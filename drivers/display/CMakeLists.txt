@@ -11,6 +11,8 @@ zephyr_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
 zephyr_sources_ifdef(CONFIG_ST7735R		display_st7735r.c)
 zephyr_sources_ifdef(CONFIG_GD7965		gd7965.c)
 zephyr_sources_ifdef(CONFIG_LS0XX		ls0xx.c)
+zephyr_sources_ifdef(CONFIG_MCUX_ELCDIF_PANEL_RM68200 display_rm68200.c)
+zephyr_sources_ifdef(CONFIG_DISPLAY_MCUX_MIPI_DSI display_mcux_mipi_dsi.c)
 
 if (CONFIG_ILI9XXX)
   zephyr_sources(display_ili9xxx.c)

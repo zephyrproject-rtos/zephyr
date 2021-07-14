@@ -286,8 +286,15 @@
 		};
 
 		iomuxc: iomuxc@400e8000 {
-			reg = <0x400e8000 0x4000>;
+			reg = <0x400e4000 0x134>;
 			label = "PINMUX_0";
+		};
+
+		iomuxc_gpr: iomuxc@400e4000 {
+			compatible = "nxp,iomuxc";
+			reg = <0x400e4000 0x134>;
+			label = "PINMUX_GPR_0";
+			status = "disabled";
 		};
 
 		lcdif: display-controller@40804000 {
@@ -296,6 +303,19 @@
 			interrupts = <54 0>;
 			label = "ELCDIF_1";
 			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4080c000 {
+			compatible = "nxp,imx-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg =	<0x4080c000 0x34>,
+					<0x4080c200 0x40>,
+					<0x4080c280 0x30>,
+					<0x4080c300 0x48>;
+			interrupts = <59 1>;
+			status = "disabled";
+			label = "MIPI_DSI";
 		};
 
 		lpspi1: spi@40114000 {
@@ -701,6 +721,20 @@
 			interrupts = <56 1>;
 			status = "disabled";
 			label = "CSI";
+		};
+
+		video_mux: video-mux@40818000 {
+			compatible = "nxp,imx-video-mux";
+			reg = <0x40818000 0x74>;
+			status = "disabled";
+			label = "VIDEO_MUX";
+		};
+
+		pgmc_bpc4: pgmc_bpc@40c88800 {
+			compatible = "nxp,imx-pgmc-bpc";
+			reg = <0x40C88800 0x28>;
+			status = "disabled";
+			label = "PGMC_BPC4";
 		};
 
 		flexcan1: can@40c40000 {

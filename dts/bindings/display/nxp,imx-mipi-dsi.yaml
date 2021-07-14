@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP MCUX MIPI DSI
+
+compatible: "nxp,imx-mipi-dsi"
+
+include: base.yaml
+
+bus: mipi-dsi
+
+properties:
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    virtualchannel:
+      required: true
+      type: int
+      description: the virtual channel of the mipi dsi

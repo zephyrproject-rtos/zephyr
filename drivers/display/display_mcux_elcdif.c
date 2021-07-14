@@ -198,7 +198,7 @@ static int mcux_elcdif_init(const struct device *dev)
 			LOG_ERR("Could not allocate frame buffer %d", i);
 			return -ENOMEM;
 		}
-		memset(data->fb[i].data, 0, data->fb_bytes);
+		memset(data->fb[i].data, 0x56, data->fb_bytes);
 	}
 	rgb_mode.bufferAddr = (uint32_t) data->fb[0].data;
 
@@ -248,6 +248,26 @@ static struct mcux_elcdif_config mcux_elcdif_config_1 = {
 				 kELCDIF_DriveDataOnRisingClkEdge,
 		.pixelFormat = kELCDIF_PixelFormatRGB565,
 		.dataBus = kELCDIF_DataBus16Bit,
+	},
+	.pixel_format = PIXEL_FORMAT_BGR_565,
+	.bits_per_pixel = 16,
+#endif
+#ifdef CONFIG_MCUX_ELCDIF_PANEL_RM68200
+	.rgb_mode = {
+		.panelWidth = 720,
+		.panelHeight = 1280,
+		.hsw = 8,
+		.hfp = 32,
+		.hbp = 32,
+		.vsw = 2,
+		.vfp = 16,
+		.vbp = 14,
+		.polarityFlags = kELCDIF_DataEnableActiveHigh |
+				 kELCDIF_VsyncActiveLow |
+				 kELCDIF_HsyncActiveLow |
+				 kELCDIF_DriveDataOnFallingClkEdge,
+		.pixelFormat = kELCDIF_PixelFormatRGB565,
+		.dataBus = kELCDIF_DataBus24Bit,
 	},
 	.pixel_format = PIXEL_FORMAT_BGR_565,
 	.bits_per_pixel = 16,

@@ -61,3 +61,8 @@
 &gpio6 {
 	interrupts = <61 0>, <62 0>;
 };
+
+&gpio11 {
+	/* FIXME: take reserved IRQ as dummy IRQ, since no IRQ routed to CM7 */
+	interrupts = <200 0>;
+};

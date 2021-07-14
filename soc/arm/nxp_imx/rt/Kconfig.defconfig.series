@@ -28,6 +28,10 @@ config DISPLAY_MCUX_ELCDIF
 	default y if HAS_MCUX_ELCDIF
 	depends on DISPLAY
 
+config DISPLAY_MCUX_MIPI_DSI
+	default y if HAS_MCUX_MIPI_DSI
+	depends on DISPLAY
+
 config GPIO_MCUX_IGPIO
 	default y if HAS_MCUX_IGPIO
 	depends on GPIO

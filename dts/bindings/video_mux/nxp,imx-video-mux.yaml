@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP MCUX video mux for the control between the camera and display
+
+compatible: "nxp,imx-video-mux"
+
+include: base.yaml
+
+properties:
+    label:
+      required: true

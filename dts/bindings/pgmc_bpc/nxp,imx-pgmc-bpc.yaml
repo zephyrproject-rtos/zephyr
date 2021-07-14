@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX power gating and memory control
+
+compatible: "nxp,imx-pgmc-bpc"
+
+include: base.yaml
+
+properties:
+    label:
+      required: true

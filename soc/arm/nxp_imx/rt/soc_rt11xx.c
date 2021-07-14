@@ -334,6 +334,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
+	rootCfg.div = 9;
+	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;

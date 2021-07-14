@@ -23,7 +23,7 @@ config MCUX_ELCDIF_POOL_BLOCK_MIN
 
 config MCUX_ELCDIF_POOL_BLOCK_MAX
 	hex "Maximum memory pool block size"
-	default 0x40000
+	default 0x1D0000
 	help
 	  Maximum block size in the frame buffer memory pool.
 
@@ -35,10 +35,14 @@ config MCUX_ELCDIF_POOL_BLOCK_ALIGN
 
 choice MCUX_ELCDIF_PANEL
 	prompt "Panel selection"
-	default MCUX_ELCDIF_PANEL_RK043FN02H
+	default MCUX_ELCDIF_PANEL_RM68200 if BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4
+	default MCUX_ELCDIF_PANEL_RK043FN02H if !(BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4)
 
 config MCUX_ELCDIF_PANEL_RK043FN02H
 	bool "Rocktech rk043fn02h-ct"
+
+config MCUX_ELCDIF_PANEL_RM68200
+	bool "RM68200 LCD panel"
 
 endchoice
 

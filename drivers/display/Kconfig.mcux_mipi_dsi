@@ -1,0 +1,8 @@
+# NXP MCUX MIPI DSI driver configuration options
+
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_MCUX_MIPI_DSI
+	bool "NXP MCUX MIPI DSI driver"
+	depends on HAS_MCUX_MIPI_DSI

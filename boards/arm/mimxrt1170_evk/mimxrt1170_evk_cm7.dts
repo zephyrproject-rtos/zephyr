@@ -27,6 +27,25 @@
 	};
 };
 
+&lcdif {
+	status = "okay";
+};
+
+&mipi_dsi {
+	status = "okay";
+	virtualchannel = <0>;
+
+	rm68200@0 {
+		compatible = "rydium,rm68xx";
+		reg = <0x0>;
+		label = "RM68200";
+		pwr-gpios = <&gpio11 16 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&gpio9 29 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
