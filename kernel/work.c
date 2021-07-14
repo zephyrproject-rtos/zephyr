@@ -597,6 +597,20 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			work = CONTAINER_OF(node, struct k_work, node);
 			flag_set(&work->flags, K_WORK_RUNNING_BIT);
 			flag_clear(&work->flags, K_WORK_QUEUED_BIT);
+
+			/* Static code analysis tool can raise a false-positive violation
+			 * in the line below that 'work' is checked for null after being
+			 * dereferenced.
+			 *
+			 * The work is figured out by CONTAINER_OF, as a container
+			 * of type struct k_work that contains the node.
+			 * The only way for it to be NULL is if node would be a member
+			 * of struct k_work object that has been placed at address NULL,
+			 * which should never happen, even line 'if (work != NULL)'
+			 * ensures that.
+			 * This means that if node is not NULL, then work will not be NULL.
+			 */
+			/* parasoft suppress item MISRAC2012-DIR_4_1-f */
 			handler = work->handler;
 		} else if (flag_test_and_clear(&queue->flags,
 					       K_WORK_QUEUE_DRAIN_BIT)) {
