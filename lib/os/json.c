@@ -460,14 +460,11 @@ static int decode_value(struct json_obj *obj,
 	int null_type = check_null_type(value->type, descr->type);
 	if(null_type) 
 	{
-		if(descr->type == JSON_TOK_NULL) {
-			// null type was expected
-			return 0;
-		} else {
+		if(descr->type != JSON_TOK_NULL) {
 			// string value contains null
 			memset(field, 0, sizeof(char *));
-			return null_type < 0 ? null_type : 0; // Return err or just ignore the current value
 		}
+		return null_type < 0 ? null_type : 0; // Return err or just ignore the current value
 	}
 
 	switch (descr->type) {
@@ -792,6 +789,10 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 {
 	int ret;
 
+	if(!(*str)) {
+		return append_bytes("null", 4, data);
+	}
+
 	ret = append_bytes("\"", 1, data);
 	if (ret < 0) {
 		return ret;
@@ -852,6 +853,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL:
+		return append_bytes("null", 4, data);
 	default:
 		return -EINVAL;
 	}
