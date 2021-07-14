@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,10 +67,20 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rl_idx, uint8_t rssi_ready);
+
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
 #endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
+static bool isr_scan_adva_check(struct lll_scan *lll, uint8_t addr_type,
+				uint8_t *addr, uint8_t rl_idx);
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
+
+static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
+				uint8_t addr_type, uint8_t *addr,
+				uint8_t rl_idx, bool *dir_report);
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   uint8_t addr_type, uint8_t *addr,
 					   bool *dir_report);
@@ -193,6 +203,47 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
 }
 #endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
+			     struct pdu_adv *pdu, uint8_t rl_idx)
+{
+	uint8_t is_directed;
+	uint8_t tx_addr;
+	uint8_t rx_addr;
+	uint8_t *adva;
+	uint8_t *tgta;
+
+	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
+		return true;
+	}
+
+	if (pdu->len <
+	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
+	    ADVA_SIZE) {
+		return false;
+	}
+
+	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
+	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
+				       sizeof(struct pdu_adv_ext_hdr) +
+				       ADVA_SIZE + TARGETA_SIZE)) {
+		return false;
+	}
+
+	tx_addr = pdu->tx_addr;
+	rx_addr = pdu->rx_addr;
+	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+	return ((!is_init ||
+		 (lll->filter_policy & 0x01) ||
+		 isr_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
+		((!is_directed) ||
+		 (is_directed &&
+		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
+				      NULL))));
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static int init_reset(void)
 {
@@ -1106,7 +1157,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		   (pdu_adv_rx->len == sizeof(struct pdu_adv_direct_ind)) &&
 		   (/* allow directed adv packets addressed to this device */
-		    lll_scan_tgta_check(lll, false, pdu_adv_rx->rx_addr,
+		    isr_scan_tgta_check(lll, false, pdu_adv_rx->rx_addr,
 					pdu_adv_rx->direct_ind.tgt_addr,
 					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -1153,21 +1204,22 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
 	return ((((lll->filter_policy & 0x01) != 0U) ||
-		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
+		isr_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
 				    rl_idx)) &&
 		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
 		  (pdu->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		 ((pdu->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		  (pdu->len == sizeof(struct pdu_adv_direct_ind)) &&
 		  (/* allow directed adv packets addressed to this device */
-			  lll_scan_tgta_check(lll, true, pdu->rx_addr,
+			  isr_scan_tgta_check(lll, true, pdu->rx_addr,
 					      pdu->direct_ind.tgt_addr, rl_idx,
 					      NULL)))));
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
-			 uint8_t rl_idx)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
+static bool isr_scan_adva_check(struct lll_scan *lll, uint8_t addr_type,
+				uint8_t *addr, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Only applies to initiator with no whitelist */
@@ -1191,9 +1243,11 @@ bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 	return false;
 #endif /* CONFIG_BT_CENTRAL */
 }
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
 
-bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
-			 uint8_t *addr, uint8_t rl_idx, bool *dir_report)
+static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
+				uint8_t addr_type, uint8_t *addr,
+				uint8_t rl_idx, bool *dir_report)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_addr_resolve(addr_type, addr, rl_idx)) {
@@ -1213,47 +1267,6 @@ bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
 		*/
 	       isr_scan_tgta_rpa_check(lll, addr_type, addr, dir_report);
 }
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
-			     struct pdu_adv *pdu, uint8_t rl_idx)
-{
-	uint8_t is_directed;
-	uint8_t tx_addr;
-	uint8_t rx_addr;
-	uint8_t *adva;
-	uint8_t *tgta;
-
-	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
-		return true;
-	}
-
-	if (pdu->len <
-	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
-	    ADVA_SIZE) {
-		return false;
-	}
-
-	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
-				       sizeof(struct pdu_adv_ext_hdr) +
-				       ADVA_SIZE + TARGETA_SIZE)) {
-		return false;
-	}
-
-	tx_addr = pdu->tx_addr;
-	rx_addr = pdu->rx_addr;
-	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
-	return ((!is_init ||
-		 (lll->filter_policy & 0x01) ||
-		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) ||
-		 (is_directed &&
-		  lll_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
-				      NULL))));
-}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   uint8_t addr_type, uint8_t *addr,
