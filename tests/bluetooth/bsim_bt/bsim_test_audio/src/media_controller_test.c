@@ -44,7 +44,9 @@ static uint32_t g_operations_supported;
 static uint8_t  g_search_control_point_result;
 
 CREATE_FLAG(ble_is_initialized);
+CREATE_FLAG(ble_link_is_ready);
 CREATE_FLAG(local_player_instance);
+CREATE_FLAG(remote_player_instance);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
 CREATE_FLAG(icon_url_read);
@@ -70,7 +72,10 @@ CREATE_FLAG(search_flag);
 
 static struct media_proxy_ctrl_cbs cbs;
 static struct media_player *local_player;
+static struct media_player *remote_player;
 static struct media_player *current_player;
+
+static struct bt_conn *default_conn;
 
 static void local_player_instance_cb(struct media_player *player, int err)
 {
@@ -81,6 +86,17 @@ static void local_player_instance_cb(struct media_player *player, int err)
 
 	local_player = player;
 	SET_FLAG(local_player_instance);
+}
+
+static void discover_player_cb(struct media_player *player, int err)
+{
+	if (err) {
+		FAIL("Discover player failed (%d)\n", err);
+		return;
+	}
+
+	remote_player = player;
+	SET_FLAG(remote_player_instance);
 }
 
 static void player_name_cb(struct media_player *plr, int err, char *name)
@@ -414,17 +430,18 @@ static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 	SET_FLAG(ccid_read);
 }
 
-int do_media_init(void)
+void initialize_media(void)
 {
 	int err = media_proxy_pl_init();  /* TODO: Fix direct call to player */
 
 	if (err) {
 		FAIL("Could not init mpl: %d", err);
-		return err;
+		return;
 	}
 
 	/* Set up the callback structure */
 	cbs.local_player_instance    = local_player_instance_cb;
+	cbs.discover_player          = discover_player_cb;
 	cbs.player_name              = player_name_cb;
 	cbs.icon_id                  = icon_id_cb;
 	cbs.icon_url                 = icon_url_cb;
@@ -451,13 +468,16 @@ int do_media_init(void)
 #endif /* CONFIG_BT_OTS */
 	cbs.content_ctrl_id          = content_ctrl_id_cb;
 
-	err = media_proxy_ctrl_register(&cbs);
+	UNSET_FLAG(local_player_instance);
 
+	err = media_proxy_ctrl_register(&cbs);
 	if (err) {
 		FAIL("Could not init mpl: %d", err);
+		return;
 	}
 
-	return err;
+	WAIT_FOR_FLAG(local_player_instance);
+	printk("media init and local player instance succeeded\n");
 }
 
 /* Callback after Bluetoot initialization attempt */
@@ -469,6 +489,22 @@ static void bt_ready(int err)
 	}
 
 	SET_FLAG(ble_is_initialized);
+}
+
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (err) {
+		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		return;
+	}
+
+	default_conn = conn;
+	printk("Connected: %s\n", addr);
+	SET_FLAG(ble_link_is_ready);
 }
 
 /* Helper function to read the media state and verify that it is as expected
@@ -1178,14 +1214,15 @@ static void test_scp(void)
 	printk("SEARCH operation succeeded\n");
 }
 
-/* This function tests all commands in the API in sequence
+/* This function tests all commands in the API in sequence for the provided player.
+ * (Works by setting the provided player as the "current player".)
+ *
  * The order of the sequence follows the order of the characterstics in the
  * Media Control Service specification
- *
- * The test uses the player that is set as the "current_player"
  */
-void test_media_controller_player(void)
+void test_media_controller_player(struct media_player *player)
 {
+	current_player = player;
 	int err;
 
 	UNSET_FLAG(player_name_read);
@@ -1498,28 +1535,114 @@ void initialize_bluetooth(void)
 	printk("Bluetooth initialized\n");
 }
 
-void initialize_media(void)
+void scan_and_connect(void)
 {
-	UNSET_FLAG(local_player_instance);
-	do_media_init();
-	WAIT_FOR_FLAG(local_player_instance);
-	printk("media init and local player instance succeeded\n");
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	UNSET_FLAG(ble_link_is_ready);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	if (err) {
+		FAIL("Failed to start scanning (err %d\n)", err);
+		return;
+	}
+
+	printk("Scanning started successfully\n");
+
+	WAIT_FOR_FLAG(ble_link_is_ready);
+
+
+	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
+	printk("Connected: %s\n", addr);
 }
 
+void discover_remote_player(void)
+{
+	int err;
+
+	UNSET_FLAG(remote_player_instance);
+	err = media_proxy_ctrl_discover_player(default_conn);
+	if (err) {
+		FAIL("Remote player discovery failed (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(remote_player_instance);
+}
+
+/* BabbleSim entry point for local player test */
 void test_media_controller_local_player(void)
 {
 	printk("Media Control local player test application.  Board: %s\n", CONFIG_BOARD);
 
 	initialize_bluetooth();
-	initialize_media();
+	initialize_media();  /* Sets local_player global variable */
 
 	printk("Local player instance: %p\n", local_player);
 
-	current_player = local_player;
-	test_media_controller_player();
+	test_media_controller_player(local_player);
 
 	/* TEST IS COMPLETE */
 	PASS("Test media_controller_local_player passed\n");
+}
+
+/* BabbleSim entry point for remote player test */
+void test_media_controller_remote_player(void)
+{
+	int err;
+	static struct bt_conn_cb conn_callbacks = {
+		.connected = connected,
+		.disconnected = disconnected,
+	};
+
+	printk("Media Control remote player test application.  Board: %s\n", CONFIG_BOARD);
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	initialize_bluetooth();
+	initialize_media();
+
+	UNSET_FLAG(ble_link_is_ready);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
+	if (err) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+	}
+	WAIT_FOR_FLAG(ble_link_is_ready);
+
+	discover_remote_player(); /* Sets global variable */
+	printk("Remote player instance: %p\n", remote_player);
+
+	test_media_controller_player(remote_player);
+
+	/* TEST IS COMPLETE */
+	PASS("Test media_controller_remote_player passed\n");
+}
+
+/* BabbleSim entry point for server for remote player test */
+void test_media_controller_server(void)
+{
+	static struct bt_conn_cb conn_callbacks = {
+		.connected = connected,
+		.disconnected = disconnected,
+	};
+
+	printk("Media Control server test application.  Board: %s\n", CONFIG_BOARD);
+
+	bt_conn_cb_register(&conn_callbacks);
+
+	initialize_bluetooth();
+	initialize_media();
+
+	/* The server side will also get callbacks, from its local player.
+	 * And if the current player is not set, the callbacks will fail the test.
+	 */
+	printk("Local player instance: %p\n", local_player);
+	current_player = local_player;
+
+	scan_and_connect();
+
+	/* TEST IS COMPLETE */
+	PASS("Test media_controller_server passed\n");
 }
 
 static const struct bst_test_instance test_media_controller[] = {
@@ -1528,6 +1651,18 @@ static const struct bst_test_instance test_media_controller[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_media_controller_local_player
+	},
+	{
+		.test_id = "media_controller_remote_player",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_media_controller_remote_player
+	},
+	{
+		.test_id = "media_controller_server",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_media_controller_server
 	},
 	BSTEST_END_MARKER
 };
