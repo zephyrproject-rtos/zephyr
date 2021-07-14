@@ -1195,6 +1195,15 @@ static void isr_abort(void *param)
 
 	radio_filter_disable();
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct event_done_extra *extra;
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	extra->type = EVENT_DONE_EXTRA_TYPE_ADV;
+#endif  /* CONFIG_BT_CTLR_ADV_EXT */
+
 	lll_isr_cleanup(param);
 }
 
