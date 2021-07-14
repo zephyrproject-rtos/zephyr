@@ -67,6 +67,14 @@ enum pm_device_state {
 /** Device PM get state control command. */
 #define PM_DEVICE_STATE_GET 1
 
+/** @brief Device PM flags. */
+enum pm_device_flag {
+	/** Indicate if the device is busy or not. */
+	PM_DEVICE_FLAG_BUSY,
+	/** Number of flags (internal use only). */
+	PM_DEVICE_FLAG_COUNT
+};
+
 /**
  * @brief Device PM info
  */
@@ -78,8 +86,8 @@ struct pm_device {
 	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
 	bool enable : 1;
-	/* Following are packed fields accessed with atomic bit operations. */
-	atomic_t atomic_flags;
+	/* Device PM status flags. */
+	ATOMIC_DEFINE(flags, PM_DEVICE_FLAG_COUNT);
 	/** Device usage count */
 	uint32_t usage;
 	/** Device power state */
@@ -89,11 +97,6 @@ struct pm_device {
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
 };
-
-/** Bit position in device_pm::atomic_flags that records whether the
- * device is busy.
- */
-#define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
  * @brief Get name of device PM state
@@ -132,6 +135,56 @@ int pm_device_state_set(const struct device *dev,
  */
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *device_power_state);
+
+#ifdef CONFIG_PM_DEVICE
+/**
+ * @brief Indicate that the device is in the middle of a transaction
+ *
+ * Called by a device driver to indicate that it is in the middle of a
+ * transaction.
+ *
+ * @param dev Pointer to device structure of the driver instance.
+ */
+void pm_device_busy_set(const struct device *dev);
+
+/**
+ * @brief Indicate that the device has completed its transaction
+ *
+ * Called by a device driver to indicate the end of a transaction.
+ *
+ * @param dev Pointer to device structure of the driver instance.
+ */
+void pm_device_busy_clear(const struct device *dev);
+
+/**
+ * @brief Check if any device is in the middle of a transaction
+ *
+ * Called by an application to see if any device is in the middle
+ * of a critical transaction that cannot be interrupted.
+ *
+ * @retval 0 if no device is busy
+ * @retval -EBUSY if any device is busy
+ */
+int pm_device_any_busy_check(void);
+
+/**
+ * @brief Check if a specific device is in the middle of a transaction
+ *
+ * Called by an application to see if a particular device is in the
+ * middle of a critical transaction that cannot be interrupted.
+ *
+ * @param chk_dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ * @retval 0 if the device is not busy
+ * @retval -EBUSY if the device is busy
+ */
+int pm_device_busy_check(const struct device *chk_dev);
+#else
+static inline void pm_device_busy_set(const struct device *dev) {}
+static inline void pm_device_busy_clear(const struct device *dev) {}
+static inline int pm_device_any_busy_check(void) { return -ENOSYS; }
+static inline int pm_device_busy_check(const struct device *chk_dev) { return -ENOSYS; }
+#endif
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
