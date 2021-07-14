@@ -17,6 +17,7 @@ set(TFM_VALID_PARTITIONS
 # List of all crypto modules that can be enabled/disabled
 # Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/config/config_default.cmake'
 set(TFM_CRYPTO_MODULES
+  CRYPTO_RNG_MODULE
   CRYPTO_KEY_MODULE
   CRYPTO_AEAD_MODULE
   CRYPTO_MAC_MODULE
