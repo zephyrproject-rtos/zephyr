@@ -1,0 +1,55 @@
+schema;binding:
+  type: map
+  mapping:
+    include:
+      type: any
+
+    description:
+      type: str
+
+    compatible:
+      type: str
+
+    bus:
+      type: str
+
+    on-bus:
+      type: str
+
+    properties:
+      type: map
+      mapping:
+        regex;([a-zA-Z0-9,._+*#?@-]+):
+          type: map
+          mapping:
+            required:
+              type: bool
+            deprecated:
+              type: bool
+            type:
+              type: str
+              enum: ['string', 'int', 'boolean', 'array', 'uint8-array',
+                     'string-array', 'phandle', 'phandles', 'phandle-array',
+                     'path', 'compound']
+            description:
+              type: str
+            enum:
+              type: seq
+              sequence:
+                - type: scalar
+                  unique: True
+            const:
+              type: scalar
+            default:
+              type: any
+
+    regex;(.*-cells):
+      type: seq
+      sequence:
+        - type: str
+          unique: True
+
+    child-binding:
+      include: binding
+
+include: binding
