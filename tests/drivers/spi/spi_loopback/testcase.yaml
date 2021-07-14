@@ -10,3 +10,10 @@ tests:
       fixture: spi_loopback
   driver.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi_dma.loopback:
+    tags: dma
+    harness: ztest
+    extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+    harness_config:
+      fixture: spi_loopback
+    platform_allow: frdm_k64f
