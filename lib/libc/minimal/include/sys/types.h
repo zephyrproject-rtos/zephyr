@@ -16,10 +16,16 @@ typedef unsigned int mode_t;
 #if !defined(__ssize_t_defined)
 #define __ssize_t_defined
 
-/* parasoft suppress item MISRAC2012-RULE_20_4-a item MISRAC2012-RULE_20_4-b
- * "Trick compiler to make sure the type of ssize_t won't be
- * unsigned long. View details in commit b889120"
+/* Static code analysis tool can raise a false-positive violation
+ * in the line below that the name of macro 'unsigned' is the same
+ * as keyword. It is made on purpose.
+ *
+ * Trick compiler to make sure the type of ssize_t won't be unsigned long.
+ * As otherwise the type of ssize_t will be unsigned long
+ * which is not correct. More details view in commit b889120
  */
+/* parasoft suppress item MISRAC2012-RULE_20_4-a */
+/* parasoft suppress item MISRAC2012-RULE_20_4-b */
 #define unsigned signed
 typedef __SIZE_TYPE__ ssize_t;
 #undef unsigned
