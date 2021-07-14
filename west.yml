@@ -231,7 +231,7 @@ manifest:
       remote: embarc
       repo-path: embarc_mli
       path: modules/lib/embarc_mli
-      revision: 8ff711337dffe225f81d9ff45dfa07b8828354ce
+      revision: 4bd12b63abc6860b6bcbe788cfe39f13d2830742
 
   self:
     path: zephyr
