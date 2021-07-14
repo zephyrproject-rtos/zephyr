@@ -73,6 +73,19 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
 	return (esf->basic.xpsr & IPSR_ISR_Msk) ? (true) : (false);
 }
 
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief Is the thread in unprivileged mode
+ *
+ * @param esf the exception stack frame (unused)
+ * @return true if the current thread was in unprivileged mode
+ */
+static ALWAYS_INLINE bool arch_exception_from_user_mode(const z_arch_esf_t *esf)
+{
+	return aarch32_thread_is_user_mode();
+}
+#endif
+
 /**
  * @brief Setup system exceptions
  *

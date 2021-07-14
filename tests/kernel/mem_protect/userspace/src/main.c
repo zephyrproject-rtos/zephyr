@@ -138,6 +138,7 @@ static void test_write_control(void)
 	zassert_unreachable("Write to control register did not fault");
 
 #elif defined(CONFIG_ARM)
+#if defined(CONFIG_CPU_CORTEX_M)
 	unsigned int msr_value;
 
 	clear_fault();
@@ -150,6 +151,17 @@ static void test_write_control(void)
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
+#else
+	uint32_t val;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	val = __get_SCTLR();
+	val |= SCTLR_DZ_Msk;
+	__set_SCTLR(val);
+
+	zassert_unreachable("Write to control register did not fault");
+#endif
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
 

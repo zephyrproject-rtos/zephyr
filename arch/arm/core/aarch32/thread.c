@@ -267,6 +267,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
+	_current->arch.priv_stack_end =
+		_current->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
 			     _current->stack_info.size -
@@ -396,7 +399,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
 		/* User thread */
-		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0U) {
+		if (aarch32_thread_is_user_mode() == false) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
 				thread->arch.priv_stack_start - guard_len,

@@ -530,6 +530,23 @@ static int mpu_mark_areas_for_dynamic_regions(
 	return 0;
 }
 
+/**
+ *  Get the number of supported MPU regions.
+ */
+static inline uint8_t get_num_regions(void)
+{
+#if defined(NUM_MPU_REGIONS)
+	/* Retrieve the number of regions from DTS configuration. */
+	return NUM_MPU_REGIONS;
+#else
+	uint32_t type = MPU->TYPE;
+
+	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
+
+	return (uint8_t)type;
+#endif /* NUM_MPU_REGIONS */
+}
+
 /* This internal function programs the dynamic MPU regions.
  *
  * It returns the number of MPU region indices configured.

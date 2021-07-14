@@ -10,6 +10,7 @@
 
 
 #include <sys/math_extras.h>
+#include <arm_mpu_internal.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
@@ -29,13 +30,26 @@ static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	/* Select the region you want to access */
-	MPU->RNR = index;
+	set_region_number(index);
+
 	/* Configure the region */
+#if defined(CONFIG_CPU_CORTEX_R)
+	/*
+	 * Clear size register, which disables the entry.  It cannot be
+	 * enabled as we reconfigure it.
+	 */
+	set_region_size(0);
+
+	set_region_base_address(region_conf->base & MPU_RBAR_ADDR_Msk);
+	set_region_attributes(region_conf->attr.rasr);
+	set_region_size(region_conf->size | MPU_RASR_ENABLE_Msk);
+#else
 	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
 	MPU->RASR = region_conf->attr.rasr | MPU_RASR_ENABLE_Msk;
 	LOG_DBG("[%d] 0x%08x 0x%08x",
 		index, region_conf->base, region_conf->attr.rasr);
+#endif
 }
 
 /* @brief Partition sanity check
@@ -105,7 +119,13 @@ static inline void get_region_attr_from_mpu_partition_info(
 	 */
 	(void) base;
 
+#if defined(CONFIG_CPU_CORTEX_R)
+	(void) size;
+
+	p_attr->rasr = attr->rasr_attr;
+#else
 	p_attr->rasr = attr->rasr_attr | size_to_mpu_rasr_size(size);
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -122,114 +142,10 @@ static inline int get_dyn_region_min_index(void)
 	return static_regions_num;
 }
 
-/**
- * This internal function converts the SIZE field value of MPU_RASR
- * to the region size (in bytes).
- */
-static inline uint32_t mpu_rasr_size_to_size(uint32_t rasr_size)
-{
-	return 1 << (rasr_size + 1U);
-}
-
-static inline uint32_t mpu_region_get_base(uint32_t index)
-{
-	MPU->RNR = index;
-	return MPU->RBAR & MPU_RBAR_ADDR_Msk;
-}
-
-static inline uint32_t mpu_region_get_size(uint32_t index)
-{
-	MPU->RNR = index;
-	uint32_t rasr_size = (MPU->RASR & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos;
-
-	return mpu_rasr_size_to_size(rasr_size);
-}
-
-/**
- * This internal function checks if region is enabled or not.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int is_enabled_region(uint32_t index)
-{
-	/* Lock IRQs to ensure RNR value is correct when reading RASR. */
-	unsigned int key;
-	uint32_t rasr;
-
-	key = irq_lock();
-	MPU->RNR = index;
-	rasr = MPU->RASR;
-	irq_unlock(key);
-
-	return (rasr & MPU_RASR_ENABLE_Msk) ? 1 : 0;
-}
-
 /* Only a single bit is set for all user accessible permissions.
  * In ARMv7-M MPU this is bit AP[1].
  */
 #define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO & RO)
-
-/**
- * This internal function returns the access permissions of an MPU region
- * specified by its region index.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline uint32_t get_region_ap(uint32_t r_index)
-{
-	/* Lock IRQs to ensure RNR value is correct when reading RASR. */
-	unsigned int key;
-	uint32_t rasr;
-
-	key = irq_lock();
-	MPU->RNR = r_index;
-	rasr = MPU->RASR;
-	irq_unlock(key);
-
-	return (rasr & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
-}
-
-/**
- * This internal function checks if the given buffer is in the region.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
-{
-	uint32_t r_addr_start;
-	uint32_t r_size_lshift;
-	uint32_t r_addr_end;
-	uint32_t end;
-
-	/* Lock IRQs to ensure RNR value is correct when reading RBAR, RASR. */
-	unsigned int key;
-	uint32_t rbar, rasr;
-
-	key = irq_lock();
-	MPU->RNR = r_index;
-	rbar = MPU->RBAR;
-	rasr = MPU->RASR;
-	irq_unlock(key);
-
-	r_addr_start = rbar & MPU_RBAR_ADDR_Msk;
-	r_size_lshift = ((rasr & MPU_RASR_SIZE_Msk) >>
-			MPU_RASR_SIZE_Pos) + 1U;
-	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1UL;
-
-	size = size == 0U ? 0U : size - 1U;
-	if (u32_add_overflow(start, size, &end)) {
-		return 0;
-	}
-
-	if ((start >= r_addr_start) && (end <= r_addr_end)) {
-		return 1;
-	}
-
-	return 0;
-}
 
 /**
  * This internal function checks if the region is user accessible or not.
@@ -256,6 +172,9 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 {
 	int32_t r_index;
+	int rc = -EPERM;
+
+	int key = arch_irq_lock();
 
 	/* Iterate all mpu regions in reversed order */
 	for (r_index = get_num_regions() - 1U; r_index >= 0;  r_index--) {
@@ -270,14 +189,15 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 		 * matched region that grants permission or denies access.
 		 */
 		if (is_user_accessible_region(r_index, write)) {
-			return 0;
+			rc = 0;
 		} else {
-			return -EPERM;
+			rc = -EPERM;
 		}
+		break;
 	}
 
-	return -EPERM;
-
+	arch_irq_unlock(key);
+	return rc;
 }
 
 #endif /* CONFIG_USERSPACE */

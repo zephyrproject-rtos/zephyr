@@ -39,6 +39,12 @@
 #ifdef CONFIG_USERSPACE
 #define _thread_offset_to_priv_stack_start \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
+
+#define _thread_offset_to_priv_stack_end \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_end_OFFSET)
+
+#define _thread_offset_to_sp_usr \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_sp_usr_OFFSET)
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)

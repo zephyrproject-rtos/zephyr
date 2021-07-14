@@ -40,6 +40,8 @@ GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
 #endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
+GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
+GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
