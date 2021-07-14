@@ -176,7 +176,14 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 	_image_rodata_end = .;
-	MPU_ALIGN(_image_rodata_end - _image_rom_start);
+
+#if defined(CONFIG_RISCV_PMP) && !defined(CONFIG_XIP)
+	SECTION_PROLOGUE(rom_mpu_padding,,)
+	{
+		MPU_ALIGN(_image_rodata_end - _image_rom_start);
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* defined(CONFIG_RISCV_PMP) && !defined(CONFIG_XIP) */
+
 	_image_rom_end = .;
 	_image_rom_size = _image_rom_end - _image_rom_start;
     GROUP_END(ROMABLE_REGION)
