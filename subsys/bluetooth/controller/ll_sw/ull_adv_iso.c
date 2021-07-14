@@ -60,7 +60,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 {
 	uint8_t field_data[1 + sizeof(uint8_t *)];
 	struct ull_adv_ext_hdr_data hdr_data;
-	void *extra_data_prev, *extra_data;
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
@@ -139,8 +138,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	}
 
 	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, 0, 0, NULL, &pdu_prev, &pdu,
-				     &extra_data_prev, &extra_data, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
+				     NULL, NULL, &ter_idx);
 	if (err) {
 		return err;
 	}
@@ -227,7 +226,6 @@ uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 
 uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 {
-	void *extra_data_prev, *extra_data;
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
@@ -254,8 +252,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	adv = HDR_LLL2ULL(lll_adv);
 
 	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, 0, 0, NULL, &pdu_prev, &pdu,
-				     &extra_data_prev, &extra_data, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
+				     NULL, NULL, &ter_idx);
 	if (err) {
 		return err;
 	}
