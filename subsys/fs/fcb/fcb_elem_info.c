@@ -44,8 +44,9 @@ fcb_elem_crc8(struct fcb *fcb, struct fcb_entry *loc, uint8_t *c8p)
 	crc8 = CRC8_CCITT_INITIAL_VALUE;
 	crc8 = crc8_ccitt(crc8, tmp_str, cnt);
 
-	off = loc->fe_data_off;
-	end = loc->fe_data_off + len;
+	len = len > fcb->f_crc_cnt ? len - fcb->f_crc_cnt : 0;
+	off = loc->fe_data_off + fcb->f_crc_cnt;
+	end = loc->fe_data_off + len + fcb->f_crc_cnt;
 	for (; off < end; off += blk_sz) {
 		blk_sz = end - off;
 		if (blk_sz > sizeof(tmp_str)) {
