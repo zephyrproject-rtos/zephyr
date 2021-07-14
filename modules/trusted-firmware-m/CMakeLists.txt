@@ -168,6 +168,12 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
+    # Supply path to NXP HAL sources used for TF-M build
+    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/platform/ext/target/nxp/)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
