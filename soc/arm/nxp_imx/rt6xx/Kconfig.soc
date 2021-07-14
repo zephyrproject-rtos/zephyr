@@ -22,6 +22,7 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_OS_TIMER
+	select HAS_MCUX_SCTIMER
 	select INIT_SYS_PLL
 
 endchoice

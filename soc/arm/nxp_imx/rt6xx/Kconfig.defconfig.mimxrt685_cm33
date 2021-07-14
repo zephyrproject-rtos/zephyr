@@ -54,4 +54,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # CORTEX_M_SYSTICK
 
+config PWM_MCUX_SCTIMER
+	default y
+	depends on PWM
+
 endif # SOC_MIMXRT685S_CM33

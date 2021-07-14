@@ -75,6 +75,8 @@
 #define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
+#elif defined CONFIG_BOARD_MIMXRT685_EVK
+#define DEFAULT_PWM_PORT 7 /* D3 on Arduino connector J27 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 /* Default port should be adapted per board to fit the channel
  * associated to the PWM pin. For intsance, for following device,

@@ -85,6 +85,8 @@ features:
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -156,6 +158,8 @@ functionality of a pin.
 | PIO2_22 | FLEXSPI0B_DATA6 | OctalSPI Flash             |
 +---------+-----------------+----------------------------+
 | PIO2_23 | FLEXSPI0B_DATA7 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO0_27 | SCT0_OUT7       | PWM                        |
 +---------+-----------------+----------------------------+
 
 System Clock

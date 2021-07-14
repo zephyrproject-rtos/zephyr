@@ -47,6 +47,8 @@ source "drivers/pwm/Kconfig.sam"
 
 source "drivers/pwm/Kconfig.mcux"
 
+source "drivers/pwm/Kconfig.mcux_sctimer"
+
 source "drivers/pwm/Kconfig.xec"
 
 source "drivers/pwm/Kconfig.litex"

@@ -30,6 +30,10 @@ tests:
     platform_allow: mimxrt1064_evk
     tags: pwm_mcux
     extra_args: "CONFIG_PWM_MCUX=y"
+  drivers.pwm.mcux.sctimer.build:
+    platform_allow: mimxrt685_evk_cm33
+    tags: pwm_mcux_sctimer
+    extra_args: "CONFIG_PWM_MCUX_SCTIMER=y"
   drivers.pwm.rv32m1.tpm.build:
     platform_allow: rv32m1_vega_ri5cy
     tags: pwm_rv32m1_tpm
