@@ -53,6 +53,7 @@ struct flash_sam_dev_data {
 static const struct flash_parameters flash_sam_parameters = {
 	.write_block_size = FLASH_WRITE_BLK_SZ,
 	.erase_value = 0xff,
+	.flags = 0,
 };
 
 static int flash_sam_write_protection(const struct device *dev, bool enable);
@@ -373,6 +374,35 @@ flash_sam_get_parameters(const struct device *dev)
 	return &flash_sam_parameters;
 }
 
+static int flash_sam_get_page_info(const struct device *dev, off_t offset,
+				   struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= DT_REG_SIZE(SOC_NV_FLASH_NODE)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(FLASH_ERASE_BLK_SZ - 1);
+	fpi->size = FLASH_ERASE_BLK_SZ;
+
+	return 0;
+}
+
+static ssize_t flash_sam_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_REG_SIZE(SOC_NV_FLASH_NODE) / FLASH_ERASE_BLK_SZ;
+}
+
+static ssize_t flash_sam_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_REG_SIZE(SOC_NV_FLASH_NODE);
+}
+
 static int flash_sam_init(const struct device *dev)
 {
 	struct flash_sam_dev_data *const data = dev->data;
@@ -387,6 +417,9 @@ static const struct flash_driver_api flash_sam_api = {
 	.write = flash_sam_write,
 	.read = flash_sam_read,
 	.get_parameters = flash_sam_get_parameters,
+	.get_page_info = flash_sam_get_page_info,
+	.get_page_count = flash_sam_get_page_count,
+	.get_size = flash_sam_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif

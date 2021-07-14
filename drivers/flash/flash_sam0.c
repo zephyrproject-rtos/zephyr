@@ -454,6 +454,31 @@ flash_sam0_get_parameters(const struct device *dev)
 	return &flash_sam0_parameters;
 }
 
+static int
+flash_sam0_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= CONFIG_FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(ROW_SIZE - 1);
+	fpi->size = ROW_SIZE;
+
+	return 0;
+}
+
+static ssize_t flash_sam0_get_page_count(const struct device *dev)
+{
+	return CONFIG_FLASH_SIZE * 1024 / ROW_SIZE;
+}
+
+static ssize_t flash_sam0_get_size(const struct device *dev)
+{
+	return CONFIG_FLASH_SIZE;
+}
+
 static int flash_sam0_init(const struct device *dev)
 {
 #if defined(CONFIG_MULTITHREADING)
@@ -485,6 +510,9 @@ static const struct flash_driver_api flash_sam0_api = {
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,
 	.get_parameters = flash_sam0_get_parameters,
+	.get_page_info = flash_sam0_get_page_info,
+	.get_page_count = flash_sam0_get_page_count,
+	.get_size = flash_sam0_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
 #endif
