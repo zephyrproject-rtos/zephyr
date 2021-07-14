@@ -17,6 +17,8 @@ struct test_nested {
 
 struct test_struct {
 	const char *some_string;
+	const char *some_null;
+	const char *some_null_string;
 	int some_int;
 	bool some_bool;
 	struct test_nested some_nested_struct;
@@ -48,6 +50,8 @@ static const struct json_obj_descr nested_descr[] = {
 
 static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_null, JSON_TOK_NULL),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_null_string, JSON_TOK_STRING)
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
@@ -99,6 +103,8 @@ static void test_json_encoding(void)
 {
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
+		.some_null = nullptr,
+		.some_null_string = nullptr;
 		.some_int = 42,
 		.some_bool = true,
 		.some_nested_struct = {
@@ -126,6 +132,8 @@ static void test_json_encoding(void)
 		},
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
+		"\"some_null\":null,"
+		"\"some_null_string\":null,"
 		"\"some_int\":42,\"some_bool\":true,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
@@ -157,6 +165,8 @@ static void test_json_decoding(void)
 {
 	struct test_struct ts;
 	char encoded[] = "{\"some_string\":\"zephyr 123\\uABCD456\","
+		"\"some_null\":null,"
+		"\"some_null_string\":null,"
 		"\"some_int\":\t42\n,"
 		"\"some_bool\":true    \t  "
 		"\n"
@@ -185,6 +195,8 @@ static void test_json_decoding(void)
 
 	zassert_true(!strcmp(ts.some_string, "zephyr 123\\uABCD456"),
 		    "String decoded correctly");
+	zassert_equal(ts.some_null, nullptr, "Null value decoded correctly");
+	zassert_equal(ts.some_null_string, nullptr, "Null string decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int, -1234,
@@ -373,9 +385,19 @@ static void test_json_invalid_null(void)
 {
 	struct encoding_test encoded[] = {
 		/* Parser will recognize 'null', but refuse to decode it */
-		{ "{\"some_string\":null }", -EINVAL},
+		{ "{\"some_int\":null}", -EINVAL},
+		{ "{\"some_bool\":null}", -EINVAL},
+		{ "{\"some_array\":null}", -EINVAL},
+		{ "{\"some_nested_struct\":null}", -EINVAL},
 		/* Null spelled wrong */
-		{ "{\"some_string\":nutella }", -EINVAL},
+		{ "{\"some_int\":nutella}", -EINVAL},
+		{ "{\"some_bool\":nutella}", -EINVAL},
+		{ "{\"some_array\":nutella}", -EINVAL},
+		{ "{\"some_nested_struct\":nutella}", -EINVAL},
+		{ "{\"some_null_string\":nutella}", -EINVAL},
+		/* Expecting null for non-null value */
+		{ "{\"some_null\":\"hello\"}", -EINVAL },
+		{ "{\"some_null\":nutella}", -EINVAL },
 	};
 
 	parse_harness(encoded, ARRAY_SIZE(encoded));
