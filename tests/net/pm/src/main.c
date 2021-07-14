@@ -21,23 +21,19 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(const struct device *dev, uint32_t command,
-			       enum pm_device_state *state)
+static int fake_dev_pm_control(const struct device *dev,
+			       enum pm_device_state state)
 {
 	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;
 
-	if (command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_SUSPEND) {
-			ret = net_if_suspend(ctx->iface);
-			if (ret == -EBUSY) {
-				goto out;
-			}
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = net_if_resume(ctx->iface);
+	if (state == PM_DEVICE_STATE_SUSPEND) {
+		ret = net_if_suspend(ctx->iface);
+		if (ret == -EBUSY) {
+			goto out;
 		}
-	} else {
-		return -EINVAL;
+	} else if (state == PM_DEVICE_STATE_ACTIVE) {
+		ret = net_if_resume(ctx->iface);
 	}
 
 out:

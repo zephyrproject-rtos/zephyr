@@ -129,23 +129,58 @@ const char *pm_device_state_str(enum pm_device_state state)
 }
 
 int pm_device_state_set(const struct device *dev,
-			enum pm_device_state device_power_state)
+			enum pm_device_state state)
 {
+	int ret;
+
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_SET,
-			       &device_power_state);
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPEND:
+		if ((dev->pm->state == PM_DEVICE_STATE_SUSPEND) ||
+		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
+			return -EALREADY;
+		}
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
+		if ((dev->pm->state == PM_DEVICE_STATE_ACTIVE) ||
+		    (dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+			return -EALREADY;
+		}
+		break;
+	case PM_DEVICE_STATE_FORCE_SUSPEND:
+		__fallthrough;
+	case PM_DEVICE_STATE_LOW_POWER:
+		__fallthrough;
+	case PM_DEVICE_STATE_OFF:
+		if (dev->pm->state == state) {
+			return -EALREADY;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = dev->pm_control(dev, state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = state;
+
+	return 0;
 }
 
 int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *device_power_state)
+			enum pm_device_state *state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
-			       device_power_state);
+	*state = dev->pm->state;
+
+	return 0;
 }

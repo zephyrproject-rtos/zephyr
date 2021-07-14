@@ -9,7 +9,6 @@
 #include "dummy_parent.h"
 
 static uint32_t store_value;
-enum pm_device_state parent_power_state;
 
 static int dummy_transfer(const struct device *dev, uint32_t cmd,
 			  uint32_t *val)
@@ -25,50 +24,16 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 	return 0;
 }
 
-static enum pm_device_state dummy_get_power_state(const struct device *dev)
-{
-	return parent_power_state;
-}
-
-static int dummy_suspend(const struct device *dev)
-{
-	printk("parent suspending..\n");
-	parent_power_state = PM_DEVICE_STATE_SUSPEND;
-
-	return 0;
-}
-
-static int dummy_resume_from_suspend(const struct device *dev)
-{
-	printk("parent resuming..\n");
-	parent_power_state = PM_DEVICE_STATE_ACTIVE;
-
-	return 0;
-}
-
 static int dummy_parent_pm_ctrl(const struct device *dev,
-				uint32_t ctrl_command,
-				enum pm_device_state *state)
+				enum pm_device_state state)
 {
-	int ret = 0;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = dummy_resume_from_suspend(dev);
-		} else {
-			ret = dummy_suspend(dev);
-		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = dummy_get_power_state(dev);
-		break;
-	default:
-		ret = -EINVAL;
-
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		printk("parent resuming..\n");
+	} else {
+		printk("parent suspending..\n");
 	}
 
-	return ret;
+	return 0;
 }
 
 static const struct dummy_parent_api funcs = {
@@ -78,7 +43,6 @@ static const struct dummy_parent_api funcs = {
 int dummy_parent_init(const struct device *dev)
 {
 	pm_device_enable(dev);
-	parent_power_state = PM_DEVICE_STATE_ACTIVE;
 	return 0;
 }
 

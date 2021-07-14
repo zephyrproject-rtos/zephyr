@@ -27,7 +27,6 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
-			dev->pm->state = PM_DEVICE_STATE_SUSPENDING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
 			if (ret == 0) {
 				dev->pm->state = PM_DEVICE_STATE_SUSPEND;
@@ -36,7 +35,6 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
-			dev->pm->state = PM_DEVICE_STATE_RESUMING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 			if (ret == 0) {
 				dev->pm->state = PM_DEVICE_STATE_ACTIVE;
@@ -77,6 +75,7 @@ static int pm_device_request(const struct device *dev,
 	int ret = 0;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
+
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
 			(target_state == PM_DEVICE_STATE_SUSPEND),
 			"Invalid device PM state requested");

@@ -311,9 +311,10 @@ static int bmp388_attr_set(const struct device *dev,
 	int ret;
 
 #ifdef CONFIG_PM_DEVICE
-	struct bmp388_data *data = DEV_DATA(dev);
+	enum pm_device_state state;
 
-	if (data->device_power_state != PM_DEVICE_STATE_ACTIVE) {
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 		return -EBUSY;
 	}
 #endif
@@ -348,7 +349,10 @@ static int bmp388_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #ifdef CONFIG_PM_DEVICE
-	if (bmp388->device_power_state != PM_DEVICE_STATE_ACTIVE) {
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 		return -EBUSY;
 	}
 #endif
@@ -546,21 +550,14 @@ static int bmp388_get_calibration_data(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int bmp388_set_power_state(const struct device *dev,
-				  enum pm_device_state power_state)
+				  enum pm_device_state state)
 {
 	uint8_t reg_val;
 
-	struct bmp388_data *data = DEV_DATA(dev);
-
-	if (data->device_power_state == power_state) {
-		/* We are already in the desired state. */
-		return 0;
-	}
-
-	if (power_state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
-	} else if ((power_state == PM_DEVICE_STATE_SUSPEND) ||
-		   (power_state == PM_DEVICE_STATE_OFF)) {
+	} else if ((state == PM_DEVICE_STATE_SUSPEND) ||
+		   (state == PM_DEVICE_STATE_OFF)) {
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
 	} else {
 		return 0;
@@ -574,30 +571,16 @@ static int bmp388_set_power_state(const struct device *dev,
 		return -EIO;
 	}
 
-	data->device_power_state = power_state;
-
 	return 0;
-}
-
-static uint32_t bmp388_get_power_state(const struct device *dev)
-{
-	struct bmp388_data *ctx = DEV_DATA(dev);
-
-	return ctx->device_power_state;
 }
 
 static int bmp388_device_ctrl(
 	const struct device *dev,
-	uint32_t ctrl_command,
-	enum pm_device_state *state)
+	enum pm_device_state state)
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		ret = bmp388_set_power_state(dev, *state);
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*state = bmp388_get_power_state(dev);
-	}
+	ret = bmp388_set_power_state(dev, state);
 
 	return ret;
 }
@@ -665,10 +648,6 @@ static int bmp388_init(const struct device *dev)
 		LOG_ERR("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
-
-#ifdef CONFIG_PM_DEVICE
-	bmp388->device_power_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 
 	/* Read calibration data */
 	if (bmp388_get_calibration_data(dev) < 0) {
