@@ -25,6 +25,8 @@ struct uart_stm32_config {
 	int  parity;
 	const struct soc_gpio_pinctrl *pinctrl_list;
 	size_t pinctrl_list_size;
+	const struct soc_gpio_pinctrl *lp_pinctrl_list;
+	size_t lp_pinctrl_list_size;
 };
 
 #ifdef CONFIG_UART_ASYNC_API
