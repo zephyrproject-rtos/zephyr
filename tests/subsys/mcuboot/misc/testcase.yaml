@@ -1,0 +1,152 @@
+common:
+  tags: mcuboot
+  platform_exclude: native_posix
+  integration_platforms:
+    - nrf52840dk_nrf52840
+
+tests:
+  mcuboot.misc.overwrite:
+    images:
+      - name: bootloader
+        path: ../../../../../bootloader/mcuboot/boot/zephyr
+        extra_args: OVERLAY_CONFIG=../../samples/zephyr/overlay-upgrade-only.conf
+      - name: hello1
+        path: ../hello-world
+        extra_args: FROM_WHO=hello1
+      - name: hello2
+        path: ../hello-world
+        extra_args: FROM_WHO=hello2
+
+    stages:
+      - WestSign:
+          image: hello1
+          imgtool_args:
+            key: ../bootloader/mcuboot/root-rsa-2048.pem
+      - WestSign:
+          image: hello2
+          imgtool_args:
+            key: ../bootloader/mcuboot/root-rsa-2048.pem
+            pad: true
+      - OnTarget:
+          image: bootloader
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Swap type: none"
+              - "Unable to find bootable image"
+      - OnTarget:
+          image: hello1
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Swap type: none"
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello1"
+      - OnTarget:
+          image: hello2
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Swap type: test"
+              - "Image upgrade secondary slot -> primary slot"
+              - "Erasing the primary slot"
+              - "Copying the secondary slot to the primary slot:" #for nrf52840  0x4638 bytes?
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello2"
+      - OnTarget:
+          command: "pyocd commander -c reset"
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Swap type: none"
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello2"
+
+  mcuboot.misc.no_bootcheck:
+    images:
+      - name: bootloader
+        path: ../../../../../bootloader/mcuboot/boot/zephyr
+        extra_args: OVERLAY_CONFIG=../../samples/zephyr/overlay-skip-primary-slot-validate.conf
+      - name: hello1
+        path: ../hello-world
+        extra_args: FROM_WHO=hello1
+      - name: hello2
+        path: ../hello-world
+        extra_args: FROM_WHO=hello2
+    stages:
+      - WestSign:
+          image: hello1
+          imgtool_args:
+            key: ../bootloader/mcuboot/root-ec-p256.pem
+      - WestSign:
+          image: hello2
+          imgtool_args:
+            key: ../bootloader/mcuboot/root-ec-p256.pem
+            pad: true
+      - OnTarget:
+          image: bootloader
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Boot source: none"
+              - "Failed reading image headers; Image=0"
+              - "bad image magic"
+              - "Unable to find bootable image"
+      - OnTarget:
+          image: hello1
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Boot source: none"
+              - "Swap type: none"
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello1"
+      - OnTarget:
+          image: hello2
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Secondary image: magic=good, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Boot source: none"
+              - "Swap type: test"
+              - "Image in the secondary slot is not valid!"
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello1"
+      - OnTarget:
+          command: "pyocd commander -c reset"
+          harness: console
+          harness_config:
+            type: multi_line
+            regex:
+              - "Starting bootloader"
+              - "Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3"
+              - "Boot source: none"
+              - "Swap type: none"
+              - "Bootloader chainload address offset:" #for nrf52840  0xc000
+              - "Jumping to the first image slot"
+              - "Hello World from hello1"
