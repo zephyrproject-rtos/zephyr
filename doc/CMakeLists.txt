@@ -248,12 +248,23 @@ set_target_properties(
 add_dependencies(latex kconfig devicetree)
 
 if(LATEX_PDFLATEX_FOUND AND LATEXMK)
+  if(WIN32)
+    set(PDF_BUILD_COMMAND "make.bat")
+  else()
+    find_program(MAKE make)
+    if(NOT MAKE)
+      message(FATAL_ERROR "The 'make' command was not found")
+    endif()
+    set(PDF_BUILD_COMMAND ${MAKE})
+  endif()
+
   add_custom_target(
     pdf
-    COMMAND ${CMAKE_COMMAND} -E env LATEXOPTS="-halt-on-error -no-shell-escape"
-    ${LATEXMK} -quiet -pdf -dvi- -ps-
+    COMMAND ${CMAKE_COMMAND} -E env LATEXMKOPTS="-halt-on-error;-no-shell-escape"
+    ${PDF_BUILD_COMMAND}
     WORKING_DIRECTORY ${DOCS_LATEX_DIR}
     COMMENT "Building PDF file..."
+    USES_TERMINAL
   )
 
   add_dependencies(pdf latex)
