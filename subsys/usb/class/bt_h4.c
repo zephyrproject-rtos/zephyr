@@ -217,7 +217,7 @@ static int bt_h4_vendor_handler(struct usb_setup_packet *setup,
 	    (setup->bRequest == 0x5c)) {
 		LOG_DBG("Device-to-Host, wLength %d, data %p",
 			setup->wLength, *data);
-		return 0;
+		/* Not yet supported */
 	}
 
 	return -ENOTSUP;

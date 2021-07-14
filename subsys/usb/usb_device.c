@@ -307,25 +307,30 @@ static void usb_handle_control_transfer(uint8_t ep,
 		setup->wIndex = sys_le16_to_cpu(setup_raw.wIndex);
 		setup->wLength = sys_le16_to_cpu(setup_raw.wLength);
 
-		if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
-			if (REQTYPE_GET_DIR(setup->bmRequestType)
-			    != REQTYPE_DIR_TO_HOST) {
+		usb_dev.data_buf = usb_dev.req_data;
+		usb_dev.zlp_flag = false;
+		/*
+		 * Set length to 0 as a precaution so that no trouble
+		 * happens if control request handler does not check the
+		 * request values sufficiently.
+		 */
+		usb_dev.data_buf_len = 0;
+		usb_dev.data_buf_residue = 0;
+
+		if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_DEVICE) {
+			if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 				LOG_ERR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
 				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
 				return;
 			}
-		}
 
-		usb_dev.data_buf = usb_dev.req_data;
-		usb_dev.data_buf_residue = setup->wLength;
-		usb_dev.data_buf_len = setup->wLength;
-		usb_dev.zlp_flag = false;
-
-		if (setup->wLength &&
-		    REQTYPE_GET_DIR(setup->bmRequestType)
-		    == REQTYPE_DIR_TO_DEVICE) {
-			return;
+			if (setup->wLength) {
+				/* Continue with data OUT stage */
+				usb_dev.data_buf_len = setup->wLength;
+				usb_dev.data_buf_residue = setup->wLength;
+				return;
+			}
 		}
 
 		/* Ask installed handler to process request */
@@ -417,21 +422,43 @@ static void usb_register_descriptors(const uint8_t *usb_descriptors)
 	usb_dev.descriptors = usb_descriptors;
 }
 
+static bool usb_get_status(struct usb_setup_packet *setup,
+			   int32_t *len, uint8_t **data_buf)
+{
+	uint8_t *data = *data_buf;
+
+	LOG_DBG("Get Status request");
+	data[0] = 0U;
+	data[1] = 0U;
+
+	if (IS_ENABLED(CONFIG_USB_SELF_POWERED)) {
+		data[0] |= DEVICE_STATUS_SELF_POWERED;
+	}
+
+	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+		data[0] |= (usb_dev.remote_wakeup ?
+			    DEVICE_STATUS_REMOTE_WAKEUP : 0);
+	}
+
+	*len = 2;
+
+	return true;
+}
+
 /*
  * @brief get specified USB descriptor
  *
  * This function parses the list of installed USB descriptors and attempts
  * to find the specified USB descriptor.
  *
- * @param [in]  type_index Type and index of the descriptor
- * @param [in]  lang_id    Language ID of the descriptor (currently unused)
+ * @param [in]  setup      The setup packet
  * @param [out] len        Descriptor length
  * @param [out] data       Descriptor data
  *
  * @return true if the descriptor was found, false otherwise
  */
-static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
-		int32_t *len, uint8_t **data)
+static bool usb_get_descriptor(struct usb_setup_packet *setup,
+			       int32_t *len, uint8_t **data)
 {
 	uint8_t type = 0U;
 	uint8_t index = 0U;
@@ -439,11 +466,9 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	uint32_t cur_index = 0U;
 	bool found = false;
 
-	/*Avoid compiler warning until this is used for something*/
-	ARG_UNUSED(lang_id);
-
-	type = GET_DESC_TYPE(type_index);
-	index = GET_DESC_INDEX(type_index);
+	LOG_DBG("Get Descriptor request");
+	type = GET_DESC_TYPE(setup->wValue);
+	index = GET_DESC_INDEX(setup->wValue);
 
 	/*
 	 * Invalid types of descriptors,
@@ -486,7 +511,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 		}
 	} else {
 		/* nothing found */
-		LOG_DBG("Desc %x not found!", type_index);
+		LOG_DBG("Desc %x not found!", setup->wValue);
 	}
 	return found;
 }
@@ -598,21 +623,28 @@ static bool usb_eps_reconfigure(struct usb_ep_descriptor *ep_desc,
  * index and alternate setting by parsing the installed USB descriptor list.
  * A configuration index of 0 unconfigures the device.
  *
- * @param [in] config_index Configuration index
- * @param [in] alt_setting  Alternate setting number
+ * @param [in] setup        The setup packet
  *
  * @return true if successfully configured false if error or unconfigured
  */
-static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
+static bool usb_set_configuration(struct usb_setup_packet *setup)
 {
 	uint8_t *p = (uint8_t *)usb_dev.descriptors;
 	uint8_t cur_alt_setting = 0xFF;
 	uint8_t cur_config = 0xFF;
 	bool found = false;
 
-	if (config_index == 0U) {
+	LOG_DBG("Set Configuration %u request", setup->wValue);
+
+	if (setup->wValue == 0U) {
+		usb_reset_alt_setting();
+		usb_dev.configuration = setup->wValue;
+		if (usb_dev.status_callback) {
+			usb_dev.status_callback(USB_DC_CONFIGURED,
+						&usb_dev.configuration);
+		}
 		/* TODO: unconfigure device */
-		LOG_DBG("Device not configured - invalid configuration");
+
 		return true;
 	}
 
@@ -622,7 +654,7 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 		case USB_CONFIGURATION_DESC:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
-			if (cur_config == config_index) {
+			if (cur_config == setup->wValue) {
 				found = true;
 			}
 
@@ -635,8 +667,8 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 			break;
 
 		case USB_ENDPOINT_DESC:
-			if ((cur_config != config_index) ||
-			    (cur_alt_setting != alt_setting)) {
+			if ((cur_config != setup->wValue) ||
+			    (cur_alt_setting != 0)) {
 				break;
 			}
 
@@ -651,8 +683,15 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 		p += p[DESC_bLength];
 	}
 
-	if (usb_dev.status_callback) {
-		usb_dev.status_callback(USB_DC_CONFIGURED, &config_index);
+	if (found) {
+		usb_reset_alt_setting();
+		usb_dev.configuration = setup->wValue;
+		if (usb_dev.status_callback) {
+			usb_dev.status_callback(USB_DC_CONFIGURED,
+						&usb_dev.configuration);
+		}
+	} else {
+		LOG_DBG("Set Configuration %u failed", setup->wValue);
 	}
 
 	return found;
@@ -661,12 +700,11 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 /*
  * @brief set USB interface
  *
- * @param [in] iface Interface index
- * @param [in] alt_setting  Alternate setting number
+ * @param [in] setup        The setup packet
  *
  * @return true if successfully configured false if error or unconfigured
  */
-static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
+static bool usb_set_interface(struct usb_setup_packet *setup)
 {
 	const uint8_t *p = usb_dev.descriptors;
 	const uint8_t *if_desc = NULL;
@@ -675,7 +713,7 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 	uint8_t cur_iface = 0xFF;
 	bool ret = false;
 
-	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
+	LOG_DBG("Set Interface %u alternate %u", setup->wIndex, setup->wValue);
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
@@ -684,9 +722,9 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
 
-			if (cur_iface == iface &&
-			    cur_alt_setting == alt_setting) {
-				usb_set_alt_setting(iface, alt_setting);
+			if (cur_iface == setup->wIndex &&
+			    cur_alt_setting == setup->wValue) {
+				usb_set_alt_setting(setup->wIndex, setup->wValue);
 				if_desc = (void *)p;
 			}
 
@@ -694,10 +732,10 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 				cur_iface, cur_alt_setting);
 			break;
 		case USB_ENDPOINT_DESC:
-			if (cur_iface == iface) {
+			if (cur_iface == setup->wIndex) {
 				ep = (struct usb_ep_descriptor *)p;
 				ret = usb_eps_reconfigure(ep, cur_alt_setting,
-							  alt_setting);
+							  setup->wValue);
 			}
 			break;
 		default:
@@ -763,102 +801,64 @@ static bool is_device_configured(void)
 static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 				      int32_t *len, uint8_t **data_buf)
 {
-	uint16_t value = setup->wValue;
-	uint16_t index = setup->wIndex;
-	bool ret = true;
 	uint8_t *data = *data_buf;
 
-	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
-		LOG_DBG("REQ_GET_STATUS");
-		/* bit 0: self-powered */
-		/* bit 1: remote wakeup */
-		data[0] = 0U;
-		data[1] = 0U;
+	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
+		switch (setup->bRequest) {
+		case REQ_GET_STATUS:
+			return usb_get_status(setup, len, data_buf);
 
-		if (IS_ENABLED(CONFIG_USB_SELF_POWERED)) {
-			data[0] |= DEVICE_STATUS_SELF_POWERED;
+		case REQ_GET_DESCRIPTOR:
+			return usb_get_descriptor(setup, len, data_buf);
+
+		case REQ_GET_CONFIGURATION:
+			LOG_DBG("Get Configuration request");
+			/* indicate if we are configured */
+			data[0] = usb_dev.configuration;
+			*len = 1;
+			return true;
+		default:
+			break;
 		}
+	} else {
+		switch (setup->bRequest) {
+		case REQ_SET_ADDRESS:
+			LOG_DBG("Set Address %u request", setup->wValue);
+			return !usb_dc_set_address(setup->wValue);
 
-		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			data[0] |= (usb_dev.remote_wakeup ?
-				    DEVICE_STATUS_REMOTE_WAKEUP : 0);
-		}
+		case REQ_SET_CONFIGURATION:
+			return usb_set_configuration(setup);
 
-		*len = 2;
-		break;
+		case REQ_CLEAR_FEATURE:
+			LOG_DBG("Clear Feature request");
 
-	case REQ_SET_ADDRESS:
-		LOG_DBG("REQ_SET_ADDRESS, addr 0x%x", value);
-		usb_dc_set_address(value);
-		break;
-
-	case REQ_GET_DESCRIPTOR:
-		LOG_DBG("REQ_GET_DESCRIPTOR");
-		ret = usb_get_descriptor(value, index, len, data_buf);
-		break;
-
-	case REQ_GET_CONFIGURATION:
-		LOG_DBG("REQ_GET_CONFIGURATION");
-		/* indicate if we are configured */
-		data[0] = usb_dev.configuration;
-		*len = 1;
-		break;
-
-	case REQ_SET_CONFIGURATION:
-		value &= 0xFF;
-		LOG_DBG("REQ_SET_CONFIGURATION, conf 0x%x", value);
-		if (!usb_set_configuration(value, 0)) {
-			LOG_DBG("USB Set Configuration failed");
-			ret = false;
-		} else {
-			/* configuration successful,
-			 * update current configuration
-			 */
-			usb_reset_alt_setting();
-			usb_dev.configuration = value;
-		}
-		break;
-
-	case REQ_CLEAR_FEATURE:
-		LOG_DBG("REQ_CLEAR_FEATURE");
-		ret = false;
-
-		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (value == FEA_REMOTE_WAKEUP) {
-				usb_dev.remote_wakeup = false;
-				ret = true;
+			if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+				if (setup->wValue == FEA_REMOTE_WAKEUP) {
+					usb_dev.remote_wakeup = false;
+					return true;
+				}
 			}
-		}
-		break;
-	case REQ_SET_FEATURE:
-		LOG_DBG("REQ_SET_FEATURE");
-		ret = false;
+			break;
 
-		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (value == FEA_REMOTE_WAKEUP) {
-				usb_dev.remote_wakeup = true;
-				ret = true;
+		case REQ_SET_FEATURE:
+			LOG_DBG("Set Feature request");
+
+			if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+				if (setup->wValue == FEA_REMOTE_WAKEUP) {
+					usb_dev.remote_wakeup = true;
+					return true;
+				}
 			}
+			break;
+
+		default:
+			break;
 		}
-
-		if (value == FEA_TEST_MODE) {
-			/* put TEST_MODE code here */
-		}
-		break;
-
-	case REQ_SET_DESCRIPTOR:
-		LOG_DBG("Device req 0x%02x not implemented", setup->bRequest);
-		ret = false;
-		break;
-
-	default:
-		LOG_DBG("Illegal device req 0x%02x", setup->bRequest);
-		ret = false;
-		break;
 	}
 
-	return ret;
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
+	return false;
 }
 
 /**
@@ -912,34 +912,31 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 		return false;
 	}
 
-	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
-		/* no bits specified */
-		data[0] = 0U;
-		data[1] = 0U;
-		*len = 2;
-		break;
+	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
+		switch (setup->bRequest) {
+		case REQ_GET_STATUS:
+			/* no bits specified */
+			data[0] = 0U;
+			data[1] = 0U;
+			*len = 2;
+			return true;
 
-	case REQ_CLEAR_FEATURE:
-	case REQ_SET_FEATURE:
-		/* not defined for interface */
-		return false;
+		case REQ_GET_INTERFACE:
+			return usb_get_interface(setup, len, data_buf);
 
-	case REQ_GET_INTERFACE:
-		return usb_get_interface(setup, len, data_buf);
+		default:
+			break;
+		}
+	} else {
+		if (setup->bRequest == REQ_SET_INTERFACE) {
+			return usb_set_interface(setup);
+		}
 
-	case REQ_SET_INTERFACE:
-		LOG_DBG("REQ_SET_INTERFACE");
-		usb_set_interface(setup->wIndex, setup->wValue);
-		*len = 0;
-		break;
-
-	default:
-		LOG_DBG("Illegal interface req 0x%02x", setup->bRequest);
-		return false;
 	}
 
-	return true;
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
+	return false;
 }
 
 /**
@@ -978,6 +975,73 @@ static bool is_ep_valid(uint8_t ep)
 	return false;
 }
 
+static bool usb_get_status_endpoint(struct usb_setup_packet *setup,
+				    int32_t *len, uint8_t **data_buf)
+{
+	uint8_t ep = setup->wIndex;
+	uint8_t *data = *data_buf;
+
+	/* Check if request addresses valid Endpoint */
+	if (!is_ep_valid(ep)) {
+		return false;
+	}
+
+	/** This request is valid for Control Endpoints when
+	 * the device is not yet configured. For other
+	 * Endpoints the device must be configured.
+	 * Firstly check if addressed ep is Control Endpoint.
+	 * If no then the device must be in Configured state
+	 * to accept the request.
+	 */
+	if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+		/* bit 0 - Endpoint halted or not */
+		usb_dc_ep_is_stalled(ep, &data[0]);
+		data[1] = 0U;
+		*len = 2;
+		return true;
+	}
+
+	return false;
+}
+
+
+static bool usb_halt_endpoint(struct usb_setup_packet *setup, bool halt)
+{
+	uint8_t ep = setup->wIndex;
+
+	/* Check if request addresses valid Endpoint */
+	if (!is_ep_valid(ep)) {
+		return false;
+	}
+
+	/** This request is valid for Control Endpoints when
+	 * the device is not yet configured. For other
+	 * Endpoints the device must be configured.
+	 * Firstly check if addressed ep is Control Endpoint.
+	 * If no then the device must be in Configured state
+	 * to accept the request.
+	 */
+	if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+		if (halt) {
+			LOG_INF("Set halt ep 0x%02x", ep);
+			usb_dc_ep_set_stall(ep);
+			if (usb_dev.status_callback) {
+				usb_dev.status_callback(USB_DC_SET_HALT, &ep);
+			}
+		} else {
+			LOG_INF("Clear halt ep 0x%02x", ep);
+			usb_dc_ep_clear_stall(ep);
+			if (usb_dev.status_callback) {
+				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 /*
  * @brief handle a standard endpoint request
  *
@@ -990,90 +1054,31 @@ static bool is_ep_valid(uint8_t ep)
 static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 					int32_t *len, uint8_t **data_buf)
 {
-	uint8_t ep = (uint8_t)setup->wIndex;
-	uint8_t *data = *data_buf;
 
-	/* Check if request addresses valid Endpoint */
-	if (!is_ep_valid(ep)) {
-		return false;
-	}
-
-	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
-		/** This request is valid for Control Endpoints when
-		 * the device is not yet configured. For other
-		 * Endpoints the device must be configured.
-		 * Firstly check if addressed ep is Control Endpoint.
-		 * If no then the device must be in Configured state
-		 * to accept the request.
-		 */
-		if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-			/* bit 0 - Endpoint halted or not */
-			usb_dc_ep_is_stalled(ep, &data[0]);
-			data[1] = 0U;
-			*len = 2;
+	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
+		if (setup->bRequest == REQ_GET_STATUS) {
+			return usb_get_status_endpoint(setup, len, data_buf);
+		}
+	} else {
+		switch (setup->bRequest) {
+		case REQ_CLEAR_FEATURE:
+			if (setup->wValue == FEA_ENDPOINT_HALT) {
+				return usb_halt_endpoint(setup, false);
+			}
+			break;
+		case REQ_SET_FEATURE:
+			if (setup->wValue == FEA_ENDPOINT_HALT) {
+				return usb_halt_endpoint(setup, true);
+			}
+			break;
+		default:
 			break;
 		}
-		return false;
-
-	case REQ_CLEAR_FEATURE:
-		if (setup->wValue == FEA_ENDPOINT_HALT) {
-			/** This request is valid for Control Endpoints when
-			 * the device is not yet configured. For other
-			 * Endpoints the device must be configured.
-			 * Firstly check if addressed ep is Control Endpoint.
-			 * If no then the device must be in Configured state
-			 * to accept the request.
-			 */
-			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-				LOG_INF("... EP clear halt %x", ep);
-				usb_dc_ep_clear_stall(ep);
-				if (usb_dev.status_callback) {
-					usb_dev.status_callback(
-						USB_DC_CLEAR_HALT, &ep);
-				}
-				break;
-			}
-		}
-		/* only ENDPOINT_HALT defined for endpoints */
-		return false;
-
-	case REQ_SET_FEATURE:
-		if (setup->wValue == FEA_ENDPOINT_HALT) {
-			/** This request is valid for Control Endpoints when
-			 * the device is not yet configured. For other
-			 * Endpoints the device must be configured.
-			 * Firstly check if addressed ep is Control Endpoint.
-			 * If no then the device must be in Configured state
-			 * to accept the request.
-			 */
-			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-				/* set HALT by stalling */
-				LOG_INF("--- EP SET halt %x", ep);
-				usb_dc_ep_set_stall(ep);
-				if (usb_dev.status_callback) {
-					usb_dev.status_callback(
-						USB_DC_SET_HALT, &ep);
-				}
-				break;
-			}
-		}
-		/* only ENDPOINT_HALT defined for endpoints */
-		return false;
-
-	case REQ_SYNCH_FRAME:
-		/* For Synch Frame request the device must be configured */
-		if (is_device_configured()) {
-			/* Not supported, return false anyway */
-			LOG_DBG("EP req 0x%02x not implemented", setup->bRequest);
-		}
-		return false;
-	default:
-		LOG_DBG("Illegal EP req 0x%02x", setup->bRequest);
-		return false;
 	}
 
-	return true;
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
+	return false;
 }
 
 /*
