@@ -21,3 +21,4 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE                   counter_handlers
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_PIT            counter_mcux_pit.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER      counter_xlnx_axi_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ESP32               counter_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_M41T62              m41t62.c)
