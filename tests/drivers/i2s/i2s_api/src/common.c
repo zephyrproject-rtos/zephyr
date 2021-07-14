@@ -35,7 +35,28 @@ static void fill_buf(int16_t *tx_block, int att)
 
 static int verify_buf(int16_t *rx_block, int att)
 {
-	for (int i = 0; i < SAMPLE_NO; i++) {
+	int sample_no = SAMPLE_NO;
+
+#if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+	static ZTEST_DMEM int offset = -1;
+
+	if (offset < 0) {
+		do {
+			++offset;
+			if (offset > CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET) {
+				TC_PRINT("Allowed data offset exceeded\n");
+				return -TC_FAIL;
+			}
+		} while (rx_block[2 * offset] != data_l[0] >> att);
+
+		TC_PRINT("Using data offset: %d\n", offset);
+	}
+
+	rx_block += 2 * offset;
+	sample_no -= offset;
+#endif
+
+	for (int i = 0; i < sample_no; i++) {
 		if (rx_block[2 * i] != data_l[i] >> att) {
 			TC_PRINT("Error: att %d: data_l mismatch at position "
 				 "%d, expected %d, actual %d\n",
@@ -114,6 +135,57 @@ int rx_block_read_slab(const struct device *dev_i2s, int att,
 	if (ret < 0) {
 		TC_PRINT("Error: Verify failed\n");
 		return -TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+i2s_opt_t get_options_for_stream(enum i2s_dir dir)
+{
+	i2s_opt_t options;
+
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+	} else if (dir == I2S_DIR_TX) {
+		/* Configure the Transmit port as Master */
+		options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+	} else {
+		/* Configure the Receive port as Slave */
+		options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+	}
+
+	if (!IS_ENABLED(CONFIG_I2S_TEST_USE_GPIO_LOOPBACK)) {
+		options |= I2S_OPT_LOOPBACK;
+	}
+
+	return options;
+}
+
+int start_both_streams(const struct device *dev_i2s_rx,
+		       const struct device *dev_i2s_tx)
+{
+	int ret;
+
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		ret = i2s_trigger(dev_i2s_rx, I2S_DIR_BOTH, I2S_TRIGGER_START);
+		if (ret < 0) {
+			TC_PRINT("RX/TX START trigger failed\n");
+			return -TC_FAIL;
+		}
+	} else {
+		/* Start reception */
+		ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
+		if (ret < 0) {
+			TC_PRINT("RX START trigger failed\n");
+			return -TC_FAIL;
+		}
+
+		/* Start transmission */
+		ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
+		if (ret < 0) {
+			TC_PRINT("TX START trigger failed\n");
+			return -TC_FAIL;
+		}
 	}
 
 	return TC_PASS;

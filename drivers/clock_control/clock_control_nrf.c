@@ -620,6 +620,26 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 	}
 }
 
+static void hfclkaudio_init(void)
+{
+#if DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency)
+	const uint32_t frequency =
+		DT_PROP(DT_NODELABEL(clock), hfclkaudio_frequency);
+	/* As specified in the nRF5340 PS:
+	 *
+	 * FREQ_VALUE = 2^16 * ((12 * f_out / 32M) - 4)
+	 */
+	const uint32_t freq_value =
+		(uint32_t)((384ULL * frequency) / 15625) - 262144;
+
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+	nrf_clock_hfclkaudio_config_set(NRF_CLOCK, freq_value);
+#else
+#error "hfclkaudio-frequency specified but HFCLKAUDIO clock is not present."
+#endif /* NRF_CLOCK_HAS_HFCLKAUDIO */
+#endif
+}
+
 static int clk_init(const struct device *dev)
 {
 	nrfx_err_t nrfx_err;
@@ -637,6 +657,8 @@ static int clk_init(const struct device *dev)
 	if (nrfx_err != NRFX_SUCCESS) {
 		return -EIO;
 	}
+
+	hfclkaudio_init();
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
 	    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
