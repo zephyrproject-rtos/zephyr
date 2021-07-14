@@ -11,9 +11,13 @@
 #if defined(CONFIG_BT_BAP)
 #define BROADCAST_SRC_CNT CONFIG_BT_BAP_BROADCAST_SRC_COUNT
 #define BROADCAST_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
+#define BROADCAST_SNK_CNT CONFIG_BT_BAP_BROADCAST_SNK_COUNT
+#define BROADCAST_SNK_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT
 #else
 #define BROADCAST_SRC_CNT 0
 #define BROADCAST_STREAM_CNT 0
+#define BROADCAST_SNK_CNT 0
+#define BROADCAST_SNK_STREAM_CNT 0
 #endif
 
 struct bt_audio_ep_cb {
@@ -28,11 +32,21 @@ struct bt_audio_ep_cb {
 struct bt_audio_broadcaster {
 	uint8_t bis_count;
 	uint8_t subgroup_count;
-	uint32_t broadcast_id;
 	uint32_t pd; /** QoS Presentation Delay */
+	uint32_t broadcast_id; /* 24 bit */
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
+};
+
+struct bt_audio_broadcast_sink {
+	uint8_t bis_count;
+	uint8_t subgroup_count;
+	bool syncing;
+	uint32_t broadcast_id; /* 24 bit */
+	struct bt_le_per_adv_sync *pa_sync;
+	struct bt_iso_big *big;
+	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 };
 
 struct bt_audio_ep {
@@ -55,7 +69,9 @@ struct bt_audio_ep {
 	struct bt_gatt_discover_params discover;
 
 	/* Broadcast fields */
+	/* TODO: Create a union to reduce memory usage */
 	struct bt_audio_broadcaster *broadcaster;
+	struct bt_audio_broadcast_sink *broadcast_sink;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
