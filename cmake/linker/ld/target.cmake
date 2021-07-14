@@ -54,6 +54,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     OUTPUT ${linker_script_gen}
     DEPENDS
     ${LINKER_SCRIPT}
+    ${AUTOCONF_H}
     ${extra_dependencies}
     # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
     ${linker_script_dep}
@@ -63,6 +64,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
+    -imacros ${AUTOCONF_H}
     ${current_includes}
     ${current_defines}
     ${linker_pass_define}
