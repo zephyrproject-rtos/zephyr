@@ -233,26 +233,17 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	k_sem_take(&dev->cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&dev->sem_tx_ready);
 
-	ret = modem_cmd_send_nolock(&dev->mctx.iface, &dev->mctx.cmd_handler,
-				    cmds, ARRAY_SIZE(cmds), cmd_buf,
-				    &dev->sem_response, ESP_CMD_TIMEOUT);
+	ret = modem_cmd_send_ext(&dev->mctx.iface, &dev->mctx.cmd_handler,
+				 cmds, ARRAY_SIZE(cmds), cmd_buf,
+				 &dev->sem_response, ESP_CMD_TIMEOUT,
+				 MODEM_NO_TX_LOCK | MODEM_NO_UNSET_CMDS);
 	if (ret < 0) {
 		LOG_DBG("Failed to send command");
 		goto out;
 	}
 
-	ret = modem_cmd_handler_update_cmds(&dev->cmd_handler_data,
-					    cmds, ARRAY_SIZE(cmds),
-					    true);
-	if (ret < 0) {
-		goto out;
-	}
-
-	/*
-	 * After modem handlers have been updated the receive buffer
-	 * needs to be processed again since there might now be a match.
-	 */
-	k_sem_give(&dev->iface_data.rx_sem);
+	/* Reset semaphore that will be released by 'SEND OK' or 'SEND FAIL' */
+	k_sem_reset(&dev->sem_response);
 
 	/* Wait for '>' */
 	ret = k_sem_take(&dev->sem_tx_ready, K_MSEC(5000));
@@ -270,7 +261,6 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	}
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
-	k_sem_reset(&dev->sem_response);
 	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("No send response");
