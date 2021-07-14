@@ -30,5 +30,7 @@
 
 /* macros for features */
 #define STM32_DMA_FEATURES_FIFO_THRESHOLD(features)	(features & 0x3)
+#define STM32_DMA_FEATURES_SOURCE_RELOAD(features)      ((features >> 2) & 0x1)
+#define STM32_DMA_FEATURES_DEST_RELOAD(features)        ((features >> 3) & 0x1)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_ */
