@@ -22,6 +22,8 @@ source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.mcux_rtc"
 
+source "drivers/counter/Kconfig.mcux_lpc_rtc"
+
 source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"

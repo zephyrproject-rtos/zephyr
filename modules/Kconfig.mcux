@@ -148,6 +148,11 @@ config HAS_MCUX_RTC
 	help
 	  Set if the real time clock (RTC) modules is present in the SoC.
 
+config HAS_MCUX_LPC_RTC
+	bool
+	help
+	  Set if the LPC real time clock (RTC) modules is present in the SoC.
+
 config HAS_MCUX_SCG
 	bool
 	help
