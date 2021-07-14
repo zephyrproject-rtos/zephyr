@@ -191,6 +191,37 @@ flash_gecko_get_parameters(const struct device *dev)
 	return &flash_gecko_parameters;
 }
 
+static int
+flash_gecko_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >=  DT_REG_SIZE(SOC_NV_FLASH_NODE)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(DT_PROP(SOC_NV_FLASH_NODE, erase_block_size) - 1);
+	fpi->size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size);
+
+	return 0;
+}
+
+static ssize_t
+flash_gecko_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size);
+}
+
+static ssize_t
+flash_gecko_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_PROP(SOC_NV_FLASH_NODE, erase_block_size);
+}
+
 static int flash_gecko_init(const struct device *dev)
 {
 	struct flash_gecko_data *const dev_data = dev->data;
@@ -212,6 +243,9 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
 	.get_parameters = flash_gecko_get_parameters,
+	.get_page_info = flash_gecko_get_page_info,
+	.get_page_count = flash_gecko_get_page_count,
+	.get_size = flash_gecko_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif
