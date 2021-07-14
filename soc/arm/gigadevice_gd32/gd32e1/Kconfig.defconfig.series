@@ -1,0 +1,15 @@
+# ST Microelectronics STM32F4 MCU line
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32F4 series
+
+if SOC_SERIES_GD32E1X
+
+source "soc/arm/gigadevice_gd32/gd32e1/Kconfig.defconfig.gd32e1*"
+
+config SOC_SERIES
+	default "gd32e1"
+
+endif # SOC_SERIES_GD32E1X

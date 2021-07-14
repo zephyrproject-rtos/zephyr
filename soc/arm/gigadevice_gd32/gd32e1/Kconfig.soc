@@ -1,0 +1,13 @@
+# ST Microelectronics STM32F4 MCU line
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "GD32E1x MCU Selection"
+	depends on SOC_SERIES_GD32E1X
+
+config SOC_GD32E103VB
+	bool "GD32E103VB"
+
+endchoice

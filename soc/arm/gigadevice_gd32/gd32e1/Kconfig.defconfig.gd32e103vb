@@ -1,0 +1,14 @@
+# ST STM32F401CC MCU configuration options
+
+# Copyright (c) 2019 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GD32E103VB
+
+config SOC
+	default	"gd32e103vb"
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_GD32E103VB

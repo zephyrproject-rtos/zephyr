@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: feilongfl_temp
+      url-base: https://github.com/feilongfl
 
   #
   # Please add items below based on alphabetical order
@@ -92,6 +94,10 @@ manifest:
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
+    - name: hal_gd32
+      remote: feilongfl_temp
+      revision: c8c63a71d8eed34dd896580aab01617f43e45a6e
+      path: modules/hal/gigadevice
     - name: libmetal
       revision: 39d049d4ae68e6f6d595fce7de1dcfc1024fb4eb
       path: modules/hal/libmetal

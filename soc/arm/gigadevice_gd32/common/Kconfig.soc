@@ -1,0 +1,23 @@
+# ST Microelectronics Common Kconfig
+
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CCM := zephyr,ccm
+
+#config GD32_CCM
+#	def_bool $(dt_chosen_enabled,$(DT_CHOSEN_Z_CCM))
+
+#config GD32_BACKUP_SRAM
+#	bool "Enable GD32 Backup SRAM"
+#	depends on SOC_SERIES_GD32F2X || SOC_SERIES_GD32F4X || \
+#		   SOC_SERIES_GD32F7X || SOC_SERIES_GD32H7X
+#	help
+#	  Enable support for GD32 backup SRAM.
+
+#config USE_GD32_ASSERT
+#	depends on ASSERT
+#	bool "GD32Cube HAL and LL drivers asserts"
+#	help
+#	  Enable asserts in GD32Cube HAL and LL drivers.

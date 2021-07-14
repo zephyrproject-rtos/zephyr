@@ -24,6 +24,8 @@ source "drivers/clock_control/Kconfig.nrf"
 
 source "drivers/clock_control/Kconfig.stm32"
 
+source "drivers/clock_control/Kconfig.gd32e1"
+
 source "drivers/clock_control/Kconfig.beetle"
 
 source "drivers/clock_control/Kconfig.lpc11u6x"
