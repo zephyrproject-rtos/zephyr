@@ -215,4 +215,8 @@
 		iterator < _CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
 
+#ifndef ZRESTRICT
+#define ZRESTRICT restrict
+#endif
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

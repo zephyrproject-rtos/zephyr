@@ -63,6 +63,8 @@
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
 
+#define ZRESTRICT __restrict
+
 #include <toolchain/common.h>
 #include <stdbool.h>
 

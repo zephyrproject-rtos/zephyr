@@ -46,6 +46,9 @@
  * and therefore this header is not meant to exist in-tree
  */
 #include <toolchain/other.h>
+#ifndef ZRESTRICT
+#define ZRESTRICT restrict
+#endif
 #endif
 
 /*
