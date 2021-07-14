@@ -32,13 +32,13 @@ static inline bool ptr_in_rodata(const char *addr)
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
 	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_NIOS2)
-	extern char _image_rodata_start[];
-	extern char _image_rodata_end[];
-#define RO_START _image_rodata_start
-#define RO_END _image_rodata_end
+	extern char __rom_start_start[];
+	extern char __rom_start_end[];
+#define RO_START __rom_start_start
+#define RO_END __rom_start_end
 #elif defined(CONFIG_XTENSA)
-	extern char _rodata_start[];
-	extern char _rodata_end[];
+	extern char __rodata_start[];
+	extern char __rodata_end[];
 #define RO_START _rodata_start
 #define RO_END _rodata_end
 #else

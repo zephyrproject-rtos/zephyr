@@ -4,6 +4,7 @@
 # should not be --whole-archive'd
 
 list(APPEND kernel_files
+  main_weak.c
   banner.c
   device.c
   errno.c

@@ -134,8 +134,8 @@
 GDATA(__bss_start)
 GDATA(__bss_num_words)
 #ifdef CONFIG_XIP
-GDATA(__data_rom_start)
-GDATA(__data_ram_start)
+GDATA(__data_load_start)
+GDATA(__data_start)
 GDATA(__data_num_words)
 #endif
 
@@ -179,9 +179,10 @@ extern char __bss_end[];
 
 /* Used by z_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
-extern char __data_rom_start[];
-extern char __data_ram_start[];
-extern char __data_ram_end[];
+extern char __data_load_start[];
+extern char __data_start[];
+extern char __data_end[];
+extern char __k_condvar_area_end[];
 #endif /* CONFIG_XIP */
 
 #ifdef CONFIG_MMU
@@ -287,10 +288,10 @@ extern char _nocache_ram_size[];
  * section, stored in RAM instead of FLASH.
  */
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-extern char _ramfunc_ram_start[];
-extern char _ramfunc_ram_end[];
-extern char _ramfunc_ram_size[];
-extern char _ramfunc_rom_start[];
+extern char __ramfunc_start[];
+extern char __ramfunc_end[];
+extern char __ramfunc_size[];
+extern char __ramfunc_load_start[];
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
 /* Memory owned by the kernel. Memory region for thread privilege stack buffers,

@@ -19,6 +19,8 @@
 # 3.3.1 Toolchain integration
 # 3.4. Debugging CMake
 # 3.5. File system management
+# 4. Zephyr linker functions
+# 4.1. zephyr_linker*
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -1241,6 +1243,38 @@ function(check_dtc_flag flag ok)
   endif()
 endfunction()
 
+# Function to round number to next power of two.
+#
+# Usage:
+#   pow2round(<variable>)
+#
+# Example:
+# set(test 2)
+# pow2round(test)
+# # test is still 2
+#
+# set(test 5)
+# pow2round(test)
+# # test is now 8
+#
+# Arguments:
+# n   = Variable containing the number to round
+function(pow2round n)
+  math(EXPR x "${${n}} & (${${n}} - 1)")
+  if(${x} EQUAL 0)
+    return()
+  endif()
+
+  math(EXPR ${n} "${${n}} | (${${n}} >> 1)")
+  math(EXPR ${n} "${${n}} | (${${n}} >> 2)")
+  math(EXPR ${n} "${${n}} | (${${n}} >> 4)")
+  math(EXPR ${n} "${${n}} | (${${n}} >> 8)")
+  math(EXPR ${n} "${${n}} | (${${n}} >> 16)")
+  math(EXPR ${n} "${${n}} | (${${n}} >> 32)")
+  math(EXPR ${n} "${${n}} + 1")
+  set(${n} ${${n}} PARENT_SCOPE)
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
@@ -2256,3 +2290,379 @@ function(target_byproducts)
                      COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
   )
 endfunction()
+
+########################################################
+# 4. Zephyr linker function
+########################################################
+# 4.1. zephyr_linker*
+#
+# The following methods are for defining linker structure using CMake functions.
+#
+# This allows Zephyr developers to define linker sections and their content and
+# have this configuration rendered into an appropriate linker script based on
+# the toolchain in use.
+# For example:
+# ld linker scripts with GNU ld
+# ARM scatter files with ARM linker.
+#
+# Example usage:
+# zephyr_linker_section(
+#   NAME my_data
+#   VMA  RAM
+#   LMA  FLASH
+# )
+#
+# and to configure special input sections for the section
+# zephyr_linker_section_configure(
+#   SECTION my_data
+#   INPUT   "my_custom_data"
+#   KEEP
+# )
+
+
+# Usage:
+#   zephyr_linker([FORMAT <format>)
+#
+# Zephyr linker general settings.
+# This function specifies general settings for the linker script to be generated.
+#
+# FORMAT <format>: The output format of the linked executable.
+#
+function(zephyr_linker)
+  set(single_args "FORMAT")
+  cmake_parse_arguments(LINKER "" "${single_args}" "" ${ARGN})
+
+  if(LINKER_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker(${ARGV0} ...) given unknown "
+                        "arguments: ${LINKER_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(DEFINED LINKER_FORMAT)
+    set_property(TARGET linker APPEND PROPERTY FORMAT ${LINKER_FORMAT})
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_linker_memory(NAME <name> START <address> SIZE <size> FLAGS <flags>)
+#
+# Zephyr linker memory.
+# This function specifies a memory region for the platform in use.
+#
+# Note:
+#   This function should generally be called with values obtained from
+#   devicetree or Kconfig.
+#
+# NAME <name>    : Name of the memory region, for example FLASH.
+# START <address>: Start address of the memory region.
+#                  Start address can be given as decimal or hex value.
+# SIZE <size>    : Size of the memory region.
+#                  Size can be given as decimal value, hex value, or decimal with postfix k or m.
+#                  All the following are valid values:
+#                    1048576, 0x10000, 1024k, 1024K, 1m, and 1M.
+# FLAGS <flags>  : Flags describing properties of the memory region.
+#                  Currently supported:
+#                  r: Read-only region
+#                  w: Read-write region
+#                  x: Executable region
+#                  The flags r and x, or w and x may be combined like: rx, wx.
+function(zephyr_linker_memory)
+  set(single_args "FLAGS;NAME;SIZE;START")
+  cmake_parse_arguments(MEMORY "" "${single_args}" "" ${ARGN})
+
+  if(MEMORY_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker_memory(${ARGV0} ...) given unknown "
+                        "arguments: ${MEMORY_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  zephyr_linker_property_append("MEMORY" "${single_args}")
+
+  string(REPLACE ";" "\;" MEMORY "${MEMORY}")
+  set_property(TARGET linker
+               APPEND PROPERTY MEMORY_REGIONS "{${MEMORY}}"
+  )
+endfunction()
+
+# Usage:
+#   zephyr_linker_memory_ifdef(<setting> NAME <name> START <address> SIZE <size> FLAGS <flags>)
+#
+# Will create memory region if <setting> is enabled.
+#
+# <setting>: Setting to check for True value before invoking
+#            zephyr_linker_memory()
+#
+# See zephyr_linker_memory() description for other supported arguments.
+#
+macro(zephyr_linker_memory_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_linker_memory(${ARGN})
+  endif()
+endmacro()
+
+# Usage:
+#   zephyr_linker_section(NAME <name> [VMA <region>] [LMA <region>]
+#                         [ADDRESS <address>] [ALIGN <alignment>]
+#                         SUBALIGN [alignment] [FLAGS <flags>]
+#                         [HIDDEN] [NOINPUT] [NOINIT]
+#                         [PASS <no> [<no>...]
+#   )
+#
+# Zephyr linker output section.
+# This function specifies an output section for the linker.
+#
+# When using zephyr_linker_section(NAME <name>) an output section with <name>
+# will be configured. This section will default include input sections of the
+# same name, unless NOINPUT is specified.
+# This means the section named `foo` will default include the sections matching
+# `foo` and `foo.*`
+# Each output section will define the following linker symbols:
+# __<name>_start      : Start address of the section
+# __<name>_end        : End address of the section
+# __<name>_size       : Size of the section
+# __<name>_load_start : Load address of the section, if VMA = LMA then this
+#                       value will be identical to `__<name>_start`
+#
+# The location of the output section can be controlled using LMA, VMA, and
+# address parameters
+#
+# NAME <name>     : Name of the output section.
+# VMA <region>    : VMA Memory region where code / data is located runtime (VMA)
+# LMA <region>    : Memory region where code / data is loaded (LMA)
+#                   If VMA is different from LMA, the code / data will be loaded
+#                   from LMA into VMA at bootup, this is usually the case for
+#                   global or static variables that are loaded in rom and copied
+#                   to ram at boot time.
+# ADDRESS <address>: Specific address to use for this section.
+# ALIGN <alignment>   : Align the execution address with alignment.
+# SUBALIGN <alignment>: Align input sections with alignment value.
+# FLAGS <flags>       : TBD
+# HIDDEN              : TBD
+# NOINPUT             : TBD
+# NOINIT              : TBD
+# PASS <no> [<no> ..] : Linker pass iteration where this section should be active.
+#                       Default a section will be present during all linker passes
+#                       But in cases a section shall only be present at a specific
+#                       pass, this argument can be used. For example to only have
+#                       this section present on the first linker pass, use `PASS 1`.
+#
+function(zephyr_linker_section)
+  set(options     "HIDDEN;NOINIT;NOINPUT")
+  set(single_args "ADDRESS;ALIGN;FLAGS;LMA;NAME;SUBALIGN;TYPE;VMA")
+  set(multi_args  "PASS")
+  cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(SECTION_UNPARSED_ARGUMENTS)
+    message(WARNING "zephyr_linker_section(${ARGV0} ...) given unknown "
+                    "arguments: ${SECTION_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+  zephyr_linker_property_append("SECTION" "${single_args}")
+  zephyr_linker_property_append("SECTION" "${options}")
+  zephyr_linker_property_append("SECTION" "${multi_args}")
+
+  string(REPLACE ";" "\;" SECTION "${SECTION}")
+  set_property(TARGET linker
+               APPEND PROPERTY SECTIONS "{${SECTION}}"
+  )
+endfunction()
+
+# Usage:
+#   zephyr_linker_section_ifdef(<setting>
+#                               NAME <name> [VMA <region>] [LMA <region>]
+#                               [ADDRESS <address>] [ALIGN <alignment>]
+#                               SUBALIGN [alignment] [FLAGS <flags>]
+#                               [HIDDEN] [NOINPUT] [NOINIT]
+#                               [PASS <no> [<no>...]
+#   )
+#
+# Will create an output section if <setting> is enabled.
+#
+# <setting>: Setting to check for True value before invoking
+#            zephyr_linker_section()
+#
+# See zephyr_linker_section() description for other supported arguments.
+#
+macro(zephyr_linker_section_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_linker_section(${ARGN})
+  endif()
+endmacro()
+
+# Usage:
+#   zephyr_iterable_section(NAME <name> [VMA <region>] [LMA <region>]
+#                           SUBALIGN [alignment]
+#   )
+#
+#
+# Define an output section which will set up an iterable area
+# of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+# Input sections will be sorted by name in lexicograhical order.
+#
+# Each list for an input section will define the following linker symbols:
+# _<name>_list_start: Start of the iterable list
+# _<name>_list_end  : Start of the iterable list
+#
+# The output section will be named `<name>_area` and define the following linker
+# symbols:
+# __<name>_area_start      : Start address of the section
+# __<name>_area_end        : End address of the section
+# __<name>_area_size       : Size of the section
+# __<name>_area_load_start : Load address of the section, if VMA = LMA then this
+#                            value will be identical to `__<name>_area_start`
+#
+# NAME <name>     : Name of the struct type, the output section be named
+#                   accordingly as: <name>_area.
+# VMA <region>    : VMA Memory region where code / data is located runtime (VMA)
+# LMA <region>    : Memory region where code / data is loaded (LMA)
+#                   If VMA is different from LMA, the code / data will be loaded
+#                   from LMA into VMA at bootup, this is usually the case for
+#                   global or static variables that are loaded in rom and copied
+#                   to ram at boot time.
+# ADDRESS <address>: Specific address to use for this section.
+# ALIGN <alignment>   : TBD
+# SUBALIGN <alignment>: TBD
+#/
+function(zephyr_iterable_section)
+  # ToDo - Should we use ROM, RAM, etc as arguments ?
+  set(options     "")
+  set(single_args "LMA;NAME;SUBALIGN;VMA")
+  set(multi_args  "")
+  cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(NOT DEFINED SECTION_NAME)
+    message(FATAL_ERROR "zephyr_iterable_section(${ARGV0} ...) missing "
+                        "required argument: NAME"
+    )
+  endif()
+
+  if(NOT DEFINED SECTION_SUBALIGN)
+    message(FATAL_ERROR "zephyr_iterable_section(${ARGV0} ...) missing "
+                        "required argument: SUBALIGN"
+    )
+  endif()
+
+  zephyr_linker_section(
+    NAME ${SECTION_NAME}_area
+    VMA "${SECTION_VMA}" LMA "${SECTION_LMA}" NOINPUT
+    SUBALIGN ${SECTION_SUBALIGN}
+  )
+  zephyr_linker_section_configure(
+    SECTION ${SECTION_NAME}_area
+    INPUT ".${SECTION_NAME}.static.*"
+    SYMBOLS _${SECTION_NAME}_list_start _${SECTION_NAME}_list_end
+    KEEP SORT NAME
+  )
+endfunction()
+
+# Usage:
+#   zephyr_linker_section_obj_level(SECTION <section> LEVEL <level>)
+#
+# generate a symbol to mark the start of the objects array for
+# the specified object and level, then link all of those objects
+# (sorted by priority). Ensure the objects aren't discarded if there is
+# no direct reference to them.
+#
+# For example: zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_1)
+# will create an input section matching `.z_init_PRE_KERNEL_1?_` and
+# `.z_init_PRE_KERNEL_1??_`.
+#
+# SECTION <section>: Section in which the objects shall be placed
+# LEVEL <level>    : Priority level, all input sections matching the level
+#                    will be sorted.
+#
+function(zephyr_linker_section_obj_level)
+  set(single_args "SECTION;LEVEL")
+  cmake_parse_arguments(OBJ "" "${single_args}" "" ${ARGN})
+
+  if(NOT DEFINED OBJ_SECTION)
+    message(FATAL_ERROR "zephyr_linker_section_obj_level(${ARGV0} ...) "
+                        "missing required argument: SECTION"
+    )
+  endif()
+
+  if(NOT DEFINED OBJ_LEVEL)
+    message(FATAL_ERROR "zephyr_linker_section_obj_level(${ARGV0} ...) "
+                        "missing required argument: LEVEL"
+    )
+  endif()
+
+  zephyr_linker_section_configure(
+    SECTION ${OBJ_SECTION}
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}?_"
+    SYMBOLS __${OBJ_SECTION}_${OBJ_LEVEL}_start
+    KEEP SORT NAME
+  )
+  zephyr_linker_section_configure(
+    SECTION ${OBJ_SECTION}
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}??_"
+    KEEP SORT NAME
+  )
+endfunction()
+
+# Usage:
+#   zephyr_linker_section_configure(SECTION <section> [ALIGN <alignment>]
+#                                   [PASS <no>] [PRIO <no>] [SORT <sort>]
+#                                   [ANY] [FIRST] [KEEP]
+#   )
+#
+# TBD
+#
+function(zephyr_linker_section_configure)
+  set(options     "ANY;FIRST;KEEP")
+  set(single_args "ALIGN;PASS;PRIO;SECTION;SORT")
+  set(multi_args  "FLAGS;INPUT;SYMBOLS")
+  cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(SECTION_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker_section_configure(${ARGV0} ...) given unknown arguments: ${SECTION_UNPARSED_ARGUMENTS}")
+  endif()
+
+  if(DEFINED SECTION_SYMBOLS)
+    list(LENGTH SECTION_SYMBOLS symbols_count)
+    if(${symbols_count} GREATER 2)
+      message(FATAL_ERROR "zephyr_linker_section_configure(SYMBOLS [start_sym [end_sym]]) takes maximum two symbol names (start and end).")
+
+    endif()
+  endif()
+
+  zephyr_linker_property_append("SECTION" "${single_args}")
+  zephyr_linker_property_append("SECTION" "${options}")
+  zephyr_linker_property_append("SECTION" "${multi_args}")
+
+  string(REPLACE ";" "\;" SECTION "${SECTION}")
+  set_property(TARGET linker
+               APPEND PROPERTY SECTION_SETTINGS "{${SECTION}}"
+  )
+endfunction()
+
+# Usage:
+#   zephyr_linker_symbol(SYMBOL <name> EXPR <expr>)
+#
+# TBD
+#
+function(zephyr_linker_symbol)
+  set(single_args "EXPR;SYMBOL")
+  cmake_parse_arguments(SYMBOL "" "${single_args}" "" ${ARGN})
+
+  if(SECTION_UNPARSED_ARGUMENTS)
+    message(WARNING "zephyr_linker_symbol(${ARGV0} ...) given unknown "
+                    "arguments: ${SECTION_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+  zephyr_linker_property_append("SYMBOL" "${single_args}")
+
+  string(REPLACE ";" "\;" SYMBOL "${SYMBOL}")
+  set_property(TARGET linker
+               APPEND PROPERTY SYMBOLS "{${SYMBOL}}"
+  )
+endfunction()
+
+# Internal helper macro for zephyr_linker*() functions.
+macro(zephyr_linker_property_append list arguments)
+  foreach(arg ${arguments})
+    if(DEFINED ${list}_${arg})
+      list(APPEND ${list} ${arg} "${${list}_${arg}}")
+    endif()
+  endforeach()
+endmacro()

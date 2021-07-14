@@ -47,12 +47,6 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
-#if defined(CONFIG_XIP)
-	#define _DATA_IN_ROM __data_rom_start
-#else
-	#define _DATA_IN_ROM
-#endif
-
 OUTPUT_ARCH(arc)
 ENTRY(CONFIG_KERNEL_ENTRY)
 

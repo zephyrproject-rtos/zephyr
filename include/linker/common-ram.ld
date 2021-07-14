@@ -78,6 +78,8 @@
 	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
 	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
 
+        __k_condvar_area_end = .;
+
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
 	{
 		_net_buf_pool_list = .;

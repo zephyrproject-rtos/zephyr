@@ -25,11 +25,11 @@ extern volatile uintptr_t __stack_chk_guard;
  */
 void z_data_copy(void)
 {
-	(void)memcpy(&__data_ram_start, &__data_rom_start,
-		 __data_ram_end - __data_ram_start);
+	(void)memcpy(&__data_start, &__data_load_start,
+		 __k_condvar_area_end - __data_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-	(void)memcpy(&_ramfunc_ram_start, &_ramfunc_rom_start,
-		 (uintptr_t) &_ramfunc_ram_size);
+	(void)memcpy(&__ramfunc_start, &__ramfunc_load_start,
+		 (uintptr_t) &__ramfunc_size);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,

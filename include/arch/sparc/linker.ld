@@ -67,7 +67,7 @@ SECTIONS
 
     _image_rom_end = .;
 
-    __data_rom_start = .;
+    __data_load_start = .;
 
 
     SECTION_PROLOGUE(.plt,,)
@@ -84,7 +84,7 @@ SECTIONS
 	{
 		 . = ALIGN(8);
 		 _image_ram_start = .;
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(.data.*)
@@ -104,7 +104,7 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
-    __data_ram_end = .;
+    __data_end = .;
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

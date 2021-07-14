@@ -12,6 +12,10 @@
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
  */
+/*
+ * Tell armclang that stack alignment are ensured.
+ */
+.eabi_attribute Tag_ABI_align_preserved, 1
 
 #include <toolchain.h>
 #include <linker/sections.h>

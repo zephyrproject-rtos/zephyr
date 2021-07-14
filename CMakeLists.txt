@@ -77,6 +77,8 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
+
 # Don't add non-existing include directories, it creates noise and
 # warnings in some tooling
 foreach(optional_include_dir
@@ -789,6 +791,7 @@ if(CONFIG_HAS_DTS)
     --output-source dev_handles.c
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
+    --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
@@ -1468,7 +1471,7 @@ if(CONFIG_OUTPUT_STAT)
             $<TARGET_PROPERTY:bintools,readelf_flag>
             $<TARGET_PROPERTY:bintools,readelf_flag_headers>
             $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
-            $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_outfile>${KERNEL_STAT_NAME}
             $<TARGET_PROPERTY:bintools,readelf_flag_final>
     )
   list(APPEND

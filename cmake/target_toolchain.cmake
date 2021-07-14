@@ -32,6 +32,12 @@ set(CMAKE_SYSTEM_VERSION ${PROJECT_VERSION})
 # We are not building dynamically loadable libraries
 set(BUILD_SHARED_LIBS OFF)
 
+# Custom targets for compiler and linker flags.
+add_custom_target(asm)
+add_custom_target(compiler)
+add_custom_target(compiler-cpp)
+add_custom_target(linker)
+
 if(NOT (COMPILER STREQUAL "host-gcc"))
   include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/target.cmake)
 endif()
@@ -52,3 +58,22 @@ include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
+
+add_custom_target(ld_target
+  COMMAND ${CMAKE_COMMAND}
+    -DFORMAT="$<TARGET_PROPERTY:linker,FORMAT>"
+    -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
+    -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
+    -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
+    -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
+    -P ${CMAKE_CURRENT_LIST_DIR}/linker/ld/ld_script.cmake
+)
+
+add_custom_target(scatter_target
+  COMMAND ${CMAKE_COMMAND}
+    -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
+    -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
+    -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
+    -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
+    -P ${CMAKE_CURRENT_LIST_DIR}/linker/armlink/scatter_script.cmake
+)
