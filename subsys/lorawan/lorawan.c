@@ -225,7 +225,7 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	mib_req.Type = MIB_APP_KEY;
-	mib_req.Param.JoinEui = join_cfg->otaa.app_key;
+	mib_req.Param.AppKey = join_cfg->otaa.app_key;
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	return LoRaMacMlmeRequest(&mlme_req);
