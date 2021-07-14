@@ -15,7 +15,6 @@
 #define VOCS_DESC_SIZE 64
 #define AICS_DESC_SIZE 64
 
-static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
 static struct bt_mics *mics;
@@ -222,7 +221,7 @@ static void bt_ready(int err)
 	g_bt_init = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -390,7 +389,6 @@ static void test_main(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
 	bt_mics_client_cb_register(&mics_cbs);
 
 	WAIT_FOR(g_bt_init);

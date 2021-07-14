@@ -295,7 +295,7 @@ static void bt_ready(int err)
 	g_bt_init = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -559,8 +559,6 @@ static void test_main(void)
 		FAIL("Bluetooth discover failed (err %d)\n", err);
 		return;
 	}
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_vcs_client_cb_register(&vcs_cbs);
 	if (err) {

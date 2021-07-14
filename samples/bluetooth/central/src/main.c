@@ -116,9 +116,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	start_scan();
 }
 
-static struct bt_conn_cb conn_callbacks = {
-		.connected = connected,
-		.disconnected = disconnected,
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
 };
 
 void main(void)
@@ -132,8 +132,6 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	start_scan();
 }

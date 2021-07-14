@@ -184,7 +184,7 @@ static void l2cap_whitelist_remove(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb l2cap_conn_callbacks = {
+BT_CONN_CB_DEFINE(l2cap_conn_callbacks) = {
 	.disconnected = l2cap_whitelist_remove,
 };
 
@@ -268,8 +268,6 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 		server.psm = 0U;
 		return -ENOEXEC;
 	} else {
-		bt_conn_cb_register(&l2cap_conn_callbacks);
-
 		shell_print(shell, "L2CAP psm %u sec_level %u registered",
 			    server.psm, server.sec_level);
 	}

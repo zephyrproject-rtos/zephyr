@@ -44,7 +44,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -155,8 +155,6 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {

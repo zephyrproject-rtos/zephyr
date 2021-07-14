@@ -97,7 +97,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -155,8 +155,6 @@ static void test_con2_main(void)
 	}
 
 	bt_ready();
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
