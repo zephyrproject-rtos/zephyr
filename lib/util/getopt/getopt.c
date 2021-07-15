@@ -31,6 +31,7 @@
 
 #include <string.h>
 #include "getopt.h"
+#include "getopt_common.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(getopt);
@@ -39,8 +40,12 @@ LOG_MODULE_REGISTER(getopt);
 #define	BADARG	((int)':')
 #define	EMSG	""
 
-void getopt_init(struct getopt_state *state)
+void getopt_init(void)
 {
+	struct getopt_state *state;
+
+	state = getopt_state_get();
+
 	state->opterr = 1;
 	state->optind = 1;
 	state->optopt = 0;
@@ -48,20 +53,30 @@ void getopt_init(struct getopt_state *state)
 	state->optarg = NULL;
 
 	state->place = ""; /* EMSG */
+
+#if CONFIG_GETOPT_LONG
+	state->nonopt_start = -1; /* first non option argument (for permute) */
+	state->nonopt_end = -1; /* first option after non options (for permute) */
+#endif
+
+	opterr = 1;
+	optind = 1;
+	optopt = 0;
+	optreset = 0;
+	optarg = NULL;
 }
 
 /*
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int
-getopt(state, nargc, nargv, ostr)
-	struct getopt_state *state;
-	int nargc;
-	char *const nargv[];
-	const char *ostr;
+int getopt(int nargc, char *const nargv[], const char *ostr)
 {
-	char *oli;		/* option letter list index */
+	struct getopt_state *state;
+	char *oli; /* option letter list index */
+
+	/* get getopt state of the current thread */
+	state = getopt_state_get();
 
 	if (state->optreset || *state->place == 0) { /* update scanning pointer */
 		state->optreset = 0;
@@ -69,6 +84,7 @@ getopt(state, nargc, nargv, ostr)
 		if (state->optind >= nargc || *state->place++ != '-') {
 			/* Argument is absent or is not an option */
 			state->place = EMSG;
+			z_getopt_global_state_update(state);
 			return -1;
 		}
 		state->optopt = *state->place++;
@@ -76,6 +92,7 @@ getopt(state, nargc, nargv, ostr)
 			/* "--" => end of options */
 			++state->optind;
 			state->place = EMSG;
+			z_getopt_global_state_update(state);
 			return -1;
 		}
 		if (state->optopt == 0) {
@@ -84,6 +101,7 @@ getopt(state, nargc, nargv, ostr)
 			 */
 			state->place = EMSG;
 			if (strchr(ostr, '-') == NULL) {
+				z_getopt_global_state_update(state);
 				return -1;
 			}
 			state->optopt = '-';
@@ -101,6 +119,7 @@ getopt(state, nargc, nargv, ostr)
 		if (state->opterr && *ostr != ':') {
 			LOG_ERR("illegal option -- %c", state->optopt);
 		}
+		z_getopt_global_state_update(state);
 		return BADCH;
 	}
 
@@ -123,16 +142,19 @@ getopt(state, nargc, nargv, ostr)
 			/* option-argument absent */
 			state->place = EMSG;
 			if (*ostr == ':') {
+				z_getopt_global_state_update(state);
 				return BADARG;
 			}
 			if (state->opterr) {
 				LOG_ERR("option requires an argument -- %c",
 					state->optopt);
 			}
+			z_getopt_global_state_update(state);
 			return BADCH;
 		}
 		state->place = EMSG;
 		++state->optind;
 	}
+	z_getopt_global_state_update(state);
 	return state->optopt;	/* return option letter */
 }

@@ -125,10 +125,24 @@ config SHELL_VT100_COLORS
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
 config SHELL_GETOPT
-	bool "Enable getopt support"
+	bool "Enable getopt support in shell"
 	select GETOPT
 	help
-	  Enables getopt support in the shell.
+	  Enables getopt support in the shell. This config creates a separate
+	  getopt_state for the shell instance. It ensures that using getopt
+	  with shell is thread safe. When more threads are using getopt
+	  please call getopt_state_get to get getopt state of shell thread.
+
+config SHELL_GETOPT_LONG
+	bool "Enable getopt_long support in shell"
+	depends on SHELL_GETOPT
+	select GETOPT_LONG
+	help
+	  Enables getopt_long support in the shell. This config creates
+	  a separate getopt_state for the shell instance. It ensures that using
+	  getopt functions with shell is thread safe.
+	  When more threads are using getopt library please call
+	  getopt_state_get to get state of the shell thread.
 
 config SHELL_METAKEYS
 	bool "Enable metakeys"

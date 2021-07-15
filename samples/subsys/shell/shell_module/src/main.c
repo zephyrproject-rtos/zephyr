@@ -90,7 +90,9 @@ static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 }
 
 #if defined CONFIG_SHELL_GETOPT
-static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
+/* Thread save usage */
+static int cmd_demo_getopt_ts(const struct shell *shell, size_t argc,
+			      char **argv)
 {
 	struct getopt_state *state;
 	char *cvalue = NULL;
@@ -98,8 +100,8 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 	int bflag = 0;
 	int c;
 
-	while ((c = shell_getopt(shell, argc, argv, "abhc:")) != -1) {
-		state = shell_getopt_state_get(shell);
+	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+		state = getopt_state_get();
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -130,6 +132,55 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 				shell_print(shell,
 					"Unknown option character `\\x%x'.",
 					state->optopt);
+			}
+			return 1;
+		default:
+			break;
+		}
+	}
+
+	shell_print(shell, "aflag = %d, bflag = %d", aflag, bflag);
+	return 0;
+}
+
+static int cmd_demo_getopt(const struct shell *shell, size_t argc,
+			      char **argv)
+{
+	char *cvalue = NULL;
+	int aflag = 0;
+	int bflag = 0;
+	int c;
+
+	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+		switch (c) {
+		case 'a':
+			aflag = 1;
+			break;
+		case 'b':
+			bflag = 1;
+			break;
+		case 'c':
+			cvalue = optarg;
+			break;
+		case 'h':
+			/* When getopt is active shell is not parsing
+			 * command handler to print help message. It must
+			 * be done explicitly.
+			 */
+			shell_help(shell);
+			return SHELL_CMD_HELP_PRINTED;
+		case '?':
+			if (optopt == 'c') {
+				shell_print(shell,
+					"Option -%c requires an argument.",
+					optopt);
+			} else if (isprint(optopt)) {
+				shell_print(shell, "Unknown option `-%c'.",
+					optopt);
+			} else {
+				shell_print(shell,
+					"Unknown option character `\\x%x'.",
+					optopt);
 			}
 			return 1;
 		default:
@@ -311,7 +362,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 #if defined CONFIG_SHELL_GETOPT
-	SHELL_CMD(getopt, NULL,	"Cammand using getopt, looking for: \"abhc:\".",
+	SHELL_CMD(getopt_thread_safe, NULL,
+		  "Cammand using getopt, looking for: \"abhc:\".",
+		  cmd_demo_getopt_ts),
+	SHELL_CMD(getopt, NULL,	"Cammand using getopt looking for: \"abhc:\".\n"
+		  "This way of using is not thread safe",
 		  cmd_demo_getopt),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */

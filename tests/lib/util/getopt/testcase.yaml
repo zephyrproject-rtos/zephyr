@@ -1,0 +1,8 @@
+tests:
+  libraries.util.getopt:
+    tags: getopt
+    integration_platforms:
+      - native_posix
+    min_flash: 64
+    min_ram: 32
+    filter: ( CONFIG_GETOPT )
