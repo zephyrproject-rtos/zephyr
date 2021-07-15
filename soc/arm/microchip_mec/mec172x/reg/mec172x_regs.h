@@ -1289,6 +1289,7 @@ struct mchp_espi_saf_comm { /* @ 0x40071000 */
 #define MCHP_ADC_CHANNELS		8
 #define MCHP_BGPO_GPIO_PINS		2
 #define MCHP_DMA_CHANNELS		16
+#define MCHP_ESPI_SAF_TAGMAP_MAX	3
 #define MCHP_GIRQS			19
 #define MCHP_GPIO_PINS			123
 #define MCHP_GPIO_PORTS			6
