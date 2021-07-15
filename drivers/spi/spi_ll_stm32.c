@@ -796,6 +796,34 @@ static const struct spi_driver_api api_funcs = {
 	.release = spi_stm32_release,
 };
 
+#define GPIO_DT_SPEC_ELEM(node_id, prop, idx)		\
+	GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx),
+
+#define SPI_CS_GPIOS_INITIALIZE(inst)				        \
+	(const struct gpio_dt_spec []) {				\
+		DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), cs_gpios,	\
+				     GPIO_DT_SPEC_ELEM)			\
+	}
+
+static int spi_stm32_cs_gpios_configure(const struct spi_stm32_config *cfg,
+					  gpio_flags_t extra_flags)
+{
+	const struct gpio_dt_spec *gpio_dt_spec;
+	int err;
+
+	for (gpio_dt_spec = cfg->cs_gpios;
+	     gpio_dt_spec < &cfg->cs_gpios[cfg->num_cs_gpios];
+	     gpio_dt_spec++) {
+		err = gpio_pin_configure_dt(gpio_dt_spec, extra_flags);
+		if (err) {
+			LOG_ERR("Failed to configure 'cs' gpio: %d", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -814,6 +842,11 @@ static int spi_stm32_init(const struct device *dev)
 					 (uint32_t)cfg->spi);
 	if (err < 0) {
 		LOG_ERR("SPI pinctrl setup failed (%d)", err);
+		return err;
+	}
+
+	err = spi_stm32_cs_gpios_configure(cfg, GPIO_OUTPUT_INACTIVE);
+	if (err) {
 		return err;
 	}
 
@@ -920,6 +953,8 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	},								\
 	.pinctrl_list = spi_pins_##id,					\
 	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
+	.cs_gpios = SPI_CS_GPIOS_INITIALIZE(id),			\
+	.num_cs_gpios = DT_INST_PROP_LEN(id, cs_gpios),		        \
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 };									\
 									\

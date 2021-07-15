@@ -19,6 +19,8 @@ struct spi_stm32_config {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #endif
+	const struct gpio_dt_spec *cs_gpios;
+	size_t num_cs_gpios;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
