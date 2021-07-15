@@ -58,6 +58,8 @@
  */
 #if defined(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
+#elif defined(CONFIG_ARM_AARCH32_MMU)
+_region_min_align = CONFIG_MMU_PAGE_SIZE;
 #else
 /* If building without MPU support, use default 4-byte alignment. */
 _region_min_align = 4;
@@ -71,6 +73,8 @@ _region_min_align = 4;
   #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align)
 #endif
+
+#define BSS_ALIGN ALIGN(_region_min_align)
 
 MEMORY
 {
@@ -127,7 +131,11 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
+        . = ALIGN(_region_min_align);
         __text_region_start = .;
+#ifndef CONFIG_XIP
+        z_mapped_start = .;
+#endif
 
 #include <linker/kobject-text.ld>
 
@@ -144,6 +152,7 @@ SECTIONS
     } GROUP_LINK_IN(ROMABLE_REGION)
 
     __text_region_end = .;
+    . = ALIGN(_region_min_align);
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -170,6 +179,7 @@ SECTIONS
         __exidx_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+    . = ALIGN(_region_min_align);
     __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
@@ -210,6 +220,7 @@ SECTIONS
 
     __rodata_region_end = .;
     __rom_region_end = .;
+    MPU_ALIGN(__rodata_region_end - __rom_region_start);
     _image_rom_end_order = (LOG2CEIL(__rom_region_end) - 1) << 1;
 
     GROUP_END(ROMABLE_REGION)
@@ -234,6 +245,9 @@ SECTIONS
      */
     . = ALIGN(_region_min_align);
     _image_ram_start = .;
+#ifdef CONFIG_XIP
+    z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -250,7 +264,7 @@ SECTIONS
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
-    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)
     {
         /*
          * For performance, BSS section is assumed to be 4 byte aligned and
@@ -316,8 +330,10 @@ SECTIONS
 
     /* Define linker symbols */
 
+    . = ALIGN(_region_min_align);
     _image_ram_end = .;
     _end = .; /* end of image */
+    z_mapped_end = .;
 
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
