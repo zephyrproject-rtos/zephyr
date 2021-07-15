@@ -19,6 +19,9 @@ struct spi_stm32_config {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	bool use_subghzspi_nss;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA

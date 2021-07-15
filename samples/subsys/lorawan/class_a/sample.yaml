@@ -5,4 +5,4 @@ sample:
    name: LoRaWAN Class-A
 tests:
    samples.lorawan.class_a:
-     platform_allow: 96b_wistrio
+     platform_allow: 96b_wistrio nucleo_wl55jc

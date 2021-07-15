@@ -5,5 +5,4 @@ sample:
    name: LoRa Receive Sample
 tests:
    sample.driver.lora.receive:
-     platform_allow: 96b_wistrio
-     platform_allow: rak4631_nrf52840
+     platform_allow: 96b_wistrio rak4631_nrf52840 nucleo_wl55jc
