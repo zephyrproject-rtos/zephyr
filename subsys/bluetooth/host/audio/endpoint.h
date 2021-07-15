@@ -28,6 +28,7 @@ struct bt_audio_ep_cb {
 struct bt_audio_broadcaster {
 	uint8_t bis_count;
 	uint8_t subgroup_count;
+	uint32_t broadcast_id;
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];

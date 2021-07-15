@@ -34,6 +34,8 @@ struct bt_audio_cap;
 
 #define BT_AUDIO_ERR(_err)  (-(_err))
 
+#define BT_BROADCAST_ID_SIZE             3 /* octets */
+
 /** @brief Abstract Audio endpoint structure. */
 struct bt_audio_endpoint;
 
