@@ -44,6 +44,13 @@ static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 }
 #include <syscalls/flash_get_write_block_size_mrsh.c>
 
+static inline const struct flash_parameters *z_vrfy_flash_get_parameters(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, get_parameters));
+	return z_impl_flash_get_parameters(dev);
+}
+#include <syscalls/flash_get_parameters_mrsh.c>
+
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,
 						     off_t offs,
