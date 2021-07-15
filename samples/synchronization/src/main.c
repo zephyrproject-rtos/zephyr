@@ -48,17 +48,17 @@ void helloLoop(const char *my_name,
 
 		current_thread = k_current_get();
 		tname = k_thread_name_get(current_thread);
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 		cpu = arch_curr_cpu()->id;
 #else
 		cpu = 0;
 #endif
 		/* say "hello" */
 		if (tname == NULL) {
-			printk("%s: Hello World from cpu %d on %s!\n",
+			printk("%s: Hello World from cpu(%d) on %s!\n",
 				my_name, cpu, CONFIG_BOARD);
 		} else {
-			printk("%s: Hello World from cpu %d on %s!\n",
+			printk("%s: Hello World from cpu(%d) on %s!\n",
 				tname, cpu, CONFIG_BOARD);
 		}
 
@@ -125,6 +125,10 @@ void main(void)
 #if PIN_THREADS
 	k_thread_cpu_mask_clear(&threadB_data);
 	k_thread_cpu_mask_enable(&threadB_data, 1);
+#endif
+
+#ifdef CONFIG_SMP
+	printk("Your target board (%s) supports symmetric multi-processing.\n", CONFIG_BOARD);
 #endif
 
 	k_thread_start(&threadA_data);

@@ -30,17 +30,32 @@ Sample Output
 
 .. code-block:: console
 
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
+   thread_a: Hello World from cpu(0) on qemu_x86!
+   thread_b: Hello World from cpu(0) on qemu_x86!
+   thread_a: Hello World from cpu(0) on qemu_x86!
+   thread_b: Hello World from cpu(0) on qemu_x86!
+   thread_a: Hello World from cpu(0) on qemu_x86!
+   thread_b: Hello World from cpu(0) on qemu_x86!
+   thread_a: Hello World from cpu(0) on qemu_x86!
+   thread_b: Hello World from cpu(0) on qemu_x86!
+   thread_a: Hello World from cpu(0) on qemu_x86!
+   thread_b: Hello World from cpu(0) on qemu_x86!
 
    <repeats endlessly>
+
+If the target board supports SMP, for example qemu_x86_64, each thread will run on a CPU with a different id.
+
+.. code-block:: console
+
+   thread_a: Hello World from cpu(0) on qemu_x86_64!
+   thread_b: Hello World from cpu(1) on qemu_x86_64!
+   thread_a: Hello World from cpu(0) on qemu_x86_64!
+   thread_b: Hello World from cpu(1) on qemu_x86_64!
+   thread_a: Hello World from cpu(0) on qemu_x86_64!
+   thread_b: Hello World from cpu(1) on qemu_x86_64!
+   thread_a: Hello World from cpu(0) on qemu_x86_64!
+   thread_b: Hello World from cpu(1) on qemu_x86_64!
+   thread_a: Hello World from cpu(0) on qemu_x86_64!
+   thread_b: Hello World from cpu(1) on qemu_x86_64!
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
