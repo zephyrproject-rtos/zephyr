@@ -1209,17 +1209,15 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 				struct bt_codec *codec,
 				struct bt_codec_qos *qos)
 {
-	const struct bt_data ad[] = {
-		BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-				BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL))
-	};
 	struct bt_audio_broadcaster *broadcaster;
 	struct bt_data base_ad_data;
 	struct bt_audio_chan *tmp;
+	struct bt_data ad;
 	uint8_t index;
 	int err;
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
+	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base));
 
 	/* TODO: Validate codec and qos values */
@@ -1303,8 +1301,12 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	 * that the audio advertising data is still present, similar to how
 	 * the GAP device name is added.
 	 */
-	err = bt_le_ext_adv_set_data(broadcaster->adv, ad, ARRAY_SIZE(ad), NULL,
-				     0);
+	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
+	net_buf_simple_add_le24(&ad_buf, broadcaster->broadcast_id);
+	ad.type = BT_DATA_SVC_DATA16;
+	ad.data_len = ad_buf.len + sizeof(ad.type);
+	ad.data = ad_buf.data;
+	err = bt_le_ext_adv_set_data(broadcaster->adv, &ad, 1, NULL, 0);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
 		/* TODO: cleanup */
