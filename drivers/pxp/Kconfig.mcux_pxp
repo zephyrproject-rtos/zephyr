@@ -1,0 +1,8 @@
+# NXP MCUX PXP driver configuration options
+
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config PXP_MCUX_PXP
+	bool "NXP MCUX PXP driver"
+	depends on HAS_MCUX_PXP

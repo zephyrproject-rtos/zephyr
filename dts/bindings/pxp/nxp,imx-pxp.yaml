@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP MCUX PXP module
+
+compatible: "nxp,imx-pxp"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    label:
+      required: true

@@ -258,6 +258,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_CACHE
 	select HAS_MCUX
 	select HAS_MCUX_SEMC
+	select HAS_MCUX_PXP
 	select HAS_MCUX_CCM_REV2
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C

@@ -1,0 +1,8 @@
+sample:
+  name: pxp
+tests:
+  sample.pxp:
+    build_only: true
+    tags: pxp
+    platform_allow: mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk mimxrt1170_evk_cm7
+    depends_on: pxp
