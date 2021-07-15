@@ -401,7 +401,6 @@ Documentation:
     collaborators:
         - nashif
         - utzig
-        - jocelyn-li
         - mbolivar-nordic
     files:
         - doc/*
@@ -1219,7 +1218,6 @@ Twister:
         - nashif
     collaborators:
         - chen-png
-        - jocelyn-li
         - galak
         - PerMac
         - enjiamai
