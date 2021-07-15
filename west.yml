@@ -159,7 +159,7 @@ manifest:
       path: modules/debug/TraceRecorder
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: e18b7a9b040b5b5324520388047c9e7d678447e6
+      revision: pull/57/head
 
   self:
     path: zephyr
