@@ -306,3 +306,4 @@ rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
 rsource "mpu/Kconfig"
+rsource "mmu/Kconfig"

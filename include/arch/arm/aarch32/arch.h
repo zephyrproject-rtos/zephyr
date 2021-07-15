@@ -71,6 +71,8 @@ extern "C" {
  */
 #if defined(CONFIG_USERSPACE)
 #define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+#elif defined(CONFIG_ARM_MMU)
+#define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE
 #else
 #define Z_THREAD_MIN_STACK_ALIGN ARCH_STACK_PTR_ALIGN
 #endif
@@ -190,6 +192,9 @@ extern "C" {
 #include <arch/arm/aarch32/mpu/nxp_mpu.h>
 #endif /* CONFIG_CPU_HAS_NXP_MPU */
 #endif /* CONFIG_ARM_MPU */
+#ifdef CONFIG_ARM_AARCH32_MMU
+#include <arch/arm/aarch32/mmu/arm_mmu.h>
+#endif /* CONFIG_ARM_AARCH32_MMU */
 
 #ifdef __cplusplus
 }
