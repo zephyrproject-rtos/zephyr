@@ -61,9 +61,6 @@ mli_tensor *const cifar10_cf_net_input = &input;
 mli_tensor *const cifar10_cf_net_output = &output;
 
 /* -----------------  Model description and configuration ---------------- */
-
-#pragma Data(".mli_data")
-
 /* Configuration objects for layers */
 
 static const mli_permute_cfg permute_hwc2chw_cfg = { .perm_dim = { 2, 0, 1 } };
@@ -200,7 +197,6 @@ static mli_tensor ir_tensor_Y = {
 	.el_type = D_EL_TYPE,
 	.el_params.fx.frac_bits = FRQ_BITS(0, d_type),
 };
-#pragma Data()
 
 /*  Wrappers on MLI calls to deal with various */
 /*  bit depth configurable in compile time */

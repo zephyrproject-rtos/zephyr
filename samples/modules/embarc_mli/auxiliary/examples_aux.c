@@ -118,7 +118,7 @@ test_status model_run_idx_base_to_idx_out(const char *input_idx_path, const char
 	/* Memory allocation for input/output (for it's external representations) */
 	input_data = malloc((input_elements * data_elem_size(descr_in.data_type)) +
 			    (output_elements * sizeof(float)));
-	output_data = (float *)(input_data + input_elements * data_elem_size(descr_in.data_type));
+	output_data = (float *)((uint8_t *)input_data + input_elements * data_elem_size(descr_in.data_type));
 	if (input_data == NULL) {
 		printf("ERROR: Can't allocate memory for input and output\n");
 		ret_val = TEST_NOT_ENOUGH_MEM;
@@ -195,8 +195,10 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 	test_status ret = TEST_PASSED;
 	tIdxDescr descr_in = { 0, 0, 0, NULL };
 	tIdxDescr descr_labels = { 0, 0, 0, NULL };
+#ifdef _C_ARRAY_
 	tIdxArrayFlag t_labels = { 0, LABELS };
 	tIdxArrayFlag t_tests = { 0, TESTS };
+#endif
 	uint32_t shape[4] = { 0, 0, 0, 0 };
 	uint32_t labels_total = 0;
 	uint32_t labels_correct = 0;

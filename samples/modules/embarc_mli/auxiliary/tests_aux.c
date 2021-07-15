@@ -123,7 +123,7 @@ test_status load_tensors_from_idx_files(const char *const test_root, const char 
 			}
 
 			elements_accounted += descr.num_elements;
-			tensors[idx]->data += descr.num_elements * elem_size;
+			tensors[idx]->data = descr.num_elements * elem_size + (uint32_t *)tensors[idx]->data;
 		}
 
 		tensors[idx]->data = addr_backup;
@@ -252,7 +252,7 @@ test_status measure_ref_to_pred(const char *const tests_root, const char *const 
 				max_abs_err = fabsf(pred_buf[i] - ref_buf[i]);
 		}
 		elements_accounted += descr.num_elements;
-		pred.data += descr.num_elements * pred_elem_size;
+		pred.data = descr.num_elements * pred_elem_size + (uint32_t *)pred.data;
 	}
 
 	const float eps = 0.000000000000000001f;
