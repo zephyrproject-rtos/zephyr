@@ -288,12 +288,24 @@ extern int _k_neg_eagain;
  */
 static void test_write_kernro(void)
 {
+	bool in_rodata;
+
 	/* Try to write to kernel RO. */
 	const char *const ptr = (const char *const)&_k_neg_eagain;
 
-	zassert_true(ptr < _image_rodata_end &&
-		     ptr >= _image_rodata_start,
+	in_rodata = ptr < _image_rodata_end &&
+		    ptr >= _image_rodata_start;
+
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+	if (!in_rodata) {
+		in_rodata = ptr < lnkr_pinned_rodata_end &&
+			    ptr >= lnkr_pinned_rodata_start;
+	}
+#endif
+
+	zassert_true(in_rodata,
 		     "_k_neg_eagain is not in rodata");
+
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	_k_neg_eagain = -EINVAL;
