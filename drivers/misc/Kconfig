@@ -6,5 +6,7 @@
 menu "Miscellaneous Drivers"
 
 source "drivers/misc/ft8xx/Kconfig"
+source "drivers/misc/microbit_display/Kconfig"
+
 
 endmenu

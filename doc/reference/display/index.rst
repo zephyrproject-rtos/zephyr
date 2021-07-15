@@ -22,10 +22,6 @@ Grove LCD Display
 
 .. doxygengroup:: grove_display
 
-BBC micro:bit Display
-=====================
-
-.. doxygengroup:: mb_display
 
 Monochrome Character Framebuffer
 ================================

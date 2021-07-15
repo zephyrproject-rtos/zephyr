@@ -1,20 +1,16 @@
-/** @file
- *  @brief BBC micro:bit display APIs.
- */
-
-/*
+/* mb_display_v2.h public API to bbc micro:bit led matrix
+ * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2017 Intel Corporation
  *
- * SPDX-License-Identifier: Apache-2.0
+ *
  */
 
-#ifndef ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
-#define ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
+#ifndef ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_V2_H_
+#define ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_V2_H_
 
 /**
  * @brief BBC micro:bit display APIs
  * @defgroup mb_display BBC micro:bit display APIs
- * @ingroup display_interfaces
  * @{
  */
 
@@ -104,14 +100,7 @@ enum mb_display_mode {
  *
  * https://lancaster-university.github.io/microbit-docs/ubit/display/
  */
-struct mb_display;
 
-/**
- * @brief Get a pointer to the BBC micro:bit display object.
- *
- * @return Pointer to display object.
- */
-struct mb_display *mb_display_get(void);
 
 /**
  * @brief Display one or more images on the BBC micro:bit LED display.
@@ -122,14 +111,13 @@ struct mb_display *mb_display_get(void);
  * another image being displayed it will be canceled and the new one takes
  * over.
  *
- * @param disp      Display object.
  * @param mode      One of the MB_DISPLAY_MODE_* options.
  * @param duration  Duration how long to show each image (in milliseconds), or
  *                  @ref SYS_FOREVER_MS.
  * @param img       Array of image bitmaps (struct mb_image objects).
  * @param img_count Number of images in 'img' array.
  */
-void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
+void mb_display_image_v2(uint32_t mode, int32_t duration,
 		      const struct mb_image *img, uint8_t img_count);
 
 /**
@@ -142,30 +130,27 @@ void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
  * the background. If there is another image or string being displayed it
  * will be canceled and the new one takes over.
  *
- * @param disp     Display object.
  * @param mode     One of the MB_DISPLAY_MODE_* options.
  * @param duration Duration how long to show each character (in milliseconds),
  *                 or @ref SYS_FOREVER_MS.
  * @param fmt      printf-style format string
  * @param ...      Optional list of format arguments.
  */
-__printf_like(4, 5) void mb_display_print(struct mb_display *disp,
+__printf_like(3, 4) void mb_display_print_v2(
 					  uint32_t mode, int32_t duration,
 					  const char *fmt, ...);
 
 /**
  * @brief Stop the ongoing display of an image.
  *
- * @param disp    Display object.
  */
-void mb_display_stop(struct mb_display *disp);
+void mb_display_stop_v2(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+
 
 #endif /* ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_ */
+/**@}*/
