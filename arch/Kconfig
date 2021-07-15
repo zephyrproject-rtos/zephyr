@@ -253,7 +253,7 @@ config USERSPACE
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
 	  with the kernel via system calls. See Zephyr documentation for more
-	  details	about this feature.
+	  details about this feature.
 
 	  If a user thread overflows its stack, this will be caught and the
 	  kernel itself will be shielded from harm. Enabling this option
