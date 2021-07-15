@@ -680,7 +680,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync)
 
 	ARG_UNUSED(tmp_idx);
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
@@ -698,9 +698,10 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 
 	ull_hdr_init(&sync->ull);
 
-	/* Calculate the PDU Tx Time and hence the radio event length */
 	lll_sync = &sync->lll;
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
+
+	/* Calculate the PDU Tx Time and hence the radio event length */
 	time_us = sync_time_get(sync, ter_pdu);
 
 	/* TODO: active_to_start feature port */
@@ -887,7 +888,7 @@ static uint8_t sync_time_update(struct ll_adv_sync_set *sync,
 		ticks_minus = 0U;
 		ticks_plus = time_ticks - sync->ull.ticks_slot;
 	} else {
-		return 0;
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	ret_cb = TICKER_STATUS_BUSY;
@@ -903,7 +904,7 @@ static uint8_t sync_time_update(struct ll_adv_sync_set *sync,
 
 	sync->ull.ticks_slot = time_ticks;
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 /* @brief Set or clear fields in extended advertising header and store

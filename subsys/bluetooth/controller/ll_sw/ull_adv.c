@@ -1754,7 +1754,7 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 		ticks_minus = 0U;
 		ticks_plus = time_ticks - adv->ull.ticks_slot;
 	} else {
-		return 0;
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	ret_cb = TICKER_STATUS_BUSY;
@@ -1771,7 +1771,7 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 
 	adv->ull.ticks_slot = time_ticks;
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 static int init_reset(void)
@@ -1857,7 +1857,7 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 
 			time_us += (BYTES2US(adv_size, PHY_1M) +
 				    EVENT_IFS_MAX_US + rx_to_us +
-				    rxtx_turn_us) * (adv_chn_cnt-1) +
+				    rxtx_turn_us) * (adv_chn_cnt - 1) +
 				   BYTES2US(adv_size, PHY_1M) + EVENT_IFS_MAX_US;
 		}
 	}
