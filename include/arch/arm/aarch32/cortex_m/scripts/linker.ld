@@ -98,11 +98,33 @@ MEMORY
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM1, rw, DT_NODELABEL(sram1))
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM2, rw, DT_NODELABEL(sram2))
     /* STM32 alternate RAM configurations */
+
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sramnocache), okay)
+    DT_REGION_FROM_NODE_STATUS_OKAY(sramnocache, rw, DT_ALIAS(sramnocache))
+
+#if !DT_SAME_NODE(DT_ALIAS(sramnocache), DT_NODELABEL(sram3))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
+#endif
+#if !DT_SAME_NODE(DT_ALIAS(sramnocache), DT_NODELABEL(sram4))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
+#endif
+#if !DT_SAME_NODE(DT_ALIAS(sramnocache), DT_NODELABEL(sdram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
+#endif
+#if !DT_SAME_NODE(DT_ALIAS(sramnocache), DT_NODELABEL(sdram2))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
+#endif
+#if !DT_SAME_NODE(DT_ALIAS(sramnocache), DT_NODELABEL(backup_sram))
+    DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
+#endif
+
+#else
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
     DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
+#endif
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
