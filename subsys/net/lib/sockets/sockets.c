@@ -1656,7 +1656,18 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 		}
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		case SO_KEEPALIVE:
+			ret = net_context_get_option(ctx,
+						     NET_OPT_KEEPALIVE,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 
+			return 0;
+#endif
 		case SO_TXTIME:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
 				ret = net_context_get_option(ctx,
@@ -1685,6 +1696,52 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		}
 		}
 
+		break;
+	case IPPROTO_TCP:
+		switch (optname) {
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		case TCP_KEEPIDLE:
+			/* set conn->keep_idle
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_context_tcp_get_option(ctx,
+						     TCP_OPT_KEEPIDLE,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPINTVL:
+			/* set conn->keep_intvl
+			 * use seconds for get/setsockopt
+			 */
+			ret = net_context_tcp_get_option(ctx,
+						     TCP_OPT_KEEPINTVL,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPCNT:
+			/* set conn->keep_cnt
+			 * The maximum number of keepalive probes TCP should
+			 * send before dropping the connection.
+			 */
+			ret = net_context_tcp_get_option(ctx,
+						     TCP_OPT_KEEPCNT,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+#endif
+		}
 		break;
 	}
 
@@ -1742,6 +1799,22 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 * existing apps.
 			 */
 			return 0;
+
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		case SO_KEEPALIVE:
+			/* Enable keep connections alive
+			 */
+			ret = net_context_set_option(ctx,
+						     NET_OPT_KEEPALIVE,
+						     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			break;
+#endif
 
 		case SO_PRIORITY:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
@@ -1907,6 +1980,48 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 * existing apps.
 			 */
 			return 0;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		case TCP_KEEPIDLE:
+			/* set conn->keep_idle
+			 * Use seconds for get/setsockopt
+			 */
+			ret = net_context_tcp_set_option(ctx,
+						     TCP_OPT_KEEPIDLE,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPINTVL:
+			/* set conn->keep_intvl
+			 * Use seconds for get/setsockopt
+			 */
+			ret = net_context_tcp_set_option(ctx,
+						     TCP_OPT_KEEPINTVL,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+		case TCP_KEEPCNT:
+			/* get conn->keep_cnt
+			 * The maximum number of keepalive probes TCP should
+			 * send before dropping the connection.
+			 */
+			ret = net_context_tcp_set_option(ctx,
+						     TCP_OPT_KEEPCNT,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+#endif
 		}
 		break;
 

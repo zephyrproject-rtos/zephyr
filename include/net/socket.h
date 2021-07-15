@@ -835,6 +835,8 @@ struct ifreq {
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 
+/** sockopt: Keep alive */
+#define SO_KEEPALIVE 5
 /**
  * sockopt: Receive timeout
  * Applies to receive functions like recv(), but not to connect()
@@ -854,6 +856,12 @@ struct ifreq {
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
+/** sockopt: Use seconds for get/setsockopt */
+#define TCP_KEEPIDLE 2
+/** sockopt: Use seconds for get/setsockopt */
+#define TCP_KEEPINTVL 3
+/** sockopt: Use number of probes sent for get/setsockopt */
+#define TCP_KEEPCNT 4
 
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */

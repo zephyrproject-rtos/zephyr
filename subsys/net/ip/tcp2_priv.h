@@ -229,6 +229,7 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable recv_queue_timer;
 	struct k_work_delayable send_data_timer;
 	struct k_work_delayable timewait_timer;
+	struct k_work_delayable keepalive_timer;
 	union {
 		/* Because FIN and establish timers are never happening
 		 * at the same time, share the timer between them to
@@ -253,6 +254,12 @@ struct tcp { /* TCP connection */
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	uint32_t keep_idle;
+	uint32_t keep_intvl;
+	uint32_t keep_cnt;
+	uint32_t keep_cur;
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
