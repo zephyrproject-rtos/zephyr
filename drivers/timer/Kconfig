@@ -120,6 +120,17 @@ DT_COMPAT_ARM_V7M_SYSTICK := arm,armv7m-systick
 DT_COMPAT_ARM_V8M_SYSTICK := arm,armv8m-systick
 DT_COMPAT_ARM_V8_1M_SYSTICK := arm,armv8.1m-systick
 
+config ARM_ARCH_TIMER_ERRATUM_740657
+	bool "ARM architected timer is affected by ARM erratum 740657"
+	depends on ARM_ARCH_TIMER
+	help
+	  This option indicates that the ARM architected timer as implemented
+	  in the target hardware is affected by the ARM erratum 740657 (comp.
+	  ARM Cortex-A9 processors Software Developers Errata Notice, ARM
+	  document ID032315) which leads to an additional, spurious interrupt
+	  indication upon every actual timer interrupt. This option activates
+	  the workaround for the erratum within the timer driver.
+
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
