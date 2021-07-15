@@ -27,7 +27,10 @@
 #define EVENT_RX_TO_US(phy) ((((((phy)&0x03) + 4)<<3)/BIT((((phy)&0x3)>>1))) + \
 				  EVENT_RX_JITTER_US(phy))
 
-/* Using conservative turnaround time, considering slowest CPU timings that is
- * required to meet tIFS of 150 us.
+/* Turnaround time between RX and TX is based on CPU execution speed. It also
+ * includes radio ramp up time. The value must meet hard deadline of `150 us`
+ * imposed by BT Core spec for inter frame spacing (IFS). To include CPUs with
+ * slow clock, the conservative approach was taken to use IFS value for all
+ * cases.
  */
 #define EVENT_RX_TX_TURNAROUND(phy)   150

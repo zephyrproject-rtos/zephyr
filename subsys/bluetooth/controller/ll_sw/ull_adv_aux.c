@@ -895,11 +895,12 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 	struct lll_adv *lll;
 	uint32_t time_us;
 
-	/* Calculate the PDU Tx Time and hence the radio event length */
 	lll_aux = &aux->lll;
 	lll = lll_aux->adv;
 	pdu = lll_adv_aux_data_peek(lll_aux);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+	/* Calculate the PDU Tx Time and hence the radio event length */
 	time_us = aux_time_get(aux, pdu, pdu_scan);
 
 	/* TODO: active_to_start feature port */
@@ -1079,7 +1080,8 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	time_us = PKT_AC_US(pdu->len, lll->phy_s) + EVENT_OVERHEAD_START_US +
 		  EVENT_OVERHEAD_END_US;
 
-	if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) {
+	if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) ==
+	    BT_HCI_LE_ADV_PROP_CONN) {
 		const uint16_t conn_req_us =
 			PKT_AC_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
 				  lll->phy_s);
@@ -1088,7 +1090,8 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 				   TARGETA_SIZE), lll->phy_s);
 
 		time_us += EVENT_IFS_MAX_US * 2 + conn_req_us + conn_rsp_us;
-	} else if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) {
+	} else if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) ==
+		   BT_HCI_LE_ADV_PROP_SCAN) {
 		const uint16_t scan_req_us  =
 			PKT_AC_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
 		const uint16_t scan_rsp_us =
@@ -1119,7 +1122,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 		ticks_minus = 0U;
 		ticks_plus = time_ticks - aux->ull.ticks_slot;
 	} else {
-		return 0;
+		return BT_HCI_ERR_SUCCESS;
 	}
 
 	ret_cb = TICKER_STATUS_BUSY;
@@ -1136,7 +1139,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 
 	aux->ull.ticks_slot = time_ticks;
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 static void mfy_aux_offset_get(void *param)
