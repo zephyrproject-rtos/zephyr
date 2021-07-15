@@ -1,0 +1,11 @@
+// A very simple person class definition with id, name
+// and email.
+
+syntax = "proto2";
+
+message Person {
+    required int32 id = 1;
+    required string name = 2;
+    required string email = 3;
+}
+

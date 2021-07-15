@@ -1,0 +1,5 @@
+* include:"sys/types.h"
+* include:"posix/dirent.h"
+Person.name     max_size:128
+Person.email    max_size:128
+
