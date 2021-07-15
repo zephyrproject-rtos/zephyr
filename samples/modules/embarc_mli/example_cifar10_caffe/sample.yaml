@@ -1,0 +1,7 @@
+sample:
+  description: cifar10_caffe embarc_mli sample
+  name: example_cifar10_caffe
+tests:
+  sample.embarc_mli.example_cifar10_caffe:
+    platform_allow: nsim_em
+    tags: embarc_mli

@@ -28,9 +28,10 @@
 	nsim_isa_agu_wb_depth=4
 	nsim_isa_agu_accord=1
 	nsim_isa_xy=1
-	nsim_isa_xy_config=dccm_y
-	nsim_isa_xy_size=8K
+	nsim_isa_xy_config=dccm_x_y
+	nsim_isa_xy_size=64K
 	nsim_isa_xy_interleave=1
+	nsim_isa_xy_x_base=0xc0000000
 	nsim_isa_xy_y_base=0xe0000000
 	nsim_isa_fpus_div_option=1
 	nsim_isa_fpu_mac_option=1

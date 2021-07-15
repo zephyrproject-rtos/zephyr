@@ -69,6 +69,12 @@ MEMORY {
 #ifdef DCCM_START
 	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 #endif
+#ifdef XCCM_START
+	XCCM  (rw)  : ORIGIN = XCCM_START, 	LENGTH = XCCM_SIZE
+#endif
+#ifdef YCCM_START
+	YCCM  (rw)  : ORIGIN = YCCM_START,  LENGTH = YCCM_SIZE
+#endif
 	/* Used by and documented in include/linker/intlist.ld */
 	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -76,7 +82,7 @@ MEMORY {
 SECTIONS {
 
 #include <linker/rel-sections.ld>
-
+#include "embarc_mli.ld"
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
@@ -206,6 +212,8 @@ SECTIONS {
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 	GROUP_END(RAMABLE_REGION)
+
+
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
