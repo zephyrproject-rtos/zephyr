@@ -1089,6 +1089,36 @@ void net_pkt_trim_buffer(struct net_pkt *pkt)
 	}
 }
 
+int net_pkt_remove_tail(struct net_pkt *pkt, size_t length)
+{
+	struct net_buf *buf = pkt->buffer;
+	size_t remaining_len = net_pkt_get_len(pkt);
+
+	if (remaining_len < length) {
+		return -EINVAL;
+	}
+
+	remaining_len -= length;
+
+	while (buf) {
+		if (buf->len >= remaining_len) {
+			buf->len = remaining_len;
+
+			if (buf->frags) {
+				net_pkt_frag_unref(buf->frags);
+				buf->frags = NULL;
+			}
+
+			break;
+		}
+
+		remaining_len -= buf->len;
+		buf = buf->frags;
+	}
+
+	return 0;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
