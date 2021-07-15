@@ -1,0 +1,1 @@
+/* only for the bluedroid sbc porting */

@@ -6,7 +6,6 @@ zephyr_library_link_libraries(subsys__bluetooth)
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c hci_common.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MONITOR          monitor.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TINYCRYPT_ECC    hci_ecc.c)
-zephyr_library_sources_ifdef(CONFIG_BT_A2DP             a2dp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TESTING          testing.c)
@@ -27,6 +26,58 @@ zephyr_library_sources_ifdef(
   hfp_hf.c
   at.c
   )
+
+if(CONFIG_BT_A2DP)
+  zephyr_library_sources(
+    a2dp.c
+    )
+
+  zephyr_library_sources(
+    a2dp_codec/sbc/a2dp_codec_sbc.c
+    )
+  zephyr_include_directories(
+    ${ZEPHYR_BASE}/subsys/bluetooth/host/a2dp_codec/sbc/porting
+    )
+
+  if(CONFIG_BT_A2DP_SOURCE)
+    zephyr_library_sources(
+      a2dp_codec/sbc/encoder/srce/sbc_analysis.c
+      a2dp_codec/sbc/encoder/srce/sbc_dct.c
+      a2dp_codec/sbc/encoder/srce/sbc_dct_coeffs.c
+      a2dp_codec/sbc/encoder/srce/sbc_enc_bit_alloc_mono.c
+      a2dp_codec/sbc/encoder/srce/sbc_enc_bit_alloc_ste.c
+      a2dp_codec/sbc/encoder/srce/sbc_enc_coeffs.c
+      a2dp_codec/sbc/encoder/srce/sbc_encoder.c
+      a2dp_codec/sbc/encoder/srce/sbc_packing.c
+      )
+    zephyr_include_directories(
+      ${ZEPHYR_BASE}/subsys/bluetooth/host/a2dp_codec/sbc/encoder/include
+      )
+  endif()
+  if(CONFIG_BT_A2DP_SINK)
+    zephyr_library_sources(
+      a2dp_codec/sbc/decoder/srce/alloc.c
+      a2dp_codec/sbc/decoder/srce/bitalloc.c
+      a2dp_codec/sbc/decoder/srce/bitalloc-sbc.c
+      a2dp_codec/sbc/decoder/srce/bitstream-decode.c
+      a2dp_codec/sbc/decoder/srce/decoder-oina.c
+      a2dp_codec/sbc/decoder/srce/decoder-private.c
+      a2dp_codec/sbc/decoder/srce/decoder-sbc.c
+      a2dp_codec/sbc/decoder/srce/dequant.c
+      a2dp_codec/sbc/decoder/srce/framing.c
+      a2dp_codec/sbc/decoder/srce/framing-sbc.c
+      a2dp_codec/sbc/decoder/srce/oi_codec_version.c
+      a2dp_codec/sbc/decoder/srce/readsamplesjoint.inc
+      a2dp_codec/sbc/decoder/srce/synthesis-8-generated.c
+      a2dp_codec/sbc/decoder/srce/synthesis-dct8.c
+      a2dp_codec/sbc/decoder/srce/synthesis-sbc.c
+      )
+    zephyr_include_directories(
+      ${ZEPHYR_BASE}/subsys/bluetooth/host/a2dp_codec/sbc/decoder/include
+      ${ZEPHYR_BASE}/subsys/bluetooth/host/a2dp_codec/sbc/decoder/srce
+      )
+  endif()
+endif()
 
 if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources(

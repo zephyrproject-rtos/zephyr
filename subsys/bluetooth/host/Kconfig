@@ -782,15 +782,137 @@ config BT_HFP_HF
 	  This option enables Bluetooth HF support
 
 config BT_AVDTP
-	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	bool "Bluetooth AVDTP protocol support"
 	help
 	  This option enables Bluetooth AVDTP support
 
 config BT_A2DP
-	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
+	bool "Bluetooth A2DP Profile"
 	select BT_AVDTP
 	help
 	  This option enables the A2DP profile
+
+if BT_AVDTP
+
+config BT_AVDTP_RTP_VERSION
+	int "Bluetooth AVDTP RTP version"
+	default 2
+	help
+	  This option sets the AVDTP RTP protocol version
+
+endif # BT_AVDTP
+
+if BT_A2DP
+
+config BT_A2DP_SOURCE
+	bool "Bluetooth A2DP Profile Source Function"
+	help
+	  This option enables the A2DP profile source function
+
+config BT_A2DP_SINK
+	bool "Bluetooth A2DP Profile Sink Function"
+	help
+	  This option enables the A2DP profile sink function
+
+config BT_A2DP_MAX_ENDPOINT_COUNT
+	int "Bluetooth max endpoints count"
+	default 2
+	help
+	  This option sets the max endpoints count
+
+if BT_A2DP_SINK
+
+config BT_A2DP_SBC_DECODER_PCM_BUFFER_SIZE
+	int "Bluetooth A2DP SBC decoding buffer size"
+	default 8192
+	help
+	  This option sets A2DP SBC decoder buffer size,
+	  it is better to be multiple value of
+	  COFNIG_BT_A2DP_SBC_DATA_IND_SAMPLES_COUNT *
+	  sample size * channel count,
+	  it must bigger than CONFIG_BT_A2DP_SBC_DATA_IND_COUNT *
+	  CONFIG_BT_A2DP_SBC_DATA_IND_SAMPLES_COUNT *
+	  sample size * channel count
+
+config BT_A2DP_SBC_DATA_IND_COUNT
+	int "The initial media data callback count to load the DAC with sufficient data when starting to play"
+	default 4
+	help
+	  This option sets the initial media data callback count
+
+config BT_A2DP_SBC_DATA_IND_SAMPLES_COUNT
+	int "The media data samples count in every data indication callback"
+	default 96
+	help
+	  This option sets the data indication callback samples count
+
+endif # BT_A2DP_SINK
+
+if BT_A2DP_SOURCE
+
+config BT_A2DP_SBC_ENCODER_BIT_RATE
+	int "Bluetooth A2DP SBC encoder bit rate"
+	default 328
+	help
+	  This option sets A2DP SBC encoder bit rate
+
+config BT_A2DP_SBC_ENCODER_PCM_BUFFER_SIZE
+	int "Bluetooth A2DP SBC encoding used buffer size"
+	default 8192
+	help
+	  This option sets A2DP SBC encoder buffer size
+
+endif # BT_A2DP_SOURCE
+
+config BT_A2DP_TASK_PRIORITY
+	int "Bluetooth A2DP Profile Task Priority"
+	default 0
+	help
+	  This option sets A2DP profile task priority
+
+config BT_A2DP_TASK_STACK_SIZE
+	int "Bluetooth A2DP Profile Task Stack Size"
+	default 8192
+	help
+	  This option sets A2DP profile task stack size
+
+config BT_A2DP_CP_SERVICE
+	bool "Enable Content Protection Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable Content Protection Service.
+
+config BT_A2DP_RECOVERY_SERVICE
+	bool "Enable Recovery Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable Recovery Service.
+
+config BT_A2DP_REPORTING_SERVICE
+	bool "Enable Reporting Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable Reporting Service.
+
+config BT_A2DP_DR_SERVICE
+	bool "Enable Delay Reporting Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable Delay Reporting Service.
+
+config BT_A2DP_HC_SERVICE
+	bool "Enable Header Compression Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable Header Compression Service.
+
+config BT_A2DP_MULTIPLEXING_SERVICE
+	bool "Enable MULTIPLEXING Service [EXPERIMENTAL]"
+	default n
+	help
+	  Enable MULTIPLEXING Service.
+
+endif # BT_A2DP
 
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
