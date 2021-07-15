@@ -433,6 +433,7 @@
 /dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
+/dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
 /dts/arm/renesas/                         @julien-massot
