@@ -31,7 +31,7 @@
 		sw1 = &btn1;
 		sensor0 = &sensor0;
 		sensor1 = &sensor1;
-		/* TODO: add support for hdc2080 */
+		sensor2 = &sensor2;
 	};
 
 	chosen {
@@ -115,7 +115,11 @@
 		label = "OPT3001";
 	};
 
-	/* TODO: add hdc2080 at 0x41 */
+	sensor2: sensor@40 {
+		compatible = "ti,hdc2080";
+		reg = <0x40>;
+		label = "HDC2080";
+	};
 };
 
 &spi0 {
