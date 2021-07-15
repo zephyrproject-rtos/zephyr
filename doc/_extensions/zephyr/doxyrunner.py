@@ -293,7 +293,7 @@ def sync_doxygen(doxyfile: str, new: Path, prev: Path) -> None:
     """
 
     generate_html = get_doxygen_option(doxyfile, "GENERATE_HTML")
-    if generate_html == "YES":
+    if generate_html[0] == "YES":
         html_output = get_doxygen_option(doxyfile, "HTML_OUTPUT")
         if not html_output:
             raise ValueError("No HTML_OUTPUT set in Doxyfile")
