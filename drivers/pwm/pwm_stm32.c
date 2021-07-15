@@ -254,6 +254,9 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		LL_TIM_OC_SetPolarity(cfg->timer, channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+		if (flags & PWM_FORCE_UPDATE) {
+			LL_TIM_GenerateEvent_UPDATE(cfg->timer);
+		}
 	}
 
 	return 0;

@@ -42,6 +42,8 @@ extern "C" {
 #define PWM_CAPTURE_TYPE_MASK		(3U << PWM_CAPTURE_TYPE_SHIFT)
 #define PWM_CAPTURE_MODE_SHIFT		3U
 #define PWM_CAPTURE_MODE_MASK		(1U << PWM_CAPTURE_MODE_SHIFT)
+#define PWM_FORCE_UPDATE_SHIFT		4U
+#define PWM_FORCE_UPDATE_MASK		(1U << PWM_FORCE_UPDATE_SHIFT)
 /** @endcond */
 
 /** PWM pin capture captures period. */
@@ -59,6 +61,12 @@ extern "C" {
 
 /** PWM pin capture captures period/pulse width continuously. */
 #define PWM_CAPTURE_MODE_CONTINUOUS	(1U << PWM_CAPTURE_MODE_SHIFT)
+
+/**
+ * PWM pin force update applies pin configuration immediately, this
+ * may reset the timer counter register.
+ */
+#define PWM_FORCE_UPDATE		(1U << PWM_FORCE_UPDATE_SHIFT)
 
 /** @} */
 
