@@ -524,6 +524,10 @@ def write_vanilla_props(node):
             # DT_N_<node-id>_P_<prop-id>
             macro2val[macro] = val
 
+        if prop.spec.type == 'string':
+            macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
+            macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
+
         if prop.enum_index is not None:
             # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
             macro2val[macro + "_ENUM_IDX"] = prop.enum_index

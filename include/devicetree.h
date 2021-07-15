@@ -41,8 +41,9 @@
  *
  * _ENUM_IDX: property's value as an index into bindings enum
  * _ENUM_TOKEN: property's value as a token into bindings enum (string
- *              enum values are identifiers)
- * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased
+ *              enum values are identifiers) [deprecated, use _STRING_TOKEN]
+ * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased [deprecated, use
+ *		      _STRING_UPPER_TOKEN]
  * _EXISTS: property is defined
  * _FOREACH_PROP_ELEM: helper for "iterating" over values in the property
  * _FOREACH_PROP_ELEM_VARGS: foreach functions with variable number of arguments
@@ -55,6 +56,8 @@
  * _NAME_<name>_PH: phandle array's phandle by name
  * _NAME_<name>_VAL_<val>: phandle array's property specifier by name
  * _NAME_<name>_VAL_<val>_EXISTS: cell value exists, by name
+ * _STRING_TOKEN: string property's value as a token
+ * _STRING_UPPER_TOKEN: like _STRING_TOKEN, but uppercased
  */
 
 /**
@@ -703,6 +706,113 @@
 		    (DT_ENUM_IDX(node_id, prop)), (default_idx_value))
 
 /**
+ * @brief Get a string property's value as a token.
+ *
+ * This removes "the quotes" from string-valued properties, and converts
+ * non-alphanumeric characters to underscores. That can be useful, for example,
+ * when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_TOKEN() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_TOKEN() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "FOO";
+ *     }
+ *     n3: node-3 {
+ *             prop = "123 foo";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string
+ *
+ * Example usage:
+ *
+ *     DT_STRING_TOKEN(DT_NODELABEL(n1), prop) // foo
+ *     DT_STRING_TOKEN(DT_NODELABEL(n2), prop) // FOO
+ *     DT_STRING_TOKEN(DT_NODELABEL(n3), prop) // 123_foo
+ *
+ * Notice how:
+ *
+ * - Unlike C identifiers, the property values may begin with a
+ *   number. It's the user's responsibility not to use such values as
+ *   the name of a C identifier.
+ *
+ * - The uppercased "FOO" in the DTS remains @p FOO as a token. It is
+ *   *not* converted to @p foo.
+ *
+ * - The whitespace in the DTS "123 foo" string is converted to @p
+ *   123_foo as a token.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property string name
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_STRING_TOKEN(node_id, prop) \
+	DT_CAT4(node_id, _P_, prop, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN(), but uppercased.
+ *
+ * This removes "the quotes and capitalize" from string-valued properties, and
+ * converts non-alphanumeric characters to underscores. That can be useful, for
+ * example, when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string
+ *
+ * Example usage:
+ *
+ *     DT_STRING_UPPER_TOKEN(DT_NODELABEL(n1), prop) // FOO
+ *     DT_STRING_UPPER_TOKEN(DT_NODELABEL(n2), prop) // 123_FOO
+ *
+ * Notice how:
+ *
+ * - Unlike C identifiers, the property values may begin with a
+ *   number. It's the user's responsibility not to use such values as
+ *   the name of a C identifier.
+ *
+ * - The lowercased "foo" in the DTS becomes @p FOO as a token, i.e.
+ *   it is uppercased.
+ *
+ * - The whitespace in the DTS "123 foo" string is converted to @p
+ *   123_FOO as a token, i.e. it is uppercased and whitespace becomes
+ *   an underscore.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property string name
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_STRING_UPPER_TOKEN(node_id, prop) \
+	DT_CAT4(node_id, _P_, prop, _STRING_UPPER_TOKEN)
+
+/**
  * @brief Get an enumeration property's value as a token.
  *
  * This allows you to "remove the quotes" from some string-valued
@@ -764,6 +874,7 @@
  *         and with special characters converted to underscores
  */
 #define DT_ENUM_TOKEN(node_id, prop) \
+	__DEPRECATED_MACRO \
 	DT_CAT4(node_id, _P_, prop, _ENUM_TOKEN)
 
 /**
@@ -823,6 +934,7 @@
  *         underscores
  */
 #define DT_ENUM_UPPER_TOKEN(node_id, prop) \
+	__DEPRECATED_MACRO \
 	DT_CAT4(node_id, _P_, prop, _ENUM_UPPER_TOKEN)
 
 /*
