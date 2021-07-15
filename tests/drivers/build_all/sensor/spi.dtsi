@@ -346,7 +346,7 @@ test_spi_ws2812_spi: ws2812-spi@2e {
 	spi-one-frame = <0>;
 	spi-zero-frame = <0>;
 	chain-length = <0>;
-	/* has-white-channel; */
+	color-mapping = <0 0 0>;
 };
 
 test_spi_bt_hci_spi: bt-hci-spi@2f {

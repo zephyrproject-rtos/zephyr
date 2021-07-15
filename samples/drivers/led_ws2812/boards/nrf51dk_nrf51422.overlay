@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/led/led.h>
 
 / {
 	led_strip: ws2812 {
@@ -12,6 +13,9 @@
 		label = "WS2812";
 
 		chain-length = <16>; /* arbitrary */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
 		/*
 		 * Arduino D11 / P0.25, which was chosen to match the pin
 		 * used in nrf52dk_nrf52832.overlay.

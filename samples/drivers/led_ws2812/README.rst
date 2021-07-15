@@ -8,7 +8,7 @@ Overview
 
 This sample application demonstrates basic usage of the WS2812 LED
 strip driver, for controlling LED strips using WS2812, WS2812b,
-SK6812, and compatible driver chips.
+SK6812, Everlight B1414 and compatible driver chips.
 
 Requirements
 ************
