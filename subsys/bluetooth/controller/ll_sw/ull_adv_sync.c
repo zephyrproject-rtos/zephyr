@@ -408,8 +408,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
 {
-	struct ull_adv_ext_hdr_data hdr_data;
-	uint8_t field_data[1 + sizeof(data)];
+	uint8_t hdr_data[1 + sizeof(data)];
 	void *extra_data_prev, *extra_data;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
@@ -435,9 +434,8 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	hdr_data.field_data = field_data;
-	field_data[0] = len;
-	memcpy(&field_data[1], &data, sizeof(data));
+	hdr_data[0] = len;
+	memcpy(&hdr_data[1], &data, sizeof(data));
 
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, &ter_idx);
@@ -448,14 +446,12 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-						  ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-						  0, &hdr_data);
+						  ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0, NULL);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-					 ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-					 0, &hdr_data);
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0,
+					 hdr_data);
 	if (err) {
 		return err;
 	}
@@ -857,26 +853,27 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 /* @brief Set or clear fields in extended advertising header and store
  *        extra_data if requested.
  *
- * @param[in]  adv              Advertising set.
+ * @param[in]  lll_sync         Reference to periodic advertising sync.
+ * @param[in]  ter_pdu_prev     Pointer to previous PDU.
+ * @param[in]  ter_pdu_         Pointer to PDU to fill fileds.
  * @param[in]  hdr_add_fields   Flag with information which fields add.
  * @param[in]  hdr_rem_fields   Flag with information which fields remove.
- * @param[in]  data             Pointer to data to be added to header and
- *                              extra_data. Content depends on the value of
- *                              @p hdr_add_fields.
- * @param[out] ter_idx          Index of new PDU.
+ * @param[in]  hdr_data         Pointer to data to be added to header. Content
+ *                              depends on the value of @p hdr_add_fields.
  *
  * @Note
- * @p data content depends on the flag provided by @p hdr_add_fields:
+ * @p hdr_data content depends on the flag provided by @p hdr_add_fields:
  * - ULL_ADV_PDU_HDR_FIELD_CTE_INFO:
- *   # @p data->field_data points to single byte with CTEInfo field
- *   # @p data->extra_data points to memory where is struct lll_df_adv_cfg
- *     for LLL.
+ *   # @p hdr_data points to single byte with CTEInfo field
  * - ULL_ADV_PDU_HDR_FIELD_AD_DATA:
- *   # @p data->field_data points to memory where first byte
+ *   # @p hdr_data points to memory where first byte
  *     is size of advertising data, following byte is a pointer to actual
  *     advertising data.
- *   # @p data->extra_data is NULL
- * - ULL_ADV_PDU_HDR_FIELD_AUX_PTR: # @p data parameter is not used
+ * - ULL_ADV_PDU_HDR_FIELD_AUX_PTR:
+ *   # @p hdr_data parameter is not used
+ * - ULL_ADV_PDU_HDR_FIELD_ACAD:
+ *   # @p hdr_data points to memory where first byte is size of ACAD, second
+ *     byte is used to return offset to ACAD field.
  *
  * @return Zero in case of success, other value in case of failure.
  */
@@ -885,7 +882,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 				   struct pdu_adv *ter_pdu,
 				   uint16_t hdr_add_fields,
 				   uint16_t hdr_rem_fields,
-				   struct ull_adv_ext_hdr_data *hdr_data)
+				   void *hdr_data)
 {
 	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
 	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
@@ -900,9 +897,6 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	uint8_t cte_info;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	uint8_t ad_len;
-	void *value;
-
-	value = hdr_data ? hdr_data->field_data : NULL;
 
 	/* Get common pointers from reference to previous tertiary PDU data */
 	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
@@ -935,8 +929,8 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	/* If requested add or update CTEInfo */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
 		ter_hdr->cte_info = 1;
-		cte_info = *(uint8_t *)value;
-		value = (uint8_t *)value + 1;
+		cte_info = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + 1;
 		ter_dptr += sizeof(struct pdu_cte_info);
 	/* If CTEInfo exists in prev and is not requested to be removed */
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
@@ -1004,11 +998,11 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Add/Retain/Remove ACAD */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ACAD) {
-		acad_len = *(uint8_t *)value;
-		value = (uint8_t *)value + 1;
+		acad_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + 1;
 		/* return the pointer to ACAD offset */
-		memcpy(value, &ter_dptr, sizeof(ter_dptr));
-		value = (uint8_t *)value + sizeof(ter_dptr);
+		memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
+		hdr_data = (uint8_t *)hdr_data + sizeof(ter_dptr);
 		ter_dptr += acad_len;
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ACAD)) {
 		acad_len = acad_len_prev;
@@ -1023,7 +1017,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Get Adv data from function parameters */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-		ad_data = value;
+		ad_data = hdr_data;
 		ad_len = *ad_data;
 		++ad_data;
 
