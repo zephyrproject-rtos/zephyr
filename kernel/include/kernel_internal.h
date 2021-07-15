@@ -217,6 +217,11 @@ void z_thread_mark_switched_out(void);
  */
 void z_mem_manage_init(void);
 
+/**
+ * @brief Finalize page frame management at the end of boot process.
+ */
+void z_mem_manage_boot_finish(void);
+
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
 			!__i.key;					\
