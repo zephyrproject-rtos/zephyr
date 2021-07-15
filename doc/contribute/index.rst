@@ -69,6 +69,18 @@ this contributing and review process for imported components.
 
       ../LICENSING.rst
 
+.. _copyrights:
+
+Copyrights Notices
+*******************
+
+Please follow this `Community Best Practice`_ for Copyright Notices from the
+Linux Foundation.
+
+
+.. _Community Best Practice:
+   https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+
 .. _DCO:
 
 Developer Certification of Origin (DCO)

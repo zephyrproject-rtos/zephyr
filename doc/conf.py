@@ -158,7 +158,7 @@ latex_elements = {
 }
 
 latex_documents = [
-    ("index", "zephyr.tex", "Zephyr Project Documentation", "many", "manual"),
+    ("index-tex", "zephyr.tex", "Zephyr Project Documentation", "many", "manual"),
 ]
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
