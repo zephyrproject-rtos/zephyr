@@ -239,7 +239,7 @@ static int get_log_file_id(struct fs_dirent *ent)
 
 	num = atoi(ent->name + LOG_PREFIX_LEN);
 
-	if (num <= MAX_FILE_NUMERAL && num > 0) {
+	if (num <= MAX_FILE_NUMERAL && num >= 0) {
 		return num;
 	}
 
@@ -277,7 +277,7 @@ static int allocate_new_file(struct fs_file_t *file)
 			}
 
 			file_num = get_log_file_id(&ent);
-			if (file_num > 0) {
+			if (file_num >= 0) {
 
 				if (file_num > max) {
 					max = file_num;
