@@ -75,17 +75,6 @@ enum ull_adv_pdu_extra_data_flag {
 #define ULL_ADV_PDU_HDR_FIELD_ACAD      BIT(8)
 #define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(9)
 
-/* Helper type to store data for extended advertising
- * header fields and extra data.
- */
-struct ull_adv_ext_hdr_data {
-	void *field_data;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
-	void *extra_data;
-#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
-};
-
 /* helper function to handle adv done events */
 void ull_adv_done(struct node_rx_event_done *done);
 
@@ -189,12 +178,9 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 /* helper function to set/clear common extended header format fields
  * for AUX_SYNC_IND PDU.
  */
-uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
-				   struct pdu_adv *ter_pdu_prev,
-				   struct pdu_adv *ter_pdu,
-				   uint16_t hdr_add_fields,
-				   uint16_t hdr_rem_fields,
-				   struct ull_adv_ext_hdr_data *hdr_data);
+uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync, struct pdu_adv *ter_pdu_prev,
+				   struct pdu_adv *ter_pdu, uint16_t hdr_add_fields,
+				   uint16_t hdr_rem_fields, void *hdr_data);
 
 /* helper function to update extra_data field */
 void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
