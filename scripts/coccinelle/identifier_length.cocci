@@ -3,6 +3,20 @@
 
 virtual report
 
+@initialize:python
+  depends on report
+@
+@@
+identifiers = {}
+
+def check_identifier(id, pos):
+    if id in identifiers:
+       msg="WARNING: Violation to rule 5.1 or 5.2 (First 31 chars shall be distinct) %s" % (id)
+       coccilib.report.print_report(pos[0], msg)
+       coccilib.report.print_report(identifiers[id][0], msg)
+    else:
+       identifiers[id] = pos
+
 @r_idlen@
 type T;
 identifier I;
@@ -26,5 +40,4 @@ pos << r_idlen.p;
 @@
 
 if (len(id) > 31):
-   msg="WARNING: Violation to rule 5.1 or 5.2 (Identifiers shall be distinct) %s length %d > 31" % (id, len(id))
-   coccilib.report.print_report(pos[0], msg)
+   check_identifier(id[:31], pos)
