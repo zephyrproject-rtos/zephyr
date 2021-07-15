@@ -82,6 +82,14 @@ static void log_backend_swo_put(const struct log_backend *const backend,
 	log_backend_std_put(&log_output_swo, flag, msg);
 }
 
+static void log_backend_swo_process(const struct log_backend *const backend,
+				    union log_msg2_generic *msg)
+{
+	uint32_t flags = log_backend_std_get_flags();
+
+	log_output_msg2_process(&log_output_swo, &msg->log, flags);
+}
+
 static void log_backend_swo_init(struct log_backend const *const backend)
 {
 	/* Enable DWT and ITM units */
@@ -144,10 +152,11 @@ static void log_backend_swo_sync_hexdump(
 }
 
 const struct log_backend_api log_backend_swo_api = {
-	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : log_backend_swo_put,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.process = IS_ENABLED(CONFIG_LOG2) ? log_backend_swo_process : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? log_backend_swo_put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			log_backend_swo_sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			log_backend_swo_sync_hexdump : NULL,
 	.panic = log_backend_swo_panic,
 	.init = log_backend_swo_init,
