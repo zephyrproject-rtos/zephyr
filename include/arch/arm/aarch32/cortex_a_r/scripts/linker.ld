@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <devicetree.h>
 
+#include <linker/devicetree_regions.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
@@ -80,6 +81,7 @@ MEMORY
 {
     FLASH    (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM     (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    LINKER_DT_REGION_FROM_NODE(OCM, rw, DT_CHOSEN(zephyr_ocm))
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -339,6 +341,32 @@ SECTIONS
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
     GROUP_END(RAMABLE_REGION)
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+GROUP_START(OCM)
+
+	SECTION_PROLOGUE(_OCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))
+	{
+		__ocm_start = .;
+		__ocm_bss_start = .;
+		*(.ocm_bss)
+		*(".ocm_bss.*")
+		__ocm_bss_end = .;
+	} GROUP_LINK_IN(OCM)
+
+	SECTION_PROLOGUE(_OCM_DATA_SECTION_NAME,,SUBALIGN(4))
+	{
+		__ocm_data_start = .;
+		*(.ocm_data)
+		*(".ocm_data.*")
+		__ocm_data_end = .;
+	} GROUP_LINK_IN(OCM)
+
+  __ocm_end = .;
+  __ocm_size = __ocm_end - __ocm_start;
+
+GROUP_END(OCM)
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
