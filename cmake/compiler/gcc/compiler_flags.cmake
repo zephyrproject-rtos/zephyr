@@ -192,4 +192,6 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 
 # gcc flag for colourful diagnostic messages
+if (NOT COMPILER STREQUAL "xcc")
 set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
+endif()

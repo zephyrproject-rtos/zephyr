@@ -9,10 +9,10 @@
 #ifndef __PLATFORM_LIB_SHIM_H__
 #define __PLATFORM_LIB_SHIM_H__
 
-#include <sys/util.h>
 #include <soc/memory.h>
 
 #ifndef ASSEMBLY
+#include <sys/util.h>
 #include <stdint.h>
 #endif
 
