@@ -217,7 +217,8 @@ def load_bindings(dts_roots):
 
     binding_files = []
     for dts_root in dts_roots:
-        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml'))
+        binding_files.extend(glob.glob(f'{dts_root}/dts/bindings/**/*.yaml',
+                                       recursive=True))
 
     bindings = edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
