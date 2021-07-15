@@ -1706,6 +1706,22 @@ size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
 void net_pkt_trim_buffer(struct net_pkt *pkt);
 
 /**
+ * @brief Remove @a length bytes from tail of packet
+ *
+ * @details This function does not take packet cursor into account. It is a
+ *          helper to remove unneeded bytes from tail of packet (like appended
+ *          CRC). It takes care of buffer deallocation if removed bytes span
+ *          whole buffer(s).
+ *
+ * @param pkt    Network packet
+ * @param length Number of bytes to be removed
+ *
+ * @retval 0       On success.
+ * @retval -EINVAL If packet length is shorter than @a length.
+ */
+int net_pkt_remove_tail(struct net_pkt *pkt, size_t length);
+
+/**
  * @brief Initialize net_pkt cursor
  *
  * @details This will initialize the net_pkt cursor from its buffer.
