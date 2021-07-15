@@ -13,10 +13,12 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 # Options
 
 set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
+set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
 separate_arguments(SPHINXOPTS)
+separate_arguments(LATEXMKOPTS)
 
 #-------------------------------------------------------------------------------
 # Dependencies
@@ -260,7 +262,7 @@ if(LATEX_PDFLATEX_FOUND AND LATEXMK)
 
   add_custom_target(
     pdf
-    COMMAND ${CMAKE_COMMAND} -E env LATEXMKOPTS="-halt-on-error;-no-shell-escape"
+    COMMAND ${CMAKE_COMMAND} -E env LATEXMKOPTS="${LATEXMKOPTS}"
     ${PDF_BUILD_COMMAND}
     WORKING_DIRECTORY ${DOCS_LATEX_DIR}
     COMMENT "Building PDF file..."
