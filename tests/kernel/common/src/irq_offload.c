@@ -148,7 +148,14 @@ __no_optimization void test_nop(void)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-#elif defined(CONFIG_ARMV8_A)
+#endif
+	t_after = k_cycle_get_32();
+
+	/* Calculate delta time of arch_nop(). */
+	diff = t_after - t_before - t_get_time;
+	printk("arch_nop() takes %d cycles\n", diff);
+
+#if defined(CONFIG_ARMV8_A) || defined(CONFIG_BOARD_EHL_CRB)
 	/* the ARMv8-A ARM states the following:
 	 * No Operation does nothing, other than advance the value of
 	 * the program counter by 4. This instruction can be used for
@@ -159,16 +166,11 @@ __no_optimization void test_nop(void)
 	 * instructions are not suitable for timing loops.
 	 *
 	 * So we skip the this test, it will get a negative cycles.
+	 *
+	 * And on EHL_CRB board, we also got a similar situation.
 	 */
 	ztest_test_skip();
 #endif
-
-	t_after = k_cycle_get_32();
-
-	/* Calculate delta time of arch_nop(). */
-	diff = t_after - t_before - t_get_time;
-	printk("arch_nop() takes %d cycles\n", diff);
-
 	/* An arch_nop() call should spend actual cpu cycles */
 	zassert_true(diff > 0,
 			"arch_nop() takes %d cpu cycles", diff);
