@@ -88,21 +88,21 @@ MEMORY
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* TI CCFG Registers */
-    DT_REGION_FROM_NODE_STATUS_OKAY(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(ti_ccfg_partition), rwx)
     /* Data & Instruction Tightly Coupled Memory */
-    DT_REGION_FROM_NODE_STATUS_OKAY(ITCM, rw, DT_CHOSEN(zephyr_itcm))
-    DT_REGION_FROM_NODE_STATUS_OKAY(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_itcm), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm), rw)
     /* STM32 Core Coupled Memory */
-    DT_REGION_FROM_NODE_STATUS_OKAY(CCM, rw, DT_CHOSEN(zephyr_ccm))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_ccm), rw)
     /* STM32WB IPC RAM */
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM1, rw, DT_NODELABEL(sram1))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM2, rw, DT_NODELABEL(sram2))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sram1), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sram2), rw)
     /* STM32 alternate RAM configurations */
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
-    DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sram3), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sram4), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sdram1), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(sdram2), rw)
+    DT_REGION_FROM_NODE_STATUS_OKAY(DT_NODELABEL(backup_sram), rw)
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
@@ -389,7 +389,7 @@ GROUP_START(ITCM)
 		*(.itcm)
 		*(".itcm.*")
 		__itcm_end = .;
-	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_itcm)) AT> ROMABLE_REGION)
 
 	__itcm_size = __itcm_end - __itcm_start;
 	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
@@ -407,7 +407,7 @@ GROUP_START(DTCM)
 		*(.dtcm_bss)
 		*(".dtcm_bss.*")
 		__dtcm_bss_end = .;
-	} GROUP_LINK_IN(DTCM)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)))
 
 	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
 	{
@@ -415,7 +415,7 @@ GROUP_START(DTCM)
 		*(.dtcm_noinit)
 		*(".dtcm_noinit.*")
 		__dtcm_noinit_end = .;
-	} GROUP_LINK_IN(DTCM)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)))
 
 	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
@@ -423,7 +423,7 @@ GROUP_START(DTCM)
 		*(.dtcm_data)
 		*(".dtcm_data.*")
 		__dtcm_data_end = .;
-	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)) AT> ROMABLE_REGION)
 
 	__dtcm_end = .;
 

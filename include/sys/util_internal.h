@@ -91,6 +91,7 @@
 #define UTIL_COMPL_0 1
 #define UTIL_COMPL_1 0
 #define UTIL_BOOL(x) UTIL_COMPL(UTIL_NOT(x))
+#define UTIL_DECR(n) UTIL_PRIMITIVE_CAT(Z_DECR_, n)
 
 #define UTIL_EVAL(...) __VA_ARGS__
 #define UTIL_EXPAND(...) __VA_ARGS__
