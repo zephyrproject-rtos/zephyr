@@ -254,15 +254,6 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* If no length is provided, discard data */
-	if (!len) {
-		sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
-		sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
-		sr_pdu->len = 0;
-
-		goto sr_data_set_did_update;
-	}
-
 	/* Update scan response PDU fields. */
 	sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
 	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
@@ -271,6 +262,11 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_pdu->tx_addr = aux_pdu->tx_addr;
 	sr_pdu->rx_addr = 0;
 	sr_pdu->len = 0;
+
+	/* If no length is provided, discard data */
+	if (!len) {
+		goto sr_data_set_did_update;
+	}
 
 	sr_com_hdr = &sr_pdu->adv_ext_ind;
 	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adv_data[0];
