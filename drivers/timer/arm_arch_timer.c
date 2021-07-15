@@ -24,6 +24,24 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+#ifdef CONFIG_ARM_ARCH_TIMER_ERRATUM_740657
+	/*
+	 * Workaround required for Cortex-A9 MPCore erratum 740657
+	 * comp. ARM Cortex-A9 processors Software Developers Errata Notice,
+	 * ARM document ID032315.
+	 */
+
+	if (!arm_arch_timer_get_int_status()) {
+		/*
+		 * If the event flag is not set, this is a spurious interrupt.
+		 * DO NOT modify the compare register's value, DO NOT announce
+		 * elapsed ticks!
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	}
+#endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
+
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint32_t delta_ticks = (uint32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
 
@@ -39,7 +57,28 @@ static void arm_arch_timer_compare_isr(const void *arg)
 		arm_arch_timer_set_irq_mask(false);
 	} else {
 		arm_arch_timer_set_irq_mask(true);
+#ifdef CONFIG_ARM_ARCH_TIMER_ERRATUM_740657
+		/*
+		 * In tickless mode, the compare register is normally not
+		 * updated from within the ISR. Yet, to work around the timer's
+		 * erratum, a new value *must* be written while the interrupt
+		 * is being processed before the interrupt is acknowledged
+		 * by the handling interrupt controller.
+		 */
+		arm_arch_timer_set_compare(~0ULL);
 	}
+
+	/*
+	 * Clear the event flag so that in case the erratum strikes (the timer's
+	 * vector will still be indicated as pending by the GIC's pending register
+	 * after this ISR has been executed) the error will be detected by the
+	 * check performed upon entry of the ISR -> the event flag is not set,
+	 * therefore, no actual hardware interrupt has occurred.
+	 */
+	arm_arch_timer_clear_int_status();
+#else
+	}
+#endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
 
 	k_spin_unlock(&lock, key);
 
