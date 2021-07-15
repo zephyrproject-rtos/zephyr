@@ -5463,6 +5463,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 {
 	struct pdu_data_llctrl_phy_upd_ind *ind = &pdu_rx->llctrl.phy_upd_ind;
 	uint16_t instant;
+	uint8_t phy;
 
 	/* Both tx and rx PHY unchanged */
 	if (!((ind->m_to_s_phy | ind->s_to_m_phy) & 0x07)) {
@@ -5502,6 +5503,22 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		p->rx = conn->lll.phy_rx;
 
 		return 0;
+	}
+
+	/* Fail on multiple PHY specified */
+	phy = ind->m_to_s_phy;
+	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+	phy = ind->s_to_m_phy;
+	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		return BT_HCI_ERR_INVALID_LL_PARAM;
 	}
 
 	/* instant passed */
