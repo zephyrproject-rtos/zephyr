@@ -30,6 +30,10 @@
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
 
+#if defined(RNG_CR_CONDRST)
+#define STM32_CONDRST_SUPPORT
+#endif
+
 /*
  * This driver need to take into account all STM32 family:
  *  - simple rng without harware fifo and no DMA.
@@ -107,30 +111,79 @@ static int entropy_stm32_got_error(RNG_TypeDef *rng)
 		return 1;
 	}
 
-	if (LL_RNG_IsActiveFlag_SECS(rng)) {
+	if (LL_RNG_IsActiveFlag_SEIS(rng)) {
 		return 1;
 	}
 
 	return 0;
 }
 
+#if defined(STM32_CONDRST_SUPPORT)
+/* SOCS w/ soft-reset support: execute the reset */
+static int recover_seed_error(RNG_TypeDef *rng)
+{
+	uint32_t count_timeout = 0;
+
+	LL_RNG_EnableCondReset(rng);
+	LL_RNG_DisableCondReset(rng);
+	/* When reset process is done cond reset bit is read 0
+	 * This typically takes: 2 AHB clock cycles + 2 RNG clock cycles.
+	 */
+
+	while (LL_RNG_IsEnabledCondReset(rng) ||
+		LL_RNG_IsActiveFlag_SEIS(rng) ||
+		LL_RNG_IsActiveFlag_SECS(rng)) {
+		count_timeout++;
+		if (count_timeout == 10) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	return 0;
+}
+
+#else /* !STM32_CONDRST_SUPPORT */
+/* SOCS w/o soft-reset support: flush pipeline */
+static int recover_seed_error(RNG_TypeDef *rng)
+{
+	LL_RNG_ClearFlag_SEIS(rng);
+
+	for (int i = 0; i < 12; ++i) {
+		LL_RNG_ReadRandData32(rng);
+	}
+
+	if (LL_RNG_IsActiveFlag_SEIS(rng) != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* !STM32_CONDRST_SUPPORT */
+
 static int random_byte_get(void)
 {
 	int retval = -EAGAIN;
 	unsigned int key;
+	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
 	key = irq_lock();
 
-	if ((LL_RNG_IsActiveFlag_DRDY(entropy_stm32_rng_data.rng) == 1)) {
-		if (entropy_stm32_got_error(entropy_stm32_rng_data.rng)) {
-			retval = -EIO;
-		} else {
-			retval = LL_RNG_ReadRandData32(
-						    entropy_stm32_rng_data.rng);
-			retval &= 0xFF;
-		}
+	if (LL_RNG_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
+		retval = -EIO;
+		goto out;
 	}
 
+	if ((LL_RNG_IsActiveFlag_DRDY(rng) == 1)) {
+		if (entropy_stm32_got_error(rng)) {
+			retval = -EIO;
+			goto out;
+		}
+
+		retval = LL_RNG_ReadRandData32(rng);
+		retval &= 0xFF;
+	}
+
+out:
 	irq_unlock(key);
 
 	return retval;
