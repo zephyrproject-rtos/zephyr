@@ -1,0 +1,4 @@
+tests:
+  drivers.flash.fixed_partition:
+    platform_allow: native_posix nrf52840dk_nrf52840
+    tags: fixed_partition

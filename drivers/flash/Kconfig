@@ -58,6 +58,12 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+config FIXED_PARTITION_SUPPORT
+	bool "Enable fixed partition support"
+	default n
+	help
+	  Enables support for reading/writing/erasing on fixed partitions.
+
 source "drivers/flash/Kconfig.b91"
 
 source "drivers/flash/Kconfig.at45"
