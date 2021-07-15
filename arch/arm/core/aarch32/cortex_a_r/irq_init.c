@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-R interrupt initialization
+ * @brief ARM Cortex-A and Cortex-R interrupt initialization
  */
 
 #include <arch/cpu.h>
