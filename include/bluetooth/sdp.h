@@ -575,6 +575,23 @@ enum bt_sdp_proto {
 int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 			   uint16_t *param);
 
+/** @brief Give to user parameter value related to given stacked protocol UUID.
+ *
+ *  API extracts specific parameter associated with given protocol UUID
+ *  available in Additional Protocol Descriptor List attribute.
+ *
+ *  @param buf Original buffered raw record data.
+ *  @param proto Known protocol to be checked like RFCOMM or L2CAP.
+ *  @param param_index There may be more than one parameters realted to the
+		   given protocol UUID. It indicates the index(from 0).
+ *  @param param On success populated by found parameter value.
+ *
+ *  @return 0 on success when specific parameter associated with given protocol
+ *  value is found, or negative if error occurred during processing.
+ */
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+			   uint8_t param_index, uint16_t *param);
+
 /** @brief Get profile version.
  *
  *  Helper API extracting remote profile version number. To get it proper

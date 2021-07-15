@@ -2306,8 +2306,9 @@ err:
 }
 
 static int sdp_get_uuid_data(const struct bt_sdp_attr_item *attr,
-			     struct bt_sdp_uuid_desc *pd,
-			     uint16_t proto_profile)
+				 struct bt_sdp_uuid_desc *pd,
+				 uint16_t proto_profile,
+				 uint8_t proto_profile_index)
 {
 	/* get start address of attribute value */
 	uint8_t *p = attr->val;
@@ -2315,79 +2316,105 @@ static int sdp_get_uuid_data(const struct bt_sdp_attr_item *attr,
 
 	BT_ASSERT(p);
 
-	/* Attribute value is a SEQ, get length of parent SEQ frame */
-	slen = sdp_get_seq_len_item(&p, attr->len);
-	if (slen < 0) {
-		return slen;
-	}
-
-	/* start reading stacked UUIDs in analyzed sequences tree */
-	while (p - attr->val < attr->len) {
-		size_t to_end, left = 0;
-
-		/* to_end tells how far to the end of input buffer */
-		to_end = attr->len - (p - attr->val);
-		/* how long is current UUID's item data associated to */
-		slen = sdp_get_seq_len_item(&p, to_end);
+	proto_profile_index += 1;
+	while (proto_profile_index > 0) {
+		/* Attribute value is a SEQ, get length of parent SEQ frame */
+		slen = sdp_get_seq_len_item(&p, attr->len);
 		if (slen < 0) {
 			return slen;
 		}
 
-		/* left tells how far is to the end of current UUID */
-		left = slen;
+		/* start reading stacked UUIDs in analyzed sequences tree */
+		while (p - attr->val < attr->len) {
+			size_t to_end, left = 0;
+			ssize_t pre_slen;
 
-		/* check if at least DTD + UUID16 can be read safely */
-		if (left < 3) {
-			return -EMSGSIZE;
-		}
+			/* to_end tells how far to the end of input buffer */
+			to_end = attr->len - (p - attr->val);
+			/* how long is current UUID's item data associated to */
+			slen = sdp_get_seq_len_item(&p, to_end);
+			if (slen < 0) {
+				return slen;
+			}
 
-		/* check DTD and get stacked UUID value */
-		switch (p[0]) {
-		case BT_SDP_UUID16:
-			memcpy(&pd->uuid16,
-			       BT_UUID_DECLARE_16(sys_get_be16(++p)),
-			       sizeof(struct bt_uuid_16));
-			p += sizeof(uint16_t);
-			left -= sizeof(uint16_t);
-			break;
-		case BT_SDP_UUID32:
-			/* check if valid UUID32 can be read safely */
-			if (left < 5) {
+			pre_slen = slen;
+			while (p - attr->val < attr->len) {
+				/* to_end tells how far to the end of input buffer */
+				to_end = attr->len - (p - attr->val);
+				/* how long is current UUID's item data associated to */
+				slen = sdp_get_seq_len_item(&p, to_end);
+				if (slen < 0) {
+					slen = pre_slen;
+					break;
+				}
+				pre_slen = slen;
+			}
+
+			slen = pre_slen;
+			/* left tells how far is to the end of current UUID */
+			left = slen;
+
+			/* check if at least DTD + UUID16 can be read safely */
+			if (left < 3) {
 				return -EMSGSIZE;
 			}
 
-			memcpy(&pd->uuid32,
-			       BT_UUID_DECLARE_32(sys_get_be32(++p)),
-			       sizeof(struct bt_uuid_32));
-			p += sizeof(uint32_t);
-			left -= sizeof(uint32_t);
-			break;
-		default:
-			BT_ERR("Invalid/unhandled DTD 0x%02x\n", p[0]);
-			return -EINVAL;
+			/* check DTD and get stacked UUID value */
+			switch (p[0]) {
+			case BT_SDP_UUID16:
+				memcpy(&pd->uuid16,
+					BT_UUID_DECLARE_16(sys_get_be16(++p)),
+					sizeof(struct bt_uuid_16));
+				p += sizeof(uint16_t);
+				left -= sizeof(uint16_t);
+				break;
+			case BT_SDP_UUID32:
+				/* check if valid UUID32 can be read safely */
+				if (left < 5) {
+					return -EMSGSIZE;
+				}
+
+				memcpy(&pd->uuid32,
+					BT_UUID_DECLARE_32(sys_get_be32(++p)),
+					sizeof(struct bt_uuid_32));
+				p += sizeof(uint32_t);
+				left -= sizeof(uint32_t);
+				break;
+			default:
+				BT_ERR("Invalid/unhandled DTD 0x%02x\n", p[0]);
+				return -EINVAL;
+			}
+
+			/* include last DTD in p[0] size itself updating left */
+			left -= sizeof(p[0]);
+
+			/*
+			 * Check if current UUID value matches input one given by user.
+			 * If found save it's location and length and return.
+			 */
+			if ((proto_profile == BT_UUID_16(&pd->uuid)->val) ||
+				(proto_profile == BT_UUID_32(&pd->uuid)->val)) {
+				pd->params = p;
+				pd->params_len = left;
+
+				BT_DBG("UUID 0x%s found", bt_uuid_str(&pd->uuid));
+				proto_profile_index--;
+				if (proto_profile_index > 0) {
+					p += left;
+					continue;
+				} else {
+					return 0;
+				}
+			}
+
+			/* skip left octets to point beginning of next UUID in tree */
+			p += left;
 		}
 
-		/* include last DTD in p[0] size itself updating left */
-		left -= sizeof(p[0]);
-
-		/*
-		 * Check if current UUID value matches input one given by user.
-		 * If found save it's location and length and return.
-		 */
-		if ((proto_profile == BT_UUID_16(&pd->uuid)->val) ||
-		    (proto_profile == BT_UUID_32(&pd->uuid)->val)) {
-			pd->params = p;
-			pd->params_len = left;
-
-			BT_DBG("UUID 0x%s found", bt_uuid_str(&pd->uuid));
-			return 0;
-		}
-
-		/* skip left octets to point beginning of next UUID in tree */
-		p += left;
+		BT_DBG("Value 0x%04x not found", proto_profile);
+		return -ENOENT;
 	}
 
-	BT_DBG("Value 0x%04x not found", proto_profile);
 	return -ENOENT;
 }
 
@@ -2467,7 +2494,36 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 		return res;
 	}
 
-	res = sdp_get_uuid_data(&attr, &pd, proto);
+	res = sdp_get_uuid_data(&attr, &pd, proto, 0);
+	if (res < 0) {
+		BT_WARN("Protocol specifier 0x%04x not found, err %d", proto,
+			res);
+		return res;
+	}
+
+	return sdp_get_param_item(&pd, param);
+}
+
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+			   uint8_t param_index, uint16_t *param)
+{
+	struct bt_sdp_attr_item attr;
+	struct bt_sdp_uuid_desc pd;
+	int res;
+
+	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP) {
+		BT_ERR("Invalid protocol specifier");
+		return -EINVAL;
+	}
+
+	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+	if (res < 0) {
+		BT_WARN("Attribute 0x%04x not found, err %d",
+			BT_SDP_ATTR_PROTO_DESC_LIST, res);
+		return res;
+	}
+
+	res = sdp_get_uuid_data(&attr, &pd, proto, param_index);
 	if (res < 0) {
 		BT_WARN("Protocol specifier 0x%04x not found, err %d", proto,
 			res);
@@ -2491,7 +2547,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
 		return res;
 	}
 
-	res = sdp_get_uuid_data(&attr, &pd, profile);
+	res = sdp_get_uuid_data(&attr, &pd, profile, 0);
 	if (res < 0) {
 		BT_WARN("Profile 0x%04x not found, err %d", profile, res);
 		return res;
