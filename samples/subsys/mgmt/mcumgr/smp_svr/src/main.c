@@ -100,7 +100,7 @@ void main(void)
 	start_smp_udp();
 #endif
 
-	if (IS_ENABLED(CONFIG_USB)) {
+	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
 		rc = usb_enable(NULL);
 		if (rc) {
 			LOG_ERR("Failed to enable USB");

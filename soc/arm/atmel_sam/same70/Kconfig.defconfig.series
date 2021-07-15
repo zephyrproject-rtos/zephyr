@@ -67,7 +67,7 @@ config SPI_SAM
 
 config USB_DC_SAM_USBHS
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config ENTROPY_SAM_RNG
 	default y

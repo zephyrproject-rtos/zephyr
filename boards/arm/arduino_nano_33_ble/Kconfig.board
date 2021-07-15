@@ -9,7 +9,7 @@ config BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE
 	bool "Sends the console output over the USB port"
 	depends on BOARD_ARDUINO_NANO_33_BLE
 	select SERIAL
-	select USB
+	select USB_DEVICE_STACK
 	select CONSOLE
 	select PRINTK
 	select UART_INTERRUPT_DRIVEN

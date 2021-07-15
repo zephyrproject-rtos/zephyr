@@ -72,7 +72,7 @@ static const struct soc_gpio_pinctrl usb_pinctrl[] =
  * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
  * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
  *
- * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB from Zephyr
+ * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
  * Kconfig system.
  */
 #ifdef USB
