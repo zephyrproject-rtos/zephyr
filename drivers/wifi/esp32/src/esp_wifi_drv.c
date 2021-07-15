@@ -175,11 +175,13 @@ static int eth_esp32_dev_init(const struct device *dev)
 {
 	esp_timer_init();
 
-	k_thread_create(&esp_wifi_event_thread, esp_wifi_event_stack,
+	k_tid_t tid = k_thread_create(&esp_wifi_event_thread, esp_wifi_event_stack,
 			CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
 			(k_thread_entry_t)esp_wifi_event_task, NULL, NULL, NULL,
 			CONFIG_ESP32_WIFI_EVENT_TASK_PRIO, K_INHERIT_PERMS,
 			K_NO_WAIT);
+
+	k_thread_name_set(tid, "esp_event");
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
