@@ -34,6 +34,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
@@ -373,6 +374,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 		      PDU_RX_USER_PDU_OCTETS_MAX)              \
 	)
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SET)
+#define BT_CTLR_ADV_ISO_SET CONFIG_BT_CTLR_ADV_ISO_SET
+#else
+#define BT_CTLR_ADV_ISO_SET 0
+#endif
+
 #if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
 #define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_PER_ADV_SYNC_MAX
 #else
@@ -618,6 +625,10 @@ int ll_init(struct k_sem *sem_rx)
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
 		ull_filter_reset(true);
 	}
+
+#if defined(CONFIG_BT_CTLR_TEST)
+	lll_chan_sel_2_ut();
+#endif /* CONFIG_BT_CTLR_TEST */
 
 	return  0;
 }
@@ -955,6 +966,16 @@ void ll_rx_dequeue(void)
 		adv->is_enabled = 0U;
 	}
 	break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_TERMINATE:
+	{
+		struct ll_adv_iso_set *adv_iso = rx->rx_ftr.param;
+
+		adv_iso->lll.adv = NULL;
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1068,6 +1089,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_COMPLETE:
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 
@@ -1075,6 +1100,12 @@ void ll_rx_dequeue(void)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		/* fall through */
+	case NODE_RX_TYPE_SYNC_ISO:
+	case NODE_RX_TYPE_SYNC_ISO_PDU:
+	case NODE_RX_TYPE_SYNC_ISO_LOST:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1189,6 +1220,12 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+		case NODE_RX_TYPE_BIG_COMPLETE:
+		case NODE_RX_TYPE_BIG_TERMINATE:
+			/* Nothing to release */
+			break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -1251,6 +1288,9 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		case NODE_RX_TYPE_SYNC_REPORT:
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		case NODE_RX_TYPE_SYNC_ISO_PDU:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -1344,6 +1384,7 @@ void ll_rx_mem_release(void **node_rx)
 			ull_sync_release(sync);
 		}
 		break;
+
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 		case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
 		{
@@ -1353,6 +1394,32 @@ void ll_rx_mem_release(void **node_rx)
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		case NODE_RX_TYPE_SYNC_ISO:
+		{
+			struct node_rx_sync_iso *se =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
+
+			if (!se->status) {
+				mem_release(rx_free, &mem_pdu_rx.free);
+
+				break;
+			}
+		}
+		/* Pass through */
+
+		case NODE_RX_TYPE_SYNC_ISO_LOST:
+		{
+			struct ll_sync_iso_set *sync_iso =
+				(void *)rx_free->rx_ftr.param;
+
+			sync_iso->timeout_reload = 0U;
+
+			ull_sync_iso_release(sync_iso);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
@@ -2345,14 +2412,23 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_OBSERVER) || \
+	defined(CONFIG_BT_CTLR_ADV_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO) || \
 	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
 	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
 	defined(CONFIG_BT_CTLR_SCAN_INDICATION) || \
 	defined(CONFIG_BT_CONN)
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_TERMINATE:
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	case NODE_RX_TYPE_SYNC_ISO_PDU:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
@@ -2379,6 +2455,8 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 #endif /* CONFIG_BT_OBSERVER ||
+	* CONFIG_BT_CTLR_ADV_ISO ||
+	* CONFIG_BT_CTLR_SYNC_ISO ||
 	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
 	* CONFIG_BT_CTLR_PROFILE_ISR ||
 	* CONFIG_BT_CTLR_ADV_INDICATION ||
@@ -2467,6 +2545,16 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_ADV:
 		ull_adv_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_COMPLETE:
+		ull_adv_iso_done_complete(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE:
+		ull_adv_iso_done_terminate(done);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2482,6 +2570,20 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB:
+		ull_sync_iso_estab_done(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO:
+		ull_sync_iso_done(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE:
+		ull_sync_iso_done_terminate(done);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

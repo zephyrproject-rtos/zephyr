@@ -1254,7 +1254,7 @@ static void mfy_sync_offset_get(void *param)
 	 */
 	lll_sync->ticks_offset = ticks_to_expire + 1;
 
-	pdu = lll_adv_aux_data_curr_get(adv->lll.aux);
+	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
 	si = sync_info_get(pdu);
 	sync_info_offset_fill(si, ticks_to_expire, 0);
 	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
@@ -1334,6 +1334,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (lll->iso) {
+		ull_adv_iso_offset_get(sync);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

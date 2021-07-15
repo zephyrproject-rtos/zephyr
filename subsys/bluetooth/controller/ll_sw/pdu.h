@@ -902,6 +902,10 @@ struct pdu_big_info {
 	uint8_t chm_phy[5]; /* 37 bit chm; 3 bit phy */
 	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
 
-	uint8_t giv; /* encryption required */
-	uint16_t gskd; /* encryption required */
+	uint8_t  giv[8]; /* encryption required */
+	uint16_t gskd[16]; /* encryption required */
 } __packed;
+#define PDU_BIG_INFO_CLEARTEXT_SIZE offsetof(struct pdu_big_info, giv)
+#define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
+#define PDU_BIG_BN_MAX              0x07
+#define PDU_BIG_PAYLOAD_COUNT_MAX   28

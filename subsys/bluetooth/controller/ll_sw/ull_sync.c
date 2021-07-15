@@ -52,8 +52,8 @@ static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_cb(uint32_t status, void *param);
-static void ticker_update_sync_op_cb(uint32_t status, void *param);
+static void ticker_start_op_cb(uint32_t status, void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 
@@ -389,6 +389,12 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->event_counter = si->evt_cntr;
 	lll->phy = aux->lll.phy;
 
+	interval = sys_le16_to_cpu(si->interval);
+	interval_us = interval * CONN_INT_UNIT_US;
+
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
+						 interval_us);
+
 	/* Extract the SCA value from the sca_chm field of the sync_info
 	 * structure.
 	 */
@@ -396,11 +402,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
 	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
 
-	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * CONN_INT_UNIT_US;
-
-	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
-						 interval_us);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	lll->sca = sca;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	lll->window_widening_periodic_us =
 		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
@@ -491,7 +495,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
+			   ticker_cb, sync,
+			   ticker_start_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -585,7 +590,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 					      ticks_drift_plus,
 					      ticks_drift_minus, 0, 0,
 					      lazy, force,
-					      ticker_update_sync_op_cb, sync);
+					      ticker_update_op_cb, sync);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  ((void *)sync == ull_disable_mark_get()));
@@ -712,14 +717,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	DEBUG_RADIO_PREPARE_O(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
+static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-static void ticker_update_sync_op_cb(uint32_t status, void *param)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());
