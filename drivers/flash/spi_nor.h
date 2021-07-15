@@ -23,6 +23,8 @@
 #define SPI_NOR_CMD_WRDI        0x04    /* Write disable */
 #define SPI_NOR_CMD_PP          0x02    /* Page program */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
+#define SPI_NOR_CMD_WRSR2       0x31    /* Write status register 2 */
+#define SPI_NOR_CMD_RDSR2       0x35    /* Read status register 2 */
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
