@@ -8,7 +8,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_CORTEX_R_MPU_ARM_MPU_H_
 
-#ifndef _ASMLANGUAGE
 /*
  * Convenience macros to represent the ARMv8-R64-specific configuration
  * for memory access permission and cache-ability attribution.
@@ -182,6 +181,8 @@
 		.mair_idx = MPU_MAIR_INDEX_FLASH,			    \
 	}
 #endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
+
+#ifndef _ASMLANGUAGE
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to PRBAR */
