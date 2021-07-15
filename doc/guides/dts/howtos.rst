@@ -219,6 +219,7 @@ Here are some ways to set it:
 #. create a ``boards/<BOARD>.overlay`` file in the application
    folder, for the current board
 #. create a ``<BOARD>.overlay`` file in the application folder
+#. create an ``app.overlay`` file in the application folder
 
 Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
 However you set the value, it is saved in the CMake cache between builds.
