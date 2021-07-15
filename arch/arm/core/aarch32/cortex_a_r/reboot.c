@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-R System Control Block interface
+ * @brief ARM Cortex-A and Cortex-R System Control Block interface
  */
 
 #include <kernel.h>
