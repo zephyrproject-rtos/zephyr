@@ -1198,11 +1198,42 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 		bis_index |= BIT(i);
 	}
 	net_buf_simple_add_u8(buf, bis_index);
+	net_buf_simple_add_u8(buf, 0); /* unused length field */
 
 	/* NOTE: It is also possible to have the codec configuration data per
 	 * BIS index. As our API does not support such specialized BISes we
 	 * currently don't do that.
 	 */
+}
+
+
+static int generate_broadcast_id(struct bt_audio_broadcaster *broadcaster)
+{
+	bool unique;
+
+	do {
+		int err;
+
+		err = bt_rand(&broadcaster->broadcast_id, BT_BROADCAST_ID_SIZE);
+		if (err) {
+			return err;
+		}
+
+		/* Ensure uniqueness */
+		unique = true;
+		for (int i = 0; i < ARRAY_SIZE(broadcasters); i++) {
+			if (&broadcasters[i] == broadcasters) {
+				continue;
+			}
+
+			if (broadcasters[i].broadcast_id == broadcaster->broadcast_id) {
+				unique = false;
+				break;
+			}
+		}
+	} while (!unique);
+
+	return 0;
 }
 
 int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
@@ -1301,6 +1332,11 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	 * that the audio advertising data is still present, similar to how
 	 * the GAP device name is added.
 	 */
+	err = generate_broadcast_id(broadcaster);
+	if (err != 0) {
+		BT_DBG("Could not generate broadcast id: %d", err);
+		return err;
+	}
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, broadcaster->broadcast_id);
 	ad.type = BT_DATA_SVC_DATA16;
@@ -1352,6 +1388,8 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
 	}
+
+	BT_DBG("Broadcasting with ID 0x%6X", broadcaster->broadcast_id);
 
 	return 0;
 }
