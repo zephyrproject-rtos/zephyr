@@ -9,7 +9,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
-#include <arch/arm64/cortex_r/mpu/arm_mpu.h>
+#include <arch/arm64/cortex_r/arm_mpu.h>
 #include <linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL

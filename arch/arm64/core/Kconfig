@@ -137,7 +137,7 @@ config ARMV8_R
 	  Protected Memory System Architecture (PMSA) based on a Memory Protection
 	  Unit (MPU). It supports the A32 and T32 instruction sets.
 
-rsource "cortex_r/mpu/Kconfig"
+rsource "cortex_r/Kconfig"
 
 endif # CPU_AARCH64_CORTEX_R
 
