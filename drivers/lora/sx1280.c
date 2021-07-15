@@ -1238,6 +1238,25 @@ void sx1280_setRx(TickTime_t timeout)
 	sx1280_WriteCommand( RADIO_SET_RX, buf, 3 );
 }
 
+uint8_t sx1280_readPacketSNR()
+{
+	uint8_t packetSNR;
+	uint8_t status[5];
+
+	sx1280_ReadCommand(RADIO_GET_PACKETSTATUS, status, 5) ;
+
+	if ( status[1] < 128 )
+	{
+		packetSNR = status[1] / 4 ;
+	}
+	else
+	{
+		packetSNR = (( status[1] - 256 ) / 4);
+	}
+
+	return packetSNR;
+}
+
 int8_t sx1280_GetRssiInst( void )
 {
     uint8_t raw = 0;
@@ -1290,6 +1309,10 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 
 	if (rssi != NULL) {
 		*rssi = sx1280_GetRssiInst();
+	}
+
+	if (snr != NULL) {
+		*snr = sx1280_readPacketSNR();
 	}
 
 	// checkBusy();
