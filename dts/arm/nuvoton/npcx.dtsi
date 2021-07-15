@@ -69,8 +69,6 @@
 	};
 
 	soc {
-		compatible = "syscon";
-
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcx-pcc";
 			/* Cells for bus type, clock control reg and bit */
