@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2021 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <telink_b91.dtsi>
+
+/ {
+	model = "telink,b91";
+	compatible = "telink,tlsr9518adk80d";
+
+	aliases {
+		led0 = &led_blue;
+		led1 = &led_green;
+		sw0 = &key_1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_blue: led_0 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			label = "LED Blue";
+		};
+
+		led_green: led_1 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+			label = "LED Green";
+		};
+
+		led_white: led_2 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+			label = "LED White";
+		};
+
+		led_red: led_3 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "LED Red";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		key_1: button_1 {
+			label = "User KEY1";
+			gpios = <&gpioc 2 GPIO_PULL_DOWN>;
+		};
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram_dlm;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &flash_mspi;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&ram_ilm {
+	reg = <0x00000000 0x00020000>;
+};
+
+&ram_dlm {
+	reg = <0x00080000 0x00020000>;
+};
+
+&flash {
+	reg = <0x20000000 0x100000>;
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	interrupts = <25 1>;
+	status = "okay";
+};
+
+&pinmux {
+	status = "okay";
+	pad-mul-sel = <1>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_pb2 &uart0_rx_pb3>;
+};
+
+&flash_mspi {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x8000>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x1a000>;
+		};
+		slot1_partition: partition@22000 {
+			label = "image-1";
+			reg = <0x00022000 0x1a000>;
+		};
+		scratch_partition: partition@3c000 {
+			label = "image-scratch";
+			reg = <0x0003c000 0x2000>;
+		};
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 0x00010000>;
+		};
+	};
+};

@@ -1,0 +1,29 @@
+# Copyright (c) 2021, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 PinMux
+
+compatible: "telink,b91-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    pad-mul-sel:
+      type: int
+      required: true
+      description: PinMux pad_mul_sel register values.
+
+child-binding:
+    description:
+        This binding gives a base representation of the Telink B91 pins configration.
+
+    properties:
+        pinmux:
+          required: true
+          type: int

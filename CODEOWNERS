@@ -220,6 +220,7 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/gpio/                            @mnkp
+/drivers/gpio/*b91*                       @yurvyn
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
@@ -263,6 +264,7 @@
 /drivers/modem/Kconfig.hl7800             @rerickson1
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
 /drivers/pm_cpu_ops/                      @carlocaione
@@ -286,6 +288,7 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
+/drivers/serial/*b91*                     @yurvyn
 /drivers/serial/uart_altera_jtag_hal.c    @nashif
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
