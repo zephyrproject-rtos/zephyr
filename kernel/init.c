@@ -216,6 +216,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
+#ifdef CONFIG_MMU
+	z_mem_manage_boot_finish();
+#endif /* CONFIG_MMU */
+
 	extern void main(void);
 
 	main();

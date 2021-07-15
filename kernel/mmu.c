@@ -722,6 +722,33 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 	return addr_offset;
 }
 
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION) || defined(CONFIG_LINKER_USE_PINNED_SECTION)
+static void mark_linker_section_pinned(void *start_addr, void *end_addr,
+				       bool pin)
+{
+	struct z_page_frame *pf;
+	uint8_t *addr;
+
+	uintptr_t pinned_start = ROUND_DOWN(POINTER_TO_UINT(start_addr),
+					    CONFIG_MMU_PAGE_SIZE);
+	uintptr_t pinned_end = ROUND_UP(POINTER_TO_UINT(end_addr),
+					CONFIG_MMU_PAGE_SIZE);
+	size_t pinned_size = pinned_end - pinned_start;
+
+	VIRT_FOREACH(UINT_TO_POINTER(pinned_start), pinned_size, addr)
+	{
+		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
+		frame_mapped_set(pf, addr);
+
+		if (pin) {
+			pf->flags |= Z_PAGE_FRAME_PINNED;
+		} else {
+			pf->flags &= ~Z_PAGE_FRAME_PINNED;
+		}
+	}
+}
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION) || CONFIG_LINKER_USE_PINNED_SECTION */
+
 void z_mem_manage_init(void)
 {
 	uintptr_t phys;
@@ -731,6 +758,8 @@ void z_mem_manage_init(void)
 
 	free_page_frame_list_init();
 
+	ARG_UNUSED(addr);
+
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
 	/* If some page frames are unavailable for use as memory, arch
 	 * code will mark Z_PAGE_FRAME_RESERVED in their flags
@@ -738,6 +767,7 @@ void z_mem_manage_init(void)
 	arch_reserved_pages_update();
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
+#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	/* All pages composing the Zephyr image are mapped at boot in a
 	 * predictable way. This can change at runtime.
 	 */
@@ -758,22 +788,18 @@ void z_mem_manage_init(void)
 		 */
 		pf->flags |= Z_PAGE_FRAME_PINNED;
 	}
+#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+	/* Pin the boot section to prevent it from being swapped out during
+	 * boot process. Will be un-pinned once boot process completes.
+	 */
+	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, true);
+#endif
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
 	/* Pin the page frames correspondng to the pinned symbols */
-	uintptr_t pinned_start = ROUND_DOWN(POINTER_TO_UINT(lnkr_pinned_start),
-					    CONFIG_MMU_PAGE_SIZE);
-	uintptr_t pinned_end = ROUND_UP(POINTER_TO_UINT(lnkr_pinned_end),
-					CONFIG_MMU_PAGE_SIZE);
-	size_t pinned_size = pinned_end - pinned_start;
-
-	VIRT_FOREACH(UINT_TO_POINTER(pinned_start), pinned_size, addr)
-	{
-		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
-		frame_mapped_set(pf, addr);
-
-		pf->flags |= Z_PAGE_FRAME_PINNED;
-	}
+	mark_linker_section_pinned(lnkr_pinned_start, lnkr_pinned_end, true);
 #endif
 
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
@@ -806,6 +832,16 @@ void z_mem_manage_init(void)
 	 * memory to be cleared.
 	 */
 	z_bss_zero();
+#endif
+}
+
+void z_mem_manage_boot_finish(void)
+{
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+	/* At the end of boot process, unpin the boot sections
+	 * as they don't need to be in memory all the time anymore.
+	 */
+	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, false);
 #endif
 }
 
