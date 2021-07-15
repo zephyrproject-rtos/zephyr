@@ -40,5 +40,5 @@ static int board_actinius_icarus_bee_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(board_actinius_icarus_bee_init, POST_KERNEL,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Needs to happen after GPIO driver init */
+SYS_INIT(board_actinius_icarus_bee_init, POST_KERNEL, 99);
