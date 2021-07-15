@@ -1,0 +1,64 @@
+name: Footprint Tracking
+
+# Run every 12 hours and on tags
+on:
+  schedule:
+    - cron: '50 1/12 * * *'
+  push:
+    paths:
+      - 'VERSION'
+    tags:
+      # only publish v* tags, do not care about zephyr-v* which point to the
+      # same commit
+      - 'v*'
+
+jobs:
+  footprint-tracking-cancel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ github.token }}
+  footprint-tracking:
+    runs-on: ubuntu-latest
+    needs: footprint-tracking-cancel
+    container:
+      image: zephyrprojectrtos/ci:v0.17.1
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.12.4
+      CLANG_ROOT_DIR: /usr/lib/llvm-12
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+    steps:
+      - name: Update PATH for west
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: west setup
+        run: |
+          west init -l . || true
+          west update
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.FOOTPRINT_AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.FOOTPRINT_AWS_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Record Footprint
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/footprint/track.py  -p scripts/footprint/plan.txt
+          aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/
