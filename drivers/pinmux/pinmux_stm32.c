@@ -45,16 +45,33 @@ const struct device * const gpio_ports[STM32_PORTS_MAX] = {
 
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {
-	const struct device *port_device = gpio_ports[STM32_PORT(pin)];
+	const struct device *port_device;
+	int ret = 0;
 
-	/* not much here, on STM32F10x the alternate function is
-	 * controller by setting up GPIO pins in specific mode.
-	 */
-	if (port_device == NULL) {
+	if (STM32_PORT(pin) >= STM32_PORTS_MAX) {
+		return -EINVAL;
+	}
+
+	port_device = gpio_ports[STM32_PORT(pin)];
+
+	if ((port_device == NULL) || (!device_is_ready(port_device))) {
 		return -ENODEV;
 	}
 
-	return gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = pm_device_get(port_device);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+
+	gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = pm_device_put(port_device);
+#endif
+
+	return ret;
 }
 
 /**
@@ -70,7 +87,6 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 			       size_t list_size, uint32_t base)
 {
-	const struct device *port_device;
 	uint32_t pin, mux;
 	uint32_t func = 0;
 	int ret = 0;
@@ -126,29 +142,14 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 
 		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
 			       STM32_DT_PINMUX_LINE(mux));
-		port_device = gpio_ports[STM32_PORT(pin)];
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-		ret = pm_device_get(port_device);
-#else
-		ret = gpio_stm32_clock_request(port_device, true);
-		/* Note, we don't use pm_constraint_foo functions here */
-		/* since idle period should not happen between clock_on */
-		/* and clock_off */
-#endif
-
+		ret = stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
 		if (ret != 0) {
 			return ret;
 		}
-
-		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-		ret = pm_device_put(port_device);
-#endif
 	}
 
-	return ret;
+	return 0;
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
