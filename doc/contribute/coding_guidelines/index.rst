@@ -944,3 +944,95 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 .. _Bluetooth Appropriate Language Mapping Tables: https://btprodspecificationrefs.blob.core.windows.net/language-mapping/Appropriate_Language_Mapping_Table.pdf
 .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
 .. _Zephyr issue 27033: https://github.com/zephyrproject-rtos/zephyr/issues/27033
+
+Parasoft Codescan Tool
+**********************
+
+Parasoft Codescan is an official static code analysis tool used by the Zephyr
+project. It is used to automate compliance with a range of coding and security
+standards.
+Currently, the tool is set to MISRA C:2012 Coding Standard because Zephyr
+:ref:`coding_guidelines` are based on that standard.
+It is used together with the Coverity Scan tool to achieve the best code health
+and precision in bug findings.
+
+Violations fixing process
+=========================
+
+Step 1
+  Any Zephyr Project member, company or a developer can request a license
+  to access Codescan online dashboard.
+
+Step 2
+  A developer starts to review raised violations.
+
+Step 3
+  A developer submits a Github PR with the fix. Commit messages should follow
+  the same guidelines as other PRs in the Zephyr project. Please add a comment
+  that your fix was found by a static coding scanning tool.
+  A developer should follow and refer to the Zephyr :ref:`coding_guidelines`
+  as the basic coding rules. These rules are based on the MISRA C standard.
+
+  Below you can find an example of a recommended commit message::
+
+     lib: os: add braces to 'if' statements
+
+
+     An 'if' (expression) construct shall be followed by a compound statement.
+     Add braces to improve readability and maintainability.
+
+     Found as a coding guideline violation (Rule 15.6) by static
+     coding scanning tool.
+
+     Signed-off-by: Johnny Developer johnny.developer@company.com
+
+Step 4
+  If a violation is a false-positive developer must submit a PR with
+  a suppression tag and an explanation comment.
+
+  The template structure of the comment and tag in the code should be::
+
+     /* Explain why that part of the code is healthy and raised violation is
+      * a false-positive. Don't refer to the Parasoft tool here, just mention
+      * that static code analysis tool can raise/raised a violation
+      * in the line below.
+      */
+     code_line_with_a_violation /* parasoft-suppress Rule ID */
+
+  Below you can find an example of a recommended commit message::
+
+     testsuite: suppress usage of setjmp in a testcode (rule 21.4)
+
+
+     According to the Rule 21.4 the standard header file <setjmp.h> shall not
+     be used. Suppress it, because it raises violation in a testcode,
+     not in a runtime code. Tag suppresses reporting of violation for the
+     current file, starting from the line where the suppression is located.
+
+     Found as a coding guideline violation (Rule 21.4) by static coding
+     scanning tool.
+
+     Signed-off-by: Johnny Developer johnny.developer@company.com
+
+  The example below demonstrates how false positives can be suppressed in the code::
+
+     /* Static code analysis tool can raise a violation that the standard header
+      * <setjmp.h> shall not be used.
+      *
+      * setjmp is using in a test code, not in a runtime code
+      */
+     #include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b */
+
+  This variant suppresses item ``MISRAC2012-RULE_21_4-a`` and ``MISRAC2012-RULE_21_4-b``
+  on the line with "setjump" header include. You can add as many rules to suppress you want,
+  just keep parasoft tag in one line, separate rules with a space.
+  To read more about Suppression Findings in the Parasoft tool refer to the
+  official Parasoft `documentation`_
+
+  .. _documentation: https://docs.parasoft.com/display/CPPTEST1031/Suppressing+Findings
+
+Step 5
+  After a PR is submitted, a developer needs to add the ``Coding guidelines``
+  and ``MISRA-C`` Github labels, so their PR can be easily tracked by maintainers.
+  If you have any concerns about what your PR should look like, you can search
+  on Github using the mentioned tags and find similar PRs that already got merged.
