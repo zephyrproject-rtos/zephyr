@@ -64,8 +64,8 @@ static void tfm_ipc_test_03(void)
 {
 	psa_handle_t handle;
 
-	handle = psa_connect(TFM_CRYPTO_SID,
-			     TFM_CRYPTO_VERSION);
+	handle = psa_connect(TFM_SP_PLATFORM_SYSTEM_RESET_SID,
+			     TFM_SP_PLATFORM_SYSTEM_RESET_VERSION);
 	if (handle > 0) {
 		printk("Connect success!\n");
 	} else {
@@ -74,6 +74,14 @@ static void tfm_ipc_test_03(void)
 	}
 	psa_close(handle);
 }
+
+/* For performing secure reset in PSA API mode (TFM_IPC)
+ * we invoke directly Arm's sys_arch_reboot, instead of
+ * sys_reboot(..) since the latter will first do an
+ * irq_lock() which will make the psa_connect() call to
+ * fail. See #36998.
+ */
+extern void sys_arch_reboot(int);
 
 void main(void)
 {
@@ -84,5 +92,6 @@ void main(void)
 	printk("TF-M IPC on %s\n", CONFIG_BOARD);
 
 	k_sleep(K_MSEC(5000));
-	sys_reboot(0);
+	/* TODO switch to sys_reboot() when #36998 is resolved. */
+	sys_arch_reboot(0);
 }
