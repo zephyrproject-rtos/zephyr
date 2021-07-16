@@ -585,6 +585,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -682,6 +683,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -731,6 +733,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -754,6 +757,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -777,6 +781,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -797,6 +802,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -828,6 +834,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("ep 0x%02x", ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -852,7 +859,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
 	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -904,7 +911,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t read_count;
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
-		LOG_ERR("Invalid Endpoint %x", ep);
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -944,7 +951,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -983,6 +990,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -996,6 +1004,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
