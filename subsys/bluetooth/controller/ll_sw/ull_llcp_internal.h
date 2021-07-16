@@ -273,941 +273,262 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 /*
  * LLCP Resource Management
  */
-bool ull_cp_priv_tx_alloc_is_available(void);
-
-static inline bool tx_alloc_is_available(void)
-{
-	return ull_cp_priv_tx_alloc_is_available();
-}
-
-struct node_tx *ull_cp_priv_tx_alloc(void);
-
-static inline struct node_tx *tx_alloc(void)
-{
-	return ull_cp_priv_tx_alloc();
-}
-
-bool ull_cp_priv_ntf_alloc_is_available(void);
-
-static inline bool ntf_alloc_is_available(void)
-{
-	return ull_cp_priv_ntf_alloc_is_available();
-}
-
-bool ull_cp_priv_ntf_alloc_num_available(uint8_t count);
-
-static inline bool ntf_alloc_num_available(uint8_t count)
-{
-	return ull_cp_priv_ntf_alloc_num_available(count);
-}
-
-struct node_rx_pdu *ull_cp_priv_ntf_alloc(void);
-
-static inline struct node_rx_pdu *ntf_alloc(void)
-{
-	return ull_cp_priv_ntf_alloc();
-}
-
-struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc);
-
-static inline struct proc_ctx *create_local_procedure(enum llcp_proc proc)
-{
-	return ull_cp_priv_create_local_procedure(proc);
-}
-
-struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc);
-
-static inline struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
-{
-	return ull_cp_priv_create_remote_procedure(proc);
-}
-
+bool llcp_tx_alloc_is_available(void);
+struct node_tx *llcp_tx_alloc(void);
+bool llcp_ntf_alloc_is_available(void);
+bool llcp_ntf_alloc_num_available(uint8_t count);
+struct node_rx_pdu *llcp_ntf_alloc(void);
+struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc);
+struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
 
 /*
  * ULL -> LLL Interface
  */
-void ull_cp_priv_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
-
-static inline void tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
-{
-	return ull_cp_priv_tx_enqueue(conn, tx);
-}
-
-void ull_cp_priv_tx_pause_data(struct ll_conn *conn);
-
-static inline void tx_pause_data(struct ll_conn *conn)
-{
-	return ull_cp_priv_tx_pause_data(conn);
-}
-
-void ull_cp_priv_tx_resume_data(struct ll_conn *conn);
-
-static inline void tx_resume_data(struct ll_conn *conn)
-{
-	return ull_cp_priv_tx_resume_data(conn);
-}
-
-void ull_cp_priv_tx_flush(struct ll_conn *conn);
-
-static inline void tx_flush(struct ll_conn *conn)
-{
-	return ull_cp_priv_tx_flush(conn);
-}
-
+void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
+void llcp_tx_pause_data(struct ll_conn *conn);
+void llcp_tx_resume_data(struct ll_conn *conn);
+void llcp_tx_flush(struct ll_conn *conn);
 
 /*
  * LLCP Local Procedure Common
  */
-void ull_cp_priv_lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
-
-static inline void lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
-{
-	return ull_cp_priv_lp_comm_tx_ack(conn, ctx, tx);
-}
-
-void ull_cp_priv_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_lp_comm_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_lp_comm_init_proc(struct proc_ctx *ctx);
-
-static inline void lp_comm_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lp_comm_init_proc(ctx);
-}
-
-void ull_cp_priv_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_comm_run(conn, ctx, param);
-}
+void llcp_lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_comm_init_proc(struct proc_ctx *ctx);
+void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 /*
  * LLCP Remote Procedure Common
  */
-void ull_cp_priv_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
-
-static inline void rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
-{
-	return ull_cp_priv_rp_comm_tx_ack(conn, ctx, tx);
-}
-
-void ull_cp_priv_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rp_comm_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rp_comm_init_proc(struct proc_ctx *ctx);
-
-static inline void rp_comm_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_comm_init_proc(ctx);
-}
-
-void ull_cp_priv_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_comm_run(conn, ctx, param);
-}
-
+void llcp_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_comm_init_proc(struct proc_ctx *ctx);
+void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 #if defined (CONFIG_BT_CTLR_LE_ENC)
 /*
  * LLCP Local Procedure Encryption
  */
-void ull_cp_priv_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_lp_enc_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_lp_enc_init_proc(struct proc_ctx *ctx);
-
-static inline void lp_enc_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lp_enc_init_proc(ctx);
-}
-
-void ull_cp_priv_lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_enc_run(conn, ctx, param);
-}
-
+void llcp_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_enc_init_proc(struct proc_ctx *ctx);
+void llcp_lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 /*
  * LLCP Remote Procedure Encryption
  */
-void ull_cp_priv_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rp_enc_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rp_enc_init_proc(struct proc_ctx *ctx);
-
-static inline void rp_enc_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_enc_init_proc(ctx);
-}
-
-void ull_cp_priv_rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
-
-static inline void rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_enc_ltk_req_reply(conn, ctx);
-}
-
-void ull_cp_priv_rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
-
-static inline void rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_enc_ltk_req_neg_reply(conn, ctx);
-}
-
-void ull_cp_priv_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_enc_run(conn, ctx, param);
-}
-
+void llcp_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_enc_init_proc(struct proc_ctx *ctx);
+void llcp_rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 /*
  * LLCP Local Procedure PHY Update
  */
-void ull_cp_priv_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_lp_pu_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_lp_pu_init_proc(struct proc_ctx *ctx);
-
-static inline void lp_pu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lp_pu_init_proc(ctx);
-}
-
-void ull_cp_priv_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_pu_run(conn, ctx, param);
-}
-
-void ull_cp_priv_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_pu_tx_ack(conn, ctx, param);
-}
+void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_pu_init_proc(struct proc_ctx *ctx);
+void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
  * LLCP Local Procedure Connection Update
  */
-void ull_cp_priv_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_lp_cu_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_lp_cu_init_proc(struct proc_ctx *ctx);
-
-static inline void lp_cu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lp_cu_init_proc(ctx);
-}
-
-void ull_cp_priv_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_cu_run(conn, ctx, param);
-}
+void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_cu_init_proc(struct proc_ctx *ctx);
+void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 /*
  * LLCP Local Channel Map Update
  */
-void ull_cp_priv_lp_chmu_init_proc(struct proc_ctx *ctx);
-
-static inline void lp_chmu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lp_chmu_init_proc(ctx);
-}
-
-void ull_cp_priv_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_lp_chmu_run(conn, ctx, param);
-}
+void llcp_lp_chmu_init_proc(struct proc_ctx *ctx);
+void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 /*
  * LLCP Remote Procedure PHY Update
  */
-void ull_cp_priv_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rp_pu_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rp_pu_init_proc(struct proc_ctx *ctx);
-
-static inline void rp_pu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_pu_init_proc(ctx);
-}
-
-void ull_cp_priv_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_pu_run(conn, ctx, param);
-}
-
-void ull_cp_priv_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_pu_tx_ack(conn, ctx, param);
-}
+void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_pu_init_proc(struct proc_ctx *ctx);
+void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
  * LLCP Remote Procedure Connection Update
  */
-void ull_cp_priv_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rp_cu_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rp_cu_init_proc(struct proc_ctx *ctx);
-
-static inline void rp_cu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_cu_init_proc(ctx);
-}
-
-void ull_cp_priv_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_cu_run(conn, ctx, param);
-}
-
-void ull_cp_priv_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
-
-static inline void rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_conn_param_req_reply(conn, ctx);
-}
-
-void ull_cp_priv_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
-
-static inline void rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_conn_param_req_neg_reply(conn, ctx);
-}
+void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_cu_init_proc(struct proc_ctx *ctx);
+void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * Terminate Helper
  */
-void ull_cp_priv_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_terminate_ind(ctx, pdu);
-}
-
-void ull_cp_priv_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_terminate_ind(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_terminate_ind(ctx, pdu);
-}
+void llcp_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 /*
  * LLCP Local Request
  */
-struct proc_ctx *lr_peek(struct ll_conn *conn);
-void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
-
-static inline void lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
-{
-	return ull_cp_priv_lr_tx_ack(conn, ctx, tx);
-}
-
-void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_lr_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
-
-static inline void lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	return ull_cp_priv_lr_enqueue(conn, ctx);
-}
-
-void ull_cp_priv_lr_init(struct ll_conn *conn);
-
-static inline void lr_init(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_init(conn);
-}
-
-void ull_cp_priv_lr_run(struct ll_conn *conn);
-
-static inline void lr_run(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_run(conn);
-}
-
-void ull_cp_priv_lr_complete(struct ll_conn *conn);
-
-static inline void lr_complete(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_complete(conn);
-}
-
-void ull_cp_priv_lr_connect(struct ll_conn *conn);
-
-static inline void lr_connect(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_connect(conn);
-}
-
-void ull_cp_priv_lr_disconnect(struct ll_conn *conn);
-
-static inline void lr_disconnect(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_disconnect(conn);
-}
-
-void ull_cp_priv_lr_abort(struct ll_conn *conn);
-
-static inline void lr_abort(struct ll_conn *conn)
-{
-	return ull_cp_priv_lr_abort(conn);
-}
+struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_lr_init(struct ll_conn *conn);
+void llcp_lr_run(struct ll_conn *conn);
+void llcp_lr_complete(struct ll_conn *conn);
+void llcp_lr_connect(struct ll_conn *conn);
+void llcp_lr_disconnect(struct ll_conn *conn);
+void llcp_lr_abort(struct ll_conn *conn);
 
 /*
  * LLCP Remote Request
  */
-void ull_cp_priv_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
-
-static inline void rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat)
-{
-	return ull_cp_priv_rr_set_incompat(conn, incompat);
-}
-
-bool ull_cp_priv_rr_get_collision(struct ll_conn *conn);
-
-static inline bool rr_get_collision(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_get_collision(conn);
-}
-
-struct proc_ctx *rr_peek(struct ll_conn *conn);
-void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
-
-static inline void rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
-{
-	return ull_cp_priv_rr_tx_ack(conn, ctx, tx);
-}
-
-void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rr_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rr_init(struct ll_conn *conn);
-
-static inline void rr_init(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_init(conn);
-}
-
-void ull_cp_priv_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx);
-
-static inline void rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rr_prepare(conn, rx);
-}
-
-void ull_cp_priv_rr_run(struct ll_conn *conn);
-
-static inline void rr_run(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_run(conn);
-}
-
-void ull_cp_priv_rr_complete(struct ll_conn *conn);
-
-static inline void rr_complete(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_complete(conn);
-}
-
-void ull_cp_priv_rr_connect(struct ll_conn *conn);
-
-static inline void rr_connect(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_connect(conn);
-}
-
-void ull_cp_priv_rr_disconnect(struct ll_conn *conn);
-
-static inline void rr_disconnect(struct ll_conn *conn)
-{
-	return ull_cp_priv_rr_disconnect(conn);
-}
-
-void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx);
-
-static inline void rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rr_new(conn, rx);
-}
+void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
+bool llcp_rr_get_collision(struct ll_conn *conn);
+struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
+void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rr_init(struct ll_conn *conn);
+void llcp_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx);
+void llcp_rr_run(struct ll_conn *conn);
+void llcp_rr_complete(struct ll_conn *conn);
+void llcp_rr_connect(struct ll_conn *conn);
+void llcp_rr_disconnect(struct ll_conn *conn);
+void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 /*
  * LE Ping Procedure Helper
  */
-void ull_cp_priv_pdu_encode_ping_req(struct pdu_data *pdu);
-
-static inline void pdu_encode_ping_req(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_ping_req(pdu);
-}
-
-void ull_cp_priv_pdu_encode_ping_rsp(struct pdu_data *pdu);
-
-static inline void pdu_encode_ping_rsp(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_ping_rsp(pdu);
-}
+void llcp_pdu_encode_ping_req(struct pdu_data *pdu);
+void llcp_pdu_encode_ping_rsp(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_LE_PING */
 /*
  * Unknown response helper
  */
 
-void ull_cp_priv_pdu_encode_unknown_rsp(struct proc_ctx *ctx,
+void llcp_pdu_encode_unknown_rsp(struct proc_ctx *ctx,
 					struct pdu_data *pdu);
-static inline void pdu_encode_unknown_rsp(struct proc_ctx *ctx,
-					   struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_encode_unknown_rsp(ctx, pdu);
-}
-
-
-void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
+void llcp_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
 					struct pdu_data *pdu);
-static inline void pdu_decode_unknown_rsp(struct proc_ctx *ctx,
-					   struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_unknown_rsp(ctx, pdu);
-}
-
-void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
+void llcp_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
 					struct pdu_data *pdu);
-
-static inline void ntf_encode_unknown_rsp(struct proc_ctx *ctx,
-					  struct pdu_data *pdu)
-
-{
-	return ull_cp_priv_ntf_encode_unknown_rsp(ctx, pdu);
-}
-
 
 /*
  * Feature Exchange Procedure Helper
  */
-void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn,
+void llcp_pdu_encode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu);
-
-static inline void pdu_encode_feature_req(struct ll_conn *conn,
-					   struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_feature_req(conn, pdu);
-}
-
-void ull_cp_priv_pdu_encode_feature_rsp(struct ll_conn *conn,
+void llcp_pdu_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
-
-static inline void pdu_encode_feature_rsp(struct ll_conn *conn,
-					struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_feature_rsp(conn, pdu);
-}
-
-void ull_cp_priv_ntf_encode_feature_rsp(struct ll_conn *conn,
+void llcp_ntf_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
-
-static inline void ntf_encode_feature_rsp(struct ll_conn *conn,
-				    struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_feature_rsp(conn, pdu);
-}
-
-void ull_cp_priv_ntf_encode_feature_req(struct ll_conn *conn,
+void llcp_ntf_encode_feature_req(struct ll_conn *conn,
 					      struct pdu_data *pdu);
-
-static inline void ntf_encode_feature_req(struct ll_conn *conn,
-					  struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_feature_req(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_feature_req(struct ll_conn *conn,
+void llcp_pdu_decode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu);
-
-static inline void pdu_decode_feature_req(struct ll_conn *conn,
-					  struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_feature_req(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn,
+void llcp_pdu_decode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
-
-static inline void pdu_decode_feature_rsp(struct ll_conn *conn,
-					  struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
-}
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 /*
  * Minimum number of used channels Procedure Helper
  */
 #if defined (CONFIG_BT_PERIPHERAL)
-void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_min_used_chans_ind(ctx, pdu);
-}
+void llcp_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_PERIPHERAL */
-#if defined (CONFIG_BT_CENTRAL)
-void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_min_used_chans_ind(conn, pdu);
-}
+#if defined (CONFIG_BT_CENTRAL)
+void llcp_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 /*
  * Version Exchange Procedure Helper
  */
-void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu);
-
-static inline void pdu_encode_version_ind(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_version_ind(pdu);
-}
-
-void ull_cp_priv_ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_version_ind(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_version_ind(conn, pdu);
-}
-
+void llcp_pdu_encode_version_ind(struct pdu_data *pdu);
+void llcp_ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
 #if defined (CONFIG_BT_CTLR_LE_ENC)
 /*
  * Encryption Start Procedure Helper
  */
 #if defined (CONFIG_BT_CENTRAL)
-void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_enc_req(ctx, pdu);
-}
+void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined (CONFIG_BT_PERIPHERAL)
-void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_enc_req(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_encode_enc_rsp(struct pdu_data *pdu);
-
-static inline void pdu_encode_enc_rsp(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_enc_rsp(pdu);
-}
-
-void ull_cp_priv_pdu_encode_start_enc_req(struct pdu_data *pdu);
-
-static inline void pdu_encode_start_enc_req(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_start_enc_req(pdu);
-}
+void llcp_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu);
+void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_PERIPHERAL */
 
-void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu);
-
-static inline void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_start_enc_rsp(pdu);
-}
+void llcp_pdu_encode_start_enc_rsp(struct pdu_data *pdu);
 
 #if defined (CONFIG_BT_CENTRAL)
-void ull_cp_priv_pdu_encode_pause_enc_req(struct pdu_data *pdu);
-
-static inline void pdu_encode_pause_enc_req(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_pause_enc_req(pdu);
-}
+void llcp_pdu_encode_pause_enc_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
-void ull_cp_priv_pdu_encode_pause_enc_rsp(struct pdu_data *pdu);
-
-static inline void pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_pause_enc_rsp(pdu);
-}
+void llcp_pdu_encode_pause_enc_rsp(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
-
-static inline void pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
-{
-	return ull_cp_priv_pdu_encode_reject_ind(pdu, error_code);
-}
-
-void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
-
-static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code)
-{
-	return ull_cp_priv_pdu_encode_reject_ext_ind(pdu, reject_opcode, error_code);
-}
-
+void llcp_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
+void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
 
 /*
  * PHY Update Procedure Helper
  */
-void ull_cp_priv_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_phy_req(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_phy_req(ctx, pdu);
-}
+void llcp_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 #if defined(CONFIG_BT_PERIPHERAL)
-void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_phy_rsp(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_phy_update_ind(ctx, pdu);
-}
+void llcp_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
-void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_phy_update_ind(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_phy_rsp(ctx, pdu);
-}
+void llcp_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
 /*
  * Connection Update Procedure Helper
  */
-void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_encode_conn_param_req(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_decode_conn_param_req(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_encode_conn_param_rsp(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_decode_conn_param_rsp(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_encode_conn_update_ind(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
-}
-
-void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx);
-
-static inline void proc_ctx_release(struct proc_ctx *ctx)
-{
-	ull_cp_priv_proc_ctx_release(ctx);
-}
+void llcp_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_proc_ctx_release(struct proc_ctx *ctx);
 
 /*
  * Remote Channel Map Update Procedure Helper
  */
-
-void ull_cp_priv_pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-static inline void pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_chan_map_update_ind(ctx, pdu);
-}
-
-void ull_cp_priv_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-static inline void pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_chan_map_update_ind(ctx, pdu);
-}
-
-void ull_cp_priv_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
-
-static inline void rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
-{
-	return ull_cp_priv_rp_chmu_rx(conn, ctx, rx);
-}
-
-void ull_cp_priv_rp_chmu_init_proc(struct proc_ctx *ctx);
-
-static inline void rp_chmu_init_proc(struct proc_ctx *ctx)
-{
-	return ull_cp_priv_rp_chmu_init_proc(ctx);
-}
-
-void ull_cp_priv_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
-
-static inline void rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
-{
-	return ull_cp_priv_rp_chmu_run(conn, ctx, param);
-}
+void llcp_pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_chmu_init_proc(struct proc_ctx *ctx);
+void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /*
  * Data Length Update Procedure Helper
  */
-void ull_cp_priv_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_length_req(conn, pdu);
-}
-
-void ull_cp_priv_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_length_rsp(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_length_req(conn, pdu);
-}
-
-void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_decode_length_rsp(conn, pdu);
-}
-
-void ull_cp_priv_ntf_encode_length_change(struct ll_conn *conn,
+void llcp_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+void llcp_ntf_encode_length_change(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void ntf_encode_length_change(struct ll_conn *conn,
-				    struct pdu_data *pdu)
-{
-	return ull_cp_priv_ntf_encode_length_change(conn, pdu);
-}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #ifdef ZTEST_UNITTEST
