@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Jonathan Hahn
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics I3G4250D 3-axis gyrometer accessed through SPI bus
+
+compatible: "st,i3g4250d"
+
+include: spi-device.yaml
