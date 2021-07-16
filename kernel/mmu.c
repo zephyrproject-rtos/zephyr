@@ -1288,7 +1288,9 @@ static bool do_page_fault(void *addr, bool pin)
 		pf->flags |= Z_PAGE_FRAME_PINNED;
 	}
 	pf->flags |= Z_PAGE_FRAME_MAPPED;
-	pf->addr = addr;
+	pf->addr = UINT_TO_POINTER(POINTER_TO_UINT(addr)
+				   & ~(CONFIG_MMU_PAGE_SIZE - 1));
+
 	arch_mem_page_in(addr, z_page_frame_to_phys(pf));
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
 out:
