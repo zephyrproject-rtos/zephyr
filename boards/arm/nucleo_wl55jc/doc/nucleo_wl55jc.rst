@@ -179,24 +179,38 @@ features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
+| AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
+| CLOCK     | on-chip    | reset and clock_control             |
 +-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
+| FLASH     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| MPU       | on-chip    | arch/arm                            |
++-----------+------------+-------------------------------------+
+| NVIC      | on-chip    | arch/arm                            |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | LoRa                                |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_wl55jc/nucleo_wl55jc_defconfig``
+The default configuration can be found in the defconfig and dts files:
+
+- :zephyr_file:`boards/arm/nucleo_wl55jc/nucleo_wl55jc_defconfig`
+- :zephyr_file:`boards/arm/nucleo_wl55jc/nucleo_wl55jc.dts`
 
 
 Connections and IOs

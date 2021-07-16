@@ -148,41 +148,61 @@ More information about STM32L562QE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l562e_dk board configuration supports the following hardware features:
+The Zephyr stm32l562e_dk board configuration supports the following
+hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
+| ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
+| AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
+| CLOCK     | on-chip    | reset and clock control             |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | PWM                                 |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | TrustZone | on-chip    | Trusted Firmware-M                  |
 +-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random Number Generator        |
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
-The default configuration can be found in the defconfig file:
-``boards/arm/stm32l562e_dk/stm32l562e_dk_defconfig``
+The default configuration can be found in the defconfig and dts files:
+
+- Common:
+
+  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_common.dtsi`
+
+- Secure target:
+
+  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_defconfig`
+  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk.dts`
+
+- Non-Secure target:
+
+  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns_defconfig`
+  - :zephyr_file:`boards/arm/stm32l562e_dk/stm32l562e_dk_ns.dts`
 
 
 Connections and IOs
