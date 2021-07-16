@@ -132,6 +132,7 @@ static const struct flash_parameters flash_mcux_parameters = {
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 #endif
 	.erase_value = 0xff,
+	.flags = 0,
 };
 
 /*
@@ -271,6 +272,35 @@ flash_mcux_get_parameters(const struct device *dev)
 	return &flash_mcux_parameters;
 }
 
+static int flash_mcux_get_page_info(const struct device *dev, off_t offset,
+				    struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= DT_REG_SIZE(SOC_NV_FLASH_NODE)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(DT_PROP(SOC_NV_FLASH_NODE, erase_block_size) - 1);
+	fpi->size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size);
+
+	return 0;
+}
+
+static ssize_t flash_mcux_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size);
+}
+
+static ssize_t flash_mcux_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return DT_REG_SIZE(SOC_NV_FLASH_NODE);
+}
+
 static struct flash_priv flash_data;
 
 static const struct flash_driver_api flash_mcux_api = {
@@ -278,6 +308,9 @@ static const struct flash_driver_api flash_mcux_api = {
 	.write = flash_mcux_write,
 	.read = flash_mcux_read,
 	.get_parameters = flash_mcux_get_parameters,
+	.get_page_info = flash_mcux_get_page_info,
+	.get_page_count = flash_mcux_get_page_count,
+	.get_size = flash_mcux_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
 #endif
