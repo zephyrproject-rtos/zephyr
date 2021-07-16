@@ -66,6 +66,7 @@ struct flash_nios2_qspi_config {
 static const struct flash_parameters flash_nios2_qspi_parameters = {
 	.write_block_size = NIOS2_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
+	.flags = 0,
 };
 
 static int flash_nios2_qspi_write_protection(const struct device *dev,
@@ -490,11 +491,48 @@ flash_nios2_qspi_get_parameters(const struct device *dev)
 	return &flash_nios2_qspi_parameters;
 }
 
+static int
+flash_nios2_qspi_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
+	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
+
+	if (offset < 0 || offset >= qspi_dev->data_end) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(qspi_dev->sector_size - 1);
+	fpi->size = qspi_dev->sector_size;
+
+	return 0;
+}
+
+static ssize_t
+flash_nios2_qspi_get_page_count(const struct device *dev)
+{
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
+	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
+
+	return (qspi_dev->data_end / qspi_dev->sector_size);
+}
+
+static ssize_t
+flash_nios2_qspi_get_size(const struct device *dev)
+{
+	struct flash_nios2_qspi_config *flash_cfg = dev->data;
+	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
+
+	return qspi_dev->data_end;
+}
+
 static const struct flash_driver_api flash_nios2_qspi_api = {
 	.erase = flash_nios2_qspi_erase,
 	.write = flash_nios2_qspi_write,
 	.read = flash_nios2_qspi_read,
 	.get_parameters = flash_nios2_qspi_get_parameters,
+	.get_page_info = flash_nios2_qspi_get_page_info,
+	.get_page_count = flash_nios2_qspi_get_page_count,
+	.get_size = flash_nios2_qspi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = (flash_api_pages_layout)
 		       flash_page_layout_not_implemented,
