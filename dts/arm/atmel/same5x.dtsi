@@ -9,7 +9,7 @@
 / {
 	soc {
 		gmac: ethernet@42000800 {
-			compatible = "atmel,sam-gmac";
+			compatible = "atmel,sam0-gmac";
 			reg = <0x42000800 0x400>;
 			interrupts = <84 0>;
 			interrupt-names = "gmac";
