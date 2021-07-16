@@ -102,7 +102,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -111,33 +111,33 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		pdu_encode_ping_req(pdu);
+		llcp_pdu_encode_ping_req(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		pdu_encode_feature_req(conn, pdu);
+		llcp_pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
-		pdu_encode_min_used_chans_ind(ctx, pdu);
+		llcp_pdu_encode_min_used_chans_ind(ctx, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		pdu_encode_version_ind(pdu);
+		llcp_pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
 	case PROC_TERMINATE:
-		pdu_encode_terminate_ind(ctx, pdu);
+		llcp_pdu_encode_terminate_ind(ctx, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		pdu_encode_length_req(conn, pdu);
+		llcp_pdu_encode_length_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -149,7 +149,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
+	llcp_tx_enqueue(conn, tx);
 
 	/* Update procedure timout. For TERMINATE supervision_timeout is used */
 	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE)?conn->procedure_reload:conn->supervision_reload);
@@ -159,7 +159,7 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		ntf_encode_feature_rsp(conn, pdu);
+		llcp_ntf_encode_feature_rsp(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
@@ -169,7 +169,7 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 		 */
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
-		ntf_encode_unknown_rsp(ctx, pdu);
+		llcp_ntf_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
 		/* EGON: TODO: define behaviour for unexpected PDU */
@@ -181,7 +181,7 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		ntf_encode_version_ind(conn, pdu);
+		llcp_ntf_encode_version_ind(conn, pdu);
 		break;
 	default:
 		/* EGON: TODO: define behaviour for unexpected PDU */
@@ -192,7 +192,7 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	ntf_encode_length_change(conn, pdu);
+	llcp_ntf_encode_length_change(conn, pdu);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -202,7 +202,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate ntf node */
-	ntf = ntf_alloc();
+	ntf = llcp_ntf_alloc();
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -236,7 +236,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP || ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
-			lr_complete(conn);
+			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		else
@@ -247,32 +247,32 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (!ntf_alloc_is_available()) {
+		if (!llcp_ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
 		} else {
 			lp_comm_ntf(conn, ctx);
-			lr_complete(conn);
+			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
-		lr_complete(conn);
+		llcp_lr_complete(conn);
 		ctx->state = LP_COMMON_STATE_IDLE;
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		if (!ntf_alloc_is_available()) {
+		if (!llcp_ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
 		} else {
 			lp_comm_ntf(conn, ctx);
-			lr_complete(conn);
+			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		break;
 	case PROC_TERMINATE:
 		/* No notification */
-		lr_complete(conn);
+		llcp_lr_complete(conn);
 		ctx->state = LP_COMMON_STATE_IDLE;
 
 		/* Mark the connection for termination */
@@ -284,21 +284,21 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			/* Apply changes in data lengths/times */
 			uint8_t dle_changed = ull_dle_update_eff(conn);
 
-			if (dle_changed && !ntf_alloc_is_available()) {
+			if (dle_changed && !llcp_ntf_alloc_is_available()) {
 				/* We need to generate NTF but no buffers avail, so go wait for one */
 				ctx->state = LP_COMMON_STATE_WAIT_NTF;
 			} else {
 				if (dle_changed) {
 					lp_comm_ntf(conn, ctx);
 				}
-				lr_complete(conn);
+				llcp_lr_complete(conn);
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 		} else {
 			/* Peer does not accept DLU, so disable on current connection */
 			feature_unmask_features(conn, LL_FEAT_BIT_DLE);
 
-			lr_complete(conn);
+			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 
@@ -306,7 +306,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			/* Resume data, but only if there is no remote procedure pending RSP
 			 * in which case, the RSP tx-ACK will resume data
 			 */
-			tx_resume_data(conn);
+			llcp_tx_resume_data(conn);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -321,7 +321,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -330,7 +330,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -340,7 +340,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -351,7 +351,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
-			if (ctx->pause || !tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_is_available()) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				lp_comm_tx(conn, ctx);
@@ -364,7 +364,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_TERMINATE:
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -374,14 +374,14 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		if (!ull_cp_remote_dle_pending(conn)) {
-			if (ctx->pause || !tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_is_available()) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				/* Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
 				 * conflicting with out-going LL Data PDUs
 				 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
 				 */
-				tx_pause_data(conn);
+				llcp_tx_pause_data(conn);
 				lp_comm_tx(conn, ctx);
 				ctx->state = LP_COMMON_STATE_WAIT_RX;
 			}
@@ -390,7 +390,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			 * lets piggy-back on RSP instead af sending REQ
 			 * thus we can complete local req
 			 */
-			lr_complete(conn);
+			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 
@@ -468,7 +468,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		pdu_decode_feature_rsp(conn, pdu);
+		llcp_pdu_decode_feature_rsp(conn, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
@@ -476,10 +476,10 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		pdu_decode_version_ind(conn, pdu);
+		llcp_pdu_decode_version_ind(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
-		pdu_decode_unknown_rsp(ctx, pdu);
+		llcp_pdu_decode_unknown_rsp(ctx, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		/* No response expected */
@@ -487,7 +487,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
-		pdu_decode_length_rsp(conn, pdu);
+		llcp_pdu_decode_length_rsp(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -520,9 +520,9 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE:
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-			if (ntf_alloc_is_available()) {
+			if (llcp_ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
-				lr_complete(conn);
+				llcp_lr_complete(conn);
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 			break;
@@ -559,22 +559,22 @@ static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-void ull_cp_priv_lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+void llcp_lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_ACK, tx->pdu);
 }
 
-void ull_cp_priv_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 }
 
-void ull_cp_priv_lp_comm_init_proc(struct proc_ctx *ctx)
+void llcp_lp_comm_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = LP_COMMON_STATE_IDLE;
 }
 
-void ull_cp_priv_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, param);
 }
@@ -598,28 +598,28 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 #endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_CENTRAL */
-		pdu_decode_feature_req(conn, pdu);
+		llcp_pdu_decode_feature_req(conn, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
-		pdu_decode_min_used_chans_ind(conn, pdu);
+		llcp_pdu_decode_min_used_chans_ind(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
-		pdu_decode_version_ind(conn, pdu);
+		llcp_pdu_decode_version_ind(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
-		pdu_decode_terminate_ind(ctx, pdu);
+		llcp_pdu_decode_terminate_ind(ctx, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		pdu_decode_length_req(conn, pdu);
+		llcp_pdu_decode_length_req(conn, pdu);
 		/* On reception of REQ mark RSP open for local piggy-back
 		 * Pause data tx, to ensure we can later (on RSP tx ack) update DLE without
 		 * conflicting with out-going LL Data PDUs
 		 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
 		 */
-		tx_pause_data(conn);
+		llcp_tx_pause_data(conn);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -634,7 +634,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -643,21 +643,21 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		pdu_encode_ping_rsp(pdu);
+		llcp_pdu_encode_ping_rsp(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		pdu_encode_feature_rsp(conn, pdu);
+		llcp_pdu_encode_feature_rsp(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		break;
 	case PROC_VERSION_EXCHANGE:
-		pdu_encode_version_ind(pdu);
+		llcp_pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		pdu_encode_length_rsp(conn, pdu);
+		llcp_pdu_encode_length_rsp(conn, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
@@ -670,7 +670,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
+	llcp_tx_enqueue(conn, tx);
 }
 
 static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -687,7 +687,7 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	ntf_encode_length_change(conn, pdu);
+	llcp_ntf_encode_length_change(conn, pdu);
 }
 
 static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -697,7 +697,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ARG_UNUSED(pdu);
 	/* Allocate ntf node */
-	ntf = ntf_alloc();
+	ntf = llcp_ntf_alloc();
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -727,35 +727,35 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		/* Always respond on remote ping */
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			rp_comm_tx(conn, ctx);
-			rr_complete(conn);
+			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			rp_comm_tx(conn, ctx);
 			conn->llcp.fex.sent = 1;
-			rr_complete(conn);
+			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
-			if (ctx->pause || !tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_is_available()) {
 				ctx->state = RP_COMMON_STATE_WAIT_TX;
 			} else {
 				rp_comm_tx(conn, ctx);
 				conn->llcp.vex.sent = 1;
-				rr_complete(conn);
+				llcp_rr_complete(conn);
 				ctx->state = RP_COMMON_STATE_IDLE;
 			}
 		} else {
@@ -782,13 +782,13 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			/* TODO - what to do on failure of ull_cp_chan_map_update() */
 		}
 		/* No response */
-		rr_complete(conn);
+		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 	case PROC_TERMINATE:
 		/* No response */
-		rr_complete(conn);
+		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 
 		/* Mark the connection for termination */
@@ -796,7 +796,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (ctx->pause || !tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_is_available()) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			/* On RSP tx close the window for possible local req piggy-back */
@@ -848,16 +848,16 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 			{
 				/* Apply changes in data lengths/times */
 				uint8_t dle_changed = ull_dle_update_eff(conn);
-				tx_resume_data(conn);
+				llcp_tx_resume_data(conn);
 
-				if (dle_changed && !ntf_alloc_is_available()) {
+				if (dle_changed && !llcp_ntf_alloc_is_available()) {
 					ctx->state = RP_COMMON_STATE_WAIT_NTF;
 				}
 				else {
 					if (dle_changed) {
 						rp_comm_ntf(conn, ctx);
 					}
-					rr_complete(conn);
+					llcp_rr_complete(conn);
 					ctx->state = RP_COMMON_STATE_IDLE;
 				}
 				break;
@@ -877,9 +877,9 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 
 static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (ntf_alloc_is_available()) {
+	if (llcp_ntf_alloc_is_available()) {
 		rp_comm_ntf(conn, ctx);
-		rr_complete(conn);
+		llcp_rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 	}
 }
@@ -911,22 +911,22 @@ static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-void ull_cp_priv_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
 }
 
-void ull_cp_priv_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+void llcp_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_ACK, tx->pdu);
 }
 
-void ull_cp_priv_rp_comm_init_proc(struct proc_ctx *ctx)
+void llcp_rp_comm_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = RP_COMMON_STATE_IDLE;
 }
 
-void ull_cp_priv_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, param);
 }
