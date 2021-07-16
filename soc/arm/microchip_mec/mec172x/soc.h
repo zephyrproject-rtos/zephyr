@@ -30,6 +30,9 @@
 #include "reg/mec172x_defs.h"
 #include "reg/mec172x_ecia.h"
 #include "reg/mec172x_ecs.h"
+#include "reg/mec172x_espi_iom.h"
+#include "reg/mec172x_espi_saf.h"
+#include "reg/mec172x_espi_vw.h"
 #include "reg/mec172x_pcr.h"
 
 /* common peripheral register defines */
