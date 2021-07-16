@@ -52,8 +52,6 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
 			      struct pdu_adv *pdu);
-static uint8_t sync_time_update(struct ll_adv_sync_set *sync,
-				struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
@@ -483,7 +481,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 	sync = HDR_LLL2ULL(lll_sync);
 	if (sync->is_started) {
-		err = ull_adv_sync_time_update(sync);
+		err = ull_adv_sync_time_update(sync, pdu);
 		if (err) {
 			return err;
 		}
@@ -663,26 +661,6 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync)
 	sync_release(sync);
 }
 
-uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync)
-{
-	struct pdu_adv *pdu;
-	uint8_t tmp_idx;
-	uint8_t err;
-
-	/* NOTE: This function is called before new PDU is commit, hence
-	 *       use *_alloc function to get the new PDU that was prepared.
-	 */
-	pdu = lll_adv_sync_data_alloc(&sync->lll, NULL, &tmp_idx);
-	err = sync_time_update(sync, pdu);
-	if (err) {
-		return err;
-	}
-
-	ARG_UNUSED(tmp_idx);
-
-	return BT_HCI_ERR_SUCCESS;
-}
-
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor)
@@ -735,6 +713,44 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
+}
+
+uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
+				 struct pdu_adv *pdu)
+{
+	uint32_t volatile ret_cb;
+	uint32_t ticks_minus;
+	uint32_t ticks_plus;
+	uint32_t time_ticks;
+	uint16_t time_us;
+	uint32_t ret;
+
+	time_us = sync_time_get(sync, pdu);
+	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	if (sync->ull.ticks_slot > time_ticks) {
+		ticks_minus = sync->ull.ticks_slot - time_ticks;
+		ticks_plus = 0U;
+	} else if (sync->ull.ticks_slot < time_ticks) {
+		ticks_minus = 0U;
+		ticks_plus = time_ticks - sync->ull.ticks_slot;
+	} else {
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+			    TICKER_USER_ID_THREAD,
+			    (TICKER_ID_ADV_SYNC_BASE + sync_handle_get(sync)),
+			    0, 0, ticks_plus, ticks_minus, 0, 0,
+			    ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret != TICKER_STATUS_SUCCESS) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	sync->ull.ticks_slot = time_ticks;
+
+	return BT_HCI_ERR_SUCCESS;
 }
 
 void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
@@ -843,68 +859,6 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 	*ter_pdu_new = pdu_new;
 
 	return 0;
-}
-
-static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu)
-{
-	struct lll_adv_sync *lll_sync;
-	struct lll_adv *lll;
-	uint32_t time_us;
-
-	lll_sync = &sync->lll;
-	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
-	time_us = PKT_AC_US(pdu->len, lll->phy_s) + EVENT_OVERHEAD_START_US +
-		  EVENT_OVERHEAD_END_US;
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
-	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
-
-	if (df_cfg && df_cfg->is_enabled) {
-		time_us += CTE_LEN_US(df_cfg->cte_length);
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-	return time_us;
-}
-
-static uint8_t sync_time_update(struct ll_adv_sync_set *sync,
-				struct pdu_adv *pdu)
-{
-	uint32_t volatile ret_cb;
-	uint32_t ticks_minus;
-	uint32_t ticks_plus;
-	uint32_t time_ticks;
-	uint16_t time_us;
-	uint32_t ret;
-
-	time_us = sync_time_get(sync, pdu);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
-	if (sync->ull.ticks_slot > time_ticks) {
-		ticks_minus = sync->ull.ticks_slot - time_ticks;
-		ticks_plus = 0U;
-	} else if (sync->ull.ticks_slot < time_ticks) {
-		ticks_minus = 0U;
-		ticks_plus = time_ticks - sync->ull.ticks_slot;
-	} else {
-		return BT_HCI_ERR_SUCCESS;
-	}
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
-			    TICKER_USER_ID_THREAD,
-			    (TICKER_ID_ADV_SYNC_BASE + sync_handle_get(sync)),
-			    0, 0, ticks_plus, ticks_minus, 0, 0,
-			    ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret != TICKER_STATUS_SUCCESS) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	sync->ull.ticks_slot = time_ticks;
-
-	return BT_HCI_ERR_SUCCESS;
 }
 
 /* @brief Set or clear fields in extended advertising header and store
@@ -1270,6 +1224,30 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 	}
 
 	return 0U;
+}
+
+static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
+			      struct pdu_adv *pdu)
+{
+	struct lll_adv_sync *lll_sync;
+	struct lll_adv *lll;
+	uint32_t time_us;
+
+	lll_sync = &sync->lll;
+	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
+	time_us = PKT_AC_US(pdu->len, lll->phy_s) + EVENT_OVERHEAD_START_US +
+		  EVENT_OVERHEAD_END_US;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
+	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
+
+	if (df_cfg && df_cfg->is_enabled) {
+		time_us += CTE_LEN_US(df_cfg->cte_length);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return time_us;
 }
 
 static void mfy_sync_offset_get(void *param)
