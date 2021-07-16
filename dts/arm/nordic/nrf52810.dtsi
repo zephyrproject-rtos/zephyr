@@ -46,6 +46,13 @@
 			label = "CLOCK";
 		};
 
+		radio: radio@40001000 {
+			compatible = "nordic,nrf-radio";
+			reg = <0x40001000 0x1000>;
+			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
 		uart0: uart@40002000 {
 			/* uart can be either UART or UARTE, for the user to pick */
 			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
@@ -194,6 +201,20 @@
 			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "QDEC";
+		};
+
+		egu0: egu@40014000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40014000 0x1000>;
+			interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu1: egu@40015000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40015000 0x1000>;
+			interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
 		};
 
 		pwm0: pwm@4001c000 {
