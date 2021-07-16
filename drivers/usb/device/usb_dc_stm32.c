@@ -498,6 +498,9 @@ static int usb_dc_stm32_init(void)
 	}
 #endif /* USB */
 
+	/* Disable soft disconnect */
+	HAL_PCD_DevConnect(&usb_dc_stm32_state.pcd);
+
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
 		    usb_dc_stm32_isr, 0, 0);
 	irq_enable(USB_IRQ);
@@ -1013,10 +1016,14 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
 	if (!usb_dc_stm32_state.attached) {
 		return 0;
 	}
+
+	irq_disable(USB_IRQ);
+
+	/* Enable soft disconnect */
+	HAL_PCD_DevDisconnect(&usb_dc_stm32_state.pcd);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
