@@ -1116,11 +1116,23 @@ uint8_t ll_adv_enable(uint8_t enable)
 		node_rx_adv_term->hdr.link = (void *)link_adv_term;
 		adv->lll.node_rx_adv_term = (void *)node_rx_adv_term;
 
-		adv_max_events_duration_set(adv, duration, max_ext_adv_evts);
+		if (0) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->is_hdcd) {
+			adv_max_events_duration_set(adv, 0U, 0U);
+#endif /* CONFIG_BT_PERIPHERAL */
+		} else {
+			adv_max_events_duration_set(adv, duration,
+						    max_ext_adv_evts);
+		}
+	} else {
+		adv->lll.node_rx_adv_term = NULL;
+		adv_max_events_duration_set(adv, 0U, 0U);
 	}
 
 	const uint8_t phy = lll->phy_p;
 
+	adv->event_counter = 0U;
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = PHY_1M;
