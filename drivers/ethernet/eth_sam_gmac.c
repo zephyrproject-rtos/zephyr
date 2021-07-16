@@ -18,7 +18,11 @@
  * - no statistics collection
  */
 
+#if defined(CONFIG_SOC_FAMILY_SAM)
 #define DT_DRV_COMPAT atmel_sam_gmac
+#else
+#define DT_DRV_COMPAT atmel_sam0_gmac
+#endif
 
 #define LOG_MODULE_NAME eth_sam
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
