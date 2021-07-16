@@ -358,7 +358,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 	}
 
 	if (sync->is_started) {
-		err = ull_adv_sync_time_update(sync);
+		err = ull_adv_sync_time_update(sync, pdu);
 		if (err) {
 			return err;
 		}
