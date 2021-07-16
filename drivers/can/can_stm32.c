@@ -512,9 +512,6 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Leave sleep mode after reset*/
-	can->MCR &= ~CAN_MCR_SLEEP;
-
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
 	LOG_INF("Init of %s done", dev->name);
