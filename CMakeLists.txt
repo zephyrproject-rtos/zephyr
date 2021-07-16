@@ -95,6 +95,11 @@ zephyr_compile_definitions(
   __ZEPHYR__=1
 )
 
+# Ensure that include/toolchain.h includes toolchain/other.h for all off-tree toolchains
+if(TOOLCHAIN_USE_CUSTOM)
+  zephyr_compile_definitions(__TOOLCHAIN_CUSTOM__)
+endif()
+
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
 # @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
 zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify> )
