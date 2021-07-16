@@ -24,16 +24,20 @@
 #define __FPU_PRESENT  CONFIG_CPU_HAS_FPU
 #define __MPU_PRESENT  CONFIG_CPU_HAS_ARM_MPU
 
-#include "reg/mec172x_regs.h"
-
 #include <sys/util.h>
 
+/* chip specific register defines */
+#include "reg/mec172x_defs.h"
+#include "reg/mec172x_pcr.h"
+
+/* common peripheral register defines */
+#include "../common/reg/mec_acpi_ec.h"
+
+/* common SoC API */
 #include "../common/soc_gpio.h"
 #include "../common/soc_pins.h"
 #include "../common/soc_espi_channels.h"
 #include "../common/soc_espi_saf.h"
-
-uint32_t soc_get_core_clock(void);
 
 #endif
 
