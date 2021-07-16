@@ -147,6 +147,7 @@ struct usb_dc_stm32_state {
 	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
+	bool attached;
 
 #if defined(USB) || defined(USB_DRD_FS)
 	uint32_t pma_offset;
@@ -509,6 +510,10 @@ int usb_dc_attach(void)
 {
 	int ret;
 
+	if (usb_dc_stm32_state.attached) {
+		return 0;
+	}
+
 	LOG_DBG("");
 
 #ifdef SYSCFG_CFGR1_USB_IT_RMP
@@ -568,6 +573,8 @@ int usb_dc_attach(void)
 #endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */
 
+	usb_dc_stm32_state.attached = true;
+
 	return 0;
 }
 
@@ -577,7 +584,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -674,7 +681,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	uint8_t ep = ep_cfg->ep_addr;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -723,7 +730,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -746,7 +753,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -769,7 +776,11 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state || !stalled) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		return -EINVAL;
+	}
+
+	if (!stalled) {
 		return -EINVAL;
 	}
 
@@ -785,7 +796,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -816,7 +827,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -840,7 +851,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
-	if (!ep_state || !USB_EP_DIR_IS_IN(ep)) {
+	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_IN(ep)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -892,7 +903,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	uint32_t read_count;
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		LOG_ERR("Invalid Endpoint %x", ep);
 		return -EINVAL;
 	}
@@ -932,7 +943,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) { /* Check if OUT ep */
+	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_OUT(ep)) {
 		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
@@ -971,7 +982,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -984,7 +995,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
 		return -EINVAL;
 	}
 
@@ -994,6 +1005,9 @@ int usb_dc_ep_mps(const uint8_t ep)
 int usb_dc_detach(void)
 {
 	LOG_ERR("Not implemented");
+	if (!usb_dc_stm32_state.attached) {
+		return 0;
+	}
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
@@ -1006,6 +1020,8 @@ int usb_dc_detach(void)
 	 * https://github.com/zephyrproject-rtos/zephyr/pull/25850
 	 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
+
+	usb_dc_stm32_state.attached = false;
 
 	return 0;
 }
