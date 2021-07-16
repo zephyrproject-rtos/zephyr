@@ -35,7 +35,10 @@
 #include "reg/mec172x_espi_vw.h"
 #include "reg/mec172x_gpio.h"
 #include "reg/mec172x_i2c_smb.h"
+#include "reg/mec172x_p80bd.h"
 #include "reg/mec172x_pcr.h"
+#include "reg/mec172x_qspi.h"
+#include "reg/mec172x_vbat.h"
 
 /* common peripheral register defines */
 #include "../common/reg/mec_acpi_ec.h"
