@@ -341,6 +341,8 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	printk("Start advertising...");
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 0;
 	err = bt_le_ext_adv_start(adv, &ext_adv_param);
 	if (err) {
 		goto exit;
