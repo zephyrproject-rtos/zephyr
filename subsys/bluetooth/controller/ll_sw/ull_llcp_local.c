@@ -68,7 +68,7 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 	if (ctx->done) {
 		struct proc_ctx *ctx_header;
 
-		ctx_header = lr_peek(conn);
+		ctx_header = llcp_lr_peek(conn);
 		LL_ASSERT(ctx_header == ctx);
 
 		lr_dequeue(conn);
@@ -77,7 +77,7 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 			ull_conn_prt_clear(conn);
 		}
 
-		ull_cp_priv_proc_ctx_release(ctx);
+		llcp_proc_ctx_release(ctx);
 	}
 }
 /*
@@ -89,7 +89,7 @@ static void lr_set_state(struct ll_conn *conn, enum lr_state state)
 	conn->llcp.local.state = state;
 }
 
-void ull_cp_priv_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
+void llcp_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	sys_slist_append(&conn->llcp.local.pend_proc_list, &ctx->node);
 }
@@ -102,7 +102,7 @@ static struct proc_ctx *lr_dequeue(struct ll_conn *conn)
 	return ctx;
 }
 
-struct proc_ctx *lr_peek(struct ll_conn *conn)
+struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -110,46 +110,46 @@ struct proc_ctx *lr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
-void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
-		lp_enc_rx(conn, ctx, rx);
+		llcp_lp_enc_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
-		lp_pu_rx(conn, ctx, rx);
+		llcp_lp_pu_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
-		lp_cu_rx(conn, ctx, rx);
+		llcp_lp_cu_rx(conn, ctx, rx);
 		break;
 	case PROC_TERMINATE:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		lp_comm_rx(conn, ctx, rx);
+		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -161,25 +161,25 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	lr_check_done(conn, ctx);
 }
 
-void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
-		lp_comm_tx_ack(conn, ctx, tx);
+		llcp_lp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_TERMINATE:
-		lp_comm_tx_ack(conn, ctx, tx);
+		llcp_lp_comm_tx_ack(conn, ctx, tx);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		lp_comm_tx_ack(conn, ctx, tx);
+		llcp_lp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
-		lp_pu_tx_ack(conn, ctx, tx);
+		llcp_lp_pu_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 	default:
@@ -193,49 +193,49 @@ static void lr_act_run(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = lr_peek(conn);
+	ctx = llcp_lr_peek(conn);
 
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
-		lp_enc_run(conn, ctx, NULL);
+		llcp_lp_enc_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
-		lp_pu_run(conn, ctx, NULL);
+		llcp_lp_pu_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
-		lp_cu_run(conn, ctx, NULL);
+		llcp_lp_cu_run(conn, ctx, NULL);
 		break;
 	case PROC_TERMINATE:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_CHAN_MAP_UPDATE:
-		lp_chmu_run(conn, ctx, NULL);
+		llcp_lp_chmu_run(conn, ctx, NULL);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		lp_comm_run(conn, ctx, NULL);
+		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -251,7 +251,7 @@ static void lr_act_complete(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = lr_peek(conn);
+	ctx = llcp_lr_peek(conn);
 
 	ctx->done = 1U;
 }
@@ -273,7 +273,7 @@ static void lr_act_disconnect(struct ll_conn *conn)
 	 * which case we need to release context
 	 */
 	while (ctx != NULL) {
-		proc_ctx_release(ctx);
+		llcp_proc_ctx_release(ctx);
 		ctx = lr_dequeue(conn);
 	}
 }
@@ -297,7 +297,7 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 	switch (evt) {
 	case LR_EVT_RUN:
-		if ((ctx = lr_peek(conn))) {
+		if ((ctx = llcp_lr_peek(conn))) {
 			lr_act_run(conn);
 			if (ctx->proc != PROC_TERMINATE) {
 				lr_set_state(conn, LR_STATE_ACTIVE);
@@ -320,7 +320,7 @@ static void lr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
-		if (lr_peek(conn)) {
+		if (llcp_lr_peek(conn)) {
 			lr_act_run(conn);
 		}
 		break;
@@ -342,7 +342,7 @@ static void lr_st_terminate(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
-		if (lr_peek(conn)) {
+		if (llcp_lr_peek(conn)) {
 			lr_act_run(conn);
 		}
 		break;
@@ -381,45 +381,45 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-void ull_cp_priv_lr_init(struct ll_conn *conn)
+void llcp_lr_init(struct ll_conn *conn)
 {
 	lr_set_state(conn, LR_STATE_DISCONNECT);
 }
 
-void ull_cp_priv_lr_run(struct ll_conn *conn)
+void llcp_lr_run(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_RUN, NULL);
 }
 
-void ull_cp_priv_lr_complete(struct ll_conn *conn)
+void llcp_lr_complete(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_COMPLETE, NULL);
 }
 
-void ull_cp_priv_lr_connect(struct ll_conn *conn)
+void llcp_lr_connect(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_CONNECT, NULL);
 }
 
-void ull_cp_priv_lr_disconnect(struct ll_conn *conn)
+void llcp_lr_disconnect(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_DISCONNECT, NULL);
 }
 
-void ull_cp_priv_lr_abort(struct ll_conn *conn)
+void llcp_lr_abort(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
 	/* Flush all pending procedures */
 	ctx = lr_dequeue(conn);
 	while (ctx) {
-		proc_ctx_release(ctx);
+		llcp_proc_ctx_release(ctx);
 		ctx = lr_dequeue(conn);
 	}
 
 	/* TODO(thoh): Whats missing here ??? */
 	ull_conn_prt_clear(conn);
-	rr_set_incompat(conn, 0U);
+	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);
 }
 
@@ -446,23 +446,23 @@ void test_int_local_pending_requests(void)
 	ull_tx_q_init(&conn.tx_q);
 	ll_conn_init(&conn);
 
-	peek_ctx = lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
 	dequeue_ctx = lr_dequeue(&conn);
 	zassert_is_null(dequeue_ctx, NULL);
 
-	lr_enqueue(&conn, &ctx);
+	llcp_lr_enqueue(&conn, &ctx);
 	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
-	peek_ctx = lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&conn);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	dequeue_ctx = lr_dequeue(&conn);
 	zassert_equal_ptr(dequeue_ctx, &ctx, NULL);
 
-	peek_ctx = lr_peek(&conn);
+	peek_ctx = llcp_lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
 
 	dequeue_ctx = lr_dequeue(&conn);
