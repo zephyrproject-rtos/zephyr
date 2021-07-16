@@ -497,8 +497,8 @@ void test_data_length_update_sla_rem_and_loc(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Steal all tx buffers, so as to hold back length_rsp */
-	while (ull_cp_priv_tx_alloc_is_available()) {
-		tx = ull_cp_priv_tx_alloc();
+	while (llcp_tx_alloc_is_available()) {
+		tx = llcp_tx_alloc();
 	}
 
 	event_prepare(&conn);

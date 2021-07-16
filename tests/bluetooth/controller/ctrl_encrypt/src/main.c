@@ -372,7 +372,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
 
 	/* Steal all tx buffers */
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx = tx_alloc();
+		tx = llcp_tx_alloc();
 		zassert_not_null(tx, NULL);
 	}
 
@@ -1042,7 +1042,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 
 	/* Steal all tx buffers */
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx = tx_alloc();
+		tx = llcp_tx_alloc();
 		zassert_not_null(tx, NULL);
 	}
 

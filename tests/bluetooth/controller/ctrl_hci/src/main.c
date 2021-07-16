@@ -141,7 +141,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 	ctx_counter = 0;
 	do {
-		ctx = create_local_procedure(PROC_FEATURE_EXCHANGE);
+		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
 	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1,
@@ -211,7 +211,7 @@ void test_hci_version_ind_wrong_handle(void)
 
 	ctx_counter = 0;
 	do {
-		ctx = create_local_procedure(PROC_VERSION_EXCHANGE);
+		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
 	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1,
