@@ -201,12 +201,6 @@ manifest:
       revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
       path: modules/lib/tensorflow
       repo-path: tensorflow
-    - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
-      revision: v1.7.2
-      path: modules/tee/tfm-mcuboot
-      groups:
-        - tee
-      repo-path: mcuboot
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
