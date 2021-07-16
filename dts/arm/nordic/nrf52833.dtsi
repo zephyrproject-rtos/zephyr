@@ -242,6 +242,48 @@
 			label = "QDEC";
 		};
 
+		egu0: egu@40014000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40014000 0x1000>;
+			interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu1: egu@40015000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40015000 0x1000>;
+			interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu2: egu@40016000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40016000 0x1000>;
+			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu3: egu@40017000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40017000 0x1000>;
+			interrupts = <23 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu4: egu@40018000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40018000 0x1000>;
+			interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		egu5: egu@40019000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x40019000 0x1000>;
+			interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
 		timer3: timer@4001a000 {
 			compatible = "nordic,nrf-timer";
 			status = "okay";
