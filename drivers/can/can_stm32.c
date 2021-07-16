@@ -663,7 +663,7 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 	mb->callback_arg = callback_arg;
 	k_sem_reset(&mb->tx_int_sem);
 
-	/* mailbix identifier register setup */
+	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
 	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
