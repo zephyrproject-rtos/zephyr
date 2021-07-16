@@ -997,7 +997,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	LOG_ERR("Not implemented");
+	HAL_PCD_EP_Flush(&usb_dc_stm32_state.pcd, ep);
 
 	return 0;
 }
