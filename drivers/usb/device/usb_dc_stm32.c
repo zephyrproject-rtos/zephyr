@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
+#define USB_CORE_REG	((USB_OTG_GlobalTypeDef *)(USB_BASE_ADDRESS))
 #define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
@@ -67,7 +68,7 @@ static const struct pinctrl_dev_config *usb_pcfg =
 
 #define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
+#define USB_STM32_CORE_RST_TIMEOUT_US (10000)
 /*
  * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
  * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
@@ -1044,7 +1045,36 @@ int usb_dc_detach(void)
 
 int usb_dc_reset(void)
 {
-	LOG_ERR("Not implemented");
+	uint32_t cnt = 0U;
+
+	/* Wait for AHB master idle state. */
+	while (!(USB_CORE_REG->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL)) {
+		k_busy_wait(1);
+
+		if (++cnt > USB_STM32_CORE_RST_TIMEOUT_US) {
+			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
+				USB_CORE_REG->GRSTCTL);
+			return -EIO;
+		}
+	}
+
+	/* Core Soft Reset */
+	cnt = 0U;
+	USB_CORE_REG->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
+
+	do {
+		if (++cnt > USB_STM32_CORE_RST_TIMEOUT_US) {
+			LOG_DBG("USB reset HANG! Soft Reset GRSTCTL=0x%08x",
+				USB_CORE_REG->GRSTCTL);
+			return -EIO;
+		}
+		k_busy_wait(1);
+	} while (USB_CORE_REG->GRSTCTL & USB_OTG_GRSTCTL_CSRST);
+
+	/* Wait for 3 PHY Clocks */
+	k_busy_wait(100);
+
+	(void)memset(&usb_dc_stm32_state, 0, sizeof(usb_dc_stm32_state));
 
 	return 0;
 }
