@@ -87,33 +87,33 @@ static void lp_chmu_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
 	/* Encode LL Control PDU */
-	pdu_encode_chan_map_update_ind(ctx, pdu);
+	llcp_pdu_encode_chan_map_update_ind(ctx, pdu);
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
+	llcp_tx_enqueue(conn, tx);
 }
 
 static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
-	lr_complete(conn);
+	llcp_lr_complete(conn);
 	ctx->state = LP_CHMU_STATE_IDLE;
 }
 
 static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!tx_alloc_is_available() || rr_get_collision(conn)) {
+	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
 		ctx->state = LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND;
 	} else {
-		rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 
 		/* TODO Hardcoded instant delta */
 		ctx->data.chmu.instant = lp_event_counter(conn) + CHMU_INSTANT_DELTA;
@@ -153,7 +153,7 @@ static void lp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 {
 	uint16_t event_counter = lp_event_counter(conn);
 	if (is_instant_reached_or_passed(ctx->data.chmu.instant, event_counter)) {
-		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		lp_chmu_complete(conn, ctx, evt, param);
 	}
 }
@@ -188,12 +188,12 @@ static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-void ull_cp_priv_lp_chmu_init_proc(struct proc_ctx *ctx)
+void llcp_lp_chmu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = LP_CHMU_STATE_IDLE;
 }
 
-void ull_cp_priv_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
 }
@@ -216,7 +216,7 @@ static uint16_t rp_event_counter(struct ll_conn *conn)
 static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
-	rr_complete(conn);
+	llcp_rr_complete(conn);
 	ctx->state = RP_CHMU_STATE_IDLE;
 }
 
@@ -237,7 +237,7 @@ static void rp_chmu_st_wait_rx_channel_map_update_ind(struct ll_conn *conn, stru
 {
 	switch (evt) {
 	case RP_CHMU_EVT_RX_CHAN_MAP_IND:
-		ull_cp_priv_pdu_decode_chan_map_update_ind(ctx, param);
+		llcp_pdu_decode_chan_map_update_ind(ctx, param);
 		ctx->state = RP_CHMU_STATE_WAIT_INSTANT;
 		break;
 	default:
@@ -284,7 +284,7 @@ static void rp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-void ull_cp_priv_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
 
@@ -298,12 +298,12 @@ void ull_cp_priv_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct n
 	}
 }
 
-void ull_cp_priv_rp_chmu_init_proc(struct proc_ctx *ctx)
+void llcp_rp_chmu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = RP_CHMU_STATE_IDLE;
 }
 
-void ull_cp_priv_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_chmu_execute_fsm(conn, ctx, RP_CHMU_EVT_RUN, param);
 }
