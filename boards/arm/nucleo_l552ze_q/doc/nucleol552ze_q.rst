@@ -132,43 +132,53 @@ More information about STM32L552ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l552ze_q board configuration supports the following hardware features:
+The Zephyr nucleo_l552ze_q board configuration supports the following
+hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
+| ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
+| CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
+| NVIC      | on-chip    | nested vector interrupt controller  |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | TrustZone | on-chip    | Trusted Firmware-M                  |
 +-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random Number Generator        |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface         |
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 
-Other hardware features are not yet supported on this Zephyr port.
+The default configuration can be found in the defconfig and dts files:
 
-The default configuration can be found in the defconfig file:
-``boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_defconfig``
+- Common:
+
+  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q-common.dtsi`
+
+- Secure target:
+
+  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_defconfig`
+  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q.dts`
+
+- Non-Secure target:
+
+  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns_defconfig`
+  - :zephyr_file:`boards/arm/nucleo_l552ze_q/nucleo_l552ze_q_ns.dts`
 
 
 Connections and IOs

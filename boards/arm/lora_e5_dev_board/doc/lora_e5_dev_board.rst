@@ -80,35 +80,42 @@ features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
-| MPU       | on-chip    | arm memory protection unit          |
+| ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
+| AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
+| COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
+| CLOCK     | on-chip    | reset and clock control             |
++-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| MPU       | on-chip    | arch/arm                            |
++-----------+------------+-------------------------------------+
+| NVIC      | on-chip    | arch/arm                            |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | LoRa                                |
++-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | rtc                                 |
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig and dts files:
-``boards/arm/lora_e5_dev_board/lora_e5_dev_board_defconfig``
-``boards/arm/lora_e5_dev_board/lora_e5_dev_board.dts``
+
+- :zephyr_file:`boards/arm/lora_e5_dev_board/lora_e5_dev_board_defconfig`
+- :zephyr_file:`boards/arm/lora_e5_dev_board/lora_e5_dev_board.dts`
 
 
 Connections and IOs
