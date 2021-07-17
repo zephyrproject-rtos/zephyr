@@ -32,21 +32,6 @@ static struct bt_mics_cb *mics_client_cb;
 static struct bt_mics mics_insts[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
-static struct bt_mics *lookup_mics_by_aics(const struct bt_aics *aics)
-{
-	__ASSERT(aics != NULL, "AICS pointer cannot be NULL");
-
-	for (int i = 0; i < ARRAY_SIZE(mics_insts); i++) {
-		for (int j = 0; j < ARRAY_SIZE(mics_insts[i].cli.aics); j++) {
-			if (mics_insts[i].cli.aics[j] == aics) {
-				return &mics_insts[i];
-			}
-		}
-	}
-
-	return NULL;
-}
-
 bool bt_mics_client_valid_aics_inst(struct bt_mics *mics, struct bt_aics *aics)
 {
 	if (mics == NULL) {
@@ -149,6 +134,22 @@ static void mics_client_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
+#if defined(CONFIG_BT_MICS_CLIENT_AICS)
+static struct bt_mics *lookup_mics_by_aics(const struct bt_aics *aics)
+{
+	__ASSERT(aics != NULL, "AICS pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(mics_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(mics_insts[i].cli.aics); j++) {
+			if (mics_insts[i].cli.aics[j] == aics) {
+				return &mics_insts[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static void aics_discover_cb(struct bt_aics *inst, int err)
 {
 	struct bt_mics *mics_inst = lookup_mics_by_aics(inst);
@@ -167,6 +168,7 @@ static void aics_discover_cb(struct bt_aics *inst, int err)
 		}
 	}
 }
+#endif /* CONFIG_BT_MICS_CLIENT_AICS */
 
 static uint8_t mics_discover_include_func(
 	struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -429,30 +431,29 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 
 int bt_mics_client_cb_register(struct bt_mics_cb *cb)
 {
-	int i, j;
+#if defined(CONFIG_BT_MICS_CLIENT_AICS)
+	struct bt_aics_cb *aics_cb = NULL;
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT)) {
-		struct bt_aics_cb *aics_cb = NULL;
-
-		if (cb != NULL) {
-			CHECKIF(cb->aics_cb.discover != NULL) {
-				BT_ERR("AICS discover callback shall not be set");
-				return -EINVAL;
-			}
-			cb->aics_cb.discover = aics_discover_cb;
-
-			aics_cb = &cb->aics_cb;
+	if (cb != NULL) {
+		CHECKIF(cb->aics_cb.discover != NULL) {
+			BT_ERR("AICS discover callback shall not be set");
+			return -EINVAL;
 		}
+		cb->aics_cb.discover = aics_discover_cb;
 
-		for (i = 0; i < ARRAY_SIZE(mics_insts); i++) {
-			for (j = 0; j < ARRAY_SIZE(mics_insts[i].cli.aics); j++) {
-				if (mics_insts[i].cli.aics[j] != NULL) {
-					bt_aics_client_cb_register(mics_insts[i].cli.aics[j],
-								   aics_cb);
-				}
+		aics_cb = &cb->aics_cb;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(mics_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(mics_insts[i].cli.aics); j++) {
+			struct bt_aics *aics = mics_insts[i].cli.aics[j];
+
+			if (aics != NULL) {
+				bt_aics_client_cb_register(aics, aics_cb);
 			}
 		}
 	}
+#endif /* CONFIG_BT_MICS_CLIENT_AICS */
 
 	mics_client_cb = cb;
 
