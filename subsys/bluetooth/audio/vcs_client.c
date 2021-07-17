@@ -32,36 +32,6 @@ static struct bt_vcs_cb *vcs_client_cb;
 static struct bt_vcs vcs_insts[CONFIG_BT_MAX_CONN];
 static int vcs_client_common_vcs_cp(struct bt_vcs *vcs, uint8_t opcode);
 
-static struct bt_vcs *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
-{
-	__ASSERT(vocs != NULL, "VOCS pointer cannot be NULL");
-
-	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
-		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.vocs); j++) {
-			if (vcs_insts[i].cli.vocs[j] == vocs) {
-				return &vcs_insts[i];
-			}
-		}
-	}
-
-	return NULL;
-}
-
-static struct bt_vcs *lookup_vcs_by_aics(const struct bt_aics *aics)
-{
-	__ASSERT(aics != NULL, "aics pointer cannot be NULL");
-
-	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
-		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
-			if (vcs_insts[i].cli.aics[j] == aics) {
-				return &vcs_insts[i];
-			}
-		}
-	}
-
-	return NULL;
-}
-
 bool bt_vcs_client_valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs)
 {
 	if (vcs == NULL) {
@@ -624,6 +594,22 @@ static int vcs_client_common_vcs_cp(struct bt_vcs *vcs, uint8_t opcode)
 	return err;
 }
 
+#if defined(CONFIG_BT_VCS_CLIENT_AICS)
+static struct bt_vcs *lookup_vcs_by_aics(const struct bt_aics *aics)
+{
+	__ASSERT(aics != NULL, "aics pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
+			if (vcs_insts[i].cli.aics[j] == aics) {
+				return &vcs_insts[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static void aics_discover_cb(struct bt_aics *inst, int err)
 {
 	struct bt_vcs *vcs_inst = lookup_vcs_by_aics(inst);
@@ -640,6 +626,23 @@ static void aics_discover_cb(struct bt_aics *inst, int err)
 			vcs_client_cb->discover(vcs_inst, err, 0, 0);
 		}
 	}
+}
+#endif /* CONFIG_BT_VCS_CLIENT_AICS */
+
+#if defined(CONFIG_BT_VCS_CLIENT_VOCS)
+static struct bt_vcs *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
+{
+	__ASSERT(vocs != NULL, "VOCS pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.vocs); j++) {
+			if (vcs_insts[i].cli.vocs[j] == vocs) {
+				return &vcs_insts[i];
+			}
+		}
+	}
+
+	return NULL;
 }
 
 static void vocs_discover_cb(struct bt_vocs *inst, int err)
@@ -671,6 +674,7 @@ static void vocs_discover_cb(struct bt_vocs *inst, int err)
 		}
 	}
 }
+#endif /* CONFIG_BT_VCS_CLIENT_VOCS */
 
 static void vcs_client_reset(struct bt_conn *conn)
 {
@@ -781,53 +785,53 @@ int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs)
 
 int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 {
-	int i, j;
+#if defined(CONFIG_BT_VCS_CLIENT_VOCS)
+	struct bt_vocs_cb *vocs_cb = NULL;
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT)) {
-		struct bt_vocs_cb *vocs_cb = NULL;
-
-		if (cb != NULL) {
-			CHECKIF(cb->vocs_cb.discover) {
-				BT_ERR("VOCS discover callback shall not be set");
-				return -EINVAL;
-			}
-			cb->vocs_cb.discover = vocs_discover_cb;
-
-			vocs_cb = &cb->vocs_cb;
+	if (cb != NULL) {
+		CHECKIF(cb->vocs_cb.discover) {
+			BT_ERR("VOCS discover callback shall not be set");
+			return -EINVAL;
 		}
+		cb->vocs_cb.discover = vocs_discover_cb;
 
-		for (i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
-			for (j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.vocs); j++) {
-				if (vcs_insts[i].cli.vocs[j]) {
-					bt_vocs_client_cb_register(vcs_insts[i].cli.vocs[j],
-								   vocs_cb);
-				}
+		vocs_cb = &cb->vocs_cb;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.vocs); j++) {
+			struct bt_vocs *vocs = vcs_insts[i].cli.vocs[j];
+
+			if (vocs != NULL) {
+				bt_vocs_client_cb_register(vocs, vocs_cb);
 			}
 		}
 	}
+#endif /* CONFIG_BT_VCS_CLIENT_VOCS */
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT)) {
-		struct bt_aics_cb *aics_cb = NULL;
+#if defined(CONFIG_BT_VCS_CLIENT_AICS)
+	struct bt_aics_cb *aics_cb = NULL;
 
-		if (cb != NULL) {
-			CHECKIF(cb->aics_cb.discover) {
-				BT_ERR("AICS discover callback shall not be set");
-				return -EINVAL;
-			}
-			cb->aics_cb.discover = aics_discover_cb;
-
-			aics_cb = &cb->aics_cb;
+	if (cb != NULL) {
+		CHECKIF(cb->aics_cb.discover) {
+			BT_ERR("AICS discover callback shall not be set");
+			return -EINVAL;
 		}
+		cb->aics_cb.discover = aics_discover_cb;
 
-		for (i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
-			for (j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
-				if (vcs_insts[i].cli.aics[j]) {
-					bt_aics_client_cb_register(vcs_insts[i].cli.aics[j],
-								   aics_cb);
-				}
+		aics_cb = &cb->aics_cb;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
+			struct bt_aics *aics = vcs_insts[i].cli.aics[j];
+
+			if (aics != NULL) {
+				bt_aics_client_cb_register(aics, aics_cb);
 			}
 		}
 	}
+#endif /* CONFIG_BT_VCS_CLIENT_AICS */
 
 	vcs_client_cb = cb;
 
