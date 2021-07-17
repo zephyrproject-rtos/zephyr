@@ -817,10 +817,10 @@ static void mount_init(struct fs_mount_t *mp)
 		int rc = fs_mount(mp);
 
 		if (rc < 0) {
-			LOG_ERR("Automount %s failed: %d\n",
+			LOG_ERR("Automount %s failed: %d",
 				mp->mnt_point, rc);
 		} else {
-			LOG_INF("Automount %s succeeded\n",
+			LOG_INF("Automount %s succeeded",
 				mp->mnt_point);
 		}
 	}
