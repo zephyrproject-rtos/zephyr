@@ -423,17 +423,26 @@ is_priv_sp:
 	addi a0, sp, 0
 
 #ifdef CONFIG_USERSPACE
-	la ra, no_reschedule_from_fault
+	/* Check if we are in user thread */
+	WAS_NOT_USER(t0, t1)
+	bnez t0, supervisor_fault
+
+user_fault:
+	/* Fault at user mode */
+	la ra, no_reschedule_user_fault
+
 	/* Switch to privilege stack */
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 	RV_OP_LOADREG t0, _thread_offset_to_priv_stack_start(t1)
 	RV_OP_STOREREG sp, _thread_offset_to_user_sp(t1) /* Update user SP */
 	addi sp, t0, CONFIG_PRIVILEGED_STACK_SIZE
-#else
-	la ra, no_reschedule
-#endif /* CONFIG_USERSPACE */
+	tail _Fault
 
+supervisor_fault:
+#endif /* CONFIG_USERSPACE */
+	/* Fault at supervisor mode */
+	la ra, no_reschedule
 	tail _Fault
 
 is_kernel_syscall:
@@ -599,18 +608,18 @@ valid_syscall_id:
 
 return_from_syscall:
 	/*
-	 * Retrieve a0 (returned value) from privilege stack
+	 * Retrieve a0 (return value) from privilege stack
 	 * (or IRQ stack if stack guard is enabled).
 	 */
 	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 
-no_reschedule_from_fault:
-	/* Restore User SP */
+no_reschedule_user_fault:
+	/* Restore user stack */
 	la t0, _kernel
 	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
 	RV_OP_LOADREG sp, _thread_offset_to_user_sp(t1)
 
-	/* Update a0 (return value) */
+	/* Update a0 (return value) to user stack. */
 	RV_OP_STOREREG a0, __z_arch_esf_t_a0_OFFSET(sp)
 
 #ifdef CONFIG_PMP_STACK_GUARD
