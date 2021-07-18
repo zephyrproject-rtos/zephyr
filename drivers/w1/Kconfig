@@ -23,6 +23,7 @@ config W1_INIT_PRIORITY
 	  1-Wire device driver initialization priority.
 
 rsource "Kconfig.test"
+rsource "Kconfig.zephyr_serial"
 
 config W1_NET
 	bool "1-Wire network layer"
