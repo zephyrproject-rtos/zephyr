@@ -29,6 +29,18 @@
 #define AICS_CP_LEN                 0x02
 #define AICS_CP_SET_GAIN_LEN        0x03
 
+
+static ssize_t write_description(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset,
+				 uint8_t flags);
+
+static ssize_t write_aics_control(struct bt_conn *conn,
+				  const struct bt_gatt_attr *attr,
+				  const void *buf, uint16_t len,
+				  uint16_t offset, uint8_t flags);
+
+#if defined(CONFIG_BT_AICS)
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value);
 static ssize_t read_aics_state(struct bt_conn *conn,
@@ -45,21 +57,12 @@ static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
 static ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset);
-static ssize_t write_aics_control(struct bt_conn *conn,
-				  const struct bt_gatt_attr *attr,
-				  const void *buf, uint16_t len,
-				  uint16_t offset, uint8_t flags);
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value);
-static ssize_t write_description(struct bt_conn *conn,
-				 const struct bt_gatt_attr *attr,
-				 const void *buf, uint16_t len, uint16_t offset,
-				 uint8_t flags);
 static ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset);
 
-#if defined(CONFIG_BT_AICS)
 #define BT_AICS_SERVICE_DEFINITION(_aics) {                                    \
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_AICS),                               \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_STATE,                             \
