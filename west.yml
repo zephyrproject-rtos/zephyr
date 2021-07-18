@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: nandojve
+      url-base: https://github.com/nandojve
 
   #
   # Please add items below based on alphabetical order
@@ -59,6 +61,12 @@ manifest:
     - name: hal_atmel
       revision: 9f78f520f6cbb997e5b44fe8ab17dd5bf2448095
       path: modules/hal/atmel
+      groups:
+        - hal
+    - name: bl_mcu_sdk
+      remote: nandojve
+      path: modules/hal/bouffalolab
+      revision: f33ca054e51fd77bc6768e70b9e06be230015b48
       groups:
         - hal
     - name: hal_cypress

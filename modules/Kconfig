@@ -46,6 +46,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
 
+comment "hal_bouffalolab module not available."
+	depends on !ZEPHYR_HAL_BOUFFALOLAB_MODULE
+
 comment "hal_gigadevice module not available."
 	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE
 
