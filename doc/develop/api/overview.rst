@@ -362,6 +362,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.1
      - 2.6
 
+   * - :ref:`w1_api`
+     - Experimental
+     - 3.2
+     - 3.2
+
    * - :ref:`watchdog_api`
      - Stable
      - 1.0
