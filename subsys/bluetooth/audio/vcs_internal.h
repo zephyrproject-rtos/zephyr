@@ -36,6 +36,7 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
+#if defined(CONFIG_BT_VCS_CLIENT)
 struct bt_vcs_client {
 	struct vcs_state state;
 	uint8_t flags;
@@ -62,7 +63,9 @@ struct bt_vcs_client {
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
 };
+#endif /* CONFIG_BT_VCS_CLIENT */
 
+#if defined(CONFIG_BT_VCS)
 struct bt_vcs_server {
 	struct vcs_state state;
 	uint8_t flags;
@@ -73,13 +76,18 @@ struct bt_vcs_server {
 	struct bt_vocs *vocs_insts[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT];
 	struct bt_aics *aics_insts[CONFIG_BT_VCS_AICS_INSTANCE_COUNT];
 };
+#endif /* CONFIG_BT_VCS */
 
 /* Struct used as a common type for the api */
 struct bt_vcs {
 	bool client_instance;
 	union {
+#if defined(CONFIG_BT_VCS)
 		struct bt_vcs_server srv;
+#endif /* CONFIG_BT_VCS */
+#if defined(CONFIG_BT_VCS_CLIENT)
 		struct bt_vcs_client cli;
+#endif /* CONFIG_BT_VCS_CLIENT */
 	};
 };
 
