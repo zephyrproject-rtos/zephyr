@@ -170,4 +170,12 @@ config X86_USE_THREAD_LOCAL_STORAGE
 	help
 	  Internal config to enable thread local storage.
 
+config X86_MFENCE_INSTRUCTION_SUPPORTED
+	bool "X86 MFENCE instruction supported"
+	default y
+	depends on CACHE_MANAGEMENT
+	help
+	  Set n to disable the use of MFENCE instruction in arch_dcache_flush()
+	  for X86 CPUs have CLFLUSH instruction but no MFENCE
+
 endif # !X86_64
