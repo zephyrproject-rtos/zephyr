@@ -161,6 +161,11 @@ manifest:
       path: modules/hal/atmel
       groups:
         - hal
+    - name: hal_bouffalolab
+      path: modules/hal/bouffalolab
+      revision: c6c44b879503d990dfba643c212b606cee414faa
+      groups:
+        - hal
     - name: hal_espressif
       revision: dbc28ad4c1bdcdb25e79ca225cb5528a75d8dc91
       path: modules/hal/espressif
