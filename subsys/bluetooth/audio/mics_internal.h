@@ -9,13 +9,16 @@
 #include <zephyr/types.h>
 #include <bluetooth/gatt.h>
 
+#if defined(CONFIG_BT_MICS)
 struct bt_mics_server {
 	uint8_t mute;
 	struct bt_mics_cb *cb;
 	struct bt_gatt_service *service_p;
 	struct bt_aics *aics_insts[CONFIG_BT_MICS_AICS_INSTANCE_COUNT];
 };
+#endif /* CONFIG_BT_MICS */
 
+#if defined(CONFIG_BT_MICS_CLIENT)
 struct bt_mics_client {
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -33,13 +36,18 @@ struct bt_mics_client {
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_MICS_CLIENT_MAX_AICS_INST];
 };
+#endif /* CONFIG_BT_MICS_CLIENT */
 
 /* Struct used as a common type for the api */
 struct bt_mics {
 	bool client_instance;
 	union {
+#if defined(CONFIG_BT_MICS)
 		struct bt_mics_server srv;
+#endif /* CONFIG_BT_MICS */
+#if defined(CONFIG_BT_MICS_CLIENT)
 		struct bt_mics_client cli;
+#endif /* CONFIG_BT_MICS_CLIENT */
 	};
 };
 
