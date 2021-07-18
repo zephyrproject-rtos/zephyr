@@ -1,0 +1,29 @@
+# Configuration options for the Zephyr serial 1-Wire Master driver
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ZEPHYR_SERIAL := zephyr,w1-serial
+
+config W1_ZEPHYR_SERIAL
+	bool "1-wire Serial"
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_SERIAL))
+	help
+	  This option enables the Zephyr serial 1-Wire master driver.
+
+	  The bus reset, and bit read and write operations are executed
+	  via bytes read and write operations on top of the Zephyr
+	  serial driver interface.
+
+if W1_ZEPHYR_SERIAL
+
+config W1_ZEPHYR_SERIAL_BIT_TIMEOUT
+	int "Bit read timeout in us"
+	default 380
+	help
+	  The bit read timeout specifies how long the driver tries to read the
+	  uart byte (1-wire standard speed data bit).
+	  For serial drivers where poll_out does not block until the transfer is
+	  complete, it must at least be greater than 87us (10bits / 115.2 kBd).
+
+endif # W1_ZEPHYR_SERIAL
