@@ -46,3 +46,4 @@ Peripherals
    video.rst
    espi.rst
    mipi_dsi.rst
+   w1.rst
