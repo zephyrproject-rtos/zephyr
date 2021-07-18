@@ -19,7 +19,7 @@
 #include <assert.h>
 #include "soc/soc.h"
 #include <logging/log.h>
-LOG_MODULE_REGISTER(esp32_intc, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(esp32_intc, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define ETS_INTERNAL_TIMER0_INTR_NO 6
 #define ETS_INTERNAL_TIMER1_INTR_NO 15
@@ -507,7 +507,7 @@ int esp_intr_alloc_intrstatus(int source,
 	struct intr_handle_data_t *ret = NULL;
 	int force = -1;
 
-	LOG_INF("%s (cpu %d): checking args", __func__, arch_curr_cpu()->id);
+	INTC_LOG("%s (cpu %d): checking args", __func__, arch_curr_cpu()->id);
 	/* Shared interrupts should be level-triggered. */
 	if ((flags & ESP_INTR_FLAG_SHARED) && (flags & ESP_INTR_FLAG_EDGE)) {
 		return -EINVAL;
@@ -547,7 +547,7 @@ int esp_intr_alloc_intrstatus(int source,
 			flags |= ESP_INTR_FLAG_LOWMED;
 		}
 	}
-	LOG_INF("%s (cpu %d): Args okay."
+	INTC_LOG("%s (cpu %d): Args okay."
 		"Resulting flags 0x%X", __func__, arch_curr_cpu()->id, flags);
 
 	/*
@@ -747,13 +747,13 @@ int esp_intr_free(struct intr_handle_data_t *handle)
 		if (handle->vector_desc->shared_vec_info == NULL) {
 			free_shared_vector = true;
 		}
-		LOG_INF("%s: Deleting shared int: %s. "
+		INTC_LOG("%s: Deleting shared int: %s. "
 			"Shared int is %s", __func__, svd ? "not found or last one" : "deleted",
 			free_shared_vector ? "empty now." : "still in use");
 	}
 
 	if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
-		LOG_INF("%s: Disabling int, killing handler", __func__);
+		INTC_LOG("%s: Disabling int, killing handler", __func__);
 		/* Reset to normal handler */
 		set_interrupt_handler(handle->vector_desc->intno,
 				      default_intr_handler,
