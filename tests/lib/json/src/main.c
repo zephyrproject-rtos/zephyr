@@ -51,7 +51,7 @@ static const struct json_obj_descr nested_descr[] = {
 static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_null, JSON_TOK_NULL),
-	JSON_OBJ_DESCR_PRIM(struct test_struct, some_null_string, JSON_TOK_STRING)
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_null_string, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
@@ -103,8 +103,8 @@ static void test_json_encoding(void)
 {
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
-		.some_null = nullptr,
-		.some_null_string = nullptr;
+		.some_null = NULL,
+		.some_null_string = NULL;
 		.some_int = 42,
 		.some_bool = true,
 		.some_nested_struct = {
@@ -195,8 +195,8 @@ static void test_json_decoding(void)
 
 	zassert_true(!strcmp(ts.some_string, "zephyr 123\\uABCD456"),
 		    "String decoded correctly");
-	zassert_equal(ts.some_null, nullptr, "Null value decoded correctly");
-	zassert_equal(ts.some_null_string, nullptr, "Null string decoded correctly");
+	zassert_equal(ts.some_null, NULL, "Null value decoded correctly");
+	zassert_equal(ts.some_null_string, NULL, "Null string decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int, -1234,
