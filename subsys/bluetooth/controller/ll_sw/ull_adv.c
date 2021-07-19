@@ -469,7 +469,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* Tx Power flag */
 		if (pri_hdr_prev.tx_pwr) {
-			pri_dptr_prev++;
+			pri_dptr_prev += sizeof(uint8_t);
 		}
 		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
 		 * for future use on the LE Coded PHY.
@@ -477,7 +477,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		if ((evt_prop & BT_HCI_LE_ADV_PROP_TX_POWER) &&
 		    (!pri_hdr_prev.aux_ptr || (phy_p != PHY_CODED))) {
 			pri_hdr->tx_pwr = 1;
-			pri_dptr++;
+			pri_dptr += sizeof(uint8_t);
 		}
 
 		/* Calc primary PDU len */
@@ -495,7 +495,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* Tx Power */
 		if (pri_hdr_prev.tx_pwr) {
-			pri_dptr_prev--;
+			pri_dptr_prev -= sizeof(uint8_t);
 		}
 		if (pri_hdr->tx_pwr) {
 			uint8_t _tx_pwr;
@@ -509,7 +509,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				}
 			}
 
-			*--pri_dptr = _tx_pwr;
+			pri_dptr -= sizeof(uint8_t);
+			*pri_dptr = _tx_pwr;
 		}
 
 		/* No SyncInfo in primary channel PDU */
