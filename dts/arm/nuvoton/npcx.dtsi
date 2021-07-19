@@ -410,17 +410,6 @@
 			label = "HOST_SUBS";
 		};
 
-		host_uart: io_host_uart {
-			compatible = "nuvoton,npcx-host-uart";
-			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
-			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
-						&altb_rts_sl &altb_cts_sl
-						&altb_ri_sl &altb_dtr_bout_sl
-						&altb_dcd_sl &altb_dsr_sl>;
-			label = "HOST_UART_IO";
-			status = "disabled";
-		};
-
 		/* I2c Controllers - Do not use them as i2c node directly */
 		i2c_ctrl0: i2c@40009000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
@@ -486,7 +475,87 @@
 			label = "I2CCTRL_7";
 		};
 
-		/* I2c Ports - Please use them as i2c node */
+		tach1: tach@400e1000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e1000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 5>;
+			label = "TACH_1";
+			status = "disabled";
+		};
+
+		tach2: tach@400e3000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e3000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
+			label = "TACH_2";
+			status = "disabled";
+		};
+
+		ps2_ctrl0: ps2@400b1000 {
+			compatible = "nuvoton,npcx-ps2-ctrl";
+			reg = <0x400b1000 0x1000>;
+			interrupts = <21 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
+			label = "PS2_CTRL_0";
+
+			/* PS2 Channels - Please use them as PS2 node */
+			ps2_channel0: io_ps2_channel0 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x00>;
+				pinctrl-0 = <&alt3_ps2_0_sl>; /* PIN67.70 */
+				label = "PS2_CHANNEL_0";
+				status = "disabled";
+			};
+
+			ps2_channel1: io_ps2_channel1 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x01>;
+				pinctrl-0 = <&alt3_ps2_1_sl>; /* PIN62.63 */
+				label = "PS2_CHANNEL_1";
+				status = "disabled";
+			};
+
+			ps2_channel2: io_ps2_channel2 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x02>;
+				pinctrl-0 = <&alt3_ps2_2_sl>; /* PIN37.34 */
+				label = "PS2_CHANNEL_2";
+				status = "disabled";
+			};
+
+			ps2_channel3: io_ps2_channel3 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x03>;
+				pinctrl-0 = <&altc_ps2_3_sl2>; /* PINA6.A7 */
+				label = "PS2_CHANNEL_3";
+				status = "disabled";
+			};
+		};
+	};
+
+	soc-if {
+		/* Soc specific peripheral interface phandles which don't contain
+		 * 'reg' prop. Please overwrite 'status' prop. to 'okay' if you
+		 * want to switch the interface from io to specific peripheral.
+		 */
+		host_uart: io_host_uart {
+			compatible = "nuvoton,npcx-host-uart";
+			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
+			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
+						&altb_rts_sl &altb_cts_sl
+						&altb_ri_sl &altb_dtr_bout_sl
+						&altb_dcd_sl &altb_dsr_sl>;
+			label = "HOST_UART_IO";
+			status = "disabled";
+		};
+
+		psl_out: psl-out {
+			compatible = "nuvoton,npcx-psl-out";
+			controller = <&gpio8>;
+			pin = <5>;
+			label = "PSL_OUT";
+		};
+
 		i2c0_0: io_i2c_ctrl0_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
 			#address-cells = <1>;
@@ -595,70 +664,6 @@
 			pinctrl-0 = <&alt2_i2c7_0_sl>; /* PINB3.B2 */
 			label = "I2C_7_PORT_0";
 			status = "disabled";
-		};
-
-		tach1: tach@400e1000 {
-			compatible = "nuvoton,npcx-tach";
-			reg = <0x400e1000 0x2000>;
-			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 5>;
-			label = "TACH_1";
-			status = "disabled";
-		};
-
-		tach2: tach@400e3000 {
-			compatible = "nuvoton,npcx-tach";
-			reg = <0x400e3000 0x2000>;
-			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
-			label = "TACH_2";
-			status = "disabled";
-		};
-
-		psl_out: psl-out {
-			compatible = "nuvoton,npcx-psl-out";
-			controller = <&gpio8>;
-			pin = <5>;
-			label = "PSL_OUT";
-		};
-
-		ps2_ctrl0: ps2@400b1000 {
-			compatible = "nuvoton,npcx-ps2-ctrl";
-			reg = <0x400b1000 0x1000>;
-			interrupts = <21 4>;
-			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
-			label = "PS2_CTRL_0";
-
-			/* PS2 Channels - Please use them as PS2 node */
-			ps2_channel0: io_ps2_channel0 {
-				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x00>;
-				pinctrl-0 = <&alt3_ps2_0_sl>; /* PIN67.70 */
-				label = "PS2_CHANNEL_0";
-				status = "disabled";
-			};
-
-			ps2_channel1: io_ps2_channel1 {
-				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x01>;
-				pinctrl-0 = <&alt3_ps2_1_sl>; /* PIN62.63 */
-				label = "PS2_CHANNEL_1";
-				status = "disabled";
-			};
-
-			ps2_channel2: io_ps2_channel2 {
-				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x02>;
-				pinctrl-0 = <&alt3_ps2_2_sl>; /* PIN37.34 */
-				label = "PS2_CHANNEL_2";
-				status = "disabled";
-			};
-
-			ps2_channel3: io_ps2_channel3 {
-				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x03>;
-				pinctrl-0 = <&altc_ps2_3_sl2>; /* PINA6.A7 */
-				label = "PS2_CHANNEL_3";
-				status = "disabled";
-			};
 		};
 	};
 
