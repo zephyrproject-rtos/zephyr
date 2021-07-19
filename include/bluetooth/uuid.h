@@ -338,6 +338,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HIDS \
 	BT_UUID_DECLARE_16(BT_UUID_HIDS_VAL)
+/** @def BT_UUID_RSCS_VAL
+ *  @brief Running Speed and Cadence Service UUID value
+ */
+#define BT_UUID_RSCS_VAL 0x1814
+/** @def BT_UUID_RSCS
+ *  @brief Running Speed and Cadence Service
+ */
+#define BT_UUID_RSCS \
+	BT_UUID_DECLARE_16(BT_UUID_RSCS_VAL)
 /** @def BT_UUID_CSC_VAL
  *  @brief Cycling Speed and Cadence Service UUID value
  */
@@ -852,6 +861,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_HIDS_PROTOCOL_MODE \
 	BT_UUID_DECLARE_16(BT_UUID_HIDS_PROTOCOL_MODE_VAL)
+/** @def BT_UUID_RSC_MEASUREMENT_VAL
+ *  @brief RSC Measurement Characteristic UUID value
+ */
+#define BT_UUID_RSC_MEASUREMENT_VAL 0x2a53
+/** @def BT_UUID_RSC_MEASUREMENT
+ *  @brief RSC Measurement Characteristic
+ */
+#define BT_UUID_RSC_MEASUREMENT \
+	BT_UUID_DECLARE_16(BT_UUID_RSC_MEASUREMENT_VAL)
+/** @def BT_UUID_RSC_FEATURE_VAL
+ *  @brief RSC Feature Characteristic UUID value
+ */
+#define BT_UUID_RSC_FEATURE_VAL 0x2a54
+/** @def BT_UUID_RSC_FEATURE
+ *  @brief RSC Feature Characteristic
+ */
+#define BT_UUID_RSC_FEATURE \
+	BT_UUID_DECLARE_16(BT_UUID_RSC_FEATURE_VAL)
 /** @def BT_UUID_CSC_MEASUREMENT_VAL
  *  @brief CSC Measurement Characteristic UUID value
  */
