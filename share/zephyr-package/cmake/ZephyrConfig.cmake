@@ -20,7 +20,7 @@ macro(include_boilerplate location)
   endif()
 
   if(NOT NO_BOILERPLATE)
-    message("Including boilerplate (${location}): ${BOILERPLATE_FILE}")
+    message(STATUS "Including boilerplate (${location}): ${BOILERPLATE_FILE}")
     include(${BOILERPLATE_FILE} NO_POLICY_SCOPE)
   endif()
 endmacro()
