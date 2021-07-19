@@ -180,6 +180,14 @@ static int random_byte_get(void)
 		}
 
 		retval = LL_RNG_ReadRandData32(rng);
+		if (retval == 0) {
+			/* A seed error could have occurred between RNG_SR
+			 * polling and RND_DR output reading.
+			 */
+			retval = -EAGAIN;
+			goto out;
+		}
+
 		retval &= 0xFF;
 	}
 
