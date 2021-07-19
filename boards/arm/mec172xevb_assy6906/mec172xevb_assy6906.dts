@@ -27,6 +27,10 @@
 	status = "okay";
 };
 
+&pcr {
+	status = "okay";
+};
+
 &uart1 {
 	status = "okay";
 };

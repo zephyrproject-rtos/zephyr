@@ -52,4 +52,6 @@ source "drivers/clock_control/Kconfig.litex"
 
 source "drivers/clock_control/Kconfig.rcar"
 
+source "drivers/clock_control/Kconfig.xec"
+
 endif # CLOCK_CONTROL

@@ -19,4 +19,7 @@ source "soc/arm/microchip_mec/mec172x/Kconfig.defconfig.mec172x*"
 config CORTEX_M_SYSTICK
 	default y
 
+config CLOCK_CONTROL_MCHP_XEC
+	default y
+
 endif # SOC_SERIES_MEC172X
