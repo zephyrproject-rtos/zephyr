@@ -27,6 +27,7 @@ extern int coop_ctx_switch(void);
 extern int sema_test(void);
 extern int sema_context_switch(void);
 extern int suspend_resume(void);
+extern void heap_malloc_free(void);
 
 void test_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -56,6 +57,8 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 	sema_context_switch();
 
 	mutex_lock_unlock();
+
+	heap_malloc_free();
 
 	TC_END_REPORT(error_count);
 }
