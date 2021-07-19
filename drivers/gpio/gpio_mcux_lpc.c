@@ -356,150 +356,58 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 
 static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-static int lpc_gpio_0_init(const struct device *dev);
-
-static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
-	.gpio_base = GPIO,
-	.pint_base = PINT, /* TODO: SECPINT issue #16330 */
 #ifdef IOPCTL
-	.pinmux_base = IOPCTL,
+#define PINMUX_BASE	IOPCTL
 #else
-	.pinmux_base = IOCON,
-#endif
-	.port_no = DT_INST_PROP(0, port),
-	.clock_ip_name = gpio_clock_names[DT_INST_PROP(0, port)],
-};
-
-static struct gpio_mcux_lpc_data gpio_mcux_lpc_port0_data;
-
-DEVICE_DT_INST_DEFINE(0, lpc_gpio_0_init, NULL,
-		    &gpio_mcux_lpc_port0_data,
-		    &gpio_mcux_lpc_port0_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_mcux_lpc_driver_api);
-
-static int lpc_gpio_0_init(const struct device *dev)
-{
-#if DT_INST_IRQ_HAS_IDX(0, 0) || \
-	DT_INST_IRQ_HAS_IDX(0, 1) || \
-	DT_INST_IRQ_HAS_IDX(0, 2) || \
-	DT_INST_IRQ_HAS_IDX(0, 3)
-	struct gpio_mcux_lpc_data *data = dev->data;
+#define PINMUX_BASE	IOCON
 #endif
 
-	gpio_mcux_lpc_init(dev);
+#define GPIO_MCUX_LPC_IRQ_CONNECT(n, m)							\
+	do {										\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),				\
+			    DT_INST_IRQ_BY_IDX(n, m, priority),				\
+			    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(n), 0);		\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));				\
+		data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(n, m, irq);	\
+	} while (0)
 
-#if DT_INST_IRQ_HAS_IDX(0, 0)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
-		    DT_INST_IRQ_BY_IDX(0, 0, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 0, irq);
-#endif
+#define GPIO_MCUX_LPC_IRQ(n, m)								\
+	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())
 
-#if DT_INST_IRQ_HAS_IDX(0, 1)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
-		    DT_INST_IRQ_BY_IDX(0, 1, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 1, irq);
-#endif
+#define GPIO_MCUX_LPC(n)								\
+	static int lpc_gpio_init_##n(const struct device *dev);				\
+											\
+	static const struct gpio_mcux_lpc_config gpio_mcux_lpc_config_##n = {		\
+		.common = {								\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),		\
+		},									\
+		.gpio_base = GPIO,							\
+		.pint_base = PINT, /* TODO: SECPINT issue #16330 */			\
+		.pinmux_base = PINMUX_BASE,						\
+		.port_no = DT_INST_PROP(n, port),					\
+		.clock_ip_name = gpio_clock_names[DT_INST_PROP(n, port)],		\
+	};										\
+											\
+	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;			\
+											\
+	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL,				\
+		    &gpio_mcux_lpc_data_##n,						\
+		    &gpio_mcux_lpc_config_##n, POST_KERNEL,				\
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,				\
+		    &gpio_mcux_lpc_driver_api);						\
+											\
+	static int lpc_gpio_init_##n(const struct device *dev)				\
+	{										\
+		struct gpio_mcux_lpc_data *data = dev->data;				\
+											\
+		gpio_mcux_lpc_init(dev);						\
+											\
+		GPIO_MCUX_LPC_IRQ(n, 0);						\
+		GPIO_MCUX_LPC_IRQ(n, 1);						\
+		GPIO_MCUX_LPC_IRQ(n, 2);						\
+		GPIO_MCUX_LPC_IRQ(n, 3);						\
+											\
+		return 0;								\
+	}
 
-#if DT_INST_IRQ_HAS_IDX(0, 2)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
-		    DT_INST_IRQ_BY_IDX(0, 2, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 2, irq);
-#endif
-
-#if DT_INST_IRQ_HAS_IDX(0, 3)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),
-		    DT_INST_IRQ_BY_IDX(0, 3, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 3, irq);
-#endif
-
-	return 0;
-}
-
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-static int lpc_gpio_1_init(const struct device *dev);
-
-static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
-	.gpio_base = GPIO,
-	.pint_base = PINT,
-#ifdef IOPCTL
-	.pinmux_base = IOPCTL,
-#else
-	.pinmux_base = IOCON,
-#endif
-	.port_no = DT_INST_PROP(1, port),
-	.clock_ip_name = gpio_clock_names[DT_INST_PROP(1, port)],
-};
-
-static struct gpio_mcux_lpc_data gpio_mcux_lpc_port1_data;
-
-DEVICE_DT_INST_DEFINE(1, lpc_gpio_1_init, NULL,
-		    &gpio_mcux_lpc_port1_data,
-		    &gpio_mcux_lpc_port1_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &gpio_mcux_lpc_driver_api);
-
-static int lpc_gpio_1_init(const struct device *dev)
-{
-#if DT_INST_IRQ_HAS_IDX(1, 0) || \
-	DT_INST_IRQ_HAS_IDX(1, 1) || \
-	DT_INST_IRQ_HAS_IDX(1, 2) || \
-	DT_INST_IRQ_HAS_IDX(1, 3)
-	struct gpio_mcux_lpc_data *data = dev->data;
-#endif
-
-	gpio_mcux_lpc_init(dev);
-
-#if DT_INST_IRQ_HAS_IDX(1, 0)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 0, irq),
-		    DT_INST_IRQ_BY_IDX(1, 0, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(1, 0, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 0, irq);
-#endif
-
-#if DT_INST_IRQ_HAS_IDX(1, 1)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 1, irq),
-		    DT_INST_IRQ_BY_IDX(1, 1, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(1, 1, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 1, irq);
-#endif
-
-#if DT_INST_IRQ_HAS_IDX(1, 2)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 2, irq),
-		    DT_INST_IRQ_BY_IDX(1, 2, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(1, 2, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 2, irq);
-#endif
-
-#if DT_INST_IRQ_HAS_IDX(1, 3)
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 3, irq),
-		    DT_INST_IRQ_BY_IDX(1, 3, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
-	irq_enable(DT_INST_IRQ_BY_IDX(1, 3, irq));
-	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 3, irq);
-#endif
-
-	return 0;
-}
-
-#endif
+DT_INST_FOREACH_STATUS_OKAY(GPIO_MCUX_LPC)
