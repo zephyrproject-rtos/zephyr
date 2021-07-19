@@ -165,7 +165,7 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 {
 	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
 	uint32_t i, reg;
-	int ret;
+	int ret = 0;
 
 	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 		/* Reading as master */
