@@ -1258,6 +1258,8 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 
 #define BT_HCI_LE_ADV_HANDLE_MAX       0xEF
 
+#define BT_HCI_LE_EXT_ADV_SID_INVALID  0xFF
+
 #define BT_HCI_OP_LE_SET_EXT_ADV_PARAM          BT_OP(BT_OGF_LE, 0x0036)
 struct bt_hci_cp_le_set_ext_adv_param {
 	uint8_t      handle;
