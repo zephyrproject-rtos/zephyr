@@ -2607,8 +2607,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->dcid = sys_cpu_to_le16(ch->rx.cid);
-	req->scid = sys_cpu_to_le16(ch->tx.cid);
+	req->dcid = sys_cpu_to_le16(ch->tx.cid);
+	req->scid = sys_cpu_to_le16(ch->rx.cid);
 
 	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
 	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECT);
