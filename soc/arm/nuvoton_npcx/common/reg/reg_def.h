@@ -124,10 +124,19 @@ struct pmc_reg {
 	volatile uint8_t PWDWN_CTL7[1];
 };
 
-/* PMC multi-registers */
-#define NPCX_PWDWN_CTL_OFFSET(n) (((n) < 6) ? (0x008 + n) : (0x024 + (n - 6)))
+/* PMC internal inline functions for multi-registers */
+static inline uint32_t npcx_pwdwn_ctl_offset(uint32_t ctl_no)
+{
+	if (ctl_no < 6) {
+		return 0x008 + ctl_no;
+	} else {
+		return 0x024 + ctl_no - 6;
+	}
+}
+
+/* Macro functions for PMC multi-registers */
 #define NPCX_PWDWN_CTL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_PWDWN_CTL_OFFSET(n)))
+						npcx_pwdwn_ctl_offset(n)))
 
 /* PMC register fields */
 #define NPCX_PMCSR_DI_INSTW                   0
