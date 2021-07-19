@@ -186,6 +186,30 @@ struct arm_mmu_ptables {
 #define MMU_REGION_FLAT_ENTRY(name, adr, sz, attrs) \
 	MMU_REGION_ENTRY(name, adr, adr, sz, attrs)
 
+/* Kernel macros for memory attribution
+ * (access permissions and cache-ability).
+ *
+ * The macros are to be stored in k_mem_partition_attr_t
+ * objects. The format of a k_mem_partition_attr_t object
+ * is an uint32_t composed by permission and attribute flags
+ * located in include/arch/arm64/arm_mmu.h
+ */
+
+/* Read-Write access permission attributes */
+#define K_MEM_PARTITION_P_RW_U_RW ((k_mem_partition_attr_t) \
+			{MT_P_RW_U_RW})
+#define K_MEM_PARTITION_P_RW_U_NA ((k_mem_partition_attr_t) \
+			{MT_P_RW_U_NA})
+#define K_MEM_PARTITION_P_RO_U_RO ((k_mem_partition_attr_t) \
+			{MT_P_RO_U_RO})
+#define K_MEM_PARTITION_P_RO_U_NA ((k_mem_partition_attr_t) \
+			{MT_P_RO_U_NA})
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RX_U_RX ((k_mem_partition_attr_t) \
+			{MT_P_RX_U_RX})
+/* Typedef for the k_mem_partition attribute */
+typedef struct { uint32_t attrs; } k_mem_partition_attr_t;
+
 /* Reference to the MMU configuration.
  *
  * This struct is defined and populated for each SoC (in the SoC definition),
