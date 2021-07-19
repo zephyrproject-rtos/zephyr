@@ -5037,7 +5037,8 @@ void k_heap_free(struct k_heap *h, void *mem);
  * @param bytes Size of memory region, in bytes
  */
 #define K_HEAP_DEFINE(name, bytes)				\
-	char __aligned(8) /* CHUNK_UNIT */			\
+	char __noinit_named(kheap_buf_##name)			\
+	     __aligned(8) /* CHUNK_UNIT */			\
 	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
 	STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
 		.heap = {					\
