@@ -23,13 +23,32 @@ flash programmer. This eliminates the need to purchase an external debug probe
 and provides a variety of debug host tool options.
 
 Several hardware vendors have their own branded onboard debug probe
-implementations: NXP LPC boards have LPC-Link2, NXP Kinetis (former Freescale)
-boards have OpenSDA, and ST boards have ST-LINK. Each onboard debug probe
+implementations: NXP LPC boards have `LPC-Link2 <#lpclink2-jlink-onboard-debug-probe>`_,
+NXP Kinetis (former Freescale) boards have `OpenSDA <#opensda-daplink-onboard-debug-probe>`_,
+and ST boards have `ST-LINK <#stlink-v21-onboard-debug-probe>`_. Each onboard debug probe
 microcontroller can support one or more types of firmware that communicate with
 their respective debug host tools. For example, an OpenSDA microcontroller can
 be programmed with DAPLink firmware to communicate with pyOCD or OpenOCD debug
 host tools, or with J-Link firmware to communicate with J-Link debug host
 tools.
+
+
++---------------------------------------+---------------------------------------------------------------+
+|| *Debug Probes & Host Tools*          |                          Host Tools                           |
++| *Compatibility Chart*                +--------------------+--------------------+---------------------+
+|                                       |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |
++----------------+----------------------+--------------------+--------------------+---------------------+
+|                | **LPC-Link2 J-Link** |           ✓        |                    |                     |
+|                +----------------------+--------------------+--------------------+---------------------+
+|                | **OpenSDA DAPLink**  |                    |          ✓         |          ✓          |
+|                +----------------------+--------------------+--------------------+---------------------+
+|  Debug Probes  | **OpenSDA J-Link**   |           ✓        |                    |                     |
+|                +----------------------+--------------------+--------------------+---------------------+
+|                | **J-Link External**  |           ✓        |          ✓         |                     |
+|                +----------------------+--------------------+--------------------+---------------------+
+|                | **ST-LINK/V2-1**     |           ✓        |          ✓         | *some STM32 boards* |
++----------------+----------------------+--------------------+--------------------+---------------------+
+
 
 Some supported boards in Zephyr do not include an onboard debug probe and
 therefore require an external debug probe. In addition, boards that do include
@@ -137,6 +156,22 @@ As with all OpenSDA debug probes, the steps for programming the firmware are:
    should see two USB devices enumerate: a CDC device (serial port) and a
    vendor-specific device (debug port).
 
+.. _jlink-external-debug-probe:
+
+J-Link External Debug Probe
+***************************
+
+`Segger J-Link`_ is a family of external debug probes, including J-Link EDU,
+J-Link PLUS, J-Link ULTRA+, and J-Link PRO, that support a large number of
+devices from different hardware architectures and vendors.
+
+This debug probe is compatible with the following debug host tools:
+
+- :ref:`jlink-debug-host-tools`
+- :ref:`openocd-debug-host-tools`
+
+Install the debug host tools before you program the firmware.
+
 .. _stlink-v21-onboard-debug-probe:
 
 ST-LINK/V2-1 Onboard Debug Probe
@@ -169,72 +204,69 @@ firmware please visit: `Segger over ST-Link`_
 Flash and debug with ST-Link
 ============================
 
-Using OpenOCD
--------------
+.. tabs::
 
-OpenOCD is available by default on ST-Link and configured as the default flash
-and debug tool. Flash and debug can be done as follows:
+    .. tab:: Using OpenOCD
 
-  .. zephyr-app-commands::
-     :zephyr-app: samples/hello_world
-     :goals: flash
+        OpenOCD is available by default on ST-Link and configured as the default flash
+        and debug tool. Flash and debug can be done as follows:
 
-  .. zephyr-app-commands::
-     :zephyr-app: samples/hello_world
-     :goals: debug
+          .. zephyr-app-commands::
+             :zephyr-app: samples/hello_world
+             :goals: flash
 
+          .. zephyr-app-commands::
+             :zephyr-app: samples/hello_world
+             :goals: debug
 
-.. _jlink-rtt-debug-probe:
+    .. tab:: _`Using Segger J-Link`
 
-Using Segger J-Link
--------------------
+        Once STLink is flashed with SEGGER FW and J-Link GDB server is installed on your
+        host computer, you can flash and debug as follows:
 
-Once STLink is flashed with SEGGER FW and J-Link GDB server is installed on your
-host computer, you can flash and debug as follows:
+        Use CMake with ``-DBOARD_FLASH_RUNNER=jlink`` to change the default OpenOCD
+        runner to J-Link. Alternatively, you might add the following line to your
+        application ``CMakeList.txt`` file.
 
-Use CMake with ``-DBOARD_FLASH_RUNNER=jlink`` to change the default OpenOCD
-runner to J-Link. Alternatively, you might add the following line to your
-application ``CMakeList.txt`` file.
+          .. code-block:: cmake
 
-  .. code-block:: cmake
+             set(BOARD_FLASH_RUNNER jlink)
 
-     set(BOARD_FLASH_RUNNER jlink)
+        If you use West (Zephyr's meta-tool) you can modify the default runner using
+        the ``--runner`` (or ``-r``) option.
 
-If you use West (Zephyr's meta-tool) you can modify the default runner using
-the ``--runner`` (or ``-r``) option.
+          .. code-block:: console
 
-  .. code-block:: console
+             west flash --runner jlink
 
-     west flash --runner jlink
+        To attach a debugger to your board and open up a debug console with ``jlink``.
 
-To attach a debugger to your board and open up a debug console with ``jlink``.
+          .. code-block:: console
 
-  .. code-block:: console
+             west debug --runner jlink
 
-     west debug --runner jlink
+        For more information about West and available options, see :ref:`west`.
 
-For more information about West and available options, see :ref:`west`.
+        If you configured your Zephyr application to use `Segger RTT`_ console instead,
+        open telnet:
 
-If you configured your Zephyr application to use `Segger RTT`_ console instead,
-open telnet:
+          .. code-block:: console
 
-  .. code-block:: console
+             $ telnet localhost 19021
+             Trying ::1...
+             Trying 127.0.0.1...
+             Connected to localhost.
+             Escape character is '^]'.
+             SEGGER J-Link V6.30f - Real time terminal output
+             J-Link STLink V21 compiled Jun 26 2017 10:35:16 V1.0, SN=773895351
+             Process: JLinkGDBServerCLExe
+             Zephyr Shell, Zephyr version: 1.12.99
+             Type 'help' for a list of available commands
+             shell>
 
-     $ telnet localhost 19021
-     Trying ::1...
-     Trying 127.0.0.1...
-     Connected to localhost.
-     Escape character is '^]'.
-     SEGGER J-Link V6.30f - Real time terminal output
-     J-Link STLink V21 compiled Jun 26 2017 10:35:16 V1.0, SN=773895351
-     Process: JLinkGDBServerCLExe
-     Zephyr Shell, Zephyr version: 1.12.99
-     Type 'help' for a list of available commands
-     shell>
-
-If you get no RTT output you might need to disable other consoles which conflict
-with the RTT one if they are enabled by default in the particular sample or
-application you are running, such as disable UART_CONSOLE in menucon
+        If you get no RTT output you might need to disable other consoles which conflict
+        with the RTT one if they are enabled by default in the particular sample or
+        application you are running, such as disable UART_CONSOLE in menucon
 
 Updating or restoring ST-Link firmware
 ======================================
@@ -253,22 +285,6 @@ following command
 Where board_uid can be obtained using twister's generate-hardware-map
 option. For more information about twister and available options, see
 :ref:`twister_script`.
-
-.. _jlink-external-debug-probe:
-
-J-Link External Debug Probe
-***************************
-
-`Segger J-Link`_ is a family of external debug probes, including J-Link EDU,
-J-Link PLUS, J-Link ULTRA+, and J-Link PRO, that support a large number of
-devices from different hardware architectures and vendors.
-
-This debug probe is compatible with the following debug host tools:
-
-- :ref:`jlink-debug-host-tools`
-- :ref:`openocd-debug-host-tools`
-
-Install the debug host tools before you program the firmware.
 
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
