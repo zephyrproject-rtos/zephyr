@@ -104,7 +104,7 @@ static void test_json_encoding(void)
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
 		.some_null = NULL,
-		.some_null_string = NULL;
+		.some_null_string = NULL,
 		.some_int = 42,
 		.some_bool = true,
 		.some_nested_struct = {
