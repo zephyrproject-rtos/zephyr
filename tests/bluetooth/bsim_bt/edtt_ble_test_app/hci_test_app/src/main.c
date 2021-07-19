@@ -39,6 +39,25 @@ static uint16_t waiting_opcode;
 static enum commands_t waiting_response;
 static uint8_t m_events;
 
+struct EdttIxit {
+	uint8_t refMajor;
+	uint8_t refMinor;
+	uint16_t len;
+	uint8_t *pVal;
+};
+
+/*! \brief  Implementation eXtra Information for Test (IXIT) definitions */
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS_MAX_NSE)
+const uint8_t TSPX_max_cis_nse = CONFIG_BT_CTLR_CONN_ISO_STREAMS_MAX_NSE;
+#endif
+
+/*! \brief  Persistent LL IXIT values. */
+static struct EdttIxit llIxits[] = {
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS_MAX_NSE)
+	{7, 14, 1, &TSPX_max_cis_nse},
+#endif
+};
+
 /**
  * @brief Clean out excess bytes from the input buffer
  */
@@ -672,6 +691,61 @@ static void le_iso_data_write(uint16_t size)
 }
 #endif /* CONFIG_BT_ISO */
 
+/**
+ * @brief Read 'Implementation eXtra Information for Test' value
+ */
+static void le_ixit_value_read(uint16_t size)
+{
+	uint8_t profileId;
+	uint8_t refMajor;
+	uint8_t refMinor;
+	struct EdttIxit *pIxitArray;
+	int ixitArraySize;
+	struct EdttIxit *pIxitElement = NULL;
+
+	/*
+	 * CMD_GET_IXIT_VALUE_REQ payload layout
+	 *
+	 * ...
+	 * [ 4] PROFILE_ID[0]
+	 * [ 5] IXIT_Reference_Major
+	 * [ 6] IXIT_Reference_Minor
+	 */
+	edtt_read((uint8_t *)&profileId, sizeof(profileId), EDTTT_BLOCK);
+	edtt_read((uint8_t *)&refMajor, sizeof(refMajor), EDTTT_BLOCK);
+	edtt_read((uint8_t *)&refMinor, sizeof(refMinor), EDTTT_BLOCK);
+
+	switch (profileId) {
+	case PROFILE_ID_LL:
+		pIxitArray = llIxits;
+		ixitArraySize = ARRAY_SIZE(llIxits);
+		break;
+	default:
+		pIxitArray = NULL;
+		ixitArraySize = 0;
+	}
+	for (int i = 0; i < ixitArraySize; i++) {
+		if (pIxitArray[i].refMajor == refMajor && pIxitArray[i].refMinor == refMinor) {
+			pIxitElement = &pIxitArray[i];
+			break;
+		}
+	}
+
+	struct ixit_value_get_resp {
+		uint16_t code;
+		uint16_t size;
+		uint8_t  data[];
+	} __packed;
+	struct ixit_value_get_resp response = {
+		.code = sys_cpu_to_le16(CMD_GET_IXIT_VALUE_RSP),
+		.size = sys_cpu_to_le16(pIxitElement ? pIxitElement->len : 0),
+	};
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	if (pIxitElement) {
+		edtt_write(pIxitElement->pVal, pIxitElement->len, EDTTT_BLOCK);
+	}
+}
+
 static K_THREAD_STACK_DEFINE(service_events_stack,
 			     CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread service_events_data;
@@ -775,6 +849,11 @@ void main(void)
 			le_iso_data_read(size);
 			break;
 #endif /* CONFIG_BT_ISO */
+
+		case CMD_GET_IXIT_VALUE_REQ:
+			le_ixit_value_read(size);
+			break;
+
 		default:
 			if (size >= 2) {
 				edtt_read((uint8_t *)&opcode, sizeof(opcode),

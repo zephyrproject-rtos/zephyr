@@ -751,6 +751,14 @@ config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
 	  This allows for applications to decide whether to
 	  forward invalid SDUs through HCI upwards.
 
+config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
+	int "LE Connected Isochronous Streams max number of subevents"
+	depends on BT_CTLR_CONN_ISO
+	range 1 31
+	default 31
+	help
+	  Maximum number of CIS subevents.
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
