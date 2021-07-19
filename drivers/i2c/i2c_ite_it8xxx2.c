@@ -771,8 +771,6 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if (i2c_bus_not_available(dev)) {
 			/* Recovery I2C bus */
 			i2c_recover_bus(dev);
-			printk("I2C ch%d reset cause %d\n", config->port,
-			       I2C_RC_NO_IDLE_FOR_START);
 			/*
 			 * After resetting I2C bus, if I2C bus is not available
 			 * (No external pull-up), drop the transaction.
