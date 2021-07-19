@@ -59,7 +59,7 @@ static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
-static uint16_t did_unique;
+static uint16_t did_unique[PDU_ADV_SID_COUNT];
 
 uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 {
@@ -810,30 +810,9 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		uint16_t did;
 
 		if (pri_hdr_prev.adi) {
-			struct pdu_adv_adi *pri_adi_prev;
-
 			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
 			sec_dptr_prev -= sizeof(struct pdu_adv_adi);
-
-			pri_adi_prev = (void *)pri_dptr_prev;
-			did = sys_le16_to_cpu(pri_adi_prev->did);
-
-			/* Prevent using same DID if did_unique rolled over */
-			if (did == (did_unique & BIT_MASK(12))) {
-				did_unique++;
-			}
 		}
-
-		/* NOTE: Using a running did_unique is a simple solution to
-		 *       prevent using same DID when PDU fields change.
-		 *       This does not prevent a case wherein an advertising
-		 *       set is removed and added again while did_unique was
-		 *       incremented by other advertising sets, and there is a
-		 *       chance the new advertising set may end up with DID
-		 *       that was used before the set was removed. This is a
-		 *       rare case, which we are not handling.
-		 */
-		did = did_unique++;
 
 		pri_dptr -= sizeof(struct pdu_adv_adi);
 		sec_dptr -= sizeof(struct pdu_adv_adi);
@@ -843,6 +822,9 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		pri_adi->sid = adv->sid;
 		sec_adi->sid = adv->sid;
+
+		did = did_unique[adv->sid]++;
+
 		pri_adi->did = sys_cpu_to_le16(did);
 		sec_adi->did = sys_cpu_to_le16(did);
 
