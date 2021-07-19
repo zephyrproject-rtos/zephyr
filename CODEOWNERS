@@ -370,8 +370,7 @@
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @ioannisg @carlescufi
-/dts/arm/nuvoton/                         @ssekar15
-/dts/arm/nuvoton/npcx/                    @MulinChao @WealianLiao @ChiHuaL
+/dts/arm/nuvoton/                         @ssekar15 @MulinChao @WealianLiao @ChiHuaL
 /dts/arm/nxp/                             @MaureenHelm @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
