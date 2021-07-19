@@ -184,24 +184,28 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the LPC-Link2.
 
-:ref:`lpclink2-jlink-onboard-debug-probe`
------------------------------------------
+.. tabs::
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path. Install jumpers JP17, JP18 and JP19, to connect the SWD signals from onboard
-debug circuit.  These jumpers are installed by default.
+    .. group-tab:: LPCLink2 JLink Onboard
 
-Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program
-the J-Link firmware. Please make sure you have the latest firmware for this
-board.
 
-:ref:`jlink-external-debug-probe`
------------------------------------------
+        1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+        2. To connect the SWD signals to onboard debug circuit, install jumpers JP17, JP18 and JP19,
+           if not already done (these jumpers are installed by default).
+        3. Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program the
+           J-Link firmware. Please make sure you have the latest firmware for this board.
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path. Remove jumpers JP17, JP18 and JP19, to disconnect the SWD signals from onboard
-debug circuit.  These jumpers are installed by default. Connect the J-Link probe
-to J2 10-pin header.
+    .. group-tab:: JLink External
+
+
+        1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+
+        2. To disconnect the SWD signals from onboard debug circuit, **remove** jumpers J17, J18,
+           and J19 (these are installed by default).
+
+        3. Connect the J-Link probe to J2 10-pin header.
+
+        See :ref:`jlink-external-debug-probe` for more information.
 
 Configuring a Console
 =====================
