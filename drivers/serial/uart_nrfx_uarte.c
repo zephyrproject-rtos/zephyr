@@ -1329,7 +1329,15 @@ static void uarte_nrfx_isr_async(const struct device *dev)
 		endrx_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+	/* RXSTARTED must be handled after ENDRX because it starts the RX timeout
+	 * and if order is swapped then ENDRX will stop this timeout.
+	 * Skip if ENDRX is set when RXSTARTED is set. It means that
+	 * ENDRX occurred after check for ENDRX in isr which may happen when
+	 * UARTE interrupt got preempted. Events are not cleared
+	 * and isr will be called again. ENDRX will be handled first.
+	 */
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED) &&
+	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 		rxstarted_isr(dev);
 	}
