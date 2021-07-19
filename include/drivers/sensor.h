@@ -643,7 +643,7 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
  * @param val A pointer to a sensor_value struct.
  * @return The converted value.
  */
-static inline double sensor_value_to_double(struct sensor_value *val)
+static inline double sensor_value_to_double(const struct sensor_value *val)
 {
 	return (double)val->val1 + (double)val->val2 / 1000000;
 }
