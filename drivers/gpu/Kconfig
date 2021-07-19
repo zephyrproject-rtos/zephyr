@@ -1,0 +1,18 @@
+# GPU driver configuration options
+
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# GPU Drivers
+#
+menuconfig GPU
+	bool "GPU hardware support"
+	help
+	  Enable support for the GPU.
+
+if GPU
+
+source "drivers/gpu/Kconfig.mcux_pxp"
+
+endif # GPU

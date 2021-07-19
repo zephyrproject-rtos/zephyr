@@ -1019,6 +1019,13 @@
 			nxp,rx-dma-channel = <6>;
 			status = "disabled";
 			label = "I2S_2";
+
+		pxp: pxp@402b4000 {
+			compatible = "nxp,imx-pxp";
+			reg = <0x402b4000 0x4000>;
+			status = "disabled";
+			interrupts = <44 0>;
+			label = "PXP";
 		};
 	};
 };
