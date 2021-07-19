@@ -8,6 +8,7 @@
 
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/mchp_xec_pcr.h>
 
 / {
 	cpus {
@@ -31,6 +32,37 @@
 	};
 
 	soc {
+		ecs: ecs@4000fc00 {
+			reg = <0x4000fc00 0x200>;
+			label = "ECS";
+		};
+		pcr: pcr@40080100 {
+			compatible = "microchip,xec-pcr";
+			reg = <0x40080100 0x100 0x4000a400 0x100>;
+			reg-names = "pcrr", "vbatr";
+			interrupts = <174 0>;
+			label = "PCR";
+			core-clock-div = <1>;
+			pll-32k-src = <MCHP_XEC_CLK32K_SRC_SIL_OSC>;
+			periph-32k-src = <MCHP_XEC_CLK32K_SRC_SIL_OSC>;
+			#clock-cells = <2>;
+		};
+		girq23: girq23@4000e12c {
+			reg = <0x4000e12c 0x14>;
+			label = "GIRQ_23";
+		};
+		hibtimer0: timer@40009800 {
+			reg = <0x40009800 0x20>;
+			interrupts = <112 0>;
+			girqs = <23 16>;
+			label = "HIBTIMER_0";
+		};
+		hibtimer1: timer@40009820 {
+			reg = <0x40009820 0x20>;
+			interrupts = <113 0>;
+			girqs = <23 17>;
+			label = "HIBTIMER_1";
+		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
 			reg = <0x400f2400 0x400>;
@@ -49,6 +81,13 @@
 			current-speed = <38400>;
 			label = "UART_1";
 			reg-shift = <0>;
+			status = "disabled";
+		};
+		glblcfg0: glblcfg@400fff00 {
+			reg = <0x400fff00 0x40>;
+			pcrs = <2 12>;
+			label = "GLBLCFG_0";
+			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 	};

@@ -8,4 +8,8 @@ if SOC_MEC172X_NSZ
 config SOC
 	default "mec172xnsz"
 
+config UART_NS16550
+	default y
+	depends on SERIAL
+
 endif # SOC_MEC172X_NSZ
