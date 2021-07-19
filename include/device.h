@@ -27,6 +27,7 @@
  */
 
 #include <init.h>
+#include <linker/sections.h>
 #include <pm/device.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
@@ -835,7 +836,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * is associated with the device
  */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name) = {	\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((__section__(".z_devstate"))) = {			\
 		.pm = {						        \
 			.flags = ATOMIC_INIT(COND_CODE_1(		\
 					DT_NODE_EXISTS(node_id),	\
@@ -851,6 +853,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
 #else
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name) \
+	__pinned_bss \
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name);
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
 #endif

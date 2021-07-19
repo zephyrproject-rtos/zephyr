@@ -23,6 +23,15 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
+        SECTION_DATA_PROLOGUE(device_states,,)
+        {
+		/* Device states used by the device objects. */
+                __device_states_start = .;
+		KEEP(*(".z_devstate"));
+		KEEP(*(".z_devstate.*"));
+                __device_states_end = .;
+        } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 #if CONFIG_PM_DEVICE
 	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
 	{
