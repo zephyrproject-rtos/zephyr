@@ -219,6 +219,17 @@ struct arm_mpu_config {
 		.attr = _attr,			      \
 	}
 
+#define K_MEM_PARTITION_P_RW_U_RW ((k_mem_partition_attr_t) \
+	{(P_RW_U_RW_Msk), MPU_MAIR_INDEX_SRAM})
+#define K_MEM_PARTITION_P_RW_U_NA ((k_mem_partition_attr_t) \
+	{(P_RW_U_NA_Msk), MPU_MAIR_INDEX_SRAM})
+#define K_MEM_PARTITION_P_RO_U_RO ((k_mem_partition_attr_t) \
+	{(P_RO_U_RO_Msk), MPU_MAIR_INDEX_SRAM})
+#define K_MEM_PARTITION_P_RO_U_NA ((k_mem_partition_attr_t) \
+	{(P_RO_U_NA_Msk), MPU_MAIR_INDEX_SRAM})
+
+typedef struct arm_mpu_region_attr k_mem_partition_attr_t;
+
 /* Reference to the MPU configuration.
  *
  * This struct is defined and populated for each SoC (in the SoC definition),
