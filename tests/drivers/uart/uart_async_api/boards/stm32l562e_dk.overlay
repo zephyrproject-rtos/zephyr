@@ -5,8 +5,8 @@
  */
 
 &usart3 {
-	dmas = <&dmamux1 5 30 0x440 0>,
-		<&dmamux1 4 29 0x480 0>;
+	dmas = <&dmamux1 5 30 0x440>,
+		<&dmamux1 4 29 0x480>;
 	dma-names = "tx", "rx";
 };
 
