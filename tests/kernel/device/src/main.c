@@ -10,6 +10,7 @@
 #include <ztest.h>
 #include <sys/printk.h>
 #include <pm/device_runtime.h>
+#include <linker/sections.h>
 #include "abstract_driver.h"
 
 
@@ -130,14 +131,17 @@ static void test_null_dynamic_name(void)
 #endif
 }
 
+__pinned_bss
 static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
 	bool is_pre_kernel;
 } init_records[4];
 
+__pinned_data
 static struct init_record *rp = init_records;
 
+__pinned_func
 static int add_init_record(bool pre_kernel)
 {
 	rp->pre_kernel = pre_kernel;
@@ -147,11 +151,13 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
+__pinned_func
 static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
+__pinned_func
 static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
