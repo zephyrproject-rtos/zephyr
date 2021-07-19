@@ -417,7 +417,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
 	}
 
-	stream->source_periph = stream->direction == MEMORY_TO_PERIPHERAL;
+	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
 	/* set the data width, when source_data_size equals dest_data_size */
 	int index = find_lsb_set(config->source_data_size) - 1;
