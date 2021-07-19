@@ -86,8 +86,25 @@ static void test_ibecc_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_ibecc_error_inject_api(void)
 {
+	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	/* Verify default parameters */
+
+	ret = edac_inject_get_error_type(dev, &test_value);
+	zassert_equal(ret, 0, "Error getting error_type");
+	zassert_equal(test_value, 0, "Error type not zero");
+
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
+	zassert_equal(val, 0, "Error param1 is not zero");
+
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
+	zassert_equal(val, 0, "Error param2 is not zero");
+
+	/* Verify basic Injection API operations */
 
 	/* Set correct value of param1 */
 	ret = edac_inject_set_param1(dev, TEST_ADDRESS1);
