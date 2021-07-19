@@ -170,15 +170,26 @@ struct scfg_reg {
 	volatile uint8_t LV_GPIO_CTL0[5];
 };
 
-/* SCFG multi-registers */
-#define NPCX_DEVALT_OFFSET(n) (0x010 + (n))
-#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_DEVALT_OFFSET(n)))
+/* SCFG internal inline functions for multi-registers */
+static inline uint32_t npcx_devalt_offset(uint32_t alt_no)
+{
+	return 0x010 + alt_no;
+}
 
-#define NPCX_LV_GPIO_CTL_OFFSET(n) (((n) < 5) ? (0x02A + (n)) \
-						: (0x026 + (n - 5)))
+static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
+{
+	if (ctl_no < 5) {
+		return 0x02a + ctl_no;
+	} else {
+		return 0x026 + ctl_no - 5;
+	}
+}
+
+/* Macro functions for SCFG multi-registers */
+#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
+						npcx_devalt_offset(n)))
 #define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_LV_GPIO_CTL_OFFSET(n)))
+						npcx_lv_gpio_ctl_offset(n)))
 
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS                6
@@ -205,7 +216,6 @@ struct scfg_reg {
 #define NPCX_DEVPU0_I2C2_0_PUE                4
 #define NPCX_DEVPU0_I2C3_0_PUE                6
 #define NPCX_DEVPU1_F_SPI_PUD_EN              7
-
 
 /*
  * System Glue (GLUE) device registers
