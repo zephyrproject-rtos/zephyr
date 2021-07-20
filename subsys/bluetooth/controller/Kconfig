@@ -125,6 +125,17 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  character is required at the beginning to separate it from the
 	  already included information.
 
+config BT_CTLR_AD_DATA_BACKUP
+	bool "Enable Legacy AD Data backup"
+	depends on BT_PERIPHERAL || BT_CTLR_ADV_EXT
+	default y
+	help
+	  Backup Legacy Advertising Data when switching to Legacy Directed or
+	  to Extended Advertising mode, and restore it when switching back to
+	  Legacy Non-Directed Advertising mode.
+	  Application can disable this feature if not using Directed
+	  Advertising or switch between Legacy and Extended Advertising.
+
 config BT_CTLR_HCI_ADV_HANDLE_MAPPING
 	bool "Enable advertising set handle mapping between HCI and LL"
 	depends on BT_CTLR_ADV_EXT
