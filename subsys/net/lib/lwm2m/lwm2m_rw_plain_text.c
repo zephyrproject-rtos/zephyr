@@ -146,32 +146,6 @@ size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
 				     value->val1, buf);
 }
 
-size_t plain_text_put_float64fix(struct lwm2m_output_context *out,
-				 struct lwm2m_obj_path *path,
-				 float64_value_t *value)
-{
-	size_t len;
-	char buf[sizeof("000000000")];
-
-	/* value of 123 -> "000000123" -- ignore sign */
-	len = snprintf(buf, sizeof(buf), "%09lld",
-		       (long long int)abs(value->val2));
-	if (len != 9U) {
-		strcpy(buf, "0");
-	} else {
-		/* clear ending zeroes, but leave 1 if needed */
-		while (len > 1U && buf[len - 1] == '0') {
-			buf[--len] = '\0';
-		}
-	}
-
-	return plain_text_put_format(out, "%s%lld.%s",
-				     /* handle negative val2 when val1 is 0 */
-				     (value->val1 == 0 && value->val2 < 0) ?
-						"-" : "",
-				     value->val1, buf);
-}
-
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
@@ -304,13 +278,6 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 	return len;
 }
 
-static size_t get_float64fix(struct lwm2m_input_context *in,
-			     float64_value_t *value)
-{
-	return plain_text_read_number(in, &value->val1, &value->val2,
-				      true, true);
-}
-
 static size_t get_bool(struct lwm2m_input_context *in,
 		       bool *value)
 {
@@ -395,7 +362,6 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float32fix = plain_text_put_float32fix,
-	.put_float64fix = plain_text_put_float64fix,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -405,7 +371,6 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s64 = get_s64,
 	.get_string = get_string,
 	.get_float32fix = get_float32fix,
-	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,
