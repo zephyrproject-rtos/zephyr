@@ -172,7 +172,7 @@ config BT_OBSERVER
 
 endmenu
 
-source "subsys/bluetooth/services/Kconfig"
+rsource "services/Kconfig"
 
 config BT_CONN
 	bool
@@ -309,10 +309,10 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-source "subsys/bluetooth/common/Kconfig"
-source "subsys/bluetooth/host/Kconfig"
-source "subsys/bluetooth/controller/Kconfig"
-source "subsys/bluetooth/shell/Kconfig"
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "shell/Kconfig"
 
 endif # BT_HCI
 
@@ -329,7 +329,7 @@ config BT_COMPANY_ID
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
-source "subsys/bluetooth/mesh/Kconfig"
-source "subsys/bluetooth/audio/Kconfig"
+rsource "mesh/Kconfig"
+rsource "audio/Kconfig"
 
 endif # BT
