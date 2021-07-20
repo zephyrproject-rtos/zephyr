@@ -39,8 +39,30 @@ The project's documentation contains the following items:
 * Script-generated material for kernel configuration options based on Kconfig
   files found in the source code tree
 
-.. image:: images/doc-gen-flow.png
-   :align: center
+.. graphviz::
+   :caption: Schematic of the documentation build process
+
+   digraph {
+      rankdir=LR
+
+      images [shape="rectangle" label=".png, .jpg\nimages"]
+      rst [shape="rectangle" label="restructuredText\nfiles"]
+      conf [shape="rectangle" label="conf.py\nconfiguration"]
+      rtd [shape="rectangle" label="read-the-docs\ntheme"]
+      header [shape="rectangle" label="c header\ncomments"]
+      xml [shape="rectangle" label="XML"]
+      html [shape="rectangle" label="HTML\nweb site"]
+      sphinx[shape="ellipse" label="sphinx +\nbreathe,\ndocutils"]
+      images -> sphinx
+      rst -> sphinx
+      conf -> sphinx
+      header -> doxygen
+      doxygen -> xml
+      xml-> sphinx
+      rtd -> sphinx
+      sphinx -> html
+   }
+
 
 The reStructuredText files are processed by the Sphinx documentation system,
 and make use of the breathe extension for including the doxygen-generated API
