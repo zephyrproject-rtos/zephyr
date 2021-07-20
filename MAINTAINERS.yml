@@ -1291,22 +1291,29 @@ Synopsys Platforms:
     labels:
         - "platform: Synopsys"
 
-Nuvoton Platforms:
-    status: orphaned
-    collaborators:
+Nuvoton_NPCX Platforms:
+    status: maintained
+    maintainers:
         - MulinChao
-        - sjg20
-        - jackrosenthal
         - ChiHuaL
         - WealianLiao
+    collaborators:
+        - MulinChao
+        - ChiHuaL
+        - WealianLiao
+        - sjg20
+        - keith-zephyr
+        - jackrosenthal
+        - fabiobaltieri
+        - yperess
     files:
-        - soc/arm/nuvoton/
+        - soc/arm/nuvoton_npcx/
         - boards/arm/npcx*/
         - dts/arm/nuvoton/
-        - dts/bindings/*/nuvoton/*
+        - dts/bindings/*/*npcx*
         - drivers/*/*_npcx*
     labels:
-        - "platform: Nuvoton"
+        - "platform: Nuvoton_NPCX"
 
 SiLabs Platforms:
     status: orphaned
