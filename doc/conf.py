@@ -74,6 +74,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
+    "sphinx.ext.graphviz",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig-role",
@@ -221,6 +222,19 @@ external_content_keep = [
     "reference/devicetree/bindings.rst",
     "reference/devicetree/bindings/**/*",
     "reference/devicetree/compatibles/**/*",
+]
+
+# -- Options for sphinx.ext.graphviz --------------------------------------
+
+graphviz_dot = os.environ.get("DOT_EXECUTABLE", "dot")
+graphviz_output_format = "svg"
+graphviz_dot_args = [
+    "-Gbgcolor=transparent",
+    "-Nstyle=filled",
+    "-Nfillcolor=white",
+    "-Ncolor=gray60",
+    "-Nfontcolor=gray25",
+    "-Ecolor=gray60",
 ]
 
 # -- Linkcheck options ----------------------------------------------------
