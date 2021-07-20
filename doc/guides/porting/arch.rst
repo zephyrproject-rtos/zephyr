@@ -795,7 +795,7 @@ details:
 
 Some architectures may need to update software memory management structures
 or modify hardware registers on another CPU when memory domain APIs are invoked.
-If so, CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API must be selected by the
+If so, :kconfig:`CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API` must be selected by the
 architecture and some additional APIs must be implemented. This is common
 on MMU systems and uncommon on MPU systems:
 

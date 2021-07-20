@@ -377,10 +377,10 @@ argument is ignored.
 
 Vector Table
 ------------
-A vector table is generated when CONFIG_GEN_IRQ_VECTOR_TABLE is enabled.  This
-data structure is used natively by the CPU and is simply an array of function
-pointers, where each element n corresponds to the IRQ handler for IRQ line n,
-and the function pointers are:
+A vector table is generated when :kconfig:`CONFIG_GEN_IRQ_VECTOR_TABLE` is
+enabled.  This data structure is used natively by the CPU and is simply an
+array of function pointers, where each element n corresponds to the IRQ handler
+for IRQ line n, and the function pointers are:
 
 #. For 'direct' interrupts declared with :c:macro:`IRQ_DIRECT_CONNECT`, the
    handler function will be placed here.
@@ -394,7 +394,8 @@ and the function pointers are:
 
 Some architectures (such as the Nios II internal interrupt controller) have a
 common entry point for all interrupts and do not support a vector table, in
-which case the CONFIG_GEN_IRQ_VECTOR_TABLE option should be disabled.
+which case the :kconfig:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
+disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
 and declare this in a table elsewhere, in which case
