@@ -72,8 +72,7 @@
 			reg = <0x41008000 0x1000>;
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			dfe-antenna-num = <0>;
-			dfe-pdu-antenna = <0xFF>;
+			dfe-supported;
 		};
 
 		rng: random@41009000 {
