@@ -5,7 +5,7 @@
 
 if SOC_SERIES_M48X
 
-source "soc/arm/nuvoton/m48x/Kconfig.defconfig.m48*"
+source "soc/arm/nuvoton_numicro/m48x/Kconfig.defconfig.m48*"
 
 config SOC_SERIES
 	default "m48x"
