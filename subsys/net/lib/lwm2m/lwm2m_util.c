@@ -90,8 +90,8 @@ int lwm2m_f32_to_b32(float32_value_t *f32, uint8_t *b32, size_t len)
 	return 0;
 }
 
-/* convert from float64 to binary64 */
-int lwm2m_f64_to_b64(float64_value_t *f64, uint8_t *b64, size_t len)
+/* convert from float32 to binary64 */
+int lwm2m_f32_to_b64(float32_value_t *f32, uint8_t *b64, size_t len)
 {
 	int64_t v, f = 0;
 	int32_t e = -1;
@@ -102,13 +102,13 @@ int lwm2m_f64_to_b64(float64_value_t *f64, uint8_t *b64, size_t len)
 	}
 
 	/* handle zero value special case */
-	if (f64->val1 == 0LL && f64->val2 == 0LL) {
+	if (f32->val1 == 0 && f32->val2 == 0) {
 		memset(b64, 0, len);
 		return 0;
 	}
 
 	/* sign handled later */
-	v = abs(f64->val1);
+	v = abs(f32->val1);
 
 	/* add whole value to fraction */
 	while (v > 0) {
@@ -123,18 +123,18 @@ int lwm2m_f64_to_b64(float64_value_t *f64, uint8_t *b64, size_t len)
 	}
 
 	/* sign handled later */
-	v = abs(f64->val2);
+	v = abs(f32->val2);
 
 	/* add decimal to fraction */
 	i = e;
 	while (v > 0 && i < 52) {
 		v *= 2;
-		if (!f && e < 0 && v < LWM2M_FLOAT64_DEC_MAX) {
+		if (!f && e < 0 && v < LWM2M_FLOAT32_DEC_MAX) {
 			/* handle -e */
 			e--;
 			continue;
-		} else if (v >= LWM2M_FLOAT64_DEC_MAX) {
-			v -= LWM2M_FLOAT64_DEC_MAX;
+		} else if (v >= LWM2M_FLOAT32_DEC_MAX) {
+			v -= LWM2M_FLOAT32_DEC_MAX;
 			f |= (int64_t)1 << (51 - i);
 		}
 
@@ -151,10 +151,10 @@ int lwm2m_f64_to_b64(float64_value_t *f64, uint8_t *b64, size_t len)
 	memset(b64, 0, len);
 
 	/* sign: bit 63 */
-	if (f64->val1 == 0) {
-		b64[0] = f64->val2 < 0 ? 0x80 : 0;
+	if (f32->val1 == 0) {
+		b64[0] = f32->val2 < 0 ? 0x80 : 0;
 	} else {
-		b64[0] = f64->val1 < 0 ? 0x80 : 0;
+		b64[0] = f32->val1 < 0 ? 0x80 : 0;
 	}
 
 	/* exponent: bits 62-52 */
@@ -233,8 +233,8 @@ int lwm2m_b32_to_f32(uint8_t *b32, size_t len, float32_value_t *f32)
 	return 0;
 }
 
-/* convert from binary64 to float64 */
-int lwm2m_b64_to_f64(uint8_t *b64, size_t len, float64_value_t *f64)
+/* convert from binary64 to float32 */
+int lwm2m_b64_to_f32(uint8_t *b64, size_t len, float32_value_t *f32)
 {
 	int64_t f, k;
 	int i, e;
@@ -244,8 +244,8 @@ int lwm2m_b64_to_f64(uint8_t *b64, size_t len, float64_value_t *f64)
 		return -EINVAL;
 	}
 
-	f64->val1 = 0LL;
-	f64->val2 = 0LL;
+	f32->val1 = 0LL;
+	f32->val2 = 0LL;
 
 	/* calc sign: bit 63 */
 	sign = SHIFT_RIGHT(b64[0], 7, 0x1);
@@ -274,11 +274,11 @@ int lwm2m_b64_to_f64(uint8_t *b64, size_t len, float64_value_t *f64)
 			e = 52;
 		}
 
-		f64->val1 = (f >> (52 - e)) * (sign ? -1 : 1);
+		f32->val1 = (f >> (52 - e)) * (sign ? -1 : 1);
 	}
 
 	/* calculate the rest of the decimal */
-	k = LWM2M_FLOAT64_DEC_MAX;
+	k = LWM2M_FLOAT32_DEC_MAX;
 
 	/* account for -e */
 	while (e < -1) {
@@ -289,7 +289,7 @@ int lwm2m_b64_to_f64(uint8_t *b64, size_t len, float64_value_t *f64)
 	for (i = 51 - e; i >= 0; i--) {
 		k /= 2;
 		if (f & ((int64_t)1 << i)) {
-			f64->val2 += k;
+			f32->val2 += k;
 
 		}
 	}

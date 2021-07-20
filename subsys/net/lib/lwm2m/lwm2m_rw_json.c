@@ -502,18 +502,6 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_float64fix(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     float64_value_t *value)
-{
-	size_t len;
-
-	len = put_json_prefix(out, path, "\"v\"");
-	len += plain_text_put_float64fix(out, path, value);
-	len += put_json_postfix(out);
-	return len;
-}
-
 static size_t put_bool(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path,
 		       bool value)
@@ -648,21 +636,6 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 	return len;
 }
 
-static size_t get_float64fix(struct lwm2m_input_context *in,
-			     float64_value_t *value)
-{
-	int64_t tmp1, tmp2;
-	size_t len;
-
-	len = read_number(in, &tmp1, &tmp2, true, true);
-	if (len > 0) {
-		value->val1 = tmp1;
-		value->val2 = tmp2;
-	}
-
-	return len;
-}
-
 static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	struct json_in_formatter_data *fd;
@@ -734,7 +707,6 @@ const struct lwm2m_writer json_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float32fix = put_float32fix,
-	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -744,7 +716,6 @@ const struct lwm2m_reader json_reader = {
 	.get_s64 = get_s64,
 	.get_string = get_string,
 	.get_float32fix = get_float32fix,
-	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,
