@@ -354,7 +354,7 @@ config LOG_BACKEND_FS_DIR
 config LOG_BACKEND_FS_FILE_SIZE
 	int "User defined log file size"
 	default 4096
-	range 128 16384
+	range 128 1073741824
 	help
 	  Max log file size (in bytes).
 
