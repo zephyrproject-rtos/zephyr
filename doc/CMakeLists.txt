@@ -23,8 +23,7 @@ separate_arguments(LATEXMKOPTS)
 #-------------------------------------------------------------------------------
 # Dependencies
 
-set(DOXYGEN_SKIP_DOT True)
-find_package(Doxygen REQUIRED)
+find_package(Doxygen REQUIRED dot)
 
 find_program(SPHINXBUILD sphinx-build)
 if(NOT SPHINXBUILD)
@@ -49,6 +48,7 @@ set(SPHINX_ENV
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+  DOT_EXECUTABLE=${DOXYGEN_DOT_EXECUTABLE}
 )
 
 set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
