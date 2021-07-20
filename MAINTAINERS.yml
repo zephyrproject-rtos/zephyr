@@ -1291,7 +1291,7 @@ Synopsys Platforms:
     labels:
         - "platform: Synopsys"
 
-Nuvoton Platforms:
+Nuvoton_NPCX Platforms:
     status: orphaned
     collaborators:
         - MulinChao
@@ -1300,13 +1300,13 @@ Nuvoton Platforms:
         - ChiHuaL
         - WealianLiao
     files:
-        - soc/arm/nuvoton/
+        - soc/arm/nuvoton_npcx/
         - boards/arm/npcx*/
         - dts/arm/nuvoton/
-        - dts/bindings/*/nuvoton/*
+        - dts/bindings/*/*npcx*
         - drivers/*/*_npcx*
     labels:
-        - "platform: Nuvoton"
+        - "platform: Nuvoton_NPCX"
 
 SiLabs Platforms:
     status: orphaned
