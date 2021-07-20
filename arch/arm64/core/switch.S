@@ -89,7 +89,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 #ifdef CONFIG_USERSPACE
 	stp     xzr, x30, [sp, #-16]!
-	bl      z_arm64_swap_ptables
+	bl      z_arm64_swap_mem_domains
 	ldp     xzr, x30, [sp], #16
 #endif
 

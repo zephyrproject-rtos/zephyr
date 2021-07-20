@@ -18,7 +18,7 @@
 #include <ksched.h>
 #include <soc.h>
 #include <init.h>
-#include <arch/arm64/arm_mmu.h>
+#include <arch/arm64/mm.h>
 #include <arch/cpu.h>
 #include <drivers/interrupt_controller/gic.h>
 #include <drivers/pm_cpu_ops.h>
@@ -26,7 +26,7 @@
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0
-#define SGI_PTABLE_IPI	1
+#define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
 
 struct boot_params {
@@ -130,7 +130,7 @@ void z_arm64_secondary_start(void)
 
 	irq_enable(SGI_SCHED_IPI);
 #ifdef CONFIG_USERSPACE
-	irq_enable(SGI_PTABLE_IPI);
+	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
 	irq_enable(SGI_FPU_IPI);
@@ -180,7 +180,7 @@ void arch_sched_ipi(void)
 }
 
 #ifdef CONFIG_USERSPACE
-void ptable_ipi_handler(const void *unused)
+void mem_cfg_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -188,12 +188,12 @@ void ptable_ipi_handler(const void *unused)
 	 * Make sure a domain switch by another CPU is effective on this CPU.
 	 * This is a no-op if the page table is already the right one.
 	 */
-	z_arm64_swap_ptables(_current);
+	z_arm64_swap_mem_domains(_current);
 }
 
-void z_arm64_ptable_ipi(void)
+void z_arm64_mem_cfg_ipi(void)
 {
-	broadcast_ipi(SGI_PTABLE_IPI);
+	broadcast_ipi(SGI_MMCFG_IPI);
 }
 #endif
 
@@ -227,8 +227,9 @@ static int arm64_smp_init(const struct device *dev)
 	irq_enable(SGI_SCHED_IPI);
 
 #ifdef CONFIG_USERSPACE
-	IRQ_CONNECT(SGI_PTABLE_IPI, IRQ_DEFAULT_PRIORITY, ptable_ipi_handler, NULL, 0);
-	irq_enable(SGI_PTABLE_IPI);
+	IRQ_CONNECT(SGI_MMCFG_IPI, IRQ_DEFAULT_PRIORITY,
+			mem_cfg_ipi_handler, NULL, 0);
+	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
 	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, flush_fpu_ipi_handler, NULL, 0);
