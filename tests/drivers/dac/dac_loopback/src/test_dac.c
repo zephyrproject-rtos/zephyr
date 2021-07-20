@@ -50,7 +50,8 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 
 #elif defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
-	defined(CONFIG_BOARD_NUCLEO_F429ZI)
+	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
+	defined(CONFIG_BOARD_NUCLEO_F746ZG)
 /*
  * DAC output on PA4
  * ADC input read from PA0
