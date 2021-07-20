@@ -5,7 +5,7 @@
 # Copyright (c) 2020 Linumiz
 # Author: Saravanan Sekar <saravanan@linumiz.com>
 
-config UART_NUVOTON
+config UART_NUMICRO
 	bool "NUVOTON MCU serial driver"
 	select SERIAL_HAS_DRIVER
 	select HAS_NUMICRO_UART
