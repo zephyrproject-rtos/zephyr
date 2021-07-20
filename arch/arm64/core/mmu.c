@@ -17,7 +17,7 @@
 #include <logging/log.h>
 #include <arch/arm64/cpu.h>
 #include <arch/arm64/lib_helpers.h>
-#include <arch/arm64/arm_mmu.h>
+#include <arch/arm64/mm.h>
 #include <linker/linker-defs.h>
 #include <spinlock.h>
 #include <sys/util.h>
@@ -931,6 +931,8 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 #ifdef CONFIG_USERSPACE
 
+static void z_arm64_swap_ptables(struct k_thread *incoming);
+
 static inline bool is_ptable_active(struct arm_mmu_ptables *ptables)
 {
 	return read_sysreg(ttbr0_el1) == (uintptr_t)ptables->base_xlat_table;
@@ -1037,7 +1039,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	} else {
 #ifdef CONFIG_SMP
 		/* the thread could be running on another CPU right now */
-		z_arm64_ptable_ipi();
+		z_arm64_mem_cfg_ipi();
 #endif
 	}
 
@@ -1067,7 +1069,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 		  thread->stack_info.size);
 }
 
-void z_arm64_swap_ptables(struct k_thread *incoming)
+static void z_arm64_swap_ptables(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables = incoming->arch.ptables;
 
@@ -1076,7 +1078,7 @@ void z_arm64_swap_ptables(struct k_thread *incoming)
 	}
 }
 
-void z_arm64_thread_pt_init(struct k_thread *incoming)
+void z_arm64_thread_mem_domains_init(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables;
 
@@ -1088,6 +1090,11 @@ void z_arm64_thread_pt_init(struct k_thread *incoming)
 	/* Map the thread stack */
 	map_thread_stack(incoming, ptables);
 
+	z_arm64_swap_ptables(incoming);
+}
+
+void z_arm64_swap_mem_domains(struct k_thread *incoming)
+{
 	z_arm64_swap_ptables(incoming);
 }
 
