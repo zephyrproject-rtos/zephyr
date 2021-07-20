@@ -221,8 +221,6 @@ add_dependencies(html devicetree kconfig)
 #-------------------------------------------------------------------------------
 # pdf
 
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
-
 add_doc_target(
   latex
   COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
@@ -236,7 +234,6 @@ add_doc_target(
     ${SPHINXOPTS}
     ${DOCS_SRC_DIR}
     ${DOCS_LATEX_DIR}
-  COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${DOCS_LATEX_DIR}/zephyr.tex
   USES_TERMINAL
   COMMENT "Running Sphinx LaTeX build..."
 )
