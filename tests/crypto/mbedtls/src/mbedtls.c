@@ -72,20 +72,6 @@
 #include "mbedtls/memory_buffer_alloc.h"
 #endif
 
-#if defined(MBEDTLS_RSA_C)
-int rand(void)
-{
-	static ZTEST_DMEM uint32_t seed = 7U;
-
-	seed ^= seed << 13;
-	seed ^= seed >> 17;
-	seed ^= seed << 5;
-
-	return seed;
-}
-
-#endif
-
 static int test_snprintf(size_t n, const char ref_buf[10], int ref_ret)
 {
 	int ret;

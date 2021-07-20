@@ -19,3 +19,4 @@ supported:
   - counter
   - can
   - spi
+  - adc
