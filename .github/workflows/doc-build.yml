@@ -20,8 +20,8 @@ on:
     - 'scripts/requirements-doc.txt'
 
 jobs:
-  doc-build:
-    name: "Documentation Build"
+  doc-build-html:
+    name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
 
     steps:
@@ -63,3 +63,43 @@ jobs:
       with:
         name: htmldocs.tar
         path: htmldocs.tar
+
+  doc-build-pdf:
+    name: "Documentation Build (PDF)"
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - name: install-pkgs
+      run: |
+        apt-get update
+        apt-get install -y python3-pip cmake ninja-build doxygen graphviz librsvg2-bin
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+
+    - name: install-pip
+      run: |
+        pip3 install -U setuptools wheel pip
+        pip3 install -r scripts/requirements-doc.txt
+        pip3 install west==0.11.0
+
+    - name: west setup
+      run: |
+        west init -l .
+
+    - name: build-docs
+      run: |
+        SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
+
+    - name: upload-build
+      uses: actions/upload-artifact@master
+      with:
+        name: pdf-output
+        path: doc/_build/latex/zephyr.pdf
