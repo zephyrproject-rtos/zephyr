@@ -10,8 +10,8 @@ config SOC_FAMILY_NUMICRO
 if SOC_FAMILY_NUMICRO
 config SOC_FAMILY
 	string
-	default "nuvoton"
+	default "nuvoton_numicro"
 
-source "soc/arm/nuvoton/*/Kconfig.soc"
+source "soc/arm/nuvoton_numicro/*/Kconfig.soc"
 
 endif # SOC_FAMILY_NUMICRO
