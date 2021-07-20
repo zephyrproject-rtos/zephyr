@@ -804,6 +804,11 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* TODO: the timeout should be adjustable */
 		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
 		/*
+		 * Ensure that interrupt can be disabled immediately when
+		 * the timeout occurs.
+		 */
+		irq_disable(config->i2c_irq_base);
+		/*
 		 * The transaction is dropped on any error(timeout, NACK, fail,
 		 * bus error, device error).
 		 */
