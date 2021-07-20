@@ -49,7 +49,7 @@ struct z_arm64_fp_context {
 };
 
 struct _thread_arch {
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_MMU)
 	struct arm_mmu_ptables *ptables;
 #endif
 #ifdef CONFIG_FPU_SHARING
