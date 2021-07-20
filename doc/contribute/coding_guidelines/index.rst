@@ -706,51 +706,6 @@ severity and the equivlent rules from other standards for reference.
       -  The library functions bsearch and qsort of <stdlib.h> shall not be used
       -  N/A
       -  `Rule 21.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_09.c>`_
-    * -  Rule 22.1
-      -  Required
-      -  All resources obtained dynamically by means of Standard Library functions shall be explicitly released
-      -  N/A
-      -  `Rule 22.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_01.c>`_
-    * -  Rule 22.3
-      -  Required
-      -  The same file shall not be open for read and write access at the same time on different streams
-      -  N/A
-      -  `Rule 22.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_03.c>`_
-    * -  Rule 22.4
-      -  Mandatory
-      -  There shall be no attempt to write to a stream which has been opened as read-only
-      -  N/A
-      -  `Rule 22.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_04.c>`_
-    * -  Rule 22.5
-      -  Mandatory
-      -  A pointer to a FILE object shall not be dereferenced
-      -  N/A
-      -  `Rule 22.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_05.c>`_
-    * -  Rule 22.6
-      -  Mandatory
-      -  The value of a pointer to a FILE shall not be used after the associated stream has been closed
-      -  N/A
-      -  `Rule 22.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_06.c>`_
-    * -  Rule 22.7
-      -  Required
-      -  The macro EOF shall only be compared with the unmodified return value from any Standard Library function capable of returning EOF
-      -  N/A
-      -  `Rule 22.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_07.c>`_
-    * -  Rule 22.8
-      -  Required
-      -  The value of errno shall be set to zero prior to a call to an errno-setting-function
-      -  N/A
-      -  `Rule 22.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_08.c>`_
-    * -  Rule 22.9
-      -  Required
-      -  The value of errno shall be tested against zero after calling an errno-setting-function
-      -  N/A
-      -  `Rule 22.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_09.c>`_
-    * -  Rule 22.10
-      -  Required
-      -  The value of errno shall only be tested when the last function to be called was an errno-setting-function
-      -  N/A
-      -  `Rule 22.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_10.c>`_
     * -  Rule 21.11
       -  Required
       -  The standard header file <tgmath.h> shall not be used
@@ -796,6 +751,51 @@ severity and the equivlent rules from other standards for reference.
       -  The pointer returned by the Standard Library functions asctime, ctime, gmtime, localtime, localeconv, getenv, setlocale or strerror shall not be used following a subsequent call to the same function
       -  N/A
       -  `Rule 21.20 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_20.c>`_
+    * -  Rule 22.1
+      -  Required
+      -  All resources obtained dynamically by means of Standard Library functions shall be explicitly released
+      -  N/A
+      -  `Rule 22.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_01.c>`_
+    * -  Rule 22.3
+      -  Required
+      -  The same file shall not be open for read and write access at the same time on different streams
+      -  N/A
+      -  `Rule 22.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_03.c>`_
+    * -  Rule 22.4
+      -  Mandatory
+      -  There shall be no attempt to write to a stream which has been opened as read-only
+      -  N/A
+      -  `Rule 22.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_04.c>`_
+    * -  Rule 22.5
+      -  Mandatory
+      -  A pointer to a FILE object shall not be dereferenced
+      -  N/A
+      -  `Rule 22.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_05.c>`_
+    * -  Rule 22.6
+      -  Mandatory
+      -  The value of a pointer to a FILE shall not be used after the associated stream has been closed
+      -  N/A
+      -  `Rule 22.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_06.c>`_
+    * -  Rule 22.7
+      -  Required
+      -  The macro EOF shall only be compared with the unmodified return value from any Standard Library function capable of returning EOF
+      -  N/A
+      -  `Rule 22.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_07.c>`_
+    * -  Rule 22.8
+      -  Required
+      -  The value of errno shall be set to zero prior to a call to an errno-setting-function
+      -  N/A
+      -  `Rule 22.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_08.c>`_
+    * -  Rule 22.9
+      -  Required
+      -  The value of errno shall be tested against zero after calling an errno-setting-function
+      -  N/A
+      -  `Rule 22.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_09.c>`_
+    * -  Rule 22.10
+      -  Required
+      -  The value of errno shall only be tested when the last function to be called was an errno-setting-function
+      -  N/A
+      -  `Rule 22.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_10.c>`_
 
 Additional rules
 ****************
