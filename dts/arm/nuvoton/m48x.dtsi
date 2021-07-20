@@ -25,7 +25,7 @@
 
 	flash0: flash@0 {
 		compatible = "serial-flash";
-		label = "FLASH_NUVOTON";
+		label = "FLASH_NUMICRO";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 	};
