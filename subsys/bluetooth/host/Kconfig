@@ -446,8 +446,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 
 endif # BT_SMP
 
-source "subsys/bluetooth/host/Kconfig.l2cap"
-source "subsys/bluetooth/host/Kconfig.gatt"
+rsource "Kconfig.l2cap"
+rsource "Kconfig.gatt"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
