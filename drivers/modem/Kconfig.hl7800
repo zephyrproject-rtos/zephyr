@@ -288,8 +288,15 @@ config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
 
 endchoice
 
-config GET_IP_ADDR_INFO_ATTEMPTS
+config MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS
 	int "Number of attempts to get IP address info during init"
 	default 4
+
+config MODEM_HL7800_GPS
+	bool "Enable GPS command and handlers"
+
+config MODEM_HL7800_USE_GLONASS
+	bool "Use GLONASS in addition to GPS"
+	depends on MODEM_HL7800_GPS
 
 endif # MODEM_HL7800
