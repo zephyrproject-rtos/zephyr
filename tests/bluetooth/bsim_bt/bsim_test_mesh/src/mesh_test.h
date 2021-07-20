@@ -52,7 +52,7 @@
 
 #define ASSERT_TRUE(cond, ...)                                                 \
 	do {                                                                   \
-		if (!cond) {                                                   \
+		if (!(cond)) {                                                   \
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
 				#cond "is false.", ##__VA_ARGS__);             \
