@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/check.h>
+
 #include "media_proxy.h"
 #include "media_proxy_internal.h"
 #include <bluetooth/mcc.h>
@@ -702,7 +704,8 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 
 int media_proxy_ctrl_player_name_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -735,7 +738,8 @@ int media_proxy_ctrl_player_name_get(struct media_player *player)
 
 int media_proxy_ctrl_icon_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -766,7 +770,8 @@ int media_proxy_ctrl_icon_id_get(struct media_player *player)
 
 int media_proxy_ctrl_icon_url_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -797,7 +802,8 @@ int media_proxy_ctrl_icon_url_get(struct media_player *player)
 
 int media_proxy_ctrl_track_title_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -828,7 +834,8 @@ int media_proxy_ctrl_track_title_get(struct media_player *player)
 
 int media_proxy_ctrl_track_duration_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -858,7 +865,8 @@ int media_proxy_ctrl_track_duration_get(struct media_player *player)
 
 int media_proxy_ctrl_track_position_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -889,7 +897,8 @@ int media_proxy_ctrl_track_position_get(struct media_player *player)
 
 int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t position)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -914,7 +923,8 @@ int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t pos
 
 int media_proxy_ctrl_playback_speed_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -945,7 +955,8 @@ int media_proxy_ctrl_playback_speed_get(struct media_player *player)
 
 int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t speed)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -970,7 +981,8 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
 
 int media_proxy_ctrl_seeking_speed_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1001,7 +1013,8 @@ int media_proxy_ctrl_seeking_speed_get(struct media_player *player)
 
 int media_proxy_ctrl_track_segments_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1032,7 +1045,8 @@ int media_proxy_ctrl_track_segments_id_get(struct media_player *player)
 
 int media_proxy_ctrl_current_track_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1063,7 +1077,8 @@ int media_proxy_ctrl_current_track_id_get(struct media_player *player)
 
 int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t id)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1089,7 +1104,8 @@ int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t 
 
 int media_proxy_ctrl_next_track_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1120,7 +1136,8 @@ int media_proxy_ctrl_next_track_id_get(struct media_player *player)
 
 int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1146,7 +1163,8 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 
 int media_proxy_ctrl_current_group_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1177,7 +1195,8 @@ int media_proxy_ctrl_current_group_id_get(struct media_player *player)
 
 int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t id)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1203,7 +1222,8 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 
 int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1234,7 +1254,8 @@ int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
 
 int media_proxy_ctrl_playing_order_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1266,7 +1287,8 @@ int media_proxy_ctrl_playing_order_get(struct media_player *player)
 
 int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t order)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1291,7 +1313,8 @@ int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t orde
 
 int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1322,7 +1345,8 @@ int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player)
 
 int media_proxy_ctrl_media_state_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1353,7 +1377,8 @@ int media_proxy_ctrl_media_state_get(struct media_player *player)
 
 int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t operation)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1378,7 +1403,8 @@ int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t 
 
 int media_proxy_ctrl_operations_supported_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1409,7 +1435,8 @@ int media_proxy_ctrl_operations_supported_get(struct media_player *player)
 
 int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t search)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1434,7 +1461,8 @@ int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t
 
 int media_proxy_ctrl_search_results_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1465,7 +1493,8 @@ int media_proxy_ctrl_search_results_id_get(struct media_player *player)
 
 uint8_t media_proxy_ctrl_content_ctrl_id_get(struct media_player *player)
 {
-	if (player == NULL) {
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
 		return -EINVAL;
 	}
 
@@ -1498,7 +1527,7 @@ uint8_t media_proxy_ctrl_content_ctrl_id_get(struct media_player *player)
 
 int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
 {
-	if (pl_calls == NULL) {
+	CHECKIF(pl_calls == NULL) {
 		BT_DBG("NULL calls");
 		return -EINVAL;
 	}
