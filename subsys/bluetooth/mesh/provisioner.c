@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2020 Lingao Meng
+ * Copyright (c) 2021 Manulytica Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,7 +151,7 @@ static void send_start(void)
 
 	net_buf_simple_add_u8(&start, bt_mesh_prov_link.oob_size);
 
-	memcpy(bt_mesh_prov_link.conf_inputs.invite, &start.data[1], PDU_LEN_INVITE);
+	memcpy(bt_mesh_prov_link.conf_inputs.start, &start.data[1], PDU_LEN_START);
 
 	if (bt_mesh_prov_auth(method, action, bt_mesh_prov_link.oob_size) < 0) {
 		BT_ERR("Invalid authentication method: 0x%02x; "
