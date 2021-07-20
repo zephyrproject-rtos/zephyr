@@ -6,18 +6,13 @@ import os
 from pathlib import Path
 import re
 
+from sphinx.cmd.build import get_parser
 import sphinx_rtd_theme
 
 
-ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    raise ValueError("ZEPHYR_BASE environment variable undefined")
-ZEPHYR_BASE = Path(ZEPHYR_BASE)
-
-ZEPHYR_BUILD = os.environ.get("ZEPHYR_BUILD")
-if not ZEPHYR_BUILD:
-    raise ValueError("ZEPHYR_BUILD environment variable undefined")
-ZEPHYR_BUILD = Path(ZEPHYR_BUILD)
+args = get_parser().parse_args()
+ZEPHYR_BASE = Path(__file__).resolve().parents[1]
+ZEPHYR_BUILD = Path(args.outputdir).resolve()
 
 # Add the '_extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
