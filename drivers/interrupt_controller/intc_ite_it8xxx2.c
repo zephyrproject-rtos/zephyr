@@ -125,7 +125,11 @@ void ite_intc_irq_enable(unsigned int irq)
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	en = reg_enable[g];
+
+	/* critical section due to run a bit-wise OR operation */
+	unsigned int key = irq_lock();
 	SET_MASK(*en, BIT(i));
+	irq_unlock(key);
 }
 
 void ite_intc_irq_disable(unsigned int irq)
@@ -139,7 +143,11 @@ void ite_intc_irq_disable(unsigned int irq)
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	en = reg_enable[g];
+
+	/* critical section due to run a bit-wise OR operation */
+	unsigned int key = irq_lock();
 	CLEAR_MASK(*en, BIT(i));
+	irq_unlock(key);
 }
 
 void ite_intc_irq_priority_set(unsigned int irq,
