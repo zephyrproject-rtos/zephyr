@@ -379,19 +379,6 @@ typedef struct float32_value {
 } float32_value_t;
 
 /**
- * @brief Maximum precision value for 64-bit LwM2M float val2
- */
-#define LWM2M_FLOAT64_DEC_MAX 1000000000LL
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float64_value {
-	int64_t val1;
-	int64_t val2;
-} float64_value_t;
-
-/**
  * @brief Maximum value for ObjLnk resource fields
  */
 #define LWM2M_OBJLNK_MAX_ID USHRT_MAX
@@ -580,16 +567,6 @@ int lwm2m_engine_set_bool(char *pathstr, bool value);
 int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
 
 /**
- * @brief Set resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 64-bit float value
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
-
-/**
  * @brief Set resource (instance) value (ObjLnk)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -720,16 +697,6 @@ int lwm2m_engine_get_bool(char *pathstr, bool *value);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
-
-/**
- * @brief Get resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 64-bit float buffer to copy data into
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf);
 
 /**
  * @brief Get resource (instance) value (ObjLnk)

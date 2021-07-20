@@ -1638,18 +1638,11 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 		*((bool *)data_ptr) = *(bool *)value;
 		break;
 
-	case LWM2M_RES_TYPE_FLOAT32:
+	case LWM2M_RES_TYPE_FLOAT:
 		((float32_value_t *)data_ptr)->val1 =
 				((float32_value_t *)value)->val1;
 		((float32_value_t *)data_ptr)->val2 =
 				((float32_value_t *)value)->val2;
-		break;
-
-	case LWM2M_RES_TYPE_FLOAT64:
-		((float64_value_t *)data_ptr)->val1 =
-				((float64_value_t *)value)->val1;
-		((float64_value_t *)data_ptr)->val2 =
-				((float64_value_t *)value)->val2;
 		break;
 
 	case LWM2M_RES_TYPE_OBJLNK:
@@ -1738,11 +1731,6 @@ int lwm2m_engine_set_bool(char *pathstr, bool value)
 int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(float32_value_t));
-}
-
-int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value)
-{
-	return lwm2m_engine_set(pathstr, value, sizeof(float64_value_t));
 }
 
 int lwm2m_engine_set_objlnk(char *pathstr, struct lwm2m_objlnk *value)
@@ -1884,18 +1872,11 @@ static int lwm2m_engine_get(char *pathstr, void *buf, uint16_t buflen)
 			*(bool *)buf = *(bool *)data_ptr;
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			((float32_value_t *)buf)->val1 =
 				((float32_value_t *)data_ptr)->val1;
 			((float32_value_t *)buf)->val2 =
 				((float32_value_t *)data_ptr)->val2;
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			((float64_value_t *)buf)->val1 =
-				((float64_value_t *)data_ptr)->val1;
-			((float64_value_t *)buf)->val2 =
-				((float64_value_t *)data_ptr)->val2;
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
@@ -1980,11 +1961,6 @@ int lwm2m_engine_get_bool(char *pathstr, bool *value)
 int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(float32_value_t));
-}
-
-int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
-{
-	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
 }
 
 int lwm2m_engine_get_objlnk(char *pathstr, struct lwm2m_objlnk *buf)
@@ -2391,14 +2367,9 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 					*(bool *)data_ptr);
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			engine_put_float32fix(&msg->out, &msg->path,
 				(float32_value_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			engine_put_float64fix(&msg->out, &msg->path,
-				(float64_value_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
@@ -2665,16 +2636,10 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			len = 1;
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			engine_get_float32fix(&msg->in,
 					      (float32_value_t *)write_buf);
 			len = sizeof(float32_value_t);
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			engine_get_float64fix(&msg->in,
-					      (float64_value_t *)write_buf);
-			len = sizeof(float64_value_t);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
