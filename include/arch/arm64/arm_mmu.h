@@ -218,10 +218,6 @@ typedef struct { uint32_t attrs; } k_mem_partition_attr_t;
  */
 extern const struct arm_mmu_config mmu_config;
 
-struct k_thread;
-void z_arm64_thread_pt_init(struct k_thread *thread);
-void z_arm64_swap_ptables(struct k_thread *thread);
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_ */

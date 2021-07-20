@@ -9,12 +9,11 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
-#include <arch/arm64/cortex_r/arm_mpu.h>
+#include <arch/arm64/mm.h>
 #include <linker/linker-defs.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(mpu);
+
+LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 /*
  * AArch64 Memory Model Feature Register 0
