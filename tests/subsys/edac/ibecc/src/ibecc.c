@@ -156,12 +156,18 @@ static void test_ibecc_error_inject_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 {
-
+	unsigned int errors_cor, errors_uc;
 	uint64_t test_addr;
 	uint32_t test_value;
 	int ret, num_int;
 
 	interrupt = 0;
+
+	errors_cor = edac_errors_cor_get(dev);
+	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
+
+	errors_uc = edac_errors_uc_get(dev);
+	zassert_not_equal(errors_uc, -ENOSYS, "Not implemented error count");
 
 	ret = edac_inject_set_param1(dev, addr);
 	zassert_equal(ret, 0, "Error setting inject address");
@@ -208,6 +214,20 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	TC_PRINT("Interrupt %d\n", num_int);
 	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
 		 error_type, error_address, error_syndrome);
+
+	/* Check statistic information */
+
+	ret = edac_errors_cor_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_COR ?
+		      errors_cor + 1 : errors_cor,
+		      "Incorrect correctable count");
+	TC_PRINT("Correctable error count %d\n", ret);
+
+	ret = edac_errors_uc_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_UC ?
+		      errors_uc + 1 : errors_uc,
+		      "Incorrect uncorrectable count");
+	TC_PRINT("Uncorrectable error count %d\n", ret);
 }
 
 static int check_values(void *p1, void *p2, void *p3)
