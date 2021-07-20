@@ -1,15 +1,27 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig USB_CDC_ACM
-	bool "USB CDC ACM Device Class support"
+DT_COMPAT_ZEPHYR_CDC_ACM_UART := zephyr,cdc-acm-uart
+
+menu "USB CDC ACM Class support"
+
+config USB_CDC_ACM_HAS_DT_COMPAT
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CDC_ACM_UART))
+	imply USB_CDC_ACM
+	help
+	  Helper symbol to select USB_CDC_ACM if compatible node is enabled.
+
+config USB_CDC_ACM
+	bool "USB CDC ACM Class support"
+	depends on SERIAL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
 	help
-	  USB CDC ACM device class support.
-	  Default device name is "CDC_ACM_0".
+	  USB CDC ACM class support.
+	  Default UART device name is "CDC_ACM_0".
 
 if USB_CDC_ACM
 
@@ -26,9 +38,11 @@ config USB_CDC_ACM_DEVICE_NAME
 	  Device name template for the CDC ACM Devices. First device would
 	  have name $(USB_CDC_ACM_DEVICE_NAME)_0, etc.
 
+if !USB_CDC_ACM_HAS_DT_COMPAT
 module = USB_CDC_ACM
 default-count = 1
 source "subsys/usb/class/Kconfig.template.composite_device_number"
+endif
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
@@ -64,3 +78,5 @@ module-str = usb cdc acm
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # USB_CDC_ACM
+
+endmenu
