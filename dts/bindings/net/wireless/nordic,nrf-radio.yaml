@@ -16,6 +16,7 @@ description: |
     ---------------------------
 
     Some radios support the Bluetooth Direction Finding Extension (DFE).
+    The 'dfe-supported' property will be set when it is available.
     In this case, the 'dfegpio[n]-gpios' properties configure GPIO pins
     to use to drive antenna switching.
 
@@ -91,21 +92,30 @@ properties:
     interrupts:
       required: true
 
+    dfe-supported:
+      type: boolean
+      description: |
+        If set, the radio hardware supports the Direction Finding Extension.
+        This property should be treated as read-only and should not be overridden;
+        the correct value is provided for your target's SoC already.
+
     dfe-antenna-num:
       type: int
-      required: true
+      required: false
       description: |
-        Number of available antennas.
+        Number of available antennas for the Direction Finding Extension.
 
-        Value zero means no antenna available. If provided value different than
-        zero, it must be greater or equal to two.
+        This should only be set if dfe-supported is true. If you set this
+        property, the value must be at least two.
 
     dfe-pdu-antenna:
       type: int
-      required: true
+      required: false
       description: |
         Antenna switch pattern to be used for transmission of PDU before start
         of transmission of Constant Tone Extension.
+
+        This should only be set if dfe-supported is true.
 
         This pattern is stored in SWITCHPATTERN[0] before actual antenna
         switching patterns. This pattern will also be used to drive GPIOs
@@ -115,7 +125,8 @@ properties:
       type: phandle-array
       required: false
       description: |
-        Pin select for DFE pin 0.
+        Pin select for DFE pin 0. This should only be set if dfe-supported
+        is true.
 
         For example, to use P0.2 on an nRF5x SoC:
 
