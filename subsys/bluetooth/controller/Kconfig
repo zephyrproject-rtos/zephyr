@@ -629,8 +629,8 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 	  Enable HCI commands to read information about supported
 	  codecs, codec capabilities, and controller delay.
 
-source "subsys/bluetooth/controller/Kconfig.df"
-source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
+rsource "Kconfig.df"
+rsource "Kconfig.ll_sw_split"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"
