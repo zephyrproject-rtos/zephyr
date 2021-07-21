@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-if(${CONFIG_SOC_NSIM_HS_SMP})
+if((${CONFIG_SOC_NSIM_HS_SMP}) OR (${CONFIG_SOC_NSIM_HS6X_SMP}))
 # mdb is required to run nsim multicore targets
 find_program(
   MDB
@@ -8,6 +8,8 @@ find_program(
 
 if(${CONFIG_SOC_NSIM_HS_SMP})
  set(MDB_ARGS mdb_hs_smp.args)
+elseif(${CONFIG_SOC_NSIM_HS6X_SMP})
+ set(MDB_ARGS mdb_hs6x_smp.args)
 endif()
 
 add_custom_target(run

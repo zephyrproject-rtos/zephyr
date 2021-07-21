@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set(EMU_PLATFORM nsim)
 
-if(NOT CONFIG_SOC_NSIM_HS_SMP)
+if(NOT (CONFIG_SOC_NSIM_HS_SMP OR CONFIG_SOC_NSIM_HS6X_SMP))
 board_set_flasher_ifnset(arc-nsim)
 board_set_debugger_ifnset(arc-nsim)
 endif()
@@ -23,6 +23,8 @@ board_runner_args(mdb-nsim "--cores=${CONFIG_MP_NUM_CPUS}" "--nsim_args=mdb_hs_s
 elseif(${CONFIG_SOC_NSIM_HS6X})
 board_runner_args(arc-nsim "--props=nsim_hs6x.props")
 board_runner_args(mdb-nsim "--nsim_args=mdb_hs6x.args")
+elseif(${CONFIG_SOC_NSIM_HS6X_SMP})
+board_runner_args(mdb-nsim "--cores=${CONFIG_MP_NUM_CPUS}" "--nsim_args=mdb_hs6x_smp.args")
 endif()
 
 board_finalize_runner_args(arc-nsim)
