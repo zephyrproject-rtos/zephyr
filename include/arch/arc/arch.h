@@ -32,11 +32,12 @@
 #include <arch/common/addr_types.h>
 #include <arch/arc/v2/error.h>
 
-#ifdef CONFIG_ISA_ARCV2
-#include "v2/sys_io.h"
 #ifdef CONFIG_ARC_CONNECT
 #include <arch/arc/v2/arc_connect.h>
 #endif
+
+#ifdef CONFIG_ISA_ARCV2
+#include "v2/sys_io.h"
 #ifdef CONFIG_ARC_HAS_SECURE
 #include <arch/arc/v2/secureshield/arc_secure.h>
 #endif
