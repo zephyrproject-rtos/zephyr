@@ -347,3 +347,9 @@ the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout
 value, and should never be called iteratively in a loop.
+
+
+API Reference
+*************
+
+.. doxygengroup:: clock_apis

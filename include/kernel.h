@@ -1515,6 +1515,7 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 
 /**
  * @addtogroup clock_apis
+ * @ingroup kernel_apis
  * @{
  */
 
