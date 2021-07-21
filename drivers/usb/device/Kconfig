@@ -93,12 +93,32 @@ config USB_KINETIS
 	help
 	  Kinetis USB Device Controller Driver.
 
+config USB_MCUX
+	bool "NXP MCUX USB Device Controller Driver"
+	help
+	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
+
+if USB_MCUX
+
+choice USB_MCUX_CONTROLLER_TYPE
+	prompt "USB Controller type"
+	help
+	  Select the type of controller available in the SoC.
+
 config USB_DC_NXP_EHCI
-	bool "Kinetis and RT EHCI USB Device Controller Driver"
-	depends on HAS_MCUX_USB_EHCI
+	bool "MXRT EHCI USB Device Controller"
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
+
+config USB_DC_NXP_LPCIP3511
+	bool "LPC USB Device Controller"
+	help
+	  LPC USB Device Controller Driver.
+
+endchoice
+
+endif # USB_MCUX
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"
