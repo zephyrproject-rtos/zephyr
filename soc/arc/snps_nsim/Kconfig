@@ -32,4 +32,7 @@ config SOC_NSIM_HS_SMP
 config SOC_NSIM_HS6X
 	bool "Synopsys ARC HS6x in nSIM"
 
+config SOC_NSIM_HS6X_SMP
+	bool "Multi-core Synopsys ARC HS6x in nSIM"
+
 endchoice
