@@ -1455,11 +1455,48 @@ flash_nor_get_parameters(const struct device *dev)
 	return &flash_nor_parameters;
 }
 
+static int
+flash_nor_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ssize_t total = dev_flash_size(dev);
+	ssize_t page = dev_page_size(dev);
+
+	BUILD_ASSERT(sizeof(uint32_t) <= sizeof(ssize_t), "ssize_t not ge the uint32_t");
+
+	/* This is possible when uint32_t value is big enough to cross into negative ssize_t */
+	if (total < 0) {
+		LOG_ERR("ssize_t not enough to handle flash size");
+		return -ERANGE;
+	}
+
+	if (offset < 0 || offset >= total) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(page - 1);
+	fpi->size = page;
+
+	return 0;
+}
+
+static ssize_t flash_nor_get_page_count(const struct device *dev)
+{
+	return dev_flash_size(dev) / dev_page_size(dev);
+}
+
+static ssize_t flash_nor_get_size(const struct device *dev)
+{
+	return dev_flash_size(dev);
+}
+
 static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
 	.get_parameters = flash_nor_get_parameters,
+	.get_page_info = flash_nor_get_page_info,
+	.get_page_count = flash_nor_get_page_count,
+	.get_size = flash_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
