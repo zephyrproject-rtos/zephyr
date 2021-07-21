@@ -1276,9 +1276,9 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	int ret;
 
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_RX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
-	sx1280_setRx((TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 10000 });
+	sx1280_setRx((TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 1000 });
 
-	ret = k_sem_take(&recv_sem, timeout);
+	ret = k_sem_take(&recv_sem, K_FOREVER);
 	if (ret < 0) {
 		LOG_ERR("Receive timeout!");
 		return ret;
@@ -1291,7 +1291,7 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	if ( (irqStatus & IRQ_HEADER_ERROR) | (irqStatus & IRQ_CRC_ERROR) | (irqStatus & IRQ_RX_TX_TIMEOUT ) ) //check if any of the preceding IRQs is set
 	{
 		printk("rx error");
-		return 0;                          //packet is errored somewhere so return 0
+		return -1;
 	}
 
 	sx1280_ReadCommand(RADIO_GET_RXBUFFERSTATUS, buffer, 2);
