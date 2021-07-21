@@ -33,8 +33,6 @@
 #include "reg/mec172x_espi_iom.h"
 #include "reg/mec172x_espi_saf.h"
 #include "reg/mec172x_espi_vw.h"
-#include "reg/mec172x_gpio.h"
-#include "reg/mec172x_i2c_smb.h"
 #include "reg/mec172x_pcr.h"
 
 /* common peripheral register defines */
