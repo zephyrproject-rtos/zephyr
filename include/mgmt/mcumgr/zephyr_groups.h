@@ -19,6 +19,9 @@ extern "C" {
 /* Basic group */
 #define ZEPHYR_MGMT_GRP_BASIC		ZEPHYR_MGMT_GRP_BASE
 #define ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE	0	/* Command to erase storage partition */
+#define ZEPHYR_MGMT_GRP_BASIC_CMD_IMAGE_LIST	1	/* Command lists "image-?" partitions with
+							 * parameters.
+							 */
 
 #ifdef __cplusplus
 }

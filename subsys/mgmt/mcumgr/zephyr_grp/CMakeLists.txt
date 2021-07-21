@@ -5,5 +5,11 @@
 #
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE basic_mgmt.c)
+if (CONFIG_MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE OR CONFIG_MCUMGR_GRP_BASIC_CMD_IMAGE_LIST)
+	zephyr_library_sources(basic_mgmt.c)
+endif()
 zephyr_library_link_libraries(MCUMGR)
+
+if(CONFIG_MCUMGR_GRP_BASIC_CMD_IMAGE_LIST)
+	zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
+endif()

@@ -234,6 +234,12 @@ config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
 	help
 	  Enables command that allows to erase storage partition.
 
+config MCUMGR_GRP_BASIC_CMD_IMAGE_LIST
+	bool "Enable Zephyr specific image list"
+	help
+	  The option enables special image list that presents statuses of images by the direct
+	  upload numbers.
+
 module=MGMT_SETTINGS
 module-dep=LOG
 module-str=SETTINGS
