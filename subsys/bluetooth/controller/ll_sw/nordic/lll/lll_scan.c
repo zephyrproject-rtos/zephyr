@@ -858,6 +858,9 @@ static void isr_abort(void *param)
 
 static void isr_done_cleanup(void *param)
 {
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+
 	if (lll_is_done(param)) {
 		return;
 	}
