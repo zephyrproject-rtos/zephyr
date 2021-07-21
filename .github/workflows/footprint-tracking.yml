@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - 'VERSION'
+      - '.github/workflows/footprint-tracking.yml'
     tags:
       # only publish v* tags, do not care about zephyr-v* which point to the
       # same commit
@@ -36,6 +37,9 @@ jobs:
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install pip packages
+        run: |
+          sudo pip3 install -U setuptools wheel pip gitpython
 
       - name: checkout
         uses: actions/checkout@v2
