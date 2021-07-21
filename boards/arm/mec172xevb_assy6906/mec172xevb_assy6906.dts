@@ -23,6 +23,11 @@
 	clock-frequency = <96000000>;
 };
 
+/* Initialize ECIA. Does not initialize child devices */
+&ecia {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
@@ -33,4 +38,5 @@
 
 &uart1 {
 	status = "okay";
+	current-speed = <115200>;
 };
