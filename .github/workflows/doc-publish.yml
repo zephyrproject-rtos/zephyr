@@ -56,7 +56,7 @@ jobs:
 
     - name: install-pkgs
       run: |
-        sudo apt-get install -y ninja-build doxygen
+        sudo apt-get install -y ninja-build doxygen graphviz
 
     - name: cache-pip
       uses: actions/cache@v1
