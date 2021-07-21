@@ -6,6 +6,7 @@
 
 #include <kernel.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "lwm2m_util.h"
 
 #define SHIFT_LEFT(v, o, m) (((v) << (o)) & (m))
@@ -295,4 +296,48 @@ int lwm2m_b64_to_f32(uint8_t *b64, size_t len, float32_value_t *f32)
 	}
 
 	return 0;
+}
+
+int lwm2m_atof32(const char *input, float32_value_t *out)
+{
+	char *pos, *end, buf[24];
+	long val;
+	int32_t base = LWM2M_FLOAT32_DEC_MAX, sign = 1;
+
+	if (!input || !out) {
+		return -EINVAL;
+	}
+
+	strncpy(buf, input, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
+	if (strchr(buf, '-')) {
+		sign = -1;
+	}
+
+	pos = strchr(buf, '.');
+	if (pos) {
+		*pos = '\0';
+	}
+
+	errno = 0;
+	val = strtol(buf, &end, 10);
+	if (errno || *end || val < INT_MIN) {
+		return -EINVAL;
+	}
+
+	out->val1 = (int32_t) val;
+	out->val2 = 0;
+
+	if (!pos) {
+		return 0;
+	}
+
+	while (*(++pos) && base > 1 && isdigit((unsigned char)*pos)) {
+		out->val2 = out->val2 * 10 + (*pos - '0');
+		base /= 10;
+	}
+
+	out->val2 *= sign * base;
+	return !*pos || base == 1 ? 0 : -EINVAL;
 }
