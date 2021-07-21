@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 #define ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 
+#include "socket_can_context.h"
+
 #define SOCKET_CAN_NAME_0 "SOCKET_CAN_0"
 #define SOCKET_CAN_NAME_1 "SOCKET_CAN_1"
 #define SOCKET_CAN_NAME_2 "SOCKET_CAN_2"
@@ -24,16 +26,6 @@
 /* TODO: make msgq size configurable */
 CAN_DEFINE_MSGQ(socket_can_msgq, 5);
 K_KERNEL_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
-
-struct socket_can_context {
-	const struct device *can_dev;
-	struct net_if *iface;
-	struct k_msgq *msgq;
-
-	/* TODO: remove the thread and push data to net directly from rx isr */
-	k_tid_t rx_tid;
-	struct k_thread rx_thread_data;
-};
 
 static inline void socket_can_iface_init(struct net_if *iface)
 {

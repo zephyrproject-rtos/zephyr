@@ -1,10 +1,7 @@
-# Kconfig.native_posix - native_posix CAN configuration options
+# Native posix CAN configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_NATIVE_POSIX
 	bool "native_posix CAN Driver"
@@ -24,51 +21,51 @@ config CAN_MAX_FILTER
 	  Must be at least the size of concurrent reads.
 
 ## Interface 1
-config CAN_NATIVE_POSIX_INTERFACE_1_ENABLE
+config CAN_NATIVE_POSIX_INTERFACE_1_ENABLED
 	bool "CANBUS interface 1"
-    default y
-   	depends on CAN_NATIVE_POSIX
+	default y
+	depends on CAN_NATIVE_POSIX
 	help
 	  This option enables the CANBUS network interface for Native POSIX board.
 
 config CAN_NATIVE_POSIX_INTERFACE_1_NAME
 	string "CANBUS interface 1 name on Linux side"
-    depends on CAN_NATIVE_POSIX_INTERFACE_1_ENABLE
+	depends on CAN_NATIVE_POSIX_INTERFACE_1_ENABLED
 	default "vcan0"
 	help
 	  This option sets the CANBUS network interface 1 name in host system.
 
 config CAN_NATIVE_POSIX_INTERFACE_1_SOCKETCAN_NAME
 	string "Network device name"
-    depends on CAN_NATIVE_POSIX_INTERFACE_1_ENABLE
+	depends on CAN_NATIVE_POSIX_INTERFACE_1_ENABLED
 	default "SOCKET_CAN_1"
 	help
 	  Name of the network device driver for SocketCAN.
 
 ## Interface 2
-config CAN_NATIVE_POSIX_INTERFACE_2_ENABLE
+config CAN_NATIVE_POSIX_INTERFACE_2_ENABLED
 	bool "CANBUS interface 2"
-    default y
-  	depends on CAN_NATIVE_POSIX
+	default n
+	depends on CAN_NATIVE_POSIX
 	help
 	  This option enables the CANBUS network interface for Native POSIX board.
 
-if CAN_NATIVE_POSIX_INTERFACE_2_ENABLE
+if CAN_NATIVE_POSIX_INTERFACE_2_ENABLED
 
 config CAN_NATIVE_POSIX_INTERFACE_2_NAME
 	string "CANBUS interface 2 name on Linux side"
-    depends on CAN_NATIVE_POSIX_INTERFACE_2_ENABLE
+	depends on CAN_NATIVE_POSIX_INTERFACE_2_ENABLED
 	default "vcan1"
 	help
-	  This option sets the CANBUS network interface 1 name in host system.
+	  This option sets the CANBUS network interface 2 name in host system.
 
 config CAN_NATIVE_POSIX_INTERFACE_2_SOCKETCAN_NAME
 	string "Network device name"
-    depends on CAN_NATIVE_POSIX_INTERFACE_2_ENABLE
+	depends on CAN_NATIVE_POSIX_INTERFACE_2_ENABLED
 	default "SOCKET_CAN_2"
 	help
 	  Name of the network device driver for SocketCAN.
-      
-endif # CAN_NATIVE_POSIX_INTERFACE_2_ENABLE
 
-endif # CAN_NATIVE_POSIX
+endif #CAN_NATIVE_POSIX_INTERFACE_2_ENABLED
+
+endif #CAN_NATIVE_POSIX
