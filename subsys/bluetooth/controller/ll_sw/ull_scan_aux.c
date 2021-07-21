@@ -400,6 +400,18 @@ uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
 	return aux_handle_get((void *)lll->hdr.parent);
 }
 
+struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux)
+{
+	if (((uint8_t *)aux < (uint8_t *)ll_scan_aux_pool) ||
+	    ((uint8_t *)aux > ((uint8_t *)ll_scan_aux_pool +
+			       (sizeof(struct ll_scan_aux_set) *
+				(CONFIG_BT_CTLR_SCAN_AUX_SET - 1))))) {
+		return NULL;
+	}
+
+	return aux;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */

@@ -52,6 +52,9 @@ uint8_t ull_scan_handle_get(struct ll_scan_set *scan);
 /* Helper function to check and return if a valid scan context */
 struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan);
 
+/* Helper function to check and return if a valid aux scan context */
+struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
+
 /* Return ll_scan_set context if enabled */
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle);
 
