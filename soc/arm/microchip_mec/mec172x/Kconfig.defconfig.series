@@ -22,4 +22,9 @@ config CORTEX_M_SYSTICK
 config CLOCK_CONTROL_MCHP_XEC
 	default y
 
+config MCHP_ECIA_XEC
+	default y
+	help
+	  Enable support for Microchip XEC ECIA driver
+
 endif # SOC_SERIES_MEC172X

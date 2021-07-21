@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/mchp_xec_pcr.h>
+#include <dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
 / {
 	cpus {
@@ -47,9 +48,213 @@
 			periph-32k-src = <MCHP_XEC_CLK32K_SRC_SIL_OSC>;
 			#clock-cells = <2>;
 		};
-		girq23: girq23@4000e12c {
-			reg = <0x4000e12c 0x14>;
-			label = "GIRQ_23";
+		ecia: ecia@4000e000 {
+			compatible = "microchip,xec-ecia";
+			reg = <0x4000e000 0x400>;
+			direct-capable-girqs = <13 14 15 16 17 18 19 20 21 23>;
+			clocks = <&pcr 1 0>;
+			label = "ECIA_0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ranges = <0x0 0x4000e000 0x400>;
+
+			girq8: girq8@0 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x0 0x14>;
+				interrupts = <0 0>;
+				label = "GIRQ_8";
+				girq-id = <0>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 21 22 24 25
+					   26 27 28 29>;
+				status = "disabled";
+			};
+			girq9: girq9@14 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x14 0x14>;
+				interrupts = <1 0>;
+				label = "GIRQ_9";
+				girq-id = <1>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 19 20 21 22 23
+					   24 25 26 27 28 29>;
+				status = "disabled";
+			};
+			girq10: girq10@28 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x28 0x14>;
+				interrupts = <2 0>;
+				label = "GIRQ_10";
+				girq-id = <2>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 19 20 21 22 23
+					   24 25 26 27 28 29 30>;
+				status = "disabled";
+			};
+			girq11: girq11@3c {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x3c 0x14>;
+				interrupts = <3 0>;
+				label = "GIRQ_11";
+				girq-id = <3>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 19 20 21 22 23
+					   24 25 26 27 28 29 30>;
+				status = "disabled";
+			};
+			girq12: girq12@50 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x50 0x14>;
+				interrupts = <4 0>;
+				label = "GIRQ_12";
+				girq-id = <4>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 19 20 21 22 23
+					   24 25 26 27 28 29 30>;
+				status = "disabled";
+			};
+			girq13: girq13@64 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x64 0x14>;
+				interrupts = <5 0>;
+				label = "GIRQ_13";
+				girq-id = <5>;
+				sources = <0 1 2 3 4>;
+				status = "disabled";
+			};
+			girq14: girq14@78 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x78 0x14>;
+				interrupts = <6 0>;
+				label = "GIRQ_14";
+				girq-id = <6>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15>;
+				status = "disabled";
+			};
+			girq15: girq15@8c {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x8c 0x14>;
+				interrupts = <7 0>;
+				label = "GIRQ_15";
+				girq-id = <7>;
+				sources = <0 1 2 3 4 5 6 7
+					   8 9 10 11 12 13 14 15
+					   16 17 18 19 20 22>;
+				status = "disabled";
+			};
+			girq16: girq16@a0 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0xa0 0x14>;
+				interrupts = <8 0>;
+				label = "GIRQ_16";
+				girq-id = <8>;
+				sources = <0 2 3>;
+				status = "disabled";
+			};
+			girq17: girq17@b4 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0xb4 0x14>;
+				interrupts = <9 0>;
+				label = "GIRQ_17";
+				girq-id = <9>;
+				sources = <0 1 2 3 4 8 9 10 11 12 13 14 15
+					   16 17 20 21 22 23>;
+				status = "disabled";
+			};
+			girq18: girq18@c8 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0xc8 0x14>;
+				interrupts = <10 0>;
+				label = "GIRQ_18";
+				girq-id = <10>;
+				sources = <0 1 2 3 4 5 6 7
+					   10 20 21 22 23
+					   24 25 26 27 28>;
+				status = "disabled";
+			};
+			girq19: girq19@dc {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0xdc 0x14>;
+				interrupts = <11 0>;
+				label = "GIRQ_19";
+				girq-id = <11>;
+				sources = <0 1 2 3 4 5 6 7 8 9 10>;
+				status = "disabled";
+			};
+			girq20: girq20@f0 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0xf0 0x14>;
+				interrupts = <12 0>;
+				label = "GIRQ_20";
+				girq-id = <12>;
+				sources = <3 9>;
+				status = "disabled";
+			};
+			girq21: girq21@104 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x104 0x14>;
+				interrupts = <13 0>;
+				label = "GIRQ_21";
+				girq-id = <13>;
+				sources = <2 3 4 5 6 7 8 9 10 11 12 13 14 15
+					   18 19 25 26>;
+				status = "disabled";
+			};
+			girq22: girq22@118 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x118 0x14>;
+				interrupts = <255 0>;
+				label = "GIRQ_22";
+				girq-id = <14>;
+				sources = <0 1 2 3 4 5 9 15>;
+				status = "disabled";
+			};
+			girq23: girq23@12c {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x12c 0x14>;
+				interrupts = <14 0>;
+				label = "GIRQ_23";
+				girq-id = <15>;
+				sources = <0 1 2 3 4 5 6 7 8 9 10 16 17>;
+				status = "disabled";
+			};
+			girq24: girq24@140 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x140 0x14>;
+				interrupts = <15 0>;
+				label = "GIRQ_24";
+				girq-id = <16>;
+				sources = <0 1 2 3 4 5 6 7 8 9 10 11
+					   12 13 14 15 16 17 18 19
+					   20 21 22 23 24 25 26 27>;
+				status = "disabled";
+			};
+			girq25: girq25@154 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x154 0x14>;
+				interrupts = <16 0>;
+				label = "GIRQ_25";
+				girq-id = <17>;
+				sources = <0 1 2 3 4 5 6 7 8 9 10 11
+					   12 13 14 15>;
+				status = "disabled";
+			};
+			girq26: girq26@168 {
+				compatible = "microchip,xec-ecia-girq";
+				reg = <0x168 0x14>;
+				interrupts = <17 0>;
+				label = "GIRQ_26";
+				girq-id = <18>;
+				sources = <0 1 2 3 4 5 6 12 13>;
+				status = "disabled";
+			};
 		};
 		hibtimer0: timer@40009800 {
 			reg = <0x40009800 0x20>;
