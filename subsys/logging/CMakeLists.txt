@@ -6,6 +6,7 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_core.c
     log_mgmt.c
     log_msg.c
+    log_cache.c
   )
 
   zephyr_sources_ifdef(
