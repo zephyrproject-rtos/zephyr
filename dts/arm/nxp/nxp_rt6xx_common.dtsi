@@ -42,6 +42,12 @@
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
 	};
+
+	sram1: memory@40140000 {
+		compatible = "mmio-sram";
+		reg = <0x40140000 DT_SIZE_K(16)>;
+	};
+
 };
 
 &systick {
@@ -189,6 +195,15 @@
 		label = "FLEXCOMM_7";
 		clocks = <&clkctl1 MCUX_FLEXCOMM7_CLK>;
 		status = "disabled";
+	};
+
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x144000 0x1000>;
+		interrupts = <50 1>;
+		num-bidir-endpoints = <6>;
+		status = "disabled";
+		label = "USBHS_0";
 	};
 
 	hs_lspi: spi@126000 {
