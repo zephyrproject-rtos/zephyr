@@ -284,7 +284,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.vocs_insts[j] = bt_vocs_free_instance_get();
 
 			if (vcs_inst.srv.vocs_insts[j] == NULL) {
-				BT_ERR("Could not get free VOCS instances[%u]",
+				BT_ERR("Could not get free VOCS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -292,7 +292,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			err = bt_vocs_register(vcs_inst.srv.vocs_insts[j],
 					       &param->vocs_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register VOCS instance[%u]: %d",
+				BT_DBG("Could not register VOCS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
@@ -326,7 +326,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.aics_insts[j] = bt_aics_free_instance_get();
 
 			if (vcs_inst.srv.aics_insts[j] == NULL) {
-				BT_ERR("Could not get free AICS instances[%u]",
+				BT_ERR("Could not get free AICS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -334,7 +334,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			err = bt_aics_register(vcs_inst.srv.aics_insts[j],
 					       &param->aics_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register AICS instance[%u]: %d",
+				BT_DBG("Could not register AICS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
