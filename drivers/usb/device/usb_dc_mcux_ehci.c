@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_usbd
+#define DT_DRV_COMPAT nxp_mcux_usbd
 
 #include <soc.h>
 #include <string.h>
@@ -14,20 +14,21 @@
 #include <soc.h>
 #include <device.h>
 #include "usb_dc_mcux.h"
+#ifdef CONFIG_USB_DC_NXP_EHCI
 #include "usb_device_ehci.h"
-
+#endif
+#ifdef CONFIG_USB_DC_NXP_LPCIP3511
+#include "usb_device_lpcip3511.h"
+#endif
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
 #endif
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_mcux_ehci);
-
-#define CONTROLLER_ID kUSB_ControllerEhci0
+LOG_MODULE_REGISTER(usb_dc_mcux);
 
 static void usb_isr_handler(void);
-extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 
 /* the setup transfer state */
 #define SETUP_DATA_STAGE_DONE	(0)
@@ -35,7 +36,7 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 #define SETUP_DATA_STAGE_OUT	(2)
 
 /*
- * Endpoint absolut index calculation:
+ * Endpoint absolute index calculation:
  *
  * MCUX EHCI USB device controller supports a specific
  * number of bidirectional endpoints. Bidirectional means
@@ -75,12 +76,28 @@ K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 static struct usb_ep_ctrl_data s_ep_ctrl[NUM_OF_EP_MAX];
 static struct usb_device_struct dev_data;
 
-#if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
+#if defined(CONFIG_USB_DC_NXP_EHCI)
 /* EHCI device driver interface */
-static const usb_device_controller_interface_struct_t ehci_iface = {
+static const usb_device_controller_interface_struct_t mcux_usb_iface = {
 	USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
+
+#define CONTROLLER_ID kUSB_ControllerEhci0
+
+extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
+
+#elif defined(CONFIG_USB_DC_NXP_LPCIP3511)
+/* LPCIP3511 device driver interface */
+static const usb_device_controller_interface_struct_t mcux_usb_iface = {
+	USB_DeviceLpc3511IpInit, USB_DeviceLpc3511IpDeinit, USB_DeviceLpc3511IpSend,
+	USB_DeviceLpc3511IpRecv, USB_DeviceLpc3511IpCancel, USB_DeviceLpc3511IpControl
+};
+
+#define CONTROLLER_ID kUSB_ControllerLpcIp3511Hs0
+
+extern void USB_DeviceLpcIp3511IsrFunction(void *deviceHandle);
+
 #endif
 
 int usb_dc_reset(void)
@@ -105,7 +122,7 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
-	dev_data.interface = &ehci_iface;
+	dev_data.interface = &mcux_usb_iface;
 	status = dev_data.interface->deviceInit(CONTROLLER_ID, &dev_data,
 						&dev_data.controllerHandle);
 	if (kStatus_USB_Success != status) {
@@ -119,9 +136,6 @@ int usb_dc_attach(void)
 	dev_data.attached = true;
 	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
 						   kUSB_DeviceControlRun, NULL);
-	if (kStatus_USB_Success != status) {
-		return -EIO;
-	}
 
 	LOG_DBG("Attached");
 
@@ -158,8 +172,17 @@ int usb_dc_detach(void)
 
 int usb_dc_set_address(const uint8_t addr)
 {
-	LOG_DBG("");
+	usb_status_t status;
+
 	dev_data.address = addr;
+	status = dev_data.interface->deviceControl(
+		dev_data.controllerHandle,
+		kUSB_DeviceControlPreSetDeviceAddress,
+		&dev_data.address);
+	if (kStatus_USB_Success != status) {
+		LOG_ERR("Failed to set device address");
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -784,5 +807,9 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 static void usb_isr_handler(void)
 {
+#if defined(CONFIG_USB_DC_NXP_EHCI)
 	USB_DeviceEhciIsrFunction(&dev_data);
+#elif defined(CONFIG_USB_DC_NXP_LPCIP3511)
+	USB_DeviceLpcIp3511IsrFunction(&dev_data);
+#endif
 }
