@@ -11,6 +11,12 @@
 / {
 	model = "IT8XXX2 EV-Board";
 	compatible = "riscv,it8xxx2-evb";
+
+	aliases {
+		pwm-led0 = &led0;
+		pwm-led1 = &led1;
+	};
+
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
@@ -19,6 +25,19 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		/* NOTE: &pwm number needs same with channel number */
+		led0: led_0 {
+			pwms = <&pwm7 PWM_CHANNEL_7 PWM_POLARITY_INVERTED>;
+			label = "LED0_GREEN";
+		};
+		led1: led_1 {
+			pwms = <&pwm0 PWM_CHANNEL_0 PWM_POLARITY_NORMAL>;
+			label = "LED1_BLUE";
+		};
 	};
 };
 &adc0 {
@@ -57,6 +76,20 @@
 	status = "okay";
 	current-speed = <460800>;
 	clock-frequency = <1804800>;
+};
+&pwm0 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C6>;
+	/*
+	 * If we need pwm output in ITE chip power saving mode,
+	 * then we should set frequency <=324Hz.
+	 */
+	pwm-output-frequency = <324>;
+};
+&pwm7 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C4>;
+	pwm-output-frequency = <30000>;
 };
 &flash0 {
 	partitions {

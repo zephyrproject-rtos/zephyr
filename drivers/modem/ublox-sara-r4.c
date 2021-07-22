@@ -73,8 +73,8 @@ static struct modem_pin modem_pins[] = {
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
-#define MDM_UART_NODE			DT_BUS(DT_DRV_INST(0))
+#define MDM_UART_NODE			DT_INST_BUS(0)
+#define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
 #define MDM_POWER_ENABLE		1
 #define MDM_POWER_DISABLE		0
@@ -2169,7 +2169,7 @@ static int modem_init(const struct device *dev)
 	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
 	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
 	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
-				    MDM_UART_DEV_NAME);
+				    MDM_UART_DEV);
 	if (ret < 0) {
 		goto error;
 	}

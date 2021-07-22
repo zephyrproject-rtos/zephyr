@@ -1,0 +1,11 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ *
+ * @brief Stub header allowing compilation of `#include <cstddef>`
+ */

@@ -891,7 +891,21 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
+#else
+			.AutoNegotiation = ETH_AUTONEGOTIATION_DISABLE,
+#if defined(CONFIG_ETH_STM32_SPEED_10M)
+			.Speed = ETH_SPEED_10M,
+#else
+			.Speed = ETH_SPEED_100M,
+#endif
+#if defined(CONFIG_ETH_STM32_MODE_HALFDUPLEX)
+			.DuplexMode = ETH_MODE_HALFDUPLEX,
+#else
+			.DuplexMode = ETH_MODE_FULLDUPLEX,
+#endif
+#endif /* !CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE */
 			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,

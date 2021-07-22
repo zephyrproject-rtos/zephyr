@@ -30,10 +30,6 @@ config I2C_ESP32_0_TX_LSB_FIRST
 config I2C_ESP32_0_RX_LSB_FIRST
 	bool "Port 0 Receive LSB first"
 
-config I2C_ESP32_0_IRQ
-	int "Port 0 IRQ line"
-	default 8
-
 endif # I2C_0
 
 if I2C_1
@@ -43,10 +39,6 @@ config I2C_ESP32_1_TX_LSB_FIRST
 
 config I2C_ESP32_1_RX_LSB_FIRST
 	bool "Port 1 Receive LSB first"
-
-config I2C_ESP32_1_IRQ
-	int "Port 1 IRQ line"
-	default 9
 
 endif # I2C_1
 

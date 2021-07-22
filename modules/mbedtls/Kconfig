@@ -151,6 +151,14 @@ config MBEDTLS_HEAP_SIZE
 	  be needed. For some dedicated and specific usage of mbedtls API, the
 	  1000 bytes might be ok.
 
+config MBEDTLS_SHELL
+	bool "mbed TLS shell"
+	depends on MBEDTLS
+	depends on SHELL
+	help
+	  Enable mbed TLS shell module, which allows to show debug information
+	  about mbed TLS library, such as heap usage.
+
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
 	default y

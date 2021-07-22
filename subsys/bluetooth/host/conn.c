@@ -1880,7 +1880,8 @@ void bt_conn_unref(struct bt_conn *conn)
 	/* Cleanup ISO before releasing the last reference to prevent other
 	 * threads reallocating the same connection while cleanup is ongoing.
 	 */
-	if (IS_ENABLED(CONFIG_BT_ISO) && conn->type == BT_CONN_TYPE_ISO &&
+	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
+	    conn->type == BT_CONN_TYPE_ISO &&
 	    atomic_get(&conn->ref) == 1) {
 		bt_iso_cleanup(conn);
 	}

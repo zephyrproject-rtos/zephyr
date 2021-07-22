@@ -172,7 +172,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_NUM_PIPE_ASYNC_MSGS`
+* :kconfig:`CONFIG_NUM_PIPE_ASYNC_MSGS`
 
 API Reference
 *************

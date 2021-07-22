@@ -2,7 +2,7 @@
 
    <a href="https://www.zephyrproject.org">
      <p align="center">
-       <img src="doc/images/Zephyr-Project.png">
+       <img src="doc/_static/images/logo-readme.png">
      </p>
    </a>
 
@@ -10,7 +10,7 @@
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
    <a href="https://buildkite.com/zephyr/zephyr">
    <img
-   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=master"></a>
+   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=main"></a>
 
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
@@ -27,13 +27,14 @@ Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
 
 .. below included in doc/introduction/introduction.rst
 
-.. start_include_here
 
 Getting Started
 ***************
 
 Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
+
+.. start_include_here
 
 Community Support
 *****************
@@ -73,7 +74,7 @@ Here's a quick summary of resources to help you find your way around:
   tracked separately at https://zephyrprojectsec.atlassian.net.
 * **Zephyr Project Website**: https://zephyrproject.org
 
-.. _Slack Invite: https://tinyurl.com/y5glwylp
+.. _Slack Invite: https://tinyurl.com/2vue8666
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html

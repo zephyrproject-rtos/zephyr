@@ -60,11 +60,10 @@ enum pending_events {
 	PENDING_EVENT_RX_FAILED, /* The RX failed */
 	PENDING_EVENT_TX_STARTED, /* Radio has started transmitting */
 	PENDING_EVENT_TX_DONE, /* Radio transmission finished */
-	PENDING_EVENT_DETECT_ENERGY, /* Requested to start Energy Detection
-				      * procedure.
-				      */
-	PENDING_EVENT_DETECT_ENERGY_DONE, /* Energy Detection finished. */
-	PENDING_EVENT_COUNT /* keep last */
+	PENDING_EVENT_DETECT_ENERGY, /* Requested to start Energy Detection procedure */
+	PENDING_EVENT_DETECT_ENERGY_DONE, /* Energy Detection finished */
+	PENDING_EVENT_SLEEP, /* Sleep if idle */
+	PENDING_EVENT_COUNT /* Keep last */
 };
 
 K_SEM_DEFINE(radio_sem, 0, 1);
@@ -200,6 +199,10 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 			}
 			set_pending_event(PENDING_EVENT_RX_FAILED);
 		}
+		break;
+	case IEEE802154_EVENT_SLEEP:
+		set_pending_event(PENDING_EVENT_SLEEP);
+		break;
 	default:
 		/* do nothing - ignore event */
 		break;
@@ -267,9 +270,6 @@ void transmit_message(struct k_work *tx_job)
 
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
-
-	net_pkt_set_ieee802154_frame_retry(tx_pkt,
-					   sTransmitFrame.mInfo.mTxInfo.mIsARetx);
 
 	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
@@ -476,6 +476,11 @@ void platformRadioProcess(otInstance *aInstance)
 		}
 	}
 
+	if (is_pending_event_set(PENDING_EVENT_SLEEP)) {
+		reset_pending_event(PENDING_EVENT_SLEEP);
+		ARG_UNUSED(otPlatRadioSleep(aInstance));
+	}
+
 	/* handle events that can't run during transmission */
 	if (sState != OT_RADIO_STATE_TRANSMIT) {
 		if (is_pending_event_set(PENDING_EVENT_DETECT_ENERGY)) {
@@ -570,8 +575,9 @@ otError otPlatRadioSleep(otInstance *aInstance)
 	    sState == OT_RADIO_STATE_RECEIVE ||
 	    sState == OT_RADIO_STATE_TRANSMIT) {
 		error = OT_ERROR_NONE;
-		sState = OT_RADIO_STATE_SLEEP;
-		radio_api->stop(radio_dev);
+		if (radio_api->stop(radio_dev)) {
+			sState = OT_RADIO_STATE_SLEEP;
+		}
 	}
 
 	return error;
@@ -1015,33 +1021,38 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
 #endif
 
 #if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
-otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod,
+otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShortAddress aShortAddr,
 			     const otExtAddress *aExtAddr)
 {
 	int result;
+	uint8_t ie_header[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE];
+	struct ieee802154_config config;
 
 	ARG_UNUSED(aInstance);
 
-	struct ieee802154_config config = {
-		.csl_recv.period = aCslPeriod,
-		.csl_recv.addr = aExtAddr->m8,
-	};
+	ie_header[0] = CSL_IE_HEADER_BYTES_LO;
+	ie_header[1] = CSL_IE_HEADER_BYTES_HI;
+	/* Leave CSL Phase empty intentionally */
+	sys_put_le16(aCslPeriod, &ie_header[OT_IE_HEADER_SIZE + 2]);
+	config.ack_ie.data = ie_header;
+	config.ack_ie.data_len = OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE;
+	config.ack_ie.short_addr = aShortAddr;
+	config.ack_ie.ext_addr = aExtAddr->m8;
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
-	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RECEIVER,
-				      &config);
+	config.csl_period = aCslPeriod;
+	result += radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
 
-void otPlatRadioUpdateCslSampleTime(otInstance *aInstance,
-				    uint32_t aCslSampleTime)
+void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTime)
 {
 	ARG_UNUSED(aInstance);
 
 	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime };
 
-	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME,
-				   &config);
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
 }
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
 
@@ -1049,10 +1060,10 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	return radio_api->get_csl_acc(radio_dev);
+	return radio_api->get_sch_acc(radio_dev);
 }
 
-#if defined(CONFIG_OPENTHREAD_LINK_METRICS)
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
 /**
  * Header IE format - IEEE Std. 802.15.4-2015, 7.4.2.1 && 7.4.2.2
  *
@@ -1166,4 +1177,5 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
-#endif /* OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE */
+
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */

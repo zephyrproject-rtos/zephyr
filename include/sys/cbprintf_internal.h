@@ -13,7 +13,10 @@
 #include <stdint.h>
 #include <toolchain.h>
 #include <sys/util.h>
+
+#ifdef CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
 #include <sys/__assert.h>
+#endif
 
 /*
  * Special alignment cases
@@ -336,10 +339,9 @@ do { \
 			"Xtensa requires aligned package."); \
 	BUILD_ASSERT((_align_offset % sizeof(int)) == 0, \
 			"Alignment offset must be multiply of a word."); \
-	if (IS_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT)) { \
-		__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
-			"Buffer must be aligned."); \
-	} \
+	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
+		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
+			  "Buffer must be aligned.");)) \
 	uint8_t *_pbuf = buf; \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \

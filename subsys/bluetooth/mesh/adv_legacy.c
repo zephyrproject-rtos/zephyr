@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2017 Intel Corporation
@@ -53,9 +51,29 @@ static inline void adv_send(struct net_buf *buf)
 
 	adv_int = MAX(adv_int_min,
 		      BT_MESH_TRANSMIT_INT(BT_MESH_ADV(buf)->xmit));
-	duration = (BT_MESH_SCAN_WINDOW_MS +
-		    ((BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1) *
-		     (adv_int + 10)));
+
+	/* Zephyr Bluetooth Low Energy Controller for mesh stack uses
+	 * pre-emptible continuous scanning, allowing advertising events to be
+	 * transmitted without delay when advertising is enabled. No need to
+	 * compensate with scan window duration.
+	 * An advertising event could be delayed by upto one interval when
+	 * advertising is stopped and started in quick succession, hence add
+	 * advertising interval to the total advertising duration.
+	 */
+	duration = adv_int +
+		   ((BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1) *
+		    (adv_int + 10));
+
+	/* Zephyr Bluetooth Low Energy Controller built for nRF51x SoCs use
+	 * CONFIG_BT_CTLR_LOW_LAT=y, and continuous scanning cannot be
+	 * pre-empted, hence, scanning will block advertising events from
+	 * being transmitted. Increase the advertising duration by the
+	 * amount of scan window duration to compensate for the blocked
+	 * advertising events.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		duration += BT_MESH_SCAN_WINDOW_MS;
+	}
 
 	BT_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
 	       buf->len, bt_hex(buf->data, buf->len));
@@ -108,7 +126,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct net_buf *buf;
 
-		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
 			buf = net_buf_get(&bt_mesh_adv_queue, K_NO_WAIT);
 			while (!buf) {
 

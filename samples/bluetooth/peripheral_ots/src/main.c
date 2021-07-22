@@ -31,7 +31,10 @@ static const struct bt_data sd[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_OTS_VAL)),
 };
 
-static uint8_t objects[OBJ_POOL_SIZE][OBJ_MAX_SIZE];
+static struct {
+	uint8_t data[OBJ_MAX_SIZE];
+	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
+} objects[OBJ_POOL_SIZE];
 static uint32_t obj_cnt;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -118,7 +121,7 @@ static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 		return 0;
 	}
 
-	*data = &objects[obj_index][offset];
+	*data = &objects[obj_index].data[offset];
 
 	/* Send even-indexed objects in 20 byte packets
 	 * to demonstrate fragmented transmission.
@@ -134,11 +137,21 @@ static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 	return len;
 }
 
+void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, const char *name)
+{
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+
+	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
+
+	printk("Name for object with %s ID has been written\n", id_str);
+}
+
 static struct bt_ots_cb ots_callbacks = {
 	.obj_created = ots_obj_created,
 	.obj_deleted = ots_obj_deleted,
 	.obj_selected = ots_obj_selected,
 	.obj_read = ots_obj_read,
+	.obj_name_written = ots_obj_name_written,
 };
 
 static int ots_init(void)
@@ -147,6 +160,8 @@ static int ots_init(void)
 	struct bt_ots *ots;
 	struct bt_ots_init ots_init;
 	struct bt_ots_obj_metadata obj_init;
+	const char * const first_object_name = "first_object.txt";
+	const char * const second_object_name = "second_object.gif";
 
 	ots = bt_ots_free_instance_get();
 	if (!ots) {
@@ -168,16 +183,20 @@ static int ots_init(void)
 	}
 
 	/* Prepare first object demo data and add it to the instance. */
-	for (uint32_t i = 0; i < sizeof(objects[0]); i++) {
-		objects[0][i] = i + 1;
+	for (uint32_t i = 0; i < sizeof(objects[0].data); i++) {
+		objects[0].data[i] = i + 1;
 	}
 
 	memset(&obj_init, 0, sizeof(obj_init));
-	obj_init.name = "first_object.txt";
+	__ASSERT(strlen(first_object_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+		 "Object name length is larger than the allowed maximum of %u",
+		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+	strcpy(objects[0].name, first_object_name);
+	obj_init.name = objects[0].name;
 	obj_init.type.uuid.type = BT_UUID_TYPE_16;
 	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = sizeof(objects[0]);
-	obj_init.size.alloc = sizeof(objects[0]);
+	obj_init.size.cur = sizeof(objects[0].data);
+	obj_init.size.alloc = sizeof(objects[0].data);
 	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
 
 	err = bt_ots_obj_add(ots, &obj_init);
@@ -187,16 +206,20 @@ static int ots_init(void)
 	}
 
 	/* Prepare second object demo data and add it to the instance. */
-	for (uint32_t i = 0; i < sizeof(objects[1]); i++) {
-		objects[1][i] = i * 2;
+	for (uint32_t i = 0; i < sizeof(objects[1].data); i++) {
+		objects[1].data[i] = i * 2;
 	}
 
 	memset(&obj_init, 0, sizeof(obj_init));
-	obj_init.name = "second_object.gif";
+	__ASSERT(strlen(second_object_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+		 "Object name length is larger than the allowed maximum of %u",
+		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+	strcpy(objects[1].name, second_object_name);
+	obj_init.name = objects[1].name;
 	obj_init.type.uuid.type = BT_UUID_TYPE_16;
 	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = sizeof(objects[1]);
-	obj_init.size.alloc = sizeof(objects[1]);
+	obj_init.size.cur = sizeof(objects[1].data);
+	obj_init.size.alloc = sizeof(objects[1].data);
 	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
 
 	err = bt_ots_obj_add(ots, &obj_init);

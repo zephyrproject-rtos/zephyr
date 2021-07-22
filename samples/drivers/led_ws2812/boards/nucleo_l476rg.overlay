@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/led/led.h>
+
 &arduino_spi {
 	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
@@ -17,6 +19,9 @@
 		chain-length = <16>; /* arbitrary; change at will */
 		spi-one-frame = <0x70>;
 		spi-zero-frame = <0x40>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
 	};
 };
 

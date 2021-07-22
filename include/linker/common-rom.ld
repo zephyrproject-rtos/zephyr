@@ -132,7 +132,7 @@
 	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
 #endif
 
-#if defined(CONFIG_BT_MESH_PROXY)
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
 #endif
 

@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TLSR9518ADK80D
+
+config BOARD
+	default "tlsr9518adk80d"
+
+config COMPRESSED_ISA
+	default y
+
+config GPIO_TELINK_B91
+	default y if GPIO
+
+config UART_TELINK_B91
+	default y if SERIAL
+
+config PINMUX_TELINK_B91
+	default y if PINMUX
+
+endif

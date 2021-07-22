@@ -5,7 +5,7 @@
 
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
-	depends on (SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX)
+	depends on "$(dt_nodelabel_enabled,lptim1)"
 	depends on CLOCK_CONTROL && PM
 	select TICKLESS_CAPABLE
 	help

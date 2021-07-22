@@ -25,7 +25,7 @@ config EDAC_SHELL
 
 config EDAC_IBECC
 	bool "In-Band ECC (IBECC)"
-	depends on X86
+	depends on X86 && PCIE
 	help
 	  This option selects In-Band ECC (IBECC) IP support.
 

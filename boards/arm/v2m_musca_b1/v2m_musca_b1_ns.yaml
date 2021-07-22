@@ -1,0 +1,10 @@
+identifier: v2m_musca_b1_ns
+name: ARM V2M MUSCA B1 NonSecure
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 1663

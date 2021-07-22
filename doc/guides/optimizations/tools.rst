@@ -38,7 +38,7 @@ Then:
 
 
 To view worst-case stack usage analysis, build this with the
-:option:`CONFIG_STACK_USAGE` enabled.
+:kconfig:`CONFIG_STACK_USAGE` enabled.
 
 .. zephyr-app-commands::
     :tool: all

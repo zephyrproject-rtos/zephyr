@@ -1,0 +1,140 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    irq-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    int-pin:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 1
+        - 2
+      description: |
+        Select DRDY pin number (1 or 2).
+
+           1 # drdy is generated from INT1
+           2 # drdy is generated from INT2
+
+        This number represents which of the two interrupt pins
+        (INT1 or INT2) the drdy line is attached to. This property is not
+        mandatory and if not present it defaults to 1 which is the
+        configuration at power-up.
+
+    range:
+      type: int
+      required: false
+      default: 2
+      description: |
+        Range in g. Default is power-up configuration.
+
+          16 # 16g (1.952 mg/LSB)
+           8 #  8g (0.976 mg/LSB)
+           4 #  4g (0.488 mg/LSB)
+           2 #  2g (0.244 mg/LSB)
+
+      enum:
+        - 16
+        -  8
+        -  4
+        -  2
+
+    power-mode:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the sensor power mode. Default is power-up configuration.
+
+          0 # Low Power M1
+          1 # Low Power M2
+          2 # Low Power M3
+          3 # Low Power M4
+          4 # High Performance
+
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+
+    # tap and tap-tap configuration section
+    # All default values are selected to match the power-up values.
+    # tap and tap-tap events can be generated on INT1 only.
+
+    tap-mode:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Tap mode. Default is power-up configuration.
+
+          0 # Only Single Tap
+          1 # Single and Double Tap
+
+      enum:
+        - 0
+        - 1
+
+    tap-threshold:
+      type: array
+      required: false
+      default: [0, 0, 0]
+      description: |
+        Tap X/Y/Z axes threshold. Default is power-up configuration.
+        (X/Y/Z values range from 0x00 to 0x1F)
+
+        Thresholds to start the tap-event detection procedure on the X/Y/Z axes.
+        Threshold values for each axis are unsigned 5-bit corresponding
+        to a 2g acceleration full-scale range. A threshold value equal to zero
+        corresponds to disable the tap detection on that axis.
+
+        For example, if you want to set the threshold for X to 12, for Z to 14
+        and want to disable tap detection on Y, you should specify in Device Tree
+
+            tap-threshold = <12>, <0>, <14>
+
+        which is equivalent to X = 12 * 2g/32 = 750mg and Z = 14 * 2g/32 = 875mg.
+
+    tap-shock:
+      type: int
+      required: false
+      default: 0x0
+      description: |
+        Tap shock value. Default is power-up configuration.
+        (values range from 0x0 to 0x3)
+        This register represents the maximum time of an over-threshold signal
+        detection to be recognized as a tap event. Where 0 equals 4*1/ODR and
+        1LSB = 8*1/ODR.
+
+    tap-latency:
+      type: int
+      required: false
+      default: 0x0
+      description: |
+        Tap latency. Default is power-up configuration.
+        (values range from 0x0 to 0xF)
+        When double-tap recognition is enabled, this register expresses the
+        maximum time between two successive detected taps to determine a
+        double-tap event. Where 0 equals 16*1/ODR and 1LSB = 32*1/ODR.
+
+    tap-quiet:
+      type: int
+      required: false
+      default: 0x0
+      description: |
+        Expected quiet time after a tap detection. Default is power-up configuration.
+        (values range from 0x0 to 0x3)
+        This register represents the time after the first detected tap in which
+        there must not be any overthreshold event. Where 0 equals 2*1/ODR
+        and 1LSB = 4*1/ODR.

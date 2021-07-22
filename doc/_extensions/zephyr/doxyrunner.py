@@ -128,15 +128,21 @@ def get_doxygen_option(doxyfile: str, option: str) -> List[str]:
 def process_doxyfile(
     doxyfile: str,
     outdir: Path,
+    silent: bool,
     fmt: bool = False,
     fmt_pattern: Optional[str] = None,
     fmt_vars: Optional[Dict[str, str]] = None,
 ) -> str:
     """Process Doxyfile.
 
+    Notes:
+        OUTPUT_DIRECTORY, WARN_FORMAT and QUIET are overridden to satisfy
+        extension operation needs.
+
     Args:
         doxyfile: Path to the Doxyfile.
         outdir: Output directory of the Doxygen build.
+        silent: If Doxygen should be run in quiet mode or not.
         fmt: If Doxyfile should be formatted.
         fmt_pattern: Format pattern.
         fmt_vars: Format variables.
@@ -151,6 +157,20 @@ def process_doxyfile(
     content = re.sub(
         r"^\s*OUTPUT_DIRECTORY\s*=.*$",
         f"OUTPUT_DIRECTORY={outdir.as_posix()}",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    content = re.sub(
+        r"^\s*WARN_FORMAT\s*=.*$",
+        'WARN_FORMAT="$file:$line: $text"',
+        content,
+        flags=re.MULTILINE,
+    )
+
+    content = re.sub(
+        r"^\s*QUIET\s*=.*$",
+        "QUIET=" + "YES" if silent else "NO",
         content,
         flags=re.MULTILINE,
     )
@@ -206,6 +226,32 @@ def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
     return True
 
 
+def process_doxygen_output(line: str, silent: bool) -> None:
+    """Process a line of Doxygen program output.
+
+    This function will map Doxygen output to the Sphinx logger output. Errors
+    and warnings will be converted to Sphinx errors and warnings. Other
+    messages, if not silent, will be mapped to the info logger channel.
+
+    Args:
+        line: Doxygen program line.
+        silent: True if regular messages should be logged, False otherwise.
+    """
+
+    m = re.match(r"(.*):(\d+): ([a-z]+): (.*)", line)
+    if m:
+        type = m.group(3)
+        message = f"{m.group(1)}:{m.group(2)}: {m.group(4)}"
+        if type == "error":
+            logger.error(message)
+        elif type == "warning":
+            logger.warning(message)
+        else:
+            logger.info(message)
+    elif not silent:
+        logger.info(line)
+
+
 def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
     """Run Doxygen build.
 
@@ -222,8 +268,8 @@ def run_doxygen(doxygen: str, doxyfile: str, silent: bool = False) -> None:
     p = Popen([doxygen, f_doxyfile.name], stdout=PIPE, stderr=STDOUT, encoding="utf-8")
     while True:
         line = p.stdout.readline()  # type: ignore
-        if line and not silent:
-            logger.info(line.rstrip())
+        if line:
+            process_doxygen_output(line.rstrip(), silent)
         if p.poll() is not None:
             break
 
@@ -247,7 +293,7 @@ def sync_doxygen(doxyfile: str, new: Path, prev: Path) -> None:
     """
 
     generate_html = get_doxygen_option(doxyfile, "GENERATE_HTML")
-    if generate_html == "YES":
+    if generate_html[0] == "YES":
         html_output = get_doxygen_option(doxyfile, "HTML_OUTPUT")
         if not html_output:
             raise ValueError("No HTML_OUTPUT set in Doxyfile")
@@ -299,6 +345,7 @@ def doxygen_build(app: Sphinx) -> None:
     doxyfile = process_doxyfile(
         app.config.doxyrunner_doxyfile,
         tmp_outdir,
+        app.config.doxyrunner_silent,
         app.config.doxyrunner_fmt,
         app.config.doxyrunner_fmt_pattern,
         app.config.doxyrunner_fmt_vars,
@@ -330,7 +377,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("doxyrunner_fmt", False, "env")
     app.add_config_value("doxyrunner_fmt_vars", {}, "env")
     app.add_config_value("doxyrunner_fmt_pattern", "@{}@", "env")
-    app.add_config_value("doxyrunner_silent", False, "")
+    app.add_config_value("doxyrunner_silent", True, "")
 
     app.connect("builder-inited", doxygen_build)
 

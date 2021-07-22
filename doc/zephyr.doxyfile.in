@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "A Scalable Open Source RTOS for IoT Embedded Devices"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = @ZEPHYR_BASE@/doc/images/Zephyr-Kite-small.png
+PROJECT_LOGO           = @ZEPHYR_BASE@/doc/_doxygen/logo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -223,7 +223,10 @@ TAB_SIZE               = 8
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "endrst=\endverbatim"
 
-ALIASES += option{1}="\verbatim embed:rst:inline :option:`\1` \endverbatim"
+# WARNING: @option{} is deprecated and will be removed after next release.
+# @kconfig{} should be used instead.
+ALIASES += option{1}="\verbatim embed:rst:inline :kconfig:`\1` \endverbatim"
+ALIASES += kconfig{1}="\verbatim embed:rst:inline :kconfig:`\1` \endverbatim"
 ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
 ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
@@ -730,7 +733,7 @@ WARN_NO_PARAMDOC       = NO
 # a warning is encountered.
 # The default value is: NO.
 
-WARN_AS_ERROR          = YES
+WARN_AS_ERROR          = NO
 
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -760,7 +763,7 @@ WARN_LOGFILE           =
 
 # This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
 # for incremental (and faster) builds to work correctly.
-INPUT                  = @ZEPHYR_BASE@/doc/custom-doxygen/mainpage.md \
+INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
@@ -1071,7 +1074,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = @ZEPHYR_BASE@/doc/custom-doxygen/header.html
+HTML_HEADER            = @ZEPHYR_BASE@/doc/_doxygen/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1106,7 +1109,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/custom-doxygen/customdoxygen.css
+HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/_doxygen/customdoxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note

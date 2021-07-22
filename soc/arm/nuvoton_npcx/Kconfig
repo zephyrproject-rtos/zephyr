@@ -42,7 +42,7 @@ config NPCX_HEADER_CHIP
 	default "npcx9m3" if SOC_NPCX9M3F
 	default "npcx9m6" if SOC_NPCX9M6F
 
-choice
+choice NPCX_HEADER_SPI_MAX_CLOCK_CHOICE
 	prompt "Clock rate to use for SPI flash"
 	default NPCX_HEADER_SPI_MAX_CLOCK_20
 	help
@@ -57,6 +57,7 @@ config NPCX_HEADER_SPI_MAX_CLOCK_25
 
 config NPCX_HEADER_SPI_MAX_CLOCK_33
 	bool "SPI flash max clock rate of 33 MHz"
+	depends on !SOC_SERIES_NPCX9
 
 config NPCX_HEADER_SPI_MAX_CLOCK_40
 	bool "SPI flash max clock rate of 40 MHz"
@@ -73,7 +74,7 @@ config NPCX_HEADER_SPI_MAX_CLOCK
 	default 40 if NPCX_HEADER_SPI_MAX_CLOCK_40
 	default 50 if NPCX_HEADER_SPI_MAX_CLOCK_50
 
-choice
+choice NPCX_HEADER_SPI_READ_MODE_CHOICE
 	prompt "Reading mode used by the SPI flash"
 	default NPCX_HEADER_SPI_READ_MODE_NORMAL
 	help
@@ -100,7 +101,7 @@ config NPCX_HEADER_SPI_READ_MODE
 	default "dual" if NPCX_HEADER_SPI_READ_MODE_DUAL
 	default "quad" if NPCX_HEADER_SPI_READ_MODE_QUAD
 
-choice
+choice NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_CHOICE
 	prompt "Core clock to SPI flash clock ratio"
 	default NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_1
 	help
@@ -134,9 +135,10 @@ config NPCX_HEADER_ENABLE_FIRMWARE_CRC
 	  When enabled, the firmware image will be verified at boot using a
 	  crc checksum.
 
-choice
+choice NPCX_HEADER_FLASH_SIZE_CHOICE
 	prompt "Flash size"
-	default NPCX_HEADER_FLASH_SIZE_0P5M_1M if SOC_SERIES_NPCX7
+	default NPCX_HEADER_FLASH_SIZE_0P5M_1M if SOC_SERIES_NPCX7 || \
+						  SOC_SERIES_NPCX9
 	default NPCX_HEADER_FLASH_SIZE_16M
 	help
 	  This sets the SPI flash size.

@@ -27,6 +27,12 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+Deprecated in this release
+
+* :c:macro:`DT_ENUM_TOKEN` and :c:macro:`DT_ENUM_UPPER_TOKEN`,
+  were deprecated in favor of utilizing
+  :c:macro:`DT_STRING_TOKEN` and :c:macro:`DT_STRING_UPPER_TOKEN`
+
 Changes in this release
 
 ==========================
@@ -58,6 +64,9 @@ Architectures
 
   * AARCH32
 
+     * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
+       tests in CI with FPU and FPU_SHARING options enabled.
+
 
   * AARCH64
 
@@ -73,6 +82,8 @@ Bluetooth
 * Host
 
 * Mesh
+
+  * Added return value for opcode callback
 
 * Bluetooth LE split software Controller
 
@@ -318,6 +329,9 @@ Trusted Firmware-m
 Documentation
 *************
 
+* Kconfig options need to be referenced using the ``:kconfig:`` Sphinx role.
+  Previous to this change, ``:option:`` was used for this purpose.
+* Doxygen alias ``@config{}`` has been deprecated in favor of ``@kconfig{}``.
 
 Tests and Samples
 *****************

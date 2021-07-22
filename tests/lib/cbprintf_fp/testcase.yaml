@@ -1,6 +1,7 @@
 common:
   harness: console
   platform_exclude: native_posix native_posix_64 nrf52_bsim
+  tags: cbprintf
   integration_platforms:
     - qemu_x86
     - qemu_x86_64

@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -11,13 +9,13 @@
 
 #include <bluetooth/gatt.h>
 
-int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
-			 bt_gatt_complete_func_t end, void *user_data);
-
 #define BT_MESH_PROXY_NET_PDU   0x00
 #define BT_MESH_PROXY_BEACON    0x01
 #define BT_MESH_PROXY_CONFIG    0x02
 #define BT_MESH_PROXY_PROV      0x03
+
+int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
+			 bt_gatt_complete_func_t end, void *user_data);
 
 int bt_mesh_proxy_prov_enable(void);
 int bt_mesh_proxy_prov_disable(bool disconnect);

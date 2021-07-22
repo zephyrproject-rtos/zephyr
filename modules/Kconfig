@@ -9,7 +9,6 @@ comment "Optional modules. Make sure they're installed, via the project manifest
 
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
-source "modules/Kconfig.canopennode"
 source "modules/Kconfig.civetweb"
 source "modules/Kconfig.cmsis"
 source "modules/Kconfig.cypress"
@@ -27,6 +26,7 @@ source "modules/Kconfig.sof"
 source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
+source "modules/Kconfig.telink"
 source "modules/Kconfig.tinycbor"
 source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
@@ -63,6 +63,9 @@ comment "Lz4 module not available."
 
 comment "loramac-node module not available."
 	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "CANopenNode module not available."
+	depends on !ZEPHYR_CANOPENNODE_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

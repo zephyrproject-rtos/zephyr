@@ -51,7 +51,6 @@
 
 static int init_reset(void);
 
-static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last);
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx);
 static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last);
@@ -98,8 +97,7 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif
 
-#define PDU_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
-				  PDU_AC_PAYLOAD_SIZE_MAX)
+#define PDU_MEM_SIZE       PDU_ADV_MEM_SIZE
 #define PDU_MEM_COUNT_MIN  (BT_CTLR_ADV_SET + \
 			    (BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT) + \
 			    (BT_CTLR_ADV_AUX_SET * PAYLOAD_FRAG_COUNT) + \
@@ -257,6 +255,7 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 {
 	uint8_t first, last;
+	void *p;
 
 	first = pdu->first;
 	last = pdu->last;
@@ -281,8 +280,76 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 
 	*idx = last;
 
-	return adv_pdu_allocate(pdu, last);
+	p = (void *)pdu->pdu[last];
+	if (p) {
+		return p;
+	}
+
+	p = lll_adv_pdu_alloc_pdu_adv();
+
+	pdu->pdu[last] = (void *)p;
+
+	return p;
 }
+
+struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
+{
+	struct pdu_adv *p;
+	int err;
+
+	p = MFIFO_DEQUEUE_PEEK(pdu_free);
+	if (p) {
+		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(pdu_free);
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
+		return p;
+	}
+
+	p = mem_acquire(&mem_pdu.free);
+	if (p) {
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
+		return p;
+	}
+
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	p = MFIFO_DEQUEUE(pdu_free);
+	LL_ASSERT(p);
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
+	return p;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+void lll_adv_pdu_release(struct pdu_adv *pdu)
+{
+	mem_release(pdu, &mem_pdu.free);
+}
+
+void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
+{
+	struct pdu_adv *pdu = pdu_first;
+
+	while (pdu) {
+		struct pdu_adv *pdu_next;
+
+		pdu_next = PDU_ADV_NEXT_PTR(pdu);
+		PDU_ADV_NEXT_PTR(pdu) = NULL;
+		lll_adv_pdu_release(pdu);
+		pdu = pdu_next;
+	}
+}
+#endif
 
 struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 				       uint8_t *is_modified)
@@ -295,11 +362,34 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		uint8_t pdu_idx;
 		void *p;
 
-		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
-			return NULL;
-		}
-
 		pdu_idx = first;
+		p = pdu->pdu[pdu_idx];
+
+		do {
+			void *next;
+
+			/* Store partial list in current data index if there is
+			 * no free slot in mfifo. It can be released on next
+			 * switch attempt (on next event).
+			 */
+			if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
+				pdu->pdu[pdu_idx] = p;
+				return NULL;
+			}
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+			next = lll_adv_pdu_linked_next_get(p);
+#else
+			next = NULL;
+#endif
+
+			MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
+			k_sem_give(&sem_pdu_free);
+
+			p = next;
+		} while (p);
+
+		pdu->pdu[pdu_idx] = NULL;
 
 		first += 1U;
 		if (first == DOUBLE_BUFFER_SIZE) {
@@ -308,11 +398,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		pdu->first = first;
 		*is_modified = 1U;
 
-		p = pdu->pdu[pdu_idx];
 		pdu->pdu[pdu_idx] = NULL;
-
-		MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
-		k_sem_give(&sem_pdu_free);
 	}
 
 	return (void *)pdu->pdu[first];
@@ -372,38 +458,13 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 						 void **extra_data,
 						 uint8_t *idx)
 {
-	uint8_t first, last;
 	struct pdu_adv *p;
-
-	first = pdu->first;
-	last = pdu->last;
-	if (first == last) {
-		last++;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		uint8_t first_latest;
-
-		pdu->last = first;
-		cpu_dmb();
-		first_latest = pdu->first;
-		if (first_latest != first) {
-			last++;
-			if (last == DOUBLE_BUFFER_SIZE) {
-				last = 0U;
-			}
-		}
-	}
-
-	*idx = last;
-
-	p = adv_pdu_allocate(pdu, last);
+	p = lll_adv_pdu_alloc(pdu, idx);
 
 	if (extra_data) {
-		*extra_data = adv_extra_data_allocate(pdu, last);
+		*extra_data = adv_extra_data_allocate(pdu, *idx);
 	} else {
-		if (adv_extra_data_free(pdu, last)) {
+		if (adv_extra_data_free(pdu, *idx)) {
 			/* There is no release of memory allocated by
 			 * adv_pdu_allocate because there is no memory leak.
 			 * If caller can recover from this error and subsequent
@@ -605,49 +666,6 @@ static int init_reset(void)
 	k_sem_init(&sem_pdu_free, 0, PDU_MEM_FIFO_COUNT);
 
 	return 0;
-}
-
-static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last)
-{
-	void *p;
-	int err;
-
-	p = (void *)pdu->pdu[last];
-	if (p) {
-		return p;
-	}
-
-	p = MFIFO_DEQUEUE_PEEK(pdu_free);
-	if (p) {
-		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
-		LL_ASSERT(!err);
-
-		MFIFO_DEQUEUE(pdu_free);
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	p = mem_acquire(&mem_pdu.free);
-	if (p) {
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	err = k_sem_take(&sem_pdu_free, K_FOREVER);
-	LL_ASSERT(!err);
-
-	p = MFIFO_DEQUEUE(pdu_free);
-	LL_ASSERT(p);
-	/* If !p then check initial value of sem_pdu_free. It must be the same
-	 * as number of elements in pdu_free store. This may not happen in
-	 * runtime.
-	 */
-
-	pdu->pdu[last] = (void *)p;
-
-	return p;
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
@@ -1373,7 +1391,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_tx_chain_delay_get(0, 0);
+				    radio_rx_chain_delay_get(0, 0);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;

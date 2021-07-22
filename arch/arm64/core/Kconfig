@@ -126,6 +126,7 @@ if CPU_AARCH64_CORTEX_R
 config ARMV8_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  This option signifies the use of an ARMv8-R processor
 	  implementation.

@@ -84,6 +84,8 @@
 				label = "FLASH_STM32";
 
 				write-block-size = <2>;
+				/* maximum erase time for a 2K sector */
+				max-erase-time = <40>;
 			};
 		};
 

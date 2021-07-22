@@ -23,6 +23,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_I2S
 	select HAS_HW_NRF_IPC
+	select HAS_HW_NRF_KMU
 	select HAS_HW_NRF_NFCT
 	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM

@@ -448,10 +448,9 @@ static int lis2mdl_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		const struct lis2mdl_config *const config,
-		uint32_t new_state)
+		enum pm_device_state new_state)
 {
-	const struct lis2mdl_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int status = 0;
 
 	if (new_state == PM_DEVICE_STATE_ACTIVE) {
@@ -483,13 +482,13 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 }
 
 static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				enum pm_device_state *state)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *const config = dev->config;
-	uint32_t current_state = lis2mdl->power_state;
+	enum pm_device_state current_state = lis2mdl->power_state;
 	int status = 0;
-	uint32_t new_state;
+	enum pm_device_state new_state;
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
@@ -505,10 +504,6 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 	default:
 		LOG_ERR("Got unknown power management control command");
 		status = -EINVAL;
-	}
-
-	if (cb) {
-		cb(dev, status, state, arg);
 	}
 
 	return status;
@@ -527,7 +522,7 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 #define LIS2MDL_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2mdl_init,				\
-			    NULL,					\
+			    lis2mdl_pm_control,				\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\

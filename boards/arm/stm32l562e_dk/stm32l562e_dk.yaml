@@ -12,5 +12,11 @@ supported:
   - lptim
   - pwm
   - watchdog
+  - dac
+  - adc
+  - spi
+  - dma
+  - usart
+  - arduino_spi
 ram: 192
 flash: 512

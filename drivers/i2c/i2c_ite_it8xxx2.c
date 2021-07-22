@@ -6,7 +6,9 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_i2c
 
+#include <drivers/gpio.h>
 #include <drivers/i2c.h>
+#include <drivers/pinmux.h>
 #include <errno.h>
 #include <logging/log.h>
 		LOG_MODULE_REGISTER(i2c_ite_it8xxx2);
@@ -19,6 +21,19 @@
 #define DEV_DATA(dev) \
 		((struct i2c_it8xxx2_data * const)(dev)->data)
 
+#define DEV_CLK_PINMUX(idx)     DEVICE_DT_GET(DT_PHANDLE \
+	(DT_NODELABEL(pinctrl_i2c_clk##idx), pinctrls))
+#define DEV_DATA_PINMUX(idx)    DEVICE_DT_GET(DT_PHANDLE \
+	(DT_NODELABEL(pinctrl_i2c_data##idx), pinctrls))
+#define DEV_CLK_PIN(idx)        DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, pin)
+#define DEV_DATA_PIN(idx)       DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, pin)
+#define DEV_CLK_ALT_FUNC(idx)   DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, alt_func)
+#define DEV_DATA_ALT_FUNC(idx)  DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, alt_func)
+
 #define I2C_STANDARD_PORT_COUNT 3
 /* Default PLL frequency. */
 #define PLL_CLOCK 48000000
@@ -29,6 +44,17 @@ struct i2c_it8xxx2_config {
 	uint8_t *base;
 	uint8_t i2c_irq_base;
 	uint8_t port;
+	/* Pinmux control group */
+	const struct device *clk_pinctrls;
+	const struct device *data_pinctrls;
+	/* GPIO pin */
+	uint8_t clk_pin;
+	uint8_t data_pin;
+	/* Alternate function */
+	uint8_t clk_alt_fun;
+	uint8_t data_alt_fun;
+	/* GPIO handle */
+	const struct device *gpio_dev;
 };
 
 enum i2c_ch_status {
@@ -41,6 +67,7 @@ enum i2c_ch_status {
 struct i2c_it8xxx2_data {
 	enum i2c_ch_status i2ccs;
 	struct i2c_msg *msgs;
+	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
 	/* Index into output data */
 	size_t widx;
@@ -182,7 +209,7 @@ static int i2c_bus_not_available(const struct device *dev)
 	return 0;
 }
 
-static void i2c_reset(const struct device *dev, int cause)
+static void i2c_reset(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
 	uint8_t *base = config->base;
@@ -197,7 +224,6 @@ static void i2c_reset(const struct device *dev, int cause)
 		/* State reset and hardware reset */
 		IT83XX_I2C_CTR(base) = E_STS_AND_HW_RST;
 	}
-	printk("I2C ch%d reset cause %d\n", config->port, cause);
 }
 
 /*
@@ -733,6 +759,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return -EINVAL;
 	}
 
+	/* Lock mutex of i2c controller */
+	k_mutex_lock(&data->mutex, K_FOREVER);
 	/*
 	 * If the transaction of write to read is divided into two
 	 * transfers, the repeat start transfer uses this flag to
@@ -741,13 +769,17 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->i2ccs == I2C_CH_NORMAL) {
 		/* Make sure we're in a good state to start */
 		if (i2c_bus_not_available(dev)) {
-			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
+			/* Recovery I2C bus */
+			i2c_recover_bus(dev);
+			printk("I2C ch%d reset cause %d\n", config->port,
+			       I2C_RC_NO_IDLE_FOR_START);
 			/*
 			 * After resetting I2C bus, if I2C bus is not available
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
+				/* Unlock mutex of i2c controller */
+				k_mutex_unlock(&data->mutex);
 				return -EIO;
 			}
 		}
@@ -773,10 +805,19 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Wait for the transfer to complete */
 		/* TODO: the timeout should be adjustable */
 		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+		/*
+		 * The transaction is dropped on any error(timeout, NACK, fail,
+		 * bus error, device error).
+		 */
+		if (data->err)
+			break;
+
 		if (res != 0) {
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_TIMEOUT);
+			i2c_reset(dev);
+			printk("I2C ch%d:0x%X reset cause %d\n",
+			       config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -786,6 +827,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Unlock mutex of i2c controller */
+	k_mutex_unlock(&data->mutex);
 
 	return data->err;
 }
@@ -811,6 +854,8 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	uint32_t bitrate_cfg, offset = 0;
 	int error;
 
+	/* Initialize mutex and semaphore */
+	k_mutex_init(&data->mutex);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	switch ((uint32_t)base) {
@@ -886,12 +931,72 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		return error;
 	}
 
+	/* The pin is set to I2C alternate function of clock */
+	pinmux_pin_set(config->clk_pinctrls, config->clk_pin, config->clk_alt_fun);
+	/* The pin is set to I2C alternate function of data */
+	pinmux_pin_set(config->data_pinctrls, config->data_pin, config->data_alt_fun);
+
+	return 0;
+}
+
+static int i2c_it8xxx2_recover_bus(const struct device *dev)
+{
+	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	int i;
+
+	/* Set clock of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->clk_pinctrls, config->clk_pin,
+				PINMUX_OUTPUT_ENABLED);
+	/* Set data of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->data_pinctrls, config->data_pin,
+				PINMUX_OUTPUT_ENABLED);
+
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	k_msleep(1);
+
+	/* Start condition */
+	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	k_msleep(1);
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+	k_msleep(1);
+
+	/* 9 cycles of SCL with SDA held high */
+	for (i = 0; i < 9; i++) {
+		gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+		gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+		k_msleep(1);
+		gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+		k_msleep(1);
+	}
+	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	k_msleep(1);
+
+	/* Stop condition */
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+	k_msleep(1);
+	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	k_msleep(1);
+
+	/* Set GPIO back to I2C alternate function of clock */
+	pinmux_pin_set(config->clk_pinctrls, config->clk_pin,
+		       config->clk_alt_fun);
+	/* Set GPIO back to I2C alternate function of data */
+	pinmux_pin_set(config->data_pinctrls, config->data_pin,
+		       config->data_alt_fun);
+
+	/* reset i2c port */
+	i2c_reset(dev);
+	printk("I2C ch%d reset cause %d\n", config->port,
+	       I2C_RC_NO_IDLE_FOR_START);
+
 	return 0;
 }
 
 static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	.configure = i2c_it8xxx2_configure,
 	.transfer = i2c_it8xxx2_transfer,
+	.recover_bus = i2c_it8xxx2_recover_bus,
 };
 
 #define I2C_ITE_IT8XXX2_INIT(idx)                                              \
@@ -903,6 +1008,13 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 		.bitrate = DT_INST_PROP(idx, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(idx),                             \
 		.port = DT_INST_PROP(idx, port_num),                           \
+		.clk_pinctrls = DEV_CLK_PINMUX(idx),                           \
+		.data_pinctrls = DEV_DATA_PINMUX(idx),                         \
+		.clk_pin = DEV_CLK_PIN(idx),                                   \
+		.data_pin = DEV_DATA_PIN(idx),                                 \
+		.clk_alt_fun = DEV_CLK_ALT_FUNC(idx),                          \
+		.data_alt_fun = DEV_DATA_ALT_FUNC(idx),                        \
+		.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE(idx, gpio_dev)),     \
 	};                                                                     \
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \

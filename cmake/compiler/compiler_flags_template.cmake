@@ -59,6 +59,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp11)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
 
 # Flag for disabling exeptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)

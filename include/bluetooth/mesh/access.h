@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Access Layer APIs.
+ *  @brief Access layer APIs.
  */
 
 /*
@@ -25,8 +25,8 @@
 		       BT_MESH_ADDR_UNASSIGNED_ELT_) }
 
 /**
- * @brief Bluetooth Mesh Access Layer
- * @defgroup bt_mesh_access Bluetooth Mesh Access Layer
+ * @brief Access layer
+ * @defgroup bt_mesh_access Access layer
  * @ingroup bt_mesh
  * @{
  */
@@ -166,8 +166,13 @@ struct bt_mesh_model_op {
 	/** OpCode encoded using the BT_MESH_MODEL_OP_* macros */
 	const uint32_t  opcode;
 
-	/** Minimum required message length */
-	const size_t min_len;
+	/** Message length. If the message has variable length then this value
+	 *  indicates minimum message length and should be positive. Handler
+	 *  function should verify precise length based on the contents of the
+	 *  message. If the message has fixed length then this value should
+	 *  be negative. Use BT_MESH_LEN_* macros when defining this value.
+	 */
+	const ssize_t len;
 
 	/** @brief Handler function for this opcode.
 	 *
@@ -175,15 +180,22 @@ struct bt_mesh_model_op {
 	 *  @param ctx   Message context for the message.
 	 *  @param buf   Message buffer containing the message payload, not
 	 *               including the opcode.
+	 *
+	 *  @return Zero on success or (negative) error code otherwise.
 	 */
-	void (*const func)(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf);
+	int (*const func)(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf);
 };
 
 #define BT_MESH_MODEL_OP_1(b0) (b0)
 #define BT_MESH_MODEL_OP_2(b0, b1) (((b0) << 8) | (b1))
 #define BT_MESH_MODEL_OP_3(b0, cid) ((((b0) << 16) | 0xc00000) | (cid))
+
+/** Macro for encoding exact message length for fixed-length messages.  */
+#define BT_MESH_LEN_EXACT(len) (-len)
+/** Macro for encoding minimum message length for variable-length messages.  */
+#define BT_MESH_LEN_MIN(len) (len)
 
 /** End of the opcode list. Must always be present. */
 #define BT_MESH_MODEL_OP_END { 0, 0, NULL }

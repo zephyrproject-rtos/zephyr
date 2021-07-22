@@ -1,8 +1,3 @@
-/** @file
- *  @brief Bluetooth Mesh shell
- *
- */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -2806,5 +2801,5 @@ static int cmd_mesh(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(mesh, &mesh_cmds, "Bluetooth Mesh shell commands",
+SHELL_CMD_ARG_REGISTER(mesh, &mesh_cmds, "Bluetooth mesh shell commands",
 			cmd_mesh, 1, 1);

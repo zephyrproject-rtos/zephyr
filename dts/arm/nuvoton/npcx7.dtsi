@@ -197,4 +197,9 @@
 				     &altf_adc9_sl>; /* ADC9 - PINF0 */
 		};
 	};
+
+	soc-id {
+		chip-id = <0x07>;
+		revision-reg = <0x00007FFC 1>;
+	};
 };

@@ -68,7 +68,7 @@ struct uart_stm32_data {
 	size_t rx_next_buffer_len;
 #endif
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 

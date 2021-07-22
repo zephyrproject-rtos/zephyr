@@ -24,6 +24,7 @@ config SOC_MK22F51212
 	select HAS_MCG
 	select CPU_HAS_FPU
 	select HAS_MCUX_DAC
+	select HAS_MCUX_RCM
 
 endchoice
 

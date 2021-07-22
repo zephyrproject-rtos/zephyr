@@ -401,7 +401,6 @@ Documentation:
     collaborators:
         - nashif
         - utzig
-        - jocelyn-li
         - mbolivar-nordic
     files:
         - doc/*
@@ -577,7 +576,6 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
         - pfalcon
     files:
         - drivers/ethernet/
@@ -651,7 +649,7 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
+        - rlubos
     files:
         - drivers/ieee802154/
     labels:
@@ -788,7 +786,7 @@ Documentation:
 "Drivers: PTP Clock":
     status: maintained
     maintainers:
-        - jukkar
+        - tbursztyka
     files:
         - drivers/ptp_clock/
         - include/drivers/ptp_clock.h
@@ -902,7 +900,7 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
+        - rlubos
         - kludentwo
     files:
         - drivers/wifi/
@@ -1074,7 +1072,7 @@ Native POSIX and POSIX arch:
 Networking:
     status: maintained
     maintainers:
-        - jukkar
+        - rlubos
     collaborators:
         - tbursztyka
         - pfalcon
@@ -1099,7 +1097,7 @@ Networking:
     maintainers:
         - pfalcon
     collaborators:
-        - jukkar
+        - rlubos
     files:
         - samples/net/sockets/
         - subsys/net/lib/sockets/
@@ -1112,7 +1110,7 @@ Networking:
     maintainers:
         - jhedberg
     collaborators:
-        - jukkar
+        - rlubos
         - tbursztyka
     files:
         - include/net/buf.h
@@ -1125,8 +1123,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
@@ -1138,8 +1134,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - samples/net/lwm2m_client/
         - subsys/net/lib/lwm2m/
@@ -1150,8 +1144,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - subsys/net/lib/mqtt/
         - tests/net/lib/mqtt_packet/
@@ -1226,7 +1218,6 @@ Twister:
         - nashif
     collaborators:
         - chen-png
-        - jocelyn-li
         - galak
         - PerMac
         - enjiamai

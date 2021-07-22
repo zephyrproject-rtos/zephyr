@@ -11,6 +11,7 @@ config CAN_RCAR
 
 config CAN_RCAR_MAX_FILTER
 	int "Maximum number of concurrent active filters"
+	depends on CAN_RCAR
 	default 5
 	range 1 32
 	help

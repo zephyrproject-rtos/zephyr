@@ -22,6 +22,8 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_OS_TIMER
+	select HAS_MCUX_LPC_RTC
+	select HAS_MCUX_TRNG
 	select INIT_SYS_PLL
 
 endchoice
@@ -68,6 +70,7 @@ config SYSOSC_SETTLING_US
 
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
 	bool "Enable the boot header"
+	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.

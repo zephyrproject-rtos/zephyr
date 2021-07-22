@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2017 Intel Corporation
@@ -174,7 +172,7 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	/* No more pending buffers */
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
 		BT_DBG("Proxy Advertising");
 		err = bt_mesh_proxy_adv_start();
 		if (!err) {

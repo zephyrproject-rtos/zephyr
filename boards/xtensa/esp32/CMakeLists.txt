@@ -51,4 +51,10 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
 
   board_finalize_runner_args(esp32 "--esp-flash-partition_table=${espidf_build_dir}/partitions_singleapp.bin")
 
+  board_finalize_runner_args(esp32 "--esp-boot-address=0x1000")
+
+  board_finalize_runner_args(esp32 "--esp-partition-table-address=0x8000")
+
+  board_finalize_runner_args(esp32 "--esp-app-address=0x10000")
+
 endif()

@@ -120,8 +120,8 @@ static int check_log_file_exist(int num)
 	while (true) {
 		rc = fs_readdir(&dir, &ent);
 		if (rc < 0) {
-			(void) fs_closedir(&dir);
-			return -EIO;
+			rc = -EIO;
+			goto close_dir;
 		}
 		if (ent.name[0] == 0) {
 			break;
@@ -130,13 +130,17 @@ static int check_log_file_exist(int num)
 		rc = get_log_file_id(&ent);
 
 		if (rc == num) {
-			return 1;
+			rc = 1;
+			goto close_dir;
 		}
 	}
 
+	rc = 0;
+
+close_dir:
 	(void) fs_closedir(&dir);
 
-	return 0;
+	return rc;
 }
 
 int write_log_to_file(uint8_t *data, size_t length, void *ctx)
@@ -239,7 +243,7 @@ static int get_log_file_id(struct fs_dirent *ent)
 
 	num = atoi(ent->name + LOG_PREFIX_LEN);
 
-	if (num <= MAX_FILE_NUMERAL && num > 0) {
+	if (num <= MAX_FILE_NUMERAL && num >= 0) {
 		return num;
 	}
 
@@ -277,7 +281,7 @@ static int allocate_new_file(struct fs_file_t *file)
 			}
 
 			file_num = get_log_file_id(&ent);
-			if (file_num > 0) {
+			if (file_num >= 0) {
 
 				if (file_num > max) {
 					max = file_num;

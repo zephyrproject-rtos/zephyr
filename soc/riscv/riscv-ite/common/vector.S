@@ -39,22 +39,40 @@ SECTION_FUNC(vectors, __start)
 	/* Jump to __initialize */
 	tail __initialize
 
-/**
- *-----------------------------------------------------------------------------
- * 16-bytes signature
- *-----------------------------------------------------------------------------
+/*
+ * eflash signature used to enable specific function after power-on reset.
+ * (HW mechanism)
+ * The content of 16-bytes must be the following and at offset 0x80 of binary.
+ * ----------------------------------------------------------------------------
+ * 1st 2nd 3rd 4th 5th 6th 7th    8th    9th 10th 11th 12th 13th 14th 15th 16th
+ * ----------------------------------------------------------------------------
+ * A5h A5h A5h A5h A5h A5h [host] [flag] 85h  12h  5Ah  5Ah  AAh  AAh  55h  55h
+ * ----------------------------------------------------------------------------
+ * [host]: A4h = enable eSPI, A5h = enable LPC
+ * [flag]:
+ * bit7: it must be 1b.
+ * bit6: it must be 0b.
+ * bit5: it must be 1b.
+ * bit4: 1b = 32.768KHz is from the internal clock generator.
+ * bit3: it must be 0b.
+ * bit2: it must be 1b.
+ * bit1: it must be 0b.
+ * bit0: it must be 0b.
  */
-    .org 0x84
-                ## 0    1    2    3    4    5    6                     7
-    .byte       0xA5,0xA5,0xA5,0xA5,0xA5,0xA5,0xA5,0xB5
-                ## 8    9   10   11   12                    13   14   15
-    .byte       0x85,0x12,0x5A,0x5A,0xAA,0xAA,0x55,0x55
-/**
- *-----------------------------------------------------------------------------
- * EC firmware version
- *-----------------------------------------------------------------------------
- */
-
-    .byte  'I', 'T', '8', 'X', 'X', 'X', '2', '-', 'A', 'X', '-',\
-	'V', '0', '.', '0', '0'
-    .org 0xa4
+.org 0x80
+.balign 16
+.global eflash_sig
+eflash_sig:
+.byte 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5
+#ifdef CONFIG_ESPI
+.byte 0xA4 /* enable eSPI */
+#else
+.byte 0xA5 /* enable LPC */
+#endif
+/* flag of signature */
+#ifdef CONFIG_SOC_IT8XXX2_EXT_32K
+.byte 0xA4 /* use external 32.768 kHz oscillator */
+#else
+.byte 0xB4 /* enable internal clock generator */
+#endif
+.byte 0x85, 0x12, 0x5A, 0x5A, 0xAA, 0xAA, 0x55, 0x55

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f469Xi.dtsi>
 #include <st/f4/stm32f469nihx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F469I-DISCO board";
@@ -57,10 +58,6 @@
 	};
 };
 
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi2 {};
-arduino_serial: &usart6 {};
-
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
@@ -102,6 +99,7 @@ arduino_serial: &usart6 {};
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pd3 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	cs-gpios = <&gpioh 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 

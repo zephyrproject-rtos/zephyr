@@ -83,7 +83,7 @@ config HPET_TIMER
 	depends on X86
 	select IOAPIC if X86
 	select LOAPIC if X86
-	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
 	help
 	  This option selects High Precision Event Timer (HPET) as a
@@ -249,6 +249,14 @@ config XTENSA_TIMER
 	  Enables a system timer driver for Xtensa based on the CCOUNT
 	  and CCOMPARE special registers.
 
+config ESP32C3_SYS_TIMER
+	bool "ESP32C3 sys-timer support"
+	depends on SOC_ESP32C3
+	default y
+	help
+	  This option enables the system timer driver for the Espressif ESP32C3
+	  and provides the standard "system clock driver" interface.
+
 config XTENSA_TIMER_ID
 	int "System timer CCOMPAREn register index"
 	default 1
@@ -397,5 +405,13 @@ config MCUX_OS_TIMER
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
+
+config MCUX_LPTMR_TIMER
+	bool "MCUX LPTMR timer"
+	depends on HAS_MCUX_LPTMR && !COUNTER_MCUX_LPTMR
+	help
+	  This module implements a kernel device driver for the NXP MCUX Low
+	  Power Timer (LPTMR) and provides the standard "system clock driver"
+	  interfaces.
 
 endmenu

@@ -338,9 +338,10 @@
 			label = "USBHS";
 		};
 
-		gmac: ethernet@40050088 {
+		gmac: ethernet@40050000 {
 			compatible = "atmel,sam-gmac";
-			reg = <0x40050088 0x4000>;
+			reg = <0x40050000 0x4000>;
+			peripheral-id = <39>;
 			interrupts = <39 0>, <66 0>, <67 0>;
 			interrupt-names = "gmac", "q1", "q2";
 			num-queues = <3>;
@@ -355,7 +356,7 @@
 				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 		};
 
-		tc0: tc@4000C000 {
+		tc0: tc@4000c000 {
 			compatible = "atmel,sam-tc";
 			reg = <0x4000c000 0x100>;
 			interrupts = <23 0

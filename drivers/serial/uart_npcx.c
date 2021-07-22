@@ -14,6 +14,7 @@
 #include <pm/device.h>
 #include <soc.h>
 #include "soc_miwu.h"
+#include "soc_power.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_npcx, LOG_LEVEL_ERR);
@@ -40,7 +41,7 @@ struct uart_npcx_data {
 	void *user_data;
 #endif
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 
@@ -320,6 +321,12 @@ static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
 	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED)) {
 		npcx_power_console_is_in_use_refresh();
 	}
+
+	/*
+	 * Disable MIWU CR_SIN interrupt to avoid the other redundant interrupts
+	 * after ec wakes up.
+	 */
+	npcx_uart_disable_access_interrupt();
 }
 
 /* UART driver registration */
@@ -350,8 +357,7 @@ static int uart_npcx_init(const struct device *dev)
 	const struct uart_npcx_config *const config = DRV_CONFIG(dev);
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t uart_rate;
 	int ret;
 
@@ -415,9 +421,6 @@ static int uart_npcx_init(const struct device *dev)
 		 */
 		npcx_miwu_interrupt_configure(&config->uart_rx_wui,
 				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
-
-		/* Enable irq of interrupt-input module */
-		npcx_miwu_irq_enable(&config->uart_rx_wui);
 	}
 
 	/* Configure pin-mux for uart device */
@@ -439,7 +442,7 @@ static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
 }
 
 static inline int uart_npcx_get_power_state(const struct device *dev,
-							uint32_t *state)
+					    enum pm_device_state *state)
 {
 	const struct uart_npcx_data *const data = DRV_DATA(dev);
 
@@ -448,7 +451,7 @@ static inline int uart_npcx_get_power_state(const struct device *dev,
 }
 
 static inline int uart_npcx_set_power_state(const struct device *dev,
-							uint32_t next_state)
+					    enum pm_device_state next_state)
 {
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 
@@ -470,7 +473,7 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 
 /* Implements the device power management control functionality */
 static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 uint32_t *state, pm_device_cb cb, void *arg)
+				 enum pm_device_state *state)
 {
 	int ret = 0;
 
@@ -485,9 +488,6 @@ static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 		ret = -EINVAL;
 	}
 
-	if (cb != NULL) {
-		cb(dev, ret, state, arg);
-	}
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
@@ -544,3 +544,20 @@ static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 NPCX_UART_IRQ_CONFIG_FUNC(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)
+
+#define ENABLE_MIWU_CRIN_IRQ(inst)                                             \
+	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##inst.uart_rx_wui);\
+	npcx_miwu_irq_enable(&uart_npcx_cfg_##inst.uart_rx_wui);
+
+#define DISABLE_MIWU_CRIN_IRQ(inst)                                            \
+	npcx_miwu_irq_disable(&uart_npcx_cfg_##inst.uart_rx_wui);
+
+void npcx_uart_enable_access_interrupt(void)
+{
+	DT_INST_FOREACH_STATUS_OKAY(ENABLE_MIWU_CRIN_IRQ)
+}
+
+void npcx_uart_disable_access_interrupt(void)
+{
+	DT_INST_FOREACH_STATUS_OKAY(DISABLE_MIWU_CRIN_IRQ)
+}

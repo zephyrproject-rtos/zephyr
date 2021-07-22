@@ -83,7 +83,7 @@ ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(sircdiv1_clk),
 ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(sircdiv2_clk),
 		       "Invalid SCG SIRC divider 2 value");
 static const scg_sirc_config_t scg_sirc_config = {
-	.enableMode = kSCG_SircEnable,
+	.enableMode = kSCG_SircEnable | kSCG_SircEnableInLowPower,
 	.div1       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv1_clk)),
 	.div2       = TO_ASYNC_CLK_DIV(SCG_CLOCK_DIV(sircdiv2_clk)),
 #if MHZ(2) == DT_PROP(SCG_CLOCK_NODE(sirc_clk), clock_frequency)
