@@ -81,24 +81,30 @@
 /* Link Layer header size of BIS PDU. Assumes pdu_bis is packed */
 #define PDU_BIS_LL_HEADER_SIZE (offsetof(struct pdu_bis, payload))
 
+/* Event Active Clock Jitter */
+#define EVENT_CLOCK_JITTER_US   2
 /* Event interframe timings */
 #define EVENT_IFS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_IFS_MAX_US        (EVENT_IFS_US + 2)
+#define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller will layout extended adv with minimum separation */
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
+#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_MSS_MAX_US        (EVENT_MSS_US + 2)
+#define EVENT_MSS_MAX_US        (EVENT_MSS_US + EVENT_CLOCK_JITTER_US)
 
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
 #define OFFS_UNIT_300_US        300
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
 #define OFFS_ADJUST_US          245760
+
+/* Sleep Clock Accuracy, calculate drift in microseconds */
+#define SCA_DRIFT_50_PPM_US(t)  (((t) * 50UL) / 1000000UL)
+#define SCA_DRIFT_500_PPM_US(t) (((t) * 500UL) / 1000000UL)
 
 /* transmitWindowDelay times (us) */
 #define WIN_DELAY_LEGACY     1250
@@ -158,7 +164,7 @@
 
 #define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
 
-#define PKT_AC_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
+#define PKT_AC_US(octets, phy) PKT_DC_US((octets), 0, (phy))
 
 #define PKT_BIS_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
 
@@ -359,6 +365,11 @@ struct pdu_adv_sync_info {
 	uint8_t  crc_init[3];
 	uint16_t evt_cntr;
 } __packed;
+
+#define PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET 4
+#define PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS     5
+#define PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK    \
+		(0x07 << (PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS))
 
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,

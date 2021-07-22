@@ -172,7 +172,7 @@ config BT_OBSERVER
 
 endmenu
 
-source "subsys/bluetooth/services/Kconfig"
+rsource "services/Kconfig"
 
 config BT_CONN
 	bool
@@ -224,17 +224,34 @@ endif # BT_CONN
 
 
 config BT_ISO
-	bool "Bluetooth Isochronous Channel Support [EXPERIMENTAL]"
+	bool # hidden
+
+config BT_ISO_UNICAST
+	bool "Bluetooth Isochronous Channel Unicast Support [EXPERIMENTAL]"
 	depends on BT_CONN
+	select BT_ISO
 	help
-	  Select this to enable Isochronous Channel support.
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels.
+
+# TODO: Split between broadcaster and observer for optimization
+config BT_ISO_BROADCAST
+	bool "Bluetooth Isochronous Channel Broadcast Support [EXPERIMENTAL]"
+	select BT_ISO
+	select BT_EXT_ADV
+	select BT_PER_ADV
+	select BT_PER_ADV_SYNC
+	help
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels.
 
 if BT_ISO
 
 config BT_ISO_MAX_CHAN
 	int "Maximum number of simultaneous ISO channels"
 	depends on BT_ISO
-	default BT_MAX_CONN
+	default BT_MAX_CONN if BT_CONN
+	default 1
 	range 1 64
 	help
 	  Maximum number of simultaneous Bluetooth isochronous channels
@@ -280,16 +297,6 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 
-# TODO: Split between broadcaster and observer for optimization
-config BT_ISO_BROADCAST
-	bool "Bluetooth ISO Broadcast Channels supported"
-	select BT_EXT_ADV
-	select BT_PER_ADV
-	select BT_PER_ADV_SYNC
-	help
-	  This option enables support for Bluetooth Broadcast
-	  Isochronous channels.
-
 if BT_ISO_BROADCAST
 
 config BT_ISO_MAX_BIG
@@ -302,10 +309,10 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-source "subsys/bluetooth/common/Kconfig"
-source "subsys/bluetooth/host/Kconfig"
-source "subsys/bluetooth/controller/Kconfig"
-source "subsys/bluetooth/shell/Kconfig"
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "shell/Kconfig"
 
 endif # BT_HCI
 
@@ -322,7 +329,7 @@ config BT_COMPANY_ID
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
-source "subsys/bluetooth/mesh/Kconfig"
-source "subsys/bluetooth/audio/Kconfig"
+rsource "mesh/Kconfig"
+rsource "audio/Kconfig"
 
 endif # BT

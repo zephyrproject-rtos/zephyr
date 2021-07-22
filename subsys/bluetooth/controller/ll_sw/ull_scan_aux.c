@@ -269,18 +269,22 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
 
-	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, 0, phy);
+	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, phy);
 	if (aux_ptr->offs_units) {
-		lll->window_size_us = 300U;
+		lll->window_size_us = OFFS_UNIT_300_US;
 	} else {
-		lll->window_size_us = 30U;
+		lll->window_size_us = OFFS_UNIT_30_US;
 	}
 	aux_offset_us += (uint32_t)aux_ptr->offs * lll->window_size_us;
 
+	/* CA field contains the clock accuracy of the advertiser;
+	 * 0 - 51 ppm to 500 ppm
+	 * 1 - 0 ppm to 50 ppm
+	 */
 	if (aux_ptr->ca) {
-		window_widening_us = aux_offset_us / 2000U;
+		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
 	} else {
-		window_widening_us = aux_offset_us / 20000U;
+		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
 	lll->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
@@ -302,7 +306,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 0, lll->phy) +
+						 lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,

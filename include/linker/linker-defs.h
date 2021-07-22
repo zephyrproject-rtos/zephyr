@@ -33,6 +33,7 @@
 #ifdef ZTEST_UNITTEST
 #define DT_NODE_HAS_STATUS(node, status) 0
 #else
+#include <linker/devicetree_reserved.h>
 #include <devicetree.h>
 #endif
 
@@ -41,6 +42,10 @@
 	_CONCAT(_##struct_type, _list_start) = .; \
 	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
 	_CONCAT(_##struct_type, _list_end) = .
+
+#define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
+	. = ALIGN(align); \
+	Z_LINK_ITERABLE(struct_type);
 
 #define Z_LINK_ITERABLE_GC_ALLOWED(struct_type) \
 	_CONCAT(_##struct_type, _list_start) = .; \
@@ -208,6 +213,10 @@ extern char _image_rodata_size[];
 
 extern char _vector_start[];
 extern char _vector_end[];
+
+#if DT_NODE_HAS_STATUS(_NODE_RESERVED, okay)
+DT_RESERVED_MEM_SYMBOLS()
+#endif
 
 #ifdef CONFIG_SW_VECTOR_RELAY
 extern char __vector_relay_table[];

@@ -222,6 +222,25 @@ config STAT_MGMT_MAX_NAME_LEN
 	  stat read commands.  If a stat group's name exceeds this limit, it will
 	  be impossible to retrieve its values with a stat show command.
 
+
+menuconfig MCUMGR_GRP_ZEPHYR_BASIC
+	bool "Enable Zephyr specific basic group of commands"
+	help
+	  Enables mcumgr to processing of Zephyr specific groups.
+
+if MCUMGR_GRP_ZEPHYR_BASIC
+config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
+	bool "Enables storage erase command"
+	help
+	  Enables command that allows to erase storage partition.
+
+module=MGMT_SETTINGS
+module-dep=LOG
+module-str=SETTINGS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif
+
 endmenu
 
 config MCUMGR_SMP_BT

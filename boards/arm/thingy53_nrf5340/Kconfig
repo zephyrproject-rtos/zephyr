@@ -12,7 +12,7 @@ config THINGY53_MISO_WORKAROUND
 
 config THINGY53_INIT_PRIORITY
 	int "Init priority"
-	default 80
+	default 79
 	help
 	  Initialization priority of the Thingy:53.
 

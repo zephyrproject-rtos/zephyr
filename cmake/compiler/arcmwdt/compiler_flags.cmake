@@ -126,10 +126,12 @@ endif()
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
 
-#no support of C++14, C++17, C++2a
+#no support of C++14, C++17, C++2a, C++20, C++2b
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
 
 # Disable exeptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")

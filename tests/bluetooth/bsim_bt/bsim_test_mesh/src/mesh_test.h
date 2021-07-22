@@ -1,5 +1,5 @@
 /** @file
- *  @brief Common functionality for Bluetooth Mesh BabbleSim tests.
+ *  @brief Common functionality for Bluetooth mesh BabbleSim tests.
  */
 
 /*
@@ -47,6 +47,15 @@
 			bst_result = Failed;                                   \
 			bs_trace_error_time_line(                              \
 				#cond " failed with error %d\n", _err);        \
+		}                                                              \
+	} while (0)
+
+#define ASSERT_TRUE(cond, ...)                                                 \
+	do {                                                                   \
+		if (!(cond)) {                                                   \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond "is false.", ##__VA_ARGS__);             \
 		}                                                              \
 	} while (0)
 

@@ -298,6 +298,60 @@ struct spi_config {
 #endif
 
 /**
+ * @brief Complete SPI DT information
+ *
+ * @param bus is the SPI bus
+ * @param config is the slave specific configuration
+ */
+struct spi_dt_spec {
+	const struct device *bus;
+	struct spi_config config;
+};
+
+#ifndef __cplusplus
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
+ * data from the devicetree.
+ *
+ * Important: multiple fields are automatically constructed by this macro
+ * which must be checked before use. @ref spi_is_ready performs the required
+ * @ref device_is_ready checks.
+ *
+ * This macro is not available in C++.
+ *
+ * @param node_id Devicetree node identifier for the SPI device whose
+ *                struct spi_dt_spec to create an initializer for
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
+	{							     \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
+		.config = SPI_CONFIG_DT(node_id, operation_, delay_) \
+	}
+
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ *
+ * This macro is not available in C++.
+ *
+ * @param inst Devicetree instance number
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
+	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+#endif
+
+/**
  * @brief SPI buffer structure
  *
  * @param buf is a valid pointer on a data buffer, or NULL otherwise.
@@ -364,6 +418,28 @@ __subsystem struct spi_driver_api {
 };
 
 /**
+ * @brief Validate that SPI bus is ready.
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus is not ready for use.
+ */
+static inline bool spi_is_ready(const struct spi_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	if (!device_is_ready(spec->bus)) {
+		return false;
+	}
+	/* Validate CS gpio port is ready, if it is used */
+	if (spec->config.cs &&
+	    !device_is_ready(spec->config.cs->gpio_dev)) {
+		return false;
+	}
+	return true;
+}
+
+/**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
  * Note: This function is synchronous.
@@ -398,6 +474,28 @@ static inline int z_impl_spi_transceive(const struct device *dev,
 }
 
 /**
+ * @brief Read/write data from an SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @retval a value from spi_transceive()
+ */
+static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+}
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * Note: This function is synchronous.
@@ -417,6 +515,24 @@ static inline int spi_read(const struct device *dev,
 			   const struct spi_buf_set *rx_bufs)
 {
 	return spi_transceive(dev, config, NULL, rx_bufs);
+}
+
+/**
+ * @brief Read data from a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_read(spec->bus, &spec->config, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ *
+ * @retval a value from spi_read()
+ */
+static inline int spi_read_dt(const struct spi_dt_spec *spec,
+			      const struct spi_buf_set *rx_bufs)
+{
+	return spi_read(spec->bus, &spec->config, rx_bufs);
 }
 
 /**
@@ -441,6 +557,24 @@ static inline int spi_write(const struct device *dev,
 	return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
+/**
+ * @brief Write data to a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_write(spec->bus, &spec->config, tx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ *
+ * @retval a value from spi_write()
+ */
+static inline int spi_write_dt(const struct spi_dt_spec *spec,
+			       const struct spi_buf_set *tx_bufs)
+{
+	return spi_write(spec->bus, &spec->config, tx_bufs);
+}
+
 /* Doxygen defines this so documentation is generated. */
 #ifdef CONFIG_SPI_ASYNC
 
@@ -449,7 +583,7 @@ static inline int spi_write(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -486,7 +620,7 @@ static inline int spi_transceive_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -516,7 +650,7 @@ static inline int spi_read_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance

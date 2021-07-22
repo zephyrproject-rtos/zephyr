@@ -898,7 +898,7 @@ static void test_change_qav_params(void)
 
 static void test_change_qbv_params(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 	struct ethernet_req_params params;
@@ -1075,7 +1075,7 @@ static void test_change_qbv_params(void)
 
 static void test_change_qbu_params(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 	struct ethernet_req_params params;
@@ -1276,7 +1276,7 @@ static void test_change_qbu_params(void)
 
 static void test_change_txtime_params(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 	struct ethernet_req_params params;

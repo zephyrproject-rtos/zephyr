@@ -61,7 +61,7 @@ struct spi_flash_at45_data {
 	struct spi_cs_control spi_cs;
 	struct k_sem lock;
 #if IS_ENABLED(CONFIG_PM_DEVICE)
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 
@@ -629,15 +629,14 @@ static int spi_flash_at45_init(const struct device *dev)
 #if IS_ENABLED(CONFIG_PM_DEVICE)
 static int spi_flash_at45_pm_control(const struct device *dev,
 				     uint32_t ctrl_command,
-				     uint32_t *state, pm_device_cb cb,
-				     void *arg)
+				     enum pm_device_state *state)
 {
 	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 	int err = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+		enum pm_device_state new_state = *state;
 
 		if (new_state != dev_data->pm_state) {
 			switch (new_state) {
@@ -668,10 +667,6 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
 		*state = dev_data->pm_state;
-	}
-
-	if (cb) {
-		cb(dev, err, state, arg);
 	}
 
 	return err;

@@ -7,8 +7,8 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
+import subprocess
 from docutils import nodes
-from local_util import run_cmd_get_output
 try:
     import west.manifest
     try:
@@ -20,11 +20,12 @@ except ImportError:
 
 
 def get_github_rev():
-    tag = run_cmd_get_output('git describe --exact-match')
-    if tag:
-        return tag.decode("utf-8")
-    else:
+    try:
+        output = subprocess.check_output('git describe --exact-match', shell=True)
+    except subprocess.CalledProcessError:
         return 'main'
+
+    return output.strip().decode('utf-8')
 
 
 def setup(app):

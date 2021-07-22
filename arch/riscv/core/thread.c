@@ -47,6 +47,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a2 = (ulong_t)p2;
 	stack_init->a3 = (ulong_t)p3;
 
+#ifdef CONFIG_RISCV_SOC_INIT_GP_VALUE
+	stack_init->gp = __soc_get_gp_initial_value();
+#endif
+
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	stack_init->tp = (ulong_t)thread->tls;
 #endif

@@ -34,6 +34,10 @@
 #include <net/dsa.h>
 #endif
 
+#if defined(CONFIG_NET_ETHERNET_BRIDGE)
+#include <net/ethernet_bridge.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -519,6 +523,10 @@ struct ethernet_context {
 	 * of network interfaces.
 	 */
 	ATOMIC_DEFINE(interfaces, NET_VLAN_MAX_COUNT);
+#endif
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE)
+	struct eth_bridge_iface_context bridge;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create

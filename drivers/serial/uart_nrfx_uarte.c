@@ -125,7 +125,7 @@ struct uarte_nrfx_data {
 #endif
 	atomic_val_t poll_out_lock;
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 	uint8_t char_out;
 	uint8_t rx_data;
@@ -1329,12 +1329,27 @@ static void uarte_nrfx_isr_async(const struct device *dev)
 		endrx_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+	/* RXSTARTED must be handled after ENDRX because it starts the RX timeout
+	 * and if order is swapped then ENDRX will stop this timeout.
+	 * Skip if ENDRX is set when RXSTARTED is set. It means that
+	 * ENDRX occurred after check for ENDRX in isr which may happen when
+	 * UARTE interrupt got preempted. Events are not cleared
+	 * and isr will be called again. ENDRX will be handled first.
+	 */
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED) &&
+	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 		rxstarted_isr(dev);
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+	/* RXTO must be handled after ENDRX which should notify the buffer.
+	 * Skip if ENDRX is set when RXTO is set. It means that
+	 * ENDRX occurred after check for ENDRX in isr which may happen when
+	 * UARTE interrupt got preempted. Events are not cleared
+	 * and isr will be called again. ENDRX will be handled first.
+	 */
+	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO) &&
+	    !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 		rxto_isr(dev);
 	}
@@ -1821,7 +1836,7 @@ static void wait_for_tx_stopped(const struct device *dev)
 
 
 static void uarte_nrfx_set_power_state(const struct device *dev,
-				       uint32_t new_state)
+				       enum pm_device_state new_state)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
@@ -1911,12 +1926,12 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 
 static int uarte_nrfx_pm_control(const struct device *dev,
 				 uint32_t ctrl_command,
-				 uint32_t *state, pm_device_cb cb, void *arg)
+				 enum pm_device_state *state)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+		enum pm_device_state new_state = *state;
 
 		if (new_state != data->pm_state) {
 			uarte_nrfx_set_power_state(dev, new_state);
@@ -1924,10 +1939,6 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
 		*state = data->pm_state;
-	}
-
-	if (cb) {
-		cb(dev, 0, state, arg);
 	}
 
 	return 0;

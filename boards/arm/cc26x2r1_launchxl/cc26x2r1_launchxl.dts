@@ -71,6 +71,7 @@
 			compatible = "zephyr,power-state";
 			power-state-name = "standby";
 			min-residency-us = <5000>;
+			exit-latency-us = <240>;
 		};
 	};
 };

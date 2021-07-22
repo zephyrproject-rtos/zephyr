@@ -24,7 +24,7 @@ config LORAWAN_SYSTEM_MAX_RX_ERROR
 	  System Max Rx timing error value in ms to be used by LoRaWAN stack
 	  for calculating the RX1/RX2 window timing.
 
-choice
+choice LORAMAC_REGION
 	prompt "LoRaWAN Region Selection"
 	default LORAMAC_REGION_UNKNOWN
 	help

@@ -11,6 +11,7 @@ menuconfig PS2
 if PS2
 
 source "drivers/ps2/Kconfig.xec"
+source "drivers/ps2/Kconfig.npcx"
 
 module = PS2
 module-str = ps2

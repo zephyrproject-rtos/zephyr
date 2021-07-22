@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-/* Common clock control device name for all NPCX series */
-#define NPCX_CLK_CTRL_NAME DT_LABEL(DT_NODELABEL(pcc))
+/* Common clock control device node for all NPCX series */
+#define NPCX_CLK_CTRL_NODE DT_NODELABEL(pcc)
 
 /**
  * @brief NPCX clock configuration structure

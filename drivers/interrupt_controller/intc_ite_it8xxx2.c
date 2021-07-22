@@ -69,6 +69,37 @@ inline void set_csr(unsigned long bit)
 	}
 }
 
+#define IT8XXX2_IER_COUNT ARRAY_SIZE(reg_enable)
+static uint8_t ier_setting[IT8XXX2_IER_COUNT];
+
+void ite_intc_save_and_disable_interrupts(void)
+{
+	/* Disable global interrupt for critical section */
+	unsigned int key = irq_lock();
+
+	/* Save and disable interrupts */
+	for (int i = 0; i < IT8XXX2_IER_COUNT; i++) {
+		ier_setting[i] = *reg_enable[i];
+		*reg_enable[i] = 0;
+	}
+	irq_unlock(key);
+}
+
+void ite_intc_restore_interrupts(void)
+{
+	/*
+	 * Ensure the highest priority interrupt will be the first fired
+	 * interrupt when soc is ready to go.
+	 */
+	unsigned int key = irq_lock();
+
+	/* Restore interrupt state */
+	for (int i = 0; i < IT8XXX2_IER_COUNT; i++) {
+		*reg_enable[i] = ier_setting[i];
+	}
+	irq_unlock(key);
+}
+
 void ite_intc_isr_clear(unsigned int irq)
 {
 	uint32_t g, i;
@@ -94,7 +125,11 @@ void ite_intc_irq_enable(unsigned int irq)
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	en = reg_enable[g];
+
+	/* critical section due to run a bit-wise OR operation */
+	unsigned int key = irq_lock();
 	SET_MASK(*en, BIT(i));
+	irq_unlock(key);
 }
 
 void ite_intc_irq_disable(unsigned int irq)
@@ -108,7 +143,11 @@ void ite_intc_irq_disable(unsigned int irq)
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	en = reg_enable[g];
+
+	/* critical section due to run a bit-wise OR operation */
+	unsigned int key = irq_lock();
 	CLEAR_MASK(*en, BIT(i));
+	irq_unlock(key);
 }
 
 void ite_intc_irq_priority_set(unsigned int irq,
@@ -173,9 +212,22 @@ void ite_intc_irq_handler(const void *arg)
 uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
-	intc_irq = IVECT - IVECT_OFFSET_WITH_IRQ;
 
+	/* wait until two equal interrupt values are read */
+	do {
+		/* Read interrupt number from interrupt vector register */
+		intc_irq = IVECT;
+		/*
+		 * WORKAROUND: when the interrupt vector register (IVECT)
+		 * isn't latched in a load operation, we read it again to make
+		 * sure the value we got is the correct value.
+		 */
+	} while (intc_irq != IVECT);
+	/* determine interrupt number */
+	intc_irq -= IVECT_OFFSET_WITH_IRQ;
+	/* clear interrupt status */
 	ite_intc_isr_clear(intc_irq);
+	/* return interrupt number */
 	return intc_irq;
 }
 

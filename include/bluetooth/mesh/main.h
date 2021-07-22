@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Profile APIs.
+ *  @brief Bluetooth mesh Profile APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 
 /**
- * @brief Bluetooth Mesh Provisioning
- * @defgroup bt_mesh_prov Bluetooth Mesh Provisioning
+ * @brief Provisioning
+ * @defgroup bt_mesh_prov Provisioning
  * @ingroup bt_mesh
  * @{
  */
@@ -107,7 +107,7 @@ struct bt_mesh_prov {
 
 	/** Pointer to Public Key in big-endian for OOB public key type support.
 	 *
-	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * Remember to enable @kconfig{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
 	 * when initializing this parameter.
 	 *
 	 * Must be used together with @ref bt_mesh_prov::private_key_be.
@@ -115,7 +115,7 @@ struct bt_mesh_prov {
 	const uint8_t *public_key_be;
 	/** Pointer to Private Key in big-endian for OOB public key type support.
 	 *
-	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * Remember to enable @kconfig{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
 	 * when initializing this parameter.
 	 *
 	 * Must be used together with @ref bt_mesh_prov::public_key_be.
@@ -440,8 +440,8 @@ bool bt_mesh_is_provisioned(void);
  */
 
 /**
- * @brief Bluetooth Mesh
- * @defgroup bt_mesh Bluetooth Mesh
+ * @brief Bluetooth mesh
+ * @defgroup bt_mesh Bluetooth mesh
  * @ingroup bluetooth
  * @{
  */

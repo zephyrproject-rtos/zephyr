@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_B91 gpio_b91.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC13XX_CC26XX gpio_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC32XX     gpio_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CMSDK_AHB  gpio_cmsdk_ahb.c)
@@ -38,6 +39,8 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_PCAL6408A  gpio_pcal6408a.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EOS_S3     gpio_eos_s3.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RCAR       gpio_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CY8C95XX   gpio_cy8c95xx.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_SNPS_CREG  gpio_creg_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_STMPE1600  gpio_stmpe1600.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 

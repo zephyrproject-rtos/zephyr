@@ -405,7 +405,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_RING_BUFFER`: Enable ring buffer.
+* :kconfig:`CONFIG_RING_BUFFER`: Enable ring buffer.
 
 API Reference
 *************

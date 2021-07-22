@@ -30,12 +30,12 @@ It can be built and executed on Musca B1 CPU 0 as follows:
    :goals: run
    :compact:
 
-This project outputs 'IPM MHU sample on v2m_musca_b1_nonsecure' to the console.
+This project outputs 'IPM MHU sample on v2m_musca_b1_ns' to the console.
 It can be built and executed on Musca B1 CPU 1 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipm_mhu_dual_core
-   :board: v2m_musca_b1_nonsecure
+   :board: v2m_musca_b1_ns
    :goals: run
    :compact:
 

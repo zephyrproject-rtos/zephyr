@@ -589,7 +589,7 @@ required dependencies are missing.
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
-.. figure:: img/ReelBoard-Blinky.gif
+.. figure:: img/ReelBoard-Blinky.png
    :width: 400px
    :name: reelboard-blinky
 
@@ -649,6 +649,6 @@ search the archives.
 When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
-.. _Slack invite: https://tinyurl.com/y5glwylp
+.. _Slack invite: https://tinyurl.com/2vue8666
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
 .. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet

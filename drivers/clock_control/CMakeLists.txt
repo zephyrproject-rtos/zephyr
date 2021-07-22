@@ -3,6 +3,7 @@
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_BEETLE              beetle_clock_control.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC11U6X            clock_control_lpc11u6x.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM            clock_control_mcux_ccm.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM_REV2       clock_control_mcux_ccm_rev2.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_MCG            clock_control_mcux_mcg.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_PCC            clock_control_mcux_pcc.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SCG            clock_control_mcux_scg.c)
@@ -17,6 +18,7 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR       clock_control_rcar_cpg_mssr.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCHP_XEC            clock_control_mchp_xec.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 if(CONFIG_SOC_SERIES_STM32MP1X)

@@ -215,15 +215,6 @@ void arm_isr_handler(const void *args)
 		expected_reason = K_ERR_KERNEL_PANIC;
 		__ASSERT(0, "Intentional assert\n");
 	} else if (test_flag == 4) {
-#if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK)
-#if !defined(CONFIG_SYS_CLOCK_EXISTS) || !defined(CONFIG_CORTEX_M_SYSTICK)
-		expected_reason = K_ERR_CPU_EXCEPTION;
-		SCB->ICSR |= SCB_ICSR_PENDSTSET_Msk;
-		__DSB();
-		__ISB();
-#endif
-#endif
-	} else if (test_flag == 5) {
 #if defined(CONFIG_HW_STACK_PROTECTION)
 		/*
 		 * Verify that the Stack Overflow has been reported by the core
@@ -331,29 +322,6 @@ void test_arm_interrupt(void)
 		zassert_true(post_flag == j, "Test flag not set by ISR\n");
 	}
 
-#if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK)
-#if !defined(CONFIG_SYS_CLOCK_EXISTS) || !defined(CONFIG_CORTEX_M_SYSTICK)
-	/* Verify that triggering a Cortex-M exception (accidentally) that has
-	 * not been installed in the vector table, leads to the reserved
-	 * exception been called and a resulting CPU fault. We test this using
-	 * the SysTick exception in platforms that are not expecting to use the
-	 * SysTick timer for system timing.
-	 */
-
-	/* The ISR will manually set the SysTick exception to pending state. */
-	NVIC_SetPendingIRQ(i);
-	__DSB();
-	__ISB();
-
-	/* Verify that the spurious exception has led to the fault and the
-	 * expected reason variable is reset.
-	 */
-	reason = expected_reason;
-	zassert_equal(reason, -1,
-		"expected_reason has not been reset (%d)\n", reason);
-#endif
-#endif
-
 #if defined(CONFIG_HW_STACK_PROTECTION)
 	/*
 	 * Simulate a stacking error that is caused explicitly by the
@@ -369,9 +337,6 @@ void test_arm_interrupt(void)
 	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 	NVIC_SetPendingIRQ(i);
-
-	/* Set test flag so the IRQ handler executes the appropriate case. */
-	test_flag = 4;
 
 	/* Manually set PSP almost at the bottom of the stack. An exception
 	 * entry will make PSP descend below the limit and into the MPU guard

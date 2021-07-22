@@ -146,6 +146,8 @@ The Zephyr stm32l496g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -170,7 +172,7 @@ Default Zephyr Peripheral Mapping:
 - LPUART_1 TX/RX : PG7/PG8 (Arduino Serial)
 - I2C1 SCL/SDA : PB8/PB7 (Arduino I2C)
 - SDMMC_1 D0/D1/D2/D3/CK/CMD: PC8/PC9/PC10/PC11/PC12/PD2
-- SPI1 SCK/MISO/MOSI : PA5/PB4/PB5 (Arduino SPI)
+- SPI1 NSS/SCK/MISO/MOSI : PA15/PA5/PB4/PB5 (Arduino SPI)
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB7
 - PWM_2_CH1 : PA0

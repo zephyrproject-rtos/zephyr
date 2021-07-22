@@ -83,6 +83,15 @@ struct nrf5_802154_data {
 
 	/* Capabilities of the network interface. */
 	enum ieee802154_hw_caps capabilities;
+
+	/* Next CSL receive time */
+	uint32_t csl_rx_time;
+
+	/* Indicates if currently processed TX frame is secured. */
+	bool tx_frame_is_secured;
+
+	/* Indicates if currently processed TX frame has dynamic data updated. */
+	bool tx_frame_mac_hdr_rdy;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

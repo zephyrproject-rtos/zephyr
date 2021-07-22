@@ -1,5 +1,5 @@
 /** @file
- * @brief Bluetooth Mesh Health faults
+ * @brief Health faults
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_HEALTH_FAULTS_H__
 
 /**
- * @brief List of specification defined Health Fault values.
- * @defgroup bt_mesh_health_faults Bluetooth Mesh Health Faults
+ * @brief List of specification defined Health fault values.
+ * @defgroup bt_mesh_health_faults Health faults
  * @ingroup bt_mesh
  * @{
  */

@@ -5,3 +5,11 @@
  */
 
 #include "acrn.dts"
+
+/ {
+	ibecc: ibecc {
+	       compatible = "intel,ibecc";
+	       label = "ibecc";
+	       status = "okay";
+	};
+};

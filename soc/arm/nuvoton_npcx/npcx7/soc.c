@@ -8,6 +8,9 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 static int soc_init(const struct device *dev)
 {

@@ -33,7 +33,7 @@ Terminology
    devices be able of saving energy independently of the the
    system. Devices will keep reference of their usage and will
    automatically be suspended or resumed. This feature is enabled via
-   the ::option:`CONFIG_PM_DEVICE_RUNTIME` Kconfig option.
+   the ::kconfig:`CONFIG_PM_DEVICE_RUNTIME` Kconfig option.
 
 Overview
 ********
@@ -58,7 +58,7 @@ System Power Management
 ***********************
 
 The kernel enters the idle state when it has nothing to schedule. If enabled via
-the :option:`CONFIG_PM` Kconfig option, the Power Management
+the :kconfig:`CONFIG_PM` Kconfig option, the Power Management
 Subsystem can put an idle system in one of the supported power states, based
 on the selected power management policy and the duration of the idle time
 allotted by the kernel.
@@ -502,16 +502,16 @@ Power Management Configuration Flags
 The Power Management features can be individually enabled and disabled using
 the following configuration flags.
 
-:option:`CONFIG_PM`
+:kconfig:`CONFIG_PM`
 
    This flag enables the power management subsystem.
 
-:option:`CONFIG_PM_DEVICE`
+:kconfig:`CONFIG_PM_DEVICE`
 
    This flag is enabled if the SOC interface and the devices support device power
    management.
 
-:option:`CONFIG_PM_DEVICE_RUNTIME`
+:kconfig:`CONFIG_PM_DEVICE_RUNTIME`
 
    This flag enables the Runtime Power Management.
 
