@@ -12,6 +12,9 @@ config SOC_MEC172X_NSZ
 
 endchoice
 
+config RTOS_TIMER
+	bool "MEC172x RTOS Timer(32KHz) as kernel timer"
+
 config SOC_MEC172X_PROC_CLK_DIV
 	int "PROC_CLK_DIV"
 	default 1

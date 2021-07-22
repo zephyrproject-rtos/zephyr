@@ -20,7 +20,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <96000000>;
+	status = "okay";
 };
 
 /* Initialize ECIA. Does not initialize child devices */
@@ -28,7 +28,7 @@
 	status = "okay";
 };
 
-&systick {
+&rtimer {
 	status = "okay";
 };
 
