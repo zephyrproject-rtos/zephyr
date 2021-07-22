@@ -13,6 +13,10 @@
 
 #include "gpio_utils.h"
 
+#define XEC_GPIO_EDGE_DLY_COUNT		8
+/* read only register in same AHB segmment for dummy writes */
+#define XEC_GPIO_DLY_ADDR		0x40080150u
+
 #define GPIO_IN_BASE(config) \
 	((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
 
@@ -211,6 +215,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	 */
 	current_pcr1 = config->pcr1_base + pin;
 	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
+	__DMB(); /* insure write completes */
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* We enable the interrupts in the EC aggregator so that the
