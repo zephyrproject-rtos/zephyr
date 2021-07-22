@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "teensy4_flexspi_nor_config.h"
+#include <flexspi_nor_config.h>
 
-#if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".boot_hdr.conf")))
 #elif defined(__ICCARM__)
@@ -41,4 +41,4 @@ const struct flexspi_nor_config_t Qspiflash_config = {
 	.blockSize = 256u * 1024u,
 	.isUniformBlockSize = false,
 };
-#endif /* XIP_BOOT_HEADER_ENABLE */
+#endif /* CONFIG_NXP_IMX_RT_BOOT_HEADER */

@@ -10,5 +10,5 @@ if(CONFIG_PINMUX)
     zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 endif()
 
-zephyr_library_sources(teensy4_flexspi_nor_config.c)
+zephyr_library_sources(flexspi_nor_config.c)
 zephyr_library_sources_ifdef(CONFIG_DEVICE_CONFIGURATION_DATA teensy4_sdram_ini_dcd.c)
