@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2021 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,13 +95,15 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 #define INTR_STATUS_REG			HPET_REG_ADDR(0x20)
 
 /* Main Counter Register */
-#define MAIN_COUNTER_REG		HPET_REG_ADDR(0xf0)
+#define MAIN_COUNTER_LOW_REG		HPET_REG_ADDR(0xf0)
+#define MAIN_COUNTER_HIGH_REG		HPET_REG_ADDR(0xf4)
 
 /* Timer 0 Configuration and Capabilities register */
 #define TIMER0_CONF_REG			HPET_REG_ADDR(0x100)
 
 /* Timer 0 Comparator Register */
-#define TIMER0_COMPARATOR_REG		HPET_REG_ADDR(0x108)
+#define TIMER0_COMPARATOR_LOW_REG	HPET_REG_ADDR(0x108)
+#define TIMER0_COMPARATOR_HIGH_REG	HPET_REG_ADDR(0x10c)
 
 /**
  * @brief Setup memory mappings needed to access HPET registers.
@@ -119,9 +121,17 @@ static inline void hpet_mmio_init(void)
  *
  * @return Value of Main Counter
  */
-static inline uint32_t hpet_counter_get(void)
+static inline uint64_t hpet_counter_get(void)
 {
-	return sys_read32(MAIN_COUNTER_REG);
+	uint32_t high;
+	uint32_t low;
+
+	do {
+		high = sys_read32(MAIN_COUNTER_HIGH_REG);
+		low = sys_read32(MAIN_COUNTER_LOW_REG);
+	} while (high != sys_read32(MAIN_COUNTER_HIGH_REG));
+
+	return ((uint64_t)high << 32) | low;
 }
 
 /**
@@ -208,9 +218,14 @@ static inline void hpet_timer_conf_set(uint32_t val)
  *
  * @param val Value to be written to the register
  */
-static inline void hpet_timer_comparator_set(uint32_t val)
+static inline void hpet_timer_comparator_set(uint64_t val)
 {
-	sys_write32(val, TIMER0_COMPARATOR_REG);
+#if CONFIG_X86_64
+	sys_write64(val, TIMER0_COMPARATOR_LOW_REG);
+#else
+	sys_write32((uint32_t)val, TIMER0_COMPARATOR_LOW_REG);
+	sys_write32((uint32_t)(val >> 32), TIMER0_COMPARATOR_HIGH_REG);
+#endif
 }
 #endif /* HPET_USE_CUSTOM_REG_ACCESS_FUNCS */
 
@@ -224,21 +239,17 @@ static inline void hpet_timer_comparator_set(uint32_t val)
 #define HPET_CMP_MIN_DELAY		(1000)
 #endif
 
-#define MAX_TICKS			0x7FFFFFFFUL
-
 static __pinned_bss struct k_spinlock lock;
-static __pinned_bss unsigned int last_count;
+static __pinned_bss uint64_t last_count;
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 static __pinned_bss unsigned int cyc_per_tick;
-static __pinned_bss unsigned int max_ticks;
 #else
 #define cyc_per_tick			\
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
-#define max_ticks			\
-	((MAX_TICKS - cyc_per_tick) / cyc_per_tick)
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
+
+#define HPET_MAX_TICKS ((int32_t)0x7fffffff)
 
 __isr
 static void hpet_isr(const void *arg)
@@ -247,7 +258,7 @@ static void hpet_isr(const void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	uint32_t now = hpet_counter_get();
+	uint64_t now = hpet_counter_get();
 
 #if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
 	/*
@@ -265,27 +276,27 @@ static void hpet_isr(const void *arg)
 		 * on the other CPU, despite the HPET being
 		 * theoretically a global device.
 		 */
-		int32_t diff = (int32_t)(now - last_count);
+		int64_t diff = (int64_t)(now - last_count);
 
 		if (last_count && diff < 0) {
 			now = last_count;
 		}
 	}
-	uint32_t dticks = (now - last_count) / cyc_per_tick;
+	uint32_t dticks = (uint32_t)((now - last_count) / cyc_per_tick);
 
-	last_count += dticks * cyc_per_tick;
+	last_count += (uint64_t)dticks * cyc_per_tick;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint32_t next = last_count + cyc_per_tick;
+		uint64_t next = last_count + cyc_per_tick;
 
-		if ((int32_t)(next - now) < HPET_CMP_MIN_DELAY) {
-			next += cyc_per_tick;
+		if ((int64_t)(next - now) < HPET_CMP_MIN_DELAY) {
+			next = now + HPET_CMP_MIN_DELAY;
 		}
 		hpet_timer_comparator_set(next);
 	}
 
 	k_spin_unlock(&lock, key);
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	sys_clock_announce(dticks);
 }
 
 __pinned_func
@@ -326,11 +337,7 @@ int sys_clock_driver_init(const struct device *dev)
 	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / hpet_counter_clk_period_get());
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	max_ticks = (MAX_TICKS - cyc_per_tick) / cyc_per_tick;
 #endif
-
-	last_count = hpet_counter_get();
 
 	/* Note: we set the legacy routing bit, because otherwise
 	 * nothing in Zephyr disables the PIT which then fires
@@ -345,11 +352,16 @@ int sys_clock_driver_init(const struct device *dev)
 	reg = hpet_timer_conf_get();
 	reg &= ~TIMER_CONF_PERIODIC;
 	reg &= ~TIMER_CONF_FSB_EN;
-	reg |= TIMER_CONF_MODE32;
+	reg &= ~TIMER_CONF_MODE32;
 	reg |= TIMER_CONF_INT_ENABLE;
 	hpet_timer_conf_set(reg);
 
-	hpet_timer_comparator_set(last_count + cyc_per_tick);
+	last_count = hpet_counter_get();
+	if (cyc_per_tick >= HPET_CMP_MIN_DELAY) {
+		hpet_timer_comparator_set(last_count + cyc_per_tick);
+	} else {
+		hpet_timer_comparator_set(last_count + HPET_CMP_MIN_DELAY);
+	}
 
 	return 0;
 }
@@ -378,15 +390,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = ticks == K_TICKS_FOREVER ? max_ticks : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)max_ticks);
+	ticks = ticks == K_TICKS_FOREVER ? HPET_MAX_TICKS : ticks;
+	ticks = CLAMP(ticks - 1, 0, HPET_MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t now = hpet_counter_get(), cyc, adj;
-	uint32_t max_cyc = max_ticks * cyc_per_tick;
+	uint64_t now = hpet_counter_get(), cyc, adj;
+	uint64_t max_cyc = (uint64_t)HPET_MAX_TICKS * cyc_per_tick;
 
 	/* Round up to next tick boundary. */
-	cyc = ticks * cyc_per_tick;
+	cyc = (uint64_t)ticks * cyc_per_tick;
 	adj = (now - last_count) + (cyc_per_tick - 1);
 	if (cyc <= max_cyc - adj) {
 		cyc += adj;
@@ -396,8 +408,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	cyc = (cyc / cyc_per_tick) * cyc_per_tick;
 	cyc += last_count;
 
-	if ((cyc - now) < HPET_CMP_MIN_DELAY) {
-		cyc += cyc_per_tick;
+	if ((int64_t)(cyc - now) < HPET_CMP_MIN_DELAY) {
+		cyc = now + HPET_CMP_MIN_DELAY;
 	}
 
 	hpet_timer_comparator_set(cyc);
@@ -413,7 +425,8 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = (hpet_counter_get() - last_count) / cyc_per_tick;
+	uint64_t now = hpet_counter_get();
+	uint32_t ret = (uint32_t)((now - last_count) / cyc_per_tick);
 
 	k_spin_unlock(&lock, key);
 	return ret;
@@ -422,7 +435,7 @@ uint32_t sys_clock_elapsed(void)
 __pinned_func
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return hpet_counter_get();
+	return (uint32_t)hpet_counter_get();
 }
 
 __pinned_func
