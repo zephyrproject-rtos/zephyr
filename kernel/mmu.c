@@ -624,7 +624,15 @@ size_t k_mem_free_get(void)
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
 
 	key = k_spin_lock(&z_mm_lock);
+#ifdef CONFIG_DEMAND_PAGING
+	if (z_free_page_count > CONFIG_DEMAND_PAGING_PAGE_FRAMES_RESERVE) {
+		ret = z_free_page_count - CONFIG_DEMAND_PAGING_PAGE_FRAMES_RESERVE;
+	} else {
+		ret = 0;
+	}
+#else
 	ret = z_free_page_count;
+#endif
 	k_spin_unlock(&z_mm_lock, key);
 
 	return ret * (size_t)CONFIG_MMU_PAGE_SIZE;
