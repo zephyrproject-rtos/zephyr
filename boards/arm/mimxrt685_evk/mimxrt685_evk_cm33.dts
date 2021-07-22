@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt6xx.dtsi>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP MIMXRT685-EVK board";
@@ -21,6 +22,10 @@
 		usart-0 = &flexcomm0;
 		/* For pwm test suites */
 		pwm-0 = &sc_timer;
+		pwm-led0 = &green_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
 	};
 
 	chosen {
@@ -57,6 +62,25 @@
 		red_led: led_3 {
 			gpios = <&gpio0 31 0>;
 			label = "User LED_RED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&sc_timer 0 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+			status = "okay";
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Blue PWM LED";
+			status = "okay";
+		};
+		red_pwm_led: red_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+			status = "disabled";
 		};
 	};
 
