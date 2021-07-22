@@ -62,4 +62,8 @@ config PWM_MCUX_SCTIMER
 	default y
 	depends on PWM
 
+config WDT_MCUX_WWDT
+	default y
+	depends on WATCHDOG
+
 endif # SOC_MIMXRT685S_CM33

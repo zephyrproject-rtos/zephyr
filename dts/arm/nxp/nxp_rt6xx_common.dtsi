@@ -250,6 +250,24 @@
 		label = "SC_TIMER";
 		#pwm-cells = <2>;
 	};
+
+	wwdt0: watchdog@e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xe000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_0";
+	};
+
+	wwdt1: watchdog@2e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x2e000 0x1000>;
+		interrupts = <52 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_1";
+	};
 };
 
 &nvic {

@@ -26,6 +26,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -262,6 +263,10 @@ i2s1: &flexcomm3 {
 	 * memory.
 	 */
 	dma-channels = <20>;
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
 
