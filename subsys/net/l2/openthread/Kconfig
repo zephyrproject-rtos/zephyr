@@ -233,23 +233,11 @@ config OPENTHREAD_COPROCESSOR_RCP
 	bool "RCP - Radio Co-Processor"
 endchoice
 
-config OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME
-	string "UART device to use for Co-Processor SPINEL"
-	default "UART_0"
-	help
-	  UART device to use for Co-Processor SPINEL.
-
 config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
 	int "Set Co-Processor UART ring buffer size"
 	default 4096
 	help
 	  TX buffer size for the OpenThread Co-Processor UART.
-
-config OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
-	bool "Run SPINEL over USB-ACM"
-	depends on USB_CDC_ACM
-	help
-	  Is the SPINEL device a USB-CDC-ACM device.
 
 config OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE
 	string "Path to vendor hook source file"

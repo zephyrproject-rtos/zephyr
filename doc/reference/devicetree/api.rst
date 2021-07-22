@@ -339,6 +339,8 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,ot-uart
+     - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,shell-uart
      - Sets default :kconfig:`CONFIG_UART_SHELL_ON_DEV_NAME`
    * - zephyr,sram
