@@ -44,7 +44,7 @@
 #elif defined(CONFIG_BOARD_NUCLEO_H723ZG)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(usart2))
 #else
-#define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#define UART_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
 #endif
 
 void init_test(void);
