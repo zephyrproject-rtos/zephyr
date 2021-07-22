@@ -216,6 +216,18 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
 }
 
 /**
+ * @brief Determine used space in a ring buffer.
+ *
+ * @param buf Address of ring buffer.
+ *
+ * @return Ring buffer space used (in 32-bit words or bytes).
+ */
+static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
+{
+	return buf->tail - buf->head;
+}
+
+/**
  * @brief Write a data item to a ring buffer.
  *
  * This routine writes a data item to ring buffer @a buf. The data item
@@ -405,6 +417,34 @@ int ring_buf_get_finish(struct ring_buf *buf, uint32_t size);
  * @retval Number of bytes written to the output buffer.
  */
 uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
+
+/**
+ * @brief Peek at data from a ring buffer.
+ *
+ * This routine reads data from a ring buffer @a buf without removal.
+ *
+ * @warning
+ * Use cases involving multiple reads of the ring buffer must prevent
+ * concurrent read operations, either by preventing all readers from
+ * being preempted or by using a mutex to govern reads to the ring buffer.
+ *
+ * @warning
+ * Ring buffer instance should not mix byte access and  item mode
+ * (calls prefixed with ring_buf_item_).
+ *
+ * @warning
+ * Multiple calls to peek will result in the same data being 'peeked'
+ * multiple times. To remove data, use either @ref ring_buf_get or
+ * @ref ring_buf_get_claim followed by @ref ring_buf_get_finish with a
+ * non-zero `size`.
+ *
+ * @param buf  Address of ring buffer.
+ * @param data Address of the output buffer. Cannot be NULL.
+ * @param size Data size (in bytes).
+ *
+ * @retval Number of bytes written to the output buffer.
+ */
+uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
 
 /**
  * @}
