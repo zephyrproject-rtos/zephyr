@@ -22,6 +22,7 @@
 #include <irq.h>
 #include <arch/x86/mmustructs.h>
 #include <arch/x86/thread_stack.h>
+#include <linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,6 +249,7 @@ extern void arch_irq_disable(unsigned int irq);
 
 extern uint32_t sys_clock_cycle_get_32(void);
 
+__pinned_func
 static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return sys_clock_cycle_get_32();
@@ -275,6 +277,7 @@ static ALWAYS_INLINE uint32_t z_do_read_cpu_timestamp32(void)
  *  @brief read timestamp register ensuring serialization
  */
 
+__pinned_func
 static inline uint64_t z_tsc_read(void)
 {
 	union {
