@@ -66,7 +66,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	struct out_buffer rt_buf = { \
 		.buf = runtime_buf, .idx = 0, .size = sizeof(runtime_buf) \
 	}; \
-	int rc = cbprintf_package(NULL, ALIGN_OFFSET, fmt, __VA_ARGS__); \
+	int rc = cbprintf_package(NULL, ALIGN_OFFSET, 0, fmt, __VA_ARGS__); \
 	zassert_true(rc > 0, "cbprintf_package() returned %d", rc); \
 	int len = rc; \
 	/* Aligned so the package is similar to the static one. */ \
@@ -74,7 +74,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 			rt_package[len + ALIGN_OFFSET]; \
 	memset(rt_package, 0, len + ALIGN_OFFSET); \
 	pkg = &rt_package[ALIGN_OFFSET]; \
-	rc = cbprintf_package(pkg, len, fmt, __VA_ARGS__); \
+	rc = cbprintf_package(pkg, len, 0, fmt, __VA_ARGS__); \
 	zassert_equal(rc, len, "cbprintf_package() returned %d, expected %d", \
 		      rc, len); \
 	dump("runtime", pkg, len); \
@@ -82,13 +82,13 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	struct out_buffer st_buf = { \
 		.buf = static_buf, .idx = 0, .size = sizeof(static_buf) \
 	}; \
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, fmt, __VA_ARGS__); \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, 0, fmt, __VA_ARGS__); \
 	zassert_true(len > 0, "CBPRINTF_STATIC_PACKAGE() returned %d", len); \
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
 		package[len + ALIGN_OFFSET];\
 	int outlen; \
 	pkg = &package[ALIGN_OFFSET]; \
-	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, fmt, __VA_ARGS__);\
+	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, 0, fmt, __VA_ARGS__);\
 	zassert_equal(len, outlen, NULL); \
 	dump("static", pkg, len); \
 	unpack("static", &st_buf, pkg, len); \
