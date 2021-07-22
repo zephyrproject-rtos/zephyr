@@ -827,6 +827,12 @@ int do_write_op_json(struct lwm2m_message *msg)
 
 	/* PARSE base name "bn" */
 	json_next_token(&msg->in, &fd);
+
+	if (fd.value_len >= sizeof(base_name)) {
+		LOG_ERR("Base name too long");
+		return -EINVAL;
+	}
+
 	/* TODO: validate name == "bn" */
 	if (buf_read(base_name, fd.value_len,
 		     CPKT_BUF_READ(msg->in.in_cpkt),
@@ -835,9 +841,13 @@ int do_write_op_json(struct lwm2m_message *msg)
 		return -EINVAL;
 	}
 
-	/* skip to elements */
+	base_name[fd.value_len] = '\0';
+
+	/* Relative name is optional - preinitialize full name with base name */
+	snprintk(full_name, sizeof(full_name), "%s", base_name);
+
+	/* skip to elements ("e")*/
 	json_next_token(&msg->in, &fd);
-	/* TODO: validate name == "bv" */
 
 	while (json_next_token(&msg->in, &fd)) {
 
@@ -845,29 +855,46 @@ int do_write_op_json(struct lwm2m_message *msg)
 			continue;
 		}
 
+		if (fd.name_len > sizeof(value)) {
+			LOG_ERR("Token value too long");
+			ret = -EINVAL;
+			break;
+		}
+
 		if (buf_read(value, fd.name_len,
 			     CPKT_BUF_READ(msg->in.in_cpkt),
 			     &fd.name_offset) < 0) {
 			LOG_ERR("Error parsing name!");
-			continue;
+			ret = -EINVAL;
+			break;
 		}
 
-		/* handle resource name */
 		if (value[0] == 'n') {
-			/* reset values */
-			created = 0U;
+			/* handle resource name */
+			if (fd.value_len >= sizeof(value)) {
+				LOG_ERR("Relative name too long");
+				ret = -EINVAL;
+				break;
+			}
 
 			/* get value for relative path */
 			if (buf_read(value, fd.value_len,
 				     CPKT_BUF_READ(msg->in.in_cpkt),
 				     &fd.value_offset) < 0) {
 				LOG_ERR("Error parsing relative path!");
-				continue;
+				ret = -EINVAL;
+				break;
 			}
+
+			value[fd.value_len] = '\0';
 
 			/* combine base_name + name */
 			snprintk(full_name, sizeof(full_name), "%s%s",
 				 base_name, value);
+		} else {
+			/* handle resource value */
+			/* reset values */
+			created = 0U;
 
 			/* parse full_name into path */
 			ret = parse_path(full_name, strlen(full_name),
@@ -939,16 +966,14 @@ int do_write_op_json(struct lwm2m_message *msg)
 				ret = -ENOENT;
 				break;
 			}
-		} else if (res && res_inst) {
-			/* handle value assignment */
+
+			/* Write the resource value */
 			ret = lwm2m_write_handler(obj_inst, res, res_inst,
 						  obj_field, msg);
 			if (orig_path.level >= 3U && ret < 0) {
 				/* return errors on a single write */
 				break;
 			}
-		} else {
-			/* complain about error? */
 		}
 	}
 
