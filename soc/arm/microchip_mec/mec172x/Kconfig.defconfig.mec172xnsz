@@ -12,4 +12,11 @@ config UART_NS16550
 	default y
 	depends on SERIAL
 
+config GPIO
+	default y
+
+config GPIO_XEC_V2
+	default y
+	depends on GPIO
+
 endif # SOC_MEC172X_NSZ
