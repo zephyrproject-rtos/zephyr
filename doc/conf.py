@@ -37,7 +37,7 @@ except ImportError:
 
 project = "Zephyr Project"
 copyright = "2015-2021 Zephyr Project members and individual contributors"
-author = "The Zephyr Project"
+author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
 with open(ZEPHYR_BASE / "VERSION") as f:
@@ -61,6 +61,8 @@ with open(ZEPHYR_BASE / "VERSION") as f:
         version = ".".join((major, minor, patch))
         if extra:
             version += "-" + extra
+
+release = version
 
 # -- General configuration ------------------------------------------------
 
@@ -150,11 +152,25 @@ html_context = {
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-    "preamble": r"\setcounter{tocdepth}{2}",
+    "papersize": "a4paper",
+    "maketitle": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "title.tex").read(),
+    "preamble": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "preamble.tex").read(),
+    "fontpkg": r"\usepackage{charter}",
+    "sphinxsetup": ",".join(
+        (
+            # NOTE: colors match those found in light.css stylesheet
+            "verbatimwithframe=false",
+            "VerbatimColor={HTML}{f0f2f4}",
+            "InnerLinkColor={HTML}{2980b9}",
+            "warningBgColor={HTML}{e9a499}",
+            "warningborder=0pt",
+            r"HeaderFamily=\rmfamily\bfseries",
+        )
+    ),
 }
-
+latex_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo-latex.pdf")
 latex_documents = [
-    ("index-tex", "zephyr.tex", "Zephyr Project Documentation", "many", "manual"),
+    ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
 ]
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
