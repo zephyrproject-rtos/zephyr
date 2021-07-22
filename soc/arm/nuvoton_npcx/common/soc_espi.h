@@ -7,6 +7,9 @@
 #ifndef _NUVOTON_NPCX_SOC_ESPI_H_
 #define _NUVOTON_NPCX_SOC_ESPI_H_
 
+#include <device.h>
+#include <sys/util.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
