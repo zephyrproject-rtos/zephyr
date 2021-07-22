@@ -73,6 +73,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_json.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_util.h"
 
 #define T_OBJECT_BEGIN	BIT(0)
 #define T_OBJECT_END	BIT(1)
@@ -528,23 +529,17 @@ static size_t put_objlnk(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t read_number(struct lwm2m_input_context *in,
-			  int64_t *value1, int64_t *value2,
-			  bool accept_sign, bool accept_dot)
+static size_t read_int(struct lwm2m_input_context *in,
+		       int64_t *value, bool accept_sign)
 {
 	struct json_in_formatter_data *fd;
-	int64_t *counter = value1;
 	uint8_t *buf;
 	size_t i = 0;
 	bool neg = false;
-	bool dot_found = false;
 	char c;
 
 	/* initialize values to 0 */
-	*value1 = 0;
-	if (value2) {
-		*value2 = 0;
-	}
+	*value = 0;
 
 	fd = engine_get_in_user_data(in);
 	if (!fd) {
@@ -556,12 +551,8 @@ static size_t read_number(struct lwm2m_input_context *in,
 		c = *(buf + i);
 		if (c == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (c == '.' && i > 0 && accept_dot && !dot_found &&
-			   value2) {
-			dot_found = true;
-			counter = value2;
 		} else if (isdigit(c)) {
-			*counter = *counter * 10 + (c - '0');
+			*value = *value * 10 + (c - '0');
 		} else {
 			/* anything else stop reading */
 			break;
@@ -571,7 +562,7 @@ static size_t read_number(struct lwm2m_input_context *in,
 	}
 
 	if (neg) {
-		*value1 = -*value1;
+		*value = -*value;
 	}
 
 	return i;
@@ -579,7 +570,7 @@ static size_t read_number(struct lwm2m_input_context *in,
 
 static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
-	return read_number(in, value, NULL, true, true);
+	return read_int(in, value, true);
 }
 
 static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
@@ -587,7 +578,7 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 	int64_t tmp = 0;
 	size_t len = 0;
 
-	len = read_number(in, &tmp, NULL, true, true);
+	len = read_int(in, &tmp, true);
 	if (len > 0) {
 		*value = (int32_t)tmp;
 	}
@@ -624,13 +615,45 @@ static size_t get_string(struct lwm2m_input_context *in,
 static size_t get_float32fix(struct lwm2m_input_context *in,
 			     float32_value_t *value)
 {
-	int64_t tmp1, tmp2;
-	size_t len;
+	struct json_in_formatter_data *fd;
 
-	len = read_number(in, &tmp1, &tmp2, true, true);
-	if (len > 0) {
-		value->val1 = (int32_t)tmp1;
-		value->val2 = (int32_t)tmp2;
+	size_t i = 0, len = 0;
+	bool has_dot = false;
+	uint8_t tmp, buf[24];
+	uint8_t *json_buf;
+
+	fd = engine_get_in_user_data(in);
+	if (!fd) {
+		return 0;
+	}
+
+	json_buf = in->in_cpkt->data + fd->value_offset;
+	while (*(json_buf + len) && len < fd->value_len) {
+		tmp = *(json_buf + len);
+
+		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) ||
+		    isdigit(tmp)) {
+			len++;
+
+			/* Copy only if it fits into provided buffer - we won't
+			 * get better precision anyway.
+			 */
+			if (i < sizeof(buf) - 1) {
+				buf[i++] = tmp;
+			}
+
+			if (tmp == '.') {
+				has_dot = true;
+			}
+		} else {
+			break;
+		}
+	}
+
+	buf[i] = '\0';
+
+	if (lwm2m_atof32(buf, value) != 0) {
+		LOG_ERR("Failed to parse float value");
 	}
 
 	return len;
@@ -681,13 +704,13 @@ static size_t get_objlnk(struct lwm2m_input_context *in,
 	/* Store the original value offset. */
 	value_offset = fd->value_offset;
 
-	len = read_number(in, &tmp, NULL, false, false);
+	len = read_int(in, &tmp, false);
 	value->obj_id = (uint16_t)tmp;
 
 	len++;  /* +1 for ':' delimeter. */
 	fd->value_offset += len;
 
-	len += read_number(in, &tmp, NULL, false, false);
+	len += read_int(in, &tmp, false);
 	value->obj_inst = (uint16_t)tmp;
 
 	/* Restore the original value offset. */
