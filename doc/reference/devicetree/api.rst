@@ -319,7 +319,7 @@ device.
      - Flash partition that the Zephyr image's text section should be linked
        into
    * - zephyr,console
-     - Sets default :kconfig:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
+     - Sets UART device used by console driver
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
