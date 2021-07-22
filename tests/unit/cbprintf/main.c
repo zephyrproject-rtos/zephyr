@@ -102,6 +102,10 @@
 #define PKG_ALIGN_OFFSET sizeof(void *)
 #endif
 
+#if (VIA_TWISTER & 0x2000) != 0
+#define PACKAGE_FLAGS CBPRINTF_PACKAGE_ADD_STRING_IDXS
+#endif
+
 #endif /* VIA_TWISTER */
 
 /* Can't use IS_ENABLED on symbols that don't start with CONFIG_
@@ -121,6 +125,10 @@
 
 #if AVOID_C_GENERIC
 #define Z_C_GENERIC 0
+#endif
+
+#ifndef PACKAGE_FLAGS
+#define PACKAGE_FLAGS 0
 #endif
 
 #include <sys/cbprintf.h>
@@ -231,7 +239,7 @@ static int prf(char *static_package_str, const char *format, ...)
 	rv = vsnprintf(buf, sizeof(buf), format, ap);
 #else
 #if USE_PACKAGED
-	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
+	rv = cbvprintf_package(packaged, sizeof(packaged), PACKAGE_FLAGS, format, ap);
 	if (rv >= 0) {
 		rv = cbpprintf(out, &outbuf, packaged);
 		if (rv == 0 && static_package_str) {
@@ -259,11 +267,11 @@ static int rawprf(const char *format, ...)
 	uint8_t *pkg_buf = &packaged[PKG_ALIGN_OFFSET];
 
 	va_copy(ap2, ap);
-	len = cbvprintf_package(NULL, PKG_ALIGN_OFFSET, format, ap2);
+	len = cbvprintf_package(NULL, PKG_ALIGN_OFFSET, PACKAGE_FLAGS, format, ap2);
 	va_end(ap2);
 
 	if (len >= 0) {
-		rv = cbvprintf_package(pkg_buf, len, format, ap);
+		rv = cbvprintf_package(pkg_buf, len, PACKAGE_FLAGS, format, ap);
 	} else {
 		rv = len;
 	}
@@ -293,17 +301,17 @@ static int rawprf(const char *format, ...)
 			.buf = _buf, .size = ARRAY_SIZE(_buf), .idx = 0 \
 		}; \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _len, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
 			package[_len + PKG_ALIGN_OFFSET]; \
 		int st_pkg_rv; \
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len - 1, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, -ENOSPC, NULL); \
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, _len, NULL); \
 		rv = cbpprintf(out, &package_buf, &package[PKG_ALIGN_OFFSET]); \
 		if (rv >= 0) { \
@@ -1199,7 +1207,7 @@ static void test_cbprintf_package(void)
 	char fmt[] = "/%i/";	/* not const */
 
 	/* Verify we can calculate length without storing */
-	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, fmt, 3);
+	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, PACKAGE_FLAGS, fmt, 3);
 	zassert_true(rc > sizeof(int), NULL);
 
 	/* Capture the base package information for future tests. */
@@ -1210,12 +1218,12 @@ static void test_cbprintf_package(void)
 	/* Verify we get same length when storing. Pass buffer which may be
 	 * unaligned. Same alignment offset was used for space calculation.
 	 */
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, len, NULL);
 
 	/* Verify we get an error if can't store */
 	len -= 1;
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, -ENOSPC, NULL);
 }
 

@@ -259,7 +259,9 @@ extern "C" {
  *
  * @param _arg argument.
  */
-#define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _align_offset, _max, _arg) do { \
+#define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _align_offset, _max, \
+			     _cfg_flags, _s_idx, _s_buf, _arg) \
+do { \
 	BUILD_ASSERT(!((sizeof(double) < VA_STACK_ALIGN(long double)) && \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
@@ -269,6 +271,9 @@ extern "C" {
 		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
+	if (Z_CBPRINTF_IS_PCHAR(_arg)) { \
+		_s_buf[_s_idx++] = _idx / sizeof(int); \
+	} \
 	if (_buf && _idx < (int)_max) { \
 		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
 	} \
@@ -283,7 +288,8 @@ extern "C" {
  * @param arg argument.
  */
 #define Z_CBPRINTF_PACK_ARG(arg) \
-	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, arg)
+	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, _flags, \
+			     _s_cnt, _s_buffer, arg)
 
 /** @brief Package descriptor.
  *
@@ -294,6 +300,7 @@ extern "C" {
 struct z_cbprintf_desc {
 	uint8_t len;
 	uint8_t str_cnt;
+	uint8_t ro_str_cnt;
 };
 
 /** @brief Package header. */
@@ -325,10 +332,12 @@ union z_cbprintf_hdr {
  * @param _align_offset Input buffer alignment offset in words. Where offset 0
  * means that buffer is aligned to CBPRINTF_PACKAGE_ALIGNMENT.
  *
+ * @param _flags Option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param ... String with variable list of arguments.
  */
 #define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
-					  ... /* fmt, ... */) \
+					  _flags, ... /* fmt, ... */) \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
@@ -342,9 +351,13 @@ do { \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			  "Buffer must be aligned.");)) \
+	bool str_idxs = _flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
 	uint8_t *_pbuf = buf; \
+	uint8_t _s_cnt = 0; \
+	uint16_t _s_buffer[16]; \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
+	int _total_len = 0; \
 	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
@@ -357,14 +370,24 @@ do { \
 	_pkg_offset += sizeof(union z_cbprintf_hdr); \
 	/* Pack remaining arguments */\
 	FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
+	_total_len = _pkg_len; \
+	if (str_idxs) {\
+		_total_len += _s_cnt; \
+		if (_pbuf) { \
+			for (int i = 0; i < _s_cnt; i++) { \
+				_pbuf[_pkg_len + i] = _s_buffer[i]; \
+			} \
+		} \
+	} \
 	/* Store length */ \
-	_outlen = (_pkg_len > (int)_pmax) ? -ENOSPC : _pkg_len; \
+	_outlen = (_total_len > (int)_pmax) ? -ENOSPC : _total_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
 		union z_cbprintf_hdr hdr = { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
+				.ro_str_cnt = str_idxs ? _s_cnt : (uint8_t)0, \
 			} \
 		}; \
 		*_len_loc = hdr; \
@@ -373,19 +396,19 @@ do { \
 } while (0)
 
 #if Z_C_GENERIC
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
 				  ... /* fmt, ... */) \
 	Z_CBPRINTF_STATIC_PACKAGE_GENERIC(packaged, inlen, outlen, \
-					  align_offset, __VA_ARGS__)
+					  align_offset, flags, __VA_ARGS__)
 #else
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
 				  ... /* fmt, ... */) \
 do { \
 	/* Small trick needed to avoid warning on always true */ \
 	if (((uintptr_t)packaged + 1) != 1) { \
-		outlen = cbprintf_package(packaged, inlen, __VA_ARGS__); \
+		outlen = cbprintf_package(packaged, inlen, flags, __VA_ARGS__); \
 	} else { \
-		outlen = cbprintf_package(NULL, align_offset, __VA_ARGS__); \
+		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
 	} \
 } while (0)
 #endif /* Z_C_GENERIC */
