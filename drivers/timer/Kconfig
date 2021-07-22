@@ -80,7 +80,6 @@ config APIC_TIMER_IRQ_PRIORITY
 
 config HPET_TIMER
 	bool "HPET timer"
-	depends on X86
 	select IOAPIC if X86
 	select LOAPIC if X86
 	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
