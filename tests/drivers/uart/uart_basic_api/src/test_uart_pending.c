@@ -93,7 +93,12 @@ static void uart_pending_callback(const struct device *dev, void *user_data)
 
 static int test_pending(void)
 {
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+
+	if (!device_is_ready(uart_dev)) {
+		TC_PRINT("UART device not ready\n");
+		return TC_FAIL;
+	}
 
 	/*
 	 * Set IRQ callback function to handle RX IRQ.
