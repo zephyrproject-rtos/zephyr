@@ -103,3 +103,7 @@
 	dma-channels = <20>;
 	status = "okay";
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
