@@ -1227,6 +1227,146 @@ static void test_cbprintf_package(void)
 	zassert_equal(rc, -ENOSPC, NULL);
 }
 
+/* Test using @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS flag.
+ * Note that only static packaging is tested here because ro string detection
+ * does not work on host testing.
+ */
+static void test_cbprintf_package_rw_string_indexes(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	if (!Z_C_GENERIC) {
+		/* runtime packaging will not detect ro strings. */
+		return;
+	}
+
+	int len0, len1;
+	static const char *test_str = "test %d %s";
+	static const char *test_str1 = "lorem ipsum";
+	uint8_t str_idx;
+	char *addr;
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len0, 0, 0, test_str, 100, test_str1);
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len1, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+	/* package with string indexes will contain two more bytes holding indexes
+	 * of string parameter locations.
+	 */
+	zassert_equal(len0 + 2, len1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package0[len0];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package1[len1];
+
+	CBPRINTF_STATIC_PACKAGE(package0, sizeof(package0), len0, 0, 0,
+				test_str, 100, test_str1);
+	CBPRINTF_STATIC_PACKAGE(package1, sizeof(package1), len1, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
+	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
+
+	/* Compare descriptor content. Second package has one ro string index. */
+	zassert_equal(desc0->ro_str_cnt, 0, NULL);
+	zassert_equal(desc1->ro_str_cnt, 2, NULL);
+	zassert_equal(len0 + 2, len1, NULL);
+
+	int *p = (int *)package1;
+
+	str_idx = package1[len0];
+	addr = *(char **)&p[str_idx];
+	zassert_equal(addr, test_str, NULL);
+
+	str_idx = package1[len0 + 1];
+	addr = *(char **)&p[str_idx];
+	zassert_equal(addr, test_str1, NULL);
+}
+
+static int fsc_package_cb(int c, void *ctx)
+{
+	char **p = ctx;
+
+	(*p)[0] = c;
+	*p = *p + 1;
+
+	return c;
+}
+
+/* Test for validating convesion to fully self-contained package. */
+static void test_cbprintf_fsc_package(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	if (!Z_C_GENERIC) {
+		/* runtime packaging will not detect ro strings. */
+		return;
+	}
+
+	char test_str[] = "test %d %s";
+	char *test_str1 = "lorem ipsum";
+	char exp_str0[256];
+	char exp_str1[256];
+	char out_str[256];
+	char *pout;
+	int len;
+	int fsc_len;
+	int err;
+
+	snprintf(exp_str0, sizeof(exp_str0), test_str, 100, test_str1);
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+
+	CBPRINTF_STATIC_PACKAGE(package, sizeof(package), len, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	/* Get length of fsc package. */
+	fsc_len = cbprintf_fsc_package(package, len, NULL, 0);
+
+	int exp_len = len + (int)strlen(test_str) + 1 + (int)strlen(test_str1) + 1;
+
+	zassert_equal(exp_len, fsc_len, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) fsc_package[fsc_len];
+
+	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len - 1);
+	zassert_equal(err, -ENOSPC, NULL);
+
+	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len);
+	zassert_equal(err, fsc_len, NULL);
+
+	/* Now overwrite a char in original string, confirm that fsc package
+	 * contains string without that change because ro string is copied into
+	 * the package.
+	 */
+	test_str[0] = 'w';
+	snprintf(exp_str1, sizeof(exp_str1), test_str, 100, test_str1);
+
+	pout = out_str;
+	cbpprintf(fsc_package_cb, &pout, package);
+	*pout = '\0';
+
+	zassert_equal(strcmp(out_str, exp_str1), 0, NULL);
+	zassert_true(strcmp(exp_str0, exp_str1) != 0, NULL);
+
+	/* FSC package contains original content. */
+	pout = out_str;
+	cbpprintf(fsc_package_cb, &pout, fsc_package);
+	*pout = '\0';
+	zassert_equal(strcmp(out_str, exp_str0), 0, NULL);
+}
+
 static void test_cbpprintf(void)
 {
 	if (!ENABLED_USE_PACKAGED) {
@@ -1324,6 +1464,8 @@ void test_main(void)
 			 ztest_unit_test(test_libc_substs),
 			 ztest_unit_test(test_cbprintf_package),
 			 ztest_unit_test(test_cbpprintf),
+			 ztest_unit_test(test_cbprintf_package_rw_string_indexes),
+			 ztest_unit_test(test_cbprintf_fsc_package),
 			 ztest_unit_test(test_nop)
 			 );
 	ztest_run_test_suite(test_prf);
