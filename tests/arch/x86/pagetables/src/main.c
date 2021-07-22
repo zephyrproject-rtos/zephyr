@@ -80,7 +80,13 @@ void test_ram_perms(void)
 
 	pentry_t entry, flags, expected;
 
-	for (pos = Z_KERNEL_VIRT_START; pos < Z_KERNEL_VIRT_END;
+#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	const uint8_t *mem_range_end = Z_KERNEL_VIRT_END;
+#else
+	const uint8_t *mem_range_end = (uint8_t *)lnkr_pinned_end;
+#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+
+	for (pos = Z_KERNEL_VIRT_START; pos < mem_range_end;
 	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			/* We have another test specifically for NULL page */
