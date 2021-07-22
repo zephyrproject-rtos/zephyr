@@ -60,26 +60,6 @@
 #define TIMER_CONF_FSB_EN		BIT(14) /* FSB interrupt delivery   */
 						/* enable                   */
 
-/*
- * The following MMIO initialization and register access functions
- * should work on generic x86 hardware. If the targeted SoC requires
- * special handling of HPET registers, these functions will need to be
- * implemented in the SoC layer by first defining the macro
- * HPET_USE_CUSTOM_REG_ACCESS_FUNCS in soc.h to signal such intent.
- *
- * This is a list of functions which must be implemented in the SoC
- * layer:
- *   void hpet_mmio_init(void)
- *   uint32_t hpet_counter_get(void)
- *   uint32_t hpet_counter_clk_period_get(void)
- *   uint32_t hpet_gconf_get(void)
- *   void hpet_gconf_set(uint32_t val)
- *   void hpet_int_sts_set(uint32_t val)
- *   uint32_t hpet_timer_conf_get(void)
- *   void hpet_timer_conf_set(uint32_t val)
- *   void hpet_timer_comparator_set(uint32_t val)
- */
-#ifndef HPET_USE_CUSTOM_REG_ACCESS_FUNCS
 DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 
 #define HPET_REG_ADDR(off)			\
@@ -104,17 +84,6 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 /* Timer 0 Comparator Register */
 #define TIMER0_COMPARATOR_LOW_REG	HPET_REG_ADDR(0x108)
 #define TIMER0_COMPARATOR_HIGH_REG	HPET_REG_ADDR(0x10c)
-
-/**
- * @brief Setup memory mappings needed to access HPET registers.
- *
- * This is called in sys_clock_driver_init() to setup any memory
- * mappings needed to access HPET registers.
- */
-static inline void hpet_mmio_init(void)
-{
-	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
-}
 
 /**
  * @brief Return the value of the main counter.
@@ -210,6 +179,19 @@ static inline void hpet_timer_conf_set(uint32_t val)
 	sys_write32(val, TIMER0_CONF_REG);
 }
 
+/*
+ * The following register access functions should work on generic x86
+ * hardware. If the targeted SoC requires special handling of HPET
+ * registers, these functions will need to be implemented in the SoC
+ * layer by first defining the macro HPET_USE_CUSTOM_REG_ACCESS_FUNCS
+ * in soc.h to signal such intent.
+ *
+ * This is a list of functions which must be implemented in the SoC
+ * layer:
+ *   void hpet_timer_comparator_set(uint32_t val)
+ */
+#ifndef HPET_USE_CUSTOM_REG_ACCESS_FUNCS
+
 /**
  * @brief Write to the Timer Comparator Value Register
  *
@@ -239,6 +221,21 @@ static inline void hpet_timer_comparator_set(uint64_t val)
 #define HPET_CMP_MIN_DELAY		(1000)
 #endif
 
+/*
+ * HPET_INT_LEVEL_TRIGGER is used to set HPET interrupt as level trigger
+ * for ARM CPU with NVIC like EHL PSE, whose DTS interrupt setting
+ * has no "sense" cell.
+ */
+#if (DT_INST_IRQ_HAS_CELL(0, sense))
+#ifdef HPET_INT_LEVEL_TRIGGER
+__WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
+#undef HPET_INT_LEVEL_TRIGGER
+#endif
+#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+#define HPET_INT_LEVEL_TRIGGER
+#endif
+#endif /* (DT_INST_IRQ_HAS_CELL(0, sense)) */
+
 static __pinned_bss struct k_spinlock lock;
 static __pinned_bss uint64_t last_count;
 
@@ -260,7 +257,7 @@ static void hpet_isr(const void *arg)
 
 	uint64_t now = hpet_counter_get();
 
-#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+#ifdef HPET_INT_LEVEL_TRIGGER
 	/*
 	 * Clear interrupt only if level trigger is selected.
 	 * When edge trigger is selected, spec says only 0 can
@@ -300,17 +297,21 @@ static void hpet_isr(const void *arg)
 }
 
 __pinned_func
-static void set_timer0_irq(unsigned int irq)
+static void config_timer0(unsigned int irq)
 {
 	uint32_t val = hpet_timer_conf_get();
 
 	/* 5-bit IRQ field starting at bit 9 */
 	val = (val & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
 
-#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
-	/* Level trigger */
+#ifdef HPET_INT_LEVEL_TRIGGER
+	/* Set level trigger if selected */
 	val |= TIMER_CONF_INT_LEVEL;
 #endif
+
+	val &=  ~((uint32_t)(TIMER_CONF_MODE32 | TIMER_CONF_PERIODIC |
+			TIMER_CONF_FSB_EN));
+	val |= TIMER_CONF_INT_ENABLE;
 
 	hpet_timer_conf_set(val);
 }
@@ -325,12 +326,18 @@ int sys_clock_driver_init(const struct device *dev)
 	ARG_UNUSED(hz);
 	ARG_UNUSED(z_clock_hw_cycles_per_sec);
 
-	hpet_mmio_init();
+	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
+#if DT_INST_IRQ_HAS_CELL(0, sense)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    hpet_isr, 0, DT_INST_IRQ(0, sense));
-	set_timer0_irq(DT_INST_IRQN(0));
+#else
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    hpet_isr, 0, 0);
+#endif
+	config_timer0(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
@@ -348,13 +355,6 @@ int sys_clock_driver_init(const struct device *dev)
 	reg = hpet_gconf_get();
 	reg |= GCONF_LR | GCONF_ENABLE;
 	hpet_gconf_set(reg);
-
-	reg = hpet_timer_conf_get();
-	reg &= ~TIMER_CONF_PERIODIC;
-	reg &= ~TIMER_CONF_FSB_EN;
-	reg &= ~TIMER_CONF_MODE32;
-	reg |= TIMER_CONF_INT_ENABLE;
-	hpet_timer_conf_set(reg);
 
 	last_count = hpet_counter_get();
 	if (cyc_per_tick >= HPET_CMP_MIN_DELAY) {
