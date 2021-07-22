@@ -1335,11 +1335,16 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+int z_cbprintf(cbprintf_cb out, void *ctx, const char *fp,
+		union z_cbprintf_args *args, bool use_valist)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
+
+	if (!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_PACKED) && !use_valist) {
+		return -ENOTSUP;
+	}
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1400,7 +1405,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		 * otherwise set width if present.
 		 */
 		if (conv->width_star) {
-			width = va_arg(ap, int);
+			Z_CBPRINTF_GET_ARG(width, args, use_valist, int);
 
 			if (width < 0) {
 				conv->flag_dash = true;
@@ -1417,7 +1422,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		 * precision is not present use 6.
 		 */
 		if (conv->prec_star) {
-			int arg = va_arg(ap, int);
+			int arg;
+
+			Z_CBPRINTF_GET_ARG(arg, args, use_valist, int);
 
 			if (arg < 0) {
 				conv->prec_present = false;
@@ -1469,24 +1476,32 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			case LENGTH_NONE:
 			case LENGTH_HH:
 			case LENGTH_H:
-				value->sint = va_arg(ap, int);
+				Z_CBPRINTF_GET_ARG(value->sint, args,
+							use_valist, int);
 				break;
 			case LENGTH_L:
 				if (WCHAR_IS_SIGNED
 				    && (conv->specifier == 'c')) {
-					value->sint = (wchar_t)va_arg(ap,
-							      WINT_TYPE);
+					Z_CBPRINTF_GET_ARG_CAST(value->sint,
+								args,
+								use_valist,
+								WINT_TYPE,
+								wchar_t);
+
 				} else {
-					value->sint = va_arg(ap, long);
+					Z_CBPRINTF_GET_ARG(value->sint, args,
+							   use_valist, long);
 				}
 				break;
 			case LENGTH_LL:
-				value->sint =
-					(sint_value_type)va_arg(ap, long long);
+				Z_CBPRINTF_GET_ARG_CAST(value->sint, args,
+							use_valist, long long,
+							sint_value_type);
 				break;
 			case LENGTH_J:
-				value->sint =
-					(sint_value_type)va_arg(ap, intmax_t);
+				Z_CBPRINTF_GET_ARG_CAST(value->sint, args,
+							use_valist, intmax_t,
+							sint_value_type);
 				break;
 			case LENGTH_Z:		/* size_t */
 			case LENGTH_T:		/* ptrdiff_t */
@@ -1497,8 +1512,10 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				 * other.  This can be checked in a platform
 				 * test.
 				 */
-				value->sint =
-					(sint_value_type)va_arg(ap, ptrdiff_t);
+				Z_CBPRINTF_GET_ARG_CAST(value->sint, args,
+							use_valist,
+							ptrdiff_t,
+							sint_value_type);
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
@@ -1512,31 +1529,39 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			case LENGTH_NONE:
 			case LENGTH_HH:
 			case LENGTH_H:
-				value->uint = va_arg(ap, unsigned int);
+				Z_CBPRINTF_GET_ARG(value->uint, args,
+						   use_valist, unsigned int);
 				break;
 			case LENGTH_L:
 				if ((!WCHAR_IS_SIGNED)
 				    && (conv->specifier == 'c')) {
-					value->uint = (wchar_t)va_arg(ap,
-							      WINT_TYPE);
+					Z_CBPRINTF_GET_ARG_CAST(value->uint,
+								args, use_valist,
+								WINT_TYPE,
+								wchar_t);
 				} else {
-					value->uint = va_arg(ap, unsigned long);
+					Z_CBPRINTF_GET_ARG(value->uint,
+							   args, use_valist,
+							   unsigned long);
 				}
 				break;
 			case LENGTH_LL:
-				value->uint =
-					(uint_value_type)va_arg(ap,
-						unsigned long long);
+				Z_CBPRINTF_GET_ARG_CAST(value->uint, args,
+							use_valist,
+							unsigned long long,
+							uint_value_type);
 				break;
 			case LENGTH_J:
-				value->uint =
-					(uint_value_type)va_arg(ap,
-								uintmax_t);
+				Z_CBPRINTF_GET_ARG_CAST(value->uint,
+							args, use_valist,
+							uintmax_t,
+							uint_value_type);
 				break;
 			case LENGTH_Z:		/* size_t */
 			case LENGTH_T:		/* ptrdiff_t */
-				value->uint =
-					(uint_value_type)va_arg(ap, size_t);
+				Z_CBPRINTF_GET_ARG_CAST(value->uint,
+							args, use_valist,
+							size_t, uint_value_type);
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
@@ -1546,12 +1571,15 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			}
 		} else if (specifier_cat == SPECIFIER_FP) {
 			if (length_mod == LENGTH_UPPER_L) {
-				value->ldbl = va_arg(ap, long double);
+				Z_CBPRINTF_GET_ARG(value->ldbl,
+						   args, use_valist,
+						   long double);
 			} else {
-				value->dbl = va_arg(ap, double);
+				Z_CBPRINTF_GET_ARG(value->dbl, args, use_valist,
+						   double);
 			}
 		} else if (specifier_cat == SPECIFIER_PTR) {
-			value->ptr = va_arg(ap, void *);
+			Z_CBPRINTF_GET_ARG(value->ptr, args, use_valist, void *);
 		}
 
 		/* We've now consumed all arguments related to this

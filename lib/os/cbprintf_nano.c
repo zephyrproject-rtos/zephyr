@@ -55,16 +55,8 @@ static inline int convert_value(uint_value_type num, unsigned int base,
 #define PAD_ZERO	BIT(0)
 #define PAD_TAIL	BIT(1)
 
-/**
- * @brief Printk internals
- *
- * See printk() for description.
- * @param fmt Format string
- * @param ap Variable parameters
- *
- * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
- */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
+int z_cbprintf(cbprintf_cb out, void *ctx, const char *fmt,
+		union z_cbprintf_args *args, bool use_valist)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
@@ -74,6 +66,10 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 
 	/* we pre-increment in the loop  afterwards */
 	fmt--;
+
+	if (!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_PACKED) && !use_valist) {
+		return -ENOTSUP;
+	}
 
 start:
 	while (*++fmt != '%') {
@@ -136,9 +132,11 @@ start:
 
 		case '*':
 			if (precision >= 0) {
-				precision = va_arg(ap, int);
+				Z_CBPRINTF_GET_ARG(precision, args, use_valist,
+						   int);
 			} else {
-				min_width = va_arg(ap, int);
+				Z_CBPRINTF_GET_ARG(min_width, args, use_valist,
+						   int);
 				if (min_width < 0) {
 					min_width = -min_width;
 					padding_mode = PAD_TAIL;
@@ -155,6 +153,7 @@ start:
 		case 'h':
 		case 'l':
 		case 'z':
+
 			if (*fmt == 'h' && length_mod == 'h') {
 				length_mod = 'H';
 			} else if (*fmt == 'l' && length_mod == 'l') {
@@ -174,11 +173,13 @@ start:
 			uint_value_type d;
 
 			if (length_mod == 'z') {
-				d = va_arg(ap, ssize_t);
+				Z_CBPRINTF_GET_ARG(d, args, use_valist, ssize_t);
 			} else if (length_mod == 'l') {
-				d = va_arg(ap, long);
+				Z_CBPRINTF_GET_ARG(d, args, use_valist, long);
 			} else if (length_mod == 'L') {
-				long long lld = va_arg(ap, long long);
+				long long lld;
+
+				Z_CBPRINTF_GET_ARG(lld, args, use_valist, long long);
 
 				if (sizeof(int_value_type) < 8U &&
 				    lld != (int_value_type) lld) {
@@ -189,9 +190,9 @@ start:
 				}
 				d = (uint_value_type) lld;
 			} else if (*fmt == 'u') {
-				d = va_arg(ap, unsigned int);
+				Z_CBPRINTF_GET_ARG(d, args, use_valist, unsigned int);
 			} else {
-				d = va_arg(ap, int);
+				Z_CBPRINTF_GET_ARG(d, args, use_valist, int);
 			}
 
 			if (*fmt != 'u' && (int_value_type)d < 0) {
@@ -218,7 +219,8 @@ start:
 			uint_value_type x;
 
 			if (*fmt == 'p') {
-				x = (uintptr_t)va_arg(ap, void *);
+				Z_CBPRINTF_GET_ARG_CAST(x, args, use_valist,
+							void *, uintptr_t);
 				if (x == (uint_value_type)0) {
 					data = "(nil)";
 					data_len = 5;
@@ -227,11 +229,14 @@ start:
 				}
 				special = '#';
 			} else if (length_mod == 'l') {
-				x = va_arg(ap, unsigned long);
+				Z_CBPRINTF_GET_ARG(x, args, use_valist,
+						   unsigned long);
 			} else if (length_mod == 'L') {
-				x = va_arg(ap, unsigned long long);
+				Z_CBPRINTF_GET_ARG(x, args, use_valist,
+						   unsigned long long);
 			} else {
-				x = va_arg(ap, unsigned int);
+				Z_CBPRINTF_GET_ARG(x, args, use_valist,
+						   unsigned int);
 			}
 			if (special == '#') {
 				prefix = (*fmt & 0x20) ? "0x" : "0X";
@@ -244,7 +249,7 @@ start:
 		}
 
 		case 's': {
-			data = va_arg(ap, char *);
+			Z_CBPRINTF_GET_ARG(data, args, use_valist, char *);
 			data_len = strlen(data);
 			if (precision >= 0 && data_len > precision) {
 				data_len = precision;
@@ -254,7 +259,9 @@ start:
 		}
 
 		case 'c': {
-			int c = va_arg(ap, int);
+			int c;
+
+			Z_CBPRINTF_GET_ARG(c, args, use_valist, int);
 
 			buf[0] = c;
 			data = buf;

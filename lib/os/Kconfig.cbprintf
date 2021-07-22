@@ -116,6 +116,13 @@ config CBPRINTF_LIBC_SUBSTS
 	  When used with CBPRINTF_NANO this increases the implementation code
 	  size by a small amount.
 
+config CBPRINTF_PACKAGE_PACKED
+	bool "Support for packed packages"
+	help
+	  If enabled, packages can be packed without alignment. That requires
+	  extension to the string formatting function and increases memory
+	  footprint.
+
 config CBPRINTF_PACKAGE_LONGDOUBLE
 	bool "Support packaging of long doubles"
 	help

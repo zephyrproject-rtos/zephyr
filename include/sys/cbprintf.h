@@ -63,7 +63,7 @@ extern "C" {
 		sizeof(long double) : MAX(sizeof(double), sizeof(long long)))
 #endif
 
-/**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
+/** @defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
  * @{
  */
 
@@ -75,7 +75,10 @@ extern "C" {
  */
 #define CBPRINTF_PACKAGE_ADD_STRING_IDXS BIT(0)
 
-/**@} */
+/** @brief Indicate package with packed data (without alignment). */
+#define CBPRINTF_PACKAGE_PACKED BIT(1)
+
+/** @} */
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -281,8 +284,9 @@ int cbprintf_fsc_package(void *in_packaged,
  * @note Memory indicated by @p packaged will be modified in a non-destructive
  * way, meaning that it could still be reused with this function again.
  *
- * @return the number of characters printed, or a negative error value
- * returned from invoking @p out.
+ * @retval nonnegative the number of characters printed
+ * @retval -ENOTSUP package not supported.
+ * @retval negative error value returned from invoking @p out.
  */
 int cbpprintf(cbprintf_cb out,
 	      void *ctx,
@@ -317,6 +321,32 @@ int cbpprintf(cbprintf_cb out,
 __printf_like(3, 4)
 int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
 
+/** @internal
+ *
+ * @brief *printf-like output through a callback using va_list or array of packed arguments.
+ *
+ * It is primarly intended to be used by @ref cbpprintf with
+ * @ref CBPRINTF_PACKAGE_PACKED set.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param args a reference to the values to be converted. Union contains
+ * arguments as packed array aligned to sizeof(int) or standard va_list.
+ *
+ * @param use_valist if true @args are interpreted as va_list or packed buffer is
+ * false.
+ *
+ * @return the number of characters generated, or a negative error value
+ * returned from invoking @p out.
+ */
+int z_cbprintf(cbprintf_cb out, void *ctx, const char *format,
+		union z_cbprintf_args *args, bool use_valist);
+
 /** @brief varargs-aware *printf-like output through a callback.
  *
  * This is essentially vsprintf() except the output is generated
@@ -342,7 +372,19 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+static inline int cbvprintf(cbprintf_cb out, void *ctx,
+			    const char *format, va_list ap)
+{
+	union z_cbprintf_args args;
+
+	if (Z_CBPRINT_CPY_VA_LIST) {
+		va_copy(args.a, ap);
+	} else {
+		args.vap = (void *)&ap;
+	}
+
+	return z_cbprintf(out, ctx, format, &args, true);
+}
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
 

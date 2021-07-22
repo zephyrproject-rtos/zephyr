@@ -200,6 +200,12 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	uint8_t str_ptr_pos[16];
 	const char *s;
 	bool parsing = false;
+	bool packed = flags & CBPRINTF_PACKAGE_PACKED;
+
+	/* Packed packages must be enabled first. */
+	if (packed && !IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_PACKED)) {
+		return -ENOTSUP;
+	}
 
 	/* Buffer must be aligned at least to size of a pointer. */
 	if ((uintptr_t)packaged & (sizeof(void *) - 1)) {
@@ -208,7 +214,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 
 #if defined(__xtensa__)
 	/* Xtensa requires package to be 16 bytes aligned. */
-	if ((uintptr_t)packaged & (CBPRINTF_PACKAGE_ALIGNMENT - 1)) {
+	if (!packed && ((uintptr_t)packaged & (CBPRINTF_PACKAGE_ALIGNMENT - 1))) {
 		return -EFAULT;
 	}
 #endif
@@ -231,7 +237,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 */
 	if (!buf0) {
 #if defined(__xtensa__)
-		if (len % CBPRINTF_PACKAGE_ALIGNMENT) {
+		if (!packed && (len % CBPRINTF_PACKAGE_ALIGNMENT)) {
 			return -EFAULT;
 		}
 #endif
@@ -241,7 +247,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 
 	/*
 	 * Otherwise we must ensure we can store at least
-	 * thepointer to the format string itself.
+	 * the pointer to the format string itself.
 	 */
 	if (buf0 && buf - buf0 + sizeof(char *) > len) {
 		return -ENOSPC;
@@ -313,6 +319,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			continue;
 
 		case 'c':
+			parsing = false;
+			break;
 		case 'd':
 		case 'i':
 		case 'o':
@@ -363,7 +371,10 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				size = sizeof(double);
 			}
 			/* align destination buffer location */
-			buf = (void *) ROUND_UP(buf, align);
+			if (!packed) {
+				buf = (void *) ROUND_UP(buf, align);
+			}
+
 			if (buf0) {
 				/* make sure it fits */
 				if (buf - buf0 + size > len) {
@@ -388,7 +399,9 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 
 		/* align destination buffer location */
-		buf = (void *) ROUND_UP(buf, align);
+		if (!packed) {
+			buf = (void *) ROUND_UP(buf, align);
+		}
 
 		/* make sure the data fits */
 		if (buf0 && buf - buf0 + size > len) {
@@ -509,11 +522,13 @@ process_string:
 
 	/* Clear our buffer header. We made room for it initially. */
 	*(char **)buf0 = NULL;
+	struct z_cbprintf_desc *desc = (struct z_cbprintf_desc *)buf0;
 
 	/* Record end of argument list and number of appended strings. */
-	buf0[0] = (buf - buf0) / sizeof(int);
-	buf0[1] = s_rw_cnt;
-	buf0[2] = s_ro_cnt;
+	desc->len = (buf - buf0) / sizeof(int);
+	desc->str_cnt = s_rw_cnt;
+	desc->ro_str_cnt = s_ro_cnt;
+	desc->flags = packed ? Z_CBPRINTF_PACKAGE_FLAGS_PACKED : 0;
 
 	/* Store strings pointer locations of read only strings. */
 	if (s_ro_cnt) {
@@ -584,15 +599,17 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 {
 	char *buf = packaged, *fmt, *s, **ps;
 	unsigned int i, args_size, s_nbr, ros_nbr, s_idx;
+	struct z_cbprintf_desc *desc;
 
 	if (!buf) {
 		return -EINVAL;
 	}
 
 	/* Retrieve the size of the arg list and number of strings. */
-	args_size = ((uint8_t *)buf)[0] * sizeof(int);
-	s_nbr     = ((uint8_t *)buf)[1];
-	ros_nbr   = ((uint8_t *)buf)[2];
+	desc = (struct z_cbprintf_desc *)buf;
+	args_size = desc->len * sizeof(int);
+	s_nbr     = desc->str_cnt;
+	ros_nbr   = desc->ro_str_cnt;
 
 	/* Locate the string table */
 	s = buf + args_size + ros_nbr;
@@ -616,6 +633,12 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 	/* skip past format string pointer */
 	buf += sizeof(char *) * 2;
 
+	if (desc->flags & Z_CBPRINTF_PACKAGE_FLAGS_PACKED) {
+		union z_cbprintf_args args = { .buf = buf };
+
+		return z_cbprintf(out, ctx, fmt, &args, false);
+	}
+
 	/* Turn this into a va_list and  print it */
 	return cbprintf_via_va_list(out, ctx, fmt, buf);
 }
@@ -630,6 +653,7 @@ int cbprintf_fsc_package(void *in_packaged,
 	unsigned int args_size, s_nbr, ros_nbr, s_idx;
 	size_t out_len;
 	size_t slen;
+	struct z_cbprintf_desc *desc;
 
 	if (!buf) {
 		return -EINVAL;
@@ -640,9 +664,10 @@ int cbprintf_fsc_package(void *in_packaged,
 	}
 
 	/* Retrieve the size of the arg list and number of strings. */
-	args_size = buf[0] * sizeof(int);
-	s_nbr     = buf[1];
-	ros_nbr   = buf[2];
+	desc = (struct z_cbprintf_desc *)buf;
+	args_size = desc->len * sizeof(int);
+	s_nbr     = desc->str_cnt;
+	ros_nbr   = desc->ro_str_cnt;
 
 	out_len = in_len;
 
@@ -650,8 +675,10 @@ int cbprintf_fsc_package(void *in_packaged,
 		unsigned int rw_strs_len = in_len - (args_size + ros_nbr);
 
 		memcpy(out, buf, args_size);
-		out[1] = s_nbr + ros_nbr;
-		out[2] = 0;
+
+		desc = (struct z_cbprintf_desc *)out;
+		desc->str_cnt = s_nbr + ros_nbr;
+		desc->ro_str_cnt = 0;
 		out += args_size;
 
 		/* Append all strings that were already part of the package. */

@@ -260,13 +260,13 @@ extern "C" {
  * @param _arg argument.
  */
 #define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _align_offset, _max, \
-			     _cfg_flags, _s_idx, _s_buf, _arg) \
+			     _is_packed, _s_idx, _s_buf, _arg) \
 do { \
 	BUILD_ASSERT(!((sizeof(double) < VA_STACK_ALIGN(long double)) && \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) { \
+	while (!_is_packed && (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg))) { \
 		_idx += sizeof(int); \
 		_align_offset += sizeof(int); \
 	} \
@@ -288,8 +288,17 @@ do { \
  * @param arg argument.
  */
 #define Z_CBPRINTF_PACK_ARG(arg) \
-	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, _flags, \
+	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, _packed, \
 			     _s_cnt, _s_buffer, arg)
+
+/** @defgroup Z_CBPRINTF_PACKAGE_FLAGS Package flags.
+ * @{
+ */
+
+/** @brief Flag indicating that arguments are packed in the package. */
+#define Z_CBPRINTF_PACKAGE_FLAGS_PACKED BIT(0)
+
+/** @} */
 
 /** @brief Package descriptor.
  *
@@ -298,9 +307,19 @@ do { \
  * @param str_cnt Number of strings stored in the package.
  */
 struct z_cbprintf_desc {
+	/* Size of part of package including descriptor and arguments but not
+	 * copied strings and string indexes. Given in int words.
+	 */
 	uint8_t len;
+
+	/* Number of strings copied into package. */
 	uint8_t str_cnt;
+
+	/* Number of read-only string locations appended to the package. */
 	uint8_t ro_str_cnt;
+
+	/* See @ref Z_CBPRINTF_PACKAGE_FLAGS. */
+	uint8_t flags;
 };
 
 /** @brief Package header. */
@@ -351,7 +370,8 @@ do { \
 	IF_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT, \
 		(__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			  "Buffer must be aligned.");)) \
-	bool str_idxs = _flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
+	bool str_idxs = (_flags) & CBPRINTF_PACKAGE_ADD_STRING_IDXS; \
+	bool _packed = (_flags) & CBPRINTF_PACKAGE_PACKED; \
 	uint8_t *_pbuf = buf; \
 	uint8_t _s_cnt = 0; \
 	uint16_t _s_buffer[16]; \
@@ -360,6 +380,10 @@ do { \
 	int _total_len = 0; \
 	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
+	if (_packed && !IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_PACKED)) { \
+		_outlen = -ENOTSUP; \
+		break; \
+	} \
 	/* package starts with string address and field with length */ \
 	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
 		_outlen = -ENOSPC; \
@@ -388,6 +412,8 @@ do { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
 				.ro_str_cnt = str_idxs ? _s_cnt : (uint8_t)0, \
+				.flags = (uint8_t)(_packed ? \
+					 Z_CBPRINTF_PACKAGE_FLAGS_PACKED : 0), \
 			} \
 		}; \
 		*_len_loc = hdr; \
@@ -417,5 +443,66 @@ do { \
 }
 #endif
 
+/* Union combaining va_list and raw, packed data. */
+union z_cbprintf_args {
+	va_list *ap;
+	va_list a;
+	void *vap;
+	char *buf;
+};
+
+#ifdef __x86_64__
+#define Z_CBPRINT_CPY_VA_LIST 1
+#else
+#define Z_CBPRINT_CPY_VA_LIST 0
+#endif
+
+/** @brief Fetching argument from the input with cast.
+ *
+ * Input can be va_list or buffer with arguments packed without any alignment.
+ *
+ * @param dst variable where argument should be written.
+ *
+ * @param args pointer to an union holding arguments.
+ *
+ * @param use_valist if true va_list is used, else @p args is interpreted as
+ * packed data.
+ *
+ * @param type variable type when fetching.
+ *
+ * @param cast_type type to which data shall be casted.
+ *
+ */
+#define Z_CBPRINTF_GET_ARG_CAST(dst, args, use_valist, type, cast_type) do { \
+	if (use_valist || !IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_PACKED)) { \
+		if (Z_CBPRINT_CPY_VA_LIST) { \
+			dst = (cast_type)va_arg(args->a, type); \
+		} else { \
+			dst = (cast_type)va_arg(*args->ap, type); \
+		} \
+	} else { \
+		type _tmp; \
+		z_cbprintf_wcpy((int *)&_tmp, (int *)args->buf, \
+				sizeof(type) / sizeof(int)); \
+		args->buf += sizeof(type); \
+		dst = (cast_type)_tmp; \
+	} \
+} while (0)
+
+/** @brief Fetching argument from the input.
+ *
+ * Input can be va_list or buffer with arguments packed without any alignment.
+ *
+ * @param dst variable where argument should be written.
+ *
+ * @param args pointer to an union holding arguments.
+ *
+ * @param use_valist if true va_list is used, else @p args is interpreted as
+ * packed data.
+ *
+ * @param type variable type when fetching.
+ */
+#define Z_CBPRINTF_GET_ARG(dst, args, use_valist, type) \
+	Z_CBPRINTF_GET_ARG_CAST(dst, args, use_valist, type, type)
 
 #endif /* ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_ */
