@@ -447,6 +447,79 @@ static const struct flash_pages_layout stm32f4_flash_layout[] = {
 #endif /* FLASH_SECTOR_TOTAL == 5 */
 #endif/* !defined(FLASH_SECTOR_TOTAL) */
 
+#if !defined(FLASH_SECTOR_TOTAL)
+#error "Unknown flash layout"
+#else
+
+#define K128_COUNT	((FLASH_SECTOR_TOTAL == 6) * 1 +				\
+			 (FLASH_SECTOR_TOTAL == 8) * 3 +				\
+			 (FLASH_SECTOR_TOTAL == 12) * 7 +				\
+			 (FLASH_SECTOR_TOTAL == 16) * 11 +				\
+			 (FLASH_SECTOR_TOTAL == 24) * 7)
+#define K64_COUNT	1
+#define K16_COUNT	4
+
+/* For the FLASH_SECTOR_TOTAL == 24 the layout is twice the layout of FLASH_SECTOR_TOTAL = 12 */
+#define KALL_COUNT	((K16_COUNT + K64_COUNT + K128_COUNT) * (1 + (FLASH_SECTOR_TOTAL == 24)))
+
+#define KALL_SIZE	((K16_COUNT * KB(16) + K64_COUNT * KB(64) + K128_COUNT * KB(128)) *	\
+			 (1 + (FLASH_SECTOR_TOTAL == 24)))
+
+#define K128_MASK	(0x00000000 | 0x00020000 * (FLASH_SECTOR_TOTAL == 6)	|		\
+				      0x00060000 * (FLASH_SECTOR_TOTAL == 8)	|		\
+				      0x000e0000 * (FLASH_SECTOR_TOTAL == 12)	|		\
+				      0x001e0000 * (FLASH_SECTOR_TOTAL == 16)	|		\
+				      0x000e0000 * (FLASH_SECTOR_TOTAL == 24))
+
+/* Bank mask is needed for FLASH_SECTOR_TOTAL == 24 to properly calculate offsets of second bank */
+#define BANK_MASK	(0x00100000 * (FLASH_SECTOR_TOTAL == 24))
+#define K64_MASK	0x00010000
+#define K16_MASK	0x0000c000
+
+int flash_stm32_get_page_info(const struct device *dev, off_t off, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (off < 0 || off >= KALL_SIZE) {
+		return -EINVAL;
+	}
+
+	if (K128_MASK != 0 && off & K128_MASK) {
+		fpi->offset = off & (K128_MASK | BANK_MASK);
+		fpi->size = KB(128);
+	} else if (off & K64_MASK) {
+		fpi->offset = off & (K64_MASK | BANK_MASK);
+		fpi->size = KB(64);
+	} else {
+		fpi->offset = off & (K16_MASK | BANK_MASK);
+		fpi->size = KB(16);
+	}
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return KALL_COUNT;
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return KALL_SIZE;
+}
+
+#undef K16_MASK
+#undef K64_MASK
+#undef K128_MASK
+#undef KALL_COUNT
+#undef KALL_SIZE
+
+#endif /* !define(FLASH_SECTOR_TOTAL) */
+
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
