@@ -83,6 +83,23 @@
 				<20 0 &gpio1 21 0>,	/* D14 */
 				<21 0 &gpio1 20 0>;	/* D15 */
 	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20000000 {
+			label = "secure-memory";
+			reg = <0x20000000 DT_SIZE_K(136)>;
+		};
+
+		non_secure_ram: partition@20022000 {
+			label = "non-secure-memory";
+			reg = <0x20022000 DT_SIZE_K(136)>;
+		};
+	};
 };
 
 &flexcomm0 {
@@ -126,25 +143,6 @@
 		storage_partition: partition@88000 {
 			label = "storage";
 			reg = <0x00088000 0x0000ca00>;
-		};
-	};
-};
-
-&sram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* RAM split used by TFM */
-		secure_ram: partition@20000000 {
-			label = "secure-memory";
-			reg = <0x20000000 DT_SIZE_K(136)>;
-		};
-
-		non_secure_ram: partition@20022000 {
-			label = "non-secure-memory";
-			reg = <0x20022000 DT_SIZE_K(136)>;
 		};
 	};
 };
