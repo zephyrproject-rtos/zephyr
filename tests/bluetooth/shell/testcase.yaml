@@ -32,26 +32,20 @@ tests:
 # Bluetooth Audio Compile validation tests
   bluetooth.shell.no_vcs:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
     tags: bluetooth
   bluetooth.shell.no_vocs:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCS_VOCS_INSTANCE_COUNT=0
     tags: bluetooth
   bluetooth.shell.no_aics:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_AICS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCS_AICS_INSTANCE_COUNT=0
@@ -59,9 +53,7 @@ tests:
     tags: bluetooth
   bluetooth.shell.no_aics_vocs:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VOCS_MAX_INSTANCE_COUNT=0
       - CONFIG_BT_VCS_VOCS_INSTANCE_COUNT=0
@@ -71,67 +63,51 @@ tests:
     tags: bluetooth
   bluetooth.shell.no_vcs_client:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT=n
     tags: bluetooth
   bluetooth.shell.no_vcs_vcs_client:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
       - CONFIG_BT_VCS_CLIENT=n
     tags: bluetooth
   bluetooth.shell.vcs_client_no_aics_client:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT_MAX_AICS_INST=0
     tags: bluetooth
   bluetooth.shell.vcs_client_no_vocs_client:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST=0
     tags: bluetooth
   bluetooth.shell.no_mics:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
     tags: bluetooth
   bluetooth.shell.no_mics_client:
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS_CLIENT=n
     tags: bluetooth
   bluetooth.shell.no_mics_mics_client:
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     build_only: true
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
       - CONFIG_BT_MICS_CLIENT=n
     tags: bluetooth
   bluetooth.shell.mics_client_no_aics_client:
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     build_only: true
-    integration_platforms:
-      - native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICS_CLIENT_MAX_AICS_INST=0
     tags: bluetooth
