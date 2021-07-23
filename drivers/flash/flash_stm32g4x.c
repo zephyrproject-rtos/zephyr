@@ -440,6 +440,55 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout_size = ARRAY_SIZE(stm32g4_flash_layout);
 }
 
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+	if (offset < 0 || offset >= (BANK2_OFFSET + FLASH_SIZE / 2)) {
+		return -EINVAL;
+	}
+
+	/* In case of a "gap" return its offset and size and report -ENOENT */
+	if (offset >= (FLASH_SIZE / 2) && offset < BANK2_OFFSET) {
+		fpi->offset = FLASH_SIZE / 2;
+		fpi->size = BANK2_OFFSET - FLASH_SIZE / 2;
+		return -ENOENT;
+	}
+
+	fpi->offset = offset & ~(FLASH_PAGE_SIZE - 1);
+	fpi->size = FLASH_PAGE_SIZE;
+#else
+
+	if (offset < 0 || offset >= FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(FLASH_PAGE_SIZE - 1);
+	fpi->size = FLASH_PAGE_SIZE;
+#endif
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+#define PAGES_PER_BANK  ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+	/* Count returns gaps too */
+	return FLASH_SIZE / FLASH_PAGE_SIZE + 1;
+#else
+	return FLASH_SIZE / FLASH_PAGE_SIZE;
+#endif
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	return FLASH_SIZE;
+}
+
 /* Override weak function */
 int  flash_stm32_check_configuration(void)
 {
