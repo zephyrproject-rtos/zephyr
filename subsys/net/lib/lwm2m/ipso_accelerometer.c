@@ -42,11 +42,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state */
 struct ipso_accel_data {
-	float32_value_t x_value;
-	float32_value_t y_value;
-	float32_value_t z_value;
-	float32_value_t min_range;
-	float32_value_t max_range;
+	double x_value;
+	double y_value;
+	double z_value;
+	double min_range;
+	double max_range;
 };
 
 static struct ipso_accel_data accel_data[MAX_INSTANCE_COUNT];

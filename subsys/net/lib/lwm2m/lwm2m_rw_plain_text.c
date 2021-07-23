@@ -74,7 +74,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_util.h"
 
 /* some temporary buffer space for format conversions */
-static char pt_buffer[42]; /* can handle float64 format */
+static char pt_buffer[42];
 
 size_t plain_text_put_format(struct lwm2m_output_context *out,
 			     const char *format, ...)
@@ -122,29 +122,22 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	return plain_text_put_format(out, "%lld", value);
 }
 
-size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
-				 struct lwm2m_obj_path *path,
-				 float32_value_t *value)
+size_t plain_text_put_float(struct lwm2m_output_context *out,
+			    struct lwm2m_obj_path *path,
+			    double *value)
 {
-	size_t len;
-	char buf[sizeof("000000")];
+	int len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 
-	/* value of 123 -> "000123" -- ignore sign */
-	len = snprintk(buf, sizeof(buf), "%06d", abs(value->val2));
-	if (len != 6U) {
-		strcpy(buf, "0");
-	} else {
-		/* clear ending zeroes, but leave 1 if needed */
-		while (len > 1U && buf[len - 1] == '0') {
-			buf[--len] = '\0';
-		}
+	if (len < 0 || len >= sizeof(pt_buffer)) {
+		LOG_ERR("Failed to encode float value");
+		return 0;
 	}
 
-	return plain_text_put_format(out, "%s%d.%s",
-				     /* handle negative val2 when val1 is 0 */
-				     (value->val1 == 0 && value->val2 < 0) ?
-						"-" : "",
-				     value->val1, buf);
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, len) < 0) {
+		return 0;
+	}
+
+	return (size_t)len;
 }
 
 static size_t put_string(struct lwm2m_output_context *out,
@@ -253,8 +246,8 @@ static size_t get_string(struct lwm2m_input_context *in,
 	return (size_t)in_len;
 }
 
-static size_t get_float32fix(struct lwm2m_input_context *in,
-			     float32_value_t *value)
+static size_t get_float(struct lwm2m_input_context *in,
+			double *value)
 {
 	size_t i = 0, len = 0;
 	bool has_dot = false;
@@ -290,7 +283,7 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 
 	buf[i] = '\0';
 
-	if (lwm2m_atof32(buf, value) != 0) {
+	if (lwm2m_atof(buf, value) != 0) {
 		LOG_ERR("Failed to parse float value");
 	}
 
@@ -380,7 +373,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
-	.put_float32fix = plain_text_put_float32fix,
+	.put_float = plain_text_put_float,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -389,7 +382,7 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
-	.get_float32fix = get_float32fix,
+	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,
