@@ -3,7 +3,6 @@
 #
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 import contextlib
 import string
@@ -34,6 +33,7 @@ import platform
 import yaml
 import json
 from multiprocessing import Lock, Process, Value
+from typing import List
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -1576,6 +1576,41 @@ class DisablePyTestCollectionMixin(object):
     __test__ = False
 
 
+class ScanPathResult:
+    """Result of the TestCase.scan_path function call.
+
+    Attributes:
+        matches                          A list of test cases
+        warnings                         A string containing one or more
+                                         warnings to display
+        has_registered_test_suites       Whether or not the path contained any
+                                         calls to the ztest_register_test_suite
+                                         macro.
+        has_run_registered_test_suites   Whether or not the path contained at
+                                         least one call to
+                                         ztest_run_registered_test_suites.
+    """
+    def __init__(self,
+                 matches: List[str] = None,
+                 warnings: str = None,
+                 has_registered_test_suites: bool = False,
+                 has_run_registered_test_suites: bool = False):
+        self.matches = matches
+        self.warnings = warnings
+        self.has_registered_test_suites = has_registered_test_suites
+        self.has_run_registered_test_suites = has_run_registered_test_suites
+
+    def __eq__(self, other):
+        if not isinstance(other, ScanPathResult):
+            return False
+        return (sorted(self.matches) == sorted(other.matches) and
+                self.warnings == other.warnings and
+                (self.has_registered_test_suites ==
+                 other.has_registered_test_suites) and
+                (self.has_run_registered_test_suites ==
+                 other.has_run_registered_test_suites))
+
+
 class TestCase(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
@@ -1662,29 +1697,42 @@ Tests should reference the category and subsystem with a dot as a separator.
             # line--as we only search starting the end of this match
             br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
+        registered_suite_regex = re.compile(
+            br"^\s*ztest_register_test_suite"
+            br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
+            re.MULTILINE)
         stc_regex = re.compile(
-            br"^\s*"  # empy space at the beginning is ok
+            br"""^\s*  # empy space at the beginning is ok
             # catch the case where it is declared in the same sentence, e.g:
             #
             # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
-            br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
+            # ztest_register_test_suite(n, p, ztest_user_unit_test(TESTNAME),
+            (?:ztest_
+              (?:test_suite\(|register_test_suite\([a-zA-Z0-9_]+\s*,\s*)
+              [a-zA-Z0-9_]+\s*,\s*
+            )?
             # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            br"ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?"
+            ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
             # Consume the argument that becomes the extra testcse
-            br"\(\s*"
-            br"(?P<stc_name>[a-zA-Z0-9_]+)"
+            \(\s*(?P<stc_name>[a-zA-Z0-9_]+)
             # _setup_teardown() variant has two extra arguments that we ignore
-            br"(?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?"
-            br"\s*\)",
+            (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
+            \s*\)""",
             # We don't check how it finishes; we don't care
-            re.MULTILINE)
+            re.MULTILINE | re.VERBOSE)
         suite_run_regex = re.compile(
             br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
+            re.MULTILINE)
+        registered_suite_run_regex = re.compile(
+            br"^\s*ztest_run_registered_test_suites\("
+            br"(\*+|&)?(?P<state_identifier>[a-zA-Z0-9_]+)\)",
             re.MULTILINE)
         achtung_regex = re.compile(
             br"(#ifdef|#endif)",
             re.MULTILINE)
         warnings = None
+        has_registered_test_suites = False
+        has_run_registered_test_suites = False
 
         with open(inf_name) as inf:
             if os.name == 'nt':
@@ -1695,52 +1743,94 @@ Tests should reference the category and subsystem with a dot as a separator.
 
             with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
                 suite_regex_match = suite_regex.search(main_c)
-                if not suite_regex_match:
+                registered_suite_regex_match = registered_suite_regex.search(
+                    main_c)
+
+                if registered_suite_regex_match:
+                    has_registered_test_suites = True
+                if registered_suite_run_regex.search(main_c):
+                    has_run_registered_test_suites = True
+
+                if not suite_regex_match and not has_registered_test_suites:
                     # can't find ztest_test_suite, maybe a client, because
                     # it includes ztest.h
-                    return None, None
+                    return ScanPathResult(
+                        matches=None,
+                        warnings=None,
+                        has_registered_test_suites=has_registered_test_suites,
+                        has_run_registered_test_suites=has_run_registered_test_suites)
 
                 suite_run_match = suite_run_regex.search(main_c)
-                if not suite_run_match:
+                if suite_regex_match and not suite_run_match:
                     raise ValueError("can't find ztest_run_test_suite")
 
+                if suite_regex_match:
+                    search_start = suite_regex_match.end()
+                else:
+                    search_start = registered_suite_regex_match.end()
+
+                if suite_run_match:
+                    search_end = suite_run_match.start()
+                else:
+                    search_end = re.compile(br"\);", re.MULTILINE) \
+                        .search(main_c, search_start) \
+                        .end()
                 achtung_matches = re.findall(
                     achtung_regex,
-                    main_c[suite_regex_match.end():suite_run_match.start()])
+                    main_c[search_start:search_end])
                 if achtung_matches:
                     warnings = "found invalid %s in ztest_test_suite()" \
                                % ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
                 _matches = re.findall(
                     stc_regex,
-                    main_c[suite_regex_match.end():suite_run_match.start()])
+                    main_c[search_start:search_end])
                 for match in _matches:
                     if not match.decode().startswith("test_"):
                         warnings = "Found a test that does not start with test_"
                 matches = [match.decode().replace("test_", "", 1) for match in _matches]
-                return matches, warnings
+                return ScanPathResult(
+                    matches=matches,
+                    warnings=warnings,
+                    has_registered_test_suites=has_registered_test_suites,
+                    has_run_registered_test_suites=has_run_registered_test_suites)
 
     def scan_path(self, path):
         subcases = []
+        has_registered_test_suites = False
+        has_run_registered_test_suites = False
         for filename in glob.glob(os.path.join(path, "src", "*.c*")):
             try:
-                _subcases, warnings = self.scan_file(filename)
-                if warnings:
-                    logger.error("%s: %s" % (filename, warnings))
-                    raise TwisterRuntimeError("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                result: ScanPathResult = self.scan_file(filename)
+                if result.warnings:
+                    logger.error("%s: %s" % (filename, result.warnings))
+                    raise TwisterRuntimeError(
+                        "%s: %s" % (filename, result.warnings))
+                if result.matches:
+                    subcases += result.matches
+                if result.has_registered_test_suites:
+                    has_registered_test_suites = True
+                if result.has_run_registered_test_suites:
+                    has_run_registered_test_suites = True
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
         for filename in glob.glob(os.path.join(path, "*.c")):
             try:
-                _subcases, warnings = self.scan_file(filename)
-                if warnings:
-                    logger.error("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                result: ScanPathResult = self.scan_file(filename)
+                if result.warnings:
+                    logger.error("%s: %s" % (filename, result.warnings))
+                if result.matches:
+                    subcases += result.matches
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
+
+        if has_registered_test_suites and not has_run_registered_test_suites:
+            warning = \
+                "Found call to 'ztest_register_test_suite()' but no "\
+                "call to 'ztest_run_registered_test_suites()'"
+            logger.error(warning)
+            raise TwisterRuntimeError(warning)
+
         return subcases
 
     def parse_subcases(self, test_path):

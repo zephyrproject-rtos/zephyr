@@ -396,12 +396,12 @@ static int run_test(struct unit_test *test)
 
 #endif /* !KERNEL */
 
-void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
+int z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 {
 	int fail = 0;
 
 	if (test_status < 0) {
-		return;
+		return test_status;
 	}
 
 	init_testing();
@@ -418,6 +418,8 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 	TC_SUITE_END(name, (fail > 0 ? TC_FAIL : TC_PASS));
 
 	test_status = (test_status || fail) ? 1 : 0;
+
+	return fail;
 }
 
 void end_report(void)
@@ -432,6 +434,36 @@ void end_report(void)
 #ifdef CONFIG_USERSPACE
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
+
+int ztest_run_registered_test_suites(const void *state)
+{
+	struct ztest_suite_node *ptr;
+	int count = 0;
+
+	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+		struct ztest_suite_stats *stats = &ptr->stats;
+		bool should_run = true;
+
+		if (ptr->predicate != NULL) {
+			should_run = ptr->predicate(state);
+		} else  {
+			/* If pragma is NULL, only run this test once. */
+			should_run = stats->run_count == 0;
+		}
+
+		if (should_run) {
+			int fail = z_ztest_run_test_suite(ptr->name, ptr->suite);
+
+			count++;
+			stats->run_count++;
+			stats->fail_count += (fail != 0) ? 1 : 0;
+		} else {
+			stats->skip_count++;
+		}
+	}
+
+	return count;
+}
 
 #ifndef KERNEL
 int main(void)
