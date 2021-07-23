@@ -62,6 +62,7 @@
 /soc/arm64/xenvm/                         @lorc
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
+/submanifests/*                           @mbolivar-nordic
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti

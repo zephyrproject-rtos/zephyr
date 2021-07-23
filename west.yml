@@ -219,3 +219,4 @@ manifest:
   self:
     path: zephyr
     west-commands: scripts/west-commands.yml
+    import: submanifests
