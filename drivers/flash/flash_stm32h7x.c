@@ -586,7 +586,10 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 }
 
 
-static const struct flash_parameters flash_stm32h7_parameters = {
+#if !defined(DUAL_BANK)
+const
+#endif
+static struct flash_parameters flash_stm32h7_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
 };
@@ -595,6 +598,12 @@ static const struct flash_parameters *
 flash_stm32h7_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+#if defined(DUAL_BANK)
+	if (DISCONTINUOUS_BANKS == 1) {
+		flash_stm32h7_parameters.flags = FPF_NON_UNIFORM_LAYOUT | FPF_GAPS_IN_LAYOUT;
+	}
+#endif
 
 	return &flash_stm32h7_parameters;
 }
@@ -653,11 +662,71 @@ static struct flash_stm32_priv flash_data = {
 		    .enr = DT_INST_CLOCKS_CELL(0, bits)},
 };
 
+static int
+flash_stm32h7_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+
+#if defined(DUAL_BANK)
+	if (offset < 0) {
+		return -EINVAL;
+	}
+
+	if (DISCONTINUOUS_BANKS) {
+		if (offset >= (BANK2_OFFSET + KB(REAL_FLASH_SIZE_KB) /  2)) {
+			return -EINVAL;
+		}
+
+		if (offset >= (KB(REAL_FLASH_SIZE_KB) / 2) && offset < BANK2_OFFSET) {
+			fpi->offset = KB(REAL_FLASH_SIZE_KB) / 2;
+			fpi->size = BANK2_OFFSET - (KB(REAL_FLASH_SIZE_KB) / 2);
+			return -ENOENT;
+		}
+	} else if (offset >= KB(REAL_FLASH_SIZE_KB)) {
+		return -EINVAL;
+	}
+#else
+	if (offset < 0 || offset >= KB(REAL_FLASH_SIZE_KB)) {
+		return -EINVAL;
+	}
+#endif
+	fpi->offset = offset & ~(FLASH_SECTOR_SIZE - 1);
+	fpi->size = FLASH_SECTOR_SIZE;
+
+	return 0;
+}
+
+static ssize_t
+flash_stm32h7_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if defined(DUAL_BANK)
+	/* Gap is counted as single page */
+	return KB(REAL_FLASH_SIZE_KB) / FLASH_SECTOR_SIZE + (DISCONTINUOUS_BANKS == 1);
+#else
+	return KB(REAL_FLASH_SIZE_KB) / FLASH_SECTOR_SIZE;
+#endif
+
+}
+
+static ssize_t
+flash_stm32h7_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return KB(REAL_FLASH_SIZE_KB);
+}
+
 static const struct flash_driver_api flash_stm32h7_api = {
 	.erase = flash_stm32h7_erase,
 	.write = flash_stm32h7_write,
 	.read = flash_stm32h7_read,
 	.get_parameters = flash_stm32h7_get_parameters,
+	.get_page_info = flash_stm32h7_get_page_info,
+	.get_page_count = flash_stm32h7_get_page_count,
+	.get_size = flash_stm32h7_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
