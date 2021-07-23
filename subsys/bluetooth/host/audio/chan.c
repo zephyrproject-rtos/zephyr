@@ -29,11 +29,13 @@
 
 #define PA_SYNC_SKIP              5
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
+#define BASE_MIN_SIZE             17
+#define BASE_BIS_DATA_MIN_SIZE    2 /* index and length */
+#define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
-/* The internal bt_audio_base_ad* structs are primarily designed to help
+/* internal bt_audio_base_ad* structs are primarily designed to help
  * calculate the maximum advertising data length
  */
-
 struct bt_audio_base_ad_bis_specific_data {
 	uint8_t index;
 	uint8_t codec_config_len; /* currently unused and shall always be 0 */
@@ -65,7 +67,7 @@ struct bt_audio_base_ad_subgroup {
 
 struct bt_audio_base_ad {
 	uint16_t uuid_val;
-	struct bt_audio_base_ad_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT];
+	struct bt_audio_base_ad_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 } __packed;
 
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
@@ -1209,7 +1211,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
 	uint8_t *start;
 	uint8_t len;
 
-	__ASSERT(broadcaster->subgroup_count == CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT,
+	__ASSERT(broadcaster->subgroup_count == BROADCAST_SUBGROUP_CNT,
 		 "Cannot encode BASE with more than a single subgroup");
 
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
@@ -1435,7 +1437,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	broadcaster->subgroup_count = CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT;
+	broadcaster->subgroup_count = BROADCAST_SUBGROUP_CNT;
 	broadcaster->pd = qos->pd;
 	err = bt_audio_set_base(broadcasters, codec);
 	if (err != 0) {
@@ -1498,6 +1500,17 @@ static struct bt_audio_broadcast_sink *broadcast_sink_free_get(void)
 	return NULL;
 }
 
+static struct bt_audio_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per_adv_sync *sync)
+{
+	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].pa_sync == sync) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -1509,7 +1522,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	BT_DBG("Synced to broadcaster with ID 0x%6X", sink->broadcast_id);
+	BT_DBG("Synced to broadcaster with ID 0x%06X", sink->broadcast_id);
 
 	sink->syncing = false;
 
@@ -1520,6 +1533,284 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 	 * TBD: What if sync to a bad broadcaster that does not send properly
 	 * formatted (or any) BASE?
 	 */
+}
+
+static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
+				     struct bt_codec_data *codec_data)
+{
+	size_t value_len;
+	void *value;
+
+	if (buf->len < sizeof(codec_data->data.data_len)) {
+		BT_DBG("Not enough data for LTV length field: %u", buf->len);
+		return false;
+	}
+	codec_data->data.data_len = net_buf_simple_pull_u8(buf);
+
+	if (buf->len < sizeof(codec_data->data.type)) {
+		BT_DBG("Not enough data for LTV type field: %u", buf->len);
+		return false;
+	}
+	codec_data->data.type = net_buf_simple_pull_u8(buf);
+	codec_data->data.data = codec_data->value;
+
+	value_len = codec_data->data.data_len - sizeof(codec_data->data.type);
+	if (buf->len < value_len) {
+		BT_DBG("Not enough data for LTV value field: %u/%zu",
+		       buf->len, value_len);
+		return false;
+	}
+	value = net_buf_simple_pull_mem(buf, value_len);
+	memcpy(codec_data->value, value, value_len);
+
+	return true;
+}
+
+static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
+				    struct bt_audio_base_bis_data *bis,
+				    bool codec_data_already_found)
+{
+	uint8_t len;
+
+	if (buf->len < BASE_BIS_DATA_MIN_SIZE) {
+		BT_DBG("Not enough bytes (%u) to decode BIS data", buf->len);
+		return false;
+	}
+
+	bis->index = net_buf_simple_pull_u8(buf);
+	if (bis->index == 0) {
+		BT_DBG("BIS index was 0");
+		return false;
+	}
+
+	/* codec config data length */
+	len = net_buf_simple_pull_u8(buf);
+	if (len > buf->len) {
+		BT_DBG("Invalid BIS specific codec config data length: "
+		       "%u (buf is %u)", len, buf->len);
+		return false;
+	}
+
+	if (len > 0) {
+		struct net_buf_simple ltv_buf;
+		void *ltv_data;
+
+		if (codec_data_already_found) {
+			/* Codec config can either be specific to each
+			 *  BIS or for all, but not both
+			 */
+			BT_DBG("BASE contains both codec config data and BIS "
+			       "codec config data. Aborting.");
+			return false;
+		}
+
+		/* TODO: Support codec configuration data per bis */
+		BT_WARN("BIS specific codec config data of length %u "
+			"was found but is not supported yet", len);
+
+		/* Use an extra net_buf_simple to be able to decode until it
+		 * is empty (len = 0)
+		 */
+		ltv_data = net_buf_simple_pull_mem(buf, len);
+		net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+
+		while (ltv_buf.len != 0) {
+			struct bt_codec_data *bis_codec_data;
+
+			bis_codec_data = &bis->data[bis->data_count];
+
+			if (!net_buf_decode_codec_ltv(&ltv_buf,
+						      bis_codec_data)) {
+				BT_DBG("Failed to decode BIS config data for entry %u",
+				       bis->data_count);
+				return false;
+			}
+			bis->data_count++;
+		}
+	}
+
+	return true;
+}
+
+static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
+				    struct bt_audio_base_subgroup *subgroup)
+{
+	struct net_buf_simple ltv_buf;
+	struct bt_codec	*codec;
+	void *ltv_data;
+	uint8_t len;
+
+	codec = &subgroup->codec;
+
+	subgroup->bis_count = net_buf_simple_pull_u8(buf);
+	if (subgroup->bis_count > ARRAY_SIZE(subgroup->bis_data)) {
+		BT_DBG("BASE has more BIS %u than we support %u",
+		       subgroup->bis_count,
+		       (uint8_t)ARRAY_SIZE(subgroup->bis_data));
+		return false;
+	}
+	codec->id = net_buf_simple_pull_u8(buf);
+	codec->cid = net_buf_simple_pull_le16(buf);
+	codec->vid = net_buf_simple_pull_le16(buf);
+
+	/* codec configuration data length */
+	len = net_buf_simple_pull_u8(buf);
+	if (len > buf->len) {
+		BT_DBG("Invalid codec config data length: %u (buf is %u)",
+		len, buf->len);
+		return false;
+	}
+
+	/* Use an extra net_buf_simple to be able to decode until it
+	 * is empty (len = 0)
+	 */
+	ltv_data = net_buf_simple_pull_mem(buf, len);
+	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+
+	/* The loop below is very similar to codec_config_store with notable
+	 * exceptions that it can do early termination, and also does not log
+	 * every LTV entry, which would simply be too much for handling
+	 * broadcasted BASEs
+	 */
+	while (ltv_buf.len != 0) {
+		struct bt_codec_data *codec_data = &codec->data[codec->data_count++];
+
+		if (!net_buf_decode_codec_ltv(&ltv_buf, codec_data)) {
+			BT_DBG("Failed to decode codec config data for entry %u",
+			       codec->data_count - 1);
+			return false;
+		}
+	}
+
+	if (sizeof(len) > buf->len) {
+		return false;
+	}
+
+	/* codec metadata length */
+	len = net_buf_simple_pull_u8(buf);
+	if (len > buf->len) {
+		BT_DBG("Invalid codec config data length: %u (buf is %u)",
+		len, buf->len);
+		return false;
+	}
+
+
+	/* Use an extra net_buf_simple to be able to decode until it
+	 * is empty (len = 0)
+	 */
+	ltv_data = net_buf_simple_pull_mem(buf, len);
+	net_buf_simple_init_with_data(&ltv_buf, ltv_data, len);
+
+	/* The loop below is very similar to codec_config_store with notable
+	 * exceptions that it can do early termination, and also does not log
+	 * every LTV entry, which would simply be too much for handling
+	 * broadcasted BASEs
+	 */
+	while (ltv_buf.len != 0) {
+		struct bt_codec_data *metadata = &codec->meta[codec->meta_count++];
+
+		if (!net_buf_decode_codec_ltv(&ltv_buf, metadata)) {
+			BT_DBG("Failed to decode codec metadata for entry %u",
+			       codec->meta_count - 1);
+			return false;
+		}
+	}
+
+	for (int i = 0; i < subgroup->bis_count; i++) {
+		if (!net_buf_decode_bis_data(buf, &subgroup->bis_data[i],
+					     codec->data_count > 0)) {
+			BT_DBG("Failed to decode BIS data for bis %d", i);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool pa_decode_base(struct bt_data *data, void *user_data)
+{
+	struct bt_audio_broadcast_sink *sink = (struct bt_audio_broadcast_sink *)user_data;
+	struct bt_codec_qos codec_qos = { 0 };
+	struct bt_audio_base base = { 0 };
+	struct bt_uuid_16 broadcast_uuid;
+	struct bt_audio_capability *cap;
+	struct net_buf_simple net_buf;
+	sys_slist_t *lst;
+	void *uuid;
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		/* Terminate early if we do not have any audio sink
+		 * capabilities
+		 */
+		return false;
+	}
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < BASE_MIN_SIZE) {
+		return true;
+	}
+
+	net_buf_simple_init_with_data(&net_buf, (void *)data->data,
+				      data->data_len);
+
+	uuid = net_buf_simple_pull_mem(&net_buf, BT_UUID_SIZE_16);
+
+	if (!bt_uuid_create(&broadcast_uuid.uuid, uuid, BT_UUID_SIZE_16)) {
+		BT_ERR("bt_uuid_create failed");
+		return false;
+	}
+
+	if (bt_uuid_cmp(&broadcast_uuid.uuid, BT_UUID_BASIC_AUDIO) != 0) {
+		/* Continue parsing */
+		return true;
+	}
+
+	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
+	sink->subgroup_count = net_buf_simple_pull_u8(&net_buf);
+	base.subgroup_count = sink->subgroup_count;
+	for (int i = 0; i < base.subgroup_count; i++) {
+		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
+			BT_DBG("Failed to decode subgroup %d", i);
+			return false;
+		}
+	}
+
+	/* TODO: We can already at this point validate whether the BASE
+	 * is useful for us based on our capabilities. E.g. if the codec
+	 * or number of BIS doesn't match our capabilities, there's no
+	 * reason to continue with the BASE. For now let the upper layer
+	 * decide.
+	 */
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->base_recv != NULL) {
+			ops->base_recv(&base, sink->broadcast_id);
+		}
+	}
+
+	return false;
+}
+
+static void pa_recv(struct bt_le_per_adv_sync *sync,
+		    const struct bt_le_per_adv_sync_recv_info *info,
+		    struct net_buf_simple *buf)
+{
+	struct bt_audio_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+
+	if (sink == NULL) {
+		/* Not a PA sync that we control */
+		return;
+	}
+
+	bt_data_parse(buf, pa_decode_base, (void *)sink);
 }
 
 static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
@@ -1551,7 +1842,8 @@ static void sync_broadcast_pa(sys_slist_t *lst,
 
 	if (!pa_cb_registered) {
 		static struct bt_le_per_adv_sync_cb cb = {
-			.synced = pa_synced
+			.synced = pa_synced,
+			.recv = pa_recv
 		};
 
 		bt_le_per_adv_sync_cb_register(&cb);

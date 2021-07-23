@@ -11,6 +11,7 @@
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(broadcaster_found);
+CREATE_FLAG(base_received);
 
 static bool scan_recv(const struct bt_le_scan_recv_info *info,
 		     uint32_t broadcast_id)
@@ -27,6 +28,18 @@ static void scan_term(int err)
 	}
 }
 
+static void base_recv(const struct bt_audio_base *base, uint32_t broadcast_id)
+{
+	if (TEST_FLAG(base_received)) {
+		return;
+	}
+
+	printk("Received BASE with %u subgroups from broadcaster with ID 0x%06X\n",
+	       base->subgroup_count, broadcast_id);
+
+	SET_FLAG(base_received);
+}
+
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
 						0x03, 30, 240, 2,
@@ -36,7 +49,8 @@ static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 
 static struct bt_audio_capability_ops lc3_ops = {
 	.scan_recv = scan_recv,
-	.scan_term = scan_term
+	.scan_term = scan_term,
+	.base_recv = base_recv
 };
 
 static void test_main(void)
@@ -64,6 +78,7 @@ static void test_main(void)
 	}
 
 	UNSET_FLAG(broadcaster_found);
+	UNSET_FLAG(base_received);
 	printk("Scanning for broadcast sources\n");
 	err = bt_audio_broadcaster_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
@@ -71,6 +86,9 @@ static void test_main(void)
 		return;
 	}
 	WAIT_FOR_FLAG(broadcaster_found);
+	printk("Broadcast source found, waiting for BASE\n");
+	WAIT_FOR_FLAG(base_received);
+	printk("BASE received\n");
 
 	k_sleep(K_SECONDS(10));
 

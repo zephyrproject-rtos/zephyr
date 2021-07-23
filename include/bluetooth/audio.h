@@ -36,6 +36,14 @@ struct bt_audio_cap;
 
 #define BT_BROADCAST_ID_SIZE             3 /* octets */
 
+#if defined(CONFIG_BT_BAP)
+#define BROADCAST_SNK_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT
+#define BROADCAST_SUBGROUP_CNT CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT
+#else
+#define BROADCAST_SNK_STREAM_CNT 0
+#define BROADCAST_SUBGROUP_CNT 0
+#endif
+
 /** @brief Abstract Audio endpoint structure. */
 struct bt_audio_endpoint;
 
@@ -184,6 +192,42 @@ struct bt_codec {
 	uint8_t  meta_count;
 	/** Codec Specific Metadata */
 	struct bt_codec_data meta[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+};
+
+
+struct bt_audio_base_bis_data {
+	/* Unique index of the BIS */
+	uint8_t index;
+	/** Codec Specific Data count.
+	 *
+	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
+	 */
+	uint8_t  data_count;
+	/** Codec Specific Data
+	 *
+	 *  Only valid if the data_count of struct bt_codec in the subgroup is 0
+	 */
+	struct bt_codec_data data[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+};
+
+struct bt_audio_base_subgroup {
+	/* Number of BIS in the subgroup */
+	uint8_t bis_count;
+	/** Codec information for the subgroup
+	 *
+	 *  If the data_count of the codec is 0, then codec specific data may be
+	 *  found for each BIS in the bis_data.
+	 */
+	struct bt_codec	codec;
+	/* Array of BIS specific data for each BIS in the subgroup */
+	struct bt_audio_base_bis_data bis_data[BROADCAST_SNK_STREAM_CNT];
+};
+
+struct bt_audio_base {
+	/* Number of subgroups in the BASE */
+	uint8_t subgroup_count;
+	/* Array of subgroups in the BASE */
+	struct bt_audio_base_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 };
 
 /** @def BT_CODEC_QOS
@@ -363,7 +407,7 @@ struct bt_audio_chan {
 
 /** @brief Capability operations structure.
  *
- *  These are only used for unicast and broadcast sink channels.
+ *  These are only used for unicast channels and broadcast sink channels.
  */
 struct bt_audio_capability_ops {
 	/** @brief Capability config callback
@@ -497,6 +541,17 @@ struct bt_audio_capability_ops {
 	 *          Syncing to the broadcaster will stop the current scan.
 	 */
 	bool                    (*scan_recv)(const struct bt_le_scan_recv_info *info,
+					     uint32_t broadcast_id);
+
+	/** @brief Broadcast Audio Source Endpoint (BASE) received
+	 *
+	 *  Callback for when we receive a BASE from a broadcaster after
+	 *  syncing to the broadcaster's periodic advertising.
+	 *
+	 *  @param base          Broadcast Audio Source Endpoint (BASE).
+	 *  @param broadcast_id  24-bit broadcast ID
+	 */
+	void                    (*base_recv)(const struct bt_audio_base *base,
 					     uint32_t broadcast_id);
 
 	/** @brief Scan terminated callback
