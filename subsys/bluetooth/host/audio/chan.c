@@ -32,6 +32,11 @@
  * are primarily designed to help calculate the maximum advertising data length
  */
 
+struct bt_audio_bis_specific_data {
+	uint8_t index;
+	uint8_t codec_config_len; /* currently unused and shall always be 0 */
+} __packed;
+
 struct bt_audio_base_codec_data {
 	uint8_t type;
 	uint8_t data_len;
@@ -47,6 +52,7 @@ struct bt_audio_base_subgroup {
 	struct bt_audio_base_codec_data codec_config[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	uint8_t metadata_len;
 	struct bt_audio_base_codec_data metadata[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+	struct bt_audio_bis_specific_data bis_data[BROADCAST_STREAM_CNT];
 } __packed;
 
 struct bt_audio_base {
@@ -1157,6 +1163,9 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
 	net_buf_simple_add_le24(buf, qos->pd);
 	net_buf_simple_add_u8(buf, broadcaster->subgroup_count);
+	/* TODO: The following encoding should be done for each subgroup once
+	 * supported
+	 */
 	net_buf_simple_add_u8(buf, broadcaster->bis_count);
 	net_buf_simple_add_u8(buf, codec->id);
 	net_buf_simple_add_le16(buf, codec->cid);
@@ -1195,10 +1204,10 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 	/* Create BIS index bitfield */
 	bis_index = 0;
 	for (int i = 0; i < broadcaster->bis_count; i++) {
-		bis_index |= BIT(i);
+		bis_index++;
+		net_buf_simple_add_u8(buf, bis_index);
+		net_buf_simple_add_u8(buf, 0); /* unused length field */
 	}
-	net_buf_simple_add_u8(buf, bis_index);
-	net_buf_simple_add_u8(buf, 0); /* unused length field */
 
 	/* NOTE: It is also possible to have the codec configuration data per
 	 * BIS index. As our API does not support such specialized BISes we
