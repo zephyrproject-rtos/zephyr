@@ -26,6 +26,18 @@
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
+/* Non-uniform access */
+#define STM32_FLASH_PARAMETERS_FLAGS FPF_NON_UNIFORM_LAYOUT
+#elif defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+/* Gapped layout is always considered non-uniform as gap is counted, and described
+ * as a page.
+ */
+#define STM32_FLASH_PARAMETERS_FLAGS (FPF_NON_UNIFORM_LAYOUT | FPF_GAPS_IN_LAYOUT)
+#else
+#define STM32_FLASH_PARAMETERS_FLAGS 0
+#endif
+
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
@@ -41,6 +53,7 @@ static const struct flash_parameters flash_stm32_parameters = {
 #else
 	.erase_value = 0xff,
 #endif
+	.flags = STM32_FLASH_PARAMETERS_FLAGS,
 };
 
 static int flash_stm32_write_protection(const struct device *dev, bool enable);
@@ -512,6 +525,9 @@ static const struct flash_driver_api flash_stm32_api = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_page_info = flash_stm32_get_page_info,
+	.get_page_count = flash_stm32_get_page_count,
+	.get_size = flash_stm32_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif

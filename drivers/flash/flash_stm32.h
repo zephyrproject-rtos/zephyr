@@ -277,6 +277,10 @@ int flash_stm32_wait_flash_idle(const struct device *dev);
 
 int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
 
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi);
+ssize_t flash_stm32_get_page_count(const struct device *dev);
+ssize_t flash_stm32_get_size(const struct device *dev);
+
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
