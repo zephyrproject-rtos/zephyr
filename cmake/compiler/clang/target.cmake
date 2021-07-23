@@ -69,7 +69,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
     list(APPEND TOOLCHAIN_LIBS gcc)
   endif()
 
-  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
+  list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 endif()
