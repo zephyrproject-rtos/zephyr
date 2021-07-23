@@ -37,11 +37,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RESOURCE_INSTANCE_COUNT	(LOCATION_MAX_ID)
 
 /* resource state */
-static float32_value_t latitude;
-static float32_value_t longitude;
-static float32_value_t altitude;
-static float32_value_t radius;
-static float32_value_t speed;
+static double latitude;
+static double longitude;
+static double altitude;
+static double radius;
+static double speed;
 static int32_t timestamp;
 
 static struct lwm2m_engine_obj location;

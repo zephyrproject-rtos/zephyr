@@ -34,6 +34,8 @@ Changes in this release
   * :c:func:`uart_tx`
   * :c:func:`uart_rx_enable`
 
+* Replaced custom LwM2M :c:struct:`float32_value` type with a native double type.
+
 ==========================
 
 Removed APIs in this release

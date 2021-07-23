@@ -43,9 +43,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state */
 struct ipso_buzzer_data {
-	float32_value_t level;
-	float32_value_t delay_duration;
-	float32_value_t min_off_time;
+	double level;
+	double delay_duration;
+	double min_off_time;
 
 	uint64_t trigger_offset;
 
@@ -81,14 +81,6 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][BUZZER_MAX_ID];
 static struct lwm2m_engine_res_inst
 		res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int float2ms(float32_value_t *f, uint32_t *ms)
-{
-	*ms = f->val1 * MSEC_PER_SEC;
-	*ms += f->val2 / (LWM2M_FLOAT32_DEC_MAX / MSEC_PER_SEC);
-
-	return 0;
-}
-
 static int get_buzzer_index(uint16_t obj_inst_id)
 {
 	int i, ret = -ENOENT;
@@ -116,7 +108,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 	}
 
 	/* check min off time from last trigger_offset */
-	float2ms(&buzzer->min_off_time, &temp);
+	temp = (uint32_t)(buzzer->min_off_time * MSEC_PER_SEC);
 	if (k_uptime_get() < buzzer->trigger_offset + temp) {
 		return -EINVAL;
 	}
@@ -128,7 +120,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 		 buzzer->obj_inst_id, DIGITAL_INPUT_STATE_RID);
 	lwm2m_engine_set_bool(path, true);
 
-	float2ms(&buzzer->delay_duration, &temp);
+	temp = (uint32_t)(buzzer->delay_duration * MSEC_PER_SEC);
 	k_work_reschedule(&buzzer->buzzer_work, K_MSEC(temp));
 
 	return 0;
@@ -210,8 +202,8 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 	/* Set default values */
 	(void)memset(&buzzer_data[avail], 0, sizeof(buzzer_data[avail]));
 	k_work_init_delayable(&buzzer_data[avail].buzzer_work, buzzer_work_cb);
-	buzzer_data[avail].level.val1 = 50; /* 50% */
-	buzzer_data[avail].delay_duration.val1 = 1; /* 1 seconds */
+	buzzer_data[avail].level = 50; /* 50% */
+	buzzer_data[avail].delay_duration = 1; /* 1 seconds */
 	buzzer_data[avail].obj_inst_id = obj_inst_id;
 
 	(void)memset(res[avail], 0,
