@@ -19,6 +19,12 @@ config DEBUG_COREDUMP_BACKEND_LOGGING
 	help
 	  Core dump is done via logging subsystem.
 
+config DEBUG_COREDUMP_BACKEND_FS
+	bool "Use file system for coredump"
+	depends on FILE_SYSTEM
+	help
+	  Core dump is done via the file system.
+
 endchoice
 
 choice
@@ -46,5 +52,12 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	  This is the default.
 
 endchoice
+
+config DEBUG_COREDUMP_BACKEND_FS_FILENAME
+	string "The full path name of the coredump file"
+	default "coredump"
+	help
+	  The string should be a valid file path+name.
+
 
 endif # DEBUG_COREDUMP
