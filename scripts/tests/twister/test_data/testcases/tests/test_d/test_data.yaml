@@ -1,0 +1,4 @@
+tests:
+  test_d.check_1:
+    tags: test_d
+    build_only: True

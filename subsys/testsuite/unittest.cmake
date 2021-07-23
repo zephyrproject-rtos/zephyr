@@ -62,6 +62,10 @@ target_compile_options(testbinary PRIVATE
   $<$<COMPILE_LANGUAGE:ASM>:${EXTRA_AFLAGS_AS_LIST}>
   )
 
+target_link_options(testbinary PRIVATE
+  -T "${ZEPHYR_BASE}/subsys/testsuite/include/ztest.ld"
+  )
+
 target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}
   )
