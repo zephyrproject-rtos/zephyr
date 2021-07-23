@@ -113,9 +113,7 @@ class GdbStub(abc.ABC):
 
     def handle_register_single_write_packet(self, pkt):
         # the 'P' packet for writing to registers
-        #
-        # We don't support writing so return error
-        self.put_gdb_packet(b"E01")
+        pass
 
     def handle_memory_read_packet(self, pkt):
         # the 'm' packet for reading memory: m<addr>,<len>
@@ -138,6 +136,10 @@ class GdbStub(abc.ABC):
         addr = s_addr
         barray = b''
         r = get_mem_region(addr)
+        if r is None:
+            barray = None
+            remaining = 0
+
         while remaining > 0:
             if addr > r['end']:
                 r = get_mem_region(addr)
