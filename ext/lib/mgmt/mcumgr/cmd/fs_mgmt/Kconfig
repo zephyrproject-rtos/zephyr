@@ -16,10 +16,15 @@
 # Under the License.
 
 menuconfig MCUMGR_CMD_FS_MGMT
-    bool "Enable mcumgr handlers for file management"
+    bool "Enable mcumgr handlers for file management (insecure)"
     depends on FILE_SYSTEM
     help
       Enables mcumgr handlers for file management
+
+      This option allows mcumgr clients to access anything in the
+      file system, including application-stored secrets like
+      private keys. Use of this feature in production is strongly
+      discouraged.
 
 if MCUMGR_CMD_FS_MGMT
 config FS_MGMT_UL_CHUNK_SIZE
