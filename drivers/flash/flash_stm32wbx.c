@@ -405,6 +405,34 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout_size = 1;
 }
 
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(FLASH_PAGE_SIZE - 1);
+	fpi->size = FLASH_PAGE_SIZE;
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return FLASH_SIZE / FLASH_PAGE_SIZE;
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return FLASH_SIZE;
+}
+
 int flash_stm32_check_status(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
