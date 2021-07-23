@@ -2059,6 +2059,7 @@ class CMake():
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
+            self.instance.fill_results_by_status()
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
 
