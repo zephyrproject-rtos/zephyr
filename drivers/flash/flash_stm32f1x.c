@@ -240,3 +240,39 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout = &flash_layout;
 	*layout_size = 1;
 }
+
+#if defined(CONFIG_SOC_SERIES_STM32F3X)
+#define STM32_FLASH_SIZE (DT_REG_SIZE(DT_INST(0, soc_nv_flash)))
+#else
+#define STM32_FLASH_SIZE (CONFIG_FLASH_SIZE * 1024)
+#endif
+#define STM32_PAGE_COUNT (STM32_FLASH_SIZE / FLASH_PAGE_SIZE)
+
+
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= STM32_FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(FLASH_PAGE_SIZE - 1);
+	fpi->size = FLASH_PAGE_SIZE;
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return STM32_PAGE_COUNT;
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return STM32_FLASH_SIZE;
+}
