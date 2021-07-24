@@ -23,6 +23,15 @@ config SOC_IT8XXX2_PLL_FLASH_48M
 	  Set n to use the default settings.
 	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
 
+config SOC_IT8XXX2_UART_INT_WORKAROUND
+	bool "Enable uart workaround to prevent uart interrupt get stuck"
+	default y
+	depends on UART_NS16550
+	help
+	   IT8XXX2 uart interrupt polarity is rising-edge-triggered.
+	   This configuration re-enables IER at the end of ISR to ensure a pending
+	   uart interrupt can be fired again after interrupt return.
+
 choice
 	prompt "Clock source for PLL reference clock"
 

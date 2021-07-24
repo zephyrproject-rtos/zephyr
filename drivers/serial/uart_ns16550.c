@@ -859,6 +859,13 @@ static void uart_ns16550_isr(const struct device *dev)
 		dev_data->cb(dev, dev_data->cb_data);
 	}
 
+	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_UART_INT_WORKAROUND)) {
+		uint8_t ier = INBYTE(IER(dev));
+
+		/* re-enables IER */
+		OUTBYTE(IER(dev), 0);
+		OUTBYTE(IER(dev), ier);
+	}
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
