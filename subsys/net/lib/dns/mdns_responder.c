@@ -73,6 +73,28 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 	addr->sin_addr.s_addr = htonl(0xE00000FB);
 }
 
+static int setup_dst_addr(struct net_context *ctx,
+			  struct net_pkt *pkt,
+			  struct sockaddr *dst,
+			  socklen_t *dst_len)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	    net_pkt_family(pkt) == AF_INET) {
+		create_ipv4_addr(net_sin(dst));
+		*dst_len = sizeof(struct sockaddr_in);
+		net_context_set_ipv4_ttl(ctx, 255);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		create_ipv6_addr(net_sin6(dst));
+		*dst_len = sizeof(struct sockaddr_in6);
+		net_context_set_ipv6_hop_limit(ctx, 255);
+	} else {
+		return -EPFNOSUPPORT;
+	}
+
+	return 0;
+}
+
 static struct net_context *get_ctx(sa_family_t family)
 {
 	struct net_context *ctx;
@@ -217,48 +239,34 @@ static int send_response(struct net_context *ctx,
 	socklen_t dst_len;
 	int ret;
 
-	if (qtype == DNS_RR_TYPE_A) {
-#if defined(CONFIG_NET_IPV4)
+	ret = setup_dst_addr(ctx, pkt, &dst, &dst_len);
+	if (ret < 0) {
+		NET_DBG("unable to set up the response address");
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
 		const struct in_addr *addr;
 
 		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 						   &ip_hdr->ipv4->src);
-
-		create_ipv4_addr(net_sin(&dst));
-		dst_len = sizeof(struct sockaddr_in);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return ret;
 		}
-
-		net_context_set_ipv4_ttl(ctx, 255);
-#else /* CONFIG_NET_IPV4 */
-		return -EPFNOSUPPORT;
-#endif /* CONFIG_NET_IPV4 */
-
-	} else if (qtype == DNS_RR_TYPE_AAAA) {
-#if defined(CONFIG_NET_IPV6)
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && qtype == DNS_RR_TYPE_AAAA) {
 		const struct in6_addr *addr;
 
 		addr = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
 						   &ip_hdr->ipv6->src);
-
-		create_ipv6_addr(net_sin6(&dst));
-		dst_len = sizeof(struct sockaddr_in6);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in6_addr), (uint8_t *)addr);
 		if (ret != 0) {
 			return -ENOMEM;
 		}
-
-		net_context_set_ipv6_hop_limit(ctx, 255);
-#else /* CONFIG_NET_IPV6 */
-		return -EPFNOSUPPORT;
-#endif /* CONFIG_NET_IPV6 */
-
 	} else {
 		/* TODO: support also service PTRs */
 		return -EINVAL;
@@ -294,6 +302,7 @@ static void send_sd_response(struct net_context *ctx,
 	const struct dns_sd_rec *record;
 	struct dns_sd_rec filter;
 	struct sockaddr dst;
+	socklen_t dst_len;
 	const struct in6_addr *addr6 = NULL;
 	const struct in_addr *addr4 = NULL;
 	char service_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
@@ -303,20 +312,22 @@ static void send_sd_response(struct net_context *ctx,
 	/* This actually is used but the compiler doesn't see that */
 	ARG_UNUSED(record);
 
+	ret = setup_dst_addr(ctx, pkt, &dst, &dst_len);
+	if (ret < 0) {
+		NET_DBG("unable to set up the response address");
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* Look up the local IPv4 address */
 		addr4 = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 					   &ip_hdr->ipv4->src);
-		create_ipv4_addr(net_sin(&dst));
-		net_context_set_ipv4_ttl(ctx, 255);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* Look up the local IPv6 address */
 		addr6 = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
 					   &ip_hdr->ipv6->src);
-		create_ipv6_addr(net_sin6(&dst));
-		net_context_set_ipv6_hop_limit(ctx, 255);
 	}
 
 	ret = dns_sd_extract_service_proto_domain(dns_msg->msg,
@@ -349,7 +360,7 @@ static void send_sd_response(struct net_context *ctx,
 
 			/* Send the response */
 			ret = net_context_sendto(ctx, result->data,
-				result->len, &dst, sizeof(dst), NULL,
+				result->len, &dst, dst_len, NULL,
 				K_NO_WAIT, NULL);
 			if (ret < 0) {
 				NET_DBG("Cannot send mDNS reply (%d)", ret);
