@@ -75,6 +75,8 @@ The Zephyr stm32f103_mini board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -108,6 +110,7 @@ Default Zephyr Peripheral Mapping:
 - PWM1_CH1: PA8
 - USER_PB: PC13
 - LD1: PA5
+- USB_DC DM/DP: PA11/PA12
 
 System Clock
 ------------
