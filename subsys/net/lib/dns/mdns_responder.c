@@ -440,7 +440,7 @@ static int dns_read(struct net_context *ctx,
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
 			NET_DBG("mDNS query to our hostname %s.local",
-				hostname);
+				log_strdup(hostname));
 			send_response(ctx, pkt, ip_hdr, result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
