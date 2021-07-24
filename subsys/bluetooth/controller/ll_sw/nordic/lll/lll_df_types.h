@@ -101,3 +101,18 @@ struct lll_df_sync {
 	uint8_t last;
 	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
 };
+
+/* Names for allowed states for CTE sampling in connected mode */
+enum df_cte_sampling_state {
+	DF_CTE_SAMPLING_UNINITIALIZED,
+	DF_CTE_SAMPLING_ENABLED,
+	DF_CTE_SAMPLING_DISABLED,
+};
+
+/* Parameters for reception of Constant Tone Extension in connected mode */
+struct lll_df_conn_rx_params {
+	uint8_t state : 2;
+	uint8_t slot_durations : 2; /* One of possible values: 1 us, 2 us. */
+	uint8_t ant_sw_len : 7;
+	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+};
