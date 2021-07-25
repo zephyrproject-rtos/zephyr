@@ -51,6 +51,11 @@ static struct net_context *ipv6;
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
+#ifndef CONFIG_NET_TEST
+static int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
+			  struct sockaddr *dst, socklen_t *dst_len);
+#endif /* CONFIG_NET_TEST */
+
 NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
@@ -73,10 +78,8 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 	addr->sin_addr.s_addr = htonl(0xE00000FB);
 }
 
-static int setup_dst_addr(struct net_context *ctx,
-			  struct net_pkt *pkt,
-			  struct sockaddr *dst,
-			  socklen_t *dst_len)
+int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
+		   struct sockaddr *dst, socklen_t *dst_len)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
