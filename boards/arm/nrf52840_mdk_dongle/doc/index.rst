@@ -1,6 +1,6 @@
 .. _nrf52840_mdk_dongle:
 
-nRF52840-mdk
+nRF52840-mdk-dongle
 #################
 
 Overview
@@ -19,7 +19,7 @@ ports: one for DAPLink interface and one for nRF52840 USB device controller.
 The kit also features ultra-low power 64-Mb QSPI FLASH memory, programmable
 user button, RGB LED, up to 24 GPIOs, antenna selection for custom applications.
 
-See `nRF52840-mdk website`_ for more information about the development
+See `nRF52840-mdk-dongle website`_ for more information about the development
 board and `nRF52840 website`_ for the official reference on the IC itself.
 
 References
@@ -27,4 +27,4 @@ References
 .. target-notes::
 
 .. _nRF52840 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52840
-.. _nRF52840-mdk website: https://wiki.makerdiary.com/nrf52840-mdk-usb-dongle/
+.. _nRF52840-mdk-dongle website: https://wiki.makerdiary.com/nrf52840-mdk-usb-dongle/

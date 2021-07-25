@@ -1,5 +1,5 @@
 identifier: nrf52840_mdk_dongle
-name: nRF52840-MDK
+name: nRF52840-MDK Dongle
 type: mcu
 arch: arm
 toolchain:
