@@ -32,7 +32,12 @@ static int reg_read(uint8_t reg, uint8_t *data, uint16_t length,
 static int reg_write(uint8_t reg, const uint8_t *data, uint16_t length,
 		     struct bmi270_data *dev)
 {
-	return i2c_burst_write(dev->i2c, dev->i2c_addr, reg, data, length);
+	uint8_t buffer[1+length];
+    __ASSERT((1U + length) <= sizeof(buffer),
+             "burst buffer too small");
+    buffer[0]=reg;
+    memmove(buffer+1,data,length);
+    return i2c_write(dev->i2c,buffer,1+length,dev->i2c_addr);
 }
 
 static void channel_accel_convert(struct sensor_value *val, int64_t raw_val,
