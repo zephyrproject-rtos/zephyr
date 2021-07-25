@@ -973,6 +973,59 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/* @brief Function sets CTE reception parameters for a connection.
+ *
+ * @param handle             Connection handle.
+ * @param sampling_enable    Enable or disable CTE RX
+ * @param slot_durations     Switching and samplig slot durations for
+ *                           AoA mode.
+ * @param switch_pattern_len Number of antenna ids in switch pattern.
+ * @param ant_ids            Array of antenna identifiers.
+ *
+ * @return HCI status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
+				     uint8_t slot_durations, uint8_t switch_pattern_len,
+				     const uint8_t *ant_ids)
+{
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	df_rx_params = &conn->lll.df_rx_params;
+
+	if (!sampling_enable) {
+		df_rx_params->state = DF_CTE_SAMPLING_DISABLED;
+	} else {
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
+			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+			      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+			    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+		}
+
+
+		df_rx_params->state = DF_CTE_SAMPLING_ENABLED;
+		df_rx_params->slot_durations = slot_durations;
+		memcpy(df_rx_params->ant_ids, ant_ids, switch_pattern_len);
+		df_rx_params->ant_sw_len = switch_pattern_len;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 /* @brief Function provides information about Direction Finding
  *        antennas switching and sampling related settings.
  *
