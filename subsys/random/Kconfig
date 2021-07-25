@@ -53,6 +53,14 @@ config XOROSHIRO_RANDOM_GENERATOR
 
 	  It is so named because it uses 128 bits of state.
 
+config XOSHIRO_RANDOM_GENERATOR
+	bool "Use Xoshiro128++ as PRNG"
+	depends on ENTROPY_HAS_DRIVER
+	help
+	  Enables the Xoshiro128++ pseudo-random number generator, that uses
+	  the entropy driver as a seed source. This is a fast general-purpose
+	  non-cryptographically secure random number generator.
+
 endchoice # RNG_GENERATOR_CHOICE
 
 #
