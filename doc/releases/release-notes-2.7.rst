@@ -295,6 +295,10 @@ Libraries / Subsystems
 * Logging
 
 
+* Random
+
+  * xoroshiro128+ PRNG deprecated in favor of xoshiro128++
+
 * Shell
 
 
