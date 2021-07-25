@@ -12,7 +12,7 @@ config ENTROPY_RV32M1_TRNG
 	  driver based on the RV32M1 TRNG driver.
 
 # Don't use use the RV32M1 TRNG as a random source since it can be quite slow.
-# Instead, use the software implemented xoroshiro RNG.
+# Instead, use the software implemented xoshiro RNG.
 choice RNG_GENERATOR_CHOICE
-	default XOROSHIRO_RANDOM_GENERATOR if ENTROPY_RV32M1_TRNG
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_RV32M1_TRNG
 endchoice

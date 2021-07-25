@@ -2,7 +2,6 @@
 
 if (CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR
     CONFIG_TIMER_RANDOM_GENERATOR OR
-    CONFIG_XOROSHIRO_RANDOM_GENERATOR OR
     CONFIG_XOSHIRO_RANDOM_GENERATOR)
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE           rand32_handlers.c)
@@ -15,8 +14,11 @@ if (CONFIG_TEST_RANDOM_GENERATOR)
     Use it carefully.")
 endif()
 
+# XOROSHIRO builds the XOSHIRO implementation because a Kconfig choice cannot
+# select another choice as a means of deprecating the symbol. Swapping out the
+# implementation lets out-of-tree users still build until the symbol is removed.
 zephyr_library_sources_ifdef(CONFIG_TIMER_RANDOM_GENERATOR          rand32_timer.c)
-zephyr_library_sources_ifdef(CONFIG_XOROSHIRO_RANDOM_GENERATOR      rand32_xoroshiro128.c)
+zephyr_library_sources_ifdef(CONFIG_XOROSHIRO_RANDOM_GENERATOR      rand32_xoshiro128.c)
 zephyr_library_sources_ifdef(CONFIG_XOSHIRO_RANDOM_GENERATOR        rand32_xoshiro128.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_DRBG_CSPRNG_GENERATOR       rand32_ctr_drbg.c)
 
