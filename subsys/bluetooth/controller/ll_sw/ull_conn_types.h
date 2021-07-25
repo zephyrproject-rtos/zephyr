@@ -337,6 +337,10 @@ struct ll_conn {
 		uint16_t conn_event_count;
 	} llcp_cis;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	struct lll_df_conn_rx_params df_rx_params;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 };
 
 struct node_rx_cc {
