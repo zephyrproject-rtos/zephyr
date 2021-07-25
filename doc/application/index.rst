@@ -712,6 +712,13 @@ Using CMake directly:
 Basics
 ======
 
+.. note::
+
+   In the below example, ``west`` is used outside of a west workspace. For this
+   to work, you must set the ``ZEPHYR_BASE`` environment variable to the path
+   of your zephyr git repository, using one of the methods on the
+   :ref:`Environment Variables <env_vars>` page.
+
 #. Navigate to the application directory :file:`<home>/app`.
 #. Enter the following commands to build the application's :file:`zephyr.elf`
    image for the board specified in the command-line parameters:
