@@ -11,6 +11,7 @@
 #include <bluetooth/hci.h>
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -26,6 +27,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
+#include "lll_conn.h"
 #include "lll_df.h"
 #include "lll/lll_df_internal.h"
 
@@ -33,6 +35,7 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
 
