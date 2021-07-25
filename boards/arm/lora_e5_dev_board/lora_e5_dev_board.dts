@@ -150,6 +150,10 @@
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
 /* connectors: */
 grove_serial: &usart1 {};
 grove_i2c: &i2c2 {};

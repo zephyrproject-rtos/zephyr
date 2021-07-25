@@ -393,6 +393,15 @@
 			};
 		};
 
+		aes: aes@58001800 {
+			compatible = "st,stm32-aes";
+			reg = <0x58001800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00020000>;
+			interrupts = <51 0>;
+			status = "disabled";
+			label = "AES";
+		};
+
 		rng: rng@58001000 {
 			compatible = "st,stm32-rng";
 			reg = <0x58001000 0x400>;

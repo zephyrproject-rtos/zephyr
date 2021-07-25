@@ -48,3 +48,7 @@
 &iwdg {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};

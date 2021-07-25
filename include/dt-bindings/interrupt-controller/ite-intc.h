@@ -24,6 +24,7 @@
 #define IT8XXX2_IRQ_WU24        17
 #define IT8XXX2_IRQ_WU22        21
 /* Group 3 */
+#define IT8XXX2_IRQ_TIMER1      30
 #define IT8XXX2_IRQ_WU21        31
 /* Group 5 */
 #define IT8XXX2_IRQ_WU50        40
@@ -43,6 +44,8 @@
 #define IT8XXX2_IRQ_WU65        53
 #define IT8XXX2_IRQ_WU66        54
 #define IT8XXX2_IRQ_WU67        55
+/* Group 7 */
+#define IT8XXX2_IRQ_TIMER2      58
 /* Group 9 */
 #define IT8XXX2_IRQ_WU70        72
 #define IT8XXX2_IRQ_WU71        73
@@ -53,6 +56,7 @@
 #define IT8XXX2_IRQ_WU76        78
 #define IT8XXX2_IRQ_WU77        79
 /* Group 10 */
+#define IT8XXX2_IRQ_TIMER8      80
 #define IT8XXX2_IRQ_WU88        85
 #define IT8XXX2_IRQ_WU89        86
 #define IT8XXX2_IRQ_WU90        87
@@ -124,6 +128,12 @@
 #define IT8XXX2_IRQ_WU124       145
 #define IT8XXX2_IRQ_WU125       146
 #define IT8XXX2_IRQ_WU126       147
+/* Group 19 */
+#define IT8XXX2_IRQ_TIMER3      155
+#define IT8XXX2_IRQ_TIMER4      156
+#define IT8XXX2_IRQ_TIMER5      157
+#define IT8XXX2_IRQ_TIMER6      158
+#define IT8XXX2_IRQ_TIMER7      159
 /* Group 20 */
 #define IT8XXX2_IRQ_USBPD0      165
 #define IT8XXX2_IRQ_USBPD1      166

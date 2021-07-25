@@ -53,6 +53,9 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct net_buf *nb;
 
 	nb = mcumgr_buf_alloc();
+	if (!nb) {
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
 	net_buf_add_mem(nb, buf, len);
 
 	ud = net_buf_user_data(nb);

@@ -156,7 +156,7 @@ void ite_intc_irq_priority_set(unsigned int irq,
 	uint32_t g, i;
 	volatile uint8_t *tri;
 
-	if ((irq > CONFIG_NUM_IRQS) || (flags&IRQ_TYPE_EDGE_BOTH)) {
+	if ((irq > CONFIG_NUM_IRQS) || ((flags&IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH)) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
