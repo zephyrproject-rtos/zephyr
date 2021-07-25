@@ -42,7 +42,7 @@ An override of the default value can be specified in the SOC or board
 .. code-block:: none
 
    choice RNG_GENERATOR_CHOICE
-	   default XOROSHIRO_RANDOM_GENERATOR
+	   default XOSHIRO_RANDOM_GENERATOR
    endchoice
 
 The random number generators available include:
@@ -55,8 +55,8 @@ The random number generators available include:
  enables a random number generator that uses the enabled hardware
  entropy gathering driver to generate random numbers.
 
-:kconfig:`CONFIG_XOROSHIRO_RANDOM_GENERATOR`
- enables the Xoroshiro128+ pseudo-random number generator, that uses the
+:kconfig:`CONFIG_XOSHIRO_RANDOM_GENERATOR`
+ enables the Xoshiro128++ pseudo-random number generator, that uses the
  entropy driver as a seed source.
 
 The CSPRNG_GENERATOR_CHOICE choice group provides selection of the
