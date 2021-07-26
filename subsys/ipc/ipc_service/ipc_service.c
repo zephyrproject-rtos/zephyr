@@ -11,8 +11,7 @@
 #include <zephyr.h>
 #include <device.h>
 
-#define LOG_MODULE_NAME ipc_service
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_IPC_SERVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(ipc_service, CONFIG_IPC_SERVICE_LOG_LEVEL);
 
 const static struct ipc_service_backend *backend;
 
