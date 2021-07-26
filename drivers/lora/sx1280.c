@@ -416,12 +416,12 @@ static void sx1280_dio_work_handle(struct k_work *work)
 		LOG_INF("transmitting done");
 		if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
 		{
-			LOG_INF("timeout\n");
+			LOG_ERR("timeout");
 			return;
 		}
 		else
 		{
-			LOG_INF("no timeout\n");
+			LOG_INF("no timeout");
 			return;
 		}
 	} else {
@@ -771,13 +771,11 @@ void testReadWriteRegister() {
 	// printk("data: %x -- %x\n", Regdata1, Regdata2);
 	if (Regdata2 == (Regdata1 + 1))
 	{
-		printk("Device found\n");
+		LOG_INF("Device found");
 	}
 	else
 	{
-		while (1) {
-			printk("No device found\n");
-		}
+		LOG_ERR("No device found");
 	}
 }
 
@@ -1169,7 +1167,7 @@ int sx1280_lora_config(const struct device *dev,
         sx1280_SetPacketParams( &PacketParams );
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_TX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
 
-	printk("frequency: %u\n", sx1280_getFreqInt());
+	// printk("frequency: %u\n", sx1280_getFreqInt());
         // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
@@ -1290,7 +1288,7 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 
 	if ( (irqStatus & IRQ_HEADER_ERROR) | (irqStatus & IRQ_CRC_ERROR) | (irqStatus & IRQ_RX_TX_TIMEOUT ) ) //check if any of the preceding IRQs is set
 	{
-		printk("rx error");
+		LOG_ERR("rx error");
 		return -1;
 	}
 
