@@ -23,3 +23,4 @@ supported:
   - backup_sram
   - pwm
   - rng
+  - dma
