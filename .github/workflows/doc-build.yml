@@ -25,10 +25,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Update PATH for west
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
     - name: checkout
       uses: actions/checkout@v2
 
