@@ -50,7 +50,7 @@ jobs:
 
     - name: west setup
       run: |
-        west init -l . || true
+        west init -l .
 
     - name: build-docs
       run: |
