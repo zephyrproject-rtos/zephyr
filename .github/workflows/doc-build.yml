@@ -40,7 +40,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-doc-pip
+        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
 
     - name: install-pip
       run: |
