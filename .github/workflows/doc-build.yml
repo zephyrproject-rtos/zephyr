@@ -55,14 +55,17 @@ jobs:
     - name: build-docs
       run: |
         SPHINXOPTS="-q -W -j auto" make -C doc html
-        tar cvf htmldocs.tar --directory=./doc/_build html
+
+    - name: compress-docs
+      run: |
+        tar cfJ html-output.tar.xz --directory=doc/_build html
 
     - name: upload-build
       uses: actions/upload-artifact@master
       continue-on-error: True
       with:
-        name: htmldocs.tar
-        path: htmldocs.tar
+        name: html-output
+        path: html-output.tar.xz
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
