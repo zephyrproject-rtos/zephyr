@@ -237,14 +237,14 @@ bool arch_cpu_active(int cpu_num);
  *
  * @see irq_lock()
  */
-static inline unsigned int arch_irq_lock(void);
+__syscall unsigned int arch_irq_lock(void);
 
 /**
  * Unlock interrupts on the current CPU
  *
  * @see irq_unlock()
  */
-static inline void arch_irq_unlock(unsigned int key);
+__syscall void arch_irq_unlock(unsigned int key);
 
 /**
  * Test if calling arch_irq_unlock() with this key would unlock irqs
@@ -253,7 +253,7 @@ static inline void arch_irq_unlock(unsigned int key);
  * @return true if interrupts were unlocked prior to the arch_irq_lock()
  * call that produced the key argument.
  */
-static inline bool arch_irq_unlocked(unsigned int key);
+__syscall bool arch_irq_unlocked(unsigned int key);
 
 /**
  * Disable the specified interrupt line
