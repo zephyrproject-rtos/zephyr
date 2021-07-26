@@ -746,6 +746,11 @@ severity and the equivlent rules from other standards for reference.
       -  The size_t argument passed to any function in <string.h> shall have an appropriate value
       -  N/A
       -  `Rule 21.18 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_18.c>`_
+    * -  Rule 21.19
+      -  Mandatory
+      -  The pointers returned by the Standard Library functions localeconv, getenv, setlocale or, strerror shall only be used as if they have pointer to const-qualified type
+      -  N/A
+      -  `Rule 21.19 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_19.c>`_
     * -  Rule 21.20
       -  Mandatory
       -  The pointer returned by the Standard Library functions asctime, ctime, gmtime, localtime, localeconv, getenv, setlocale or strerror shall not be used following a subsequent call to the same function
