@@ -109,6 +109,8 @@ The Zephyr nucleo_f429zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
