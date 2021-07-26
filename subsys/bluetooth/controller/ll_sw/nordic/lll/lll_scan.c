@@ -73,11 +73,6 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
 #endif /* CONFIG_BT_CENTRAL */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
-static bool isr_scan_adva_check(struct lll_scan *lll, uint8_t addr_type,
-				uint8_t *addr, uint8_t rl_idx);
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
-
 static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				uint8_t addr_type, uint8_t *addr,
 				uint8_t rl_idx, bool *dir_report);
@@ -122,6 +117,75 @@ void lll_scan_prepare(void *param)
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
+
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
+bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
+			 uint8_t rl_idx)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Only applies to initiator with no whitelist */
+	if (rl_idx != FILTER_IDX_NONE) {
+		return (rl_idx == lll->rl_idx);
+	} else if (!ull_filter_lll_rl_addr_allowed(addr_type, addr, &rl_idx)) {
+		return false;
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	/* NOTE: This function to be used only to check AdvA when intiating,
+	 *       hence, otherwise we should not use the return value.
+	 *       This function is referenced in lll_scan_ext_tgta_check, but
+	 *       is not used when not being an initiator, hence return false
+	 *       is never reached.
+	 */
+#if defined(CONFIG_BT_CENTRAL)
+	return ((lll->adv_addr_type == addr_type) &&
+		!memcmp(lll->adv_addr, addr, BDADDR_SIZE));
+#else /* CONFIG_BT_CENTRAL */
+	return false;
+#endif /* CONFIG_BT_CENTRAL */
+}
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
+			     struct pdu_adv *pdu, uint8_t rl_idx)
+{
+	uint8_t is_directed;
+	uint8_t tx_addr;
+	uint8_t rx_addr;
+	uint8_t *adva;
+	uint8_t *tgta;
+
+	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
+		return true;
+	}
+
+	if (pdu->len <
+	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
+	    ADVA_SIZE) {
+		return false;
+	}
+
+	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
+	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
+				       sizeof(struct pdu_adv_ext_hdr) +
+				       ADVA_SIZE + TARGETA_SIZE)) {
+		return false;
+	}
+
+	tx_addr = pdu->tx_addr;
+	rx_addr = pdu->rx_addr;
+	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+	return ((!is_init ||
+		 (lll->filter_policy & 0x01) ||
+		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
+		((!is_directed) ||
+		 (is_directed &&
+		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
+				      NULL))));
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CENTRAL)
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
@@ -203,47 +267,6 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
 }
 #endif /* CONFIG_BT_CENTRAL */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
-			     struct pdu_adv *pdu, uint8_t rl_idx)
-{
-	uint8_t is_directed;
-	uint8_t tx_addr;
-	uint8_t rx_addr;
-	uint8_t *adva;
-	uint8_t *tgta;
-
-	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
-		return true;
-	}
-
-	if (pdu->len <
-	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
-	    ADVA_SIZE) {
-		return false;
-	}
-
-	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
-				       sizeof(struct pdu_adv_ext_hdr) +
-				       ADVA_SIZE + TARGETA_SIZE)) {
-		return false;
-	}
-
-	tx_addr = pdu->tx_addr;
-	rx_addr = pdu->rx_addr;
-	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
-	return ((!is_init ||
-		 (lll->filter_policy & 0x01) ||
-		 isr_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) ||
-		 (is_directed &&
-		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
-				      NULL))));
-}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static int init_reset(void)
 {
@@ -1204,7 +1227,7 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
 	return ((((lll->filter_policy & 0x01) != 0U) ||
-		isr_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
+		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
 				    rl_idx)) &&
 		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
 		  (pdu->len <= sizeof(struct pdu_adv_adv_ind))) ||
@@ -1216,34 +1239,6 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 					      NULL)))));
 }
 #endif /* CONFIG_BT_CENTRAL */
-
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
-static bool isr_scan_adva_check(struct lll_scan *lll, uint8_t addr_type,
-				uint8_t *addr, uint8_t rl_idx)
-{
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	/* Only applies to initiator with no whitelist */
-	if (rl_idx != FILTER_IDX_NONE) {
-		return (rl_idx == lll->rl_idx);
-	} else if (!ull_filter_lll_rl_addr_allowed(addr_type, addr, &rl_idx)) {
-		return false;
-	}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-
-	/* NOTE: This function to be used only to check AdvA when intiating,
-	 *       hence, otherwise we should not use the return value.
-	 *       This function is referenced in lll_scan_ext_tgta_check, but
-	 *       is not used when not being an initiator, hence return false
-	 *       is never reached.
-	 */
-#if defined(CONFIG_BT_CENTRAL)
-	return ((lll->adv_addr_type == addr_type) &&
-		!memcmp(lll->adv_addr, addr, BDADDR_SIZE));
-#else /* CONFIG_BT_CENTRAL */
-	return false;
-#endif /* CONFIG_BT_CENTRAL */
-}
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
 
 static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				uint8_t addr_type, uint8_t *addr,
