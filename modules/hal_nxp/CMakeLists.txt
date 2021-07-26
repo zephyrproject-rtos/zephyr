@@ -5,3 +5,4 @@
 #
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} hal_nxp)
+add_subdirectory_ifdef(CONFIG_USB_DEVICE_DRIVER usb)
