@@ -35,6 +35,11 @@ manifest:
     - name: mbedtls
       revision: 53044168b43f06ec5654b906a2cdd260bf477edd
       path: modules/crypto/mbedtls
+    - name: mcuboot
+      path: modules/mcuboot
+      revision: a423338d7cd600cf7102ca0cf3255468136700e2
+      remote: recogni
+    
 
   self:
     path: zephyr

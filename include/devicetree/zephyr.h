@@ -63,6 +63,7 @@
 #define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL \
 	DT_LABEL(DT_CHOSEN(zephyr_flash_controller))
 #endif
+//DT_LABEL(DT_CHOSEN(scorpio_flash_controller))
 
 #if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_can_primary), label)
 #define DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL \

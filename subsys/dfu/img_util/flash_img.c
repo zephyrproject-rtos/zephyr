@@ -29,8 +29,8 @@
 #endif
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-#define FLASH_WRITE_BLOCK_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
+#define FLASH_WRITE_BLOCK_SIZE 512
+//	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
 
 BUILD_ASSERT((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 	     "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
