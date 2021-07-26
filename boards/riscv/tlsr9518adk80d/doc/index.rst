@@ -63,6 +63,8 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | UART           | on-chip    | serial                       |
 +----------------+------------+------------------------------+
+| FLASH (MSPI)   | on-chip    | flash                        |
++----------------+------------+------------------------------+
 
 The following example projects are supported:
 
@@ -72,11 +74,13 @@ The following example projects are supported:
 - samples/basic/threads
 - samples/basic/blinky
 - samples/basic/button
+- samples/subsys/nvs
 - samples/subsys/console/echo
 - samples/subsys/console/getchar
 - samples/subsys/console/getline
 - samples/subsys/shell/shell_module
 - samples/subsys/cpp/cpp_synchronization
+- samples/drivers/flash_shell
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
