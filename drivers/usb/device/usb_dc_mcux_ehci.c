@@ -72,8 +72,8 @@ __nocache K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 #endif
 
-static usb_ep_ctrl_data_t s_ep_ctrl[NUM_OF_EP_MAX];
-static usb_device_struct_t dev_data;
+static struct usb_ep_ctrl_data s_ep_ctrl[NUM_OF_EP_MAX];
+static struct usb_device_struct dev_data;
 
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /* EHCI device driver interface */
@@ -746,7 +746,7 @@ static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
 }
 
 /* Notify the up layer the KHCI status changed. */
-void USB_DeviceNotificationTrigger(void *handle, void *msg)
+usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 {
 	uint8_t ep_abs_idx;
 	usb_device_callback_message_struct_t *cb_msg =
@@ -771,13 +771,15 @@ void USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 		if (ep_abs_idx >= NUM_OF_EP_MAX) {
 			LOG_ERR("Wrong endpoint index/address");
-			return;
+			return kStatus_USB_Error;
 		}
 
 		memcpy(&dev_data.eps[ep_abs_idx].transfer_message, cb_msg,
 		       sizeof(usb_device_callback_message_struct_t));
 		handle_transfer_msg(&dev_data.eps[ep_abs_idx].transfer_message);
 	}
+
+	return kStatus_USB_Success;
 }
 
 static void usb_isr_handler(void)
