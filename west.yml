@@ -77,7 +77,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: b280eec5d3b1296b231117c1999bcd0269b6ecc4
+      revision: 870d05e6a64ea9548da6b907058b03c8c9420826
       path: modules/hal/microchip
       groups:
         - hal
