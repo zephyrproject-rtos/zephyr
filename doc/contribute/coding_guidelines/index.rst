@@ -761,6 +761,11 @@ severity and the equivlent rules from other standards for reference.
       -  All resources obtained dynamically by means of Standard Library functions shall be explicitly released
       -  N/A
       -  `Rule 22.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_01.c>`_
+    * -  Rule 22.2
+      -  Mandatory
+      -  A block of memory shall only be freed if it was allocated by means of a Standard Library function
+      -  N/A
+      -  `Rule 22.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_22_02.c>`_
     * -  Rule 22.3
       -  Required
       -  The same file shall not be open for read and write access at the same time on different streams
