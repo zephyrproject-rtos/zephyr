@@ -22,8 +22,6 @@
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
 
 #define VW_MAX_GIRQS                2ul
-/* Missing HAL value */
-#define MEC_ESPI_MSVW08_SRC1_VAL    BIT(5)
 
 /* 200ms */
 #define MAX_OOB_TIMEOUT             200ul
