@@ -4919,7 +4919,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	int8_t rssi;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	uint8_t rl_idx;
+	uint8_t rl_idx = ll_rl_size_get();
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
@@ -4950,7 +4950,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		rl_idx = node_rx_curr->hdr.rx_ftr.rl_idx;
+		uint8_t rl_idx_curr = node_rx_curr->hdr.rx_ftr.rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		BT_DBG("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u,"
@@ -5101,6 +5101,9 @@ no_ext_hdr:
 			data_len = data_len_curr;
 			total_data_len = data_len;
 			data = data_curr;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+			rl_idx = rl_idx_curr;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		} else {
 			/* TODO: Validate current value with previous, also
 			 * detect the scan response in the list of node_rx.
@@ -5127,6 +5130,11 @@ no_ext_hdr:
 				 * fragment.
 				 */
 			}
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+			if (rl_idx >= ll_rl_size_get()) {
+				rl_idx = rl_idx_curr;
+			}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		}
 
 		if (!node_rx_next) {
