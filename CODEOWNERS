@@ -220,6 +220,7 @@
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
 /drivers/flash/                           @nashif @nvlsianpu
+/drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn
