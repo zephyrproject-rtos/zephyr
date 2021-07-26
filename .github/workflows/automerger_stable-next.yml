@@ -10,6 +10,7 @@ jobs:
     steps:
     - name: clone repo
       run: |
+        rm -rf zephyr
         git clone -b ${{ env.branch }} git@github.com:phytec-labs/${{ env.repository_name }}.git zephyr
         git clone git@github.com:phytec-labs/${{ env.repository_name }}-samples.git ${{ env.repository_name }}-samples
       env:
