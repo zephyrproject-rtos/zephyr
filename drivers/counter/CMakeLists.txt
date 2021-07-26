@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPC_RTC        counter_mcux_lpc
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_TIMER           counter_nrfx_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_RTC             counter_nrfx_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_STM32           counter_ll_stm32_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_SAM_TC              counter_sam_tc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_SAM0_TC32           counter_sam0_tc32.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_CMOS                counter_cmos.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_GPT            counter_mcux_gpt.c)
