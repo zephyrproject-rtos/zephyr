@@ -154,6 +154,13 @@
 			status = "disabled";
 		};
 
+		trng0: trng@80101800 {
+			compatible = "telink,b91-trng";
+			reg = <0x80101800 0x20>;
+			label = "trng_0";
+			status = "disabled";
+		};
+
 		pinmux: pinmux@80140330 {
 			compatible = "telink,b91-pinmux";
 			reg = <0x80140330 0x28
