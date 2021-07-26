@@ -56,6 +56,7 @@
 		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
+		zephyr,entropy = &trng0;
 	};
 };
 
@@ -93,6 +94,10 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pb2 &uart0_rx_pb3>;
+};
+
+&trng0 {
+	status = "okay";
 };
 
 &ieee802154 {
