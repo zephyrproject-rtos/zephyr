@@ -119,7 +119,10 @@
 		};
 		storage_partition: partition@f0000 {
 			label = "storage";
-			reg = <0x000f0000 0x00010000>;
+			reg = <0x000f0000 0x00008000>;
+			/* region 0x000f8000 .. 0x000FFFFF
+			 * is reserved for factory calibration
+			 */
 		};
 	};
 };
