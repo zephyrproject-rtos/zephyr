@@ -56,7 +56,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 		      compare_buf, buf->buf);
 }
 
-#define TEST_PACKAGING(fmt, ...) do { \
+#define TEST_PACKAGING2(flags, fmt, ...) do { \
 	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(0, fmt, __VA_ARGS__); \
 	zassert_equal(must_runtime, !Z_C_GENERIC, NULL); \
 	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
@@ -66,7 +66,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	struct out_buffer rt_buf = { \
 		.buf = runtime_buf, .idx = 0, .size = sizeof(runtime_buf) \
 	}; \
-	int rc = cbprintf_package(NULL, ALIGN_OFFSET, 0, fmt, __VA_ARGS__); \
+	int rc = cbprintf_package(NULL, ALIGN_OFFSET, flags, fmt, __VA_ARGS__); \
 	zassert_true(rc > 0, "cbprintf_package() returned %d", rc); \
 	int len = rc; \
 	/* Aligned so the package is similar to the static one. */ \
@@ -74,7 +74,7 @@ static void unpack(const char *desc, struct out_buffer *buf,
 			rt_package[len + ALIGN_OFFSET]; \
 	memset(rt_package, 0, len + ALIGN_OFFSET); \
 	pkg = &rt_package[ALIGN_OFFSET]; \
-	rc = cbprintf_package(pkg, len, 0, fmt, __VA_ARGS__); \
+	rc = cbprintf_package(pkg, len, flags, fmt, __VA_ARGS__); \
 	zassert_equal(rc, len, "cbprintf_package() returned %d, expected %d", \
 		      rc, len); \
 	dump("runtime", pkg, len); \
@@ -82,16 +82,26 @@ static void unpack(const char *desc, struct out_buffer *buf,
 	struct out_buffer st_buf = { \
 		.buf = static_buf, .idx = 0, .size = sizeof(static_buf) \
 	}; \
-	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, 0, fmt, __VA_ARGS__); \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, flags, \
+				fmt, __VA_ARGS__); \
 	zassert_true(len > 0, "CBPRINTF_STATIC_PACKAGE() returned %d", len); \
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
 		package[len + ALIGN_OFFSET];\
 	int outlen; \
 	pkg = &package[ALIGN_OFFSET]; \
-	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, 0, fmt, __VA_ARGS__);\
+	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, flags, \
+				fmt, __VA_ARGS__);\
 	zassert_equal(len, outlen, NULL); \
 	dump("static", pkg, len); \
 	unpack("static", &st_buf, pkg, len); \
+} while (0)
+
+#define TEST_PACKAGING(fmt, ...) do { \
+	TEST_PACKAGING2(0, fmt, __VA_ARGS__); \
+	TEST_PACKAGING2(CBPRINTF_PACKAGE_ADD_STRING_IDXS, fmt, __VA_ARGS__); \
+	TEST_PACKAGING2(CBPRINTF_PACKAGE_ADD_STRING_IDXS | \
+			CBPRINTF_PACKAGE_PACKED, fmt, __VA_ARGS__); \
+	TEST_PACKAGING2(CBPRINTF_PACKAGE_PACKED, fmt, __VA_ARGS__); \
 } while (0)
 
 void test_cbprintf_package(void)
