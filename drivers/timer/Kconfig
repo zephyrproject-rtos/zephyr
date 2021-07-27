@@ -253,6 +253,7 @@ config ESP32C3_SYS_TIMER
 	bool "ESP32C3 sys-timer support"
 	depends on SOC_ESP32C3
 	default y
+	select TICKLESS_CAPABLE
 	help
 	  This option enables the system timer driver for the Espressif ESP32C3
 	  and provides the standard "system clock driver" interface.
