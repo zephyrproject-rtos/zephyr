@@ -7,7 +7,10 @@ endif()
 
 find_program(CMAKE_AR      llvm-ar      ${find_program_clang_args}   )
 find_program(CMAKE_NM      llvm-nm      ${find_program_clang_args}   )
-find_program(CMAKE_OBJDUMP llvm-objdump ${find_program_clang_args}   )
+# In OneApi installation directory on Windows, there is no llvm-objdump
+# binary, so would better use objdump from system environment both
+# on Linux and Windows.
+find_program(CMAKE_OBJDUMP objdump      ${find_program_binutils_args})
 find_program(CMAKE_RANLIB  llvm-ranlib  ${find_program_clang_args}   )
 find_program(CMAKE_OBJCOPY llvm-objcopy ${find_program_binutils_args})
 find_program(CMAKE_READELF readelf      ${find_program_binutils_args})
