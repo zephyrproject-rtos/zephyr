@@ -231,6 +231,8 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
+		__fallthrough;
+	case PM_STATE_SOFT_OFF:
 		if (pm_suspend_devices()) {
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
 					ticks, _handle_device_abort(z_power_state));
