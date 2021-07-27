@@ -4,6 +4,11 @@
 name: Documentation GitHub Workflow
 
 on:
+  schedule:
+    - cron: '0 */3 * * *'
+  push:
+    tags:
+      - v*
   pull_request:
     paths:
     - 'doc/**'
