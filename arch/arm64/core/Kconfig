@@ -127,6 +127,7 @@ config ARMV8_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
 	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_USERSPACE if ARM_MPU
 	help
 	  This option signifies the use of an ARMv8-R processor
 	  implementation.
