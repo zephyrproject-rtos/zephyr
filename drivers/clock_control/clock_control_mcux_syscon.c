@@ -72,6 +72,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		LOG_ERR("Missing feature define for HS_SPI clock!");
 #endif
 		break;
+#if (defined(FSL_FEATURE_SOC_USDHC_COUNT) && FSL_FEATURE_SOC_USDHC_COUNT)
+	case MCUX_USDHC1_CLK:
+		*rate = CLOCK_GetSdioClkFreq(0);
+		break;
+	case MCUX_USDHC2_CLK:
+		*rate = CLOCK_GetSdioClkFreq(1);
+		break;
+#endif
 	}
 #endif
 
