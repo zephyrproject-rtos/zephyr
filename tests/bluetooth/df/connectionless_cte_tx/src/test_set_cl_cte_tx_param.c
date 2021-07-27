@@ -223,19 +223,23 @@ void test_set_ct_cte_tx_params_aoa_invalid_pattern_len(void)
 	zassert_equal(err, 0, "Unexpected error value for AoA");
 }
 
-void run_set_cl_cte_tx_params_tests(void)
+static bool enabled_set_cl_cte_tx_para(const void *state)
 {
-	ztest_test_suite(test_hci_df_info,
-			 ztest_unit_test(test_set_cl_cte_tx_params_with_correct_aod_2us),
-			 ztest_unit_test(test_set_cl_cte_tx_params_with_correct_aod_1us),
-			 ztest_unit_test(test_set_ct_cte_tx_params_correct_aoa),
-			 ztest_unit_test(test_set_ct_cte_tx_params_correct_aoa_without_ant_pattern),
-			 ztest_unit_test(test_set_ct_cte_tx_params_wrong_adv_handle),
-			 ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_len),
-			 ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_type),
-			 ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_count),
-			 ztest_unit_test(test_set_ct_cte_tx_params_aod_2us_invalid_pattern_len),
-			 ztest_unit_test(test_set_ct_cte_tx_params_aod_1us_invalid_pattern_len),
-			 ztest_unit_test(test_set_ct_cte_tx_params_aoa_invalid_pattern_len));
-	ztest_run_test_suite(test_hci_df_info);
+	const struct bt_test_state *s = state;
+
+	return s->is_setup && s->is_adv_set_created;
 }
+
+ztest_register_test_suite(
+	test_set_cl_cte_tx_param, enabled_set_cl_cte_tx_para,
+	ztest_unit_test(test_set_cl_cte_tx_params_with_correct_aod_2us),
+	ztest_unit_test(test_set_cl_cte_tx_params_with_correct_aod_1us),
+	ztest_unit_test(test_set_ct_cte_tx_params_correct_aoa),
+	ztest_unit_test(test_set_ct_cte_tx_params_correct_aoa_without_ant_pattern),
+	ztest_unit_test(test_set_ct_cte_tx_params_wrong_adv_handle),
+	ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_len),
+	ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_type),
+	ztest_unit_test(test_set_ct_cte_tx_params_invalid_cte_count),
+	ztest_unit_test(test_set_ct_cte_tx_params_aod_2us_invalid_pattern_len),
+	ztest_unit_test(test_set_ct_cte_tx_params_aod_1us_invalid_pattern_len),
+	ztest_unit_test(test_set_ct_cte_tx_params_aoa_invalid_pattern_len));

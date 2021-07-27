@@ -244,16 +244,19 @@ void test_set_cl_cte_tx_enable_and_update_cte_params(void)
 	common_delete_adv_set();
 }
 
-void run_set_cl_cte_tx_enable_tests(void)
+static bool test_set_cl_cte_tx_enable_pragma(const void *state)
 {
-	ztest_test_suite(test_hci_df_info,
-			 ztest_unit_test(test_set_cl_cte_tx_enable_invalid_adv_set_handle),
-			 ztest_unit_test(test_set_cl_cte_tx_enable_cte_params_not_set),
-			 ztest_unit_test(test_set_cl_cte_tx_enable_per_adv_coded_phy),
-			 ztest_unit_test(test_set_cl_cte_tx_enable),
-			 ztest_unit_test(test_set_cl_cte_tx_enable_after_per_adv_enabled),
-			 ztest_unit_test(test_set_cl_cte_tx_disable_before_per_adv_enable),
-			 ztest_unit_test(test_set_cl_cte_tx_enable_and_update_cte_params),
-			 ztest_unit_test(test_set_cl_cte_tx_disable_during_per_adv_enable));
-	ztest_run_test_suite(test_hci_df_info);
+	const struct bt_test_state *s = state;
+
+	return s->is_setup && !s->is_adv_set_created;
 }
+
+ztest_register_test_suite(test_set_cl_cte_tx_enable, test_set_cl_cte_tx_enable_pragma,
+			  ztest_unit_test(test_set_cl_cte_tx_enable_invalid_adv_set_handle),
+			  ztest_unit_test(test_set_cl_cte_tx_enable_cte_params_not_set),
+			  ztest_unit_test(test_set_cl_cte_tx_enable_per_adv_coded_phy),
+			  ztest_unit_test(test_set_cl_cte_tx_enable),
+			  ztest_unit_test(test_set_cl_cte_tx_enable_after_per_adv_enabled),
+			  ztest_unit_test(test_set_cl_cte_tx_disable_before_per_adv_enable),
+			  ztest_unit_test(test_set_cl_cte_tx_enable_and_update_cte_params),
+			  ztest_unit_test(test_set_cl_cte_tx_disable_during_per_adv_enable));
