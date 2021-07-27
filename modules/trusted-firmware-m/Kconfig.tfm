@@ -157,6 +157,31 @@ config TFM_MCUBOOT_IMAGE_NUMBER
 	  updated in one atomic operation. When this is 2, they are split and
 	  can be updated independently if dependency requirements are met.
 
+choice TFM_MCUBOOT_PATH
+	prompt "Path to MCUboot or DOWNLOAD to fetch automatically"
+	default TFM_MCUBOOT_PATH_LOCAL
+	help
+	   Path to MCUboot for TF-M builds. The default option
+	   is to use Zephyr's MCUboot module. As an alternative,
+	   users may switch to the 'download' version; in that
+	   case MCUboot will be fetched by the TF-M build during
+	   build time. The default option ensures that Zephyr builds
+	   with TF-M do not fetch external trees.
+
+config TFM_MCUBOOT_PATH_LOCAL
+	bool "TF-M to use Zephyr's MCUboot"
+	help
+	  TF-M builds with BL2 will use the Zephyr's MCUboot version,
+	  which is present in the MCUboot module.
+
+config TFM_MCUBOOT_PATH_DOWNLOAD
+	bool "TF-M to automatically download MCUboot during build"
+	help
+	  TF-M bulds with BL2 will let the TF-M build to automatically
+	  fetch and check-out the MCUboot version to use in the build.
+
+endchoice
+
 endif # TFM_BL2
 
 config TFM_IPC
