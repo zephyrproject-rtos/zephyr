@@ -59,7 +59,8 @@ struct rtc_stm32_config {
 };
 
 struct rtc_stm32_data {
-	counter_alarm_callback_t callback;
+	counter_alarm_callback_t alarm_callback;
+	counter_top_callback_t top_callback;
 	uint32_t ticks;
 	void *user_data;
 };
@@ -150,13 +151,13 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now = rtc_stm32_read(dev);
 	uint32_t ticks = alarm_cfg->ticks;
 
-	if (data->callback != NULL) {
-		LOG_DBG("Alarm busy\n");
+	if (data->alarm_callback != NULL) {
+		LOG_DBG("Alarm busy");
 		return -EBUSY;
 	}
 
-
-	data->callback = alarm_cfg->callback;
+	/* defining the alarm_callback means, the alarm is on */
+	data->alarm_callback = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
@@ -172,7 +173,7 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 		alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC);
 	}
 
-	LOG_DBG("Set Alarm: %d\n", ticks);
+	LOG_DBG("Set Alarm: %d", ticks);
 
 	gmtime_r(&alarm_val, &alarm_tm);
 
@@ -212,7 +213,8 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	LL_RTC_ALMA_Disable(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
-	DEV_DATA(dev)->callback = NULL;
+	/* un-defining the alarm_callback means, the alarm is off */
+	DEV_DATA(dev)->alarm_callback = NULL;
 
 	return 0;
 }
@@ -231,27 +233,99 @@ static uint32_t rtc_stm32_get_top_value(const struct device *dev)
 	return info->max_top_value;
 }
 
-
 static int rtc_stm32_set_top_value(const struct device *dev,
 				   const struct counter_top_cfg *cfg)
 {
+	struct rtc_stm32_data *data = DEV_DATA(dev);
 	const struct counter_config_info *info = dev->config;
-
-	if ((cfg->ticks != info->max_top_value) ||
-		!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-		return -ENOTSUP;
-	} else {
-		return 0;
+#ifdef RTC_CR_ALRBE
+	struct tm alarm_tm;
+	time_t alarm_val;
+	LL_RTC_AlarmTypeDef rtc_alarm;
+	bool reset_counter = false;
+#endif /* RTC_CR_ALRBE */
+	/*
+	 * Zephyr API specifies that Top value can only be changed
+	 * when there is no active channel alarm
+	 */
+	if (data->alarm_callback != NULL) {
+		LOG_ERR("cannot set top value, Alarm busy");
+		return -EBUSY;
 	}
 
+	if (cfg->ticks > info->max_top_value) {
+		LOG_ERR("Counter top value exceeeds %d", info->max_top_value);
+		return -ENOTSUP;
+	}
 
+#ifdef RTC_CR_ALRBE
+	/* top counter is based on the ALARM B: setting a new alarm */
+	uint32_t now = rtc_stm32_read(dev);
+	/* compare new top value with the position of the current counter */
+
+	/* set new top value in the future : reset or not the counter */
+	if ((cfg->ticks > now) && (cfg->flags & !COUNTER_TOP_CFG_DONT_RESET)) {
+		reset_counter = true;
+	}
+	if ((cfg->ticks < now) && (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE)) {
+		reset_counter = true;
+	}
+	/* try to set a new top value in the past without reset : error */
+	if ((cfg->ticks < now) && (cfg->flags & !COUNTER_TOP_CFG_RESET_WHEN_LATE)) {
+		/* return error */
+		LOG_ERR("top counter is too late");
+		return -ETIME;
+	}
+	/* reset counter and continue setting the new top value */
+	if (reset_counter) {
+		/* counter must also be stopped and re-started from 0 */
+		LOG_DBG("stop top counter, reset and restart");
+		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+		LL_RCC_DisableRTC();
+		LL_RTC_TIME_Config(RTC, LL_RTC_HOURFORMAT_24HOUR, 0, 0, 0);
+		LL_RTC_DATE_Config(RTC, 0, 0, 0, 0);
+		LL_RCC_EnableRTC();
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+	}
+	alarm_val = (time_t)cfg->ticks;
+	gmtime_r(&alarm_val, &alarm_tm);
+
+	/* Apply ALARM_B */
+	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
+	rtc_alarm.AlarmTime.Hours = alarm_tm.tm_hour;
+	rtc_alarm.AlarmTime.Minutes = alarm_tm.tm_min;
+	rtc_alarm.AlarmTime.Seconds = alarm_tm.tm_sec;
+
+	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_NONE;
+	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
+	rtc_alarm.AlarmDateWeekDay = alarm_tm.tm_mday;
+
+	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_ALMB_Disable(RTC);
+	if (LL_RTC_ALMB_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
+		return -EIO;
+	}
+
+	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_ALMB_Enable(RTC);
+	LL_RTC_ClearFlag_ALRB(RTC);
+	LL_RTC_EnableIT_ALRB(RTC);
+	LL_RTC_EnableWriteProtection(RTC);
+
+	/* prepare the callback */
+	data->top_callback = cfg->callback;
+	data->user_data = cfg->user_data;
+
+#endif /* RTC_CR_ALRBE */
+	LOG_DBG("Counter top value set to %x", cfg->ticks);
+
+	return 0;
 }
 
 void rtc_stm32_isr(const struct device *dev)
 {
 	struct rtc_stm32_data *data = DEV_DATA(dev);
-	counter_alarm_callback_t alarm_callback = data->callback;
-
+	counter_alarm_callback_t alarm_callback = data->alarm_callback;
 	uint32_t now = rtc_stm32_read(dev);
 
 	if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
@@ -263,10 +337,34 @@ void rtc_stm32_isr(const struct device *dev)
 		LL_RTC_EnableWriteProtection(RTC);
 
 		if (alarm_callback != NULL) {
-			data->callback = NULL;
+			/* Alarm is one-shot, so disable once triggered */
+			data->alarm_callback = NULL;
 			alarm_callback(dev, 0, now, data->user_data);
+		} else if (data->alarm_callback != NULL) {
+			data->alarm_callback(dev, 0, now, data->user_data);
 		}
 	}
+#ifdef RTC_CR_ALRBE
+	if (LL_RTC_IsActiveFlag_ALRB(RTC) != 0) {
+
+		LL_RTC_DisableWriteProtection(RTC);
+		LL_RTC_ClearFlag_ALRB(RTC);
+		/* do not disable this top counter, but let auto reload */
+		LL_RTC_EnableWriteProtection(RTC);
+		/* the top counter is called periodically */
+		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+		LL_RCC_DisableRTC();
+		LL_RTC_TIME_Config(RTC, LL_RTC_HOURFORMAT_24HOUR, 0, 0, 0);
+		LL_RTC_DATE_Config(RTC, 0, 0, 0, 0);
+		LL_RCC_EnableRTC();
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+		/* finally top value callback */
+		if (data->top_callback != NULL) {
+			data->top_callback(dev, data->user_data);
+		}
+	}
+	/* ALARM A & B share the same interrupt LINE */
+#endif /* RTC_CR_ALRBE */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -283,7 +381,8 @@ static int rtc_stm32_init(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = DEV_CFG(dev);
 
-	DEV_DATA(dev)->callback = NULL;
+	DEV_DATA(dev)->alarm_callback = NULL;
+	DEV_DATA(dev)->top_callback = NULL;
 
 	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
@@ -368,6 +467,19 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_RTC_EnableWriteProtection(RTC);
 #endif /* RTC_CR_BYPSHAD */
 
+#ifdef RTC_CR_ALRBE
+	/* put the top counter on the ALARMB */
+	LL_RTC_DisableWriteProtection(RTC);
+	/* do not start the top counter yet but on set_top_counter API */
+	LL_RTC_ALMB_Disable(RTC);
+	LL_RTC_ClearFlag_ALRB(RTC);
+	LL_RTC_EnableIT_ALRB(RTC);
+	LL_RTC_EnableWriteProtection(RTC);
+
+	/* top counter IRQ on same line as ALARMA */
+
+#endif /* RTC_CR_ALRBE */
+
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 #else
@@ -386,7 +498,9 @@ static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
 		.max_top_value = UINT32_MAX,
 		.freq = 1,
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
+		.flags = (COUNTER_CONFIG_INFO_COUNT_UP | \
+				!COUNTER_TOP_CFG_DONT_RESET | \
+				COUNTER_TOP_CFG_RESET_WHEN_LATE),
 		.channels = 1,
 	},
 	.pclken = {
