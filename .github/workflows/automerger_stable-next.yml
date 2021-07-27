@@ -5,12 +5,22 @@ on:
   - cron: "0 1 * * *"
 
 jobs:
+  cleanup:
+    runs-on: self-hosted
+    steps:
+    - name: post cleanup
+      run: |
+        rm -rf zephyr ${{ env.repository_name}}-samples
+        rm -rf .west build venv
+      env:
+        repository_name: elements-zephyr
+
   prepare:
     runs-on: self-hosted
+    needs: [cleanup]
     steps:
     - name: clone repo
       run: |
-        rm -rf zephyr
         git clone -b ${{ env.branch }} git@github.com:phytec-labs/${{ env.repository_name }}.git zephyr
         git clone git@github.com:phytec-labs/${{ env.repository_name }}-samples.git ${{ env.repository_name }}-samples
       env:
@@ -78,15 +88,3 @@ jobs:
       env:
         repository_name: zephyr
         branch: stable-next
-
-  cleanup:
-    runs-on: self-hosted
-    needs: [deploy]
-    if: always()
-    steps:
-    - name: post cleanup
-      run: |
-        rm -rf zephyr ${{ env.repository_name}}-samples
-        rm -rf .west build venv
-      env:
-        repository_name: elements-zephyr
