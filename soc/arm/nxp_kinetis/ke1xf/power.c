@@ -25,7 +25,7 @@ __ramfunc static void wait_for_flash_prefetch_and_idle(void)
 }
 #endif /* CONFIG_XIP */
 
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	switch (info.state) {
 	case PM_STATE_RUNTIME_IDLE:
@@ -51,7 +51,7 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	ARG_UNUSED(info);
 
