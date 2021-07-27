@@ -51,14 +51,12 @@ static void lis2ds12_handle_int(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
-	uint8_t status;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	lis2ds12_all_sources_t sources;
 
-	if (data->hw_tf->read_reg(data, LIS2DS12_REG_STATUS, &status) < 0) {
-		LOG_ERR("status reading error");
-		return;
-	}
+	lis2ds12_all_sources_get(ctx, &sources);
 
-	if (status & LIS2DS12_INT_DRDY) {
+	if (sources.status_dup.drdy) {
 		lis2ds12_handle_drdy_int(dev);
 	}
 
@@ -89,23 +87,27 @@ static void lis2ds12_work_cb(struct k_work *work)
 static int lis2ds12_init_interrupt(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	lis2ds12_pin_int1_route_t route;
+	int err;
 
-	/* Enable latched mode */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL3,
-				    LIS2DS12_MASK_LIR,
-				    (1 << LIS2DS12_SHIFT_LIR)) < 0) {
-		LOG_ERR("Could not enable LIR mode.");
-		return -EIO;
+	/* Enable pulsed mode */
+	err = lis2ds12_int_notification_set(ctx, LIS2DS12_INT_PULSED);
+	if (err < 0) {
+		return err;
 	}
 
-	/* enable data-ready interrupt */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL4,
-				    LIS2DS12_MASK_INT1_DRDY,
-				    (1 << LIS2DS12_SHIFT_INT1_DRDY)) < 0) {
-		LOG_ERR("Could not enable data-ready interrupt.");
-		return -EIO;
+	/* route data-ready interrupt on int1 */
+	err = lis2ds12_pin_int1_route_get(ctx, &route);
+	if (err < 0) {
+		return err;
+	}
+
+	route.int1_drdy = 1;
+
+	err = lis2ds12_pin_int1_route_set(ctx, route);
+	if (err < 0) {
+		return err;
 	}
 
 	return 0;
@@ -160,8 +162,9 @@ int lis2ds12_trigger_set(const struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
 	const struct lis2ds12_config *cfg = dev->config;
-	uint8_t buf[6];
+	int16_t raw[3];
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
@@ -175,11 +178,7 @@ int lis2ds12_trigger_set(const struct device *dev,
 	}
 
 	/* re-trigger lost interrupt */
-	if (data->hw_tf->read_data(data, LIS2DS12_REG_OUTX_L,
-				   buf, sizeof(buf)) < 0) {
-		LOG_ERR("status reading error");
-		return -EIO;
-	}
+	lis2ds12_acceleration_raw_get(ctx, raw);
 
 	data->data_ready_trigger = *trig;
 

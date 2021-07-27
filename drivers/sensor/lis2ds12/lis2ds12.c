@@ -41,83 +41,54 @@ static struct lis2ds12_config lis2ds12_config = {
 #endif
 };
 
-#if defined(LIS2DS12_ODR_RUNTIME)
-static const uint16_t lis2ds12_hr_odr_map[] = {0, 12, 25, 50, 100, 200, 400, 800};
-
-static int lis2ds12_freq_to_odr_val(uint16_t freq)
+static int lis2ds12_set_odr(const struct device *dev, uint16_t odr)
 {
-	size_t i;
+	const struct lis2ds12_data *data = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	uint8_t val;
 
-	for (i = 0; i < ARRAY_SIZE(lis2ds12_hr_odr_map); i++) {
-		if (freq == lis2ds12_hr_odr_map[i]) {
-			return i;
-		}
+	/* check if power off */
+	if (odr == 0U) {
+		return lis2ds12_xl_data_rate_set(ctx, LIS2DS12_XL_ODR_OFF);
 	}
 
-	return -EINVAL;
+	val = LIS2DS12_HR_ODR_TO_REG(odr);
+	if (val > LIS2DS12_XL_ODR_800Hz_HR) {
+		LOG_ERR("ODR too high");
+		return -EINVAL;
+	}
+
+	return lis2ds12_xl_data_rate_set(ctx, val);
 }
 
-static int lis2ds12_accel_odr_set(const struct device *dev, uint16_t freq)
+static int lis2ds12_set_range(const struct device *dev, uint8_t range)
 {
+	int err;
 	struct lis2ds12_data *data = dev->data;
-	int odr;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
 
-	odr = lis2ds12_freq_to_odr_val(freq);
-	if (odr < 0) {
-		return odr;
+	switch (range) {
+	default:
+	case 2U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_2g);
+		data->gain = lis2ds12_from_fs2g_to_mg(1);
+		break;
+	case 4U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_4g);
+		data->gain = lis2ds12_from_fs4g_to_mg(1);
+		break;
+	case 8U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_8g);
+		data->gain = lis2ds12_from_fs8g_to_mg(1);
+		break;
+	case 16U:
+		err = lis2ds12_xl_full_scale_set(ctx, LIS2DS12_16g);
+		data->gain = lis2ds12_from_fs16g_to_mg(1);
+		break;
 	}
 
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_ODR,
-				    odr << LIS2DS12_SHIFT_CTRL1_ODR) < 0) {
-		LOG_DBG("failed to set accelerometer sampling rate");
-		return -EIO;
-	}
-
-	return 0;
+	return err;
 }
-#endif
-
-#ifdef LIS2DS12_FS_RUNTIME
-static const uint16_t lis2ds12_accel_fs_map[] = {2, 16, 4, 8};
-static const uint16_t lis2ds12_accel_fs_sens[] = {1, 8, 2, 4};
-
-static int lis2ds12_accel_range_to_fs_val(int32_t range)
-{
-	size_t i;
-
-	for (i = 0; i < ARRAY_SIZE(lis2ds12_accel_fs_map); i++) {
-		if (range == lis2ds12_accel_fs_map[i]) {
-			return i;
-		}
-	}
-
-	return -EINVAL;
-}
-
-static int lis2ds12_accel_range_set(const struct device *dev, int32_t range)
-{
-	int fs;
-	struct lis2ds12_data *data = dev->data;
-
-	fs = lis2ds12_accel_range_to_fs_val(range);
-	if (fs < 0) {
-		return fs;
-	}
-
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_FS,
-				    fs << LIS2DS12_SHIFT_CTRL1_FS) < 0) {
-		LOG_DBG("failed to set accelerometer full-scale");
-		return -EIO;
-	}
-
-	data->gain = (float)(lis2ds12_accel_fs_sens[fs] * GAIN_XL);
-	return 0;
-}
-#endif
 
 static int lis2ds12_accel_config(const struct device *dev,
 				 enum sensor_channel chan,
@@ -125,14 +96,10 @@ static int lis2ds12_accel_config(const struct device *dev,
 				 const struct sensor_value *val)
 {
 	switch (attr) {
-#ifdef LIS2DS12_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2ds12_accel_range_set(dev, sensor_ms2_to_g(val));
-#endif
-#ifdef LIS2DS12_ODR_RUNTIME
+		return lis2ds12_set_range(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lis2ds12_accel_odr_set(dev, val->val1);
-#endif
+		return lis2ds12_set_odr(dev, val->val1);
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -160,17 +127,18 @@ static int lis2ds12_attr_set(const struct device *dev,
 static int lis2ds12_sample_fetch_accel(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
-	uint8_t buf[6];
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	int16_t buf[3];
 
-	if (data->hw_tf->read_data(data, LIS2DS12_REG_OUTX_L,
-				   buf, sizeof(buf)) < 0) {
-		LOG_DBG("failed to read sample");
+	/* fetch raw data sample */
+	if (lis2ds12_acceleration_raw_get(ctx, buf) < 0) {
+		LOG_ERR("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
-	data->sample_x = (int16_t)((uint16_t)(buf[0]) | ((uint16_t)(buf[1]) << 8));
-	data->sample_y = (int16_t)((uint16_t)(buf[2]) | ((uint16_t)(buf[3]) << 8));
-	data->sample_z = (int16_t)((uint16_t)(buf[4]) | ((uint16_t)(buf[5]) << 8));
+	data->sample_x = sys_le16_to_cpu(buf[0]);
+	data->sample_y = sys_le16_to_cpu(buf[1]);
+	data->sample_z = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -265,34 +233,39 @@ static int lis2ds12_init(const struct device *dev)
 {
 	const struct lis2ds12_config * const config = dev->config;
 	struct lis2ds12_data *data = dev->data;
+	stmdev_ctx_t *ctx;
 	uint8_t chip_id;
+	int ret;
 
 	data->comm_master = device_get_binding(config->comm_master_dev_name);
 	if (!data->comm_master) {
-		LOG_DBG("master not found: %s",
+		LOG_ERR("master not found: %s",
 			    config->comm_master_dev_name);
 		return -EINVAL;
 	}
 
 	config->bus_init(dev);
 
-	/* s/w reset the sensor */
-	if (data->hw_tf->write_reg(data,
-				    LIS2DS12_REG_CTRL2,
-				    LIS2DS12_SOFT_RESET) < 0) {
-		LOG_DBG("s/w reset fail");
-		return -EIO;
+	ctx = (stmdev_ctx_t *)data->ctx;
+	/* check chip ID */
+	ret = lis2ds12_device_id_get(ctx, &chip_id);
+	if (ret < 0) {
+		LOG_ERR("Not able to read dev id");
+		return ret;
 	}
 
-	if (data->hw_tf->read_reg(data, LIS2DS12_REG_WHO_AM_I, &chip_id) < 0) {
-		LOG_DBG("failed reading chip id");
-		return -EIO;
+	if (chip_id != LIS2DS12_ID) {
+		LOG_ERR("Invalid chip ID 0x%02x", chip_id);
+		return -EINVAL;
 	}
 
-	if (chip_id != LIS2DS12_VAL_WHO_AM_I) {
-		LOG_DBG("invalid chip id 0x%x", chip_id);
-		return -EIO;
+	/* reset device */
+	ret = lis2ds12_reset_set(ctx, PROPERTY_ENABLE);
+	if (ret < 0) {
+		return ret;
 	}
+
+	k_busy_wait(100);
 
 	LOG_DBG("chip id 0x%x", chip_id);
 
@@ -304,23 +277,18 @@ static int lis2ds12_init(const struct device *dev)
 #endif
 
 	/* set sensor default odr */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_ODR,
-				    LIS2DS12_DEFAULT_ODR) < 0) {
-		LOG_DBG("failed setting odr");
-		return -EIO;
+	ret = lis2ds12_set_odr(dev, 12);
+	if (ret < 0) {
+		LOG_ERR("odr init error (12.5 Hz)");
+		return ret;
 	}
 
 	/* set sensor default scale */
-	if (data->hw_tf->update_reg(data,
-				    LIS2DS12_REG_CTRL1,
-				    LIS2DS12_MASK_CTRL1_FS,
-				    LIS2DS12_DEFAULT_FS) < 0) {
-		LOG_DBG("failed setting scale");
-		return -EIO;
+	ret = lis2ds12_set_range(dev, CONFIG_LIS2DS12_FS);
+	if (ret < 0) {
+		LOG_ERR("range init error %d", CONFIG_LIS2DS12_FS);
+		return ret;
 	}
-	data->gain = LIS2DS12_DEFAULT_GAIN;
 
 	return 0;
 }
