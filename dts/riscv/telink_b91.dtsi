@@ -161,6 +161,15 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm@80140400 {
+			compatible = "telink,b91-pwm";
+			reg = <0x80140400 0x80>;
+			channels = <6>;
+			label = "pwm_0";
+			status = "disabled";
+			#pwm-cells = <2>;
+		};
+
 		pinmux: pinmux@80140330 {
 			compatible = "telink,b91-pinmux";
 			reg = <0x80140330 0x28
@@ -214,6 +223,63 @@
 			};
 			uart1_rx_pe2: uart1_rx_pe2 {
 				pinmux = <B91_PINMUX_SET(B91_FUNC_B, B91_PORT_E, B91_PIN_2)>;
+			};
+
+			/* Define PWM Channel 0 pins (PB4, PC0, PE3) */
+
+			pwm_ch0_pb4: pwm_ch0_pb4 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_B, B91_PORT_B, B91_PIN_4)>;
+			};
+			pwm_ch0_pc0: pwm_ch0_pc0 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_C, B91_PIN_0)>;
+			};
+			pwm_ch0_pe3: pwm_ch0_pe3 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_3)>;
+			};
+
+			/* Define PWM Channel 1 pins (PB5, PE1) */
+
+			pwm_ch1_pb5: pwm_ch1_pb5 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_B, B91_PIN_5)>;
+			};
+			pwm_ch1_pe1: pwm_ch1_pe1 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_1)>;
+			};
+
+			/* Define PWM Channel 2 pins (PB7, PE2) */
+
+			pwm_ch2_pb7: pwm_ch2_pb7 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_B, B91_PIN_7)>;
+			};
+			pwm_ch2_pe2: pwm_ch2_pe2 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_2)>;
+			};
+
+			/* Define PWM Channel 3 pins (PB1, PE0) */
+
+			pwm_ch3_pb1: pwm_ch3_pb1 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_B, B91_PIN_1)>;
+			};
+			pwm_ch3_pe0: pwm_ch3_pe0 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_0)>;
+			};
+
+			/* Define PWM Channel 4 pins (PD7, PE4) */
+
+			pwm_ch4_pd7: pwm_ch4_pd7 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_B, B91_PORT_D, B91_PIN_7)>;
+			};
+			pwm_ch4_pe4: pwm_ch4_pe4 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_4)>;
+			};
+
+			/* Define PWM Channel 5 pins (PB0, PE5) */
+
+			pwm_ch5_pb0: pwm_ch5_pb0 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_B, B91_PIN_0)>;
+			};
+			pwm_ch5_pe5: pwm_ch5_pe5 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_C, B91_PORT_E, B91_PIN_5)>;
 			};
 		};
 	};
