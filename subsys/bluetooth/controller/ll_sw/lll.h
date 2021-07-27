@@ -267,10 +267,16 @@ struct node_rx_ftr {
 			uint16_t conn_handle;
 		} param_adv_term;
 	};
-	void     *extra;
+	void     *extra; /* Used as next pointer for extended PDU chaining, to
+			  * reserve node_rx for CSA#2 event generation etc.
+			  */
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+	uint8_t  scan_req:1;
+	uint8_t  scan_rsp:1;
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  lrpa_used:1;
 	uint8_t  rl_idx;

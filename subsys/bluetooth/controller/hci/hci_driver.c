@@ -286,7 +286,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 		}
 		if (buf) {
-			hci_evt_encode(node_rx, buf);
+			hci_evt_encode(&node_rx, buf);
 		}
 		break;
 #if defined(CONFIG_BT_CONN)
@@ -327,8 +327,10 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		break;
 	}
 
-	node_rx->hdr.next = NULL;
-	ll_rx_mem_release((void **)&node_rx);
+	if (node_rx) {
+		node_rx->hdr.next = NULL;
+		ll_rx_mem_release((void **)&node_rx);
+	}
 
 	return buf;
 }

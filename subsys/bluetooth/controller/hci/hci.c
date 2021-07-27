@@ -4903,13 +4903,14 @@ static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
 }
 
 static void le_ext_adv_report(struct pdu_data *pdu_data,
-			      struct node_rx_pdu *node_rx,
+			      struct node_rx_pdu **node_rx,
 			      struct net_buf *buf, uint8_t phy)
 {
 	struct bt_hci_evt_le_ext_advertising_info *adv_info;
 	struct bt_hci_evt_le_ext_advertising_report *sep;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
+	struct node_rx_pdu *node_rx_first;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
 	struct pdu_adv_adi *adi = NULL;
@@ -4934,11 +4935,12 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT)) {
-		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+		node_rx_extra_list_release((*node_rx)->hdr.rx_ftr.extra);
 		return;
 	}
 
-	node_rx_curr = node_rx;
+	node_rx_first = *node_rx;
+	node_rx_curr = node_rx_first;
 	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 	do {
 		struct pdu_adv_adi *adi_curr = NULL;
@@ -5100,7 +5102,7 @@ no_ext_hdr:
 			BT_DBG("    AD Data (%u): <todo>", data_len);
 		}
 
-		if (node_rx_curr == node_rx) {
+		if (node_rx_curr == node_rx_first) {
 			evt_type = evt_type_curr;
 			adv_addr_type = adv_addr_type_curr;
 			adv_addr = adv_addr_curr;
@@ -5115,9 +5117,17 @@ no_ext_hdr:
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 		} else {
-			/* TODO: Validate current value with previous, also
-			 * detect the scan response in the list of node_rx.
-			 */
+			/* TODO: Validate current value with previous */
+
+			/* Retain node_rx if scan request in progress */
+			if (node_rx_curr->hdr.rx_ftr.scan_req) {
+				node_rx_curr->hdr.rx_ftr.scan_req = 0U;
+				*node_rx = NULL;
+			/* Detect the scan response in the list of node_rx */
+			} else if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
+				evt_type = BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
+				data = NULL;
+			}
 
 			if (!adv_addr) {
 				adv_addr_type = adv_addr_type_curr;
@@ -5167,7 +5177,11 @@ no_ext_hdr:
 	if (adv_addr) {
 		if (dup_found(PDU_ADV_TYPE_EXT_IND, adv_addr_type, adv_addr,
 			      evt_type, adi, data_status)) {
-			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+			if (*node_rx) {
+				node_rx_extra_list_release(
+					(*node_rx)->hdr.rx_ftr.extra);
+			}
+
 			return;
 		}
 	}
@@ -5204,7 +5218,10 @@ no_ext_hdr:
 			 * is present or if Tx pwr and/or data is present from
 			 * anonymous device.
 			 */
-			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+			if (*node_rx) {
+				node_rx_extra_list_release(
+					(*node_rx)->hdr.rx_ftr.extra);
+			}
 			return;
 		}
 
@@ -5271,11 +5288,13 @@ no_ext_hdr:
 	adv_info->length = data_len;
 	memcpy(&adv_info->data[0], data, data_len);
 
-	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+	if (*node_rx) {
+		node_rx_extra_list_release((*node_rx)->hdr.rx_ftr.extra);
+	}
 }
 
 static void le_adv_ext_report(struct pdu_data *pdu_data,
-			      struct node_rx_pdu *node_rx,
+			      struct node_rx_pdu **node_rx,
 			      struct net_buf *buf, uint8_t phy)
 {
 	struct pdu_adv *adv = (void *)pdu_data;
@@ -5283,26 +5302,26 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 	if ((adv->type == PDU_ADV_TYPE_EXT_IND) && adv->len) {
 		le_ext_adv_report(pdu_data, node_rx, buf, phy);
 	} else {
-		le_ext_adv_legacy_report(pdu_data, node_rx, buf);
+		le_ext_adv_legacy_report(pdu_data, *node_rx, buf);
 	}
 }
 
 static void le_adv_ext_1M_report(struct pdu_data *pdu_data,
-				 struct node_rx_pdu *node_rx,
+				 struct node_rx_pdu **node_rx,
 				 struct net_buf *buf)
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_1M);
 }
 
 static void le_adv_ext_2M_report(struct pdu_data *pdu_data,
-				 struct node_rx_pdu *node_rx,
+				 struct node_rx_pdu **node_rx,
 				 struct net_buf *buf)
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_2M);
 }
 
 static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
-				    struct node_rx_pdu *node_rx,
+				    struct node_rx_pdu **node_rx,
 				    struct net_buf *buf)
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_CODED);
@@ -5956,17 +5975,17 @@ static void mesh_adv_cplt(struct pdu_data *pdu_data,
  * @param pdu_data[in]    PDU. Same as node_rx_pdu->pdu, but more convenient
  * @param net_buf[out]    Upwards-going HCI buffer to fill
  */
-static void encode_control(struct node_rx_pdu *node_rx,
+static void encode_control(struct node_rx_pdu **node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
 	uint16_t handle;
 
-	handle = node_rx->hdr.handle;
+	handle = (*node_rx)->hdr.handle;
 
-	switch (node_rx->hdr.type) {
+	switch ((*node_rx)->hdr.type) {
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
-		le_advertising_report(pdu_data, node_rx, buf);
+		le_advertising_report(pdu_data, *node_rx, buf);
 		break;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -5983,24 +6002,24 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		break;
 
 	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
-		le_scan_timeout(pdu_data, node_rx, buf);
+		le_scan_timeout(pdu_data, *node_rx, buf);
 		break;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC:
-		le_per_adv_sync_established(pdu_data, node_rx, buf);
+		le_per_adv_sync_established(pdu_data, *node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_SYNC_REPORT:
-		le_per_adv_sync_report(pdu_data, node_rx, buf);
+		le_per_adv_sync_report(pdu_data, *node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_SYNC_LOST:
-		le_per_adv_sync_lost(pdu_data, node_rx, buf);
+		le_per_adv_sync_lost(pdu_data, *node_rx, buf);
 		break;
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-		le_df_connectionless_iq_report(pdu_data, node_rx, buf);
+		le_df_connectionless_iq_report(pdu_data, *node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -6010,12 +6029,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_BROADCASTER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
-		le_adv_ext_terminate(pdu_data, node_rx, buf);
+		le_adv_ext_terminate(pdu_data, *node_rx, buf);
 		break;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case NODE_RX_TYPE_BIG_COMPLETE:
-		le_big_complete(pdu_data, node_rx, buf);
+		le_big_complete(pdu_data, *node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -6023,7 +6042,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
-		le_scan_req_received(pdu_data, node_rx, buf);
+		le_scan_req_received(pdu_data, *node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
@@ -6073,13 +6092,13 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case NODE_RX_TYPE_CIS_REQUEST:
-		le_cis_request(pdu_data, node_rx, buf);
+		le_cis_request(pdu_data, *node_rx, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
-		le_cis_established(pdu_data, node_rx, buf);
+		le_cis_established(pdu_data, *node_rx, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
@@ -6115,17 +6134,17 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case NODE_RX_TYPE_MESH_ADV_CPLT:
-		mesh_adv_cplt(pdu_data, node_rx, buf);
+		mesh_adv_cplt(pdu_data, *node_rx, buf);
 		return;
 
 	case NODE_RX_TYPE_MESH_REPORT:
-		le_advertising_report(pdu_data, node_rx, buf);
+		le_advertising_report(pdu_data, *node_rx, buf);
 		return;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
-		hci_user_ext_encode_control(node_rx, pdu_data, buf);
+		hci_user_ext_encode_control(*node_rx, pdu_data, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
@@ -6381,14 +6400,14 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CONN */
 
-void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
+void hci_evt_encode(struct node_rx_pdu **node_rx, struct net_buf *buf)
 {
-	struct pdu_data *pdu_data = (void *)node_rx->pdu;
+	struct pdu_data *pdu_data = (void *)(*node_rx)->pdu;
 
-	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
+	if ((*node_rx)->hdr.type != NODE_RX_TYPE_DC_PDU) {
 		encode_control(node_rx, pdu_data, buf);
 	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
-		encode_data_ctrl(node_rx, pdu_data, buf);
+		encode_data_ctrl(*node_rx, pdu_data, buf);
 	}
 }
 
