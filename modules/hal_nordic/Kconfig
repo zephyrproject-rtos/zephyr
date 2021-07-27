@@ -122,7 +122,7 @@ config NRF_802154_TEMPERATURE_UPDATE_PRIO
 
 config NRF_802154_TEMPERATURE_UPDATE_STACK_SIZE
 	int "nRF 802.15.4 temperature update stack size"
-	default 128
+	default 256
 	help
 	  Stack size of a thread updating current temperature for nRF 802.15.4 driver.
 
