@@ -296,10 +296,42 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	is_connected = false;
-	is_disconnected = false;
+	printk("Create scannable extended advertising set...");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_SCAN_NAME, &adv_callbacks,
+				   &adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scannable advertising...");
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 0;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(500));
+
+	printk("Stopping scannable advertising...");
+	err = bt_le_ext_adv_stop(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Removing scannable adv set...");
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	printk("Create connectable extended advertising set...");
+	is_connected = false;
+	is_disconnected = false;
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
@@ -1053,6 +1085,8 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
+static bool is_scannable;
+static bool is_scan_rsp;
 static bool is_periodic;
 static uint8_t per_sid;
 static bt_addr_le_t per_addr;
@@ -1080,6 +1114,19 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 	       info->interval, info->interval * 5 / 4, info->sid);
+
+	if (!is_scannable &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0)) {
+		is_scannable = true;
+	}
+
+	if (!is_scan_rsp &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0) &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0) &&
+	    (strlen(name) == strlen(CONFIG_BT_DEVICE_NAME)) &&
+	    (!strcmp(name, CONFIG_BT_DEVICE_NAME))) {
+		is_scan_rsp = true;
+	}
 
 	if (info->interval) {
 		if (!is_periodic) {
@@ -1261,14 +1308,33 @@ static void test_scanx_main(void)
 	}
 	printk("success.\n");
 
-	connection_to_test = true;
-
 	printk("Start scanning...");
+	is_scannable = false;
+	is_scan_rsp = false;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
+
+	printk("Waiting for scannable advertising report...\n");
+	while (!is_scannable) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for scan response advertising report...\n");
+	while (!is_scan_rsp) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	/* This wait is to ensure we match with connectable advertising in the
+	 * advertiser's timeline.
+	 */
+	k_sleep(K_MSEC(500));
+
+	connection_to_test = true;
 
 	printk("Waiting for connection...");
 	while (!is_connected) {
