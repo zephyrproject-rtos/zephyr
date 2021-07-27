@@ -151,7 +151,7 @@
 #define REGION_RAM_TEXT_ATTR				   \
 	{						   \
 		/* AP, XN, SH */			   \
-		.rbar = P_RO_U_NA_Msk | NON_SHAREABLE_Msk, \
+		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
 		/* Cache-ability */			   \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,	   \
 	}
@@ -159,7 +159,7 @@
 #define REGION_RAM_RO_ATTR					      \
 	{							      \
 		/* AP, XN, SH */				      \
-		.rbar = NOT_EXEC | P_RO_U_NA_Msk | NON_SHAREABLE_Msk, \
+		.rbar = NOT_EXEC | P_RO_U_RO_Msk | NON_SHAREABLE_Msk, \
 		/* Cache-ability */				      \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,		      \
 	}
