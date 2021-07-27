@@ -28,6 +28,9 @@ manifest:
     - name: canopennode
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
+    - name: chre
+      revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
+      path: modules/lib/chre
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
