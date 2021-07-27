@@ -609,6 +609,11 @@ endif()
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
+
+# Add .S file extension suffix into CMAKE_ASM_SOURCE_FILE_EXTENSIONS,
+# because clang from OneApi can't recongnize them as asm files on
+# windows now.
+list(APPEND CMAKE_ASM_SOURCE_FILE_EXTENSIONS "S")
 enable_language(C CXX ASM)
 # The setup / configuration of the toolchain itself and the configuration of
 # supported compilation flags are now split, as this allows to use the toolchain
