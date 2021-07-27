@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -83,11 +84,12 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
-			compatible = "st,stm32l5-flash-controller";
+		flash: flash-controller@40022000 {
+			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
-			interrupts = <4 0>;
+			interrupts = <6 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000100>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -95,6 +97,14 @@
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				label = "FLASH_STM32";
+				write-block-size = <8>;
+				erase-block-size = <2048>;
+
+				/* using maximum erase time(ms) for 4K page, since
+				 * datasheet does not show the maximum erase
+				 * for a 2K(dual-bank) page.
+				 */
+				max-erase-time = <25>;
 			};
 		};
 
