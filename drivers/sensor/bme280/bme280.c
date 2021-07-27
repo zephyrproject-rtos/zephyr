@@ -170,6 +170,23 @@ static void bme280_compensate_humidity(struct bme280_data *data,
 	data->comp_humidity = (uint32_t)(h >> 12);
 }
 
+static int bme280_wait_until_ready(const struct device *dev)
+{
+	uint8_t status = 0;
+	int ret;
+
+	/* Wait for NVM to copy and and measurement to be completed */
+	do {
+		k_sleep(K_MSEC(3));
+		ret = bme280_reg_read(dev, BME280_REG_STATUS, &status, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	} while (status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE));
+
+	return 0;
+}
+
 static int bme280_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -192,15 +209,12 @@ static int bme280_sample_fetch(const struct device *dev,
 	if (ret < 0) {
 		return ret;
 	}
-
-	do {
-		k_sleep(K_MSEC(3));
-		ret = bme280_reg_read(dev, BME280_REG_STATUS, buf, 1);
-		if (ret < 0) {
-			return ret;
-		}
-	} while (buf[0] & 0x08);
 #endif
+
+	ret = bme280_wait_until_ready(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		size = 8;
@@ -356,6 +370,10 @@ static int bme280_chip_init(const struct device *dev)
 	err = bme280_reg_write(dev, BME280_REG_RESET, BME280_CMD_SOFT_RESET);
 	if (err < 0) {
 		LOG_DBG("Soft-reset failed: %d", err);
+	}
+
+	err = bme280_wait_until_ready(dev);
+	if (err < 0) {
 		return err;
 	}
 
