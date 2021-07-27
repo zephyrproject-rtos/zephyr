@@ -1,0 +1,11 @@
+/* Copyright (c) 2021 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr.h>
+#include <sys/printk.h>
+
+void main(void)
+{
+	printk("Hello CHRE!\n");
+}

@@ -28,6 +28,10 @@ manifest:
     - name: canopennode
       revision: f167efe85c8c7de886f1bc47f9173cfb8a346bb5
       path: modules/lib/canopennode
+    - name: chre
+      url: https://android.googlesource.com/platform/system/chre
+      revision: 24c20c96d942a14419a19625b37d8081b9ca23ea
+      path: modules/lib/chre
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
