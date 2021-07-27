@@ -348,18 +348,12 @@ void test_benchmark_vec_dot_prod_f32(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void benchmark_basicmath_f32(void)
-{
-	ztest_test_suite(basicmath_f32_benchmark,
-		ztest_unit_test(test_benchmark_vec_add_f32),
-		ztest_unit_test(test_benchmark_vec_sub_f32),
-		ztest_unit_test(test_benchmark_vec_mult_f32),
-		ztest_unit_test(test_benchmark_vec_abs_f32),
-		ztest_unit_test(test_benchmark_vec_negate_f32),
-		ztest_unit_test(test_benchmark_vec_offset_f32),
-		ztest_unit_test(test_benchmark_vec_scale_f32),
-		ztest_unit_test(test_benchmark_vec_dot_prod_f32)
-		);
-
-	ztest_run_test_suite(basicmath_f32_benchmark);
-}
+ztest_register_test_suite(basicmath_f32_benchmark, NULL,
+			  ztest_unit_test(test_benchmark_vec_add_f32),
+			  ztest_unit_test(test_benchmark_vec_sub_f32),
+			  ztest_unit_test(test_benchmark_vec_mult_f32),
+			  ztest_unit_test(test_benchmark_vec_abs_f32),
+			  ztest_unit_test(test_benchmark_vec_negate_f32),
+			  ztest_unit_test(test_benchmark_vec_offset_f32),
+			  ztest_unit_test(test_benchmark_vec_scale_f32),
+			  ztest_unit_test(test_benchmark_vec_dot_prod_f32));
