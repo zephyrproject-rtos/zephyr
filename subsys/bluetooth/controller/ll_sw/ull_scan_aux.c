@@ -46,7 +46,10 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
-static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
+static void flush_and_release(struct ll_scan_aux_set *aux,
+			      struct node_rx_hdr *rx);
+static struct node_rx_hdr *flush(struct ll_scan_aux_set *aux,
+				 struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
@@ -99,9 +102,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint32_t ticker_status;
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
+	bool is_scan_req;
+	bool is_scan_rsp;
 	uint8_t *ptr;
 	uint8_t phy;
 
+	is_scan_req = false;
+	is_scan_rsp = false;
 	ftr = &rx->rx_ftr;
 
 	switch (rx->type) {
@@ -143,6 +150,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				LL_ASSERT(0);
 				return;
 			}
+
+			/* Backup scan requested flag as it is in union with
+			 * `extra` struct member which will be set to NULL
+			 * in subsequent code.
+			 */
+			is_scan_req = !!ftr->scan_req;
+			is_scan_rsp = !!ftr->scan_rsp;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		} else {
@@ -186,6 +200,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	rx->link = link;
 	ftr->extra = NULL;
+	ftr->scan_req = (is_scan_req) ? 1U : 0U;
+	ftr->scan_rsp = (is_scan_rsp) ? 1U : 0U;
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -363,14 +379,21 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		struct ull_hdr *hdr;
+		if (is_scan_req) {
+			rx = flush(aux, rx);
+			rx->rx_ftr.scan_req = 1U;
+		} else {
+			struct ull_hdr *hdr;
 
-		/* Setup the disabled callback to flush the auxiliary PDUs */
-		hdr = &aux->ull;
-		LL_ASSERT(!hdr->disabled_cb);
+			/* Setup the disabled callback to flush the auxiliary
+			 * PDUs
+			 */
+			hdr = &aux->ull;
+			LL_ASSERT(!hdr->disabled_cb);
 
-		hdr->disabled_param = rx;
-		hdr->disabled_cb = last_disabled_cb;
+			hdr->disabled_param = rx;
+			hdr->disabled_cb = last_disabled_cb;
+		}
 
 		return;
 	}
@@ -443,34 +466,56 @@ static void last_disabled_cb(void *param)
 	rx = param;
 	aux = HDR_LLL2ULL(rx->rx_ftr.param);
 
-	flush(aux, rx);
+	flush_and_release(aux, rx);
 }
 
 static void done_disabled_cb(void *param)
 {
-	flush(param, NULL);
+	flush_and_release(param, NULL);
 }
 
-static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
+static void flush_and_release(struct ll_scan_aux_set *aux,
+			      struct node_rx_hdr *rx)
+{
+	flush(aux, rx);
+	aux_release(aux);
+}
+
+static struct node_rx_hdr *flush(struct ll_scan_aux_set *aux,
+				 struct node_rx_hdr *rx)
 {
 	if (aux->rx_last) {
-		if (rx) {
-			struct node_rx_ftr *ftr;
+		memq_link_t *rx_link;
 
-			ftr = &aux->rx_last->rx_ftr;
-			ftr->extra = rx;
+		if (rx) {
+			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
 		}
 
 		rx = aux->rx_head;
 
-		ll_rx_put(rx->link, rx);
+		if (rx->rx_ftr.scan_req) {
+			struct node_rx_hdr *rx_next;
+
+			rx_next = rx->rx_ftr.extra;
+			LL_ASSERT(rx_next);
+
+			rx_link = rx_next->link;
+			LL_ASSERT(rx_link);
+
+			rx_next->link = NULL;
+		} else {
+			rx_link = rx->link;
+		}
+
+		ll_rx_put(rx_link, rx);
 		ll_rx_sched();
 	} else if (rx) {
 		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
 	}
 
-	aux_release(aux);
+	return rx;
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -524,5 +569,5 @@ static void ticker_op_cb(uint32_t status, void *param)
 
 static void ticker_op_aux_failure(void *param)
 {
-	flush(param, NULL);
+	flush_and_release(param, NULL);
 }

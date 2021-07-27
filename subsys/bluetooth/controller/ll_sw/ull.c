@@ -208,7 +208,7 @@
 #define BT_CTLR_MAX_CONNECTABLE 1
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #define BT_CTLR_ADV_EXT_RX_CNT  1
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
@@ -911,10 +911,18 @@ void ll_rx_dequeue(void)
 		while (rx_curr) {
 			memq_link_t *link_free;
 
-			link_free = rx_curr->link;
-			rx_curr = rx_curr->rx_ftr.extra;
+			if (rx_curr->rx_ftr.scan_req) {
+				link_free = NULL;
+			} else {
+				link_free = rx_curr->link;
+				rx_curr->link = NULL;
+			}
 
-			mem_release(link_free, &mem_link_rx.free);
+			if (link_free) {
+				mem_release(link_free, &mem_link_rx.free);
+			}
+
+			rx_curr = rx_curr->rx_ftr.extra;
 		}
 	}
 	break;
