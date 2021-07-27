@@ -408,7 +408,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 				ret = bme280_chip_init(dev);
 			}
 			/* Switching to OFF from any */
-			else if (new_pm_state == PM_DEVICE_STATE_OFF) {
+			else if (*state == PM_DEVICE_STATE_OFF) {
 
 				/* Put the chip into sleep mode */
 				ret = bme280_reg_write(dev,
@@ -422,7 +422,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 
 			/* Store the new state */
 			if (!ret)
-				data->pm_state = new_pm_state;
+				data->pm_state = *state;
 		}
 	}
 	/* Get power state */
