@@ -101,9 +101,12 @@
 #if (VIA_TWISTER & 0x1000) != 0
 #define PKG_ALIGN_OFFSET sizeof(void *)
 #endif
-
 #if (VIA_TWISTER & 0x2000) != 0
-#define PACKAGE_FLAGS CBPRINTF_PACKAGE_ADD_STRING_IDXS
+#define PACKAGE_ADD_STRING_IDXS 1
+#endif
+#if (VIA_TWISTER & 0x4000) != 0
+#define CONFIG_CBPRINTF_PACKAGE_PACKED 1
+#define PACKAGE_PACKED 1
 #endif
 
 #endif /* VIA_TWISTER */
@@ -127,9 +130,17 @@
 #define Z_C_GENERIC 0
 #endif
 
-#ifndef PACKAGE_FLAGS
-#define PACKAGE_FLAGS 0
+#ifndef PACKAGE_ADD_STRING_IDXS
+#define PACKAGE_ADD_STRING_IDXS 0
 #endif
+
+#ifndef PACKAGE_PACKED
+#define PACKAGE_PACKED 0
+#endif
+
+#define PACKAGE_FLAGS \
+	((PACKAGE_ADD_STRING_IDXS ? CBPRINTF_PACKAGE_ADD_STRING_IDXS : 0) | \
+	(PACKAGE_PACKED ? CBPRINTF_PACKAGE_PACKED : 0))
 
 #include <sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
@@ -242,8 +253,14 @@ static int prf(char *static_package_str, const char *format, ...)
 	rv = cbvprintf_package(packaged, sizeof(packaged), PACKAGE_FLAGS, format, ap);
 	if (rv >= 0) {
 		rv = cbpprintf(out, &outbuf, packaged);
-		if (rv == 0 && static_package_str) {
-			rv = strcmp(static_package_str, outbuf.buf);
+		outbuf_null_terminate(&outbuf);
+		if (rv >= 0 && static_package_str) {
+			int rc;
+
+			rc = strcmp(static_package_str, outbuf.buf);
+			if (rc < 0) {
+				rv = rc;
+			}
 		}
 	}
 #else
@@ -314,6 +331,7 @@ static int rawprf(const char *format, ...)
 					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, _len, NULL); \
 		rv = cbpprintf(out, &package_buf, &package[PKG_ALIGN_OFFSET]); \
+		outbuf_null_terminate(&package_buf); \
 		if (rv >= 0) { \
 			sp_buf = _buf; \
 		} \
