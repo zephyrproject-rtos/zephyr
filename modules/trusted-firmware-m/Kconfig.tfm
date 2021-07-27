@@ -145,6 +145,8 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
+if TFM_BL2
+
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
 	range 1 2
@@ -155,7 +157,7 @@ config TFM_MCUBOOT_IMAGE_NUMBER
 	  updated in one atomic operation. When this is 2, they are split and
 	  can be updated independently if dependency requirements are met.
 
-
+endif # TFM_BL2
 
 config TFM_IPC
 	bool "IPC" if TFM_PROFILE_TYPE_NOT_SET
