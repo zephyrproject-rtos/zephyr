@@ -123,6 +123,7 @@
 		label = "LIS2DH";
 		reg = <0x18>;
 		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		disconnect-sdo-sa0-pull-up;
 	};
 
 };
