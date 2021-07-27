@@ -33,12 +33,12 @@
 		/* Secure image primary slot */
 		slot0_partition: partition@19000 {
 			label = "image-0";
-			reg = <0x00019000 0x00038000>;
+			reg = <0x00019000 0x0003C000>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@51000 {
+		slot1_partition: partition@55000 {
 			label = "image-1";
-			reg = <0x00051000 0x0002A000>;
+			reg = <0x00055000 0x0002A000>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at
