@@ -1,4 +1,4 @@
-.. _tlst9518adk80d:
+.. _tlsr9518adk80d:
 
 Telink TLSR9518ADK80D
 #####################
@@ -63,9 +63,11 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | UART           | on-chip    | serial                       |
 +----------------+------------+------------------------------+
-| FLASH (MSPI)   | on-chip    | flash                        |
+| PWM            | on-chip    | pwm                          |
 +----------------+------------+------------------------------+
 | TRNG           | on-chip    | entopy                       |
++----------------+------------+------------------------------+
+| FLASH (MSPI)   | on-chip    | flash                        |
 +----------------+------------+------------------------------+
 | RADIO          | on-chip    | ieee802154, OpenThread       |
 +----------------+------------+------------------------------+
@@ -77,6 +79,8 @@ The following example projects are supported:
 - samples/philosophers
 - samples/basic/threads
 - samples/basic/blinky
+- samples/basic/blinky_pwm
+- samples/basic/fade_led
 - samples/basic/button
 - samples/subsys/nvs
 - samples/subsys/console/echo
@@ -140,6 +144,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 
 - UART0 RX: PB2, TX: PB3
 - UART1 RX: PC6, TX: PC7
+- PWM Channel 0: PB4
 
 Serial Port
 -----------

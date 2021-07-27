@@ -18,6 +18,9 @@ config UART_TELINK_B91
 config PINMUX_TELINK_B91
 	default y if PINMUX
 
+config PWM_TELINK_B91
+	default y if PWM
+
 config ENTROPY_TELINK_B91_TRNG
 	default y if ENTROPY_GENERATOR
 
