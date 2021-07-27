@@ -10,6 +10,9 @@ if CPU_HAS_MPU
 config ARM_MPU
 	bool "ARM MPU Support"
 	select THREAD_STACK_INFO
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	default y
 	help
 	  MPU implements Memory Protection Unit.
