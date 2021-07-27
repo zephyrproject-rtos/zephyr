@@ -23,8 +23,8 @@
 #include "lll.h"
 #include "lll/lll_vendor.h"
 #include "lll_scan.h"
-#include "lll_conn.h"
 #include "lll/lll_df_types.h"
+#include "lll_conn.h"
 
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
