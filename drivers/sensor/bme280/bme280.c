@@ -353,6 +353,12 @@ static int bme280_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	err = bme280_reg_write(dev, BME280_REG_RESET, BME280_CMD_SOFT_RESET);
+	if (err < 0) {
+		LOG_DBG("Soft-reset failed: %d", err);
+		return err;
+	}
+
 	err = bme280_read_compensation(dev);
 	if (err < 0) {
 		return err;
@@ -380,6 +386,8 @@ static int bme280_chip_init(const struct device *dev)
 		LOG_DBG("CONFIG write failed: %d", err);
 		return err;
 	}
+	/* Wait for the sensor to be ready */
+	k_sleep(K_MSEC(1));
 
 #ifdef CONFIG_PM_DEVICE
 	/* Set power state to ACTIVE */
