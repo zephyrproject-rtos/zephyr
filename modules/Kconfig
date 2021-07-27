@@ -84,6 +84,9 @@ comment "FFF module not available."
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
 
+comment "CHRE module not available."
+	depends on !ZEPHYR_CHRE_MODULE
+
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
 # modules are not present in the workspace
