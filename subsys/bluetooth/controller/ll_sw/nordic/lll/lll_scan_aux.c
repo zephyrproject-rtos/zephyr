@@ -54,12 +54,13 @@ static void isr_rx(void *param);
 static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		      uint8_t devmatch_id, uint8_t irkmatch_ok,
 		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
+static void isr_tx_scan_req(void *param);
 #if defined(CONFIG_BT_CENTRAL)
-static bool isr_scan_connect_rsp_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu_tx,
-				       struct pdu_adv *pdu_rx, uint8_t rl_idx);
 static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
+static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
+				     struct pdu_adv *pdu_tx,
+				     struct pdu_adv *pdu_rx, uint8_t rl_idx);
 static void isr_early_abort(void *param);
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -143,11 +144,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CENTRAL */
 
-	/* Start setting up Radio h/w */
-	radio_reset();
+	/* Initialize scanning state */
+	lll->state = 0U;
 
 	/* Reset Tx/rx count */
 	trx_cnt = 0U;
+
+	/* Start setting up Radio h/w */
+	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -444,7 +448,6 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		 * and CSA#2 events and 2 nodes are always reserved for connection.
 		 */
 		rx = ull_pdu_rx_alloc_peek(4);
-
 		if (!rx) {
 			return -ENOBUFS;
 		}
@@ -556,8 +559,9 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		memcpy(rx->pdu, pdu_tx, (offsetof(struct pdu_adv, connect_ind) +
-					 sizeof(struct pdu_adv_connect_ind)));
+		(void)memcpy(rx->pdu, pdu_tx,
+			     (offsetof(struct pdu_adv, connect_ind) +
+			      sizeof(struct pdu_adv_connect_ind)));
 
 		/* ChSel is RFU in AUX_ADV_IND but we do need to use CSA#2 for
 		 * connections initiated on the secondary advertising channel
@@ -584,16 +588,92 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 
 		return 0;
 
+	/* Active scanner */
 	} else if (!lll_scan->conn &&
+		   lll_scan->type &&
+		   !lll->state &&
+		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
 					   rl_idx)) {
 #else /* !CONFIG_BT_CENTRAL */
-	} else if (lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
+	} else if (lll_scan->type &&
+		   !lll->state &&
+		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
+		   lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
 					   rl_idx)) {
 #endif /* !CONFIG_BT_CENTRAL */
-		ull_pdu_rx_alloc();
+		struct node_rx_pdu *rx;
+		struct pdu_adv *pdu_tx;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		bt_addr_t *lrpa;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		trx_cnt++;
+		/* Check if 4 nodes free, 2 will be utilized for aux PDU and
+		 * scan response PDU; 2 more to ensure connections have them.
+		 */
+		rx = ull_pdu_rx_alloc_peek(4);
+		if (!rx) {
+			return -ENOBUFS;
+		}
+
+		/* setup tIFS switching */
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_rx(lll->phy);
+
+		/* prepare the scan request packet */
+		pdu_tx = (void *)radio_pkt_scratch_get();
+		pdu_tx->type = PDU_ADV_TYPE_SCAN_REQ;
+		pdu_tx->rx_addr = pdu->tx_addr;
+		pdu_tx->len = sizeof(struct pdu_adv_scan_req);
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		lrpa = ull_filter_lll_lrpa_get(rl_idx);
+		if (lll_scan->rpa_gen && lrpa) {
+			pdu_tx->tx_addr = 1;
+			(void)memcpy(pdu_tx->scan_req.scan_addr, lrpa->val,
+				     BDADDR_SIZE);
+		} else {
+#else
+		if (1) {
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+			pdu_tx->tx_addr = lll_scan->init_addr_type;
+			(void)memcpy(pdu_tx->scan_req.scan_addr,
+				     lll_scan->init_addr, BDADDR_SIZE);
+		}
+		(void)memcpy(pdu_tx->scan_req.adv_addr,
+			     &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+			     BDADDR_SIZE);
+
+		radio_pkt_tx_set(pdu_tx);
+
+		/* assert if radio packet ptr is not set and radio started tx */
+		LL_ASSERT(!radio_is_ready());
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+		}
+
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
+		radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* PA/LNA enable is overwriting packet end
+			 * used in ISR profiling, hence back it up
+			 * for later use.
+			 */
+			lll_prof_radio_end_backup();
+		}
+
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 EVENT_IFS_US -
+					 radio_rx_chain_delay_get(lll->phy, 1) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+		radio_isr_set(isr_tx_scan_req, lll);
+
+		(void)ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
@@ -602,9 +682,48 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
 				    radio_rx_chain_delay_get(lll->phy, 1);
-
 		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
+		ftr->scan_req = 1U;
+		ftr->scan_rsp = 0U;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+
+		/* switch aux scanner state to active */
+		lll->state = 1U;
+
+		return 0;
+
+	/* Passive scanner or scan responses */
+#if defined(CONFIG_BT_CENTRAL)
+	} else if (!lll_scan->conn &&
+		   lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
+					   rl_idx)) {
+#else /* !CONFIG_BT_CENTRAL */
+	} else if (lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
+					   rl_idx)) {
+#endif /* !CONFIG_BT_CENTRAL */
+
+		trx_cnt++;
+
+		(void)ull_pdu_rx_alloc();
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
+
+		ftr = &(node_rx->hdr.rx_ftr);
+		ftr->param = lll;
+		ftr->ticks_anchor = radio_tmr_start_get();
+		ftr->radio_end_us = radio_tmr_end_get() -
+				    radio_rx_chain_delay_get(lll->phy, 1);
+		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
+		ftr->scan_req = 0U;
+		ftr->scan_rsp = lll->state;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
@@ -617,8 +736,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 	return -ECANCELED;
 }
 
-#if defined(CONFIG_BT_CENTRAL)
-static void isr_tx_connect_req(void *param)
+static void isr_tx(void *param, void *pdu_rx, void (*isr)(void *))
 {
 	struct lll_scan_aux *lll_aux;
 	uint32_t hcto;
@@ -626,16 +744,16 @@ static void isr_tx_connect_req(void *param)
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
-	lll_aux = param;
+	/* setup tIFS switching */
+	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_switch_complete_and_disable();
 
-	radio_pkt_rx_set(radio_pkt_scratch_get());
+	radio_pkt_rx_set(pdu_rx);
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_disable();
-	radio_isr_set(isr_rx_connect_rsp, param);
+	lll_aux = param;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -652,10 +770,8 @@ static void isr_tx_connect_req(void *param)
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, 1);
 	radio_tmr_hcto_configure(hcto);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_CONN_RSSI)) {
-		radio_rssi_measure();
-	}
+	/* scanner always measures RSSI */
+	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -671,12 +787,32 @@ static void isr_tx_connect_req(void *param)
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
+	radio_isr_set(isr, param);
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		/* NOTE: as scratch packet is used to receive, it is safe to
 		 * generate profile event using rx nodes.
 		 */
 		lll_prof_send();
 	}
+}
+
+static void isr_tx_scan_req(void *param)
+{
+	struct node_rx_pdu *node_rx;
+
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+	isr_tx(param, node_rx->pdu, isr_rx);
+}
+
+#if defined(CONFIG_BT_CENTRAL)
+static void isr_tx_connect_req(void *param)
+{
+	void *pdu_rx;
+
+	pdu_rx = radio_pkt_scratch_get();
+	isr_tx(param, pdu_rx, isr_rx_connect_rsp);
 }
 
 static void isr_rx_connect_rsp(void *param)
@@ -734,7 +870,7 @@ static void isr_rx_connect_rsp(void *param)
 	/* Check for PDU reception */
 	if (trx_done && crc_ok) {
 		pdu_rx = radio_pkt_scratch_get();
-		trx_done = isr_scan_connect_rsp_check(lll,
+		trx_done = isr_rx_connect_rsp_check(lll,
 				(void *)lll_scan_connect_req_pdu, pdu_rx,
 				rl_idx);
 	} else {
@@ -788,9 +924,9 @@ static void isr_rx_connect_rsp(void *param)
 
 		pdu = (void *)rx->pdu;
 		pdu->rx_addr = pdu_rx->tx_addr;
-		memcpy(pdu->connect_ind.adv_addr,
-		       &pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-		       BDADDR_SIZE);
+		(void)memcpy(pdu->connect_ind.adv_addr,
+			     &pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+			     BDADDR_SIZE);
 		ftr = &(rx->hdr.rx_ftr);
 		ftr->rl_idx = rl_idx;
 	}
@@ -804,8 +940,9 @@ isr_rx_do_close:
 	radio_disable();
 }
 
-bool isr_scan_connect_rsp_check(struct lll_scan *lll, struct pdu_adv *pdu_tx,
-				struct pdu_adv *pdu_rx, uint8_t rl_idx)
+static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
+				     struct pdu_adv *pdu_tx,
+				     struct pdu_adv *pdu_rx, uint8_t rl_idx)
 {
 	if (pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP) {
 		return false;

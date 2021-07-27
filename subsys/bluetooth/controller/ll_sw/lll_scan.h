@@ -57,6 +57,7 @@ struct lll_scan_aux {
 	struct lll_hdr hdr;
 
 	uint8_t chan:6;
+	uint8_t state:1;
 
 	uint8_t phy:3;
 
