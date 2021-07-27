@@ -522,6 +522,9 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* Disable irq before configuring it */
+	irq_disable(gpio_irq);
+
 	if (trig & GPIO_INT_TRIG_BOTH) {
 		uint8_t wuc_group = gpio_irqs[gpio_irq].wuc_group;
 		uint8_t wuc_mask = gpio_irqs[gpio_irq].wuc_mask;
