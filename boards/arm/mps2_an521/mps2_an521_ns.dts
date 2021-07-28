@@ -82,11 +82,13 @@
 	sram1: memory@0 {
 		compatible = "mmio-sram";
 		reg = <0x0 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2_3: memory@28000000 {
 		compatible = "mmio-sram";
 		reg = <0x28000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM2_3";
 	};
 
 	psram: memory@80000000 {

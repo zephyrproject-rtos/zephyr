@@ -837,6 +837,7 @@
 			reg = <0x38800000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x10000000>;
 			label = "BACKUP_SRAM";
+			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
 	};
