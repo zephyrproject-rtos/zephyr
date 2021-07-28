@@ -911,18 +911,10 @@ void ll_rx_dequeue(void)
 		while (rx_curr) {
 			memq_link_t *link_free;
 
-			if (rx_curr->rx_ftr.scan_req) {
-				link_free = NULL;
-			} else {
-				link_free = rx_curr->link;
-				rx_curr->link = NULL;
-			}
-
-			if (link_free) {
-				mem_release(link_free, &mem_link_rx.free);
-			}
-
+			link_free = rx_curr->link;
 			rx_curr = rx_curr->rx_ftr.extra;
+
+			mem_release(link_free, &mem_link_rx.free);
 		}
 	}
 	break;
