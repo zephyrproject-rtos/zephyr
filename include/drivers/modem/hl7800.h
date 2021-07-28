@@ -74,6 +74,7 @@ struct mdm_hl7800_apn {
 
 #define MDM_HL7800_MAX_POLTE_USER_ID_SIZE 16
 #define MDM_HL7800_MAX_POLTE_PASSWORD_SIZE 16
+#define MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE 33
 
 /* Assign the server error code (location response) to a value
  * that isn't used by locate response so that a single status
@@ -217,11 +218,11 @@ struct mdm_hl7800_polte_registration_event_data {
  * Data is not valid if status is non-zero.
  */
 struct mdm_hl7800_polte_location_data {
-	uint64_t timestamp;
+	uint32_t timestamp;
 	int status;
-	float latitude;
-	float longitude;
-	float confidence_in_meters;
+	char latitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char longitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char confidence_in_meters[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
 };
 
 /**

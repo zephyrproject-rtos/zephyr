@@ -2772,7 +2772,7 @@ static bool on_cmd_polte_locate_cmd_rsp(struct net_buf **buf, uint16_t len)
 }
 
 /* Handler:
- * %POLTEEVU: "LOCATION",<stat>[,<latitude>,<longitude>, <time>,<confidence>]
+ * %POLTEEVU: "LOCATION",<stat>[,<latitude>,<longitude>,<time>,<confidence>]
  */
 static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 {
@@ -2780,7 +2780,7 @@ static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 	size_t rsp_len = sizeof(rsp) - 1;
 	char *rsp_end = rsp + rsp_len;
 	struct net_buf *frag = NULL;
-	size_t out_len;
+	size_t out_len = 0;
 	char *start;
 	char *end;
 	bool parsed;
@@ -2827,46 +2827,35 @@ static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 			break;
 		}
 
-		start = strstr(start, "\"");
-		if (start != NULL && start < rsp_end) {
-			start += 1;
-			if (start >= rsp_end) {
-				break;
-			}
-			data.latitude = strtof(start, &end);
+		start = strstr(start, "\"") + 1;
+		end = strstr(start, DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.latitude, start, MIN(end - start, sizeof(data.latitude) - 1));
 		} else {
 			break;
 		}
 
-		start = strstr(end, DELIMITER);
-		if (start != NULL && start < rsp_end) {
-			start += strlen(DELIMITER);
-			if (start >= rsp_end) {
-				break;
-			}
-			data.longitude = strtof(start, &end);
+		start = end + strlen(DELIMITER);
+		end = strstr(start, DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.longitude, start, MIN(end - start, sizeof(data.longitude) - 1));
 		} else {
 			break;
 		}
 
-		start = strstr(end, DELIMITER);
-		if (start != NULL && start < rsp_end) {
-			start += strlen(DELIMITER);
-			if (start >= rsp_end) {
-				break;
-			}
-			data.timestamp = strtoul(start, &end, 10);
+		start = end + strlen(DELIMITER);
+		end = strstr(start, DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			data.timestamp = (uint32_t)strtoul(start, NULL, 10);
 		} else {
 			break;
 		}
 
-		start = strstr(end, DELIMITER);
-		if (start != NULL && start < rsp_end) {
-			start += strlen(DELIMITER);
-			if (start >= rsp_end) {
-				break;
-			}
-			data.confidence_in_meters = strtof(start, &end);
+		start = end + strlen(DELIMITER);
+		end = strstr(start, "\"");
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.confidence_in_meters, start,
+			       MIN(end - start, sizeof(data.confidence_in_meters) - 1));
 		} else {
 			break;
 		}
@@ -2875,8 +2864,11 @@ static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 	} while (0);
 
 	if (!parsed) {
-		LOG_ERR("Unable to parse PoLTE location from rsp: \"%s\"", log_strdup(rsp));
+		LOG_HEXDUMP_ERR(rsp, out_len, "Unable to parse PoLTE location");
+	} else {
+		LOG_HEXDUMP_DBG(rsp, out_len, "PoLTE Location");
 	}
+
 	event_handler(HL7800_EVENT_POLTE, &data);
 
 	return true;
