@@ -113,6 +113,53 @@ QEMU, and display the following console output:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
+For qemu_x86_64 platform, it also supports to use UEFI bootable method
+to run Zephyr applications and kernel tests, but you need to set up
+some environemnt configurations as follows:
+
+* Please install uefi-run in your system environment according to this
+  reference link https://github.com/Richard-W/uefi-run.
+
+* Please install OVMF in your system environment according to this
+  reference link https://github.com/tianocore/tianocore.github.io/wiki/OVMF.
+
+* Set system environment variable OVMF_FD_PATH,
+  for example: export OVMF_FD_PATH=/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd
+
+For example, with the test "sample.basic.helloworld.uefi":
+
+.. code-block:: console
+
+        export OVMF_FD_PATH=/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd
+        west build -b qemu_x86_64 -p auto samples/hello_world/ -DCONF_FILE=prj_uefi.conf
+        west build -t run
+
+This will build an image with the hello_world sample app, boot it on
+qemu_x86_64 using UEFI, and display the following console output:
+
+.. code-block:: console
+
+        UEFI Interactive Shell v2.2
+        EDK II
+        UEFI v2.70 (EDK II, 0x00010000)
+        Mapping table
+              FS0: Alias(s):F0a:;BLK0:
+                  PciRoot(0x0)/Pci(0x1,0x1)/Ata(0x0)
+             BLK1: Alias(s):
+                  PciRoot(0x0)/Pci(0x1,0x1)/Ata(0x0)
+        Press ESC in 1 seconds to skip startup.nsh or any other key to continue.
+        Starting UEFI application...
+        *** Zephyr EFI Loader ***
+        Zeroing 524544 bytes of memory at 0x105000
+        Copying 32768 data bytes to 0x1000 from image offset
+        Copying 20480 data bytes to 0x100000 from image offset 32768
+        Copying 540416 data bytes to 0x185100 from image offset 53248
+        Jumping to Entry Point: 0x112b (48 31 c0 48 31 d2 48)
+        *** Booting Zephyr OS build zephyr-v2.6.0-1472-g61810ec36d28  ***
+        Hello World! qemu_x86_64
+
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
 Debugging
 =========
 

@@ -56,6 +56,14 @@ config QEMU_IVSHMEM_PLAIN_MEM_SIZE
 	  device in Qemu. Note that it's in mega-bytes, so 1 means 1M for Qemu
 	  etc..
 
+config QEMU_UEFI_BOOT
+	bool "QEMU uses UEFI to boot up"
+	default n
+	depends on BUILD_OUTPUT_EFI && QEMU_TARGET && X86_64
+	help
+	  This option indicates that QEMU will use UEFI bootable method
+	  to boot up.
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu
