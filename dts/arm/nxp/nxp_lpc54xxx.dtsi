@@ -52,11 +52,13 @@
 		sram1:memory@20010000 {
 			compatible = "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "SRAM1";
 		};
 
 		sram2:memory@20020000 {
 			compatible = "mmio-sram";
 			reg = <0x20020000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM2";
 		};
 
 		sramx:memory@4000000{

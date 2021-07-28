@@ -48,6 +48,7 @@
 	sram1: memory@21000000 {
 		compatible = "mmio-sram";
 		reg = <0x21000000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	soc {

@@ -26,6 +26,7 @@
 		ocm_low: memory@1000 {
 			compatible = "xlnx,zynq-ocm";
 			reg = <0x00001000 DT_SIZE_K(188)>;
+			zephyr,memory-region = "OCM";
 		};
 
 		ocm_high: memory@fffc0000 {
