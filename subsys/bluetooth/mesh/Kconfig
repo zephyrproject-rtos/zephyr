@@ -293,6 +293,8 @@ config BT_MESH_ADV_STACK_SIZE
 	default 1024 if BT_HOST_CRYPTO
 	default 768
 	help
+	  Size of bt mesh adv thread stack.
+
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
 
