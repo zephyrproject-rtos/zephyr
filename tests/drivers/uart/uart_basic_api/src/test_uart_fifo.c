@@ -110,6 +110,8 @@ static int test_fifo_read(void)
 
 	data_received = false;
 	while (data_received == false) {
+		/* Allow other thread/workqueue to work. */
+		k_yield();
 	}
 
 	/* Verify uart_irq_rx_disable() */

@@ -23,6 +23,8 @@ static int test_poll_in(void)
 	/* Verify uart_poll_in() */
 	while (1) {
 		while (uart_poll_in(uart_dev, &recv_char) < 0) {
+			/* Allow other thread/workqueue to work. */
+			k_yield();
 		}
 
 		TC_PRINT("%c", recv_char);
