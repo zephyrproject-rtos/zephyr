@@ -509,7 +509,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 	chunk = &res->deployment.chunks[0];
 	if (strcmp("bApp", chunk->part)) {
-		LOG_ERR("only part 'bApp' is supported; got %s", chunk->part);
+		LOG_ERR("only part 'bApp' is supported; got %s", log_strdup(chunk->part));
 		return -EINVAL;
 	}
 
