@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f525ee6f468c2c68119731e1453ad72d189a1277
+      revision: 7b19e8c4a66fa6fb05c5862175edb12e15659b72
       path: modules/hal/espressif
       groups:
         - hal
