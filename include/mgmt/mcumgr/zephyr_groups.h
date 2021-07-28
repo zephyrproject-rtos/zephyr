@@ -12,9 +12,10 @@
 extern "C" {
 #endif
 
-/* The file contains definitions of Zephyr specific mgmt commands */
-
-#define ZEPHYR_MGMT_GRP_BASE		MGMT_GROUP_ID_PERUSER
+/* The file contains definitions of Zephyr specific mgmt commands. The group numbers decrease
+ * from PERUSER to avoid collision with user defined groups.
+ */
+#define ZEPHYR_MGMT_GRP_BASE		(MGMT_GROUP_ID_PERUSER - 1)
 
 /* Basic group */
 #define ZEPHYR_MGMT_GRP_BASIC		ZEPHYR_MGMT_GRP_BASE
