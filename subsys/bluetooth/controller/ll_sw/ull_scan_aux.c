@@ -46,8 +46,6 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
-static void flush_and_release(struct ll_scan_aux_set *aux,
-			      struct node_rx_hdr *rx);
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -205,6 +203,15 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	h = (void *)p->ext_hdr_adv_data;
 	if (!h->aux_ptr && !sync) {
+		if (is_scan_req) {
+			LL_ASSERT(aux && aux->rx_last);
+
+			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
+
+			return;
+		}
+
 		goto ull_scan_aux_rx_flush;
 	}
 
@@ -373,20 +380,16 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		if (is_scan_req) {
-			flush(aux, rx);
-		} else {
-			struct ull_hdr *hdr;
+		struct ull_hdr *hdr;
 
-			/* Setup the disabled callback to flush
-			 * the auxiliary PDUs
-			 */
-			hdr = &aux->ull;
-			LL_ASSERT(!hdr->disabled_cb);
+		/* Setup the disabled callback to flush
+		 * the auxiliary PDUs
+		 */
+		hdr = &aux->ull;
+		LL_ASSERT(!hdr->disabled_cb);
 
-			hdr->disabled_param = rx;
-			hdr->disabled_cb = last_disabled_cb;
-		}
+		hdr->disabled_param = rx;
+		hdr->disabled_cb = last_disabled_cb;
 
 		return;
 	}
@@ -459,19 +462,12 @@ static void last_disabled_cb(void *param)
 	rx = param;
 	aux = HDR_LLL2ULL(rx->rx_ftr.param);
 
-	flush_and_release(aux, rx);
+	flush(aux, rx);
 }
 
 static void done_disabled_cb(void *param)
 {
-	flush_and_release(param, NULL);
-}
-
-static void flush_and_release(struct ll_scan_aux_set *aux,
-			      struct node_rx_hdr *rx)
-{
-	flush(aux, rx);
-	aux_release(aux);
+	flush(param, NULL);
 }
 
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
@@ -481,8 +477,6 @@ static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 			aux->rx_last->rx_ftr.extra = rx;
 		}
 
-		aux->rx_last = NULL;
-
 		rx = aux->rx_head;
 
 		ll_rx_put(rx->link, rx);
@@ -491,6 +485,8 @@ static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
 	}
+
+	aux_release(aux);
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -544,5 +540,5 @@ static void ticker_op_cb(uint32_t status, void *param)
 
 static void ticker_op_aux_failure(void *param)
 {
-	flush_and_release(param, NULL);
+	flush(param, NULL);
 }
