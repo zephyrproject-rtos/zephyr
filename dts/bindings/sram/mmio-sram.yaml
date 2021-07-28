@@ -5,7 +5,7 @@ description: Generic on-chip SRAM description
 
 compatible: "mmio-sram"
 
-include: base.yaml
+include: [base.yaml, mem-region.yaml]
 
 properties:
     reg:
