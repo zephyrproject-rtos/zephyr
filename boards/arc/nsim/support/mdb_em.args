@@ -22,9 +22,10 @@
 	-Xagu_wb_depth=4
 	-Xagu_accord
 	-Xxy
-	-Xxy_config=dccm_y
-	-Xxy_size=8K
+	-Xxy_config=dccm_x_y
+	-Xxy_size=64K
 	-Xxy_interleave
+	-Xxy_x_base=0xc0000000
 	-Xxy_y_base=0xe0000000
 	-Xfpus_div
 	-Xfpu_mac

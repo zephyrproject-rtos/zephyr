@@ -28,4 +28,6 @@
 #define DCCM_SIZE		DT_REG_SIZE(DT_INST(0, arc_dccm))
 #endif
 
+#include <arch/arc/v2/xy_mem.ld>
+
 #include <arch/arc/v2/linker.ld>
