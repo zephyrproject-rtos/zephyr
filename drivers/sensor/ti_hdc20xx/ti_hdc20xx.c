@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Temperature and humidity scale and factors from the datasheet ("Register Maps" section) */
 #define TI_HDC20XX_RH_SCALE		100U
-#define TI_HDC20XX_TEMP_OFFSET		-40U
+#define TI_HDC20XX_TEMP_OFFSET		-2654208	/* = -40.5 * 2^16 */
 #define TI_HDC20XX_TEMP_SCALE		165U
 
 struct ti_hdc20xx_config {
@@ -87,9 +87,9 @@ static int ti_hdc20xx_channel_get(const struct device *dev,
 	/* See datasheet "Register Maps" section for more details on processing sample data. */
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		/* val = -40 + 165 * sample / 2^16 */
-		tmp = data->t_sample * TI_HDC20XX_TEMP_SCALE;
-		val->val1 = TI_HDC20XX_TEMP_OFFSET + (tmp >> 16);
+		/* val = -40.5 + 165 * sample / 2^16 */
+		tmp = data->t_sample * TI_HDC20XX_TEMP_SCALE + TI_HDC20XX_TEMP_OFFSET;
+		val->val1 = tmp >> 16;
 		/* x * 1000000 / 2^16 = x * 15625 / 2^10 */
 		val->val2 = ((tmp & 0xFFFF) * 15625U) >> 10;
 		break;
