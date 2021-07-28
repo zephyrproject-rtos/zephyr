@@ -124,6 +124,8 @@ static int test_pending(void)
 	TC_PRINT("Please send characters to serial console\n");
 
 	while (status == WAIT) {
+		/* Allow other thread/workqueue to work. */
+		k_yield();
 		/*
 		 * Wait RX handler change 'status' properly:
 		 * it will change to PASSED or FAILED after
