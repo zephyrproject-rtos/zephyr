@@ -1,0 +1,6 @@
+# Copyright (c) 2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS2_AN519
+	bool "ARM Cortex-M23 SMM on V2M-MPS2 (AN519)"
+	depends on SOC_MPS2_AN519
