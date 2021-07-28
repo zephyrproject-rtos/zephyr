@@ -67,7 +67,6 @@ jobs:
 
     - name: upload-build
       uses: actions/upload-artifact@master
-      continue-on-error: True
       with:
         name: html-output
         path: html-output.tar.xz
