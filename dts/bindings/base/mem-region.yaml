@@ -1,0 +1,13 @@
+# Copyright (c) 2021, CSIRO
+# SPDX-License-Identifier: Apache-2.0
+# Common fields for devices resulting in linker memory regions
+
+properties:
+  zephyr,memory-region:
+    type: string
+    required: false
+    description: |
+      Signify that this node should result in a dedicated linker script
+      memory region in the final executable. The region address and size
+      is taken from the <reg> property, while the name is the value of
+      this property.
