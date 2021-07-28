@@ -5101,12 +5101,7 @@ no_ext_hdr:
 		}
 
 		if (node_rx_curr == node_rx) {
-			/* Detect the scan response in the list of node_rx */
-			if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
-				evt_type = BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
-			} else {
-				evt_type = evt_type_curr;
-			}
+			evt_type = evt_type_curr;
 			adv_addr_type = adv_addr_type_curr;
 			adv_addr = adv_addr_curr;
 			direct_addr_type = direct_addr_type_curr;
@@ -5121,6 +5116,11 @@ no_ext_hdr:
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 		} else {
 			/* TODO: Validate current value with previous */
+
+			/* Detect the scan response in the list of node_rx */
+			if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
+				evt_type |= BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
+			}
 
 			if (!adv_addr) {
 				adv_addr_type = adv_addr_type_curr;
