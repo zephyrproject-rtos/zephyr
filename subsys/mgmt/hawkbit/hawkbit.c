@@ -627,7 +627,7 @@ int hawkbit_init(void)
 	LOG_DBG("Action id: current %d", action_id);
 
 	image_ok = boot_is_img_confirmed();
-	LOG_INF("Image is %s confirmed OK", image_ok ? "" : " not");
+	LOG_INF("Image is %s confirmed OK", image_ok ? "" : "not");
 	if (!image_ok) {
 		ret = boot_write_img_confirmed();
 		if (ret < 0) {
