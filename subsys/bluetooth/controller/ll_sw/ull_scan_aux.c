@@ -48,8 +48,7 @@ static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
 static void flush_and_release(struct ll_scan_aux_set *aux,
 			      struct node_rx_hdr *rx);
-static struct node_rx_hdr *flush(struct ll_scan_aux_set *aux,
-				 struct node_rx_hdr *rx);
+static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
@@ -103,12 +102,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	bool is_scan_req;
-	bool is_scan_rsp;
 	uint8_t *ptr;
 	uint8_t phy;
 
 	is_scan_req = false;
-	is_scan_rsp = false;
 	ftr = &rx->rx_ftr;
 
 	switch (rx->type) {
@@ -156,7 +153,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * in subsequent code.
 			 */
 			is_scan_req = !!ftr->scan_req;
-			is_scan_rsp = !!ftr->scan_rsp;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		} else {
@@ -200,8 +196,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	rx->link = link;
 	ftr->extra = NULL;
-	ftr->scan_req = (is_scan_req) ? 1U : 0U;
-	ftr->scan_rsp = (is_scan_rsp) ? 1U : 0U;
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -380,13 +374,12 @@ ull_scan_aux_rx_flush:
 
 	if (aux) {
 		if (is_scan_req) {
-			rx = flush(aux, rx);
-			rx->rx_ftr.scan_req = 1U;
+			flush(aux, rx);
 		} else {
 			struct ull_hdr *hdr;
 
-			/* Setup the disabled callback to flush the auxiliary
-			 * PDUs
+			/* Setup the disabled callback to flush
+			 * the auxiliary PDUs
 			 */
 			hdr = &aux->ull;
 			LL_ASSERT(!hdr->disabled_cb);
@@ -481,41 +474,23 @@ static void flush_and_release(struct ll_scan_aux_set *aux,
 	aux_release(aux);
 }
 
-static struct node_rx_hdr *flush(struct ll_scan_aux_set *aux,
-				 struct node_rx_hdr *rx)
+static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 {
 	if (aux->rx_last) {
-		memq_link_t *rx_link;
-
 		if (rx) {
 			aux->rx_last->rx_ftr.extra = rx;
-			aux->rx_last = rx;
 		}
+
+		aux->rx_last = NULL;
 
 		rx = aux->rx_head;
 
-		if (rx->rx_ftr.scan_req) {
-			struct node_rx_hdr *rx_next;
-
-			rx_next = rx->rx_ftr.extra;
-			LL_ASSERT(rx_next);
-
-			rx_link = rx_next->link;
-			LL_ASSERT(rx_link);
-
-			rx_next->link = NULL;
-		} else {
-			rx_link = rx->link;
-		}
-
-		ll_rx_put(rx_link, rx);
+		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
 	} else if (rx) {
 		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
 	}
-
-	return rx;
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
