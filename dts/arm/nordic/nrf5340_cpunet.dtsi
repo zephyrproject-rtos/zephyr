@@ -50,6 +50,7 @@
 
 		sram1: memory@21000000 {
 			compatible = "mmio-sram";
+			zephyr,memory-region = "SRAM1";
 		};
 
 		clock: clock@41005000 {

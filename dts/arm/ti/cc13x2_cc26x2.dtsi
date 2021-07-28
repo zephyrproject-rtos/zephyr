@@ -32,6 +32,7 @@
 	sram1: memory@11000000 {
 		compatible = "mmio-sram";
 		reg = <0x11000000 0x2000>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	flash0: serial-flash@0 {
