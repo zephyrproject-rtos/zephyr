@@ -1107,7 +1107,7 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 
 	prov_sd[0].type = BT_DATA_URI;
 	prov_sd[0].data_len = uri_len;
-	prov_sd[0].data = prov->uri;
+	prov_sd[0].data = (const uint8_t *)prov->uri;
 
 	return 1;
 }
