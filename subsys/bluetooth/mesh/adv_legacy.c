@@ -97,6 +97,8 @@ static inline void adv_send(struct net_buf *buf)
 
 	uint64_t time = k_uptime_get();
 
+	ARG_UNUSED(time);
+
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
 
 	bt_mesh_adv_send_start(duration, err, BT_MESH_ADV(buf));
