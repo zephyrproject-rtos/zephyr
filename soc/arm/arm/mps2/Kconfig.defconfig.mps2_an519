@@ -1,0 +1,13 @@
+# Copyright (c) 2018-2019 Linaro Limited
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MPS2_AN519
+
+config SOC
+	default "mps2_an519"
+
+config NUM_IRQS
+	default 120
+
+endif

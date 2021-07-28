@@ -9,10 +9,11 @@
 
 #define __MPU_PRESENT 1
 
-#if defined(CONFIG_SOC_MPS2_AN521)
+#if defined(CONFIG_SOC_MPS2_AN519) || defined(CONFIG_SOC_MPS2_AN521)
 #define __SAUREGION_PRESENT       CONFIG_CPU_HAS_ARM_SAU
 #define __FPU_PRESENT             CONFIG_CPU_HAS_FPU
 #define __DSP_PRESENT             CONFIG_ARMV8_M_DSP
+#define __VTOR_PRESENT            CONFIG_CPU_CORTEX_M_HAS_VTOR
 
 #endif
 
