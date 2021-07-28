@@ -59,7 +59,13 @@ jobs:
 
     - name: build-docs
       run: |
-        SPHINXOPTS="-q -W -j auto" make -C doc html
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto" make -C doc html
 
     - name: compress-docs
       run: |
@@ -103,7 +109,13 @@ jobs:
 
     - name: build-docs
       run: |
-        SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
 
     - name: upload-build
       uses: actions/upload-artifact@master
