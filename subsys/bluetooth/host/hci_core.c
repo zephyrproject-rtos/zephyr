@@ -1381,10 +1381,6 @@ static void le_remote_feat_complete(struct net_buf *buf)
 static void le_data_len_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_data_len_change *evt = (void *)buf->data;
-	uint16_t max_tx_octets = sys_le16_to_cpu(evt->max_tx_octets);
-	uint16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
-	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
-	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
@@ -1394,13 +1390,18 @@ static void le_data_len_change(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets,
-	       max_tx_time, max_rx_octets, max_rx_time);
-
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	uint16_t max_tx_octets = sys_le16_to_cpu(evt->max_tx_octets);
+	uint16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
+	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
+	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
+
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE)) {
 		atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE);
 	}
+
+	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)",
+		max_tx_octets, max_tx_time, max_rx_octets, max_rx_time);
 
 	conn->le.data_len.tx_max_len = max_tx_octets;
 	conn->le.data_len.tx_max_time = max_tx_time;
