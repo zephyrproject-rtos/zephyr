@@ -39,7 +39,7 @@ manifest:
       path: modules/crypto/mbedtls
     - name: mcuboot
       path: modules/mcuboot
-      revision: 65e999a4c427dc2a5a9bf1e83c2122891d5da8ad
+      revision: cafc5ce0c1c75484dca915fdd5e493961bac38d0
       remote: recogni-http
     
 
