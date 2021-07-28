@@ -26,11 +26,11 @@ LOG_MODULE_REGISTER(ipc_rpmsg_multi_instance, CONFIG_IPC_SERVICE_LOG_LEVEL);
 #define CH_NAME(idx, sub)	(CONFIG_RPMSG_MULTI_INSTANCE_ ## idx ## _IPM_ ## sub ## _NAME)
 
 static char *ipm_rx_name[] = {
-	FOR_EACH_FIXED_ARG(CH_NAME, (,), RX, 1, 2, 3, 4, 5, 6, 7, 8),
+	FOR_EACH_FIXED_ARG(CH_NAME, (,), RX, 0, 1, 2, 3, 4, 5, 6, 7),
 };
 
 static char *ipm_tx_name[] = {
-	FOR_EACH_FIXED_ARG(CH_NAME, (,), TX, 1, 2, 3, 4, 5, 6, 7, 8),
+	FOR_EACH_FIXED_ARG(CH_NAME, (,), TX, 0, 1, 2, 3, 4, 5, 6, 7),
 };
 
 BUILD_ASSERT(ARRAY_SIZE(ipm_rx_name) >= NUM_INSTANCES, "Invalid configuration");
