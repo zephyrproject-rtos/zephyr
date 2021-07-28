@@ -19,4 +19,8 @@ config GPIO_XEC_V2
 	default y
 	depends on GPIO
 
+config PINMUX_XEC
+	default y
+	depends on PINMUX
+
 endif # SOC_MEC172X_NSZ
