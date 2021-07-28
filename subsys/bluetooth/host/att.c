@@ -435,12 +435,8 @@ static inline bool att_chan_is_connected(struct bt_att_chan *chan)
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
-	struct bt_att_hdr *hdr;
-
-	hdr = (void *)buf->data;
-
 	BT_DBG("chan %p flags %u code 0x%02x", chan, atomic_get(chan->flags),
-	       hdr->code);
+	       ((struct bt_att_hdr *)buf->data)->code);
 
 	return chan_send(chan, buf, cb);
 }
