@@ -1,7 +1,7 @@
 .. _tensorflow_hello_world:
 
-TensorFlow Hello World sample
-#############################
+TensorFlow Lite Micro Hello World sample
+########################################
 
 Overview
 ********
@@ -23,7 +23,7 @@ running inference on a microcontroller.
    `the TensorFlow Hello World sample for Zephyr`_.
 
 .. _the TensorFlow Hello World sample for Zephyr:
-   https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/hello_world
+   https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/examples/hello_world
 
 Building and Running
 ********************

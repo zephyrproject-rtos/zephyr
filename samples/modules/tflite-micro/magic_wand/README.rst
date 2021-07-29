@@ -1,7 +1,7 @@
 .. _tensorflow_magic_wand:
 
-TensorFlow Magic Wand sample
-############################
+TensorFlow Lite Micro Magic Wand sample
+#######################################
 
 Overview
 ********
@@ -16,7 +16,7 @@ from an accelerometer.
     `the Antmicro tutorial on Renode emulation for TensorFlow`_.
 
 .. _the TensorFlow Magic Wand sample for Zephyr:
-    https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/micro/examples/magic_wand
+    https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/examples/magic_wand
 
 .. _the Antmicro tutorial on Renode emulation for TensorFlow:
     https://github.com/antmicro/litex-vexriscv-tensorflow-lite-demo
