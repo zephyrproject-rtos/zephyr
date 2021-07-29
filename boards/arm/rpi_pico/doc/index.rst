@@ -60,6 +60,9 @@ hardware features:
    * - I2C
      - :kconfig:option:`CONFIG_I2C`
      - :dtcompatible:`snps,designware-i2c`
+   * - USB Device
+     - :kconfig:option:`CONFIG_USB_DEVICE_STACK`
+     - :dtcompatible:`raspberrypi,pico-usbd`
    * - HWINFO
      - :kconfig:option:`CONFIG_HWINFO`
      - N/A

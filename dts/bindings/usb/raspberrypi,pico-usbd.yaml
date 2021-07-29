@@ -1,0 +1,15 @@
+# Copyright (c) 2021, Pete Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+description: RaspberryPi Pico USB Device Controller
+
+compatible: "raspberrypi,pico-usbd"
+
+include: [usb-ep.yaml, reset-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
