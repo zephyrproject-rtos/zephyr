@@ -1,0 +1,11 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.espi.acpi:
+    tags: drivers espi
+    filter: dt_compat_enabled("zephyr,espi-emul-controller")
+    harness: ztest
+    platform_allow: native_posix
+    integration_platforms:
+      - native_posix
