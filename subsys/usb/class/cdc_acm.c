@@ -428,7 +428,7 @@ static void cdc_interface_config(struct usb_desc_header *head,
 	desc->if0_union.bControlInterface = bInterfaceNumber;
 	desc->if1.bInterfaceNumber = bInterfaceNumber + 1;
 	desc->if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
+#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 	desc->iad_cdc.bFirstInterface = bInterfaceNumber;
 #endif
 }
