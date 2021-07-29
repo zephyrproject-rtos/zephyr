@@ -7,6 +7,8 @@ zephyr_sources(
   soc_irq.S
 )
 
+zephyr_sources_ifdef(CONFIG_SOC_ANDES_V5_PMA pma.c)
+
 # Note: AndeStar V5 DSP needs custom Andes V5 toolchain
 if(CONFIG_SOC_ANDES_V5_HWDSP)
   zephyr_cc_option(-mext-dsp)
