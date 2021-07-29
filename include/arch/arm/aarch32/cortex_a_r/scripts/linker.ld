@@ -134,6 +134,9 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
         _image_text_start = .;
+
+#include <linker/kobject-text.ld>
+
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
@@ -143,8 +146,6 @@ SECTIONS
          * after .gnu.linkonce.t.*
          */
         *(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
-
-#include <linker/kobject-text.ld>
 
     } GROUP_LINK_IN(ROMABLE_REGION)
 
