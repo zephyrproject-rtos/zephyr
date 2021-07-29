@@ -18,6 +18,8 @@
 #define IPM_WORK_QUEUE_STACK_SIZE  1024
 #define APP_TASK_STACK_SIZE        1024
 
+#define IPM_MSG_ID                 0
+
 K_THREAD_STACK_DEFINE(ipm_stack_area_1, IPM_WORK_QUEUE_STACK_SIZE);
 K_THREAD_STACK_DEFINE(ipm_stack_area_2, IPM_WORK_QUEUE_STACK_SIZE);
 
@@ -72,6 +74,9 @@ static const struct rpmsg_mi_ctx_cfg cfg_1 = {
 	.ipm_work_q_prio    = 0,
 	.ipm_tx_name        = CONFIG_RPMSG_MULTI_INSTANCE_0_IPM_TX_NAME,
 	.ipm_rx_name        = CONFIG_RPMSG_MULTI_INSTANCE_0_IPM_RX_NAME,
+	.ipm_tx_id          = IPM_MSG_ID,
+	.shm_addr           = SHM_START_ADDR,
+	.shm_size           = SHM_SIZE,
 };
 
 static const struct rpmsg_mi_ctx_cfg cfg_2 = {
@@ -82,6 +87,9 @@ static const struct rpmsg_mi_ctx_cfg cfg_2 = {
 	.ipm_work_q_prio    = 0,
 	.ipm_tx_name        = CONFIG_RPMSG_MULTI_INSTANCE_1_IPM_TX_NAME,
 	.ipm_rx_name        = CONFIG_RPMSG_MULTI_INSTANCE_1_IPM_RX_NAME,
+	.ipm_tx_id          = IPM_MSG_ID,
+	.shm_addr           = SHM_START_ADDR,
+	.shm_size           = SHM_SIZE,
 };
 
 static struct rpmsg_mi_cb cb_1 = {

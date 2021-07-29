@@ -17,7 +17,6 @@
 
 LOG_MODULE_REGISTER(rpmsg_multi_instance, CONFIG_RPMSG_MULTI_INSTANCE_LOG_LEVEL);
 
-static bool config_correct;
 static int instance;
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *p_ep)
@@ -67,7 +66,7 @@ static void virtio_notify(struct virtqueue *vq)
 	int status;
 
 	if (ctx) {
-		status = ipm_send(ctx->ipm_tx_handle, 0, CONFIG_IPM_MSG_ID, NULL, 0);
+		status = ipm_send(ctx->ipm_tx_handle, 0, ctx->ipm_tx_id, NULL, 0);
 		if (status != 0) {
 			LOG_WRN("Failed to notify: %d", status);
 		}
@@ -102,9 +101,11 @@ static void ipm_callback(const struct device *dev, void *context, uint32_t id, v
 
 int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
-	uint8_t vring_size = VRING_SIZE_GET(SHM_SIZE);
-	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(SHM_START_ADDR, SHM_SIZE, instance);
-	uint32_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(SHM_SIZE);
+	uint8_t vring_size = VRING_SIZE_GET(cfg->shm_size);
+	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm_addr,
+							  cfg->shm_size,
+							  instance);
+	uint32_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm_size);
 
 	uint32_t shm_local_start_addr = shm_addr + VDEV_STATUS_SIZE;
 	uint32_t shm_local_size = shm_size - VDEV_STATUS_SIZE;
@@ -193,10 +194,20 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 	}
 }
 
+static bool rpmsg_mi_config_verify(const struct rpmsg_mi_ctx_cfg *cfg)
+{
+	if (SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm_size) * IPC_INSTANCE_COUNT > cfg->shm_size) {
+		LOG_ERR("Not enough memory");
+		return false;
+	}
+
+	return true;
+}
+
 int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
-	uint8_t vring_size = VRING_SIZE_GET(SHM_SIZE);
+	uint8_t vring_size = VRING_SIZE_GET(cfg->shm_size);
 	struct metal_device *device;
 	int err;
 
@@ -204,7 +215,7 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 		return -EINVAL;
 	}
 
-	if (!config_correct) {
+	if (!rpmsg_mi_config_verify(cfg)) {
 		return -EIO;
 	}
 
@@ -257,6 +268,8 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 		LOG_ERR("Could not get TX IPM device handle");
 		return -ENODEV;
 	}
+
+	ctx->ipm_tx_id = cfg->ipm_tx_id;
 
 	ctx->ipm_rx_handle = device_get_binding(cfg->ipm_rx_name);
 	if (!ctx->ipm_rx_handle) {
@@ -367,24 +380,3 @@ int rpmsg_mi_send(struct rpmsg_mi_ept *ept, const void *data, size_t len)
 {
 	return rpmsg_send(&ept->ep, data, len);
 }
-
-static bool rpmsg_mi_config_verify(void)
-{
-	if (SHMEM_INST_SIZE_AUTOALLOC_GET(SHM_SIZE) * IPC_INSTANCE_COUNT > SHM_SIZE) {
-		LOG_ERR("Not enough memory");
-		return false;
-	}
-	return true;
-}
-
-static int rpmsg_mi_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	LOG_DBG("Initialization of RPMsg multiple instance");
-	config_correct = rpmsg_mi_config_verify();
-
-	return 0;
-}
-
-SYS_INIT(rpmsg_mi_init, POST_KERNEL, CONFIG_RPMSG_MULTI_INSTANCE_INIT_PRIORITY);
