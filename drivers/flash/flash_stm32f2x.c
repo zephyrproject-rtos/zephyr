@@ -183,6 +183,54 @@ static const struct flash_pages_layout stm32f2_flash_layout[] = {
 	{.pages_count = 1, .pages_size = KB(64)},
 	{.pages_count = 7, .pages_size = KB(128)},
 };
+
+#define K16_COUNT	4
+#define K64_COUNT	1
+#define K128_COUNT	7
+
+#define K16_MASK	0x0000c000
+#define K64_MASK	0x00010000
+#define K128_MASK	0x000e0000
+
+#define KALL_COUNT	(K16_COUNT + K64_COUNT + K128_COUNT)
+#define KALL_SIZE	(K16_COUNT * KB(16) + K64_COUNT * KB(64) + K128_COUNT * KB(128))
+
+int flash_stm32_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 || offset >= KALL_SIZE) {
+		return -EINVAL;
+	}
+
+	if (offset & K128_MASK) {
+		fpi->offset = offset & K128_MASK;
+		fpi->size = KB(128);
+	} else if (offset & K64_MASK) {
+		fpi->offset = offset & K64_MASK;
+		fpi->size = KB(64);
+	} else {
+		fpi->offset = offset & K16_MASK;
+		fpi->size = KB(16);
+	}
+
+	return 0;
+}
+
+ssize_t flash_stm32_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return KALL_COUNT;
+}
+
+ssize_t flash_stm32_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return KALL_SIZE;
+}
+
 #else
 #error "Unknown flash layout"
 #endif /* FLASH_SECTOR_TOTAL == 12 */
