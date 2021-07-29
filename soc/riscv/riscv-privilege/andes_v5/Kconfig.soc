@@ -1,0 +1,50 @@
+# Copyright (c) 2021 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "Andes V5 SoC Selection"
+depends on SOC_SERIES_RISCV_ANDES_V5
+
+config SOC_RISCV_ANDES_AE350
+	bool "Andes AE350 SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+
+endchoice
+
+if SOC_SERIES_RISCV_ANDES_V5
+
+choice
+prompt "Base CPU ISA options"
+default RV32I_CPU
+
+config RV32I_CPU
+	bool "RISCV32 CPU ISA"
+
+config RV64I_CPU
+	bool "RISCV64 CPU ISA"
+	select 64BIT
+
+endchoice
+
+choice
+prompt "FPU options"
+default NO_FPU
+
+config NO_FPU
+	bool "No FPU"
+
+config SINGLE_PRECISION_FPU
+	bool "Single precision FPU"
+	select CPU_HAS_FPU
+
+config DOUBLE_PRECISION_FPU
+	bool "Double precision FPU"
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
+endchoice
+
+config CACHE_ENABLE
+	bool "Enable cache"
+	default n
+
+endif # SOC_SERIES_RISCV_ANDES_V5
