@@ -40,8 +40,9 @@ struct thread_analyzer_info {
  *  Callback function with thread analysis information.
  *
  *  @param info Thread analysis information.
+ *  @param user_data User data supplied by caller.
  */
-typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info);
+typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info, void *user_data);
 
 /** @brief Run the thread analyzer and provide information to the callback
  *
@@ -49,8 +50,9 @@ typedef void (*thread_analyzer_cb)(struct thread_analyzer_info *info);
  *  a given callback on every thread found.
  *
  *  @param cb The callback function handler
+ *  @param user_data User data supplied by caller.
  */
-void thread_analyzer_run(thread_analyzer_cb cb);
+void thread_analyzer_run(thread_analyzer_cb cb, void *user_data);
 
 /** @brief Run the thread analyzer and print stack size statistics.
  *

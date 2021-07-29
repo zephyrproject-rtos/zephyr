@@ -35,8 +35,15 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
  */
 #define PTR_STR_MAXLEN (sizeof(void *) * 2 + 2)
 
-static void thread_print_cb(struct thread_analyzer_info *info)
+struct thread_analyzer_data {
+	thread_analyzer_cb callback;
+	void *user_data;
+};
+
+static void thread_print_cb(struct thread_analyzer_info *info, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	size_t pcnt = (info->stack_used * 100U) / info->stack_size;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	THREAD_ANALYZER_PRINT(
@@ -65,7 +72,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	int ret;
 #endif
 	size_t size = thread->stack_info.size;
-	thread_analyzer_cb cb = user_data;
+	struct thread_analyzer_data *analyzer_data = user_data;
 	struct thread_analyzer_info info;
 	char hexname[PTR_STR_MAXLEN + 1];
 	const char *name;
@@ -109,22 +116,27 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 			rt_stats_all.execution_cycles;
 	}
 #endif
-	cb(&info);
+	analyzer_data->callback(&info, analyzer_data->user_data);
 }
 
-void thread_analyzer_run(thread_analyzer_cb cb)
+void thread_analyzer_run(thread_analyzer_cb cb, void *user_data)
 {
+	struct thread_analyzer_data thread_analyzer_data = {
+		.callback = cb,
+		.user_data = user_data
+	};
+
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
-		k_thread_foreach_unlocked(thread_analyze_cb, cb);
+		k_thread_foreach_unlocked(thread_analyze_cb, &thread_analyzer_data);
 	} else {
-		k_thread_foreach(thread_analyze_cb, cb);
+		k_thread_foreach(thread_analyze_cb, &thread_analyzer_data);
 	}
 }
 
 void thread_analyzer_print(void)
 {
 	THREAD_ANALYZER_PRINT(THREAD_ANALYZER_FMT("Thread analyze:"));
-	thread_analyzer_run(thread_print_cb);
+	thread_analyzer_run(thread_print_cb, NULL);
 }
 
 #if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO)
