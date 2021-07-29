@@ -28,7 +28,7 @@ static bool should_suspend(const struct device *dev, enum pm_device_state state)
 	int rc;
 	enum pm_device_state current_state;
 
-	if (pm_device_busy_check(dev) != 0) {
+	if (pm_device_is_busy(dev) != 0) {
 		return false;
 	}
 
@@ -150,26 +150,23 @@ int pm_device_state_get(const struct device *dev,
 			       device_power_state);
 }
 
-int pm_device_any_busy_check(void)
+bool pm_device_is_any_busy(void)
 {
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
 		if (atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
-			return -EBUSY;
+			return true;
 		}
 		++dev;
 	}
 
-	return 0;
+	return false;
 }
 
-int pm_device_busy_check(const struct device *dev)
+bool pm_device_is_busy(const struct device *dev)
 {
-	if (atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
-		return -EBUSY;
-	}
-	return 0;
+	return atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 void pm_device_busy_set(const struct device *dev)
