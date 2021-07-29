@@ -96,6 +96,8 @@ struct rpmsg_mi_ctx {
 	const struct device *ipm_tx_handle;
 	const struct device *ipm_rx_handle;
 
+	unsigned int ipm_tx_id;
+
 	uint32_t shm_status_reg_addr;
 	struct metal_io_region *shm_io;
 	struct metal_device shm_device;
@@ -121,6 +123,12 @@ struct rpmsg_mi_ctx_cfg {
 	/** Name of instance. */
 	const char *name;
 
+	/** Physical address shared memory region. */
+	uintptr_t shm_addr;
+
+	/** Size shared memory region. */
+	size_t shm_size;
+
 	/** Stack area for k_work_q. */
 	k_thread_stack_t *ipm_stack_area;
 
@@ -138,6 +146,9 @@ struct rpmsg_mi_ctx_cfg {
 
 	/** Name of the RX IPM channel. */
 	const char *ipm_rx_name;
+
+	/** IPM message identifier. */
+	unsigned int ipm_tx_id;
 };
 
 /** @brief Initialization of RPMsg instance.
