@@ -124,6 +124,17 @@
 			label = "I2C_1";
 			status = "disabled";
 		};
+
+		usbd: usbd@50100000 {
+			compatible = "raspberrypi,pico-usbd";
+			reg = <0x50100000 0x10000>;
+			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
+			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "usbctrl";
+			num-bidir-endpoints = <16>;
+			label = "USBD";
+			status = "disabled";
+		};
 	};
 };
 

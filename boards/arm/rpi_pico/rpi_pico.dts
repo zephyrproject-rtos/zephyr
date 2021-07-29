@@ -84,3 +84,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 };
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
