@@ -193,10 +193,10 @@ manifest:
     - name: sof
       revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
       path: modules/audio/sof
-    - name: tensorflow
-      revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
-      path: modules/lib/tensorflow
-      repo-path: tensorflow
+    - name: tflite-micro
+      revision: 9156d050927012da87079064db59d07f03b8baf6
+      path: modules/lib/tflite-micro
+      repo-path: tflite-micro
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
