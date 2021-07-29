@@ -125,7 +125,7 @@ static int register_ept(struct ipc_ept **ept, const struct ipc_ept_cfg *cfg)
 	 * When registering the first endpoint for the instance.
 	 */
 	if (!instances[i_idx].is_initialized) {
-		struct rpsmg_mi_ctx_cfg ctx_cfg = { 0 };
+		struct rpmsg_mi_ctx_cfg ctx_cfg = { 0 };
 
 		snprintf(instances[i_idx].name, INSTANCE_NAME_SIZE, "rpmsg_mi_%d", i_idx);
 
