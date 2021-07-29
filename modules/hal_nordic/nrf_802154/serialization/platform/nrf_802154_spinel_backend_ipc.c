@@ -12,6 +12,7 @@
 #include "nrf_802154_spinel_backend_callouts.h"
 #include "nrf_802154_serialization_error.h"
 #include "../../spinel_base/spinel.h"
+#include "../../src/include/nrf_802154_spinel.h"
 
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend
@@ -66,7 +67,7 @@ static int register_endpoint(const struct device *arg)
 SYS_INIT(register_endpoint, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);
 
 /* Send packet thread details */
-#define RING_BUFFER_LEN 4
+#define RING_BUFFER_LEN 16
 #define SEND_THREAD_STACK_SIZE 1024
 
 static K_SEM_DEFINE(send_sem, 0, RING_BUFFER_LEN);
@@ -75,7 +76,7 @@ struct k_thread send_thread_data;
 
 struct ringbuffer {
 	uint32_t len;
-	uint8_t data[SPINEL_FRAME_BUFFER_SIZE];
+	uint8_t data[NRF_802154_SPINEL_FRAME_MAX_SIZE];
 };
 
 static struct ringbuffer ring_buffer[RING_BUFFER_LEN];
