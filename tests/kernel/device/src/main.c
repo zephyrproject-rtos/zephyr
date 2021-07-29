@@ -280,7 +280,7 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  * sets/clears busy status and validates status again.
  *
  * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
- * pm_device_busy_check(), pm_device_any_busy_check(),
+ * pm_device_is_busy(), pm_device_is_any_busy(),
  * pm_device_state_set()
  */
 void test_dummy_device_pm(void)
@@ -292,22 +292,22 @@ void test_dummy_device_pm(void)
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
-	busy = pm_device_any_busy_check();
+	busy = pm_device_is_any_busy();
 	zassert_true((busy == 0), NULL);
 
 	/* Set device state to BUSY*/
 	pm_device_busy_set(dev);
 
-	busy = pm_device_any_busy_check();
+	busy = pm_device_is_any_busy();
 	zassert_false((busy == 0), NULL);
 
-	busy = pm_device_busy_check(dev);
+	busy = pm_device_is_busy(dev);
 	zassert_false((busy == 0), NULL);
 
 	/* Clear device BUSY state*/
 	pm_device_busy_clear(dev);
 
-	busy = pm_device_busy_check(dev);
+	busy = pm_device_is_busy(dev);
 	zassert_true((busy == 0), NULL);
 
 	test_build_suspend_device_list();

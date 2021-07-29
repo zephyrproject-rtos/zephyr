@@ -162,10 +162,10 @@ void pm_device_busy_clear(const struct device *dev);
  * Called by an application to see if any device is in the middle
  * of a critical transaction that cannot be interrupted.
  *
- * @retval 0 if no device is busy
- * @retval -EBUSY if any device is busy
+ * @retval false if no device is busy
+ * @retval true if any device is busy
  */
-int pm_device_any_busy_check(void);
+bool pm_device_is_any_busy(void);
 
 /**
  * @brief Check if a specific device is in the middle of a transaction
@@ -175,15 +175,15 @@ int pm_device_any_busy_check(void);
  *
  * @param chk_dev Pointer to device structure of the specific device driver
  * the caller is interested in.
- * @retval 0 if the device is not busy
- * @retval -EBUSY if the device is busy
+ * @retval false if the device is not busy
+ * @retval true if the device is busy
  */
-int pm_device_busy_check(const struct device *chk_dev);
+bool pm_device_is_busy(const struct device *chk_dev);
 #else
 static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
-static inline int pm_device_any_busy_check(void) { return -ENOSYS; }
-static inline int pm_device_busy_check(const struct device *chk_dev) { return -ENOSYS; }
+static inline bool pm_device_is_any_busy(void) { return false; }
+static inline bool pm_device_is_busy(const struct device *chk_dev) { return false; }
 #endif
 
 /** Alias for legacy use of device_pm_control_nop */
