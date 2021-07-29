@@ -34,11 +34,6 @@
 extern "C" {
 #endif
 
-#define K_NUM_PRIORITIES \
-	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
-
-#define K_NUM_PRIO_BITMAPS ((K_NUM_PRIORITIES + 31) >> 5)
-
 /*
  * Bitmask definitions for the struct k_thread.thread_state field.
  *
