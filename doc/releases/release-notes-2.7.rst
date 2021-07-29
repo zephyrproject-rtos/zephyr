@@ -291,6 +291,15 @@ Libraries / Subsystems
 
 * Power management
 
+  * The APIs to set/clear/check if devices are busy from a power management
+    perspective have been moved to the PM subsystem. Their naming and signature
+    has also been adjusted to follow common conventions. Below you can find the
+    equivalence list.
+
+    * ``device_busy_set`` -> ``pm_device_busy_set``
+    * ``device_busy_clear`` -> ``pm_device_busy_clear``
+    * ``device_busy_check`` -> ``pm_device_is_busy``
+    * ``device_any_busy_check`` -> ``pm_device_is_any_busy``
 
 * Logging
 
