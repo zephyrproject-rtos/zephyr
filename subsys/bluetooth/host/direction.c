@@ -40,14 +40,10 @@ static struct bt_le_df_ant_info df_ant_info;
 const static uint8_t df_dummy_switch_pattern[BT_HCI_LE_SWITCH_PATTERN_LEN_MIN] = { 0, 0 };
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
-#define DF_SUPP_TEST(feat, n)                   ((feat) & BIT((n)))
+#define DF_AOD_TX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOD_TX)
+#define DF_AOD_RX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOD_RX)
+#define DF_AOA_RX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOA_RX)
 
-#define DF_AOD_TX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOD_TX))
-#define DF_AOD_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOD_RX))
-#define DF_AOA_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOA_RX))
 #define DF_SAMPLING_ANTENNA_NUMBER_MIN 0x2
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
