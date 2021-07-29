@@ -95,6 +95,10 @@
 	pinctrl-0 = <&uart0_tx_pb2 &uart0_rx_pb3>;
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash_mspi {
 	partitions {
 		compatible = "fixed-partitions";
