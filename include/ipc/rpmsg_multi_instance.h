@@ -87,7 +87,7 @@ struct rpmsg_mi_ept_cfg {
 	void *priv;
 };
 
-/** @brief Struct describing the context of the RPMsg instanece. */
+/** @brief Struct describing the context of the RPMsg instance. */
 struct rpmsg_mi_ctx {
 	const char *name;
 	struct k_work_q ipm_work_q;
@@ -116,7 +116,7 @@ struct rpmsg_mi_ctx {
 };
 
 /** @brief Configuration of the RPMsg instance. */
-struct rpsmg_mi_ctx_cfg {
+struct rpmsg_mi_ctx_cfg {
 
 	/** Name of instance. */
 	const char *name;
@@ -153,7 +153,7 @@ struct rpsmg_mi_ctx_cfg {
  *         -ENOMEM when there is not enough memory to register virqueue.
  *         < 0 on other negative errno code, reported by rpmsg.
  */
-int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpsmg_mi_ctx_cfg *cfg);
+int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg);
 
 /** @brief Register IPC endpoint.
  *

@@ -100,7 +100,7 @@ static void ipm_callback(const struct device *dev, void *context, uint32_t id, v
 	k_work_submit_to_queue(&ctx->ipm_work_q, &ctx->ipm_work);
 }
 
-int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpsmg_mi_ctx_cfg *cfg)
+int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	uint8_t vring_size = VRING_SIZE_GET(SHM_SIZE);
 	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(SHM_START_ADDR, SHM_SIZE, instance);
@@ -193,7 +193,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 	}
 }
 
-int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpsmg_mi_ctx_cfg *cfg)
+int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	uint8_t vring_size = VRING_SIZE_GET(SHM_SIZE);
