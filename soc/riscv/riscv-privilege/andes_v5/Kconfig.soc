@@ -47,4 +47,20 @@ config CACHE_ENABLE
 	bool "Enable cache"
 	default n
 
+config SOC_ANDES_V5_HWDSP
+	bool "Enable AndeStar V5 DSP ISA"
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	help
+		This option enables the AndeStar v5 hardware DSP, in order to
+		support using the DSP instructions.
+
+config SOC_ANDES_V5_PFT
+	bool "Enable Andes V5 PowerBrake extension"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+	help
+		The PowerBrake extension throttles performance by reducing instruction
+		executing rate.
+
 endif # SOC_SERIES_RISCV_ANDES_V5
