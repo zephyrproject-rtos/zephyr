@@ -59,6 +59,27 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
+/* Make linker section alignment comply with PMA granularity. */
+#if defined(CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE)
+_region_min_align = CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE;
+#else
+_region_min_align = 4;
+#endif
+
+#if defined(CONFIG_SOC_ANDES_V5_PMA)
+/*
+ * Andes-V5 PMA needs power-of-2 alignment.
+ */
+#define MPU_MIN_SIZE_ALIGN . = ALIGN(_region_min_align);
+#define MPU_ALIGN(region_size) \
+    . = ALIGN(_region_min_align); \
+    . = ALIGN( 1 << LOG2CEIL(region_size))
+#else
+#define MPU_MIN_SIZE_ALIGN
+#define MPU_ALIGN(region_size) \
+    . = ALIGN(_region_min_align)
+#endif
+
 MEMORY
 {
 #ifdef CONFIG_XIP
