@@ -557,9 +557,9 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 
 static void isr_rx(void *param)
 {
-	struct lll_scan *lll;
 	struct node_rx_pdu *node_rx;
-	struct pdu_adv *pdu_adv_rx;
+	struct lll_scan *lll;
+	struct pdu_adv *pdu;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
@@ -600,17 +600,24 @@ static void isr_rx(void *param)
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
-	pdu_adv_rx = (void *)node_rx->pdu;
+	pdu = (void *)node_rx->pdu;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (!irkmatch_ok && (pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
-	    (pdu_adv_rx->tx_addr)) {
-		radio_ar_resolve(&pdu_adv_rx->payload[2]);
-		irkmatch_ok = radio_ar_has_match();
-		irkmatch_id = radio_ar_match_get();
+	if (ull_filter_lll_rl_enabled() && !irkmatch_ok && pdu->tx_addr &&
+	    (pdu->type == PDU_ADV_TYPE_EXT_IND)) {
+		uint8_t count;
+
+		ull_filter_lll_irks_get(&count);
+		if (count) {
+			radio_ar_resolve(
+				&pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET]);
+			irkmatch_ok = radio_ar_has_match();
+			irkmatch_id = radio_ar_match_get();
+		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	rl_idx = devmatch_ok ?
 		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
 				       devmatch_id) :
@@ -619,11 +626,12 @@ static void isr_rx(void *param)
 #else
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	if (crc_ok && isr_rx_scan_check(lll, irkmatch_ok, devmatch_ok,
 					rl_idx)) {
 		int err;
 
-		err = isr_rx_pdu(lll, pdu_adv_rx, devmatch_ok, devmatch_id,
+		err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id,
 				 irkmatch_ok, irkmatch_id, rl_idx, rssi_ready);
 		if (!err) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
