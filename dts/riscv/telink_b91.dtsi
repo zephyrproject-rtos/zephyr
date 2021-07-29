@@ -145,6 +145,15 @@
 			status = "disabled";
 		};
 
+		ieee802154: ieee802154@80140800 {
+			compatible = "telink,b91-zb";
+			reg = <0x80140800 0x800>;
+			label = "IEEE802154";
+			interrupt-parent = <&plic0>;
+			interrupts = <15 2>;
+			status = "disabled";
+		};
+
 		pinmux: pinmux@80140330 {
 			compatible = "telink,b91-pinmux";
 			reg = <0x80140330 0x28
