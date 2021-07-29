@@ -31,6 +31,7 @@ struct lll_scan {
 	uint16_t duration_expire;
 	uint8_t  phy:3;
 	uint8_t  is_adv_ind:1;
+	uint8_t  is_aux_sched:1;
 
 	/* temporary storage when aux scan was scheduled from LLL */
 	struct lll_scan_aux *lll_aux;
