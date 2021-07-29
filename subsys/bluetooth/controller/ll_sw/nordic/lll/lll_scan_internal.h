@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+void lll_scan_isr_resume(void *param);
 bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 			 uint8_t rl_idx);
 bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,

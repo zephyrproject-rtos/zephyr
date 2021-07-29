@@ -47,6 +47,8 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static int resume_prepare_cb(struct lll_prepare_param *p);
+static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume);
 static int is_abort_cb(void *next, void *curr,
 		       lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -116,6 +118,17 @@ void lll_scan_prepare(void *param)
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
+void lll_scan_isr_resume(void *param)
+{
+	static struct lll_prepare_param p;
+
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+
+	p.param = param;
+	resume_prepare_cb(&p);
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -275,6 +288,23 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+	return common_prepare_cb(p, false);
+}
+
+static int resume_prepare_cb(struct lll_prepare_param *p)
+{
+	struct ull_hdr *ull;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	p->remainder = 0;
+	p->lazy = 0;
+
+	return common_prepare_cb(p, true);
+}
+
+static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
+{
 	uint32_t ticks_at_event, ticks_at_start;
 	struct node_rx_pdu *node_rx;
 	uint32_t remainder_us;
@@ -319,6 +349,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 
 	lll->is_adv_ind = 0U;
+	lll->is_aux_sched = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
@@ -410,7 +441,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	{
 		uint32_t ret;
 
-		if (lll->ticks_window) {
+		if (!is_resume && lll->ticks_window) {
 			/* start window close timeout */
 			ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 					   TICKER_USER_ID_LLL,
@@ -455,18 +486,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	return 0;
 }
 
-static int resume_prepare_cb(struct lll_prepare_param *p)
-{
-	struct ull_hdr *ull;
-
-	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
-	p->remainder = 0;
-	p->lazy = 0;
-
-	return prepare_cb(p);
-}
-
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 	struct lll_scan *lll = curr;
@@ -493,6 +512,9 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
 		radio_isr_set(isr_done_cleanup, lll);
+	} else if (lll->is_aux_sched) {
+		/* as a continuous scanner, let us not abort aux PDU scan */
+		return 0;
 	} else
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{

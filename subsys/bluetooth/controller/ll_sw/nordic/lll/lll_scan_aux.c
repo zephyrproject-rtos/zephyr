@@ -203,6 +203,9 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 	/* There's no prepare_cb prior to scan so need to clear flag here */
 	trx_cnt = 0U;
 
+	/* Primary scanner switched to auxliary PDU scanning */
+	lll->is_aux_sched = 1U;
+
 	radio_isr_set(isr_scan_aux_setup, node_rx);
 	radio_disable();
 
@@ -439,6 +442,7 @@ static void isr_rx(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t rl_idx;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -462,9 +466,11 @@ static void isr_rx(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 	lll_isr_rx_status_reset();
 
 	/* No Rx */
-	if (!trx_done) {
+	if (!trx_done || !crc_ok) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
+		err = -EINVAL;
+
 		goto isr_rx_do_close;
 	}
 
@@ -478,23 +484,26 @@ static void isr_rx(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (crc_ok) {
-		int err;
-
-		err = isr_rx_pdu(lll_scan, lll_aux, phy_aux, devmatch_ok,
-				 devmatch_id, irkmatch_ok, irkmatch_ok, rl_idx,
-				 rssi_ready);
-		if (!err) {
-			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-				lll_prof_send();
-			}
-
-			return;
+	err = isr_rx_pdu(lll_scan, lll_aux, phy_aux, devmatch_ok, devmatch_id,
+			 irkmatch_ok, irkmatch_ok, rl_idx, rssi_ready);
+	if (!err) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
 		}
+
+		return;
 	}
 
 isr_rx_do_close:
-	radio_isr_set(isr_done, NULL);
+	if (lll_aux) {
+		radio_isr_set(isr_done, lll_aux);
+	} else {
+		/* TODO: Send message to flush Auxiliary PDU list */
+		if (err != -ECANCELED) {
+			LL_ASSERT(0);
+		}
+		radio_isr_set(lll_scan_isr_resume, lll_scan);
+	}
 	radio_disable();
 }
 
@@ -728,9 +737,11 @@ static int isr_rx_pdu(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 		if (ftr->aux_sched) {
 			return 0;
 		}
+
+		return -ECANCELED;
 	}
 
-	return -ECANCELED;
+	return -EINVAL;
 }
 
 #if defined(CONFIG_BT_CENTRAL)
