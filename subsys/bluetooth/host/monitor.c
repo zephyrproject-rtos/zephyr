@@ -234,7 +234,7 @@ extern void __stdout_hook_install(int (*fn)(int));
 #endif /* !CONFIG_UART_CONSOLE */
 
 #if defined(CONFIG_HAS_DTS) && !defined(CONFIG_BT_MONITOR_ON_DEV_NAME)
-#define CONFIG_BT_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#define CONFIG_BT_MONITOR_ON_DEV_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
 #endif
 
 #ifndef CONFIG_LOG_MINIMAL
