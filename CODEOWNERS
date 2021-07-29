@@ -243,6 +243,7 @@
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/ieee802154/                      @rlubos @tbursztyka
+/drivers/ieee802154/*b91*                 @yurvyn
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @dcpleung @nashif
