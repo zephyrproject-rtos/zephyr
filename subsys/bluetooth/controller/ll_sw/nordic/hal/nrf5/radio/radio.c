@@ -1459,13 +1459,23 @@ void radio_ar_resolve(uint8_t *addr)
 	NRF_AAR->EVENTS_RESOLVED = 0;
 	NRF_AAR->EVENTS_NOTRESOLVED = 0;
 
-	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
+	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+
+	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
+
 	while (NRF_AAR->EVENTS_END == 0) {
 		__WFE();
 		__SEV();
 		__WFE();
 	}
+
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
+
+	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
+
 }
