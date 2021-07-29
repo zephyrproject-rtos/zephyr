@@ -101,9 +101,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	bool is_lll_sched;
+	bool is_lll_aux;
 	uint8_t *ptr;
 	uint8_t phy;
 
+	is_lll_aux = false;
 	ftr = &rx->rx_ftr;
 
 	switch (rx->type) {
@@ -145,6 +147,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			lll_scan->lll_aux = NULL;
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(lll_scan == aux->rx_head->rx_ftr.param);
+
+			/* aux is retrieved from LLL Aux scheduling */
+			is_lll_aux = true;
 
 			/* Store retrieved aux context to node so it can be
 			 * processed as if scheduled from ULL.
@@ -415,14 +420,20 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		struct ull_hdr *hdr;
+		if (is_lll_aux) {
+			flush(aux, rx);
+		} else {
+			struct ull_hdr *hdr;
 
-		/* Setup the disabled callback to flush the auxiliary PDUs */
-		hdr = &aux->ull;
-		LL_ASSERT(!hdr->disabled_cb);
+			/* Setup the disabled callback to flush the
+			 * auxiliary PDUs
+			 */
+			hdr = &aux->ull;
+			LL_ASSERT(!hdr->disabled_cb);
 
-		hdr->disabled_param = rx;
-		hdr->disabled_cb = last_disabled_cb;
+			hdr->disabled_param = rx;
+			hdr->disabled_cb = last_disabled_cb;
+		}
 
 		return;
 	}
@@ -520,9 +531,6 @@ static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 	if (aux->rx_last) {
 		struct lll_scan *lll;
 
-		lll = aux->rx_head->rx_ftr.param;
-		lll->lll_aux = NULL;
-
 		if (rx) {
 			struct node_rx_ftr *ftr;
 
@@ -531,6 +539,8 @@ static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 		}
 
 		rx = aux->rx_head;
+		lll = rx->rx_ftr.param;
+		lll->lll_aux = NULL;
 
 		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
