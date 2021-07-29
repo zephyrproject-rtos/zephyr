@@ -1088,19 +1088,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.tx_ringbuf = &tx_ringbuf_##x,				\
 	};
 
-#define CDC_ACM_DEVICE_DEFINE(idx, _)					\
-	CDC_ACM_CFG_AND_DATA_DEFINE(idx)				\
-									\
-	DEVICE_DEFINE(cdc_acm_##idx,					\
-		CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #idx,		\
-		cdc_acm_init, NULL,					\
-		&cdc_acm_dev_data_##idx,				\
-		&cdc_acm_config_##idx,					\
-		POST_KERNEL,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		&cdc_acm_driver_api);
-
-
 #define DT_DRV_COMPAT zephyr_cdc_acm_uart
 
 #define CDC_ACM_DT_DEVICE_DEFINE(idx)					\
@@ -1114,8 +1101,4 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		&cdc_acm_driver_api);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 DT_INST_FOREACH_STATUS_OKAY(CDC_ACM_DT_DEVICE_DEFINE);
-#else
-UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, CDC_ACM_DEVICE_DEFINE, _)
-#endif
