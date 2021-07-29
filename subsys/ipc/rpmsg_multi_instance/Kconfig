@@ -68,13 +68,6 @@ config RPMSG_MULTI_INSTANCE_INIT_PRIORITY
 	help
 	  If in doubt, do not modify this value.
 
-config IPM_MSG_ID
-	int "IPM message identifier."
-	default 0
-	help
-	  Values are constrained by ipm_max_data_size_get since many boards
-	  only allow for a subset of bits in a 32-bit register to store the ID.
-
 module = RPMSG_MULTI_INSTANCE
 module-str = RPMsg multi instance
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
