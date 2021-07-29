@@ -5,23 +5,16 @@ DT_COMPAT_ZEPHYR_CDC_ACM_UART := zephyr,cdc-acm-uart
 
 menu "USB CDC ACM Class support"
 
-config USB_CDC_ACM_HAS_DT_COMPAT
-	bool
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CDC_ACM_UART))
-	imply USB_CDC_ACM
-	help
-	  Helper symbol to select USB_CDC_ACM if compatible node is enabled.
-
 config USB_CDC_ACM
 	bool "USB CDC ACM Class support"
 	depends on SERIAL
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CDC_ACM_UART))
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
 	help
 	  USB CDC ACM class support.
-	  Default UART device name is "CDC_ACM_0".
 
 if USB_CDC_ACM
 
@@ -30,19 +23,6 @@ config USB_CDC_ACM_RINGBUF_SIZE
 	default 1024
 	help
 	  USB CDC ACM ring buffer size
-
-config USB_CDC_ACM_DEVICE_NAME
-	string "USB CDC ACM device name template"
-	default "CDC_ACM"
-	help
-	  Device name template for the CDC ACM Devices. First device would
-	  have name $(USB_CDC_ACM_DEVICE_NAME)_0, etc.
-
-if !USB_CDC_ACM_HAS_DT_COMPAT
-module = USB_CDC_ACM
-default-count = 1
-source "subsys/usb/class/Kconfig.template.composite_device_number"
-endif
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
