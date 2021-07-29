@@ -73,6 +73,10 @@ struct espi_host_emul_data {
 	/** Virtual Wires states, for one slave only.
 	 *  With multi-slaves config, the states should be saved per slave */
 	struct vw_data vw_state[NUMBER_OF_VWIRES];
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	/** ACPI Shared memory. */
+	uint8_t shm_acpi_mmap[CONFIG_EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE];
+#endif
 };
 
 /** Static configuration for the emulator */
@@ -217,10 +221,31 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 	return 0;
 }
 
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+static uintptr_t emul_espi_dev_get_acpi_shm(struct espi_emul *emul)
+{
+	struct espi_host_emul_data *data =
+		CONTAINER_OF(emul, struct espi_host_emul_data, emul);
+
+	return (uintptr_t)data->shm_acpi_mmap;
+}
+
+uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev)
+{
+	uint32_t shm;
+	int rc = espi_read_lpc_request(espi_dev, EACPI_GET_SHARED_MEMORY, &shm);
+
+	__ASSERT_NO_MSG(rc == 0);
+
+	return (uintptr_t) shm;
+}
+#endif
+
 /* Device instantiation */
 static struct emul_espi_device_api ap_emul_api = {
 	.set_vw = emul_host_set_vw,
 	.get_vw = emul_host_get_vw,
+	.get_acpi_shm = emul_espi_dev_get_acpi_shm,
 };
 
 /**
