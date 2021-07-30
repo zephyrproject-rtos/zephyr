@@ -226,6 +226,13 @@ static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
 #define NPCX_DEVPU0_I2C3_0_PUE                6
 #define NPCX_DEVPU1_F_SPI_PUD_EN              7
 
+/* Supported host interface type for HIF_TYP_SEL FILED in DEVCNT register. */
+enum npcx_hif_type {
+	NPCX_HIF_TYPE_NONE,
+	NPCX_HIF_TYPE_LPC,
+	NPCX_HIF_TYPE_ESPI_SHI,
+};
+
 /*
  * System Glue (GLUE) device registers
  */
