@@ -87,7 +87,14 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* set stack pointer limit to the start of the priv stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    push {r1, r2}
+    ldr r1, =_thread_offset_to_priv_stack_start
+    ldr r0, [r0, r1]    /* priv stack ptr */
+    pop {r1, r2}
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+#endif
     msr PSPLIM, r0
 #endif
 
@@ -188,7 +195,12 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
     /* Temporarily store current IRQ locking status in ip */
     mrs ip, BASEPRI
+    /* Temporarily store r0 to stack */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    push {r0, r1}
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     push {r0, ip}
+#endif
 
     /* Lock PendSV while reprogramming PSP and PSPLIM */
     mov r0, #_EXC_PENDSV_PRIO_MASK
@@ -198,10 +210,19 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* Set PSPLIM to guard the thread's user stack. */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    ldr r1, =_thread_offset_to_stack_info_start
+    ldr r0, [r0, r1]
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r0, [r0, #_thread_offset_to_stack_info_start]
+#endif
     msr PSPLIM, r0
 
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    pop {r0, r1}
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     pop {r0, ip}
+#endif
 #endif
 
     /* set stack to user stack */
@@ -344,10 +365,21 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* Set stack pointer limit (needed in privileged mode) */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r1, =_kernel_offset_to_current
+    ldr r0, [r0, r1]
+    ldr r1, =_thread_offset_to_priv_stack_start
+    ldr r0, [r0, r1]    /* priv stack ptr */
+    msr PSPLIM, r0
+    pop {r0, r1}
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr ip, =_kernel
     ldr ip, [ip, #_kernel_offset_to_current]
     ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     msr PSPLIM, ip
+#endif
 #endif
 
     /*
@@ -462,7 +494,14 @@ dispatch_syscall:
     /* Set PSPLIM to guard the thread's user stack. */
     ldr r3, =_kernel
     ldr r3, [r3, #_kernel_offset_to_current]
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    push {r0, r1}
+    ldr r0, =_thread_offset_to_stack_info_start
+    ldr r3, [r3, r0]
+    pop {r0, r1}
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r3, [r3, #_thread_offset_to_stack_info_start]    /* stack_info.start */
+#endif
     msr PSPLIM, r3
 #endif
 
