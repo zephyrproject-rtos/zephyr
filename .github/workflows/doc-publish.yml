@@ -39,6 +39,8 @@ jobs:
         aws-region: us-east-1
 
     - name: Upload to AWS S3
+      env:
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |
         if [ "${HEAD_BRANCH:0:1}" == "v" ]; then
           VERSION=${HEAD_BRANCH:1}
