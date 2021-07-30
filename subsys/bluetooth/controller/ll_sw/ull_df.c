@@ -124,6 +124,21 @@ int ull_df_reset(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv;
+	uint8_t handle;
+
+	/* Get the advertising set instance */
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		adv = ull_adv_is_created_get(handle);
+		if (!adv) {
+			continue;
+		}
+
+		adv->df_cfg = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 	err = init_reset();
 	if (err) {
 		return err;
