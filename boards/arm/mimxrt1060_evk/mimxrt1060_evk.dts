@@ -208,3 +208,7 @@ zephyr_udc0: &usb1 {
 &lpspi3 {
 	status = "okay";
 };
+
+&sai1 {
+	status = "okay";
+};
