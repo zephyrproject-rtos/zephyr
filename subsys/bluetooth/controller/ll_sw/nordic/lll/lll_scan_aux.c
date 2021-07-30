@@ -59,7 +59,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		      uint8_t phy_aux, uint8_t devmatch_ok,
 		      uint8_t devmatch_id, uint8_t irkmatch_ok,
 		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
-static void isr_tx_scan_req(void *param);
+static void isr_tx_scan_req_ull_scheduled(void *param);
+static void isr_tx_scan_req_lll_scheduled(void *param);
 #if defined(CONFIG_BT_CENTRAL)
 static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
@@ -199,10 +200,9 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 	ftr = &(node_rx->hdr.rx_ftr);
 	ftr->param = lll;
 	ftr->aux_ptr = aux_ptr;
-	ftr->radio_end_us = radio_tmr_end_get() - PKT_AC_US(pdu->len, pdu_phy);
-
-	/* There's no prepare_cb prior to scan so need to clear flag here */
-	trx_cnt = 0U;
+	ftr->radio_end_us = radio_tmr_end_get() -
+			    radio_rx_chain_delay_get(pdu_phy, 1) -
+			    PKT_AC_US(pdu->len, pdu_phy);
 
 	/* Primary scanner switched to auxliary PDU scanning */
 	lll->is_aux_sched = 1U;
@@ -445,15 +445,17 @@ static void isr_scan_aux_setup(void *param)
 	uint32_t aux_offset_us;
 	uint32_t aux_start_us;
 	struct lll_scan *lll;
-	uint32_t hcto;
 	uint8_t phy_aux;
+	uint32_t hcto;
 
-	radio_status_reset();
+	lll_isr_status_reset();
 
 	node_rx = param;
 	ftr = &(node_rx->hdr.rx_ftr);
 	lll = ftr->param;
 	aux_ptr = ftr->aux_ptr;
+	phy_aux = BIT(aux_ptr->phy);
+	ftr->aux_phy = phy_aux;
 
 	/* Determine the window size */
 	if (aux_ptr->offs_units) {
@@ -472,15 +474,15 @@ static void isr_scan_aux_setup(void *param)
 		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
+	/* Reset Tx/rx count */
+	trx_cnt = 0U;
+
 	/* Setup radio for auxiliary PDU scan */
-	phy_aux = BIT(aux_ptr->phy);
 	radio_phy_set(phy_aux, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_aux << 1));
 	lll_chan_set(aux_ptr->chan_idx);
 
 	radio_pkt_rx_set(node_rx->pdu);
-
-	ftr->aux_phy = aux_ptr->phy;
 
 	/* FIXME: we could (?) use isr_rx_ull_scheduled if already have aux
 	 *        context allocated, i.e. some previous aux was scheduled from
@@ -488,8 +490,10 @@ static void isr_scan_aux_setup(void *param)
 	 */
 	radio_isr_set(isr_rx_lll_scheduled, node_rx);
 
-	/* Setup receive and disable radio */
-	radio_switch_complete_and_disable();
+	/* setup tIFS switching */
+	radio_tmr_tifs_set(EVENT_IFS_US);
+	/* TODO: for passive scanning use complete_and_disable */
+	radio_switch_complete_and_tx(phy_aux, 0, phy_aux, 1);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
@@ -573,7 +577,11 @@ static void isr_rx_lll_scheduled(void *param)
 
 	node_rx = param;
 	lll = node_rx->hdr.rx_ftr.param;
-	phy_aux = node_rx->hdr.rx_ftr.aux_phy;
+	if (lll->lll_aux) {
+		phy_aux = lll->lll_aux->phy;
+	} else {
+		phy_aux = node_rx->hdr.rx_ftr.aux_phy;
+	}
 
 	isr_rx(lll, NULL, phy_aux);
 }
@@ -680,6 +688,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx)) {
+		struct lll_scan_aux *lll_lll_aux;
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -692,10 +701,13 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		/* FIXME: we need lll_aux for aux_connect_req handling, need to
-		 *        fix somehow
-		 */
 		if (!lll_aux) {
+			lll_lll_aux = lll->lll_aux;
+		} else {
+			lll_lll_aux = lll_aux;
+		}
+
+		if (!lll_lll_aux) {
 			return -ENOBUFS;
 		}
 
@@ -773,7 +785,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_rx(phy_aux);
-		radio_isr_set(isr_tx_connect_req, lll_aux);
+		radio_isr_set(isr_tx_connect_req, lll_lll_aux);
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -809,8 +821,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		/* Stop further initiating events */
 		lll->is_stop = 1U;
 
+		/* Populate the connection complete message */
 		rx = ull_pdu_rx_alloc();
-
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
@@ -820,13 +832,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		/* ChSel is RFU in AUX_ADV_IND but we do need to use CSA#2 for
 		 * connections initiated on the secondary advertising channel
-		 * thus overwrise chan_sel to make it work seamlessly.
+		 * thus overwrite chan_sel to make it work seamlessly.
 		 */
 		pdu = (void *)rx->pdu;
 		pdu->chan_sel = 1;
 
 		ftr = &(rx->hdr.rx_ftr);
-
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = conn_space_us -
@@ -839,19 +850,31 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ftr->extra = ull_pdu_rx_alloc();
 
-		lll_aux->node_conn_rx = rx;
+		/* Hold onto connection event message until after successful
+		 * reception of CONNECT_RSP
+		 */
+		lll_lll_aux->node_conn_rx = rx;
+
+		/* Increase trx count so as to not generate done extra event
+		 * when LLL scheduling of Auxiliary PDU reception
+		 */
+		if (!lll_aux) {
+			trx_cnt++;
+		}
 
 		return 0;
 
 	/* Active scanner */
 	} else if (!lll->conn &&
 		   lll->type &&
-		   lll_aux && !lll_aux->state &&
+		   ((lll_aux && !lll_aux->state) ||
+		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
 #else /* !CONFIG_BT_CENTRAL */
 	} else if (lll->type &&
-		   lll_aux && !lll_aux->state &&
+		   ((lll_aux && !lll_aux->state) ||
+		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
 		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
 #endif /* !CONFIG_BT_CENTRAL */
@@ -924,14 +947,22 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
-		radio_isr_set(isr_tx_scan_req, lll_aux);
-
 		(void)ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
 		ftr = &(node_rx->hdr.rx_ftr);
-		ftr->param = lll_aux;
+		if (lll_aux) {
+			ftr->param = lll_aux;
+			radio_isr_set(isr_tx_scan_req_ull_scheduled,
+				      lll_aux);
+			lll_aux->state = 1U;
+		} else {
+			ftr->param = lll;
+			radio_isr_set(isr_tx_scan_req_lll_scheduled,
+				      node_rx);
+			lll->lll_aux->state = 1U;
+		}
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
 				    radio_rx_chain_delay_get(phy_aux, 1);
@@ -944,11 +975,10 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+		ftr->aux_sched = 0U;
+
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
-
-		/* switch aux scanner state to active */
-		lll_aux->state = 1U;
 
 		return 0;
 
@@ -960,20 +990,17 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	} else if (lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
 #endif /* !CONFIG_BT_CENTRAL */
 
-		trx_cnt++;
-
-		(void)ull_pdu_rx_alloc();
-
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
-
 		ftr = &(node_rx->hdr.rx_ftr);
 		if (lll_aux) {
 			ftr->param = lll_aux;
 			ftr->scan_rsp = lll_aux->state;
-		} else {
+		} else if (lll->lll_aux) {
 			ftr->param = lll;
-			ftr->scan_rsp = 0U;
+			ftr->scan_rsp = lll->lll_aux->state;
+		} else {
+			return -ECANCELED;
 		}
+
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
 				    radio_rx_chain_delay_get(phy_aux, 1);
@@ -986,6 +1013,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		ftr->aux_sched = lll_scan_aux_setup(lll, pdu, phy_aux);
+
+		trx_cnt++;
+
+		(void)ull_pdu_rx_alloc();
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
@@ -1003,24 +1036,21 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	return -EINVAL;
 }
 
-static void isr_tx(void *param, void *pdu_rx, void (*isr)(void *))
+static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
+		   void (*isr)(void *), void *param)
 {
-	struct lll_scan_aux *lll_aux;
 	uint32_t hcto;
 
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
-	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	/* complete the reception and disable radio  */
 	radio_switch_complete_and_disable();
 
 	radio_pkt_rx_set(pdu_rx);
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
-
-	lll_aux = param;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -1064,17 +1094,28 @@ static void isr_tx(void *param, void *pdu_rx, void (*isr)(void *))
 	}
 }
 
-static void isr_tx_scan_req(void *param)
+static void isr_tx_scan_req_ull_scheduled(void *param)
 {
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
-	/* NOTE: Since we will have a lll_aux context, we will use
-	 * `isr_rx_ull_scheduled`.
-	 */
-	isr_tx(param, node_rx->pdu, isr_rx_ull_scheduled);
+	isr_tx(param, node_rx->pdu, isr_rx_ull_scheduled, param);
+}
+
+static void isr_tx_scan_req_lll_scheduled(void *param)
+{
+	struct node_rx_pdu *node_rx_adv = param;
+	struct node_rx_pdu *node_rx;
+	struct lll_scan *lll;
+
+	lll = node_rx_adv->hdr.rx_ftr.param;
+
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	isr_tx(lll->lll_aux, node_rx->pdu, isr_rx_lll_scheduled, param);
 }
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -1083,7 +1124,7 @@ static void isr_tx_connect_req(void *param)
 	void *pdu_rx;
 
 	pdu_rx = radio_pkt_scratch_get();
-	isr_tx(param, pdu_rx, isr_rx_connect_rsp);
+	isr_tx(param, pdu_rx, isr_rx_connect_rsp, param);
 }
 
 static void isr_rx_connect_rsp(void *param)
