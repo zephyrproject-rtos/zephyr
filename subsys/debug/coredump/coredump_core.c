@@ -11,12 +11,19 @@
 #include <sys/byteorder.h>
 #include <sys/util.h>
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
+
 #include "coredump_internal.h"
 
 #if defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING)
 extern struct z_coredump_backend_api z_coredump_backend_logging;
 static struct z_coredump_backend_api
 	*backend_api = &z_coredump_backend_logging;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_FS)
+extern struct z_coredump_backend_api z_coredump_backend_fs;
+static struct z_coredump_backend_api
+	*backend_api = &z_coredump_backend_fs;
 #elif defined(DEBUG_COREDUMP_BACKEND_NULL)
 extern struct z_coredump_backend_api z_coredump_backend_null;
 static struct z_coredump_backend_api

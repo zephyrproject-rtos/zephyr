@@ -89,3 +89,13 @@ class GdbStub_ARM_CortexM(GdbStub):
         # other than the general ones (e.g. eax, ebx)
         # so we can safely reply "xxxxxxxx" here.
         self.put_gdb_packet(b'x' * 8)
+
+    def swap32(self, i):
+        return struct.unpack("<I", struct.pack(">I", i))[0]
+
+    def handle_register_single_write_packet(self, pkt):
+        str_reg, str_val = pkt[1:].split(b'=')
+        reg = int(b'0x' + str_reg, 16)
+        val = self.swap32(int(b'0x' + str_val, 16))
+        self.registers[reg] = val
+        self.put_gdb_packet(b"OK")

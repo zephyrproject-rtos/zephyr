@@ -155,3 +155,7 @@ class GdbStub_x86(GdbStub):
         # other than the general ones (e.g. eax, ebx)
         # so we can safely reply "xxxxxxxx" here.
         self.put_gdb_packet(b'x' * 8)
+
+    def handle_register_single_write_packet(self, pkt):
+        # We don't support writing so return error
+        self.put_gdb_packet(b"E01")
