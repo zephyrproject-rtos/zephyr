@@ -1,0 +1,70 @@
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP mcux SAI-I2S controller
+
+compatible: "nxp,mcux-i2s"
+
+include: [i2s-controller.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    dma-names:
+      required: true
+
+    nxp,tx-dma-channel:
+      type: int
+      required: true
+      description: tx dma channel number
+
+    nxp,rx-dma-channel:
+      type: int
+      required: true
+      description: rx dma channel number
+
+    nxp,tx-sync-mode:
+      type: boolean
+      required: false
+      description: tx sync mode
+
+    nxp,rx-sync-mode:
+      type: boolean
+      required: false
+      description: rx sync mode
+
+    pre-div:
+      type: int
+      required: false
+      description: pre divider
+
+    podf:
+      type: int
+      required: false
+      description: post-divider fraction
+
+    pll-clocks:
+      type: phandle-array
+      required: false
+      description: pll settings
+      specifier-space: pll-clock
+
+    pll-clock-names:
+      required: false
+      type: string-array
+      description: Provided names of pll-clock specifiers
+
+    pinmuxes:
+      type: phandle-array
+      required: false
+      specifier-space: pinmux
+      description: iomux settings
+
+    nxp,tx-channel:
+      type: int
+      required: false
+      description: tx channel the maximum number is SOC dependent
