@@ -583,8 +583,6 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 		ret = gpio_stm32_clock_request(dev, true);
 	} else if (state == PM_DEVICE_STATE_SUSPEND) {
 		ret = gpio_stm32_clock_request(dev, false);
-	} else if (state == PM_DEVICE_STATE_LOW_POWER) {
-		ret = gpio_stm32_clock_request(dev, false);
 	}
 
 	if (ret < 0) {
