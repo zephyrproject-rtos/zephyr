@@ -671,6 +671,10 @@
 		compatible = "nuvoton,npcx-soc-id";
 		family-id = <0x20>;
 	};
+
+	booter-variant {
+		compatible = "nuvoton,npcx-booter-variant";
+	};
 };
 
 &nvic {

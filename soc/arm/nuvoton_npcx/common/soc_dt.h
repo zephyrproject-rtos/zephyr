@@ -705,4 +705,16 @@
 #define NPCX_DT_PSL_OUT_PIN(inst) DT_PROP(DT_INST(inst, nuvoton_npcx_psl_out), \
 							pin)
 
+/**
+ * @brief Check if the host interface type is automatically configured by
+ * booter.
+ *
+ * @param @param inst number for devices with compatible
+ *               'nuvoton_npcx_booter_variant'.
+ * @return TRUE - if the host interface is configured by booter,
+ *         FALSE - otherwise.
+ */
+#define NPCX_BOOTER_IS_HIF_TYPE_SET() \
+	DT_PROP(DT_INST(0, nuvoton_npcx_booter_variant), hif_type_auto)
+
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */
