@@ -1670,13 +1670,21 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 	len = 0;
 	if (msg) {
 		for (i = 0; i < msg->msg_iovlen; i++) {
-			ret = ztls_sendto_ctx(ctx, msg->msg_iov[i].iov_base,
-					      msg->msg_iov[i].iov_len, flags,
-					      msg->msg_name, msg->msg_namelen);
-			if (ret < 0) {
-				return ret;
+			struct iovec *vec = msg->msg_iov + i;
+			size_t sent = 0;
+
+			while (sent < vec->iov_len) {
+				uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
+
+				ret = ztls_sendto_ctx(ctx, ptr,
+					    vec->iov_len - sent, flags,
+					    msg->msg_name, msg->msg_namelen);
+				if (ret < 0) {
+					return ret;
+				}
+				sent += ret;
 			}
-			len += ret;
+			len += sent;
 		}
 	}
 
