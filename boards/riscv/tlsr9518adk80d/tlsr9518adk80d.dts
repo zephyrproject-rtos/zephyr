@@ -133,6 +133,12 @@
 	pinctrl-0 = <&hspi_clk_pa2 &hspi_miso_io1_pa3 &hspi_mosi_io0_pa4>;
 };
 
+&i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c_scl_pe1 &i2c_sda_pe3>;
+};
+
 &flash_mspi {
 	partitions {
 		compatible = "fixed-partitions";
