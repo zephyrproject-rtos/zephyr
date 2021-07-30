@@ -150,8 +150,8 @@ class EDT:
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
                  infer_binding_for_paths=None,
-                 err_on_deprecated_properties=False,
-                 vendor_prefixes=None):
+                 vendor_prefixes=None,
+                 werror=False):
         """EDT constructor.
 
         dts:
@@ -180,20 +180,22 @@ class EDT:
           should be inferred from the node content.  (Child nodes are not
           processed.)  Pass none if no nodes should support inferred bindings.
 
-        err_on_deprecated_properties (default: False):
-          If True and 'dts' has any deprecated properties set, raise an error.
-
         vendor_prefixes (default: None):
           A dict mapping vendor prefixes in compatible properties to their
           descriptions. If given, compatibles in the form "manufacturer,device"
           for which "manufacturer" is neither a key in the dict nor a specially
           exempt set of grandfathered-in cases will cause warnings.
+
+        werror (default: False):
+          If True, some edtlib specific warnings become errors. This currently
+          errors out if 'dts' has any deprecated properties set, or an unknown
+          vendor prefix is used.
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
-        self._err_on_deprecated_properties = bool(err_on_deprecated_properties)
+        self._werror = bool(werror)
         self._vendor_prefixes = vendor_prefixes
 
         self.dts_path = dts
@@ -426,8 +428,7 @@ class EDT:
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
             node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=
-                             self._err_on_deprecated_properties)
+                             err_on_deprecated=self._werror)
             node._init_interrupts()
             node._init_pinctrls()
 
@@ -519,7 +520,11 @@ class EDT:
             vendor = compat.split(',', 1)[0]
             if vendor not in self._vendor_prefixes and \
                    vendor not in _VENDOR_PREFIX_ALLOWED:
-                _LOG.warning(
+                if self._werror:
+                    log_fn = _LOG.error
+                else:
+                    log_fn = _LOG.warning
+                log_fn(
                     f"node '{node.path}' compatible '{compat}' "
                     f"has unknown vendor prefix '{vendor}'")
 

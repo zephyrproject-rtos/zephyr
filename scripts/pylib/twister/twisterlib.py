@@ -2008,7 +2008,7 @@ class CMake():
             ldflags = "-Wl,--fatal-warnings"
             cflags = "-Werror"
             aflags = "-Wa,--fatal-warnings"
-            gen_defines_args = "--err-on-deprecated-properties"
+            gen_defines_args = "--edtlib-Werror"
         else:
             ldflags = cflags = aflags = ""
             gen_defines_args = ""
