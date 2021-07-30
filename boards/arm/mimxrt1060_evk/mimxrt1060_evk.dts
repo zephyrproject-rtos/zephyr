@@ -214,3 +214,7 @@ zephyr_udc0: &usb1 {
 	dmas = <&edma0 2 15>, <&edma0 3 16>;
 	dma-names = "rx", "tx";
 };
+
+&sai1 {
+	status = "okay";
+};
