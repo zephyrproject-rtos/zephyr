@@ -366,10 +366,15 @@ _thread_irq_disabled:
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
     /* r2 contains k_thread */
-    add r0, r2, #0
+    mov r0, r2
     push {r2, lr}
     bl configure_builtin_stack_guard
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    pop {r2, r3}
+    mov lr, r3
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     pop {r2, lr}
+#endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -584,7 +589,12 @@ valid_syscall_id:
      * stack to execute the system call. We need to protect the user stack
      * against stack overflows until this stack transition.
      */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    ldr r2, =_thread_offset_to_stack_info_start
+    ldr r1, [r0, r2]    /* stack_info.start */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r1, [r0, #_thread_offset_to_stack_info_start]    /* stack_info.start */
+#endif
     msr PSPLIM, r1
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
