@@ -80,7 +80,7 @@ void ull_adv_done(struct node_rx_event_done *done);
 
 /* Helper functions to initialise and reset ull_adv_aux module */
 int ull_adv_aux_init(void);
-int ull_adv_aux_reset(void);
+int ull_adv_aux_reset_finalize(void);
 
 /* Return the aux set handle given the aux set instance */
 uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
@@ -150,6 +150,7 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
 
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
+int ull_adv_sync_reset_finalize(void);
 
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);

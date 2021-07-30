@@ -635,6 +635,42 @@ int ull_adv_sync_init(void)
 
 int ull_adv_sync_reset(void)
 {
+	struct lll_adv_sync *lll_sync;
+	struct ll_adv_sync_set *sync;
+	struct ll_adv_set *adv;
+	uint8_t handle;
+	int err;
+
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		adv = ull_adv_is_created_get(handle);
+		if (!adv) {
+			continue;
+		}
+
+		lll_sync = adv->lll.sync;
+		if (!lll_sync) {
+			continue;
+		}
+
+		sync = HDR_LLL2ULL(lll_sync);
+
+		if (!sync->is_started) {
+			sync->is_enabled = 0U;
+
+			continue;
+		}
+
+		err = sync_remove(sync, adv, 0U);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+int ull_adv_sync_reset_finalize(void)
+{
 	int err;
 
 	err = init_reset();
