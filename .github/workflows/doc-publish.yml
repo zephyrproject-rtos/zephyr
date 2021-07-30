@@ -48,11 +48,6 @@ jobs:
           VERSION="latest"
         fi
 
-        echo "Publish version: ${VERSION}"
-        ls -l html-output/html
-        ls -l html-output/html/doxygen/html
-        ls -l pdf-output/
-
-        aws s3 sync --debug html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
-        aws s3 sync --debug html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
-        aws s3 cp --debug pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
+        aws s3 sync --quiet html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
+        aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
+        aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
