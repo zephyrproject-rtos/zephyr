@@ -117,17 +117,22 @@ struct rpmsg_mi_ctx {
 	sys_slist_t endpoints;
 };
 
+struct rpmsg_mi_ctx_shm_cfg {
+	/** Physical address shared memory region. */
+	uintptr_t addr;
+
+	/** Size shared memory region. */
+	size_t size;
+
+	/** Internal counter. */
+	unsigned int instance;
+};
+
 /** @brief Configuration of the RPMsg instance. */
 struct rpmsg_mi_ctx_cfg {
 
 	/** Name of instance. */
 	const char *name;
-
-	/** Physical address shared memory region. */
-	uintptr_t shm_addr;
-
-	/** Size shared memory region. */
-	size_t shm_size;
 
 	/** Stack area for k_work_q. */
 	k_thread_stack_t *ipm_stack_area;
@@ -149,6 +154,9 @@ struct rpmsg_mi_ctx_cfg {
 
 	/** IPM message identifier. */
 	unsigned int ipm_tx_id;
+
+	/** SHM struct. */
+	struct rpmsg_mi_ctx_shm_cfg *shm;
 };
 
 /** @brief Initialization of RPMsg instance.

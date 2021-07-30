@@ -56,6 +56,11 @@ struct ipc_rpmsg_mi_instances {
 
 static struct ipc_rpmsg_mi_instances instances[NUM_INSTANCES];
 
+static struct rpmsg_mi_ctx_shm_cfg shm = {
+	.addr   = SHM_START_ADDR,
+	.size   = SHM_SIZE,
+};
+
 static void common_bound_cb(void *priv)
 {
 	struct ipc_ept *ept = (struct ipc_ept *)priv;
@@ -139,8 +144,7 @@ static int register_ept(struct ipc_ept **ept, const struct ipc_ept_cfg *cfg)
 		ctx_cfg.ipm_tx_name = ipm_tx_name[i_idx];
 		ctx_cfg.ipm_tx_id = IPM_MSG_ID;
 
-		ctx_cfg.shm_addr = SHM_START_ADDR;
-		ctx_cfg.shm_size = SHM_SIZE;
+		ctx_cfg.shm = &shm;
 
 		if (rpmsg_mi_ctx_init(&instances[i_idx].ctx, &ctx_cfg) < 0) {
 			LOG_ERR("Instance initialization failed");

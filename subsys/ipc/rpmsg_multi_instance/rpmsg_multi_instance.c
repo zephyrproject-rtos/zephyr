@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(rpmsg_multi_instance, CONFIG_RPMSG_MULTI_INSTANCE_LOG_LEVEL);
 
-static int instance;
+K_MUTEX_DEFINE(shm_mutex);
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *p_ep)
 {
@@ -101,11 +101,11 @@ static void ipm_callback(const struct device *dev, void *context, uint32_t id, v
 
 int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
-	uint8_t vring_size = VRING_SIZE_GET(cfg->shm_size);
-	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm_addr,
-							  cfg->shm_size,
-							  instance);
-	uint32_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm_size);
+	uint8_t vring_size = VRING_SIZE_GET(cfg->shm->size);
+	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm->addr,
+							  cfg->shm->size,
+							  cfg->shm->instance);
+	uint32_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm->size);
 
 	uint32_t shm_local_start_addr = shm_addr + VDEV_STATUS_SIZE;
 	uint32_t shm_local_size = shm_size - VDEV_STATUS_SIZE;
@@ -196,7 +196,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 
 static bool rpmsg_mi_config_verify(const struct rpmsg_mi_ctx_cfg *cfg)
 {
-	if (SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm_size) * IPC_INSTANCE_COUNT > cfg->shm_size) {
+	if (SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm->size) * IPC_INSTANCE_COUNT > cfg->shm->size) {
 		LOG_ERR("Not enough memory");
 		return false;
 	}
@@ -207,9 +207,9 @@ static bool rpmsg_mi_config_verify(const struct rpmsg_mi_ctx_cfg *cfg)
 int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
-	uint8_t vring_size = VRING_SIZE_GET(cfg->shm_size);
+	uint8_t vring_size = VRING_SIZE_GET(cfg->shm->size);
 	struct metal_device *device;
-	int err;
+	int err = 0;
 
 	if (!ctx || !cfg) {
 		return -EINVAL;
@@ -220,6 +220,8 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	}
 
 	LOG_DBG("RPMsg multiple instance initialization");
+
+	k_mutex_lock(&shm_mutex, K_FOREVER);
 
 	/* Start IPM workqueue */
 	k_work_queue_start(&ctx->ipm_work_q, cfg->ipm_stack_area,
@@ -234,39 +236,41 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	err = rpmsg_mi_configure_shm(ctx, cfg);
 	if (err) {
 		LOG_ERR("shmem configuration: failed - error code %d", err);
-		return err;
+		goto out;
 	}
 
 	/* Libmetal setup */
 	err = metal_init(&metal_params);
 	if (err) {
 		LOG_ERR("metal_init: failed - error code %d", err);
-		return err;
+		goto out;
 	}
 
 	err = metal_register_generic_device(&ctx->shm_device);
 	if (err) {
 		LOG_ERR("Could not register shared memory device: %d", err);
-		return err;
+		goto out;
 	}
 
 	err = metal_device_open("generic", SHM_DEVICE_NAME, &device);
 	if (err) {
 		LOG_ERR("metal_device_open failed: %d", err);
-		return err;
+		goto out;
 	}
 
 	ctx->shm_io = metal_device_io_region(device, 0);
 	if (!ctx->shm_io) {
 		LOG_ERR("metal_device_io_region failed to get region");
-		return err;
+		err = -ENODEV;
+		goto out;
 	}
 
 	 /* IPM setup. */
 	ctx->ipm_tx_handle = device_get_binding(cfg->ipm_tx_name);
 	if (!ctx->ipm_tx_handle) {
 		LOG_ERR("Could not get TX IPM device handle");
-		return -ENODEV;
+		err = -ENODEV;
+		goto out;
 	}
 
 	ctx->ipm_tx_id = cfg->ipm_tx_id;
@@ -274,7 +278,8 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	ctx->ipm_rx_handle = device_get_binding(cfg->ipm_rx_name);
 	if (!ctx->ipm_rx_handle) {
 		LOG_ERR("Could not get RX IPM device handle");
-		return -ENODEV;
+		err = -ENODEV;
+		goto out;
 	}
 
 	/* Register IPM callback. This cb executes when msg has come. */
@@ -289,13 +294,15 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	ctx->vq[RPMSG_VQ_0] = virtqueue_allocate(vring_size);
 	if (!ctx->vq[RPMSG_VQ_0]) {
 		LOG_ERR("virtqueue_allocate failed to alloc vq[RPMSG_VQ_0]");
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto out;
 	}
 
 	ctx->vq[RPMSG_VQ_1] = virtqueue_allocate(vring_size);
 	if (!ctx->vq[RPMSG_VQ_1]) {
 		LOG_ERR("virtqueue_allocate failed to alloc vq[RPMSG_VQ_1]");
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto out;
 	}
 
 	ctx->rvrings[RPMSG_VQ_0].io = ctx->shm_io;
@@ -333,17 +340,20 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 
 	if (err) {
 		LOG_ERR("RPMSG vdev initialization failed %d", err);
-		return err;
+		goto out;
 	}
 
 	/* Get RPMsg device from RPMsg VirtIO device. */
 	ctx->rdev = rpmsg_virtio_get_rpmsg_device(&ctx->rvdev);
 
-	instance++;
+	cfg->shm->instance++;
 
 	LOG_DBG("RPMsg multiple instance initialization done");
 
-	return 0;
+out:
+	k_mutex_unlock(&shm_mutex);
+
+	return err;
 }
 
 int rpmsg_mi_ept_register(struct rpmsg_mi_ctx *ctx, struct rpmsg_mi_ept *ept,
