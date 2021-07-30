@@ -118,6 +118,23 @@ enum {
 	BT_GAP_ADV_PROP_SCAN_RESPONSE         = BIT(3),
 	/** Extended advertising. */
 	BT_GAP_ADV_PROP_EXT_ADV               = BIT(4),
+	/** The received data is the last part of an advertisement.
+	 *
+	 * This bit is set when all the data is reported at once
+	 * or when the data was received in chucks and the received
+	 * data is the last part of an advertisement.
+	 */
+	BT_GAP_ADV_PROP_REPORT_LAST           = BIT(5),
+	/** The reported data is a chuck of the total advertisement data.
+	 *
+	 * The reported data may be the first, intermediate, or the last part
+	 * of the total advertisement.
+	 *
+	 * If this bit is set in conjunction with
+	 * @ref BT_GAP_ADV_PROP_REPORT_LAST, that indicates the
+	 * device was unable to receive the remaining data.
+	 */
+	BT_GAP_ADV_PROP_REPORT_INCOMPLETE     = BIT(6),
 };
 
 /** Maximum advertising data length. */

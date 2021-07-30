@@ -545,6 +545,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_hci_evt_le_ext_advertising_info *evt;
 		struct bt_le_scan_recv_info adv_info;
+		uint8_t data_status;
 
 		if (buf->len < sizeof(*evt)) {
 			BT_ERR("Unexpected end of buffer");
@@ -562,7 +563,16 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 
 		adv_info.adv_type = get_adv_type(evt->evt_type);
 		/* Convert "Legacy" property to Extended property. */
-		adv_info.adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
+		adv_info.adv_props =
+			(evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY) & BIT_MASK(5);
+
+		data_status = (evt->evt_type & (BIT(5) | BIT(6))) >> 5;
+		if (!(data_status & BIT(0))) {
+			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_LAST;
+		}
+		if (data_status != 0) {
+			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_INCOMPLETE;
+		}
 
 		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
 
@@ -933,6 +943,7 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 		adv_info.adv_type = evt->evt_type;
 		adv_info.adv_props = get_adv_props(evt->evt_type);
+		adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_LAST;
 
 		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
 

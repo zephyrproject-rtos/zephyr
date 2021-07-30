@@ -820,6 +820,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 	       info->interval, info->interval * 5 / 4, info->sid);
 
+	if (!(info->adv_props & BT_GAP_ADV_PROP_REPORT_LAST)) {
+		FAIL("Didn't expect a report where REPORT_LAST is not set.");
+	}
+
 	if (info->interval) {
 		if (!is_periodic) {
 			is_periodic = true;
