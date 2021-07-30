@@ -68,6 +68,7 @@ Architectures
 
      * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
        tests in CI with FPU and FPU_SHARING options enabled.
+     * Added support for built-in stack limit checking using PSPLIM for Cortex-M23.
 
 
   * AARCH64
@@ -108,6 +109,7 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+   * mps2_an519
 
 * Added support for these ARM64 boards:
 
