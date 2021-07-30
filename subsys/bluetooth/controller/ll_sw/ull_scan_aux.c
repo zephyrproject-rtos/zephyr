@@ -144,19 +144,15 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * PDU was handled.
 			 */
 			lll = ftr->param;
-			LL_ASSERT(lll->lll_aux);
+
 			lll_aux = lll->lll_aux;
-			lll->lll_aux = NULL;
+			LL_ASSERT(lll_aux);
+
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(lll == aux->rx_head->rx_ftr.param);
 
 			/* aux is retrieved from LLL Aux scheduling */
 			is_lll_aux = true;
-
-			/* Store retrieved aux context to node so it can be
-			 * processed as if scheduled from ULL.
-			 */
-			ftr->param = lll_aux;
 		}
 
 		scan = HDR_LLL2ULL(lll);
@@ -335,9 +331,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 */
 	if (is_lll_sched) {
 		lll->lll_aux = lll_aux;
+		lll_aux->state = 0U;
 
 		return;
 	}
+
+	/* Switching to ULL scheduling to receive auxiliary PDUs */
+	lll->lll_aux = NULL;
 
 	/* Determine the window size */
 	if (aux_ptr->offs_units) {
