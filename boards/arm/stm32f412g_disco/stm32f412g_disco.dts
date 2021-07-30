@@ -123,3 +123,20 @@
 &rtc {
 	status = "okay";
 };
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
+
+	status = "okay";
+
+	n25q128a1: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		label = "N25Q128A1";
+		reg = <0>;
+		qspi-max-frequency = <72000000>;
+		size = <DT_SIZE_M(16*8)>;
+		status = "okay";
+	};
+};
