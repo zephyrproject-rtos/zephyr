@@ -196,6 +196,16 @@
 			status = "disabled";
 		};
 
+		i2c: i2c@80140280 {
+			compatible = "telink,b91-i2c";
+			label = "I2C";
+			reg = <0x80140280 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
 		pinmux: pinmux@80140330 {
 			compatible = "telink,b91-pinmux";
 			reg = <0x80140330 0x28
@@ -367,6 +377,34 @@
 			};
 			hspi_io3_pb0: hspi_io3_pb0 {
 				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_B, B91_PIN_0)>;
+			};
+
+			/* Define I2C pins: SCL(PB2, PC1, PE0, PE1), SDA(PB3, PC2, PE2, PE3) */
+
+			i2c_scl_pb2: i2c_scl_pb2 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_B, B91_PORT_B, B91_PIN_2)>;
+			};
+			i2c_scl_pc1: i2c_scl_pc1 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_C, B91_PIN_1)>;
+			};
+			i2c_scl_pe0: i2c_scl_pe0 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_E, B91_PIN_0)>;
+			};
+			i2c_scl_pe1: i2c_scl_pe1 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_E, B91_PIN_1)>;
+			};
+
+			i2c_sda_pb3: i2c_sda_pb3 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_B, B91_PORT_B, B91_PIN_3)>;
+			};
+			i2c_sda_pc2: i2c_sda_pc2 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_C, B91_PIN_2)>;
+			};
+			i2c_sda_pe2: i2c_sda_pe2 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_E, B91_PIN_2)>;
+			};
+			i2c_sda_pe3: i2c_sda_pe3 {
+				pinmux = <B91_PINMUX_SET(B91_FUNC_A, B91_PORT_E, B91_PIN_3)>;
 			};
 		};
 	};
