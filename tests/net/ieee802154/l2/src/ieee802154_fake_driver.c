@@ -100,6 +100,8 @@ static void fake_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
+	ieee802154_init(iface);
+
 	ctx->pan_id = 0xabcd;
 	ctx->channel = 26U;
 	ctx->sequence = 62U;
