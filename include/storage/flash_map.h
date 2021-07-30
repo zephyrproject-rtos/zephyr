@@ -281,6 +281,128 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FLASH_AREA_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(label)))
 
+/* Experimental macros */
+/*
+ * Get device pointer for device the partition resides on
+ *
+ * @param label partition label
+ *
+ * @return const struct device type pointer
+ */
+#define FIXED_PARTITION_DEVICE(label)								\
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(label)))
+
+/*
+ * Get device pointer for device the partition resides on
+ *
+ * @param node DTS node
+ *
+ * @return const struct device type pointer
+ */
+#define FIXED_PARTITION_NODE_DEVICE(node)							\
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
+
+/**
+ * @brief Check if device, the partition is on, is ready
+ *
+ * @return result of device_is_ready invocation
+ */
+#define FIXED_PARTITION_DEVICE_READY(label)							\
+	device_is_ready(FIXED_PARTITION_DEVICE(label))
+
+/**
+ * @brief Read data from fixed partition
+ *
+ * @param label partition label
+ * @param off   data offset
+ * @param data  buffer for data
+ * @param size  size of data to read
+ *
+ * @return result of flash_read invocation, check its specification for the meaning of a returned
+ *         code.
+ */
+#define FIXED_PARTITION_READ(label, off, data, size)						\
+	FIXED_PARTITION_LABEL_ACTION(READ, label, off, data, size)
+
+/**
+ * @brief Write data to fixed partition
+ *
+ * Invocation, of the macro, on a fixed partition marked as "read-only" will fail compilation.
+ *
+ * @param label partition label
+ * @param off   data offset
+ * @param data  buffer with data
+ * @param size  size of data to read
+ *
+ * @return result of flash_write invocation, check its specification for the meaning of a returned
+ *         code.
+ */
+#define FIXED_PARTITION_WRITE(label, off, data, size)						\
+	FIXED_PARTITION_LABEL_ACTION(WRITE, label, off, data, size)
+
+/**
+ * @brief Erase a fixed partition
+ *
+ * Invocation, of the macro, on a fixed partition marked as "read-only" will fail compilation.
+ *
+ * @param label partition label
+ * @param off   offset
+ * @param size  size to erase, from the offset
+ *
+ * @return result of flash_erase invocation, check its specification for the meaning of a returned
+ *         code.
+ */
+#define FIXED_PARTITION_ERASE(label, off, size)							\
+	FIXED_PARTITION_LABEL_ACTION(ERASE, label, off, NULL, size)
+
+/**
+ * @brief Get offset of a fixed partition from the beginning on the device it is placed on
+ *
+ * @param label partition label
+ *
+ * @return offset of the partition
+ */
+#define FIXED_PARTITION_OFFSET(label)								\
+	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+/**
+ * @brief Get size of a fixed partition
+ *
+ * @param label partition label
+ *
+ * @return size of the partition
+ */
+#define FIXED_PARTITION_SIZE(label)								\
+	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+#define FIXED_PARTITION_LABEL_ACTION(action, label, off, data, size)				\
+	FIXED_PARTITION_NODE_ACTION(action, DT_NODE_BY_FIXED_PARTITION_LABEL(label), off, data,	\
+				    size)
+
+/*
+ * The macro relies on the fact that all the flash API function return -EINVAL when negative offset
+ * is provided: if size or offset would result in operation beyond defined partition, then the macro
+ * returns negative value, expecting API call to fail.
+ */
+#define OFFSET_OR_ERROR(node, off, size)							\
+	((off < 0) ? off : (((off + size) > (DT_REG_SIZE(node))) ? -1 : (off + DT_REG_ADDR(node))))
+
+#define FIXED_PARTITION_NODE_ACTION(action, node, off, data, size)				\
+	FIXED_PARTITION_NODE_##action(node, OFFSET_OR_ERROR(node, off, size), data, size)
+
+#define FIXED_PARTITION_NODE_WRITE(node, off, data, size)					\
+	COND_CODE_0(DT_PROP(node, read_only),							\
+		    (flash_write(FIXED_PARTITION_NODE_DEVICE(node), off, data, size)),		\
+		    (-EROFS; BUILD_ASSERT(0, "Attempt to write to read-only partition")))
+
+#define FIXED_PARTITION_NODE_READ(node, off, data, size)					\
+	flash_read(FIXED_PARTITION_NODE_DEVICE(node), off, data, size)
+
+#define FIXED_PARTITION_NODE_ERASE(node, off, data, size)					\
+	COND_CODE_0(DT_PROP(node, read_only),							\
+		    (flash_erase(FIXED_PARTITION_NODE_DEVICE(node), off, size)),		\
+		    (-EROFS; BUILD_ASSERT(0, "Attempt to erase read-only partition")))
+
 #ifdef __cplusplus
 }
 #endif
