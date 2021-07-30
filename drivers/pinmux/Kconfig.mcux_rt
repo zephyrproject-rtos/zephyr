@@ -1,0 +1,10 @@
+# MCUXpresso SDK pinmux for RT
+
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_MCUX_RT
+	bool "MCUX RT pinmux driver"
+	depends on SOC_SERIES_IMX_RT
+	help
+	  Enable the MCUX RT pinmux driver.
