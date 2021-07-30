@@ -84,6 +84,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
 	uint32_t ticks_slot_overhead;
+	struct lll_scan_aux *lll_aux;
 	struct ll_scan_aux_set *aux;
 	uint32_t window_widening_us;
 	uint32_t ticks_slot_offset;
@@ -91,13 +92,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct pdu_adv_ext_hdr *h;
 	struct ll_scan_set *scan;
 	struct ll_sync_set *sync;
-	struct lll_scan_aux *lll_aux;
-	struct lll_scan *lll_scan;
 	struct pdu_adv_adi *adi;
 	struct node_rx_ftr *ftr;
 	uint32_t ready_delay_us;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
+	struct lll_scan *lll;
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	bool is_lll_sched;
@@ -110,18 +110,18 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	switch (rx->type) {
 	case NODE_RX_TYPE_EXT_1M_REPORT:
-		lll_scan = ftr->param;
+		lll = ftr->param;
 		lll_aux = NULL;
 		aux = NULL;
-		scan = HDR_LLL2ULL(lll_scan);
+		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
 		break;
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
-		lll_scan = ftr->param;
+		lll = ftr->param;
 		lll_aux = NULL;
 		aux = NULL;
-		scan = HDR_LLL2ULL(lll_scan);
+		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		break;
@@ -133,20 +133,20 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			lll_aux = ftr->param;
 			aux = HDR_LLL2ULL(lll_aux);
 			/* FIXME: pick the aux somehow */
-			lll_scan = aux->rx_head->rx_ftr.param;
-			LL_ASSERT(!lll_scan->lll_aux);
+			lll = aux->rx_head->rx_ftr.param;
+			LL_ASSERT(!lll->lll_aux);
 		} else {
 			/* Node that does not have valid aux context was
 			 * scheduled from LLL. We can retrieve aux context
 			 * from lll_scan as it was stored there when superior
 			 * PDU was handled.
 			 */
-			lll_scan = ftr->param;
-			LL_ASSERT(lll_scan->lll_aux);
-			lll_aux = lll_scan->lll_aux;
-			lll_scan->lll_aux = NULL;
+			lll = ftr->param;
+			LL_ASSERT(lll->lll_aux);
+			lll_aux = lll->lll_aux;
+			lll->lll_aux = NULL;
 			aux = HDR_LLL2ULL(lll_aux);
-			LL_ASSERT(lll_scan == aux->rx_head->rx_ftr.param);
+			LL_ASSERT(lll == aux->rx_head->rx_ftr.param);
 
 			/* aux is retrieved from LLL Aux scheduling */
 			is_lll_aux = true;
@@ -157,7 +157,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			ftr->param = lll_aux;
 		}
 
-		scan = HDR_LLL2ULL(lll_scan);
+		scan = HDR_LLL2ULL(lll);
 		sync = (void *)scan;
 		scan = ull_scan_is_valid_get(scan);
 		phy = lll_aux->phy;
@@ -209,7 +209,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 *        from LLL; should we store lll_scan_set in
 			 *        lll_sync instead?
 			 */
-			lll_scan = NULL;
+			lll = NULL;
 			lll_aux = NULL;
 			aux = NULL;
 			scan = NULL;
@@ -317,7 +317,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 * with a valid context.
 	 */
 	if (is_lll_sched) {
-		lll_scan->lll_aux = lll_aux;
+		lll->lll_aux = lll_aux;
 
 		return;
 	}
