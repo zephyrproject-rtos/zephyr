@@ -3990,7 +3990,15 @@ done:
 	/* In many places it's assumed that link address was set with
 	 * net_if_set_link_addr(). Better check that now.
 	 */
-	NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
+		/* CAN does not require link address. */
+	} else
+#endif	/* CONFIG_NET_L2_CANBUS_RAW */
+	{
+		NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+	}
 
 	net_if_flag_set(iface, NET_IF_UP);
 
