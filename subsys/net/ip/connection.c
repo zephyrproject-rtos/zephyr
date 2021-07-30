@@ -461,6 +461,10 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 
 static inline void conn_send_icmp_error(struct net_pkt *pkt)
 {
+	if (IS_ENABLED(CONFIG_NET_DISABLE_ICMP_DESTINATION_UNREACHABLE)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
 		net_icmpv6_send_error(pkt, NET_ICMPV6_DST_UNREACH,
 				      NET_ICMPV6_DST_UNREACH_NO_PORT, 0);
