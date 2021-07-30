@@ -66,6 +66,11 @@ static void received2_cb(const void *data, size_t len, void *priv)
 	k_sem_give(&data_rx2_sem);
 }
 
+static struct rpmsg_mi_ctx_shm_cfg shm = {
+	.addr	= SHM_START_ADDR,
+	.size	= SHM_SIZE,
+};
+
 static const struct rpmsg_mi_ctx_cfg cfg_1 = {
 	.name               = "instance 1",
 	.ipm_stack_area     = ipm_stack_area_1,
@@ -75,8 +80,7 @@ static const struct rpmsg_mi_ctx_cfg cfg_1 = {
 	.ipm_tx_name        = CONFIG_RPMSG_MULTI_INSTANCE_0_IPM_TX_NAME,
 	.ipm_rx_name        = CONFIG_RPMSG_MULTI_INSTANCE_0_IPM_RX_NAME,
 	.ipm_tx_id          = IPM_MSG_ID,
-	.shm_addr           = SHM_START_ADDR,
-	.shm_size           = SHM_SIZE,
+	.shm                = &shm,
 };
 
 static const struct rpmsg_mi_ctx_cfg cfg_2 = {
@@ -88,8 +92,7 @@ static const struct rpmsg_mi_ctx_cfg cfg_2 = {
 	.ipm_tx_name        = CONFIG_RPMSG_MULTI_INSTANCE_1_IPM_TX_NAME,
 	.ipm_rx_name        = CONFIG_RPMSG_MULTI_INSTANCE_1_IPM_RX_NAME,
 	.ipm_tx_id          = IPM_MSG_ID,
-	.shm_addr           = SHM_START_ADDR,
-	.shm_size           = SHM_SIZE,
+	.shm                = &shm,
 };
 
 static struct rpmsg_mi_cb cb_1 = {
