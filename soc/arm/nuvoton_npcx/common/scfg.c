@@ -209,6 +209,13 @@ void npcx_pinctrl_psl_input_configure(void)
 	}
 }
 
+void npcx_host_interface_sel(enum npcx_hif_type hif_type)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	SET_FIELD(inst_scfg->DEVCNT, NPCX_DEVCNT_HIF_TYP_SEL_FIELD, hif_type);
+}
+
 /* Pin-control driver registration */
 static int npcx_scfg_init(const struct device *dev)
 {
