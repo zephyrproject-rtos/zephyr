@@ -186,6 +186,26 @@ static inline bool pm_device_is_any_busy(void) { return false; }
 static inline bool pm_device_is_busy(const struct device *dev) { return false; }
 #endif
 
+__deprecated static inline void device_busy_set(const struct device *dev)
+{
+	pm_device_busy_set(dev);
+}
+
+__deprecated static inline void device_busy_clear(const struct device *dev)
+{
+	pm_device_busy_clear(dev);
+}
+
+__deprecated static inline int device_any_busy_check(void)
+{
+	return pm_device_is_any_busy() ? -EBUSY : 0;
+}
+
+__deprecated static inline int device_busy_check(const struct device *dev)
+{
+	return pm_device_is_busy(dev) ? -EBUSY : 0;
+}
+
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
 
