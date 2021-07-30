@@ -434,7 +434,7 @@ int ull_adv_aux_init(void)
 	return 0;
 }
 
-int ull_adv_aux_reset(void)
+int ull_adv_aux_reset_finalize(void)
 {
 	int err;
 

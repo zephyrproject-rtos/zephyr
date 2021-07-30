@@ -35,6 +35,7 @@
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
+#include "lll/lll_df_types.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -1474,17 +1475,6 @@ int ull_adv_reset(void)
 #if defined(CONFIG_BT_HCI_RAW)
 	ll_adv_cmds = LL_ADV_CMDS_ANY;
 #endif
-
-#if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
-	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
-		int err;
-
-		err = ull_adv_aux_reset();
-		if (err) {
-			return err;
-		}
-	}
-
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	{
 		int err;
@@ -1495,7 +1485,6 @@ int ull_adv_reset(void)
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-#endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	return 0;
@@ -1506,6 +1495,23 @@ int ull_adv_reset_finalize(void)
 	uint8_t handle;
 	int err;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
+	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+		err = ull_adv_aux_reset_finalize();
+		if (err) {
+			return err;
+		}
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		err = ull_adv_sync_reset_finalize();
+		if (err) {
+			return err;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+	}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		struct ll_adv_set *adv = &ll_adv[handle];
 		struct lll_adv *lll = &adv->lll;
@@ -1513,7 +1519,10 @@ int ull_adv_reset_finalize(void)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->is_created = 0;
 		lll->aux = NULL;
-#endif
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		lll->sync = NULL;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 		lll_adv_data_reset(&lll->adv_data);
 		lll_adv_data_reset(&lll->scan_rsp);
 	}
