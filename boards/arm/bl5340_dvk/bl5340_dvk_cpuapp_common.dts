@@ -86,6 +86,12 @@
 		label = "dac0";
 		#io-channel-cells = <1>;
 	};
+
+	extrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6f>;
+		label = "mcp7940n";
+	};
 };
 
 &spi2 {
