@@ -303,11 +303,11 @@ static int pwm_nrfx_set_power_state(enum pm_device_state state,
 		break;
 	case PM_DEVICE_STATE_LOW_POWER:
 	case PM_DEVICE_STATE_SUSPEND:
-	case PM_DEVICE_STATE_FORCE_SUSPEND:
 	case PM_DEVICE_STATE_OFF:
 		pwm_nrfx_uninit(dev);
 		break;
 	default:
+
 		__ASSERT_NO_MSG(false);
 		break;
 	}
