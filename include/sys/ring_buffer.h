@@ -174,10 +174,7 @@ static inline void ring_buf_init(struct ring_buf *buf,
  *
  * @return 1 if the ring buffer is empty, or 0 if not.
  */
-static inline int ring_buf_is_empty(struct ring_buf *buf)
-{
-	return (buf->head == buf->tail);
-}
+int ring_buf_is_empty(struct ring_buf *buf);
 
 /**
  * @brief Reset ring buffer state.
@@ -198,10 +195,7 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words or bytes).
  */
-static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
-{
-	return buf->size - (buf->tail - buf->head);
-}
+uint32_t ring_buf_space_get(struct ring_buf *buf);
 
 /**
  * @brief Return ring buffer capacity.
@@ -222,10 +216,7 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
  *
  * @return Ring buffer space used (in 32-bit words or bytes).
  */
-static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
-{
-	return buf->tail - buf->head;
-}
+uint32_t ring_buf_size_get(struct ring_buf *buf);
 
 /**
  * @brief Write a data item to a ring buffer.
