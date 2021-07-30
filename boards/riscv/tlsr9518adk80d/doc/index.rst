@@ -1,4 +1,4 @@
-.. _tlst9518adk80d:
+.. _tlsr9518adk80d:
 
 Telink TLSR9518ADK80D
 #####################
