@@ -304,4 +304,9 @@ config HAS_MCUX_CTIMER
 	help
 	  Set if the CTIMER module is present in the SoC.
 
+config HAS_MCUX_I2S
+	bool
+	help
+	  Set if the I2S/SAI module is present on the Soc
+
 endif # HAS_MCUX
