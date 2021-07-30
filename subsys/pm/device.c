@@ -67,7 +67,9 @@ static int _pm_devices(uint32_t state)
 			 * in the right state.
 			 */
 			rc = pm_device_state_set(dev, state);
-			if ((rc != -ENOSYS) && (rc != 0)) {
+			if (rc == -ENOTSUP) {
+				continue;
+			} else if ((rc != -ENOSYS) && (rc != 0)) {
 				LOG_DBG("%s did not enter %s state: %d",
 					dev->name, pm_device_state_str(state),
 					rc);
