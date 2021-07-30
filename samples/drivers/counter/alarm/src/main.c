@@ -19,6 +19,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_LABEL(DT_NODELABEL(tc4))
 #elif defined(CONFIG_SOC_FAMILY_SAM)
 #define TIMER DT_LABEL(DT_NODELABEL(tc0))
+#elif defined(CONFIG_COUNTER_MICROCHIP_MCP7940N)
+#define TIMER DT_LABEL(DT_NODELABEL(extrtc0))
 #elif defined(CONFIG_COUNTER_RTC0)
 #define TIMER DT_LABEL(DT_NODELABEL(rtc0))
 #elif defined(CONFIG_COUNTER_RTC_STM32)
