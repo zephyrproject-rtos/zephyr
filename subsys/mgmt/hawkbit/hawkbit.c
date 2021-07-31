@@ -74,7 +74,6 @@ static struct hawkbit_context {
 	int32_t action_id;
 	uint8_t *response_data;
 	int32_t json_action_id;
-	struct k_sem semaphore;
 	size_t url_buffer_size;
 	size_t status_buffer_size;
 	struct hawkbit_download dl;
@@ -84,6 +83,7 @@ static struct hawkbit_context {
 	uint8_t status_buffer[STATUS_BUFFER_SIZE];
 	uint8_t recv_buf_tcp[RECV_BUFFER_SIZE];
 	enum hawkbit_response code_status;
+	bool final_data_received;
 } hb_context;
 
 static union {
@@ -829,7 +829,7 @@ static void response_cb(struct http_response *rsp,
 		}
 
 		if (final_data == HTTP_DATA_FINAL) {
-			k_sem_give(&hb_context.semaphore);
+			hb_context.final_data_received = true;
 		}
 
 		break;
@@ -865,6 +865,7 @@ static bool send_request(enum http_method method,
 	hb_context.http_req.response = response_cb;
 	hb_context.http_req.recv_buf = hb_context.recv_buf_tcp;
 	hb_context.http_req.recv_buf_len = sizeof(hb_context.recv_buf_tcp);
+	hb_context.final_data_received = false;
 
 	switch (type) {
 	case HAWKBIT_PROBE:
@@ -1023,7 +1024,6 @@ enum hawkbit_response hawkbit_probe(void)
 
 	memset(&hb_context, 0, sizeof(hb_context));
 	hb_context.response_data = malloc(RESPONSE_BUFFER_SIZE);
-	k_sem_init(&hb_context.semaphore, 0, 1);
 
 	if (!boot_is_img_confirmed()) {
 		LOG_ERR("The current image is not confirmed");
@@ -1210,8 +1210,11 @@ enum hawkbit_response hawkbit_probe(void)
 		goto cleanup;
 	}
 
-	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
-		LOG_ERR("Download failed");
+	if (!hb_context.final_data_received) {
+		LOG_ERR("Download is not complete");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+	} else if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		LOG_ERR("Failed to mark the image in slot 1 as pending");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 	} else {
 		hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
