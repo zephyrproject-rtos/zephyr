@@ -25,6 +25,7 @@ def _import_runner_module(runner_name):
 # defined; otherwise, ZephyrBinaryRunner.get_runners() won't work.
 
 _names = [
+    'adafruit_nrfutil',
     'blackmagicprobe',
     'bossac',
     'canopen_program',
