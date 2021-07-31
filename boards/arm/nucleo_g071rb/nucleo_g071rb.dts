@@ -21,6 +21,21 @@
 		zephyr,flash = &flash0;
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <20>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <100>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_4 {
@@ -139,4 +154,12 @@
 			reg = <0x0001f800 0x00000800>;
 		};
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&lptim1 {
+	status = "okay";
 };
