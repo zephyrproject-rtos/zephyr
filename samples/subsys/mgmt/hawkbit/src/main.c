@@ -71,6 +71,10 @@ void main(void)
 		LOG_INF("Update installed");
 		break;
 
+	case HAWKBIT_PROBE_IN_PROGRESS:
+		LOG_INF("Hawkbit is already running");
+		break;
+
 	default:
 		break;
 	}
