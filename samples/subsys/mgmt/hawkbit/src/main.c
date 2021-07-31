@@ -8,6 +8,7 @@
 #include <mgmt/hawkbit.h>
 #include <dfu/mcuboot.h>
 #include <sys/printk.h>
+#include <sys/reboot.h>
 #include <logging/log.h>
 
 #include "dhcp.h"
