@@ -7,6 +7,8 @@ menuconfig HAWKBIT
 	select FLASH
 	select REBOOT
 	select HWINFO
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
 	select NET_TCP
 	select NET_SOCKETS
 	select IMG_MANAGER
