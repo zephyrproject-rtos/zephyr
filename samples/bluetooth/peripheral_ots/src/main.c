@@ -105,9 +105,9 @@ static void ots_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	printk("Object with %s ID has been selected\n", id_str);
 }
 
-static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
-			     uint64_t id, uint8_t **data, uint32_t len,
-			     uint32_t offset)
+static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
+			   uint64_t id, void **data, size_t len,
+			   off_t offset)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint32_t obj_index = (id % ARRAY_SIZE(objects));
@@ -131,8 +131,8 @@ static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 	}
 
 	printk("Object with %s ID is being read\n"
-		"Offset = %d, Length = %d\n",
-		id_str, offset, len);
+		"Offset = %lu, Length = %zu\n",
+		id_str, (long)offset, len);
 
 	return len;
 }
