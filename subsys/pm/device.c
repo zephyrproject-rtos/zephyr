@@ -184,7 +184,7 @@ bool pm_device_is_any_busy(void)
 	devc = z_device_get_all_static(&devs);
 
 	for (const struct device *dev = devs; dev < (devs + devc); dev++) {
-		if (atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
+		if (atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
 			return true;
 		}
 	}
@@ -194,15 +194,15 @@ bool pm_device_is_any_busy(void)
 
 bool pm_device_is_busy(const struct device *dev)
 {
-	return atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
+	return atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 void pm_device_busy_set(const struct device *dev)
 {
-	atomic_set_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
+	atomic_set_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 void pm_device_busy_clear(const struct device *dev)
 {
-	atomic_clear_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY);
+	atomic_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
