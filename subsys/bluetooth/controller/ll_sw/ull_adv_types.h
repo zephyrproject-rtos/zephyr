@@ -72,6 +72,10 @@ struct ll_adv_aux_set {
 	uint16_t interval;
 
 	uint8_t is_started:1;
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+	uint32_t random_delay;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 };
 
 struct ll_adv_sync_set {

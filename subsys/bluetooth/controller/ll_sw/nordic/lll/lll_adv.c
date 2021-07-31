@@ -1183,8 +1183,9 @@ static void isr_done(void *param)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		if (lll->aux) {
-			ull_adv_aux_lll_offset_fill(lll->aux->ticks_offset,
-						    start_us, pdu);
+			ull_adv_aux_lll_offset_fill(lll->aux, pdu,
+						    lll->aux->ticks_offset,
+						    start_us);
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		ARG_UNUSED(pdu);

@@ -1353,10 +1353,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
 			 */
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+			aux->interval = adv->interval;
+#else /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 			aux->interval = adv->interval +
 					(HAL_TICKER_TICKS_TO_US(
 						ULL_ADV_RANDOM_DELAY) /
 						ADV_INT_UNIT_US);
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
@@ -2078,7 +2082,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
 	struct ll_adv_set *adv = param;
-	uint32_t random_delay;
+	uint32_t random_delay = 0U;
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -2145,6 +2149,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 	if (adv->lll.aux) {
 		ull_adv_aux_offset_get(adv);
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+		struct ll_adv_aux_set *aux = HDR_LLL2ULL(adv->lll.aux);
+
+		aux->random_delay += random_delay;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
+
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
