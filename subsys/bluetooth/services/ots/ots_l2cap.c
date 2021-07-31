@@ -252,5 +252,10 @@ int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	return 0;
 }
 
+int bt_gatt_ots_l2cap_disconnect(struct bt_gatt_ots_l2cap *l2cap_ctx)
+{
+	return bt_l2cap_chan_disconnect(&l2cap_ctx->ot_chan.chan);
+}
+
 SYS_INIT(bt_gatt_ots_l2cap_init, APPLICATION,
 	 CONFIG_APPLICATION_INIT_PRIORITY);

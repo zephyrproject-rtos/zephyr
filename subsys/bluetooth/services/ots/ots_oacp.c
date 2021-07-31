@@ -279,9 +279,9 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			      struct bt_conn *conn)
 {
 	int err;
-	uint8_t *obj_chunk;
-	uint32_t offset;
-	uint32_t len;
+	void *obj_chunk;
+	off_t offset;
+	ssize_t len;
 	struct bt_ots *ots;
 	struct bt_gatt_ots_object_read_op *read_op;
 
@@ -315,6 +315,15 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	} else {
 		len = ots->cb->obj_read(ots, conn, ots->cur_obj->id, &obj_chunk,
 					len, offset);
+	}
+
+	if (len < 0) {
+		LOG_ERR("OCAP Read Op failed with error: %d", len);
+
+		bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+
+		return;
 	}
 
 	ots->l2cap.tx_done = oacp_read_proc_cb;

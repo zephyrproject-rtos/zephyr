@@ -542,10 +542,11 @@ struct bt_ots_cb {
 	 *
 	 *  @return Data length to be sent via data parameter. This value
 	 *          shall be smaller or equal to the len parameter.
+	 *  @return Negative value in case of an error.
 	 */
-	uint32_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
-			     uint64_t id, uint8_t **data, uint32_t len,
-			     uint32_t offset);
+	ssize_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
+			   uint64_t id, void **data, size_t len,
+			   off_t offset);
 
 	/** @brief Object write callback
 	 *
