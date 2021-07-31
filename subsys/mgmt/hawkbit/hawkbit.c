@@ -9,7 +9,7 @@
 
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(hawkbit);
+LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include <stdio.h>
 #include <zephyr.h>
