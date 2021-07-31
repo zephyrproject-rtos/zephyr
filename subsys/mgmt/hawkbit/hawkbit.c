@@ -621,7 +621,7 @@ int hawkbit_init(void)
 	LOG_DBG("Action id: current %d", action_id);
 
 	image_ok = boot_is_img_confirmed();
-	LOG_INF("Image is %s confirmed OK", image_ok ? "" : " not");
+	LOG_INF("Image is%s confirmed OK", image_ok ? "" : " not");
 	if (!image_ok) {
 		ret = boot_write_img_confirmed();
 		if (ret < 0) {
@@ -1230,7 +1230,7 @@ static void autohandler(struct k_work *work)
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		LOG_ERR("Image is unconfirmed");
-		LOG_ERR("Rebooting to previous confirmed image.");
+		LOG_ERR("Rebooting to previous confirmed image");
 		sys_reboot(SYS_REBOOT_WARM);
 		break;
 
@@ -1239,7 +1239,7 @@ static void autohandler(struct k_work *work)
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("Hawkbit update Cancelled from server");
+		LOG_INF("Hawkbit update cancelled from server");
 		break;
 
 	case HAWKBIT_OK:
@@ -1247,15 +1247,15 @@ static void autohandler(struct k_work *work)
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update Installed. Please Reboot");
+		LOG_INF("Update installed. Please Reboot");
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:
-		LOG_INF("Update Failed");
+		LOG_INF("Update failed");
 		break;
 
 	case HAWKBIT_NETWORKING_ERROR:
-		LOG_INF("Network Error");
+		LOG_INF("Network error");
 		break;
 
 	case HAWKBIT_METADATA_ERROR:

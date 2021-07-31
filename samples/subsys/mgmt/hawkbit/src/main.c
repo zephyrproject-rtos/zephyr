@@ -45,12 +45,12 @@ void main(void)
 #endif
 
 #if defined(CONFIG_HAWKBIT_MANUAL)
-	LOG_INF("Starting Hawkbit manual mode");
+	LOG_INF("Starting hawkbit manual mode");
 
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
-		LOG_ERR("Image in unconfirmed. Rebooting to revert back to");
-		LOG_ERR("previous confirmed image.");
+		LOG_ERR("Image is unconfirmed");
+		LOG_ERR("Rebooting to previous confirmed image");
 
 		sys_reboot(SYS_REBOOT_WARM);
 		break;
@@ -60,7 +60,7 @@ void main(void)
 		break;
 
 	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("Hawkbit update Cancelled from server");
+		LOG_INF("Hawkbit update cancelled from server");
 		break;
 
 	case HAWKBIT_OK:
@@ -68,7 +68,7 @@ void main(void)
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update Installed");
+		LOG_INF("Update installed");
 		break;
 
 	default:
