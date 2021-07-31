@@ -1,0 +1,28 @@
+# Si1133 UV Index and Ambient Light Sensor configuration options
+
+# Copyright (c) 2021 Murali Tejeshwar Janaswami
+# SPDX-License-Identifier: Apache-2.0
+
+config SI1133
+	bool "Si1133 UV Index and Ambient Light Sensor"
+	depends on I2C
+	help
+	  Enable driver for Si1133 UV Index and Ambient Light Sensor.
+
+if SI1133
+
+choice SI1133_OPERATING_MODE
+	prompt "Sensor operating mode"
+	default SI1133_OPERATING_MODE_LL
+	help
+	  Configure Si1133 for operating under low-light(ex: indoor lighting) or bright-light(ex: sunlight) conditions.
+
+config SI1133_OPERATING_MODE_LL
+	bool "Low-light"
+
+config SI1133_OPERATING_MODE_BL
+	bool "Bright-light"
+
+endchoice
+
+endif

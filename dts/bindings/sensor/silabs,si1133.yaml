@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Murali Tejeshwar Janaswami
+# SPDX-License-Identifier: Apache-2.0
+
+description: Si1133 UV Index and Ambient Light Sensor
+
+compatible: "silabs,si1133"
+
+include: i2c-device.yaml
