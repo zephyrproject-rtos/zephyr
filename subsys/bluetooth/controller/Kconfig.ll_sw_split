@@ -338,6 +338,12 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
+config BT_CTLR_ADV_AUX_OFFSET_CONSTANT
+	bool "Use Constant Auxiliary PDU Offset"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	help
+	  Dynamically calculate a constant Auxiliary PDU offset.
+
 config BT_CTLR_ADV_AUX_SET
 	int "LE Extended Advertising Auxiliary Sets"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT

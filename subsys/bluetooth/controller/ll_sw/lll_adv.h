@@ -159,6 +159,11 @@ struct lll_adv_aux {
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
 	struct pdu_adv     *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+	uint32_t offs_prev_us;
+	uint32_t offs_min_us;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 };
 
 struct lll_adv {

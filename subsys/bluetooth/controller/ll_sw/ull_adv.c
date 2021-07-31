@@ -1500,6 +1500,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 			interval_us = (uint64_t)adv->interval * ADV_INT_UNIT_US;
 
 			if (adv->max_skip == 0U) {
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+				aux->interval = DIV_ROUND_UP(interval_us,
+						     PERIODIC_INT_UNIT_US);
+#else /* !CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 				/* Special case to keep behaviour unchanged from
 				 * before max_skip was implemented; In this case
 				 * add ULL_ADV_RANDOM_DELAY and round up for a
@@ -1508,6 +1512,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				aux->interval = DIV_ROUND_UP(interval_us +
 						     HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY),
 						     PERIODIC_INT_UNIT_US);
+#endif /* !CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 			} else {
 				aux->interval = (interval_us * (adv->max_skip + 1))
 						 / PERIODIC_INT_UNIT_US;
@@ -2344,7 +2349,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 #else /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	struct ll_adv_set *adv = param;
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
-	uint32_t random_delay;
+	uint32_t random_delay = 0U;
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -2490,6 +2495,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		adv->event_counter += event_counter_inc;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+	if (adv->lll.aux) {
+		struct ll_adv_aux_set *aux = HDR_LLL2ULL(adv->lll.aux);
+
+		aux->random_delay += random_delay;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

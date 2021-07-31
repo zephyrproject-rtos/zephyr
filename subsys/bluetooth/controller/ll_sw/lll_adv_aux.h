@@ -14,3 +14,6 @@ extern struct pdu_adv_aux_ptr *
 				    uint32_t remainder_us, uint32_t start_us);
 
 extern void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *lll_adv);
+
+extern void ull_adv_aux_lll_offset_constant_update(struct lll_adv_aux *lll_aux,
+						   struct pdu_adv_aux_ptr *aux_ptr);
