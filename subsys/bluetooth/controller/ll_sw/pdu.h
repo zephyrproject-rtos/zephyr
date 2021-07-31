@@ -285,6 +285,8 @@ enum pdu_adv_mode {
 	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
 };
 
+#define PDU_ADV_SID_COUNT 16
+
 struct pdu_adv_adi {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint16_t did:12;

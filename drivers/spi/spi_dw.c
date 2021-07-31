@@ -344,8 +344,8 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&spi->ctx, asynchronous, signal, config);
 
 #ifdef CONFIG_PM_DEVICE
-	if (device_busy_check(dev) != (-EBUSY)) {
-		device_busy_set(dev);
+	if (!pm_device_is_busy(dev)) {
+		pm_device_busy_set(dev);
 	}
 #endif /* CONFIG_PM_DEVICE */
 
@@ -434,7 +434,7 @@ static int transceive(const struct device *dev,
 out:
 	spi_context_release(&spi->ctx, ret);
 
-	device_busy_clear(dev);
+	pm_device_busy_clear(dev);
 
 	return ret;
 }

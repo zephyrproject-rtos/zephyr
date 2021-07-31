@@ -199,6 +199,30 @@
 			};
 		};
 
+		tc0: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <55 0
+				      56 0
+				      57 0>;
+			peripheral-id = <2>;
+			status = "disabled";
+			label = "TC0";
+			pinctrl-0 = <>;
+		};
+
+		tc1: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <58 0
+				      59 0
+				      60 0>;
+			peripheral-id = <3>;
+			status = "disabled";
+			label = "TC1";
+			pinctrl-0 = <>;
+		};
+
 		trng: random@40068000 {
 			compatible = "atmel,sam-trng";
 			reg = <0x40068000 0x4000>;

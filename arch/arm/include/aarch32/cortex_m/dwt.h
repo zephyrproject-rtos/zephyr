@@ -163,8 +163,10 @@ static inline void z_arm_dwt_enable_debug_monitor(void)
 		"DebugMonitor targets Non-Secure\n");
 #endif
 
-	/* Set the DebugMonitor handler priority to the higyhest value. */
-	NVIC_SetPriority(DebugMonitor_IRQn, _EXC_FAULT_PRIO);
+	/* The DebugMonitor handler priority is set already
+	 * to the highest value (_EXC_FAULT_PRIO) during
+	 * system initialization.
+	 */
 
 	/* Enable debug monitor exception triggered on debug events */
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_MON_EN_Msk;

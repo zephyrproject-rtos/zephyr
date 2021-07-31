@@ -52,7 +52,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: d17b7dd92d209b20bc1e15431d068edc29bf438d
+      revision: 9f78f520f6cbb997e5b44fe8ab17dd5bf2448095
       path: modules/hal/atmel
       groups:
         - hal
@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f525ee6f468c2c68119731e1453ad72d189a1277
+      revision: 7b19e8c4a66fa6fb05c5862175edb12e15659b72
       path: modules/hal/espressif
       groups:
         - hal
@@ -77,7 +77,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: b280eec5d3b1296b231117c1999bcd0269b6ecc4
+      revision: 870d05e6a64ea9548da6b907058b03c8c9420826
       path: modules/hal/microchip
       groups:
         - hal
@@ -118,7 +118,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 7e5f46d25a292f4a140af6da7afc0efc67d56e45
+      revision: 4200321ef1cd27cacc37b0439389424156bb1267
       path: modules/hal/stm32
       groups:
         - hal
@@ -162,7 +162,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7a5196820ba48a6ad7e7d573c9048c021960677c
+      revision: 62b78ff2a2148490f91ee9a4b4d7a7ab8bbc4fd4
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
@@ -187,7 +187,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: eae63bb47a31ed61d008f49a024873026626ebcc
+      revision: 3bcb1e8e502c20a32f57626396a88af5f860da4a
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -201,12 +201,6 @@ manifest:
       revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
       path: modules/lib/tensorflow
       repo-path: tensorflow
-    - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
-      revision: v1.7.2
-      path: modules/tee/tfm-mcuboot
-      groups:
-        - tee
-      repo-path: mcuboot
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
@@ -222,7 +216,7 @@ manifest:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: e18b7a9b040b5b5324520388047c9e7d678447e6
+      revision: 1ab3b62d641070a6e8574634168c374645f382b8
       groups:
         - tee
 

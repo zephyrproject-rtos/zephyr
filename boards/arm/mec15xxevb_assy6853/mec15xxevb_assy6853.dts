@@ -125,7 +125,7 @@
 	pc_girq = <15>;
 };
 
-&timer3 {
+&timer5 {
 	status = "okay";
 };
 

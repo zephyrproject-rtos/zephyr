@@ -347,14 +347,11 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 
 uint8_t *coap_next_token(void)
 {
-	static uint32_t rand[
-		ceiling_fraction(COAP_TOKEN_MAX_LEN, sizeof(uint32_t))];
+	static uint8_t token[COAP_TOKEN_MAX_LEN];
 
-	for (size_t i = 0; i < ARRAY_SIZE(rand); ++i) {
-		rand[i] = sys_rand32_get();
-	}
+	sys_rand_get(token, COAP_TOKEN_MAX_LEN);
 
-	return (uint8_t *) rand;
+	return token;
 }
 
 static uint8_t option_header_get_delta(uint8_t opt)

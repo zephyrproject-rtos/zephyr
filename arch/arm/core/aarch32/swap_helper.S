@@ -20,13 +20,15 @@
 #include <arch/cpu.h>
 #include <syscall.h>
 
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <arch/arm/aarch32/cortex_m/cpu.h>
+#endif
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_svc)
 GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
 GTEXT(z_arm_do_syscall)
-GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
 
@@ -100,7 +102,7 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-out thread had been using the FP registers. */
-    tst lr, #0x10    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    tst lr, #_EXC_RETURN_FTYPE_Msk
     bne out_fp_endif
 
     /* FP context active: set FP state and store callee-saved registers.
@@ -130,7 +132,7 @@ out_fp_endif:
     cpsid i
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
-    msr BASEPRI, r0
+    msr BASEPRI_MAX, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
 #elif defined(CONFIG_ARMV7_R)
     /*
@@ -207,8 +209,7 @@ out_fp_endif:
     /* Restore previous interrupt disable state (irq_lock key)
      * (We clear the arch.basepri field after restoring state)
      */
-#if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0) || \
-	defined(CONFIG_CPU_CORTEX_M1)) && _thread_offset_to_basepri > 124
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && (_thread_offset_to_basepri > 124)
     /* Doing it this way since the offset to thread->arch.basepri can in
      * some configurations be larger than the maximum of 124 for ldr/str
      * immediate offsets.
@@ -287,7 +288,7 @@ _thread_irq_disabled:
 
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-in thread had been using the FP registers. */
-    tst lr, #0x10 /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    tst lr, #_EXC_RETURN_FTYPE_Msk
     beq in_fp_active
     /* FP context inactive for swapped-in thread:
      * - reset FPSCR to 0
@@ -309,7 +310,7 @@ in_fp_active:
 in_fp_endif:
     /* Clear CONTROL.FPCA that may have been set by FP instructions */
     mrs r3, CONTROL
-    bic r3, #0x4 /* CONTROL.FPCA Msk */
+    bic r3, #_CONTROL_FPCA_Msk
     msr CONTROL, r3
     isb
 #endif
@@ -408,7 +409,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
    * MSP or PSP
    */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-  movs r0, #0x4
+  movs r0, #_EXC_RETURN_SPSEL_Msk
   mov r1, lr
   tst r1, r0
   beq _stack_frame_msp
@@ -418,7 +419,7 @@ _stack_frame_msp:
   mrs r0, MSP
 _stack_frame_endif:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    tst lr, #0x4    /* did we come from thread mode ? */
+    tst lr, #_EXC_RETURN_SPSEL_Msk /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */

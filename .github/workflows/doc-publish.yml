@@ -1,48 +1,35 @@
 # Copyright (c) 2020 Linaro Limited.
+# Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-name: Doc build for Release or Daily
+name: Publish Documentation
 
-# Either a daily based on schedule/cron or only on tag push
 on:
-  schedule:
-    - cron:  '50 1/3 * * *'
-  push:
-    paths:
-      - 'VERSION'
+  workflow_run:
+    workflows: ["Documentation Build"]
+    branches:
+      - main
+      - v*
     tags:
-      # only publish v* tags, do not care about zephyr-v* which point to the
-      # same commit
-      - 'v*'
+      - v*
+    types:
+      - completed
 
 jobs:
   doc-publish:
     name: Publish Documentation
     runs-on: ubuntu-latest
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-    - name: Update PATH for west
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: Download artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: doc-build.yml
 
-    - name: Determine tag
-      id: tag
+    - name: Uncompress HTML docs
       run: |
-        # We expect to get here either due to a schedule event in which
-        # case we are doing a daily build of the docs, or because a new
-        # tag was pushed, in which case we are building docs for a release
-        if [ ${GITHUB_EVENT_NAME} == "schedule" ]; then
-           echo ::set-output name=TYPE::daily;
-           echo ::set-output name=RELEASE::latest;
-        elif [ ${GITHUB_EVENT_NAME} == "push" ]; then
-           # If push due to a tag GITHUB_REF will look like refs/tags/TAG-FOO
-           # chop of 'refs/tags' so RELEASE=TAG-FOO
-           echo ::set-output name=TYPE::release;
-           echo ::set-output name=RELEASE::${GITHUB_REF/refs\/tags\//};
-        else
-           exit 1
-        fi
+        tar xf html-output/html-output.tar.xz -C html-output
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -51,59 +38,16 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: checkout
-      uses: actions/checkout@v2
-
-    - name: install-pkgs
-      run: |
-        sudo apt-get install -y ninja-build doxygen graphviz
-
-    - name: cache-pip
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-doc-pip
-
-    - name: install-pip
-      run: |
-        sudo pip3 install -U setuptools wheel pip
-        pip3 install -r scripts/requirements-base.txt
-        pip3 install -r scripts/requirements-doc.txt
-
-    - name: west setup
-      run: |
-        west init -l . || true
-
-    - name: build-docs
-      env:
-        DOC_TAG: ${{ steps.tag.outputs.TYPE }}
-      run: |
-        source zephyr-env.sh
-        make DOC_TAG=${DOC_TAG} -C doc html
-
     - name: Upload to AWS S3
       env:
-        RELEASE: ${{ steps.tag.outputs.RELEASE }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |
-        echo "DOC_RELEASE=[$RELEASE]"
-        if [ "$RELEASE" == "latest" ]; then
-           echo "publish latest docs"
-           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
-           echo "success sync of latest docs"
+        if [ "${HEAD_BRANCH:0:1}" == "v" ]; then
+          VERSION=${HEAD_BRANCH:1}
         else
-           # we want just the version, without the leading 'v'
-           DOC_RELEASE=${RELEASE:1}
-           echo "publish release docs: ${DOC_RELEASE}"
-           aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
-           echo "success sync of rel docs"
+          VERSION="latest"
         fi
-        if [ -d doc/_build/doxygen/html ]; then
-           if [ "$RELEASE" == "latest" ]; then
-              API_RELEASE=latest
-           else
-              API_RELEASE=${RELEASE:1}
-           fi
-           echo "publish doxygen to apidoc/${API_RELEASE}"
-           aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${API_RELEASE} --delete
-           echo "success publish of doxygen"
-        fi
+
+        aws s3 sync --quiet html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
+        aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
+        aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf

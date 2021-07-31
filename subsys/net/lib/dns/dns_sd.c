@@ -935,7 +935,7 @@ int dns_sd_extract_service_proto_domain(const uint8_t *query,
 	label_size = query[offs];
 	if (label_size == 0 || label_size > proto_size - 1
 	    || offs + label_size > query_size) {
-		NET_DBG("could not get proto for '%s...'", service);
+		NET_DBG("could not get proto for '%s...'", log_strdup(service));
 		return -EINVAL;
 	} else {
 		strncpy(proto, &query[offs + 1], label_size);
@@ -947,8 +947,8 @@ int dns_sd_extract_service_proto_domain(const uint8_t *query,
 	label_size = query[offs];
 	if (label_size == 0 || label_size > domain_size - 1
 	    || offs + label_size > query_size) {
-		NET_DBG("could not get domain for '%s.%s...'", service,
-			proto);
+		NET_DBG("could not get domain for '%s.%s...'",
+			log_strdup(service), log_strdup(proto));
 		return -EINVAL;
 	} else {
 		strncpy(domain, &query[offs + 1], label_size);
@@ -959,7 +959,9 @@ int dns_sd_extract_service_proto_domain(const uint8_t *query,
 	/* Check that we have reached the DNS terminator */
 	if (query[offs] != 0) {
 		NET_DBG("ignoring request for '%s.%s.%s...'",
-			service, proto, domain);
+			log_strdup(service),
+			log_strdup(proto),
+			log_strdup(domain));
 		return -EINVAL;
 	}
 

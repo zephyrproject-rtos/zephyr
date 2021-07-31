@@ -59,6 +59,8 @@ static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
+static uint16_t did_unique[PDU_ADV_SID_COUNT];
+
 uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 {
 	struct ll_adv_set *adv;
@@ -419,6 +421,11 @@ int ull_adv_aux_init(void)
 {
 	int err;
 
+	err = lll_rand_get(&did_unique, sizeof(did_unique));
+	if (err) {
+		return err;
+	}
+
 	err = init_reset();
 	if (err) {
 		return err;
@@ -452,6 +459,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv_ext_hdr *sec_hdr, sec_hdr_prev;
 	struct pdu_adv *pri_pdu, *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev, *sec_pdu;
+	struct pdu_adv_adi *pri_adi, *sec_adi;
 	struct pdu_adv_sync_info *sync_info;
 	uint8_t *pri_dptr, *pri_dptr_prev;
 	uint8_t *sec_dptr, *sec_dptr_prev;
@@ -464,6 +472,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	uint16_t sec_len;
 	uint8_t sec_idx;
 	uint8_t ad_len;
+	uint16_t did;
 
 	lll = &adv->lll;
 
@@ -798,42 +807,33 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* ADI */
-	{
-		struct pdu_adv_adi *pri_adi, *sec_adi;
-		uint16_t did = UINT16_MAX;
+	if (pri_hdr_prev.adi) {
+		pri_dptr_prev -= sizeof(struct pdu_adv_adi);
+	}
+	if (sec_hdr_prev.adi) {
+		sec_dptr_prev -= sizeof(struct pdu_adv_adi);
+	}
 
-		pri_dptr -= sizeof(struct pdu_adv_adi);
-		sec_dptr -= sizeof(struct pdu_adv_adi);
+	pri_dptr -= sizeof(struct pdu_adv_adi);
+	sec_dptr -= sizeof(struct pdu_adv_adi);
 
-		pri_adi = (void *)pri_dptr;
-		sec_adi = (void *)sec_dptr;
+	pri_adi = (void *)pri_dptr;
+	sec_adi = (void *)sec_dptr;
 
-		if (pri_hdr_prev.adi) {
-			struct pdu_adv_adi *pri_adi_prev;
+	pri_adi->sid = adv->sid;
+	sec_adi->sid = adv->sid;
 
-			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
-			sec_dptr_prev -= sizeof(struct pdu_adv_adi);
+	/* The DID for a specific SID shall be unique.
+	 * The DID is 12 bits and did_unique may overflow without any negative
+	 * consequences.
+	 */
+	did = did_unique[adv->sid]++;
 
-			memcpy(pri_dptr, pri_dptr_prev,
-			       sizeof(struct pdu_adv_adi));
-			memcpy(sec_dptr, sec_dptr_prev,
-			       sizeof(struct pdu_adv_adi));
+	pri_adi->did = sys_cpu_to_le16(did);
+	sec_adi->did = sys_cpu_to_le16(did);
 
-			pri_adi_prev = (void *)pri_dptr_prev;
-			did = sys_le16_to_cpu(pri_adi_prev->did);
-		} else {
-			pri_adi->sid = adv->sid;
-			sec_adi->sid = adv->sid;
-		}
-
-		did++;
-
-		pri_adi->did = sys_cpu_to_le16(did);
-		sec_adi->did = sys_cpu_to_le16(did);
-
-		if (adi) {
-			*adi = *pri_adi;
-		}
+	if (adi) {
+		*adi = *pri_adi;
 	}
 
 	/* No CTEInfo field in primary channel PDU */

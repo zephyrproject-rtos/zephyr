@@ -16,12 +16,31 @@
 extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
+static unsigned int expected_reason;
 
 void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
 	test_flag++;
+}
+
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	printk("Caught system error -- reason %d\n", reason);
+
+	if (expected_reason == -1) {
+		printk("Was not expecting a crash\n");
+		k_fatal_halt(reason);
+	}
+
+	if (reason != expected_reason) {
+		printk("Wrong crash type got %d expected %d\n", reason,
+			expected_reason);
+		k_fatal_halt(reason);
+	}
+
+	expected_reason = -1;
 }
 
 void test_main(void)
@@ -56,6 +75,12 @@ void test_main(void)
 		"IRQs locked in main()");
 
 	arch_irq_unlock(key);
+
+	/* Verify activating the PendSV IRQ triggers a K_ERR_SPURIOUS_IRQ */
+	expected_reason = K_ERR_CPU_EXCEPTION;
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+	__DSB();
+	__ISB();
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, flag = test_flag;

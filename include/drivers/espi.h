@@ -253,6 +253,29 @@ enum lpc_peripheral_opcode {
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 };
 
+/* KBC 8042 event: Input Buffer Full */
+#define HOST_KBC_EVT_IBF BIT(0)
+/* KBC 8042 event: Output Buffer Empty */
+#define HOST_KBC_EVT_OBE BIT(1)
+/**
+ * @brief Bit field definition of evt_data in struct espi_event for KBC.
+ */
+struct espi_evt_data_kbc {
+	uint32_t type:8;
+	uint32_t data:8;
+	uint32_t evt:8;
+	uint32_t reserved:8;
+};
+
+/**
+ * @brief Bit field definition of evt_data in struct espi_event for ACPI.
+ */
+struct espi_evt_data_acpi {
+	uint32_t type:8;
+	uint32_t data:8;
+	uint32_t reserved:16;
+};
+
 /**
  * @brief eSPI event
  */

@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT microchip_ksz8794
-
 #define LOG_MODULE_NAME dsa
 
 #include <logging/log.h>
@@ -18,14 +16,41 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #include <drivers/spi.h>
 #include <net/ethernet.h>
 #include <linker/sections.h>
+#include <drivers/spi.h>
 
+#if defined(CONFIG_DSA_SPI)
+#include <drivers/spi.h>
+#else
+#error "No communication bus defined"
+#endif
+
+#if CONFIG_DSA_KSZ8863
+#define DT_DRV_COMPAT microchip_ksz8863
+#include "dsa_ksz8863.h"
+#elif CONFIG_DSA_KSZ8794
+#define DT_DRV_COMPAT microchip_ksz8794
 #include "dsa_ksz8794.h"
+#else
+#error "Unsupported KSZ chipset"
+#endif
 
-static struct dsa_ksz8794_spi phy_spi;
+struct ksz8xxx_data {
+	int iface_init_count;
+	bool is_init;
+#if defined(CONFIG_DSA_SPI)
+	const struct device *spi;
+	struct spi_config spi_cfg;
+	struct spi_cs_control cs_ctrl;
+#endif
+};
 
-static void dsa_ksz8794_write_reg(struct dsa_ksz8794_spi *sdev,
+#define DEV_DATA(dev) ((struct dsa_context *const)(dev)->data)
+#define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
+
+static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
 				  uint16_t reg_addr, uint8_t value)
 {
+#if defined(CONFIG_DSA_SPI)
 	uint8_t buf[3];
 
 	const struct spi_buf tx_buf = {
@@ -37,16 +62,18 @@ static void dsa_ksz8794_write_reg(struct dsa_ksz8794_spi *sdev,
 		.count = 1
 	};
 
-	buf[0] = KSZ8794_SPI_CMD_WR | ((reg_addr >> 7) & 0x1F);
+	buf[0] = KSZ8XXX_SPI_CMD_WR | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = value;
 
-	spi_write(sdev->spi, &sdev->spi_cfg, &tx);
+	spi_write(pdev->spi, &pdev->spi_cfg, &tx);
+#endif
 }
 
-static void dsa_ksz8794_read_reg(struct dsa_ksz8794_spi *sdev,
+static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
 				 uint16_t reg_addr, uint8_t *value)
 {
+#if defined(CONFIG_DSA_SPI)
 	uint8_t buf[3];
 
 	const struct spi_buf tx_buf = {
@@ -67,96 +94,56 @@ static void dsa_ksz8794_read_reg(struct dsa_ksz8794_spi *sdev,
 		.count = 1
 	};
 
-	buf[0] = KSZ8794_SPI_CMD_RD | ((reg_addr >> 7) & 0x1F);
+	buf[0] = KSZ8XXX_SPI_CMD_RD | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = 0x0;
 
-	if (!spi_transceive(sdev->spi, &sdev->spi_cfg, &tx, &rx)) {
+	if (!spi_transceive(pdev->spi, &pdev->spi_cfg, &tx, &rx)) {
 		*value = buf[2];
 	} else {
 		LOG_DBG("Failure while reading register 0x%04x", reg_addr);
 		*value = 0U;
 	}
+#endif
 }
 
-static bool dsa_ksz8794_port_link_status(struct dsa_ksz8794_spi *sdev,
+static bool dsa_ksz8xxx_port_link_status(struct ksz8xxx_data *pdev,
 					 uint8_t port)
 {
 	uint8_t tmp;
 
-	if (port < KSZ8794_PORT1 || port > KSZ8794_PORT3) {
+	if (port < KSZ8XXX_FIRST_PORT || port > KSZ8XXX_LAST_PORT ||
+		port == KSZ8XXX_CPU_PORT) {
 		return false;
 	}
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_STAT2_PORTn(port), &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_STAT2_PORTn(port), &tmp);
 
-	return tmp & KSZ8794_STAT2_LINK_GOOD;
-}
-
-static bool dsa_ksz8794_link_status(struct dsa_ksz8794_spi *sdev)
-{
-	bool ret = false;
-	uint8_t i;
-
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
-		if (dsa_ksz8794_port_link_status(sdev, i)) {
-			LOG_INF("Port: %d link UP!", i);
-			ret |= true;
-		}
-	}
-
-	return ret;
+	return tmp & KSZ8XXX_STAT2_LINK_GOOD;
 }
 
 #if !DT_INST_NODE_HAS_PROP(0, reset_gpios)
-static void dsa_ksz8794_soft_reset(struct dsa_ksz8794_spi *sdev)
+static void dsa_ksz8xxx_soft_reset(struct ksz8xxx_data *pdev)
 {
 	/* reset switch */
-	dsa_ksz8794_write_reg(sdev, KSZ8794_PD_MGMT_CTRL1,
-			      KSZ8794_PWR_MGNT_MODE_SOFT_DOWN);
-	k_busy_wait(1000);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_PD_MGMT_CTRL1, 0);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_RESET_REG,
+			      KSZ8XXX_RESET_SET);
+	k_busy_wait(KSZ8XXX_SOFT_RESET_DURATION);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_RESET_REG, KSZ8XXX_RESET_CLEAR);
 }
 #endif
 
-static int dsa_ksz8794_spi_setup(struct dsa_ksz8794_spi *sdev)
+static int dsa_ksz8xxx_probe(struct ksz8xxx_data *pdev)
 {
 	uint16_t timeout = 100;
 	uint8_t val[2], tmp;
-
-	/* SPI config */
-	sdev->spi_cfg.operation =
-#if DT_INST_PROP(0, spi_cpol)
-		SPI_MODE_CPOL |
-#endif
-#if DT_INST_PROP(0, spi_cpha)
-		SPI_MODE_CPHA |
-#endif
-		SPI_WORD_SET(8);
-
-	sdev->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	sdev->spi_cfg.slave = DT_INST_REG_ADDR(0);
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	sdev->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	sdev->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	sdev->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	sdev->cs_ctrl.delay = 0U;
-	sdev->spi_cfg.cs = &(sdev->cs_ctrl);
-#else
-	sdev->spi_cfg.cs = NULL;
-#endif
-	sdev->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!sdev->spi) {
-		return -EINVAL;
-	}
 
 	/*
 	 * Wait for SPI of KSZ8794 being fully operational - up to 10 ms
 	 */
 	for (timeout = 100, tmp = 0;
-	     tmp != KSZ8794_CHIP_ID0_ID_DEFAULT && timeout > 0; timeout--) {
-		dsa_ksz8794_read_reg(sdev, KSZ8794_CHIP_ID0, &tmp);
+	     tmp != KSZ8XXX_CHIP_ID0_ID_DEFAULT && timeout > 0; timeout--) {
+		dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID0, &tmp);
 		k_busy_wait(100);
 	}
 
@@ -165,8 +152,19 @@ static int dsa_ksz8794_spi_setup(struct dsa_ksz8794_spi *sdev)
 		return -ENODEV;
 	}
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_CHIP_ID0, &val[0]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_CHIP_ID1, &val[1]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID0, &val[0]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID1, &val[1]);
+
+	if (val[0] != KSZ8XXX_CHIP_ID0_ID_DEFAULT ||
+	    val[1] != KSZ8XXX_CHIP_ID1_ID_DEFAULT) {
+		LOG_ERR("Chip ID mismatch. "
+			"Expected %02x%02x but found %02x%02x",
+			KSZ8XXX_CHIP_ID0_ID_DEFAULT,
+			KSZ8XXX_CHIP_ID1_ID_DEFAULT,
+			val[0],
+			val[1]);
+		return -ENODEV;
+	}
 
 	LOG_DBG("KSZ8794: ID0: 0x%x ID1: 0x%x timeout: %d", val[1], val[0],
 		timeout);
@@ -174,7 +172,7 @@ static int dsa_ksz8794_spi_setup(struct dsa_ksz8794_spi *sdev)
 	return 0;
 }
 
-static int dsa_ksz8794_write_static_mac_table(struct dsa_ksz8794_spi *sdev,
+static int dsa_ksz8xxx_write_static_mac_table(struct ksz8xxx_data *pdev,
 					      uint16_t entry_addr, uint8_t *p)
 {
 	/*
@@ -189,22 +187,22 @@ static int dsa_ksz8794_write_static_mac_table(struct dsa_ksz8794_spi *sdev,
 	 * Write to Register 111 with 0x0x (trigger the write operation, to
 	 * table entry x)
 	 */
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_7, p[7]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_6, p[6]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_5, p[5]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_4, p[4]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_3, p[3]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_2, p[2]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_1, p[1]);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_DATA_0, p[0]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_7, p[7]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_6, p[6]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_5, p[5]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_4, p[4]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_3, p[3]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_2, p[2]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_1, p[1]);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_DATA_0, p[0]);
 
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_0, 0x00);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_1, entry_addr);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_CTRL_0, 0x00);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_CTRL_1, entry_addr);
 
 	return 0;
 }
 
-static int dsa_ksz8794_set_static_mac_table(struct dsa_ksz8794_spi *sdev,
+static int dsa_ksz8xxx_set_static_mac_table(struct ksz8xxx_data *pdev,
 					    const uint8_t *mac, uint8_t fw_port,
 					    uint16_t entry_idx)
 {
@@ -224,15 +222,15 @@ static int dsa_ksz8794_set_static_mac_table(struct dsa_ksz8794_spi *sdev,
 	buf[0] = mac[5];
 
 	buf[6] = fw_port;
-	buf[6] |= KSZ8794_STATIC_MAC_TABLE_VALID;
-	buf[6] |= KSZ8794_STATIC_MAC_TABLE_OVERRIDE;
+	buf[6] |= KSZ8XXX_STATIC_MAC_TABLE_VALID;
+	buf[6] |= KSZ8XXX_STATIC_MAC_TABLE_OVRD;
 
-	dsa_ksz8794_write_static_mac_table(sdev, entry_idx, buf);
+	dsa_ksz8xxx_write_static_mac_table(pdev, entry_idx, buf);
 
 	return 0;
 }
 
-static int dsa_ksz8794_read_static_mac_table(struct dsa_ksz8794_spi *sdev,
+static int dsa_ksz8xxx_read_static_mac_table(struct ksz8xxx_data *pdev,
 					      uint16_t entry_addr, uint8_t *p)
 {
 	/*
@@ -250,28 +248,23 @@ static int dsa_ksz8794_read_static_mac_table(struct dsa_ksz8794_spi *sdev,
 	 *
 	 */
 
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_0, 0x10);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_1, entry_addr);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_CTRL_0, 0x10);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_REG_IND_CTRL_1, entry_addr);
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_7, &p[7]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_6, &p[6]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_5, &p[5]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_4, &p[4]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_3, &p[3]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_2, &p[2]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_1, &p[1]);
-	dsa_ksz8794_read_reg(sdev, KSZ8794_REG_IND_DATA_0, &p[0]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_7, &p[7]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_6, &p[6]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_5, &p[5]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_4, &p[4]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_3, &p[3]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_2, &p[2]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_1, &p[1]);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_REG_IND_DATA_0, &p[0]);
 
 	return 0;
 }
 
-static int dsa_ksz8794_get_static_mac_table(struct dsa_ksz8794_spi *sdev,
-					    uint8_t *buf, uint16_t entry_idx)
-{
-	return dsa_ksz8794_read_static_mac_table(sdev, entry_idx, buf);
-}
-
-static int dsa_ksz8794_switch_setup(struct dsa_ksz8794_spi *sdev)
+#if CONFIG_DSA_KSZ8863
+static int dsa_ksz8xxx_switch_setup(const struct ksz8xxx_data *pdev)
 {
 	uint8_t tmp, i;
 
@@ -279,36 +272,80 @@ static int dsa_ksz8794_switch_setup(struct dsa_ksz8794_spi *sdev)
 	 * Loop through ports - The same setup when tail tagging is enabled or
 	 * disabled.
 	 */
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
+	for (i = KSZ8XXX_FIRST_PORT; i <= KSZ8XXX_LAST_PORT; i++) {
+
 		/* Enable transmission, reception and switch address learning */
-		dsa_ksz8794_read_reg(sdev, KSZ8794_CTRL2_PORTn(i), &tmp);
+		dsa_ksz8xxx_read_reg(pdev, KSZ8863_CTRL2_PORTn(i), &tmp);
+		tmp |= KSZ8863_CTRL2_TRANSMIT_EN;
+		tmp |= KSZ8863_CTRL2_RECEIVE_EN;
+		tmp &= ~KSZ8863_CTRL2_LEARNING_DIS;
+		dsa_ksz8xxx_write_reg(pdev, KSZ8863_CTRL2_PORTn(i), tmp);
+	}
+
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
+	/* Enable tail tag feature */
+	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL10, &tmp);
+	tmp |= KSZ8863_GLOBAL_CTRL1_TAIL_TAG_EN;
+	dsa_ksz8xxx_write_reg(pdev, KSZ8863_GLOBAL_CTRL10, tmp);
+#else
+	/* Disable tail tag feature */
+	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL1, &tmp);
+	tmp &= ~KSZ8863_GLOBAL_CTRL1_TAIL_TAG_EN;
+	dsa_ksz8xxx_write_reg(pdev, KSZ8863_GLOBAL_CTRL1, tmp);
+#endif
+
+	dsa_ksz8xxx_read_reg(pdev, KSZ8863_GLOBAL_CTRL2, &tmp);
+	tmp &= ~KSZ8863_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_ENA;
+	dsa_ksz8xxx_write_reg(pdev, KSZ8863_GLOBAL_CTRL2, tmp);
+
+	return 0;
+}
+#endif
+
+#if CONFIG_DSA_KSZ8794
+static int dsa_ksz8xxx_switch_setup(struct ksz8xxx_data *pdev)
+{
+	uint8_t tmp, i;
+
+	/*
+	 * Loop through ports - The same setup when tail tagging is enabled or
+	 * disabled.
+	 */
+	for (i = KSZ8XXX_FIRST_PORT; i <= KSZ8XXX_LAST_PORT; i++) {
+		/* Skip Switch <-> CPU Port */
+		if (i == KSZ8XXX_CPU_PORT) {
+			continue;
+		}
+
+		/* Enable transmission, reception and switch address learning */
+		dsa_ksz8xxx_read_reg(pdev, KSZ8794_CTRL2_PORTn(i), &tmp);
 		tmp |= KSZ8794_CTRL2_TRANSMIT_EN;
 		tmp |= KSZ8794_CTRL2_RECEIVE_EN;
 		tmp &= ~KSZ8794_CTRL2_LEARNING_DIS;
-		dsa_ksz8794_write_reg(sdev, KSZ8794_CTRL2_PORTn(i), tmp);
+		dsa_ksz8xxx_write_reg(pdev, KSZ8794_CTRL2_PORTn(i), tmp);
 	}
 
-#if defined(CONFIG_DSA_KSZ8794_TAIL_TAGGING)
+#if defined(DSA_KSZ_TAIL_TAGGING)
 	/* Enable tail tag feature */
-	dsa_ksz8794_read_reg(sdev, KSZ8794_GLOBAL_CTRL10, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL10, &tmp);
 	tmp |= KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN;
-	dsa_ksz8794_write_reg(sdev, KSZ8794_GLOBAL_CTRL10, tmp);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_GLOBAL_CTRL10, tmp);
 #else
 	/* Disable tail tag feature */
-	dsa_ksz8794_read_reg(sdev, KSZ8794_GLOBAL_CTRL10, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL10, &tmp);
 	tmp &= ~KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN;
-	dsa_ksz8794_write_reg(sdev, KSZ8794_GLOBAL_CTRL10, tmp);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_GLOBAL_CTRL10, tmp);
 #endif
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_PORT4_IF_CTRL6, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8794_PORT4_IF_CTRL6, &tmp);
 	LOG_DBG("KSZ8794: CONTROL6: 0x%x port4", tmp);
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_PORT4_CTRL2, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8794_PORT4_CTRL2, &tmp);
 	LOG_DBG("KSZ8794: CONTROL2: 0x%x port4", tmp);
 
-	dsa_ksz8794_read_reg(sdev, KSZ8794_GLOBAL_CTRL2, &tmp);
+	dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL2, &tmp);
 	tmp |= KSZ8794_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_DIS;
-	dsa_ksz8794_write_reg(sdev, KSZ8794_GLOBAL_CTRL2, tmp);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_GLOBAL_CTRL2, tmp);
 
 	return 0;
 }
@@ -385,15 +422,15 @@ static int dsa_ksz8794_switch_setup(struct dsa_ksz8794_spi *sdev)
  * for all corner cases of the short cable and short distance connection for
  * port to port or board to board cases.
  */
-static int dsa_ksz8794_phy_workaround_0x01(struct dsa_ksz8794_spi *sdev)
+static int dsa_ksz8794_phy_workaround_0x01(struct ksz8xxx_data *pdev)
 {
 	uint8_t indirect_type = 0x0a;
 	uint8_t indirect_addr = 0x3c;
 	uint8_t indirect_data = 0x15;
 
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_IND_BYTE, indirect_data);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_IND_BYTE, indirect_data);
 	LOG_INF("apply workarkound 0x01 for short connections on KSZ8794");
 	return 0;
 }
@@ -512,51 +549,51 @@ static int dsa_ksz8794_phy_workaround_0x01(struct dsa_ksz8794_spi *sdev)
  *  lengths.
  */
 
-static int dsa_ksz8794_phy_workaround_0x02(struct dsa_ksz8794_spi *sdev)
+static int dsa_ksz8794_phy_workaround_0x02(struct ksz8xxx_data *pdev)
 {
 	uint8_t indirect_type = 0x0a;
 	uint8_t indirect_addr = 0x4c;
 	uint8_t indirect_data = 0x40;
 
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_IND_BYTE, indirect_data);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_IND_BYTE, indirect_data);
 	LOG_INF("apply workarkound 0x02 link issue CAT-5E/6 on KSZ8794");
 	return 0;
 }
 
-static int dsa_ksz8794_phy_workaround_0x04(struct dsa_ksz8794_spi *sdev)
+static int dsa_ksz8794_phy_workaround_0x04(struct ksz8xxx_data *pdev)
 {
 	uint8_t indirect_type = 0x0a;
 	uint8_t indirect_addr = 0x08;
 	uint8_t indirect_data = 0x00;
 
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
-	dsa_ksz8794_write_reg(sdev, KSZ8794_IND_BYTE, indirect_data);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_0, indirect_type);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_REG_IND_CTRL_1, indirect_addr);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8794_IND_BYTE, indirect_data);
 	LOG_INF("apply workarkound 0x04 link issue CAT-5E/6 on KSZ8794");
 	return 0;
 }
 
-static int dsa_ksz8794_apply_workarounds(struct dsa_ksz8794_spi *swspi)
+static int dsa_ksz8794_apply_workarounds(struct ksz8xxx_data *pdev)
 {
 	int workaround = DT_INST_PROP(0, workaround);
 
 	if (workaround & 0x01) {
-		dsa_ksz8794_phy_workaround_0x01(swspi);
+		dsa_ksz8794_phy_workaround_0x01(pdev);
 	}
 	if (workaround & 0x02) {
-		dsa_ksz8794_phy_workaround_0x02(swspi);
+		dsa_ksz8794_phy_workaround_0x02(pdev);
 	}
 	if (workaround & 0x04) {
-		dsa_ksz8794_phy_workaround_0x04(swspi);
+		dsa_ksz8794_phy_workaround_0x04(pdev);
 	}
 	return 0;
 }
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, mii_lowspeed_drivestrength)
-static int dsa_ksz8794_set_lowspeed_drivestrength(struct dsa_ksz8794_spi *sdev)
+static int dsa_ksz8794_set_lowspeed_drivestrength(struct ksz8xxx_data *pdev)
 {
 	int mii_lowspeed_drivestrength =
 		DT_INST_PROP(0, mii_lowspeed_drivestrength);
@@ -598,19 +635,21 @@ static int dsa_ksz8794_set_lowspeed_drivestrength(struct dsa_ksz8794_spi *sdev)
 
 	if (ret == 0) {
 		/* set Low-Speed Interface Drive Strength for MII and RMMI */
-		dsa_ksz8794_read_reg(sdev, KSZ8794_GLOBAL_CTRL20, &tmp);
+		dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL20, &tmp);
 		tmp &= ~KSZ8794_GLOBAL_CTRL20_LOWSPEED_MASK;
 		tmp |= val;
-		dsa_ksz8794_write_reg(sdev, KSZ8794_GLOBAL_CTRL20, tmp);
-		dsa_ksz8794_read_reg(sdev, KSZ8794_GLOBAL_CTRL20, &tmp);
+		dsa_ksz8xxx_write_reg(pdev, KSZ8794_GLOBAL_CTRL20, tmp);
+		dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL20, &tmp);
 		LOG_INF("KSZ8794: set drive strength %dmA",
 			mii_lowspeed_drivestrength);
 	}
 	return ret;
 }
 #endif
+#endif
 
-static int dsa_ksz8794_gpio_reset(struct dsa_ksz8794_spi *swspi)
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+static int dsa_ksz8xxx_gpio_reset(struct ksz8xxx_data *pdev)
 {
 	const struct device *reset_dev =
 		device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
@@ -629,44 +668,88 @@ static int dsa_ksz8794_gpio_reset(struct dsa_ksz8794_spi *swspi)
 
 	return 0;
 }
+#endif
+
+static int dsa_ksz8xxx_configure_bus(struct ksz8xxx_data *pdev)
+{
+#if defined(CONFIG_DSA_SPI)
+	/* SPI config */
+	pdev->spi_cfg.operation =
+#if DT_INST_PROP(0, spi_cpol)
+		SPI_MODE_CPOL |
+#endif
+#if DT_INST_PROP(0, spi_cpha)
+		SPI_MODE_CPHA |
+#endif
+		SPI_WORD_SET(8);
+
+	pdev->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	pdev->spi_cfg.slave = DT_INST_REG_ADDR(0);
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	pdev->cs_ctrl.gpio_dev =
+		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	pdev->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	pdev->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
+	pdev->cs_ctrl.delay = 0U;
+	pdev->spi_cfg.cs = &(pdev->cs_ctrl);
+#else
+	pdev->spi_cfg.cs = NULL;
+#endif
+	pdev->spi = device_get_binding(DT_INST_BUS_LABEL(0));
+	if (!pdev->spi) {
+		return -ENODEV;
+	}
+#endif
+	return 0;
+}
 
 /* Low level initialization code for DSA PHY */
-int dsa_hw_init(struct device *dev)
+int dsa_hw_init(struct ksz8xxx_data *pdev)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
+	int rc;
+
+	if (pdev->is_init) {
+		return 0;
+	}
 
 	/* Hard reset */
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	dsa_ksz8794_gpio_reset(swspi);
+	dsa_ksz8xxx_gpio_reset(pdev);
+
+	/* Time needed for chip to completely power up (100ms) */
+	k_busy_wait(KSZ8XXX_HARD_RESET_WAIT);
 #endif
 
-	/* Time needed for KSZ8794 to completely power up (100ms) */
-	k_busy_wait(100000);
+	/* Configure communication bus */
+	rc = dsa_ksz8xxx_configure_bus(pdev);
+	if (rc < 0) {
+		return rc;
+	}
 
-	/* Configure SPI */
-	dsa_ksz8794_spi_setup(swspi);
+	/* Probe attached PHY */
+	rc = dsa_ksz8xxx_probe(pdev);
+	if (rc < 0) {
+		return rc;
+	}
 
 #if !DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	/* Soft reset */
-	dsa_ksz8794_soft_reset(swspi);
+	dsa_ksz8xxx_soft_reset(pdev);
 #endif
 
 	/* Setup KSZ8794 */
-	dsa_ksz8794_switch_setup(swspi);
+	dsa_ksz8xxx_switch_setup(pdev);
 
 #if DT_INST_NODE_HAS_PROP(0, mii_lowspeed_drivestrength)
-	dsa_ksz8794_set_lowspeed_drivestrength(swspi);
+	dsa_ksz8794_set_lowspeed_drivestrength(pdev);
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, workaround)
 	/* apply workarounds */
-	dsa_ksz8794_apply_workarounds(swspi);
+	dsa_ksz8794_apply_workarounds(pdev);
 #endif
 
-	/* Read ports status */
-	dsa_ksz8794_link_status(swspi);
-
-	swspi->is_init = true;
+	pdev->is_init = true;
 
 	return 0;
 }
@@ -675,11 +758,17 @@ static void dsa_delayed_work(struct k_work *item)
 {
 	struct dsa_context *context =
 		CONTAINER_OF(item, struct dsa_context, dsa_work);
+	struct ksz8xxx_data *pdev = PRV_DATA(context);
 	bool link_state;
 	uint8_t i;
 
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
-		link_state = dsa_ksz8794_port_link_status(&phy_spi, i);
+	for (i = KSZ8XXX_FIRST_PORT; i <= KSZ8XXX_LAST_PORT; i++) {
+		/* Skip Switch <-> CPU Port */
+		if (i == KSZ8XXX_CPU_PORT) {
+			continue;
+		}
+
+		link_state = dsa_ksz8xxx_port_link_status(pdev, i);
 		if (link_state && !context->link_up[i]) {
 			LOG_INF("DSA port: %d link UP!", i);
 			net_eth_carrier_on(context->iface_slave[i]);
@@ -695,48 +784,36 @@ static void dsa_delayed_work(struct k_work *item)
 
 int dsa_port_init(const struct device *dev)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
 
-	if (swspi->is_init) {
-		return 0;
-	}
-
-	dsa_hw_init(NULL);
+	dsa_hw_init(pdev);
 	return 0;
 }
 
 /* Generic implementation of writing value to DSA register */
-static int dsa_ksz8794_sw_write_reg(int switch_id, uint16_t reg_addr,
+static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 				    uint8_t value)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
 
-	if (!swspi->is_init) {
-		return -ENODEV;
-	}
-
-	dsa_ksz8794_write_reg(swspi, reg_addr, value);
+	dsa_ksz8xxx_write_reg(pdev, reg_addr, value);
 	return 0;
 }
 
 /* Generic implementation of reading value from DSA register */
-static int dsa_ksz8794_sw_read_reg(int switch_id, uint16_t reg_addr,
+static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
 				   uint8_t *value)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
 
-	if (!swspi->is_init) {
-		return -ENODEV;
-	}
-
-	dsa_ksz8794_read_reg(swspi, reg_addr, value);
+	dsa_ksz8xxx_read_reg(pdev, reg_addr, value);
 	return 0;
 }
 
 /**
  * @brief Set entry to DSA MAC address table
  *
- * @param switch_id The id number (equal to reg=<X>) of switch chip
+ * @param dev DSA device
  * @param mac The MAC address to be set in the table
  * @param fw_port Port number to forward packets
  * @param tbl_entry_idx The index of entry in the table
@@ -744,22 +821,20 @@ static int dsa_ksz8794_sw_read_reg(int switch_id, uint16_t reg_addr,
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8794_set_mac_table_entry(int switch_id, const uint8_t *mac,
-					   uint8_t fw_port,
-					   uint16_t tbl_entry_idx,
-					   uint16_t flags)
+static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
+						const uint8_t *mac,
+						uint8_t fw_port,
+						uint16_t tbl_entry_idx,
+						uint16_t flags)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
-
-	if (!swspi->is_init) {
-		return -ENODEV;
-	}
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
 
 	if (flags != 0) {
 		return -EINVAL;
 	}
 
-	dsa_ksz8794_set_static_mac_table(swspi, mac, fw_port, tbl_entry_idx);
+	dsa_ksz8xxx_set_static_mac_table(pdev, mac, fw_port,
+						tbl_entry_idx);
 
 	return 0;
 }
@@ -767,28 +842,25 @@ static int dsa_ksz8794_set_mac_table_entry(int switch_id, const uint8_t *mac,
 /**
  * @brief Get DSA MAC address table entry
  *
- * @param switch_id The id number (equal to reg=<X>) of switch chip
+ * @param dev DSA device
  * @param buf The buffer for data read from the table
  * @param tbl_entry_idx The index of entry in the table
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8794_get_mac_table_entry(int switch_id, uint8_t *buf,
-					   uint16_t tbl_entry_idx)
+static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
+						uint8_t *buf,
+						uint16_t tbl_entry_idx)
 {
-	struct dsa_ksz8794_spi *swspi = &phy_spi;
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
 
-	if (!swspi->is_init) {
-		return -ENODEV;
-	}
-
-	dsa_ksz8794_get_static_mac_table(swspi, buf, tbl_entry_idx);
+	dsa_ksz8xxx_read_static_mac_table(pdev, tbl_entry_idx, buf);
 
 	return 0;
 }
 
-#if defined(CONFIG_DSA_KSZ8794_TAIL_TAGGING)
-#define DSA_KSZ8795_TAIL_TAG_OVERRIDE	BIT(6)
+#if defined(DSA_KSZ_TAIL_TAGGING)
+#define DSA_KSZ8795_TAIL_TAG_OVRD	BIT(6)
 #define DSA_KSZ8795_TAIL_TAG_LOOKUP	BIT(7)
 
 #define DSA_KSZ8794_EGRESS_TAG_LEN 1
@@ -797,7 +869,7 @@ static int dsa_ksz8794_get_mac_table_entry(int switch_id, uint8_t *buf,
 #define DSA_MIN_L2_FRAME_SIZE 64
 #define DSA_L2_FCS_SIZE 4
 
-struct net_pkt *dsa_ksz8794_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
+struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
@@ -878,7 +950,7 @@ struct net_pkt *dsa_ksz8794_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
  * Returns:
  *  - Pointer to struct net_if
  */
-static struct net_if *dsa_ksz8794_get_iface(struct net_if *iface,
+static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
 					    struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx;
@@ -928,8 +1000,9 @@ static void dsa_iface_init(struct net_if *iface)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *dm, *dev = net_if_get_device(iface);
 	struct dsa_context *context = dev->data;
+	struct ksz8xxx_data *pdev = PRV_DATA(context);
 	struct ethernet_context *ctx_master;
-	static uint8_t i = KSZ8794_PORT1;
+	int i = pdev->iface_init_count;
 
 	/* Find master port for ksz8794 switch */
 	if (context->iface_master == NULL) {
@@ -965,16 +1038,15 @@ static void dsa_iface_init(struct net_if *iface)
 		ethernet_init(iface);
 	}
 
-	i++;
+	pdev->iface_init_count++;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	/*
 	 * Start DSA work to monitor status of ports (read from switch IC)
-	 * only when carrier_work is properly initialized for each iface.
+	 * only when carrier_work is properly initialized for all slave
+	 * interfaces.
 	 */
-	if (context->iface_slave[KSZ8794_PORT1] &&
-	    context->iface_slave[KSZ8794_PORT2] &&
-	    context->iface_slave[KSZ8794_PORT3]) {
+	if (pdev->iface_init_count == context->num_slave_ports) {
 		k_work_init_delayable(&context->dsa_work, dsa_delayed_work);
 		k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 	}
@@ -995,18 +1067,14 @@ const struct ethernet_api dsa_eth_api_funcs = {
 };
 
 static struct dsa_api dsa_api_f = {
-	.switch_read = dsa_ksz8794_sw_read_reg,
-	.switch_write = dsa_ksz8794_sw_write_reg,
-	.switch_set_mac_table_entry = dsa_ksz8794_set_mac_table_entry,
-	.switch_get_mac_table_entry = dsa_ksz8794_get_mac_table_entry,
-	.dsa_xmit_pkt = dsa_ksz8794_xmit_pkt,
-	.dsa_get_iface = dsa_ksz8794_get_iface,
-};
-
-static struct dsa_context dsa_context = {
-	.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),
-	.switch_id = 0,
-	.dapi = &dsa_api_f,
+	.switch_read = dsa_ksz8xxx_sw_read_reg,
+	.switch_write = dsa_ksz8xxx_sw_write_reg,
+	.switch_set_mac_table_entry = dsa_ksz8xxx_set_mac_table_entry,
+	.switch_get_mac_table_entry = dsa_ksz8xxx_get_mac_table_entry,
+#if defined(DSA_KSZ_TAIL_TAGGING)
+	.dsa_xmit_pkt = dsa_ksz8xxx_xmit_pkt,
+	.dsa_get_iface = dsa_ksz8xxx_get_iface,
+#endif
 };
 
 /*
@@ -1033,16 +1101,16 @@ static struct dsa_context dsa_context = {
  * For simple cases it is just good enough.
  */
 
-#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave)                              \
+#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                           \
 	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
 		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
 	};                                                                 \
 	NET_DEVICE_INIT_INSTANCE(dsa_slave_port_##slave,                   \
 	DT_LABEL(slave),                                                   \
-	0,                                                                 \
+	n,                                                                 \
 	dsa_port_init,                                                     \
 	NULL,                                                              \
-	&dsa_context,                                                      \
+	&dsa_context_##n,                                                  \
 	&dsa_0_slave_##slave##_config,                                     \
 	CONFIG_ETH_INIT_PRIORITY,                                          \
 	&dsa_eth_api_funcs,                                                \
@@ -1050,4 +1118,28 @@ static struct dsa_context dsa_context = {
 	NET_L2_GET_CTX_TYPE(ETHERNET_L2),                                  \
 	NET_ETH_MTU);
 
-DT_INST_FOREACH_CHILD(0, NET_SLAVE_DEVICE_INIT_INSTANCE);
+#define NET_SLAVE_DEVICE_0_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 0)
+#define NET_SLAVE_DEVICE_1_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 1)
+#define NET_SLAVE_DEVICE_2_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 2)
+#define NET_SLAVE_DEVICE_3_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 3)
+#define NET_SLAVE_DEVICE_4_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
+
+#define DSA_DEVICE(n)							\
+	static struct ksz8xxx_data dsa_device_prv_data_##n = {		\
+		.iface_init_count = 0,					\
+		.is_init = false,					\
+	};								\
+	static struct dsa_context dsa_context_##n = {			\
+		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),	\
+		.dapi = &dsa_api_f,					\
+		.prv_data = (void *)&dsa_device_prv_data_##n,		\
+	};								\
+	DT_INST_FOREACH_CHILD_VARGS(n, NET_SLAVE_DEVICE_INIT_INSTANCE, n);
+
+
+DT_INST_FOREACH_STATUS_OKAY(DSA_DEVICE);

@@ -1056,7 +1056,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 		}
 	} while (!atomic_cas(&conn->ref, old, old + 1));
 
-	BT_DBG("handle %u ref %u -> %u", conn->handle, old, old + 1);
+	BT_DBG("handle %u ref %d -> %d", conn->handle, old, old + 1);
 
 	return conn;
 }
@@ -1076,7 +1076,7 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 
-	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
+	BT_DBG("handle %u ref %d -> %d", conn->handle, old,
 	       atomic_get(&conn->ref));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");

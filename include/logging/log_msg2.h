@@ -219,12 +219,13 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_SYNC(_domain_id, _source, _level, _data, _dlen, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				__VA_ARGS__); \
+				0, __VA_ARGS__); \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, _dlen)); \
 	if (_plen) {\
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
-					Z_LOG_MSG2_ALIGN_OFFSET, __VA_ARGS__); \
+					Z_LOG_MSG2_ALIGN_OFFSET, \
+					0, __VA_ARGS__); \
 	} \
 	struct log_msg2_desc _desc = \
 		     Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
@@ -238,15 +239,15 @@ do { \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
 	} else { \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, \
-					Z_LOG_MSG2_ALIGN_OFFSET, __VA_ARGS__); \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
+					0, __VA_ARGS__); \
 	} \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
 	if (_plen) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					__VA_ARGS__);\
+					0, __VA_ARGS__);\
 	} \
 	struct log_msg2_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
@@ -260,7 +261,7 @@ do { \
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				__VA_ARGS__); \
+				0, __VA_ARGS__); \
 	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg2 *_msg = z_log_msg2_alloc(_msg_wlen); \
 	struct log_msg2_desc _desc = \
@@ -269,7 +270,8 @@ do { \
 			_plen, _msg); \
 	if (_msg) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
-					Z_LOG_MSG2_ALIGN_OFFSET, __VA_ARGS__); \
+					Z_LOG_MSG2_ALIGN_OFFSET, \
+					0, __VA_ARGS__); \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (0)

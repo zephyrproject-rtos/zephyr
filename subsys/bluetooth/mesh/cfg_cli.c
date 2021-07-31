@@ -1975,7 +1975,7 @@ static int mod_sub_va(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t ele
 	}
 
 	BT_DBG("net_idx 0x%04x addr 0x%04x elem_addr 0x%04x label %s",
-	       net_idx, addr, elem_addr, log_strdup(label));
+	       net_idx, addr, elem_addr, bt_hex(label, 16));
 	BT_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
 
 	bt_mesh_model_msg_init(&msg, op);

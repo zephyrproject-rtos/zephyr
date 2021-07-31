@@ -122,7 +122,8 @@
 		compatible = "st,lis2dh";
 		label = "LIS2DH";
 		reg = <0x18>;
-		irq-gpios = <&gpio0 29 0>;
+		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		disconnect-sdo-sa0-pull-up;
 	};
 
 };
@@ -227,7 +228,7 @@
 		io-channels = <&adc 7>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 100000)>;
-		power-gpios = <&gpio0 25 0>;
+		power-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 	};
 };
 

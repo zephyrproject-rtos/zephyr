@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32 DMA controller (V2bis) for the stm32F1 and stm32L1 soc families
+  STM32 DMA controller (V2bis) for the stm32F0, stm32F1 and stm32L1 soc families
 
   This DMA controller includes several channels with different requests.
   All the requests ar ORed before entering the DMA, so that only one request

@@ -32,19 +32,20 @@
 	};
 };
 
-&clk_hsi {
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
 };
 
 &pll {
 	mul = <9>;
-	clocks = <&clk_hsi>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(36)>;
+	clock-frequency = <DT_FREQ_M(72)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <1>;
@@ -96,6 +97,11 @@
 		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
+};
+
+&usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	status = "okay";
 };
 
 &adc1 {

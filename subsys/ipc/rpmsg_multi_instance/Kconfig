@@ -31,6 +31,8 @@ config RPMSG_MULTI_INSTANCES_NO
 	help
 	  How many instances are to be used.
 
+ipm_name_instance_num = 0
+rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 1
 rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 2
@@ -44,8 +46,6 @@ rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 6
 rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 7
-rsource "Kconfig.ipm_name_instance"
-ipm_name_instance_num = 8
 rsource "Kconfig.ipm_name_instance"
 
 config RPMSG_MULTI_INSTANCE_SHM_BASE_ADDRESS

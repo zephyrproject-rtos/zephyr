@@ -229,6 +229,42 @@
 				#atmel,pin-cells = <2>;
 			};
 		};
+
+		tc0: tc@40090000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40090000 0x100>;
+			interrupts = <21 0
+				      22 0
+				      23 0>;
+			peripheral-id = <21 22 23>;
+			status = "disabled";
+			label = "TC0";
+			pinctrl-0 = <>;
+		};
+
+		tc1: tc@40094000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40094000 0x100>;
+			interrupts = <24 0
+				      25 0
+				      26 0>;
+			peripheral-id = <24 25 26>;
+			status = "disabled";
+			label = "TC1";
+			pinctrl-0 = <>;
+		};
+
+		tc2: tc@40098000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40098000 0x100>;
+			interrupts = <27 0
+				      28 0
+				      29 0>;
+			peripheral-id = <27 28 29>;
+			status = "disabled";
+			label = "TC2";
+			pinctrl-0 = <>;
+		};
 	};
 };
 

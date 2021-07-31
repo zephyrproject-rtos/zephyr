@@ -559,16 +559,15 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 	/* read from rambuffer if possible */
 	if (dev_config->rambuf) {
 		memcpy(data, dev_config->rambuf + address, len);
-		return 0;
-	}
+	} else {
+		/* read from flash if no rambuffer */
+		while (ctx.rlen) {
+			rc = eeprom_emu_flash_get(dev, &ctx);
+			if (rc) {
+				break;
+			}
 
-	/* read from flash if no rambuffer */
-	while (ctx.rlen) {
-		rc = eeprom_emu_flash_get(dev, &ctx);
-		if (rc) {
-			break;
 		}
-
 	}
 
 	k_mutex_unlock(&dev_data->lock);

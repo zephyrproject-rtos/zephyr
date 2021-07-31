@@ -613,52 +613,6 @@ static inline bool device_is_ready(const struct device *dev)
 }
 
 /**
- * @brief Indicate that the device is in the middle of a transaction
- *
- * Called by a device driver to indicate that it is in the middle of a
- * transaction.
- *
- * @param dev Pointer to device structure of the driver instance.
- */
-void device_busy_set(const struct device *dev);
-
-/**
- * @brief Indicate that the device has completed its transaction
- *
- * Called by a device driver to indicate the end of a transaction.
- *
- * @param dev Pointer to device structure of the driver instance.
- */
-void device_busy_clear(const struct device *dev);
-
-#ifdef CONFIG_PM_DEVICE
-/**
- * @brief Check if any device is in the middle of a transaction
- *
- * Called by an application to see if any device is in the middle
- * of a critical transaction that cannot be interrupted.
- *
- * @retval 0 if no device is busy
- * @retval -EBUSY if any device is busy
- */
-int device_any_busy_check(void);
-
-/**
- * @brief Check if a specific device is in the middle of a transaction
- *
- * Called by an application to see if a particular device is in the
- * middle of a critical transaction that cannot be interrupted.
- *
- * @param chk_dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 if the device is not busy
- * @retval -EBUSY if the device is busy
- */
-int device_busy_check(const struct device *chk_dev);
-
-#endif
-
-/**
  * @}
  */
 

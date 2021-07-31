@@ -62,7 +62,8 @@
 
 extern enum bst_result_t bst_result;
 
-static uint8_t const own_addr[] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5};
+static uint8_t const own_addr[]  = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5};
+static uint8_t const peer_addr[] = {0xc6, 0xc7, 0xc8, 0xc9, 0xc1, 0xcb};
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
@@ -97,8 +98,10 @@ static uint8_t per_adv_data3[] = {
 		0xFF, 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF,
 	};
 
-static bool volatile is_connected, is_disconnected;
+static bool volatile is_scanned, is_connected, is_disconnected;
 static bool volatile connection_to_test;
+static uint8_t adv_data_expected_len;
+static uint8_t *adv_data_expected;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -207,7 +210,93 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	printk("AD Data set...");
+	handle = 0U;
+	err = ll_adv_data_set(handle, sizeof(adv_data), adv_data);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Directed advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Connectable advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, ADV_INTERVAL, BT_HCI_ADV_NONCONN_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	k_sleep(K_MSEC(100));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Directed advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("AD Data set...");
+	handle = 0U;
+	err = ll_adv_data_set(handle, sizeof(adv_data1), adv_data1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Connectable advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, ADV_INTERVAL, BT_HCI_ADV_NONCONN_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	is_connected = false;
 	is_disconnected = false;
@@ -823,6 +912,18 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		} else {
 			bt_conn_unref(conn);
 		}
+	} else if (!is_scanned) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		printk("Device found: %s, type: %u, AD len: %u, RSSI %d\n",
+			addr_str, adv_type, buf->len, rssi);
+
+		if ((buf->len == adv_data_expected_len) &&
+		    !memcmp(buf->data, adv_data_expected,
+			    adv_data_expected_len)) {
+			is_scanned = true;
+		}
 	}
 }
 
@@ -1031,6 +1132,39 @@ static void test_scanx_main(void)
 
 	is_connected = false;
 	is_disconnected = false;
+	connection_to_test = false;
+
+	printk("Start scanning...");
+	adv_data_expected = adv_data;
+	adv_data_expected_len = sizeof(adv_data);
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for advertising report, switch back from directed...");
+	while (!is_scanned) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for advertising report, data update while directed...");
+	adv_data_expected = adv_data1;
+	adv_data_expected_len = sizeof(adv_data1);
+	is_scanned = false;
+	while (!is_scanned) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	connection_to_test = true;
 
 	printk("Start scanning...");

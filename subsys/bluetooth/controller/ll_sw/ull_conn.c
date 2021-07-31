@@ -4029,6 +4029,17 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		struct node_tx *tx;
 
+		/* Delay until all pending Tx in LLL is acknowledged,
+		 * conn->llcp_phy.pause_tx is true, new Tx PDUs will not be
+		 * enqueued until we proceed to initiate PHY update.
+		 * This is required to ensure PDU with instant can be
+		 * transmitted before instant expires.
+		 */
+		if (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail,
+			      NULL)) {
+			return;
+		}
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		rx = ll_pdu_rx_alloc_peek(2);
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
@@ -5463,6 +5474,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 {
 	struct pdu_data_llctrl_phy_upd_ind *ind = &pdu_rx->llctrl.phy_upd_ind;
 	uint16_t instant;
+	uint8_t phy;
 
 	/* Both tx and rx PHY unchanged */
 	if (!((ind->m_to_s_phy | ind->s_to_m_phy) & 0x07)) {
@@ -5502,6 +5514,22 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		p->rx = conn->lll.phy_rx;
 
 		return 0;
+	}
+
+	/* Fail on multiple PHY specified */
+	phy = ind->m_to_s_phy;
+	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+	phy = ind->s_to_m_phy;
+	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
+		/* Mark for buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		return BT_HCI_ERR_INVALID_LL_PARAM;
 	}
 
 	/* instant passed */

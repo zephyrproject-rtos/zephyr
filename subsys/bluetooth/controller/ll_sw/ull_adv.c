@@ -213,6 +213,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	struct ll_adv_set *adv;
+	uint8_t pdu_type_prev;
 	struct pdu_adv *pdu;
 
 	adv = is_disabled_get(handle);
@@ -225,7 +226,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	 * evt_prop bits.
 	 */
 
-	/* extended adv param set */
+	/* Extended adv param set command used */
 	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
 		if (evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) {
@@ -299,8 +300,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->lll.scan_req_notify = sreq;
 #endif
 
-	/* update the "current" primary adv data */
+	/* update the "current" primary adv PDU */
 	pdu = lll_adv_data_peek(&adv->lll);
+	pdu_type_prev = pdu->type;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (is_new_set) {
 		is_pdu_type_changed = 1;
@@ -352,16 +354,12 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		}
 
 		pdu->type = pdu_adv_type[adv_type];
-
-		if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-			/* TODO: Copy AD data from legacy PDU into auxiliary
-			 * PDU.
-			 */
-		}
 	}
+
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	pdu->type = pdu_adv_type[adv_type];
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 	pdu->rfu = 0;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2) &&
@@ -371,6 +369,30 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	} else {
 		pdu->chan_sel = 0;
 	}
+
+#if defined(CONFIG_BT_CTLR_AD_DATA_BACKUP)
+	/* Backup the legacy AD Data if switching to legacy directed advertising
+	 * or to Extended Advertising.
+	 */
+	if (((pdu->type == PDU_ADV_TYPE_DIRECT_IND) ||
+	     (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	      (pdu->type == PDU_ADV_TYPE_EXT_IND))) &&
+	    (pdu_type_prev != PDU_ADV_TYPE_DIRECT_IND) &&
+	    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
+	     (pdu_type_prev != PDU_ADV_TYPE_EXT_IND))) {
+		if (pdu->len == 0U) {
+			adv->ad_data_backup.len = 0U;
+		} else {
+			LL_ASSERT(pdu->len >=
+				  offsetof(struct pdu_adv_adv_ind, data));
+
+			adv->ad_data_backup.len = pdu->len -
+				offsetof(struct pdu_adv_adv_ind, data);
+			memcpy(adv->ad_data_backup.data, pdu->adv_ind.data,
+			       adv->ad_data_backup.len);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_AD_DATA_BACKUP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	adv->own_addr_type = own_addr_type;
@@ -584,6 +606,22 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		pdu->rx_addr = 0;
 		pdu->len = BDADDR_SIZE;
 	} else {
+
+#if defined(CONFIG_BT_CTLR_AD_DATA_BACKUP)
+		if (((pdu_type_prev == PDU_ADV_TYPE_DIRECT_IND) ||
+		     (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+		      (pdu_type_prev == PDU_ADV_TYPE_EXT_IND))) &&
+		    (pdu->type != PDU_ADV_TYPE_DIRECT_IND) &&
+		    (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
+		     (pdu->type != PDU_ADV_TYPE_EXT_IND))) {
+			/* Restore the legacy AD Data */
+			memcpy(pdu->adv_ind.data, adv->ad_data_backup.data,
+			       adv->ad_data_backup.len);
+			pdu->len = offsetof(struct pdu_adv_adv_ind, data) +
+				   adv->ad_data_backup.len;
+		}
+#endif /* CONFIG_BT_CTLR_AD_DATA_BACKUP */
+
 		pdu->tx_addr = own_addr_type & 0x1;
 		pdu->rx_addr = 0;
 	}
@@ -1561,17 +1599,26 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 	struct pdu_adv *pdu;
 	uint8_t idx;
 
-	/* Dont update data if directed */
-	prev = lll_adv_data_peek(&adv->lll);
-	if (prev->type == PDU_ADV_TYPE_DIRECT_IND) {
-		/* TODO: remember data, to be used if type is changed using
-		 * parameter set function ll_adv_params_set afterwards.
-		 */
-		return 0;
-	}
-
+	/* Check invalid AD Data length */
 	if (len > PDU_AC_DATA_SIZE_MAX) {
 		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	prev = lll_adv_data_peek(&adv->lll);
+
+	/* Dont update data if directed, back it up */
+	if ((prev->type == PDU_ADV_TYPE_DIRECT_IND) ||
+	    (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	     (prev->type == PDU_ADV_TYPE_EXT_IND))) {
+#if defined(CONFIG_BT_CTLR_AD_DATA_BACKUP)
+		/* Update the backup AD Data */
+		adv->ad_data_backup.len = len;
+		memcpy(adv->ad_data_backup.data, data, adv->ad_data_backup.len);
+		return 0;
+
+#else /* !CONFIG_BT_CTLR_AD_DATA_BACKUP */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+#endif /* !CONFIG_BT_CTLR_AD_DATA_BACKUP */
 	}
 
 	/* update adv pdu fields. */

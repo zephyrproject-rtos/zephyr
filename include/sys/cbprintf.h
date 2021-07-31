@@ -63,6 +63,20 @@ extern "C" {
 		sizeof(long double) : MAX(sizeof(double), sizeof(long long)))
 #endif
 
+/**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
+ * @{
+ */
+
+/** @brief Append indexes of read-only string arguments in the package.
+ *
+ * When used, package contains locations of read-only string arguments. Package
+ * with that information can be converted to fully self-contain package using
+ * @ref cbprintf_fsc_package.
+ */
+#define CBPRINTF_PACKAGE_ADD_STRING_IDXS BIT(0)
+
+/**@} */
+
 /** @brief Signature for a cbprintf callback function.
  *
  * This function expects two parameters:
@@ -98,7 +112,7 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @retval 1 if string must be packaged in run time.
  * @retval 0 string can be statically packaged.
  */
-#define CBPRINTF_MUST_RUNTIME_PACKAGE(skip, .../* fmt, ... */) \
+#define CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ... /* fmt, ... */) \
 	Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, __VA_ARGS__)
 
 /** @brief Statically package string.
@@ -126,12 +140,14 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * that @p packaged is aligned to CBPRINTF_PACKAGE_ALIGNMENT so it must be
  * multiply of CBPRINTF_PACKAGE_ALIGNMENT or 0.
  *
+ * @param flags option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param ... formatted string with arguments. Format string must be constant.
  */
-#define CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+#define CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
 				... /* fmt, ... */) \
 	Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, \
-				  align_offset, __VA_ARGS__)
+				  align_offset, flags, __VA_ARGS__)
 
 /** @brief Capture state required to output formatted data later.
  *
@@ -158,6 +174,8 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * so it must be multiply of CBPRINTF_PACKAGE_ALIGNMENT or 0 when @p packaged is
  * null.
  *
+ * @param flags option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
@@ -171,9 +189,10 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */
-__printf_like(3, 4)
+__printf_like(4, 5)
 int cbprintf_package(void *packaged,
 		     size_t len,
+		     uint32_t flags,
 		     const char *format,
 		     ...);
 
@@ -197,6 +216,8 @@ int cbprintf_package(void *packaged,
  * @param len this must be set to the number of bytes available at @p packaged.
  * Ignored if @p packaged is NULL.
  *
+ * @param flags option flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
@@ -211,8 +232,40 @@ int cbprintf_package(void *packaged,
  */
 int cbvprintf_package(void *packaged,
 		      size_t len,
+		      uint32_t flags,
 		      const char *format,
 		      va_list ap);
+
+/** @brief Convert package to fully self-contained (fsc) package.
+ *
+ * By default, package does not contain read only strings. However, if needed
+ * it may be converted to a fully self-contained package which contains all
+ * strings. In order to allow such conversion, original package must be created
+ * with @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS flag. Such package will contain
+ * necessary data to find read only strings in the package and copy them into
+ * package body.
+ *
+ * @param in_packaged pointer to original package created with
+ * @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS.
+ *
+ * @param in_len @p in_packaged length.
+ *
+ * @param packaged pointer to location where fully self-contained version of the
+ * input package will be written. Pass a null pointer to calculate space required.
+ *
+ * @param len must be set to the number of bytes available at @p packaged. Not
+ * used if @p packaged is null.
+ *
+ * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * This will not exceed @p len. If @p packaged is null, calculated length.
+ * @retval -ENOSPC if @p packaged was not null and the space required to store
+ * exceed @p len.
+ * @retval -EINVAL if @p in_packaged is null.
+ */
+int cbprintf_fsc_package(void *in_packaged,
+			 size_t in_len,
+			 void *packaged,
+			 size_t len);
 
 /** @brief Generate the output for a previously captured format
  * operation.

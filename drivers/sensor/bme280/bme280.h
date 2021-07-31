@@ -63,6 +63,7 @@ extern const struct bme280_bus_io bme280_bus_io_i2c;
 #define BME280_REG_CTRL_MEAS            0xF4
 #define BME280_REG_CTRL_HUM             0xF2
 #define BME280_REG_STATUS               0xF3
+#define BME280_REG_RESET                0xE0
 
 #define BMP280_CHIP_ID_SAMPLE_1         0x56
 #define BMP280_CHIP_ID_SAMPLE_2         0x57
@@ -72,6 +73,9 @@ extern const struct bme280_bus_io bme280_bus_io_i2c;
 #define BME280_MODE_FORCED              0x01
 #define BME280_MODE_NORMAL              0x03
 #define BME280_SPI_3W_DISABLE           0x00
+#define BME280_CMD_SOFT_RESET           0xB6
+#define BME280_STATUS_MEASURING         0x08
+#define BME280_STATUS_IM_UPDATE         0x01
 
 #if defined CONFIG_BME280_MODE_NORMAL
 #define BME280_MODE BME280_MODE_NORMAL
@@ -153,7 +157,7 @@ extern const struct bme280_bus_io bme280_bus_io_i2c;
 					 BME280_SPI_3W_DISABLE)
 
 
-#define BME280_CTRL_MEAS_OFF_VAL		(BME280_PRESS_OVER | \
+#define BME280_CTRL_MEAS_OFF_VAL	(BME280_PRESS_OVER | \
 					 BME280_TEMP_OVER |  \
 					 BME280_MODE_SLEEP)
 

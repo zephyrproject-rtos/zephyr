@@ -230,13 +230,19 @@ static void host_kbc_ibf_isr(void *arg)
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		ESPI_PERIPHERAL_8042_KBC, ESPI_PERIPHERAL_NODATA
 	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
 
+	/* KBC Input Buffer Full event */
+	kbc_evt->evt = HOST_KBC_EVT_IBF;
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = inst_kbc->HIKMDI;
 	/*
-	 * The high byte contains information from the host, and the lower byte
-	 * indicates if the host sent a command or data. 1 = Command.
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
 	 */
-	evt.evt_data = NPCX_8042_EVT_DATA(NPCX_8042_EVT_IBF, inst_kbc->HIKMDI,
-			IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_A2));
+	kbc_evt->type = IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_A2);
 
 	LOG_DBG("%s: kbc data 0x%02x", __func__, evt.evt_data);
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
@@ -250,6 +256,8 @@ static void host_kbc_obe_isr(void *arg)
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		ESPI_PERIPHERAL_8042_KBC, ESPI_PERIPHERAL_NODATA
 	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
 
 	/* Disable KBC OBE interrupt first */
 	inst_kbc->HICTRL &= ~BIT(NPCX_HICTRL_OBECIE);
@@ -261,7 +269,10 @@ static void host_kbc_obe_isr(void *arg)
 	 * might need to clear status register via espi_api_lpc_write_request()
 	 * with E8042_CLEAR_FLAG opcode in callback.
 	 */
-	evt.evt_data = NPCX_8042_EVT_DATA(NPCX_8042_EVT_OBE, 0, 0);
+	kbc_evt->evt = HOST_KBC_EVT_OBE;
+	kbc_evt->data = 0;
+	kbc_evt->type = 0;
+
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
 							evt);
 }
@@ -301,16 +312,19 @@ static void host_acpi_process_input_data(uint8_t data)
 		.evt_details = ESPI_PERIPHERAL_HOST_IO,
 		.evt_data = ESPI_PERIPHERAL_NODATA
 	};
+	struct espi_evt_data_acpi *acpi_evt =
+				(struct espi_evt_data_acpi *)&evt.evt_data;
 
 	LOG_DBG("%s: acpi data 0x%02x", __func__, data);
 
 	/*
-	 * The high byte contains information from the host, and the lower byte
-	 * indicates if the host sent a command or data. 1 = Command.
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
 	 */
-	evt.evt_data = (data << NPCX_ACPI_DATA_POS) |
-		       (IS_BIT_SET(inst_acpi->HIPMST, NPCX_HIPMST_CMD) <<
-				       NPCX_ACPI_TYPE_POS);
+	acpi_evt->type = IS_BIT_SET(inst_acpi->HIPMST, NPCX_HIPMST_CMD);
+	acpi_evt->data = data;
+
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
 							evt);
 }

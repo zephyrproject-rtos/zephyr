@@ -149,6 +149,7 @@
 /boards/shields/esp_8266/                 @nandojve
 /boards/shields/inventek_eswifi/          @nandojve
 /boards/x86/                              @dcpleung @nashif @jenmwms @aasthagr
+/boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
@@ -219,6 +220,7 @@
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
 /drivers/flash/                           @nashif @nvlsianpu
+/drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn
@@ -227,7 +229,6 @@
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
 /drivers/gpio/*rcar*                      @julien-massot
 /drivers/hwinfo/                          @alexanderwachter
-/drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_ite_it8xxx2.c            @GTLin08
@@ -239,6 +240,8 @@
 /drivers/i2c/i2c_test.c                   @mbolivar-nordic
 /drivers/i2c/*rcar*                       @aaillet
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
+/drivers/i2s/i2s_ll_stm32*                @avisconti
+/drivers/i2s/*nrfx*                       @anangl
 /drivers/ieee802154/                      @rlubos @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
@@ -399,6 +402,7 @@
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
+/dts/xtensa/espressif/                    @glaubermaroto
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
