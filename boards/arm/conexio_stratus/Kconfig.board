@@ -1,0 +1,14 @@
+# Conexio Stratus configuration
+
+# Copyright (c) 2022 Conexio Technologies, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_CONEXIO_STRATUS
+	bool "Conexio Stratus"
+
+config BOARD_CONEXIO_STRATUS_NS
+	bool "Conexio Stratus non-secure"
+
+endif # SOC_NRF9160_SICA

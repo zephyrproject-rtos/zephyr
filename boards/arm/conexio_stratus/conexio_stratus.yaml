@@ -1,0 +1,17 @@
+identifier: conexio_stratus
+name: Conexio-Stratus
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter

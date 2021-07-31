@@ -1,0 +1,243 @@
+/*
+ * Copyright (c) 2022 Conexio Technologies, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "conexio_stratus_common-pinctrl.dtsi"
+
+/ {
+	model = "Conexio Stratus";
+	compatible = "conexio,stratus";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Mode Button";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &blue_led; /* For user programmable purpose */
+		bootloader-led0 = &blue_led; /* For MCUBoot */
+		pwm-led0 = &pwm_led0;
+		sw0 = &button0; /* For user button */
+	};
+
+	/* Used for accessing other pins */
+	stratus_header: connector {
+		compatible = "conexio-stratus-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 13 0>,  /* A0 */
+				<1 0 &gpio0 14 0>,   /* A1 */
+				<2 0 &gpio0 15 0>,   /* A2 */
+				<3 0 &gpio0 16 0>,   /* A3 */
+				<4 0 &gpio0 17 0>,   /* A4 */
+				<5 0 &gpio0 18 0>,   /* A5 */
+				<6 0 &gpio0 19 0>,   /* SCK */
+				<7 0 &gpio0 21 0>,   /* MOSI */
+				<8 0 &gpio0 22 0>,   /* MISO */
+				<9 0 &gpio0 23 0>,   /* RX */
+				<10 0 &gpio0 24 0>,  /* TX */
+				<11 0 &gpio0 31 0>,  /* 31 */
+				<12 0 &gpio0 10 0>,  /* D12 */
+				<13 0 &gpio0 9 0>,   /* D11 */
+				<14 0 &gpio0 8 0>,   /* D10 */
+				<15 0 &gpio0 7 0>,   /* D9 */
+				<16 0 &gpio0 26 0>,  /* SDA */
+				<17 0 &gpio0 27 0>,  /* SCL */
+				<18 0 &gpio0 29 0>,  /* 2 */
+				<19 0 &gpio0 30 0>,  /* 3 */
+				<20 0 &gpio0 0 0>,   /* 4 */
+				<21 0 &gpio0 1 0>,   /* 5 */
+				<22 0 &gpio0 2 0>,   /* 6 */
+				<23 0 &gpio0 3 0>,   /* 7 */
+				<24 0 &gpio0 4 0>,   /* 8 */
+				/* 25 VCC 5V */
+				<26 0 &gpio0 28 0>;  /* 28 */
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 7>;
+		output-ohms = <100000>;
+		full-ohms = <(100000 + 100000)>;
+		power-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+	};
+
+	sensor-pwr-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "sensor-pwr-ctrl";
+		regulator-name = "sensor-pwr-ctrl";
+		enable-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	lis2dh@18 {
+		compatible = "st,lis2dh";
+		label = "LIS2DH";
+		reg = <0x18>;
+		irq-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		disconnect-sdo-sa0-pull-up;
+	};
+
+	sht4x@44 {
+		compatible = "sensirion,sht4x";
+		label = "SHT4X";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@40000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@b0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_bsd: image_bsd@20010000 {
+			/* BSD (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "conexio_stratus_partition_conf.dts"
+

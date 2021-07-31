@@ -1,0 +1,17 @@
+identifier: conexio_stratus_ns
+name: Conexio-Stratus-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
