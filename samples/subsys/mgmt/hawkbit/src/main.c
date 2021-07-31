@@ -46,8 +46,6 @@ void main(void)
 #if defined(CONFIG_HAWKBIT_MANUAL)
 	LOG_INF("Starting Hawkbit manual mode");
 
-	enum hawkbit_response resp;
-
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		LOG_ERR("Image in unconfirmed. Rebooting to revert back to");
