@@ -46,6 +46,8 @@ int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx);
 
 int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx);
 
+int bt_gatt_ots_l2cap_disconnect(struct bt_gatt_ots_l2cap *l2cap_ctx);
+
 
 #ifdef __cplusplus
 }
