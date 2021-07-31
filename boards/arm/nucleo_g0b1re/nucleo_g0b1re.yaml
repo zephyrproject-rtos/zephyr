@@ -19,3 +19,4 @@ supported:
   - nvs
   - dma
   - usb_device
+  - lptim
