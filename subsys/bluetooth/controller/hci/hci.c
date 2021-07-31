@@ -5344,11 +5344,11 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct bt_hci_evt_le_per_advertising_report *sep;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
+	uint8_t cte_type = BT_HCI_LE_NO_CTE;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
 	uint8_t total_data_len = 0U;
 	uint8_t data_status = 0U;
-	uint8_t cte_type = 0U;
 	uint8_t data_len = 0U;
 	uint8_t *data = NULL;
 	uint8_t data_max_len;
