@@ -96,7 +96,7 @@ struct pm_device {
 	/** Device pm enable flag */
 	bool enable : 1;
 	/* Device PM status flags. */
-	ATOMIC_DEFINE(flags, PM_DEVICE_FLAG_COUNT);
+	atomic_t flags;
 	/** Device usage count */
 	uint32_t usage;
 	/** Device power state */
