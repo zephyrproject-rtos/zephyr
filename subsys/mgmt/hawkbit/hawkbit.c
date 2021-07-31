@@ -94,6 +94,8 @@ static union {
 
 static struct k_work_delayable hawkbit_work_handle;
 
+static struct k_sem probe_sem;
+
 static const struct json_obj_descr json_href_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_href, href, JSON_TOK_STRING),
 };
@@ -640,6 +642,8 @@ int hawkbit_init(void)
 		}
 	}
 
+	k_sem_init(&probe_sem, 1, 1);
+
 	return ret;
 }
 
@@ -1022,6 +1026,10 @@ enum hawkbit_response hawkbit_probe(void)
 	     deployment_base[DEPLOYMENT_BASE_SIZE] = { 0 },
 	     firmware_version[BOOT_IMG_VER_STRLEN_MAX] = { 0 };
 
+	if (k_sem_take(&probe_sem, K_NO_WAIT) != 0) {
+		return HAWKBIT_PROBE_IN_PROGRESS;
+	}
+
 	memset(&hb_context, 0, sizeof(hb_context));
 	hb_context.response_data = malloc(RESPONSE_BUFFER_SIZE);
 
@@ -1228,6 +1236,7 @@ cleanup:
 
 error:
 	free(hb_context.response_data);
+	k_sem_give(&probe_sem);
 	return hb_context.code_status;
 }
 
@@ -1266,6 +1275,10 @@ static void autohandler(struct k_work *work)
 
 	case HAWKBIT_METADATA_ERROR:
 		LOG_INF("Metadata error");
+		break;
+
+	case HAWKBIT_PROBE_IN_PROGRESS:
+		LOG_INF("Hawkbit is already running");
 		break;
 	}
 
