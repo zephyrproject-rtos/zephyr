@@ -3,6 +3,7 @@
  * Copyright (c) 2018 Open Source Foundries Limited
  * Copyright (c) 2018 Foundries.io
  * Copyright (c) 2020 Linumiz
+ * Copyright (c) 2021 G-Technologies Sdn. Bhd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +33,8 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #include "mgmt/hawkbit.h"
 #include "hawkbit_firmware.h"
 
+#include "mbedtls/md.h"
+
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
 #include <net/tls_credentials.h>
@@ -42,6 +45,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define CANCEL_BASE_SIZE 50
 #define RECV_BUFFER_SIZE 640
 #define URL_BUFFER_SIZE 300
+#define SHA256_HASH_SIZE 32
 #define STATUS_BUFFER_SIZE 200
 #define DOWNLOAD_HTTP_SIZE 200
 #define DEPLOYMENT_BASE_SIZE 50
@@ -67,6 +71,8 @@ struct hawkbit_download {
 	int download_progress;
 	size_t downloaded_size;
 	size_t http_content_size;
+	mbedtls_md_context_t hash_ctx;
+	uint8_t file_hash[SHA256_HASH_SIZE];
 };
 
 static struct hawkbit_context {
@@ -521,6 +527,12 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 	}
 
 	artifact = &chunk->artifacts[0];
+	if (hex2bin(artifact->hashes.sha256, SHA256_HASH_SIZE << 1,
+	    hb_context.dl.file_hash, sizeof(hb_context.dl.file_hash)) !=
+	    SHA256_HASH_SIZE) {
+		return -EINVAL;
+	}
+
 	size = artifact->size;
 
 	if (size > SLOT1_SIZE) {
@@ -814,6 +826,8 @@ static void response_cb(struct http_response *rsp,
 			ret = flash_img_buffered_write(
 				&hb_context.flash_ctx, body_data, body_len,
 				final_data == HTTP_DATA_FINAL);
+			mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
+					  body_len);
 			if (ret < 0) {
 				LOG_ERR("flash write error");
 				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
@@ -1020,6 +1034,8 @@ enum hawkbit_response hawkbit_probe(void)
 	int ret;
 	int32_t action_id;
 	int32_t file_size = 0;
+	uint8_t response_hash[SHA256_HASH_SIZE] = { 0 };
+	const mbedtls_md_info_t *hash_info;
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 },
 	     cancel_base[CANCEL_BASE_SIZE] = { 0 },
 	     download_http[DOWNLOAD_HTTP_SIZE] = { 0 },
@@ -1206,20 +1222,48 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
-	if (!send_request(HTTP_GET, HAWKBIT_DOWNLOAD,
-			  HAWKBIT_STATUS_FINISHED_NONE,
-			  HAWKBIT_STATUS_EXEC_NONE)) {
-		LOG_ERR("Send request failed");
-		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
+	hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+	if (!hash_info) {
+		LOG_ERR("Unable to request hash type from mbedTLS");
+		hb_context.code_status = HAWKBIT_METADATA_ERROR;
 		goto cleanup;
 	}
 
+	mbedtls_md_init(&hb_context.dl.hash_ctx);
+	if (mbedtls_md_setup(&hb_context.dl.hash_ctx, hash_info, 0) < 0) {
+		LOG_ERR("Can't setup mbedTLS hash engine");
+		mbedtls_md_free(&hb_context.dl.hash_ctx);
+		hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		goto free_md;
+	}
+
+	mbedtls_md_starts(&hb_context.dl.hash_ctx);
+
+	ret = (int)send_request(HTTP_GET, HAWKBIT_DOWNLOAD,
+			  HAWKBIT_STATUS_FINISHED_NONE,
+			  HAWKBIT_STATUS_EXEC_NONE);
+
+	mbedtls_md_finish(&hb_context.dl.hash_ctx, response_hash);
+
+	if (!ret) {
+		LOG_ERR("Send request failed");
+		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
+		goto free_md;
+	}
+
 	if (hb_context.code_status == HAWKBIT_DOWNLOAD_ERROR) {
-		goto cleanup;
+		goto free_md;
 	}
 
 	if (!hb_context.final_data_received) {
 		LOG_ERR("Download is not complete");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+	} else if (memcmp(response_hash, hb_context.dl.file_hash,
+			  mbedtls_md_get_size(hash_info)) != 0) {
+		LOG_ERR("Hash mismatch");
+		LOG_HEXDUMP_DBG(response_hash, sizeof(response_hash), "resp");
+		LOG_HEXDUMP_DBG(hb_context.dl.file_hash,
+				sizeof(hb_context.dl.file_hash), "file");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 	} else if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
 		LOG_ERR("Failed to mark the image in slot 1 as pending");
@@ -1230,6 +1274,9 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	hb_context.dl.http_content_size = 0;
+
+free_md:
+	mbedtls_md_free(&hb_context.dl.hash_ctx);
 
 cleanup:
 	cleanup_connection();
