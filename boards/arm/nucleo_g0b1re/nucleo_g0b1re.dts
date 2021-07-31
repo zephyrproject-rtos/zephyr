@@ -65,6 +65,11 @@
 	apb1-prescaler = <1>;
 };
 
+&usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;
