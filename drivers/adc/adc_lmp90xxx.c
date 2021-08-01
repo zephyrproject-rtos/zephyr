@@ -107,8 +107,7 @@ LOG_MODULE_REGISTER(adc_lmp90xxx);
 #define LMP90XXX_HAS_DRDYB(config) (config->drdyb.port != NULL)
 
 struct lmp90xxx_config {
-	const struct device *spi_dev;
-	struct spi_config spi_cfg;
+	struct spi_dt_spec bus;
 	struct gpio_dt_spec drdyb;
 	uint8_t rtd_current;
 	uint8_t resolution;
@@ -224,7 +223,7 @@ static int lmp90xxx_read_reg(const struct device *dev, uint8_t addr,
 	rx.buffers = rx_buf;
 	rx.count = 2;
 
-	err = spi_transceive(config->spi_dev, &config->spi_cfg, &tx, &rx);
+	err = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -290,7 +289,7 @@ static int lmp90xxx_write_reg(const struct device *dev, uint8_t addr,
 	tx.buffers = tx_buf;
 	tx.count = i;
 
-	err = spi_write(config->spi_dev, &config->spi_cfg, &tx);
+	err = spi_write_dt(&config->bus, &tx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -942,18 +941,9 @@ static int lmp90xxx_init(const struct device *dev)
 	/* Force INST1 + UAB on first access */
 	data->ura = LMP90XXX_INVALID_URA;
 
-	if (!device_is_ready(config->spi_dev)) {
-		LOG_ERR("SPI master device '%s' not ready",
-			config->spi_dev->name);
-		return -EINVAL;
-	}
-
-	if (config->spi_cfg.cs) {
-		if (!device_is_ready(config->spi_cfg.cs->gpio_dev)) {
-			LOG_ERR("SPI CS GPIO device '%s' not ready",
-				config->spi_cfg.cs->gpio_dev->name);
-			return -EINVAL;
-		}
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		return -ENODEV;
 	}
 
 	err = lmp90xxx_soft_reset(dev);
@@ -1071,10 +1061,8 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx), \
 	}; \
 	static const struct lmp90xxx_config lmp##t##_config_##n = { \
-		.spi_dev = DEVICE_DT_GET(DT_BUS(DT_INST_LMP90XXX(n, t))), \
-		.spi_cfg = SPI_CONFIG_DT(DT_INST_LMP90XXX(n, t), \
-					SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-					SPI_WORD_SET(8), 0), \
+		.bus = SPI_DT_SPEC_GET(DT_INST_LMP90XXX(n, t), SPI_OP_MODE_MASTER | \
+			SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0), \
 		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}), \
 		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
 			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)), \
