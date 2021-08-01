@@ -703,6 +703,22 @@ static inline int z_impl_spi_release(const struct device *dev,
 	return api->release(dev, config);
 }
 
+/**
+ * @brief Release the SPI device specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_release(spec->bus, &spec->config);
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @return a value from spi_release().
+ */
+static inline int spi_release_dt(const struct spi_dt_spec *spec)
+{
+	return spi_release(spec->bus, &spec->config);
+}
+
 #ifdef __cplusplus
 }
 #endif
