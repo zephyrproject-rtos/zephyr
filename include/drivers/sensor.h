@@ -222,8 +222,8 @@ enum sensor_trigger_type {
 	/**
 	 * Trigger fires when channel reading transitions configured
 	 * thresholds.  The thresholds are configured via the @ref
-	 * SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
-	 * attributes.
+	 * SENSOR_ATTR_LOWER_THRESH, @ref SENSOR_ATTR_UPPER_THRESH, and
+	 * @ref SENSOR_ATTR_HYSTERESIS attributes.
 	 */
 	SENSOR_TRIG_THRESHOLD,
 
@@ -283,6 +283,8 @@ enum sensor_attribute {
 	 * outside the threshold for the trigger to fire.
 	 */
 	SENSOR_ATTR_SLOPE_DUR,
+	/* Hysteresis for trigger thresholds. */
+	SENSOR_ATTR_HYSTERESIS,
 	/** Oversampling factor */
 	SENSOR_ATTR_OVERSAMPLING,
 	/** Sensor range, in SI units. */
