@@ -124,22 +124,28 @@ extern "C" {
  * This can be used to control a CS line via a GPIO line, instead of
  * using the controller inner CS logic.
  *
- * @param gpio_dev is a valid pointer to an actual GPIO device. A NULL pointer
- *        can be provided to full inhibit CS control if necessary.
- * @param gpio_pin is a number representing the gpio PIN that will be used
- *    to act as a CS line
- * @param delay is a delay in microseconds to wait before starting the
- *    transmission and before releasing the CS line
- * @param gpio_dt_flags is the devicetree flags corresponding to how the CS
- *    line should be driven. GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
- *    equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
- *    spi_config.
  */
 struct spi_cs_control {
-	const struct device	*gpio_dev;
-	uint32_t		delay;
-	gpio_pin_t		gpio_pin;
-	gpio_dt_flags_t		gpio_dt_flags;
+	/**
+	 * GPIO devicetree specification of CS GPIO.
+	 * The device pointer can be set to NULL to fully inhibit CS control if
+	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
+	 * spi_config.
+	 */
+	union {
+		struct gpio_dt_spec gpio;
+		struct {
+			const struct device *gpio_dev;
+			gpio_pin_t gpio_pin;
+			gpio_dt_flags_t gpio_dt_flags;
+		};
+	};
+	/**
+	 * Delay in microseconds to wait before starting the
+	 * transmission and before releasing the CS line.
+	 */
+	uint32_t delay;
 };
 
 #ifndef __cplusplus
