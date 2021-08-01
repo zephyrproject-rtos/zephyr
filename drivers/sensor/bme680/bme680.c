@@ -24,19 +24,19 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bme680_reg_read(struct bme680_data *data, uint8_t start, uint8_t *buf,
-			   int size)
+static int bme680_reg_read(const struct device *dev, uint8_t start,
+			   uint8_t *buf, int size)
 {
-	return i2c_burst_read(data->i2c_master, data->i2c_slave_addr, start,
-			      buf, size);
-	return 0;
+	const struct bme680_config *config = dev->config;
+
+	return i2c_burst_read_dt(&config->bus, start, buf, size);
 }
 
-static int bme680_reg_write(struct bme680_data *data, uint8_t reg, uint8_t val)
+static int bme680_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
-	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
-				  reg, val);
-	return 0;
+	const struct bme680_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->bus, reg, val);
 }
 
 static void bme680_calc_temp(struct bme680_data *data, uint32_t adc_temp)
@@ -201,7 +201,7 @@ static int bme680_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	ret = bme680_reg_read(data, BME680_REG_FIELD0, buff, size);
+	ret = bme680_reg_read(dev, BME680_REG_FIELD0, buff, size);
 	if (ret < 0) {
 		return ret;
 	}
@@ -225,7 +225,7 @@ static int bme680_sample_fetch(const struct device *dev,
 	}
 
 	/* Trigger the next measurement */
-	ret = bme680_reg_write(data, BME680_REG_CTRL_MEAS,
+	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
 			       BME680_CTRL_MEAS_VAL);
 	if (ret < 0) {
 		return ret;
@@ -280,23 +280,24 @@ static int bme680_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bme680_read_compensation(struct bme680_data *data)
+static int bme680_read_compensation(const struct device *dev)
 {
+	struct bme680_data *data = dev->data;
 	uint8_t buff[BME680_LEN_COEFF_ALL];
 	int err = 0;
 
-	err = bme680_reg_read(data, BME680_REG_COEFF1, buff, BME680_LEN_COEFF1);
+	err = bme680_reg_read(dev, BME680_REG_COEFF1, buff, BME680_LEN_COEFF1);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_read(data, BME680_REG_COEFF2, &buff[BME680_LEN_COEFF1],
+	err = bme680_reg_read(dev, BME680_REG_COEFF2, &buff[BME680_LEN_COEFF1],
 			      16);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_read(data, BME680_REG_COEFF3,
+	err = bme680_reg_read(dev, BME680_REG_COEFF3,
 			      &buff[BME680_LEN_COEFF1 + BME680_LEN_COEFF2],
 			      BME680_LEN_COEFF3);
 	if (err < 0) {
@@ -346,7 +347,7 @@ static int bme680_chip_init(const struct device *dev)
 	struct bme680_data *data = (struct bme680_data *)dev->data;
 	int err;
 
-	err = bme680_reg_read(data, BME680_REG_CHIP_ID, &data->chip_id, 1);
+	err = bme680_reg_read(dev, BME680_REG_CHIP_ID, &data->chip_id, 1);
 	if (err < 0) {
 		return err;
 	}
@@ -358,40 +359,40 @@ static int bme680_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	err = bme680_read_compensation(data);
+	err = bme680_read_compensation(dev);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_CTRL_HUM, BME680_HUMIDITY_OVER);
+	err = bme680_reg_write(dev, BME680_REG_CTRL_HUM, BME680_HUMIDITY_OVER);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_CONFIG, BME680_CONFIG_VAL);
+	err = bme680_reg_write(dev, BME680_REG_CONFIG, BME680_CONFIG_VAL);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_CTRL_GAS_1,
+	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1,
 			       BME680_CTRL_GAS_1_VAL);
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_RES_HEAT0,
+	err = bme680_reg_write(dev, BME680_REG_RES_HEAT0,
 			       bme680_calc_res_heat(data, BME680_HEATR_TEMP));
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_GAS_WAIT0,
+	err = bme680_reg_write(dev, BME680_REG_GAS_WAIT0,
 			       bme680_calc_gas_wait(BME680_HEATR_DUR_MS));
 	if (err < 0) {
 		return err;
 	}
 
-	err = bme680_reg_write(data, BME680_REG_CTRL_MEAS,
+	err = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
 			       BME680_CTRL_MEAS_VAL);
 	if (err < 0) {
 		return err;
@@ -402,17 +403,12 @@ static int bme680_chip_init(const struct device *dev)
 
 static int bme680_init(const struct device *dev)
 {
-	struct bme680_data *data = dev->data;
+	const struct bme680_config *config = dev->config;
 
-	data->i2c_master = device_get_binding(
-		DT_INST_BUS_LABEL(0));
-	if (!data->i2c_master) {
-		LOG_ERR("I2C master not found: %s",
-			    DT_INST_BUS_LABEL(0));
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C master %s not ready", config->bus.bus->name);
 		return -EINVAL;
 	}
-
-	data->i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 	if (bme680_chip_init(dev) < 0) {
 		return -EINVAL;
@@ -428,6 +424,10 @@ static const struct sensor_driver_api bme680_api_funcs = {
 
 static struct bme680_data bme680_data;
 
+static const struct bme680_config bme680_config = {
+	.bus = I2C_DT_SPEC_INST_GET(0)
+};
+
 DEVICE_DT_INST_DEFINE(0, bme680_init, NULL, &bme680_data,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &bme680_api_funcs);
+		      &bme680_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		      &bme680_api_funcs);
