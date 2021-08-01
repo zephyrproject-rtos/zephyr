@@ -43,6 +43,11 @@ Deprecated in this release
 * The TinyCBOR module has been deprecated in favor of the new zcbor CBOR
   library, included with Zephyr in this release.
 
+* SPI
+
+  * Deprecated the `gpio_dev`, `gpio_pin` and `gpio_dt_flags` members from
+    spi_cs_control struct in favor of `gpio_dt_spec` gpio.
+
 Stable API changes in this release
 ==================================
 

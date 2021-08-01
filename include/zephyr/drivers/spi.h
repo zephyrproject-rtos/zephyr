@@ -152,9 +152,9 @@ struct spi_cs_control {
 	union {
 		struct gpio_dt_spec gpio;
 		struct {
-			const struct device *gpio_dev;
-			gpio_pin_t gpio_pin;
-			gpio_dt_flags_t gpio_dt_flags;
+			const struct device *gpio_dev __deprecated;
+			gpio_pin_t gpio_pin __deprecated;
+			gpio_dt_flags_t gpio_dt_flags __deprecated;
 		};
 	};
 	/**
