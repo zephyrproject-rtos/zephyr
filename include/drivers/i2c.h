@@ -58,6 +58,45 @@ extern "C" {
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			BIT(4)
 
+/**
+ * @brief Complete I2C DT information
+ *
+ * @param bus is the I2C bus
+ * @param addr is the slave address
+ */
+struct i2c_dt_spec {
+	const struct device *bus;
+	uint16_t addr;
+};
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET(node_id)		     \
+	{							     \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
+		.addr = DT_REG_ADDR(node_id) \
+	}
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>I2C_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ */
+#define I2C_DT_SPEC_INST_GET(inst) \
+	I2C_DT_SPEC_GET(DT_DRV_INST(inst))
+
+
 /*
  * I2C_MSG_* are I2C Message flags.
  */
