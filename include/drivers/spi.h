@@ -193,13 +193,10 @@ struct spi_cs_control {
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)				\
-	(&(struct spi_cs_control) {						\
-		.gpio_dev = DEVICE_DT_GET(				\
-			DT_SPI_DEV_CS_GPIOS_CTLR(node_id)),		\
-		.delay = (delay_),					\
-		.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(node_id),		\
-		.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(node_id),	\
+#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
+	(&(struct spi_cs_control) {				  \
+		.gpio = DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(node_id), \
+		.delay = (delay_),				  \
 	})
 
 /**
@@ -439,7 +436,7 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 	}
 	/* Validate CS gpio port is ready, if it is used */
 	if (spec->config.cs &&
-	    !device_is_ready(spec->config.cs->gpio_dev)) {
+	    !device_is_ready(spec->config.cs->gpio.port)) {
 		return false;
 	}
 	return true;
