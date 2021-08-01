@@ -13,6 +13,7 @@ extern "C" {
 
 #include <zephyr/types.h>
 #include <sys/slist.h>
+#include <sys/types.h>
 
 #include <bluetooth/l2cap.h>
 
@@ -27,6 +28,10 @@ struct bt_gatt_ots_l2cap {
 	struct bt_l2cap_le_chan ot_chan;
 	struct bt_gatt_ots_l2cap_tx tx;
 	void (*tx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn);
+	ssize_t (*rx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			   struct bt_conn *conn, struct net_buf *buf);
+	void (*closed)(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn);
 };
 
