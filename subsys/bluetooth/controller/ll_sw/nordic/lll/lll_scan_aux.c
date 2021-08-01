@@ -119,8 +119,7 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 	uint32_t window_size_us;
 	struct node_rx_ftr *ftr;
 	uint32_t aux_offset_us;
-	uint32_t aux_start_us;
-	uint32_t radio_end_us;
+	uint32_t overhead_us;
 	uint8_t *pri_dptr;
 	uint8_t phy;
 
@@ -166,8 +165,6 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us = (uint32_t)aux_ptr->offs * window_size_us;
-	radio_end_us = radio_tmr_end_get() -
-		       radio_rx_chain_delay_get(pdu_phy, 1);
 
 	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
@@ -178,18 +175,25 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 
 	phy = BIT(aux_ptr->phy);
 
-	aux_start_us = radio_end_us;
-	aux_start_us -= PKT_AC_US(pdu->len, pdu_phy);
-	aux_start_us += aux_offset_us;
-	aux_start_us -= lll_radio_rx_ready_delay_get(phy, 1);
-	aux_start_us -= window_widening_us;
-	aux_start_us -= EVENT_JITTER_US;
+	/* Calculate the minimum overhead to decide if LLL or ULL scheduling
+	 * to be used for auxiliary PDU reception.
+	 */
+	overhead_us = PKT_AC_US(pdu->len, pdu_phy);
+	overhead_us += lll_radio_rx_ready_delay_get(phy, 1);
+	overhead_us += window_widening_us;
+	overhead_us += EVENT_JITTER_US;
+
+	/* Minimum prepare tick offset + minimum preempt tick offset are the
+	 * overheads before ULL scheduling can setup radio for reception
+	 */
+	overhead_us +=
+		HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1);
+
+	/* CPU execution overhead to setup the radio for reception */
+	overhead_us += EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US;
 
 	/* Sufficient offset to ULL schedule the auxiliary PDU scan? */
-	if ((aux_start_us < radio_end_us) ||
-	    ((aux_start_us - radio_end_us) >
-	     (HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN << 1) +
-	      EVENT_OVERHEAD_START_US))) {
+	if (aux_offset_us > overhead_us) {
 		return 0;
 	}
 
