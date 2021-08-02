@@ -842,10 +842,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		break;
 	case BT_CONN_DISCONNECTED:
-		if (conn->type == BT_CONN_TYPE_ISO) {
-			break;
-		}
-
 #if defined(CONFIG_BT_CONN)
 		if (conn->type == BT_CONN_TYPE_SCO) {
 			/* TODO: Notify sco disconnected */
@@ -922,7 +918,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 		break;
-#endif /* CONFIG_BT_CONN */
 	case BT_CONN_CONNECT_AUTO:
 		break;
 	case BT_CONN_CONNECT_ADV:
@@ -948,6 +943,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		break;
 	case BT_CONN_DISCONNECT:
 		break;
+#endif /* CONFIG_BT_CONN */
 	case BT_CONN_DISCONNECT_COMPLETE:
 		process_unack_tx(conn);
 		break;
