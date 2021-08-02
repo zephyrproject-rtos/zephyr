@@ -13,7 +13,6 @@
 #include <ctype.h>
 #include <zephyr.h>
 #include <shell/shell.h>
-#include <sys/printk.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
 
@@ -29,18 +28,19 @@
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u, seq: %d, ts: %d\n", chan, buf->len,
-			info->sn, info->ts);
+	shell_print(ctx_shell, "Incoming data channel %p len %u, seq: %d, ts: %d",
+		    chan, buf->len, info->sn, info->ts);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
-	printk("ISO Channel %p connected\n", chan);
+	shell_print(ctx_shell, "ISO Channel %p connected", chan);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	printk("ISO Channel %p disconnected with reason 0x%02x\n", chan, reason);
+	shell_print(ctx_shell, "ISO Channel %p disconnected with reason 0x%02x",
+		    chan, reason);
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -77,10 +77,10 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
 
 static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
 {
-	printk("Incoming conn %p\n", conn);
+	shell_print(ctx_shell, "Incoming conn %p", conn);
 
 	if (iso_chan.conn) {
-		printk("No channels available\n");
+		shell_print(ctx_shell, "No channels available");
 		return -ENOMEM;
 	}
 
