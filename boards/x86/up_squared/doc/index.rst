@@ -61,38 +61,6 @@ Use the following procedures for booting an image on a UP Squared board.
    :local:
    :backlinks: top
 
-Creating a GRUB2 Boot Loader Image from a Linux Host
-====================================================
-
-If you are having problems running an application using the preinstalled
-copy of GRUB, follow these steps to test on supported boards using a custom GRUB.
-
-#. Install the requirements to build GRUB on your host machine.
-
-   On Ubuntu, type:
-
-   .. code-block:: console
-
-      $ sudo apt-get install bison autoconf libopts25-dev flex automake \
-      pkg-config gettext autopoint
-
-   On Fedora, type:
-
-   .. code-block:: console
-
-      $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
-      automake texinfo gettext-devel
-
-#. Clone and build the GRUB repository using the script in Zephyr tree, type:
-
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE
-      $ ./boards/x86/common/scripts/build_grub.sh x86_64
-
-#. Find the binary at
-   :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub_x86_64.efi`.
-
 Build Zephyr application
 ========================
 
@@ -106,9 +74,8 @@ Build Zephyr application
 
    .. note::
 
-      A stripped project image file named :file:`zephyr.strip` is automatically
-      created in the build directory after the application is built. This image
-      has removed debug information from the :file:`zephyr.elf` file.
+      A Zephyr EFI image file named :file:`zephyr.efi` is automatically
+      created in the build directory after the application is built.
 
 Preparing the Boot Device
 =========================
@@ -140,33 +107,12 @@ a UP Squared board.
       the USB flash drive. Or else you may erase other storage devices
       on your system, and will render the system unusable afterwards.
 
-#. Create the following directories
-
-   :file:`efi`
-
-   :file:`efi/boot`
-
-   :file:`kernel`
-
-#. Copy the kernel file :file:`zephyr/zephyr.strip` to the :file:`$USB/kernel` folder.
-
-#. Copy your built version of GRUB to :file:`$USB/efi/boot/bootx64.efi`
-
-#. Create :file:`$USB/efi/boot/grub.cfg` containing the following:
-
-   .. code-block:: console
-
-      set default=0
-      set timeout=10
-
-      menuentry "Zephyr Kernel" {
-         multiboot /kernel/zephyr.strip
-      }
+#. Copy the Zephyr EFI image file :file:`zephyr/zephyr.efi` to the USB drive.
 
 Booting the UP Squared Board
 ============================
 
-Boot the UP Squared board from the boot device using GRUB2 via USB flash drive.
+Boot the UP Squared board to the EFI shell with USB flash drive connected.
 
 #. Insert the prepared boot device (USB flash drive) into the UP Squared board.
 
@@ -187,15 +133,13 @@ Boot the UP Squared board from the boot device using GRUB2 via USB flash drive.
       Press <DEL> or <ESC> to enter setup.
 
 #. From the menu that appears, select the menu entry that describes
-   that particular type of USB flash drive.
+   that particular EFI shell.
 
-   GRUB2 starts and a menu shows entries for the items you added
-   to the file :file:`grub.cfg`.
+#. From the EFI shell select Zephyr EFI image to boot.
 
-#. Select the image you want to boot and press :guilabel:`Enter`.
+   .. code-block:: console
 
-   When the boot process completes, you have finished booting the
-   Zephyr application image.
+      Shell> fs0:zephyr.efi
 
    .. note::
       You can safely ignore this message if it appears:
@@ -215,9 +159,6 @@ Build Zephyr image
 
 Prepare Linux host
 ------------------
-
-#. Follow `Creating a GRUB2 Boot Loader Image from a Linux Host`_ steps
-   to create grub binary.
 
 #. Install DHCP, TFTP servers. For example ``dnsmasq``
 
@@ -240,36 +181,17 @@ Prepare Linux host
       # tftp
       enable-tftp
       tftp-root=/srv/tftp
-      dhcp-boot=grub_x86_64.efi
+      dhcp-boot=zephyr.efi
 
-   ``grub_x86_64.efi`` is a grub binary created above.
+   ``zephyr.efi`` is a Zephyr EFI binary created above.
 
-#. Create the following directories inside TFTP root :file:`/srv/tftp`
-
-    .. code-block:: console
-
-       $ sudo mkdir -p /srv/tftp/EFI/BOOT
-       $ sudo mkdir -p /srv/tftp/kernel
-
-#. Copy the Zephyr image :file:`zephyr/zephyr.strip` to the
-   :file:`/srv/tftp/kernel` folder.
+#. Copy the Zephyr EFI image :file:`zephyr/zephyr.efi` to the
+   :file:`/srv/tftp` folder.
 
     .. code-block:: console
 
-       $ sudo cp zephyr/zephyr.strip /srv/tftp/kernel
+       $ sudo cp zephyr/zephyr.efi /srv/tftp
 
-#. Copy your built version of GRUB to :file:`/srv/tftp/grub_x86_64.efi`
-
-#. Create :file:`/srv/tftp/EFI/BOOT/grub.cfg` containing the following:
-
-   .. code-block:: console
-
-      set default=0
-      set timeout=10
-
-      menuentry "Zephyr Kernel" {
-         multiboot /kernel/zephyr.strip
-      }
 
 #. TFTP root should be looking like:
 
@@ -277,12 +199,7 @@ Prepare Linux host
 
       $ tree /srv/tftp
       /srv/tftp
-      ├── EFI
-      │   └── BOOT
-      │       └── grub.cfg
-      ├── grub_x86_64.efi
-      └── kernel
-          └── zephyr.strip
+      └── zephyr.efi
 
 #. Restart ``dnsmasq`` service:
 
@@ -329,9 +246,7 @@ Booting UP Squared
    .. code-block:: console
 
       $ journalctl -f -u dnsmasq
-      dnsmasq-tftp[5386]: sent /srv/tftp/grub_x86_64.efi to 10.1.1.28
-      dnsmasq-tftp[5386]: sent /srv/tftp/EFI/BOOT/grub.cfg to 10.1.1.28
-      dnsmasq-tftp[5386]: sent /srv/tftp/kernel/zephyr.strip to 10.1.1.28
+      dnsmasq-tftp[5386]: sent /srv/tftp/zephyr.efi to 10.1.1.28
 
 #. When the boot process completes, you have finished booting the
    Zephyr application image.
