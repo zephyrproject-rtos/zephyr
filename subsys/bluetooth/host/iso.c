@@ -1135,7 +1135,7 @@ int bt_iso_accept(struct bt_conn *conn)
 
 	err = iso_server->accept(conn, &chan);
 	if (err < 0) {
-		BT_ERR("err %d", err);
+		BT_ERR("Server failed to accept: %d", err);
 		return err;
 	}
 
