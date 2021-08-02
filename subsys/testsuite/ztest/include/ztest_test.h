@@ -93,6 +93,17 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 int ztest_run_registered_test_suites(const void *state);
 
 /**
+ * @brief Fails the test if any of the registered tests did not run.
+ *
+ * When registering test suites, a pragma function can be provided to determine WHEN the test should
+ * run. It is possible that a test suite could be registered but the pragma always prevents it from
+ * running. In cases where a test should make sure that ALL suites ran at least once, this function
+ * may be called at the end of test_main(). It will cause the test to fail if any suite was
+ * registered but never ran.
+ */
+void ztest_verify_all_registered_test_suites_ran(void);
+
+/**
  * @brief Run a test suite.
  *
  * Internal implementation. Do not call directly. This will run the full test suite along with some

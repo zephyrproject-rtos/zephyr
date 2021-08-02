@@ -465,6 +465,29 @@ int ztest_run_registered_test_suites(const void *state)
 	return count;
 }
 
+void ztest_verify_all_registered_test_suites_ran(void)
+{
+	bool all_tests_run = true;
+	struct ztest_suite_node *ptr;
+
+	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+		if (ptr->stats.run_count < 1) {
+			PRINT("ERROR: Test '%s' did not run.\n", ptr->name);
+			all_tests_run = false;
+		}
+	}
+
+	if (!all_tests_run) {
+		test_status = 1;
+	}
+}
+
+void __weak test_main(void)
+{
+	ztest_run_registered_test_suites(NULL);
+	ztest_verify_all_registered_test_suites_ran();
+}
+
 #ifndef KERNEL
 int main(void)
 {
