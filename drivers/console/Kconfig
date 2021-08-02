@@ -246,17 +246,6 @@ config UART_MCUMGR
 
 if UART_MCUMGR
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
-
-config UART_MCUMGR_ON_DEV_NAME
-	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_MCUMGR))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used
-	  for mcumgr UART.
-
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
 	default 128
