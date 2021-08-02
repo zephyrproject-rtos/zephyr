@@ -568,6 +568,7 @@
 /include/net/coap*.h                      @rlubos
 /include/net/lwm2m*.h                     @rlubos
 /include/net/mqtt.h                       @rlubos
+/include/net/net_pkt_filter.h             @npitre
 /include/posix/                           @pfalcon
 /include/pm/pm.h                          @nashif @ceolin
 /include/drivers/ptp_clock.h              @tbursztyka
@@ -719,6 +720,7 @@
 /subsys/net/lib/tls_credentials/          @rlubos
 /subsys/net/l2/                           @rlubos @tbursztyka
 /subsys/net/l2/canbus/                    @alexanderwachter
+/subsys/net/pkt_filter/                   @npitre
 /subsys/net/*/openthread/                 @rlubos
 /subsys/pm/                               @nashif @ceolin
 /subsys/random/                           @dleach02
@@ -760,6 +762,7 @@
 /tests/net/lib/http_header_fields/        @rlubos @tbursztyka
 /tests/net/lib/mqtt_packet/               @rlubos
 /tests/net/lib/coap/                      @rlubos
+/tests/net/npf/                           @npitre
 /tests/net/socket/socketpair/             @cfriedt
 /tests/net/socket/                        @rlubos @tbursztyka @pfalcon
 /tests/subsys/debug/coredump/             @dcpleung
