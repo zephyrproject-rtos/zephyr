@@ -35,7 +35,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/system_setup.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_planner/linear_memory_planner.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_planner/greedy_memory_planner.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/c/common.c 
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/c/common.c
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/quantization_util.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/kernel_util.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/flatbuffer_conversions.cc
@@ -44,6 +44,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/op_resolver.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/schema/schema_utils.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activations_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/add.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/add_n.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/arg_min_max.cc
@@ -75,6 +76,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/gather.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/gather_nd.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/hard_swish.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/hard_swish_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/if.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/kernel_runner.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/kernel_util.cc
@@ -82,7 +84,9 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/l2_pool_2d.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/leaky_relu.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/logical.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/logical_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/logistic.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/logistic_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/log_softmax.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/maximum_minimum.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/mul.cc
@@ -115,146 +119,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/transpose.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/transpose_conv.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/unpack.cc
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/zeros_like.cc 
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/system_setup.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/compatibility.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_time.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_op_resolver.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/simple_memory_allocator.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_helpers.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/test_helpers.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/recording_micro_interpreter.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/recording_micro_allocator.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_error_reporter.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/debug_log.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/recording_simple_memory_allocator.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_string.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_profiler.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_mutable_op_resolver.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_graph.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/flatbuffer_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/mock_micro_graph.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/all_ops_resolver.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_interpreter.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/micro_allocator.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/benchmarks/keyword_scrambled_model_data.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/kernel_util.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/conv_test.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/ethosu.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/svdf.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/depthwise_conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/activation_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/softmax.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/quantize.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/micro_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/circular_buffer_flexbuffers_generated_data.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/pooling.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/kernel_runner.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/micro_ops.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/detection_postprocess_flexbuffers_generated_data.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/fully_connected.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_planner/linear_memory_planner.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_planner/memory_planner.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/memory_planner/greedy_memory_planner.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/LICENSE
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/portable_type_to_tflitetype.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/c/c_api_types.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/c/builtin_op_data.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/c/common.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/optimized/neon_check.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/cppmath.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/types.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/neg.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/space_to_depth.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/hard_swish.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/pooling.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/floor.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/leaky_relu.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/add.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/space_to_batch_nd.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/log_softmax.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/round.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/requantize.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/reduce.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/softmax.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/resize_bilinear.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/binary_function.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/elu.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/sub.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/pad.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/concatenation.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/comparisons.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/fully_connected.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/arg_min_max.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/batch_to_space_nd.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/strided_slice.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/fill.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/depthwise_conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/pooling.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/add.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/fully_connected.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/l2normalization.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/mean.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/mul.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/logistic.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/tanh.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/integer_ops/transpose_conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/floor_mod.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/resize_nearest_neighbor.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/maximum_minimum.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/process_broadcast_shapes.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/prelu.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/quantize.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/depth_to_space.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/exp.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/floor_div.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/dequantize.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/depthwiseconv_uint8.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/batch_matmul.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/add_n.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/transpose.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/ceil.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/l2normalization.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/mul.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/depthwiseconv_float.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/cumsum.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/logistic.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/tanh.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/reference/transpose_conv.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/min.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/strided_slice_logic.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/tensor_ctypes.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/portable_tensor.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/compatibility.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/tensor_utils_common.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/max.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/common.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/internal/quantization_util.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/padding.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/kernel_util.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/kernels/op_macros.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/op_resolver.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/tensor_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/error_reporter.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/core/api/flatbuffer_conversions.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/schema/schema_utils.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/schema/schema_generated.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/gemmlowp/fixedpoint/fixedpoint.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/gemmlowp/fixedpoint/fixedpoint_neon.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/gemmlowp/fixedpoint/fixedpoint_sse.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/gemmlowp/internal/detect_platform.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/gemmlowp/LICENSE
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/include/flatbuffers/base.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/include/flatbuffers/stl_emulation.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/include/flatbuffers/flatbuffers.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/include/flatbuffers/flexbuffers.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/include/flatbuffers/util.h
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/flatbuffers/LICENSE.txt
-    ${TENSORFLOW_LITE_MICRO_DIR}/third_party_static/ruy/ruy/profiler/instrumentation.h
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/zeros_like.cc
   )
 
 endif()
