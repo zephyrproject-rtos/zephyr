@@ -133,7 +133,7 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
-void show_faults(uint8_t test_id, uint16_t cid, uint8_t *faults, size_t fault_count)
+static void show_faults(uint8_t test_id, uint16_t cid, uint8_t *faults, size_t fault_count)
 {
 	size_t i;
 
