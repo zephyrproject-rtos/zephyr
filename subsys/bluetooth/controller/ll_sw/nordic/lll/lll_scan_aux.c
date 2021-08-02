@@ -41,11 +41,6 @@
 #include <ull_scan_types.h>
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CENTRAL)
-static uint8_t lll_scan_connect_req_pdu[PDU_AC_LL_HEADER_SIZE +
-					sizeof(struct pdu_adv_connect_ind)];
-#endif /* CONFIG_BT_CENTRAL */
-
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -793,7 +788,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			init_addr = lll->init_addr;
 		}
 
-		pdu_tx = (void *)lll_scan_connect_req_pdu;
+		pdu_tx = radio_pkt_scratch_get();
 
 		lll_scan_prepare_connect_req(lll, pdu_tx, phy_aux,
 					     pdu->tx_addr,
@@ -1173,10 +1168,12 @@ static void isr_tx_scan_req_lll_schedule(void *param)
 #if defined(CONFIG_BT_CENTRAL)
 static void isr_tx_connect_req(void *param)
 {
-	void *pdu_rx;
+	struct node_rx_pdu *node_rx;
 
-	pdu_rx = radio_pkt_scratch_get();
-	isr_tx(param, pdu_rx, isr_rx_connect_rsp, param);
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	isr_tx(param, (void *)node_rx->pdu, isr_rx_connect_rsp, param);
 }
 
 static void isr_rx_connect_rsp(void *param)
@@ -1233,10 +1230,17 @@ static void isr_rx_connect_rsp(void *param)
 
 	/* Check for PDU reception */
 	if (trx_done && crc_ok) {
-		pdu_rx = radio_pkt_scratch_get();
-		trx_done = isr_rx_connect_rsp_check(lll,
-				(void *)lll_scan_connect_req_pdu, pdu_rx,
-				rl_idx);
+		struct node_rx_pdu *node_rx;
+		struct pdu_adv *pdu_tx;
+
+		pdu_tx = radio_pkt_scratch_get();
+
+		node_rx = ull_pdu_rx_alloc_peek(1);
+		LL_ASSERT(node_rx);
+		pdu_rx = (void *)node_rx->pdu;
+
+		trx_done = isr_rx_connect_rsp_check(lll, pdu_tx, pdu_rx,
+						    rl_idx);
 	} else {
 		trx_done = 0U;
 	}

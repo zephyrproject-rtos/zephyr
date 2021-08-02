@@ -43,13 +43,6 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-static uint8_t lll_adv_connect_rsp_pdu[PDU_AC_LL_HEADER_SIZE +
-				       offsetof(struct pdu_adv_com_ext_adv,
-						ext_hdr_adv_data) +
-				       offsetof(struct pdu_adv_ext_hdr,
-						data) +
-				       ADVA_SIZE + TARGETA_SIZE];
-
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void isr_done(void *param);
@@ -60,86 +53,13 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready);
 #if defined(CONFIG_BT_PERIPHERAL)
+static struct pdu_adv *init_connect_rsp_pdu(struct pdu_adv *pdu_ci);
 static void isr_tx_connect_rsp(void *param);
-#endif /* CONFIG_BT_PERIPHERAL */
-
-static struct pdu_adv *init_connect_rsp_pdu(void)
-{
-	struct pdu_adv_com_ext_adv *com_hdr;
-	struct pdu_adv_ext_hdr *hdr;
-	struct pdu_adv *pdu;
-	uint8_t ext_hdr_len;
-	uint8_t *dptr;
-
-	pdu = (void *)lll_adv_connect_rsp_pdu;
-	pdu->type = PDU_ADV_TYPE_AUX_CONNECT_RSP;
-	pdu->rfu = 0;
-	pdu->chan_sel = 0;
-	pdu->tx_addr = 0;
-	pdu->rx_addr = 0;
-	pdu->len = 0;
-
-	com_hdr = &pdu->adv_ext_ind;
-	hdr = &com_hdr->ext_hdr;
-	dptr = (void *)hdr;
-
-	/* Flags */
-	*dptr = 0;
-	hdr->adv_addr = 1;
-	hdr->tgt_addr = 1;
-	dptr++;
-
-	/* Note: AdvA and InitA are updated before transmitting PDU */
-
-	/* AdvA */
-	dptr += BDADDR_SIZE;
-	/* InitA */
-	dptr += BDADDR_SIZE;
-
-	ext_hdr_len = dptr - (uint8_t *)&com_hdr->ext_hdr;
-
-	/* Finish Common ExtAdv Payload header */
-	com_hdr->adv_mode = 0;
-	com_hdr->ext_hdr_len = ext_hdr_len;
-
-	/* Finish PDU */
-	pdu->len = dptr - &pdu->payload[0];
-
-	return pdu;
-}
-
-#if defined(CONFIG_BT_PERIPHERAL)
-static struct pdu_adv *update_connect_rsp_pdu(struct pdu_adv *pdu_ci)
-{
-	struct pdu_adv_com_ext_adv *cr_com_hdr;
-	struct pdu_adv_ext_hdr *cr_hdr;
-	struct pdu_adv *pdu_cr;
-	uint8_t *cr_dptr;
-
-	pdu_cr = (void *)lll_adv_connect_rsp_pdu;
-	pdu_cr->tx_addr = pdu_ci->rx_addr;
-	pdu_cr->rx_addr = pdu_ci->tx_addr;
-
-	cr_com_hdr = &pdu_cr->adv_ext_ind;
-	cr_hdr = &cr_com_hdr->ext_hdr;
-	/* Skip flags */
-	cr_dptr = cr_hdr->data;
-
-	/* AdvA */
-	memcpy(cr_dptr, &pdu_ci->connect_ind.adv_addr, BDADDR_SIZE);
-	cr_dptr += BDADDR_SIZE;
-	/* InitA */
-	memcpy(cr_dptr, &pdu_ci->connect_ind.init_addr, BDADDR_SIZE);
-
-	return pdu_cr;
-}
 #endif /* CONFIG_BT_PERIPHERAL */
 
 int lll_adv_aux_init(void)
 {
 	int err;
-
-	init_connect_rsp_pdu();
 
 	err = init_reset();
 	if (err) {
@@ -363,6 +283,7 @@ static void isr_done(void *param)
 static void isr_tx(void *param)
 {
 	struct node_rx_pdu *node_rx_prof;
+	struct node_rx_pdu *node_rx;
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
 	uint32_t hcto;
@@ -382,7 +303,11 @@ static void isr_tx(void *param)
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	radio_switch_complete_and_tx(lll->phy_s, 0, lll->phy_s, lll->phy_flags);
 
-	radio_pkt_rx_set(radio_pkt_scratch_get());
+	/* setup Rx buffer */
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+	radio_pkt_rx_set(node_rx->pdu);
+
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
 
@@ -496,6 +421,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready)
 {
+	struct node_rx_pdu *node_rx;
 	struct pdu_adv_ext_hdr *hdr;
 	struct pdu_adv *pdu_adv;
 	struct pdu_adv *pdu_aux;
@@ -517,7 +443,10 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 
 	lll = lll_aux->adv;
 
-	pdu_rx = (void *)radio_pkt_scratch_get();
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	pdu_rx = (void *)node_rx->pdu;
 	pdu_adv = lll_adv_data_curr_get(lll);
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
 	LL_ASSERT(pdu_aux);
@@ -605,7 +534,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		 * are done */
 		radio_isr_set(isr_tx_connect_rsp, rx);
 		radio_switch_complete_and_disable();
-		pdu_tx = update_connect_rsp_pdu(pdu_rx);
+		pdu_tx = init_connect_rsp_pdu(pdu_rx);
 		radio_pkt_tx_set(pdu_tx);
 
 		/* assert if radio packet ptr is not set and radio started tx */
@@ -637,8 +566,6 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
-					 sizeof(struct pdu_adv_connect_ind)));
 		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
@@ -661,6 +588,49 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+static struct pdu_adv *init_connect_rsp_pdu(struct pdu_adv *pdu_ci)
+{
+	struct pdu_adv_com_ext_adv *cr_com_hdr;
+	struct pdu_adv_ext_hdr *cr_hdr;
+	struct pdu_adv *pdu_cr;
+	uint8_t *cr_dptr;
+
+	pdu_cr = radio_pkt_scratch_get();
+	pdu_cr->type = PDU_ADV_TYPE_AUX_CONNECT_RSP;
+	pdu_cr->rfu = 0;
+	pdu_cr->chan_sel = 0;
+	pdu_cr->tx_addr = pdu_ci->rx_addr;
+	pdu_cr->rx_addr = pdu_ci->tx_addr;
+
+	/* Common Extended Header Format Advertising Mode */
+	cr_com_hdr = &pdu_cr->adv_ext_ind;
+	cr_com_hdr->adv_mode = 0;
+
+	/* Clear Flags */
+	cr_hdr = &cr_com_hdr->ext_hdr;
+	cr_dptr = (void *)cr_hdr;
+	*cr_dptr = 0;
+	cr_dptr = cr_hdr->data;
+
+	/* AdvA */
+	cr_hdr->adv_addr = 1;
+	memcpy(cr_dptr, &pdu_ci->connect_ind.adv_addr, BDADDR_SIZE);
+	cr_dptr += BDADDR_SIZE;
+
+	/* InitA */
+	cr_hdr->tgt_addr = 1;
+	memcpy(cr_dptr, &pdu_ci->connect_ind.init_addr, BDADDR_SIZE);
+	cr_dptr += BDADDR_SIZE;
+
+	/* Common Extended Header Length */
+	cr_com_hdr->ext_hdr_len = cr_dptr - (uint8_t *)&cr_com_hdr->ext_hdr;
+
+	/* PDU length */
+	pdu_cr->len = cr_dptr - &pdu_cr->payload[0];
+
+	return pdu_cr;
+}
+
 static void isr_tx_connect_rsp(void *param)
 {
 	struct node_rx_ftr *ftr;
