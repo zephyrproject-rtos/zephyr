@@ -1049,6 +1049,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 static void isr_tx(void *param)
 {
 	uint32_t hcto;
+	struct node_rx_pdu *node_rx_prof;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv *lll = param;
 	uint8_t phy_p = lll->phy_p;
@@ -1060,6 +1061,7 @@ static void isr_tx(void *param)
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
+		node_rx_prof = lll_prof_reserve();
 	}
 
 	/* Clear radio tx status and events */
@@ -1122,7 +1124,7 @@ static void isr_tx(void *param)
 		/* NOTE: as scratch packet is used to receive, it is safe to
 		 * generate profile event using rx nodes.
 		 */
-		lll_prof_send();
+		lll_prof_reserve_send(node_rx_prof);
 	}
 }
 
