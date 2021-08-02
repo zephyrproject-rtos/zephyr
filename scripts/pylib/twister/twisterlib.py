@@ -1589,16 +1589,20 @@ class ScanPathResult:
         has_run_registered_test_suites   Whether or not the path contained at
                                          least one call to
                                          ztest_run_registered_test_suites.
+        has_test_main                    Whether or not the path contains a
+                                         definition of test_main(void)
     """
     def __init__(self,
                  matches: List[str] = None,
                  warnings: str = None,
                  has_registered_test_suites: bool = False,
-                 has_run_registered_test_suites: bool = False):
+                 has_run_registered_test_suites: bool = False,
+                 has_test_main: bool = False):
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
         self.has_run_registered_test_suites = has_run_registered_test_suites
+        self.has_test_main = has_test_main
 
     def __eq__(self, other):
         if not isinstance(other, ScanPathResult):
@@ -1608,7 +1612,8 @@ class ScanPathResult:
                 (self.has_registered_test_suites ==
                  other.has_registered_test_suites) and
                 (self.has_run_registered_test_suites ==
-                 other.has_run_registered_test_suites))
+                 other.has_run_registered_test_suites) and
+                self.has_test_main == other.has_test_main)
 
 
 class TestCase(DisablePyTestCollectionMixin):
@@ -1701,6 +1706,15 @@ Tests should reference the category and subsystem with a dot as a separator.
             br"^\s*ztest_register_test_suite"
             br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
+        # Checks if the file contains a definition of "void test_main(void)"
+        # Since ztest provides a plain test_main implementation it is OK to:
+        # 1. register test suites and not call the run function iff the test
+        #    doesn't have a custom test_main.
+        # 2. register test suites and a custom test_main definition iff the test
+        #    also calls ztest_run_registered_test_suites.
+        test_main_regex = re.compile(
+            br"^\s*void\s+test_main\(void\)",
+            re.MULTILINE)
         stc_regex = re.compile(
             br"""^\s*  # empy space at the beginning is ok
             # catch the case where it is declared in the same sentence, e.g:
@@ -1733,6 +1747,7 @@ Tests should reference the category and subsystem with a dot as a separator.
         warnings = None
         has_registered_test_suites = False
         has_run_registered_test_suites = False
+        has_test_main = False
 
         with open(inf_name) as inf:
             if os.name == 'nt':
@@ -1750,6 +1765,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                     has_registered_test_suites = True
                 if registered_suite_run_regex.search(main_c):
                     has_run_registered_test_suites = True
+                if test_main_regex.search(main_c):
+                    has_test_main = True
 
                 if not suite_regex_match and not has_registered_test_suites:
                     # can't find ztest_test_suite, maybe a client, because
@@ -1758,7 +1775,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                         matches=None,
                         warnings=None,
                         has_registered_test_suites=has_registered_test_suites,
-                        has_run_registered_test_suites=has_run_registered_test_suites)
+                        has_run_registered_test_suites=has_run_registered_test_suites,
+                        has_test_main=has_test_main)
 
                 suite_run_match = suite_run_regex.search(main_c)
                 if suite_regex_match and not suite_run_match:
@@ -1792,12 +1810,14 @@ Tests should reference the category and subsystem with a dot as a separator.
                     matches=matches,
                     warnings=warnings,
                     has_registered_test_suites=has_registered_test_suites,
-                    has_run_registered_test_suites=has_run_registered_test_suites)
+                    has_run_registered_test_suites=has_run_registered_test_suites,
+                    has_test_main=has_test_main)
 
     def scan_path(self, path):
         subcases = []
         has_registered_test_suites = False
         has_run_registered_test_suites = False
+        has_test_main = False
         for filename in glob.glob(os.path.join(path, "src", "*.c*")):
             try:
                 result: ScanPathResult = self.scan_file(filename)
@@ -1811,6 +1831,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                     has_registered_test_suites = True
                 if result.has_run_registered_test_suites:
                     has_run_registered_test_suites = True
+                if result.has_test_main:
+                    has_test_main = True
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
@@ -1824,7 +1846,8 @@ Tests should reference the category and subsystem with a dot as a separator.
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
-        if has_registered_test_suites and not has_run_registered_test_suites:
+        if (has_registered_test_suites and has_test_main and
+                not has_run_registered_test_suites):
             warning = \
                 "Found call to 'ztest_register_test_suite()' but no "\
                 "call to 'ztest_run_registered_test_suites()'"
