@@ -64,8 +64,7 @@ static struct net_buf *get_rx(const uint8_t *buf)
 	switch (buf[0]) {
 	case H4_EVT:
 		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
-		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
-		     buf[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 			discardable = true;
 			timeout = K_NO_WAIT;
 		}

@@ -27,6 +27,10 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
 
 #if defined(CONFIG_BT_EXT_ADV)
+/* A buffer pool used to reassemble advertisement data from the controller. */
+NET_BUF_POOL_FIXED_DEFINE(ext_scan_buf_pool, 1, CONFIG_BT_EXT_SCAN_BUF_SIZE, NULL);
+static struct net_buf *ext_scan_buf;
+
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void);
 static struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
@@ -37,6 +41,14 @@ static sys_slist_t pa_sync_cbs = SYS_SLIST_STATIC_INIT(&pa_sync_cbs);
 void bt_scan_reset(void)
 {
 	scan_dev_found_cb = NULL;
+#if defined(CONFIG_BT_EXT_ADV)
+	if (ext_scan_buf) {
+		net_buf_reset(ext_scan_buf);
+	} else {
+		ext_scan_buf = net_buf_alloc(&ext_scan_buf_pool, K_NO_WAIT);
+		__ASSERT_NO_MSG(ext_scan_buf);
+	}
+#endif
 }
 
 static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
@@ -516,6 +528,8 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_hci_evt_le_ext_advertising_info *evt;
 		struct bt_le_scan_recv_info adv_info;
+		uint8_t size_to_copy;
+		bool truncate;
 
 		if (buf->len < sizeof(*evt)) {
 			BT_ERR("Unexpected end of buffer");
@@ -523,6 +537,36 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+		if (!ext_scan_buf) {
+			/* The previous report was truncated in the host.
+			 * Discard all remaining reports for that advertisement.
+			 */
+
+			if (!(evt->evt_type & BIT(5))) {
+				/* This event is the last event to be discarded.
+				 */
+				ext_scan_buf = net_buf_alloc(&ext_scan_buf_pool,
+							     K_NO_WAIT);
+				__ASSERT_NO_MSG(ext_scan_buf);
+			}
+
+			continue;
+		}
+
+		if (evt->length + ext_scan_buf->len > net_buf_max_len(ext_scan_buf)) {
+			size_to_copy = net_buf_max_len(ext_scan_buf) - evt->length;
+			truncate = true;
+		} else {
+			size_to_copy = evt->length;
+			truncate = false;
+		}
+
+		net_buf_add_mem(ext_scan_buf, buf->data, size_to_copy);
+		if (!truncate && (evt->evt_type & BIT(5))) {
+			/* More data to come. */
+			continue;
+		}
 
 		adv_info.primary_phy = bt_get_phy(evt->prim_phy);
 		adv_info.secondary_phy = bt_get_phy(evt->sec_phy);
@@ -534,8 +578,24 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		adv_info.adv_type = get_adv_type(evt->evt_type);
 		/* Convert "Legacy" property to Extended property. */
 		adv_info.adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
+		adv_info.adv_props &= BIT_MASK(5);
 
-		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
+		if (truncate || (evt->evt_type & BIT(6))) {
+			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_TRUNCATED;
+		}
+
+		le_adv_recv(&evt->addr, &adv_info, ext_scan_buf, ext_scan_buf->len);
+		net_buf_reset(ext_scan_buf);
+
+		if (truncate && !(evt->evt_type & BIT(5))) {
+			/* We have truncated the data and the controller
+			 * will provide more data.
+			 * Therefore we must discard the remaining part of the
+			 * advertisement.
+			 */
+			net_buf_unref(ext_scan_buf);
+			ext_scan_buf = NULL;
+		}
 
 		net_buf_pull(buf, evt->length);
 	}

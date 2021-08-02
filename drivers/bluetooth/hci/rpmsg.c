@@ -41,8 +41,6 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 			return true;
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
-			return true;
 		default:
 			return false;
 		}
