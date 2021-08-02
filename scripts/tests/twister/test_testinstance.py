@@ -123,24 +123,28 @@ TESTDATA_5 = [
                   'test_test_aa',
                   'user', 'last'],
          has_registered_test_suites=False,
-         has_run_registered_test_suites=False)),
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
     ("testcases/tests/test_a/test_ztest_error.c",
      ScanPathResult(
          warnings="Found a test that does not start with test_",
          matches=['1a', '1c', '2a', '2b'],
          has_registered_test_suites=False,
-         has_run_registered_test_suites=False)),
+         has_run_registered_test_suites=False,
+         has_test_main=True)),
     ("testcases/tests/test_a/test_ztest_error_1.c",
      ScanPathResult(
          warnings="found invalid #ifdef, #endif in ztest_test_suite()",
          matches=['unit_1a', 'unit_1b', 'Unit_1c'],
          has_registered_test_suites=False,
-         has_run_registered_test_suites=False)),
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
     ("testcases/tests/test_d/test_ztest_error_register_test_suite.c",
      ScanPathResult(
          warnings=None, matches=['unit_1a', 'unit_1b'],
          has_registered_test_suites=True,
-         has_run_registered_test_suites=False)),
+         has_run_registered_test_suites=False,
+         has_test_main=False)),
 ]
 
 @pytest.mark.parametrize("test_file, expected", TESTDATA_5)
