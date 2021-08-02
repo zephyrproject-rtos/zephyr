@@ -78,6 +78,10 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_RESUME,
 	/** Turn off. */
 	PM_DEVICE_ACTION_TURN_OFF,
+	/** Force suspend. */
+	PM_DEVICE_ACTION_FORCE_SUSPEND,
+	/** Low power. */
+	PM_DEVICE_ACTION_LOW_POWER,
 };
 
 /**
