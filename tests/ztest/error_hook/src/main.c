@@ -267,7 +267,14 @@ void test_catch_fatal_error(void)
 #if defined(CONFIG_USERSPACE)
 	run_trigger_thread(ZTEST_CATCH_FATAL_ACCESS);
 	run_trigger_thread(ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION);
+#if !defined(CONFIG_RISCV)
+	/*
+	 * Because RISC-V Arch doesn't trigger exception for division-by-zero,
+	 * this test couldn't support RISC-V.
+	 * (RISC-V ISA Manual v2.2, Ch6.2 Division Operation)
+	 */
 	run_trigger_thread(ZTEST_CATCH_FATAL_DIVIDE_ZERO);
+#endif
 #endif
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_PANIC);
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_OOPS);
