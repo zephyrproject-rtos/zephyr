@@ -186,9 +186,3 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	return (REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG) & (1 << irq));
 }
-
-ulong_t __soc_get_gp_initial_value(void)
-{
-	extern uint32_t __global_pointer$;
-	return (ulong_t)&__global_pointer$;
-}
