@@ -19,7 +19,7 @@
 
 #define kChannelNumber 3
 
-#include <tensorflow/lite/c/c_api_internal.h>
+#include <tensorflow/lite/c/c_api_types.h>
 #include <tensorflow/lite/micro/micro_error_reporter.h>
 
 extern int begin_index;
