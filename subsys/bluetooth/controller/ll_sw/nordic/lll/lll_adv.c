@@ -33,6 +33,7 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_aux.h"
+#include "lll_adv_sync.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
@@ -159,6 +160,12 @@ int lll_adv_init(void)
 		return err;
 	}
 #endif /* BT_CTLR_ADV_AUX_SET > 0 */
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	err = lll_adv_sync_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	err = init_reset();
@@ -180,6 +187,12 @@ int lll_adv_reset(void)
 		return err;
 	}
 #endif /* BT_CTLR_ADV_AUX_SET > 0 */
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	err = lll_adv_sync_reset();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	err = init_reset();
