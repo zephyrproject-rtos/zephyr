@@ -70,7 +70,14 @@ void test_isr_dynamic(void)
  */
 #if defined(CONFIG_X86)
 #define IV_IRQS 32	/* start of vectors available for x86 IRQs */
+
+/* Using APIC TSC deadline timer will conflict with our testcase */
+#if defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#define TEST_IRQ_DYN_LINE 17
+#else
 #define TEST_IRQ_DYN_LINE 16
+#endif
+
 #define TRIGGER_IRQ_DYN_LINE (TEST_IRQ_DYN_LINE + IV_IRQS)
 
 #elif defined(CONFIG_ARCH_POSIX)
