@@ -2628,9 +2628,9 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 		memcpy(keys->ltk.ediv, req->ediv, sizeof(keys->ltk.ediv));
 		memcpy(keys->ltk.rand, req->rand, sizeof(req->rand));
-
-		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
+
+	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
