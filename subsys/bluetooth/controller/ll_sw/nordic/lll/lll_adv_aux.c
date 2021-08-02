@@ -362,12 +362,14 @@ static void isr_done(void *param)
 
 static void isr_tx(void *param)
 {
+	struct node_rx_pdu *node_rx_prof;
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
 	uint32_t hcto;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
+		node_rx_prof = lll_prof_reserve();
 	}
 
 	/* Clear radio tx status and events */
@@ -430,10 +432,7 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		/* NOTE: as scratch packet is used to receive, it is safe to
-		 * generate profile event using rx nodes.
-		 */
-		lll_prof_send();
+		lll_prof_reserve_send(node_rx_prof);
 	}
 }
 
