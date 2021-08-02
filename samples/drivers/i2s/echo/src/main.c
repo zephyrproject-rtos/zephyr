@@ -10,7 +10,6 @@
 #include <drivers/i2s.h>
 #include <drivers/gpio.h>
 #include <string.h>
-#include <drivers/clock_control/nrf_clock_control.h>
 
 
 #if DT_NODE_EXISTS(DT_NODELABEL(i2s_rxtx))
