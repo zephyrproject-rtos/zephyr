@@ -474,7 +474,7 @@ int modem_cmd_send_ext(struct modem_iface *iface,
 		       struct k_sem *sem, k_timeout_t timeout, int flags)
 {
 	struct modem_cmd_handler_data *data;
-	int ret;
+	int ret = 0;
 
 	if (!iface || !handler || !handler->cmd_handler_data || !buf) {
 		return -EINVAL;
