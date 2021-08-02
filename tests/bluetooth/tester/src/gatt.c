@@ -1385,7 +1385,7 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void read(uint8_t *data, uint16_t len)
+static void read_data(uint8_t *data, uint16_t len)
 {
 	const struct gatt_read_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
@@ -1583,7 +1583,7 @@ static void write_rsp(struct bt_conn *conn, uint8_t err,
 
 static struct bt_gatt_write_params write_params;
 
-static void write(uint8_t *data, uint16_t len)
+static void write_data(uint8_t *data, uint16_t len)
 {
 	const struct gatt_write_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
@@ -2007,7 +2007,7 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		disc_all_desc(data, len);
 		return;
 	case GATT_READ:
-		read(data, len);
+		read_data(data, len);
 		return;
 	case GATT_READ_UUID:
 		read_uuid(data, len);
@@ -2025,7 +2025,7 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		write_without_rsp(data, len, opcode, true);
 		return;
 	case GATT_WRITE:
-		write(data, len);
+		write_data(data, len);
 		return;
 	case GATT_WRITE_LONG:
 		write_long(data, len);
