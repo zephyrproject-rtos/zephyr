@@ -158,9 +158,19 @@ int pm_device_state_set(const struct device *dev,
 		action = PM_DEVICE_ACTION_RESUME;
 		break;
 	case PM_DEVICE_STATE_FORCE_SUSPEND:
-		__fallthrough;
+		if (dev->pm->state == state) {
+			return -EALREADY;
+		}
+
+		action = PM_DEVICE_ACTION_FORCE_SUSPEND;
+		break;
 	case PM_DEVICE_STATE_LOW_POWER:
-		__fallthrough;
+		if (dev->pm->state == state) {
+			return -EALREADY;
+		}
+
+		action = PM_DEVICE_ACTION_LOW_POWER;
+		break;
 	case PM_DEVICE_STATE_OFF:
 		if (dev->pm->state == state) {
 			return -EALREADY;
