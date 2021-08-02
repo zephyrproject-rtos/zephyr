@@ -246,9 +246,9 @@ void uart_mcumgr_register(uart_mcumgr_recv_fn *cb)
 {
 	uart_mgumgr_recv_cb = cb;
 
-	uart_mcumgr_dev = device_get_binding(CONFIG_UART_MCUMGR_ON_DEV_NAME);
+	uart_mcumgr_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
 
-	if (uart_mcumgr_dev != NULL) {
+	if (device_is_ready(uart_mcumgr_dev)) {
 		uart_mcumgr_setup(uart_mcumgr_dev);
 	}
 }
