@@ -264,6 +264,13 @@ SECTIONS
 
      GROUP_END(RAMABLE_REGION)
 
+#ifdef CONFIG_XIP
+	/* Firmware binary size is text + rodata + data in rom. */
+	_flash_used = _image_rom_size + (__data_ram_end - __data_ram_start);
+#else
+	_flash_used = _image_rom_size;
+#endif
+
 #include <linker/debug-sections.ld>
 
     /DISCARD/ : { *(.note.GNU-stack) }
