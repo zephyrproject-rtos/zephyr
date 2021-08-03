@@ -411,6 +411,29 @@ extern char lnkr_pinned_bss_size[];
 extern char lnkr_pinned_noinit_start[];
 extern char lnkr_pinned_noinit_end[];
 extern char lnkr_pinned_noinit_size[];
+
+__pinned_func
+static inline bool lnkr_is_pinned(uint8_t *addr)
+{
+	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
+	    (addr < (uint8_t *)lnkr_pinned_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+__pinned_func
+static inline bool lnkr_is_region_pinned(uint8_t *addr, size_t sz)
+{
+	if ((addr >= (uint8_t *)lnkr_pinned_start) &&
+	    ((addr + sz) < (uint8_t *)lnkr_pinned_end)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #endif /* ! _ASMLANGUAGE */
