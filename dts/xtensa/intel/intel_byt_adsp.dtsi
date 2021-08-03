@@ -34,7 +34,7 @@
 
 	soc {
 		core_intc: core_intc@0 {
-			compatible = "xtensa,core-intc";
+			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
