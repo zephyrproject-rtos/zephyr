@@ -71,6 +71,15 @@
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			its: msi-controller@8080000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x8080000 0x20000>;
+				label = "ITS";
+				status = "okay";
+			};
 		};
 
 		uart0: uart@9000000 {
