@@ -1,0 +1,17 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab UART
+
+compatible: "bflb,bl-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
