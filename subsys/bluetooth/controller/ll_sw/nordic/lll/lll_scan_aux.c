@@ -1001,6 +1001,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			return -ECANCELED;
 		}
 
+		/* Allocate before `lll_scan_aux_setup` call, so that a new
+		 * free PDU buffer is used to receive auxiliary PDU when using
+		 * LLL scheduling.
+		 */
+		(void)ull_pdu_rx_alloc();
+
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
 				    radio_rx_chain_delay_get(phy_aux, 1);
@@ -1014,14 +1020,15 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ftr->aux_sched = lll_scan_aux_setup(lll, pdu, phy_aux);
 
-		trx_cnt++;
-
-		(void)ull_pdu_rx_alloc();
-
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
+
+		/* Increase trx count so as to not generate done extra event
+		 * as a valid Auxiliary PDU node rx is being reported to ULL.
+		 */
+		trx_cnt++;
 
 		/* Next aux scan is scheduled from LLL, we already handled radio
 		 * disable so prevent caller from doing it again.
