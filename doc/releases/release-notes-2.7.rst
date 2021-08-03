@@ -281,6 +281,30 @@ Build and Infrastructure
 
 * Devicetree
 
+  * Various compatibles had incorrect vendor prefixes in their :ref:`compatible
+    <dt-important-props>` properties; the following changes were made to fix
+    these.
+
+    * ``nios,i2c`` is now ``altr,nios2-i2c``
+    * ``colorway,lpd8803`` is now ``greeled,lpd8803``
+    * ``colorway,lpd8806`` is now ``greeled,lpd8806``
+    * ``grove,light`` is now ``seeed,grove-light``
+    * ``grove,temperature`` is now ``seeed,grove-temperature``
+    * ``max,max30101`` is now ``maxim,max30101``
+    * ``ublox,sara-r4`` is now ``u-blox,sara-r4``
+    * ``xtensa,core-intc`` is now ``cdns,xtensa-core-intc``
+
+    Out of tree users of these compatibles will need to update their
+    devicetrees.
+
+    You can support multiple versions of Zephyr with one devicetree by
+    including both the old and new values in your nodes' compatible properties,
+    like this example for the LPD8803::
+
+        my-led-strip@0 {
+                compatible = "colorway,lpd8803", "greeled,lpd8803";
+                ...
+        };
 
 * West (extensions)
 
