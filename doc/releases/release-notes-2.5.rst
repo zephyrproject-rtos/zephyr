@@ -2,6 +2,26 @@
 
 .. _zephyr_2.5:
 
+.. _zephyr_2.1.1:
+
+Zephyr 2.5.1
+#############
+
+This is a maintenance release with the following fixes.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+
+.. _zephyr_2.5.0:
+
 Zephyr 2.5.0
 #############
 
