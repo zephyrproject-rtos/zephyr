@@ -89,7 +89,7 @@
 
 	max30101@57 {
 		status = "disabled";
-		compatible = "max,max30101";
+		compatible = "maxim,max30101";
 		reg = <0x57>;
 		label = "MAX30101";
 	};

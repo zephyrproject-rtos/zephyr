@@ -162,7 +162,7 @@ test_i2c_isl29035: isl29035@17 {
 };
 
 test_i2c_max30101: max30101@18 {
-	compatible = "max,max30101";
+	compatible = "maxim,max30101";
 	label = "MAX30101";
 	reg = <0x18>;
 };
