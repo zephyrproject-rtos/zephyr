@@ -5,7 +5,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "SiFive,FE310G-0002-Z0-dev", "fe310-dev", "sifive-dev";
+	compatible = "sifive,FE310G-0002-Z0-dev", "fe310-dev", "sifive-dev";
 	model = "SiFive,FE310G-0002-Z0";
 	cpus {
 		#address-cells = <1>;
@@ -34,7 +34,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "SiFive,FE310G-0002-Z0-soc", "fe310-soc",
+		compatible = "sifive,FE310G-0002-Z0-soc", "fe310-soc",
 			"sifive-soc", "simple-bus";
 		ranges;
 		wdog0: wdog@10000000 {
