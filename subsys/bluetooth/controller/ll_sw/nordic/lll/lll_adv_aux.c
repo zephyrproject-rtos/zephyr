@@ -202,6 +202,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
+	upd = 0U;
 	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
 	LL_ASSERT(sec_pdu);
 
