@@ -63,8 +63,10 @@
 #define BBPLL_OC_ENB_VCON_VAL       0x00
 #define BBPLL_BBADC_CAL_7_0_VAL     0x00
 
-extern uint32_t esp32_rom_g_ticks_per_us_pro;
-extern uint32_t esp32_rom_g_ticks_per_us_app;
-extern void esp32_rom_ets_delay_us(uint32_t us);
+#define ESP32_FAST_CLK_FREQ_8M      8500000
+
+extern uint32_t esp_rom_g_ticks_per_us_pro;
+extern uint32_t esp_rom_g_ticks_per_us_app;
+extern void esp_rom_ets_delay_us(uint32_t us);
 
 #endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_ESP32_CLOCK_H_ */
