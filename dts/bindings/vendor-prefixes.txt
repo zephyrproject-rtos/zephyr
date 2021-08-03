@@ -142,6 +142,7 @@ cznic	CZ.NIC, z.s.p.o.
 dallas	Maxim Integrated Products (formerly Dallas Semiconductor)
 dataimage	DataImage, Inc.
 davicom	DAVICOM Semiconductor, Inc.
+decawave	Qorvo, Inc (formerly Decawave)
 dell	Dell Inc.
 delta	Delta Electronics, Inc.
 denx	Denx Software Engineering
