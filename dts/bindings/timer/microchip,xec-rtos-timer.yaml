@@ -22,10 +22,10 @@ properties:
       required: true
       description: Array of GIRQ numbers [8:26] and bit positions [0:31].
 
-    "girqs-cells":
+    "girq-cells":
       type: int
       const: 2
 
-girqs-cells:
+girq-cells:
     - girq_num
     - bitpos

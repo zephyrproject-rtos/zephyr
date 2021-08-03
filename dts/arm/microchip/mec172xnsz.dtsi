@@ -357,8 +357,6 @@
 			girqs = <21 2>;
 			pcrs = <1 9>;
 			label = "WDT_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 		};
 		rtimer: timer@40007400 {
 			compatible = "microchip,xec-rtos-timer";
@@ -377,8 +375,6 @@
 			label = "TIMER_0";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		timer1: timer@40000c20 {
@@ -391,8 +387,6 @@
 			label = "TIMER_1";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		timer2: timer@40000c40 {
@@ -405,8 +399,6 @@
 			label = "TIMER_2";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		timer3: timer@40000c60 {
@@ -419,8 +411,6 @@
 			label = "TIMER_3";
 			max-value = <0xFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		/*
@@ -438,8 +428,6 @@
 			label = "TIMER_4";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		timer5: timer@40000ca0 {
@@ -452,8 +440,6 @@
 			label = "TIMER_5";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		cntr0: timer@40000d00 {
@@ -462,8 +448,6 @@
 			girqs = <23 6>;
 			pcrs = <4 2>;
 			label = "EVTMR_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		cntr1: timer@40000d20 {
@@ -472,8 +456,6 @@
 			girqs = <23 7>;
 			pcrs = <4 3>;
 			label = "EVTMR_1";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		cntr2: timer@40000d40 {
@@ -482,8 +464,6 @@
 			girqs = <23 8>;
 			pcrs = <4 3>;
 			label = "EVTMR_2";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		cntr3: timer@40000d60 {
@@ -492,8 +472,6 @@
 			girqs = <23 9>;
 			pcrs = <4 4>;
 			label = "EVTMR_3";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		cctmr0: timer@40001000 {
@@ -505,8 +483,6 @@
 				<18 25>, <18 26>, <18 27>, <18 28>;
 			pcrs = <3 30>;
 			label = "CCTMR_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		hibtimer0: timer@40009800 {
@@ -539,7 +515,6 @@
 				     <124 0>, <125 0>;
 			girqs = <21 10>, <21 11>, <21 12>, <21 13>, <21 14>;
 			label = "VCI_0";
-			#girqs-cells = <2>;
 			status = "disabled";
 		};
 		dmac: dmac@40002400 {
@@ -555,8 +530,6 @@
 			pcrs = <1 6>;
 			label = "DMA_0";
 			#dma-cells = <2>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		i2c_smb_0: i2c@40004000 {
@@ -568,8 +541,6 @@
 			label = "I2C_SMB_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		i2c_smb_1: i2c@40004400 {
@@ -581,8 +552,6 @@
 			label = "I2C_SMB_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		i2c_smb_2: i2c@40004800 {
@@ -594,8 +563,6 @@
 			label = "I2C_SMB_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		i2c_smb_3: i2c@40004c00 {
@@ -607,8 +574,6 @@
 			label = "I2C_SMB_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		i2c_smb_4: i2c@40005000 {
@@ -620,8 +585,6 @@
 			label = "I2C_SMB_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		uart0: uart@400f2400 {
@@ -652,8 +615,6 @@
 			label = "PS2_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		pwm0: pwm@40005800 {
@@ -662,7 +623,6 @@
 			label = "PWM_0";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm1: pwm@40005810 {
 			reg = <0x40005810 0x20>;
@@ -670,7 +630,6 @@
 			label = "PWM_1";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm2: pwm@40005820 {
 			reg = <0x40005820 0x20>;
@@ -678,7 +637,6 @@
 			label = "PWM_2";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm3: pwm@40005830 {
 			reg = <0x40005830 0x20>;
@@ -686,7 +644,6 @@
 			label = "PWM_3";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm4: pwm@40005840 {
 			reg = <0x40005840 0x20>;
@@ -694,7 +651,6 @@
 			label = "PWM_4";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm5: pwm@40005850 {
 			reg = <0x40005850 0x20>;
@@ -702,7 +658,6 @@
 			label = "PWM_5";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm6: pwm@40005860 {
 			reg = <0x40005860 0x20>;
@@ -710,7 +665,6 @@
 			label = "PWM_6";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm7: pwm@40005870 {
 			reg = <0x40005870 0x20>;
@@ -718,7 +672,6 @@
 			label = "PWM_7";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		pwm8: pwm@40005880 {
 			reg = <0x40005880 0x20>;
@@ -726,7 +679,6 @@
 			label = "PWM_8";
 			status = "disabled";
 			#pwm-cells = <1>;
-			#pcrs-cells = <2>;
 		};
 		tach0: tach@40006000 {
 			reg = <0x40006000 0x10>;
@@ -736,8 +688,6 @@
 			label = "TACH_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		tach1: tach@40006010 {
@@ -748,8 +698,6 @@
 			label = "TACH_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		tach2: tach@40006020 {
@@ -760,8 +708,6 @@
 			label = "TACH_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		tach3: tach@40006030 {
@@ -772,8 +718,6 @@
 			label = "TACH_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		rpmfan0: rpmfan@4000a000 {
@@ -782,8 +726,6 @@
 			girqs = <17 20>, <17 21>;
 			pcrs = <3 12>;
 			label = "RPMFAN_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		rpmfan1: rpmfan@4000a080 {
@@ -792,8 +734,6 @@
 			girqs = <17 22>, <17 23>;
 			pcrs = <4 7>;
 			label = "RPMFAN_1";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		adc0: adc@40007c00 {
@@ -804,8 +744,6 @@
 			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 		};
 		kscan0: kscan@40009c00 {
 			reg = <0x40009c00 0x18>;
@@ -816,8 +754,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 		};
 		peci0: peci@40006400 {
 			reg = <0x40006400 0x80>;
@@ -827,8 +763,6 @@
 			label = "PECI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 		};
 		spi0: spi@40070000 {
 			reg = <0x40070000 0x400>;
@@ -846,10 +780,8 @@
 			dcsda = <6>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#girqs-cells = <2>;
 			#ldma-cells = <2>;
 			#legdma-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		spi1: spi@40009400 {
@@ -858,8 +790,6 @@
 			girqs = <18 2>, <18 3>;
 			pcrs = <3 9>;
 			label = "SPI_1";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		spi2: spi@40009480 {
@@ -868,8 +798,6 @@
 			girqs = <18 4>, <18 5>;
 			pcrs = <4 22>;
 			label = "SPI_2";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		prochot0: prochot@40003400 {
@@ -878,8 +806,6 @@
 			girqs = <17 17>;
 			pcrs = <4 13>;
 			label = "PROCHOT_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		rcid0: rcid@40001400 {
@@ -888,8 +814,6 @@
 			girqs = <17 10>;
 			pcrs = <4 10>;
 			label = "RCID_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		rcid1: rcid@40001480 {
@@ -898,8 +822,6 @@
 			girqs = <17 11>;
 			pcrs = <4 11>;
 			label = "RCID_1";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		rcid2: rcid@40001500 {
@@ -908,8 +830,6 @@
 			girqs = <17 12>;
 			pcrs = <4 12>;
 			label = "RCID_2";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		spip0: spip@40007000 {
@@ -918,8 +838,6 @@
 			girqs = <18 0>;
 			pcrs = <4 16>;
 			label = "SPIP_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		bbled0: bbled@4000b800 {
@@ -928,8 +846,6 @@
 			girqs = <17 13>;
 			pcrs = <3 16>;
 			label = "BBLED_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		bbled1: bbled@4000b900 {
@@ -938,8 +854,6 @@
 			girqs = <17 14>;
 			pcrs = <3 17>;
 			label = "BBLED_1";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		bbled2: bbled@4000ba00 {
@@ -948,8 +862,6 @@
 			girqs = <17 15>;
 			pcrs = <3 18>;
 			label = "BBLED_2";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		bbled3: bbled@4000bb00 {
@@ -958,8 +870,6 @@
 			girqs = <17 16>;
 			pcrs = <3 25>;
 			label = "BBLED_3";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		bclink0: bclink@4000cd00 {
@@ -968,8 +878,6 @@
 			girqs = <18 7>, <18 6>;
 			pcrs = <3 19>;
 			label = "BCLINK_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		mbox0: mbox@400f0000 {
@@ -978,8 +886,6 @@
 			girqs = <15 20>;
 			pcrs = <2 17>;
 			label = "MBOX_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		emi0: emi@400f4000 {
@@ -987,7 +893,6 @@
 			interrupts = <42 0>;
 			girqs = <15 2>;
 			label = "EMI_0";
-			#girqs-cells = <2>;
 			status = "disabled";
 		};
 		emi1: emi@400f4400 {
@@ -995,7 +900,6 @@
 			interrupts = <43 0>;
 			girqs = <15 3>;
 			label = "EMI_1";
-			#girqs-cells = <2>;
 			status = "disabled";
 		};
 		emi2: emi@400f4800 {
@@ -1003,7 +907,6 @@
 			interrupts = <44 0>;
 			girqs = <15 4>;
 			label = "EMI_2";
-			#girqs-cells = <2>;
 			status = "disabled";
 		};
 		rtc0: rtc@400f5000 {
@@ -1012,8 +915,6 @@
 			girqs = <21 8>, <21 9>;
 			pcrs = <2 18>;
 			label = "RTC_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		p80bd0: p80bd@400f8000 {
@@ -1022,22 +923,18 @@
 			girqs = <15 22>;
 			pcrs = <2 25>;
 			label = "P80BD_0";
-			#girqs-cells = <2>;
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		tfdp0: tfdp@40008c00 {
 			reg = <0x40008c00 0x10>;
 			pcrs = <1 7>;
 			label = "TFDP_0";
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 		glblcfg0: glblcfg@400fff00 {
 			reg = <0x400fff00 0x40>;
 			pcrs = <2 12>;
 			label = "GLBLCFG_0";
-			#pcrs-cells = <2>;
 			status = "disabled";
 		};
 	};
