@@ -3,7 +3,7 @@
 
 description: u-blox SARA-R4 modem
 
-compatible: "ublox,sara-r4"
+compatible: "u-blox,sara-r4"
 
 include: uart-device.yaml
 
