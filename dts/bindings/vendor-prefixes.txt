@@ -636,6 +636,7 @@ wi2wi	Wi2Wi, Inc.
 winbond	Winbond Electronics corp.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
+wiznet	WIZnet Co., Ltd.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.
 wnc	Wistron NeWeb Corporation
