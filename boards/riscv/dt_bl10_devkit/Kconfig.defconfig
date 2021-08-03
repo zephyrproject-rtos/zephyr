@@ -1,0 +1,11 @@
+# Bouffalo Lab BL602 DevKit
+#
+# Copyright (c) 2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DT_BL10_DEVKIT
+
+config BOARD
+	default "dt_bl10_devkit"
+
+endif   # BOARD_DT_BL10_DEVKIT

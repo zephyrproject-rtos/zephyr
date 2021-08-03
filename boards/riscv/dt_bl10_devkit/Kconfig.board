@@ -1,0 +1,8 @@
+# Bouffalo Lab BL602 DevKit
+#
+# Copyright (c) 2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DT_BL10_DEVKIT
+	bool "2.4GHz Wi-Fi and BLE coexistence Module Development Kit"
+	depends on SOC_PART_NUMBER_BL602C20Q2I
