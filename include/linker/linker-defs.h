@@ -52,8 +52,12 @@
 	*(SORT_BY_NAME(._##struct_type.static.*)); \
 	_CONCAT(_##struct_type, _list_end) = .
 
-/* Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+/**
+ * @brief Define a read-only iterable section output.
+ *
+ * @details
+ * Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
  * This macro should be used for read-only data.
@@ -62,28 +66,42 @@
  * they are not being directly referenced. Use this when symbols
  * are indirectly referenced by iterating through the section.
  */
+#define ITERABLE_SECTION_ROM(struct_type, subalign) \
+	Z_ITERABLE_SECTION_ROM(struct_type, subalign)
+
 #define Z_ITERABLE_SECTION_ROM(struct_type, subalign) \
 	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-/* Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+/**
+ * @brief Define a garbage collectable read-only iterable section output.
+ *
+ * @details
+ * Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
  * This macro should be used for read-only data.
  *
  * Note that the symbols within the section can be garbage collected.
  */
+#define ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
+	Z_ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign)
+
 #define Z_ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
 	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-/* Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+/**
+ * @brief Define a read-write iterable section output.
+ *
+ * @details
+ * Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
  * This macro should be used for read-write data that is modified at runtime.
@@ -92,6 +110,9 @@
  * they are not being directly referenced. Use this when symbols
  * are indirectly referenced by iterating through the section.
  */
+#define ITERABLE_SECTION_RAM(struct_type, subalign) \
+	Z_ITERABLE_SECTION_RAM(struct_type, subalign)
+
 #define Z_ITERABLE_SECTION_RAM(struct_type, subalign) \
 	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
@@ -99,14 +120,21 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 
-/* Define an output section which will set up an iterable area
- * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+/**
+ * @brief Define a garbage collectable read-write iterable section output.
+ *
+ * @details
+ * Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with STRUCT_SECTION_ITERABLE().
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
  * This macro should be used for read-write data that is modified at runtime.
  *
  * Note that the symbols within the section can be garbage collected.
  */
+#define ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
+	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign)
+
 #define Z_ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
 	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
