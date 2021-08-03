@@ -49,6 +49,7 @@ amstaos	AMS-Taos Inc.
 analogix	Analogix Semiconductor, Inc.
 andestech	Andes Technology Corporation
 anvo	Anvo-Systems Dresden GmbH
+aosong	Guangzhou Aosong Electronic Co., Ltd.
 apa	Apa Electronic Co., Ltd
 apm	Applied Micro Circuits Corporation (APM)
 apple	Apple Inc.
