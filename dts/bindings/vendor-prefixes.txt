@@ -87,6 +87,7 @@ baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+bflb	Bouffalo Lab
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blutek	BluTek Power
