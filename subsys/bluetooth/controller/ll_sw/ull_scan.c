@@ -669,6 +669,24 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 
 	scan = param;
 	lll = &scan->lll;
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&scan->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = lll;
+	p.force = force;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+	LL_ASSERT(!ret);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (lll->duration_expire) {
 		uint16_t elapsed;
@@ -714,23 +732,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			  (ret == TICKER_STATUS_BUSY));
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-	/* Increment prepare reference count */
-	ref = ull_ref_inc(&scan->ull);
-	LL_ASSERT(ref);
-
-	/* Append timing parameters */
-	p.ticks_at_expire = ticks_at_expire;
-	p.remainder = remainder;
-	p.lazy = lazy;
-	p.param = lll;
-	p.force = force;
-	mfy.param = &p;
-
-	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
