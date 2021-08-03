@@ -16,6 +16,7 @@
 
 #include <autoconf.h>
 #include <linker/sections.h>
+#include <linker/devicetree_regions.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
@@ -79,6 +80,11 @@ MEMORY
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
+
+    /* Data & Instruction Tightly Coupled Memory */
+    LINKER_DT_REGION_FROM_NODE(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    LINKER_DT_REGION_FROM_NODE(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -267,6 +273,58 @@ SECTIONS
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+GROUP_START(ITCM)
+
+	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,SUBALIGN(8))
+	{
+		__itcm_start = .;
+		*(.itcm)
+		*(".itcm.*")
+		__itcm_end = .;
+	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+
+	__itcm_size = __itcm_end - __itcm_start;
+	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
+
+GROUP_END(ITCM)
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+GROUP_START(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(8))
+	{
+		__dtcm_start = .;
+		__dtcm_bss_start = .;
+		*(.dtcm_bss)
+		*(".dtcm_bss.*")
+		__dtcm_bss_end = .;
+	} GROUP_LINK_IN(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(8))
+	{
+		__dtcm_noinit_start = .;
+		*(.dtcm_noinit)
+		*(".dtcm_noinit.*")
+		__dtcm_noinit_end = .;
+	} GROUP_LINK_IN(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(8))
+	{
+		__dtcm_data_start = .;
+		*(.dtcm_data)
+		*(".dtcm_data.*")
+		__dtcm_data_end = .;
+	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+
+	__dtcm_end = .;
+
+	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
+
+GROUP_END(DTCM)
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
