@@ -158,6 +158,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[0])));
 	lll_chan_set(data_chan_use);
 
+	upd = 0U;
 	pdu = lll_adv_sync_data_latest_get(lll, NULL, &upd);
 	LL_ASSERT(pdu);
 
