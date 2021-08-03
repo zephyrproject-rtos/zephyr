@@ -76,3 +76,9 @@ int *___errno(void)
 {
 	return z_errno();
 }
+
+__weak void _exit(int status)
+{
+	while (1) {
+	}
+}
