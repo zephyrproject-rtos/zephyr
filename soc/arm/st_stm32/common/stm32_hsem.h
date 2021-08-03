@@ -69,6 +69,12 @@
 /** Index of the semaphore used to access the EXTI */
 #define CFG_HW_EXTI_SEMID                                       9U
 
+/** Index of the semaphore for CPU1 mailbox */
+#define CFG_HW_IPM_CPU1_SEMID                                   10U
+
+/** Index of the semaphore for CPU2 mailbox */
+#define CFG_HW_IPM_CPU2_SEMID                                   11U
+
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 /** HW semaphore from STM32MP1
  * EXTI and GPIO are inherited from STM32MP1 Linux.
@@ -94,6 +100,8 @@
 #define CFG_HW_RNG_SEMID                      0U
 #define CFG_HW_GPIO_SEMID                     0U
 #define CFG_HW_EXTI_SEMID                     0U
+#define CFG_HW_IPM_CPU1_SEMID                 0U
+#define CFG_HW_IPM_CPU2_SEMID                 0U
 
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
