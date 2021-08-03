@@ -265,6 +265,7 @@ incircuit	In-Circuit GmbH
 inet-tek	Shenzhen iNet Mobile Internet Technology Co., Ltd
 infineon	Infineon Technologies
 inforce	Inforce Computing
+inventek	Inventek Systems
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
 ingenic	Ingenic Semiconductor
 innolux	Innolux Corporation
