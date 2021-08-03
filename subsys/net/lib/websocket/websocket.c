@@ -46,7 +46,6 @@ static struct websocket_context contexts[CONFIG_WEBSOCKET_MAX_CONTEXTS];
 
 static struct k_sem contexts_lock;
 
-extern const struct socket_op_vtable sock_fd_op_vtable;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
 #if defined(CONFIG_NET_TEST)
@@ -437,7 +436,21 @@ static int websocket_close_vmeth(void *obj)
 
 static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
-	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+	struct websocket_context *ctx = obj;
+	const struct fd_op_vtable *vtable;
+	void *core_obj;
+
+	core_obj = z_get_fd_obj_and_vtable(
+			ctx->real_sock,
+			(const struct fd_op_vtable **)&vtable,
+			NULL);
+	if (core_obj == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
+	/* Pass the call to the core socket implementation. */
+	return vtable->ioctl(core_obj, request, args);
 }
 
 static int websocket_prepare_and_send(struct websocket_context *ctx,
