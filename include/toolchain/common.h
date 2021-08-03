@@ -180,6 +180,12 @@
 #define Z_DECL_ALIGN(type) __aligned(__alignof(type)) type
 
 /**
+ * @brief Iterable Sections APIs
+ * @defgroup iterable_section_apis Iterable Sections APIs
+ * @{
+ */
+
+/**
  * @brief Defines a new iterable section.
  *
  * @details
@@ -234,5 +240,9 @@
 			 "unexpected list end location"); \
 		iterator < _CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
+
+/**
+ * @}
+ */ /* end of struct_section_apis */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */
