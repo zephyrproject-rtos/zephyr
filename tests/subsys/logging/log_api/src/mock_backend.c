@@ -271,7 +271,11 @@ static void process(const struct log_backend *const backend,
 	}
 
 	zassert_equal(msg->log.hdr.timestamp, exp->timestamp,
+#if CONFIG_LOG_TIMESTAMP_64BIT
+		      "Got: %llu, expected: %llu",
+#else
 		      "Got: %u, expected: %u",
+#endif
 		      msg->log.hdr.timestamp, exp->timestamp);
 	zassert_equal(msg->log.hdr.desc.level, exp->level, NULL);
 	zassert_equal(msg->log.hdr.desc.domain, exp->domain_id, NULL);
