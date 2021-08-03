@@ -162,6 +162,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		if (scan) {
 			/* Here we are scanner context */
 			sync = sync_create_get(scan);
+
+			/* Generate report based on PHY scanned */
 			switch (phy) {
 			case PHY_1M:
 				rx->type = NODE_RX_TYPE_EXT_1M_REPORT;
@@ -490,6 +492,26 @@ struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux)
 	}
 
 	return aux;
+}
+
+void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
+{
+	struct lll_scan_aux *lll_aux;
+	struct ll_scan_aux_set *aux;
+	struct lll_scan *lll;
+
+	lll = rx->rx_ftr.param;
+	lll_aux = lll->lll_aux;
+	if (lll_aux) {
+		aux = HDR_LLL2ULL(lll_aux);
+		flush(aux, NULL);
+	}
+
+	/* Mark for buffer for release */
+	rx->type = NODE_RX_TYPE_RELEASE;
+
+	ll_rx_put(link, rx);
+	ll_rx_sched();
 }
 
 static int init_reset(void)

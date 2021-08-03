@@ -912,6 +912,22 @@ static void isr_done_cleanup(void *param)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct event_done_extra *extra;
+	struct lll_scan *lll;
+
+	lll = param;
+	if (lll->is_aux_sched) {
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
 
 	extra = ull_event_done_extra_get();
 	LL_ASSERT(extra);
