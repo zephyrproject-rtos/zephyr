@@ -524,10 +524,10 @@ class EDT:
                    vendor not in self._vendor_prefixes and \
                    vendor not in _VENDOR_PREFIX_ALLOWED:
                 if self._werror:
-                    log_fn = _LOG.error
+                    handler_fn = _err
                 else:
-                    log_fn = _LOG.warning
-                log_fn(
+                    handler_fn = _LOG.warning
+                handler_fn(
                     f"node '{node.path}' compatible '{compat}' "
                     f"has unknown vendor prefix '{vendor}'")
 
