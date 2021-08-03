@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2021-2024 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			clock-frequency = <0>;
+			compatible = "riscv,sifive-e24", "riscv";
+			device_type = "cpu";
+			hardware-exec-breakpoint-count = <4>;
+			reg = <0>;
+			riscv,isa = "rv32imafcb";
+			riscv,pmpregions = <4>;
+
+			ictrl: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		itcm: itcm@22010000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x22010000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "ITCM";
+		};
+		dtcm: dtcm@42014000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x42014000 DT_SIZE_K(48)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0: memory@42020000 {
+			compatible = "mmio-sram";
+		};
+		sram1: memory@42030000 {
+			compatible = "mmio-sram";
+			reg = <0x42030000 DT_SIZE_K(112)>;
+		};
+
+		clic: clic@2000000 {
+			compatible = "sifive,clic";
+			reg = <0x2000000 0x10000>;
+			reg-names = "control";
+
+			#interrupt-cells = <1>;
+			interrupt-controller;
+
+			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;
+			interrupt-names = "msip", /* Machine Software Interrupt */
+					  "mtip", /* Machine Timer interrupt    */
+					  "meip", /* Machine External Interrupt */
+					  "csip"; /* CLIC Software Interrupt    */
+		};
+
+		spi0: spi@4000a200 {
+			compatible = "bflb,bl-spi";
+			reg = <0x4000a200 0x100>;
+			peripheral-id = <0>;
+			interrupts = <27 0>;
+			interrupt-parent = <&ictrl>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@4000b000 {
+			compatible = "bflb,bl-qspi";
+			reg = <0x4000b000 0x1000>;
+			peripheral-id = <0>;
+			interrupts = <23 0>;
+			interrupt-parent = <&ictrl>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
