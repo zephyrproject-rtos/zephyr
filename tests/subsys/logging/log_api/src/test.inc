@@ -501,11 +501,23 @@ static void test_log_from_declared_module(void)
 	mock_log_backend_validate(&backend1, false);
 }
 
-static size_t get_short_msg_capacity(void)
+/** Calculate how many messages will fit in the buffer. Also calculate if
+ * remaining free space is size of message or not. This impacts how many messages
+ * are dropped. If free space is equal to message size then when buffer is full,
+ * adding new message will lead to one message drop, otherwise 2 message will
+ * be dropped.
+ */
+static size_t get_short_msg_capacity(bool *remainder)
 {
 	if (IS_ENABLED(CONFIG_LOG2)) {
-		return (CONFIG_LOG_BUFFER_SIZE / LOG2_SIMPLE_MSG_LEN) - 1;
+		*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG2_SIMPLE_MSG_LEN) ?
+				true : false;
+
+		return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG2_SIMPLE_MSG_LEN;
 	}
+
+	*remainder = (CONFIG_LOG_BUFFER_SIZE % sizeof(struct log_msg)) ?
+			true : false;
 
 	return CONFIG_LOG_BUFFER_SIZE / sizeof(struct log_msg);
 }
@@ -552,13 +564,14 @@ static void test_log_msg_dropped_notification(void)
 		ztest_test_skip();
 	}
 
-	uint32_t capacity = get_short_msg_capacity();
+	bool remainder;
+	uint32_t capacity = get_short_msg_capacity(&remainder);
 
 	log_n_messages(capacity, 0);
 
 	/* Expect messages dropped when logger more than buffer capacity. */
-	log_n_messages(capacity + 1, 1);
-	log_n_messages(capacity + 2, 2);
+	log_n_messages(capacity + 1, 1 + (remainder ? 1 : 0));
+	log_n_messages(capacity + 2, 2 + (remainder ? 1 : 0));
 }
 
 /* Test checks if panic is correctly executed. On panic logger should flush all
