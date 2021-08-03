@@ -232,6 +232,7 @@ gmt	Global Mixed-mode Technology, Inc.
 gooddisplay	Dalian Good Display Co., Ltd.
 goodix	Shenzhen Huiding Technology Co., Ltd.
 google	Google, Inc.
+greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
 gumstix	Gumstix, Inc.
