@@ -43,7 +43,7 @@
 	hw-flow-control;
 
 	sara_r4 {
-		compatible = "ublox,sara-r4";
+		compatible = "u-blox,sara-r4";
 		label = "ublox-sara-r4";
 		status = "okay";
 
