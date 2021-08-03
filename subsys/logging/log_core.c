@@ -541,6 +541,7 @@ void log_core_init(void)
 	uint32_t freq;
 
 	panic_mode = false;
+	dropped_cnt = 0;
 
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
