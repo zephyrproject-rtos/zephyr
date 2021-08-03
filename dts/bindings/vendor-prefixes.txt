@@ -225,6 +225,7 @@ giantplus	Giantplus Technology Co., Ltd.
 globalscale	Globalscale Technologies, Inc.
 globaltop	GlobalTop Technology, Inc.
 gmt	Global Mixed-mode Technology, Inc.
+gooddisplay	Dalian Good Display Co., Ltd.
 goodix	Shenzhen Huiding Technology Co., Ltd.
 google	Google, Inc.
 grinn	Grinn
