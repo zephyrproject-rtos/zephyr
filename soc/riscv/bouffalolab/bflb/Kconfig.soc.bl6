@@ -1,0 +1,17 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "bouffalo Lab BL6 MCU Selection"
+	depends on SOC_SERIES_BL6
+
+	config SOC_PART_NUMBER_BL602C00Q2I
+		bool "BL602C00Q2I"
+
+	config SOC_PART_NUMBER_BL602C20Q2I
+		bool "BL602C20Q2I"
+
+	config SOC_PART_NUMBER_BL604C20Q2I
+		bool "BL604E20Q2I"
+
+endchoice
