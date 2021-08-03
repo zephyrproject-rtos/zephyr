@@ -544,6 +544,7 @@ skyworks	Skyworks Solutions, Inc.
 smartlabs	SmartLabs LLC
 smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
+starfive	StarFive Technology Co. Ltd.
 sochip	Shenzhen SoChip Technology Co., Ltd.
 socionext	Socionext Inc.
 solidrun	SolidRun
