@@ -98,7 +98,6 @@ brcm	Broadcom Corporation
 buffalo	Buffalo, Inc.
 bur	B&R Industrial Automation GmbH
 bticino	Bticino International
-cadence	Cadence Design Systems, Inc.
 calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.
