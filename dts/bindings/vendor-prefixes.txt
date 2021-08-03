@@ -358,6 +358,7 @@ mentor	Mentor Graphics
 meraki	Cisco Meraki, LLC
 merrii	Merrii Technology Co., Ltd.
 micrel	Micrel Inc.
+microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
