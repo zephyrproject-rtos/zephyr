@@ -15,7 +15,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx7";
+			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
 		};
 	};
