@@ -2346,6 +2346,13 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_scan_aux_setup(link, rx);
 	}
 	break;
+
+	case NODE_RX_TYPE_EXT_AUX_RELEASE:
+	{
+		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ull_scan_aux_release(link, rx);
+	}
+	break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
