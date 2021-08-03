@@ -363,6 +363,7 @@ microbit	Micro:bit Educational Foundation
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
+microsemi	Microchip Technology Inc. (formerly Microsemi Corporation)
 microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
