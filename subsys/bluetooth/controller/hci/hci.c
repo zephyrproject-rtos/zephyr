@@ -2619,7 +2619,6 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 
 	struct lll_sync *lll;
 	uint8_t samples_cnt;
-	int16_t iq_tmp;
 	int16_t rssi;
 	uint8_t idx;
 
@@ -2678,10 +2677,8 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		sep->sample_count = 0;
 	} else {
 		for (idx = 0; idx < samples_cnt; ++idx) {
-			iq_tmp = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].i);
-			sep->sample[idx].i = (int8_t)iq_tmp;
-			iq_tmp = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].q);
-			sep->sample[idx].q = (int8_t)iq_tmp;
+			sep->sample[idx].i = iq_report->sample[idx].i;
+			sep->sample[idx].q = iq_report->sample[idx].q;
 		}
 		sep->sample_count = samples_cnt;
 	}

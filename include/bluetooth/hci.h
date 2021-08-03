@@ -2442,8 +2442,8 @@ struct bt_hci_evt_le_chan_sel_algo {
 
 #define BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT  0x15
 struct bt_hci_le_iq_sample {
-	int8_t i;
-	int8_t q;
+	int16_t i;
+	int16_t q;
 };
 
 struct bt_hci_evt_le_connectionless_iq_report {

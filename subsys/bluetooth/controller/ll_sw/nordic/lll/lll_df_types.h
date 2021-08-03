@@ -54,7 +54,6 @@ struct lll_df_adv_cfg {
 #define IQ_SAMPLE_CNT  (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
-#define IQ_SHIFT_12_TO_8_BIT(x) ((x) >> 4)
 
 /* Structure to store an single IQ sample */
 struct iq_sample {
