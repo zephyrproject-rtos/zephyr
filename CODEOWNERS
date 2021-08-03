@@ -259,6 +259,7 @@
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
+/drivers/ipm/ipm_stm32_hsem.c             @cameled
 /drivers/kscan/                           @VenkatKotakonda @franciscomunoz @scottwcpg
 /drivers/kscan/*xec*                      @franciscomunoz @scottwcpg
 /drivers/kscan/*ft5336*                   @MaureenHelm
