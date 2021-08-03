@@ -645,6 +645,7 @@ wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.
 wnc	Wistron NeWeb Corporation
 wobo	Wobo
+worldsemi	Worldsemi Co., Limited
 x-powers	X-Powers
 xes	Extreme Engineering Solutions (X-ES)
 xiaomi	Xiaomi Technology Co., Ltd.
