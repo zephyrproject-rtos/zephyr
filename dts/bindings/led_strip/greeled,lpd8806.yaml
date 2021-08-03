@@ -1,8 +1,8 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-description: Colorway LPD8803 SPI LED strip
+description: GreeLed LPD8806 SPI LED strip
 
-compatible: "colorway,lpd8803"
+compatible: "greeled,lpd8806"
 
 include: spi-device.yaml
