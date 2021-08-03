@@ -638,6 +638,7 @@ winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.
+wnc	Wistron NeWeb Corporation
 wobo	Wobo
 x-powers	X-Powers
 xes	Extreme Engineering Solutions (X-ES)
