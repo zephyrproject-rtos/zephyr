@@ -518,7 +518,10 @@ class EDT:
 
         if ',' in compat and self._vendor_prefixes is not None:
             vendor = compat.split(',', 1)[0]
-            if vendor not in self._vendor_prefixes and \
+            # As an exception, the root node can have whatever
+            # compatibles it wants. Other nodes get checked.
+            if node.path != '/' and \
+                   vendor not in self._vendor_prefixes and \
                    vendor not in _VENDOR_PREFIX_ALLOWED:
                 if self._werror:
                     log_fn = _LOG.error
