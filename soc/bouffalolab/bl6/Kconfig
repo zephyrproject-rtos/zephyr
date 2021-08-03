@@ -1,0 +1,21 @@
+# Copyright (c) 2021-2024 ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL6
+	select RISCV
+	select RISCV_HAS_CPU_IDLE
+	select RISCV_MACHINE_TIMER
+	select ATOMIC_OPERATIONS_C
+	select COMPRESSED_ISA
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+	select SOC_EARLY_INIT_HOOK
+	select XIP
+
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI

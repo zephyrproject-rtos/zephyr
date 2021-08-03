@@ -1,0 +1,13 @@
+# Copyright (c) 2021-2024 ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BL6
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 192000000
+
+config NUM_IRQS
+	default 64
+
+endif   # SOC_SERIES_BL6

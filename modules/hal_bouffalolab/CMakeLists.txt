@@ -15,7 +15,7 @@ zephyr_library_compile_definitions(
   BFLB_USE_CUSTOM_LD_SECTIONS
 )
 
-set(bflb_soc         ${CONFIG_SOC_SUB_SERIES})
+set(bflb_soc         ${CONFIG_SOC_SERIES}02)
 set(bflb_drv_dir     ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/drivers/${bflb_soc}_driver)
 set(bflb_common_dir  ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/common)
 set(bflb_drv_src_dir ${bflb_drv_dir}/std_drv/src)
