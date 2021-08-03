@@ -3,6 +3,6 @@
 
 description: MAX30101 heart rate sensor
 
-compatible: "max,max30101"
+compatible: "maxim,max30101"
 
 include: i2c-device.yaml
