@@ -218,7 +218,7 @@ source "drivers/timer/Kconfig.stm32_lptim"
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
-	depends on SOC_FAMILY_RISCV_PRIVILEGE
+	depends on SOC_FAMILY_RISCV_PRIVILEGE || SOC_FAMILY_BFLB
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the generic RISCV machine
