@@ -344,7 +344,7 @@ struct bt_ad {
 	size_t len;
 };
 
-static int set_data_add(uint8_t *set_data, uint8_t set_data_len_max,
+static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 			const struct bt_ad *ad, size_t ad_len, uint8_t *data_len)
 {
 	uint8_t set_data_len = 0;
@@ -397,8 +397,8 @@ static int hci_set_ad(uint16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 	set_data = net_buf_add(buf, sizeof(*set_data));
 	(void)memset(set_data, 0, sizeof(*set_data));
 
-	err = set_data_add(set_data->data, BT_GAP_ADV_MAX_ADV_DATA_LEN,
-			   ad, ad_len, &set_data->len);
+	err = set_data_add_complete(set_data->data, BT_GAP_ADV_MAX_ADV_DATA_LEN,
+				    ad, ad_len, &set_data->len);
 	if (err) {
 		net_buf_unref(buf);
 		return err;
@@ -407,9 +407,8 @@ static int hci_set_ad(uint16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 	return bt_hci_cmd_send_sync(hci_op, buf, NULL);
 }
 
-/* Set legacy data using Extended Advertising HCI commands */
-static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
-			  const struct bt_ad *ad, size_t ad_len)
+static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
+				    const struct bt_ad *ad, size_t ad_len)
 {
 	struct bt_hci_cp_le_set_ext_adv_data *set_data;
 	struct net_buf *buf;
@@ -423,8 +422,8 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	set_data = net_buf_add(buf, sizeof(*set_data));
 	(void)memset(set_data, 0, sizeof(*set_data));
 
-	err = set_data_add(set_data->data, BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN,
-			   ad, ad_len, &set_data->len);
+	err = set_data_add_complete(set_data->data, BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN,
+				    ad, ad_len, &set_data->len);
 	if (err) {
 		net_buf_unref(buf);
 		return err;
@@ -435,6 +434,124 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_DISABLED;
 
 	return bt_hci_cmd_send_sync(hci_op, buf, NULL);
+}
+
+static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op,
+				      const struct bt_ad *ad, size_t ad_len)
+{
+	struct bt_hci_cp_le_set_ext_adv_data *set_data;
+	struct net_buf *buf;
+	int err;
+
+	for (size_t i = 0; i < ad_len; i++) {
+
+		const struct bt_data *data = ad[i].data;
+
+		for (size_t j = 0; j < ad[i].len; j++) {
+			size_t len = data[j].data_len;
+			uint8_t type = data[j].type;
+			size_t offset = 0;
+
+			/* We can't necessarily set one AD field in a single step. */
+			while (offset < data[j].data_len) {
+				buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
+				if (!buf) {
+					return -ENOBUFS;
+				}
+
+				set_data = net_buf_add(buf, sizeof(*set_data));
+				(void)memset(set_data, 0, sizeof(*set_data));
+
+				set_data->handle = adv->handle;
+				set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_DISABLED;
+
+				/* Determine the operation parameter value. */
+				if ((i == 0) && (j == 0) && (offset == 0)) {
+					set_data->op = BT_HCI_LE_EXT_ADV_OP_FIRST_FRAG;
+				} else if ((i == ad_len - 1) && (j == ad[i].len - 1)) {
+					/* The last AD field may be split into
+					 * one or two commands.
+					 */
+					if (offset != 0) {
+						/* We can always set the data in two operations
+						 * Therefore, we know that this is the last.
+						 */
+						set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
+					} else if (len + 2 <= BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) {
+						/* First part fits. */
+						set_data->op = BT_HCI_LE_EXT_ADV_OP_LAST_FRAG;
+					} else {
+						/* The data must be split into two
+						 * commands.
+						 */
+						set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
+					}
+				} else {
+					set_data->op = BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG;
+				}
+
+				if (offset == 0) {
+					set_data->len = MIN(len + 2,
+							    BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN);
+				} else {
+					/* No need to take min operation here,
+					 * as we can always fit the second part.
+					 */
+					set_data->len = len - offset;
+				}
+
+				if (offset == 0) {
+					set_data->data[0] = len + 1;
+					set_data->data[1] = type;
+					memcpy(&set_data->data[2], data[j].data, set_data->len);
+					offset += set_data->len - 2;
+				} else {
+					memcpy(&set_data->data[0], &data[j].data[offset],
+					       set_data->len);
+					offset += set_data->len;
+				}
+
+				err = bt_hci_cmd_send_sync(hci_op, buf, NULL);
+				if (err) {
+					return err;
+				}
+			}
+
+		}
+	}
+
+	return 0;
+}
+
+static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
+			  const struct bt_ad *ad, size_t ad_len)
+{
+	size_t total_len_bytes = 0;
+
+	for (size_t i = 0; i < ad_len; i++) {
+		for (size_t j = 0; j < ad[i].len; j++) {
+			total_len_bytes += ad[i].data[j].data_len + 2;
+		}
+	}
+
+	if ((total_len_bytes > BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) &&
+	    atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		/* It is not allowed to set advertising data in multiple
+		 * operations while the advertiser is running.
+		 */
+		return -EAGAIN;
+	}
+
+	if (total_len_bytes <= BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN) {
+		/* If possible, set all data at once.
+		 * This allows us to update advertising data while advertising.
+		 */
+		return hci_set_adv_ext_complete(adv, hci_op, ad, ad_len);
+	} else {
+		return hci_set_adv_ext_fragmented(adv, hci_op, ad, ad_len);
+	}
+
+	return 0;
 }
 
 static int set_ad(struct bt_le_ext_adv *adv, const struct bt_ad *ad,
@@ -1525,8 +1642,8 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 	 */
 	cp->op = BT_HCI_LE_PER_ADV_OP_COMPLETE_DATA;
 
-	err = set_data_add(cp->data, BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, &d, 1,
-			   &cp->len);
+	err = set_data_add_complete(cp->data, BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, &d, 1,
+				    &cp->len);
 	if (err) {
 		return err;
 	}
