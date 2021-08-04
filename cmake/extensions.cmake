@@ -1094,16 +1094,17 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    Preprocessor directives work inside <files>. Relative paths are resolved
 #    relative to the calling file, like zephyr_sources().
 # <location> is one of
-#    NOINIT       Inside the noinit output section.
-#    RWDATA       Inside the data output section.
-#    RODATA       Inside the rodata output section.
-#    ROM_START    Inside the first output section of the image. This option is
-#                 currently only available on ARM Cortex-M, ARM Cortex-R,
-#                 x86, ARC, openisa_rv32m1, and RISC-V.
-#                 Note: On RISC-V the rom_start section will be after vector section.
-#    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
-#    SECTIONS     Near the end of the file. Don't use this when linking into
-#                 RAMABLE_REGION, use RAM_SECTIONS instead.
+#    NOINIT        Inside the noinit output section.
+#    RWDATA        Inside the data output section.
+#    RODATA        Inside the rodata output section.
+#    ROM_START     Inside the first output section of the image. This option is
+#                  currently only available on ARM Cortex-M, ARM Cortex-R,
+#                  x86, ARC, openisa_rv32m1, and RISC-V.
+#                  Note: On RISC-V the rom_start section will be after vector section.
+#    RAM_SECTIONS  Inside the RAMABLE_REGION GROUP, not initialized.
+#    DATA_SECTIONS Inside the RAMABLE_REGION GROUP, initialized.
+#    SECTIONS      Near the end of the file. Don't use this when linking into
+#                  RAMABLE_REGION, use RAM_SECTIONS instead.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
@@ -1118,8 +1119,8 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    _mysection_end = .;
 #    _mysection_size = ABSOLUTE(_mysection_end - _mysection_start);
 #
-# When placing into SECTIONS or RAM_SECTIONS, the files must instead define
-# their own output sections to achieve the same thing:
+# When placing into SECTIONS, RAM_SECTIONS or DATA_SECTIONS, the files must
+# instead define their own output sections to achieve the same thing:
 #    SECTION_PROLOGUE(.mysection,,)
 #    {
 #        _mysection_start = .;
@@ -1137,19 +1138,21 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 function(zephyr_linker_sources location)
   # Set up the paths to the destination files. These files are #included inside
   # the global linker.ld.
-  set(snippet_base      "${__build_dir}/include/generated")
-  set(sections_path     "${snippet_base}/snippets-sections.ld")
-  set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
-  set(rom_start_path    "${snippet_base}/snippets-rom-start.ld")
-  set(noinit_path       "${snippet_base}/snippets-noinit.ld")
-  set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
-  set(rodata_path       "${snippet_base}/snippets-rodata.ld")
+  set(snippet_base       "${__build_dir}/include/generated")
+  set(sections_path      "${snippet_base}/snippets-sections.ld")
+  set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
+  set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
+  set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
+  set(noinit_path        "${snippet_base}/snippets-noinit.ld")
+  set(rwdata_path        "${snippet_base}/snippets-rwdata.ld")
+  set(rodata_path        "${snippet_base}/snippets-rodata.ld")
 
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if (NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
     file(WRITE ${ram_sections_path} "")
+    file(WRITE ${data_sections_path} "")
     file(WRITE ${rom_start_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
@@ -1162,6 +1165,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "RAM_SECTIONS")
     set(snippet_path "${ram_sections_path}")
+  elseif("${location}" STREQUAL "DATA_SECTIONS")
+    set(snippet_path "${data_sections_path}")
   elseif("${location}" STREQUAL "ROM_START")
     set(snippet_path "${rom_start_path}")
   elseif("${location}" STREQUAL "NOINIT")
