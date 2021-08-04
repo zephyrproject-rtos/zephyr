@@ -76,7 +76,7 @@ extern "C" {
  */
 #define DNS_SD_REGISTER_SERVICE(id, instance, service, proto, domain, \
 				text, port)			      \
-	static const Z_STRUCT_SECTION_ITERABLE(dns_sd_rec, id) = {    \
+	static const STRUCT_SECTION_ITERABLE(dns_sd_rec, id) = {      \
 		instance,					      \
 		service,					      \
 		proto,						      \

@@ -175,7 +175,7 @@ static void update_app_key_settings(uint16_t app_idx, bool store)
 
 static void app_key_evt(struct app_key *app, enum bt_mesh_key_evt evt)
 {
-	Z_STRUCT_SECTION_FOREACH(bt_mesh_app_key_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_mesh_app_key_cb, cb) {
 		cb->evt_handler(app->app_idx, app->net_idx, evt);
 	}
 }

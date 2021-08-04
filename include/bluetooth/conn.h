@@ -939,7 +939,7 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  *  @param _name Name of callback structure.
  */
 #define BT_CONN_CB_DEFINE(_name)					\
-	static const Z_STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
+	static const STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
 						_CONCAT(bt_conn_cb,	\
 							_name))
 

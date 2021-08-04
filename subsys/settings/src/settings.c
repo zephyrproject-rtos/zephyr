@@ -40,7 +40,7 @@ int settings_register(struct settings_handler *handler)
 {
 	int rc = 0;
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (strcmp(handler->name, ch->name) == 0) {
 			return -EEXIST;
 		}
@@ -145,7 +145,7 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 		*next = NULL;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (!settings_name_steq(name, ch->name, &tmpnext)) {
 			continue;
 		}
@@ -241,7 +241,7 @@ int settings_commit_subtree(const char *subtree)
 
 	rc = 0;
 
-	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
 			continue;
 		}
