@@ -175,11 +175,14 @@ static void usb_reset_alt_setting(void)
 	memset(usb_dev.alt_setting, 0, ARRAY_SIZE(usb_dev.alt_setting));
 }
 
-static void usb_set_alt_setting(uint8_t iface, uint8_t alt_setting)
+static bool usb_set_alt_setting(uint8_t iface, uint8_t alt_setting)
 {
 	if (iface < ARRAY_SIZE(usb_dev.alt_setting)) {
 		usb_dev.alt_setting[iface] = alt_setting;
+		return true;
 	}
+
+	return false;
 }
 
 static uint8_t usb_get_alt_setting(uint8_t iface)
@@ -722,7 +725,8 @@ static bool usb_set_interface(struct usb_setup_packet *setup)
 
 			if (cur_iface == setup->wIndex &&
 			    cur_alt_setting == setup->wValue) {
-				usb_set_alt_setting(setup->wIndex, setup->wValue);
+				ret = usb_set_alt_setting(setup->wIndex,
+							  setup->wValue);
 				if_desc = (void *)p;
 			}
 
