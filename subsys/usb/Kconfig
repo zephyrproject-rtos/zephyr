@@ -3,12 +3,6 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config USB
-	bool "Enable USB device stack (DEPRECATED)"
-	select USB_DEVICE_STACK
-	help
-	  Compatibility option for the external modules.
-
 menuconfig USB_DEVICE_STACK
 	bool "USB Device Support"
 	select USB_DEVICE_DRIVER
