@@ -40,6 +40,7 @@
 		led0 = &led;
 		led1 = &rx_led;
 		led2 = &tx_led;
+		usbd0 = &usb0;
 	};
 };
 

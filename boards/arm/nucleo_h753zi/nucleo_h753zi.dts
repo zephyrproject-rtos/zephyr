@@ -55,6 +55,7 @@
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+		usbd0 = &usbotg_fs;
 	};
 };
 

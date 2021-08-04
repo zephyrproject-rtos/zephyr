@@ -33,6 +33,7 @@
 	aliases {
 		led0 = &led0;
 		spi = &spi2;
+		usbd0 = &usbd;
 	};
 };
 

@@ -62,6 +62,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
+		usbd0 = &usbd;
 	};
 };
 

@@ -83,6 +83,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button;
+		usbd0 = &usbd;
 	};
 };
 

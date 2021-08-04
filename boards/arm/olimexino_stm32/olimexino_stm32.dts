@@ -44,6 +44,7 @@
 		led0 = &green_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
+		usbd0 = &usb;
 	};
 };
 

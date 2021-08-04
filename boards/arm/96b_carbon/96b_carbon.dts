@@ -50,6 +50,7 @@
 		led1 = &green_led_2;
 		led2 = &bt_blue_led;
 		sw0 = &user_button;
+		usbd0 = &usbotg_fs;
 	};
 };
 

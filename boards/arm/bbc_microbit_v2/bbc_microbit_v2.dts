@@ -15,6 +15,7 @@
 	aliases {
 		sw0 = &buttonA;
 		sw1 = &buttonB;
+		usbd0 = &usbd;
 	};
 
 	chosen {

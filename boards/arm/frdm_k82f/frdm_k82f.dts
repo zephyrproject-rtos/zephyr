@@ -23,6 +23,7 @@
 		pwm-led2 = &blue_pwm_led;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		usbd0 = &usbotg;
 	};
 
 	chosen {

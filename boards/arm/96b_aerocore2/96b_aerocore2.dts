@@ -36,6 +36,7 @@
 	aliases {
 		led0 = &yellow_led_1;
 		led1 = &blue_led_2;
+		usbd0 = &usbotg_fs;
 	};
 
 };

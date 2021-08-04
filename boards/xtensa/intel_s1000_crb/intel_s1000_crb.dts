@@ -10,6 +10,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		usbd0 = &usb;
 	};
 
 	chosen {

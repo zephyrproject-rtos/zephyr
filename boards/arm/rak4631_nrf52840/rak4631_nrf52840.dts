@@ -39,6 +39,7 @@
 	aliases {
 		led0 = &blue_led;
 		lora0 = &lora;
+		usbd0 = &usbd;
 	};
 };
 

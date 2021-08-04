@@ -24,6 +24,7 @@
 		led1 = &led1;
 		led2 = &led2;
 		pwm-led0 = &pwm_led0;
+		usbd0 = &usb0;
 	};
 
 	leds {

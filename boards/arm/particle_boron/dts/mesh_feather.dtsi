@@ -18,6 +18,7 @@
 		led3 = &status_blue;
 		sw0 = &mode_button;
 		sw1 = &reset_button;
+		usbd0 = &usbd;
 	};
 
 	chosen {

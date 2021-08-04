@@ -33,6 +33,7 @@
 	/* Declaration of aliases */
 	aliases {
 		led0 = &led0;
+		usbd0 = &usbd;
 	};
 };
 

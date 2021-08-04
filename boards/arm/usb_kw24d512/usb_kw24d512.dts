@@ -12,6 +12,7 @@
 		led0 = &led_0;
 		led1 = &led_1;
 		sw0 = &user_button_1;
+		usbd0 = &usbd;
 	};
 
 	chosen {

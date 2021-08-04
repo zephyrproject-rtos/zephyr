@@ -24,6 +24,7 @@
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		i2c-0 = &sercom7;
+		usbd0 = &usb0;
 	};
 
 	leds {

@@ -14,6 +14,7 @@
 
 	aliases {
 		led0 = &board_led;
+		usbd0 = &usb1;
 	};
 
 	chosen {
