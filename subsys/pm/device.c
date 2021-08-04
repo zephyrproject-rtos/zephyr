@@ -145,6 +145,8 @@ int pm_device_state_set(const struct device *dev,
 		if ((dev->pm->state == PM_DEVICE_STATE_SUSPENDED) ||
 		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
 			return -EALREADY;
+		} else if (dev->pm->state == PM_DEVICE_STATE_OFF) {
+			return -ENOTSUP;
 		}
 
 		action = PM_DEVICE_ACTION_SUSPEND;
