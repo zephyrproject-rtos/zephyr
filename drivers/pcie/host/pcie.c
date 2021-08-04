@@ -71,6 +71,36 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
+uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t ext_cap_id)
+{
+	uint32_t reg = PCIE_CONF_SPACE_SIZE;
+	uint32_t data;
+
+	if (!pcie_ecam_access()) {
+		return 0;
+	}
+
+	while (reg != 0) {
+		data = pcie_conf_read(bdf, reg);
+		if (data == 0) {
+			return 0;
+		}
+
+		if (PCIE_EXT_CONF_CAP_ID(data) == ext_cap_id) {
+			break;
+		}
+
+		reg = PCIE_EXT_CONF_CAP_NEXT(data);
+		if ((reg < PCIE_CONF_SPACE_SIZE) ||
+		    (reg > (PCIE_EXT_CONF_SPACE_SIZE -
+			     PCIE_EXT_CONF_CAP_MIN_SIZE))) {
+			return 0;
+		}
+	}
+
+	return reg;
+}
+
 bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 {
 	uintptr_t phys_addr;

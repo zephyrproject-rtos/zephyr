@@ -156,6 +156,44 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
  */
 extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
+/**
+ * @brief Check if PCIe is access through ECAM
+ *
+ * Note: Enhanced Configuration Access Mechanism is mandatory for extended
+ *       configuration space access.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @return True if ECAM is enabled, False otherwise
+ */
+extern bool pcie_ecam_access(void);
+
+/**
+ * @brief Find a PCIe extended capability in a device's extended configuration
+ *        space.
+ *
+ * @param bdf the PCI device to examine
+ * @param ext_cap_id The extended capability ID of interest
+ * @return the index of the configuration word, or 0 if no capability.
+ */
+extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t ext_cap_id);
+
+/*
+ * Extended Configuration space size
+ * (Note: this includes the legacy configuration space as well)
+ */
+#define PCIE_EXT_CONF_SPACE_SIZE	4096U
+
+#define PCIE_EXT_CONF_CAP_ID(w)		((w) & 0xFFFFU)
+#define PCIE_EXT_CONF_CAP_NEXT(w)	(((w) >> 20) & 0xFFCU)
+
+#define PCIE_EXT_CONF_CAP_MIN_SIZE	8
+
+/*
+ * Legacy Configuration space size
+ */
+#define PCIE_CONF_SPACE_SIZE	256U
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
