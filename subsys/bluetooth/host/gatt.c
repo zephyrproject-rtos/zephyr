@@ -1094,7 +1094,7 @@ static void bt_gatt_service_init(void)
 		return;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
 		last_static_handle += svc->attr_count;
 	}
 }
@@ -1391,7 +1391,7 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 		return attr->handle;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 		/* Skip ahead if start is not within service attributes array */
 		if ((attr < &static_svc->attrs[0]) ||
 		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
@@ -1587,7 +1587,7 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 	if (start_handle <= last_static_handle) {
 		uint16_t handle = 1;
 
-		Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+		STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 			/* Skip ahead if start is not within service handles */
 			if (handle + static_svc->attr_count < start_handle) {
 				handle += static_svc->attr_count;

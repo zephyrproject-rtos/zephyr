@@ -95,7 +95,7 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return NET_CONTINUE;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != protocol) {
 			continue;
 		}
@@ -414,7 +414,7 @@ static void ppp_startup(struct k_work *work)
 
 	NET_DBG("PPP %p startup for interface %p", ctx, ctx->iface);
 
-	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
 			ppp_lcp = proto;
 		}

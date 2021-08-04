@@ -86,7 +86,7 @@ extern const struct log_backend __log_backends_end[];
 		.id = 0,						       \
 		.active = false,					       \
 	};								       \
-	static const Z_STRUCT_SECTION_ITERABLE(log_backend, _name) =	       \
+	static const STRUCT_SECTION_ITERABLE(log_backend, _name) =	       \
 	{								       \
 		.api = &_api,						       \
 		.cb = &UTIL_CAT(backend_cb_, _name),			       \

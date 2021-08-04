@@ -79,7 +79,7 @@ struct bt_mesh_subnet_cb {
  *  @param _handler Handler function, see @ref bt_mesh_subnet_cb::evt_handler.
  */
 #define BT_MESH_SUBNET_CB_DEFINE(_handler)                                     \
-	static const Z_STRUCT_SECTION_ITERABLE(                                \
+	static const STRUCT_SECTION_ITERABLE(                                  \
 		bt_mesh_subnet_cb, _CONCAT(bt_mesh_subnet_cb_, _handler)) = {  \
 		.evt_handler = (_handler),                                     \
 	}
