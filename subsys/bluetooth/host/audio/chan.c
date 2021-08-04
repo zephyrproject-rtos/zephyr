@@ -28,42 +28,42 @@
 
 /* API only supports a single subgroup at the moment */
 
-/* The struct bt_audio_base_codec_data, bt_audio_base_subgroup and bt_audio_base
- * are primarily designed to help calculate the maximum advertising data length
+/* The internal bt_audio_base_ad* structs are primarily designed to help
+ * calculate the maximum advertising data length
  */
 
-struct bt_audio_bis_specific_data {
+struct bt_audio_base_ad_bis_specific_data {
 	uint8_t index;
 	uint8_t codec_config_len; /* currently unused and shall always be 0 */
 } __packed;
 
-struct bt_audio_base_codec_data {
+struct bt_audio_base_ad_codec_data {
 	uint8_t type;
 	uint8_t data_len;
 	uint8_t data[CONFIG_BT_CODEC_MAX_DATA_LEN];
 } __packed;
 
-struct bt_audio_base_codec_metadata {
+struct bt_audio_base_ad_codec_metadata {
 	uint8_t type;
 	uint8_t data_len;
 	uint8_t data[CONFIG_BT_CODEC_MAX_METADATA_LEN];
 } __packed;
 
-struct bt_audio_base_subgroup {
+struct bt_audio_base_ad_subgroup {
 	uint8_t bis_cnt;
 	uint8_t codec_id;
 	uint16_t company_id;
 	uint16_t vendor_id;
 	uint8_t codec_config_len;
-	struct bt_audio_base_codec_data codec_config[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+	struct bt_audio_base_ad_codec_data codec_config[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	uint8_t metadata_len;
-	struct bt_audio_base_codec_metadata metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
-	struct bt_audio_bis_specific_data bis_data[BROADCAST_STREAM_CNT];
+	struct bt_audio_base_ad_codec_metadata metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
+	struct bt_audio_base_ad_bis_specific_data bis_data[BROADCAST_STREAM_CNT];
 } __packed;
 
-struct bt_audio_base {
+struct bt_audio_base_ad {
 	uint16_t uuid_val;
-	struct bt_audio_base_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT];
+	struct bt_audio_base_ad_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT];
 } __packed;
 
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
@@ -1267,7 +1267,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_BROADCAST_ID_SIZE);
-	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base));
+	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base_ad));
 
 	/* TODO: Validate codec and qos values */
 
