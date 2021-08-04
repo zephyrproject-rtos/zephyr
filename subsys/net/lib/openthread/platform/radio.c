@@ -978,12 +978,21 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 	return OT_ERROR_NONE;
 }
 
+uint64_t otPlatTimeGet(void)
+{
+	if (radio_api == NULL || radio_api->get_time == NULL) {
+		return k_ticks_to_us_floor64(k_uptime_ticks());
+	} else {
+		return radio_api->get_time(radio_dev);
+	}
+}
+
 #if defined(CONFIG_NET_PKT_TXTIME)
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	return radio_api->get_time(radio_dev);
+	return otPlatTimeGet();
 }
 #endif
 
