@@ -210,7 +210,7 @@ struct dma_status {
  *
  */
 struct dma_context {
-	int magic;
+	int32_t magic;
 	int dma_channels;
 	atomic_t *atomic;
 };
