@@ -30,6 +30,7 @@ struct dma_stm32_stream {
 };
 
 struct dma_stm32_data {
+		struct dma_context dma_ctx;
 };
 
 struct dma_stm32_config {
