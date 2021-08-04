@@ -1066,9 +1066,14 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
 	/* Leave CSL Phase empty intentionally */
 	sys_put_le16(aCslPeriod, &ie_header[OT_IE_HEADER_SIZE + 2]);
 	config.ack_ie.data = ie_header;
-	config.ack_ie.data_len = OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE;
 	config.ack_ie.short_addr = aShortAddr;
 	config.ack_ie.ext_addr = aExtAddr->m8;
+
+	if (aCslPeriod > 0) {
+		config.ack_ie.data_len = OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE;
+	} else {
+		config.ack_ie.data_len = 0;
+	}
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	config.csl_period = aCslPeriod;

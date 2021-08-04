@@ -747,7 +747,10 @@ static void nrf5_config_csl_period(uint16_t period)
 	/* A placeholder reception window is scheduled so that the radio driver is able to inject
 	 * the proper CSL Phase in the transmitted CSL Information Elements.
 	 */
-	nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, nrf_802154_channel_get(), DRX_SLOT_PH);
+	if (period > 0) {
+		nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, nrf_802154_channel_get(),
+				DRX_SLOT_PH);
+	}
 }
 
 static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
