@@ -1,0 +1,24 @@
+/* Copyright 2021 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		compatible = "reserved-memory";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+		ranges;
+
+		res0: res@42000000 {
+			reg = <0x42000000 0x8>;
+			label = "res0";
+		};
+	};
+	syscon: syscon@42000000 {
+		compatible = "syscon";
+		status = "okay";
+		reg = <0x42000000 0x8>;
+		reg-io-width = <1>;
+	};
+};
