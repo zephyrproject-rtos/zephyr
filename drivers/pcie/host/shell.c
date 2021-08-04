@@ -93,6 +93,16 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 				      "    wired interrupt on IRQ %d\n", irq);
 		}
 	}
+
+	if (pcie_ecam_access()) {
+		data = pcie_conf_read(bdf, PCIE_CONF_SPACE_SIZE);
+	} else {
+		data = 0;
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "    %sExtended Capabilities available\n",
+		      data == 0 ? "No " : "");
 }
 
 static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
