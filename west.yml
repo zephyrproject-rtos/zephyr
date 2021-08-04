@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 69c5db5d41f351d843326df0d133807910c8190b
+      revision: d7387dc67266f74e8d4dd6b908ec447dd2efc942
       path: modules/hal/nxp
       groups:
         - hal
@@ -212,7 +212,7 @@ manifest:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 1ab3b62d641070a6e8574634168c374645f382b8
+      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
       groups:
         - tee
 
