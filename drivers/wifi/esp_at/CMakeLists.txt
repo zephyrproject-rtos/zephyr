@@ -6,7 +6,7 @@ if(CONFIG_WIFI_ESP_AT)
     ${ZEPHYR_BASE}/drivers/modem
   )
 
-  zephyr_sources(
+  zephyr_library_sources(
     esp.c
     esp_socket.c
     esp_offload.c
