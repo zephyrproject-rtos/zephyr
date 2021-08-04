@@ -27,6 +27,15 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APP
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
+zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
+                                 ENABLE_APPROTECT)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
+                                 ENABLE_APPROTECT_USER_HANDLING)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_LOCK
+                                 ENABLE_SECURE_APPROTECT)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
+                                 ENABLE_SECURE_APPROTECT_USER_HANDLING)
+
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
 zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)
 zephyr_compile_definitions_ifdef(CONFIG_LOG_BACKEND_SWO ENABLE_SWO)
