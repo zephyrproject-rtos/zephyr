@@ -1371,7 +1371,7 @@ static void adv_timeout(struct k_work *work)
 #else
 	err = bt_le_adv_stop();
 #endif
-	__ASSERT(err != 0, "Limited Advertising timeout reached, "
+	__ASSERT(err == 0, "Limited Advertising timeout reached, "
 			   "failed to stop advertising");
 }
 
