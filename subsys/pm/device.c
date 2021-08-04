@@ -14,9 +14,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-extern const struct device __device_start[];
-extern const struct device __device_end[];
-
 #if defined(CONFIG_PM)
 extern const struct device *__pm_device_slots_start[];
 
@@ -25,10 +22,14 @@ static size_t num_susp;
 
 static int _pm_devices(enum pm_device_state state)
 {
-	const struct device *dev;
+	const struct device *devs;
+	size_t devc;
+
+	devc = z_device_get_all_static(&devs);
+
 	num_susp = 0;
 
-	for (dev = (__device_end - 1); dev > __device_start; dev--) {
+	for (const struct device *dev = devs + devc - 1; dev >= devs; dev--) {
 		int ret;
 
 		/* ignore busy devices */
@@ -177,13 +178,15 @@ int pm_device_state_get(const struct device *dev,
 
 bool pm_device_is_any_busy(void)
 {
-	const struct device *dev = __device_start;
+	const struct device *devs;
+	size_t devc;
 
-	while (dev < __device_end) {
+	devc = z_device_get_all_static(&devs);
+
+	for (const struct device *dev = devs; dev < (devs + devc); dev++) {
 		if (atomic_test_bit(dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
 			return true;
 		}
-		++dev;
 	}
 
 	return false;
