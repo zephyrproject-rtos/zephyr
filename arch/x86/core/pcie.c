@@ -142,6 +142,19 @@ static inline void pcie_conf(pcie_bdf_t bdf, unsigned int reg,
 
 /* these functions are explained in include/drivers/pcie/pcie.h */
 
+bool pcie_ecam_access(void)
+{
+#ifdef CONFIG_PCIE_MMIO_CFG
+	if (bus_segs[0].mmio == NULL) {
+		pcie_mm_init();
+	}
+
+	return do_pcie_mmio_cfg;
+#else
+	return false;
+#endif
+}
+
 uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 {
 	uint32_t data = 0U;
