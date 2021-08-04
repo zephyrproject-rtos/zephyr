@@ -43,6 +43,12 @@ struct bt_audio_base_codec_data {
 	uint8_t data[CONFIG_BT_CODEC_MAX_DATA_LEN];
 } __packed;
 
+struct bt_audio_base_codec_metadata {
+	uint8_t type;
+	uint8_t data_len;
+	uint8_t data[CONFIG_BT_CODEC_MAX_METADATA_LEN];
+} __packed;
+
 struct bt_audio_base_subgroup {
 	uint8_t bis_cnt;
 	uint8_t codec_id;
@@ -51,7 +57,7 @@ struct bt_audio_base_subgroup {
 	uint8_t codec_config_len;
 	struct bt_audio_base_codec_data codec_config[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	uint8_t metadata_len;
-	struct bt_audio_base_codec_data metadata[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+	struct bt_audio_base_codec_metadata metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 	struct bt_audio_bis_specific_data bis_data[BROADCAST_STREAM_CNT];
 } __packed;
 
@@ -1174,12 +1180,13 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 	/* Insert codec configuration data in LTV format */
 	start = net_buf_simple_add(buf, sizeof(len));
 	for (int i = 0; i < codec->data_count; i++) {
-		const struct bt_data *codec_data = &codec->data->data;
+		const struct bt_data *codec_data = &codec->data[i].data;
 
 		net_buf_simple_add_u8(buf, codec_data->data_len);
 		net_buf_simple_add_u8(buf, codec_data->type);
 		net_buf_simple_add_mem(buf, codec_data->data,
-				       codec_data->data_len);
+				       codec_data->data_len -
+					sizeof(codec_data->type));
 
 	}
 	/* Calcute length of codec config data */
@@ -1190,11 +1197,13 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 	/* Insert codec metadata in LTV format*/
 	start = net_buf_simple_add(buf, sizeof(len));
 	for (int i = 0; i < codec->meta_count; i++) {
-		const struct bt_data *metadata = &codec->meta->data;
+		const struct bt_data *metadata = &codec->meta[i].data;
 
 		net_buf_simple_add_u8(buf, metadata->data_len);
 		net_buf_simple_add_u8(buf, metadata->type);
-		net_buf_simple_add_mem(buf, metadata->data, metadata->data_len);
+		net_buf_simple_add_mem(buf, metadata->data,
+				       metadata->data_len -
+					sizeof(metadata->type));
 	}
 	/* Calcute length of codec config data */
 	len = net_buf_simple_tail(buf) - start - sizeof(len);
