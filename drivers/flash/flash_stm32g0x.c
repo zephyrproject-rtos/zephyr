@@ -21,8 +21,12 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include "flash_stm32.h"
 
 
-#define STM32G0X_PAGE_SHIFT	11
+#define STM32G0_BANK_COUNT		1
 
+#define STM32G0_FLASH_SIZE		(FLASH_SIZE)
+#define STM32G0_FLASH_PAGE_SIZE		(FLASH_PAGE_SIZE)
+#define STM32G0_PAGES_PER_BANK		\
+	((STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE) / STM32G0_BANK_COUNT)
 
 /*
  * offset and len must be aligned on 8 for write,
@@ -34,14 +38,6 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 {
 	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
 		flash_stm32_range_exists(dev, offset, len);
-}
-
-/*
- * STM32G0xx devices can have up to 64 2K pages
- */
-static unsigned int get_page(off_t offset)
-{
-	return offset >> STM32G0X_PAGE_SHIFT;
 }
 
 static inline void flush_cache(FLASH_TypeDef *regs)
@@ -101,11 +97,12 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	return rc;
 }
 
-static int erase_page(const struct device *dev, unsigned int page)
+static int erase_page(const struct device *dev, unsigned int offset)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uint32_t tmp;
 	int rc;
+	int page;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -125,16 +122,17 @@ static int erase_page(const struct device *dev, unsigned int page)
 	 */
 	flush_cache(regs);
 
-	/* Set the PER bit and select the page you wish to erase */
-	regs->CR |= FLASH_CR_PER;
-	regs->CR &= ~FLASH_CR_PNB_Msk;
-	regs->CR |= ((page % 256) << 3);
-
-	/* Set the STRT bit */
-	regs->CR |= FLASH_CR_STRT;
-
-	/* flush the register write */
 	tmp = regs->CR;
+	page = offset / STM32G0_FLASH_PAGE_SIZE;
+
+	/* Set the PER bit and select the page you wish to erase */
+	tmp |= FLASH_CR_PER;
+	tmp &= ~FLASH_CR_PNB_Msk;
+	tmp |= ((page << FLASH_CR_PNB_Pos) & FLASH_CR_PNB_Msk);
+
+	/* Set the STRT bit and write the reg */
+	tmp |= FLASH_CR_STRT;
+	regs->CR = tmp;
 
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
@@ -148,11 +146,11 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 				 unsigned int offset,
 				 unsigned int len)
 {
-	int i, rc = 0;
+	unsigned int addr = offset;
+	int rc = 0;
 
-	i = get_page(offset);
-	for (; i <= get_page(offset + len - 1) ; ++i) {
-		rc = erase_page(dev, i);
+	for (; addr <= offset + len - 1 ; addr += STM32G0_FLASH_PAGE_SIZE) {
+		rc = erase_page(dev, addr);
 		if (rc < 0) {
 			break;
 		}
@@ -188,8 +186,9 @@ void flash_stm32_page_layout(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (stm32g0_flash_layout.pages_count == 0) {
-		stm32g0_flash_layout.pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
-		stm32g0_flash_layout.pages_size = FLASH_PAGE_SIZE;
+		stm32g0_flash_layout.pages_count =
+				STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE;
+		stm32g0_flash_layout.pages_size = STM32G0_FLASH_PAGE_SIZE;
 	}
 
 	*layout = &stm32g0_flash_layout;
