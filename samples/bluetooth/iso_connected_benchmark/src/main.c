@@ -409,6 +409,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
 
+	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
 	k_sem_give(&sem_disconnected);
@@ -847,7 +848,11 @@ static int cleanup(void)
 			return err;
 		}
 
-		bt_conn_unref(default_conn);
+		err = k_sem_take(&sem_disconnected, K_FOREVER);
+		if (err != 0) {
+			LOG_ERR("failed to take sem_disconnected: %d", err);
+			return err;
+		}
 	} /* else ACL already disconnected */
 
 	return err;
@@ -893,8 +898,6 @@ static int run_central(void)
 		LOG_ERR("failed to take sem_disconnected: %d", err);
 		return err;
 	}
-
-	bt_conn_unref(default_conn);
 
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_disconnected, K_FOREVER);
@@ -977,8 +980,6 @@ static int run_peripheral(void)
 		LOG_ERR("failed to take sem_disconnected: %d", err);
 		return err;
 	}
-
-	bt_conn_unref(default_conn);
 
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_disconnected, K_FOREVER);
