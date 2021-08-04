@@ -354,7 +354,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
+	STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
 		struct bt_l2cap_le_chan *ch;
 
 		if (fchan->accept(conn, &chan) < 0) {

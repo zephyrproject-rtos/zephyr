@@ -2210,7 +2210,7 @@ struct net_if_api {
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
-	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_name, sfx)) = { \
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
@@ -2228,7 +2228,7 @@ struct net_if_api {
 	}
 
 #define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
-	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_name, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.mtu = _mtu,						\

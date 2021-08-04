@@ -519,8 +519,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_SERVICE_DEFINE(_name, ...)				\
 	const struct bt_gatt_attr attr_##_name[] = { __VA_ARGS__ };	\
-	const Z_STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =\
-						BT_GATT_SERVICE(attr_##_name)
+	const STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =	\
+					BT_GATT_SERVICE(attr_##_name)
 
 #define _BT_GATT_ATTRS_ARRAY_DEFINE(n, _instances, _attrs_def)	\
 	static struct bt_gatt_attr attrs_##n[] = _attrs_def(_instances[n]);

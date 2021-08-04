@@ -183,19 +183,19 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  Z_ITERABLE_SECTION_RAM(_static_thread_data, 4)
+  ITERABLE_SECTION_RAM(_static_thread_data, 4)
 
-#pragma push_macro("Z_ITERABLE_SECTION_RAM")
-#pragma push_macro("Z_ITERABLE_SECTION_RAM_GC_ALLOWED")
-#undef Z_ITERABLE_SECTION_RAM_GC_ALLOWED
-#define Z_ITERABLE_SECTION_RAM_GC_ALLOWED(x, y)
-#undef Z_ITERABLE_SECTION_RAM
-#define Z_ITERABLE_SECTION_RAM(x, y)
+#pragma push_macro("ITERABLE_SECTION_RAM")
+#pragma push_macro("ITERABLE_SECTION_RAM_GC_ALLOWED")
+#undef ITERABLE_SECTION_RAM_GC_ALLOWED
+#define ITERABLE_SECTION_RAM_GC_ALLOWED(x, y)
+#undef ITERABLE_SECTION_RAM
+#define ITERABLE_SECTION_RAM(x, y)
 #include <linker/common-ram.ld>
 /* Restore original value for symbols referenced by `common-ram.ld` */
 _net_buf_pool_list = _esp_net_buf_pool_list;
-#pragma pop_macro("Z_ITERABLE_SECTION_RAM_GC_ALLOWED")
-#pragma pop_macro("Z_ITERABLE_SECTION_RAM")
+#pragma pop_macro("ITERABLE_SECTION_RAM_GC_ALLOWED")
+#pragma pop_macro("ITERABLE_SECTION_RAM")
 
 #include <linker/common-ram.ld>
 

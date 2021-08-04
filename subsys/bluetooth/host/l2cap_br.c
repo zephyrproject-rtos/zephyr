@@ -401,7 +401,7 @@ static uint8_t get_fixed_channels_mask(void)
 	uint8_t mask = 0U;
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
-	Z_STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
+	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
 		mask |= BIT(fchan->cid);
 	}
 
@@ -466,7 +466,7 @@ void bt_l2cap_br_connected(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
 
-	Z_STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
+	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
 		struct bt_l2cap_br_chan *ch;
 
 		if (!fchan->accept) {
