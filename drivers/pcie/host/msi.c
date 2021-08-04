@@ -124,10 +124,8 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 		base_msix = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
 		if (base_msix != 0U) {
 			base = base_msix;
+			msi = false;
 		}
-
-		msi = false;
-		base = base_msix;
 	}
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
