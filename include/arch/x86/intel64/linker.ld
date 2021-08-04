@@ -184,6 +184,11 @@ SECTIONS
 #include <linker/cplusplus-ram.ld>
 #include <arch/x86/pagetables.ld>
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
 /* Must be last in RAM */
 #include <linker/kobject-data.ld>
 	MMU_PAGE_ALIGN

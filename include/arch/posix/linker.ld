@@ -48,6 +48,11 @@ SECTIONS
 
 #include <arch/posix/native_tasks.ld>
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
  __data_ram_end = .;
 
 /* Located in generated directory. This file is populated by the
