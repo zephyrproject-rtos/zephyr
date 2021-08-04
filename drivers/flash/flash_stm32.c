@@ -30,17 +30,6 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-#if defined(FLASH_NSSR_NSBSY)		/* For STM32L5x in non-secure mode */
-#define FLASH_SECURITY_NS
-#elif defined(FLASH_SECSR_SECBSY)	/* For STM32L5x in secured mode */
-#error Flash is not supported in secure mode
-#define FLASH_SECURITY_SEC
-#else
-#define FLASH_SECURITY_NA		/* For series which does not have
-					 *  secured or non-secured mode
-					 */
-#endif
-
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
@@ -113,13 +102,9 @@ static int flash_stm32_check_status(const struct device *dev)
 #endif
 		FLASH_FLAG_WRPERR;
 
-#if defined(FLASH_SECURITY_NS)
-	if (FLASH_STM32_REGS(dev)->NSSR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->NSSR & error);
-#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
-	if (FLASH_STM32_REGS(dev)->SR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
-#endif /* FLASH_SECURITY_NS */
+	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & error) {
+		LOG_DBG("Status: 0x%08x",
+			FLASH_STM32_REGS(dev)->FLASH_STM32_SR & error);
 		return -EIO;
 	}
 
@@ -131,21 +116,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
+	uint32_t busy_flags;
 
 	rc = flash_stm32_check_status(dev);
 	if (rc < 0) {
 		return -EIO;
 	}
-#if defined(FLASH_SECURITY_NS)
-	while ((FLASH_STM32_REGS(dev)->NSSR & FLASH_FLAG_BSY)) {
-#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
-#if defined(FLASH_SR_BSY1)
-	/* Applicable for STM32G0 series */
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY1)) {
-#else
-	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY)) {
-#endif
-#endif /* FLASH_SECURITY_NS */
+
+	busy_flags = FLASH_STM32_SR_BUSY;
+
+	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
 			return -EIO;
