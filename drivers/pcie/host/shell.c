@@ -18,7 +18,6 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 	uint32_t data;
 
 	msi = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
-
 	if (msi) {
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI support%s%s\n",
@@ -27,7 +26,6 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 	}
 
 	msi = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
-
 	if (msi) {
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI-X support\n");
 	}
@@ -63,7 +61,6 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 	unsigned int irq;
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
-
 	if (data == PCIE_ID_NONE) {
 		return;
 	}
@@ -84,7 +81,6 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 		     PCIE_CONF_CLASSREV_REV(data));
 
 	data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
-
 	if (PCIE_CONF_TYPE_BRIDGE(data)) {
 		shell_fprintf(shell, SHELL_NORMAL, " [bridge]\n");
 	} else {
