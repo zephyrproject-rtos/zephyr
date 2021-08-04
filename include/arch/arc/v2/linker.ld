@@ -196,6 +196,11 @@ SECTIONS {
 #include <linker/cplusplus-ram.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
 	__data_ram_end = .;
 	MPU_MIN_SIZE_ALIGN
 	/* Define linker symbols */
