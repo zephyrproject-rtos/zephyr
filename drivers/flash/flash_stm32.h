@@ -33,8 +33,32 @@ struct flash_stm32_priv {
 	/* as flash node property 'write-block-size' */
 #endif
 
+/* Differentiate between arm trust-zone non-secure/secure, and others. */
+#if defined(FLASH_NSSR_NSBSY)		/* For mcu w. TZ in non-secure mode */
+#define FLASH_SECURITY_NS
+#define FLASH_STM32_SR		NSSR
+#elif defined(FLASH_SECSR_SECBSY)	/* For mcu w. TZ  in secured mode */
+#error Flash is not supported in secure mode
+#define FLASH_SECURITY_SEC
+#else
+#define FLASH_SECURITY_NA		/* For series which does not have
+					 *  secured or non-secured mode
+					 */
+#define FLASH_STM32_SR		SR
+#endif
+
+
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
+
+
+/* Redefintions of flags and masks to harmonize stm32 series: */
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+#define FLASH_STM32_SR_BUSY	(FLASH_SR_BSY1)
+#else
+#define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY)
+#endif
+
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(const struct device *dev,
