@@ -254,9 +254,10 @@ void platformRadioInit(void)
 
 void transmit_message(struct k_work *tx_job)
 {
+	int tx_err;
+
 	ARG_UNUSED(tx_job);
 
-	tx_result = OT_ERROR_NONE;
 	/*
 	 * The payload is already in tx_payload->data,
 	 * but we need to set the length field
@@ -276,26 +277,47 @@ void transmit_message(struct k_work *tx_job)
 		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
-		if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA,
-				  tx_pkt, tx_payload)) {
-			tx_result = OT_ERROR_INVALID_STATE;
-		}
+		tx_err =
+			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
-		if (radio_api->get_capabilities(radio_dev) &
-		    IEEE802154_HW_CSMA) {
-			if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA,
-					  tx_pkt, tx_payload) != 0) {
-				tx_result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+		if (radio_api->get_capabilities(radio_dev) & IEEE802154_HW_CSMA) {
+			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
+					       tx_payload);
+		} else {
+			tx_err = radio_api->cca(radio_dev);
+			if (tx_err == 0) {
+				tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT, tx_pkt,
+						       tx_payload);
 			}
-		} else if (radio_api->cca(radio_dev) != 0 ||
-			   radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT,
-					 tx_pkt, tx_payload) != 0) {
-			tx_result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
 		}
 	} else {
-		if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT, tx_pkt, tx_payload)) {
-			tx_result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
-		}
+		tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT, tx_pkt, tx_payload);
+	}
+
+	/*
+	 * OpenThread handles the following errors:
+	 * - OT_ERROR_NONE
+	 * - OT_ERROR_NO_ACK
+	 * - OT_ERROR_CHANNEL_ACCESS_FAILURE
+	 * - OT_ERROR_ABORT
+	 * Any other error passed to `otPlatRadioTxDone` will result in assertion.
+	 */
+	switch (tx_err) {
+	case 0:
+		tx_result = OT_ERROR_NONE;
+		break;
+	case -ENOMSG:
+		tx_result = OT_ERROR_NO_ACK;
+		break;
+	case -EBUSY:
+		tx_result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+		break;
+	case -EIO:
+		tx_result = OT_ERROR_ABORT;
+		break;
+	default:
+		tx_result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+		break;
 	}
 
 	set_pending_event(PENDING_EVENT_TX_DONE);
