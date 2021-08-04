@@ -37,8 +37,8 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 static int w5500_spi_read(const struct device *dev, uint32_t addr,
 			  uint8_t *data, uint32_t len)
 {
+	const struct w5500_config *cfg = dev->config;
 	int ret;
-	struct w5500_runtime *ctx = dev->data;
 	/* 3 bytes as 0x010203 during command phase */
 	uint8_t tmp[len + 3];
 
@@ -64,7 +64,7 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 		.count = 1,
 	};
 
-	ret = spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx);
+	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 
 	if (!ret) {
 		/* skip the default dummy 0x010203 */
@@ -77,8 +77,8 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 static int w5500_spi_write(const struct device *dev, uint32_t addr,
 			   uint8_t *data, uint32_t len)
 {
+	const struct w5500_config *cfg = dev->config;
 	int ret;
-	struct w5500_runtime *ctx = dev->data;
 	uint8_t cmd[3] = {
 		addr >> 8,
 		addr,
@@ -99,7 +99,7 @@ static int w5500_spi_write(const struct device *dev, uint32_t addr,
 		.count = ARRAY_SIZE(tx_buf),
 	};
 
-	ret = spi_write(ctx->spi, &ctx->spi_cfg, &tx);
+	ret = spi_write_dt(&cfg->spi, &tx);
 
 	return ret;
 }
@@ -474,67 +474,43 @@ static int w5500_init(const struct device *dev)
 	const struct w5500_config *config = dev->config;
 	struct w5500_runtime *ctx = dev->data;
 
-	ctx->spi_cfg.operation = SPI_WORD_SET(8);
-	ctx->spi_cfg.frequency = config->spi_freq;
-	ctx->spi_cfg.slave = config->spi_slave;
-
-	ctx->spi = device_get_binding((char *)config->spi_port);
-	if (!ctx->spi) {
-		LOG_ERR("SPI master port %s not found", config->spi_port);
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	ctx->spi_cs.gpio_dev = device_get_binding((char *)config->spi_cs_port);
-	if (!ctx->spi_cs.gpio_dev) {
-		LOG_ERR("SPI CS port %s not found", config->spi_cs_port);
+	if (!device_is_ready(config->interrupt.port)) {
+		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
 
-	ctx->spi_cs.gpio_pin = config->spi_cs_pin;
-	ctx->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
-	ctx->spi_cfg.cs = &ctx->spi_cs;
-#endif
-
-	ctx->gpio = device_get_binding((char *)config->gpio_port);
-	if (!ctx->gpio) {
-		LOG_ERR("GPIO port %s not found", config->gpio_port);
-		return -EINVAL;
-	}
-
-	if (gpio_pin_configure(ctx->gpio, config->gpio_pin,
-			       GPIO_INPUT | config->gpio_flags)) {
-		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
+	if (gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
 		return -EINVAL;
 	}
 
 	gpio_init_callback(&(ctx->gpio_cb), w5500_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->interrupt.pin));
 
-	if (gpio_add_callback(ctx->gpio, &(ctx->gpio_cb))) {
+	if (gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb))) {
 		return -EINVAL;
 	}
 
-	gpio_pin_interrupt_configure(ctx->gpio,
-				     config->gpio_pin,
-				     GPIO_INT_EDGE_FALLING);
+	gpio_pin_interrupt_configure_dt(&config->interrupt,
+					GPIO_INT_EDGE_FALLING);
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ctx->reset = device_get_binding((char *)config->reset_port);
-	if (!ctx->reset) {
-		LOG_ERR("GPIO port %s not found", config->reset_port);
-		return -EINVAL;
+	if (config->reset.port) {
+		if (!device_is_ready(config->reset.port)) {
+			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
+			return -EINVAL;
+		}
+		if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT)) {
+			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
+			return -EINVAL;
+		}
+		gpio_pin_set_dt(&config->reset, 0);
+		k_usleep(500);
 	}
-
-	if (gpio_pin_configure(ctx->reset, config->reset_pin,
-			       GPIO_OUTPUT | config->reset_flags)) {
-		LOG_ERR("Unable to configure GPIO pin %u", config->reset_pin);
-		return -EINVAL;
-	}
-
-	gpio_pin_set(ctx->reset, DT_INST_GPIO_PIN(0, reset_gpios), 0);
-	k_usleep(500);
-#endif
 
 	err = w5500_hw_reset(dev);
 	if (err) {
@@ -573,22 +549,9 @@ static struct w5500_runtime w5500_0_runtime = {
 };
 
 static const struct w5500_config w5500_0_config = {
-	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset_port = DT_INST_GPIO_LABEL(0, reset_gpios),
-	.reset_pin = DT_INST_GPIO_PIN(0, reset_gpios),
-	.reset_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
-#endif
-	.spi_port = DT_INST_BUS_LABEL(0),
-	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
-	.spi_slave = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.spi_cs_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-#endif
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,
 };
 
