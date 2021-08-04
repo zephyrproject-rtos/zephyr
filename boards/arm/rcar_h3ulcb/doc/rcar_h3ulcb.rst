@@ -17,7 +17,7 @@ It is possible to order 2 different types of H3 Starter Kit Boards, one with Eth
    :height: 288px
    :alt: R-Car starter kit
 
-.. Note:: The H3ULCB board can be plugged on a Renesas Kingfisher Infotainment daughter board through COM Express connector in order to physically access more I/O. CAUTION : In this case, power supply is managed by the daughter board.
+.. note:: The H3ULCB board can be plugged on a Renesas Kingfisher Infotainment daughter board through COM Express connector in order to physically access more I/O. CAUTION: In this case, power supply is managed by the daughter board.
 
 More information about the board can be found at `Renesas R-Car Starter Kit website`_.
 
@@ -32,9 +32,9 @@ Hardware capabilities for the H3ULCB for can be found on the `eLinux H3SK page`_
    :height: 280px
    :alt: R-Car starter kit features
 
-.. Note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.
+.. note:: Zephyr will be booted on the CR7 processor provided for RTOS purpose.
 
-More information about the SoC that equips the board can be found here :
+More information about the SoC that equips the board can be found here:
 
 - `Renesas R-Car H3 chip`_
 
@@ -53,6 +53,14 @@ Here is the current supported features when running Zephyr Project on the R-Car 
 | GPIO      | gpio                         |                                |
 +-----------+------------------------------+--------------------------------+
 | UART      | uart                         | serial port-polling            |
++           +                              +                                +
+|           | FT232RQ / CP2102             | serial port-interrupt          |
++-----------+------------------------------+--------------------------------+
+| CAN       | can                          | normal mode                    |
++           +                              +                                +
+|           | TCAN332GDCNT                 | loopback mode                  |
++-----------+------------------------------+--------------------------------+
+| I2C       | i2c                          | interrupt driven               |
 +-----------+------------------------------+--------------------------------+
 
 It's also currently possible to write on the ram console.
@@ -62,37 +70,37 @@ More features will be supported soon.
 Connections and IOs
 ===================
 
-H3ULCB Board :
-------------------
+H3ULCB Board
+------------
 
-Here are official IOs figures from eLinux for H3ULCB board :
+Here are official IOs figures from eLinux for H3ULCB board:
 
 `H3SK top view`_
 
 `H3SK bottom view`_
 
-Kingfisher Infotainment daughter board :
-----------------------------------------
+Kingfisher Infotainment daughter board
+--------------------------------------
 
 When connected to Kingfisher Infotainment board through COMExpress connector, the board is exposing much more IOs.
 
-Here are official IOs figures from eLinux for Kingfisher Infotainment board :
+Here are official IOs figures from eLinux for Kingfisher Infotainment board:
 
 `Kingfisher top view`_
 
 `Kingfisher bottom view`_
 
-GPIO :
-------
+GPIO
+----
 
 By running Zephyr on H3ULCB, the software readable push button 'SW3' can be used as input, and the software contollable LED 'LED5' can be used as output.
 
-UART :
-------
+UART
+----
 
 H3ULCB board is providing two serial ports, only one is commonly available on the board, however, the second one can be made available either by welding components or by plugging the board on a Kingfisher Infotainment daughter board.
 
-Here is information about these serial ports :
+Here is information about these serial ports:
 
 +--------------------+-------------------+--------------------+-----------+--------------------------------------+
 | Physical Interface | Physical Location | Software Interface | Converter | Further Information                  |
@@ -104,9 +112,9 @@ Here is information about these serial ports :
 | CN04 DEBUG SERIAL  | Kingfisher        | SCIF1              |           | Secondary UART // Through ComExpress |
 +--------------------+-------------------+--------------------+-----------+--------------------------------------+
 
-.. Note:: The Zephyr console output is assigned to SCIF1 (commonly used on Kingfisher daughter board) with settings 115200 8N1 without hardware flow control by default.
+.. note:: The Zephyr console output is assigned to SCIF1 (commonly used on Kingfisher daughter board) with settings 115200 8N1 without hardware flow control by default.
 
-Here is CN04 UART interface pinout (depending on your Kingfisher board version) :
+Here is CN04 UART interface pinout (depending on your Kingfisher board version):
 
 +--------+----------+----------+
 | Signal | Pin KF03 | Pin KF04 |
@@ -122,60 +130,110 @@ Here is CN04 UART interface pinout (depending on your Kingfisher board version) 
 | GND    | 9        | 6        |
 +--------+----------+----------+
 
+CAN
+---
+
+H3ULCB board provides two CAN interfaces. Both interfaces are available on the Kingfisher daughter board.
+
++--------------------+--------------------+--------------+
+| Physical Interface | Software Interface | Transceiver  |
++====================+====================+==============+
+| CN17               | CAN0               | TCAN332GDCNT |
++--------------------+--------------------+--------------+
+| CN18               | CAN1               | TCAN332GDCNT |
++--------------------+--------------------+--------------+
+
+.. note:: Interfaces are set to 125 kbit/s by default.
+
+The following table lists CAN physical interfaces pinout:
+
++-----+--------+
+| Pin | Signal |
++=====+========+
+| 1   | CANH   |
++-----+--------+
+| 2   | CANL   |
++-----+--------+
+| 3   | GND    |
++-----+--------+
+
+I2C
+---
+
+H3ULCB board provides two I2C buses. Unfortunately direct access to these buses is not available through connectors.
+
+I2C is mainly used to manage and power on multiple of onboard chips on the H3ULCB and Kingfisher daughter board.
+
+Embedded I2C devices and I/O expanders are not yet supported. The current I2C support therefore does not make any devices available to the user at this time.
+
 Programming and Debugging
 *************************
 
-The Cortex®-R7 of rcar_h3ulcb board needs to be started by the Cortex®-A cores. Cortex®-A cores are responsible to load the Cortex®-R7 binary application into the RAM, and get the Cortex®-R7 out of reset. The Cortex®-A can currently perform these steps at bootloader level.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-Building
+Supported Debug Probe
+=====================
+
+The "Olimex ARM-USB-OCD-H" probe is the only officially supported probe. This probe is supported by OpenOCD that is shipped with the Zephyr SDK.
+
+The "Olimex ARM-USB-OCD-H" probe needs to be connected with a SICA20I2P adapter to CN3 on H3ULCB.
+
+.. note::
+    See `eLinux Kingfisher page`_ "Known issues" section if you encounter problem with JTAG.
+
+Configuring a Console
+=====================
+
+Connect a USB cable from your PC to CN04 of your Kingfisher daughter board.
+
+Use the following settings with your serial terminal of choice (minicom, putty,
+etc.):
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Flashing
 ========
+
+First of all, open your serial terminal.
 
 Applications for the ``rcar_h3ulcb_cr7`` board configuration can be built in the usual way (see :ref:`build_an_application` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rcar_h3ulcb_cr7
-   :goals: build
+   :goals: flash
+
+You should see the following message in the terminal:
+
+.. code-block:: console
+
+	*** Booting Zephyr OS build v2.6.0-rc1 ***
+	Hello World! rcar_h3ulcb_cr7
 
 Debugging
 =========
-You can debug an application using OpenOCD and GDB. The Solution proposed below is using a OpenOCD custom version that support R-Car ULCB boards Cortex®-R7.
 
-Get Renesas ready OpenOCD version
----------------------------------
+First of all, open your serial terminal.
 
-.. code-block:: bash
+Here is an example for the :ref:`hello_world` application.
 
-	git clone --branch renesas https://github.com/iotbzh/openocd.git
-	cd openocd
-	./bootstrap
-	./configure
-	make
-	sudo make install
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rcar_h3ulcb_cr7
+   :goals: debug
 
-Start OpenOCD
--------------
+You will then get access to a GDB session for debug.
 
-.. code-block:: bash
+By continuing the app, you should see the following message in the terminal:
 
-	cd openocd
-	sudo openocd -f tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg -f tcl/board/renesas_h3ulcb.cfg
+.. code-block:: console
 
-In a new terminal session
-
-.. code-block:: bash
-
-	telnet 127.0.0.1 4444
-	r8a77950.r7 arp_examine
-
-Start Debugging
----------------
-
-In a new terminal session
-
-.. code-block:: bash
-
-	{ZEPHYR_SDK}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb {APP_BUILD_DIR}/zephyr/zephyr.elf
+	*** Booting Zephyr OS build v2.6.0-rc1 ***
+	Hello World! rcar_h3ulcb_cr7
 
 References
 **********
@@ -208,3 +266,6 @@ References
 
 .. _Kingfisher bottom view:
 	https://elinux.org/images/0/06/Kfisher_bot_specs.png
+
+.. _Install a toolchain:
+	https://docs.zephyrproject.org/latest/getting_started/index.html#install-a-toolchain
