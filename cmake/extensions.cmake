@@ -1451,6 +1451,12 @@ function(zephyr_library_compile_definitions_ifdef feature_toggle item)
   endif()
 endfunction()
 
+function(zephyr_library_include_directories_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_library_include_directories(${ARGN})
+  endif()
+endfunction()
+
 function(zephyr_library_compile_options_ifdef feature_toggle item)
   if(${${feature_toggle}})
     zephyr_library_compile_options(${item} ${ARGN})
