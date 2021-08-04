@@ -42,9 +42,9 @@ static int stm32h7_m4_wakeup(const struct device *arg)
 		 */
 
 		/*Take HSEM */
-		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
+		z_stm32_hsem_lock(CFG_HW_ENTRY_STOP_MODE_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 		/*Release HSEM in order to notify the CPU2(CM4)*/
-		LL_HSEM_ReleaseLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID, 0);
+		z_stm32_hsem_unlock(CFG_HW_ENTRY_STOP_MODE_SEMID);
 
 		/* wait until CPU2 wakes up from stop mode */
 		timeout = 0xFFFF;
