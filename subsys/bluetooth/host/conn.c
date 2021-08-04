@@ -1196,7 +1196,7 @@ static void notify_connected(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->connected) {
 			cb->connected(conn, conn->err);
 		}
@@ -1217,7 +1217,7 @@ static void notify_disconnected(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->disconnected) {
 			cb->disconnected(conn, conn->err);
 		}
@@ -1243,7 +1243,7 @@ void notify_remote_info(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->remote_info_available) {
 			cb->remote_info_available(conn, &remote_info);
 		}
@@ -1274,7 +1274,7 @@ void notify_le_param_updated(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_param_updated) {
 			cb->le_param_updated(conn, conn->le.interval,
 					     conn->le.latency,
@@ -1294,7 +1294,7 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_data_len_updated) {
 			cb->le_data_len_updated(conn, &conn->le.data_len);
 		}
@@ -1313,7 +1313,7 @@ void notify_le_phy_updated(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_phy_updated) {
 			cb->le_phy_updated(conn, &conn->le.phy);
 		}
@@ -1346,7 +1346,7 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (!cb->le_param_req) {
 			continue;
 		}
@@ -1790,7 +1790,7 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->identity_resolved) {
 			cb->identity_resolved(conn, rpa, &conn->le.dst);
 		}
@@ -1895,7 +1895,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		}
 	}
 
-	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->security_changed) {
 			cb->security_changed(conn, conn->sec_level, err);
 		}

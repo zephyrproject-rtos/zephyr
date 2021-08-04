@@ -234,7 +234,7 @@ struct bt_l2cap_fixed_chan {
 };
 
 #define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = {   \
 				.cid = _cid,                            \
 				.accept = _accept,                      \
 				.destroy = _destroy,                    \
@@ -247,7 +247,7 @@ struct bt_l2cap_br_fixed_chan {
 };
 
 #define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
 				.cid = _cid,			\
 				.accept = _accept,		\
 			}

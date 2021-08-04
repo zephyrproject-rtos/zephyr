@@ -79,7 +79,7 @@ struct ec_host_cmd_handler {
  */
 #define EC_HOST_CMD_HANDLER(_function, _id, _version_mask, _request_type,      \
 			    _response_type)                                    \
-	const Z_STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {   \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {     \
 		.id = _id,                                                     \
 		.handler = _function,                                          \
 		.version_mask = _version_mask,                                 \
@@ -100,7 +100,7 @@ struct ec_host_cmd_handler {
  *        supports. E.g. BIT(0) corresponse to version 0.
  */
 #define EC_HOST_CMD_HANDLER_UNBOUND(_function, _id, _version_mask)             \
-	const Z_STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {   \
+	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {     \
 		.id = _id,                                                     \
 		.handler = _function,                                          \
 		.version_mask = _version_mask,                                 \
