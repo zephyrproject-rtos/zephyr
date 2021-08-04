@@ -809,12 +809,19 @@ static int tls_mbedtls_reset(struct tls_context *context)
 		return ret;
 	}
 
-	k_sem_init(&context->tls_established, 0, 1);
+	k_sem_reset(&context->tls_established);
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	(void)memset(&context->dtls_peer_addr, 0,
-		     sizeof(context->dtls_peer_addr));
-	context->dtls_peer_addrlen = 0;
+	/* Server role: reset the address so that a new
+	 *              client can connect w/o a need to reopen a socket
+	 * Client role: keep peer addr so socket can continue to be used
+	 *              even on handshake timeout
+	 */
+	if (context->options.role == MBEDTLS_SSL_IS_SERVER) {
+		(void)memset(&context->dtls_peer_addr, 0,
+			     sizeof(context->dtls_peer_addr));
+		context->dtls_peer_addrlen = 0;
+	}
 #endif
 
 	return 0;
@@ -857,6 +864,16 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 				}
 
 				ret = -EAGAIN;
+				break;
+			}
+		} else if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
+			/* MbedTLS API documentation requires session to
+			 * be reset in this case
+			 */
+			ret = tls_mbedtls_reset(context);
+			if (ret == 0) {
+				NET_ERR("TLS handshake timeout");
+				ret = -ETIMEDOUT;
 				break;
 			}
 		}
@@ -1533,9 +1550,12 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	}
 
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+	    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+	    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+	    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
 		errno = EAGAIN;
 	} else {
+		(void)tls_mbedtls_reset(ctx);
 		errno = EIO;
 	}
 
