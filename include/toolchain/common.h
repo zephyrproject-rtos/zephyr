@@ -197,11 +197,12 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM().
  */
 #define STRUCT_SECTION_ITERABLE(struct_type, name) \
-	Z_STRUCT_SECTION_ITERABLE(struct_type, name)
-
-#define Z_STRUCT_SECTION_ITERABLE(struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
 	__in_section(_##struct_type, static, name) __used
+
+#define Z_STRUCT_SECTION_ITERABLE(struct_type, name) \
+	__DEPRECATED_MACRO \
+	STRUCT_SECTION_ITERABLE(struct_type, name)
 
 /**
  * @brief Defines an alternate data type iterable section.
@@ -212,11 +213,12 @@
  * data type sizes and semantics must be equivalent!
  */
 #define STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
-	Z_STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name)
-
-#define Z_STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
 	__in_section(_##out_type, static, name) __used
+
+#define Z_STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
+	__DEPRECATED_MACRO \
+	STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name)
 
 /**
  * @brief Iterate over a specified iterable section.
@@ -229,9 +231,6 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	Z_STRUCT_SECTION_FOREACH(struct_type, iterator)
-
-#define Z_STRUCT_SECTION_FOREACH(struct_type, iterator) \
 	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
 	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
 	for (struct struct_type *iterator = \
@@ -240,6 +239,10 @@
 			 "unexpected list end location"); \
 		iterator < _CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
+
+#define Z_STRUCT_SECTION_FOREACH(struct_type, iterator) \
+	__DEPRECATED_MACRO \
+	STRUCT_SECTION_FOREACH(struct_type, iterator)
 
 /**
  * @}
