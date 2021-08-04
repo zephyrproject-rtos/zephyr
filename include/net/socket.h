@@ -884,7 +884,7 @@ struct net_socket_register {
 	(__net_socket_register_##socket_name)
 
 #define NET_SOCKET_REGISTER(socket_name, _family, _is_supported, _handler) \
-	static const Z_STRUCT_SECTION_ITERABLE(net_socket_register,	\
+	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
 			NET_SOCKET_GET_NAME(socket_name)) = {		\
 		.family = _family,					\
 		.is_supported = _is_supported,				\

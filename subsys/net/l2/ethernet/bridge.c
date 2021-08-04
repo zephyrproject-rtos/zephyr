@@ -22,7 +22,7 @@ extern struct eth_bridge _eth_bridge_list_end[];
 
 void net_eth_bridge_foreach(eth_bridge_cb_t cb, void *user_data)
 {
-	Z_STRUCT_SECTION_FOREACH(eth_bridge, br) {
+	STRUCT_SECTION_FOREACH(eth_bridge, br) {
 		cb(br, user_data);
 	}
 }

@@ -44,7 +44,7 @@ static struct k_spinlock z_thread_monitor_lock;
 #endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
-	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
+	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
 
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
@@ -711,7 +711,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 static void grant_static_access(void)
 {
-	Z_STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
+	STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
 		for (int i = 0; pos->objects[i] != NULL; i++) {
 			k_object_access_grant(pos->objects[i],
 					      pos->thread);

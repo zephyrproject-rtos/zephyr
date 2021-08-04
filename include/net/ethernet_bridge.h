@@ -51,7 +51,7 @@ struct eth_bridge {
  * @param name Name of the bridge object
  */
 #define ETH_BRIDGE_INIT(name) \
-	Z_STRUCT_SECTION_ITERABLE(eth_bridge, name) = \
+	STRUCT_SECTION_ITERABLE(eth_bridge, name) = \
 		ETH_BRIDGE_INITIALIZER(name)
 
 struct eth_bridge_iface_context {
