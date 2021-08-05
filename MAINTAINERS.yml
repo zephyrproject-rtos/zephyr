@@ -1315,6 +1315,19 @@ Nuvoton_NPCX Platforms:
     labels:
         - "platform: Nuvoton_NPCX"
 
+Nuvoton_Numicro Platforms:
+    status: orphaned
+    collaborators:
+        - ssekar15
+    files:
+        - soc/arm/nuvoton_numicro/
+        - boards/arm/nuvoton_pfm*/
+        - dts/arm/nuvoton/
+        - dts/bindings/*/*numicro*
+        - drivers/*/*_numicro*
+    labels:
+        - "platform: Nuvoton_Numicro"
+
 SiLabs Platforms:
     status: orphaned
     collaborators:
