@@ -304,7 +304,7 @@ static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 	}
 
-	if ((attr->perm & GATT_PERM_ENC_READ_MASK) &&
+	if ((attr->perm & GATT_PERM_ENC_READ_MASK) && (conn != NULL) &&
 	    (value->enc_key_size > bt_conn_enc_key_size(conn))) {
 		return BT_GATT_ERR(BT_ATT_ERR_ENCRYPTION_KEY_SIZE);
 	}
