@@ -42,6 +42,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_NPCX uart_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_APBUART uart_apbuart.c)
 zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RCAR uart_rcar.c)
+zephyr_library_sources_ifdef(CONFIG_UART_XEC uart_mchp_xec.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 

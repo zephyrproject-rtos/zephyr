@@ -1,0 +1,38 @@
+description: Microchip XEC UART
+
+compatible: "microchip,xec-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    girqs:
+      type: array
+      required: true
+      description: UART GIRQ and bit position in EC interrupt aggregator
+
+    pcrs:
+      type: array
+      required: true
+      description: UART Power Clock Reset(PCR) register index and bit position
+
+    "#girq-cells":
+      type: int
+      const: 2
+
+    "#pcr-cells":
+      type: int
+      const: 2
+
+girq-cells:
+    - girq_num
+    - bitpos
+
+pcr-cells:
+    - reg_idx
+    - bitpos
