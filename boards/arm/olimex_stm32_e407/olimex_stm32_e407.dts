@@ -96,7 +96,7 @@ usb_otg1: &usbotg_fs {
 	status = "disabled";
 };
 
-usb_otg2: &usbotg_hs {
+zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
 	status = "okay";
 };

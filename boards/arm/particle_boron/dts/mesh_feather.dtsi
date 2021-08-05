@@ -225,7 +225,7 @@ feather_serial: &uart0 { /* feather UART1 */
 	/* optional mesh_feather_uart1_rtscts.dtsi */
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };
