@@ -32,7 +32,7 @@ class ToggleAction(argparse.Action):
 class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
-    def __init__(self, cfg, device, did=None,
+    def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
                  dt_flash=True, erase=True, reset_after_load=False,
                  iface='swd', speed='auto',
@@ -46,7 +46,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
-        self.did = did # Debugger Identifier
+        self.dev_id = dev_id
         self.commander = commander
         self.dt_flash = dt_flash
         self.erase = erase
@@ -69,7 +69,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          flash_addr=True, erase=True)
+                          dev_id=True, flash_addr=True, erase=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return '''Device identifier. Use it to select the J-Link Serial Number
+                  of the device connected over USB.'''
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -77,9 +82,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--device', required=True, help='device name')
 
         # Optional:
-        parser.add_argument('--id', required=False,
-                            dest='did',
-                            help='Serial number of J-Link to use')
+        parser.add_argument('--id', required=False, dest='dev_id',
+                            help='Deprecated: use -i/--dev-id instead')
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',
@@ -110,7 +114,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         return JLinkBinaryRunner(cfg, args.device,
-                                 did=args.did,
+                                 dev_id=args.dev_id,
                                  commander=args.commander,
                                  dt_flash=args.dt_flash,
                                  erase=args.erase,
@@ -201,7 +205,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         server_cmd = ([self.gdbserver] +
                        # only USB connections supported
-                      ['-select', 'usb' + (f'={self.did}' if self.did else ''),
+                      ['-select', 'usb' + (f'={self.dev_id}'
+                                           if self.dev_id else ''),
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
                        '-speed', self.speed,
@@ -293,7 +298,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
             cmd = ([self.commander] +
                     # only USB connections supported
-                   (['-USB', f'{self.did}'] if self.did else []) +
+                   (['-USB', f'{self.dev_id}'] if self.dev_id else []) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,
