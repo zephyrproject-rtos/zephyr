@@ -120,7 +120,15 @@ int cavs_idc_smp_init(const struct device *dev);
 void z_mp_entry(void)
 {
 	volatile int ie;
-	uint32_t idc_reg;
+	uint32_t idc_reg, reg;
+
+	/* Fix ATOMCTL to match CPU0.  Hardware defaults for S32C1I
+	 * use internal operations (and are thus presumably atomic
+	 * only WRT the local CPU!).  We need external transactions on
+	 * the shared bus
+	 */
+	reg = 0x15;
+	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
 
 	/* Correct the Region Protection Option cachability settings.
 	 * The hardware defaults (everything accessible and uncached)
