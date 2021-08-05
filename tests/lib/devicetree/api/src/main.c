@@ -1265,6 +1265,30 @@ static void test_foreach_status_okay(void)
 	 * for-each-property type macros.
 	 */
 	unsigned int val;
+	const char *str;
+
+	/* This should expand to something like:
+	 *
+	 * "/test/enum-0" "/test/enum-1"
+	 *
+	 * but there is no guarantee about the order of nodes in the
+	 * expansion, so we test both.
+	 */
+	str = DT_FOREACH_STATUS_OKAY(vnd_enum_holder, DT_NODE_PATH);
+	zassert_true(!strcmp(str, "/test/enum-0/test/enum-1") ||
+		     !strcmp(str, "/test/enum-1/test/enum-0"), "");
+
+#undef MY_FN
+#define MY_FN(node_id, operator) DT_ENUM_IDX(node_id, val) operator
+	/* This should expand to something like:
+	 *
+	 * 0 + 2 + 3
+	 *
+	 * and order of expansion doesn't matter, since we're adding
+	 * the values all up.
+	 */
+	val = DT_FOREACH_STATUS_OKAY_VARGS(vnd_enum_holder, MY_FN, +) 3;
+	zassert_equal(val, 5, "");
 
 	/*
 	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
