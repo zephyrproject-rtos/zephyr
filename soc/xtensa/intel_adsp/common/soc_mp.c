@@ -103,7 +103,8 @@ void z_soc_mp_asm_entry(void);
 __asm__(".align 4                   \n\t"
 	".global z_soc_mp_asm_entry \n\t"
 	"z_soc_mp_asm_entry:        \n\t"
-	"  rsil  a0, 5              \n\t" /* 5 == XCHAL_EXCM_LEVEL */
+	"  movi  a0, 0x40025        \n\t" /* WOE | UM | INTLEVEL(5) */
+	"  wsr   a0, PS             \n\t"
 	"  movi  a0, 0              \n\t"
 	"  wsr   a0, WINDOWBASE     \n\t"
 	"  movi  a0, 1              \n\t"
@@ -187,9 +188,39 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint32_t vecbase;
 	uint32_t idc_reg;
 
-	__ASSERT(cpu_num == 1, "Only supports only two CPUs!");
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* On cAVS v2.5, MP startup works differently.  The core has
+	 * no ROM, and starts running immediately upon receipt of an
+	 * IDC interrupt at the start of LPSRAM at 0xbe800000.  Note
+	 * that means we don't need to bother constructing a "message"
+	 * below, it will be ignored.  But it's left in place for
+	 * simplicity and compatibility.
+	 *
+	 * All we need to do is place a single jump at that address to
+	 * our existing MP entry point.  Unfortunately Xtensa makes
+	 * this difficult, as the region is beyond the range of a
+	 * relative jump instruction, so we need an immediate, which
+	 * can only be backwards-referenced.  So we hand-assemble a
+	 * tiny trampoline here ("jump over the immediate address,
+	 * load it, jump to it").
+	 *
+	 * Long term we want to have this in linkable LP-SRAM memory
+	 * such that the standard system bootstrap out of IMR can
+	 * place it there.  But this is fine for now.
+	 */
+	void **lpsram = z_soc_uncached_ptr((void *)LP_SRAM_BASE);
+	uint8_t tramp[] = {
+		0x06, 0x01, 0x00, /* J <PC+8>  (jump to L32R) */
+		0,                /* (padding to align entry_addr) */
+		0, 0, 0, 0,       /* (entry_addr goes here) */
+		0x01, 0xff, 0xff, /* L32R a0, <entry_addr> */
+		0xa0, 0x00, 0x00, /* JX a0 */
+	};
 
-	/* Setup data to boot core #1 */
+	memcpy(lpsram, tramp, ARRAY_SIZE(tramp));
+	lpsram[1] = z_soc_mp_asm_entry;
+#endif
+
 	__asm__ volatile("rsr.VECBASE %0\n\t" : "=r"(vecbase));
 
 	start_rec.cpu = cpu_num;
