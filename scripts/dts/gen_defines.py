@@ -771,10 +771,24 @@ def write_global_compat_info(edt):
 
         ident = str2ident(compat)
         n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
+
+        # Helpers for non-INST for-each macros that take node
+        # identifiers as arguments.
+        for_each_macros[f"DT_FOREACH_OKAY_{ident}(fn)"] = \
+            " ".join(f"fn(DT_{node.z_path_id})"
+                     for node in okay_nodes)
+        for_each_macros[f"DT_FOREACH_OKAY_VARGS_{ident}(fn, ...)"] = \
+            " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)"
+                     for node in okay_nodes)
+
+        # Helpers for INST versions of for-each macros, which take
+        # instance numbers. We emit separate helpers for these because
+        # avoiding an intermediate node_id --> instance number
+        # conversion in the preprocessor helps to keep the macro
+        # expansions simpler. That hopefully eases debugging.
         for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
                      for node in okay_nodes)
-
         for_each_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)}, __VA_ARGS__)"
                      for node in okay_nodes)
