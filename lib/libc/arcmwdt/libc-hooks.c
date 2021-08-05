@@ -10,6 +10,7 @@
 #include <syscall_handler.h>
 #include <string.h>
 #include <sys/errno_private.h>
+#include <unistd.h>
 #include <errno.h>
 
 static int _stdout_hook_default(int c)
@@ -57,6 +58,19 @@ int _write(int fd, const char *buf, unsigned int nbytes)
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
 #endif
+
+/*
+ * It's require to implement _isatty to have STDIN/STDOUT/STDERR buffered
+ * properly.
+ */
+int _isatty(int file)
+{
+	if (file == STDIN_FILENO || file == STDOUT_FILENO || file == STDERR_FILENO) {
+		return 1;
+	}
+
+	return 0;
+}
 
 int *___errno(void)
 {
