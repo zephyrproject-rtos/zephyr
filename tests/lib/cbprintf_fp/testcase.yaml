@@ -5,7 +5,7 @@ common:
   integration_platforms:
     - qemu_x86
     - qemu_x86_64
-  filter: CONSOLE_HAS_DRIVER
+  filter: CONFIG_CONSOLE_HAS_DRIVER
 tests:
   lib.cbprintf_fp.printk:
     extra_configs:
