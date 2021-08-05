@@ -64,18 +64,18 @@ static void pm_work_handler(struct k_work *work)
 }
 
 static int pm_device_request(const struct device *dev,
-			enum pm_device_state target_state, uint32_t pm_flags)
+			enum pm_device_state state, uint32_t pm_flags)
 {
 	int ret = 0;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, state);
 
-	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
-			(target_state == PM_DEVICE_STATE_SUSPENDED),
+	__ASSERT((state == PM_DEVICE_STATE_ACTIVE) ||
+			(state == PM_DEVICE_STATE_SUSPENDED),
 			"Invalid device PM state requested");
 
 	if (k_is_pre_kernel()) {
-		if (target_state == PM_DEVICE_STATE_ACTIVE) {
+		if (state == PM_DEVICE_STATE_ACTIVE) {
 			dev->pm->usage++;
 		} else {
 			dev->pm->usage--;
@@ -107,7 +107,7 @@ static int pm_device_request(const struct device *dev,
 		goto out_unlock;
 	}
 
-	if (target_state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		dev->pm->usage++;
 	} else {
 		dev->pm->usage--;
@@ -134,10 +134,10 @@ static int pm_device_request(const struct device *dev,
 
 	/*
 	 * dev->pm->state was set in pm_device_runtime_state_set(). As the
-	 * device may not have been properly changed to the target_state or
+	 * device may not have been properly changed to the state or
 	 * another thread we check it here before returning.
 	 */
-	ret = target_state == dev->pm->state ? 0 : -EIO;
+	ret = state == dev->pm->state ? 0 : -EIO;
 
 out_unlock:
 	(void)k_mutex_unlock(&dev->pm->lock);
