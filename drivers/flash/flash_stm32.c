@@ -78,33 +78,11 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(const struct device *dev)
 {
-	uint32_t const error =
-#if defined(FLASH_FLAG_PGAERR)
-		FLASH_FLAG_PGAERR |
-#endif
-#if defined(FLASH_FLAG_RDERR)
-		FLASH_FLAG_RDERR  |
-#endif
-#if defined(FLASH_FLAG_PGPERR)
-		FLASH_FLAG_PGPERR |
-#endif
-#if defined(FLASH_FLAG_PGSERR)
-		FLASH_FLAG_PGSERR |
-#endif
-#if defined(FLASH_FLAG_OPERR)
-		FLASH_FLAG_OPERR |
-#endif
-#if defined(FLASH_FLAG_PROGERR)
-		FLASH_FLAG_PROGERR |
-#endif
-#if defined(FLASH_FLAG_PGERR)
-		FLASH_FLAG_PGERR |
-#endif
-		FLASH_FLAG_WRPERR;
 
-	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & error) {
-		LOG_DBG("Status: 0x%08x",
-			FLASH_STM32_REGS(dev)->FLASH_STM32_SR & error);
+	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
+		LOG_DBG("Status: 0x%08lx",
+			FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+							FLASH_STM32_SR_ERRORS);
 		return -EIO;
 	}
 
