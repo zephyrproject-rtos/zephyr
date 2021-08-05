@@ -28,17 +28,11 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
-			if (ret == 0) {
-				dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
-			}
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-			if (ret == 0) {
-				dev->pm->state = PM_DEVICE_STATE_ACTIVE;
-			}
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDING:
