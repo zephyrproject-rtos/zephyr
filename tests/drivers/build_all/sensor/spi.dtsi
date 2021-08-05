@@ -317,27 +317,6 @@ test_spi_lsm6dso: lsm6dso@22 {
 	irq-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_cc1200: cc1200@23 {
-	compatible = "ti,cc1200";
-	label = "CC1200";
-	reg = <0x23>;
-	spi-max-frequency = <0>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_cc2520: cc2520@24 {
-	compatible = "ti,cc2520";
-	label = "CC2520";
-	reg = <0x24>;
-	spi-max-frequency = <0>;
-	vreg-en-gpios = <&test_gpio 0 0>;
-	reset-gpios = <&test_gpio 0 0>;
-	fifo-gpios = <&test_gpio 0 0>;
-	cca-gpios = <&test_gpio 0 0>;
-	sfd-gpios = <&test_gpio 0 0>;
-	fifop-gpios = <&test_gpio 0 0>;
-};
-
 test_spi_ws2812_spi: ws2812-spi@2e {
 	compatible = "worldsemi,ws2812-spi";
 	label = "WS2812-SPI";
