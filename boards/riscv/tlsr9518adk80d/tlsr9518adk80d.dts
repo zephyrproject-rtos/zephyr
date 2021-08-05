@@ -121,6 +121,18 @@
 	pinctrl-0 = <&pwm_ch0_pb4>;
 };
 
+&pspi {
+	status = "okay";
+	cs0-pin = "PSPI_CSN_PC4";
+	pinctrl-0 = <&pspi_clk_pc5 &pspi_miso_io1_pc6 &pspi_mosi_io0_pc7>;
+};
+
+&hspi {
+	status = "okay";
+	cs0-pin = "HSPI_CSN_PA1";
+	pinctrl-0 = <&hspi_clk_pa2 &hspi_miso_io1_pa3 &hspi_mosi_io0_pa4>;
+};
+
 &flash_mspi {
 	partitions {
 		compatible = "fixed-partitions";

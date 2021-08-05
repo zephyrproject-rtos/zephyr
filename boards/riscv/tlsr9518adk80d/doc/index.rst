@@ -71,6 +71,8 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | RADIO          | on-chip    | ieee802154, OpenThread       |
 +----------------+------------+------------------------------+
+| SPI (Master)   | on-chip    | spi                          |
++----------------+------------+------------------------------+
 
 The following example projects are supported:
 
@@ -103,8 +105,9 @@ Limitations
 -----------
 
 - Maximum 3 GPIO pins could be configured to generate interrupts simultaneously. All pins must be related to different ports and use different IRQ numbers.
-- DMA mode is not supported by Serial Port.
+- DMA mode is not supported by I2C, SPI and Serial Port.
 - UART hardware flow control is not implemented.
+- SPI Slave mode is not implemented.
 
 Default configuration and IOs
 =============================
@@ -145,6 +148,8 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 - UART0 RX: PB2, TX: PB3
 - UART1 RX: PC6, TX: PC7
 - PWM Channel 0: PB4
+- PSPI CS0: PC4, CLK: PC5, MISO: PC6, MOSI: PC7
+- HSPI CS0: PA1, CLK: PA2, MISO: PA3, MOSI: PA4
 
 Serial Port
 -----------
