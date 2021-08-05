@@ -11,12 +11,6 @@
 
 #include <soc.h>
 
-#define XEC_UART_0_REGS							\
-	((struct uart_regs *)DT_REG_ADDR(DT_NODELABEL(uart0)))
-
-#define XEC_UART_1_REGS							\
-	((struct uart_regs *)DT_REG_ADDR(DT_NODELABEL(uart1)))
-
 struct pinmux_ports_t {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_000_036), okay)
 	const struct device *porta;
@@ -77,22 +71,10 @@ static void brd_init_pinmux_ports(struct pinmux_ports_t *pp)
 static void brd_cfg_uart(struct pinmux_ports_t *pp)
 {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
-	struct uart_regs *uart0 = XEC_UART_0_REGS;
-
-	uart0->CFG_SEL = (MCHP_UART_LD_CFG_INTCLK +
-		MCHP_UART_LD_CFG_RESET_SYS + MCHP_UART_LD_CFG_NO_INVERT);
-	uart0->ACTV = MCHP_UART_LD_ACTIVATE;
-
 	pinmux_pin_set(pp->portc, MCHP_GPIO_104, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(pp->portc, MCHP_GPIO_105, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
-	struct uart_regs *uart1 = XEC_UART_1_REGS;
-
-	uart1->CFG_SEL = (MCHP_UART_LD_CFG_INTCLK +
-		MCHP_UART_LD_CFG_RESET_SYS + MCHP_UART_LD_CFG_NO_INVERT);
-	uart1->ACTV = MCHP_UART_LD_ACTIVATE;
-
 	pinmux_pin_set(pp->portd, MCHP_GPIO_170, MCHP_GPIO_CTRL_MUX_F1);
 	pinmux_pin_set(pp->portd, MCHP_GPIO_171, MCHP_GPIO_CTRL_MUX_F1);
 #endif
