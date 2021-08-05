@@ -669,3 +669,10 @@ test_i2c_ina23x: ina23x@4f {
 	alert_limit = <0>;
 	irq-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_lm77: lm77@50 {
+	compatible = "lm77";
+	label = "LM77";
+	reg = <0x50>;
+	int-gpios = <&test_gpio 0 0>;
+};
