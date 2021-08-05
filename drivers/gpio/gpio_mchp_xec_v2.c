@@ -14,7 +14,7 @@
 
 #include "gpio_utils.h"
 
-#define XEC_ECIA_REGS ((struct ecia_regs *)(DT_REG_ADDR(DT_NODELABEL(ecia))))
+#define XEC_GPIO_EDGE_DLY_COUNT		4
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
@@ -268,7 +268,6 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 		} else {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_LVL_LO;
 		}
-		sys_write32(pcr1, pcr1_addr);
 	} else if (mode == GPIO_INT_MODE_EDGE) {
 		if (trig == GPIO_INT_TRIG_LOW) {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_FEDGE;
@@ -277,11 +276,14 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 		} else if (trig == GPIO_INT_TRIG_BOTH) {
 			pcr1 |= MCHP_GPIO_CTRL_IDET_BEDGE;
 		}
-		sys_write32(pcr1, pcr1_addr);
-		__DMB(); /* insure write completes */
 	} else {
 		pcr1 |= MCHP_GPIO_CTRL_IDET_DISABLE;
-		sys_write32(pcr1, pcr1_addr);
+	}
+
+	sys_write32(pcr1, pcr1_addr);
+	/* delay for HW to synchronize after it ungates its clock */
+	for (int i = 0; i < XEC_GPIO_EDGE_DLY_COUNT; i++) {
+		sys_read32(pcr1_addr);
 	}
 
 	mchp_soc_ecia_girq_src_clr(config->girq_id, pin);
