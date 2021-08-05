@@ -54,9 +54,19 @@ struct flash_stm32_priv {
 
 /* Redefintions of flags and masks to harmonize stm32 series: */
 #if defined(CONFIG_SOC_SERIES_STM32G0X)
+#if defined(FLASH_FLAG_BSY2)
+#define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY1 | FLASH_FLAG_BSY2);
+#else
 #define FLASH_STM32_SR_BUSY	(FLASH_SR_BSY1)
+#endif /* defined(FLASH_FLAG_BSY2) */
 #else
 #define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY)
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+#define FLASH_STM32_SR_CFGBSY	(FLASH_SR_CFGBSY)
+#elif defined(FLASH_FLAG_CFGBSY)
+#define FLASH_STM32_SR_CFGBSY	(FLASH_FLAG_CFGBSY)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32G0X)

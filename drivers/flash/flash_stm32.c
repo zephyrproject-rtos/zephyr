@@ -103,6 +103,11 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 
 	busy_flags = FLASH_STM32_SR_BUSY;
 
+/* Some Series can't modify FLASH_CR reg while CFGBSY is set. Wait as well */
+#if defined(FLASH_STM32_SR_CFGBSY)
+	busy_flags |= FLASH_STM32_SR_CFGBSY;
+#endif
+
 	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
