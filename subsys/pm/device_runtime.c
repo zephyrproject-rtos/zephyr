@@ -70,7 +70,7 @@ static void pm_work_handler(struct k_work *work)
 }
 
 static int pm_device_request(const struct device *dev,
-			     uint32_t target_state, uint32_t pm_flags)
+			enum pm_device_state target_state, uint32_t pm_flags)
 {
 	int ret = 0;
 
