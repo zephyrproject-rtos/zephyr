@@ -97,7 +97,7 @@
 	status = "okay";
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 

@@ -161,7 +161,7 @@ arduino_spi: &spi0 {
 	pinctrl-0 = <&UART2_RTS_b_PTD0 &UART2_CTS_b_PTD1 &UART2_RX_PTD2 &UART2_TX_PTD3>;
 };
 
-&usbotg {
+zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
