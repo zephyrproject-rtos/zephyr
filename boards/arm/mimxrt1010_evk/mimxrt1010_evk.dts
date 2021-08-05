@@ -15,7 +15,6 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		usbd0 = &usb1;
 	};
 
 	chosen {
