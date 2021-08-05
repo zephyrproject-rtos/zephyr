@@ -1254,6 +1254,53 @@ static void test_arrays(void)
 	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, c), 2, "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_gpio
+static void test_foreach_status_okay(void)
+{
+	/*
+	 * For-each-node type macro tests.
+	 *
+	 * See test_foreach_prop_elem*() for tests of
+	 * for-each-property type macros.
+	 */
+	unsigned int val;
+
+	/*
+	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
+	 * using macros with side effects in the current scope.
+	 */
+	val = 0;
+#define INC(inst_ignored) do { val++; } while (0);
+	DT_INST_FOREACH_STATUS_OKAY(INC)
+	zassert_equal(val, 2, "");
+#undef INC
+
+	val = 0;
+#define INC_ARG(arg) do { val++; val += arg; } while (0)
+#define INC(inst_ignored, arg) INC_ARG(arg);
+	DT_INST_FOREACH_STATUS_OKAY_VARGS(INC, 1)
+	zassert_equal(val, 4, "");
+#undef INC_ARG
+#undef INC
+
+	/*
+	 * Make sure DT_INST_FOREACH_STATUS_OKAY works with 0 instances, and does
+	 * not expand its argument at all.
+	 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT xxxx
+#define BUILD_BUG_ON_EXPANSION (there is a bug in devicetree.h)
+	DT_INST_FOREACH_STATUS_OKAY(BUILD_BUG_ON_EXPANSION)
+#undef BUILD_BUG_ON_EXPANSION
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT xxxx
+#define BUILD_BUG_ON_EXPANSION(arg) (there is a bug in devicetree.h)
+	DT_INST_FOREACH_STATUS_OKAY_VARGS(BUILD_BUG_ON_EXPANSION, 1)
+#undef BUILD_BUG_ON_EXPANSION
+}
+
 static void test_foreach_prop_elem(void)
 {
 #define TIMES_TWO(node_id, prop, idx) \
@@ -1369,7 +1416,6 @@ static void test_devices(void)
 	const struct device *devs[3];
 	int i = 0;
 	const struct device *dev_abcd;
-	unsigned int val;
 
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "");
 
@@ -1399,40 +1445,6 @@ static void test_devices(void)
 	zassert_not_null(dev_abcd, "");
 	zassert_equal(to_info(dev_abcd)->reg_addr, 0xabcd1234, "");
 	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "");
-
-	/*
-	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
-	 * using macros with side effects in the current scope.
-	 */
-	val = 0;
-#define INC(inst_ignored) do { val++; } while (0);
-	DT_INST_FOREACH_STATUS_OKAY(INC)
-	zassert_equal(val, 2, "");
-#undef INC
-
-	val = 0;
-#define INC_ARG(arg) do { val++; val += arg; } while (0)
-#define INC(inst_ignored, arg) INC_ARG(arg);
-	DT_INST_FOREACH_STATUS_OKAY_VARGS(INC, 1)
-	zassert_equal(val, 4, "");
-#undef INC_ARG
-#undef INC
-
-	/*
-	 * Make sure DT_INST_FOREACH_STATUS_OKAY works with 0 instances, and does
-	 * not expand its argument at all.
-	 */
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT xxxx
-#define BUILD_BUG_ON_EXPANSION (there is a bug in devicetree.h)
-	DT_INST_FOREACH_STATUS_OKAY(BUILD_BUG_ON_EXPANSION)
-#undef BUILD_BUG_ON_EXPANSION
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT xxxx
-#define BUILD_BUG_ON_EXPANSION(arg) (there is a bug in devicetree.h)
-	DT_INST_FOREACH_STATUS_OKAY_VARGS(BUILD_BUG_ON_EXPANSION, 1)
-#undef BUILD_BUG_ON_EXPANSION
 }
 
 static void test_cs_gpios(void)
@@ -1901,6 +1913,7 @@ void test_main(void)
 			 ztest_unit_test(test_pwms),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
+			 ztest_unit_test(test_foreach_status_okay),
 			 ztest_unit_test(test_foreach_prop_elem),
 			 ztest_unit_test(test_foreach_prop_elem_varg),
 			 ztest_unit_test(test_devices),
