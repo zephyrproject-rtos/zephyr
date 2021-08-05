@@ -788,16 +788,16 @@ if(CONFIG_HAS_DTS)
   # dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_handles.py
   add_custom_command(
-    OUTPUT dev_handles.c
+    OUTPUT misc/generated/dev_handles.c
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_handles.py
-    --output-source dev_handles.c
+    --output-source misc/generated/dev_handles.c
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES misc/generated/dev_handles.c)
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
