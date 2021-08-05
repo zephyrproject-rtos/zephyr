@@ -990,7 +990,10 @@ void gsm_ppp_start(const struct device *dev)
 	(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 
 #if defined(CONFIG_GSM_MUX)
-	k_work_init_delayable(&rssi_work_handle, rssi_handler);
+	// Don't initialize rssi_work_handle if it's already pending!
+	if (k_work_delayable_is_pending(&rssi_work_handle) == false){
+		k_work_init_delayable(&rssi_work_handle, rssi_handler);
+	}
 #endif
 }
 
