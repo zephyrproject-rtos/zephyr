@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&usbd {
+&zephyr_udc0 {
 	hs_0 {
 		label = "HEADSET";
 		compatible = "usb-audio-hs";
