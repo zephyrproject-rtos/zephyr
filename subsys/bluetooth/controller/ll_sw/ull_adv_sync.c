@@ -238,8 +238,10 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 	return 0;
 }
 
-static uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu,
-					const uint8_t *data, uint8_t len)
+/* Note: Function made global because it is temporarily not used and causes compilation warning.
+ * It will be used when fragmentation of periodic advertising PDU is implemented.
+ */
+uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu, const uint8_t *data, uint8_t len)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	uint8_t len_max;
