@@ -152,6 +152,8 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	timeout_work;
+
+	bool timeout_work_active;
 };
 
 enum {
