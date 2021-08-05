@@ -996,7 +996,9 @@ static int uart_nrfx_init(const struct device *dev)
 	nrf_gpio_cfg_output(TX_PIN);
 
 	if (RX_PIN_USED) {
-		nrf_gpio_cfg_input(RX_PIN, NRF_GPIO_PIN_PULLUP);
+		nrf_gpio_cfg_input(RX_PIN,
+			PROP(rx_pull_up) ? NRF_GPIO_PIN_PULLUP
+					 : NRF_GPIO_PIN_NOPULL);
 	}
 
 	nrf_uart_txrx_pins_set(uart0_addr, TX_PIN, RX_PIN);
@@ -1010,7 +1012,9 @@ static int uart_nrfx_init(const struct device *dev)
 	}
 
 	if (HAS_PROP(cts_pin)) {
-		nrf_gpio_cfg_input(CTS_PIN, NRF_GPIO_PIN_PULLUP);
+		nrf_gpio_cfg_input(CTS_PIN,
+			PROP(cts_pull_up) ? NRF_GPIO_PIN_PULLUP
+					  : NRF_GPIO_PIN_NOPULL);
 	}
 
 	nrf_uart_hwfc_pins_set(uart0_addr, RTS_PIN, CTS_PIN);
@@ -1104,37 +1108,36 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 		return;
 	}
 
-	uint32_t tx_pin = nrf_uart_tx_pin_get(uart0_addr);
-	uint32_t rx_pin = nrf_uart_rx_pin_get(uart0_addr);
-	uint32_t cts_pin = nrf_uart_cts_pin_get(uart0_addr);
-	uint32_t rts_pin = nrf_uart_rts_pin_get(uart0_addr);
-
 	if (enable) {
-		nrf_gpio_pin_write(tx_pin, 1);
-		nrf_gpio_cfg_output(tx_pin);
+		nrf_gpio_pin_write(TX_PIN, 1);
+		nrf_gpio_cfg_output(TX_PIN);
 		if (RX_PIN_USED) {
-			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_PULLUP);
+			nrf_gpio_cfg_input(RX_PIN,
+				PROP(rx_pull_up) ? NRF_GPIO_PIN_PULLUP
+						 : NRF_GPIO_PIN_NOPULL);
 		}
 
 		if (HAS_PROP(rts_pin)) {
-			nrf_gpio_pin_write(rts_pin, 1);
-			nrf_gpio_cfg_output(rts_pin);
+			nrf_gpio_pin_write(RTS_PIN, 1);
+			nrf_gpio_cfg_output(RTS_PIN);
 		}
 		if (HAS_PROP(cts_pin)) {
-			nrf_gpio_cfg_input(cts_pin, NRF_GPIO_PIN_PULLUP);
+			nrf_gpio_cfg_input(CTS_PIN,
+				PROP(cts_pull_up) ? NRF_GPIO_PIN_PULLUP
+						  : NRF_GPIO_PIN_NOPULL);
 		}
 	} else {
-		nrf_gpio_cfg_default(tx_pin);
+		nrf_gpio_cfg_default(TX_PIN);
 		if (RX_PIN_USED) {
-			nrf_gpio_cfg_default(rx_pin);
+			nrf_gpio_cfg_default(RX_PIN);
 		}
 
 		if (HAS_PROP(rts_pin)) {
-			nrf_gpio_cfg_default(rts_pin);
+			nrf_gpio_cfg_default(RTS_PIN);
 		}
 
 		if (HAS_PROP(cts_pin)) {
-			nrf_gpio_cfg_default(cts_pin);
+			nrf_gpio_cfg_default(CTS_PIN);
 		}
 	}
 }
