@@ -209,8 +209,7 @@
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CENTRAL)
-/* FIXME: needs more due to lll scheduling */
-#define BT_CTLR_ADV_EXT_RX_CNT  16
+#define BT_CTLR_ADV_EXT_RX_CNT  1
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
 #endif

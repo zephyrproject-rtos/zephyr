@@ -47,8 +47,6 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
-static int resume_prepare_cb(struct lll_prepare_param *p);
-static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume);
 static int is_abort_cb(void *next, void *curr,
 		       lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -118,17 +116,6 @@ void lll_scan_prepare(void *param)
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-void lll_scan_isr_resume(void *param)
-{
-	static struct lll_prepare_param p;
-
-	/* Clear radio status and events */
-	lll_isr_status_reset();
-
-	p.param = param;
-	resume_prepare_cb(&p);
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -288,23 +275,6 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	return common_prepare_cb(p, false);
-}
-
-static int resume_prepare_cb(struct lll_prepare_param *p)
-{
-	struct ull_hdr *ull;
-
-	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
-	p->remainder = 0;
-	p->lazy = 0;
-
-	return common_prepare_cb(p, true);
-}
-
-static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
-{
 	uint32_t ticks_at_event, ticks_at_start;
 	struct node_rx_pdu *node_rx;
 	uint32_t remainder_us;
@@ -349,7 +319,6 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 
 	lll->is_adv_ind = 0U;
-	lll->is_aux_sched = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
@@ -451,7 +420,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	{
 		uint32_t ret;
 
-		if (!is_resume && lll->ticks_window) {
+		if (lll->ticks_window) {
 			/* start window close timeout */
 			ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 					   TICKER_USER_ID_LLL,
@@ -494,6 +463,18 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	DEBUG_RADIO_START_O(1);
 
 	return 0;
+}
+
+static int resume_prepare_cb(struct lll_prepare_param *p)
+{
+	struct ull_hdr *ull;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	p->remainder = 0;
+	p->lazy = 0;
+
+	return prepare_cb(p);
 }
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
@@ -903,9 +884,6 @@ static void isr_abort(void *param)
 
 static void isr_done_cleanup(void *param)
 {
-	/* Clear radio status and events */
-	lll_isr_status_reset();
-
 	if (lll_is_done(param)) {
 		return;
 	}
@@ -1266,12 +1244,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 						       FILTER_IDX_NONE,
 					 dir_report);
 		if (err) {
-			/* Auxiliary PDU LLL scanning has been setup */
-			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-			    (err == -EBUSY)) {
-				return 0;
-			}
-
 			return err;
 		}
 	}
@@ -1355,7 +1327,6 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 				uint8_t rl_idx, bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
-	int err = 0;
 
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
@@ -1410,13 +1381,6 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 				ftr->radio_end_us =
 					radio_tmr_end_get() -
 					radio_rx_chain_delay_get(lll->phy, 1);
-
-				ftr->aux_sched = lll_scan_aux_setup(lll,
-								    pdu_adv_rx,
-								    lll->phy);
-				if (ftr->aux_sched) {
-					err = -EBUSY;
-				}
 			}
 			break;
 		}
@@ -1446,5 +1410,5 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();
 
-	return err;
+	return 0;
 }

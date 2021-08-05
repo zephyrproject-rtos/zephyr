@@ -267,12 +267,7 @@ struct node_rx_ftr {
 			uint16_t conn_handle;
 		} param_adv_term;
 	};
-	union {
-		void *extra;
-		void *aux_ptr;
-		uint8_t aux_phy;
-		uint8_t aux_sched;
-	};
+	void     *extra;
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
