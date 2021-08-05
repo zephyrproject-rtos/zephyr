@@ -79,7 +79,7 @@
 	status = "okay";
 };
 
-&usbhs {
+zephyr_udc0: &usbhs {
 	status = "okay";
 };
 

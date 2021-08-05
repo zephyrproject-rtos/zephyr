@@ -62,7 +62,7 @@
 	pinctrl-0 = <&UART0_RX_PTA1 &UART0_TX_PTA2>;
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
