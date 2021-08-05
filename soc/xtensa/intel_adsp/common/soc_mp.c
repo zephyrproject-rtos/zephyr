@@ -122,6 +122,23 @@ void z_mp_entry(void)
 	volatile int ie;
 	uint32_t idc_reg;
 
+	/* Correct the Region Protection Option cachability settings.
+	 * The hardware defaults (everything accessible and uncached)
+	 * don't match the design intent.  Registers in the first
+	 * region are RW but uncached, as is the RAM mapped in the
+	 * fifth.  The same RAM in the sixth is mapped cached.  Note
+	 * that there's actually a HAL call to do this by emulating
+	 * the older cacheattr feature, but it generates significantly
+	 * more code.
+	 */
+	const uint32_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
+
+	for (int region = 0; region < 8; region++) {
+		uint32_t addr = 0x20000000 * region;
+
+		__asm__ volatile("wdtlb %0, %1" :: "r"(attribs[region]), "r"(addr));
+	}
+
 	/* We don't know what the boot ROM might have touched and we
 	 * don't care.  Make sure it's not in our local cache to be
 	 * flushed accidentally later.
