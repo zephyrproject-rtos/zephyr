@@ -144,8 +144,10 @@
 	current-speed = <115200>;
 	tx-pin = <20>;
 	rx-pin = <22>;
+	rx-pull-up;
 	rts-pin = <19>;
 	cts-pin = <21>;
+	cts-pull-up;
 };
 
 &pwm0 {
@@ -198,6 +200,7 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 	tx-pin = <33>;
 	rx-pin = <32>;
+	rx-pull-up;
 };
 
 arduino_i2c: &i2c1 {};
