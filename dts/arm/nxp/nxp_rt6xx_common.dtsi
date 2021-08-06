@@ -101,6 +101,15 @@
 		port = <1>;
 	};
 
+	gpio2: gpio@2 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x4000>;
+		label = "GPIO_2";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <2>;
+	};
+
 	flexspi: spi@134000 {
 		compatible = "nxp,imx-flexspi";
 		reg = <0x134000 0x1000>;
