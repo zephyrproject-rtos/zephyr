@@ -52,6 +52,10 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 
 static int wdt_ambiq_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
+	// cfg->window.min should be 0 since this doesn't support time windows.
+	uint8_t in_ms = cfg->window.max;
+	// TODO(michalc): compute the upper bound of the 8 bit count register and the optimal clock
+	// frequency to hit the timeout as precisely as possible.
 	return 0;
 }
 
