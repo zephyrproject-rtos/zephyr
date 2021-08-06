@@ -107,8 +107,10 @@
 	current-speed = <115200>;
 	tx-pin = <20>;
 	rx-pin = <24>;
+	rx-pull-up;
 	rts-pin = <17>;
 	cts-pin = <22>;
+	cts-pull-up;
 };
 
 &i2c0 {
