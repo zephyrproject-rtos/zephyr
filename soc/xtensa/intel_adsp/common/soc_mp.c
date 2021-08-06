@@ -117,46 +117,102 @@ BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
 int cavs_idc_smp_init(const struct device *dev);
 
+#define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
+#define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
+#define CxL1PCFG (*(volatile uint32_t *)0x9F080088)
+
+/* "Data/Instruction Cache Memory Way Count" fields */
+#define CxL1CCAP_DCMWC ((CxL1CCAP >> 16) & 7)
+#define CxL1CCAP_ICMWC ((CxL1CCAP >> 20) & 7)
+
+static ALWAYS_INLINE void enable_l1_cache(void)
+{
+	uint32_t reg;
+
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* First, on cAVS 2.5 we need to power the cache SRAM banks
+	 * on!  Write a bit for each cache way in the bottom half of
+	 * the L1CCFG register and poll the top half for them to turn
+	 * on.
+	 */
+	uint32_t dmask = BIT(CxL1CCAP_DCMWC) - 1;
+	uint32_t imask = BIT(CxL1CCAP_ICMWC) - 1;
+	uint32_t waymask = (imask << 8) | dmask;
+
+	CxL1CCFG = waymask;
+	while (((CxL1CCFG >> 16) & waymask) != waymask) {
+	}
+
+	/* Prefetcher also power gates, same interface */
+	CxL1PCFG = 1;
+	while ((CxL1PCFG & 0x10000) == 0) {
+	}
+#endif
+
+	/* Now set up the Xtensa CPU to enable the cache logic.  The
+	 * details of the fields are somewhat complicated, but per the
+	 * ISA ref: "Turning on caches at power-up usually consists of
+	 * writing a constant with bits[31:8] all 1’s to MEMCTL.".
+	 * Also set bit 0 to enable the LOOP extension instruction
+	 * fetch buffer.
+	 */
+	reg = 0xffffff01;
+	__asm__ volatile("wsr %0, MEMCTL; rsync" :: "r"(reg));
+
+	/* Likewise enable prefetching.  Sadly these values are not
+	 * architecturally defined by Xtensa (they're just documented
+	 * as priority hints), so this constant is just copied from
+	 * SOF for now.  If we care about prefetch priority tuning
+	 * we're supposed to ask Cadence I guess.
+	 */
+	reg = IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25) ? 0x1038 : 0;
+	__asm__ volatile("wsr %0, PREFCTL; rsync" :: "r"(reg));
+
+	/* Finally we need to enable the cache in the Region
+	 * Protection Option "TLB" entries.  The hardware defaults
+	 * have this set to RW/uncached (2) everywhere.  We want
+	 * writeback caching (4) in the sixth mapping (the second of
+	 * two RAM mappings) and to mark all unused regions
+	 * inaccessible (15) for safety.  Note that there is a HAL
+	 * routine that does this (by emulating the older "cacheattr"
+	 * hardware register), but it generates significantly larger
+	 * code.
+	 */
+	const uint8_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
+
+	for (int region = 0; region < 8; region++) {
+		reg = 0x20000000 * region;
+		__asm__ volatile("wdtlb %0, %1" :: "r"(attribs[region]), "r"(reg));
+	}
+}
+
 void z_mp_entry(void)
 {
 	volatile int ie;
 	uint32_t idc_reg, reg;
 
+	enable_l1_cache();
+
 	/* Fix ATOMCTL to match CPU0.  Hardware defaults for S32C1I
 	 * use internal operations (and are thus presumably atomic
 	 * only WRT the local CPU!).  We need external transactions on
-	 * the shared bus
+	 * the shared bus.
 	 */
 	reg = 0x15;
 	__asm__ volatile("wsr %0, ATOMCTL" :: "r"(reg));
 
-	/* Correct the Region Protection Option cachability settings.
-	 * The hardware defaults (everything accessible and uncached)
-	 * don't match the design intent.  Registers in the first
-	 * region are RW but uncached, as is the RAM mapped in the
-	 * fifth.  The same RAM in the sixth is mapped cached.  Note
-	 * that there's actually a HAL call to do this by emulating
-	 * the older cacheattr feature, but it generates significantly
-	 * more code.
-	 */
-	const uint32_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
-
-	for (int region = 0; region < 8; region++) {
-		uint32_t addr = 0x20000000 * region;
-
-		__asm__ volatile("wdtlb %0, %1" :: "r"(attribs[region]), "r"(addr));
-	}
-
-	/* We don't know what the boot ROM might have touched and we
-	 * don't care.  Make sure it's not in our local cache to be
-	 * flushed accidentally later.
+	/* We don't know what the boot ROM (on pre-2.5 DSPs) might
+	 * have touched and we don't care.  Make sure it's not in our
+	 * local cache to be flushed accidentally later.
 	 *
 	 * Note that technically this is dropping our own (cached)
 	 * stack memory, which we don't have a guarantee the compiler
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	z_xtensa_cache_flush_inv_all();
+#endif
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
