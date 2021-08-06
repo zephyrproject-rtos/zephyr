@@ -234,58 +234,55 @@ static inline void radio_df_ctrl_set(uint8_t cte_len,
 				     uint8_t switch_spacing,
 				     uint8_t sample_spacing)
 {
-	uint32_t conf;
-
 	/* Complete setup is done on purpose, to be sure that there isn't left
 	 * any unexpected state in the register.
 	 */
-	conf = ((((uint32_t)cte_len << RADIO_DFECTRL1_NUMBEROF8US_Pos) &
-				       RADIO_DFECTRL1_NUMBEROF8US_Msk) |
-		((uint32_t)RADIO_DFECTRL1_DFEINEXTENSION_CRC <<
-			RADIO_DFECTRL1_DFEINEXTENSION_Pos) |
-		((uint32_t)switch_spacing << RADIO_DFECTRL1_TSWITCHSPACING_Pos) |
-		((uint32_t)NRF_RADIO_DFECTRL_SAMPLE_SPACING_1US <<
-			RADIO_DFECTRL1_TSAMPLESPACINGREF_Pos) |
-		((uint32_t)NRF_RADIO_DFECTRL_SAMPLE_TYPE_IQ <<
-			RADIO_DFECTRL1_SAMPLETYPE_Pos) |
-		((uint32_t)sample_spacing << RADIO_DFECTRL1_TSAMPLESPACING_Pos) |
-		(((uint32_t)0 << RADIO_DFECTRL1_AGCBACKOFFGAIN_Pos) &
-				 RADIO_DFECTRL1_AGCBACKOFFGAIN_Msk));
+	const nrf_radio_dfectrl_conf_t dfe_conf = {
+		.dfe_len = cte_len,
+		.extension = NRF_RADIO_DFECTRL_EXTENSION_CRC,
+		.switch_spacing = switch_spacing,
+		.spacing_ref = NRF_RADIO_DFECTRL_SAMPLE_SPACING_1US,
+		.sample_type = NRF_RADIO_DFECTRL_SAMPLE_TYPE_IQ,
+		.sample_spacing = sample_spacing,
+		.gain_steps = 0,
+		.switch_offset = 0,
+		.sample_offset = 0
+	};
 
-	NRF_RADIO->DFECTRL1 = conf;
+	nrf_radio_dfectrl_configure(NRF_RADIO, &dfe_conf);
 }
 
 void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
-	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+	radio_df_ctrl_set(cte_len, NRF_RADIO_DFECTRL_SWITCH_SPACING_2US,
+			  NRF_RADIO_DFECTRL_SAMPLE_SPACING_2US);
 }
 
 void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
-	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+	radio_df_ctrl_set(cte_len, NRF_RADIO_DFECTRL_SWITCH_SPACING_4US,
+			  NRF_RADIO_DFECTRL_SAMPLE_SPACING_2US);
 }
 
 void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 {
 	/* Switch and sample spacing does not matter for AoA Tx. It is set to
 	 * value that is in DFECTRL1 register after reset. That is done instead
-	 * of adding conditions on the value and and masking of the field before
+	 * of adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
-	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+	radio_df_ctrl_set(cte_len, NRF_RADIO_DFECTRL_SWITCH_SPACING_4US,
+			  NRF_RADIO_DFECTRL_SAMPLE_SPACING_2US);
 }
 
 void radio_df_cte_rx_2us_switching(void)
@@ -294,8 +291,8 @@ void radio_df_cte_rx_2us_switching(void)
 	 * spacing for slot and samples is the same.
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
-	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+	radio_df_ctrl_set(0, NRF_RADIO_DFECTRL_SWITCH_SPACING_2US,
+			  NRF_RADIO_DFECTRL_SAMPLE_SPACING_2US);
 	radio_df_cte_inline_set_enabled(false);
 }
 
@@ -305,8 +302,8 @@ void radio_df_cte_rx_4us_switching(void)
 	 * spacing for slot and samples is the same.
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
-	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_4us);
+	radio_df_ctrl_set(0, NRF_RADIO_DFECTRL_SWITCH_SPACING_4US,
+			  NRF_RADIO_DFECTRL_SAMPLE_SPACING_4US);
 	radio_df_cte_inline_set_enabled(false);
 }
 
