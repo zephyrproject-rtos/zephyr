@@ -1,0 +1,746 @@
+/*
+ * Copyright (c) 2021 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40081000 {
+			/* ADC */
+			adc1_in0_h3: adc1_in0_h3 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0200, AF1)>;
+			};
+			adc1_in1_j3: adc1_in1_j3 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0201, AF1)>;
+			};
+			adc1_in2_j2: adc1_in2_j2 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0202, AF1)>;
+			};
+			adc1_in3_j1: adc1_in3_j1 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0203, AF1)>;
+			};
+			adc1_in4_h2: adc1_in4_h2 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0204, AF1)>;
+			};
+
+			/* eSPI */
+			espi_reset_n1: espi_reset_n1 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 061, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			espi_alert_m4: espi_alert_m4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 063, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			espi_clk_m2: espi_clk_m2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 065, AF1)>;
+				slew-rate = "fast";
+			};
+			espi_cs_m1: espi_cs_m1 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 066, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			espi_io0_l3: espi_io0_l3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 070, AF1)>;
+				slew-rate = "fast";
+			};
+			espi_io1_n2: espi_io1_n2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 071, AF1)>;
+				slew-rate = "fast";
+			};
+			espi_io2_m3: espi_io2_m3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 072, AF1)>;
+				slew-rate = "fast";
+			};
+			espi_io3_l4: espi_io3_l4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 073, AF1)>;
+				slew-rate = "fast";
+			};
+
+			/* I2C port 0 */
+			i2c00_scl_c6: i2c00_scl_c6 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 04, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c00_sda_f5: i2c00_sda_f5 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 03, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 1 */
+			i2c01_scl_n7: i2c01_scl_n7 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0131, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c01_sda_n8: i2c01_sda_n8 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0130, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 1 alternate */
+			i2c01_scl_alt_l4: i2c01_scl_alt_l4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 073, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c01_sda_alt_m3: i2c01_sda_alt_m3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 072, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 2 */
+			i2c02_scl_c9: i2c02_scl_c9 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0155, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c02_sda_a12: i2c02_sda_a12 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0154, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 3 */
+			i2c03_scl_c10: i2c03_scl_c10 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 010, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c03_sda_b12: i2c03_sda_b12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 07, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 4 */
+			i2c04_scl_e7: i2c04_scl_e7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0144, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c04_sda_a7: i2c04_sda_a7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0143, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 5 */
+			i2c05_scl_f7: i2c05_scl_f7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0142, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c05_sda_b7: i2c05_sda_b7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0141, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 6 */
+			i2c06_scl_l11: i2c06_scl_l11 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0140, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c06_sda_n11: i2c06_sda_n11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0132, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 7 */
+			i2c07_scl_m7: i2c07_scl_m7 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 013, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c07_sda_n6: i2c07_sda_n6 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 012, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 7 alternate */
+			i2c07_scl_alt_c2: i2c07_scl_alt_c2 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 024, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c07_sda_alt_n10: i2c07_sda_alt_n10 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0152, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 8 does not exist on 144-pin MEC172x-NSZ */
+
+			/* I2C port 9 */
+			i2c09_scl_g8: i2c09_scl_g8 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0146, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c09_sda_a8: i2c09_sda_a8 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0145, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 10 */
+			i2c10_scl_l13: i2c10_scl_l13 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0107, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c10_sda_j9: i2c09_sda_j9 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 030, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 11 */
+			i2c11_scl_a2: i2c11_scl_a2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 062, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c11_sda_b3: i2c11_sda_b3 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 000, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 12 */
+			i2c12_scl_k11: i2c12_scl_k11 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 027, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c12_sda_n13: i2c12_sda_n13 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 026, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 13 */
+			i2c13_scl_m13: i2c13_scl_m13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 065, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c13_sda_m1: i2c13_sda_m1 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 066, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 14 */
+			i2c14_scl_n2: i2c14_scl_n2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 071, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c14_sda_l3: i2c14_sda_l3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 070, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* I2C port 15 */
+			i2c15_scl_f8: i2c15_scl_f8 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0150, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			i2c15_sda_c7: i2c15_sda_c7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0147, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* KEYSCAN */
+			kscan_ksi0_j8: kscan_ksi0_j8 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 017, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi1_l7: kscan_ksi1_l7 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 020, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi2_n9: kscan_ksi2_n9 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 021, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi3_n13: kscan_ksi3_n13 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 026, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi4_k11: kscan_ksi4_k11 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 027, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi5_j9: kscan_ksi5_j9 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 030, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi6_m11: kscan_ksi6_m11 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 031, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_ksi7_l10: kscan_ksi7_l10 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 032, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso00_m10: kscan_kso00_m10 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 040, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso01_e8: kscan_kso01_e8 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 045, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso02_e9: kscan_kso02_e9 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 046, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso03_f13: kscan_kso03_f13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 047, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso04_l13: kscan_kso04_l13 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0107, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso05_k13: kscan_kso05_k13 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0112, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso06_j11: kscan_kso06_j11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0113, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso07_k12: kscan_kso07_k12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0120, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso08_f12: kscan_kso08_f12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 0121, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso09_e11: kscan_kso09_e11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0122, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso10_e12: kscan_kso10_e12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0123, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso11_c11: kscan_kso11_c11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0124, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso12_d11: kscan_kso12_d11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0125, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso13_d12: kscan_kso13_d12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0126, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso14_n10: kscan_kso14_n10 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0152, AF1)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso15_l9: kscan_kso15_l9 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0151, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso16_n11: kscan_kso16_n11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0132, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			kscan_kso17_l11: kscan_kso17_l11 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0140, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* Quad SPI Shared Port: two chip selects */
+			quadspi_shd_io3_n3: quadspi_shd_io3_n3 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 016, AF2)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_io2_l6: quadspi_shd_io2_l6 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0227, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_io1_m5: quadspi_shd_io1_m5 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0224, AF2)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_io0_m6: quadspi_shd_io0_m6 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0223, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_clk_n5: quadspi_shd_clk_n5 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 056, AF2)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_cs0_n4: quadspi_shd_cs0_n4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 055, AF2)>;
+				slew-rate = "fast";
+			};
+			quadspi_shd_cs1_m8: quadspi_shd_cs1_m8 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 002, AF2)>;
+				slew-rate = "fast";
+			};
+
+			/* Quad SPI Private Port: One chip select */
+			quadspi_pvt_io3_d12: quadspi_pvt_io3_d12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0126, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_pvt_io2_e12: quadspi_pvt_io2_e12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0123, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_pvt_io1_e11: quadspi_pvt_io1_e11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0122, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_pvt_io0_f12: quadspi_pvt_io0_f12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0121, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_pvt_clk_d11: quadspi_pvt_clk_d11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0125, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_pvt_cs_c11: quadspi_pvt_cs_c11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0124, AF1)>;
+				slew-rate = "fast";
+			};
+
+			/* Quad SPI Internal: one chip select */
+			quadspi_gp_io3_e2: quadspi_gp_io3_e2 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 022, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_gp_io2_h12: quadspi_gp_io2_h12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 034, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_gp_io1_c8: quadspi_gp_io1_c8 {
+				pinmux = <MCHP_XEC_PINMUX(240_276, 0243, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_gp_io0_b11: quadspi_gp_io0_b11 {
+				pinmux = <MCHP_XEC_PINMUX(240_276, 0245, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_gp_clk_c3: quadspi_gp_clk_c3 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 023, AF1)>;
+				slew-rate = "fast";
+			};
+			quadspi_gp_cs_c2: quadspi_gp_cs_c2 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 024, AF1)>;
+				slew-rate = "fast";
+			};
+
+			/* PECI */
+			peci_dat_j12: peci_dat_j12 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 042, AF1)>;
+			};
+
+			/* PROCHOT */
+			prochot_in_alt_l5: prochot_in_alt_l5 {
+				pinmux = <MCHP_XEC_PINMUX(200_236, 0222, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* PS2 */
+			ps2c0_clk0a_h9: ps2c0_clk0a_h9 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0114, AF1)>;
+			};
+			ps2c0_dat0a_n12: ps2c0_dat0a_n12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0115, AF1)>;
+			};
+			ps2c0_clk0b_b12: ps2c0_clk0b_b12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 007, AF2)>;
+			};
+			ps2c0_dat0b_c10: ps2c0_dat0b_c10 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 010, AF2)>;
+			};
+
+			/* PWM */
+			pwm0_out_m13: pwm0_out_m13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 053, AF1)>;
+			};
+			pwm0_out_alt_b8: pwm0_out_alt_b8 {
+				pinmux = <MCHP_XEC_PINMUX(240_276, 0241, AF4)>;
+			};
+			pwm1_out_l12: pwm1_out_l12 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 054, AF1)>;
+			};
+			pwm2_out_n4: pwm2_out_n4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 055, AF1)>;
+			};
+			pwm2_out_alt_e8: pwm2_out_alt_e8 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 045, AF2)>;
+			};
+			pwm3_out_n5: pwm3_out_n5 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 056, AF1)>;
+			};
+			pwm3_out_alt_f13: pwm3_out_alt_f13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 047, AF2)>;
+			};
+			pwm4_out_j6: pwm4_out_j6 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 011, AF2)>;
+			};
+			pwm5_out_m8: pwm5_out_m8 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 002, AF1)>;
+			};
+			pwm6_out_m9: pwm6_out_m9 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 014, AF1)>;
+			};
+			pwm6_out_alt_m4: pwm6_out_alt_m4 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 063, AF2)>;
+			};
+			pwm7_out_j7: pwm7_out_j7 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 015, AF1)>;
+			};
+			pwm8_out_e13: pwm8_out_e13 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 035, AF1)>;
+			};
+			pwm8_out_alt_c13: pwm8_out_alt_c13 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0175, AF3)>;
+			};
+
+			/* RPM Fan  */
+			rpmfan0_gpwm0_m13: rpmfan0_gpwm0_m13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 053, AF3)>;
+			};
+			rpmfan0_gtach0_f3: rpmfan0_gtach0_f3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 050, AF2)>;
+			};
+			rpmfan1_gpwm1_l12: rpmfan1_gpwm1_l12 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 054, AF3)>;
+			};
+			rpmfan1_gtach1_b1: rpmfan1_gtach1_b1 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 051, AF2)>;
+			};
+
+			/* SB-TSI */
+			sbtsi_dat_j12: sbtsi_dat_j12 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 042, AF2)>;
+			};
+			sbtsi_clk_j13: sbtsi_clk_j13 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 043, AF1)>;
+			};
+
+			/* SPI Controller 0: half/full duplex and dual */
+			spi0_miso_h13: spi0_miso_h13 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 036, AF3)>;
+			};
+			spi0_mosi_c6: spi0_mosi_c6 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 004, AF4)>;
+			};
+			spi0_clk_h12: spi0_clk_h12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 034, AF4)>;
+			};
+			spi0_cs0_f5: spi0_cs0_f5 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 003, AF4)>;
+			};
+			spi0_cs1_d2: spi0_cs1_d2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 060, AF4)>;
+			};
+
+			/* SPI Controller 1: half/full duplex and dual */
+			spi1_miso_a7: spi1_miso_a7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0143, AF3)>;
+			};
+			spi1_mosi_f7: spi1_mosi_f7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0142, AF3)>;
+			};
+			spi1_clk_b7: spi1_clk_b7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0141, AF3)>;
+			};
+			spi1_cs_e7: spi1_cs_e7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0144, AF3)>;
+			};
+
+			/* TACH */
+			tach0_ict0_f3: tach0_ict0_f3 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 050, AF1)>;
+			};
+			tach1_ict1_b1: tach1_ict1_b1 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 051, AF1)>;
+			};
+			tach2_ict2_l8: tach2_ict2_l8 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 052, AF1)>;
+			};
+			tach3_in_b2: tach3_in_b2 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 033, AF1)>;
+			};
+
+			/* UART 0: 16550 compatible */
+			uart0_tx_f11: uart0_tx_f11 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0104, AF1)>;
+				bias-pull-up;
+			};
+			uart0_rx_f9: uart0_rx_f9 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0105, AF1)>;
+			};
+			uart0_cts_a7: uart0_cts_a7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0143, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_cts_alt_d13: uart0_cts_alt_d13 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0127, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_dcd_j8: uart0_dcd_j8 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 017, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_dcd_alt_b7: uart0_dcd_alt_b7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0141, AF4)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_dtr_n13: uart0_dtr_n13 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 026, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_dtr_alt_a7: uart0_dtr_alt_a7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0143, AF4)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_ri_l10: uart0_ri_l10 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 032, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_ri_alt_e7: uart0_ri_alt_e7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0144, AF4)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart0_rts_e7: uart0_rts_e7 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0144, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* UART 1: 16550 compatible */
+			uart1_tx_g12: uart1_tx_g12 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0170, AF1)>;
+				bias-pull-up;
+			};
+			uart1_rx_g9: uart1_rx_g9 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0171, AF1)>;
+			};
+			uart1_rx_alt_b6: uart1_rx_alt_b6 {
+				pinmux = <MCHP_XEC_PINMUX(240_276, 0255, AF1)>;
+			};
+			uart1_cts_m10: uart1_cts_m10 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 040, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart1_dcd_d2: uart1_dcd_d2 {
+				pinmux = <MCHP_XEC_PINMUX(040_076, 060, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart1_dtr_k12: uart1_dtr_k12 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0120, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart1_ri_m12: uart1_ri_m12 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 025, AF3)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+			uart1_rts_d13: uart1_rts_d13 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0127, AF2)>;
+				bias-pull-up;
+				drive-open-drain;
+			};
+
+			/* VCI:
+			 * VCI_IN0 is a dedicated pin.
+			 * VCI_IN[1:3] multiplexed with GPIO pins
+			 */
+			vci_in1_a6: vci_in1_a6 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0162, AF1)>;
+			};
+			vci_in2_c4: vci_in2_c4 {
+				pinmux = <MCHP_XEC_PINMUX(140_176, 0161, AF1)>;
+			};
+			vci_in3_b3: vci_in3_b3 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 000, AF1)>;
+			};
+
+			/* Voltage References */
+			vref_vtt_h11: vref_vtt_h11 {
+				pinmux = <MCHP_XEC_PINMUX(000_036, 044, AF1)>;
+			};
+
+			/* Week timer BGPO pins
+			 * BGPO[0] is a dedicated pin
+			 * BGPO[1:2] are multiplexed with GPIO pins
+			 * BGPO[3] only on 176 pin package
+			 */
+			wkt_bgpo1_a4: wkt_bgpo1_a4 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0101, AF1)>;
+			};
+			wkt_bgpo2_b5: wkt_bgpo2_b5 {
+				pinmux = <MCHP_XEC_PINMUX(100_136, 0102, AF1)>;
+			};
+		};
+	};
+};

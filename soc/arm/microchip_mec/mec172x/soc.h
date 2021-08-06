@@ -63,6 +63,9 @@
 #include "../common/soc_espi_channels.h"
 #include "../common/soc_espi_saf.h"
 
+/* SoC device tree helper macros */
+#include "../common/mchp_xec_dt.h"
+
 #endif
 
 #endif
