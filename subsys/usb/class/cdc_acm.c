@@ -96,7 +96,6 @@ struct cdc_acm_dev_data_t {
 	/* Callback function pointer/arg */
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
-	struct k_sem poll_wait_sem;
 	struct k_work cb_work;
 #if defined(CONFIG_CDC_ACM_DTE_RATE_CALLBACK_SUPPORT)
 	cdc_dte_rate_callback_t rate_cb;
@@ -211,8 +210,6 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 
 	dev_data->tx_ready = true;
 
-	k_sem_give(&dev_data->poll_wait_sem);
-
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
@@ -326,7 +323,6 @@ static void cdc_acm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 {
-	k_sem_give(&dev_data->poll_wait_sem);
 	dev_data->configured = false;
 	dev_data->suspended = false;
 	dev_data->rx_ready = false;
@@ -473,7 +469,6 @@ static int cdc_acm_init(const struct device *dev)
 	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
 		dev, dev_data, dev->config, &cdc_acm_data_devlist);
 
-	k_sem_init(&dev_data->poll_wait_sem, 0, K_SEM_MAX_LIMIT);
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
 	k_work_init(&dev_data->tx_work, tx_work_handler);
 
@@ -902,16 +897,35 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 /*
  * @brief Output a character in polled mode.
  *
- * The UART poll method for USB UART is simulated by waiting till
- * we get the next BULK In upcall from the USB device controller or 100 ms.
+ * The poll function looks similar to cdc_acm_fifo_fill() and
+ * tries to do the best to mimic behavior of a hardware UART controller
+ * without flow control.
+ * This function does not block, if the USB subsystem
+ * is not ready, no data is transferred to the buffer, that is, c is dropped.
+ * If the USB subsystem is ready and the buffer is full, the first character
+ * from the tx_ringbuf is removed to make room for the new character.
  */
-static void cdc_acm_poll_out(const struct device *dev,
-				      unsigned char c)
+static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	cdc_acm_fifo_fill(dev, &c, 1);
-	k_sem_take(&dev_data->poll_wait_sem, K_MSEC(100));
+	if (!dev_data->configured || dev_data->suspended) {
+		LOG_INF("USB device not ready, drop data");
+		return;
+	}
+
+	dev_data->tx_ready = false;
+
+	if (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+		LOG_INF("Ring buffer full, drain buffer");
+		if (!ring_buf_get(dev_data->tx_ringbuf, NULL, 1) ||
+		    !ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
+			LOG_ERR("Failed to drain buffer");
+			return;
+		}
+	}
+
+	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {
