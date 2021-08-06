@@ -12,6 +12,8 @@
 #include <bluetooth/l2cap.h>
 #include <sys/byteorder.h>
 
+#include <conn_internal.h>
+
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester_l2cap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -379,7 +381,7 @@ fail:
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint8_t cmds[1];
+	uint8_t cmds[2];
 	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
@@ -389,9 +391,44 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_CONN_PARAM_UPDATE);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
+}
+
+static void conn_param_update(const uint8_t *data, uint16_t len)
+{
+	const struct l2cap_conn_param_update_cmd *cmd = (void *)data;
+	struct bt_le_conn_param param = {
+		.interval_min = sys_le16_to_cpu(cmd->interval_min),
+		.interval_max = sys_le16_to_cpu(cmd->interval_max),
+		.latency = sys_le16_to_cpu(cmd->latency),
+		.timeout = sys_le16_to_cpu(cmd->timeout),
+	};
+	struct bt_conn *conn;
+	uint8_t status = BTP_STATUS_FAILED;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)cmd);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		goto rsp;
+	}
+
+	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP);
+
+	err = bt_conn_le_param_update(conn, &param);
+	if (err < 0) {
+		LOG_ERR("Failed to update params: %d", err);
+	}
+
+	bt_conn_unref(conn);
+	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CONN_PARAM_UPDATE, CONTROLLER_INDEX,
+		   status);
 }
 
 void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
@@ -412,6 +449,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
+		return;
+	case L2CAP_CONN_PARAM_UPDATE:
+		conn_param_update(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_L2CAP, opcode, index,

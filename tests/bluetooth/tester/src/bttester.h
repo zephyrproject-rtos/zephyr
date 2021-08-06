@@ -781,6 +781,16 @@ struct l2cap_accept_connection_cmd {
 	uint16_t result;
 } __packed;
 
+#define L2CAP_CONN_PARAM_UPDATE		0x08
+struct l2cap_conn_param_update_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
+} __packed;
+
 /* events */
 #define L2CAP_EV_CONNECTION_REQ		0x80
 struct l2cap_connection_req_ev {
