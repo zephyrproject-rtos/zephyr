@@ -269,8 +269,8 @@
 /drivers/memc/                            @gmarull
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
-/drivers/modem/hl7800.c                   @rerickson1
-/drivers/modem/Kconfig.hl7800             @rerickson1
+/drivers/modem/hl7800.c                   @LairdCP/zephyr
+/drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/*b91*                     @yurvyn
@@ -414,7 +414,7 @@
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
-/dts/bindings/modem/*hl7800.yaml          @rerickson1
+/dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
@@ -447,7 +447,7 @@
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @dcpleung @nashif
 /include/drivers/interrupt_controller/gic.h @stephanosio
-/include/drivers/modem/hl7800.h           @rerickson1
+/include/drivers/modem/hl7800.h           @LairdCP/zephyr
 /include/drivers/pcie/                    @dcpleung
 /include/drivers/hwinfo.h                 @alexanderwachter
 /include/drivers/led.h                    @Mani-Sadhasivam
