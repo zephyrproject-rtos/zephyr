@@ -9,6 +9,7 @@
 #include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
 #include <soc/dport_access.h>
+#include <soc/rtc_cntl_reg.h>
 #include <soc/soc_caps.h>
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/spi_flash.h>
@@ -37,5 +38,7 @@ extern void esp_rom_Cache_Set_ICache_Mode(cache_size_t cache_size, cache_ways_t 
 
 extern void esp_rom_Cache_Invalidate_ICache_All(void);
 void esp_rom_Cache_Resume_ICache(uint32_t autoload);
+
+extern uint32_t esp_rom_g_ticks_per_us_pro;
 
 #endif /* __SOC_H__ */
