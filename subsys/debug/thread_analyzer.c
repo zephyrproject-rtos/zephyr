@@ -110,6 +110,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	}
 #endif
 	cb(&info);
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	k_thread_runtime_stats_clear(thread);
+#endif
+
 }
 
 void thread_analyzer_run(thread_analyzer_cb cb)
@@ -133,6 +138,7 @@ void thread_analyzer_auto(void)
 {
 	for (;;) {
 		thread_analyzer_print();
+		k_thread_runtime_stats_all_clear();
 		k_sleep(K_SECONDS(CONFIG_THREAD_ANALYZER_AUTO_INTERVAL));
 	}
 }

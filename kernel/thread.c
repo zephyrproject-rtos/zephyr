@@ -1050,7 +1050,9 @@ void z_thread_mark_switched_out(void)
 	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
 #else
 	now = k_cycle_get_32();
-	diff = (uint64_t)(now - thread->rt_stats.last_switched_in);
+	diff = now < thread->rt_stats.last_switched_in ?
+		(uint64_t) UINT32_MAX - thread->rt_stats.last_switched_in + now :
+		now - thread->rt_stats.last_switched_in;
 	thread->rt_stats.last_switched_in = 0;
 #endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
 
@@ -1088,6 +1090,22 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		     sizeof(threads_runtime_stats));
 
 	return 0;
+}
+
+int k_thread_runtime_stats_clear(k_tid_t thread)
+{
+	if (thread == NULL) {
+		return -EINVAL;
+	}
+
+	thread->rt_stats.stats.execution_cycles = 0;
+
+	return 0;
+}
+
+void k_thread_runtime_stats_all_clear(void)
+{
+	threads_runtime_stats.execution_cycles = 0;
 }
 #endif /* CONFIG_THREAD_RUNTIME_STATS */
 

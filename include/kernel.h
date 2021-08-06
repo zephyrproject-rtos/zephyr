@@ -5710,6 +5710,20 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
 
+/**
+ * @brief Clear runtime statistics for a specific thread
+ *
+ * @param stats Pointer to struct to copy statistics into.
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int k_thread_runtime_stats_clear(k_tid_t thread);
+
+
+/**
+ * @brief Clear runtime statistics for all threads
+ */
+void k_thread_runtime_stats_all_clear(void);
+
 #endif
 
 #ifdef __cplusplus
