@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <xtensa/xtensa.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/esp32s2_clock.h>
 #include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
 
 / {
@@ -19,6 +21,7 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
+			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 	};
 
@@ -40,6 +43,16 @@
 			reg = <0x3f4c2000 0x114>;
 			label = "INTC_0";
 			status = "okay";
+		};
+
+		rtc: rtc@3f408000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x3f408000 0x0D8>;
+			label = "RTC";
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			xtal-div = <0>;
+			#clock-cells = <1>;
+			status = "ok";
 		};
 
 		uart0: uart@3f400000 {
