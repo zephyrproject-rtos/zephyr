@@ -249,7 +249,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 
 	if (app->app_idx == app_idx) {
 		if (app->net_idx != net_idx) {
-			return STATUS_INVALID_BINDING;
+			return STATUS_INVALID_NETKEY;
 		}
 
 		if (memcmp(key, app->keys[0].val, 16)) {
