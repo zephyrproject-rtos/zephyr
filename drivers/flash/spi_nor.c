@@ -19,6 +19,7 @@
 #include "spi_nor.h"
 #include "jesd216.h"
 #include "flash_priv.h"
+#include "spi_nor_priv.h"
 
 LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
@@ -253,9 +254,9 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  * @param is_write A flag to define if it's a read or a write command
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_access(const struct device *const dev,
-			  uint8_t opcode, bool is_addressed, off_t addr,
-			  void *data, size_t length, bool is_write)
+int spi_nor_access(const struct device *const dev, uint8_t opcode,
+		   bool is_addressed, off_t addr, void *data, size_t length,
+		   bool is_write, bool rx_dummy_byte)
 {
 	struct spi_nor_data *const driver_data = dev->data;
 
@@ -276,6 +277,14 @@ static int spi_nor_access(const struct device *const dev,
 			.len = length
 		}
 	};
+
+	/* Some read commands require shifting in a dummy byte before the actual
+	 * payload is shifted in
+	 */
+	if (rx_dummy_byte) {
+		spi_buf[0].len++;
+	}
+
 	const struct spi_buf_set tx_set = {
 		.buffers = spi_buf,
 		.count = (length) ? 2 : 1
@@ -288,21 +297,12 @@ static int spi_nor_access(const struct device *const dev,
 
 	if (is_write) {
 		return spi_write(driver_data->spi,
-			&driver_data->spi_cfg, &tx_set);
+				 &driver_data->spi_cfg, &tx_set);
 	}
 
 	return spi_transceive(driver_data->spi,
-		&driver_data->spi_cfg, &tx_set, &rx_set);
+			      &driver_data->spi_cfg, &tx_set, &rx_set);
 }
-
-#define spi_nor_cmd_read(dev, opcode, dest, length) \
-	spi_nor_access(dev, opcode, false, 0, dest, length, false)
-#define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length) \
-	spi_nor_access(dev, opcode, true, addr, dest, length, false)
-#define spi_nor_cmd_write(dev, opcode) \
-	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
-#define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
 /*
@@ -396,7 +396,7 @@ static int exit_dpd(const struct device *const dev)
  * This means taking the lock and, if necessary, waking the device
  * from deep power-down mode.
  */
-static void acquire_device(const struct device *dev)
+void spi_nor_acquire_device(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
@@ -414,7 +414,7 @@ static void acquire_device(const struct device *dev)
  * This means (optionally) putting the device into deep power-down
  * mode, and releasing the lock.
  */
-static void release_device(const struct device *dev)
+void spi_nor_release_device(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
 		enter_dpd(dev);
@@ -433,7 +433,7 @@ static void release_device(const struct device *dev)
  * @param dev The device structure
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_wait_until_ready(const struct device *dev)
+int spi_nor_wait_until_ready(const struct device *dev)
 {
 	int ret;
 	uint8_t reg;
@@ -456,13 +456,13 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
 	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
-	release_device(dev);
+	spi_nor_release_device(dev);
 	return ret;
 }
 
@@ -479,7 +479,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	while (size > 0) {
 		size_t to_write = size;
@@ -510,7 +510,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 	}
 
 out:
-	release_device(dev);
+	spi_nor_release_device(dev);
 	return ret;
 }
 
@@ -534,7 +534,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	while ((size > 0) && (ret == 0)) {
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
@@ -573,7 +573,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 		spi_nor_wait_until_ready(dev);
 	}
 
-	release_device(dev);
+	spi_nor_release_device(dev);
 
 	return ret;
 }
@@ -583,7 +583,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 {
 	int ret;
 
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
@@ -596,7 +596,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
-	release_device(dev);
+	spi_nor_release_device(dev);
 
 	return ret;
 }
@@ -606,13 +606,13 @@ static int spi_nor_write_protection_set(const struct device *dev,
 static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 			     void *dest, size_t size)
 {
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
 	int ret = read_sfdp(dev, addr, dest, size);
 
-	release_device(dev);
+	spi_nor_release_device(dev);
 
 	return ret;
 }
@@ -626,13 +626,13 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	spi_nor_acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
 	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
 
-	release_device(dev);
+	spi_nor_release_device(dev);
 
 	return ret;
 }

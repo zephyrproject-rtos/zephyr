@@ -476,7 +476,7 @@ registering:
 	/* Clear register_retry */
 	register_retry = 0;
 
-#if defined(CONFIG_BOARD_WOLFENSTEIN)
+#if defined(CONFIG_BOARD_WOLFENSTEIN) || defined(CONFIG_BOARD_DOOM)
 	/* For Quectel, dump the network info (LTE/WCDMA/etc) for debugging */
 	(void)modem_cmd_send_nolock(
 		&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0,

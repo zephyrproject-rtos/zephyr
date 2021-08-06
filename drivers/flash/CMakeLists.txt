@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM flash_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_GECKO flash_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RV32M1 soc_flash_rv32m1.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_NOR_EXTRAS_GD25Q64C spi_nor_gd25q64c.c)
 
 if(CONFIG_SOC_FLASH_STM32)
   zephyr_sources(flash_stm32.c)
