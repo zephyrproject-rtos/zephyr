@@ -1457,8 +1457,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			poll_timeout = SYS_FOREVER_MS;
 		} else {
-			poll_timeout = k_ticks_to_ms_floor32(
-				sys_clock_timeout_end_calc(timeout));
+			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
 		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,
