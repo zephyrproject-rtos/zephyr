@@ -364,6 +364,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
 #define GPIO_MCUX_LPC_IRQ_CONNECT(n, m)							\
 	do {										\
+		struct gpio_mcux_lpc_data *data = dev->data;				\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),				\
 			    DT_INST_IRQ_BY_IDX(n, m, priority),				\
 			    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(n), 0);		\
@@ -373,6 +374,7 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
 #define GPIO_MCUX_LPC_IRQ(n, m)								\
 	COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, m), (GPIO_MCUX_LPC_IRQ_CONNECT(n, m)), ())
+
 
 #define GPIO_MCUX_LPC(n)								\
 	static int lpc_gpio_init_##n(const struct device *dev);				\
@@ -398,8 +400,6 @@ static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 											\
 	static int lpc_gpio_init_##n(const struct device *dev)				\
 	{										\
-		struct gpio_mcux_lpc_data *data = dev->data;				\
-											\
 		gpio_mcux_lpc_init(dev);						\
 											\
 		GPIO_MCUX_LPC_IRQ(n, 0);						\
