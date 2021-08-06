@@ -34,6 +34,8 @@ mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 
 #ifdef CONFIG_GIC_V3_ITS
 static uintptr_t lpi_prop_table;
+
+atomic_t nlpi_intid = ATOMIC_INIT(8192);
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -76,6 +78,8 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 	}
 
 	dsb();
+
+	its_rdist_invall();
 }
 
 static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
@@ -86,6 +90,8 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 	*cfg |= prio & 0xfc;
 
 	dsb();
+
+	its_rdist_invall();
 }
 
 static bool arm_gic_lpi_is_enabled(unsigned int intid)
@@ -483,5 +489,10 @@ SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 void arm_gic_secondary_init(void)
 {
 	__arm_gic_init();
+
+#ifdef CONFIG_GIC_V3_ITS
+	/* Map this CPU Redistributor in all the ITS Collection tables */
+	its_rdist_map();
+#endif
 }
 #endif
