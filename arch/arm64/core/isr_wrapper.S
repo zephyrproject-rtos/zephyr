@@ -47,7 +47,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	/* IRQ out of bounds */
-	cmp	x0, #(CONFIG_NUM_IRQS - 1)
+	mov	x1, #(CONFIG_NUM_IRQS - 1)
+	cmp	x0, x1
 	b.hi	spurious_continue
 
 	stp	x0, xzr, [sp, #-16]!
