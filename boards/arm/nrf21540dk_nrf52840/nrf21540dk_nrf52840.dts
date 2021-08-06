@@ -158,14 +158,17 @@
 	current-speed = <115200>;
 	tx-pin = <6>;
 	rx-pin = <8>;
+	rx-pull-up;
 	rts-pin = <5>;
 	cts-pin = <7>;
+	cts-pull-up;
 };
 
 arduino_serial: &uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	rx-pin = <33>;
+	rx-pull-up;
 	tx-pin = <34>;
 };
 
