@@ -281,7 +281,6 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
-done:
 	dev_data->rx_ready = true;
 
 	/* Call callback only if rx irq ena */
@@ -289,6 +288,7 @@ done:
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
+done:
 	usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
 		     USB_TRANS_READ, cdc_acm_read_cb, dev_data);
 
