@@ -18,7 +18,7 @@ from conftest import RC_BUILD_DIR, RC_GDB, RC_KERNEL_HEX, RC_KERNEL_ELF
 
 TEST_PYOCD = 'test-pyocd'
 TEST_ADDR = 0xadd
-TEST_BOARD_ID = 'test-board-id'
+TEST_DEV_ID = 'test-dev-id'
 TEST_FREQUENCY = 'test-frequency'
 TEST_DAPARG = 'test-daparg'
 TEST_TARGET = 'test-target'
@@ -34,7 +34,7 @@ TEST_ALL_KWARGS = {
     'gdb_port': TEST_GDB_PORT,
     'telnet_port': TEST_TELNET_PORT,
     'tui': False,
-    'board_id': TEST_BOARD_ID,
+    'dev_id': TEST_DEV_ID,
     'frequency': TEST_FREQUENCY,
     'daparg': TEST_DAPARG,
     'tool_opt': TEST_TOOL_OPT,
@@ -49,7 +49,7 @@ TEST_ALL_PARAMS = (['--target', TEST_TARGET,
                     TEST_FLASH_OPTS] +
                    ['--gdb-port', str(TEST_GDB_PORT),
                     '--telnet-port', str(TEST_TELNET_PORT),
-                    '--board-id', TEST_BOARD_ID,
+                    '--dev-id', TEST_DEV_ID,
                     '--frequency', str(TEST_FREQUENCY),
                     '--tool-opt', TEST_TOOL_OPT])
 
@@ -71,7 +71,7 @@ FLASH_ALL_EXPECTED_CALL = ([TEST_PYOCD,
                             'flash',
                             '-e', 'sector',
                             '-a', hex(TEST_ADDR), '-da', TEST_DAPARG,
-                            '-t', TEST_TARGET, '-u', TEST_BOARD_ID,
+                            '-t', TEST_TARGET, '-u', TEST_DEV_ID,
                             '-f', TEST_FREQUENCY,
                             TEST_TOOL_OPT] +
                            TEST_FLASH_OPTS +
@@ -86,7 +86,7 @@ DEBUG_ALL_EXPECTED_SERVER = [TEST_PYOCD,
                              '-p', str(TEST_GDB_PORT),
                              '-T', str(TEST_TELNET_PORT),
                              '-t', TEST_TARGET,
-                             '-u', TEST_BOARD_ID,
+                             '-u', TEST_DEV_ID,
                              '-f', TEST_FREQUENCY,
                              TEST_TOOL_OPT]
 DEBUG_ALL_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
@@ -112,7 +112,7 @@ DEBUGSERVER_ALL_EXPECTED_CALL = [TEST_PYOCD,
                                  '-p', str(TEST_GDB_PORT),
                                  '-T', str(TEST_TELNET_PORT),
                                  '-t', TEST_TARGET,
-                                 '-u', TEST_BOARD_ID,
+                                 '-u', TEST_DEV_ID,
                                  '-f', TEST_FREQUENCY,
                                  TEST_TOOL_OPT]
 DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd',
