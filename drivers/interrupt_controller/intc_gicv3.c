@@ -11,6 +11,8 @@
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
+#include <string.h>
+
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 
@@ -18,6 +20,20 @@ mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 #define IGROUPR_VAL	0xFFFFFFFFU
 #else
 #define IGROUPR_VAL	0x0U
+#endif
+
+/*
+ * We allocate memory for PROPBASE to cover 2 ^ lpi_id_bits LPIs to
+ * deal with (one configuration byte per interrupt). PENDBASE has to
+ * be 64kB aligned (one bit per LPI, plus 8192 bits for SPI/PPI/SGI).
+ */
+#define ITS_MAX_LPI_NRBITS	16 /* 64K LPIs */
+
+#define LPI_PROPBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits), KB(64))
+#define LPI_PENDBASE_SZ(nrbits)	ROUND_UP(BIT(nrbits) / 8, KB(64))
+
+#ifdef CONFIG_GIC_V3_ITS
+static uintptr_t lpi_prop_table;
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -48,9 +64,47 @@ static int gic_wait_rwp(uint32_t intid)
 	return 0;
 }
 
+#ifdef CONFIG_GIC_V3_ITS
+static void arm_gic_lpi_setup(unsigned int intid, bool enable)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	if (enable) {
+		*cfg |= BIT(0);
+	} else {
+		*cfg &= ~BIT(0);
+	}
+
+	dsb();
+}
+
+static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	*cfg &= 0xfc;
+	*cfg |= prio & 0xfc;
+
+	dsb();
+}
+
+static bool arm_gic_lpi_is_enabled(unsigned int intid)
+{
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+
+	return (*cfg & BIT(0));
+}
+#endif
+
 void arm_gic_irq_set_priority(unsigned int intid,
 			      unsigned int prio, uint32_t flags)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_set_priority(intid, prio);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 	uint32_t shift;
@@ -80,6 +134,12 @@ void arm_gic_irq_set_priority(unsigned int intid,
 
 void arm_gic_irq_enable(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_setup(intid, true);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
@@ -99,6 +159,12 @@ void arm_gic_irq_enable(unsigned int intid)
 
 void arm_gic_irq_disable(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		arm_gic_lpi_setup(intid, false);
+		return;
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
@@ -109,6 +175,11 @@ void arm_gic_irq_disable(unsigned int intid)
 
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
+#ifdef CONFIG_GIC_V3_ITS
+	if (intid >= 8192) {
+		return arm_gic_lpi_is_enabled(intid);
+	}
+#endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 	uint32_t val;
@@ -183,6 +254,58 @@ static void gicv3_rdist_enable(mem_addr_t rdist)
 	while (sys_read32(rdist + GICR_WAKER) & BIT(GICR_WAKER_CA))
 		;
 }
+
+#ifdef CONFIG_GIC_V3_ITS
+/*
+ * Setup LPIs Configuration & Pending tables for redistributors
+ * LPI configuration is global, each redistributor has a pending table
+ */
+static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
+{
+	unsigned int lpi_id_bits = MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)),
+				       ITS_MAX_LPI_NRBITS);
+	uintptr_t lpi_pend_table;
+	uint64_t reg;
+	uint32_t ctlr;
+
+	/* If not, alloc a common prop table for all redistributors */
+	if (!lpi_prop_table) {
+		lpi_prop_table = (uintptr_t)k_aligned_alloc(4 * 1024, LPI_PROPBASE_SZ(lpi_id_bits));
+		memset((void *)lpi_prop_table, 0, LPI_PROPBASE_SZ(lpi_id_bits));
+	}
+
+	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
+	memset((void *)lpi_pend_table, 0, LPI_PENDBASE_SZ(lpi_id_bits));
+
+	ctlr = sys_read32(rdist + GICR_CTLR);
+	ctlr &= ~GICR_CTLR_ENABLE_LPIS;
+	sys_write32(ctlr, rdist + GICR_CTLR);
+
+	/* PROPBASE */
+	reg = (GIC_BASER_SHARE_INNER << GITR_PROPBASER_SHAREABILITY_SHIFT) |
+	      (GIC_BASER_CACHE_RAWAWB << GITR_PROPBASER_INNER_CACHE_SHIFT) |
+	      (lpi_prop_table & (GITR_PROPBASER_ADDR_MASK << GITR_PROPBASER_ADDR_SHIFT)) |
+	      (GIC_BASER_CACHE_INNERLIKE << GITR_PROPBASER_OUTER_CACHE_SHIFT) |
+	      ((lpi_id_bits - 1) & GITR_PROPBASER_ID_BITS_MASK);
+	sys_write64(reg, rdist + GICR_PROPBASER);
+	/* TOFIX: check SHAREABILITY validity */
+
+	/* PENDBASE */
+	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
+	      (GIC_BASER_CACHE_RAWAWB << GITR_PENDBASER_INNER_CACHE_SHIFT) |
+	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
+	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) |
+	      GITR_PENDBASER_PTZ;
+	sys_write64(reg, rdist + GICR_PENDBASER);
+	/* TOFIX: check SHAREABILITY validity */
+
+	ctlr = sys_read32(rdist + GICR_CTLR);
+	ctlr |= GICR_CTLR_ENABLE_LPIS;
+	sys_write32(ctlr, rdist + GICR_CTLR);
+
+	dsb();
+}
+#endif
 
 /*
  * Initialize the cpu interface. This should be called by each core.
@@ -333,6 +456,11 @@ static void __arm_gic_init(void)
 
 	cpu = arch_curr_cpu()->id;
 	gic_rdists[cpu] = GIC_RDIST_BASE + MPIDR_TO_CORE(GET_MPIDR()) * 0x20000;
+
+#ifdef CONFIG_GIC_V3_ITS
+	/* Enable LPIs in Redistributor */
+	gicv3_rdist_setup_lpis(gic_get_rdist());
+#endif
 
 	gicv3_rdist_enable(gic_get_rdist());
 

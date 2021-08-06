@@ -216,6 +216,9 @@
 /* GICD_TYPER.ITLinesNumber 0:4 */
 #define GICD_TYPER_ITLINESNUM_MASK	0x1f
 
+/* GICD_TYPER.IDbits */
+#define GICD_TYPER_IDBITS(typer)	((((typer) >> 19) & 0x1f) + 1)
+
 /*
  * Common Helper Constants
  */
