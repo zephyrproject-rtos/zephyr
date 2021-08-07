@@ -20,22 +20,19 @@
 #define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-union bme280_bus_config {
+union bme280_bus {
 #if BME280_BUS_SPI
-	struct spi_config spi_cfg;
+	struct spi_dt_spec spi;
 #endif
 #if BME280_BUS_I2C
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 #endif
 };
 
-typedef int (*bme280_bus_check_fn)(const struct device *bus,
-				   const union bme280_bus_config *bus_config);
-typedef int (*bme280_reg_read_fn)(const struct device *bus,
-				  const union bme280_bus_config *bus_config,
+typedef int (*bme280_bus_check_fn)(const union bme280_bus *bus);
+typedef int (*bme280_reg_read_fn)(const union bme280_bus *bus,
 				  uint8_t start, uint8_t *buf, int size);
-typedef int (*bme280_reg_write_fn)(const struct device *bus,
-				   const union bme280_bus_config *bus_config,
+typedef int (*bme280_reg_write_fn)(const union bme280_bus *bus,
 				   uint8_t reg, uint8_t val);
 
 struct bme280_bus_io {
