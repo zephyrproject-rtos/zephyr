@@ -200,6 +200,8 @@ source "drivers/sensor/si7055/Kconfig"
 
 source "drivers/sensor/si7060/Kconfig"
 
+source "drivers/sensor/si7210/Kconfig"
+
 source "drivers/sensor/sm351lt/Kconfig"
 
 source "drivers/sensor/stm32_temp/Kconfig"

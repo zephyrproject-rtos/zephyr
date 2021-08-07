@@ -290,6 +290,12 @@ test_i2c_si7060: si7060@25 {
 	reg = <0x25>;
 };
 
+test_i2c_si7210: si7010@30 {
+	compatible = "silabs,si7210";
+	label = "SI7210";
+	reg = <0x30>;
+};
+
 test_i2c_ssd1306fb: ssd1306fb@26 {
 	compatible = "solomon,ssd1306fb";
 	label = "SSD1306FB";
