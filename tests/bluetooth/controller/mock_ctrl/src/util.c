@@ -132,16 +132,12 @@ again:
 		 */
 		if ((consecutive_cnt > 6) ||
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-		    (!consecutive_bit && (((bit_idx < 6) &&
-					   (ones_count_lsb8 < 1)) ||
-					  ((bit_idx < 5) &&
-					   (ones_count_lsb8 < 2)) ||
-					  ((bit_idx < 4) &&
-					   (ones_count_lsb8 < 3)))) ||
+		    (!consecutive_bit && (((bit_idx < 6) && (ones_count_lsb8 < 1)) ||
+					  ((bit_idx < 5) && (ones_count_lsb8 < 2)) ||
+					  ((bit_idx < 4) && (ones_count_lsb8 < 3)))) ||
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
-		    ((consecutive_cnt < 6) &&
-		     (((bit_idx < 29) && (transitions < 1)) ||
-		      ((bit_idx < 28) && (transitions < 2))))) {
+		    ((consecutive_cnt < 6) && (((bit_idx < 29) && (transitions < 1)) ||
+					       ((bit_idx < 28) && (transitions < 2))))) {
 			if (consecutive_bit) {
 				consecutive_bit = 0U;
 				aa &= ~BIT(bit_idx);
@@ -170,10 +166,8 @@ again:
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			if (bit_idx < 15) {
-				if (transitions_lsb16 !=
-				    transitions_lsb16_prev) {
-					transitions_lsb16 =
-						transitions_lsb16_prev;
+				if (transitions_lsb16 != transitions_lsb16_prev) {
+					transitions_lsb16 = transitions_lsb16_prev;
 				} else {
 					transitions_lsb16++;
 				}
@@ -205,14 +199,12 @@ again:
 	 * packets Access Address by only one bit.
 	 */
 	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
-	if (util_ones_count_get((uint8_t *)&adv_aa_check,
-				sizeof(adv_aa_check)) <= 1) {
+	if (util_ones_count_get((uint8_t *)&adv_aa_check, sizeof(adv_aa_check)) <= 1) {
 		goto again;
 	}
 
 	/* It shall not have all four octets equal. */
-	if (!((aa & 0xFFFF) ^ (aa >> 16)) &&
-	    !((aa & 0xFF) ^ (aa >> 24))) {
+	if (!((aa & 0xFFFF) ^ (aa >> 16)) && !((aa & 0xFF) ^ (aa >> 24))) {
 		goto again;
 	}
 

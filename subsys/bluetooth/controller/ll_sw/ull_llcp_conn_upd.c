@@ -39,7 +39,7 @@
 #include "hal/debug.h"
 
 /* Hardcoded instant delta +6 */
-#define CONN_UPDATE_INSTANT_DELTA  6U
+#define CONN_UPDATE_INSTANT_DELTA 6U
 
 /* TODO: Known, missing items (missing implementation):
  *	LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request – event masked]
@@ -112,15 +112,13 @@ enum {
  * LLCP Local Procedure Connection Update FSM
  */
 
-static bool cu_have_params_changed(struct ll_conn *conn, uint16_t interval,
-				uint16_t latency, uint16_t timeout)
+static bool cu_have_params_changed(struct ll_conn *conn, uint16_t interval, uint16_t latency,
+				   uint16_t timeout)
 {
 	struct lll_conn *lll = &conn->lll;
 
-	if ((interval != lll->interval) ||
-	    (latency != lll->latency) ||
-	    (RADIO_CONN_EVENTS(timeout * 10000U,
-			       lll->interval * CONN_INT_UNIT_US) !=
+	if ((interval != lll->interval) || (latency != lll->latency) ||
+	    (RADIO_CONN_EVENTS(timeout * 10000U, lll->interval * CONN_INT_UNIT_US) !=
 	     conn->supervision_reload)) {
 		return true;
 	}
@@ -129,24 +127,19 @@ static bool cu_have_params_changed(struct ll_conn *conn, uint16_t interval,
 
 static void cu_update_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-	ctx->data.cu.params_changed = cu_have_params_changed(conn,
-					ctx->data.cu.interval_max,
-					ctx->data.cu.latency,
-					ctx->data.cu.timeout);
+	ctx->data.cu.params_changed = cu_have_params_changed(
+		conn, ctx->data.cu.interval_max, ctx->data.cu.latency, ctx->data.cu.timeout);
 
-	ull_conn_update_parameters(conn, (ctx->proc == PROC_CONN_UPDATE),
-					ctx->data.cu.win_size,
-					ctx->data.cu.win_offset_us,
-					ctx->data.cu.interval_max,
-					ctx->data.cu.latency,
-					ctx->data.cu.timeout,
-					ctx->data.cu.instant);
+	ull_conn_update_parameters(conn, (ctx->proc == PROC_CONN_UPDATE), ctx->data.cu.win_size,
+				   ctx->data.cu.win_offset_us, ctx->data.cu.interval_max,
+				   ctx->data.cu.latency, ctx->data.cu.timeout,
+				   ctx->data.cu.instant);
 }
 
 static bool cu_should_notify_host(struct proc_ctx *ctx)
 {
 	return (((ctx->proc == PROC_CONN_PARAM_REQ) && (ctx->data.cu.error != 0U)) ||
-		 (ctx->data.cu.params_changed != 0U));
+		(ctx->data.cu.params_changed != 0U));
 }
 
 static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
@@ -213,7 +206,8 @@ static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	}
 }
 
-static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
 {
 	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_PARAM_REQ;
@@ -250,14 +244,16 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				       void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		ctx->data.cu.win_size = 1U;
 		ctx->data.cu.win_offset_us = 0U;
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency + CONN_UPDATE_INSTANT_DELTA;
+		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+				       CONN_UPDATE_INSTANT_DELTA;
 		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
@@ -287,7 +283,8 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
-static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case LP_CU_EVT_RUN:
@@ -299,9 +296,10 @@ static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
-	struct pdu_data *pdu = (struct pdu_data *) param;
+	struct pdu_data *pdu = (struct pdu_data *)param;
 
 	switch (evt) {
 	case LP_CU_EVT_CONN_PARAM_RSP:
@@ -334,7 +332,8 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void lp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_CU_EVT_RUN:
@@ -346,9 +345,10 @@ static void lp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
 {
-	struct pdu_data *pdu = (struct pdu_data *) param;
+	struct pdu_data *pdu = (struct pdu_data *)param;
 
 	switch (evt) {
 	case LP_CU_EVT_CONN_UPDATE_IND:
@@ -369,7 +369,8 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	uint16_t event_counter = ull_conn_event_counter(conn);
 
@@ -392,7 +393,8 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-static void lp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				  void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -450,7 +452,7 @@ static void lp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 
 void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
@@ -507,7 +509,8 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ, ctx->data.cu.error);
+		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+					       ctx->data.cu.error);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
@@ -557,7 +560,7 @@ static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
+	pdu = (struct pdu_data *)ntf->pdu;
 
 	llcp_pdu_encode_conn_param_req(ctx, pdu);
 
@@ -577,21 +580,24 @@ static void rp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	}
 }
 
-static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				       void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		ctx->data.cu.win_size = 1U;
 		ctx->data.cu.win_offset_us = 0U;
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency + CONN_UPDATE_INSTANT_DELTA;
+		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+				       CONN_UPDATE_INSTANT_DELTA;
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = RP_CU_STATE_WAIT_INSTANT;
 	}
 }
 
-static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
@@ -602,7 +608,8 @@ static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void rp_cu_send_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_send_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP;
@@ -613,7 +620,8 @@ static void rp_cu_send_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					  void *param)
 {
 	if (!llcp_ntf_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_NTF_CONN_PARAM_REQ;
@@ -623,7 +631,8 @@ static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx 
 	}
 }
 
-static void rp_cu_send_unknown_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_send_unknown_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_TX_UNKNOWN_RSP;
@@ -657,16 +666,16 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
-static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_CONN_PARAM_REQ:
 		llcp_pdu_decode_conn_param_req(ctx, param);
 
-		bool params_changed = cu_have_params_changed(conn,
-						ctx->data.cu.interval_max,
-						ctx->data.cu.latency,
-						ctx->data.cu.timeout);
+		bool params_changed =
+			cu_have_params_changed(conn, ctx->data.cu.interval_max,
+					       ctx->data.cu.latency, ctx->data.cu.timeout);
 
 		/* notify Host if conn parameters changed, else respond */
 		if (params_changed) {
@@ -681,7 +690,8 @@ static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void rp_cu_state_wait_ntf_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_state_wait_ntf_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx,
+						uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -693,7 +703,8 @@ static void rp_cu_state_wait_ntf_conn_param_req(struct ll_conn *conn, struct pro
 	}
 }
 
-static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx,
+						  uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_CONN_PARAM_REQ_REPLY:
@@ -710,7 +721,9 @@ static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct p
 	}
 }
 
-static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn,
+							   struct proc_ctx *ctx, uint8_t evt,
+							   void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -729,7 +742,8 @@ static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn,
 	}
 }
 
-static void rp_cu_state_wait_tx_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_state_wait_tx_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					       uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -741,7 +755,8 @@ static void rp_cu_state_wait_tx_reject_ext_ind(struct ll_conn *conn, struct proc
 	}
 }
 
-static void rp_cu_st_wait_tx_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_st_wait_tx_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -753,7 +768,8 @@ static void rp_cu_st_wait_tx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -765,7 +781,8 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_CONN_UPDATE_IND:
@@ -779,7 +796,7 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 			/* TODO(tosk): skip/terminate if instant passed? */
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			/* conn param req procedure, if any, is complete */
-			 ull_conn_prt_clear(conn);
+			ull_conn_prt_clear(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 			ctx->state = RP_CU_STATE_WAIT_INSTANT;
 			break;
@@ -793,7 +810,8 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	uint16_t event_counter = ull_conn_event_counter(conn);
 
@@ -815,7 +833,8 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-static void rp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				  void *param)
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
@@ -884,7 +903,7 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 
 void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:

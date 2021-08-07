@@ -102,7 +102,7 @@ enum {
 };
 
 /* Hardcoded instant delta +6 */
-#define PHY_UPDATE_INSTANT_DELTA  6
+#define PHY_UPDATE_INSTANT_DELTA 6
 
 #if defined(CONFIG_BT_CENTRAL)
 /* PHY preference order*/
@@ -126,7 +126,6 @@ static inline uint8_t pu_select_phy(uint8_t phys)
 
 static void pu_prep_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
-
 	ctx->data.pu.tx = pu_select_phy(ctx->data.pu.tx);
 	ctx->data.pu.rx = pu_select_phy(ctx->data.pu.rx);
 
@@ -150,9 +149,8 @@ static uint8_t pu_select_phy_timing_restrict(struct ll_conn *conn, uint8_t phy_t
 	 * connEffectiveMaxTxTime.
 	 */
 	/* Note - entry 0 in table is unused, so 0 on purpose */
-	uint8_t phy_tx_time[8] = {0, PHY_1M, PHY_2M,
-				  PHY_1M, PHY_CODED, PHY_CODED,
-				  PHY_CODED, PHY_CODED};
+	uint8_t phy_tx_time[8] = { 0,	      PHY_1M,	 PHY_2M,    PHY_1M,
+				   PHY_CODED, PHY_CODED, PHY_CODED, PHY_CODED };
 	struct lll_conn *lll = &conn->lll;
 	const uint8_t phys = phy_tx | lll->phy_tx;
 
@@ -259,22 +257,18 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	uint16_t eff_rx_time = lll->dle.eff.max_rx_time;
 
 	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_SLAVE)) ||
-		(ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_MASTER))) {
-			eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets,
-						    lll->phy_tx,
-						    lll->dle.local.max_tx_time);
-
+	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_MASTER))) {
+		eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets, lll->phy_tx,
+					       lll->dle.local.max_tx_time);
 	}
 	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_MASTER)) ||
-		(ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_SLAVE))) {
-			eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets,
-							lll->phy_rx,
-							lll->dle.local.max_rx_time);
-
+	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_SLAVE))) {
+		eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx,
+					       lll->dle.local.max_rx_time);
 	}
 
-	if ((eff_tx_time != lll->dle.eff.max_tx_time) || (eff_rx_time != lll->dle.eff.max_rx_time))
-	{
+	if ((eff_tx_time != lll->dle.eff.max_tx_time) ||
+	    (eff_rx_time != lll->dle.eff.max_rx_time)) {
 		lll->dle.eff.max_tx_time = eff_tx_time;
 		lll->dle.eff.max_rx_time = eff_rx_time;
 		return 1;
@@ -295,7 +289,8 @@ static inline void pu_set_preferred_phys(struct ll_conn *conn, struct proc_ctx *
 	conn->lll.phy_flags = ctx->data.pu.flags;
 }
 
-static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t tx, uint8_t rx)
+static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t tx,
+				   uint8_t rx)
 {
 	/* Combine requested phys with locally preferred phys */
 	ctx->data.pu.rx &= rx;
@@ -312,7 +307,7 @@ static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, u
 		the PHY specified by the slave for both directions or shall leave both directions
 		unchanged.
 	*/
-	if (conn->lll.role == BT_HCI_ROLE_MASTER && (!ctx->data.pu.rx  || !ctx->data.pu.tx) ) {
+	if (conn->lll.role == BT_HCI_ROLE_MASTER && (!ctx->data.pu.rx || !ctx->data.pu.tx)) {
 		ctx->data.pu.tx = 0;
 		ctx->data.pu.rx = 0;
 	}
@@ -341,7 +336,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
-		pu_prep_update_ind(conn,ctx);
+		pu_prep_update_ind(conn, ctx);
 		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
@@ -405,15 +400,15 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	#define NTF_DLE (ctx->data.pu.ntf_dle)
+#define NTF_DLE (ctx->data.pu.ntf_dle)
 #else
-	#define NTF_DLE 0
+#define NTF_DLE 0
 #endif
 	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer) */
 	pu_reset_timing_restrict(conn);
 
-	if (ntf_count  && !llcp_ntf_alloc_num_available(ntf_count)) {
+	if (ntf_count && !llcp_ntf_alloc_num_available(ntf_count)) {
 		ctx->state = LP_PU_STATE_WAIT_NTF;
 	} else {
 		if (ctx->data.pu.ntf_pu) {
@@ -442,7 +437,8 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
@@ -468,7 +464,8 @@ static void lp_pu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
-static void lp_pu_st_wait_tx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_tx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				     void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -481,7 +478,8 @@ static void lp_pu_st_wait_tx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				     void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_RSP:
@@ -513,7 +511,8 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					 void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_ACK:
@@ -527,7 +526,8 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 #if defined(CONFIG_BT_PERIPHERAL)
 		case BT_HCI_ROLE_SLAVE:
 			/* If we act as peripheral apply timing restriction */
-			pu_set_timing_restrict(conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
+			pu_set_timing_restrict(
+				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
 			ctx->state = LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 			break;
@@ -545,7 +545,8 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static void lp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -557,15 +558,15 @@ static void lp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	}
 }
 
-static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+						uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_ACK:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_MASTER);
 		if (ctx->data.pu.s_to_m_phy || ctx->data.pu.m_to_s_phy) {
 			/* Either phys should change */
-			if (ctx->data.pu.m_to_s_phy)
-			{
+			if (ctx->data.pu.m_to_s_phy) {
 				/* master to slave tx phy changes so, apply timing restriction */
 				pu_set_timing_restrict(conn, ctx->data.pu.m_to_s_phy);
 			}
@@ -591,7 +592,8 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
@@ -626,7 +628,8 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	if (is_instant_reached_or_passed(ctx->data.pu.instant, pu_event_counter(conn))) {
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
@@ -642,7 +645,8 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-static void lp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				  void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -709,7 +713,7 @@ static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 
 void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 #if defined(CONFIG_BT_CENTRAL)
@@ -772,7 +776,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
-		pu_prep_update_ind(conn,ctx);
+		pu_prep_update_ind(conn, ctx);
 		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
@@ -790,9 +794,9 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	#define NTF_DLE (ctx->data.pu.ntf_dle)
+#define NTF_DLE (ctx->data.pu.ntf_dle)
 #else
-	#define NTF_DLE 0
+#define NTF_DLE 0
 #endif
 	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF) */
@@ -801,13 +805,11 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	if ((ntf_count > 0) && !llcp_ntf_alloc_num_available(ntf_count)) {
 		ctx->state = RP_PU_STATE_WAIT_NTF;
 	} else {
-		if (ctx->data.pu.ntf_pu)
-		{
+		if (ctx->data.pu.ntf_pu) {
 			pu_ntf(conn, ctx);
 		}
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		if (ctx->data.pu.ntf_dle)
-		{
+		if (ctx->data.pu.ntf_dle) {
 			pu_dle_ntf(conn, ctx);
 		}
 #endif
@@ -817,7 +819,8 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
 {
 	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
@@ -856,11 +859,12 @@ static void rp_pu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
-static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				     void *param)
 {
 	llcp_pdu_decode_phy_req(ctx, (struct pdu_data *)param);
 	/* Combine with the 'Prefered' the phys in conn->phy_pref_?x */
-	pu_combine_phys(conn,ctx, conn->phy_pref_tx, conn->phy_pref_rx);
+	pu_combine_phys(conn, ctx, conn->phy_pref_tx, conn->phy_pref_rx);
 	llcp_tx_pause_data(conn);
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
@@ -887,7 +891,8 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void rp_pu_st_wait_tx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_tx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				     void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
@@ -900,7 +905,8 @@ static void rp_pu_st_wait_tx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				     void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_ACK:
@@ -909,7 +915,8 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_RSP) {
 			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_SLAVE);
 			/* When we act as peripheral apply timing restriction */
-			pu_set_timing_restrict(conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
+			pu_set_timing_restrict(
+				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
 			/* RSP acked, now await update ind from master */
 			ctx->state = RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -939,7 +946,8 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static void rp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
@@ -953,14 +961,14 @@ static void rp_pu_st_wait_tx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					    void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_PHY_UPDATE_IND:
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
-		if (!end_procedure)
-		{
+		if (!end_procedure) {
 			/* Since at least one phy will change, we clear procedure response timeout */
 			ull_conn_prt_clear(conn);
 
@@ -976,7 +984,8 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	if (is_instant_reached_or_passed(ctx->data.pu.instant, pu_event_counter(conn))) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
@@ -992,7 +1001,8 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-static void rp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_pu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				  void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -1016,7 +1026,6 @@ static void rp_pu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	}
 }
-
 
 static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
@@ -1060,7 +1069,7 @@ static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 
 void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
-	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
@@ -1091,4 +1100,3 @@ void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_ACK, param);
 }
-
