@@ -33,8 +33,7 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 #define TI_HDC20XX_TEMP_SCALE		165U
 
 struct ti_hdc20xx_config {
-	const struct device *bus;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec bus;
 };
 
 struct ti_hdc20xx_data {
@@ -53,7 +52,7 @@ static int ti_hdc20xx_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* start conversion of both temperature and humidity with the default accuracy (14 bits) */
-	rc = i2c_reg_write_byte(config->bus, config->i2c_addr, TI_HDC20XX_REG_MEAS_CFG, 0x01);
+	rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_MEAS_CFG, 0x01);
 	if (rc < 0) {
 		LOG_ERR("Failed to write measurement configuration register");
 		return rc;
@@ -63,8 +62,7 @@ static int ti_hdc20xx_sample_fetch(const struct device *dev,
 	k_sleep(TI_HDC20XX_CONVERSION_TIME);
 
 	/* temperature and humidity registers are consecutive, read them in the same burst */
-	rc = i2c_burst_read(config->bus, config->i2c_addr,
-			    TI_HDC20XX_REG_TEMP, (uint8_t *)buf, sizeof(buf));
+	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_TEMP, (uint8_t *)buf, sizeof(buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read sample data");
 		return rc;
@@ -118,14 +116,14 @@ static int ti_hdc20xx_init(const struct device *dev)
 	uint16_t buf[2];
 	int rc;
 
-	if (!device_is_ready(config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus->name);
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	/* manufacturer and device ID registers are consecutive, read them in the same burst */
-	rc = i2c_burst_read(config->bus, config->i2c_addr,
-			    TI_HDC20XX_REG_MANUFACTURER_ID, (uint8_t *)buf, sizeof(buf));
+	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_MANUFACTURER_ID,
+			       (uint8_t *)buf, sizeof(buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read manufacturer and device IDs");
 		return rc;
@@ -147,8 +145,7 @@ static int ti_hdc20xx_init(const struct device *dev)
 #define TI_HDC20XX_DEFINE(inst, compat)							\
 	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;			\
 	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {	\
-		.bus = DEVICE_DT_GET(DT_BUS(DT_INST(inst, compat))),			\
-		.i2c_addr = DT_REG_ADDR(DT_INST(inst, compat))				\
+		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),				\
 	};										\
 	DEVICE_DT_DEFINE(DT_INST(inst, compat),						\
 			ti_hdc20xx_init,						\
