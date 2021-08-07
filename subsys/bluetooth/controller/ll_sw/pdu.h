@@ -142,33 +142,33 @@
 					    (CODED_PHY_CRC_SIZE) + \
 					    (CODED_PHY_TERM2_SIZE))<<3)
 
-#define PKT_DC_US(octets, mic, phy) (((phy) & PHY_CODED) ? \
-				     ((CODED_PHY_PREAMBLE_TIME_US) + \
-				      (FEC_BLOCK1_TIME_US) + \
-				      FEC_BLOCK2_TIME_US((octets), (mic))) : \
-				     (((PDU_PREAMBLE_SIZE(phy) + \
+#define PDU_MAX_US(octets, mic, phy) (((phy) & PHY_CODED) ? \
+				      ((CODED_PHY_PREAMBLE_TIME_US) + \
+				       (FEC_BLOCK1_TIME_US) + \
+				       FEC_BLOCK2_TIME_US((octets), (mic))) : \
+				      (((PDU_PREAMBLE_SIZE(phy) + \
+					 (PDU_ACCESS_ADDR_SIZE) + \
+					 (PDU_HEADER_SIZE) + \
+					 (octets) + \
+					 (mic) + \
+					 (PDU_CRC_SIZE))<<3) / \
+				       BIT(((phy) & 0x03) >> 1)))
+
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+#define PDU_MAX_US(octets, mic, phy) (((PDU_PREAMBLE_SIZE(phy) + \
 					(PDU_ACCESS_ADDR_SIZE) + \
 					(PDU_HEADER_SIZE) + \
 					(octets) + \
 					(mic) + \
 					(PDU_CRC_SIZE))<<3) / \
-				      BIT(((phy) & 0x03) >> 1)))
-
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_DC_US(octets, mic, phy) (((PDU_PREAMBLE_SIZE(phy) + \
-				       (PDU_ACCESS_ADDR_SIZE) + \
-				       (PDU_HEADER_SIZE) + \
-				       (octets) + \
-				       (mic) + \
-				       (PDU_CRC_SIZE))<<3) / \
-				     BIT(((phy) & 0x03) >> 1))
+				      BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
-#define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
+#define PKT_US(octets, phy)          PDU_MAX_US((octets), (PDU_MIC_SIZE), (phy))
 
-#define PKT_AC_US(octets, phy) PKT_DC_US((octets), 0, (phy))
+#define PKT_AC_US(octets, phy)       PDU_MAX_US((octets), 0, (phy))
 
-#define PKT_BIS_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
+#define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
