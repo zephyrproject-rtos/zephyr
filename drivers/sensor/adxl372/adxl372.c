@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 static int adxl372_bus_access(const struct device *dev, uint8_t reg,
 			      void *data, size_t length)
 {
-	struct adxl372_data *adxl372_data = dev->data;
+	const struct adxl372_dev_config *config = dev->config;
 
 #ifdef CONFIG_ADXL372_SPI
 	const struct spi_buf buf[2] = {
@@ -50,28 +50,25 @@ static int adxl372_bus_access(const struct device *dev, uint8_t reg,
 
 		tx.count = 1;
 
-		return spi_transceive(adxl372_data->bus,
-				      &adxl372_data->spi_cfg, &tx, &rx);
+		return spi_transceive_dt(&config->spi, &tx, &rx);
 	}
 
 	tx.count = 2;
 
-	return spi_write(adxl372_data->bus, &adxl372_data->spi_cfg, &tx);
+	return spi_write_dt(&config->spi, &tx);
 #elif CONFIG_ADXL372_I2C
-	const struct adxl372_dev_config *cfg = dev->config;
-
 	if (reg & ADXL372_READ) {
-		return i2c_burst_read(adxl372_data->bus, cfg->i2c_addr,
-				      ADXL372_TO_I2C_REG(reg),
-				      (uint8_t *) data, length);
+		return i2c_burst_read_dt(&config->i2c,
+					 ADXL372_TO_I2C_REG(reg),
+					 (uint8_t *) data, length);
 	} else {
 		if (length != 1) {
 			return -EINVAL;
 		}
 
-		return i2c_reg_write_byte(adxl372_data->bus, cfg->i2c_addr,
-					  ADXL372_TO_I2C_REG(reg),
-					  *(uint8_t *)data);
+		return i2c_reg_write_byte_dt(&config->i2c,
+					     ADXL372_TO_I2C_REG(reg),
+					     *(uint8_t *)data);
 	}
 
 #endif
@@ -886,43 +883,19 @@ static int adxl372_probe(const struct device *dev)
 
 static int adxl372_init(const struct device *dev)
 {
-	struct adxl372_data *data = dev->data;
 	const struct adxl372_dev_config *cfg = dev->config;
 
 #ifdef CONFIG_ADXL372_I2C
-	data->bus  = device_get_binding(cfg->i2c_port);
-	if (data->bus  == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			    cfg->i2c_port);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus %s not ready!", cfg->i2c.bus->name);
 		return -EINVAL;
 	}
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	data->bus = device_get_binding(cfg->spi_port);
-	if (!data->bus) {
-		LOG_ERR("spi device not found: %s", cfg->spi_port);
+	if (!spi_is_ready(&cfg->spi)) {
+		LOG_ERR("SPI bus %s not ready!", cfg->spi.bus->name);
 		return -EINVAL;
 	}
-	/* CPOL=0, CPHA=0, max 10MHz */
-	data->spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	data->spi_cfg.frequency = cfg->spi_max_frequency;
-	data->spi_cfg.slave = cfg->spi_slave;
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	/* handle SPI CS thru GPIO if it is the case */
-
-	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
-	if (!data->adxl372_cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
-		return -ENODEV;
-	}
-
-	data->adxl372_cs_ctrl.gpio_pin = cfg->cs_gpio;
-	data->adxl372_cs_ctrl.gpio_dt_flags = cfg->cs_flags;
-	data->adxl372_cs_ctrl.delay = 0U;
-
-	data->spi_cfg.cs = &data->adxl372_cs_ctrl;
-#endif
 #endif /* CONFIG_ADXL372_SPI */
 
 	if (adxl372_probe(dev) < 0) {
@@ -936,23 +909,13 @@ static struct adxl372_data adxl372_data;
 
 static const struct adxl372_dev_config adxl372_config = {
 #ifdef CONFIG_ADXL372_I2C
-	.i2c_port = DT_INST_BUS_LABEL(0),
-	.i2c_addr = DT_INST_REG_ADDR(0),
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	.spi_port = DT_INST_BUS_LABEL(0),
-	.spi_slave = DT_INST_REG_ADDR(0),
-	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-#endif
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
-	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
-	.int_gpio = DT_INST_GPIO_PIN(0, int1_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
+	.interrupt = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
 #endif
 
 	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),
