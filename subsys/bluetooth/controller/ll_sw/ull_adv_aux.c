@@ -1135,8 +1135,8 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) ==
 	    BT_HCI_LE_ADV_PROP_CONN) {
 		const uint16_t conn_req_us =
-			PKT_AC_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
-				  lll->phy_s);
+			PDU_AC_MAX_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
+				      lll->phy_s);
 		const uint16_t conn_rsp_us =
 			PKT_AC_US((PDU_AC_EXT_HEADER_SIZE_MIN + ADVA_SIZE +
 				   TARGETA_SIZE), lll->phy_s);
@@ -1145,7 +1145,7 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	} else if ((pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) ==
 		   BT_HCI_LE_ADV_PROP_SCAN) {
 		const uint16_t scan_req_us  =
-			PKT_AC_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
+			PDU_AC_MAX_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
 		const uint16_t scan_rsp_us =
 			PKT_AC_US(pdu_scan->len, lll->phy_s);
 

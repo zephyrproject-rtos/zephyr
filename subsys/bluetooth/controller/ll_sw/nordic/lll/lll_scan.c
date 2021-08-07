@@ -236,8 +236,8 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 
 	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
 	conn_offset_us = radio_tmr_end_get() + EVENT_IFS_US +
-			 PKT_AC_US(sizeof(struct pdu_adv_connect_ind),
-				   phy == PHY_LEGACY ? PHY_1M : phy);
+			 PDU_AC_MAX_US(sizeof(struct pdu_adv_connect_ind),
+				       (phy == PHY_LEGACY) ? PHY_1M : phy);
 
 	/* Add transmitWindowDelay to default calculated connection offset:
 	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for

@@ -120,10 +120,12 @@
  * for packet formats and thus lengths
  */
 
-#define PHY_LEGACY 0
-#define PHY_1M     BIT(0)
-#define PHY_2M     BIT(1)
-#define PHY_CODED  BIT(2)
+#define PHY_LEGACY   0
+#define PHY_1M       BIT(0)
+#define PHY_2M       BIT(1)
+#define PHY_CODED    BIT(2)
+#define PHY_FLAGS_S2 0
+#define PHY_FLAGS_S8 BIT(0)
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define CODED_PHY_PREAMBLE_TIME_US       80
@@ -133,40 +135,58 @@
 #define CODED_PHY_CRC_SIZE               24
 #define CODED_PHY_TERM2_SIZE             3
 
-#define FEC_BLOCK1_TIME_US               ((CODED_PHY_ACCESS_ADDRESS_TIME_US) + \
+#define FEC_BLOCK1_US                    ((CODED_PHY_ACCESS_ADDRESS_TIME_US) + \
 					  (CODED_PHY_CI_TIME_US) + \
 					  (CODED_PHY_TERM1_TIME_US))
-#define FEC_BLOCK2_TIME_US(octets, mic)  (((((PDU_HEADER_SIZE) + \
-					     (octets) + \
-					     (mic))<<3) + \
-					    (CODED_PHY_CRC_SIZE) + \
-					    (CODED_PHY_TERM2_SIZE))<<3)
 
-#define PDU_MAX_US(octets, mic, phy) (((phy) & PHY_CODED) ? \
-				      ((CODED_PHY_PREAMBLE_TIME_US) + \
-				       (FEC_BLOCK1_TIME_US) + \
-				       FEC_BLOCK2_TIME_US((octets), (mic))) : \
-				      (((PDU_PREAMBLE_SIZE(phy) + \
-					 (PDU_ACCESS_ADDR_SIZE) + \
-					 (PDU_HEADER_SIZE) + \
-					 (octets) + \
-					 (mic) + \
-					 (PDU_CRC_SIZE))<<3) / \
-				       BIT(((phy) & 0x03) >> 1)))
+/* cs = 0, S2 coding scheme, use PHY_FLAGS_S2
+ * cs = 1, S8 coding scheme, use PHY_FLAGS_S8
+ *
+ * Not using the term CI, Coding Indicator, where in the Spec its defined value
+ * of 0 is S8 encoding, 1 is S2 encoding.
+ */
+#define FEC_BLOCK2_US(octets, mic, cs)   (((((PDU_HEADER_SIZE) + \
+					     (octets) + \
+					     (mic)) << 3) + \
+					   (CODED_PHY_CRC_SIZE) + \
+					   (CODED_PHY_TERM2_SIZE)) << \
+					  (1 + (((cs) & 0x01) << 1)))
+
+#define PDU_US(octets, mic, phy, cs)     (((phy) & PHY_CODED) ? \
+					  ((CODED_PHY_PREAMBLE_TIME_US) + \
+					   (FEC_BLOCK1_US) + \
+					   FEC_BLOCK2_US((octets), (mic), \
+							 (cs))) : \
+					  (((PDU_PREAMBLE_SIZE(phy) + \
+					     (PDU_ACCESS_ADDR_SIZE) + \
+					     (PDU_HEADER_SIZE) + \
+					     (octets) + \
+					     (mic) + \
+					     (PDU_CRC_SIZE)) << 3) / \
+					   BIT(((phy) & 0x03) >> 1)))
+
+#define PDU_MAX_US(octets, mic, phy)     PDU_US((octets), (mic), (phy), \
+						PHY_FLAGS_S8)
 
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PDU_MAX_US(octets, mic, phy) (((PDU_PREAMBLE_SIZE(phy) + \
-					(PDU_ACCESS_ADDR_SIZE) + \
-					(PDU_HEADER_SIZE) + \
-					(octets) + \
-					(mic) + \
-					(PDU_CRC_SIZE))<<3) / \
-				      BIT(((phy) & 0x03) >> 1))
+#define PDU_US(octets, mic, phy, cs)     (((PDU_PREAMBLE_SIZE(phy) + \
+					    (PDU_ACCESS_ADDR_SIZE) + \
+					    (PDU_HEADER_SIZE) + \
+					    (octets) + \
+					    (mic) + \
+					    (PDU_CRC_SIZE)) << 3) / \
+					  BIT(((phy) & 0x03) >> 1))
+
+#define PDU_MAX_US(octets, mic, phy)     PDU_US((octets), (mic), (phy), 0)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 #define PDU_DC_MAX_US(octets, phy)   PDU_MAX_US((octets), (PDU_MIC_SIZE), (phy))
 
-#define PKT_AC_US(octets, phy)       PDU_MAX_US((octets), 0, (phy))
+#define PDU_DC_US(octets, mic, phy, cs)  PDU_US((octets), (mic), (phy), (cs))
+
+#define PDU_AC_MAX_US(octets, phy)   PDU_MAX_US((octets), 0, (phy))
+
+#define PDU_AC_US(octets, phy, cs)   PDU_US((octets), 0, (phy), (cs))
 
 #define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
 
