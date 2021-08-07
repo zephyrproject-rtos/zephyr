@@ -382,8 +382,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	aux->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 lll_aux->phy) +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						     lll_aux->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
