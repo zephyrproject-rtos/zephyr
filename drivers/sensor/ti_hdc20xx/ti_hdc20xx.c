@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 /* Register addresses */
 #define TI_HDC20XX_REG_TEMP		0x00
 #define TI_HDC20XX_REG_HUMIDITY		0x02
+#define TI_HDC20XX_REG_CONFIG		0x0E
 #define TI_HDC20XX_REG_MEAS_CFG		0x0F
 #define TI_HDC20XX_REG_MANUFACTURER_ID	0xFC
 #define TI_HDC20XX_REG_DEVICE_ID	0xFE
@@ -23,6 +24,12 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 /* Register values */
 #define TI_HDC20XX_MANUFACTURER_ID	0x5449
 #define TI_HDC20XX_DEVICE_ID		0x07D0
+
+/* Register bits */
+#define TI_HDC20XX_BIT_CONFIG_SOFT_RES		0x80
+
+/* Reset time: not in the datasheet, but found by trial and error */
+#define TI_HDC20XX_RESET_TIME		K_MSEC(1)
 
 /* Conversion time for 14-bit resolution. Temperature needs 660us and humidity 610us */
 #define TI_HDC20XX_CONVERSION_TIME      K_MSEC(2)
@@ -110,6 +117,22 @@ static const struct sensor_driver_api ti_hdc20xx_api_funcs = {
 	.channel_get = ti_hdc20xx_channel_get,
 };
 
+static int ti_hdc20xx_reset(const struct device *dev)
+{
+	const struct ti_hdc20xx_config *config = dev->config;
+	int rc;
+
+	rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_CONFIG,
+				   TI_HDC20XX_BIT_CONFIG_SOFT_RES);
+	if (rc < 0) {
+		LOG_ERR("Failed to soft-reset device");
+		return rc;
+	}
+	k_sleep(TI_HDC20XX_RESET_TIME);
+
+	return 0;
+}
+
 static int ti_hdc20xx_init(const struct device *dev)
 {
 	const struct ti_hdc20xx_config *config = dev->config;
@@ -136,6 +159,12 @@ static int ti_hdc20xx_init(const struct device *dev)
 	if (sys_le16_to_cpu(buf[1]) != TI_HDC20XX_DEVICE_ID) {
 		LOG_ERR("Unsupported device ID");
 		return -EINVAL;
+	}
+
+	/* Soft-reset the device to bring all registers in a known and consistent state */
+	rc = ti_hdc20xx_reset(dev);
+	if (rc < 0) {
+		return rc;
 	}
 
 	return 0;
