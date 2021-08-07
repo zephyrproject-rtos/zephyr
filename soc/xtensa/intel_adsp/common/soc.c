@@ -11,6 +11,7 @@
 #include <init.h>
 
 #include <soc/shim.h>
+#include <cavs-idc.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -282,6 +283,11 @@ static int soc_init(const struct device *dev)
 #endif
 
 	soc_set_power_and_clock();
+
+#if CONFIG_MP_NUM_CPUS > 1
+	soc_idc_init();
+#endif
+
 	return 0;
 }
 
