@@ -9,9 +9,7 @@
 #include <ztest.h>
 #include "kconfig.h"
 
-
 #define ULL_LLCP_UNITTEST
-
 
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
@@ -45,12 +43,10 @@ struct ll_conn *conn_from_pool;
 
 static void setup(void)
 {
-
 	ull_conn_init();
 
 	conn_from_pool = ll_conn_acquire();
-	zassert_not_null(conn_from_pool,
-			 "Could not allocate connection memory", NULL);
+	zassert_not_null(conn_from_pool, "Could not allocate connection memory", NULL);
 
 	test_setup(conn_from_pool);
 }
@@ -78,12 +74,10 @@ static void setup(void)
 void test_hci_feature_exchange_mas_loc(void)
 {
 	uint64_t err;
-	uint64_t set_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE };
+	uint64_t set_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE };
 	uint64_t rsp_featureset[] = {
-		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE,
-		0x0 };
+		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE, 0x0
+	};
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 
 	struct node_tx *tx;
@@ -97,10 +91,8 @@ void test_hci_feature_exchange_mas_loc(void)
 	for (feat_counter = 0; feat_counter < feat_to_test; feat_counter++) {
 		conn_handle = ll_conn_handle_get(conn_from_pool);
 
-		sys_put_le64(set_featureset[feat_counter],
-			     local_feature_req.features);
-		sys_put_le64(rsp_featureset[feat_counter],
-			     remote_feature_rsp.features);
+		sys_put_le64(set_featureset[feat_counter], local_feature_req.features);
+		sys_put_le64(rsp_featureset[feat_counter], remote_feature_rsp.features);
 
 		test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
 		/* Connect */
@@ -123,22 +115,20 @@ void test_hci_feature_exchange_mas_loc(void)
 		event_done(conn_from_pool);
 		/* There should be one host notification */
 
-		ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 
 		ut_rx_q_is_empty();
 
-		zassert_equal(conn_from_pool->lll.event_counter, feat_counter+1,
-		      "Wrong event count %d\n",
-			      conn_from_pool->lll.event_counter);
+		zassert_equal(conn_from_pool->lll.event_counter, feat_counter + 1,
+			      "Wrong event count %d\n", conn_from_pool->lll.event_counter);
 
 		ull_cp_release_tx(tx);
 		ull_cp_release_ntf(ntf);
 
 		ll_conn_release(conn_from_pool);
-
-
 	}
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_hci_feature_exchange_wrong_handle(void)
@@ -150,34 +140,32 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	err = ll_feature_req_send(conn_handle+1);
+	err = ll_feature_req_send(conn_handle + 1);
 
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Wrong reply for wrong handle\n");
 
 	ctx_counter = 0;
 	do {
 		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1,
-		      "Error in setup of test\n");
+	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1, "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 
 	zassert_equal(ctx_buffers_free(), 0, "Free CTX buffers %d", ctx_buffers_free());
 }
 
-
 void test_hci_main(void)
 {
 	ztest_test_suite(hci_feature_exchange_master,
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_mas_loc, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle,
+							setup, unit_test_noop)
 
-		);
+	);
 
 	ztest_run_test_suite(hci_feature_exchange_master);
 }

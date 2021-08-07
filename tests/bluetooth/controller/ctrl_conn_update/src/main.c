@@ -34,52 +34,46 @@
 #include "helper_util.h"
 
 /* Default connection values */
-#define INTVL_MIN  6U /* multiple of 1.25 ms (min 6, max 3200) */
-#define INTVL_MAX  6U /* multiple of 1.25 ms (min 6, max 3200) */
-#define LATENCY    1U
-#define TIMEOUT   10U /* multiple of 10 ms (min 10, max 3200) */
+#define INTVL_MIN 6U /* multiple of 1.25 ms (min 6, max 3200) */
+#define INTVL_MAX 6U /* multiple of 1.25 ms (min 6, max 3200) */
+#define LATENCY 1U
+#define TIMEOUT 10U /* multiple of 10 ms (min 10, max 3200) */
 
 /* Default conn_update_ind PDU */
-struct pdu_data_llctrl_conn_update_ind conn_update_ind = {
-	.win_size = 1U,
-	.win_offset = 0U,
-	.interval = INTVL_MAX,
-	.latency = LATENCY,
-	.timeout = TIMEOUT,
-	.instant = 6U
-};
+struct pdu_data_llctrl_conn_update_ind conn_update_ind = { .win_size = 1U,
+							   .win_offset = 0U,
+							   .interval = INTVL_MAX,
+							   .latency = LATENCY,
+							   .timeout = TIMEOUT,
+							   .instant = 6U };
 
 /* Default conn_param_req PDU */
-struct pdu_data_llctrl_conn_param_req conn_param_req = {
-	.interval_min = INTVL_MIN,
-	.interval_max = INTVL_MAX,
-	.latency = LATENCY,
-	.timeout = TIMEOUT,
-	.preferred_periodicity = 0U,
-	.reference_conn_event_count = 0u,
-	.offset0 = 0x0000U,
-	.offset1 = 0xffffU,
-	.offset2 = 0xffffU,
-	.offset3 = 0xffffU,
-	.offset4 = 0xffffU,
-	.offset5 = 0xffffU
-};
+struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_MIN,
+							 .interval_max = INTVL_MAX,
+							 .latency = LATENCY,
+							 .timeout = TIMEOUT,
+							 .preferred_periodicity = 0U,
+							 .reference_conn_event_count = 0u,
+							 .offset0 = 0x0000U,
+							 .offset1 = 0xffffU,
+							 .offset2 = 0xffffU,
+							 .offset3 = 0xffffU,
+							 .offset4 = 0xffffU,
+							 .offset5 = 0xffffU };
 
 /* Default conn_param_rsp PDU */
-struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = {
-	.interval_min = INTVL_MIN,
-	.interval_max = INTVL_MAX,
-	.latency = LATENCY,
-	.timeout = TIMEOUT,
-	.preferred_periodicity = 0U,
-	.reference_conn_event_count = 0u,
-	.offset0 = 0x0000U,
-	.offset1 = 0xffffU,
-	.offset2 = 0xffffU,
-	.offset3 = 0xffffU,
-	.offset4 = 0xffffU,
-	.offset5 = 0xffffU
-};
+struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = { .interval_min = INTVL_MIN,
+							 .interval_max = INTVL_MAX,
+							 .latency = LATENCY,
+							 .timeout = TIMEOUT,
+							 .preferred_periodicity = 0U,
+							 .reference_conn_event_count = 0u,
+							 .offset0 = 0x0000U,
+							 .offset1 = 0xffffU,
+							 .offset2 = 0xffffU,
+							 .offset3 = 0xffffU,
+							 .offset4 = 0xffffU,
+							 .offset5 = 0xffffU };
 
 /* Different PDU contents for (B) */
 
@@ -87,8 +81,8 @@ struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = {
 struct pdu_data_llctrl_conn_param_req conn_param_req_B = {
 	.interval_min = INTVL_MIN,
 	.interval_max = INTVL_MAX,
-	.latency = LATENCY + 1U,	/* differentiate parameter */
-	.timeout = TIMEOUT + 1U,	/* differentiate parameter */
+	.latency = LATENCY + 1U, /* differentiate parameter */
+	.timeout = TIMEOUT + 1U, /* differentiate parameter */
 	.preferred_periodicity = 0U,
 	.reference_conn_event_count = 0u,
 	.offset0 = 0x0000U,
@@ -103,8 +97,8 @@ struct pdu_data_llctrl_conn_param_req conn_param_req_B = {
 struct pdu_data_llctrl_conn_param_rsp conn_param_rsp_B = {
 	.interval_min = INTVL_MIN,
 	.interval_max = INTVL_MAX,
-	.latency = LATENCY + 1U,	/* differentiate parameter */
-	.timeout = TIMEOUT + 1U,	/* differentiate parameter */
+	.latency = LATENCY + 1U, /* differentiate parameter */
+	.timeout = TIMEOUT + 1U, /* differentiate parameter */
 	.preferred_periodicity = 0U,
 	.reference_conn_event_count = 0u,
 	.offset0 = 0x0000U,
@@ -120,8 +114,8 @@ struct pdu_data_llctrl_conn_update_ind conn_update_ind_B = {
 	.win_size = 1U,
 	.win_offset = 0U,
 	.interval = INTVL_MAX,
-	.latency = LATENCY + 1U,	/* differentiate parameter */
-	.timeout = TIMEOUT + 1U,	/* differentiate parameter */
+	.latency = LATENCY + 1U, /* differentiate parameter */
+	.timeout = TIMEOUT + 1U, /* differentiate parameter */
 	.instant = 6U
 };
 
@@ -192,9 +186,7 @@ void test_conn_update_mas_loc_accept(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -270,7 +262,8 @@ void test_conn_update_mas_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -305,9 +298,7 @@ void test_conn_update_mas_loc_reject(void)
 		.error_code = BT_HCI_ERR_UNACCEPT_CONN_PARAM
 	};
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_UNACCEPT_CONN_PARAM
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_UNACCEPT_CONN_PARAM };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -341,7 +332,8 @@ void test_conn_update_mas_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -384,9 +376,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 		.error_code = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
 	};
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -465,7 +455,8 @@ void test_conn_update_mas_loc_remote_legacy(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -508,9 +499,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 		.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ
 	};
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -589,7 +578,8 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -621,9 +611,7 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Disable feature */
 	test_unmask_feature_conn_param_req(&conn);
@@ -689,7 +677,8 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -743,9 +732,7 @@ void test_conn_update_mas_loc_collision(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
@@ -855,9 +842,9 @@ void test_conn_update_mas_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 /*
  * Slave-initiated Connection Parameters Request procedure.
@@ -895,9 +882,7 @@ void test_conn_update_mas_rem_accept(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -977,7 +962,8 @@ void test_conn_update_mas_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1053,7 +1039,8 @@ void test_conn_update_mas_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* Slave-initiated Connection Parameters Request procedure.
@@ -1152,9 +1139,7 @@ void test_conn_update_mas_rem_collision(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -1176,8 +1161,8 @@ void test_conn_update_mas_rem_collision(void)
 	/*******************/
 
 	/* (B) Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max,
-					req_B->latency, req_B->timeout);
+	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
+				 req_B->timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1316,7 +1301,8 @@ void test_conn_update_mas_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1349,9 +1335,7 @@ void test_conn_update_sla_loc_accept(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -1419,7 +1403,8 @@ void test_conn_update_sla_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1449,9 +1434,7 @@ void test_conn_update_sla_loc_reject(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_UNACCEPT_CONN_PARAM
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_UNACCEPT_CONN_PARAM };
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
@@ -1499,7 +1482,8 @@ void test_conn_update_sla_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1530,9 +1514,7 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
 
 	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
 		.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ
@@ -1579,7 +1561,8 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1626,7 +1609,8 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1688,13 +1672,9 @@ void test_conn_update_sla_loc_collision(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu cu1 = {
-		.status = BT_HCI_ERR_LL_PROC_COLLISION
-	};
+	struct node_rx_pu cu1 = { .status = BT_HCI_ERR_LL_PROC_COLLISION };
 
-	struct node_rx_pu cu2 = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu2 = { .status = BT_HCI_ERR_SUCCESS };
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
@@ -1807,7 +1787,8 @@ void test_conn_update_sla_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -1848,9 +1829,7 @@ void test_conn_update_sla_rem_accept(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -1938,7 +1917,8 @@ void test_conn_update_sla_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2017,7 +1997,8 @@ void test_conn_update_sla_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2116,9 +2097,7 @@ void test_conn_update_sla_rem_collision(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -2140,8 +2119,8 @@ void test_conn_update_sla_rem_collision(void)
 	/*******************/
 
 	/* (B) Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max,
-					req_B->latency, req_B->timeout);
+	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
+				 req_B->timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*******************/
@@ -2268,7 +2247,8 @@ void test_conn_update_sla_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2307,9 +2287,7 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 	/* Test with and without parameter change  */
 	uint8_t parameters_changed = 1U;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -2380,7 +2358,8 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2436,8 +2415,8 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
-
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2471,9 +2450,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 	/* Test with and without parameter change  */
 	uint8_t parameters_changed = 1U;
 
-	struct node_rx_pu cu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -2529,7 +2506,8 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /*
@@ -2573,42 +2551,60 @@ void test_conn_update_sla_loc_disallowed_no_param_req(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_main(void)
 {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	ztest_test_suite(mas_loc,
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_reject, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_remote_legacy, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_wo_feat_exch, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_w_feat_exch, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_collision, setup, unit_test_noop)
-			);
+	ztest_test_suite(
+		mas_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_reject, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_remote_legacy, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_wo_feat_exch, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_w_feat_exch, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_collision, setup,
+					       unit_test_noop));
 
 	ztest_test_suite(mas_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_accept, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_reject, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_unsupp_feat, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_collision, setup, unit_test_noop)
-			);
+			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_accept, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_reject, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_unsupp_feat, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_collision, setup,
+							unit_test_noop));
 
-	ztest_test_suite(sla_loc,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_accept, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_reject, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_wo_feat_exch, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_w_feat_exch, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_collision, setup, unit_test_noop)
-			);
+	ztest_test_suite(
+		sla_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_accept, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_reject, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_wo_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_w_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_collision, setup,
+					       unit_test_noop));
 
 	ztest_test_suite(sla_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_reject, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_unsupp_feat, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_collision, setup, unit_test_noop)
-			);
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_reject, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_unsupp_feat, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_collision, setup,
+							unit_test_noop));
 
 	ztest_run_test_suite(mas_loc);
 	ztest_run_test_suite(mas_rem);
@@ -2617,21 +2613,22 @@ void test_main(void)
 
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-	ztest_test_suite(mas_loc_no_param_req,
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept_no_param_req, setup, unit_test_noop)
-			);
+	ztest_test_suite(mas_loc_no_param_req, ztest_unit_test_setup_teardown(
+						       test_conn_update_mas_loc_accept_no_param_req,
+						       setup, unit_test_noop));
 
-	ztest_test_suite(mas_rem_no_param_req,
-			ztest_unit_test_setup_teardown(test_conn_update_mas_rem_accept_no_param_req, setup, unit_test_noop)
-			);
+	ztest_test_suite(mas_rem_no_param_req, ztest_unit_test_setup_teardown(
+						       test_conn_update_mas_rem_accept_no_param_req,
+						       setup, unit_test_noop));
 
-	ztest_test_suite(sla_loc_no_param_req,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_disallowed_no_param_req, setup, unit_test_noop)
-			);
+	ztest_test_suite(
+		sla_loc_no_param_req,
+		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_disallowed_no_param_req,
+					       setup, unit_test_noop));
 
-	ztest_test_suite(sla_rem_no_param_req,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept_no_param_req, setup, unit_test_noop)
-			);
+	ztest_test_suite(sla_rem_no_param_req, ztest_unit_test_setup_teardown(
+						       test_conn_update_sla_rem_accept_no_param_req,
+						       setup, unit_test_noop));
 
 	ztest_run_test_suite(mas_loc_no_param_req);
 	ztest_run_test_suite(mas_rem_no_param_req);

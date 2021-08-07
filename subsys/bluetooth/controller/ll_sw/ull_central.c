@@ -586,8 +586,8 @@ uint8_t ll_connect_disable(void **rx)
 
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
-		     uint8_t const *const ediv, uint8_t const *const ltk)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num, uint8_t const *const ediv,
+			uint8_t const *const ltk)
 {
 	struct ll_conn *conn;
 	struct node_tx *tx;
@@ -622,14 +622,13 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 			enc_req = (void *)
 				&pdu_data_tx->llctrl.enc_req;
-			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
+			memcpy(enc_req->rand, rand_num, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
 			lll_csrand_get(enc_req->skdm, sizeof(enc_req->skdm));
 			lll_csrand_get(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
-			memcpy(&conn->llcp_enc.rand[0], rand,
-			       sizeof(conn->llcp_enc.rand));
+			memcpy(&conn->llcp_enc.rand[0], rand_num, sizeof(conn->llcp_enc.rand));
 
 			conn->llcp_enc.ediv[0] = ediv[0];
 			conn->llcp_enc.ediv[1] = ediv[1];

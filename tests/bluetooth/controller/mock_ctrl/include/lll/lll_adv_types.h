@@ -14,8 +14,8 @@
  */
 struct lll_adv_pdu {
 	uint8_t volatile first;
-	uint8_t          last;
-	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
+	uint8_t last;
+	uint8_t *pdu[DOUBLE_BUFFER_SIZE];
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	/* This is a storage for LLL configuration that may be
 	 * changed while LLL advertising role is started.
@@ -23,6 +23,6 @@ struct lll_adv_pdu {
 	 * with extended advertising PDU e.g. CTE TX configuration
 	 * and CTEInfo field.
 	 */
-	void             *extra_data[DOUBLE_BUFFER_SIZE];
+	void *extra_data[DOUBLE_BUFFER_SIZE];
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 };
