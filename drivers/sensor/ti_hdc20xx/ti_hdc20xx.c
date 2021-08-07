@@ -38,8 +38,8 @@ struct ti_hdc20xx_config {
 };
 
 struct ti_hdc20xx_data {
-	int32_t t_sample;
-	int32_t rh_sample;
+	uint16_t t_sample;
+	uint16_t rh_sample;
 };
 
 static int ti_hdc20xx_sample_fetch(const struct device *dev,
