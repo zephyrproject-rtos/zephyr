@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 static inline void feature_unmask_features(struct ll_conn *conn, uint64_t ll_feat_mask)
 {
 	conn->llcp.fex.features_used &= ~ll_feat_mask;
@@ -129,9 +128,7 @@ static inline bool feature_smi_rx(struct ll_conn *conn)
 
 static inline bool feature_peer_smi_rx(struct ll_conn *conn)
 {
-
 	return conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_SMI_RX);
-
 }
 
 static inline bool feature_smi_tx(struct ll_conn *conn)
@@ -143,7 +140,6 @@ static inline bool feature_peer_smi_tx(struct ll_conn *conn)
 {
 	return conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_SMI_TX);
 }
-
 
 /*
  * The following features are not yet defined in KConfig and do

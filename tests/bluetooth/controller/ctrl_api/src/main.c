@@ -58,8 +58,6 @@ extern void test_int_create_proc(void);
 extern void test_int_local_pending_requests(void);
 extern void test_int_remote_pending_requests(void);
 
-
-
 void test_api_connect(void)
 {
 	ull_cp_init();
@@ -193,26 +191,19 @@ void test_int_disconnect_rem(void)
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
-
 }
 
 void test_main(void)
 {
-	ztest_test_suite(internal,
-			 ztest_unit_test(test_int_mem_proc_ctx),
-			 ztest_unit_test(test_int_mem_tx),
-			 ztest_unit_test(test_int_create_proc),
+	ztest_test_suite(internal, ztest_unit_test(test_int_mem_proc_ctx),
+			 ztest_unit_test(test_int_mem_tx), ztest_unit_test(test_int_create_proc),
 			 ztest_unit_test(test_int_local_pending_requests),
 			 ztest_unit_test(test_int_remote_pending_requests),
 			 ztest_unit_test(test_int_disconnect_loc),
-			 ztest_unit_test(test_int_disconnect_rem)
-			);
+			 ztest_unit_test(test_int_disconnect_rem));
 
-	ztest_test_suite(public,
-			 ztest_unit_test(test_api_init),
-			 ztest_unit_test(test_api_connect),
-			 ztest_unit_test(test_api_disconnect)
-			);
+	ztest_test_suite(public, ztest_unit_test(test_api_init), ztest_unit_test(test_api_connect),
+			 ztest_unit_test(test_api_disconnect));
 
 	ztest_run_test_suite(internal);
 	ztest_run_test_suite(public);
