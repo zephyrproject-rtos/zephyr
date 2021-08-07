@@ -193,8 +193,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Use the default 1M packet Tx time, extended connection initiation
 	 * in LLL will update this with the correct PHY.
 	 */
-	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	conn_lll->max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -340,26 +340,26 @@ conn_is_valid:
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
-				    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-					   lll->phy));
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy));
 	conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
-				    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-					   lll->phy));
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy));
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	max_tx_time = conn_lll->max_tx_time;
 	max_rx_time = conn_lll->max_rx_time;
 #else /* !CONFIG_BT_CTLR_PHY */
-	max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-	max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
-	max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-	max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	max_tx_time = MAX(max_tx_time,
-			  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
 	max_rx_time = MAX(max_rx_time,
-			  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 
