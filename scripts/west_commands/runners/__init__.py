@@ -26,6 +26,7 @@ def _import_runner_module(runner_name):
 
 _names = [
     'blackmagicprobe',
+    'blflash',
     'bossac',
     'canopen_program',
     'dediprog',
