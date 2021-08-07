@@ -9,9 +9,7 @@
 #include <ztest.h>
 #include "kconfig.h"
 
-
 #define ULL_LLCP_UNITTEST
-
 
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
@@ -74,12 +72,10 @@ static void setup(void)
 void test_feature_exchange_mas_loc(void)
 {
 	uint64_t err;
-	uint64_t set_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE };
+	uint64_t set_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE };
 	uint64_t rsp_featureset[] = {
-		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE,
-		0x0 };
+		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE, 0x0
+	};
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 
 	struct node_tx *tx;
@@ -90,7 +86,6 @@ void test_feature_exchange_mas_loc(void)
 	int feat_counter;
 
 	for (feat_counter = 0; feat_counter < feat_to_test; feat_counter++) {
-
 		sys_put_le64(set_featureset[feat_counter], local_feature_req.features);
 
 		sys_put_le64(rsp_featureset[feat_counter], remote_feature_rsp.features);
@@ -114,16 +109,17 @@ void test_feature_exchange_mas_loc(void)
 		event_done(&conn);
 		/* There should be one host notification */
 
-		ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 
 		ut_rx_q_is_empty();
 
 		ull_cp_release_tx(tx);
 		ull_cp_release_ntf(ntf);
 	}
-	zassert_equal(conn.lll.event_counter, feat_to_test,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(conn.lll.event_counter, feat_to_test, "Wrong event-count %d\n",
+		      conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_feature_exchange_mas_loc_2(void)
@@ -158,18 +154,11 @@ void test_feature_exchange_mas_loc_2(void)
 #define MAS_REM_NR_OF_EVENTS 2
 void test_feature_exchange_mas_rem(void)
 {
-	uint64_t set_featureset[] = {
-		DEFAULT_FEATURE,
-		LL_FEAT_BIT_MASK_VALID,
-		EXPECTED_FEAT_EXCH_VALID,
-		0xFFFFFFFFFFFFFFFF,
-		0x0 };
-	uint64_t exp_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
+	uint64_t set_featureset[] = { DEFAULT_FEATURE, LL_FEAT_BIT_MASK_VALID,
+				      EXPECTED_FEAT_EXCH_VALID, 0xFFFFFFFFFFFFFFFF, 0x0 };
+	uint64_t exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+				      DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID, DEFAULT_FEATURE,
+				      DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	struct node_tx *tx;
 
@@ -181,10 +170,8 @@ void test_feature_exchange_mas_rem(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
-		sys_put_le64(set_featureset[feat_count],
-			     remote_feature_req.features);
-		sys_put_le64(exp_featureset[feat_count],
-			     local_feature_rsp.features);
+		sys_put_le64(set_featureset[feat_count], remote_feature_req.features);
+		sys_put_le64(exp_featureset[feat_count], local_feature_rsp.features);
 
 		event_prepare(&conn);
 
@@ -203,10 +190,10 @@ void test_feature_exchange_mas_rem(void)
 
 		ull_cp_release_tx(tx);
 	}
-	zassert_equal(conn.lll.event_counter,
-		      MAS_REM_NR_OF_EVENTS*(feat_to_test),
+	zassert_equal(conn.lll.event_counter, MAS_REM_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 #define MAS_REM_2_NR_OF_EVENTS 3
@@ -217,30 +204,16 @@ void test_feature_exchange_mas_rem_2(void)
 	 * but in reality we should add some more
 	 * test cases
 	 */
-	uint64_t set_featureset[] = {
-		DEFAULT_FEATURE,
-		LL_FEAT_BIT_MASK_VALID,
-		EXPECTED_FEAT_EXCH_VALID,
-		0xFFFFFFFFFFFFFFFF,
-		0x0 };
-	uint64_t exp_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
-	uint64_t ut_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE };
-	uint64_t ut_exp_featureset[] = {
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
-		DEFAULT_FEATURE,
-		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
+	uint64_t set_featureset[] = { DEFAULT_FEATURE, LL_FEAT_BIT_MASK_VALID,
+				      EXPECTED_FEAT_EXCH_VALID, 0xFFFFFFFFFFFFFFFF, 0x0 };
+	uint64_t exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+				      DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID, DEFAULT_FEATURE,
+				      DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
+	uint64_t ut_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE, DEFAULT_FEATURE,
+				     DEFAULT_FEATURE, DEFAULT_FEATURE };
+	uint64_t ut_exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+					 DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
+					 DEFAULT_FEATURE, DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
 
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	uint64_t err;
@@ -256,14 +229,10 @@ void test_feature_exchange_mas_rem_2(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
-		sys_put_le64(set_featureset[feat_count],
-			     remote_feature_req.features);
-		sys_put_le64(exp_featureset[feat_count],
-			     local_feature_rsp.features);
-		sys_put_le64(ut_featureset[feat_count],
-			     ut_feature_req.features);
-		sys_put_le64(ut_exp_featureset[feat_count],
-			     ut_feature_rsp.features);
+		sys_put_le64(set_featureset[feat_count], remote_feature_req.features);
+		sys_put_le64(exp_featureset[feat_count], local_feature_rsp.features);
+		sys_put_le64(ut_featureset[feat_count], ut_feature_req.features);
+		sys_put_le64(ut_exp_featureset[feat_count], ut_feature_rsp.features);
 
 		err = ull_cp_feature_exchange(&conn);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -274,7 +243,7 @@ void test_feature_exchange_mas_rem_2(void)
 
 		event_prepare(&conn);
 		lt_rx(LL_FEATURE_REQ, &conn, &tx, &ut_feature_req);
-		lt_tx(LL_FEATURE_RSP, &conn,  &local_feature_rsp);
+		lt_tx(LL_FEATURE_RSP, &conn, &local_feature_rsp);
 		event_done(&conn);
 
 		ull_cp_release_tx(tx);
@@ -293,15 +262,13 @@ void test_feature_exchange_mas_rem_2(void)
 
 		ull_cp_release_tx(tx);
 		ull_cp_release_ntf(ntf);
-
 	}
 
-	zassert_equal(conn.lll.event_counter,
-		      MAS_REM_2_NR_OF_EVENTS*(feat_to_test),
+	zassert_equal(conn.lll.event_counter, MAS_REM_2_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 void test_slave_feature_exchange_sla_loc(void)
 {
@@ -352,13 +319,12 @@ void test_slave_feature_exchange_sla_loc(void)
 
 	/* There should be one host notification */
 
-	ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
+	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 void test_feature_exchange_sla_loc_unknown_rsp(void)
 {
@@ -414,32 +380,34 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 	event_prepare(&conn);
 	event_done(&conn);
 
-	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf,  &unknown_rsp);
+	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 3,
-	  	      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 void test_hci_main(void);
 
 void test_main(void)
 {
 	ztest_test_suite(feature_exchange_master,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup,
+							unit_test_noop));
 
 	ztest_test_suite(feature_exchange_slave,
-			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup,
+							unit_test_noop));
 
 	ztest_test_suite(feature_exchange_unknown,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp,
+							setup, unit_test_noop));
 
 	ztest_run_test_suite(feature_exchange_master);
 	ztest_run_test_suite(feature_exchange_slave);

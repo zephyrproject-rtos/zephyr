@@ -42,42 +42,30 @@ static struct {
 } mem_link_done;
 
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#define LL_PDU_RX_CNT (3+128)
+#define LL_PDU_RX_CNT (3 + 128)
 #else
-#define LL_PDU_RX_CNT (2+128)
+#define LL_PDU_RX_CNT (2 + 128)
 #endif
 
-#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
-#define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
+#define PDU_RX_CNT (CONFIG_BT_CTLR_RX_BUFFERS + 3)
+#define RX_CNT (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
-
 
 #if defined(CONFIG_BT_RX_USER_PDU_LEN)
 #define PDU_RX_USER_PDU_OCTETS_MAX (CONFIG_BT_RX_USER_PDU_LEN)
 #else
 #define PDU_RX_USER_PDU_OCTETS_MAX 0
 #endif
-#define NODE_RX_HEADER_SIZE      (offsetof(struct node_rx_pdu, pdu))
-#define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE)
+#define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
+#define NODE_RX_STRUCT_OVERHEAD (NODE_RX_HEADER_SIZE)
 
 #define PDU_ADVERTIZE_SIZE (PDU_AC_LL_SIZE_MAX + PDU_AC_LL_SIZE_EXTRA)
-#define PDU_DATA_SIZE      (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
-
-#define PDU_RX_NODE_POOL_ELEMENT_SIZE			\
-	MROUND(						\
-		NODE_RX_STRUCT_OVERHEAD			\
-		+ MAX(MAX(PDU_ADVERTIZE_SIZE,		\
-			  PDU_DATA_SIZE),		\
-		      PDU_RX_USER_PDU_OCTETS_MAX)	\
-		)
-
-
-
-
-
-
+#define PDU_RX_NODE_POOL_ELEMENT_SIZE                                                              \
+	MROUND(NODE_RX_STRUCT_OVERHEAD +                                                           \
+	       MAX(MAX(PDU_ADVERTIZE_SIZE, PDU_DATA_SIZE), PDU_RX_USER_PDU_OCTETS_MAX))
 
 /*
  * just a big number
@@ -177,12 +165,11 @@ void ll_rx_release(void *node_rx)
 
 void ll_rx_put(memq_link_t *link, void *rx)
 {
-	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
+	sys_slist_append(&ut_rx_q, (sys_snode_t *)rx);
 }
 
 void ll_rx_sched(void)
 {
-
 }
 
 void *ll_pdu_rx_alloc_peek(uint8_t count)
@@ -203,12 +190,10 @@ void *ll_pdu_rx_alloc(void)
 struct node_tx;
 void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx)
 {
-
 }
 
 void ull_ticker_status_give(uint32_t status, void *param)
 {
-
 }
 
 uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
@@ -231,8 +216,7 @@ void *ull_disable_mark_get(void)
 	return NULL;
 }
 
-int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
-			      void *lll_disable)
+int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param, void *lll_disable)
 {
 	return 0;
 }
@@ -259,18 +243,15 @@ int ull_disable(void *lll)
 
 void ull_rx_put(memq_link_t *link, void *rx)
 {
-
 }
 
 void ull_rx_sched(void)
 {
-
 }
 
 /* Forward declaration */
 struct node_rx_event_done;
-void ull_drift_ticks_get(struct node_rx_event_done *done,
-			 uint32_t *ticks_drift_plus,
+void ull_drift_ticks_get(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
 			 uint32_t *ticks_drift_minus)
 {
 }
@@ -280,22 +261,18 @@ static inline int init_reset(void)
 	memq_link_t *link;
 
 	/* Initialize done pool. */
-	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
-		 EVENT_DONE_MAX, &mem_done.free);
+	mem_init(mem_done.pool, sizeof(struct node_rx_event_done), EVENT_DONE_MAX, &mem_done.free);
 
 	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX,
-		 &mem_link_done.free);
+	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX, &mem_link_done.free);
 
 	/* Initialize rx pool. */
 	mem_init(mem_pdu_rx.pool, (PDU_RX_NODE_POOL_ELEMENT_SIZE),
-		 sizeof(mem_pdu_rx.pool) / (PDU_RX_NODE_POOL_ELEMENT_SIZE),
-		 &mem_pdu_rx.free);
+		 sizeof(mem_pdu_rx.pool) / (PDU_RX_NODE_POOL_ELEMENT_SIZE), &mem_pdu_rx.free);
 
 	/* Initialize rx link pool. */
 	mem_init(mem_link_rx.pool, sizeof(memq_link_t),
-		 sizeof(mem_link_rx.pool) / sizeof(memq_link_t),
-		 &mem_link_rx.free);
+		 sizeof(mem_link_rx.pool) / sizeof(memq_link_t), &mem_link_rx.free);
 
 	/* Acquire a link to initialize ull rx memq */
 	link = mem_acquire(&mem_link_rx.free);
@@ -321,8 +298,7 @@ static inline void rx_alloc(uint8_t max)
 	uint8_t idx;
 
 #if defined(CONFIG_BT_CONN)
-	while (mem_link_rx.quota_pdu &&
-	       MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
+	while (mem_link_rx.quota_pdu && MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
 		memq_link_t *link;
 		struct node_rx_hdr *rx;
 

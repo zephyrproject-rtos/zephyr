@@ -46,10 +46,10 @@ struct mem_pool {
 	uint8_t *pool;
 };
 
-#define LLCTRL_PDU_SIZE		(offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
-#define PROC_CTX_BUF_SIZE	WB_UP(sizeof(struct proc_ctx))
-#define TX_CTRL_BUF_SIZE	WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
-#define NTF_BUF_SIZE		WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
+#define LLCTRL_PDU_SIZE (offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
+#define PROC_CTX_BUF_SIZE WB_UP(sizeof(struct proc_ctx))
+#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
+#define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
 
 /* LLCP Allocations */
 
@@ -79,7 +79,7 @@ static struct proc_ctx *proc_ctx_acquire(void)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) mem_acquire(&mem_ctx.free);
+	ctx = (struct proc_ctx *)mem_acquire(&mem_ctx.free);
 	return ctx;
 }
 
@@ -97,7 +97,7 @@ struct node_tx *llcp_tx_alloc(void)
 {
 	struct node_tx *tx;
 
-	tx = (struct node_tx *) mem_acquire(&mem_tx.free);
+	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
 	return tx;
 }
 
@@ -164,7 +164,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->done = 0U;
 
 	/* Clear procedure data */
-	memset((void *) &ctx->data, 0, sizeof(ctx->data));
+	memset((void *)&ctx->data, 0, sizeof(ctx->data));
 
 	/* Initialize opcodes fields to known values */
 	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
@@ -200,7 +200,7 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		llcp_lp_comm_init_proc(ctx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_lp_enc_init_proc(ctx);
@@ -263,7 +263,7 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		llcp_rp_comm_init_proc(ctx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_rp_enc_init_proc(ctx);
@@ -334,7 +334,7 @@ void ll_conn_init(struct ll_conn *conn)
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
 	conn->llcp.fex.features_used = LL_FEAT;
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
@@ -383,7 +383,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 {
 	struct proc_ctx *ctx;
 
-	if (conn->lll.role != BT_HCI_ROLE_SLAVE ) {
+	if (conn->lll.role != BT_HCI_ROLE_SLAVE) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -446,9 +446,11 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
-#if defined (CONFIG_BT_CTLR_LE_ENC)
-#if defined (CONFIG_BT_CENTRAL)
-uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL)
+uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
 
@@ -471,7 +473,8 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
+uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
 
@@ -514,7 +517,8 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_initiated)
+uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx,
+			  uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
 
@@ -598,7 +602,8 @@ const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn)
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time)
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
+				  uint16_t max_tx_time)
 {
 	struct proc_ctx *ctx;
 
@@ -617,7 +622,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
 	/* TODO(thoh): Call rp_enc to query if LTK request reply is allowed */
@@ -642,7 +647,8 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
+uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
+			   uint16_t latency, uint16_t timeout)
 {
 	struct proc_ctx *ctx;
 
@@ -677,15 +683,14 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-			(conn->lll.role == BT_HCI_ROLE_SLAVE)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (conn->lll.role == BT_HCI_ROLE_SLAVE)) {
 			uint16_t handle = ll_conn_handle_get(conn);
 
 			ull_slave_latency_cancel(conn, handle);
 		}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	} else {
-		LL_ASSERT(0);	/* Unknown procedure */
+		LL_ASSERT(0); /* Unknown procedure */
 	}
 
 	/* TODO(tosk): Check what to handle (ADV_SCHED) from this legacy fct. */
@@ -735,13 +740,16 @@ static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 
 static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
-	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) && (ctx->tx_opcode == pdu->llctrl.unknown_rsp.type));
+	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) &&
+		(ctx->tx_opcode == pdu->llctrl.unknown_rsp.type));
 }
 
 static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
 	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
-	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
+		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
+		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
 }
 
 static bool pdu_is_terminate(struct pdu_data *pdu)
@@ -771,21 +779,23 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 	struct pdu_data *pdu;
 	struct proc_ctx *ctx;
 
-	pdu = (struct pdu_data *) rx->pdu;
+	pdu = (struct pdu_data *)rx->pdu;
 
 	if (!pdu_is_terminate(pdu)) {
 		/* Process non LL_TERMINATE_IND PDU's as responses to active
 		 * procedures */
 
 		ctx = llcp_lr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
+			    pdu_is_reject(pdu, ctx))) {
 			/* Response on local procedure */
 			llcp_lr_rx(conn, ctx, rx);
 			return;
 		}
 
 		ctx = llcp_rr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
+			    pdu_is_reject(pdu, ctx))) {
 			/* Response on remote procedure */
 			llcp_rr_rx(conn, ctx, rx);
 			return;

@@ -9,9 +9,7 @@
 #include <ztest.h>
 #include "kconfig.h"
 
-
 #define ULL_LLCP_UNITTEST
-
 
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
@@ -41,22 +39,17 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-
 struct ll_conn *conn_from_pool;
 
 static void setup(void)
 {
-
 	ull_conn_init();
 
 	conn_from_pool = ll_conn_acquire();
-	zassert_not_null(conn_from_pool,
-			 "Could not allocate connection memory", NULL);
+	zassert_not_null(conn_from_pool, "Could not allocate connection memory", NULL);
 
 	test_setup(conn_from_pool);
-
 }
-
 
 /*
  * +-----+                     +-------+            +-----+
@@ -82,8 +75,7 @@ void test_hci_feature_exchange(void)
 {
 	uint64_t err;
 	uint64_t set_feature = DEFAULT_FEATURE;
-	uint64_t rsp_feature = (LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) |
-		DEFAULT_FEATURE;
+	uint64_t rsp_feature = (LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE;
 
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -99,10 +91,8 @@ void test_hci_feature_exchange(void)
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-	sys_put_le64(set_feature,
-		     local_feature_req.features);
-	sys_put_le64(rsp_feature,
-		     remote_feature_rsp.features);
+	sys_put_le64(set_feature, local_feature_req.features);
+	sys_put_le64(rsp_feature, remote_feature_rsp.features);
 
 	/* Initiate a Feature Exchange Procedure via HCI */
 	err = ll_feature_req_send(conn_handle);
@@ -114,10 +104,9 @@ void test_hci_feature_exchange(void)
 	lt_rx_q_is_empty(conn_from_pool);
 	lt_tx(LL_FEATURE_RSP, conn_from_pool, &remote_feature_rsp);
 	event_done(conn_from_pool);
-	ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
+	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn_from_pool->lll.event_counter, 1,
-		      "Wrong event count %d\n",
+	zassert_equal(conn_from_pool->lll.event_counter, 1, "Wrong event count %d\n",
 		      conn_from_pool->lll.event_counter);
 	ull_cp_release_tx(tx);
 	ull_cp_release_ntf(ntf);
@@ -134,22 +123,19 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	err = ll_feature_req_send(conn_handle+1);
+	err = ll_feature_req_send(conn_handle + 1);
 
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Wrong reply for wrong handle\n");
 
 	ctx_counter = 0;
 	do {
 		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1,
-		      "Error in setup of test\n");
+	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1, "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 }
 
 void test_hci_version_ind(void)
@@ -184,10 +170,9 @@ void test_hci_version_ind(void)
 	lt_rx_q_is_empty(conn_from_pool);
 	lt_tx(LL_VERSION_IND, conn_from_pool, &remote_pdu);
 	event_done(conn_from_pool);
-	ut_rx_pdu(LL_VERSION_IND, &ntf,  &remote_pdu);
+	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_pdu);
 	ut_rx_q_is_empty();
-	zassert_equal(conn_from_pool->lll.event_counter, 1,
-		      "Wrong event count %d\n",
+	zassert_equal(conn_from_pool->lll.event_counter, 1, "Wrong event count %d\n",
 		      conn_from_pool->lll.event_counter);
 	ull_cp_release_tx(tx);
 	ull_cp_release_ntf(ntf);
@@ -204,22 +189,19 @@ void test_hci_version_ind_wrong_handle(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	err = ll_version_ind_send(conn_handle+1);
+	err = ll_version_ind_send(conn_handle + 1);
 
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 
 	ctx_counter = 0;
 	do {
 		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1,
-		      "Error in setup of test\n");
+	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1, "Error in setup of test\n");
 
 	err = ll_version_ind_send(conn_handle);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED,
-		      "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
 }
 
 void test_hci_apto(void)
@@ -241,14 +223,15 @@ void test_hci_apto(void)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 	zassert_equal(apto, 125, "Apto is %d", apto);
 
-	err = ll_apto_get(conn_handle+1, &apto);
+	err = ll_apto_get(conn_handle + 1, &apto);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 
 	err = ll_apto_set(conn_handle, 1000);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	zassert_equal(conn_from_pool->apto_reload, 800, "Apto reload is %d", conn_from_pool->apto_reload);
+	zassert_equal(conn_from_pool->apto_reload, 800, "Apto reload is %d",
+		      conn_from_pool->apto_reload);
 
-	err = ll_apto_get(conn_handle+1, 0x00);
+	err = ll_apto_get(conn_handle + 1, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 }
 
@@ -265,16 +248,15 @@ void test_hci_phy(void)
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-	err = ll_phy_req_send(conn_handle+1,  0x00, 0x00, 0x00);
+	err = ll_phy_req_send(conn_handle + 1, 0x00, 0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 	conn_from_pool->llcp.fex.features_used = 0x00;
 	conn_from_pool->llcp.fex.valid = 1;
-	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
-	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
-		      "Errorcode %d", err);
+	err = ll_phy_req_send(conn_handle, 0x03, 0xFF, 0x03);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, "Errorcode %d", err);
 
 	conn_from_pool->llcp.fex.features_used = 0xFFFF;
-	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
+	err = ll_phy_req_send(conn_handle, 0x03, 0xFF, 0x03);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 	err = ll_phy_get(conn_handle + 1, &phy_tx, &phy_rx);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
@@ -320,33 +302,30 @@ void test_hci_dle(void)
 
 	conn_from_pool->llcp.fex.features_used = 0x00;
 	err = ll_length_req_send(conn_handle, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
-		      "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, "Errorcode %d", err);
 	conn_from_pool->llcp.fex.features_used = 0xFFFFFFFF;
-	err = ll_length_req_send(conn_handle+1, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID,
-		      "Errorcode %d", err);
+	err = ll_length_req_send(conn_handle + 1, tx_octets, tx_time);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
-	ll_length_max_get(&max_tx_octets, &max_tx_time,
-			  &max_rx_octets, &max_rx_time);
+	ll_length_max_get(&max_tx_octets, &max_tx_time, &max_rx_octets, &max_rx_time);
 	zassert_equal(max_tx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
 	zassert_equal(max_rx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
 	zassert_equal(max_tx_time, 2120, "Actual time is %d", max_tx_time);
 	zassert_equal(max_rx_time, 2120, "Actual time is %d", max_rx_time);
 
 	err = ll_length_default_set(0x00, 0x00);
-        ll_length_default_get(&max_tx_octets, &max_tx_time);
-	zassert_equal(err,00,NULL);
-	zassert_equal(max_tx_octets,0x00,NULL);
+	ll_length_default_get(&max_tx_octets, &max_tx_time);
+	zassert_equal(err, 00, NULL);
+	zassert_equal(max_tx_octets, 0x00, NULL);
 	zassert_equal(max_tx_time, 0x00, NULL);
 	err = ll_length_default_set(0x10, 0x3FF);
 	ll_length_default_get(&max_tx_octets, &max_tx_time);
-	zassert_equal(err,00,NULL);
-	zassert_equal(max_tx_octets,0x10,NULL);
+	zassert_equal(err, 00, NULL);
+	zassert_equal(max_tx_octets, 0x10, NULL);
 	zassert_equal(max_tx_time, 0x3FF, NULL);
 	max_tx_octets = ull_conn_default_tx_octets_get();
 	max_tx_time = ull_conn_default_tx_time_get();
-	zassert_equal(max_tx_octets,0x10,NULL);
+	zassert_equal(max_tx_octets, 0x10, NULL);
 	zassert_equal(max_tx_time, 0x3FF, NULL);
 }
 
@@ -364,9 +343,9 @@ void test_hci_terminate(void)
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
 	reason = 0x01;
-	err = ll_terminate_ind_send(conn_handle+1,reason);
+	err = ll_terminate_ind_send(conn_handle + 1, reason);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
-	err = ll_terminate_ind_send(conn_handle,reason);
+	err = ll_terminate_ind_send(conn_handle, reason);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 }
 
@@ -378,7 +357,7 @@ void test_hci_conn_update(void)
 	uint8_t cmd, status;
 	uint16_t interval_min, interval_max, latency, timeout;
 
-	uint8_t unknown_cmds[3U] = {1U, 3U, 255U};
+	uint8_t unknown_cmds[3U] = { 1U, 3U, 255U };
 
 	cmd = 0x00;
 	status = 0x00;
@@ -394,38 +373,33 @@ void test_hci_conn_update(void)
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
 	/* Unknown Connection ID */
-	err = ll_conn_update(conn_handle+1, cmd, status,
-			     interval_min, interval_max,
-			     latency, timeout);
+	err = ll_conn_update(conn_handle + 1, cmd, status, interval_min, interval_max, latency,
+			     timeout);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	/* Unknown commands */
 	for (uint8_t i = 0U; i < sizeof(unknown_cmds); i++) {
-		err = ll_conn_update(conn_handle, unknown_cmds[i], status,
-				     interval_min, interval_max,
-				     latency, timeout);
+		err = ll_conn_update(conn_handle, unknown_cmds[i], status, interval_min,
+				     interval_max, latency, timeout);
 		zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
 	}
 
 	/* Connection Update or Connecton Parameter Req. */
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
-	err = ll_conn_update(conn_handle, cmd, status,
-			     interval_min, interval_max,
-			     latency, timeout);
+	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
+			     timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	conn_from_pool->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
-	err = ll_conn_update(conn_handle, cmd, status,
-			     interval_min, interval_max,
-			     latency, timeout);
+	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
+			     timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	/* Connecton Parameter Req. Reply */
 	cmd = 2U;
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
-	err = ll_conn_update(conn_handle, cmd, status,
-			     interval_min, interval_max,
-			     latency, timeout);
+	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
+			     timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	/* Connecton Parameter Req. Neg. Reply */
@@ -440,8 +414,8 @@ void test_hci_chmap(void)
 	uint16_t conn_handle;
 	uint64_t err;
 	uint8_t chmap[5];
-	uint8_t chmap_zero[5] = { };
-	uint8_t chmap_test[5] = {0x42, 0x00, 0x42, 0x00, 0x00};
+	uint8_t chmap_zero[5] = {};
+	uint8_t chmap_test[5] = { 0x42, 0x00, 0x42, 0x00, 0x00 };
 
 	err = ll_chm_update(chmap_zero);
 	zassert_equal(err, BT_HCI_ERR_INVALID_PARAM, "Errorcode %d", err);
@@ -451,7 +425,7 @@ void test_hci_chmap(void)
 	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-	err = ll_chm_get(conn_handle+1, chmap);
+	err = ll_chm_get(conn_handle + 1, chmap);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	err = ll_chm_get(conn_handle, chmap);
@@ -491,7 +465,7 @@ void test_hci_rssi(void)
 	 * EGON: add ll_chm_update
 	 */
 
-	err = ll_rssi_get(conn_handle+1, &rssi);
+	err = ll_rssi_get(conn_handle + 1, &rssi);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	err = ll_rssi_get(conn_handle, &rssi);
@@ -508,7 +482,6 @@ void test_hci_enc(void)
 	uint8_t error_code;
 	uint8_t ltk[5];
 
-
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
 	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
@@ -517,14 +490,13 @@ void test_hci_enc(void)
 
 	error_code = 0;
 
-	err = ll_enc_req_send(conn_handle+1, &rand, &ediv, &ltk[0]);
+	err = ll_enc_req_send(conn_handle + 1, &rand, &ediv, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_enc_req_send(conn_handle, &rand, &ediv, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
-
 	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
-	err = ll_start_enc_req_send(conn_handle+1, error_code, &ltk[0]);
+	err = ll_start_enc_req_send(conn_handle + 1, error_code, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_start_enc_req_send(conn_handle, error_code, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
@@ -532,20 +504,22 @@ void test_hci_enc(void)
 
 void test_main(void)
 {
-	ztest_test_suite(hci_interface,
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_apto, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_phy, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_dle, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_terminate, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_conn_update, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_chmap, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop)
+	ztest_test_suite(
+		hci_interface,
+		ztest_unit_test_setup_teardown(test_hci_feature_exchange, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_apto, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_phy, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_dle, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_terminate, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_conn_update, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_chmap, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop)
 
-		);
+	);
 
 	ztest_run_test_suite(hci_interface);
 }

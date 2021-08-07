@@ -35,7 +35,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-
 static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
 static void rr_abort(struct ll_conn *conn);
@@ -161,7 +160,7 @@ static struct proc_ctx *rr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.remote.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -169,7 +168,7 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -184,7 +183,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 	case PROC_FEATURE_EXCHANGE:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
-#if defined (CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
@@ -192,7 +191,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 	case PROC_VERSION_EXCHANGE:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_rp_enc_rx(conn, ctx, rx);
@@ -211,7 +210,7 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 	case PROC_CHAN_MAP_UPDATE:
-		llcp_rp_chmu_rx(conn, ctx,rx);
+		llcp_rp_chmu_rx(conn, ctx, rx);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
@@ -262,7 +261,7 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_FEATURE_EXCHANGE:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
-#if defined (CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
@@ -270,7 +269,7 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_VERSION_EXCHANGE:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_rp_enc_run(conn, ctx, NULL);
@@ -320,7 +319,8 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode, BT_HCI_ERR_LL_PROC_COLLISION);
+		llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
+					       BT_HCI_ERR_LL_PROC_COLLISION);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -445,12 +445,12 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				 */
 
 				/* Send reject */
-				struct node_rx_pdu *rx = (struct node_rx_pdu *) param;
-				struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+				struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
+				struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
 				rr_act_reject(conn);
 			} else if (with_instant && incompat == INCOMPAT_RESERVED) {
-				 /* Protocol violation.
+				/* Protocol violation.
 				 * => Disconnect
 				 *
 				 */
@@ -579,7 +579,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 	struct pdu_data *pdu;
 	uint8_t proc = PROC_UNKNOWN;
 
-	pdu = (struct pdu_data *) rx->pdu;
+	pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
@@ -693,7 +693,7 @@ void test_int_remote_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	rr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = llcp_rr_peek(&conn);
