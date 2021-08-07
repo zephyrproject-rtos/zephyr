@@ -17,6 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
+#include <cavs-idc.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
 #include <adsp/io.h>
@@ -26,9 +27,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
 
-#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_IPM_CAVS_IDC) && defined(CONFIG_SMP)
-#error Need to enable the IPM driver for multiprocessing
-#endif
+extern void z_sched_ipi(void);
 
 /* ROM wake version parsed by ROM during core wake up. */
 #define IDC_ROM_WAKE_VERSION	0x2
@@ -51,10 +50,6 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 	(IDC_TYPE(0x1) | IDC_HEADER(IDC_ROM_WAKE_VERSION))
 
 #define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
-
-#ifdef CONFIG_IPM_CAVS_IDC
-static const struct device *idc;
-#endif
 
 struct cpustart_rec {
 	uint32_t		cpu;
@@ -156,8 +151,10 @@ static ALWAYS_INLINE void enable_l1_cache(void)
 	 * Also set bit 0 to enable the LOOP extension instruction
 	 * fetch buffer.
 	 */
+#ifdef XCHAL_HAVE_ICACHE_DYN_ENABLE
 	reg = 0xffffff01;
 	__asm__ volatile("wsr %0, MEMCTL; rsync" :: "r"(reg));
+#endif
 
 	/* Likewise enable prefetching.  Sadly these values are not
 	 * architecturally defined by Xtensa (they're just documented
@@ -189,7 +186,7 @@ static ALWAYS_INLINE void enable_l1_cache(void)
 void z_mp_entry(void)
 {
 	volatile int ie;
-	uint32_t idc_reg, reg;
+	uint32_t reg;
 
 	enable_l1_cache();
 
@@ -229,14 +226,18 @@ void z_mp_entry(void)
 	__asm__ volatile(
 		"wsr." CONFIG_XTENSA_KERNEL_CPU_PTR_SR " %0" : : "r"(cpu));
 
-	/* Clear busy bit set by power up message */
-	idc_reg = idc_read(IPC_IDCTFC(0), start_rec.cpu) | IPC_IDCTFC_BUSY;
-	idc_write(IPC_IDCTFC(0), start_rec.cpu, idc_reg);
+	/* We got here via an IDC interrupt.  Clear the TFC high bit
+	 * (by writing a one!) to acknowledge and clear the latched
+	 * hardware interrupt (so we don't have to service it as a
+	 * spurious IPI when we enter user code).  Remember: this
+	 * could have come from any core, clear all of them.
+	 */
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		IDC[start_rec.cpu].core[i].tfc = BIT(31);
+	}
 
-#ifdef CONFIG_IPM_CAVS_IDC
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
-#endif /* CONFIG_IPM_CAVS_IDC */
 
 #ifdef CONFIG_SMP_BOOT_DELAY
 	cavs_idc_smp_init(NULL);
@@ -266,8 +267,9 @@ bool arch_cpu_active(int cpu_num)
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint32_t vecbase;
-	uint32_t idc_reg;
+	uint32_t vecbase, curr_cpu;
+
+	__asm__ volatile("rsr %0, PRID" : "=r"(curr_cpu));
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
@@ -312,28 +314,21 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
-#ifdef CONFIG_IPM_CAVS_IDC
-	idc = device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
-#endif
-
-	/* Enable IDC interrupt on the other core */
-	idc_reg = idc_read(IPC_IDCCTL, cpu_num);
-	idc_reg |= IPC_IDCCTL_IDCTBIE(0);
-	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	/* FIXME: 8 is IRQ_BIT_LVL2_IDC / PLATFORM_IDC_INTERRUPT */
-	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
-		    CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
-
 	/* Send power up message to the other core */
 	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
 
-	idc_write(IPC_IDCIETC(cpu_num), 0, ietc);
-	idc_write(IPC_IDCITC(cpu_num), 0, IDC_MSG_POWER_UP | IPC_IDCITC_BUSY);
+	IDC[curr_cpu].core[cpu_num].ietc = ietc;
+	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP | IPC_IDCITC_BUSY;
 
-	/* Disable IDC interrupt on other core so IPI won't cause
-	 * them to jump to ISR until the core is fully initialized.
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* Early DSPs have a ROM that actually receives the startup
+	 * IDC as an interrupt, and we don't want that to be confused
+	 * by IPIs sent by the OS elsewhere.  Mask the IDC interrupt
+	 * on other core so IPI won't cause them to jump to ISR until
+	 * the core is fully initialized.
 	 */
-	idc_reg = idc_read(IPC_IDCCTL, cpu_num);
+	uint32_t idc_reg = idc_read(IPC_IDCCTL, cpu_num);
+
 	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
 	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
 	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
@@ -344,10 +339,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 #ifdef CONFIG_SMP_BOOT_DELAY
 	cavs_idc_smp_init(NULL);
 #endif
-
-	/* Clear done bit from responding the power up message */
-	idc_reg = idc_read(IPC_IDCIETC(cpu_num), 0) | IPC_IDCIETC_DONE;
-	idc_write(IPC_IDCIETC(cpu_num), 0, idc_reg);
+#endif
 
 	while (!start_rec.alive)
 		;
@@ -359,13 +351,80 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	cpu_mask |= BIT(cpu_num);
 }
 
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
-FUNC_ALIAS(soc_sched_ipi, arch_sched_ipi, void);
-void soc_sched_ipi(void)
+void arch_sched_ipi(void)
 {
-	if (idc != NULL) {
-		ipm_send(idc, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-			 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	uint32_t prid;
+
+	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
+	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
+		if (c != prid) {
+			IDC[prid].core[c].itc = BIT(31);
+		}
+	}
+#else
+	/* Legacy implementation for cavs15 based on the 2-core-only
+	 * IPM driver.  To be replaced with the general one when
+	 * validated.
+	 */
+	const struct device *idcdev =
+		device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
+
+	ipm_send(idcdev, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
+		 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
+#endif
+}
+
+void idc_isr(void *param)
+{
+	ARG_UNUSED(param);
+
+#ifdef CONFIG_SMP
+	/* Right now this interrupt is only used for IPIs */
+	z_sched_ipi();
+#endif
+
+	/* ACK the interrupt to all the possible sources.  This is a
+	 * level-sensitive interrupt triggered by a logical OR of each
+	 * of the ITC/TFC high bits, INCLUDING the one "from this
+	 * CPU".
+	 */
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		IDC[start_rec.cpu].core[i].tfc = BIT(31);
 	}
 }
+
+#ifndef CONFIG_IPM_CAVS_IDC
+/* Fallback stub for external SOF code */
+int cavs_idc_smp_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
 #endif
+
+void soc_idc_init(void)
+{
+#ifndef CONFIG_IPM_CAVS_IDC
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
+#endif
+
+	/* Every CPU should be able to receive an IDC interrupt from
+	 * every other CPU, but not to be back-interrupted when the
+	 * target core clears the busy bit.
+	 */
+	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
+		uint32_t coremask = BIT(CONFIG_MP_NUM_CPUS) - 1;
+
+		IDC[core].busy_int |= coremask;
+		IDC[core].done_int &= ~coremask;
+
+		/* Also unmask the interrupt for every core in the L2
+		 * mask register. Really this should have an API
+		 * exposed out of the interrupt controller layer...
+		 */
+		sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
+			    CAVS_ICTL_INT_CPU_OFFSET(core), 8);
+
+	}
+}
