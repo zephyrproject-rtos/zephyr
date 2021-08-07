@@ -772,9 +772,9 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ull = HDR_LLL2ULL(lll);
 		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(ull->ticks_slot) -
 				  EVENT_IFS_US -
-				  PKT_AC_US(aux_connect_req_len, phy_aux) -
+				  PDU_AC_MAX_US(aux_connect_req_len, phy_aux) -
 				  EVENT_IFS_US -
-				  PKT_AC_US(aux_connect_rsp_len, phy_aux) -
+				  PDU_AC_MAX_US(aux_connect_rsp_len, phy_aux) -
 				  EVENT_OVERHEAD_START_US -
 				  EVENT_TICKER_RES_MARGIN_US)) {
 			return -ETIME;
