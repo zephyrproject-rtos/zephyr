@@ -164,7 +164,7 @@
 				      BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
-#define PKT_US(octets, phy)          PDU_MAX_US((octets), (PDU_MIC_SIZE), (phy))
+#define PDU_DC_MAX_US(octets, phy)   PDU_MAX_US((octets), (PDU_MIC_SIZE), (phy))
 
 #define PKT_AC_US(octets, phy)       PDU_MAX_US((octets), 0, (phy))
 
