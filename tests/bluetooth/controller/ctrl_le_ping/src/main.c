@@ -60,11 +60,9 @@ void test_ping_mas_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {
-	};
+	struct pdu_data_llctrl_ping_req local_ping_req = {};
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {
-	};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -95,7 +93,8 @@ void test_ping_mas_loc(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -119,11 +118,9 @@ void test_ping_sla_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {
-	};
+	struct pdu_data_llctrl_ping_req local_ping_req = {};
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {
-	};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -154,7 +151,8 @@ void test_ping_sla_loc(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -172,11 +170,9 @@ void test_ping_mas_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {
-	};
+	struct pdu_data_llctrl_ping_req local_ping_req = {};
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {
-	};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -209,7 +205,8 @@ void test_ping_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -227,11 +224,9 @@ void test_ping_sla_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_ping_req local_ping_req = {
-	};
+	struct pdu_data_llctrl_ping_req local_ping_req = {};
 
-	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {
-	};
+	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -264,7 +259,8 @@ void test_ping_sla_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_main(void)
@@ -273,8 +269,7 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_ping_mas_loc, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_ping_sla_loc, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_ping_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_ping_sla_rem, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_ping_sla_rem, setup, unit_test_noop));
 
 	ztest_run_test_suite(ping);
 }

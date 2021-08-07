@@ -34,7 +34,6 @@
 #include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
-
 #include "helper_pdu.h"
 #include "helper_util.h"
 #include "helper_features.h"
@@ -75,9 +74,9 @@ void test_data_length_update_mas_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_length_req local_length_req = {251,2120,211,1800};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = {201,1720,251,2120};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,201,1720};
+	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 201, 1720, 251, 2120 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 201, 1720 };
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	/* Connect */
@@ -95,7 +94,7 @@ void test_data_length_update_mas_loc(void)
 	}
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -120,10 +119,9 @@ void test_data_length_update_mas_loc(void)
 	event_done(&conn);
 
 	/* There should be one host notification */
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
 /*
@@ -149,8 +147,8 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 	uint8_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req local_length_req = {251, 2120, 211, 1800};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = {27, 328, 27, 328};
+	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 27, 328, 27, 328 };
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	/* Connect */
@@ -161,7 +159,7 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -179,9 +177,7 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
-
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
 }
 /*
  * Locally triggered Data Length Update procedure -
@@ -223,11 +219,11 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_length_req local_length_req = {251,2120,211,1800};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = {101,920,251,2120};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,101,920};
-	struct pdu_data_llctrl_length_req local_length_req2 = {251,2120,211,1800};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = {101,920,251,2120};
+	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 101, 920, 251, 2120 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 101, 920 };
+	struct pdu_data_llctrl_length_req local_length_req2 = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = { 101, 920, 251, 2120 };
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	/* Connect */
@@ -238,7 +234,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -255,14 +251,13 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	event_done(&conn);
 
 	/* There should be one host notification */
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
 
 	/* Now lets generate another DLU, but one that should not result in
 	   change to effective numbers, thus not generate NTF */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -280,8 +275,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
 void test_data_length_update_sla_loc(void)
@@ -290,9 +284,9 @@ void test_data_length_update_sla_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 1800, 251, 2120};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,211,1800};
+	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 1800, 251, 2120 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 211, 1800 };
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 	/* Connect */
@@ -303,7 +297,7 @@ void test_data_length_update_sla_loc(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -320,10 +314,9 @@ void test_data_length_update_sla_loc(void)
 	event_done(&conn);
 
 	/* There should be one host notification */
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
 /*
@@ -349,9 +342,9 @@ void test_data_length_update_mas_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 251, 2120};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,27,328};
+	struct pdu_data_llctrl_length_req remote_length_req = { 27, 328, 251, 2120 };
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 27, 328 };
 
 	struct node_rx_pdu *ntf;
 
@@ -380,7 +373,7 @@ void test_data_length_update_mas_rem(void)
 
 	event_done(&conn);
 
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 }
 
@@ -408,9 +401,9 @@ void test_data_length_update_sla_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 201, 1720};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
-	struct pdu_data_llctrl_length_rsp length_ntf = {201,1720,27,328};
+	struct pdu_data_llctrl_length_req remote_length_req = { 27, 328, 201, 1720 };
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 201, 1720, 27, 328 };
 	struct node_rx_pdu *ntf;
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -452,7 +445,7 @@ void test_data_length_update_sla_rem(void)
 	event_prepare(&conn);
 	event_done(&conn);
 
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 }
 
@@ -484,9 +477,9 @@ void test_data_length_update_sla_rem_and_loc(void)
 	uint64_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 211, 1800};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
-	struct pdu_data_llctrl_length_rsp length_ntf = {211,1800,27,328};
+	struct pdu_data_llctrl_length_req remote_length_req = { 27, 328, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 211, 1800, 27, 328 };
 	struct node_rx_pdu *ntf;
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -514,7 +507,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800 );
+	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_done(&conn);
@@ -532,7 +525,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 
 	event_done(&conn);
 
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 }
 
@@ -615,7 +608,7 @@ void test_data_length_update_dle_max_time_get(void)
 	// Check that MIN works
 	max_time = 20;
 	max_octets = 2;
-    ull_dle_local_tx_update(&conn, max_octets, max_time);
+	ull_dle_local_tx_update(&conn, max_octets, max_time);
 
 #ifdef CONFIG_BT_CTLR_PHY
 #ifdef CONFIG_BT_CTLR_PHY_CODED
@@ -629,30 +622,34 @@ void test_data_length_update_dle_max_time_get(void)
 	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
 	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
 #endif
-
 }
 
 void test_main(void)
 {
-	ztest_test_suite(data_length_update_master,
-			 ztest_unit_test_setup_teardown(test_data_length_update_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change2, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_mas_rem, setup, unit_test_noop)
-		);
+	ztest_test_suite(
+		data_length_update_master,
+		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change2,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_data_length_update_mas_rem, setup,
+					       unit_test_noop));
 
 	ztest_test_suite(data_length_update_slave,
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_data_length_update_sla_loc, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc,
+							setup, unit_test_noop));
 
 	ztest_test_suite(data_length_update_util,
-			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get, setup, unit_test_noop)
-		);
+			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get,
+							setup, unit_test_noop));
 
 	ztest_run_test_suite(data_length_update_master);
 	ztest_run_test_suite(data_length_update_slave);
 	ztest_run_test_suite(data_length_update_util);
-
 }

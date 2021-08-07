@@ -35,13 +35,13 @@ extern sys_slist_t ut_rx_q;
 
 __attribute__((weak)) int lll_csrand_get(void *buf, size_t len)
 {
-	* (int *) buf = 0;
+	*(int *)buf = 0;
 	return 0;
 }
 
 __attribute__((weak)) int lll_csrand_isr_get(void *buf, size_t len)
 {
-	* (int *) buf = 0;
+	*(int *)buf = 0;
 	return 0;
 }
 

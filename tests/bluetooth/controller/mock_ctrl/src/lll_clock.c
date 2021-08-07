@@ -16,7 +16,6 @@
 #define LFCLOCK_TIMEOUT_MS 500
 #define HFCLOCK_TIMEOUT_MS 2
 
-
 int lll_clock_init(void)
 {
 	return 0;

@@ -62,7 +62,6 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
-
 static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
@@ -98,7 +97,7 @@ static struct proc_ctx *lr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.local.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -106,7 +105,7 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -129,7 +128,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 	case PROC_VERSION_EXCHANGE:
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_lp_enc_rx(conn, ctx, rx);
@@ -212,7 +211,7 @@ static void lr_act_run(struct ll_conn *conn)
 	case PROC_VERSION_EXCHANGE:
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		llcp_lp_enc_run(conn, ctx, NULL);
@@ -453,7 +452,7 @@ void test_int_local_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	llcp_lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = llcp_lr_peek(&conn);

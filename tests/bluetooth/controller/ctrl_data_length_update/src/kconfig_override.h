@@ -9,7 +9,6 @@
  * Common Kconfig settings
  */
 
-
 #ifdef CONFIG_BT_CTLR_PHY
 #undef CONFIG_BT_CTLR_PHY
 #endif

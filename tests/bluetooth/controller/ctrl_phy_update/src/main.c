@@ -58,26 +58,35 @@ static void setup(void)
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
 	/* Emulate different remote numbers to trigger update of eff */
-	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN*3;
-	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN*3;
+	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
+	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
 	conn.lll.dle.remote.max_tx_time = PKT_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
 	conn.lll.dle.remote.max_rx_time = PKT_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
 	ull_dle_update_eff(&conn);
-
 }
 
-#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)\
-do {\
-	zassert_equal(_conn.phy_pref_rx, _rx, "Preferred RX PHY mismatch %d (actual) != %d (expected)",_conn.phy_pref_rx, _rx );\
-	zassert_equal(_conn.phy_pref_tx, _tx, "Preferred TX PHY mismatch %d (actual) != %d (expected)",_conn.phy_pref_tx, _tx );\
-} while (0)
+#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                                                      \
+	do {                                                                                       \
+		zassert_equal(_conn.phy_pref_rx, _rx,                                              \
+			      "Preferred RX PHY mismatch %d (actual) != %d (expected)",            \
+			      _conn.phy_pref_rx, _rx);                                             \
+		zassert_equal(_conn.phy_pref_tx, _tx,                                              \
+			      "Preferred TX PHY mismatch %d (actual) != %d (expected)",            \
+			      _conn.phy_pref_tx, _tx);                                             \
+	} while (0)
 
-#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)\
-do {\
-	zassert_equal(_conn.lll.phy_rx, _rx, "Current RX PHY mismatch %d (actual) != %d (expected)",_conn.lll.phy_rx, _rx );\
-	zassert_equal(_conn.lll.phy_tx, _tx, "Current TX PHY mismatch %d (actual) != %d (expected)",_conn.lll.phy_tx, _tx );\
-	zassert_equal(_conn.lll.phy_rx, _rx, "Current Flags mismatch %d (actual) != %d (expected)",_conn.lll.phy_flags, _flags );\
-} while (0)
+#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                                           \
+	do {                                                                                       \
+		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
+			      "Current RX PHY mismatch %d (actual) != %d (expected)",              \
+			      _conn.lll.phy_rx, _rx);                                              \
+		zassert_equal(_conn.lll.phy_tx, _tx,                                               \
+			      "Current TX PHY mismatch %d (actual) != %d (expected)",              \
+			      _conn.lll.phy_tx, _tx);                                              \
+		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
+			      "Current Flags mismatch %d (actual) != %d (expected)",               \
+			      _conn.lll.phy_flags, _flags);                                        \
+	} while (0)
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 {
@@ -96,15 +105,18 @@ void test_phy_update_mas_loc(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
+					       .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
+						   .m_to_s_phy = PHY_2M,
+						   .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+	};
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -189,7 +201,7 @@ void test_phy_update_mas_loc(void)
 
 	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -198,7 +210,8 @@ void test_phy_update_mas_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_unsupp_feat(void)
@@ -208,13 +221,9 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 
-	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
-		.type = PDU_DATA_LLCTRL_TYPE_PHY_REQ
-	};
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = { .type = PDU_DATA_LLCTRL_TYPE_PHY_REQ };
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -252,7 +261,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem(void)
@@ -261,14 +271,16 @@ void test_phy_update_mas_rem(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
+						   .m_to_s_phy = 0,
+						   .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+	};
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -340,7 +352,7 @@ void test_phy_update_mas_rem(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -348,7 +360,8 @@ void test_phy_update_mas_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc(void)
@@ -357,15 +370,16 @@ void test_phy_update_sla_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+	};
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {.m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M};
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { .m_to_s_phy = PHY_2M,
+							      .s_to_m_phy = PHY_2M };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -389,7 +403,6 @@ void test_phy_update_sla_loc(void)
 
 	/* Done */
 	event_done(&conn);
-
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -433,7 +446,7 @@ void test_phy_update_sla_loc(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -441,7 +454,8 @@ void test_phy_update_sla_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_rem(void)
@@ -449,15 +463,18 @@ void test_phy_update_sla_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED, .tx_phys = PHY_1M | PHY_2M | PHY_CODED};
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
+					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
+						   .m_to_s_phy = 0,
+						   .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+	};
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -532,7 +549,7 @@ void test_phy_update_sla_rem(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -541,7 +558,8 @@ void test_phy_update_sla_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_collision(void)
@@ -551,10 +569,15 @@ void test_phy_update_mas_loc_collision(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
+					       .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9,
+						   .m_to_s_phy = PHY_2M,
+						   .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+	};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -562,9 +585,7 @@ void test_phy_update_mas_loc_collision(void)
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -702,13 +723,14 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem_collision(void)
@@ -719,18 +741,25 @@ void test_phy_update_mas_rem_collision(void)
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req req_master = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14, .m_to_s_phy = PHY_2M, .s_to_m_phy = 0 };
-	struct pdu_data_llctrl_length_rsp length_ntf_1 = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
-	struct pdu_data_llctrl_length_rsp length_ntf_2 = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
+					       .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7,
+						     .m_to_s_phy = 0,
+						     .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14,
+						     .m_to_s_phy = PHY_2M,
+						     .s_to_m_phy = 0 };
+	struct pdu_data_llctrl_length_rsp length_ntf_1 = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+	};
+	struct pdu_data_llctrl_length_rsp length_ntf_2 = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+	};
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -815,7 +844,7 @@ void test_phy_update_mas_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf_1);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf_1);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -867,13 +896,14 @@ void test_phy_update_mas_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf_2);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf_2);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc_collision(void)
@@ -884,9 +914,13 @@ void test_phy_update_sla_loc_collision(void)
 	struct pdu_data_llctrl_phy_req req_master = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
-	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_1M };
-	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
-							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
+						   .m_to_s_phy = PHY_2M,
+						   .s_to_m_phy = PHY_1M };
+	struct pdu_data_llctrl_length_rsp length_ntf = {
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+	};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -894,7 +928,7 @@ void test_phy_update_sla_loc_collision(void)
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
 
-	struct node_rx_pu pu = {0};
+	struct node_rx_pu pu = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -991,29 +1025,31 @@ void test_phy_update_sla_loc_collision(void)
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_SUCCESS;
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
-	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 void test_main(void)
 {
-
-	ztest_test_suite(phy,
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_collision, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem_collision, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup, unit_test_noop)
-			);
+	ztest_test_suite(
+		phy, ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_collision, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_rem_collision, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup,
+					       unit_test_noop));
 
 	ztest_run_test_suite(phy);
 }
