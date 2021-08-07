@@ -58,9 +58,8 @@ struct bme280_data {
 };
 
 struct bme280_config {
-	const struct device *bus;
+	union bme280_bus bus;
 	const struct bme280_bus_io *bus_io;
-	const union bme280_bus_config bus_config;
 };
 
 static inline struct bme280_data *to_data(const struct device *dev)
@@ -68,39 +67,27 @@ static inline struct bme280_data *to_data(const struct device *dev)
 	return dev->data;
 }
 
-static inline const struct bme280_config *to_config(const struct device *dev)
-{
-	return dev->config;
-}
-
-static inline const struct device *to_bus(const struct device *dev)
-{
-	return to_config(dev)->bus;
-}
-
-static inline const union bme280_bus_config*
-to_bus_config(const struct device *dev)
-{
-	return &to_config(dev)->bus_config;
-}
-
 static inline int bme280_bus_check(const struct device *dev)
 {
-	return to_config(dev)->bus_io->check(to_bus(dev), to_bus_config(dev));
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
 }
 
 static inline int bme280_reg_read(const struct device *dev,
 				  uint8_t start, uint8_t *buf, int size)
 {
-	return to_config(dev)->bus_io->read(to_bus(dev), to_bus_config(dev),
-					    start, buf, size);
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, start, buf, size);
 }
 
 static inline int bme280_reg_write(const struct device *dev, uint8_t reg,
 				   uint8_t val)
 {
-	return to_config(dev)->bus_io->write(to_bus(dev), to_bus_config(dev),
-					     reg, val);
+	const struct bme280_config *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, val);
 }
 
 /*
@@ -340,9 +327,6 @@ static int bme280_chip_init(const struct device *dev)
 	struct bme280_data *data = to_data(dev);
 	int err;
 
-	LOG_DBG("initializing \"%s\" on bus \"%s\"",
-		dev->name, to_bus(dev)->name);
-
 	err = bme280_bus_check(dev);
 	if (err < 0) {
 		LOG_DBG("bus check failed: %d", err);
@@ -438,22 +422,18 @@ int bme280_pm_ctrl(const struct device *dev, enum pm_device_action action)
 #endif /* CONFIG_PM_DEVICE */
 
 /* Initializes a struct bme280_config for an instance on a SPI bus. */
-#define BME280_CONFIG_SPI(inst)						\
-	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
-		.bus_io = &bme280_bus_io_spi,				\
-		.bus_config.spi_cfg =					\
-			SPI_CONFIG_DT_INST(inst,			\
-					   BME280_SPI_OPERATION,	\
-					   0),				\
+#define BME280_CONFIG_SPI(inst)				\
+	{						\
+		.bus.spi = SPI_DT_SPEC_INST_GET(	\
+			inst, BME280_SPI_OPERATION, 0),	\
+		.bus_io = &bme280_bus_io_spi,		\
 	}
 
 /* Initializes a struct bme280_config for an instance on an I2C bus. */
-#define BME280_CONFIG_I2C(inst)						\
-	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
-		.bus_io = &bme280_bus_io_i2c,				\
-		.bus_config.i2c_addr = DT_INST_REG_ADDR(inst),		\
+#define BME280_CONFIG_I2C(inst)			       \
+	{					       \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &bme280_bus_io_i2c,	       \
 	}
 
 /*
