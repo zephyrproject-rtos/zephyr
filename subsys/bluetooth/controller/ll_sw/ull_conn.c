@@ -7035,8 +7035,8 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 
 	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
-			PKT_DC_US(0U, 0U, phy) +
+	time_outgoing = PDU_MAX_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
+			PDU_MAX_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
 
 	force_md_cnt = 0U;
@@ -7045,7 +7045,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 		uint32_t time_keep_alive;
 
 		delta = (time_incoming << 1) - time_outgoing;
-		time_keep_alive = (PKT_DC_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
+		time_keep_alive = (PDU_MAX_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
 		force_md_cnt = (delta + (time_keep_alive - 1)) /
 			       time_keep_alive;
 		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
