@@ -41,11 +41,6 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_SOFTWARE;
 	}
 #endif
-#if defined(RCC_FLAG_PINRST)
-	if (LL_RCC_IsActiveFlag_PINRST()) {
-		flags |= RESET_PIN;
-	}
-#endif
 #if defined(RCC_FLAG_IWDGRST)
 	if (LL_RCC_IsActiveFlag_IWDGRST()) {
 		flags |= RESET_WATCHDOG;
@@ -79,6 +74,13 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 #if defined(RCC_FLAG_LPWRRST)
 	if (LL_RCC_IsActiveFlag_LPWRRST()) {
 		flags |= RESET_LOW_POWER_WAKE;
+	}
+#endif
+#if defined(RCC_FLAG_PINRST)
+	if (!flags) {
+		if (LL_RCC_IsActiveFlag_PINRST()) {
+			flags |= RESET_PIN;
+		}
 	}
 #endif
 
