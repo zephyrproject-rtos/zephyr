@@ -323,7 +323,7 @@ config XTENSA_CONSOLE_INIT_PRIORITY
 
 config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default 99
 	depends on NATIVE_POSIX_CONSOLE
 	help
 	  Device driver initialization priority.
