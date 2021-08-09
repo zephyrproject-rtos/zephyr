@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Innoseis B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_TMP116
+	bool "TMP116 EEPROM driver"
+	depends on TMP116
+	default y
+	help
+	  Enable support for the on-chip EEPROM found on
+	  Texas instrument TMP116 temperature sensor
