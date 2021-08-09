@@ -11,6 +11,8 @@
 
 #ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
 
+#include <sys/mem_manage.h>
+
 __weak uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 					      msi_vector_t *vectors,
 					      uint8_t n_vector)
