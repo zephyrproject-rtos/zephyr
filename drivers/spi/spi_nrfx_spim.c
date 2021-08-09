@@ -6,6 +6,7 @@
 
 #include <drivers/spi.h>
 #include <nrfx_spim.h>
+#include <hal/nrf_clock.h>
 #include <string.h>
 
 #define LOG_DOMAIN "spi_nrfx_spim"
@@ -104,9 +105,11 @@ static inline nrf_spim_bit_order_t get_nrf_spim_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
+	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
 	struct spi_context *ctx = &get_dev_data(dev)->ctx;
-	const nrfx_spim_t *spim = &get_dev_config(dev)->spim;
-	nrf_spim_frequency_t freq;
+	const nrfx_spim_t *spim = &dev_config->spim;
+	uint32_t max_freq = dev_config->max_freq;
+	nrf_spim_frequency_t spim_frequency;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
@@ -143,14 +146,24 @@ static int configure(const struct device *dev,
 	ctx->config = spi_cfg;
 	spi_context_cs_configure(ctx);
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	/* On nRF5340, the 32 Mbps speed is supported by the application core
+	 * when it is running at 128 MHz (see the Timing specifications section
+	 * in the nRF5340 PS).
+	 */
+	if (max_freq > 16000000 &&
+	    nrf_clock_hfclk_div_get(NRF_CLOCK) != NRF_CLOCK_HFCLK_DIV_1) {
+		max_freq = 16000000;
+	}
+#endif
 	/* Limit the frequency to that supported by the SPIM instance */
-	freq = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
-					  get_dev_config(dev)->max_freq));
+	spim_frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
+						    max_freq));
 
 	nrf_spim_configure(spim->p_reg,
 			   get_nrf_spim_mode(spi_cfg->operation),
 			   get_nrf_spim_bit_order(spi_cfg->operation));
-	nrf_spim_frequency_set(spim->p_reg, freq);
+	nrf_spim_frequency_set(spim->p_reg, spim_frequency);
 
 	return 0;
 }
