@@ -16,6 +16,15 @@ menuconfig CLOCK_CONTROL
 
 if CLOCK_CONTROL
 
+config CLOCK_CONTROL_ENABLE_SET_RATE
+	bool "Enable setting clock rate at runtime"
+	help
+	  This enables the APIs and supported drivers to set the clock
+	  rate at runtime.
+
+	  Say N if unsure, or if your application does not need this (which
+	  will save a few bytes).
+
 module = CLOCK_CONTROL
 module-str = clock control
 source "subsys/logging/Kconfig.template.log_config"

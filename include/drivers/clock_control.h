@@ -71,6 +71,12 @@ typedef int (*clock_control_get)(const struct device *dev,
 				 clock_control_subsys_t sys,
 				 uint32_t *rate);
 
+#ifdef CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE
+typedef int (*clock_control_set)(const struct device *dev,
+				 clock_control_subsys_t sys,
+				 uint32_t *rate);
+#endif /* CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE */
+
 typedef int (*clock_control_async_on_fn)(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 clock_control_cb_t cb,
@@ -86,6 +92,10 @@ struct clock_control_driver_api {
 	clock_control_async_on_fn	async_on;
 	clock_control_get		get_rate;
 	clock_control_get_status_fn	get_status;
+
+#ifdef CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE
+	clock_control_set		set_rate;
+#endif /* CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE */
 };
 
 /**
@@ -230,6 +240,35 @@ static inline int clock_control_get_rate(const struct device *dev,
 
 	return api->get_rate(dev, sys, rate);
 }
+
+#ifdef CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE
+/**
+ * @brief Set the clock rate of given sub-system
+ * @param dev Pointer to the device structure for the clock controller driver
+ *        instance
+ * @param sys A pointer to an opaque data representing the sub-system
+ * @param rate Subsystem clock rate to be set, 0 to turn off clock
+ */
+static inline int clock_control_set_rate(const struct device *dev,
+					 clock_control_subsys_t sys,
+					 uint32_t *rate)
+{
+	int ret = device_usable_check(dev);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->set_rate == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_rate(dev, sys, rate);
+}
+#endif /* CONFIG_CLOCK_CONTROL_ENABLE_SET_RATE */
 
 #ifdef __cplusplus
 }
