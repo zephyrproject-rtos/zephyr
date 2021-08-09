@@ -23,6 +23,19 @@ multi-thread application.
 Building and Running
 ********************
 
+This project needs another firmware as the update payload. It must use another
+example's hex file, and should be specified on the command line
+as ZEPHYR_FIRMWARE_UPDATE_SAMPLE_BUILD. For example, to use the sample
+`tfm_integration/tfm_ipc` as the payload:
+
+.. code-block:: bash
+
+   cd <ZEPHYR_ROOT>
+   west build -p -b lpcxpresso5s69_ns samples/tfm_integration/psa_firmware \
+       -d build/lpcxpresso55s69_ns/tfm_integration/psa_firmware
+       -- -DCONFIG_FIRMWARE_UPDATE_IMAGE=`realpath build/lpcxpresso55s69_ns/tfm_integration/tfm_ipc/zephyr_ns_signed.hex`
+
+
 This project outputs startup status and info to the console. It can be built and
 executed on an ARM Cortex M33 target board or QEMU.
 
@@ -30,8 +43,9 @@ This sample will only build on a Linux or macOS development system
 (not Windows), and has been tested on the following setups:
 
 - macOS Big Sur using QEMU 6.0.0 with gcc-arm-none-eabi-9-2020-q2-update
+- Linux (NixOS) using QEMU 6.2.50 with gcc from Zephyr SDK 0.13.2
 
-On MPS2+ AN521:
+On MPS3 AN547:
 ===============
 
 1. Build Zephyr with a non-secure configuration
@@ -42,7 +56,8 @@ On MPS2+ AN521:
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_ns samples/tfm_integration/psa_firmware
+      west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware
+
 
    Using ``cmake`` and ``ninja``
 
@@ -61,13 +76,13 @@ On MPS2+ AN521:
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_ns ..
+      cmake -DBOARD=mps3_an547_ns ..
       make
 
 2. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
-   ``<MPS2 device name>/SOFTWARE/``.
+   ``<MPS3 device name>/SOFTWARE/``.
 
-3. Edit (e.g., with vim) the ``<MPS2 device name>/MB/HBI0263C/AN521/images.txt``
+3. Edit (e.g., with vim) the ``<MPS3 device name>/MB/HBI0263C/AN547/images.txt``
    file, and update it as shown below:
 
    .. code-block:: bash
@@ -83,12 +98,12 @@ On MPS2+ AN521:
       IMAGE1ADDRESS: 0x10080000
       IMAGE1FILE: \SOFTWARE\tfm_sign.bin ; TF-M with application binary blob
 
-4. Save the file, exit the editor, and reset the MPS2+ board.
+4. Save the file, exit the editor, and reset the MPS3 board.
 
 On QEMU:
 ========
 
-Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``)
+Build Zephyr with a non-secure configuration (``-DBOARD=mps3_an547_ns``)
 and run it in qemu via the ``run`` command.
 
    Using ``west``
@@ -96,7 +111,7 @@ and run it in qemu via the ``run`` command.
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_ns samples/tfm_integration/psa_firmware -t run
+      west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware -t run
 
    Using ``cmake`` and ``ninja``
 
@@ -105,7 +120,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_ns ..
+      cmake -GNinja -DBOARD=mps3_an547_ns ..
       ninja run
 
    Using ``cmake`` and ``make``
@@ -115,7 +130,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_ns ..
+      cmake -DBOARD=mps3_an547_ns ..
       make run
 
 On LPCxpresso55S69:
@@ -145,42 +160,28 @@ it's in an unknown state and can't be flashed.
 
 We need to reset the board manually after flashing the image to run this code.
 
-On nRF5340 and nRF9160:
-=======================
-
-Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuappns`` or ``-DBOARD=nrf9160dk_nrf9160ns``).
-
-   Example, for nRF9160, using ``cmake`` and ``ninja``
-
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
-      rm -rf build
-      mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
-
-If building with BL2 (MCUboot bootloader) enabled, manually flash
-the MCUboot bootloader image binary (``bl2.hex``).
-
-   Example, using ``nrfjprog`` on nRF9160:
-
-   .. code-block:: bash
-
-      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
-
-Finally, flash the concatenated TF-M + Zephyr binary.
-
-   Example, for nRF9160, using ``cmake`` and ``ninja``
-
-   .. code-block:: bash
-
-      ninja flash
-
-
 Sample Output
 =============
 
    .. code-block:: console
 
-      TODO!
+      [INF] Beginning TF-M provisioning
+      [WRN] TFM_DUMMY_PROVISIONING is not suitable for production! This device is NOT SECURE
+      [Sec Thread] Secure image initializing!
+      TF-M FP mode: Software
+      Booting TFM v1.5.0
+      Creating an empty ITS flash layout.
+      Creating an empty PS flash layout.
+      *** Booting Zephyr OS build v3.0.0-rc1-321-gbe26b6a260d6  ***
+      PSA Firmware API test
+      Active NS image version: 0.0.0-0
+      Starting FWU; Writing Firmware from 21000000 size 58466 bytes
+      Wrote Firmware; Writing Header from 2100e462 size   432 bytes
+      Wrote Header; Installing Image
+      Installed New Firmware; Reboot Needed; Rebooting
+      [WRN] This device was provisioned with dummy keys. This device is NOT SECURE
+      [Sec Thread] Secure image initializing!
+      TF-M FP mode: Software
+      Booting TFM v1.5.0
+      *** Booting Zephyr OS build v3.0.0-rc1-35-g03f2993ef07b  ***
+      Hello World from UserSpace! mps3_an547
