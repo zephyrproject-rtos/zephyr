@@ -386,7 +386,7 @@
 	/* get pointer to _cpu_t of this CPU */
 	_get_cpu_id MACRO_ARG(irq_sp)
 	ASLR MACRO_ARG(irq_sp), MACRO_ARG(irq_sp), ARC_REGSHIFT
-	LDR MACRO_ARG(irq_sp), MACRO_ARG(irq_sp), @_curr_cpu
+	LDR MACRO_ARG(irq_sp), MACRO_ARG(irq_sp), _curr_cpu
 	/* get pointer to irq_stack itself */
 	LDR MACRO_ARG(irq_sp), MACRO_ARG(irq_sp), ___cpu_t_irq_stack_OFFSET
 #else
