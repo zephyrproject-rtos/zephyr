@@ -140,9 +140,6 @@ enum sensor_channel {
 	/** Revolutions per minute, in RPM. */
 	SENSOR_CHAN_RPM,
 
-	/** Tank level, in percent. */
-	SENSOR_CHAN_TANK_LEVEL,
-
 	/** Voltage, in volts **/
 	SENSOR_CHAN_GAUGE_VOLTAGE,
 	/** Average current, in amps **/
