@@ -17,6 +17,23 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_PCIE_CONTROLLER
+struct msi_vector_generic {
+	unsigned int irq;
+	uint32_t address;
+	uint16_t eventid;
+	unsigned int priority;
+};
+
+typedef struct msi_vector_generic arch_msi_vector_t;
+
+#define PCI_DEVID(bus, dev, fn)	((((bus) & 0xff) << 8) | (((dev) & 0x1f) << 3) | ((fn) & 0x07))
+#define PCI_BDF_TO_DEVID(bdf)	PCI_DEVID(PCIE_BDF_TO_BUS(bdf), \
+					  PCIE_BDF_TO_DEV(bdf),	\
+					  PCIE_BDF_TO_FUNC(bdf))
+
+#endif
+
 struct msix_vector {
 	uint32_t msg_addr;
 	uint32_t msg_up_addr;
