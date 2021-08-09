@@ -494,6 +494,7 @@ __syscall void k_wakeup(k_tid_t thread);
  *
  * @return ID of current thread.
  */
+__attribute_const__
 __syscall k_tid_t z_current_get(void);
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
