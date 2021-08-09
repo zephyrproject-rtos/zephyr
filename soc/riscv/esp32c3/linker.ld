@@ -238,7 +238,7 @@ SECTIONS
   .flash.rodata : ALIGN(0x10)
   {
     _rodata_start = ABSOLUTE(.);
-    _image_rodata_start = .;
+    __rodata_region_start = .;
     __esp_shell_root_cmds_start = .;
     KEEP(*(SORT(.shell_root_cmd_*)));
     __esp_shell_root_cmds_end = .;
@@ -285,7 +285,7 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    _image_rodata_end = .;
+    __rodata_region_end = .;
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);

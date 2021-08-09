@@ -155,10 +155,10 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
+    __rodata_region_end = .;
+    __rodata_region_size = __rodata_region_end - __rodata_region_start;
 
-    _image_rom_end = .;
+    __rom_region_end = .;
     __data_region_load_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
 
     GROUP_END(ROMABLE_REGION)

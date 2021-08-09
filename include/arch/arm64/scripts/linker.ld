@@ -89,7 +89,7 @@ SECTIONS
 
     GROUP_START(ROMABLE_REGION)
 
-    _image_rom_start = ROM_ADDR;
+    __rom_region_start = ROM_ADDR;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
@@ -154,7 +154,7 @@ SECTIONS
         __exidx_end = .;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-        _image_rodata_start = .;
+        __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -179,9 +179,9 @@ SECTIONS
 #include <linker/cplusplus-rom.ld>
     MMU_ALIGN;
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
-    _image_rom_end = .;
+    __rodata_region_end = .;
+    __rodata_region_size = __rodata_region_end - __rodata_region_start;
+    __rom_region_end = .;
 
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -317,6 +317,6 @@ SECTIONS
 
     /* To provide the image size as a const expression,
      * calculate this value here. */
-    _flash_used = LOADADDR(.last_section) - _image_rom_start;
+    _flash_used = LOADADDR(.last_section) - __rom_region_start;
 
 }

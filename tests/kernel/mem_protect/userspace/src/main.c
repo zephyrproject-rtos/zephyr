@@ -293,8 +293,8 @@ static void test_write_kernro(void)
 	/* Try to write to kernel RO. */
 	const char *const ptr = (const char *const)&_k_neg_eagain;
 
-	in_rodata = ptr < _image_rodata_end &&
-		    ptr >= _image_rodata_start;
+	in_rodata = ptr < __rodata_region_end &&
+		    ptr >= __rodata_region_start;
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
 	if (!in_rodata) {
