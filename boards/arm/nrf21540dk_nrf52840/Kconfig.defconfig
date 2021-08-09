@@ -19,8 +19,6 @@ config USB_DEVICE_STACK
 endif # USB
 
 config BT_CTLR
-	# Disabled until PA/LNA support for nRF21540 front-end is added
-	# in Zephyr Bluetooth Controller
-	# default BT
+	default BT
 
 endif # BOARD_NRF21540DK_NRF52840
