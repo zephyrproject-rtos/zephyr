@@ -24,7 +24,7 @@ SECTIONS
 
 #include <linker/rel-sections.ld>
 
-    _image_rom_start = .;
+    __rom_region_start = .;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -40,7 +40,7 @@ SECTIONS
 	} GROUP_LINK_IN(REGION_TEXT)
 
     _image_text_end = .;
-    _image_rodata_start = .;
+    __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -62,10 +62,10 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
+    __rodata_region_end = .;
+    __rodata_region_size = __rodata_region_end - __rodata_region_start;
 
-    _image_rom_end = .;
+    __rom_region_end = .;
 
     __data_region_load_start = .;
     __data_region_start = .;

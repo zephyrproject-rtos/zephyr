@@ -651,8 +651,8 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 
 	/* Mark rodata segment cacheable, read only and execute-never */
 	{ .name  = "zephyr_rodata",
-	  .start = _image_rodata_start,
-	  .end   = _image_rodata_end,
+	  .start = __rodata_region_start,
+	  .end   = __rodata_region_end,
 	  .attrs = MT_NORMAL | MT_P_RO_U_RO | MT_DEFAULT_SECURE_STATE },
 };
 

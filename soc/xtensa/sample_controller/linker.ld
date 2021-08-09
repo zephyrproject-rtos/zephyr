@@ -402,7 +402,7 @@ SECTIONS
 
   .ResetVector.text : ALIGN(4)
   {
-    _image_rom_start = ABSOLUTE(.);
+    __rom_region_start = ABSOLUTE(.);
     _ResetVector_text_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     _ResetVector_text_end = ABSOLUTE(.);
@@ -422,7 +422,7 @@ SECTIONS
     *(.srom.literal .srom.text)
     _srom_text_end = ABSOLUTE(.);
     _memmap_seg_srom1_end = ALIGN(0x8);
-    _image_rom_end = ABSOLUTE(.);
+    __rom_region_end = ABSOLUTE(.);
   } >srom1_seg :srom1_phdr
 
   .sram.rodata : ALIGN(4)

@@ -74,7 +74,7 @@ SECTIONS {
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
-		_image_rom_start = .;
+		__rom_region_start = .;
 		_image_text_start = .;
 
 /* Located in generated directory. This file is populated by the
@@ -96,7 +96,7 @@ SECTIONS {
 #endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
 	_image_text_end = .;
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -127,10 +127,10 @@ SECTIONS {
 #include <linker/cplusplus-rom.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
-	_image_rodata_end = .;
-	MPU_ALIGN(_image_rodata_end - _image_rom_start);
-	_image_rom_end = .;
-	_image_rom_size = _image_rom_end - _image_rom_start;
+	__rodata_region_end = .;
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
+	__rom_region_end = .;
+	__rom_region_size = __rom_region_end - __rom_region_start;
 
 	GROUP_END(ROMABLE_REGION)
 

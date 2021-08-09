@@ -99,7 +99,7 @@ SECTIONS
 	}
 
     GROUP_START(ROM)
-    _image_rom_start = ROM_BASE;
+    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -119,7 +119,7 @@ SECTIONS
 
     _image_text_end = .;
 
-    _image_rodata_start = .;
+    __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -142,8 +142,8 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rom_end = .;
+    __rodata_region_end = .;
+    __rom_region_end = .;
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
     /* The vector table goes into core-dependent flash locations. */
