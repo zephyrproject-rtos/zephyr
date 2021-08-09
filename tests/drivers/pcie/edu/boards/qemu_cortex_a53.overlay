@@ -21,6 +21,7 @@
 			ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
 				 <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
 				 <0x3000000 0x80 0 0x80 0 0x80 0>;
+			msi-parent = <&its>;
 			label = "PCIE";
 
 			pci_edu: test@1000 {
