@@ -58,6 +58,7 @@ config EEPROM_AT25
 source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"
 source "drivers/eeprom/Kconfig.eeprom_emu"
+source "drivers/eeprom/Kconfig.tmp116"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"
