@@ -375,6 +375,16 @@ def main():
 
     if args.settings_out:
         with open(args.settings_out, 'w', encoding="utf-8") as fp:
+            fp.write('''\
+# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!
+#
+# This file contains build system settings derived from your modules.
+#
+# Modules may be set via ZEPHYR_MODULES, ZEPHYR_EXTRA_MODULES,
+# and/or the west manifest file.
+#
+# See the Modules guide for more information.
+''')
             fp.write(settings)
 
     if args.twister_out:
