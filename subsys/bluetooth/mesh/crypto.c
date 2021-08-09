@@ -20,6 +20,7 @@
 #include <tinycrypt/ccm_mode.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
+#include <tinycrypt/hmac.h>
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/crypto.h>
@@ -73,11 +74,53 @@ static int bt_mesh_aes_cmac_one(const uint8_t key[16], const void *m,
 	return bt_mesh_aes_cmac(key, &sg, 1, mac);
 }
 
-int bt_mesh_s1(const char *m, uint8_t salt[16])
+int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16])
 {
 	const uint8_t zero[16] = { 0 };
 
-	return bt_mesh_aes_cmac_one(zero, m, strlen(m), salt);
+	return bt_mesh_aes_cmac_one(zero, m, m_len, salt);
+}
+
+int bt_mesh_sha256_hmac(const uint8_t key[32], struct bt_mesh_sg *sg,
+			size_t sg_len, uint8_t mac[32])
+{
+	struct tc_hmac_state_struct h;
+
+	if (tc_hmac_set_key(&h, key, 32) == TC_CRYPTO_FAIL) {
+		return -EIO;
+	}
+
+	if (tc_hmac_init(&h) == TC_CRYPTO_FAIL) {
+		return -EIO;
+	}
+
+	for (; sg_len; sg_len--, sg++) {
+		if (tc_hmac_update(&h, sg->data,
+				   sg->len) == TC_CRYPTO_FAIL) {
+			return -EIO;
+		}
+	}
+
+	if (tc_hmac_final(mac, 32, &h) == TC_CRYPTO_FAIL) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static inline int bt_mesh_sha256_hmac_one(const uint8_t key[32], const void *m,
+					  size_t len, uint8_t mac[32])
+{
+	struct bt_mesh_sg sg = { m, len };
+
+	return bt_mesh_sha256_hmac(key, &sg, 1, mac);
+}
+
+int bt_mesh_s2(const char *m, size_t m_len, uint8_t salt[32])
+{
+	const uint8_t zero[32] = { 0 };
+
+	return bt_mesh_sha256_hmac_one(zero, m, m_len, salt);
 }
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
@@ -106,7 +149,7 @@ int bt_mesh_k2(const uint8_t n[16], const uint8_t *p, size_t p_len,
 	LOG_DBG("n %s", bt_hex(n, 16));
 	LOG_DBG("p %s", bt_hex(p, p_len));
 
-	err = bt_mesh_s1("smk2", salt);
+	err = bt_mesh_s1_str("smk2", salt);
 	if (err) {
 		return err;
 	}
@@ -165,7 +208,7 @@ int bt_mesh_k3(const uint8_t n[16], uint8_t out[8])
 	uint8_t t[16];
 	int err;
 
-	err = bt_mesh_s1("smk3", tmp);
+	err = bt_mesh_s1_str("smk3", tmp);
 	if (err) {
 		return err;
 	}
@@ -192,7 +235,7 @@ int bt_mesh_k4(const uint8_t n[16], uint8_t out[1])
 	uint8_t t[16];
 	int err;
 
-	err = bt_mesh_s1("smk4", tmp);
+	err = bt_mesh_s1_str("smk4", tmp);
 	if (err) {
 		return err;
 	}
@@ -212,13 +255,32 @@ int bt_mesh_k4(const uint8_t n[16], uint8_t out[1])
 	return 0;
 }
 
+int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32],
+		uint8_t *p, uint8_t out[32])
+{
+	uint8_t t[32];
+	int err;
+
+	err = bt_mesh_sha256_hmac_one(salt, n, n_len, t);
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_sha256_hmac_one(t, p, strlen(p), out);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16])
 {
 	const char *id128 = "id128\x01";
 	uint8_t salt[16];
 	int err;
 
-	err = bt_mesh_s1(s, salt);
+	err = bt_mesh_s1_str(s, salt);
 	if (err) {
 		return err;
 	}
@@ -497,7 +559,7 @@ int bt_mesh_virtual_addr(const uint8_t virtual_label[16], uint16_t *addr)
 	uint8_t tmp[16];
 	int err;
 
-	err = bt_mesh_s1("vtad", salt);
+	err = bt_mesh_s1_str("vtad", salt);
 	if (err) {
 		return err;
 	}
@@ -512,42 +574,82 @@ int bt_mesh_virtual_addr(const uint8_t virtual_label[16], uint16_t *addr)
 	return 0;
 }
 
-int bt_mesh_prov_salt(const uint8_t conf_salt[16], const uint8_t prov_rand[16],
-		      const uint8_t dev_rand[16], uint8_t prov_salt[16])
+int bt_mesh_prov_salt(uint8_t algorithm,
+			const uint8_t *conf_salt,
+			const uint8_t *prov_rand,
+			const uint8_t *dev_rand,
+			uint8_t *prov_salt)
 {
+	uint8_t size = algorithm ? 32 : 16;
 	const uint8_t prov_salt_key[16] = { 0 };
 	struct bt_mesh_sg sg[] = {
-		{ conf_salt, 16 },
-		{ prov_rand, 16 },
-		{ dev_rand, 16 },
+		{ conf_salt, size },
+		{ prov_rand, size },
+		{ dev_rand, size },
 	};
 
 	return bt_mesh_aes_cmac(prov_salt_key, sg, ARRAY_SIZE(sg), prov_salt);
 }
 
-int bt_mesh_prov_conf_salt(const uint8_t conf_inputs[145], uint8_t salt[16])
+int bt_mesh_prov_conf_salt(uint8_t algorithm, const uint8_t conf_inputs[145],
+		uint8_t *salt)
 {
-	const uint8_t conf_salt_key[16] = { 0 };
+	if (algorithm == BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
 
-	return bt_mesh_aes_cmac_one(conf_salt_key, conf_inputs, 145, salt);
+		return bt_mesh_s2(conf_inputs, 145, salt);
+	}
+
+	if (algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
+
+		return bt_mesh_s1(conf_inputs, 145, salt);
+	}
+
+	return -EINVAL;
 }
 
-int bt_mesh_prov_conf_key(const uint8_t dhkey[32], const uint8_t conf_salt[16],
-			  uint8_t conf_key[16])
+int bt_mesh_prov_conf_key(uint8_t algorithm, const uint8_t *k_input,
+		const uint8_t *conf_salt, uint8_t *conf_key)
 {
-	return bt_mesh_k1(dhkey, 32, conf_salt, "prck", conf_key);
+	if (algorithm == BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
+
+		return bt_mesh_k5(k_input, 64, conf_salt, "prck256", conf_key);
+	}
+
+	if (algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
+
+		return bt_mesh_k1(k_input, 32, conf_salt, "prck", conf_key);
+	}
+
+	return -EINVAL;
 }
 
-int bt_mesh_prov_conf(const uint8_t conf_key[16], const uint8_t rand[16],
-		      const uint8_t auth[16], uint8_t conf[16])
+int bt_mesh_prov_conf(uint8_t algorithm, const uint8_t *conf_key,
+	const uint8_t *prov_rand, const uint8_t *auth, uint8_t *conf)
 {
-	struct bt_mesh_sg sg[] = { { rand, 16 }, { auth, 16 } };
+	uint8_t auth_size = algorithm ? 32 : 16;
 
-	LOG_DBG("ConfirmationKey %s", bt_hex(conf_key, 16));
-	LOG_DBG("RandomDevice %s", bt_hex(rand, 16));
-	LOG_DBG("AuthValue %s", bt_hex(auth, 16));
+	LOG_DBG("ConfirmationKey %s", bt_hex(conf_key, auth_size));
+	LOG_DBG("RandomDevice %s", bt_hex(prov_rand, auth_size));
+	LOG_DBG("AuthValue %s", bt_hex(auth, auth_size));
 
-	return bt_mesh_aes_cmac(conf_key, sg, ARRAY_SIZE(sg), conf);
+	if (algorithm == BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
+
+		return bt_mesh_sha256_hmac_one(conf_key, prov_rand, 32, conf);
+	}
+
+	if (algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
+		struct bt_mesh_sg sg[] = { { prov_rand, 16 }, { auth, 16 } };
+
+		return bt_mesh_aes_cmac(conf_key, sg, ARRAY_SIZE(sg), conf);
+	}
+
+	return -EINVAL;
 }
 
 int bt_mesh_prov_decrypt(const uint8_t key[16], uint8_t nonce[13],

@@ -150,7 +150,7 @@ static int unprovisioned_beacon_send(void)
 	net_buf_add_u8(buf, BEACON_TYPE_UNPROVISIONED);
 	net_buf_add_mem(buf, prov->uuid, 16);
 
-	if (prov->uri && bt_mesh_s1(prov->uri, uri_hash) == 0) {
+	if (prov->uri && bt_mesh_s1_str(prov->uri, uri_hash) == 0) {
 		oob_info = prov->oob_info | BT_MESH_PROV_OOB_URI;
 	} else {
 		oob_info = prov->oob_info;

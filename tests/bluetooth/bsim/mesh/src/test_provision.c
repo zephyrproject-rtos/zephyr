@@ -233,7 +233,7 @@ static int output_string(const char *str)
 
 static void capabilities(const struct bt_mesh_dev_capabilities *cap)
 {
-	if (cap->static_oob) {
+	if (cap->oob_type & BT_MESH_STATIC_OOB_AVAILABLE) {
 		LOG_INF("Static OOB authentication");
 		ASSERT_OK(bt_mesh_auth_method_set_static(prov.static_val, prov.static_val_len));
 	} else if (cap->output_actions) {
