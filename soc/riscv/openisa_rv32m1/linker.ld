@@ -110,14 +110,14 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	_image_text_start = .;
+	__text_region_start = .;
 
 	*(.text .text.*)
 	*(.gnu.linkonce.t.*)
 	*(.eh_frame)
 	} GROUP_LINK_IN(ROM)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
     __rodata_region_start = .;
 

@@ -556,7 +556,7 @@ SECTIONS
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	_image_text_start = .;
+	__text_region_start = .;
 
 #if !defined(CONFIG_LINKER_USE_BOOT_SECTION) || \
     !defined(CONFIG_LINKER_USE_PINNED_SECTION)
@@ -588,8 +588,8 @@ SECTIONS
 	MMU_PAGE_ALIGN_PERM
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	_image_text_end = .;
-	_image_text_size = _image_text_end - _image_text_start;
+	__text_region_end = .;
+	__text_region_size = __text_region_end - __text_region_start;
 	__rodata_region_start = .;
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION

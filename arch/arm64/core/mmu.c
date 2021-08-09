@@ -645,8 +645,8 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 
 	/* Mark text segment cacheable,read only and executable */
 	{ .name  = "zephyr_code",
-	  .start = _image_text_start,
-	  .end   = _image_text_end,
+	  .start = __text_region_start,
+	  .end   = __text_region_end,
 	  .attrs = MT_NORMAL | MT_P_RX_U_RX | MT_DEFAULT_SECURE_STATE },
 
 	/* Mark rodata segment cacheable, read only and execute-never */

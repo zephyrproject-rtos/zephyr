@@ -21,8 +21,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/* Region 1 zephyr text */
 	MPU_REGION_ENTRY("SRAM_0",
-			 (uintptr_t)_image_text_start,
-			 (uintptr_t)_image_text_end,
+			 (uintptr_t)__text_region_start,
+			 (uintptr_t)__text_region_end,
 			 REGION_RAM_TEXT_ATTR),
 
 	/* Region 2 zephyr rodata */

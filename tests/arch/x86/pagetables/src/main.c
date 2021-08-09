@@ -97,7 +97,7 @@ void test_ram_perms(void)
 
 		if (!IS_ENABLED(CONFIG_SRAM_REGION_PERMISSIONS)) {
 			expected = MMU_P | MMU_RW;
-		} else if (IN_REGION(_image_text, pos)) {
+		} else if (IN_REGION(__text_region, pos)) {
 			expected = MMU_P | MMU_US;
 		} else if (IN_REGION(__rodata_region, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
