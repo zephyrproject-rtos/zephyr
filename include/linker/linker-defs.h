@@ -247,9 +247,9 @@ extern char _flash_used[];
 extern char _image_ram_start[];
 extern char _image_ram_end[];
 
-extern char _image_text_start[];
-extern char _image_text_end[];
-extern char _image_text_size[];
+extern char __text_region_start[];
+extern char __text_region_end[];
+extern char __text_region_size[];
 
 extern char __rodata_region_start[];
 extern char __rodata_region_end[];

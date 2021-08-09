@@ -93,7 +93,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
-        _image_text_start = .;
+        __text_region_start = .;
 #ifndef CONFIG_XIP
         z_mapped_start = .;
 #endif
@@ -126,8 +126,8 @@ SECTIONS
         MMU_ALIGN;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-    _image_text_end = .;
-    _image_text_size = _image_text_end - _image_text_start;
+    __text_region_end = .;
+    __text_region_size = __text_region_end - __text_region_start;
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)

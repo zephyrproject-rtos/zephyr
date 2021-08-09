@@ -127,7 +127,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
-        _image_text_start = .;
+        __text_region_start = .;
 
 #include <linker/kobject-text.ld>
 
@@ -143,7 +143,7 @@ SECTIONS
 
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -205,12 +205,12 @@ SECTIONS
          * RODATA must be the last section so that the size of the entire read
          * only area will be filled to a power of 2.
          */
-        MPU_ALIGN(ABSOLUTE(.) - _image_rom_start);
+        MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
     } GROUP_LINK_IN(ROMABLE_REGION)
 
     __rodata_region_end = .;
-    _image_rom_end = .;
-    _image_rom_end_order = (LOG2CEIL(_image_rom_end) - 1) << 1;
+    __rom_region_end = .;
+    _image_rom_end_order = (LOG2CEIL(__rom_region_end) - 1) << 1;
 
     GROUP_END(ROMABLE_REGION)
 

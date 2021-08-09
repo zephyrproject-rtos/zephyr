@@ -30,7 +30,7 @@ SECTIONS
 	{
 		/* Trap table alignment required by SPARC V8 specification. */
 		. = ALIGN(0x1000);
-		_image_text_start = .;
+		__text_region_start = .;
 
 		*(.text.traptable)
 		*(.text)
@@ -39,7 +39,7 @@ SECTIONS
 		*(.gnu.linkonce.t.*)
 	} GROUP_LINK_IN(REGION_TEXT)
 
-    _image_text_end = .;
+    __text_region_end = .;
     __rodata_region_start = .;
 
 #include <linker/common-rom.ld>

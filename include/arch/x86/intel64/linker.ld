@@ -89,7 +89,7 @@ SECTIONS
 	{
 	. = ALIGN(16);
 	__rom_region_start = .;
-	_image_text_start = .;
+	__text_region_start = .;
 	z_mapped_start = .;
 	*(.text)
 	*(.text.*)
@@ -99,8 +99,8 @@ SECTIONS
 	MMU_PAGE_ALIGN_PERM
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	_image_text_end = .;
-	_image_text_size = _image_text_end - _image_text_start;
+	__text_region_end = .;
+	__text_region_size = __text_region_end - __text_region_start;
 	__rodata_region_start = .;
 
 	#include <linker/common-rom.ld>
