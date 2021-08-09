@@ -21,6 +21,18 @@
 extern "C" {
 #endif
 
+/** Available authentication algorithms. */
+enum {
+	BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM,
+	BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM,
+};
+
+/** OOB Type field values. */
+enum {
+	BT_MESH_STATIC_OOB_AVAILABLE = BIT(0), /* Static OOB information available */
+	BT_MESH_OOB_AUTH_REQUIRED    = BIT(1)  /* OOB authentication required */
+};
+
 /** Available Provisioning output authentication actions. */
 typedef enum {
 	BT_MESH_NO_OUTPUT       = 0,
@@ -74,8 +86,8 @@ struct bt_mesh_dev_capabilities {
 	/** Supported public key types */
 	uint8_t pub_key_type;
 
-	/** Supported static OOB Types */
-	uint8_t static_oob;
+	/** Supported OOB Types */
+	uint8_t oob_type;
 
 	/** Supported Output OOB Actions */
 	bt_mesh_output_action_t output_actions;

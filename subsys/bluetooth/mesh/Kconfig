@@ -70,6 +70,13 @@ config BT_MESH_PROVISIONER
 config BT_MESH_CDB
 	bool "Mesh Configuration Database"
 
+config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
+	bool "Support CMAC AES128 for OOB authentication"
+	depends on BT_MESH_PROV
+	default y
+	help
+	  Enable this option to support CMAC AES128 for OOB authentication.
+
 if BT_MESH_CDB
 
 config BT_MESH_CDB_NODE_COUNT
@@ -945,6 +952,19 @@ menuconfig BT_MESH_V1d1
 	  is in a draft state.
 
 if BT_MESH_V1d1
+
+config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
+	bool "Support HMAC SHA256 for OOB authentication"
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_SHA256_HMAC
+	depends on BT_MESH_PROV
+	default y
+	help
+	  Enable this option to support HMAC SHA256 for OOB authentication.
+
+config BT_MESH_OOB_AUTH_REQUIRED
+	bool "OOB authentication mandates to use HMAC SHA256"
+	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 
 endif # BT_MESH_V1d1
 

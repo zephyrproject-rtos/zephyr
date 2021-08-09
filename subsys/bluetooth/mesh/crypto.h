@@ -5,7 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int bt_mesh_s1(const char *m, uint8_t salt[16]);
+
+int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16]);
+
+static inline int bt_mesh_s1_str(const char *m, uint8_t salt[16])
+{
+	return bt_mesh_s1(m, strlen(m), salt);
+}
+
+int bt_mesh_s2(const char *m, size_t m_len, uint8_t salt[32]);
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16],
 	       const char *info, uint8_t okm[16]);
@@ -16,6 +24,9 @@ int bt_mesh_k2(const uint8_t n[16], const uint8_t *p, size_t p_len,
 int bt_mesh_k3(const uint8_t n[16], uint8_t out[8]);
 
 int bt_mesh_k4(const uint8_t n[16], uint8_t out[1]);
+
+int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32],
+		uint8_t *p, uint8_t out[32]);
 
 int bt_mesh_id128(const uint8_t n[16], const char *s, uint8_t out[16]);
 
@@ -77,8 +88,11 @@ static inline int bt_mesh_dev_key(const uint8_t dhkey[32],
 	return bt_mesh_k1(dhkey, 32, prov_salt, "prdk", dev_key);
 }
 
-int bt_mesh_prov_salt(const uint8_t conf_salt[16], const uint8_t prov_rand[16],
-		      const uint8_t dev_rand[16], uint8_t prov_salt[16]);
+int bt_mesh_prov_salt(uint8_t algorithm,
+				const uint8_t *conf_salt,
+				const uint8_t *prov_rand,
+				const uint8_t *dev_rand,
+				uint8_t *prov_salt);
 
 int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 			  const uint8_t privacy_key[16]);
@@ -114,13 +128,14 @@ bool bt_mesh_fcs_check(struct net_buf_simple *buf, uint8_t received_fcs);
 
 int bt_mesh_virtual_addr(const uint8_t virtual_label[16], uint16_t *addr);
 
-int bt_mesh_prov_conf_salt(const uint8_t conf_inputs[145], uint8_t salt[16]);
+int bt_mesh_prov_conf_salt(uint8_t algorithm, const uint8_t conf_inputs[145],
+			   uint8_t *salt);
 
-int bt_mesh_prov_conf_key(const uint8_t dhkey[32], const uint8_t conf_salt[16],
-			  uint8_t conf_key[16]);
+int bt_mesh_prov_conf_key(uint8_t algorithm, const uint8_t *k_input,
+		const uint8_t *conf_salt, uint8_t *conf_key);
 
-int bt_mesh_prov_conf(const uint8_t conf_key[16], const uint8_t rand[16],
-		      const uint8_t auth[16], uint8_t conf[16]);
+int bt_mesh_prov_conf(uint8_t algorithm, const uint8_t *conf_key,
+	const uint8_t *prov_rand, const uint8_t *auth, uint8_t *conf);
 
 int bt_mesh_prov_decrypt(const uint8_t key[16], uint8_t nonce[13],
 			 const uint8_t data[25 + 8], uint8_t out[25]);

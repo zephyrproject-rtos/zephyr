@@ -117,7 +117,7 @@ static void send_start(void)
 	bool oob_pub_key = bt_mesh_prov_link.conf_inputs.capabilities[3] == PUB_KEY_OOB;
 
 	bt_mesh_prov_buf_init(&start, PROV_START);
-	net_buf_simple_add_u8(&start, PROV_ALG_P256);
+	net_buf_simple_add_u8(&start, bt_mesh_prov_link.algorithm);
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, REMOTE_PUB_KEY) && oob_pub_key) {
 		net_buf_simple_add_u8(&start, PUB_KEY_OOB);
@@ -151,7 +151,7 @@ static void send_start(void)
 static bool prov_check_method(struct bt_mesh_dev_capabilities *caps)
 {
 	if (bt_mesh_prov_link.oob_method == AUTH_METHOD_STATIC) {
-		if (!caps->static_oob) {
+		if (!caps->oob_type) {
 			LOG_WRN("Device not support OOB static authentication provisioning");
 			return false;
 		}
@@ -213,13 +213,32 @@ static void prov_capabilities(const uint8_t *data)
 	LOG_DBG("Elements:          %u", caps.elem_count);
 
 	caps.algorithms = sys_get_be16(&data[1]);
-	LOG_DBG("Algorithms:        %u", caps.algorithms);
+	LOG_DBG("Algorithms:        0x%02x", caps.algorithms);
+
+	bool is_aes128 = false;
+	bool is_sha256 = false;
+
+	if ((caps.algorithms & BIT(BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
+		is_aes128 = true;
+	}
+
+	if ((caps.algorithms & BIT(BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM)) &&
+		IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
+		is_sha256 = true;
+	}
+
+	if (!(is_sha256 || is_aes128)) {
+		LOG_ERR("Invalid encryption algorithm");
+		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
+	}
 
 	caps.pub_key_type = data[3];
-	caps.static_oob = data[4];
+	caps.oob_type = data[4];
 	caps.output_size = data[5];
 	LOG_DBG("Public Key Type:   0x%02x", caps.pub_key_type);
-	LOG_DBG("Static OOB Type:   0x%02x", caps.static_oob);
+	LOG_DBG("Static OOB Type:   0x%02x", caps.oob_type);
 	LOG_DBG("Output OOB Size:   %u", caps.output_size);
 
 	caps.output_actions = (bt_mesh_output_action_t)
@@ -237,6 +256,21 @@ static void prov_capabilities(const uint8_t *data)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
+		(caps.oob_type & BT_MESH_OOB_AUTH_REQUIRED)) {
+
+		bool oob_availability = caps.output_size > 0 || caps.input_size > 0 ||
+			(caps.oob_type & BT_MESH_STATIC_OOB_AVAILABLE);
+
+		if (!oob_availability && !is_sha256) {
+			LOG_ERR("Invalid capabilities for OOB authentication");
+			prov_fail(PROV_ERR_NVAL_FMT);
+			return;
+		}
+	}
+
+	bt_mesh_prov_link.algorithm = is_sha256 ? BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM :
+			BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM;
 	prov_device.node =
 		bt_mesh_cdb_node_alloc(prov_device.uuid,
 				       prov_device.addr, data[0],
@@ -264,40 +298,54 @@ static void prov_capabilities(const uint8_t *data)
 static void send_confirm(void)
 {
 	PROV_BUF(cfm, PDU_LEN_CONFIRM);
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
 	uint8_t *inputs = (uint8_t *)&bt_mesh_prov_link.conf_inputs;
+	uint8_t conf_key_input[64];
 
-	LOG_DBG("ConfInputs[0]   %s", bt_hex(inputs, 64));
-	LOG_DBG("ConfInputs[64]  %s", bt_hex(&inputs[64], 64));
+	LOG_DBG("ConfInputs[0]   %s", bt_hex(inputs, 32));
+	LOG_DBG("ConfInputs[32]  %s", bt_hex(&inputs[32], 32));
+	LOG_DBG("ConfInputs[64]  %s", bt_hex(&inputs[64], 32));
+	LOG_DBG("ConfInputs[96]  %s", bt_hex(&inputs[96], 32));
 	LOG_DBG("ConfInputs[128] %s", bt_hex(&inputs[128], 17));
 
-	if (bt_mesh_prov_conf_salt(inputs, bt_mesh_prov_link.conf_salt)) {
+	if (bt_mesh_prov_conf_salt(bt_mesh_prov_link.algorithm,
+				   inputs,
+				   bt_mesh_prov_link.conf_salt)) {
 		LOG_ERR("Unable to generate confirmation salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("ConfirmationSalt: %s", bt_hex(bt_mesh_prov_link.conf_salt, 16));
+	LOG_DBG("ConfirmationSalt: %s", bt_hex(bt_mesh_prov_link.conf_salt, auth_size));
 
-	if (bt_mesh_prov_conf_key(bt_mesh_prov_link.dhkey,
+	memcpy(conf_key_input, bt_mesh_prov_link.dhkey, 32);
+
+	if (bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM &&
+	    IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
+		memcpy(&conf_key_input[32], bt_mesh_prov_link.auth, 32);
+		LOG_DBG("AuthValue  %s", bt_hex(bt_mesh_prov_link.auth, 32));
+	}
+
+	if (bt_mesh_prov_conf_key(bt_mesh_prov_link.algorithm, conf_key_input,
 				  bt_mesh_prov_link.conf_salt, bt_mesh_prov_link.conf_key)) {
 		LOG_ERR("Unable to generate confirmation key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("ConfirmationKey: %s", bt_hex(bt_mesh_prov_link.conf_key, 16));
+	LOG_DBG("ConfirmationKey: %s", bt_hex(bt_mesh_prov_link.conf_key, auth_size));
 
-	if (bt_rand(bt_mesh_prov_link.rand, 16)) {
+	if (bt_rand(bt_mesh_prov_link.rand, auth_size)) {
 		LOG_ERR("Unable to generate random number");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	LOG_DBG("LocalRandom: %s", bt_hex(bt_mesh_prov_link.rand, 16));
+	LOG_DBG("LocalRandom: %s", bt_hex(bt_mesh_prov_link.rand, auth_size));
 
 	bt_mesh_prov_buf_init(&cfm, PROV_CONFIRM);
 
-	if (bt_mesh_prov_conf(bt_mesh_prov_link.conf_key,
+	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
 			      bt_mesh_prov_link.rand, bt_mesh_prov_link.auth,
 			      bt_mesh_prov_link.conf)) {
 		LOG_ERR("Unable to generate confirmation value");
@@ -305,7 +353,7 @@ static void send_confirm(void)
 		return;
 	}
 
-	net_buf_simple_add_mem(&cfm, bt_mesh_prov_link.conf, 16);
+	net_buf_simple_add_mem(&cfm, bt_mesh_prov_link.conf, auth_size);
 
 	if (bt_mesh_prov_send(&cfm, NULL)) {
 		LOG_ERR("Failed to send Provisioning Confirm");
@@ -557,9 +605,10 @@ static void prov_complete(const uint8_t *data)
 static void send_random(void)
 {
 	PROV_BUF(rnd, PDU_LEN_RANDOM);
+	uint8_t rand_size = bt_mesh_prov_auth_size_get();
 
 	bt_mesh_prov_buf_init(&rnd, PROV_RANDOM);
-	net_buf_simple_add_mem(&rnd, bt_mesh_prov_link.rand, 16);
+	net_buf_simple_add_mem(&rnd, bt_mesh_prov_link.rand, rand_size);
 
 	if (bt_mesh_prov_send(&rnd, NULL)) {
 		LOG_ERR("Failed to send Provisioning Random");
@@ -571,32 +620,33 @@ static void send_random(void)
 
 static void prov_random(const uint8_t *data)
 {
-	uint8_t conf_verify[16];
+	uint8_t rand_size = bt_mesh_prov_auth_size_get();
+	uint8_t conf_verify[PROV_AUTH_MAX_LEN];
 
-	LOG_DBG("Remote Random: %s", bt_hex(data, 16));
-	if (!memcmp(data, bt_mesh_prov_link.rand, 16)) {
+	LOG_DBG("Remote Random: %s", bt_hex(data, rand_size));
+	if (!memcmp(data, bt_mesh_prov_link.rand, rand_size)) {
 		LOG_ERR("Random value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	if (bt_mesh_prov_conf(bt_mesh_prov_link.conf_key,
-			      data, bt_mesh_prov_link.auth, conf_verify)) {
+	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
+		data, bt_mesh_prov_link.auth, conf_verify)) {
 		LOG_ERR("Unable to calculate confirmation verification");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	if (memcmp(conf_verify, bt_mesh_prov_link.conf, 16)) {
+	if (memcmp(conf_verify, bt_mesh_prov_link.conf, rand_size)) {
 		LOG_ERR("Invalid confirmation value");
-		LOG_DBG("Received:   %s", bt_hex(bt_mesh_prov_link.conf, 16));
-		LOG_DBG("Calculated: %s",  bt_hex(conf_verify, 16));
+		LOG_DBG("Received:   %s", bt_hex(bt_mesh_prov_link.conf, rand_size));
+		LOG_DBG("Calculated: %s",  bt_hex(conf_verify, rand_size));
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	if (bt_mesh_prov_salt(bt_mesh_prov_link.conf_salt,
-			      bt_mesh_prov_link.rand, data, bt_mesh_prov_link.prov_salt)) {
+	if (bt_mesh_prov_salt(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_salt,
+		bt_mesh_prov_link.rand, data, bt_mesh_prov_link.prov_salt)) {
 		LOG_ERR("Failed to generate provisioning salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
@@ -609,15 +659,17 @@ static void prov_random(const uint8_t *data)
 
 static void prov_confirm(const uint8_t *data)
 {
-	LOG_DBG("Remote Confirm: %s", bt_hex(data, 16));
+	uint8_t conf_size = bt_mesh_prov_auth_size_get();
 
-	if (!memcmp(data, bt_mesh_prov_link.conf, 16)) {
+	LOG_DBG("Remote Confirm: %s", bt_hex(data, conf_size));
+
+	if (!memcmp(data, bt_mesh_prov_link.conf, conf_size)) {
 		LOG_ERR("Confirm value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	memcpy(bt_mesh_prov_link.conf, data, 16);
+	memcpy(bt_mesh_prov_link.conf, data, conf_size);
 
 	send_random();
 }
@@ -690,15 +742,18 @@ int bt_mesh_auth_method_set_output(bt_mesh_output_action_t action, uint8_t size)
 
 int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size)
 {
-	if (!size || !static_val || size > 16) {
+	uint8_t auth_size = bt_mesh_prov_auth_size_get();
+
+	if (!size || !static_val || size > auth_size) {
 		return -EINVAL;
 	}
 
 	prov_set_method(AUTH_METHOD_STATIC, 0, 0);
 
-	memcpy(bt_mesh_prov_link.auth, static_val, size);
-	memset(bt_mesh_prov_link.auth + size, 0, sizeof(bt_mesh_prov_link.auth) - size);
-
+	memcpy(bt_mesh_prov_link.auth + auth_size - size, static_val, size);
+	if (size < auth_size) {
+		(void)memset(bt_mesh_prov_link.auth, 0, auth_size - size);
+	}
 	return 0;
 }
 
