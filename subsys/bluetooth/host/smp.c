@@ -167,10 +167,10 @@ struct bt_smp {
 	uint8_t				tk[16];
 
 	/* Remote Public Key for LE SC */
-	uint8_t				pkey[64];
+	uint8_t				pkey[BT_PUB_KEY_LEN];
 
 	/* DHKey */
-	uint8_t				dhkey[32];
+	uint8_t				dhkey[BT_DH_KEY_LEN];
 
 	/* Remote DHKey check */
 	uint8_t				e[16];
@@ -3520,7 +3520,7 @@ static uint8_t smp_dhkey_ready(struct bt_smp *smp, const uint8_t *dhkey)
 	}
 
 	atomic_clear_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
-	memcpy(smp->dhkey, dhkey, 32);
+	memcpy(smp->dhkey, dhkey, BT_DH_KEY_LEN);
 
 	/* wait for user passkey confirmation */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
@@ -4159,7 +4159,7 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 	uint8_t err;
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
-	    memcmp(smp->pkey, sc_public_key, 32) == 0) {
+	    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
 		/* Deny public key with identitcal X coordinate unless it is the
 		 * debug public key.
 		 */
@@ -4216,8 +4216,8 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
-	memcpy(smp->pkey, req->x, 32);
-	memcpy(&smp->pkey[32], req->y, 32);
+	memcpy(smp->pkey, req->x, BT_PUB_KEY_COORD_LEN);
+	memcpy(&smp->pkey[BT_PUB_KEY_COORD_LEN], req->y, BT_PUB_KEY_COORD_LEN);
 
 	/* mark key as debug if remote is using it */
 	if (bt_pub_key_is_debug(smp->pkey)) {
@@ -4235,7 +4235,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
-		    memcmp(smp->pkey, sc_public_key, 32) == 0) {
+		    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
 			/* Deny public key with identitcal X coordinate unless
 			 * it is the debug public key.
 			 */

@@ -36,6 +36,7 @@
 #include "beacon.h"
 #include "rpl.h"
 #include "settings.h"
+#include "host/ecc.h"
 #include "prov.h"
 
 /* Tracking of what storage changes are pending for Net Keys. We track this in
