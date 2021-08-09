@@ -22,7 +22,7 @@ If CONFIG_SRAM_REGION_PERMISSIONS is enabled, the access permissions
 vary:
   - By default, the Present, Write, and Execute Disable bits are
     set.
-  - The _image_text region will have Present and User bits set
+  - The __text_region region will have Present and User bits set
   - The __rodata_region region will have Present, User, and Execute
     Disable bits set
   - On x86_64, the _locore region will have Present set and
@@ -866,7 +866,7 @@ def main():
         if is_generic_section_present:
             flags = flags | FLAG_P
 
-        pt.set_region_perms("_image_text", flags)
+        pt.set_region_perms("__text_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
             pt.set_region_perms("lnkr_boot_text", flags | FLAG_P)

@@ -145,7 +145,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	_image_text_start = .;
+	__text_region_start = .;
 
 #include <linker/kobject-text.ld>
 
@@ -162,7 +162,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	_image_text_end = .;
+	__text_region_end = .;
 
 #if defined (CONFIG_CPLUSPLUS)
 	SECTION_PROLOGUE(.ARM.extab,,)

@@ -484,7 +484,7 @@ SECTIONS
     _sram_text_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
 
-  _image_text_start =  ALIGN(4);
+  __text_region_start =  ALIGN(4);
   .text : ALIGN(4)
   {
     _stext = .;
@@ -499,7 +499,7 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >sram0_seg :sram0_phdr
-  _image_text_end = .;
+  __text_region_end = .;
 
   .sram.data : ALIGN(4)
   {
