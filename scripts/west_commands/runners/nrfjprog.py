@@ -41,13 +41,13 @@ UnavailableOperationBecauseProtectionError = 16
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, cfg, family, softreset, snr, erase=False,
+    def __init__(self, cfg, family, softreset, dev_id, erase=False,
                  tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
-        self.snr = snr
+        self.dev_id = dev_id
         self.erase = bool(erase)
         self.force = force
         self.recover = bool(recover)
@@ -62,7 +62,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True, erase=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return '''Device identifier. Use it to select the J-Link Serial Number
+                  of the device connected over USB. '*' matches one or more
+                  characters/digits'''
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -73,9 +79,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
-        parser.add_argument('--snr', required=False,
-                            help="""Serial number of board to use.
-                            '*' matches one or more characters/digits.""")
+        parser.add_argument('--snr', required=False, dest='dev_id',
+                            help='Deprecated: use -i/--dev-id instead')
         parser.add_argument('--tool-opt', default=[], action='append',
                             help='''Additional options for nrfjprog,
                             e.g. "--recover"''')
@@ -91,14 +96,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
-                                    args.snr, erase=args.erase,
+                                    args.dev_id, erase=args.erase,
                                     tool_opt=args.tool_opt, force=args.force,
                                     recover=args.recover)
 
     def ensure_snr(self):
-        if not self.snr or "*" in self.snr:
-            self.snr = self.get_board_snr(self.snr or "*")
-        self.snr = self.snr.lstrip("0")
+        if not self.dev_id or "*" in self.dev_id:
+            self.dev_id = self.get_board_snr(self.dev_id or "*")
+        self.dev_id = self.dev_id.lstrip("0")
 
     def get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -223,10 +228,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         if self.family == 'NRF53':
             self.check_call(['nrfjprog', '--recover', '-f', self.family,
                              '--coprocessor', 'CP_NETWORK',
-                             '--snr', self.snr])
+                             '--snr', self.dev_id])
 
         self.check_call(['nrfjprog', '--recover',  '-f', self.family,
-                         '--snr', self.snr])
+                         '--snr', self.dev_id])
 
     def program_hex(self):
         # Get the nrfjprog command use to actually program self.hex_.
@@ -251,7 +256,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             # any options that we set here.
             program_commands.append(['nrfjprog', '--program', self.hex_,
                                      erase_arg, '-f', self.family,
-                                     '--snr', self.snr] +
+                                     '--snr', self.dev_id] +
                                     self.tool_opt)
 
         try:
@@ -299,7 +304,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         def add_program_cmd(hex_file, coprocessor):
             program_commands.append(
                 ['nrfjprog', '--program', hex_file, erase_arg,
-                 '-f', 'NRF53', '--snr', self.snr,
+                 '-f', 'NRF53', '--snr', self.dev_id,
                  '--coprocessor', coprocessor] + self.tool_opt)
 
         full_hex = IntelHex()
@@ -341,14 +346,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     def reset_target(self):
         if self.family == 'NRF52' and not self.softreset:
             self.check_call(['nrfjprog', '--pinresetenable', '-f', self.family,
-                             '--snr', self.snr])  # Enable pin reset
+                             '--snr', self.dev_id])  # Enable pin reset
 
         if self.softreset:
             self.check_call(['nrfjprog', '--reset', '-f', self.family,
-                             '--snr', self.snr])
+                             '--snr', self.dev_id])
         else:
             self.check_call(['nrfjprog', '--pinreset', '-f', self.family,
-                             '--snr', self.snr])
+                             '--snr', self.dev_id])
 
     def do_run(self, command, **kwargs):
         self.require('nrfjprog')
@@ -363,5 +368,5 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         self.program_hex()
         self.reset_target()
 
-        self.logger.info(f'Board with serial number {self.snr} '
+        self.logger.info(f'Board with serial number {self.dev_id} '
                          'flashed successfully.')
