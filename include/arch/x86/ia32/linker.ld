@@ -289,7 +289,7 @@ SECTIONS
 	. = ALIGN(8);
 
 #ifdef CONFIG_XIP
-	_image_rom_start = PHYS_LOAD_ADDR;
+	__rom_region_start = PHYS_LOAD_ADDR;
 #endif
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -329,7 +329,7 @@ SECTIONS
 
 	_image_text_end = .;
 	_image_text_size = _image_text_end - _image_text_start;
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <linker/common-rom.ld>
@@ -363,11 +363,11 @@ SECTIONS
 	MMU_PAGE_ALIGN_PERM
 	/* ROM ends here, position counter will now be in RAM areas */
 #ifdef CONFIG_XIP
-	_image_rom_end = .;
-	_image_rom_size = _image_rom_end - _image_rom_start;
+	__rom_region_end = .;
+	__rom_region_size = __rom_region_end - __rom_region_start;
 #endif
-	_image_rodata_end = .;
-	_image_rodata_size = _image_rodata_end - _image_rodata_start;
+	__rodata_region_end = .;
+	__rodata_region_size = __rodata_region_end - __rodata_region_start;
 	GROUP_END(ROMABLE_REGION)
 	/*
 	 * Needed for dynamic linking which we do not have, do discard

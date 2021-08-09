@@ -99,7 +99,7 @@ void test_ram_perms(void)
 			expected = MMU_P | MMU_RW;
 		} else if (IN_REGION(_image_text, pos)) {
 			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(_image_rodata, pos)) {
+		} else if (IN_REGION(__rodata_region, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #ifdef CONFIG_COVERAGE_GCOV
 		} else if (IN_REGION(__gcov_bss, pos)) {

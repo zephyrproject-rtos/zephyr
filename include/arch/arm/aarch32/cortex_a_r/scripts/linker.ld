@@ -103,9 +103,9 @@ SECTIONS
     GROUP_START(ROMABLE_REGION)
 
 #if defined(CONFIG_XIP)
-    _image_rom_start = ROM_ADDR;
+    __rom_region_start = ROM_ADDR;
 #else
-    _image_rom_start = RAM_ADDR;
+    __rom_region_start = RAM_ADDR;
 #endif
 
     SECTION_PROLOGUE(rom_start,,)
@@ -170,7 +170,7 @@ SECTIONS
         __exidx_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_rodata_start = .;
+    __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -208,7 +208,7 @@ SECTIONS
         MPU_ALIGN(ABSOLUTE(.) - _image_rom_start);
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_rodata_end = .;
+    __rodata_region_end = .;
     _image_rom_end = .;
     _image_rom_end_order = (LOG2CEIL(_image_rom_end) - 1) << 1;
 
@@ -345,6 +345,6 @@ SECTIONS
 
     /* To provide the image size as a const expression,
      * calculate this value here. */
-    _flash_used = LOADADDR(.last_section) - _image_rom_start;
+    _flash_used = LOADADDR(.last_section) - __rom_region_start;
 
 }

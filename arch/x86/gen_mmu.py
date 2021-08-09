@@ -23,7 +23,7 @@ vary:
   - By default, the Present, Write, and Execute Disable bits are
     set.
   - The _image_text region will have Present and User bits set
-  - The _image_rodata region will have Present, User, and Execute
+  - The __rodata_region region will have Present, User, and Execute
     Disable bits set
   - On x86_64, the _locore region will have Present set and
     the _lorodata region will have Present and Execute Disable set.
@@ -878,7 +878,7 @@ def main():
         if is_generic_section_present:
             flags = flags | FLAG_P
 
-        pt.set_region_perms("_image_rodata", flags)
+        pt.set_region_perms("__rodata_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
             pt.set_region_perms("lnkr_boot_rodata", flags | FLAG_P)

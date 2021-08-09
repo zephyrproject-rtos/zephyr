@@ -88,7 +88,7 @@ SECTIONS
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	. = ALIGN(16);
-	_image_rom_start = .;
+	__rom_region_start = .;
 	_image_text_start = .;
 	z_mapped_start = .;
 	*(.text)
@@ -101,7 +101,7 @@ SECTIONS
 
 	_image_text_end = .;
 	_image_text_size = _image_text_end - _image_text_start;
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 
 	#include <linker/common-rom.ld>
 	#include <linker/thread-local-storage.ld>
@@ -128,9 +128,9 @@ SECTIONS
 #include <linker/cplusplus-rom.ld>
 
 	MMU_PAGE_ALIGN_PERM
-	_image_rodata_end = .;
-	_image_rodata_size = _image_rodata_end - _image_rodata_start;
-	_image_rom_end = .;
+	__rodata_region_end = .;
+	__rodata_region_size = __rodata_region_end - __rodata_region_start;
+	__rom_region_end = .;
 
 #ifdef CONFIG_USERSPACE
 	/* APP SHARED MEMORY REGION */

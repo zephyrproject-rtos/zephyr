@@ -236,9 +236,9 @@ extern char z_mapped_end[];
 #endif /* CONFIG_MMU */
 
 /* Includes text and rodata */
-extern char _image_rom_start[];
-extern char _image_rom_end[];
-extern char _image_rom_size[];
+extern char __rom_region_start[];
+extern char __rom_region_end[];
+extern char __rom_region_size[];
 
 /* Includes all ROMable data, i.e. the size of the output image file. */
 extern char _flash_used[];
@@ -251,9 +251,9 @@ extern char _image_text_start[];
 extern char _image_text_end[];
 extern char _image_text_size[];
 
-extern char _image_rodata_start[];
-extern char _image_rodata_end[];
-extern char _image_rodata_size[];
+extern char __rodata_region_start[];
+extern char __rodata_region_end[];
+extern char __rodata_region_size[];
 
 extern char _vector_start[];
 extern char _vector_end[];
