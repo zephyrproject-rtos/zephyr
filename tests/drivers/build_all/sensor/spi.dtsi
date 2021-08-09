@@ -411,3 +411,10 @@ test_spi_bmp388: bmp388@3a {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_i3g4250d: i3g4250d@3b {
+	compatible = "st,i3g4250d";
+	label = "I3G4250D";
+	reg = <0x3b>;
+	spi-max-frequency = <0>;
+};
