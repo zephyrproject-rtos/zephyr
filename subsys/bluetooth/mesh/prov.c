@@ -48,7 +48,7 @@ static void pub_key_ready(const uint8_t *pkey)
 	BT_DBG("Local public key ready");
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
+int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]))
 {
 	int err;
 	static struct bt_pub_key_cb pub_key_cb;
