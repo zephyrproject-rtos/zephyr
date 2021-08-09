@@ -9,8 +9,6 @@ config BOARD
 	default "nrf21540dk_nrf52840"
 
 config BT_CTLR
-	# Disabled until PA/LNA support for nRF21540 front-end is added
-	# in Zephyr Bluetooth Controller
-	# default BT
+	default BT
 
 endif # BOARD_NRF21540DK_NRF52840
