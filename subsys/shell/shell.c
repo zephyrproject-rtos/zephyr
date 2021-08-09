@@ -1608,6 +1608,8 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	ret_val = execute(shell);
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 
+	cmd_buffer_clear(shell);
+
 	return ret_val;
 }
 
