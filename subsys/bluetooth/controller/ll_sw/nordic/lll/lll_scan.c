@@ -501,34 +501,50 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 	struct lll_scan *lll = curr;
 
-	/* TODO: check prio */
+	/* Check if pre-emption by a different state/role radio event */
 	if (next != curr) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* Resume not to be used if duration being used */
 		if (unlikely(!lll->duration_reload || lll->duration_expire))
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		{
-			int err;
+			/* Put back to resume state for continuous scanning */
+			if (!lll->ticks_window) {
+				int err;
 
-			/* wrap back after the pre-empter */
-			*resume_cb = resume_prepare_cb;
+				/* Set the resume prepare function to use for
+				 * resumption after the pre-emptor is done.
+				 */
+				*resume_cb = resume_prepare_cb;
 
-			/* Retain HF clock */
-			err = lll_hfclock_on();
-			LL_ASSERT(err >= 0);
+				/* Retain HF clock */
+				err = lll_hfclock_on();
+				LL_ASSERT(err >= 0);
 
-			return -EAGAIN;
+				/* Yield to the pre-emptor, but be
+				 * resumed thereafter.
+				 */
+				return -EAGAIN;
+			}
+
+			/* Yield to the pre-emptor */
+			return -ECANCELED;
 		}
 	}
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+		/* Duration expired, do not continue, close and generate
+		 * done event.
+		 */
 		radio_isr_set(isr_done_cleanup, lll);
 	} else if (lll->is_aux_sched) {
-		/* as a continuous scanner, let us not abort aux PDU scan */
+		/* Do not abort LLL scheduled auxiliary PDU scan */
 		return 0;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
+		/* Switch scan window to next radio channel */
 		radio_isr_set(isr_window, lll);
 	}
 
