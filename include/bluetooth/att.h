@@ -52,6 +52,10 @@ extern "C" {
 /* 0xffff is defined as the maximum, and thus last, valid attribute handle */
 #define BT_ATT_LAST_ATTTRIBUTE_HANDLE           0xffff
 
+#if defined(CONFIG_BT_TESTING)
+int bt_eatt_disconnect_one(struct bt_conn *conn);
+#endif /* CONFIG_BT_TESTING */
+
 #ifdef __cplusplus
 }
 #endif

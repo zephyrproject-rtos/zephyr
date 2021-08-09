@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/att.h>
 #include <sys/byteorder.h>
 
 #include <logging/log.h>
@@ -237,6 +238,39 @@ rsp:
 		   status);
 }
 
+
+void disconnect_eatt_chans(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_disconnect_eatt_chans_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+	int err;
+	int status;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	for (int i = 0; i < cmd->count; i++) {
+		err = bt_eatt_disconnect_one(conn);
+		if (err) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	bt_conn_unref(conn);
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT_EATT_CHANS,
+		   CONTROLLER_INDEX, status);
+}
+
+
 static void send_data(uint8_t *data, uint16_t len)
 {
 	const struct l2cap_send_data_cmd *cmd = (void *) data;
@@ -372,7 +406,7 @@ fail:
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint8_t cmds[1];
+	uint8_t cmds[2];
 	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
@@ -382,6 +416,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -399,6 +434,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_DISCONNECT:
 		disconnect(data, len);
+		return;
+	case L2CAP_DISCONNECT_EATT_CHANS:
+		disconnect_eatt_chans(data, len);
 		return;
 	case L2CAP_SEND_DATA:
 		send_data(data, len);
