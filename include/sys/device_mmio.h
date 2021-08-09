@@ -323,7 +323,7 @@ struct z_device_mmio_rom {
  *
  * struct foo_driver_data {
  *      int blarg;
- *      DEVICE_MMIO_NAMED_RAM(courge);
+ *      DEVICE_MMIO_NAMED_RAM(corge);
  *      DEVICE_MMIO_NAMED_RAM(grault);
  *      int wibble;
  *      ...
@@ -380,7 +380,7 @@ struct z_device_mmio_rom {
  *
  * struct foo_config {
  *      int bar;
- *      DEVICE_MMIO_NAMED_ROM(courge);
+ *      DEVICE_MMIO_NAMED_ROM(corge);
  *      DEVICE_MMIO_NAMED_ROM(grault);
  *      int baz;
  *      ...
@@ -417,11 +417,11 @@ struct z_device_mmio_rom {
  * a device config struct, using information from DTS.
  *
  * Example for an instance of a driver belonging to the "foo" subsystem
- * that will have two regions named 'courge' and 'grault':
+ * that will have two regions named 'corge' and 'grault':
  *
  * struct foo_config my_config = {
  *	bar = 7;
- *	DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...));
+ *	DEVICE_MMIO_NAMED_ROM_INIT(corge, DT_DRV_INST(...));
  *	DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...));
  *	baz = 2;
  *	...
