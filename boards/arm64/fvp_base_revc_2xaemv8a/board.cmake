@@ -14,4 +14,5 @@ set(ARMFVP_FLAGS
   -C bp.vis.disable_visualisation=1
   -C bp.vis.rate_limit-enable=0
   -C gic_distributor.ARE-fixed-to-one=1
+  -C gic_distributor.ITS-device-bits=16
   )
