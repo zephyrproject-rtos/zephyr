@@ -1462,7 +1462,7 @@ static int uart_stm32_pm_control(const struct device *dev,
 	.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),			\
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
-		.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),\
+		.dma_slot = STM32_DMA_SLOT(index, dir, slot),\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
