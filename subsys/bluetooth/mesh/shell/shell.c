@@ -425,6 +425,36 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 	bt_mesh_shell_target_ctx.dst = addr;
 }
 
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+static enum {
+	AUTH_NO_OOB,
+	AUTH_STATIC_OOB,
+	AUTH_OUTPUT_OOB,
+	AUTH_INPUT_OOB
+} auth_type;
+
+static void capabilities(const struct bt_mesh_dev_capabilities *cap)
+{
+	if (cap->oob_type && auth_type == AUTH_STATIC_OOB) {
+		bt_mesh_auth_method_set_static(bt_mesh_shell_prov.static_val,
+					       bt_mesh_shell_prov.static_val_len);
+		return;
+	}
+
+	if (cap->output_actions && auth_type == AUTH_OUTPUT_OOB) {
+		bt_mesh_auth_method_set_output(BT_MESH_DISPLAY_NUMBER, 6);
+		return;
+	}
+
+	if (cap->input_actions && auth_type == AUTH_INPUT_OOB) {
+		bt_mesh_auth_method_set_input(BT_MESH_ENTER_NUMBER, 6);
+		return;
+	}
+
+	bt_mesh_auth_method_set_none();
+}
+#endif
+
 static void prov_input_complete(void)
 {
 	shell_print_ctx("Input complete");
@@ -527,6 +557,9 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 		(BT_MESH_ENTER_NUMBER | BT_MESH_ENTER_STRING | BT_MESH_TWIST | BT_MESH_PUSH),
 	.input = input,
 	.input_complete = prov_input_complete,
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	.capabilities = capabilities
+#endif
 };
 
 static int cmd_static_oob(const struct shell *sh, size_t argc, char *argv[])
@@ -1621,7 +1654,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD(test, &test_cmds, "Test commands", bt_mesh_shell_mdl_cmds_help),
 #endif
 	SHELL_CMD(target, &target_cmds, "Target commands", bt_mesh_shell_mdl_cmds_help),
-
 
 	SHELL_SUBCMD_SET_END
 );
