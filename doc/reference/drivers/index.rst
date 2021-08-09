@@ -147,7 +147,7 @@ A subsystem API definition typically looks like this:
         struct subsystem_api *api;
 
         api = (struct subsystem_api *)dev->api;
-        api->do_that(dev, foo, bar);
+        api->do_that(dev, baz);
   }
 
 A driver implementing a particular subsystem will define the real implementation
@@ -474,7 +474,7 @@ is made within the init function:
    {
       ...
       /* Write some data to the MMIO region */
-      sys_write32(DEVICE_MMIO_GET(dev), 0xDEADBEEF);
+      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev));
       ...
    }
 
@@ -536,8 +536,8 @@ For example:
    {
       ...
       /* Write some data to the MMIO regions */
-      sys_write32(DEVICE_MMIO_GET(dev, grault), 0xDEADBEEF);
-      sys_write32(DEVICE_MMIO_GET(dev, courge), 0xF0CCAC1A);
+      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev, grault));
+      sys_write32(0xF0CCAC1A, DEVICE_MMIO_GET(dev, courge));
       ...
    }
 
