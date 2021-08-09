@@ -1,0 +1,9 @@
+common:
+  integration_platforms:
+    - nrf52840dk_nrf52840
+
+tests:
+  drivers.flash.fixed_partitions:
+    platform_allow: nrf52840dk_nrf52840
+    tags: nrf52 soc_flash_nrf
+    extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
