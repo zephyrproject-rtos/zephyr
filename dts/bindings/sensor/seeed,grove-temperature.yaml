@@ -3,7 +3,7 @@
 
 description: Grove NTC Temperature Sensor
 
-compatible: "grove,temperature"
+compatible: "seeed,grove-temperature"
 
 include: base.yaml
 
