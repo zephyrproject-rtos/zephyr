@@ -110,6 +110,7 @@ static void feature_filter(uint8_t *featuresin, uint64_t *featuresout)
 	 */
 	feat = sys_get_le64(featuresin);
 	feat &= LL_FEAT_BIT_MASK;
+	feat &= LL_FEAT_BIT_MASK_VALID;
 
 	*featuresout = feat;
 }
