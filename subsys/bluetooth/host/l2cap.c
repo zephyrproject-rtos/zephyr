@@ -743,12 +743,14 @@ static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 int bt_l2cap_server_register(struct bt_l2cap_server *server)
 {
 	if (!server->accept) {
+		printk("invalid accept!!\n");
 		return -EINVAL;
 	}
 
 	if (server->psm) {
 		if (server->psm < L2CAP_LE_PSM_FIXED_START ||
 		    server->psm > L2CAP_LE_PSM_DYN_END) {
+			printk("invalid psm!!\n");
 			return -EINVAL;
 		}
 

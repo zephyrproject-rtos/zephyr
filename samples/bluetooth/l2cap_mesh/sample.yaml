@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth L2CAP Mesh
+tests:
+  sample.bluetooth.l2cap_mesh:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86
+    tags: bluetooth
