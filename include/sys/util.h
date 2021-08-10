@@ -234,7 +234,9 @@ static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
  */
 static inline void bytecpy(void *dst, const void *src, size_t size)
 {
-	for (size_t i = 0; i < size; ++i) {
+	size_t i;
+
+	for (i = 0; i < size; ++i) {
 		((uint8_t *)dst)[i] = ((uint8_t *)src)[i];
 	}
 }
