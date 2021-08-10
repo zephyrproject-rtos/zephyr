@@ -3,7 +3,7 @@
 
 description: Grove Photo-Resistor Light Sensor
 
-compatible: "grove,light"
+compatible: "seeed,grove-light"
 
 include: base.yaml
 
