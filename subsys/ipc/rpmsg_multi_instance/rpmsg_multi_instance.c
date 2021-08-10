@@ -27,7 +27,7 @@ static void rpmsg_service_unbind(struct rpmsg_endpoint *p_ep)
 static unsigned char virtio_get_status(struct virtio_device *p_vdev)
 {
 	struct  rpmsg_mi_ctx *ctx = metal_container_of(p_vdev, struct rpmsg_mi_ctx, vdev);
-	unsigned char ret = VIRTIO_CONFIG_STATUS_DRIVER_OK;
+	uint8_t ret = VIRTIO_CONFIG_STATUS_DRIVER_OK;
 
 	if (!IS_ENABLED(CONFIG_RPMSG_MULTI_INSTANCE_MASTER)) {
 		sys_cache_data_range(&ctx->shm_status_reg_addr,
@@ -101,17 +101,17 @@ static void ipm_callback(const struct device *dev, void *context, uint32_t id, v
 
 int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
-	uint8_t vring_size = VRING_SIZE_GET(cfg->shm->size);
-	uint32_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm->addr,
+	size_t vring_size = VRING_SIZE_GET(cfg->shm->size);
+	uintptr_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm->addr,
 							  cfg->shm->size,
 							  cfg->shm->instance);
-	uint32_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm->size);
+	size_t shm_size = SHMEM_INST_SIZE_AUTOALLOC_GET(cfg->shm->size);
 
-	uint32_t shm_local_start_addr = shm_addr + VDEV_STATUS_SIZE;
-	uint32_t shm_local_size = shm_size - VDEV_STATUS_SIZE;
+	uintptr_t shm_local_start_addr = shm_addr + VDEV_STATUS_SIZE;
+	size_t shm_local_size = shm_size - VDEV_STATUS_SIZE;
 
-	uint32_t rpmsg_reg_size = VRING_COUNT * VIRTQUEUE_SIZE_GET(vring_size);
-	uint32_t vring_region_size = VRING_SIZE_COMPUTE(vring_size, VRING_ALIGNMENT);
+	size_t rpmsg_reg_size = VRING_COUNT * VIRTQUEUE_SIZE_GET(vring_size);
+	size_t vring_region_size = VRING_SIZE_COMPUTE(vring_size, VRING_ALIGNMENT);
 
 	ctx->shm_status_reg_addr = shm_addr;
 	ctx->shm_physmap[0] = shm_local_start_addr;
@@ -207,7 +207,7 @@ static bool rpmsg_mi_config_verify(const struct rpmsg_mi_ctx_cfg *cfg)
 int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
-	uint8_t vring_size = VRING_SIZE_GET(cfg->shm->size);
+	size_t vring_size = VRING_SIZE_GET(cfg->shm->size);
 	struct metal_device *device;
 	int err = 0;
 
