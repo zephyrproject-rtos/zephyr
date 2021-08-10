@@ -74,10 +74,13 @@ static void setup(void)
 void test_hci_feature_exchange_mas_loc(void)
 {
 	uint64_t err;
-	uint64_t set_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE };
-	uint64_t rsp_featureset[] = {
-		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE, 0x0
-	};
+	uint64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE };
+	uint64_t rsp_featureset[] = { ((LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) |
+				       DEFAULT_FEATURE) &
+					      LL_FEAT_BIT_MASK_VALID,
+				      0x0 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 
 	struct node_tx *tx;
