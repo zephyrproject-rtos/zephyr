@@ -968,6 +968,21 @@ int bt_mesh_cfg_mod_sub_del_all(uint16_t net_idx, uint16_t addr,
 				uint16_t elem_addr, uint16_t mod_id,
 				uint8_t *status);
 
+/** @brief Delete all group addresses in a vendor model's subscription list.
+ *
+ *  @param net_idx   Network index to encrypt with.
+ *  @param addr      Target node address.
+ *  @param elem_addr Element address the model is in.
+ *  @param mod_id    Model ID.
+ *  @param cid       Company ID of the model.
+ *  @param status    Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_sub_del_all_vnd(uint16_t net_idx, uint16_t addr,
+				    uint16_t elem_addr, uint16_t mod_id,
+				    uint16_t cid, uint8_t *status);
+
 /** @brief Update a network key to the target node.
  *
  *  @param net_idx     Network index to encrypt with.
