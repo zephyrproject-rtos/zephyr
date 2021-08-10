@@ -64,7 +64,7 @@ struct ring_buf {
  */
 
 /**
- * @brief Statically define and initialize a high performance ring buffer.
+ * @brief Define and initialize a high performance ring buffer.
  *
  * This macro establishes a ring buffer whose size must be a power of 2;
  * that is, the ring buffer contains 2^pow 32-bit words, where @a pow is
@@ -90,7 +90,7 @@ struct ring_buf {
 	}
 
 /**
- * @brief Statically define and initialize a standard ring buffer.
+ * @brief Define and initialize a standard ring buffer.
  *
  * This macro establishes a ring buffer of an arbitrary size. A standard
  * ring buffer uses modulo arithmetic operations to maintain itself.
@@ -113,7 +113,7 @@ struct ring_buf {
 	}
 
 /**
- * @brief Statically define and initialize a ring buffer for byte data.
+ * @brief Define and initialize a ring buffer for byte data.
  *
  * This macro establishes a ring buffer of an arbitrary size.
  *
