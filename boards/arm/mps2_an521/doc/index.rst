@@ -488,7 +488,7 @@ The update requires 3 steps:
 2. Open ``<MPS2 device name>/MB/HBI0263C/AN521/images.txt``.
 3. Update the ``AN521/images.txt`` file as follows:
 
-.. code-block:: bash
+.. code-block:: none
 
    TITLE: Versatile Express Images Configuration File
 

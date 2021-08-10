@@ -166,7 +166,7 @@ The update requires 3 steps:
 2. Open ``<MPS3 device name>/MB/HBI0309C/AN547/images.txt``.
 3. Update the ``AN547/images.txt`` file as follows:
 
-.. code-block:: bash
+.. code-block:: none
 
    TITLE: Versatile Express Images Configuration File
 
