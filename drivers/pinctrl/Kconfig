@@ -16,4 +16,6 @@ config PINCTRL_SAM
 	help
 	  Enable Atmel SAM pinctrl driver.
 
-endif
+source "drivers/pinctrl/Kconfig.nrf"
+
+endif # PINCTRL

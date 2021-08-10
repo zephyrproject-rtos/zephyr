@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    nRF pin controller
+
+compatible: "nordic,nrf-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: nRF pin controller pin configuration nodes.
+  properties:
+      pincfg:
+        required: true
+        type: array
