@@ -1826,7 +1826,10 @@ static int mod_sub(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t elem_a
 
 	bt_mesh_model_msg_init(&msg, op);
 	net_buf_simple_add_le16(&msg, elem_addr);
-	net_buf_simple_add_le16(&msg, sub_addr);
+
+	if (sub_addr != BT_MESH_ADDR_UNASSIGNED) {
+		net_buf_simple_add_le16(&msg, sub_addr);
+	}
 
 	if (cid != CID_NVAL) {
 		net_buf_simple_add_le16(&msg, cid);
@@ -1852,6 +1855,10 @@ static int mod_sub(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t elem_a
 int bt_mesh_cfg_mod_sub_add(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			    uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+		return -EINVAL;
+	}
+
 	return mod_sub(OP_MOD_SUB_ADD, net_idx, addr, elem_addr, sub_addr,
 		       mod_id, CID_NVAL, status);
 }
@@ -1860,7 +1867,7 @@ int bt_mesh_cfg_mod_sub_add_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 				 uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
 				 uint8_t *status)
 {
-	if (cid == CID_NVAL) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
@@ -1871,6 +1878,10 @@ int bt_mesh_cfg_mod_sub_add_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 int bt_mesh_cfg_mod_sub_del(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			    uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+		return -EINVAL;
+	}
+
 	return mod_sub(OP_MOD_SUB_DEL, net_idx, addr, elem_addr, sub_addr,
 		       mod_id, CID_NVAL, status);
 }
@@ -1879,50 +1890,15 @@ int bt_mesh_cfg_mod_sub_del_all(uint16_t net_idx, uint16_t addr,
 				uint16_t elem_addr, uint16_t mod_id,
 				uint8_t *status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_SUB_DEL_ALL, 6);
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
-		.app_idx = BT_MESH_KEY_DEV_REMOTE,
-		.addr = addr,
-		.send_ttl = BT_MESH_TTL_DEFAULT,
-	};
-	struct mod_sub_param param = {
-		.status = status,
-		.elem_addr = elem_addr,
-		.mod_id = mod_id,
-		.cid = CID_NVAL,
-	};
-	int err;
-
-	err = cli_prepare(&param, OP_MOD_SUB_STATUS, addr);
-	if (err) {
-		return err;
-	}
-
-	bt_mesh_model_msg_init(&msg, OP_MOD_SUB_DEL_ALL);
-	net_buf_simple_add_le16(&msg, elem_addr);
-	net_buf_simple_add_le16(&msg, mod_id);
-
-	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
-	if (err) {
-		BT_ERR("model_send() failed (err %d)", err);
-		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
-		return err;
-	}
-
-	if (!status) {
-		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
-		return 0;
-	}
-
-	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+	return mod_sub(OP_MOD_SUB_DEL_ALL, net_idx, addr, elem_addr,
+		       BT_MESH_ADDR_UNASSIGNED, mod_id, CID_NVAL, status);
 }
 
 int bt_mesh_cfg_mod_sub_del_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 				uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
 				uint8_t *status)
 {
-	if (cid == CID_NVAL) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
@@ -1930,9 +1906,25 @@ int bt_mesh_cfg_mod_sub_del_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 		       mod_id, cid, status);
 }
 
+int bt_mesh_cfg_mod_sub_del_all_vnd(uint16_t net_idx, uint16_t addr,
+				    uint16_t elem_addr, uint16_t mod_id,
+				    uint16_t cid, uint8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub(OP_MOD_SUB_DEL_ALL, net_idx, addr, elem_addr,
+		       BT_MESH_ADDR_UNASSIGNED, mod_id, cid, status);
+}
+
 int bt_mesh_cfg_mod_sub_overwrite(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 				  uint16_t sub_addr, uint16_t mod_id, uint8_t *status)
 {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+		return -EINVAL;
+	}
+
 	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
 		       sub_addr, mod_id, CID_NVAL, status);
 }
@@ -1941,7 +1933,7 @@ int bt_mesh_cfg_mod_sub_overwrite_vnd(uint16_t net_idx, uint16_t addr,
 				      uint16_t elem_addr, uint16_t sub_addr,
 				      uint16_t mod_id, uint16_t cid, uint8_t *status)
 {
-	if (cid == CID_NVAL) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) || cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
