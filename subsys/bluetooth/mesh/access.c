@@ -1222,7 +1222,7 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	encode_mod_path(mod, vnd, "data", path, sizeof(path));
 	if (name) {
 		strcat(path, "/");
-		strncat(path, name, 8);
+		strncat(path, name, SETTINGS_MAX_DIR_DEPTH);
 	}
 
 	if (data_len) {
