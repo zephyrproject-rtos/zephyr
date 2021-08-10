@@ -10,6 +10,10 @@
  * @name nRF pinctrl pin functions.
  * @{
  */
+#define PINCTRL_NRF_FUN_UART_TX 0U
+#define PINCTRL_NRF_FUN_UART_RX 1U
+#define PINCTRL_NRF_FUN_UART_RTS 2U
+#define PINCTRL_NRF_FUN_UART_CTS 3U
 /** @} */
 
 /**
