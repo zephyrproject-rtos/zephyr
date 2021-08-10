@@ -18,6 +18,7 @@ endfunction()
 
 function(zephyr_mcuboot_tasks)
   set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
+  set(keyfile_enc "${CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE}")
 
   # Check for misconfiguration.
   if("${keyfile}" STREQUAL "")
@@ -31,24 +32,20 @@ function(zephyr_mcuboot_tasks)
     message(FATAL_ERROR "Can't sign images for MCUboot: west not found. To fix, install west and ensure it's on PATH.")
   endif()
 
-  if(NOT IS_ABSOLUTE "${keyfile}")
-    # Relative paths are relative to 'west topdir'.
-    set(keyfile "${WEST_TOPDIR}/${keyfile}")
-    set(keyfile_relative TRUE)
-  else()
-    set(keyfile_relative FALSE)
-  endif()
+  foreach(file keyfile keyfile_enc)
+    if(NOT "${${file}}" STREQUAL "")
+      if(NOT IS_ABSOLUTE "${${file}}")
+        # Relative paths are relative to 'west topdir'.
+        set(${file} "${WEST_TOPDIR}/${${file}}")
+      endif()
 
-  if(NOT EXISTS "${keyfile}")
-    if(keyfile_relative)
-      set(relative_msg " Note: relative paths are relative to the west workspace topdir \"${WEST_TOPDIR}\".")
-    else()
-      set(relative_msg "")
+      if(NOT EXISTS "${${file}}")
+        message(FATAL_ERROR "west sign can't find file ${${file}} (Note: Relative paths are relative to the west workspace topdir \"${WEST_TOPDIR}\")")
+      elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
+        message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
+      endif()
     endif()
-    message(FATAL_ERROR "Can't sign images for MCUboot: CONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}\" not found.${relative_msg}")
-  elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
-    message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
-  endif()
+  endforeach()
 
   # Find imgtool. Even though west is installed, imgtool might not be.
   # The user may also have a custom manifest which doesn't include
@@ -95,9 +92,10 @@ function(zephyr_mcuboot_tasks)
   # List of additional build byproducts.
   set(byproducts)
 
-  # 'west sign' arguments for confirmed and unconfirmed images.
+  # 'west sign' arguments for confirmed, unconfirmed and encrypted images.
   set(unconfirmed_args)
   set(confirmed_args)
+  set(encrypted_args)
 
   # Set up .bin outputs.
   if(CONFIG_BUILD_OUTPUT_BIN)
@@ -108,6 +106,11 @@ function(zephyr_mcuboot_tasks)
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --bin --sbin ${output}.signed.confirmed.bin)
       list(APPEND byproducts ${output}.signed.confirmed.bin)
+    endif()
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      list(APPEND encrypted_args --bin --sbin ${output}.signed.encrypted.bin)
+      list(APPEND byproducts ${output}.signed.encrypted.bin)
     endif()
   endif()
 
@@ -120,6 +123,11 @@ function(zephyr_mcuboot_tasks)
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --hex --shex ${output}.signed.confirmed.hex)
       list(APPEND byproducts ${output}.signed.confirmed.hex)
+    endif()
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      list(APPEND encrypted_args --hex --shex ${output}.signed.encrypted.hex)
+      list(APPEND byproducts ${output}.signed.encrypted.hex)
     endif()
   endif()
 
@@ -135,6 +143,10 @@ function(zephyr_mcuboot_tasks)
   if(confirmed_args)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
       ${west_sign} ${confirmed_args} ${imgtool_args} --pad --confirm)
+  endif()
+  if(encrypted_args)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+      ${west_sign} ${encrypted_args} ${imgtool_args} --encrypt "${keyfile_enc}")
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()

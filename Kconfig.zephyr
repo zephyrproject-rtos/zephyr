@@ -535,15 +535,42 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
 	  and CONFIG_BUILD_OUTPUT_HEX.
 
-	  This option should contain an absolute path to the same file
-	  as the BOOT_SIGNATURE_KEY_FILE option in your MCUboot
-	  .config. (The MCUboot config option is used for the MCUboot
-	  bootloader image; this option is for your application which
-	  is to be loaded by MCUboot. The MCUboot config option can be
-	  a relative path from the MCUboot repository root; this option's
-	  behavior is undefined for relative paths.)
+	  This option should contain a path to the same file as the
+	  BOOT_SIGNATURE_KEY_FILE option in your MCUboot .config. The path
+	  may be absolute or relative to the west workspace topdir. (The MCUboot
+	  config option is used for the MCUboot bootloader image; this option is
+	  for your application which is to be loaded by MCUboot. The MCUboot
+	  config option can be a relative path from the MCUboot repository
+	  root.)
 
 	  If left empty, you must sign the Zephyr binaries manually.
+
+config MCUBOOT_ENCRYPTION_KEY_FILE
+	string "Path to the mcuboot encryption key file"
+	default ""
+	depends on MCUBOOT_SIGNATURE_KEY_FILE != ""
+	help
+	  The file contains the public key that is used to encrypt the
+	  ephemeral key that encrypts the image. The corresponding
+	  private key is hard coded in the MCUboot source code and is
+	  used to decrypt the ephemeral key that is embedded in the
+	  image. The file is in PEM format.
+
+	  If set to a non-empty value, the build system tries to
+	  sign and encrypt the final binaries using a 'west sign -t imgtool'
+	  command. The binaries are placed in the build directory at
+	  zephyr/zephyr.signed.encrypted.bin and
+	  zephyr/zephyr.signed.encrypted.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+	  This option should either be an absolute path or a path relative to
+	  the west workspace topdir.
+	  Example: './bootloader/mcuboot/enc-rsa2048-pub.pem'
+
+	  If left empty, you must encrypt the Zephyr binaries manually.
 
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool"
