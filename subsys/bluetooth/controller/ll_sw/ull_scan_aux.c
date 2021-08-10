@@ -299,7 +299,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	}
 
-	if (!aux_ptr || !aux_ptr->offs) {
+	if (!aux_ptr || !aux_ptr->offs ||
+	    (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED)) {
 		goto ull_scan_aux_rx_flush;
 	}
 

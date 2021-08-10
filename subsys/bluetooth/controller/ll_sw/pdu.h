@@ -330,9 +330,9 @@ enum pdu_adv_offs_units {
 };
 
 enum pdu_adv_aux_phy {
-	EXT_ADV_AUX_PHY_LE_1M  = 0x00,
-	EXT_ADV_AUX_PHY_LE_2M  = 0x01,
-	EXT_ADV_AUX_PHY_LE_COD = 0x02,
+	EXT_ADV_AUX_PHY_LE_1M    = 0x00,
+	EXT_ADV_AUX_PHY_LE_2M    = 0x01,
+	EXT_ADV_AUX_PHY_LE_CODED = 0x02,
 };
 
 struct pdu_cte_info {
