@@ -98,7 +98,7 @@ struct rpmsg_mi_ctx {
 
 	unsigned int ipm_tx_id;
 
-	uint32_t shm_status_reg_addr;
+	uintptr_t shm_status_reg_addr;
 	struct metal_io_region *shm_io;
 	struct metal_device shm_device;
 	metal_phys_addr_t shm_physmap[1];
@@ -111,8 +111,8 @@ struct rpmsg_mi_ctx {
 	struct virtio_vring_info rvrings[2];
 	struct virtio_device vdev;
 
-	uint32_t vring_tx_addr;
-	uint32_t vring_rx_addr;
+	uintptr_t vring_tx_addr;
+	uintptr_t vring_rx_addr;
 
 	sys_slist_t endpoints;
 };
