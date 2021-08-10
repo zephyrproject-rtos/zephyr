@@ -1,0 +1,27 @@
+&pinctrl {
+	/* UART0 */
+	uart0_default: uart0_default {
+		pincfg = <PINCTRL_NRF(0, 6, OUT, IDISC, PN, UART_TX)
+			  PINCTRL_NRF(0, 8, INP, ICONN, PU, UART_RX)
+			  PINCTRL_NRF(0, 5, OUT, IDISC, PN, UART_RTS)
+			  PINCTRL_NRF(0, 7, INP, ICONN, PU, UART_CTS)>;
+	};
+
+	uart0_sleep: uart0_sleep {
+		pincfg = <PINCTRL_NRF(0, 6, INP, IDISC, PN, UART_TX)
+			  PINCTRL_NRF(0, 8, INP, IDISC, PN, UART_RX)
+			  PINCTRL_NRF(0, 5, INP, IDISC, PN, UART_RTS)
+			  PINCTRL_NRF(0, 7, INP, IDISC, PN, UART_CTS)>;
+	};
+
+	/* UART1 */
+	uart1_default: uart1_default {
+		pincfg = <PINCTRL_NRF(1, 2, OUT, IDISC, PN, UART_TX)
+			  PINCTRL_NRF(1, 1, INP, ICONN, PU, UART_RX)>;
+	};
+
+	uart1_sleep: uart1_sleep {
+		pincfg = <PINCTRL_NRF(1, 2, INP, IDISC, PN, UART_TX)
+			  PINCTRL_NRF(1, 1, INP, IDISC, PN, UART_RX)>;
+	};
+};
