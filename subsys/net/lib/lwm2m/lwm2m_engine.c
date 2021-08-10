@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -2203,25 +2204,28 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 					  strlen((uint8_t *)data_ptr));
 			break;
 
-		case LWM2M_RES_TYPE_U64:
-			engine_put_s64(&msg->out, &msg->path,
-				       (int64_t)*(uint64_t *)data_ptr);
-			break;
+		case LWM2M_RES_TYPE_U64: {
+			uint64_t value = *(uint64_t *)data_ptr;
+			if (value > INT64_MAX) {
+				return -EINVAL;
+			}
+			engine_put_s64(&msg->out, &msg->path, (int64_t)value);
+		} break;
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
-			engine_put_s32(&msg->out, &msg->path,
-				       (int32_t)*(uint32_t *)data_ptr);
+			engine_put_s64(&msg->out, &msg->path,
+				       (int64_t)*(uint32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U16:
-			engine_put_s16(&msg->out, &msg->path,
-				       (int16_t)*(uint16_t *)data_ptr);
+			engine_put_s32(&msg->out, &msg->path,
+				       (int32_t)*(uint16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U8:
-			engine_put_s8(&msg->out, &msg->path,
-				      (int8_t)*(uint8_t *)data_ptr);
+			engine_put_s16(&msg->out, &msg->path,
+				      (int16_t)*(uint8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S64:
