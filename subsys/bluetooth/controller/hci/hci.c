@@ -5136,19 +5136,28 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		if (h->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux_ptr;
 			uint8_t aux_phy;
 
-			aux = (void *)ptr;
-			ptr += sizeof(*aux);
+			aux_ptr = (void *)ptr;
+			if (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED) {
+				struct node_rx_ftr *ftr;
 
-			sec_phy_curr = aux->phy + 1;
+				ftr = &node_rx->hdr.rx_ftr;
+				node_rx_extra_list_release(ftr->extra);
+				return;
+			}
 
-			aux_phy = BIT(aux->phy);
+			ptr += sizeof(*aux_ptr);
+
+			sec_phy_curr = aux_ptr->phy + 1;
+
+			aux_phy = BIT(aux_ptr->phy);
 
 			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-			       aux->ca, aux->offs_units, aux->offs, aux_phy);
+			       "= %u offs = 0x%x, phy = 0x%x",
+			       aux_ptr->chan_idx, aux_ptr->ca,
+			       aux_ptr->offs_units, aux_ptr->offs, aux_phy);
 		}
 
 		if (h->sync_info) {
@@ -5561,19 +5570,28 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		/* AuxPtr */
 		if (h->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux_ptr;
 			uint8_t aux_phy;
 
-			aux = (void *)ptr;
-			ptr += sizeof(*aux);
+			aux_ptr = (void *)ptr;
+			if (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED) {
+				struct node_rx_ftr *ftr;
 
-			sec_phy_curr = aux->phy + 1;
+				ftr = &node_rx->hdr.rx_ftr;
+				node_rx_extra_list_release(ftr->extra);
+				return;
+			}
 
-			aux_phy = BIT(aux->phy);
+			ptr += sizeof(*aux_ptr);
+
+			sec_phy_curr = aux_ptr->phy + 1;
+
+			aux_phy = BIT(aux_ptr->phy);
 
 			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-			       aux->ca, aux->offs_units, aux->offs, aux_phy);
+			       "= %u offs = 0x%x, phy = 0x%x",
+			       aux_ptr->chan_idx, aux_ptr->ca,
+			       aux_ptr->offs_units, aux_ptr->offs, aux_phy);
 		}
 
 		/* No SyncInfo */
