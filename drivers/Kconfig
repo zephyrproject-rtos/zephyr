@@ -123,4 +123,6 @@ source "drivers/bbram/Kconfig"
 
 source "drivers/fpga/Kconfig"
 
+source "drivers/pinctrl/Kconfig"
+
 endmenu
