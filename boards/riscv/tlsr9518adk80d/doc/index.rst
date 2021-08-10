@@ -93,6 +93,7 @@ The following example projects are supported:
 - samples/drivers/flash_shell
 - samples/net/sockets/echo_client (OpenThread and IEEE802154)
 - samples/net/sockets/echo_server (OpenThread and IEEE802154)
+- samples/net/openthread/coprocessor
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
