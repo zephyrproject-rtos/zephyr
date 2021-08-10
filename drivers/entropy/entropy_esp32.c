@@ -7,18 +7,20 @@
 #define DT_DRV_COMPAT espressif_esp32_trng
 
 #include <string.h>
-#include <drivers/entropy.h>
-#include <soc/dport_reg.h>
+#include <hal/cpu_hal.h>
+#include <esp_clk.h>
 #include <soc/rtc.h>
 #include <soc/wdev_reg.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/apb_ctrl_reg.h>
 #include <esp_system.h>
 #include <soc.h>
-#include <xtensa/core-macros.h>
+#include <drivers/entropy.h>
 
-extern int esp_clk_cpu_freq(void);
-extern int esp_clk_apb_freq(void);
+#ifdef CONFIG_SOC_ESP32
+#include <xtensa/core-macros.h>
+#include <soc/dport_reg.h>
+#endif
 
 static inline uint32_t entropy_esp32_get_u32(void)
 {
@@ -37,9 +39,10 @@ static inline uint32_t entropy_esp32_get_u32(void)
 	uint32_t ccount;
 
 	do {
-		ccount = XTHAL_GET_CCOUNT();
+		ccount = cpu_hal_get_cycle_count();
 	} while (ccount - last_ccount < cpu_to_apb_freq_ratio * 16);
 	last_ccount = ccount;
+
 	return REG_READ(WDEV_RND_REG);
 }
 
