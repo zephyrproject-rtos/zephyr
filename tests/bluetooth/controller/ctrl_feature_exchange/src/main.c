@@ -76,6 +76,10 @@ void test_feature_exchange_mas_loc(void)
 	uint64_t rsp_featureset[] = {
 		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE, 0x0
 	};
+	uint64_t exp_rsp_featureset[] = { ((LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) |
+					   DEFAULT_FEATURE) &
+						  LL_FEAT_BIT_MASK_VALID,
+					  0x0 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 
 	struct node_tx *tx;
@@ -83,12 +87,15 @@ void test_feature_exchange_mas_loc(void)
 
 	struct pdu_data_llctrl_feature_req local_feature_req;
 	struct pdu_data_llctrl_feature_rsp remote_feature_rsp;
+	struct pdu_data_llctrl_feature_rsp exp_remote_feature_rsp;
 	int feat_counter;
 
 	for (feat_counter = 0; feat_counter < feat_to_test; feat_counter++) {
 		sys_put_le64(set_featureset[feat_counter], local_feature_req.features);
 
 		sys_put_le64(rsp_featureset[feat_counter], remote_feature_rsp.features);
+
+		sys_put_le64(exp_rsp_featureset[feat_counter], exp_remote_feature_rsp.features);
 
 		test_set_role(&conn, BT_HCI_ROLE_MASTER);
 		/* Connect */
@@ -109,7 +116,7 @@ void test_feature_exchange_mas_loc(void)
 		event_done(&conn);
 		/* There should be one host notification */
 
-		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &exp_remote_feature_rsp);
 
 		ut_rx_q_is_empty();
 
@@ -154,10 +161,17 @@ void test_feature_exchange_mas_loc_2(void)
 #define MAS_REM_NR_OF_EVENTS 2
 void test_feature_exchange_mas_rem(void)
 {
-	uint64_t set_featureset[] = { DEFAULT_FEATURE, LL_FEAT_BIT_MASK_VALID,
-				      EXPECTED_FEAT_EXCH_VALID, 0xFFFFFFFFFFFFFFFF, 0x0 };
-	uint64_t exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-				      DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID, DEFAULT_FEATURE,
+	uint64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		LL_FEAT_BIT_MASK_VALID,
+		EXPECTED_FEAT_EXCH_VALID,
+		0xFFFFFFFFFFFFFFFF,
+		0x0 };
+	uint64_t exp_featureset[] = { DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
+				      DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
+				      DEFAULT_FEATURE &
+					      COMMON_FEAT_OCTET0(EXPECTED_FEAT_EXCH_VALID),
+				      DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
 				      DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	struct node_tx *tx;
@@ -204,16 +218,29 @@ void test_feature_exchange_mas_rem_2(void)
 	 * but in reality we should add some more
 	 * test cases
 	 */
-	uint64_t set_featureset[] = { DEFAULT_FEATURE, LL_FEAT_BIT_MASK_VALID,
-				      EXPECTED_FEAT_EXCH_VALID, 0xFFFFFFFFFFFFFFFF, 0x0 };
-	uint64_t exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-				      DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID, DEFAULT_FEATURE,
+	uint64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		LL_FEAT_BIT_MASK_VALID,
+		EXPECTED_FEAT_EXCH_VALID,
+		0xFFFFFFFFFFFFFFFF,
+		0x0 };
+	uint64_t exp_featureset[] = { DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
+				      DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
+				      DEFAULT_FEATURE &
+					      COMMON_FEAT_OCTET0(EXPECTED_FEAT_EXCH_VALID),
+				      DEFAULT_FEATURE & COMMON_FEAT_OCTET0(LL_FEAT_BIT_MASK_VALID),
 				      DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
-	uint64_t ut_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE, DEFAULT_FEATURE,
-				     DEFAULT_FEATURE, DEFAULT_FEATURE };
-	uint64_t ut_exp_featureset[] = { DEFAULT_FEATURE, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
-					 DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
-					 DEFAULT_FEATURE, DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
+	uint64_t ut_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE };
+	uint64_t ut_exp_featureset[] = {
+		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+		DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID, DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID,
+		(DEFAULT_FEATURE & LL_FEAT_BIT_MASK_VALID) & 0xFFFFFFFFFFFFFF00
+	};
 
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	uint64_t err;
@@ -282,6 +309,7 @@ void test_slave_feature_exchange_sla_loc(void)
 
 	featureset = DEFAULT_FEATURE;
 	sys_put_le64(featureset, local_feature_req.features);
+	featureset &= LL_FEAT_BIT_MASK_VALID;
 	sys_put_le64(featureset, remote_feature_rsp.features);
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
