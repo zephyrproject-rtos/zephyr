@@ -27,6 +27,12 @@ BUILD_ASSERT(((NRF_DRIVE_S0S1 == NRF_GPIO_PIN_S0S1) &&
 	      (1U)),
 	     "nRF pinctrl drive settings do not match HAL values");
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uart)
+#define NRF_PSEL_UART(reg, line) ((NRF_UART_Type *)reg)->PSEL##line
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uarte)
+#define NRF_PSEL_UART(reg, line) ((NRF_UARTE_Type *)reg)->PSEL.line
+#endif
+
 /**
  * @brief Configure pin settings.
  *
@@ -51,10 +57,32 @@ __unused static void nrf_pin_configure(pinctrl_soc_pin_t pin,
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-	ARG_UNUSED(reg);
-
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		switch (NRF_GET_FUN(pins[i])) {
+#if defined(NRF_PSEL_UART)
+		case NRF_FUN_UART_TX:
+			NRF_PSEL_UART(reg, TXD) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 1);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_UART_RX:
+			NRF_PSEL_UART(reg, RXD) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+		case NRF_FUN_UART_RTS:
+			NRF_PSEL_UART(reg, RTS) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 1);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_UART_CTS:
+			NRF_PSEL_UART(reg, CTS) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+#endif /* defined(NRF_PSEL_UART) */
 		default:
 			return -ENOTSUP;
 		}

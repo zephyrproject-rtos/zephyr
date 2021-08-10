@@ -51,6 +51,15 @@
  * @{
  */
 
+/** UART TX */
+#define NRF_FUN_UART_TX 0U
+/** UART RX */
+#define NRF_FUN_UART_RX 1U
+/** UART RTS */
+#define NRF_FUN_UART_RTS 2U
+/** UART CTS */
+#define NRF_FUN_UART_CTS 3U
+
 /** @} */
 
 /**
