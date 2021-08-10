@@ -212,6 +212,7 @@ focaltech	FocalTech Systems Co.,Ltd
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
+ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 gaisler	Gaisler
 gardena	GARDENA GmbH
