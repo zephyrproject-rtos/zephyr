@@ -14,7 +14,7 @@ New features:
 Bug fixes:
 
 - The manifest file parser was incorrectly allowing project names which contain
-  the path separator characters ``/`` and ``\\``. These invalid characters are
+  the path separator characters ``/`` and ``\``. These invalid characters are
   now rejected.
 
   Note: if you need to place a project within a subdirectory of the workspace
@@ -30,7 +30,7 @@ Bug fixes:
 - The :envvar:`WEST_CONFIG_LOCAL` environment variable now correctly
   overrides the default location, :file:`<workspace topdir>/.west/config`.
 
-- ``west update --fetch=smart`` (``smart`` is the default) now correclty skips
+- ``west update --fetch=smart`` (``smart`` is the default) now correctly skips
   fetches for project revisions which are `lightweight tags`_ (it already
   worked correctly for annotated tags; only lightweight tags were unnecessarily
   fetched).
