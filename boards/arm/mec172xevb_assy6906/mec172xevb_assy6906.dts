@@ -63,3 +63,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&adc0 {
+	status = "okay";
+};
