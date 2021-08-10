@@ -26,7 +26,7 @@
 #
 # Under these restraints we use a second 'cmake_minimum_required'
 # invocation in every toplevel CMakeLists.txt.
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 # CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
