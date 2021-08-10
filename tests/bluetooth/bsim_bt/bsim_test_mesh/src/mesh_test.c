@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RECV_QUEUE_SIZE 32
 
 const struct bt_mesh_test_cfg *cfg;
-struct bt_mesh_model *test_model;
 
 static K_MEM_SLAB_DEFINE(msg_pool, sizeof(struct bt_mesh_test_msg),
 			 RECV_QUEUE_SIZE, 4);
@@ -73,8 +72,51 @@ static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 static const struct bt_mesh_model_op model_op[] = {
 	{ TEST_MSG_OP, 0, msg_rx },
 };
+
+int __weak test_model_pub_update(struct bt_mesh_model *mod)
+{
+	return -1;
+}
+
+int __weak test_model_settings_set(struct bt_mesh_model *model,
+				   const char *name, size_t len_rd,
+				   settings_read_cb read_cb, void *cb_arg)
+{
+	return -1;
+}
+
+static const struct bt_mesh_model_cb test_model_cb = {
+	.settings_set = test_model_settings_set,
+};
+
 static struct bt_mesh_model_pub pub = {
 	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+	.update = test_model_pub_update,
+};
+
+static const struct bt_mesh_model_op vnd_model_op[] = {
+	BT_MESH_MODEL_OP_END,
+};
+
+int __weak test_vnd_model_pub_update(struct bt_mesh_model *mod)
+{
+	return -1;
+}
+
+int __weak test_vnd_model_settings_set(struct bt_mesh_model *model,
+				       const char *name, size_t len_rd,
+				       settings_read_cb read_cb, void *cb_arg)
+{
+	return -1;
+}
+
+static const struct bt_mesh_model_cb test_vnd_model_cb = {
+	.settings_set = test_vnd_model_settings_set,
+};
+
+static struct bt_mesh_model_pub vnd_pub = {
+	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+	.update = test_vnd_model_pub_update,
 };
 
 static struct bt_mesh_cfg_cli cfg_cli;
@@ -82,11 +124,20 @@ static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL(TEST_MOD_ID, model_op, &pub, NULL),
+	BT_MESH_MODEL_CB(TEST_MOD_ID, model_op, &pub, NULL, &test_model_cb),
 };
 
+struct bt_mesh_model *test_model = &models[2];
+
+static struct bt_mesh_model vnd_models[] = {
+	BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, vnd_model_op, &vnd_pub,
+			     NULL, &test_vnd_model_cb),
+};
+
+struct bt_mesh_model *test_vnd_model = &vnd_models[0];
+
 static struct bt_mesh_elem elems[] = {
-	BT_MESH_ELEM(0, models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(0, models, vnd_models),
 };
 
 const struct bt_mesh_comp comp = {
@@ -105,6 +156,7 @@ static void bt_enabled(void)
 	int err;
 
 	net_buf_simple_init(pub.msg, 0);
+	net_buf_simple_init(vnd_pub.msg, 0);
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
@@ -148,8 +200,6 @@ static void bt_enabled(void)
 void bt_mesh_test_setup(void)
 {
 	int err;
-
-	test_model = &models[2];
 
 	err = bt_enable(NULL);
 	if (err) {
