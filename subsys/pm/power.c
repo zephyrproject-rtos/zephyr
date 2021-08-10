@@ -275,6 +275,8 @@ enum pm_state pm_system_suspend(int32_t ticks)
 
 void pm_notifier_register(struct pm_notifier *notifier)
 {
+	__ASSERT(notifier != NULL, "notifier is NULL");
+
 	k_spinlock_key_t pm_notifier_key = k_spin_lock(&pm_notifier_lock);
 
 	sys_slist_append(&pm_notifiers, &notifier->_node);
@@ -286,6 +288,7 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 	int ret = -EINVAL;
 	k_spinlock_key_t pm_notifier_key;
 
+	__ASSERT(notifier != NULL, "notifier is NULL");
 	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
 	if (sys_slist_find_and_remove(&pm_notifiers, &(notifier->_node))) {
 		ret = 0;
