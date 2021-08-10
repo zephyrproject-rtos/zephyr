@@ -288,4 +288,9 @@ config HAS_MCUX_RCM
 	  Set if the Reset Control Module (RCM) module is present in
 	  the SoC.
 
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
+
 endif # HAS_MCUX
