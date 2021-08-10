@@ -23,4 +23,8 @@ config PINMUX_XEC
 	default y
 	depends on PINMUX
 
+config ADC_XEC_V2
+	default y
+	depends on ADC
+
 endif # SOC_MEC172X_NSZ
