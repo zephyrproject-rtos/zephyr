@@ -12,30 +12,42 @@ extern enum bst_result_t bst_result;
 
 CREATE_FLAG(broadcaster_found);
 CREATE_FLAG(base_received);
+CREATE_FLAG(pa_synced);
 
-static bool scan_recv(const struct bt_le_scan_recv_info *info,
-		     uint32_t broadcast_id)
+static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
+			 uint32_t broadcast_id)
 {
 	SET_FLAG(broadcaster_found);
 
 	return true;
 }
 
-static void scan_term(int err)
+static void scan_term_cb(int err)
 {
 	if (err != 0) {
 		FAIL("Scan terminated with error: %d", err);
 	}
 }
 
-static void base_recv(const struct bt_audio_base *base, uint32_t broadcast_id)
+static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
+			 struct bt_le_per_adv_sync *sync,
+			 uint32_t broadcast_id)
+{
+	printk("PA synced to broadcaster %p with broadcast ID 0x%06X\n",
+	       sink, broadcast_id);
+
+	SET_FLAG(pa_synced);
+}
+
+static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
+			 const struct bt_audio_base *base)
 {
 	if (TEST_FLAG(base_received)) {
 		return;
 	}
 
-	printk("Received BASE with %u subgroups from broadcaster with ID 0x%06X\n",
-	       base->subgroup_count, broadcast_id);
+	printk("Received BASE with %u subgroups from broadcaster %p\n",
+	       base->subgroup_count, sink);
 
 	SET_FLAG(base_received);
 }
@@ -48,9 +60,10 @@ static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_META_CONTEXT_ANY);
 
 static struct bt_audio_capability_ops lc3_ops = {
-	.scan_recv = scan_recv,
-	.scan_term = scan_term,
-	.base_recv = base_recv
+	.scan_recv = scan_recv_cb,
+	.scan_term = scan_term_cb,
+	.base_recv = base_recv_cb,
+	.pa_synced = pa_synced_cb
 };
 
 static void test_main(void)
@@ -79,6 +92,7 @@ static void test_main(void)
 
 	UNSET_FLAG(broadcaster_found);
 	UNSET_FLAG(base_received);
+	UNSET_FLAG(pa_synced);
 	printk("Scanning for broadcast sources\n");
 	err = bt_audio_broadcaster_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
@@ -86,7 +100,9 @@ static void test_main(void)
 		return;
 	}
 	WAIT_FOR_FLAG(broadcaster_found);
-	printk("Broadcast source found, waiting for BASE\n");
+	printk("Broadcast source found, waiting for PA sync\n");
+	WAIT_FOR_FLAG(pa_synced);
+	printk("Broadcast source PA synced, waiting for BASE\n");
 	WAIT_FOR_FLAG(base_received);
 	printk("BASE received\n");
 

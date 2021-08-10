@@ -1515,6 +1515,8 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
 	struct bt_audio_broadcast_sink *sink;
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
 
 	sink = broadcast_sink_syncing_get();
 	if (sink == NULL || sync != sink->pa_sync) {
@@ -1527,6 +1529,24 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 	sink->syncing = false;
 
 	bt_audio_broadcaster_scan_stop();
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		/* Terminate early if we do not have any audio sink
+		 * capabilities
+		 */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->pa_synced != NULL) {
+			ops->pa_synced(sink, sink->pa_sync, sink->broadcast_id);
+		}
+	}
 
 	/* TODO: Wait for an parse PA data and use the capability ops to
 	 * get audio channels from the upper layer
@@ -1792,7 +1812,7 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		ops = cap->ops;
 
 		if (ops != NULL && ops->base_recv != NULL) {
-			ops->base_recv(&base, sink->broadcast_id);
+			ops->base_recv(sink, &base);
 		}
 	}
 
