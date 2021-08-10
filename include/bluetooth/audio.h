@@ -47,6 +47,9 @@ struct bt_audio_cap;
 /** @brief Abstract Audio endpoint structure. */
 struct bt_audio_endpoint;
 
+/** @brief Abstract Audio Broadcast Sink structure. */
+struct bt_audio_broadcast_sink;
+
 /** @brief Codec configuration structure */
 struct bt_codec_data {
 	struct bt_data data;
@@ -543,16 +546,31 @@ struct bt_audio_capability_ops {
 	bool                    (*scan_recv)(const struct bt_le_scan_recv_info *info,
 					     uint32_t broadcast_id);
 
+	/** @brief Periodic advertising sync callback
+	 *
+	 *  Called when synchronized to a periodic advertising. When
+	 *  synchronized a bt_audio_broadcast_sink structure is allocated for
+	 *  future use.
+	 *
+	 *  @param sink          Pointer to the allocated sink structure.
+	 *  @param sync          Pointer to the periodic advertising sync.
+	 *  @param broadcast_id  24-bit broadcast ID previously reported by
+	 *                       scan_recv.
+	 */
+	void                    (*pa_synced)(struct bt_audio_broadcast_sink *sink,
+					     struct bt_le_per_adv_sync *sync,
+					     uint32_t broadcast_id);
+
 	/** @brief Broadcast Audio Source Endpoint (BASE) received
 	 *
 	 *  Callback for when we receive a BASE from a broadcaster after
 	 *  syncing to the broadcaster's periodic advertising.
 	 *
+	 *  @param sink          Pointer to the sink structure.
 	 *  @param base          Broadcast Audio Source Endpoint (BASE).
-	 *  @param broadcast_id  24-bit broadcast ID
 	 */
-	void                    (*base_recv)(const struct bt_audio_base *base,
-					     uint32_t broadcast_id);
+	void                    (*base_recv)(struct bt_audio_broadcast_sink *sink,
+					     const struct bt_audio_base *base);
 
 	/** @brief Scan terminated callback
 	 *
