@@ -72,6 +72,9 @@ static const char * const devices[] = {
 	LABELS_FOR_DT_COMPAT(microchip_xec_timer)
 	LABELS_FOR_DT_COMPAT(nxp_imx_epit)
 	LABELS_FOR_DT_COMPAT(nxp_imx_gpt)
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+	LABELS_FOR_DT_COMPAT(nxp_lpc_ctimer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif
@@ -534,9 +537,10 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
 
-	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err,
-			"%s: Counter failed to set top value", dev_name);
+	if (set_top_value_capable(dev_name)) {
+		err = counter_set_top_value(dev, &top_cfg);
+		zassert_equal(0, err, "%s: Counter failed to set top value", dev_name);
+	}
 
 	k_busy_wait(3*(uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
 
@@ -546,7 +550,12 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
 	zassert_equal(0, err, "%s: Counter set alarm failed", dev_name);
 
-	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks * 2U));
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+	k_busy_wait((uint32_t)counter_ticks_to_us(dev, 0xFFFFFFFF));
+#else
+	k_busy_wait(1.2 * counter_ticks_to_us(dev, ticks * 2U));
+#endif
+
 	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
 		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
 	zassert_equal(2, cnt,
