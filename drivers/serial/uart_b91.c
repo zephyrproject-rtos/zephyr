@@ -372,8 +372,13 @@ static int uart_b91_fifo_fill(const struct device *dev,
 			      int size)
 {
 	int i = 0;
+	volatile struct uart_b91_t *uart = GET_UART(dev);
 
 	for (i = 0; i < size; i++) {
+		if (uart_b91_get_rx_bufcnt(uart) != 0) {
+			break;
+		}
+
 		uart_b91_poll_out(dev, tx_data[i]);
 	}
 
