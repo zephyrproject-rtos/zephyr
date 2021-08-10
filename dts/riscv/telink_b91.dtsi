@@ -40,7 +40,7 @@
 
 		flash_mspi: flash-controller@80140100 {
 			compatible = "telink,b91-flash-controller";
-			label = "flash_mspi";
+			label = "FLASH_MSPI";
 			reg = <0x80140100 0x40>;
 
 			#address-cells = <1>;
@@ -66,7 +66,7 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140300 0x08>;
-			label = "gpio_a";
+			label = "GPIO_A";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -77,7 +77,7 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140308 0x08>;
-			label = "gpio_b";
+			label = "GPIO_B";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -88,7 +88,7 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140310 0x08>;
-			label = "gpio_c";
+			label = "GPIO_C";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -99,7 +99,7 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140318 0x08>;
-			label = "gpio_d";
+			label = "GPIO_D";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -110,7 +110,7 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
 			reg = <0x80140320 0x08>;
-			label = "gpio_e";
+			label = "GPIO_E";
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
@@ -129,7 +129,7 @@
 
 		uart0: serial@80140080 {
 			compatible = "telink,b91-uart";
-			label = "uart_0";
+			label = "UART_0";
 			reg = <0x80140080 0x40>;
 			interrupts = <19 1>;
 			interrupt-parent = <&plic0>;
@@ -138,7 +138,7 @@
 
 		uart1: serial@801400C0 {
 			compatible = "telink,b91-uart";
-			label = "uart_1";
+			label = "UART_1";
 			reg = <0x801400C0 0x40>;
 			interrupts = <18 1>;
 			interrupt-parent = <&plic0>;
@@ -157,7 +157,7 @@
 		trng0: trng@80101800 {
 			compatible = "telink,b91-trng";
 			reg = <0x80101800 0x20>;
-			label = "trng_0";
+			label = "TRNG";
 			status = "disabled";
 		};
 
@@ -165,7 +165,7 @@
 			compatible = "telink,b91-pwm";
 			reg = <0x80140400 0x80>;
 			channels = <6>;
-			label = "pwm_0";
+			label = "PWM";
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
@@ -204,7 +204,7 @@
 			reg-names = "pin_mux",
 						"gpio_en",
 						"pull_up_en";
-			label = "pinmux";
+			label = "PINMUX";
 			status = "disabled";
 
 			/* UART0: TX(PA3 PB2 PD2), RX(PA4 PB3 PD3) */
