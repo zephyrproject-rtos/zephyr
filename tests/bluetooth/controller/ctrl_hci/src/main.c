@@ -75,7 +75,8 @@ void test_hci_feature_exchange(void)
 {
 	uint64_t err;
 	uint64_t set_feature = DEFAULT_FEATURE;
-	uint64_t rsp_feature = (LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE;
+	uint64_t rsp_feature = ((LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE) &
+			       LL_FEAT_BIT_MASK_VALID;
 
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
