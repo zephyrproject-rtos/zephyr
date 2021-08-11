@@ -146,8 +146,8 @@ currently enabled (PORT_B for LEDs control and PORT_C for buttons) in the board 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d.dts`` file:
 
-- UART0 RX: PB2, TX: PB3
-- UART1 RX: PC6, TX: PC7
+- UART0 TX: PB2, RX: PB3
+- UART1 TX: PC6, RX: PC7
 - PWM Channel 0: PB4
 - PSPI CS0: PC4, CLK: PC5, MISO: PC6, MOSI: PC7
 - HSPI CS0: PA1, CLK: PA2, MISO: PA3, MOSI: PA4
@@ -155,8 +155,7 @@ Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 Serial Port
 -----------
 
-The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned
-to UART0 in the ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
+The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -174,6 +173,7 @@ the "hello_world" application.
    west build -b tlsr9518adk80d samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
+In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
 
 .. code-block:: console
 
