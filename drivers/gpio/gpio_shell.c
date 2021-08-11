@@ -1,7 +1,10 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2021 Dennis Ruffer <daruffer@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Use "device list" command for GPIO port names
  */
 
 #include <sys/printk.h>
@@ -29,7 +32,7 @@ struct args_number {
 	uint8_t conf;
 	uint8_t set;
 	uint8_t get;
-	uint8_t listen;
+	uint8_t blink;
 };
 
 static const struct args_index args_indx = {
@@ -43,7 +46,7 @@ static const struct args_number args_no = {
 	.conf = 4,
 	.set = 4,
 	.get = 3,
-	.listen = 7
+	.blink = 3
 };
 
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
@@ -99,7 +102,7 @@ static int cmd_gpio_get(const struct shell *shell,
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
 		shell_print(shell, "Reading %s pin %d",
-			     argv[args_indx.port], index);
+			    argv[args_indx.port], index);
 		rc = gpio_pin_get(dev, index);
 		if (rc >= 0) {
 			shell_print(shell, "Value %d", rc);
@@ -141,11 +144,53 @@ static int cmd_gpio_set(const struct shell *shell,
 }
 
 
+/* 500 msec = 1/2 sec */
+#define SLEEP_TIME_MS   500
+
+static int cmd_gpio_blink(const struct shell *shell,
+			  size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t index = 0U;
+	uint8_t value = 0U;
+	size_t count = 0;
+	char data;
+
+	if (argc == args_no.blink && isdigit((unsigned char)argv[args_indx.index][0])) {
+		index = (uint8_t)atoi(argv[args_indx.index]);
+	} else {
+		shell_error(shell, "Wrong parameters for get");
+		return -EINVAL;
+	}
+	dev = device_get_binding(argv[args_indx.port]);
+
+	if (dev != NULL) {
+		index = (uint8_t)atoi(argv[2]);
+		shell_fprintf(shell, SHELL_NORMAL, "Blinking port %s index %d.", argv[1], index);
+		shell_fprintf(shell, SHELL_NORMAL, " Hit any key to exit");
+
+		while (true) {
+			(void)shell->iface->api->read(shell->iface, &data, sizeof(data), &count);
+			if (count != 0) {
+				break;
+			}
+			gpio_pin_set(dev, index, value);
+			value = !value;
+			k_msleep(SLEEP_TIME_MS);
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "\n");
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
-	SHELL_CMD(conf, NULL, "Configure GPIO", cmd_gpio_conf),
-	SHELL_CMD(get, NULL, "Get GPIO value", cmd_gpio_get),
-	SHELL_CMD(set, NULL, "Set GPIO", cmd_gpio_set),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD(conf, NULL, "Configure GPIO", cmd_gpio_conf),
+			       SHELL_CMD(get, NULL, "Get GPIO value", cmd_gpio_get),
+			       SHELL_CMD(set, NULL, "Set GPIO", cmd_gpio_set),
+			       SHELL_CMD(blink, NULL, "Blink GPIO", cmd_gpio_blink),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+			       );
 
 SHELL_CMD_REGISTER(gpio, &sub_gpio, "GPIO commands", NULL);
