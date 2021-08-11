@@ -126,7 +126,7 @@
 
 	/* Macronix MX25L CMOS Flash Memory */
 	mx25l: mx25l@0 {
-		compatible = "macronix,cmos-mx25l";
+		compatible = "mxicy,cmos-mx25l";
 		reg = <0>;
 		spi-max-frequency = <8000000>; /* 8MHz */
 		label = "CMOS MX25L";
