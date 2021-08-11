@@ -157,9 +157,11 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Encode LL Control PDU */
 	switch (opcode) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		llcp_pdu_encode_conn_param_req(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		llcp_pdu_encode_conn_update_ind(ctx, pdu);
@@ -210,6 +212,7 @@ static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
@@ -238,7 +241,7 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
 			break;
 #endif /* CONFIG_BT_CENTRAL */
-#if defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL)
 		case BT_HCI_ROLE_SLAVE:
 			ctx->state = LP_CU_STATE_WAIT_RX_CONN_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
@@ -251,6 +254,7 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 		}
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CENTRAL)
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -275,9 +279,11 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	switch (evt) {
 	case LP_CU_EVT_RUN:
 		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		case PROC_CONN_PARAM_REQ:
 			lp_cu_send_conn_param_req(conn, ctx, evt, param);
 			break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CENTRAL)
 		case PROC_CONN_UPDATE:
 			lp_cu_send_conn_update_ind(conn, ctx, evt, param);
@@ -295,6 +301,7 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -307,8 +314,10 @@ static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ct
 		break;
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -344,6 +353,7 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 		break;
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void lp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
@@ -359,7 +369,7 @@ static void lp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-#if defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL)
 static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
 {
@@ -441,18 +451,22 @@ static void lp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case LP_CU_STATE_IDLE:
 		lp_cu_st_idle(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case LP_CU_STATE_WAIT_TX_CONN_PARAM_REQ:
 		lp_cu_st_wait_tx_conn_param_req(conn, ctx, evt, param);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case LP_CU_STATE_WAIT_RX_CONN_PARAM_RSP:
 		lp_cu_st_wait_rx_conn_param_rsp(conn, ctx, evt, param);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND:
 		lp_cu_st_wait_tx_conn_update_ind(conn, ctx, evt, param);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
-#if defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL)
 	case LP_CU_STATE_WAIT_RX_CONN_UPDATE_IND:
 		lp_cu_st_wait_rx_conn_update_ind(conn, ctx, evt, param);
 		break;
@@ -475,9 +489,11 @@ void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
 		lp_cu_execute_fsm(conn, ctx, LP_CU_EVT_CONN_PARAM_RSP, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		lp_cu_execute_fsm(conn, ctx, LP_CU_EVT_CONN_UPDATE_IND, pdu);
 		break;
@@ -521,17 +537,21 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Encode LL Control PDU */
 	switch (opcode) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
 		llcp_pdu_encode_conn_param_rsp(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		llcp_pdu_encode_conn_update_ind(ctx, pdu);
 		break;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
 		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
 					       ctx->data.cu.error);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
 		break;
@@ -569,6 +589,7 @@ static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
@@ -588,6 +609,7 @@ static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_put(ntf->hdr.link, ntf);
 	ll_rx_sched();
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void rp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
@@ -616,6 +638,7 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
@@ -650,6 +673,7 @@ static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx 
 		ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY;
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void rp_cu_send_unknown_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
@@ -668,9 +692,11 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	switch (evt) {
 	case RP_CU_EVT_RUN:
 		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		case PROC_CONN_PARAM_REQ:
 			ctx->state = RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ;
 			break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		case PROC_CONN_UPDATE:
 			ctx->state = RP_CU_STATE_WAIT_RX_CONN_UPDATE_IND;
 			break;
@@ -686,6 +712,7 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -787,6 +814,7 @@ static void rp_cu_st_wait_tx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 		break;
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
@@ -884,6 +912,7 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_CU_STATE_IDLE:
 		rp_cu_st_idle(conn, ctx, evt, param);
 		break;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ:
 		rp_cu_st_wait_rx_conn_param_req(conn, ctx, evt, param);
 		break;
@@ -902,6 +931,7 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	case RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP:
 		rp_cu_st_wait_tx_conn_param_rsp(conn, ctx, evt, param);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND:
 		rp_cu_st_wait_tx_conn_update_ind(conn, ctx, evt, param);
 		break;
@@ -926,9 +956,11 @@ void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_PARAM_REQ, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_UPDATE_IND, pdu);
 		break;
@@ -949,6 +981,7 @@ void llcp_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_RUN, param);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void llcp_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_PARAM_REQ_REPLY, NULL);
@@ -958,3 +991,4 @@ void llcp_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY, NULL);
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
