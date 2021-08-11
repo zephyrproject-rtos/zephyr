@@ -724,6 +724,7 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -744,6 +745,7 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
 		llcp_rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,
