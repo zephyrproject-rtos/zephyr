@@ -65,7 +65,10 @@
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, interrupt_parent),\
 		(CY_PSOC6_IRQ_CONFIG(n, isr)))
 #define CY_PSOC6_NVIC_MUX_IRQN(n) DT_IRQN(DT_INST_PHANDLE_BY_IDX(n,\
-						interrupt_parent, 0))
+					  interrupt_parent, 0))
+
+#define CY_PSOC6_NVIC_MUX_IRQ_PRIO(n) DT_IRQ(DT_INST_PHANDLE_BY_IDX(n,\
+					     interrupt_parent, 0), priority)
 /*
  * DT_INST_PROP_BY_IDX should be used get interrupt and configure, instead
  * DT_INST_IRQN. The DT_INST_IRQN return IRQ number with level translation,
@@ -86,13 +89,14 @@
  */
 #define CY_PSOC6_DT_INST_NVIC_INSTALL(n, isr) CY_PSOC6_IRQ_CONFIG(n, isr)
 #define CY_PSOC6_NVIC_MUX_IRQN(n) DT_INST_IRQN(n)
+#define CY_PSOC6_NVIC_MUX_IRQ_PRIO(n) DT_INST_IRQ(n, priority)
 #define CY_PSOC6_NVIC_MUX_MAP(n)
 #endif
 
 #define CY_PSOC6_IRQ_CONFIG(n, isr)			\
 	do {						\
 		IRQ_CONNECT(CY_PSOC6_NVIC_MUX_IRQN(n),	\
-			    DT_INST_IRQ(n, priority),	\
+			    CY_PSOC6_NVIC_MUX_IRQ_PRIO(n),\
 			    isr, DEVICE_DT_INST_GET(n), 0);\
 		CY_PSOC6_NVIC_MUX_MAP(n);		\
 		irq_enable(CY_PSOC6_NVIC_MUX_IRQN(n));	\
