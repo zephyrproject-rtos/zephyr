@@ -272,6 +272,10 @@ void transmit_message(struct k_work *tx_job)
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
 
+	net_pkt_set_ieee802154_frame_secured(tx_pkt,
+					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
+	net_pkt_set_ieee802154_mac_hdr_rdy(tx_pkt, sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated);
+
 	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
@@ -325,6 +329,10 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
+	sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed =
+		net_pkt_ieee802154_frame_secured(tx_pkt);
+	sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated = net_pkt_ieee802154_mac_hdr_rdy(tx_pkt);
+
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame, tx_result);
 	} else {
