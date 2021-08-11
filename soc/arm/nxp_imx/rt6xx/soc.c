@@ -171,6 +171,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* attach AUDIO PLL clock to FLEXCOMM3 (I2S3) */
 	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
 #endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay))
 	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
 #else
@@ -179,8 +180,33 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+	/* Make sure USDHC ram buffer has been power up*/
+	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
+	POWER_ApplyPD();
+
+	/* usdhc depend on 32K clock also */
+	CLOCK_AttachClk(kLPOSC_DIV32_to_32KHZWAKE_CLK);
+	CLOCK_AttachClk(kAUX0_PLL_to_SDIO0_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
+	CLOCK_EnableClock(kCLOCK_Sdio0);
+	RESET_PeripheralReset(kSDIO0_RST_SHIFT_RSTn);
+#endif
+
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
+
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC)
+
+void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
+{
+
+}
+#endif
 
 /**
  *

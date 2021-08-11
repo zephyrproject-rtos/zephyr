@@ -277,6 +277,24 @@
 		clk-divider = <1>;
 		label = "WWDT_1";
 	};
+
+	usdhc1: usdhc@136000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x136000 0x4000>;
+		status = "disabled";
+		interrupts = <45 0>;
+		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
+		label = "USDHC_1";
+	};
+
+	usdhc2: usdhc@137000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x137000 0x4000>;
+		status = "disabled";
+		interrupts = <46 0>;
+		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
+		label = "USDHC_2";
+	};
 };
 
 &nvic {
