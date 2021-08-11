@@ -28,11 +28,6 @@ properties:
         description: Get the handle of the GPIO device
 
     pinctrl-0:
-      type: phandle
+      type: phandles
       required: true
-      description: Configuration of I2C clock pinmux controller
-
-    pinctrl-1:
-      type: phandle
-      required: true
-      description: Configuration of I2C data pinmux controller
+      description: Configuration of I2C SCL and SDA pinmux controller
