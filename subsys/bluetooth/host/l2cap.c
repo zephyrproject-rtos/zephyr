@@ -1235,7 +1235,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t mtu, mps;
 	uint16_t scid, result = BT_L2CAP_RECONF_SUCCESS;
 	int chan_count = 0;
-	bool mps_reduced;
+	bool mps_reduced = false;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small ecred reconf req packet size");
