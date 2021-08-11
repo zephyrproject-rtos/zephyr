@@ -38,11 +38,18 @@ struct bt_audio_broadcaster {
 };
 
 struct bt_audio_broadcast_sink {
+	uint8_t index; /* index of broadcast_snks array */
 	uint8_t bis_count;
 	uint8_t subgroup_count;
+	uint16_t pa_interval;
+	uint16_t iso_interval;
+	uint16_t biginfo_num_bis;
+	bool biginfo_received;
 	bool syncing;
+	bool big_encrypted;
 	uint32_t broadcast_id; /* 24 bit */
 	struct bt_le_per_adv_sync *pa_sync;
+	struct bt_audio_capability *cap; /* Capability that accepted the PA sync */
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 };
@@ -158,4 +165,6 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 		     struct net_buf_simple *buf);
 
 struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir);
+bool bt_audio_ep_is_broadcast_snk(const struct bt_audio_ep *ep);
+bool bt_audio_ep_is_broadcast_src(const struct bt_audio_ep *ep);
 bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep);

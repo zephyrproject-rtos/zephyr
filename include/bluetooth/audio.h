@@ -572,6 +572,21 @@ struct bt_audio_capability_ops {
 	void                    (*base_recv)(struct bt_audio_broadcast_sink *sink,
 					     const struct bt_audio_base *base);
 
+	/** @brief Broadcast sink is syncable
+	 *
+	 *  Called whenever a broadcast sink is not synchronized to audio, but
+	 *  the audio is synchronizable. This is inferred when a BIGInfo report
+	 *  is received.
+	 *
+	 *  Once this callback has been called, it is possible to call
+	 *  bt_audio_broadcast_sync to synchronize to the audio stream(s).
+	 *
+	 *  @param sink          Pointer to the sink structure.
+	 *  @param encrypted     Whether or not the broadcast is encrypted
+	 */
+	void                    (*syncable)(struct bt_audio_broadcast_sink *sink,
+					    bool encrypted);
+
 	/** @brief Scan terminated callback
 	 *
 	 *  Scan terminated callback is called whenever a scan started by
@@ -886,7 +901,11 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan);
 
 /** @brief Release Audio Channel
  *
- *  This procedure is used by a client release a channel..
+ *  This procedure is used by a client to release a unicast or broadcast
+ *  source channel.
+ *
+ *  Broadcast sink channels shall be released using
+ *  bt_audio_broadcast_sink_release.
  *
  *  @param chan Channel object
  *  @param cache True to cache the codec configuration or false to forget it
@@ -982,6 +1001,42 @@ int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcaster_scan_stop(void);
+
+/** @brief Sync to a broadcaster's audio
+ *
+ *  @param sink               Pointer to the sink object from the base_recv
+ *                            callback.
+ *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
+ *                            e.g. BIS index 1 and 2, this should have the value
+ *                            of BIT(1) | BIT(2).
+ *  @param chan               Channel object to be used for the receiver. If
+ *                            multiple BIS indexes shall be synchronized,
+ *                            multiple channels shall be provided. To provide
+ *                            multiple channels use bt_audio_chan_link to link
+ *                            them.
+ *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
+ *                            the broadcast is encrypted (see the syncable
+ *                            callback).
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_broadcast_sync(struct bt_audio_broadcast_sink *sink,
+			    uint32_t indexes_bitfield,
+			    struct bt_audio_chan *chan,
+			    const uint8_t broadcast_code[16]);
+
+/** @brief Release a broadcast sink
+ *
+ *  Once a broadcast sink has been allocated after the pa_synced callback,
+ *  it can be released using this function. If the sink has synchronized to any
+ *  broadcast audio channels, these must first be stopped using
+ *  bt_audio_chan_stop.
+ *
+ *  @param sink Pointer to the sink object to release.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_broadcast_sink_release(struct bt_audio_broadcast_sink *sink);
 
 /** @} */
 
