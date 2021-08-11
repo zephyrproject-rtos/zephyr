@@ -1229,7 +1229,13 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV);
+	/* If no auxiliary PDUs scheduled, generate primary radio event done */
+	if (!lll->aux) {
+		struct event_done_extra *extra;
+
+		extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV);
+		LL_ASSERT(extra);
+	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	lll_isr_cleanup(param);

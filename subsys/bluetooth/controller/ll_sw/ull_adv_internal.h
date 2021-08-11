@@ -154,6 +154,9 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 /* helper function to fill the aux ptr structure in common ext adv payload */
 void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
 
+/* helper function to handle adv aux done events */
+void ull_adv_aux_done(struct node_rx_event_done *done);
+
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);
