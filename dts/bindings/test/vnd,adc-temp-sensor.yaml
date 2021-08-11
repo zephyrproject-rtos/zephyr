@@ -21,3 +21,12 @@ properties:
 
     clocks:
       required: true
+
+    pinctrl-0:
+      type: phandles
+
+    pinctrl-1:
+      type: phandles
+
+    pinctrl-2:
+      type: phandles
