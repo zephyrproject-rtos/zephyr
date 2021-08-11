@@ -140,6 +140,9 @@ config OPENTHREAD_MULTIPLE_INSTANCE
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 	bool "Enable neighbor discovery agent support"
 
+config OPENTHREAD_NETDATA_PUBLISHER
+	bool "Enable Thread Network Data publisher"
+
 config OPENTHREAD_PING_SENDER
 	bool "Enable ping sender support"
 
