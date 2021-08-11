@@ -27,6 +27,10 @@ set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 # This is relative to each element of DTS_ROOT.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
+# Devicetree in CMake.
+set(DTS_CMAKE_SCRIPT            ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
+
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 
 zephyr_file(APPLICATION_ROOT DTS_ROOT)
@@ -175,6 +179,7 @@ if(SUPPORTS_DTS)
     CMAKE_CONFIGURE_DEPENDS
     ${include_files}
     ${GEN_DEFINES_SCRIPT}
+    ${DTS_CMAKE_SCRIPT}
     )
 
   #
@@ -248,6 +253,20 @@ if(SUPPORTS_DTS)
     message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
     message(STATUS "Generated devicetree_unfixed.h: ${DEVICETREE_UNFIXED_H}")
     message(STATUS "Generated device_extern.h: ${DEVICE_EXTERN_H}")
+  endif()
+
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${DTS_CMAKE_SCRIPT}
+    --edt-pickle ${EDT_PICKLE}
+    --cmake-out ${DTS_CMAKE}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "gen_dts_cmake.py failed with return code: ${ret}")
+  else()
+    message(STATUS "Including generated dts.cmake file: ${DTS_CMAKE}")
+    include(${DTS_CMAKE})
   endif()
 
 else()
