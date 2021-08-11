@@ -34,6 +34,21 @@ zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZ
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
 zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 
+# TI CCFG Registers
+zephyr_linker_dts_memory(NAME FLASH_CCFG FLAGS rwx NODELABEL ti_ccfg_partition)
+
+# Data & Instruction Tightly Coupled Memory
+zephyr_linker_dts_memory(NAME ITCM        FLAGS rw CHOSEN "zephyr,itcm")
+zephyr_linker_dts_memory(NAME DTCM        FLAGS rw CHOSEN "zephyr,dtcm")
+
+zephyr_linker_dts_memory(NAME SRAM1       FLAGS rw NODELABEL sram1)
+zephyr_linker_dts_memory(NAME SRAM2       FLAGS rw NODELABEL sram2)
+zephyr_linker_dts_memory(NAME SRAM3       FLAGS rw NODELABEL sram3)
+zephyr_linker_dts_memory(NAME SRAM4       FLAGS rw NODELABEL sram4)
+zephyr_linker_dts_memory(NAME SDRAM1      FLAGS rw NODELABEL sdram1)
+zephyr_linker_dts_memory(NAME SDRAM2      FLAGS rw NODELABEL sdram2)
+zephyr_linker_dts_memory(NAME BACKUP_SRAM FLAGS rw NODELABEL backup_sram)
+
 if(CONFIG_XIP)
   zephyr_linker_group(NAME ROM_REGION LMA FLASH)
   set(rom_start ${FLASH_ADDR})
@@ -156,6 +171,28 @@ zephyr_linker_section_configure(
   ALIGN ${VECTOR_ALIGN}
   PRIO 50
 )
+
+dt_chosen(chosen_itcm PROPERTY "zephyr,itcm")
+if(DEFINED chosen_itcm)
+  dt_node_has_status(status_result PATH ${chosen_itcm} STATUS okay)
+  if(${status_result})
+    zephyr_linker_group(NAME ITCM_REGION VMA ITCM LMA ROM_REGION)
+
+    zephyr_linker_section(NAME .itcm GROUP ITCM_REGION SUBALIGN 4)
+  endif()
+endif()
+
+dt_chosen(chosen_dtcm PROPERTY "zephyr,dtcm")
+if(DEFINED chosen_dtcm)
+  dt_node_has_status(status_result PATH ${chosen_dtcm} STATUS okay)
+  if(${status_result})
+    zephyr_linker_group(NAME DTCM_REGION VMA DTCM LMA ROM_REGION)
+
+    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION SUBALIGN 4 TYPE BSS)
+    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION SUBALIGN 4 TYPE NOLOAD NOINIT)
+    zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION SUBALIGN 4)
+  endif()
+endif()
 
 zephyr_linker_section(NAME .ARM.attributes ADDRESS 0 NOINPUT)
 zephyr_linker_section_configure(SECTION .ARM.attributes INPUT ".ARM.attributes" KEEP)
