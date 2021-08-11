@@ -27,6 +27,16 @@ static int entropy_mcux_trng_get_entropy(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	status = TRNG_GetRandomData(config->base, buffer, length);
+	if (unlikely(status)) {
+		/*
+		 * There can be a situation after certain types of resets
+		 * where the underlying TRNG IP reports an error. The
+		 * TRNG_GetRandomData() function will clear the error but
+		 * doesn't try to retrieve random data so make the request
+		 * again.
+		 */
+		status = TRNG_GetRandomData(config->base, buffer, length);
+	}
 	__ASSERT_NO_MSG(!status);
 
 	return 0;
