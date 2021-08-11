@@ -46,7 +46,7 @@
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "st,stm32-hse-clock";
+			compatible = "fixed-clock";
 			/* Expected clock-frequency on the whole series 32MHz */
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
