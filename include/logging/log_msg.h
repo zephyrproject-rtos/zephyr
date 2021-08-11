@@ -468,6 +468,22 @@ struct log_msg *log_msg_create_n(const char *str,
 				 uint32_t nargs);
 
 /**
+ * @brief Get number of free blocks from the log mem pool
+ */
+uint32_t log_msg_mem_get_free(void);
+
+/**
+ * @brief Get number of used blocks from the log mem pool
+ */
+uint32_t log_msg_mem_get_used(void);
+
+/**
+ * @brief Get max used blocks from the log mem pool
+ */
+uint32_t log_msg_mem_get_max_used(void);
+
+
+/**
  * @}
  */
 
