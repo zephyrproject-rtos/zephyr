@@ -62,9 +62,13 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 56a84e45eeaf3b6dea88b198c5c252c06f8ac774
+      revision: f525ee6f468c2c68119731e1453ad72d189a1277
       path: modules/hal/espressif
+      groups:
+        - hal
       west-commands: west/west-commands.yml
+      revision: c21d252a2188fcb60d52dceb6b018a9f4a371817
+      path: modules/hal/espressif
       groups:
         - hal
     - name: hal_infineon
@@ -73,7 +77,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 870d05e6a64ea9548da6b907058b03c8c9420826
+      revision: b280eec5d3b1296b231117c1999bcd0269b6ecc4
       path: modules/hal/microchip
       groups:
         - hal
@@ -88,7 +92,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: bb97ba1cb3820d5799f53c7af765830d766b56a2
+      revision: 4b493d4346e841e786a8daa2eb2ee03cbe5cfd37
       path: modules/hal/nxp
       groups:
         - hal
@@ -114,7 +118,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 4200321ef1cd27cacc37b0439389424156bb1267
+      revision: pull/110/head
       path: modules/hal/stm32
       groups:
         - hal
@@ -124,12 +128,12 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 1992a4c536554c4f409c36896eda6abdc414d277
+      revision: 3da6fae25fc44ec830fac4a92787b585ff55435e
       path: modules/hal/ti
       groups:
         - hal
     - name: hal_xtensa
-      revision: 6e1cf3c483e87df4888e87c5396b4534570f01af
+      revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
       groups:
         - hal
@@ -158,10 +162,10 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 62b78ff2a2148490f91ee9a4b4d7a7ab8bbc4fd4
+      revision: 7a5196820ba48a6ad7e7d573c9048c021960677c
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: a15a953e35b0d3100893fd86a127c3e8b7e3257c
+      revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
       path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -183,7 +187,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: 542b14a5bc5b38f29e2cab892c66da670a524b05
+      revision: eae63bb47a31ed61d008f49a024873026626ebcc
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -197,6 +201,12 @@ manifest:
       revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
       path: modules/lib/tensorflow
       repo-path: tensorflow
+    - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
+      revision: v1.7.2
+      path: modules/tee/tfm-mcuboot
+      groups:
+        - tee
+      repo-path: mcuboot
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
@@ -212,7 +222,7 @@ manifest:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 1ab3b62d641070a6e8574634168c374645f382b8
+      revision: e18b7a9b040b5b5324520388047c9e7d678447e6
       groups:
         - tee
 
