@@ -39,3 +39,11 @@ endforeach()
 # common compile options, no copyright msg, little-endian, no small data,
 # no MWDT stack checking
 list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata -Hoff=Stackcheck_alloca)
+
+# The MWDT compiler can replace some code with call to builtin functions.
+# We can't rely on these functions presence if we don't use MWDT libc.
+# NOTE: the option name '-fno-builtin' is misleading a bit - we still can
+# manually call __builtin_** functions even if we specify it.
+if(NOT CONFIG_ARCMWDT_LIBC)
+  list(APPEND TOOLCHAIN_C_FLAGS -fno-builtin)
+endif()
