@@ -34,6 +34,7 @@ import platform
 import yaml
 import json
 from multiprocessing import Lock, Process, Value
+import zipfile
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -2593,8 +2594,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "harness_config": {"type": "map", "default": {}}
                        }
 
+    # This is put into a .gz archive to avoid results showing up in
+    # recursive greps of the zephyr repository. On Linux, you can run
+    # this to see the data without uncompressing the file:
+    #
+    #     zcat twister_last_release.csv.gz
     RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "release",
-                            "twister_last_release.csv")
+                                "twister_last_release.csv.gz")
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTCASE_FILENAME = 'testcase.yaml'
@@ -2851,7 +2857,15 @@ class TestSuite(DisablePyTestCollectionMixin):
                 self.discard_report(filename + "_discard.csv")
 
         if release:
-            self.csv_report(self.RELEASE_DATA)
+            # Store the release data in a temporary file, and compress
+            # it into the self.RELEASE_DATA file.
+            fd, path = tempfile.mkstemp()
+            os.close(fd)
+            self.csv_report(path)
+            with zipfile.ZipFile(self.RELEASE_DATA, 'w', zipfile.ZIP_DEFLATED) as zf:
+                # foo.csv.gz will contain a file foo.csv.
+                zf.write(path, arcname=self.RELEASE_DATA[:-3])
+            os.unlink(path)
 
     def add_configurations(self):
 
