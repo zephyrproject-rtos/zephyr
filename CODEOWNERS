@@ -280,6 +280,7 @@
 /drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
+/drivers/pinmux/*esp32*                   @glaubermaroto
 /drivers/pm_cpu_ops/                      @carlocaione
 /drivers/ps2/                             @franciscomunoz @scottwcpg
 /drivers/ps2/*xec*                        @franciscomunoz @scottwcpg
