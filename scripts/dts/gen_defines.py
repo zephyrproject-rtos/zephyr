@@ -361,6 +361,7 @@ def write_special_props(node):
 
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
+    write_pinctrls(node)
     write_fixed_partitions(node)
 
 def write_regs(node):
@@ -507,6 +508,36 @@ def write_child_functions_status_okay(node):
 
 def write_status(node):
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
+
+
+def write_pinctrls(node):
+    # Write special macros for pinctrl-<index> and pinctrl-names properties.
+
+    out_comment("Pin control (pinctrl-<i>, pinctrl-names) properties:")
+
+    out_dt_define(f"{node.z_path_id}_PINCTRL_NUM", len(node.pinctrls))
+
+    if not node.pinctrls:
+        return
+
+    for pc_idx, pinctrl in enumerate(node.pinctrls):
+        out_dt_define(f"{node.z_path_id}_PINCTRL_IDX_{pc_idx}_EXISTS", 1)
+
+        if not pinctrl.name:
+            continue
+
+        name = pinctrl.name_as_token
+
+        # Below we rely on the fact that edtlib ensures the
+        # pinctrl-<pc_idx> properties are contiguous, start from 0,
+        # and contain only phandles.
+        out_dt_define(f"{node.z_path_id}_PINCTRL_IDX_{pc_idx}_TOKEN", name)
+        out_dt_define(f"{node.z_path_id}_PINCTRL_IDX_{pc_idx}_UPPER_TOKEN", name.upper())
+        out_dt_define(f"{node.z_path_id}_PINCTRL_NAME_{name}_EXISTS", 1)
+        out_dt_define(f"{node.z_path_id}_PINCTRL_NAME_{name}_IDX", pc_idx)
+        for idx, ph in enumerate(pinctrl.conf_nodes):
+            out_dt_define(f"{node.z_path_id}_PINCTRL_NAME_{name}_IDX_{idx}_PH",
+                          f"DT_{ph.z_path_id}")
 
 
 def write_fixed_partitions(node):
