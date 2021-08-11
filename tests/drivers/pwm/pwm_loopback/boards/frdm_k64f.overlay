@@ -13,3 +13,15 @@
 		       <&ftm3 4 0 PWM_POLARITY_NORMAL>; /* PTC8, J1 pin 7 */
 	};
 };
+
+/* per default nxp_k6x.dtsi defines prescaler values of 16,
+ * override those to make sure output timer is 4-times slower
+ */
+
+&ftm3 {
+	prescaler = <16>;
+};
+
+&ftm0 {
+	prescaler = <64>;
+};

@@ -16,7 +16,7 @@
 
 &pwt {
 	status = "okay";
-	prescaler = <32>;
+	prescaler = <8>;
 	pinctrl-0 = <&PWT_IN1_PTE11>;
 };
 
