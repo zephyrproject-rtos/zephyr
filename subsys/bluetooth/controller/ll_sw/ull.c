@@ -2524,6 +2524,12 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_ADV:
 		ull_adv_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case EVENT_DONE_EXTRA_TYPE_ADV_AUX:
+		ull_adv_aux_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 #endif /* CONFIG_BT_BROADCASTER */
 
