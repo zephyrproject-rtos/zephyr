@@ -101,11 +101,13 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
  * @param bdf the target PCI endpoint
  * @param vectors an array of allocated vector(s)
  * @param n_vector the size of the vector array
+ * @param irq The IRQ we wish to trigger via MSI.
  * @return true if the endpoint supports MSI, false otherwise.
  */
 extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    msi_vector_t *vectors,
-			    uint8_t n_vector);
+			    uint8_t n_vector,
+			    unsigned int irq);
 
 /*
  * MSI capability IDs in the PCI configuration capability list.
