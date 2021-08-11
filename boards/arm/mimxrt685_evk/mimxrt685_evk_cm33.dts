@@ -253,6 +253,10 @@ i2s1: &flexcomm3 {
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &dma0 {
 	/*
 	 * The total number of dma channels available is defined by
@@ -292,4 +296,9 @@ i2s1: &flexcomm3 {
 
 &sc_timer {
 	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 };

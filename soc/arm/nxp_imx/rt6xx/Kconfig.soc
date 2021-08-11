@@ -25,6 +25,8 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_LPC_RTC
 	select HAS_MCUX_TRNG
 	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 	select INIT_SYS_PLL
 
 endchoice
