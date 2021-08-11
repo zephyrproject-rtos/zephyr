@@ -1919,6 +1919,165 @@ static void test_same_node(void)
 	zassert_false(DT_SAME_NODE(TEST_DEADBEEF, TEST_ABCD1234), "");
 }
 
+static void test_pinctrl(void)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+	/*
+	 * Tests when a node does have pinctrl properties.
+	 */
+
+	/*
+	 * node_id versions:
+	 */
+
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_BY_IDX(TEST_TEMP, 0, 1),
+				  DT_NODELABEL(test_pincfg_b)), "");
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_BY_IDX(TEST_TEMP, 1, 0),
+				  DT_NODELABEL(test_pincfg_c)), "");
+
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_0(TEST_TEMP, 0),
+				  DT_NODELABEL(test_pincfg_a)), "");
+
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_BY_NAME(TEST_TEMP, default, 1),
+				  DT_NODELABEL(test_pincfg_b)), "");
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_BY_NAME(TEST_TEMP, sleep, 0),
+				  DT_NODELABEL(test_pincfg_c)), "");
+	zassert_true(DT_SAME_NODE(DT_PINCTRL_BY_NAME(TEST_TEMP, f_o_o2, 0),
+				  DT_NODELABEL(test_pincfg_d)), "");
+
+	zassert_equal(DT_PINCTRL_NAME_TO_IDX(TEST_TEMP, default), 0, "");
+	zassert_equal(DT_PINCTRL_NAME_TO_IDX(TEST_TEMP, sleep), 1, "");
+	zassert_equal(DT_PINCTRL_NAME_TO_IDX(TEST_TEMP, f_o_o2), 2, "");
+
+	zassert_equal(DT_NUM_PINCTRLS_BY_IDX(TEST_TEMP, 0), 2, "");
+
+	zassert_equal(DT_NUM_PINCTRLS_BY_NAME(TEST_TEMP, default), 2, "");
+	zassert_equal(DT_NUM_PINCTRLS_BY_NAME(TEST_TEMP, f_o_o2), 1, "");
+
+	zassert_equal(DT_NUM_PINCTRL_STATES(TEST_TEMP), 3, "");
+
+	zassert_equal(DT_PINCTRL_HAS_IDX(TEST_TEMP, 0), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_IDX(TEST_TEMP, 1), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_IDX(TEST_TEMP, 2), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_IDX(TEST_TEMP, 3), 0, "");
+
+	zassert_equal(DT_PINCTRL_HAS_NAME(TEST_TEMP, default), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_NAME(TEST_TEMP, sleep), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_NAME(TEST_TEMP, f_o_o2), 1, "");
+	zassert_equal(DT_PINCTRL_HAS_NAME(TEST_TEMP, bar), 0, "");
+
+#undef MAKE_TOKEN
+#define MAKE_TOKEN(pc_idx)						\
+	_CONCAT(NODE_ID_ENUM_,						\
+		DT_PINCTRL_IDX_TO_NAME_TOKEN(TEST_TEMP, pc_idx))
+#undef MAKE_UPPER_TOKEN
+#define MAKE_UPPER_TOKEN(pc_idx)					\
+	_CONCAT(NODE_ID_ENUM_,						\
+		DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(TEST_TEMP, pc_idx))
+	enum {
+		MAKE_TOKEN(0) = 10,
+		MAKE_TOKEN(1) = 11,
+		MAKE_TOKEN(2) = 12,
+		MAKE_TOKEN(3) = 13,
+
+		MAKE_UPPER_TOKEN(0) = 20,
+		MAKE_UPPER_TOKEN(1) = 21,
+		MAKE_UPPER_TOKEN(2) = 22,
+		MAKE_UPPER_TOKEN(3) = 23,
+	};
+
+	zassert_equal(NODE_ID_ENUM_default, 10, "");
+	zassert_equal(NODE_ID_ENUM_sleep, 11, "");
+	zassert_equal(NODE_ID_ENUM_f_o_o2, 12, "");
+
+	zassert_equal(NODE_ID_ENUM_DEFAULT, 20, "");
+	zassert_equal(NODE_ID_ENUM_SLEEP, 21, "");
+	zassert_equal(NODE_ID_ENUM_F_O_O2, 22, "");
+
+	/*
+	 * inst versions:
+	 */
+
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_BY_IDX(0, 0, 1),
+				  DT_NODELABEL(test_pincfg_b)), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_BY_IDX(0, 1, 0),
+				  DT_NODELABEL(test_pincfg_c)), "");
+
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_0(0, 0),
+				  DT_NODELABEL(test_pincfg_a)), "");
+
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_BY_NAME(0, default, 1),
+				  DT_NODELABEL(test_pincfg_b)), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_BY_NAME(0, sleep, 0),
+				  DT_NODELABEL(test_pincfg_c)), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PINCTRL_BY_NAME(0, f_o_o2, 0),
+				  DT_NODELABEL(test_pincfg_d)), "");
+
+	zassert_equal(DT_INST_PINCTRL_NAME_TO_IDX(0, default), 0, "");
+	zassert_equal(DT_INST_PINCTRL_NAME_TO_IDX(0, sleep), 1, "");
+	zassert_equal(DT_INST_PINCTRL_NAME_TO_IDX(0, f_o_o2), 2, "");
+
+	zassert_equal(DT_INST_NUM_PINCTRLS_BY_IDX(0, 0), 2, "");
+
+	zassert_equal(DT_INST_NUM_PINCTRLS_BY_NAME(0, default), 2, "");
+	zassert_equal(DT_INST_NUM_PINCTRLS_BY_NAME(0, f_o_o2), 1, "");
+
+	zassert_equal(DT_INST_NUM_PINCTRL_STATES(0), 3, "");
+
+	zassert_equal(DT_INST_PINCTRL_HAS_IDX(0, 0), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_IDX(0, 1), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_IDX(0, 2), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_IDX(0, 3), 0, "");
+
+	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, default), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, sleep), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 1, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, bar), 0, "");
+
+#undef MAKE_TOKEN
+#define MAKE_TOKEN(pc_idx)						\
+	_CONCAT(INST_ENUM_,						\
+			DT_INST_PINCTRL_IDX_TO_NAME_TOKEN(0, pc_idx))
+#undef MAKE_UPPER_TOKEN
+#define MAKE_UPPER_TOKEN(pc_idx)					\
+	_CONCAT(INST_ENUM_,						\
+			DT_INST_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(0, pc_idx))
+	enum {
+		MAKE_TOKEN(0) = 10,
+		MAKE_TOKEN(1) = 11,
+		MAKE_TOKEN(2) = 12,
+
+		MAKE_UPPER_TOKEN(0) = 20,
+		MAKE_UPPER_TOKEN(1) = 21,
+		MAKE_UPPER_TOKEN(2) = 22,
+	};
+
+	zassert_equal(INST_ENUM_default, 10, "");
+	zassert_equal(INST_ENUM_sleep, 11, "");
+	zassert_equal(INST_ENUM_f_o_o2, 12, "");
+
+	zassert_equal(INST_ENUM_DEFAULT, 20, "");
+	zassert_equal(INST_ENUM_SLEEP, 21, "");
+	zassert_equal(INST_ENUM_F_O_O2, 22, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder
+	/*
+	 * Tests when a node does NOT have any pinctrl properties.
+	 */
+
+	/* node_id versions */
+	zassert_equal(DT_NUM_PINCTRL_STATES(TEST_REG), 0, "");
+	zassert_equal(DT_PINCTRL_HAS_IDX(TEST_REG, 0), 0, "");
+	zassert_equal(DT_PINCTRL_HAS_NAME(TEST_REG, f_o_o2), 0, "");
+
+	/* inst versions */
+	zassert_equal(DT_INST_NUM_PINCTRL_STATES(0), 0, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_IDX(0, 0), 0, "");
+	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1960,7 +2119,8 @@ void test_main(void)
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
-			 ztest_unit_test(test_same_node)
+			 ztest_unit_test(test_same_node),
+			 ztest_unit_test(test_pinctrl)
 		);
 	ztest_run_test_suite(devicetree_api);
 }
