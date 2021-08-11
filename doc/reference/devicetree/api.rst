@@ -254,6 +254,34 @@ channels (e.g. ADC or DAC channels) for conversion.
 
 .. doxygengroup:: devicetree-io-channels
 
+Pinctrl (pin control)
+=====================
+
+These are used to access pin control properties by name or index.
+
+Devicetree nodes may have properties which specify pin control (sometimes known
+as pin mux) settings. These are expressed using ``pinctrl-<index>`` properties
+within the node, where the ``<index>`` values are contiguous integers starting
+from 0. These may also be named using the ``pinctrl-names`` property.
+
+Here is an example:
+
+.. code-block:: DTS
+
+   node {
+       ...
+       pinctrl-0 = <&foo &bar ...>;
+       pinctrl-1 = <&baz ...>;
+       pinctrl-names = "default", "sleep";
+   };
+
+Above, ``pinctrl-0`` has name ``"default"``, and ``pinctrl-1`` has name
+``"sleep"``. The ``pinctrl-<index>`` property values contain phandles. The
+``&foo``, ``&bar``, etc. phandles within the properties point to nodes whose
+contents vary by platform, and which describe a pin configuration for the node.
+
+.. doxygengroup:: devicetree-pinctrl
+
 PWM
 ===
 
