@@ -352,20 +352,16 @@ def write_special_props(node):
     # data cannot otherwise be obtained from write_vanilla_props()
     # results
 
-    global flash_area_num
-
-    out_comment("Special property macros:")
-
     # Macros that are special to the devicetree specification
+    out_comment("Macros for properties that are special in the specification:")
     write_regs(node)
     write_interrupts(node)
     write_compatibles(node)
     write_status(node)
 
-    if node.parent and "fixed-partitions" in node.parent.compats:
-        macro = f"{node.z_path_id}_PARTITION_ID"
-        out_dt_define(macro, flash_area_num)
-        flash_area_num += 1
+    # Macros that are special to bindings inherited from Linux, which
+    # we can't capture with the current bindings language.
+    write_fixed_partitions(node)
 
 def write_regs(node):
     # reg property: edtlib knows the right #address-cells and
@@ -511,6 +507,18 @@ def write_child_functions_status_okay(node):
 
 def write_status(node):
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
+
+
+def write_fixed_partitions(node):
+    # Macros for child nodes of each fixed-partitions node.
+
+    if not (node.parent and "fixed-partitions" in node.parent.compats):
+        return
+
+    global flash_area_num
+    out_comment("fixed-partitions identifier:")
+    out_dt_define(f"{node.z_path_id}_PARTITION_ID", flash_area_num)
+    flash_area_num += 1
 
 
 def write_vanilla_props(node):
