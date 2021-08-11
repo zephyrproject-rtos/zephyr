@@ -86,6 +86,7 @@ endchoice #CLOCK_STM32_SYSCLK_SRC
 config CLOCK_STM32_HSE_BYPASS
 	bool "HSE bypass"
 	depends on CLOCK_STM32_SYSCLK_SRC_HSE || CLOCK_STM32_PLL_SRC_HSE
+	depends on !SOC_SERIES_STM32WBX
 	help
 	  Enable this option to bypass external high-speed clock (HSE).
 

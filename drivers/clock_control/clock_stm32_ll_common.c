@@ -542,6 +542,14 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
+
+		/*
+		 * stm32wb have HSE capability but no bypass, so its binding
+		 * is not  compatible = "st_stm32_hse_clock", but "fixed-clock"
+		 * LL functions to enable/disable bypass doesn't exixt.
+		 * But HSE still needs to be enabled
+		 */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32_hse_clock, okay)
 		/* Check if need to enable HSE bypass feature or not */
 		if (IS_ENABLED(STM32_HSE_BYPASS)) {
 #ifdef CONFIG_SOC_SERIES_STM32WLX
@@ -554,6 +562,7 @@ int stm32_clock_control_init(const struct device *dev)
 			LL_RCC_HSE_DisableBypass();
 #endif
 		}
+#endif /* DT_NODE_HAS_COMPAT_STATUS(..., st_stm32_hse_clock, ...) */
 
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();
@@ -561,6 +570,7 @@ int stm32_clock_control_init(const struct device *dev)
 		/* Wait for HSE ready */
 		}
 	}
+
 
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
