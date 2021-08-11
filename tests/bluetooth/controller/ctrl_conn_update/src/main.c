@@ -49,6 +49,7 @@ struct pdu_data_llctrl_conn_update_ind conn_update_ind = { .win_size = 1U,
 							   .timeout = TIMEOUT,
 							   .instant = 6U };
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Default conn_param_req PDU */
 struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_MIN,
 							 .interval_max = INTVL_MAX,
@@ -110,6 +111,7 @@ struct pdu_data_llctrl_conn_param_rsp conn_param_rsp_B = {
 	.offset4 = 0xffffU,
 	.offset5 = 0xffffU
 };
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 /* Default conn_update_ind PDU (B) */
 struct pdu_data_llctrl_conn_update_ind conn_update_ind_B = {
@@ -121,12 +123,16 @@ struct pdu_data_llctrl_conn_update_ind conn_update_ind_B = {
 	.instant = 6U
 };
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 struct pdu_data_llctrl_conn_param_req *req_B = &conn_param_req_B;
 struct pdu_data_llctrl_conn_param_rsp *rsp_B = &conn_param_rsp_B;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 struct pdu_data_llctrl_conn_update_ind *cu_ind_B = &conn_update_ind_B;
 
 static struct ll_conn conn;
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void test_unmask_feature_conn_param_req(struct ll_conn *conn)
 {
 	conn->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
@@ -136,6 +142,7 @@ static bool test_get_feature_conn_param_req(struct ll_conn *conn)
 {
 	return (conn->llcp.fex.features_used & BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ));
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static void setup(void)
 {
@@ -154,6 +161,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
  * Master-initiated Connection Parameters Request procedure.
  * Master requests change in LE connection parameters, slave’s Host accepts.
@@ -2252,6 +2260,7 @@ void test_conn_update_sla_rem_collision(void)
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
 		      ctx_buffers_free());
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 /*
  * Parameter Request Procedure not supported.
