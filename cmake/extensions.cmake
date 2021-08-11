@@ -2980,6 +2980,77 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
+#   zephyr_linker_dts_memory(NAME <name> PATH <path> FLAGS <flags>)
+#   zephyr_linker_dts_memory(NAME <name> NODELABEL <nodelabel> FLAGS <flags>)
+#   zephyr_linker_dts_memory(NAME <name> CHOSEN <prop> FLAGS <flags>)
+#
+# Zephyr linker devicetree memory.
+# This function specifies a memory region for the platform in use based on its
+# devicetree configuration.
+#
+# The memory will only be defined if the devicetree node or a devicetree node
+# matching the nodelabel exists and has status okay.
+#
+# Only one of PATH, NODELABEL, and CHOSEN parameters may be given.
+#
+# NAME <name>      : Name of the memory region, for example FLASH.
+# PATH <path>      : Devicetree node identifier.
+# NODELABEL <label>: Node label
+# CHOSEN <prop>    : Chosen property, add memory section described by the
+#                    /chosen property if it exists.
+# FLAGS <flags>  : Flags describing properties of the memory region.
+#                  Currently supported:
+#                  r: Read-only region
+#                  w: Read-write region
+#                  x: Executable region
+#                  The flags r and x, or w and x may be combined like: rx, wx.
+#
+function(zephyr_linker_dts_memory)
+  set(single_args "CHOSEN;FLAGS;NAME;PATH;NODELABEL")
+  cmake_parse_arguments(DTS_MEMORY "" "${single_args}" "" ${ARGN})
+
+  if(DTS_MEMORY_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker_dts_memory(${ARGV0} ...) given unknown "
+                        "arguments: ${DTS_MEMORY_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if((DEFINED DTS_MEMORY_PATH AND (DEFINED DTS_MEMORY_NODELABEL OR DEFINED DTS_MEMORY_CHOSEN))
+     OR (DEFINED DTS_MEMORY_NODELABEL AND DEFINED DTS_MEMORY_CHOSEN))
+    message(FATAL_ERROR "zephyr_linker_dts_memory(${ARGV0} ...), only one of "
+                        "PATH, NODELABEL, and CHOSEN is allowed."
+    )
+  endif()
+
+  if(DEFINED DTS_MEMORY_NODELABEL)
+    dt_nodelabel(DTS_MEMORY_PATH NODELABEL ${DTS_MEMORY_NODELABEL})
+  endif()
+
+  if(DEFINED DTS_MEMORY_CHOSEN)
+    dt_chosen(DTS_MEMORY_PATH PROPERTY ${DTS_MEMORY_CHOSEN})
+  endif()
+
+  if(NOT DEFINED DTS_MEMORY_PATH)
+    return()
+  endif()
+
+  dt_node_exists(exists PATH ${DTS_MEMORY_PATH})
+  if(NOT ${exists})
+    return()
+  endif()
+
+  dt_reg_addr(addr PATH ${DTS_MEMORY_PATH})
+  dt_reg_size(size PATH ${DTS_MEMORY_PATH})
+
+  zephyr_linker_memory(
+    NAME  ${DTS_MEMORY_NAME}
+    START ${addr}
+    SIZE  ${size}
+    FLAGS ${DTS_MEMORY_FLAGS}
+  )
+endfunction()
+
+# Usage:
 #   zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>])
 #   zephyr_linker_group(NAME <name> GROUP <group>)
 #
