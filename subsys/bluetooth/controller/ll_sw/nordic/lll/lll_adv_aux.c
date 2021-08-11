@@ -52,6 +52,7 @@ static uint8_t lll_adv_connect_rsp_pdu[PDU_AC_LL_HEADER_SIZE +
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static void isr_done(void *param);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
 static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
@@ -297,7 +298,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_rx(phy_s);
 	} else {
-		radio_isr_set(lll_isr_done, lll);
+		radio_isr_set(isr_done, lll);
 		radio_switch_complete_and_disable();
 	}
 
@@ -342,6 +343,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_A(1);
 
 	return 0;
+}
+
+static void isr_done(void *param)
+{
+	struct event_done_extra *extra;
+
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+
+	/* Generate auxiliary radio event done */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_AUX);
+	LL_ASSERT(extra);
+
+	/* Cleanup radio event and dispatch the done event */
+	lll_isr_cleanup(param);
 }
 
 static void isr_tx(void *param)
@@ -472,7 +488,7 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_do_close:
-	radio_isr_set(lll_isr_done, param);
+	radio_isr_set(isr_done, param);
 	radio_disable();
 }
 
@@ -523,7 +539,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
 	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
 				   &rl_idx)) {
-		radio_isr_set(lll_isr_done, lll);
+		radio_isr_set(isr_done, lll);
 		radio_switch_complete_and_disable();
 		radio_pkt_tx_set(lll_adv_scan_rsp_curr_get(lll));
 

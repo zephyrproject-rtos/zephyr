@@ -1088,6 +1088,22 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 	return aux;
 }
 
+void ull_adv_aux_done(struct node_rx_event_done *done)
+{
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
+	struct ll_adv_set *adv;
+
+	/* Get reference to ULL context */
+	aux = CONTAINER_OF(done->param, struct ll_adv_aux_set, ull);
+	lll_aux = &aux->lll;
+	adv = HDR_LLL2ULL(lll_aux->adv);
+
+	/* Call the primary channel advertising done */
+	done->param = &adv->ull;
+	ull_adv_done(done);
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
