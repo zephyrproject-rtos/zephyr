@@ -493,7 +493,7 @@ def write_child_functions(node):
                 node.children.values()))
 
 def write_child_functions_status_okay(node):
-    # Writes macro that are helpers that will call a macro/function
+    # Writes macros that are helpers that will call a macro/function
     # for each child node with status "okay".
 
     functions = ''
