@@ -1856,6 +1856,11 @@ enum chip_pll_mode {
 #define IT83XX_GCTRL_CHIPVER         ECREG(IT83XX_GCTRL_BASE + 0x02)
 #define IT83XX_GCTRL_DBGROS          ECREG(IT83XX_GCTRL_BASE + 0x03)
 #define IT83XX_SMB_DBGR                    BIT(0)
+
+/*
+ * Writing 00h to this register and the CPU program counter will be paused
+ * until the next low to high transition of the 65.536 clock.
+ */
 #define IT83XX_GCTRL_WNCKR           ECREG(IT83XX_GCTRL_BASE + 0x0B)
 #define IT83XX_GCTRL_RSTS            ECREG(IT83XX_GCTRL_BASE + 0x06)
 #define IT83XX_GCTRL_BADRSEL         ECREG(IT83XX_GCTRL_BASE + 0x0A)
