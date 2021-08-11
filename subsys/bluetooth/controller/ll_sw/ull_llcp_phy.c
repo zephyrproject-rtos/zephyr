@@ -142,6 +142,7 @@ static void pu_prep_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t pu_select_phy_timing_restrict(struct ll_conn *conn, uint8_t phy_tx)
 {
 	/* select the probable PHY with longest Tx time, which
@@ -156,6 +157,7 @@ static uint8_t pu_select_phy_timing_restrict(struct ll_conn *conn, uint8_t phy_t
 
 	return phy_tx_time[phys];
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static void pu_set_timing_restrict(struct ll_conn *conn, uint8_t phy_tx)
 {
