@@ -375,6 +375,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	return 0;
 }
 #endif /* XXX_THIS_IS_OLD_XXX */
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 /**
  * @brief Pause the data path of a rx queue.
  */
@@ -390,6 +391,7 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 {
 	conn->pause_rx_data = 0U;
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 /**
  * @brief Restart procedure timeout 'timer'
