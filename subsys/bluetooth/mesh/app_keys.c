@@ -602,7 +602,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 	}
 }
 
-BT_MESH_SUBNET_CB_DEFINE(subnet_evt);
+BT_MESH_SUBNET_CB_DEFINE(app_keys) = {
+	.evt_handler = subnet_evt,
+};
 
 void bt_mesh_app_keys_reset(void)
 {
