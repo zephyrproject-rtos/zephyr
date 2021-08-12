@@ -1019,8 +1019,9 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 
 #define I2C_ITE_IT8XXX2_INIT(idx)                                              \
 	static void i2c_it8xxx2_config_func_##idx(void);                       \
-	static const struct i2c_alts_cfg i2c_alts_##idx[DT_INST_PROP_LEN       \
-		(idx, pinctrl_0)] = IT8XXX2_DT_ALT_ITEMS_LIST(idx);            \
+	static const struct i2c_alts_cfg                                       \
+		i2c_alts_##idx[DT_INST_NUM_PINCTRLS_BY_IDX(idx, 0)] =          \
+			IT8XXX2_DT_ALT_ITEMS_LIST(idx);                        \
 									       \
 	static const struct i2c_it8xxx2_config i2c_it8xxx2_cfg_##idx = {       \
 		.base = (uint8_t *)(DT_INST_REG_ADDR(idx)),                    \
