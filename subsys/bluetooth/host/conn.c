@@ -548,7 +548,12 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 		break;
 #endif
 	default:
+#if defined(CONFIG_BT_CONN)
 		frag = bt_conn_create_frag(0);
+#else
+		return NULL;
+#endif /* CONFIG_BT_CONN */
+
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -1114,6 +1119,68 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 	}
 
 	return (uint8_t)index;
+}
+
+
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
+						 size_t reserve,
+						 k_timeout_t timeout,
+						 const char *func, int line)
+#else
+struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
+					   size_t reserve, k_timeout_t timeout)
+#endif
+{
+	struct net_buf *buf;
+
+	/*
+	 * PDU must not be allocated from ISR as we block with 'K_FOREVER'
+	 * during the allocation
+	 */
+	__ASSERT_NO_MSG(!k_is_in_isr());
+
+	if (!pool) {
+#if defined(CONFIG_BT_CONN)
+		pool = &acl_tx_pool;
+#else
+		return NULL;
+#endif /* CONFIG_BT_CONN */
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, K_NO_WAIT, func, line);
+#else
+		buf = net_buf_alloc(pool, K_NO_WAIT);
+#endif
+		if (!buf) {
+			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
+#if defined(CONFIG_NET_BUF_LOG)
+			buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
+			buf = net_buf_alloc(pool, timeout);
+#endif
+		}
+	} else {
+#if defined(CONFIG_NET_BUF_LOG)
+		buf = net_buf_alloc_fixed_debug(pool, timeout, func,
+							line);
+#else
+		buf = net_buf_alloc(pool, timeout);
+#endif
+	}
+
+	if (!buf) {
+		BT_WARN("Unable to allocate buffer within timeout");
+		return NULL;
+	}
+
+	reserve += sizeof(struct bt_hci_acl_hdr) + BT_BUF_RESERVE;
+	net_buf_reserve(buf, reserve);
+
+	return buf;
 }
 
 /* Group Connected BT_CONN only in this */
@@ -2668,63 +2735,6 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 #else
 	return bt_conn_create_pdu_timeout(pool, reserve, timeout);
 #endif /* CONFIG_NET_BUF_LOG */
-}
-
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
-						 size_t reserve,
-						 k_timeout_t timeout,
-						 const char *func, int line)
-#else
-struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
-					   size_t reserve, k_timeout_t timeout)
-#endif
-{
-	struct net_buf *buf;
-
-	/*
-	 * PDU must not be allocated from ISR as we block with 'K_FOREVER'
-	 * during the allocation
-	 */
-	__ASSERT_NO_MSG(!k_is_in_isr());
-
-	if (!pool) {
-		pool = &acl_tx_pool;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DEBUG_CONN)) {
-#if defined(CONFIG_NET_BUF_LOG)
-		buf = net_buf_alloc_fixed_debug(pool, K_NO_WAIT, func, line);
-#else
-		buf = net_buf_alloc(pool, K_NO_WAIT);
-#endif
-		if (!buf) {
-			BT_WARN("Unable to allocate buffer with K_NO_WAIT");
-#if defined(CONFIG_NET_BUF_LOG)
-			buf = net_buf_alloc_fixed_debug(pool, timeout, func,
-							line);
-#else
-			buf = net_buf_alloc(pool, timeout);
-#endif
-		}
-	} else {
-#if defined(CONFIG_NET_BUF_LOG)
-		buf = net_buf_alloc_fixed_debug(pool, timeout, func,
-							line);
-#else
-		buf = net_buf_alloc(pool, timeout);
-#endif
-	}
-
-	if (!buf) {
-		BT_WARN("Unable to allocate buffer within timeout");
-		return NULL;
-	}
-
-	reserve += sizeof(struct bt_hci_acl_hdr) + BT_BUF_RESERVE;
-	net_buf_reserve(buf, reserve);
-
-	return buf;
 }
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
