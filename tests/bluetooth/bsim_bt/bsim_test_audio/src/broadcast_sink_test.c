@@ -13,6 +13,7 @@ extern enum bst_result_t bst_result;
 CREATE_FLAG(broadcaster_found);
 CREATE_FLAG(base_received);
 CREATE_FLAG(pa_synced);
+CREATE_FLAG(pa_sync_lost);
 
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 uint32_t broadcast_id)
@@ -52,6 +53,17 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	SET_FLAG(base_received);
 }
 
+static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
+{
+	if (TEST_FLAG(pa_sync_lost)) {
+		return;
+	}
+
+	printk("Sink %p disconnected\n", sink);
+
+	SET_FLAG(pa_sync_lost);
+}
+
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
 						0x03, 30, 240, 2,
@@ -63,7 +75,8 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.scan_recv = scan_recv_cb,
 	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
-	.pa_synced = pa_synced_cb
+	.pa_synced = pa_synced_cb,
+	.pa_sync_lost = pa_sync_lost_cb
 };
 
 static void test_main(void)
@@ -106,7 +119,8 @@ static void test_main(void)
 	WAIT_FOR_FLAG(base_received);
 	printk("BASE received\n");
 
-	k_sleep(K_SECONDS(10));
+	printk("Waiting for PA disconnected\n");
+	WAIT_FOR_FLAG(pa_sync_lost);
 
 	PASS("Broadcast sink passed\n");
 }
