@@ -86,6 +86,13 @@ static __aligned(XCHAL_DCACHE_LINESIZE) union {
 
 static uint32_t cpu_mask;
 
+/* Simple array of CPUs that are active and available for an IPI.  The
+ * IDC interrupt is ALSO used to bring a CPU out of reset, so we need
+ * to be absolutely sure we don't try to IPI a CPU that isn't ready to
+ * start, or else we'll launch it into garbage and crash the DSP.
+ */
+static bool cpus_active[CONFIG_MP_NUM_CPUS];
+
 /* Tiny assembly stub for calling z_mp_entry() on the auxiliary CPUs.
  * Mask interrupts, clear the register window state and set the stack
  * pointer.  This represents the minimum work required to run C code
@@ -243,6 +250,7 @@ void z_mp_entry(void)
 	cavs_idc_smp_init(NULL);
 #endif
 
+	cpus_active[start_rec.cpu] = true;
 	start_rec.alive = 1;
 
 	start_rec.fn(start_rec.arg);
@@ -362,12 +370,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 void arch_sched_ipi(void)
 {
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	uint32_t prid;
+	uint32_t curr = prid();
 
-	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
-		if (c != prid) {
-			IDC[prid].core[c].itc = BIT(31);
+		if (c != curr && cpus_active[c]) {
+			IDC[curr].core[c].itc = BIT(31);
 		}
 	}
 #else
