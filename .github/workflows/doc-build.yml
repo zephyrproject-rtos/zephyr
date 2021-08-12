@@ -19,6 +19,11 @@ on:
     - 'scripts/dts/**'
     - 'scripts/requirements-doc.txt'
 
+env:
+  # The latest CMake available directly with apt is 3.18, but we need >=3.20
+  # so we fetch that through pip.
+  CMAKE_VERSION: 3.20.5
+
 jobs:
   doc-build:
     name: "Documentation Build"
@@ -47,6 +52,7 @@ jobs:
         sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-doc.txt
         pip3 install west==0.11.0
+        pip3 install cmake==${CMAKE_VERSION}
 
     - name: west setup
       run: |
