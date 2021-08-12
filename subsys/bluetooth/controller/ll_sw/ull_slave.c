@@ -50,8 +50,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-static void invalid_release(struct lll_conn *lll, memq_link_t *link,
-			    struct node_rx_hdr *rx);
+static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
+			    memq_link_t *link, struct node_rx_hdr *rx);
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
@@ -117,7 +117,7 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* Do not connect twice to the same peer */
 	if (ull_conn_peer_connected(own_addr_type, own_addr,
 				    peer_addr_type, peer_id_addr)) {
-		invalid_release(lll, link, rx);
+		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
 	}
@@ -139,7 +139,7 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
 	    (lll->data_chan_hop > 16) || !lll->interval) {
-		invalid_release(lll, link, rx);
+		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
 	}
@@ -575,9 +575,12 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-static void invalid_release(struct lll_conn *lll, memq_link_t *link,
-			    struct node_rx_hdr *rx)
+static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
+			    memq_link_t *link, struct node_rx_hdr *rx)
 {
+	/* Reset the advertising disabled callback */
+	hdr->disabled_cb = NULL;
+
 	/* Let the advertiser continue with connectable advertising */
 	lll->slave.initiated = 0U;
 
