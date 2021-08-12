@@ -180,6 +180,12 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
+
 	_image_rodata_end = .;
 	MPU_ALIGN(_image_rodata_end - _image_rom_start);
 	_image_rom_end = .;
@@ -267,11 +273,6 @@ SECTIONS
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-sections.ld>
 
      GROUP_END(RAMABLE_REGION)
 
