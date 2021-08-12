@@ -26,6 +26,10 @@ set(NOSTDINC "")
 
 list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
+if(CONFIG_ARCMWDT_LIBC AND CONFIG_LIB_CPLUSPLUS)
+  list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/lib/src/c++/inc)
+endif()
+
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
 # link a dummy C file.
