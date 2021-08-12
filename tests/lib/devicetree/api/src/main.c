@@ -616,6 +616,10 @@ static void test_phandles(void)
 
 	/* phandle */
 	zassert_true(DT_NODE_HAS_PROP(TEST_PH, ph), "");
+	zassert_true(DT_SAME_NODE(DT_PROP(TEST_PH, ph),
+				  DT_NODELABEL(test_gpio_1)), "");
+	zassert_true(DT_SAME_NODE(DT_PROP_BY_IDX(TEST_PH, ph, 0),
+				  DT_NODELABEL(test_gpio_1)), "");
 	/* DT_PROP_BY_PHANDLE */
 	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "");
 
@@ -623,6 +627,8 @@ static void test_phandles(void)
 	zassert_true(DT_NODE_HAS_PROP(TEST_PH, phs), "");
 	zassert_equal(ARRAY_SIZE(phs_labels), 3, "");
 	zassert_equal(DT_PROP_LEN(TEST_PH, phs), 3, "");
+	zassert_true(DT_SAME_NODE(DT_PROP_BY_IDX(TEST_PH, phs, 1),
+				  DT_NODELABEL(test_gpio_2)), "");
 
 	/* DT_PROP_BY_PHANDLE_IDX */
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 0, label),
