@@ -291,7 +291,7 @@ extern char __ccm_end[];
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
-extern char __itcm_rom_start[];
+extern char __itcm_load_start[];
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
@@ -301,7 +301,7 @@ extern char __dtcm_bss_start[];
 extern char __dtcm_bss_end[];
 extern char __dtcm_noinit_start[];
 extern char __dtcm_noinit_end[];
-extern char __dtcm_data_rom_start[];
+extern char __dtcm_data_load_start[];
 extern char __dtcm_start[];
 extern char __dtcm_end[];
 #endif
