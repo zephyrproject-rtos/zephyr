@@ -57,6 +57,10 @@
 	status = "okay";
 };
 
+&dacc {
+	status = "okay";
+};
+
 &twihs0 {
 	status = "okay";
 };
