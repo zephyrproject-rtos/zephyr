@@ -651,10 +651,23 @@ struct bt_mesh_friend_cb {
  *
  *  @param _name Name of callback structure.
  */
+<<<<<<< HEAD
 #define BT_MESH_FRIEND_CB_DEFINE(_name)                                  \
 	static const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
 					     _CONCAT(bt_mesh_friend_cb_, \
+=======
+<<<<<<< HEAD
+#define BT_MESH_FRIEND_CB_DEFINE(_name)                                 \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,         \
+					     _CONCAT(bt_mesh_friend_cb, \
+>>>>>>> Bluetooth: Mesh: Missing `_` when concate with _name
 						     _name))
+=======
+#define BT_MESH_FRIEND_CB_DEFINE(_name)                                    \
+	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,          \
+					       _CONCAT(bt_mesh_friend_cb_, \
+						       _name))
+>>>>>>> Bluetooth: Mesh: Missing `_` when concate with _name
 
 /** @brief Terminate Friendship.
  *
