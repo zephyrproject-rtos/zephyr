@@ -70,6 +70,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_multidomain_link.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_LINK_IPC_SERVICE
+    log_link_ipc_service.c
+  )
+
 
 else()
   zephyr_sources(log_minimal.c)
