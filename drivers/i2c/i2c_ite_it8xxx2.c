@@ -25,14 +25,14 @@
 	(DT_NODELABEL(pinctrl_i2c_clk##idx), pinctrls))
 #define DEV_DATA_PINMUX(idx)    DEVICE_DT_GET(DT_PHANDLE \
 	(DT_NODELABEL(pinctrl_i2c_data##idx), pinctrls))
-#define DEV_CLK_PIN(idx)        DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, pin)
-#define DEV_DATA_PIN(idx)       DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, pin)
-#define DEV_CLK_ALT_FUNC(idx)   DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, alt_func)
-#define DEV_DATA_ALT_FUNC(idx)  DT_PHA(DT_PHANDLE_BY_IDX \
-	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, alt_func)
+#define DEV_CLK_PIN(idx)        DT_PHA( \
+	DT_INST_PINCTRL_BY_IDX(idx, 0, 0), pinctrls, pin)
+#define DEV_DATA_PIN(idx)       DT_PHA( \
+	DT_INST_PINCTRL_BY_IDX(idx, 1, 0), pinctrls, pin)
+#define DEV_CLK_ALT_FUNC(idx)   DT_PHA( \
+	DT_INST_PINCTRL_BY_IDX(idx, 0, 0), pinctrls, alt_func)
+#define DEV_DATA_ALT_FUNC(idx)  DT_PHA( \
+	DT_INST_PINCTRL_BY_IDX(idx, 1, 0), pinctrls, alt_func)
 
 #define I2C_STANDARD_PORT_COUNT 3
 /* Default PLL frequency. */
