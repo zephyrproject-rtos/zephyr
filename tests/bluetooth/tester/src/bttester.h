@@ -746,6 +746,7 @@ struct l2cap_connect_cmd {
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
+	uint8_t ecfc;
 } __packed;
 struct l2cap_connect_rp {
 	uint8_t num;

@@ -182,12 +182,12 @@ static void connect(uint8_t *data, uint16_t len)
 		allocated_channels[i] = &chan->le.chan;
 	}
 
-	if (cmd->num == 1) {
+	if (cmd->num == 1 && cmd->ecfc == 0) {
 		err = bt_l2cap_chan_connect(conn, &chan->le.chan, cmd->psm);
 		if (err < 0) {
 			goto fail;
 		}
-	} else if (cmd->num > 1) {
+	} else if (cmd->ecfc == 1) {
 #if defined(CONFIG_BT_L2CAP_ECRED)
 		err = bt_l2cap_ecred_chan_connect(conn, allocated_channels,
 							cmd->psm);
