@@ -93,10 +93,65 @@ const char *pm_device_state_str(enum pm_device_state state)
 	}
 }
 
+/*
+ * This function iterates over parent devices and
+ * set their state to the value given in @param context.
+ */
+static int device_required_cb(const struct device *dev,
+				void *context)
+{
+	int ret;
+
+	ret = pm_device_state_set(dev, *(enum pm_device_state *)context);
+	/* Ignore devices that are already in the right state or that don't
+	 * support PM.
+	 */
+	if ((ret == -EALREADY) || (ret == -ENOTSUP) || (ret == -ENOSYS)) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
+/*
+ * This function iterates over children devices and
+ * and check if they are @c PM_DEVICE_STATE_ACTIVE. If so,
+ * the parent can not be suspended.
+ */
+static int device_supported_cb(const struct device *dev,
+			      void *context)
+{
+	int ret;
+	enum pm_device_state state, target_state;
+
+	target_state = *(enum pm_device_state *)context;
+
+	ret = pm_device_state_get(dev, &state);
+
+	/* If the return is ENOSYS, it means that the device does not
+	 * support PM consequently it is probably active and we need
+	 * to keep queried device active as well.
+	 */
+	if (ret == -ENOSYS) {
+		return -EBUSY;
+	}
+
+	/* If a device that requires the queried device is active or
+	 * in a different state of the one requested, we have to keep
+	 * the queried device in its current state.
+	 */
+	if ((state == PM_DEVICE_STATE_ACTIVE) || (state != target_state)) {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
 int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state)
 {
 	int ret;
+	bool bringup = false;
 	enum pm_device_action action;
 
 	if (dev->pm_control == NULL) {
@@ -123,6 +178,7 @@ int pm_device_state_set(const struct device *dev,
 		}
 
 		action = PM_DEVICE_ACTION_RESUME;
+		bringup = true;
 		break;
 	case PM_DEVICE_STATE_LOW_POWER:
 		if (dev->pm->state == state) {
@@ -140,6 +196,16 @@ int pm_device_state_set(const struct device *dev,
 		break;
 	default:
 		return -ENOTSUP;
+	}
+
+	if (bringup) {
+		ret = device_required_foreach(dev, device_required_cb, &state);
+	} else {
+		ret = device_supported_foreach(dev, device_supported_cb, &state);
+	}
+
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = dev->pm_control(dev, action);
