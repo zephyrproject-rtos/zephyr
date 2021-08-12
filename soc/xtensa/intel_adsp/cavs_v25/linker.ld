@@ -35,16 +35,16 @@ PROVIDE(_MemErrorHandler = 0x00000000);
  * data (e.g. stacks) or shared data that is managed with explicit
  * cache flush/invalidate operations.
  *
- * The UNCACHED_RAM_OFFSET will be used before to move the address
- * pointer forward or backward so code and data land in correct
- * region. Remember to align the memory, and be sure to also emit the
+ * These macros will set up a segment start address correctly,
+ * including alignment to a cache line.  Be sure to also emit the
  * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
  * appropriate. (Forgetting the correct PHDR will actually work, as
  * the output tooling ignores it, but it will cause the linker to emit
  * 512MB of unused data into the output file!)
  *
  */
-#define UNCACHED_RAM_OFFSET	0x20000000
+#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & ~0x20000000)
 
 MEMORY
 {
@@ -115,7 +115,7 @@ MEMORY
 	org = RAM_BASE,
 	len = RAM_SIZE
   ucram :
-	org = RAM_BASE - UNCACHED_RAM_OFFSET,
+	org = RAM_BASE - 0x20000000,
 	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
@@ -465,20 +465,13 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  /*
-   * Address pointer here is at cached ram.
-   * So need to go into uncached memory region, hence
-   * the subtraction.
-   */
-  segstart_uncached_noinit = ALIGN(64) - UNCACHED_RAM_OFFSET;
-
-  .noinit segstart_uncached_noinit : ALIGN(64)
+  .noinit SEGSTART_UNCACHED : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
   } >ucram :ucram_phdr
 
-  .data : ALIGN(64)
+  .data SEGSTART_UNCACHED : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
     *(.data)
@@ -499,10 +492,7 @@ SECTIONS
     . = ALIGN(4096);
   } >ucram :ucram_phdr
 
-  /* Going back into cached memory region. */
-  segstart_cached_lit4 = ALIGN(64) + UNCACHED_RAM_OFFSET;
-
-  .lit4 segstart_cached_lit4 : ALIGN(64)
+  .lit4 SEGSTART_CACHED : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -515,6 +505,7 @@ SECTIONS
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
+  . = SEGSTART_UNCACHED;
 
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
@@ -523,9 +514,7 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
-  segstart_cached_altboot = ALIGN(64) + UNCACHED_RAM_OFFSET;
-
-  .AltBootManifest segstart_cached_altboot : ALIGN(64)
+  .AltBootManifest SEGSTART_CACHED : ALIGN(8)
   {
     /* Single entry of strorage manifest
      * consist of 3 items. Entries array
@@ -557,15 +546,14 @@ SECTIONS
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached : ALIGN(64)
+  .cached SEGSTART_CACHED :
   {
     *(.cached .cached.*)
   } >ram :ram_phdr
 
-  /* ...into uncached memory region. */
-  segstart_uncached_bss = ALIGN(4096) - UNCACHED_RAM_OFFSET;
+  . = ALIGN(4096);
 
-  .bss segstart_uncached_bss (NOLOAD) : ALIGN(64)
+  .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
@@ -585,16 +573,15 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } >ucram :ucram_phdr
 
-  _end = ALIGN(64);
+  . = SEGSTART_UNCACHED;
+  _end = ALIGN(8);
   PROVIDE(end = ALIGN(8));
 
   /* Re-adjust to the upper mapping for the final symbols below */
-  segstart_cached_stack = _end + UNCACHED_RAM_OFFSET;
-  . = segstart_cached_stack;
+  . = SEGSTART_CACHED;
   __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
 
-  segstart_uncached_lpbuf = ALIGN(4) - UNCACHED_RAM_OFFSET;
-  . = segstart_uncached_lpbuf;
+  . = SEGSTART_UNCACHED;
 
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
@@ -605,7 +592,8 @@ SECTIONS
   } >LP_SRAM_REGION
 
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  _heap_sentry = . - UNCACHED_RAM_OFFSET;
+  . = SEGSTART_UNCACHED;
+  _heap_sentry = .;
 
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
