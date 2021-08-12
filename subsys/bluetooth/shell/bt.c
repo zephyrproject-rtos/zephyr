@@ -1001,6 +1001,9 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "no-name")) {
 			param.options &= ~BT_LE_ADV_OPT_USE_NAME;
+		} else if (!strcmp(arg, "name-ad")) {
+			param.options |= BT_LE_ADV_OPT_USE_NAME;
+			param.options |= BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
 		} else if (!strcmp(arg, "one-time")) {
 			param.options |= BT_LE_ADV_OPT_ONE_TIME;
 		} else if (!strcmp(arg, "disable-37")) {
@@ -1126,6 +1129,9 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "name")) {
 			param->options |= BT_LE_ADV_OPT_USE_NAME;
+		} else if (!strcmp(arg, "name-ad")) {
+			param->options |= BT_LE_ADV_OPT_USE_NAME;
+			param->options |= BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
 		} else if (!strcmp(arg, "low")) {
 			param->options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		} else if (!strcmp(arg, "disable-37")) {
@@ -3070,7 +3076,7 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name] "  \
-		      "[directed "HELP_ADDR_LE"] [mode: low]"                 \
+		      "[name-ad] [directed "HELP_ADDR_LE"] [mode: low]"       \
 		      "[disable-37] [disable-38] [disable-39]"
 #else
 #define EXT_ADV_SCAN_OPT ""
@@ -3101,7 +3107,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name] "
-		      "[one-time] [disable-37] [disable-38] [disable-39]",
+		      "[one-time] [name-ad]"
+		      "[disable-37] [disable-38] [disable-39]",
 		      cmd_advertise, 2, 8),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
