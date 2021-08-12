@@ -620,7 +620,7 @@ config BT_DEBUG_HCI_CORE
 
 config BT_DEBUG_CONN
 	bool "Bluetooth connection debug"
-	depends on BT_CONN
+	depends on BT_CONN || BT_ISO
 	help
 	  This option enables debug support for Bluetooth
 	  connection handling.
