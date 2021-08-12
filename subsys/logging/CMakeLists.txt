@@ -65,6 +65,13 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     zephyr_sources(log_output_custom.c)
   endif()
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_MULTIDOMAIN_LINK
+    log_multidomain_link.c
+  )
+
+  endif()
+
 else()
   zephyr_sources(log_minimal.c)
 endif()

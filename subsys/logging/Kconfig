@@ -36,6 +36,12 @@ rsource "Kconfig.frontends"
 
 endif #LOG_FRONTEND
 
+if LOG_MULTIDOMAIN
+
+rsource "Kconfig.links"
+
+endif
+
 rsource "Kconfig.misc"
 
 endif # LOG
