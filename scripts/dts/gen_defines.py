@@ -682,10 +682,13 @@ def phandle_macros(prop, macro):
 
     if prop.type == "phandle":
         # A phandle is treated as a phandles with fixed length 1.
+        ret[f"{macro}"] = f"DT_{prop.val.z_path_id}"
+        ret[f"{macro}_IDX_0"] = f"DT_{prop.val.z_path_id}"
         ret[f"{macro}_IDX_0_PH"] = f"DT_{prop.val.z_path_id}"
         ret[f"{macro}_IDX_0_EXISTS"] = 1
     elif prop.type == "phandles":
         for i, node in enumerate(prop.val):
+            ret[f"{macro}_IDX_{i}"] = f"DT_{node.z_path_id}"
             ret[f"{macro}_IDX_{i}_PH"] = f"DT_{node.z_path_id}"
             ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     elif prop.type == "phandle-array":
