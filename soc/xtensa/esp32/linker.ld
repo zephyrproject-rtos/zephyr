@@ -281,6 +281,10 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     Z_LINK_ITERABLE_ALIGNED(bt_l2cap_br_fixed_chan, 4);
 #endif
 
+#if defined(CONFIG_BT_CONN)
+    Z_LINK_ITERABLE_ALIGNED(bt_conn_cb, 4)
+#endif
+
     Z_LINK_ITERABLE_ALIGNED(bt_gatt_service_static, 4);
 
 #if defined(CONFIG_BT_MESH)
