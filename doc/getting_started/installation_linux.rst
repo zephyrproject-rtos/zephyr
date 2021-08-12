@@ -139,9 +139,9 @@ there are several ways of obtaining a more recent one:
   .. code-block:: console
 
      cd ~
-     wget https://github.com/Kitware/CMake/releases/download/v3.15.3/cmake-3.15.3-Linux-x86_64.sh
-     chmod +x cmake-3.15.3-Linux-x86_64.sh
-     sudo ./cmake-3.15.3-Linux-x86_64.sh --skip-license --prefix=/usr/local
+     wget https://github.com/Kitware/CMake/releases/download/v3.21.1/cmake-3.21.1-Linux-x86_64.sh
+     chmod +x cmake-3.21.1-Linux-x86_64.sh
+     sudo ./cmake-3.21.1-Linux-x86_64.sh --skip-license --prefix=/usr/local
      hash -r
 
   The ``hash -r`` command may be necessary if the installation script
@@ -149,14 +149,14 @@ there are several ways of obtaining a more recent one:
 
 * Download and install from the pre-built binaries provided by the CMake
   project itself in the `CMake Downloads`_ page.
-  For example, to install version 3.13.1 in :file:`~/bin/cmake`:
+  For example, to install version 3.21.1 in :file:`~/bin/cmake`:
 
   .. code-block:: console
 
      mkdir $HOME/bin/cmake && cd $HOME/bin/cmake
-     wget https://github.com/Kitware/CMake/releases/download/v3.13.1/cmake-3.13.1-Linux-x86_64.sh
-     yes | sh cmake-3.13.1-Linux-x86_64.sh | cat
-     echo "export PATH=$PWD/cmake-3.13.1-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
+     wget https://github.com/Kitware/CMake/releases/download/v3.21.1/cmake-3.21.1-Linux-x86_64.sh
+     yes | sh cmake-3.21.1-Linux-x86_64.sh | cat
+     echo "export PATH=$PWD/cmake-3.21.1-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
 
 * Use ``pip3``:
 
