@@ -35,6 +35,7 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
@@ -977,9 +978,9 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 /* @brief Function sets CTE reception parameters for a connection.
  *
  * @param handle             Connection handle.
- * @param sampling_enable    Enable or disable CTE RX
- * @param slot_durations     Switching and samplig slot durations for
- *                           AoA mode.
+ * @param sampling_enable    Enable or disable CTE RX. When the parameter is set to false,
+ *                           @p slot_durations, @p switch_pattern_len and @ant_ids are ignored.
+ * @param slot_durations     Switching and samplig slot durations for AoA mode.
  * @param switch_pattern_len Number of antenna ids in switch pattern.
  * @param ant_ids            Array of antenna identifiers.
  *
@@ -1023,6 +1024,91 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 	}
 
 	return BT_HCI_ERR_SUCCESS;
+}
+
+/* @brief Function enables or disables CTE request control procedure for a connection.
+ *
+ * The procedure may be enabled in two modes:
+ * - single-shot, it is autmatically disabled when the occurrence finishes.
+ * - periodic, it is executed periodically until disabled, connection is lost or PHY is changed
+ *   to the one that does not support CTE.
+ *
+ * @param handle               Connection handle.
+ * @param enable               Enable or disable CTE request. When the parameter is set to false
+ *                             @p cte_request_interval, @requested_cte_length and
+ *                             @p requested_cte_type are ignored.
+ * @param cte_request_interval Value zero enables single-shot mode. Other values enable periodic
+ *                             mode. In periodic mode, the value is a number of connection envets
+ *                             the procedure is executed. The value may not be lower than
+ *                             connection peer latency.
+ * @param requested_cte_length Minimum value of CTE length requested from peer.
+ * @param requested_cte_type   Type of CTE requested from peer.
+ *
+ * @return HCI Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
+				      uint8_t requested_cte_length, uint8_t requested_cte_type)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!enable) {
+		/* There is no parameter validation for disable operation. */
+
+		/* TODO: Add missing implementation of disable CTE reques.
+		 * Requires refactored LLCPs.
+		 */
+	} else {
+		if (conn->df_rx_params.state == DF_CTE_SAMPLING_UNINITIALIZED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		/* TODO: check if CTE_REQ LLCP is active. Add when merged with refactored LLCPs */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
+		 * case the mandatory PHY1M is used (that supports CTE).
+		 */
+		if (conn->lll.phy_tx == PHY_CODED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
+		    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		/* If controller is aware of features supported by peer device then check
+		 * whether required features are enabled.
+		 */
+		if (conn->common.fex_valid &&
+		    (!(conn->llcp_feature.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
+		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
+		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
+		      !(conn->llcp_feature.features_peer &
+			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
+			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		}
+	}
+
+	/* TODO: implement disable of the CTE if PHY is changed to coded */
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
