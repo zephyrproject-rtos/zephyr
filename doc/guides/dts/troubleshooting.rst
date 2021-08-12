@@ -79,6 +79,39 @@ And if you're trying to **set** that property in a devicetree overlay:
    	clock-frequency = <115200>;
    };
 
+Look at the preprocessor output
+*******************************
+
+To save preprocessor output when using GCC-based toolchains, add
+``-save-temps=obj`` to the ``EXTRA_CFLAGS`` CMake variable. For example, to
+build :ref:`hello_world` with west with this option set, use:
+
+.. code-block:: sh
+
+   west build -b BOARD samples/hello_world -- -DEXTRA_CFLAGS=-save-temps=obj
+
+This will create a preprocessor output file named :file:`foo.c.i` in the build
+directory for each source file :file:`foo.c`.
+
+You can then search for the file in the build directory to see what your
+devicetree macros expanded to. For example, on macOS and Linux, using ``find``
+to find :file:`main.c.i`:
+
+.. code-block:: sh
+
+   $ find build -name main.c.i
+   build/CMakeFiles/app.dir/src/main.c.i
+
+It's usually easiest to run a style formatter on the results before opening
+them. For example, to use ``clang-format`` to reformat the file in place:
+
+.. code-block:: sh
+
+   clang-format -i build/CMakeFiles/app.dir/src/main.c.i
+
+You can then open the file in your favorite editor to view the final C results
+after preprocessing.
+
 Validate properties
 *******************
 
