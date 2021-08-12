@@ -2367,7 +2367,8 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == BT_EVENT_CMD_TX) {
 				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+			} else if (IS_ENABLED(CONFIG_BT_CONN) ||
+				   IS_ENABLED(CONFIG_BT_ISO)) {
 				struct bt_conn *conn;
 
 				if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
@@ -2396,8 +2397,13 @@ static void process_events(struct k_poll_event *ev, int count)
 #define EV_COUNT (2 + CONFIG_BT_MAX_CONN)
 #endif /* CONFIG_BT_ISO */
 #else
+#if defined(CONFIG_BT_ISO)
+/* command FIFO + MAX_ISO_CONN */
+#define EV_COUNT (1 + CONFIG_BT_ISO_MAX_CHAN)
+#else
 /* command FIFO */
 #define EV_COUNT 1
+#endif /* CONFIG_BT_ISO */
 #endif /* CONFIG_BT_CONN */
 
 static void hci_tx_thread(void *p1, void *p2, void *p3)
@@ -2417,7 +2423,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 		events[0].state = K_POLL_STATE_NOT_READY;
 		ev_count = 1;
 
-		if (IS_ENABLED(CONFIG_BT_CONN)) {
+		if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_ISO)) {
 			ev_count += bt_conn_prepare_events(&events[1]);
 		}
 
@@ -2480,6 +2486,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	k_sem_init(&bt_dev.le.acl_pkts, pkts, pkts);
 }
 #endif /* !defined(CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_CONN */
 
 static void le_read_buffer_size_complete(struct net_buf *buf)
 {
@@ -2487,6 +2494,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("status 0x%02x", rp->status);
 
+#if defined(CONFIG_BT_CONN)
 	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->le_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
@@ -2496,6 +2504,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	       bt_dev.le.acl_mtu);
 
 	k_sem_init(&bt_dev.le.acl_pkts, rp->le_max_num, rp->le_max_num);
+#endif /* CONFIG_BT_CONN */
 }
 
 static void read_buffer_size_v2_complete(struct net_buf *buf)
@@ -2505,6 +2514,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 
 	BT_DBG("status %u", rp->status);
 
+#if defined(CONFIG_BT_CONN)
 	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
@@ -2514,6 +2524,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 		bt_dev.le.acl_mtu);
 
 	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
+#endif /* CONFIG_BT_CONN */
 
 	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
 	if (!bt_dev.le.iso_mtu) {
@@ -2530,7 +2541,6 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 
 static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 {
-#if defined(CONFIG_BT_ISO)
 	struct bt_hci_cp_le_set_host_feature *cp;
 	struct net_buf *buf;
 
@@ -2544,12 +2554,7 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	cp->bit_value = bit_value;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_FEATURE, buf, NULL);
-#else
-	return -ENOTSUP;
-#endif /* CONFIG_BT_ISO */
 }
-
-#endif /* CONFIG_BT_CONN */
 
 static void read_supported_commands_complete(struct net_buf *buf)
 {
@@ -2778,7 +2783,6 @@ static int le_set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
 
-#if defined(CONFIG_BT_CONN)
 static int le_init_iso(void)
 {
 	int err;
@@ -2799,7 +2803,9 @@ static int le_init_iso(void)
 			return err;
 		}
 		read_buffer_size_v2_complete(rsp);
-	} else {
+
+		net_buf_unref(rsp);
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		BT_WARN("Read Buffer Size V2 command is not supported."
 			"No ISO buffers will be available");
 
@@ -2810,12 +2816,12 @@ static int le_init_iso(void)
 			return err;
 		}
 		le_read_buffer_size_complete(rsp);
+
+		net_buf_unref(rsp);
 	}
 
-	net_buf_unref(rsp);
 	return 0;
 }
-#endif /* CONFIG_BT_CONN */
 
 static int le_init(void)
 {
@@ -2839,14 +2845,13 @@ static int le_init(void)
 	read_le_features_complete(rsp);
 	net_buf_unref(rsp);
 
-#if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_ISO(bt_dev.le.features)) {
 		err = le_init_iso();
 		if (err) {
 			return err;
 		}
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		/* Read LE Buffer Size */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
 					   NULL, &rsp);
@@ -2856,7 +2861,6 @@ static int le_init(void)
 		le_read_buffer_size_complete(rsp);
 		net_buf_unref(rsp);
 	}
-#endif /* CONFIG_BT_CONN */
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
