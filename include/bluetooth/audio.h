@@ -601,6 +601,17 @@ struct bt_audio_capability_ops {
 	 *  @param err 0 in case of success or negative value in case of error.
 	 */
 	void                     (*scan_term)(int err);
+
+	/** @brief Periodic advertising synchronization lost callback
+	 *
+	 *  The periodic advertising synchronization lost callback is called if
+	 *  the periodic advertising sync is lost. If this happens, the sink
+	 *  object is released. To synchronize to the broadcaster again,
+	 *  bt_audio_broadcaster_scan_start  must be called.
+	 *
+	 *  @param sink          Pointer to the sink structure.
+	 */
+	void                    (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
 };
 
 /** @brief Channel operation. */
