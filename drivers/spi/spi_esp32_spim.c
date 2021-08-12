@@ -63,6 +63,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
 	size_t chunk_len = spi_context_max_continuous_chunk(&data->ctx);
+	chunk_len = MIN(chunk_len, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
 	/* clean up and prepare SPI hal */
 	memset((uint32_t *) hal->hw->data_buf, 0, sizeof(hal->hw->data_buf));
