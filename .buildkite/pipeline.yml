@@ -10,7 +10,7 @@ steps:
       manual: true
     plugins:
       - docker#v3.5.0:
-          image: "zephyrprojectrtos/ci:v0.18.0"
+          image: "zephyrprojectrtos/ci:v0.18.2"
           propagate-environment: true
           volumes:
             - "/var/lib/buildkite-agent/git-mirrors:/var/lib/buildkite-agent/git-mirrors"
