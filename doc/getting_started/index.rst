@@ -62,7 +62,7 @@ The current minimum required version for the main dependencies are:
      - Min. Version
 
    * - `CMake <https://cmake.org/>`_
-     - 3.13.1
+     - 3.20.0
 
    * - `Python <https://www.python.org/>`_
      - 3.6
@@ -75,6 +75,16 @@ The current minimum required version for the main dependencies are:
    .. group-tab:: Ubuntu
 
       .. _install_dependencies_ubuntu:
+
+      #. Download, inspect and execute the Kitware archive script to add the
+         Kitware APT repository to your sources list.
+         A detailed explanation of ``kitware-archive.sh`` can be found here
+         `kitware third-party apt repository <https://apt.kitware.com/>`_::
+
+         .. code-block:: bash
+
+            wget https://apt.kitware.com/kitware-archive.sh
+            sudo bash kitware-archive.sh
 
       #. Use ``apt`` to install the required dependencies:
 
