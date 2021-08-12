@@ -228,6 +228,15 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 			/* Extended options require extended advertising. */
 			return false;
 		}
+
+		if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		    (param->options & BT_LE_ADV_OPT_SCANNABLE) &&
+		    (param->options & BT_LE_ADV_OPT_FORCE_NAME_IN_AD)) {
+			/* Advertising data is not permitted for an extended
+			 * scannable advertiser.
+			 */
+			return false;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
@@ -472,7 +481,7 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 			name, strlen(name));
 	}
 
-	if (!(ext_adv && scannable) || force_name_in_ad) {
+	if (!(ext_adv && scannable)) {
 		d_len = 1;
 		d[0].data = ad;
 		d[0].len = ad_len;
