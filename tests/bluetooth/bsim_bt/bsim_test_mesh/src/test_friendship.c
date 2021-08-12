@@ -256,9 +256,9 @@ static void test_friend_msg(void)
 	 * transport and network parts of the second packet.
 	 * Ensures coverage for the regression reported in #32033.
 	 */
-	ASSERT_OK(bt_mesh_test_send(friend_lpn_addr, 5, 0, K_SECONDS(1)),
+	ASSERT_OK(bt_mesh_test_send(friend_lpn_addr, BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
 		  "Unseg send failed");
-	ASSERT_OK(bt_mesh_test_send(friend_lpn_addr, 5, 0, K_SECONDS(1)),
+	ASSERT_OK(bt_mesh_test_send(friend_lpn_addr, BT_MESH_SDU_UNSEG_MAX, 0, K_SECONDS(1)),
 		  "Unseg send failed");
 
 	/* Two messages require 2 polls plus the "no more messages" msg */
@@ -421,9 +421,9 @@ static void test_lpn_msg_frnd(void)
 
 	/* Receive two unsegmented messages */
 	ASSERT_OK(bt_mesh_lpn_poll(), "Poll failed");
-	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(2)),
+	ASSERT_OK(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr, K_SECONDS(2)),
 		  "Failed to receive message");
-	ASSERT_OK(bt_mesh_test_recv(5, cfg->addr, K_SECONDS(2)),
+	ASSERT_OK(bt_mesh_test_recv(BT_MESH_SDU_UNSEG_MAX, cfg->addr, K_SECONDS(2)),
 		  "Failed to receive message");
 
 	k_sleep(K_SECONDS(3));
