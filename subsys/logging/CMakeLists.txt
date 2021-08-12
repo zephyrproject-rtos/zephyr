@@ -70,7 +70,6 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_multidomain_link.c
   )
 
-  endif()
 
 else()
   zephyr_sources(log_minimal.c)
