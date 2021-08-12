@@ -19,10 +19,11 @@ LOG_MODULE_REGISTER(spi_nrfx_spim);
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
-	size_t chunk_len;
-	bool   busy;
+	size_t  chunk_len;
+	bool    busy;
+	bool    initialized;
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
-	uint8_t   buffer[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE];
+	uint8_t buffer[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE];
 #endif
 };
 
@@ -30,8 +31,10 @@ struct spi_nrfx_config {
 	nrfx_spim_t	   spim;
 	size_t		   max_chunk_len;
 	uint32_t	   max_freq;
-	nrfx_spim_config_t config;
+	nrfx_spim_config_t def_config;
 };
+
+static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
 static inline struct spi_nrfx_data *get_dev_data(const struct device *dev)
 {
@@ -105,20 +108,20 @@ static inline nrf_spim_bit_order_t get_nrf_spim_bit_order(uint16_t operation)
 static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
+	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	const struct spi_nrfx_config *dev_config = get_dev_config(dev);
-	struct spi_context *ctx = &get_dev_data(dev)->ctx;
-	const nrfx_spim_t *spim = &dev_config->spim;
+	struct spi_context *ctx = &dev_data->ctx;
 	uint32_t max_freq = dev_config->max_freq;
-	nrf_spim_frequency_t spim_frequency;
+	nrfx_spim_config_t config;
+	nrfx_err_t result;
 
-	if (spi_context_configured(ctx, spi_cfg)) {
+	if (dev_data->initialized && spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
 		return 0;
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s",
-			    dev->name);
+		LOG_ERR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -133,8 +136,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits"
-			    " are not supported");
+		LOG_ERR("Word sizes other than 8 bits are not supported");
 		return -EINVAL;
 	}
 
@@ -142,9 +144,6 @@ static int configure(const struct device *dev,
 		LOG_ERR("Frequencies lower than 125 kHz are not supported");
 		return -EINVAL;
 	}
-
-	ctx->config = spi_cfg;
-	spi_context_cs_configure(ctx);
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	/* On nRF5340, the 32 Mbps speed is supported by the application core
@@ -156,14 +155,31 @@ static int configure(const struct device *dev,
 		max_freq = 16000000;
 	}
 #endif
-	/* Limit the frequency to that supported by the SPIM instance */
-	spim_frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
-						    max_freq));
 
-	nrf_spim_configure(spim->p_reg,
-			   get_nrf_spim_mode(spi_cfg->operation),
-			   get_nrf_spim_bit_order(spi_cfg->operation));
-	nrf_spim_frequency_set(spim->p_reg, spim_frequency);
+	config = dev_config->def_config;
+
+	/* Limit the frequency to that supported by the SPIM instance. */
+	config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
+						      max_freq));
+	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
+	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
+
+	if (dev_data->initialized) {
+		nrfx_spim_uninit(&dev_config->spim);
+		dev_data->initialized = false;
+	}
+
+	result = nrfx_spim_init(&dev_config->spim, &config,
+				event_handler, dev_data);
+	if (result != NRFX_SUCCESS) {
+		LOG_ERR("Failed to initialize nrfx driver: %08x", result);
+		return -EIO;
+	}
+
+	dev_data->initialized = true;
+
+	ctx->config = spi_cfg;
+	spi_context_cs_configure(ctx);
 
 	return 0;
 }
@@ -225,6 +241,18 @@ static void transfer_next_chunk(const struct device *dev)
 
 	spi_context_complete(ctx, error);
 	dev_data->busy = false;
+}
+
+static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
+{
+	struct spi_nrfx_data *dev_data = p_context;
+
+	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
+		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
+		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
+
+		transfer_next_chunk(dev_data->dev);
+	}
 }
 
 static int transceive(const struct device *dev,
@@ -301,41 +329,6 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 	.release = spi_nrfx_release,
 };
 
-
-static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
-{
-	struct spi_nrfx_data *dev_data = p_context;
-
-	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
-		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
-		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
-
-		transfer_next_chunk(dev_data->dev);
-	}
-}
-
-static int init_spim(const struct device *dev)
-{
-	struct spi_nrfx_data *data = get_dev_data(dev);
-	nrfx_err_t result;
-
-	data->dev = dev;
-
-	/* This sets only default values of frequency, mode and bit order.
-	 * The proper ones are set in configure() when a transfer is started.
-	 */
-	result = nrfx_spim_init(&get_dev_config(dev)->spim,
-				&get_dev_config(dev)->config,
-				event_handler,
-				data);
-	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
-		return -EBUSY;
-	}
-
-	return 0;
-}
-
 #ifdef CONFIG_PM_DEVICE
 static int spim_nrfx_pm_control(const struct device *dev,
 				enum pm_device_action action)
@@ -346,13 +339,14 @@ static int spim_nrfx_pm_control(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		ret = init_spim(dev);
-		/* Force reconfiguration before next transfer */
-		data->ctx.config = NULL;
+		/* No action needed at this point, nrfx_spim_init() will be
+		 * called at configuration before the next transfer.
+		 */
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_spim_uninit(&config->spim);
+		data->initialized = false;
 		break;
 
 	default:
@@ -401,28 +395,25 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
-		int err = init_spim(dev);				       \
 		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
-		return err;						       \
+		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 		.max_freq = SPIM##idx##_MAX_DATARATE * 1000000,		       \
-		.config = {						       \
+		.def_config = {						       \
 			.sck_pin   = SPIM_PROP(idx, sck_pin),		       \
 			.mosi_pin  = SPIM_PROP(idx, mosi_pin),		       \
 			.miso_pin  = SPIM_PROP(idx, miso_pin),		       \
 			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		       \
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
-			.frequency = NRF_SPIM_FREQ_4M,			       \
-			.mode      = NRF_SPIM_MODE_0,			       \
-			.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST,	       \
 			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		}							       \
