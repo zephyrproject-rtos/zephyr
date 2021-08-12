@@ -1570,6 +1570,42 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 	 */
 }
 
+static void pa_term(struct bt_le_per_adv_sync *sync,
+		    const struct bt_le_per_adv_sync_term_info *info)
+{
+	struct bt_audio_broadcast_sink *sink;
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	sink = broadcast_sink_get_by_pa(sync);
+	if (sink == NULL) {
+		/* Not ours */
+		return;
+	}
+
+	BT_DBG("PA sync with broadcaster with ID 0x%06X lost", sink->broadcast_id);
+
+	memset(sink, 0, sizeof(*sink));
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		/* Terminate early if we do not have any audio sink
+		 * capabilities
+		 */
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->pa_sync_lost != NULL) {
+			ops->pa_sync_lost(sink);
+		}
+	}
+}
+
 static bool net_buf_decode_codec_ltv(struct net_buf_simple *buf,
 				     struct bt_codec_data *codec_data)
 {
@@ -1929,6 +1965,7 @@ static void sync_broadcast_pa(sys_slist_t *lst,
 		static struct bt_le_per_adv_sync_cb cb = {
 			.synced = pa_synced,
 			.recv = pa_recv,
+			.term = pa_term,
 			.biginfo = biginfo_recv
 		};
 
