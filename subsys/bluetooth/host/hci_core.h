@@ -92,7 +92,9 @@ enum {
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
 	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME,
+	BT_ADV_INCLUDE_NAME_AD,
+	/* Advertiser should include name in scan response data */
+	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -121,10 +123,6 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
-	/* The device name has been forced to appear in the advertising data
-	 * instead of in the scan response data
-	 */
-	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };
