@@ -3669,7 +3669,11 @@ static void modem_reset(void)
 	set_network_state(HL7800_NOT_REGISTERED);
 	set_startup_state(HL7800_STARTUP_STATE_UNKNOWN);
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
-	set_fota_state(HL7800_FOTA_IDLE);
+	if (ictx.fw_update_state == HL7800_FOTA_REBOOT_AND_RECONFIGURE) {
+		set_fota_state(HL7800_FOTA_COMPLETE);
+	} else {
+		set_fota_state(HL7800_FOTA_IDLE);
+	}
 #endif
 	k_sem_reset(&ictx.mdm_awake);
 }
@@ -4110,12 +4114,6 @@ int32_t mdm_hl7800_reset(void)
 	hl7800_lock();
 
 	ret = modem_reset_and_configure();
-
-#ifdef CONFIG_MODEM_HL7800_FW_UPDATE
-	if (ictx.fw_update_state == HL7800_FOTA_REBOOT_AND_RECONFIGURE) {
-		set_fota_state(HL7800_FOTA_COMPLETE);
-	}
-#endif
 
 	hl7800_unlock();
 
