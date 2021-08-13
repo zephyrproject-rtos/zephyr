@@ -362,54 +362,7 @@ uint8_t bt_get_phy(uint8_t hci_phy)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
-static void hci_acl(struct net_buf *buf)
-{
-	struct bt_hci_acl_hdr *hdr;
-	uint16_t handle, len;
-	struct bt_conn *conn;
-	uint8_t flags;
-
-	BT_DBG("buf %p", buf);
-
-	BT_ASSERT(buf->len >= sizeof(*hdr));
-
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	len = sys_le16_to_cpu(hdr->len);
-	handle = sys_le16_to_cpu(hdr->handle);
-	flags = bt_acl_flags(handle);
-
-	acl(buf)->handle = bt_acl_handle(handle);
-	acl(buf)->index = BT_CONN_INDEX_INVALID;
-
-	BT_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
-
-	if (buf->len != len) {
-		BT_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
-		net_buf_unref(buf);
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(acl(buf)->handle);
-	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", acl(buf)->handle);
-		net_buf_unref(buf);
-		return;
-	}
-
-	acl(buf)->index = bt_conn_index(conn);
-
-	bt_conn_recv(conn, buf, flags);
-	bt_conn_unref(conn);
-}
-
-static void hci_data_buf_overflow(struct net_buf *buf)
-{
-	struct bt_hci_evt_data_buf_overflow *evt = (void *)buf->data;
-
-	BT_WARN("Data buffer overflow (link type 0x%02x)", evt->link_type);
-}
-
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -468,6 +421,55 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		bt_conn_unref(conn);
 	}
+}
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+
+#if defined(CONFIG_BT_CONN)
+static void hci_acl(struct net_buf *buf)
+{
+	struct bt_hci_acl_hdr *hdr;
+	uint16_t handle, len;
+	struct bt_conn *conn;
+	uint8_t flags;
+
+	BT_DBG("buf %p", buf);
+
+	BT_ASSERT(buf->len >= sizeof(*hdr));
+
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+	len = sys_le16_to_cpu(hdr->len);
+	handle = sys_le16_to_cpu(hdr->handle);
+	flags = bt_acl_flags(handle);
+
+	acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->index = BT_CONN_INDEX_INVALID;
+
+	BT_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
+
+	if (buf->len != len) {
+		BT_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
+		net_buf_unref(buf);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(acl(buf)->handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", acl(buf)->handle);
+		net_buf_unref(buf);
+		return;
+	}
+
+	acl(buf)->index = bt_conn_index(conn);
+
+	bt_conn_recv(conn, buf, flags);
+	bt_conn_unref(conn);
+}
+
+static void hci_data_buf_overflow(struct net_buf *buf)
+{
+	struct bt_hci_evt_data_buf_overflow *evt = (void *)buf->data;
+
+	BT_WARN("Data buffer overflow (link type 0x%02x)", evt->link_type);
 }
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -3314,13 +3316,14 @@ static const struct event_handler prio_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_DATA_BUF_OVERFLOW,
 		      hci_data_buf_overflow,
 		      sizeof(struct bt_hci_evt_data_buf_overflow)),
+	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete_prio,
+		      sizeof(struct bt_hci_evt_disconn_complete)),
+#endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	EVENT_HANDLER(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 		      hci_num_completed_packets,
 		      sizeof(struct bt_hci_evt_num_completed_packets)),
-	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete_prio,
-		      sizeof(struct bt_hci_evt_disconn_complete)),
-
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 };
 
 void hci_event_prio(struct net_buf *buf)
