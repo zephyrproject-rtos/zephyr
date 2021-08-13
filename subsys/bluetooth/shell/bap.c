@@ -148,7 +148,8 @@ static void print_codec(struct bt_codec *codec)
 			    codec->data[i].data.type,
 			    codec->data[i].data.data_len);
 		shell_hexdump(ctx_shell, codec->data[i].data.data,
-			      codec->data[i].data.data_len);
+			      codec->data[i].data.data_len -
+				sizeof(codec->data[i].data.type));
 	}
 
 	for (i = 0; i < codec->meta_count; i++) {
@@ -156,7 +157,8 @@ static void print_codec(struct bt_codec *codec)
 			    codec->meta[i].data.type,
 			    codec->meta[i].data.data_len);
 		shell_hexdump(ctx_shell, codec->meta[i].data.data,
-			      codec->meta[i].data.data_len);
+			      codec->data[i].data.data_len -
+				sizeof(codec->meta[i].data.type));
 	}
 }
 
