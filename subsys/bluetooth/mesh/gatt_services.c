@@ -640,7 +640,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 	}
 }
 
-BT_MESH_SUBNET_CB_DEFINE(subnet_evt);
+BT_MESH_SUBNET_CB_DEFINE(gatt_services) = {
+	.evt_handler = subnet_evt,
+};
 
 static void proxy_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
