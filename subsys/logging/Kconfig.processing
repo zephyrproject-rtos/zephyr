@@ -67,6 +67,13 @@ config LOG_PROCESS_THREAD
 
 if LOG_PROCESS_THREAD
 
+config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
+	int "Set log processing thread startup delay"
+	default 0
+	help
+	  Log processing thread starts after requested delay given in
+	  milliseconds. When started, thread process any buffered messages.
+
 config LOG_PROCESS_THREAD_SLEEP_MS
 	int "Set internal log processing thread sleep period"
 	default 1000
