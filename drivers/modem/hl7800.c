@@ -563,6 +563,9 @@ static void mdm_vgpio_work_cb(struct k_work *item);
 static void mdm_reset_work_callback(struct k_work *item);
 static int write_apn(char *access_point_name);
 static void hl7800_build_mac(void);
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+static void mark_sockets_for_reconfig(void);
+#endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 static char *get_fota_state_string(enum mdm_hl7800_fota_state state);
@@ -2251,6 +2254,10 @@ static bool on_cmd_startup_report(struct net_buf **buf, uint16_t len)
 		PRINT_AWAKE_MSG;
 		ictx.wait_for_KSUP = false;
 		ictx.mdm_startup_reporting_on = true;
+		ictx.reconfig_IP_connection = true;
+#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
+		mark_sockets_for_reconfig();
+#endif
 		set_sleep_state(HL7800_SLEEP_STATE_AWAKE);
 		k_sem_give(&ictx.mdm_awake);
 	}
