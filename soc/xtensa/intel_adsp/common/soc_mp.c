@@ -434,12 +434,10 @@ void soc_idc_init(void)
 		IDC[core].busy_int |= coremask;
 		IDC[core].done_int &= ~coremask;
 
-		/* Also unmask the interrupt for every core in the L2
-		 * mask register. Really this should have an API
-		 * exposed out of the interrupt controller layer...
+		/* Also unmask the IDC interrupt for every core in the
+		 * L2 mask register.
 		 */
-		sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
-			    CAVS_ICTL_INT_CPU_OFFSET(core), 8);
+		CAVS_INTCTRL[core].l2.clear = CAVS_L2_IDC;
 
 	}
 }
