@@ -105,6 +105,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&backup_sram {
+	status = "okay";
+};
+
 &timers12 {
 	status = "okay";
 
