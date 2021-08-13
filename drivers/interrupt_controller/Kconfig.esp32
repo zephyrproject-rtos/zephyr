@@ -5,7 +5,7 @@
 
 config INTC_ESP32_DECISIONS_LOG
 	bool "Enables ESP32 interrupt allocator logging"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2
 	select LOG
 	help
 	  Enable this option to visualize information on decisions made by the
