@@ -2,6 +2,7 @@ identifier: mps2_an521_remote
 name: ARM V2M MPS2-AN521_remote
 type: mcu
 arch: arm
+simulation: qemu
 toolchain:
   - gnuarmemb
   - zephyr
