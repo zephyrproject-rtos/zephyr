@@ -981,6 +981,10 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
  * advertiser set is currently advertising. Stop the advertising set before
  * calling this function.
  *
+ * @note When changing the option @ref BT_LE_ADV_OPT_USE_NAME then
+ *       @ref bt_le_ext_adv_set_data needs to be called in order to update the
+ *       advertising data and scan response data.
+ *
  * @param adv   Advertising set object.
  * @param param Advertising parameters.
  *
