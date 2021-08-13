@@ -126,9 +126,13 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
 {
 	uint8_t first, last;
 
+	/* TODO: Make this unique mechanism to update last element in double
+	 *       buffer a re-usable utility function.
+	 */
 	first = df_cfg->first;
 	last = df_cfg->last;
 	if (first == last) {
+		/* Return the index of next free PDU in the double buffer */
 		last++;
 		if (last == DOUBLE_BUFFER_SIZE) {
 			last = 0U;
@@ -136,10 +140,23 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
 	} else {
 		uint8_t first_latest;
 
+		/* LLL has not consumed the first PDU. Revert back the `last` so
+		 * that LLL still consumes the first PDU while the caller of
+		 * this function updates/modifies the latest PDU.
+		 *
+		 * Under race condition:
+		 * 1. LLL runs before `pdu->last` is reverted, then `pdu->first`
+		 *    has changed, hence restore `pdu->last` and return index of
+		 *    next free PDU in the double buffer.
+		 * 2. LLL runs after `pdu->last` is reverted, then `pdu->first`
+		 *    will not change, return the saved `last` as the index of
+		 *    the next free PDU in the double buffer.
+		 */
 		df_cfg->last = first;
 		cpu_dmb();
 		first_latest = df_cfg->first;
 		if (first_latest != first) {
+			df_cfg->last = last;
 			last++;
 			if (last == DOUBLE_BUFFER_SIZE) {
 				last = 0U;
