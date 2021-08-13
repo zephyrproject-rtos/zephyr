@@ -26,7 +26,8 @@
 #define EVT_PROP_SCAN   BIT(1)
 #define EVT_PROP_ANON   BIT(5)
 #define EVT_PROP_TXP    BIT(6)
-#define ADV_INTERVAL    0x20
+#define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
+#define ADV_WAIT_MS     10     /* 10 ms wait loop */
 #define OWN_ADDR_TYPE   1
 #define PEER_ADDR_TYPE  0
 #define PEER_ADDR       NULL
@@ -1340,7 +1341,7 @@ static void test_scanx_main(void)
 	printk("Waiting...");
 	while (!is_periodic ||
 	       (per_adv_evt_cnt_actual != per_adv_evt_cnt_expected)) {
-		k_sleep(K_MSEC(30));
+		k_sleep(K_MSEC(ADV_WAIT_MS));
 	}
 	printk("done.\n");
 
