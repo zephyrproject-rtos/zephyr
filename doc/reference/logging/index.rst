@@ -156,6 +156,9 @@ threshold is used by the internal thread.
 :kconfig:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
 which handles log processing.
 
+:kconfig:`CONFIG_LOG_PROCESS_THREAD_STARTUP_DELAY_MS`: Delay in milliseconds
+after which logging thread is started.
+
 :kconfig:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the message pool.
 Single message capable of storing standard log with up to 3 arguments or hexdump
 message with 12 bytes of data take 32 bytes. In v2 it indicates buffer size
