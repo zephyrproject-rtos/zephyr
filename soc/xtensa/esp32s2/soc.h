@@ -9,6 +9,7 @@
 #include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
 #include <soc/dport_access.h>
+#include <soc/soc_caps.h>
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/spi_flash.h>
 #include <esp32s2/rom/cache.h>
