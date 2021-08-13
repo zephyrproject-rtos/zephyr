@@ -5,6 +5,7 @@ config SOC_ESP32S2
 	bool "ESP32S2"
 	select XTENSA
 	select ATOMIC_OPERATIONS_C
+	select DYNAMIC_INTERRUPTS
 
 if SOC_ESP32S2
 

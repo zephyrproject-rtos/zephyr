@@ -21,5 +21,6 @@ zephyr_library_sources_ifdef(CONFIG_RV32M1_INTMUX           intc_rv32m1_intmux.c
 zephyr_library_sources_ifdef(CONFIG_SAM0_EIC                intc_sam0_eic.c)
 zephyr_library_sources_ifdef(CONFIG_SHARED_IRQ              intc_shared_irq.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_ESP32               intc_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_ESP32S2             intc_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.c)
