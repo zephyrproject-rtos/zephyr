@@ -670,7 +670,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	struct bt_hci_cp_le_set_adv_param set_param;
 	struct bt_conn *conn = NULL;
 	struct net_buf *buf;
-	bool dir_adv = (param->peer != NULL), scannable;
+	bool dir_adv = (param->peer != NULL), scannable = false;
 	enum adv_name_type name_type;
 
 	int err;
@@ -720,8 +720,6 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	name_type = get_adv_name_type_param(param);
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-		scannable = true;
-
 		if (dir_adv) {
 			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
 				set_param.type = BT_HCI_ADV_DIRECT_IND_LOW_DUTY;
@@ -731,13 +729,15 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 
 			bt_addr_le_copy(&set_param.direct_addr, param->peer);
 		} else {
+			scannable = true;
 			set_param.type = BT_HCI_ADV_IND;
 		}
+	} else if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || sd ||
+		   (name_type == ADV_NAME_TYPE_SD)) {
+		scannable = true;
+		set_param.type = BT_HCI_ADV_SCAN_IND;
 	} else {
-		scannable = sd || name_type == ADV_NAME_TYPE_SD;
-
-		set_param.type = scannable ? BT_HCI_ADV_SCAN_IND :
-					     BT_HCI_ADV_NONCONN_IND;
+		set_param.type = BT_HCI_ADV_NONCONN_IND;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
