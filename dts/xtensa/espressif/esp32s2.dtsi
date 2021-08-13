@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
 
 / {
 	#address-cells = <1>;
@@ -29,6 +30,15 @@
 		sram0: memory@3ffb0000 {
 			compatible = "mmio-sram";
 			reg = <0x3ffb0000 0x50000>;
+		};
+
+		intc: interrupt-controller@3f4c2000 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x3f4c2000 0x114>;
+			label = "INTC_0";
+			status = "okay";
 		};
 
 		uart0: uart@3f400000 {
