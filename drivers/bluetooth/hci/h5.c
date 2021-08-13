@@ -305,7 +305,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 	H5_SET_LEN(hdr, len);
 
 	/* Calculate CRC */
-	hdr[3] = ~((hdr[0] + hdr[1] + hdr[2]) & 0xff);
+	hdr[3] = ~(hdr[0] + hdr[1] + hdr[2]);
 
 	h5_print_header(hdr, "TX: <");
 
@@ -415,6 +415,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	uint8_t byte;
 	int ret;
 	static uint8_t hdr[4];
+	uint8_t header_checksum;
 
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -463,6 +464,15 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 
 			if (remaining) {
 				break;
+			}
+
+			header_checksum = ~(hdr[0] + hdr[1] + hdr[2]);
+
+			if (hdr[3] != header_checksum) {
+				BT_ERR("Wrong packet header %02x %02x %02x %02x",
+				       hdr[0], hdr[1], hdr[2], hdr[3]);
+				h5_reset_rx();
+				continue;
 			}
 
 			remaining = H5_HDR_LEN(hdr);
