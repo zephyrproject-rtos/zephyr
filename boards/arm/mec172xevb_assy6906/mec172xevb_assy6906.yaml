@@ -16,3 +16,8 @@ flash: 352
 supported:
   - gpio
   - pinmux
+testing:
+  ignore_tags:
+    - device
+    - pm
+    - power
