@@ -732,13 +732,17 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef CONFIG_PM_DEVICE
+/* Use of DT_PROP_OR here is because we cant assume that 'wakeup-source`
+ * will be a defined property for the binding of the devicetree node that
+ * is associated with the device
+ */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name) = {	\
 		.pm = {						        \
 			.flags = ATOMIC_INIT(COND_CODE_1(		\
 					DT_NODE_EXISTS(node_id),	\
-					(DT_PROP(			\
-					node_id, wakeup_source)),	\
+					(DT_PROP_OR(			\
+					node_id, wakeup_source, 0)),	\
 					(0)) <<			        \
 				PM_DEVICE_FLAGS_WS_CAPABLE),		\
 		},                                                      \
