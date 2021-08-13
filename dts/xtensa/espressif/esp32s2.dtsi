@@ -37,6 +37,11 @@
 			label = "UART_0";
 			status = "disabled";
 		};
+
+		pinmux: pinmux@3f409000 {
+			compatible = "espressif,esp32-pinmux";
+			reg = <0x3f409000 0x94>;
+		};
 	};
 
 };
