@@ -12,7 +12,9 @@ find_program(CMAKE_NM      llvm-nm      ${find_program_clang_args}   )
 # on Linux and Windows.
 find_program(CMAKE_OBJDUMP objdump      ${find_program_binutils_args})
 find_program(CMAKE_RANLIB  llvm-ranlib  ${find_program_clang_args}   )
-find_program(CMAKE_OBJCOPY llvm-objcopy ${find_program_binutils_args})
+# llvm-objcopy doesn't support --gap-fill option, we need to use objcopy
+# from system environment.
+find_program(CMAKE_OBJCOPY objcopy      ${find_program_binutils_args})
 find_program(CMAKE_READELF readelf      ${find_program_binutils_args})
 find_program(CMAKE_STRIP   llvm-strip   ${find_program_binutils_args})
 
