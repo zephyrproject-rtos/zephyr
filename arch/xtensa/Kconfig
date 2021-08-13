@@ -78,4 +78,16 @@ config XTENSA_ENABLE_BACKTRACE
 	help
 	  Enable this config option to print backtrace on panic exception
 
+config XTENSA_CPU_IDLE_SPIN
+	bool "Use busy loop for k_cpu_idle"
+	help
+	  Use a spin loop instead of WAITI for the CPU idle state.
+
+config XTENSA_WAITI_BUG
+	bool "Enable workaround sequence for WAITI bug on LX6"
+	help
+	  SOF traditionally contains this workaround on its ADSP
+	  platforms which prefixes a WAITI entry with 128 NOP
+	  instructions followed by an ISYNC and EXTW.
+
 endmenu
