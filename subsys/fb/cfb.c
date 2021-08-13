@@ -65,13 +65,22 @@ static struct char_framebuffer char_fb;
 
 static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
 {
+	return (uint8_t *)fptr->data +
+	       (c - fptr->first_char) *
+	       (fptr->width * fptr->height / 8U);
+}
+
+static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
+				     uint8_t x, uint8_t y)
+{
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return (uint8_t *)fptr->data +
-		       (c - fptr->first_char) *
-		       (fptr->width * fptr->height / 8U);
+		return glyph_ptr[x * (fptr->height / 8U) + y];
+	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
+		return glyph_ptr[y * (fptr->width) + x];
 	}
 
-	return NULL;
+	LOG_WRN("Unknown font type");
+	return 0;
 }
 
 /*
@@ -106,7 +115,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 				return 0;
 			}
 
-			byte = glyph_ptr[g_x * (fptr->height / 8U) + g_y];
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y);
 			if (need_reverse) {
 				byte = byte_reverse(byte);
 			}
