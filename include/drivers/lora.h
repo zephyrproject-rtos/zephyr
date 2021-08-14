@@ -53,6 +53,15 @@ struct lora_modem_config {
 };
 
 /**
+ * @typedef lora_recv_cb()
+ * @brief Callback API for receiving data asynchronously
+ *
+ * @see lora_recv() for argument descriptions.
+ */
+typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t size,
+			     int16_t rssi, int8_t snr);
+
+/**
  * @typedef lora_api_config()
  * @brief Callback API for configuring the LoRa module
  *
@@ -91,6 +100,15 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
 			     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
 /**
+ * @typedef lora_api_recv_async()
+ * @brief Callback API for receiving data asynchronously over LoRa
+ *
+ * @param dev Modem to receive data on.
+ * @param cb Callback to run on receiving data.
+ */
+typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb);
+
+/**
  * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
@@ -104,6 +122,7 @@ struct lora_driver_api {
 	lora_api_send send;
 	lora_api_send_async send_async;
 	lora_api_recv recv;
+	lora_api_recv_async recv_async;
 	lora_api_test_cw test_cw;
 };
 
@@ -189,6 +208,28 @@ static inline int lora_recv(const struct device *dev, uint8_t *data,
 		(const struct lora_driver_api *)dev->api;
 
 	return api->recv(dev, data, size, timeout, rssi, snr);
+}
+
+/**
+ * @brief Receive data asynchronously over LoRa
+ *
+ * Receive packets continuously under the configuration previously setup
+ * by @ref lora_config.
+ *
+ * Reception is cancelled by calling this function again with @p cb = NULL.
+ * This can be done within the callback handler.
+ *
+ * @param dev Modem to receive data on.
+ * @param cb Callback to run on receiving data. If NULL, any pending
+ *	     asynchronous receptions will be cancelled.
+ * @return 0 when reception successfully setup, negative on error
+ */
+static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	return api->recv_async(dev, cb);
 }
 
 /**
