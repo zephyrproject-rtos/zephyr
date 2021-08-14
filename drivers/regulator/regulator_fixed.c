@@ -19,11 +19,9 @@ LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
 struct driver_config {
 	const char *regulator_name;
-	const char *gpio_name;
 	uint32_t startup_delay_us;
 	uint32_t off_on_delay_us;
-	gpio_pin_t gpio_pin;
-	gpio_dt_flags_t gpio_flags;
+	struct gpio_dt_spec enable;
 	uint8_t options;
 };
 
@@ -35,7 +33,6 @@ enum work_task {
 };
 
 struct driver_data_onoff {
-	const struct device *gpio;
 	const struct device *dev;
 	struct onoff_manager mgr;
 #ifdef CONFIG_MULTITHREADING
@@ -53,31 +50,27 @@ struct driver_data_onoff {
  *
  * @return negative on error, otherwise zero.
  */
-static int common_init(const struct device *dev,
-		       const struct device **gpiop)
+static int common_init(const struct device *dev)
 {
 	const struct driver_config *cfg = dev->config;
-	const struct device *gpio = device_get_binding(cfg->gpio_name);
+	gpio_flags_t flags;
 
-	if (gpio == NULL) {
-		LOG_ERR("no GPIO device: %s", cfg->gpio_name);
+	if (!device_is_ready(cfg->enable.port)) {
+		LOG_ERR("GPIO port: %s not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
 
-	*gpiop = gpio;
-
-	gpio_flags_t flags = cfg->gpio_flags;
 	bool on = cfg->options & (OPTION_ALWAYS_ON | OPTION_BOOT_ON);
 	uint32_t delay_us = 0;
 
 	if (on) {
-		flags |= GPIO_OUTPUT_ACTIVE;
+		flags = GPIO_OUTPUT_ACTIVE;
 		delay_us = cfg->startup_delay_us;
 	} else {
-		flags |= GPIO_OUTPUT_INACTIVE;
+		flags = GPIO_OUTPUT_INACTIVE;
 	}
 
-	int rc = gpio_pin_configure(gpio, cfg->gpio_pin, flags);
+	int rc = gpio_pin_configure_dt(&cfg->enable, flags);
 
 	if ((rc == 0) && (delay_us > 0)) {
 		/* Turned on and we have to wait until the on
@@ -146,11 +139,11 @@ static void onoff_worker(struct k_work *work)
 	int rc = 0;
 
 	if (data->task == WORK_TASK_ENABLE) {
-		rc = gpio_pin_set(data->gpio, cfg->gpio_pin, true);
+		rc = gpio_pin_set_dt(&cfg->enable, true);
 		LOG_DBG("%s: work enable: %d", cfg->regulator_name, rc);
 		delay_us = cfg->startup_delay_us;
 	} else if (data->task == WORK_TASK_DISABLE) {
-		rc = gpio_pin_set(data->gpio, cfg->gpio_pin, false);
+		rc = gpio_pin_set_dt(&cfg->enable, false);
 		LOG_DBG("%s: work disable: %d", cfg->regulator_name, rc);
 		delay_us = cfg->off_on_delay_us;
 	} else if (data->task == WORK_TASK_DELAY) {
@@ -179,7 +172,7 @@ static void start(struct onoff_manager *mgr,
 		goto finalize;
 	}
 
-	rc = gpio_pin_set(data->gpio, cfg->gpio_pin, true);
+	rc = gpio_pin_set_dt(&cfg->enable, true);
 
 #ifdef CONFIG_MULTITHREADING
 	if (rc == -EWOULDBLOCK) {
@@ -216,7 +209,7 @@ static void stop(struct onoff_manager *mgr,
 		goto finalize;
 	}
 
-	rc = gpio_pin_set(data->gpio, cfg->gpio_pin, false);
+	rc = gpio_pin_set_dt(&cfg->enable, false);
 
 #ifdef CONFIG_MULTITHREADING
 	if (rc == -EWOULDBLOCK) {
@@ -273,7 +266,7 @@ static int regulator_fixed_init_onoff(const struct device *dev)
 	k_work_init_delayable(&data->dwork, onoff_worker);
 #endif /* CONFIG_MULTITHREADING */
 
-	rc = common_init(dev, &data->gpio);
+	rc = common_init(dev);
 	if (rc >= 0) {
 		rc = 0;
 	}
@@ -284,7 +277,6 @@ static int regulator_fixed_init_onoff(const struct device *dev)
 }
 
 struct driver_data_sync {
-	const struct device *gpio;
 	struct onoff_sync_service srv;
 };
 
@@ -299,7 +291,7 @@ static int enable_sync(const struct device *dev, struct onoff_client *cli)
 
 	if ((rc == 0)
 	    && ((cfg->options & OPTION_ALWAYS_ON) == 0)) {
-		rc = gpio_pin_set(data->gpio, cfg->gpio_pin, true);
+		rc = gpio_pin_set_dt(&cfg->enable, true);
 	}
 
 	return onoff_sync_finalize(&data->srv, key, cli, rc, true);
@@ -315,7 +307,7 @@ static int disable_sync(const struct device *dev)
 	if  ((cfg->options & OPTION_ALWAYS_ON) != 0) {
 		rc = 0;
 	} else if (rc == 1) {
-		rc = gpio_pin_set(data->gpio, cfg->gpio_pin, false);
+		rc = gpio_pin_set_dt(&cfg->enable, false);
 	} else if (rc == 0) {
 		rc = -EINVAL;
 	} /* else rc > 0, leave it on */
@@ -330,9 +322,8 @@ static const struct regulator_driver_api api_sync = {
 
 static int regulator_fixed_init_sync(const struct device *dev)
 {
-	struct driver_data_sync *data = dev->data;
 	const struct driver_config *cfg = dev->config;
-	int rc = common_init(dev, &data->gpio);
+	int rc = common_init(dev);
 
 	(void)regulator_fixed_init_onoff;
 	(void)api_onoff;
@@ -372,11 +363,9 @@ static int regulator_fixed_init_sync(const struct device *dev)
 #define REGULATOR_DEVICE(id) \
 static const struct driver_config regulator_##id##_cfg = { \
 	.regulator_name = DT_INST_PROP(id, regulator_name), \
-	.gpio_name = DT_INST_GPIO_LABEL(id, enable_gpios), \
 	.startup_delay_us = DT_INST_PROP(id, startup_delay_us), \
 	.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us), \
-	.gpio_pin = DT_INST_GPIO_PIN(id, enable_gpios),	\
-	.gpio_flags = DT_INST_GPIO_FLAGS(id, enable_gpios), \
+	.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios), \
 	.options = (DT_INST_PROP(id, regulator_boot_on)	\
 		    << OPTION_BOOT_ON_POS) \
 		  | (DT_INST_PROP(id, regulator_always_on) \
