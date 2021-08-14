@@ -82,13 +82,24 @@ void z_sys_init_run_level(int32_t level);
  * @param prio The initialization priority of the object, relative to
  * other objects of the same initialization level. See SYS_INIT().
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
+	__attribute__((constructor)) \
+	static void _CONCAT(__ctor_, _entry_name)(void) { \
+		extern void __z_native_posix_init_add(const char *e, const void *i, \
+			const struct device *d, const char *l, int p); \
+		__z_native_posix_init_add(STRINGIFY(_entry_name), _init_fn, _device, \
+			STRINGIFY(_level), _prio); \
+	}
+#else
 #define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
 		_CONCAT(__init_, _entry_name) __used			\
-	__attribute__((__section__(".z_init_" #_level STRINGIFY(_prio)"_"))) = { \
+		__z_section(".z_init_" #_level STRINGIFY(_prio)"_") = { \
 		.init = (_init_fn),					\
 		.dev = (_device),					\
 	}
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 
 /**
  * @def SYS_INIT

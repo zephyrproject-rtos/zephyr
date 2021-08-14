@@ -733,11 +733,19 @@ static inline bool device_is_ready(const struct device *dev)
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((section("__common,z_sad_mac"))) = {			\
+		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
+	};
+#else
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate"))) = {			\
 		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
 	};
+#endif
 
 /* If device power management is enabled, this macro defines a pointer to a
  * device in the z_pm_device_slots region. When invoked for each device, this
@@ -807,8 +815,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
 	const device_handle_t						\
 	__aligned(sizeof(device_handle_t))				\
-	__attribute__((__weak__,					\
-		       __section__(".__device_handles_pass1")))		\
+	__weak								\
+	__z_section(".__device_handles_pass1")				\
 	Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {			\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
@@ -844,7 +852,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
+		__z_section(".z_device_" #level STRINGIFY(prio)"_") = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\

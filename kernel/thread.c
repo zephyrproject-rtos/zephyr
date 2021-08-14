@@ -722,6 +722,7 @@ static void grant_static_access(void)
 
 void z_init_static_threads(void)
 {
+#if !(defined(__APPLE__) && defined(__MACH__))
 	_FOREACH_STATIC_THREAD(thread_data) {
 		z_setup_new_thread(
 			thread_data->init_thread,
@@ -760,6 +761,7 @@ void z_init_static_threads(void)
 		}
 	}
 	k_sched_unlock();
+#endif /* !(defined(__APPLE__) && defined(__MACH__)) */
 }
 #endif
 

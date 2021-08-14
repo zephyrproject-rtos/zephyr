@@ -103,8 +103,14 @@ endmacro()
 
 # Force symbols to be entered in the output file as undefined symbols
 function(toolchain_ld_force_undefined_symbols)
+  if (CONFIG_ARCH_POSIX AND ${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
+    set(symbol_prefix "_")
+  else()
+    set(symbol_prefix "")
+  endif()
+
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,${symbol})
+    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,${symbol_prefix}${symbol})
   endforeach()
 endfunction()
 
@@ -133,18 +139,30 @@ function(toolchain_ld_link_elf)
     set(use_linker "-fuse-ld=bfd")
   endif()
 
+  if (CONFIG_ARCH_POSIX AND ${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
+    set(linker_script "")
+    set(map_opt "-map,")
+    set(whole_archive "")
+    set(no_whole_archive "")
+  else()
+    set(linker_script ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT})
+    set(map_opt "-Map=")
+    set(whole_archive "${LINKERFLAGPREFIX},--whole-archive")
+    set(no_whole_archive "${LINKERFLAGPREFIX},--no-whole-archive")
+  endif()
+
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
     ${use_linker}
     ${TOPT}
-    ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
+    ${linker_script}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
 
-    ${LINKERFLAGPREFIX},-Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
-    ${LINKERFLAGPREFIX},--whole-archive
+    ${LINKERFLAGPREFIX},${map_opt}${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+    ${whole_archive}
     ${ZEPHYR_LIBS_PROPERTY}
-    ${LINKERFLAGPREFIX},--no-whole-archive
+    ${no_whole_archive}
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}

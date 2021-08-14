@@ -38,6 +38,13 @@ static struct k_spinlock lock;
  * @return 0
  */
 /* LCOV_EXCL_START */
+#if defined(__APPLE__) && defined(__MACH__)
+int arch_printk_char_out(int c)
+{
+	extern int putchar(int c);
+	return putchar(c);
+}
+#else /* defined(__APPLE__) && defined(__MACH__) */
 __attribute__((weak)) int arch_printk_char_out(int c)
 {
 	ARG_UNUSED(c);
@@ -45,6 +52,7 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 	/* do nothing */
 	return 0;
 }
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 /* LCOV_EXCL_STOP */
 
 int (*_char_out)(int) = arch_printk_char_out;

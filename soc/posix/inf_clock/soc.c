@@ -226,6 +226,10 @@ void posix_boot_cpu(void)
  */
 void run_native_tasks(int level)
 {
+#if defined(__APPLE__) && defined(__MACH__)
+	extern void __z_native_posix_task_run(int level);
+	__z_native_posix_task_run(level);
+#else /* defined(__APPLE__) && defined(__MACH__) */
 	extern void (*__native_PRE_BOOT_1_tasks_start[])(void);
 	extern void (*__native_PRE_BOOT_2_tasks_start[])(void);
 	extern void (*__native_PRE_BOOT_3_tasks_start[])(void);
@@ -250,6 +254,7 @@ void run_native_tasks(int level)
 			(*fptr)();
 		}
 	}
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 }
 
 /**

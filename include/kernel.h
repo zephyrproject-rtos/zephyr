@@ -675,6 +675,27 @@ struct _static_thread_data {
  * wasting space. To work around this, force a 4-byte alignment.
  *
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#define K_THREAD_DEFINE(name, stack_size,                                \
+			entry, p1, p2, p3,                               \
+			prio, options, delay)                            \
+	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
+	struct k_thread _k_thread_obj_##name;				 \
+	Z_STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) =\
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
+				    _k_thread_stack_##name, stack_size,  \
+				entry, p1, p2, p3, prio, options, delay, \
+				NULL, name); \
+	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name; \
+	__attribute__((constructor)) \
+	static void _CONCAT(__ctor_, name)(void) { \
+		extern void __z_native_posix_static_thread_add(const char *n, \
+			size_t sz, void *f, void *p1, void *p2, void *p3, int p, \
+			int d); \
+		__z_native_posix_static_thread_add(STRINGIFY(name), stack_size, \
+			entry, p1, p2, p3, prio, delay); \
+	}
+#else /* defined(__APPLE__) && defined(__MACH__) */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
 			prio, options, delay)                            \
@@ -686,6 +707,7 @@ struct _static_thread_data {
 				entry, p1, p2, p3, prio, options, delay, \
 				NULL, name);				 	 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 
 /**
  * @brief Get a thread's priority.

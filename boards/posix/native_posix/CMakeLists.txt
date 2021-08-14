@@ -18,6 +18,13 @@ zephyr_library_sources(
 	hw_counter.c
 	)
 
+if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
+	set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp11>)
+	zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
+	toolchain_ld_cpp()
+	zephyr_library_sources(PRIVATE macho_init.cpp)
+endif()
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/posix/include

@@ -54,6 +54,10 @@ void z_device_state_init(void)
  */
 void z_sys_init_run_level(int32_t level)
 {
+#if defined(__APPLE__) && defined(__MACH__)
+	extern void __z_native_posix_init_run(int level);
+	__z_native_posix_init_run(level);
+#else /* defined(__APPLE__) && defined(__MACH__) */
 	static const struct init_entry *levels[] = {
 		__init_PRE_KERNEL_1_start,
 		__init_PRE_KERNEL_2_start,
@@ -87,6 +91,7 @@ void z_sys_init_run_level(int32_t level)
 			dev->state->initialized = true;
 		}
 	}
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 }
 
 const struct device *z_impl_device_get_binding(const char *name)

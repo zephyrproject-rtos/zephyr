@@ -42,10 +42,21 @@ void posix_soc_clean_up(void);
  * Note that for the PRE and ON_EXIT levels neither the Zephyr kernel or
  * any Zephyr thread are running.
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#define NATIVE_TASK(fn, level, prio)	\
+	__attribute__((constructor)) \
+	static void _CONCAT(__ctor_, fn)(void) { \
+		extern void __z_native_posix_task_add(const char *n, \
+			const void *f, const char *l, int p); \
+		__z_native_posix_task_add(STRINGIFY(fn), fn, STRINGIFY(level), \
+			prio); \
+	}
+#else
 #define NATIVE_TASK(fn, level, prio)	\
 	static void (*_CONCAT(__native_task_, fn)) __used	\
-	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))\
+	__z_section(".native_" #level STRINGIFY(prio) "_task")\
 	= fn
+#endif /* defined(__APPLE__) && defined(__MACH__) */
 
 
 #define _NATIVE_PRE_BOOT_1_LEVEL	0

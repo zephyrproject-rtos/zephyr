@@ -366,9 +366,12 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_LINKER_DEP kobject_linker)
 endif()
 
+# TODO: macOS linker has an -order_file argument that may be similar
+if (NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin" AND CONFIG_ARCH_POSIX))
 get_property(TOPT GLOBAL PROPERTY TOPT)
 set_ifndef(  TOPT -Wl,-T) # clang doesn't pick -T for some reason and complains,
                           # while -Wl,-T works for both, gcc and clang
+endif()
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
@@ -1492,6 +1495,8 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
 endif()
 
 if(CONFIG_OUTPUT_STAT)
+# probably some equivalent command exists to read stats from a Mach-O binary
+if (NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin" AND CONFIG_ARCH_POSIX))
 #  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
     post_build_commands
@@ -1506,6 +1511,7 @@ if(CONFIG_OUTPUT_STAT)
     post_build_byproducts
     ${KERNEL_STAT_NAME}
     )
+endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)
