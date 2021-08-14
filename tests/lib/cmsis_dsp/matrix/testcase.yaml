@@ -107,7 +107,7 @@ tests:
       - mps2_an521
       - native_posix
     tags: cmsis_dsp
-    platform_exclude: mps2_an521 frdm_kw41z
+    platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
@@ -118,7 +118,7 @@ tests:
     integration_platforms:
       - mps2_an521_remote
     tags: cmsis_dsp fpu
-    platform_exclude: mps2_an521 frdm_kw41z
+    platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
     extra_args: CONF_FILE=prj_base.conf
