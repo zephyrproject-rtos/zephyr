@@ -106,8 +106,8 @@ __no_optimization static void trigger_fault_divide_zero(void)
 
 /*
  * While no optimization is enabled, some QEMU such as QEMU cortex a53
- * series, QEMU mps2 series and QEMU ARC series boards will not trigger
- * an exception for divide zero. They might need to enable the divide
+ * series, QEMU mps2 and mps3 series and QEMU ARC series boards will not
+ * trigger an exception for divide zero. They might need to enable the divide
  * zero exception. We only skip the QEMU board here, this means this
  * test will still apply on the physical board.
  * For the Cortex-M0, M0+, M23 (CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -115,6 +115,7 @@ __no_optimization static void trigger_fault_divide_zero(void)
  * and there will be no hardware exception for that.
  */
 #if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
+	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	ztest_test_skip();
