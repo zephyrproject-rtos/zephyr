@@ -949,7 +949,7 @@ static void preempt(void *param)
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				idx = UINT8_MAX;
+				iter_idx = UINT8_MAX;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 			}
 
