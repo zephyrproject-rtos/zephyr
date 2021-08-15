@@ -67,13 +67,11 @@ foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
 endforeach()
 
-set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
+set(CMAKE_REQUIRED_FLAGS ${isystem_include_flags})
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
-# Load toolchain_cc-family macros
-
-macro(toolchain_cc_nostdinc)
-  if(NOT "${ARCH}" STREQUAL "posix")
-    zephyr_compile_options( -nostdinc)
-  endif()
-endmacro()
+if(CONFIG_ARMCLANG_STD_LIBC)
+  # Zephyr requires AEABI portability to ensure correct functioning of the C
+  # library, for example error numbers, errno.h.
+  list(APPEND TOOLCHAIN_C_FLAGS -D_AEABI_PORTABILITY_LEVEL=1)
+endif()
