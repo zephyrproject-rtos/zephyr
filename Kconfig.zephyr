@@ -25,6 +25,8 @@ source "$(BOARD_DIR)/Kconfig.defconfig"
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 # This loads Zephyr base SoC root defconfigs
 osource "soc/$(ARCH)/*/Kconfig.defconfig"
+# This loads the toolchain defconfigs
+osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 
 menu "Modules"
 
