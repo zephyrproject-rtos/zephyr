@@ -163,5 +163,16 @@
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
 		};
+
+		quadspi: quadspi@a0001000 {
+			compatible = "st,stm32-qspi";
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			reg = <0xa0001000 0x400>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000002>;
+			status = "disabled";
+			label = "QUADSPI";
+		};
 	};
 };
