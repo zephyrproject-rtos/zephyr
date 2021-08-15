@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LD_LINKER_SCRIPT_SUPPORTED
+	bool
+	default n
+
+choice LINKER_SCRIPT
+	default CMAKE_LINKER_GENERATOR
+endchoice
+
+choice LIBC_IMPLEMENTATION
+	prompt "C Library Implementation"
+	default ARMCLANG_STD_LIBC
+
+config ARMCLANG_STD_LIBC
+	bool "ARM Compiler C library"
+	help
+	  Use the full Arm Compiler runtime libraries.
+	  A reduced Zephyr minimal libc will be used for library functionality
+	  not provided by ARM Compiler standard libraries.
+
+endchoice
