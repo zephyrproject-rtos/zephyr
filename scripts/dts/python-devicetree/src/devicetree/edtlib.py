@@ -1381,12 +1381,21 @@ class PinCtrl:
       The name of the configuration, as given in pinctrl-names, or None if
       there is no pinctrl-names property
 
+    name_as_token:
+      Like 'name', but with non-alphanumeric characters converted to underscores.
+
     conf_nodes:
       A list of Node instances for the pin configuration nodes, e.g.
       the nodes pointed at by &state_1 and &state_2 in
 
           pinctrl-0 = <&state_1 &state_2>;
     """
+
+    @property
+    def name_as_token(self):
+        "See the class docstring"
+        return _val_as_token(self.name) if self.name is not None else None
+
     def __repr__(self):
         fields = []
 
@@ -1478,7 +1487,7 @@ class Property:
     @property
     def val_as_token(self):
         "See the class docstring"
-        return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', self.val)
+        return _val_as_token(self.val)
 
     @property
     def enum_index(self):
@@ -2745,6 +2754,11 @@ _LOG = logging.getLogger(__name__)
 
 # Regular expression for non-alphanumeric-or-underscore characters.
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
+
+
+def _val_as_token(val):
+    return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', val)
+
 
 # Custom PyYAML binding loader class to avoid modifying yaml.Loader directly,
 # which could interfere with YAML loading in clients
