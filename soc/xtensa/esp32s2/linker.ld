@@ -197,8 +197,6 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
 #pragma pop_macro("ITERABLE_SECTION_RAM_GC_ALLOWED")
 #pragma pop_macro("ITERABLE_SECTION_RAM")
 
-#include <linker/common-ram.ld>
-
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
