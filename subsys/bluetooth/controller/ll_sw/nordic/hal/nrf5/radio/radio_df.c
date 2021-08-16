@@ -260,33 +260,33 @@ void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 {
 	/* Switch and sample spacing does not matter for AoA Tx. It is set to
 	 * value that is in DFECTRL1 register after reset. That is done instead
-	 * of adding conditions on the value and and masking of the field before
+	 * of adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_rx_2us_switching(void)
@@ -296,7 +296,7 @@ void radio_df_cte_rx_2us_switching(void)
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 	radio_df_cte_inline_set_enabled(false);
 }
 
@@ -307,7 +307,7 @@ void radio_df_cte_rx_4us_switching(void)
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_4us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_4us);
 	radio_df_cte_inline_set_enabled(false);
 }
 
