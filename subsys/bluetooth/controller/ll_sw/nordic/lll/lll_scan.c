@@ -808,7 +808,6 @@ static void isr_done(void *param)
 
 static void isr_window(void *param)
 {
-	uint32_t ticks_at_start;
 	uint32_t remainder_us;
 	struct lll_scan *lll;
 
@@ -826,6 +825,7 @@ static void isr_window(void *param)
 	bool is_sched_advanced = IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) &&
 				 lll->conn && lll->conn_win_offset_us;
 	uint32_t ticks_anchor_prev;
+	uint32_t ticks_at_start;
 
 	if (is_sched_advanced) {
 		/* Get the ticks_anchor when the offset to free time space for
@@ -838,11 +838,14 @@ static void isr_window(void *param)
 	} else {
 		ticks_anchor_prev = 0U;
 	}
-#endif /* CONFIG_BT_CENTRAL */
 
 	ticks_at_start = ticker_ticks_now_get() +
 			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
+#else /* !CONFIG_BT_CENTRAL */
+
+	remainder_us = radio_tmr_start_now(0);
+#endif /* !CONFIG_BT_CENTRAL */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
 	 * master event.
