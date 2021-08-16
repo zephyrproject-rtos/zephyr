@@ -74,6 +74,7 @@ static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, uint8_t force, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
+static void adv_disable(void *param);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -83,8 +84,10 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts);
 static void ticker_stop_aux_op_cb(uint32_t status, void *param);
+static void aux_disable(void *param);
 static void aux_disabled_cb(void *param);
 static void ticker_stop_ext_op_cb(uint32_t status, void *param);
+static void ext_disable(void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -2195,9 +2198,8 @@ static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_adv_set *adv;
-	struct ull_hdr *hdr;
+	static struct mayfly mfy = {0, 0, &link, NULL, adv_disable};
+	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -2213,33 +2215,42 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
-	 *       As we are in the callback after successful stop of the
-	 *       ticker, the ULL reference count will not be modified
-	 *       further hence it is safe to check and act on either the need
-	 *       to call lll_disable or not.
-	 */
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void adv_disable(void *param)
+{
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
+	/* Check ref count to determine if any pending LLL events in pipeline */
 	adv = param;
 	hdr = &adv->ull;
-	mfy.param = &adv->lll;
 	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 		uint32_t ret;
 
+		mfy.param = &adv->lll;
+
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
 
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 	} else {
-		uint32_t ret;
-
-		mfy.fp = disabled_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
+		/* No pending LLL events */
+		disabled_cb(&adv->lll);
 	}
 }
 
@@ -2326,20 +2337,26 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 
 static void ticker_stop_aux_op_cb(uint32_t status, void *param)
 {
-	struct lll_adv_aux *lll_aux;
-	struct ll_adv_aux_set *aux;
-	struct ll_adv_set *adv;
-	struct ull_hdr *hdr;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, aux_disable};
 	uint32_t ret;
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
-	 *       As we are in the callback after successful stop of the
-	 *       ticker, the ULL reference count will not be modified
-	 *       further hence it is safe to check and act on either the need
-	 *       to call lll_disable or not.
-	 */
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void aux_disable(void *param)
+{
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
 	adv = param;
 	lll_aux = adv->lll.aux;
 	aux = HDR_LLL2ULL(lll_aux);
@@ -2349,15 +2366,7 @@ static void ticker_stop_aux_op_cb(uint32_t status, void *param)
 		hdr->disabled_param = adv;
 		hdr->disabled_cb = aux_disabled_cb;
 	} else {
-		uint8_t handle;
-
-		handle = ull_adv_handle_get(adv);
-		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				  TICKER_USER_ID_ULL_LOW,
-				  (TICKER_ID_ADV_BASE + handle),
-				  ticker_op_ext_stop_cb, adv);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		aux_disabled_cb(param);
 	}
 }
 
@@ -2378,9 +2387,8 @@ static void aux_disabled_cb(void *param)
 static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_adv_set *adv;
-	struct ull_hdr *hdr;
+	static struct mayfly mfy = {0, 0, &link, NULL, ext_disable};
+	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -2389,33 +2397,42 @@ static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 		return;
 	}
 
-	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
-	 *       As we are in the callback after successful stop of the
-	 *       ticker, the ULL reference count will not be modified
-	 *       further hence it is safe to check and act on either the need
-	 *       to call lll_disable or not.
-	 */
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void ext_disable(void *param)
+{
+	struct ll_adv_set *adv;
+	struct ull_hdr *hdr;
+
+	/* Check ref count to determine if any pending LLL events in pipeline */
 	adv = param;
 	hdr = &adv->ull;
-	mfy.param = &adv->lll;
 	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 		uint32_t ret;
 
+		mfy.param = &adv->lll;
+
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = ext_disabled_cb;
 
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 	} else {
-		uint32_t ret;
-
-		mfy.fp = ext_disabled_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
+		/* No pending LLL events */
+		ext_disabled_cb(&adv->lll);
 	}
 }
 
