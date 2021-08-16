@@ -26,4 +26,10 @@ config IRQ_OFFLOAD_INTNUM
 config MP_NUM_CPUS
 	default 1
 
+config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
+	default n
+
+config LOG_DETECT_MISSED_STRDUP
+	default n
+
 endif
