@@ -120,7 +120,8 @@ config IPM_STM32_HSEM
 
 config IPM_STM32_HSEM_CPU
 	int "HSEM CPU ID"
-	default 1
+	default 1 if "$(dt_nodelabel_enabled,cpu0)"
+	default 2 if "$(dt_nodelabel_enabled,cpu1)"
 	range 1 2
 	depends on IPM_STM32_HSEM
 	help
