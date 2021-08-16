@@ -370,8 +370,18 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	radio_isr_set(isr_rx, lll);
 
 	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	if (0) {
+	} else if (lll->type ||
+#if defined(CONFIG_BT_CENTRAL)
+		   lll->conn) {
+#else /* !CONFIG_BT_CENTRAL */
+		   0) {
+#endif /* !CONFIG_BT_CENTRAL */
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
@@ -740,8 +750,19 @@ static void isr_common_done(void *param)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	if (0) {
+		/* TODO: Add Rx-Rx switch usecase improvement in the future */
+	} else if (lll->type ||
+#if defined(CONFIG_BT_CENTRAL)
+		   lll->conn) {
+#else /* !CONFIG_BT_CENTRAL */
+		   0) {
+#endif /* !CONFIG_BT_CENTRAL */
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_tx(0, 0, 0, 0);
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
