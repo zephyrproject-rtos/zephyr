@@ -118,7 +118,7 @@ static int cmd_device_list_visitor(const struct device *dev,
 {
 	const struct cmd_device_list_visitor_context *ctx = context;
 
-	shell_fprintf(ctx->shell, SHELL_NORMAL, "  requires: %s\n",
+	shell_fprintf(ctx->shell, SHELL_NORMAL, "\t\t%s\n",
 		      get_device_name(dev, ctx->buf, ctx->buf_size));
 
 	return 0;
@@ -163,7 +163,10 @@ static int cmd_device_list(const struct shell *shell,
 				.buf_size = sizeof(buf),
 			};
 
+			shell_fprintf(shell, SHELL_NORMAL, "\trequires:\n");
 			(void)device_required_foreach(dev, cmd_device_list_visitor, &ctx);
+			shell_fprintf(shell, SHELL_NORMAL, "\trequired by:\n");
+			(void)device_supported_foreach(dev, cmd_device_list_visitor, &ctx);
 		}
 	}
 
