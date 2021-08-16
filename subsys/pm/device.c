@@ -14,7 +14,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-#if defined(CONFIG_PM)
+#if defined(CONFIG_PM_DEVICE)
 extern const struct device *__pm_device_slots_start[];
 
 /* Number of devices successfully suspended. */
@@ -80,7 +80,7 @@ void pm_resume_devices(void)
 
 	num_susp = 0;
 }
-#endif /* defined(CONFIG_PM) */
+#endif /* defined(CONFIG_PM_DEVICE) */
 
 const char *pm_device_state_str(enum pm_device_state state)
 {
