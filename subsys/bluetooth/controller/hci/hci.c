@@ -5349,6 +5349,7 @@ no_ext_hdr:
 	evt_type |= BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
 
 	/* set scan data status bits */
+	evt_type &= ~(BIT_MASK(2) << 5);
 	evt_type |= (scan_data_status << 5);
 
 	/* Start constructing the event */
