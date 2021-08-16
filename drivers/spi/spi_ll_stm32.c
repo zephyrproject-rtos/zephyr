@@ -557,7 +557,8 @@ static int spi_stm32_configure(const struct device *dev,
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
-#ifndef CONFIG_SOC_SERIES_STM32F1X
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
+	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
 	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
 #endif
 
