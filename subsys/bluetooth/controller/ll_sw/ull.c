@@ -1641,6 +1641,19 @@ int ull_disable(void *lll)
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
 
+	/* ULL_HIGH can run after we have call `ull_ref_get` and it can
+	 * decrement the ref count. Hence, handle this race condition by
+	 * ensuring that `disabled_cb` has been set while the ref count is still
+	 * set.
+	 * No need to call `lll_disable` and take the semaphore thereafter if
+	 * reference count is zero.
+	 * If the `sem` is given when reference count was decremented, we do not
+	 * care.
+	 */
+	if (!ull_ref_get(hdr)) {
+		return 0;
+	}
+
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
 			     &mfy);
