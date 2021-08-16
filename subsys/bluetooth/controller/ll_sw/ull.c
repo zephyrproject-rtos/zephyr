@@ -2282,7 +2282,8 @@ static void ull_done(void *param)
 
 		if (link) {
 			/* Process done event */
-			memq_dequeue(memq_ull_done.tail, &memq_ull_done.head, NULL);
+			(void)memq_dequeue(memq_ull_done.tail,
+					   &memq_ull_done.head, NULL);
 			rx_demux_event_done(link, done);
 		}
 	} while (link);
@@ -2301,7 +2302,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	case NODE_RX_TYPE_EVENT_DONE:
 	{
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		rx_demux_event_done(link, rx);
 	}
 	break;
@@ -2321,7 +2322,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	{
 		struct pdu_adv *adv;
 
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		adv = (void *)((struct node_rx_pdu *)rx)->pdu;
 		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
@@ -2336,7 +2337,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	case NODE_RX_TYPE_EXT_AUX_RELEASE:
 	{
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ull_scan_aux_release(link, rx);
 	}
 	break;
@@ -2346,7 +2347,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
 	{
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ull_conn_setup(link, rx);
 	}
 	break;
@@ -2360,7 +2361,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 			return nack;
 		}
 
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		if (rx) {
 			ll_rx_put(link, rx);
@@ -2401,7 +2402,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	case NODE_RX_TYPE_RELEASE:
 	{
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);
 		ll_rx_sched();
 	}
@@ -2418,7 +2419,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_ISO_PDU:
 	{
 		/* Remove from receive-queue; ULL has received this now */
-		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
