@@ -51,16 +51,16 @@ static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
 static void isr_scan_aux_setup(void *param);
-static void isr_rx_ull_scheduled(void *param);
-static void isr_rx_lll_scheduled(void *param);
+static void isr_rx_ull_schedule(void *param);
+static void isr_rx_lll_schedule(void *param);
 static void isr_rx(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 		   uint8_t phy_aux);
 static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		      uint8_t phy_aux, uint8_t devmatch_ok,
 		      uint8_t devmatch_id, uint8_t irkmatch_ok,
 		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
-static void isr_tx_scan_req_ull_scheduled(void *param);
-static void isr_tx_scan_req_lll_scheduled(void *param);
+static void isr_tx_scan_req_ull_schedule(void *param);
+static void isr_tx_scan_req_lll_schedule(void *param);
 #if defined(CONFIG_BT_CENTRAL)
 static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
@@ -289,7 +289,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll_chan_set(lll->chan);
 
-	radio_isr_set(isr_rx_ull_scheduled, lll);
+	radio_isr_set(isr_rx_ull_schedule, lll);
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -455,7 +455,7 @@ static void isr_scan_aux_setup(void *param)
 	lll_isr_status_reset();
 
 	node_rx = param;
-	ftr = &(node_rx->hdr.rx_ftr);
+	ftr = &node_rx->hdr.rx_ftr;
 	lll = ftr->param;
 	aux_ptr = ftr->aux_ptr;
 	phy_aux = BIT(aux_ptr->phy);
@@ -488,11 +488,11 @@ static void isr_scan_aux_setup(void *param)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
-	/* FIXME: we could (?) use isr_rx_ull_scheduled if already have aux
+	/* FIXME: we could (?) use isr_rx_ull_schedule if already have aux
 	 *        context allocated, i.e. some previous aux was scheduled from
 	 *        ull already.
 	 */
-	radio_isr_set(isr_rx_lll_scheduled, node_rx);
+	radio_isr_set(isr_rx_lll_schedule, node_rx);
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -558,7 +558,7 @@ static void isr_scan_aux_setup(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
-static void isr_rx_ull_scheduled(void *param)
+static void isr_rx_ull_schedule(void *param)
 {
 	struct lll_scan_aux *lll_aux;
 	struct ll_scan_aux_set *aux;
@@ -573,7 +573,7 @@ static void isr_rx_ull_scheduled(void *param)
 	isr_rx(lll, lll_aux, lll_aux->phy);
 }
 
-static void isr_rx_lll_scheduled(void *param)
+static void isr_rx_lll_schedule(void *param)
 {
 	struct node_rx_pdu *node_rx;
 	struct lll_scan *lll;
@@ -703,7 +703,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx)) {
-		struct lll_scan_aux *lll_lll_aux;
+		struct lll_scan_aux *lll_aux_to_use;
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -717,12 +717,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		if (!lll_aux) {
-			lll_lll_aux = lll->lll_aux;
+			lll_aux_to_use = lll->lll_aux;
 		} else {
-			lll_lll_aux = lll_aux;
+			lll_aux_to_use = lll_aux;
 		}
 
-		if (!lll_lll_aux) {
+		if (!lll_aux_to_use) {
 			return -ENOBUFS;
 		}
 
@@ -800,7 +800,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_rx(phy_aux);
-		radio_isr_set(isr_tx_connect_req, lll_lll_aux);
+		radio_isr_set(isr_tx_connect_req, lll_aux_to_use);
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -868,7 +868,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		/* Hold onto connection event message until after successful
 		 * reception of CONNECT_RSP
 		 */
-		lll_lll_aux->node_conn_rx = rx;
+		lll_aux_to_use->node_conn_rx = rx;
 
 		/* Increase trx count so as to not generate done extra event
 		 * when LLL scheduling of Auxiliary PDU reception
@@ -969,12 +969,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr = &(node_rx->hdr.rx_ftr);
 		if (lll_aux) {
 			ftr->param = lll_aux;
-			radio_isr_set(isr_tx_scan_req_ull_scheduled,
+			radio_isr_set(isr_tx_scan_req_ull_schedule,
 				      lll_aux);
 			lll_aux->state = 1U;
 		} else {
 			ftr->param = lll;
-			radio_isr_set(isr_tx_scan_req_lll_scheduled,
+			radio_isr_set(isr_tx_scan_req_lll_schedule,
 				      node_rx);
 			lll->lll_aux->state = 1U;
 		}
@@ -1116,17 +1116,17 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 	}
 }
 
-static void isr_tx_scan_req_ull_scheduled(void *param)
+static void isr_tx_scan_req_ull_schedule(void *param)
 {
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
-	isr_tx(param, node_rx->pdu, isr_rx_ull_scheduled, param);
+	isr_tx(param, node_rx->pdu, isr_rx_ull_schedule, param);
 }
 
-static void isr_tx_scan_req_lll_scheduled(void *param)
+static void isr_tx_scan_req_lll_schedule(void *param)
 {
 	struct node_rx_pdu *node_rx_adv = param;
 	struct node_rx_pdu *node_rx;
@@ -1137,7 +1137,7 @@ static void isr_tx_scan_req_lll_scheduled(void *param)
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
-	isr_tx(lll->lll_aux, node_rx->pdu, isr_rx_lll_scheduled, param);
+	isr_tx(lll->lll_aux, node_rx->pdu, isr_rx_lll_schedule, param);
 }
 
 #if defined(CONFIG_BT_CENTRAL)
