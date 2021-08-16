@@ -238,6 +238,22 @@ SECTIONS
 		 *(.data)
 		 *(".data.*")
 
+#ifdef CONFIG_RISCV_GP
+		/*
+		 * RISC-V architecture has 12-bit signed immediate offsets in the
+		 * instructions. If we can put the most commonly accessed globals
+		 * in a special 4K span of memory addressed by the GP register, then
+		 * we can access those values in a single instruction, saving both
+		 * codespace and runtime.
+		 *
+		 * Since these immediate offsets are signed, place gp 0x800 past the
+		 * beginning of .sdata so that we can use both positive and negative
+		 * offsets.
+		 */
+		 . = ALIGN(8);
+		 PROVIDE (__global_pointer$ = . + 0x800);
+#endif
+
 		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 
 /* Located in generated directory. This file is populated by the
