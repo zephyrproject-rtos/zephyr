@@ -519,15 +519,15 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		}
 	}
 
+	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+	} else if (unlikely(lll->duration_reload && !lll->duration_expire)) {
 		radio_isr_set(isr_done_cleanup, lll);
 	} else if (lll->is_aux_sched) {
 		/* as a continuous scanner, let us not abort aux PDU scan */
 		return 0;
-	} else
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-	{
+	} else {
 		radio_isr_set(isr_window, lll);
 	}
 
