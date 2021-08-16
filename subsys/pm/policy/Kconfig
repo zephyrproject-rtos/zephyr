@@ -23,6 +23,25 @@ config PM_POLICY_APP
 
 endchoice
 
+choice
+	prompt "Device Power Management Policy"
+	depends on PM_DEVICE
+	default PM_DEVICE_POLICY_DEFAULT
+	help
+	  Select the device power management policy.
+
+config PM_DEVICE_POLICY_DEFAULT
+	bool "Default device power management policy"
+	help
+	  Select this option for PM policy based on CPU residencies.
+
+config PM_DEVICE_POLICY_APP
+	bool "Application Device Power Management Policy"
+	help
+	  When this option is selected, the application must provide a device power management policy.
+
+endchoice
+
 config PM_POLICY_RESIDENCY_DEFAULT
 	bool
 	help
