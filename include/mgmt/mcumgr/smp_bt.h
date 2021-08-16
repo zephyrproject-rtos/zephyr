@@ -32,6 +32,18 @@ int smp_bt_register(void);
  */
 int smp_bt_unregister(void);
 
+/**
+ * Transmits an SMP command/response over the specified Bluetooth connection
+ * as a notification.
+ *
+ * @param conn Connection object.
+ * @param data Pointer to SMP message.
+ * @param len data length.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int smp_bt_notify(struct bt_conn *conn, const void *data, uint16_t len);
+
 #ifdef __cplusplus
 }
 #endif
