@@ -39,8 +39,11 @@ enum adc_gain {
 	ADC_GAIN_2,   /**< x 2. */
 	ADC_GAIN_3,   /**< x 3. */
 	ADC_GAIN_4,   /**< x 4. */
+	ADC_GAIN_6,   /**< x 6. */
 	ADC_GAIN_8,   /**< x 8. */
+	ADC_GAIN_12,  /**< x 12. */
 	ADC_GAIN_16,  /**< x 16. */
+	ADC_GAIN_24,  /**< x 24. */
 	ADC_GAIN_32,  /**< x 32. */
 	ADC_GAIN_64,  /**< x 64. */
 	ADC_GAIN_128, /**< x 128. */
