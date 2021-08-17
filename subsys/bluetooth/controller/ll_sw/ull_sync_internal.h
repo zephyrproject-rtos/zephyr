@@ -15,3 +15,4 @@ void ull_sync_done(struct node_rx_event_done *done);
 void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len);
 int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us);
+struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync);
