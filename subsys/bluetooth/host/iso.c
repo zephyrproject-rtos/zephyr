@@ -1320,7 +1320,7 @@ static void cleanup_big(struct bt_iso_big *big)
 	for (int i = 0; i < big->num_bis; i++) {
 		struct bt_iso_chan *bis = big->bis[i];
 
-		if (bis->conn) {
+		if (bis != NULL && bis->conn != NULL) {
 			bt_conn_unref(bis->conn);
 			bis->conn = NULL;
 		}
