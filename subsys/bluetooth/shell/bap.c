@@ -10,6 +10,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <zephyr.h>
 #include <shell/shell.h>
@@ -27,6 +28,8 @@
 
 static struct bt_audio_chan chans[MAX_PAC];
 static struct bt_audio_chan broadcast_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_chan broadcast_sink_chans[BROADCAST_SNK_STREAM_CNT];
+static struct bt_audio_broadcast_sink *default_sink;
 static uint64_t broadcast_chan_index_bits;
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
@@ -136,7 +139,7 @@ static struct lc3_preset {
 /* Default to 16_2_1 */
 static struct lc3_preset *default_preset = &lc3_presets[3];
 
-static void print_codec(struct bt_codec *codec)
+static void print_codec(const struct bt_codec *codec)
 {
 	int i;
 
@@ -937,6 +940,117 @@ static int lc3_release(struct bt_audio_chan *chan)
 	return 0;
 }
 
+static uint32_t accepted_broadcast_id;
+
+static bool scan_recv(const struct bt_le_scan_recv_info *info,
+		     uint32_t broadcast_id)
+{
+	shell_print(ctx_shell, "Found broadcaster with ID 0x%06X",
+		    broadcast_id);
+
+	if (broadcast_id == accepted_broadcast_id) {
+		shell_print(ctx_shell, "PA syncing to broadcaster");
+		accepted_broadcast_id = 0;
+		return true;
+	}
+
+	return false;
+}
+
+static void pa_synced(struct bt_audio_broadcast_sink *sink,
+		      struct bt_le_per_adv_sync *sync,
+		      uint32_t broadcast_id)
+{
+	shell_print(ctx_shell,
+		    "PA synced to broadcaster with ID 0x%06X as sink %p",
+		    broadcast_id, sink);
+
+	if (default_sink == NULL) {
+		default_sink = sink;
+
+		shell_print(ctx_shell, "Sink %p is set as default", sink);
+	}
+}
+
+static void base_recv(struct bt_audio_broadcast_sink *sink,
+		      const struct bt_audio_base *base)
+{
+	uint8_t bis_indexes[BROADCAST_SNK_STREAM_CNT] = { 0 };
+	/* "0xXX " requires 5 characters */
+	char bis_indexes_str[5 * ARRAY_SIZE(bis_indexes) + 1];
+	size_t index_count = 0;
+
+	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
+
+	for (int i = 0; i < base->subgroup_count; i++) {
+		const struct bt_audio_base_subgroup *subgroup;
+
+		subgroup = &base->subgroups[i];
+
+		shell_print(ctx_shell, "Subgroup[%d]:", i);
+		print_codec(&subgroup->codec);
+
+		for (int j = 0; j < subgroup->bis_count; j++) {
+			const struct bt_audio_base_bis_data *bis_data;
+
+			bis_data = &subgroup->bis_data[j];
+
+			shell_print(ctx_shell, "BIS[%d] index 0x%02x",
+				    i, bis_data->index);
+			bis_indexes[index_count++] = bis_data->index;
+
+			for (int k = 0; k < bis_data->data_count; k++) {
+				const struct bt_codec_data *codec_data;
+
+				codec_data = &bis_data->data[k];
+
+				shell_print(ctx_shell,
+					    "data #%u: type 0x%02x len %u",
+					    i, codec_data->data.type,
+					    codec_data->data.data_len);
+				shell_hexdump(ctx_shell, codec_data->data.data,
+					      codec_data->data.data_len -
+						sizeof(codec_data->data.type));
+			}
+		}
+	}
+
+	memset(bis_indexes_str, 0, sizeof(bis_indexes_str));
+	/* Create space separated list of indexes as hex values */
+	for (int i = 0; i < index_count; i++) {
+		char bis_index_str[6];
+
+		sprintf(bis_index_str, "0x%02x ", bis_indexes[i]);
+
+		strcat(bis_indexes_str, bis_index_str);
+		shell_print(ctx_shell, "[%d]: %s", i, bis_index_str);
+	}
+
+	shell_print(ctx_shell, "Possible indexes: %s", bis_indexes_str);
+}
+
+static void syncable(struct bt_audio_broadcast_sink *sink, bool encrypted)
+{
+	shell_print(ctx_shell, "Sink %p is ready to sync %s encryption",
+		    sink, encrypted ? "with" : "without");
+}
+
+static void scan_term(int err)
+{
+	shell_print(ctx_shell, "Broadcast scan was terminated: %d", err);
+
+}
+
+static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
+{
+	shell_warn(ctx_shell, "Sink %p disconnected", sink);
+
+	if (default_sink == sink) {
+		default_sink = NULL;
+	}
+}
+
+
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
 						0x03, 30, 240, 2,
@@ -954,6 +1068,12 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.disable = lc3_disable,
 	.stop = lc3_stop,
 	.release = lc3_release,
+	.scan_recv = scan_recv,
+	.pa_synced = pa_synced,
+	.base_recv = base_recv,
+	.syncable = syncable,
+	.scan_term = scan_term,
+	.pa_sync_lost = pa_sync_lost,
 };
 
 static void audio_connected(struct bt_audio_chan *chan)
@@ -1035,6 +1155,110 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	}
 
 	return 0;
+}
+
+static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_le_scan_param param = {
+			.type       = BT_LE_SCAN_TYPE_ACTIVE,
+			.options    = BT_LE_SCAN_OPT_NONE,
+			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
+			.window     = BT_GAP_SCAN_FAST_WINDOW,
+			.timeout    = 0 };
+
+	if (strcmp(argv[1], "on") == 0) {
+		err =  bt_audio_broadcaster_scan_start(&param);
+		if (err != 0) {
+			shell_error(sh, "Could not start scan: %d", err);
+		}
+	} else if (strcmp(argv[1], "off") == 0) {
+		err = bt_audio_broadcaster_scan_stop();
+		if (err != 0) {
+			shell_error(sh, "Could not stop scan: %d", err);
+		}
+	} else {
+		shell_help(sh);
+		err = -ENOEXEC;
+	}
+
+	return err;
+}
+
+static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	accepted_broadcast_id = strtoul(argv[1], NULL, 16);
+
+	return 0;
+}
+
+static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
+{
+	static bool chans_linked;
+	uint32_t bis_bitfield;
+	int err;
+
+	bis_bitfield = 0;
+	for (int i = 1; i < argc; i++) {
+		unsigned long val = strtoul(argv[1], NULL, 16);
+
+		if (val < 0x01 || val > 0x1F) {
+			shell_error(sh, "Invalid index: %ld", val);
+		}
+		bis_bitfield |= BIT(val);
+	}
+
+	if (default_sink == NULL) {
+		shell_error(sh, "No sink available");
+		return -ENOEXEC;
+	}
+
+	if (!chans_linked) {
+		/* We can just link all broadcast sink channels once, as it
+		 * doesn't matter if we provide too many channels to the API,
+		 * as long as we provide enough.
+		 */
+
+		/* Link all channels */
+		for (int i = 0; i < ARRAY_SIZE(broadcast_sink_chans); i++) {
+			for (int j = i + 1; j < ARRAY_SIZE(broadcast_sink_chans); j++) {
+				bt_audio_chan_link(&broadcast_sink_chans[i],
+						   &broadcast_sink_chans[j]);
+			}
+		}
+		chans_linked = true;
+	}
+
+	err = bt_audio_broadcast_sync(default_sink, bis_bitfield,
+				      broadcast_sink_chans, NULL);
+	if (err != 0) {
+		shell_error(sh, "Failed to sync to broadcast: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
+				   char *argv[])
+{
+	int err;
+
+	if (default_sink == NULL) {
+		shell_error(sh, "No sink available");
+		return -ENOEXEC;
+	}
+
+	err = bt_audio_broadcast_sink_release(default_sink);
+	if (err != 0) {
+		shell_error(sh, "Failed to term sink: %d", err);
+		return err;
+	}
+
+	default_sink = NULL;
+
+	return err;
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -1125,6 +1349,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      cmd_config, 3, 2),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[codec] [preset]",
 		      cmd_create_broadcast, 1, 2),
+	SHELL_CMD_ARG(broadcast_scan, NULL, "<on, off>",
+		      cmd_broadcast_scan, 2, 0),
+	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>",
+		      cmd_accept_broadcast, 2, 0),
+	SHELL_CMD_ARG(sync_broadcast, NULL, "0x<bis_bitfield>",
+		      cmd_sync_broadcast, 2, 0),
+	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",
+		      cmd_term_broadcast_sink, 1, 0),
 	SHELL_CMD_ARG(qos, NULL,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]", cmd_qos, 1, 8),
