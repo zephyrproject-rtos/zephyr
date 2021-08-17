@@ -69,6 +69,9 @@ struct bt_audio_base_ad {
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_audio_broadcaster broadcasters[BROADCAST_SRC_CNT];
 
+static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
+			     struct bt_codec *codec);
+
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
 			struct bt_codec *codec)
@@ -144,7 +147,47 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 {
 	BT_DBG("chan %p cap %p codec %p", chan, cap, codec);
 
-	if (!chan || !chan->ep || !cap || !cap->ops || !codec) {
+	if (!chan || !chan->ep) {
+		BT_DBG("Invalid channel or endpoint");
+		return -EINVAL;
+	}
+
+	if (codec == NULL) {
+		BT_DBG("NULL codec");
+		return -EINVAL;
+	}
+
+	if (bt_audio_ep_is_broadcast(chan->ep)) {
+		struct bt_audio_broadcaster *broadcaster;
+		struct bt_audio_chan *tmp;
+		int err;
+
+		broadcaster = chan->ep->broadcaster;
+
+		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+			BT_DBG("Channel is not in the configured state");
+			return -EBADMSG;
+		}
+
+		chan_attach(NULL, chan, chan->ep, NULL, codec);
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+
+			chan_attach(NULL, tmp, tmp->ep, NULL, codec);
+		}
+
+		err = bt_audio_set_base(broadcaster, codec);
+		if (err != 0) {
+			BT_DBG("Failed to set base data (err %d)", err);
+			/* TODO: cleanup */
+			return err;
+		}
+
+		return 0;
+	}
+
+	if (!chan->cap || !chan->cap->ops) {
+		BT_DBG("Invalid capabilities or capabilities ops");
 		return -EINVAL;
 	}
 
@@ -1154,9 +1197,8 @@ static int bt_audio_broadcaster_setup_chan(uint8_t index,
 	return 0;
 }
 
-static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
+static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
 				 struct bt_codec *codec,
-				 struct bt_codec_qos *qos,
 				 struct net_buf_simple *buf)
 {
 	uint8_t bis_index;
@@ -1167,7 +1209,7 @@ static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
 		 "Cannot encode BASE with more than a single subgroup");
 
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
-	net_buf_simple_add_le24(buf, qos->pd);
+	net_buf_simple_add_le24(buf, broadcaster->pd);
 	net_buf_simple_add_u8(buf, broadcaster->subgroup_count);
 	/* TODO: The following encoding should be done for each subgroup once
 	 * supported
@@ -1254,12 +1296,35 @@ static int generate_broadcast_id(struct bt_audio_broadcaster *broadcaster)
 	return 0;
 }
 
+static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
+			     struct bt_codec *codec)
+{
+	struct bt_data base_ad_data;
+	int err;
+
+	/* Broadcast Audio Streaming Endpoint advertising data */
+	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base_ad));
+
+	bt_audio_encode_base(broadcaster, codec, &base_buf);
+
+	base_ad_data.type = BT_DATA_SVC_DATA16;
+	base_ad_data.data_len = base_buf.len;
+	base_ad_data.data = base_buf.data;
+
+	err = bt_le_per_adv_set_data(broadcaster->adv, &base_ad_data, 1);
+	if (err != 0) {
+		BT_DBG("Failed to set extended advertising data (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 				struct bt_codec *codec,
 				struct bt_codec_qos *qos)
 {
 	struct bt_audio_broadcaster *broadcaster;
-	struct bt_data base_ad_data;
 	struct bt_audio_chan *tmp;
 	struct bt_data ad;
 	uint8_t index;
@@ -1267,7 +1332,6 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_BROADCAST_ID_SIZE);
-	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base_ad));
 
 	/* TODO: Validate codec and qos values */
 
@@ -1368,15 +1432,10 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	broadcaster->subgroup_count = CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT;
-	bt_audio_encode_base(broadcaster, codec, qos, &base_buf);
-
-	base_ad_data.type = BT_DATA_SVC_DATA16;
-	base_ad_data.data_len = base_buf.len;
-	base_ad_data.data = base_buf.data;
-
-	err = bt_le_per_adv_set_data(broadcaster->adv, &base_ad_data, 1);
+	broadcaster->pd = qos->pd;
+	err = bt_audio_set_base(broadcasters, codec);
 	if (err != 0) {
-		BT_DBG("Failed to set extended advertising data (err %d)", err);
+		BT_DBG("Failed to set base data (err %d)", err);
 		/* TODO: cleanup */
 		return err;
 	}

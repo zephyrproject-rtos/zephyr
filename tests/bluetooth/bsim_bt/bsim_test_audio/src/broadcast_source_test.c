@@ -26,7 +26,12 @@ struct lc3_preset {
 static void test_main(void)
 {
 	int err;
-	struct lc3_preset preset =
+	struct lc3_preset preset_48_1_2 =
+		LC3_PRESET("48_1_2",
+			   BT_CODEC_LC3_CONFIG_48_1,
+			   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(75u, 23u, 45u,
+							     40000u));
+	struct lc3_preset preset_48_2_2 =
 		LC3_PRESET("48_2_2",
 			   BT_CODEC_LC3_CONFIG_48_2,
 			   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u,
@@ -50,10 +55,18 @@ static void test_main(void)
 		}
 	}
 
-	err = bt_audio_broadcaster_create(&broadcast_chans[0], &preset.codec,
-					  &preset.qos);
+	err = bt_audio_broadcaster_create(&broadcast_chans[0],
+					  &preset_48_1_2.codec,
+					  &preset_48_1_2.qos);
 	if (err != 0) {
 		FAIL("Unable to create broadcaster: %d", err);
+		return;
+	}
+
+	err = bt_audio_chan_reconfig(&broadcast_chans[0], NULL,
+				     &preset_48_2_2.codec);
+	if (err != 0) {
+		FAIL("Unable to reconfigure broadcast source: %d", err);
 		return;
 	}
 
