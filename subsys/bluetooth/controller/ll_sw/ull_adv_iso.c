@@ -58,7 +58,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
-static void ticker_op_stop_cb(uint32_t status, void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
 static void disabled_cb(void *param);
 static void tx_lll_flush(void *param);
 
@@ -623,7 +623,7 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
-			  ticker_op_stop_cb, adv_iso);
+			  ticker_stop_op_cb, adv_iso);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 
@@ -857,7 +857,7 @@ static void ticker_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 
-static void ticker_op_stop_cb(uint32_t status, void *param)
+static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
