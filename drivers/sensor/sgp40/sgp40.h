@@ -38,8 +38,7 @@
 #define SGP40_COMP_DEFAULT_RH	50
 
 struct sgp40_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec bus;
 	bool selftest;
 };
 

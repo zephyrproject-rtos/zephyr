@@ -36,8 +36,7 @@ static int sgp40_write_command(const struct device *dev, uint16_t cmd)
 
 	sys_put_be16(cmd, tx_buf);
 
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf),
-			 cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sgp40_start_measurement(const struct device *dev)
@@ -50,8 +49,7 @@ static int sgp40_start_measurement(const struct device *dev)
 	sys_put_be24(sys_get_be24(data->rh_param), &tx_buf[2]);
 	sys_put_be24(sys_get_be24(data->t_param), &tx_buf[5]);
 
-	return i2c_write(cfg->bus, tx_buf, sizeof(tx_buf),
-			 cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sgp40_attr_set(const struct device *dev,
@@ -110,7 +108,7 @@ static int sgp40_selftest(const struct device *dev)
 
 	k_sleep(K_MSEC(SGP40_TEST_WAIT_MS));
 
-	rc = i2c_read(cfg->bus, rx_buf, sizeof(rx_buf), cfg->i2c_addr);
+	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return rc;
@@ -151,7 +149,7 @@ static int sgp40_sample_fetch(const struct device *dev,
 
 	k_sleep(K_MSEC(SGP40_MEASURE_WAIT_MS));
 
-	rc = i2c_read(cfg->bus, rx_buf, sizeof(rx_buf), cfg->i2c_addr);
+	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return rc;
@@ -211,7 +209,7 @@ static int sgp40_init(const struct device *dev)
 	const struct sgp40_config *cfg = dev->config;
 	struct sensor_value comp_data;
 
-	if (!device_is_ready(cfg->bus)) {
+	if (!device_is_ready(cfg->bus.bus)) {
 		LOG_ERR("Device not ready.");
 		return -ENODEV;
 	}
@@ -250,8 +248,7 @@ static const struct sensor_driver_api sgp40_api = {
 	static struct sgp40_data sgp40_data_##n;		\
 								\
 	static const struct sgp40_config sgp40_config_##n = {	\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),		\
-		.i2c_addr = DT_INST_REG_ADDR(n),		\
+		.bus = I2C_DT_SPEC_INST_GET(n),			\
 		.selftest = DT_INST_PROP(n, enable_selftest),	\
 	};							\
 								\
