@@ -330,6 +330,20 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
+	/* Disable automatic power and clock gating for that CPU, so
+	 * it won't just go back to sleep.  Note that after startup,
+	 * the cores are NOT power gated even if they're configured to
+	 * be, so by default a core will launch successfully but then
+	 * turn itself off when it gets to the WAITI instruction in
+	 * the idle thread.
+	 */
+	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
+
+	shim->pwrctl |= BIT(cpu_num);
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		shim->clkctl |= BIT(16 + cpu_num);
+	}
+
 	/* Send power up message to the other core */
 	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
 
