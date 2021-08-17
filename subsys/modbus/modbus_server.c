@@ -926,6 +926,198 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	return true;
 }
 
+/*
+ * 20 (0x14) Read File Record
+ *
+ * Request Payload:
+ *  Function code                 1 Byte
+ *  Byte Count                    1 Byte
+ *  Sub-Req. x, Reference type    1 Byte
+ *  Sub-Req. x, File number       2 Bytes
+ *  Sub-Req. x, Record number     2 Bytes
+ *  Sub-Req. x, Record length     2 Bytes
+ *  Sub-Req. x+1, ...
+ *
+ * Response Payload:
+ *  Function code                 1 Byte
+ *  Response data length          1 Byte
+ *  Sub-Req. x, File resp. length 1 Byte
+ *  Sub-Req. x, Reference type    1 Byte
+ *  Sub-Req. x, Record data       x Bytes
+ *  Sub-Req. x+1, ...
+ */
+static bool mbs_fc20_file_record_read(struct modbus_context *ctx)
+{
+	const uint8_t byte_count_min = 0x07;
+	const uint8_t byte_count_max = 0xF5;
+	int err;
+	uint8_t rx_data_ix = 1;
+	uint8_t tx_data_ix = 1;
+	uint8_t reference_type;
+	uint16_t file_number;
+	uint16_t record_number;
+	uint16_t record_length;
+	uint8_t *record_data;
+	uint8_t byte_count;
+	uint8_t response_length;
+
+	if (ctx->mbs_user_cb->file_record_rd == NULL) {
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
+		return true;
+	}
+
+	byte_count = ctx->rx_adu.data[0];
+	if ((byte_count < byte_count_min) || (byte_count > byte_count_max)) {
+		LOG_ERR("Incorrect request data length");
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return true;
+	}
+
+	while (rx_data_ix < ctx->rx_adu.length) {
+		reference_type = ctx->rx_adu.data[rx_data_ix++];
+		if (reference_type != 0x06) {
+			LOG_ERR("Illegal reference type (%d)", reference_type);
+			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			return true;
+		}
+
+		file_number = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+		record_number = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+		record_length = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+
+		/* Prepare response header */
+		/* Leave room for file response length and reference type */
+		record_data = &ctx->tx_adu.data[tx_data_ix + 2];
+		/* Default response length is N * 2 bytes */
+		response_length = record_length * sizeof(uint16_t);
+
+		err = ctx->mbs_user_cb->file_record_rd(file_number,
+						       record_number,
+						       record_length,
+						       (uint16_t *)record_data,
+						       &response_length);
+
+		if (err != 0) {
+			LOG_INF("File number not supported");
+			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			return true;
+		}
+
+		/* File response length is data + reference type */
+		ctx->tx_adu.data[tx_data_ix++] = response_length + 1;
+		ctx->tx_adu.data[tx_data_ix++] = 0x06;
+		tx_data_ix += response_length;
+	}
+
+	/* Set response data length */
+	ctx->tx_adu.data[0] = (uint8_t)(tx_data_ix - 1);
+	ctx->tx_adu.length = tx_data_ix;
+	return true;
+}
+
+/*
+ * 21 (0x15) Write File Record
+ *
+ * Request Payload:
+ *  Function code                 1 Byte
+ *  Request data length           1 Byte
+ *  Sub-Req. x, Reference type    1 Byte
+ *  Sub-Req. x, File number       2 Bytes
+ *  Sub-Req. x, Record number     2 Bytes
+ *  Sub-Req. x, Record length     2 Bytes
+ *  Sub-Req. x, Record data       N * 2 Bytes
+ *  Sub-Req. x+1, ...
+ *
+ * Response Payload:
+ *  Function code                 1 Byte
+ *  Response data length          1 Byte
+ *  Sub-Req. x, Reference type    1 Byte
+ *  Sub-Req. x, File number       2 Bytes
+ *  Sub-Req. x, Record number     2 Bytes
+ *  Sub-Req. x, Record length     2 Bytes
+ *  Sub-Req. x, Record data       N * 2 Bytes
+ *  Sub-Req. x+1, ...
+ */
+static bool mbs_fc21_file_record_write(struct modbus_context *ctx)
+{
+	const uint8_t req_data_length_min = 0x07;
+	const uint8_t req_data_length_max = 0xFB;
+	int err;
+	uint8_t rx_data_ix = 1;
+	uint8_t tx_data_ix = 1;
+	uint8_t req_data_length;
+	uint8_t reference_type;
+	uint16_t file_number;
+	uint16_t record_number;
+	uint16_t record_length;
+	uint8_t *record_data;
+	size_t record_size;
+
+	if (ctx->mbs_user_cb->file_record_wr == NULL) {
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
+		return true;
+	}
+
+	req_data_length = ctx->rx_adu.data[0];
+	if ((req_data_length < req_data_length_min) ||
+	    (req_data_length > req_data_length_max)) {
+		LOG_ERR("Incorrect request data length");
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return true;
+	}
+
+	while (rx_data_ix < ctx->rx_adu.length) {
+		reference_type = ctx->rx_adu.data[rx_data_ix++];
+		if (reference_type != 0x06) {
+			LOG_ERR("Illegal reference type (%d)", reference_type);
+			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			return true;
+		}
+
+		file_number = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+		record_number = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+		record_length = sys_get_be16(&ctx->rx_adu.data[rx_data_ix]);
+		rx_data_ix += sizeof(uint16_t);
+
+		/* Copy record data to TX buffer */
+		record_data = &ctx->tx_adu.data[tx_data_ix + 5];
+		record_size = record_length * sizeof(uint16_t);
+		memcpy(record_data, &ctx->rx_adu.data[rx_data_ix], record_size);
+		rx_data_ix += record_size;
+
+		err = ctx->mbs_user_cb->file_record_wr(file_number,
+						       record_number,
+						       &record_length,
+						       (uint16_t *)record_data);
+
+		if (err != 0) {
+			LOG_INF("File number not supported");
+			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+			return true;
+		}
+
+		ctx->tx_adu.data[tx_data_ix++] = 0x06;
+		sys_put_be16(file_number, &ctx->tx_adu.data[tx_data_ix]);
+		tx_data_ix += sizeof(uint16_t);
+		sys_put_be16(record_number, &ctx->tx_adu.data[tx_data_ix]);
+		tx_data_ix += sizeof(uint16_t);
+		sys_put_be16(record_length, &ctx->tx_adu.data[tx_data_ix]);
+		tx_data_ix += sizeof(uint16_t);
+		/* Data has already been written */
+		tx_data_ix += record_length * sizeof(uint16_t);
+	}
+
+	/* Set response data length */
+	ctx->tx_adu.data[0] = (uint8_t)(tx_data_ix - 1);
+	ctx->tx_adu.length = tx_data_ix;
+	return true;
+}
+
 bool modbus_server_handler(struct modbus_context *ctx)
 {
 	bool send_reply = false;
@@ -992,6 +1184,14 @@ bool modbus_server_handler(struct modbus_context *ctx)
 
 	case MODBUS_FC16_HOLDING_REGS_WR:
 		send_reply = mbs_fc16_hregs_write(ctx);
+		break;
+
+	case MODBUS_FC20_FILE_RECORD_RD:
+		send_reply = mbs_fc20_file_record_read(ctx);
+		break;
+
+	case MODBUS_FC21_FILE_RECORD_WR:
+		send_reply = mbs_fc21_file_record_write(ctx);
 		break;
 
 	default:

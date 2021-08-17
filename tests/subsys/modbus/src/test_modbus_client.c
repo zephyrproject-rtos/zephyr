@@ -188,6 +188,45 @@ void test_holding_reg(void)
 		      "FC16FP verify failed");
 }
 
+void test_file_record(void)
+{
+	uint16_t file_rec_wr[8] = {0, 2, 1, 3, 5, 4, 7, 6};
+	uint16_t file_rec_rd[8] = {0};
+	struct modbus_write_file_record write_records[1] = {
+		{
+			.file_number = 1,
+			.record_number = 1,
+			.record_length = ARRAY_SIZE(file_rec_wr),
+			.record_data = file_rec_wr,
+		}
+	};
+	int err;
+
+	err = modbus_write_file_record(client_iface,
+				       node,
+				       write_records,
+				       ARRAY_SIZE(write_records));
+	zassert_not_equal(err, 0, "FC21 write request failed");
+
+	struct modbus_read_file_record read_records[1] = {
+		{
+			.file_number = 1,
+			.record_number = 1,
+			.record_length = ARRAY_SIZE(file_rec_rd),
+			.record_data = file_rec_rd,
+		}
+	};
+	err = modbus_read_file_record(client_iface,
+				      node,
+				      read_records,
+				      ARRAY_SIZE(read_records));
+	zassert_equal(err, 0, "FC20 read request failed");
+
+	LOG_HEXDUMP_DBG(file_rec_rd, sizeof(file_rec_rd), "FC20, file_rec_rd");
+	zassert_equal(memcmp(file_rec_wr, file_rec_rd, sizeof(file_rec_wr)), 0,
+		      "FC21 verify failed");
+}
+
 void test_diagnostic(void)
 {
 	uint16_t data = 0xcafe;
@@ -331,6 +370,11 @@ void test_input_reg(void)
 }
 
 void test_holding_reg(void)
+{
+	ztest_test_skip();
+}
+
+void test_file_record(void)
 {
 	ztest_test_skip();
 }

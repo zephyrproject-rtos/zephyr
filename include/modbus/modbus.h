@@ -61,6 +61,21 @@ struct modbus_adu {
 	uint16_t crc;
 };
 
+struct modbus_write_file_record {
+	uint16_t file_number;
+	uint16_t record_number;
+	uint16_t record_length;
+	uint16_t * const record_data;
+};
+
+struct modbus_read_file_record {
+	uint16_t file_number;
+	uint16_t record_number;
+	uint16_t record_length;
+	uint8_t file_response_length;
+	uint16_t *record_data;
+};
+
 /**
  * @brief Coil read (FC01)
  *
@@ -330,6 +345,16 @@ int modbus_write_holding_regs_fp(const int iface,
 				 float *const reg_buf,
 				 const uint16_t num_regs);
 
+int modbus_read_file_record(const int iface,
+			    const uint8_t unit_id,
+			    struct modbus_read_file_record records[],
+			    const int num_file_records);
+
+int modbus_write_file_record(const int iface,
+			     const uint8_t unit_id,
+			     const struct modbus_write_file_record records[],
+			     const int num_file_records);
+
 /** Modbus Server User Callback structure */
 struct modbus_user_callbacks {
 	/** Coil read callback */
@@ -358,6 +383,19 @@ struct modbus_user_callbacks {
 
 	/** Floating Point Holding Register write callback */
 	int (*holding_reg_wr_fp)(uint16_t addr, float reg);
+
+	/** File Record read callback */
+	int (*file_record_rd)(uint16_t file_number,
+			      uint16_t record_number,
+			      uint16_t record_length,
+			      uint16_t record_data[],
+			      uint8_t *response_length);
+
+	/** File Record write callback */
+	int (*file_record_wr)(uint16_t file_number,
+			      uint16_t record_number,
+			      uint16_t *record_length,
+			      uint16_t record_data[]);
 };
 
 /**

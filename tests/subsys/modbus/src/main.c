@@ -51,6 +51,7 @@ void test_main(void)
 			 ztest_unit_test(test_di_rd),
 			 ztest_unit_test(test_input_reg),
 			 ztest_unit_test(test_holding_reg),
+			 ztest_unit_test(test_file_record),
 			 ztest_unit_test(test_diagnostic),
 			 ztest_unit_test(test_client_disable),
 			 ztest_unit_test(test_server_disable)

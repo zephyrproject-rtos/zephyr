@@ -640,3 +640,116 @@ int modbus_write_holding_regs_fp(const int iface,
 	return err;
 }
 #endif
+
+int modbus_read_file_record(const int iface,
+			    const uint8_t unit_id,
+			    struct modbus_read_file_record records[],
+			    const int num_file_records)
+{
+	struct modbus_context *ctx = modbus_get_context(iface);
+	uint16_t length = 0;
+	uint8_t *data_ptr;
+	struct modbus_read_file_record * sub_req;
+	int err;
+
+	if (ctx == NULL) {
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
+
+	ctx->tx_adu.data[0] = num_file_records * 7;
+	length = 1;
+
+	for (int i = 0; i < num_file_records; i++) {
+		length += 7;
+		if (length > sizeof(ctx->tx_adu.data)) {
+			LOG_ERR("Length of data buffer is not sufficient");
+			k_mutex_unlock(&ctx->iface_lock);
+			return -ENOBUFS;
+		}
+
+		sub_req = &records[i];
+		data_ptr = &ctx->tx_adu.data[length];
+		data_ptr[0] = 0x06;
+		sys_put_be16(sub_req->file_number, &data_ptr[1]);
+		sys_put_be16(sub_req->record_number, &data_ptr[3]);
+		sys_put_be16(sub_req->record_length, &data_ptr[5]);
+	}
+
+	ctx->tx_adu.length = length;
+	err = mbc_send_cmd(ctx, unit_id, MODBUS_FC20_FILE_RECORD_RD, NULL);
+	k_mutex_unlock(&ctx->iface_lock);
+
+	length = 1;
+	for (int i = 0; i < num_file_records; i++) {
+		sub_req = &records[i];
+		data_ptr = &ctx->rx_adu.data[length];
+		uint8_t response_length = data_ptr[0];
+		uint8_t reference_type = data_ptr[1];
+
+		if (reference_type != 0x06) {
+			LOG_ERR("Invalid reference type (%d)", data_ptr[1]);
+			return -EINVAL;
+		}
+
+		memcpy(sub_req->record_data, &data_ptr[2], response_length);
+		sub_req->file_response_length = response_length;
+	}
+
+	return err;
+}
+
+int modbus_write_file_record(const int iface,
+			     const uint8_t unit_id,
+			     const struct modbus_write_file_record records[],
+			     const int num_file_records)
+{
+	struct modbus_context *ctx = modbus_get_context(iface);
+	uint16_t length = 0;
+	uint8_t *data_ptr;
+	const struct modbus_write_file_record * sub_req;
+	size_t num_bytes;
+	int err;
+
+	if (ctx == NULL) {
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
+
+	/* Request data length is written last */
+	length = 1;
+
+	for (int i = 0; i < num_file_records; i++) {
+		length += 7;
+		if (length > sizeof(ctx->tx_adu.data)) {
+			LOG_ERR("Length of data buffer is not sufficient");
+			k_mutex_unlock(&ctx->iface_lock);
+			return -ENOBUFS;
+		}
+
+		sub_req = &records[i];
+		data_ptr = &ctx->tx_adu.data[length];
+		data_ptr[0] = 0x06;
+		sys_put_be16(sub_req->file_number, &data_ptr[1]);
+		sys_put_be16(sub_req->record_number, &data_ptr[3]);
+		sys_put_be16(sub_req->record_length, &data_ptr[5]);
+
+		num_bytes = sizeof(uint16_t) * sub_req->record_length;
+		length += num_bytes;
+		if (length > sizeof(ctx->tx_adu.data)) {
+			LOG_ERR("Length of data buffer is not sufficient");
+			k_mutex_unlock(&ctx->iface_lock);
+			return -ENOBUFS;
+		}
+		memcpy(&data_ptr[7], sub_req->record_data, num_bytes);
+	}
+
+	ctx->tx_adu.data[0] = (uint8_t)(length + 1);
+	ctx->tx_adu.length = length;
+	err = mbc_send_cmd(ctx, unit_id, MODBUS_FC21_FILE_RECORD_WR, NULL);
+	k_mutex_unlock(&ctx->iface_lock);
+
+	return err;
+}

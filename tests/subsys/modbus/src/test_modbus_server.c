@@ -13,6 +13,7 @@ const static uint16_t fp_offset = MB_TEST_FP_OFFSET;
 static uint16_t coils;
 static uint16_t holding_reg[8];
 static float holding_fp[4];
+static uint16_t file_record[64];
 
 uint8_t server_iface;
 
@@ -153,6 +154,43 @@ static int holding_reg_wr_fp(uint16_t addr, float reg)
 	return 0;
 }
 
+static int file_record_write(uint16_t file_number,
+			     uint16_t record_number,
+			     uint16_t *record_length,
+			     uint16_t record_data[])
+{
+	if (file_number != 1) {
+		return -ENOTSUP;
+	}
+
+	memcpy(file_record, record_data, *record_length * sizeof(uint16_t));
+
+	LOG_DBG("File record write, number %u, record %u",
+		file_number, record_number);
+
+	return 0;
+}
+
+static int file_record_read(uint16_t file_number,
+			    uint16_t record_number,
+			    uint16_t record_length,
+			    uint16_t record_data[],
+			    uint8_t *response_length)
+{
+	if (file_number != 1) {
+		return -ENOTSUP;
+	}
+
+	*response_length = MIN(sizeof(file_record),
+			       record_length * sizeof(uint16_t));
+	memcpy(record_data, file_record, *response_length);
+
+	LOG_DBG("File record read, number %u, record %u",
+		file_number, record_number);
+
+	return 0;
+}
+
 static struct modbus_user_callbacks mbs_cbs = {
 	/** Coil read/write callback */
 	.coil_rd = coil_rd,
@@ -169,6 +207,9 @@ static struct modbus_user_callbacks mbs_cbs = {
 	/* Floating Point Holding Register read/write callback */
 	.holding_reg_rd_fp = holding_reg_rd_fp,
 	.holding_reg_wr_fp = holding_reg_wr_fp,
+	/* File record read/write callback */
+	.file_record_rd = file_record_read,
+	.file_record_wr = file_record_write,
 };
 
 static struct modbus_iface_param server_param = {

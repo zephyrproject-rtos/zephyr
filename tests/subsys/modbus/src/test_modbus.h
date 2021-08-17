@@ -44,6 +44,7 @@ void test_coil_wr_rd(void);
 void test_di_rd(void);
 void test_input_reg(void);
 void test_holding_reg(void);
+void test_file_record(void);
 void test_diagnostic(void);
 void test_client_disable(void);
 
