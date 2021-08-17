@@ -184,11 +184,13 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS,
 			  BT_MESH_IV_UPDATE(flags));
 
-	/* Set minimum required hours, since the 96-hour minimum requirement
-	 * doesn't apply straight after provisioning (since we can't know how
-	 * long has actually passed since the network changed its state).
+	/* If IV Update is already in progress, set minimum required hours,
+	 * since the 96-hour minimum requirement doesn't apply in this case straight
+	 * after provisioning.
 	 */
-	bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
+	if (BT_MESH_IV_UPDATE(flags)) {
+		bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
