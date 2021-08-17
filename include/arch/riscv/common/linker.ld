@@ -188,8 +188,6 @@ SECTIONS
 #include <linker/cplusplus-rom.ld>
 	_image_rodata_end = .;
 	MPU_ALIGN(_image_rodata_end - _image_rom_start);
-	_image_rom_end = .;
-	_image_rom_size = _image_rom_end - _image_rom_start;
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -342,5 +340,15 @@ GROUP_END(DTCM)
 	KEEP(*(.riscv.attributes))
 	KEEP(*(.gnu.attributes))
 	}
+
+/* Must be last in romable region */
+SECTION_PROLOGUE(.last_section,(NOLOAD),)
+{
+} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* To provide the image size as a const expression,
+ * calculate this value here. */
+_image_rom_end = LOADADDR(.last_section);
+_image_rom_size = _image_rom_end - _image_rom_start;
 
 }
