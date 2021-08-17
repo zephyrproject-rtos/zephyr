@@ -180,9 +180,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Critical section */
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* NOTE: To reduce cpu effort, we don't add critical section here */
+	/* Disable event timer */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
+
 	if (ticks == K_TICKS_FOREVER) {
-		hw_cnt = EVENT_TIMER_MAX_CNT;
+		/* Return since no future timer interrupts are required */
+		k_spin_unlock(&lock, key);
+		return;
 	} else if (ticks <= 1) {
 		/*
 		 * Ticks <= 1 means the kernel wants the tick announced
@@ -210,12 +214,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Set event timer 24-bit count */
 	IT8XXX2_EXT_CNTX(EVENT_TIMER) = hw_cnt;
 
-	/* Enable and re-start event timer */
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
-					   IT8XXX2_EXT_ETXRST);
-
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	/*
+	 * When timer enable bit is from 0->1, timer will reload counts and
+	 * start countdown.
+	 */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= IT8XXX2_EXT_ETXEN;
 
 	k_spin_unlock(&lock, key);
 
