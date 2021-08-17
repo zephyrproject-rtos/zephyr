@@ -45,6 +45,13 @@ int socket_offload_getaddrinfo(const char *node, const char *service,
 
 void socket_offload_freeaddrinfo(struct zsock_addrinfo *res);
 
+/* When CONFIG_NET_SOCKETS_OFFLOAD is enabled, offloaded sockets take precedence
+ * when creating a new socket. Combine this flag with a socket type when
+ * creating a socket, to enforce native socket creation
+ * (e. g. SOCK_STREAM | SOCK_NATIVE).
+ */
+#define SOCK_NATIVE 0x80000000
+
 #ifdef __cplusplus
 }
 #endif

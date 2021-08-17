@@ -876,6 +876,7 @@ struct ifreq {
  */
 struct net_socket_register {
 	int family;
+	bool is_offloaded;
 	bool (*is_supported)(int family, int type, int proto);
 	int (*handler)(int family, int type, int proto);
 };
@@ -887,6 +888,16 @@ struct net_socket_register {
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
 			NET_SOCKET_GET_NAME(socket_name)) = {		\
 		.family = _family,					\
+		.is_offloaded = false,					\
+		.is_supported = _is_supported,				\
+		.handler = _handler,					\
+	}
+
+#define NET_SOCKET_OFFLOADED_REGISTER(socket_name, _family, _is_supported, _handler) \
+	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
+			NET_SOCKET_GET_NAME(socket_name)) = {		\
+		.family = _family,					\
+		.is_offloaded = true,					\
 		.is_supported = _is_supported,				\
 		.handler = _handler,					\
 	}

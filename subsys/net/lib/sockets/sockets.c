@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
+#include <net/socket_offload.h>
 #include <net/socket_types.h>
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
@@ -206,17 +207,50 @@ int zsock_socket_internal(int family, int type, int proto)
 	return fd;
 }
 
+static bool sock_family_match(const struct net_socket_register *sock_family,
+			      int family, int type, int proto, bool offloaded)
+{
+	if (sock_family->is_offloaded != offloaded) {
+		return false;
+	}
+
+	if (sock_family->family != family &&
+	    sock_family->family != AF_UNSPEC) {
+		return false;
+	}
+
+	NET_ASSERT(sock_family->is_supported);
+
+	if (!sock_family->is_supported(family, type, proto)) {
+		return false;
+	}
+
+	return true;
+}
+
 int z_impl_zsock_socket(int family, int type, int proto)
 {
-	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
-		if (sock_family->family != family &&
-		    sock_family->family != AF_UNSPEC) {
-			continue;
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		if (type & SOCK_NATIVE) {
+			/* Enforce native socket creation. */
+			type = type & ~SOCK_NATIVE;
+		} else {
+			/* Loop over offloaded implementations. */
+			STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
+				if (!sock_family_match(sock_family, family, type,
+						       proto, true)) {
+					continue;
+				}
+
+				return sock_family->handler(family, type, proto);
+			}
 		}
+	}
 
-		NET_ASSERT(sock_family->is_supported);
-
-		if (!sock_family->is_supported(family, type, proto)) {
+	/* Loop over custom native sockets implementations (TLS, PACKET etc.) */
+	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
+		if (!sock_family_match(sock_family, family, type,
+				       proto, false)) {
 			continue;
 		}
 
