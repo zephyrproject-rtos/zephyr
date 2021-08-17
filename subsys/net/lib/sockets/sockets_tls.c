@@ -18,6 +18,20 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 
+/* TODO: Remove all direct access to private fields.
+ * According with Mbed TLS migration guide:
+ *
+ * Direct access to fields of structures
+ * (`struct` types) declared in public headers is no longer
+ * supported. In Mbed TLS 3, the layout of structures is not
+ * considered part of the stable API, and minor versions (3.1, 3.2,
+ * etc.) may add, remove, rename, reorder or change the type of
+ * structure fields.
+ */
+#if !defined(MBEDTLS_ALLOW_PRIVATE_ACCESS)
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+#endif
+
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
