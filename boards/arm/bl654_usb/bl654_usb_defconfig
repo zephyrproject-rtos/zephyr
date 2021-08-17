@@ -12,13 +12,12 @@ CONFIG_SERIAL=y
 
 # Enable console
 CONFIG_CONSOLE=y
-CONFIG_USB_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
 
 # Enable USB
-CONFIG_USB=y
+CONFIG_USB_DEVICE_STACK=y
 
 # Additional board options
 CONFIG_GPIO_AS_PINRESET=y
