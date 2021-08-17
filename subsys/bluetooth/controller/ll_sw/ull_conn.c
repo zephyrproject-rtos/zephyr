@@ -83,7 +83,7 @@ static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
 static void conn_cleanup_finalize(struct ll_conn *conn);
 static void tx_ull_flush(struct ll_conn *conn);
-static void ticker_op_stop_cb(uint32_t status, void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
 static void disabled_cb(void *param);
 static void tx_lll_flush(void *param);
 
@@ -1974,7 +1974,7 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_CONN_BASE + lll->handle,
-				    ticker_op_stop_cb, conn);
+				    ticker_stop_op_cb, conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -2036,7 +2036,7 @@ static void tx_ull_flush(struct ll_conn *conn)
 	}
 }
 
-static void ticker_op_stop_cb(uint32_t status, void *param)
+static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};

@@ -68,12 +68,12 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_update_cb(uint32_t status, void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_stop_cb(uint32_t status, void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -82,9 +82,9 @@ static void conn_release(struct ll_adv_set *adv);
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts);
-static void ticker_op_aux_stop_cb(uint32_t status, void *param);
+static void ticker_stop_aux_op_cb(uint32_t status, void *param);
 static void aux_disabled_cb(void *param);
-static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ticker_stop_ext_op_cb(uint32_t status, void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1774,7 +1774,7 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 			    TICKER_ID_ADV_BASE + ull_adv_handle_get(adv),
 			    random_delay,
 			    ticks_adjust_minus, 0, 0, 0, 0,
-			    ticker_op_update_cb, adv);
+			    ticker_update_op_cb, adv);
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -1892,12 +1892,12 @@ void ull_adv_done(struct node_rx_event_done *done)
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_ULL_HIGH,
 				  (TICKER_ID_ADV_AUX_BASE + aux_handle),
-				  ticker_op_aux_stop_cb, adv);
+				  ticker_stop_aux_op_cb, adv);
 	} else {
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_ULL_HIGH,
 				  (TICKER_ID_ADV_BASE + handle),
-				  ticker_op_ext_stop_cb, adv);
+				  ticker_stop_ext_op_cb, adv);
 	}
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
@@ -2168,7 +2168,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
-static void ticker_op_update_cb(uint32_t status, void *param)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());
@@ -2187,12 +2187,12 @@ static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  TICKER_ID_ADV_BASE + handle,
-			  ticker_op_stop_cb, adv);
+			  ticker_stop_op_cb, adv);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_op_stop_cb(uint32_t status, void *param)
+static void ticker_stop_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
@@ -2324,7 +2324,7 @@ static void adv_max_events_duration_set(struct ll_adv_set *adv,
 		HAL_TICKER_US_TO_TICKS((uint64_t)duration * 10 * USEC_PER_MSEC);
 }
 
-static void ticker_op_aux_stop_cb(uint32_t status, void *param)
+static void ticker_stop_aux_op_cb(uint32_t status, void *param)
 {
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
@@ -2370,12 +2370,12 @@ static void aux_disabled_cb(void *param)
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 			  TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_ADV_BASE + handle),
-			  ticker_op_ext_stop_cb, param);
+			  ticker_stop_ext_op_cb, param);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
