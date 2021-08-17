@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties for Power Management (PM)
+
+description: |
+    This binding provides resources required to build and run the
+    tests/subsys/power/power_mgmt test in Zephyr.
+
+compatible: "zephyr,wakeup-dev"
+
+include: base.yaml

@@ -27,27 +27,6 @@ static bool idle_entered;
 static const struct device *dev;
 static struct dummy_driver_api *api;
 
-void pm_power_state_set(struct pm_state_info info)
-{
-	/* at this point, notify_pm_state_entry() implemented in
-	 * this file has been called and set_pm should have been set
-	 */
-	zassert_true(set_pm == true,
-		     "Notification to enter suspend was not sent to the App");
-
-	/* this function is called after devices enter low power state */
-	enum pm_device_state device_power_state;
-	/* at this point, devices have been deactivated */
-	pm_device_state_get(dev, &device_power_state);
-	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
-
-	/* this function is called when system entering low power state, so
-	 * parameter state should not be PM_STATE_ACTIVE
-	 */
-	zassert_false(info.state == PM_STATE_ACTIVE,
-		      "Entering low power state with a wrong parameter");
-}
-
 void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/* pm_system_suspend is entered with irq locked
@@ -190,7 +169,7 @@ void test_setup(void)
 {
 	int ret;
 
-	dev = device_get_binding(DUMMY_DRIVER_NAME);
+	dev = device_get_binding(DUMMY_NAME);
 	api = (struct dummy_driver_api *)dev->api;
 	ret = api->open(dev);
 	zassert_true(ret == 0, "Fail to open device");

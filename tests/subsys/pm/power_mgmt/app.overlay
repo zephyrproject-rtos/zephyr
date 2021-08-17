@@ -1,0 +1,14 @@
+/*
+ * Copyright 2021 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	wakeup_capable_test_dev {
+		compatible = "zephyr,wakeup-dev";
+		label = "WAKEUP_CAPABLE";
+		status = "okay";
+		wakeup-source;
+	};
+};
