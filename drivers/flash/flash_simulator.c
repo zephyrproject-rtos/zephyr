@@ -454,3 +454,29 @@ NATIVE_TASK(flash_native_posix_options, PRE_BOOT_1, 1);
 NATIVE_TASK(flash_native_posix_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
+
+/* Extension to generic flash driver API */
+void *z_impl_flash_simulator_get_memory(const struct device *dev,
+					size_t *mock_size)
+{
+	ARG_UNUSED(dev);
+
+	*mock_size = FLASH_SIMULATOR_FLASH_SIZE;
+	return mock_flash;
+}
+
+#ifdef CONFIG_USERSPACE
+
+#include <syscall_handler.h>
+
+void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
+				      size_t *mock_size)
+{
+	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+
+	return z_impl_flash_simulator_get_memory(dev, mock_size);
+}
+
+#include <syscalls/flash_simulator_get_memory_mrsh.c>
+
+#endif /* CONFIG_USERSPACE */
