@@ -25,8 +25,7 @@
 #define SHT4X_CRC_INIT		0xFF
 
 struct sht4x_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec bus;
 	uint8_t repeatability;
 };
 
