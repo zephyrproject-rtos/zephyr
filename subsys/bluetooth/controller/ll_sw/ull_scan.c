@@ -63,7 +63,7 @@ static uint8_t duration_period_setup(struct ll_scan_set *scan,
 				     struct node_rx_pdu **node_rx_scan_term);
 static uint8_t duration_period_update(struct ll_scan_set *scan,
 				      uint8_t is_update);
-static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ticker_stop_ext_op_cb(uint32_t status, void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -515,7 +515,7 @@ void ull_scan_done(struct node_rx_event_done *done)
 	rx_hdr->handle = handle;
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_BASE + handle), ticker_op_ext_stop_cb,
+			  (TICKER_ID_SCAN_BASE + handle), ticker_stop_ext_op_cb,
 			  scan);
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
@@ -837,7 +837,7 @@ static uint8_t duration_period_update(struct ll_scan_set *scan,
 	return 0;
 }
 
-static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
