@@ -360,7 +360,7 @@ static void test_provisioning_data_load(void)
 
 	/* verify IV index state */
 	if (bt_mesh.iv_index != test_ividx ||
-	    bt_mesh.ivu_duration != 96 ||
+	    bt_mesh.ivu_duration != 0 ||
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS)) {
 		FAIL("IV loading verification failed");
 	}
