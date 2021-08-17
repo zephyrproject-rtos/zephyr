@@ -332,6 +332,17 @@ struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle)
 	return sync;
 }
 
+struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
+{
+	if (((uint8_t *)sync < (uint8_t *)ll_sync_pool) ||
+	    ((uint8_t *)sync > ((uint8_t *)ll_sync_pool +
+	     (sizeof(struct ll_sync_set) * (CONFIG_BT_PER_ADV_SYNC_MAX - 1))))) {
+		return NULL;
+	}
+
+	return sync;
+}
+
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
 {
 	return mem_index_get(sync, ll_sync_pool, sizeof(struct ll_sync_set));

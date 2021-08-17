@@ -29,8 +29,9 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
-#include "lll_scan.h"
 #include "lll_df_types.h"
+#include "lll_scan.h"
+#include "lll_sync.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
@@ -1454,7 +1455,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 								 phy_flags_rx);
 				ftr->phy_flags = phy_flags_rx;
 				ftr->aux_sched =
-					lll_scan_aux_setup(lll, pdu_adv_rx,
+					lll_scan_aux_setup(lll, NULL, pdu_adv_rx,
 							   lll->phy,
 							   phy_flags_rx);
 				if (ftr->aux_sched) {

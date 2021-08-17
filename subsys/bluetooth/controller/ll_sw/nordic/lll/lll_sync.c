@@ -23,11 +23,13 @@
 #include "lll_clock.h"
 #include "lll_chan.h"
 #include "lll_df_types.h"
+#include "lll_scan.h"
 #include "lll_sync.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
+#include "lll_scan_internal.h"
 
 #include "lll_df.h"
 #include "lll_df_internal.h"
@@ -44,11 +46,6 @@ static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
-
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
-				    uint8_t packet_status);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 int lll_sync_init(void)
 {
@@ -98,6 +95,26 @@ void lll_sync_prepare(void *param)
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
+void lll_sync_setup_radio_switch(struct lll_sync *lll, uint8_t chan_idx)
+{
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_df_sync_cfg *cfg;
+
+	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+
+	if (cfg->is_enabled) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
+					  cfg->ant_ids, chan_idx);
+		cfg->cte_count = 0;
+
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_switch_complete_and_disable();
+	}
 }
 
 static int init_reset(void)
@@ -185,30 +202,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	struct lll_df_sync_cfg *cfg;
-
-	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
-
-	if (cfg->is_enabled) {
-		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  data_chan_use);
-		cfg->cte_count = 0;
-	}
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	lll_sync_setup_radio_switch(lll, data_chan_use);
 
 	radio_isr_set(isr_rx, lll);
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
-
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	if (cfg->is_enabled) {
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		radio_switch_complete_and_disable();
-	}
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -300,6 +298,7 @@ static void isr_rx(void *param)
 	uint8_t trx_done;
 	uint8_t trx_cnt;
 	uint8_t crc_ok;
+	int err = 0;
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -333,6 +332,7 @@ static void isr_rx(void *param)
 		node_rx = ull_pdu_rx_alloc_peek(3);
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
+			struct pdu_adv *pdu;
 
 			ull_pdu_rx_alloc();
 
@@ -347,10 +347,19 @@ static void isr_rx(void *param)
 					    radio_rx_chain_delay_get(lll->phy,
 								     1);
 
+			pdu = (void *)node_rx->pdu;
+
+			ftr->aux_sched_from_lll = 0;
+			ftr->aux_sched = lll_scan_aux_setup(NULL, lll, pdu,
+							    lll->phy, 0);
+			if (ftr->aux_sched) {
+				err = -EBUSY;
+			}
+
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
+			lll_create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
 
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
@@ -360,8 +369,7 @@ static void isr_rx(void *param)
 	else {
 		int err;
 
-		err = create_iq_report(lll, rssi_ready,
-				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+		err = lll_create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
 			ull_rx_sched();
 		}
@@ -387,12 +395,15 @@ isr_rx_done:
 	lll->window_widening_event_us = 0U;
 	lll->window_size_event_us = 0U;
 
+	if (err == -EBUSY) {
+		return;
+	}
+
 	lll_isr_cleanup(param);
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
-				   uint8_t packet_status)
+int lll_create_iq_report(struct lll_sync *lll, uint8_t rssi_ready, uint8_t packet_status)
 {
 	struct node_rx_iq_report *iq_report;
 	struct lll_df_sync_cfg *cfg;
