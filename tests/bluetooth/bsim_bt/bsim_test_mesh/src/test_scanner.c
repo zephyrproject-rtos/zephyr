@@ -67,7 +67,7 @@ static void test_tx_device_setup(void)
 /** Bypassing setting up transmission, and will try to send the raw data that is
  *  provided to the function.
  */
-static void test_tx_send_ad_type_msg(uint8_t type, uint8_t *data, uint8_t len)
+static void test_tx_send_ad_type_msg(uint8_t type, const uint8_t *data, uint8_t len)
 {
 	struct bt_le_adv_param param = {};
 	uint16_t duration, adv_int;
