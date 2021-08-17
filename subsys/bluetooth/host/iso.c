@@ -1781,6 +1781,13 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
+	for (int i = 0; i < param->num_bis; i++) {
+		if (param->bis_channels[i] == NULL) {
+			BT_DBG("NULL channel in bis_channels[%d]", i);
+			return -EINVAL;
+		}
+	}
+
 	big = get_free_big();
 
 	if (!big) {
