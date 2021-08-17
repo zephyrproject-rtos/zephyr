@@ -68,7 +68,6 @@ void pm_dump_debug_info(void)
 static inline void pm_debug_start_timer(void) { }
 static inline void pm_debug_stop_timer(void) { }
 static void pm_log_debug_info(enum pm_state state) { }
-void pm_dump_debug_info(void) { }
 #endif
 
 static inline void exit_pos_ops(struct pm_state_info info)
