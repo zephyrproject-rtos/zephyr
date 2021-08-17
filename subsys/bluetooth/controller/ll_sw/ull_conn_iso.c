@@ -395,7 +395,7 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void disabled_cig_cb(void *param)
+static void cig_disabled_cb(void *param)
 {
 	struct ll_conn_iso_group *cig;
 
@@ -427,7 +427,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 		 */
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
-		hdr->disabled_cb = disabled_cig_cb;
+		hdr->disabled_cb = cig_disabled_cb;
 
 		mfy.fp = lll_disable;
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
@@ -435,14 +435,14 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 		LL_ASSERT(!ret);
 	} else {
 		/* Disable now */
-		mfy.fp = disabled_cig_cb;
+		mfy.fp = cig_disabled_cb;
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
 		LL_ASSERT(!ret);
 	}
 }
 
-static void disabled_cis_cb(void *param)
+static void cis_disabled_cb(void *param)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
@@ -527,20 +527,20 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 		 * continue CIS teardown from there. The disabled_cb cannot be
 		 * reserved for other use.
 		 */
-		LL_ASSERT(!hdr->disabled_cb || hdr->disabled_cb == disabled_cis_cb);
+		LL_ASSERT(!hdr->disabled_cb || hdr->disabled_cb == cis_disabled_cb);
 
 		hdr->disabled_param = cig;
-		hdr->disabled_cb = disabled_cis_cb;
+		hdr->disabled_cb = cis_disabled_cb;
 	} else {
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 
 		/* Tear down CIS now in ULL_HIGH context. Ignore enqueue
 		 * error (already enqueued) as all CISes marked for teardown
-		 * will be handled in disabled_cis_cb. Use mayfly chaining to
+		 * will be handled in cis_disabled_cb. Use mayfly chaining to
 		 * prevent recursive stop calls.
 		 */
-		mfy.fp = disabled_cis_cb;
+		mfy.fp = cis_disabled_cb;
 		mfy.param = cig;
 		mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 			       TICKER_USER_ID_ULL_HIGH, 1, &mfy);
