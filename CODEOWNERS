@@ -590,12 +590,12 @@
 /lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
-/lib/util/getopt/                         @jakub-uC
 /lib/gui/                                 @vanwinkeljan
 /lib/open-amp/                            @arnopo
 /lib/os/                                  @dcpleung @nashif @andyross
 /lib/os/cbprintf_packaged.c               @npitre
 /lib/posix/                               @pfalcon
+/lib/posix/getopt/                        @jakub-uC
 /subsys/portability/                      @nashif
 /lib/libc/                                @nashif
 /lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
