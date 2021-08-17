@@ -29,6 +29,9 @@ struct lll_sync {
 	uint32_t window_widening_event_us;
 	uint32_t window_size_event_us;
 
+	/* temporary storage when aux scan was scheduled from LLL */
+	struct lll_scan_aux *lll_aux;
+
 	uint8_t phy:3;
 	uint8_t is_rx_enabled:1;
 
@@ -40,5 +43,7 @@ struct lll_sync {
 int lll_sync_init(void);
 int lll_sync_reset(void);
 void lll_sync_prepare(void *param);
+
+int lll_create_iq_report(struct lll_sync *lll, uint8_t rssi_ready, uint8_t packet_status);
 
 extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);
