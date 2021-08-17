@@ -241,6 +241,7 @@
 #endif
 
 #if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED)
+#define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 #endif
 
