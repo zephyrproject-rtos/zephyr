@@ -286,6 +286,30 @@ size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen);
 size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
 
 /**
+ * @brief Convert a binary coded decimal (BCD 8421) value to binary.
+ *
+ * @param bcd BCD 8421 value to convert.
+ *
+ * @return Binary representation of input value.
+ */
+static inline uint8_t bcd2bin(uint8_t bcd)
+{
+	return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+}
+
+/**
+ * @brief Convert a binary value to binary coded decimal (BCD 8421).
+ *
+ * @param bin Binary value to convert.
+ *
+ * @return BCD 8421 representation of input value.
+ */
+static inline uint8_t bin2bcd(uint8_t bin)
+{
+	return (((bin / 10) << 4) | (bin % 10));
+}
+
+/**
  * @brief      Convert a uint8_t into a decimal string representation.
  *
  * Convert a uint8_t value into its ASCII decimal string representation.
