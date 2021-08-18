@@ -60,9 +60,10 @@ static void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#if STM32_LSE_CLOCK
+	/* Enable the power interface clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
+#if STM32_LSE_CLOCK
 	if (!LL_PWR_IsEnabledBkUpAccess()) {
 		/* Enable write access to Backup domain */
 		LL_PWR_EnableBkUpAccess();
