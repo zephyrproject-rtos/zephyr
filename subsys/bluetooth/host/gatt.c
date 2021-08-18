@@ -1323,6 +1323,24 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 
 	return 0;
 }
+
+bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
+{
+	bool registered = false;
+	sys_snode_t *node;
+
+	k_sched_lock();
+	SYS_SLIST_FOR_EACH_NODE(&db, node) {
+		if (&svc->node == node) {
+			registered = true;
+			break;
+		}
+	}
+
+	k_sched_unlock();
+
+	return registered;
+}
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
