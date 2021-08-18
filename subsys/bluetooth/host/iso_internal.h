@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,19 @@ struct iso_data {
 
 	/** ISO connection handle */
 	uint16_t handle;
+};
+
+struct bt_iso_cig {
+	/** Array of ISO channels to setup as CIS (the CIG). */
+	struct bt_iso_chan **cis;
+
+	/** Total number of CISes in the CIG. */
+	uint8_t  num_cis;
+
+	/** The CIG ID */
+	uint8_t id;
+
+	bool initialized;
 };
 
 enum {
