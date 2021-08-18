@@ -132,6 +132,7 @@ static void rx_isr(void)
 				buf = bt_buf_get_tx(BT_BUF_H4, K_NO_WAIT,
 						    &type, sizeof(type));
 				if (!buf) {
+					LOG_ERR("No available command buffers!");
 					state = ST_IDLE;
 					return;
 				}
