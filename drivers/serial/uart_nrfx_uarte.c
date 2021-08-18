@@ -160,6 +160,7 @@ struct uarte_nrfx_data {
  */
 struct uarte_nrfx_config {
 	NRF_UARTE_Type *uarte_regs; /* Instance address */
+	const struct pinctrl_config pincfg;
 	uint32_t flags;
 	bool disable_rx;
 #ifdef CONFIG_UART_ASYNC_API
@@ -1670,10 +1671,7 @@ static int uarte_instance_init(const struct device *dev,
 
 	data->dev = dev;
 
-	err = pinctrl_state_set(dev, PINCTRL_STATE_ID_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
+	pinctrl_set_pin_state(cfg->pincfg.states[0]);
 
 	err = uarte_nrfx_configure(dev, &get_dev_data(dev)->uart_config);
 	if (err) {
@@ -1881,6 +1879,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		(1))) ? 0 : UARTE_CFG_FLAG_LOW_POWER)
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
+	PINCTRL_DT_CONFIG_DEFINE(UARTE(idx));				       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
@@ -1892,6 +1891,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 	};								       \
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		.uarte_regs = (NRF_UARTE_Type *)DT_REG_ADDR(UARTE(idx)),       \
+		.pincfg = PINCTRL_DT_CONFIG_NAME(UARTE(idx)),		       \
 		.flags =						       \
 			(UARTE_HAS_PROP(idx, rts_pin) ?			       \
 				UARTE_CFG_FLAG_RTS_PIN_SET : 0) |	       \
