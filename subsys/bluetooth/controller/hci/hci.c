@@ -5218,12 +5218,6 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			}
 		}
 
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
-		}
-
 no_ext_hdr:
 		if (hdr_len < adv->len) {
 			data_len_curr = adv->len - hdr_len;
@@ -5632,12 +5626,6 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 				ptr += len;
 				hdr_len += len;
 			}
-		}
-
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
 		}
 
 no_ext_hdr:
