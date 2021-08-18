@@ -171,13 +171,23 @@ static void send_pending_adv(struct k_work *work)
 		}
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
+		return;
+	}
+
 	/* No more pending buffers */
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
-		BT_DBG("Proxy Advertising");
-		err = bt_mesh_proxy_adv_start();
-		if (!err) {
-			atomic_set_bit(adv.flags, ADV_FLAG_PROXY);
+	if (bt_mesh_is_provisioned()) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+			err = bt_mesh_proxy_adv_start();
+			BT_DBG("Proxy Advertising");
 		}
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		err = bt_mesh_prov_adv_start();
+		BT_DBG("PB-GATT Advertising");
+	}
+
+	if (!err) {
+		atomic_set_bit(adv.flags, ADV_FLAG_PROXY);
 	}
 }
 
