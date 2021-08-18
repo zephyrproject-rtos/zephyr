@@ -1334,7 +1334,7 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
 #if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
@@ -1369,7 +1369,7 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
 #if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
