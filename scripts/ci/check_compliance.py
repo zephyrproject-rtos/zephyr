@@ -572,6 +572,10 @@ UNDEF_KCONFIG_WHITELIST = {
     "USB_CONSOLE",
     "USE_STDC_",
     "WHATEVER",
+    "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
 }
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
