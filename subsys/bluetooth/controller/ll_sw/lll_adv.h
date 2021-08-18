@@ -79,6 +79,7 @@ struct lll_adv {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	uint8_t phy_p:3;
 	uint8_t phy_s:3;
+	uint8_t phy_flags:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
