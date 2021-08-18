@@ -36,6 +36,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
 
+#ifdef CONFIG_RISCV_GP
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be
 	 * relaxed by the linker to access something relative to __global_pointer$)
@@ -44,6 +45,7 @@ void __attribute__((section(".iram1"))) __start(void)
 						".option norelax\n"
 						"la gp, __global_pointer$\n"
 						".option pop");
+#endif /* CONFIG_RISCV_GP */
 
 	__asm__ __volatile__("la t0, _esp32c3_vector_table\n"
 						"csrw mtvec, t0\n");
