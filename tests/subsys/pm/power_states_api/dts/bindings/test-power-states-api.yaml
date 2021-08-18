@@ -5,7 +5,7 @@ description: |
     This binding provides resources required to build and run the
     tests/subsys/power/power_states_api test in Zephyr.
 
-compatible: "test,power_states_api"
+compatible: "test-power-states-api"
 
 properties:
     cpu-power-states:
