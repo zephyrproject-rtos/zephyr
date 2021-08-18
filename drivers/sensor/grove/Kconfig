@@ -3,6 +3,13 @@
 # Copyright (c) 2015 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config GROVE_SENSORS
+	bool "Seeed Grove sensors support"
+	help
+	  Enable Seeed Grove sensors support.
+
+if GROVE_SENSORS
+
 config GROVE_LIGHT_SENSOR
 	bool "Enable the Seeed Grove Light Sensor"
 	depends on ADC && !MINIMAL_LIBC
@@ -16,3 +23,5 @@ config GROVE_TEMPERATURE_SENSOR
 	help
 	  Setting this value will enable driver support for the Grove
 	  Temperature Sensor.
+
+endif # GROVE_SENSORS
