@@ -362,12 +362,20 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
- * *
+ *
  *  @param svc Service to be unregistered.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
+
+/** @brief Check if GATT service is registered.
+ *
+ *  @param svc Service to be checked.
+ *
+ *  @return true if registered or false if not register.
+ */
+bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc);
 
 enum {
 	BT_GATT_ITER_STOP = 0,
