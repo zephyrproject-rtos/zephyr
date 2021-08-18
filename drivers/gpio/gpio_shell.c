@@ -28,25 +28,11 @@ struct args_index {
 	uint8_t value;
 };
 
-struct args_number {
-	uint8_t conf;
-	uint8_t set;
-	uint8_t get;
-	uint8_t blink;
-};
-
 static const struct args_index args_indx = {
 	.port = 1,
 	.index = 2,
 	.mode = 3,
 	.value = 3,
-};
-
-static const struct args_number args_no = {
-	.conf = 4,
-	.set = 4,
-	.get = 3,
-	.blink = 3
 };
 
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
@@ -55,8 +41,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 	int type = GPIO_OUTPUT;
 	const struct device *dev;
 
-	if (argc == args_no.conf &&
-	    isdigit((unsigned char)argv[args_indx.index][0]) &&
+	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
 	    isalpha((unsigned char)argv[args_indx.mode][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
@@ -90,7 +75,7 @@ static int cmd_gpio_get(const struct shell *shell,
 	uint8_t index = 0U;
 	int rc;
 
-	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
 		shell_error(shell, "Wrong parameters for get");
@@ -122,8 +107,7 @@ static int cmd_gpio_set(const struct shell *shell,
 	uint8_t index = 0U;
 	uint8_t value = 0U;
 
-	if (argc == args_no.set &&
-	    isdigit((unsigned char)argv[args_indx.index][0]) &&
+	if (isdigit((unsigned char)argv[args_indx.index][0]) &&
 	    isdigit((unsigned char)argv[args_indx.value][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		value = (uint8_t)atoi(argv[args_indx.value]);
@@ -156,10 +140,10 @@ static int cmd_gpio_blink(const struct shell *shell,
 	size_t count = 0;
 	char data;
 
-	if (argc == args_no.blink && isdigit((unsigned char)argv[args_indx.index][0])) {
+	if (isdigit((unsigned char)argv[args_indx.index][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
-		shell_error(shell, "Wrong parameters for get");
+		shell_error(shell, "Wrong parameters for blink");
 		return -EINVAL;
 	}
 	dev = device_get_binding(argv[args_indx.port]);
@@ -186,10 +170,10 @@ static int cmd_gpio_blink(const struct shell *shell,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
-			       SHELL_CMD(conf, NULL, "Configure GPIO", cmd_gpio_conf),
-			       SHELL_CMD(get, NULL, "Get GPIO value", cmd_gpio_get),
-			       SHELL_CMD(set, NULL, "Set GPIO", cmd_gpio_set),
-			       SHELL_CMD(blink, NULL, "Blink GPIO", cmd_gpio_blink),
+			       SHELL_CMD_ARG(conf, NULL, "Configure GPIO", cmd_gpio_conf, 4, 0),
+			       SHELL_CMD_ARG(get, NULL, "Get GPIO value", cmd_gpio_get, 3, 0),
+			       SHELL_CMD_ARG(set, NULL, "Set GPIO", cmd_gpio_set, 4, 0),
+			       SHELL_CMD_ARG(blink, NULL, "Blink GPIO", cmd_gpio_blink, 3, 0),
 			       SHELL_SUBCMD_SET_END /* Array terminated. */
 			       );
 
