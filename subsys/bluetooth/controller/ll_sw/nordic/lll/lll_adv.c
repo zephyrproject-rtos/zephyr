@@ -885,7 +885,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
-	radio_phy_set(lll->phy_p, 1);
+	radio_phy_set(lll->phy_p, lll->phy_flags);
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy_p << 1));
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
@@ -1052,8 +1052,10 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv *lll = param;
 	uint8_t phy_p = lll->phy_p;
+	uint8_t phy_flags = lll->phy_flags;
 #else
-	uint8_t phy_p = 0;
+	const uint8_t phy_p = 0U;
+	const uint8_t phy_flags = 0U;
 #endif
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1065,7 +1067,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(phy_p, 0, phy_p, 0);
+	radio_switch_complete_and_tx(phy_p, 0, phy_p, phy_flags);
 
 	radio_pkt_rx_set(radio_pkt_scratch_get());
 	/* assert if radio packet ptr is not set and radio started rx */

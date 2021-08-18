@@ -63,7 +63,9 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
-			     uint8_t adv_chn_cnt, uint8_t phy);
+			     uint8_t adv_chn_cnt, uint8_t phy,
+			     uint8_t phy_flags);
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_update_cb(uint32_t status, void *param);
@@ -283,6 +285,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 					 /* pdu_adv_type array. */
 
 			adv->lll.phy_p = phy_p;
+			adv->lll.phy_flags = PHY_FLAGS_S8;
 		}
 	} else {
 		adv->lll.phy_p = PHY_1M;
@@ -1134,11 +1137,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 	const uint8_t phy = lll->phy_p;
+	const uint8_t phy_flags = lll->phy_flags;
 
 	adv->event_counter = 0U;
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = PHY_1M;
+	const uint8_t phy_flags = 0U;
 #endif
 
 	/* For now we adv on all channels enabled in channel map */
@@ -1151,7 +1156,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 	/* Calculate the advertising time reservation */
-	uint16_t time_us = adv_time_get(pdu_adv, pdu_scan, adv_chn_cnt, phy);
+	uint16_t time_us = adv_time_get(pdu_adv, pdu_scan, adv_chn_cnt, phy,
+					phy_flags);
 
 	uint16_t interval = adv->interval;
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -2027,14 +2033,15 @@ static inline struct ll_adv_set *is_disabled_get(uint8_t handle)
 }
 
 static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
-			     uint8_t adv_chn_cnt, uint8_t phy)
+			     uint8_t adv_chn_cnt, uint8_t phy,
+			     uint8_t phy_flags)
 {
 	uint16_t time_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		time_us += PKT_AC_US(pdu->len, phy) * adv_chn_cnt +
+		time_us += PDU_AC_US(pdu->len, phy, phy_flags) * adv_chn_cnt +
 			   EVENT_RX_TX_TURNAROUND(phy) * (adv_chn_cnt - 1);
 	} else
 #endif
