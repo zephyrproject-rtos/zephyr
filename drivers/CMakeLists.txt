@@ -2,7 +2,6 @@
 
 add_definitions(-D__ZEPHYR_SUPERVISOR__)
 
-add_subdirectory(console)
 add_subdirectory(interrupt_controller)
 add_subdirectory(misc)
 add_subdirectory(pcie)
@@ -12,6 +11,7 @@ add_subdirectory(usb)
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL clock_control)
 add_subdirectory_ifdef(CONFIG_COUNTER counter)
+add_subdirectory_ifdef(CONFIG_CONSOLE console)
 add_subdirectory_ifdef(CONFIG_CRYPTO crypto)
 add_subdirectory_ifdef(CONFIG_DAC dac)
 add_subdirectory_ifdef(CONFIG_DISPLAY display)
