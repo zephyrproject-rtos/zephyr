@@ -4,6 +4,7 @@
 config SOC_ESP32C3
 	bool "ESP32C3"
 	select RISCV
+	select RISCV_GP
 	select DYNAMIC_INTERRUPTS
 
 config IDF_TARGET_ESP32C3
