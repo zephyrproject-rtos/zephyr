@@ -93,6 +93,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access                         |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
