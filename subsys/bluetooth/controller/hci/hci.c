@@ -5216,12 +5216,6 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		hdr_len = ptr - (uint8_t *)p;
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
-		}
-
 		hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
 		if (hdr_len > hdr_buf_len) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
@@ -5639,12 +5633,6 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	}
 
 	hdr_len = ptr - (uint8_t *)p;
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
-		}
-
 	hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
 	if (hdr_len > hdr_buf_len) {
 		BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
