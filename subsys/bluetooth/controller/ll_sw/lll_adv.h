@@ -44,6 +44,8 @@ struct lll_adv_iso {
 	uint8_t bn_curr:3;
 	uint8_t bis_curr:5;
 
+	uint8_t phy_flags:1;
+
 	uint8_t term_req:1;
 	uint8_t term_ack:1;
 	uint8_t term_reason;
