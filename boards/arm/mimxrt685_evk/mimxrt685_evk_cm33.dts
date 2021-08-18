@@ -302,3 +302,7 @@ i2s1: &flexcomm3 {
 	status = "okay";
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
