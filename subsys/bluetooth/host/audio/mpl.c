@@ -786,9 +786,9 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 }
 
 
-static uint32_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
-			       uint64_t id, uint8_t **data, uint32_t len,
-			       uint32_t offset)
+static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
+			      uint64_t id, void **data, size_t len,
+			      off_t offset)
 {
 	if (obj.busy) {
 		/* TODO: Can there be a collision between select and internal */
@@ -801,8 +801,8 @@ static uint32_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, t, sizeof(t));
-		BT_DBG("Object Id %s, offset %i, length %i", log_strdup(t),
-		       offset, len);
+		BT_DBG("Object Id %s, offset %lu, length %zu", log_strdup(t),
+		       (long)offset, len);
 	}
 
 	if (id != obj.selected_id) {
