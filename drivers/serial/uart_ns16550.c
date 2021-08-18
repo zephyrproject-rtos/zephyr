@@ -360,7 +360,7 @@ static int uart_ns16550_configure(const struct device *dev,
 			goto out;
 		}
 
-		pcie_get_mbar(dev_cfg->pcie_bdf, 0, &mbar);
+		pcie_probe_mbar(dev_cfg->pcie_bdf, 0, &mbar);
 		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
