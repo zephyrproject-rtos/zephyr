@@ -44,6 +44,12 @@ config PCIE_MSI_X
 
 endif # PCIE_MSI
 
+config PCIE_PTM
+	bool "Enable support for PCI(e) Precision Time Management (PTM)"
+	help
+	  This will enable support both PTM root and PTM requester features.
+	  Up to the PCIe device driver to enable its PTM requester capability.
+
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"
 	default y
