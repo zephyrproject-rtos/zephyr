@@ -1112,7 +1112,8 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 +
+		RANGE_DELAY_US + 1;
 	hcto += radio_rx_chain_delay_get(lll_aux->phy, 1);
 	hcto += addr_us_get(lll_aux->phy);
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, 1);
