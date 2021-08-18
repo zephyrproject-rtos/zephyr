@@ -212,7 +212,14 @@
 
 #define PDU_AC_US(octets, phy, cs)   PDU_US((octets), 0, (phy), (cs))
 
-#define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
+#define PDU_BIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
+
+#define PDU_BIS_US(octets, enc, phy, s8) PDU_US((octets), \
+						((enc) ? (PDU_MIC_SIZE) : 0), \
+						(phy), (s8))
 
 /* TODO: verify if the following lines are correct */
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving

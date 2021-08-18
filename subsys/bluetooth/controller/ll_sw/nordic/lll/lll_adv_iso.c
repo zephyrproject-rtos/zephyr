@@ -301,8 +301,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	} else {
 		uint16_t iss_us;
 
-		/* FIXME: for encrypted PDU */
-		iss_us = lll->sub_interval - PKT_BIS_US(pdu->len, 0, lll->phy);
+		iss_us = lll->sub_interval -
+			 PDU_BIS_US(pdu->len, lll->enc, lll->phy, 1);
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, 0, lll->phy, 0);
 	}
@@ -493,8 +493,8 @@ static void isr_tx_common(void *param,
 	} else {
 		uint16_t iss_us;
 
-		/* FIXME: for encrypted PDU */
-		iss_us = lll->sub_interval - PKT_BIS_US(pdu->len, 0, lll->phy);
+		iss_us = lll->sub_interval -
+			 PDU_BIS_US(pdu->len, lll->enc, lll->phy, 1);
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, 0, lll->phy, 0);
 
