@@ -177,6 +177,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->handle = big_handle;
 	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
 	lll_adv_iso->phy = phy;
+	lll_adv_iso->phy_flags = PHY_FLAGS_S8;
 
 	/* Mandatory Num_BIS = 1 */
 	lll_adv_iso->num_bis = num_bis;
@@ -205,10 +206,10 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	 *       max_tx_time for Max_PDU + tMSS.
 	 */
 	lll_adv_iso->sub_interval = PDU_BIS_US(lll_adv_iso->max_pdu, encryption,
-					       phy, 1) +
+					       phy, lll_adv_iso->phy_flags) +
 				    EVENT_MSS_US;
 	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
-				  1) + EVENT_IFS_US;
+				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
 
 	latency_pdu = max_latency * lll_adv_iso->bn / bn;
 
