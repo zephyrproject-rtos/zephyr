@@ -444,14 +444,14 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 
 registering:
 	/* Don't initialize PPP until network registration is complete. */
-	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+	modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
 						  check_registration_cmds,
 						  ARRAY_SIZE(check_registration_cmds),
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 
-	if (ret < 0 || !(gsm->gprs_registered || gsm->eps_registered)) {
+	if (!(gsm->gprs_registered || gsm->eps_registered)) {
 		/*
 		 * register_retry not set        -> trigger 10 register retries
 		 * register_retry set            -> decrement and retry
