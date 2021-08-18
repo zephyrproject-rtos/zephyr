@@ -39,7 +39,10 @@
 #ifndef MATH_HELPER_H
 #define MATH_HELPER_H
 
-#include "arm_math.h"
+#include <arm_math.h>
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+#include <arm_math_f16.h>
+#endif
 
 /**
  * @brief  Calculation of SNR
@@ -130,6 +133,39 @@ static inline float arm_snr_f32(const float *pRef, const float *pTest,
 
 	return SNR;
 }
+
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline float arm_snr_f16(const float16_t *pRef, const float16_t *pTest,
+	uint32_t buffSize)
+{
+	float EnergySignal = 0.0, EnergyError = 0.0;
+	uint32_t i;
+	float SNR;
+
+	for (i = 0; i < buffSize; i++) {
+		/* Checking for a NAN value in pRef array */
+		IFNANRETURNZERO((float)pRef[i]);
+
+		/* Checking for a NAN value in pTest array */
+		IFNANRETURNZERO((float)pTest[i]);
+
+		EnergySignal += pRef[i] * pRef[i];
+		EnergyError += (pRef[i] - pTest[i]) * (pRef[i] - pTest[i]);
+	}
+
+	/* Checking for a NAN value in EnergyError */
+	IFNANRETURNZERO(EnergyError);
+
+
+	SNR = 10 * log10f(EnergySignal / EnergyError);
+
+	/* Checking for a NAN value in SNR */
+	IFNANRETURNZERO(SNR);
+	IFINFINITERETURN(SNR, 100000.0);
+
+	return SNR;
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
 
 static inline float arm_snr_q63(const q63_t *pRef, const q63_t *pTest,
 	uint32_t buffSize)
