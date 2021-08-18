@@ -107,10 +107,10 @@ struct bt_conn_iso {
 	};
 
 	union {
-		/* CIS ID */
+		/* CIS ID within the CIG */
 		uint8_t			cis_id;
 
-		/* BIS ID */
+		/* BIS ID within the BIG*/
 		uint8_t			bis_id;
 	};
 
@@ -246,12 +246,6 @@ struct bt_iso_create_param {
 	struct bt_conn		**conns;
 	struct bt_iso_chan	**chans;
 };
-
-/* Bind ISO connections parameters */
-int bt_conn_bind_iso(struct bt_iso_create_param *param);
-
-/* Connect ISO connections */
-int bt_conn_connect_iso(struct bt_conn **conns, uint8_t num_conns);
 
 /* Add a new ISO connection */
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);

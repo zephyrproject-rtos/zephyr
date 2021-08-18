@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,10 +71,6 @@ struct bt_iso_chan {
 
 /** @brief ISO Channel IO QoS structure. */
 struct bt_iso_chan_io_qos {
-	/** Channel interval in us. Value range 0x0000FF - 0x0FFFFFF. */
-	uint32_t			interval;
-	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
-	uint16_t			latency;
 	/** Channel SDU. Value range 0x0000 - 0x0FFF. */
 	uint16_t			sdu;
 	/** Channel PHY - See BT_GAP_LE_PHY for values.
@@ -92,16 +89,6 @@ struct bt_iso_chan_io_qos {
 
 /** @brief ISO Channel QoS structure. */
 struct bt_iso_chan_qos {
-	/** @brief Channel peripherals sleep clock accuracy Only for CIS
-	 *
-	 * Shall be worst case sleep clock accuracy of all the peripherals.
-	 * If unknown for the peripherals, this should be set to BT_GAP_SCA_UNKNOWN.
-	 */
-	uint8_t				sca;
-	/** Channel packing mode. 0 for unpacked, 1 for packed. */
-	uint8_t				packing;
-	/** Channel framing mode. 0 for unframed, 1 for framed. */
-	uint8_t				framing;
 	/** @brief Channel Receiving QoS.
 	 *
 	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_CTLR_TO_HOST.
@@ -165,15 +152,74 @@ struct bt_iso_recv_info {
 	uint8_t flags;
 };
 
+
+/** Opaque type representing an Connected Isochronous Group (CIG). */
+struct bt_iso_cig;
+
+struct bt_iso_cig_create_param {
+	/** Array of pointers to CIS channels
+	 *
+	 * This array shall remain valid for the duration of the CIG.
+	 */
+	struct bt_iso_chan **cis_channels;
+
+	/** Number channels in @p cis_channels */
+	uint8_t num_cis;
+
+	/** Channel interval in us. Value range 0x0000FF - 0xFFFFFF. */
+	uint32_t interval;
+
+	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
+	uint16_t latency;
+
+	/** @brief Channel peripherals sleep clock accuracy Only for CIS
+	 *
+	 * Shall be worst case sleep clock accuracy of all the peripherals.
+	 * For possible values see the BT_GAP_SCA_* values.
+	 * If unknown for the peripherals, this should be set to
+	 * BT_GAP_SCA_UNKNOWN.
+	 */
+	uint8_t sca;
+
+	/** Channel packing mode. 0 for unpacked, 1 for packed. */
+	uint8_t packing;
+
+	/** Channel framing mode. 0 for unframed, 1 for framed. */
+	uint8_t framing;
+};
+
+struct bt_iso_connect_param {
+	/* The ISO channel to connect */
+	struct bt_iso_chan *iso;
+
+	/* The ACL connection */
+	struct bt_conn *conn;
+};
+
 /** Opaque type representing an Broadcast Isochronous Group (BIG). */
 struct bt_iso_big;
 
 struct bt_iso_big_create_param {
-	/** Array of pointers to BIS channels */
+	/** Array of pointers to BIS channels
+	 *
+	 * This array shall remain valid for the duration of the BIG.
+	 */
 	struct bt_iso_chan **bis_channels;
 
 	/** Number channels in @p bis_channels */
 	uint8_t num_bis;
+
+	/** Channel interval in us. Value range 0x0000FF - 0xFFFFFF. */
+	uint32_t interval;
+
+	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
+	uint16_t latency;
+
+	/** Channel packing mode. 0 for unpacked, 1 for packed. */
+	uint8_t packing;
+
+	/** Channel framing mode. 0 for unframed, 1 for framed. */
+	uint8_t framing;
 
 	/** Whether or not to encrypt the streams. */
 	bool  encryption;
@@ -337,49 +383,51 @@ struct bt_iso_server {
  */
 int bt_iso_server_register(struct bt_iso_server *server);
 
-/** @brief Bind ISO channels
+/** @brief Creates a CIG as a central
  *
- *  Bind ISO channels with existing ACL connections, Channel objects passed
- *  (over an address of it) shouldn't be instantiated in application as
- *  standalone.
+ *  This can called at any time, even before connecting to a remote device.
+ *  This must be called before any connected isochronous stream (CIS) channel
+ *  can be connected.
  *
- *  @param conns Array of ACL connection objects
- *  @param num_conns Number of connection objects
- *  @param chans Array of ISO Channel objects to be created
+ *  Once a CIG is created, the channels supplied in the @p param can be
+ *  connected using bt_iso_chan_connect.
+ *
+ *  @param[in]  param     The parameters used to create and enable the CIG.
+ *  @param[out] out_cig  Connected Isochronous Group object on success.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
-		     struct bt_iso_chan **chans);
+int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
+		      struct bt_iso_cig **out_cig);
 
-/** @brief Unbind ISO channel
+/** @brief Terminates a CIG as a central
  *
- *  Unbind ISO channel from ACL connection, channel must be in BT_ISO_BOUND
- *  state.
+ *  All the CIS in the CIG shall be disconnected first.
  *
- *  Note: Channels which the ACL connection has been disconnected are unbind
- *  automatically.
- *
- *  @param chan Channel object.
+ *  @param cig    Pointer to the CIG structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_iso_chan_unbind(struct bt_iso_chan *chan);
+int bt_iso_cig_terminate(struct bt_iso_cig *cig);
 
-/** @brief Connect ISO channels
+/** @brief Connect ISO channels on ACL connections
  *
- *  Connect ISO channels, once the connection is completed each channel
- *  connected() callback will be called. If the connection is rejected
- *  disconnected() callback is called instead.
- *  Channel object passed (over an address of it) as second parameter shouldn't
- *  be instantiated in application as standalone.
+ *  Connect ISO channels. The ISO channels must have been initialized in a CIG
+ *  first by calling bt_iso_cig_create.
  *
- *  @param chans Array of ISO channel objects
- *  @param num_chans Number of channel objects
+ *  Once the connection is completed the channels' connected() callback will be
+ *  called. If the connection is rejected disconnected() callback is called
+ *  instead.
+ *
+ *  This function will also setup the ISO data path based on the @p path
+ *  parameter of the bt_iso_chan_io_qos for each channel.
+ *
+ *  @param param Pointer to a connect parameter array with the ISO and ACL pointers.
+ *  @param count Number of connect parameters.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_iso_chan_connect(struct bt_iso_chan **chans, uint8_t num_chans);
+int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 
 /** @brief Disconnect ISO channel
  *
