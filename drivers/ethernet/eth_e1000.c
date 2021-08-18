@@ -244,7 +244,7 @@ int e1000_probe(const struct device *ddev)
 		return -ENODEV;
 	}
 
-	pcie_get_mbar(bdf, 0, &mbar);
+	pcie_probe_mbar(bdf, 0, &mbar);
 	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
 		     PCIE_CONF_CMDSTAT_MASTER, true);
 

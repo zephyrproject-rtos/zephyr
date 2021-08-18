@@ -623,7 +623,7 @@ static int i2c_dw_initialize(const struct device *dev)
 			return -EINVAL;
 		}
 
-		pcie_get_mbar(rom->pcie_bdf, 0, &mbar);
+		pcie_probe_mbar(rom->pcie_bdf, 0, &mbar);
 		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
