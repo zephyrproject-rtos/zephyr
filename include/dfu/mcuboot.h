@@ -204,6 +204,17 @@ int boot_write_img_confirmed_multi(int image_index);
  */
 int mcuboot_swap_type(void);
 
+/**
+ * @brief Determines the action, if any, that mcuboot will take on the next
+ * reboot.
+ *
+ * @param image_index Image pair index.
+ *
+ * @return a BOOT_SWAP_TYPE_[...] constant on success, negative errno code on
+ * fail.
+ */
+int mcuboot_swap_type_multi(int image_index);
+
 
 /** Boot upgrade request modes */
 #define BOOT_UPGRADE_TEST       0
