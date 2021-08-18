@@ -69,7 +69,8 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
-			     uint8_t rl_idx, uint8_t rssi_ready);
+			     uint8_t rl_idx, uint8_t rssi_ready,
+			     uint8_t phy_flags_rx);
 
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
@@ -84,7 +85,8 @@ static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   bool *dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t rl_idx, bool dir_report);
+			      uint8_t phy_flags_rx, uint8_t rl_idx,
+			      bool dir_report);
 
 int lll_scan_init(void)
 {
@@ -607,6 +609,7 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 static void isr_rx(void *param)
 {
 	struct node_rx_pdu *node_rx;
+	uint8_t phy_flags_rx;
 	struct lll_scan *lll;
 	struct pdu_adv *pdu;
 	uint8_t devmatch_ok;
@@ -631,8 +634,10 @@ static void isr_rx(void *param)
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
+		phy_flags_rx = radio_phy_flags_rx_get();
 	} else {
-		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0U;
+		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
+			phy_flags_rx = 0U;
 		devmatch_id = irkmatch_id = 0xFF;
 	}
 
@@ -681,7 +686,8 @@ static void isr_rx(void *param)
 		int err;
 
 		err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id,
-				 irkmatch_ok, irkmatch_id, rl_idx, rssi_ready);
+				 irkmatch_ok, irkmatch_id, rl_idx, rssi_ready,
+				 phy_flags_rx);
 		if (!err) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 				lll_prof_send();
@@ -1008,7 +1014,8 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
-			     uint8_t rl_idx, uint8_t rssi_ready)
+			     uint8_t rl_idx, uint8_t rssi_ready,
+			     uint8_t phy_flags_rx)
 {
 	bool dir_report = false;
 
@@ -1190,7 +1197,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		radio_switch_complete_and_rx(0);
 
 		/* save the adv packet */
-		err = isr_rx_scan_report(lll, rssi_ready,
+		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
 					 irkmatch_ok ? rl_idx : FILTER_IDX_NONE,
 					 false);
 		if (err) {
@@ -1294,7 +1301,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		uint32_t err;
 
 		/* save the scan response packet */
-		err = isr_rx_scan_report(lll, rssi_ready,
+		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
 					 irkmatch_ok ? rl_idx :
 						       FILTER_IDX_NONE,
 					 dir_report);
@@ -1385,7 +1392,8 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 }
 
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-				uint8_t rl_idx, bool dir_report)
+			      uint8_t phy_flags_rx, uint8_t rl_idx,
+			      bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1442,11 +1450,13 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 				ftr->ticks_anchor = radio_tmr_start_get();
 				ftr->radio_end_us =
 					radio_tmr_end_get() -
-					radio_rx_chain_delay_get(lll->phy, 1);
-
-				ftr->aux_sched = lll_scan_aux_setup(lll,
-								    pdu_adv_rx,
-								    lll->phy);
+					radio_rx_chain_delay_get(lll->phy,
+								 phy_flags_rx);
+				ftr->phy_flags = phy_flags_rx;
+				ftr->aux_sched =
+					lll_scan_aux_setup(lll, pdu_adv_rx,
+							   lll->phy,
+							   phy_flags_rx);
 				if (ftr->aux_sched) {
 					err = -EBUSY;
 				}
