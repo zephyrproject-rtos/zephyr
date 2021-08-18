@@ -14,4 +14,4 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 				  uint8_t *adv_addr, uint8_t init_tx_addr,
 				  uint8_t *init_addr, uint32_t *conn_space_us);
 uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
-			   uint8_t pdu_phy);
+			   uint8_t pdu_phy, uint8_t pdu_phy_flags_rx);

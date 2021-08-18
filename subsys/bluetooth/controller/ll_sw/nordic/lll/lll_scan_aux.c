@@ -56,9 +56,10 @@ static void isr_rx_lll_schedule(void *param);
 static void isr_rx(struct lll_scan *lll_scan, struct lll_scan_aux *lll_aux,
 		   uint8_t phy_aux);
 static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
-		      uint8_t phy_aux, uint8_t devmatch_ok,
-		      uint8_t devmatch_id, uint8_t irkmatch_ok,
-		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
+		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
+		      uint8_t devmatch_ok, uint8_t devmatch_id,
+		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
+		      uint8_t rssi_ready);
 static void isr_tx_scan_req_ull_schedule(void *param);
 static void isr_tx_scan_req_lll_schedule(void *param);
 #if defined(CONFIG_BT_CENTRAL)
@@ -109,7 +110,7 @@ void lll_scan_aux_prepare(void *param)
 }
 
 uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
-			   uint8_t pdu_phy)
+			   uint8_t pdu_phy, uint8_t pdu_phy_flags_rx)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	struct pdu_adv_ext_hdr *pri_hdr;
@@ -179,7 +180,7 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 	/* Calculate the minimum overhead to decide if LLL or ULL scheduling
 	 * to be used for auxiliary PDU reception.
 	 */
-	overhead_us = PKT_AC_US(pdu->len, pdu_phy);
+	overhead_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
 	overhead_us += lll_radio_rx_ready_delay_get(phy, 1);
 	overhead_us += window_widening_us;
 	overhead_us += EVENT_JITTER_US;
@@ -206,8 +207,9 @@ uint8_t lll_scan_aux_setup(struct lll_scan *lll, struct pdu_adv *pdu,
 	ftr->param = lll;
 	ftr->aux_ptr = aux_ptr;
 	ftr->radio_end_us = radio_tmr_end_get() -
-			    radio_rx_chain_delay_get(pdu_phy, 1) -
-			    PKT_AC_US(pdu->len, pdu_phy);
+			    radio_rx_chain_delay_get(pdu_phy,
+						     pdu_phy_flags_rx) -
+			    PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
 
 	/* Primary scanner switched to auxliary PDU scanning */
 	lll->is_aux_sched = 1U;
@@ -594,6 +596,7 @@ static void isr_rx_lll_schedule(void *param)
 static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   uint8_t phy_aux)
 {
+	uint8_t phy_aux_flags_rx;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
@@ -617,8 +620,10 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
+		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
-		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0U;
+		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
+			phy_aux_flags_rx = 0U;
 		devmatch_id = irkmatch_id = 0xFF;
 	}
 
@@ -644,8 +649,9 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	err = isr_rx_pdu(lll, lll_aux, phy_aux, devmatch_ok, devmatch_id,
-			 irkmatch_ok, irkmatch_ok, rl_idx, rssi_ready);
+	err = isr_rx_pdu(lll, lll_aux, phy_aux, phy_aux_flags_rx, devmatch_ok,
+			 devmatch_id, irkmatch_ok, irkmatch_ok, rl_idx,
+			 rssi_ready);
 	if (!err) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_send();
@@ -679,9 +685,10 @@ isr_rx_do_close:
 }
 
 static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
-		      uint8_t phy_aux, uint8_t devmatch_ok,
-		      uint8_t devmatch_id, uint8_t irkmatch_ok,
-		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready)
+		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
+		      uint8_t devmatch_ok, uint8_t devmatch_id,
+		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
+		      uint8_t rssi_ready)
 {
 	struct node_rx_pdu *node_rx;
 	struct node_rx_ftr *ftr;
@@ -821,7 +828,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(phy_aux, 1) -
+					 radio_rx_chain_delay_get(phy_aux,
+						phy_aux_flags_rx) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
@@ -864,7 +872,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = conn_space_us -
-				    radio_rx_chain_delay_get(phy_aux, 1);
+				    radio_rx_chain_delay_get(phy_aux,
+							     phy_aux_flags_rx);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
@@ -966,7 +975,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(phy_aux, 1) -
+					 radio_rx_chain_delay_get(phy_aux,
+						phy_aux_flags_rx) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
@@ -988,7 +998,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		}
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_rx_chain_delay_get(phy_aux, 1);
+				    radio_rx_chain_delay_get(phy_aux,
+							     phy_aux_flags_rx);
 		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
 		ftr->scan_req = 1U;
@@ -1039,7 +1050,9 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_rx_chain_delay_get(phy_aux, 1);
+				    radio_rx_chain_delay_get(phy_aux,
+							     phy_aux_flags_rx);
+		ftr->phy_flags = phy_aux_flags_rx;
 		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
 		ftr->scan_req = 0U;
@@ -1048,7 +1061,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		ftr->aux_sched = lll_scan_aux_setup(lll, pdu, phy_aux);
+		ftr->aux_sched = lll_scan_aux_setup(lll, pdu, phy_aux,
+						    phy_aux_flags_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
