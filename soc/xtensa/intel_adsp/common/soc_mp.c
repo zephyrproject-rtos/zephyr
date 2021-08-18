@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <ipm/ipm_cavs_idc.h>
 
 extern void z_sched_ipi(void);
+extern void z_smp_start_cpu(int id);
+extern void z_reinit_idle_thread(int i);
 
 /* ROM wake version parsed by ROM during core wake up. */
 #define IDC_ROM_WAKE_VERSION	0x2
@@ -60,6 +62,8 @@ struct cpustart_rec {
 
 	uint32_t		alive;
 };
+
+static struct k_spinlock mplock;
 
 char *z_mp_stack_top;
 
@@ -283,9 +287,7 @@ static ALWAYS_INLINE uint32_t prid(void)
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	uint32_t vecbase, curr_cpu;
-
-	__asm__ volatile("rsr %0, PRID" : "=r"(curr_cpu));
+	uint32_t vecbase, curr_cpu = prid();
 
 #ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* On cAVS v2.5, MP startup works differently.  The core has
@@ -454,4 +456,82 @@ void soc_idc_init(void)
 		CAVS_INTCTRL[core].l2.clear = CAVS_L2_IDC;
 
 	}
+}
+
+/**
+ * @brief Restart halted SMP CPU
+ *
+ * Relaunches a CPU that has entered an idle power state via
+ * soc_halt_cpu().  Returns -EINVAL if the CPU is not in a power-gated
+ * idle state.  Upon successful return, the CPU is online and
+ * available to run any Zephyr thread.
+ *
+ * @param id CPU to start, in the range [1:CONFIG_MP_NUM_CPUS)
+ */
+int soc_relaunch_cpu(int id)
+{
+	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
+	int ret = 0;
+	k_spinlock_key_t k = k_spin_lock(&mplock);
+
+	if (id < 1 || id >= CONFIG_MP_NUM_CPUS) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (shim->pwrsts & BIT(id)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CAVS_INTCTRL[id].l2.clear = CAVS_L2_IDC;
+	z_reinit_idle_thread(id);
+	z_smp_start_cpu(id);
+
+ out:
+	k_spin_unlock(&mplock, k);
+	return ret;
+}
+
+/**
+ * @brief Halts and offlines a running CPU
+ *
+ * Enables power gating on the specified CPU, which cannot be the
+ * current CPU or CPU 0.  The CPU must be idle; no application threads
+ * may be runnable on it when this function is called (or at least the
+ * CPU must be guaranteed to reach idle in finite time without
+ * deadlock).  Actual CPU shutdown can only happen in the context of
+ * the idle thread, and synchronization is an application
+ * responsibility.  This function will hang if the other CPU fails to
+ * reach idle.
+ *
+ * @param id CPU to halt, not current cpu or cpu 0
+ * @return 0 on success, -EINVAL on error
+ */
+int soc_halt_cpu(int id)
+{
+	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
+	int ret = 0;
+	k_spinlock_key_t k = k_spin_lock(&mplock);
+
+	if (id == 0 || id == _current_cpu->id) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	/* Turn off the "prevent power/clock gating" bits, enabling
+	 * low power idle, and mask off IDC interrupts so it will not
+	 * be woken up by scheduler IPIs
+	 */
+	CAVS_INTCTRL[id].l2.set = CAVS_L2_IDC;
+	shim->pwrctl &= ~BIT(id);
+	shim->clkctl &= ~BIT(16 + id);
+
+	/* Wait for the CPU to reach an idle state before returing */
+	while (shim->pwrsts & BIT(id)) {
+	}
+
+ out:
+	k_spin_unlock(&mplock, k);
+	return ret;
 }
