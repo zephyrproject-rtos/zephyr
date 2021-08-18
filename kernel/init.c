@@ -255,6 +255,11 @@ static void init_idle_thread(int i)
 #endif
 }
 
+void z_reinit_idle_thread(int i)
+{
+	init_idle_thread(i);
+}
+
 /**
  *
  * @brief Initializes kernel data structures
