@@ -351,7 +351,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	sync_iso_offset_us = ftr->radio_end_us;
 	sync_iso_offset_us += (uint32_t)bi->offs * lll->window_size_event_us;
-	sync_iso_offset_us -= PKT_AC_US(pdu->len, lll->phy);
+	sync_iso_offset_us -= PDU_BIS_US(pdu->len, lll->enc, lll->phy,
+					 ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_OVERHEAD_START_US;
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
@@ -365,12 +366,11 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync_iso->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 lll->phy) +
-				       EVENT_OVERHEAD_END_US);
+	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
+			EVENT_OVERHEAD_START_US + ready_delay_us +
+			PDU_BIS_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->enc,
+				       lll->phy) +
+			EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
 				sync_iso->ull.ticks_prepare_to_start);

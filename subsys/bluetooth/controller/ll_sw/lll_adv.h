@@ -16,6 +16,7 @@ struct lll_adv_iso {
 	uint16_t data_chan_remap_idx;
 
 	uint64_t payload_count:39;
+	uint64_t enc:1;
 	uint64_t framing:1;
 	uint64_t handle:8;
 	uint64_t cssn:3;
