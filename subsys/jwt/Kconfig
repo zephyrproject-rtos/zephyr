@@ -16,6 +16,7 @@ choice
 
 config JWT_SIGN_RSA
 	bool "Use RSA signature (RS-256)"
+	depends on CSPRING_ENABLED
 	select MBEDTLS
 
 config JWT_SIGN_ECDSA
