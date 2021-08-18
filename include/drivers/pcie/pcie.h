@@ -88,7 +88,18 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
- * @brief Get the nth MMIO address assigned to an endpoint.
+ * @brief Get the MBAR at a specific BAR index
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param mbar Pointer to struct pcie_mbar
+ * @return true if the mbar was found and is valid, false otherwise
+ */
+extern bool pcie_get_mbar(pcie_bdf_t bdf,
+			  unsigned int bar_index,
+			  struct pcie_mbar *mbar);
+
+/**
+ * @brief Probe the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
  * @param mbar Pointer to struct pcie_mbar
@@ -100,9 +111,9 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
  */
-extern bool pcie_get_mbar(pcie_bdf_t bdf,
-			  unsigned int index,
-			  struct pcie_mbar *mbar);
+extern bool pcie_probe_mbar(pcie_bdf_t bdf,
+			    unsigned int index,
+			    struct pcie_mbar *mbar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.

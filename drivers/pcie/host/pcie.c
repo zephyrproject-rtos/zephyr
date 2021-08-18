@@ -71,22 +71,15 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
+bool pcie_get_mbar(pcie_bdf_t bdf,
+		   unsigned int bar_index,
+		   struct pcie_mbar *mbar)
 {
+	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 	uintptr_t phys_addr;
-	uint32_t reg;
 	size_t size;
 
-	for (reg = PCIE_CONF_BAR0;
-	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
-		uintptr_t addr = pcie_conf_read(bdf, reg);
-
-		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
-			reg++;
-		}
-	}
-
-	if (index != 0 || reg > PCIE_CONF_BAR5) {
+	if (reg > PCIE_CONF_BAR5) {
 		return false;
 	}
 
@@ -134,6 +127,28 @@ bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 	mbar->size = size & ~(size-1);
 
 	return true;
+}
+
+bool pcie_probe_mbar(pcie_bdf_t bdf,
+		     unsigned int index,
+		     struct pcie_mbar *mbar)
+{
+	uint32_t reg;
+
+	for (reg = PCIE_CONF_BAR0;
+	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
+		uintptr_t addr = pcie_conf_read(bdf, reg);
+
+		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
+			reg++;
+		}
+	}
+
+	if (index != 0) {
+		return false;
+	}
+
+	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
 }
 
 /* The first bit is used to indicate whether the list of reserved interrupts
