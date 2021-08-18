@@ -234,7 +234,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif
 
 	phy = lll->phy;
-	radio_phy_set(phy, 1);
+	radio_phy_set(phy, lll->phy_flags);
 	radio_pkt_configure(8, lll->max_pdu, (phy << 1));
 	radio_aa_set(access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
@@ -302,7 +302,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		uint16_t iss_us;
 
 		iss_us = lll->sub_interval -
-			 PDU_BIS_US(pdu->len, lll->enc, lll->phy, 1);
+			 PDU_BIS_US(pdu->len, lll->enc, lll->phy,
+				    lll->phy_flags);
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, 0, lll->phy, 0);
 	}
@@ -494,7 +495,8 @@ static void isr_tx_common(void *param,
 		uint16_t iss_us;
 
 		iss_us = lll->sub_interval -
-			 PDU_BIS_US(pdu->len, lll->enc, lll->phy, 1);
+			 PDU_BIS_US(pdu->len, lll->enc, lll->phy,
+				    lll->phy_flags);
 		radio_tmr_tifs_set(iss_us);
 		radio_switch_complete_and_b2b_tx(lll->phy, 0, lll->phy, 0);
 
