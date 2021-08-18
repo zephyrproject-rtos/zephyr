@@ -176,7 +176,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	phy_s = lll_adv->phy_s;
 
 	/* TODO: if coded we use S8? */
-	radio_phy_set(phy_s, 1);
+	radio_phy_set(phy_s, lll_adv->phy_flags);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
 
 	/* Access address and CRC */
@@ -301,7 +301,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(lll->phy_s, 0, lll->phy_s, 1);
+	radio_switch_complete_and_tx(lll->phy_s, 0, lll->phy_s, lll->phy_flags);
 
 	/* setup Rx buffer */
 	node_rx = ull_pdu_rx_alloc_peek(1);
