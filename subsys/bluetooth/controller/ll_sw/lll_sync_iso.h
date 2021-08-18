@@ -16,6 +16,7 @@ struct lll_sync_iso {
 	uint16_t data_chan_remap_idx;
 
 	uint64_t payload_count:39;
+	uint64_t enc:1;
 	uint64_t ctrl:1;
 	uint64_t cssn_curr:3;
 	uint64_t cssn_next:3;
