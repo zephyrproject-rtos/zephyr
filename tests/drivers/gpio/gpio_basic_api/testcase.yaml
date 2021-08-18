@@ -3,7 +3,7 @@ tests:
     tags: drivers gpio
     depends_on: gpio
     min_flash: 34
-    filter: dt_compat_enabled("test,gpio_basic_api")
+    filter: dt_compat_enabled("test-gpio-basic-api")
     harness: ztest
     harness_config:
       fixture: gpio_loopback

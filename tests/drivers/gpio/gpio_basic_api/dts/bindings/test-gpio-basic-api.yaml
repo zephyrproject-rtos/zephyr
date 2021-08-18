@@ -8,7 +8,7 @@ description: |
     This binding provides resources required to build and run the
     tests/drivers/gpio/gpio_basic_api test in Zephyr.
 
-compatible: "test,gpio_basic_api"
+compatible: "test-gpio-basic-api"
 
 properties:
     out-gpios:
