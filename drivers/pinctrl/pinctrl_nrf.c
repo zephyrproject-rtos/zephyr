@@ -4,16 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
-
-#include <device.h>
+#include <drivers/pinctrl.h>
 
 #include <hal/nrf_gpio.h>
 #if CONFIG_NRF_UARTE_PERIPHERAL
 #include <hal/nrf_uarte.h>
 #endif
 
-#if CONFIG_NRF_UARTE_PERIPHERAL
+#if 0 && CONFIG_NRF_UARTE_PERIPHERAL
 static void pinctrl_nrf_uarte_config(NRF_UARTE_Type *uarte,
 				     const uint32_t *pincfgs,
 				     size_t pincfgs_cnt)
@@ -49,16 +47,9 @@ static void pinctrl_nrf_uarte_config(NRF_UARTE_Type *uarte,
 }
 #endif
 
-int pinctrl_state_set(const struct device *dev, enum pinctrl_state_id id)
+int z_impl_pinctrl_pin_configure(const pinctrl_soc_pins_t *pin_spec)
 {
-	int ret;
-	const struct pinctrl_state *state;
-
-	ret = pinctrl_lookup_state(dev, id, &state);
-	if (ret < 0) {
-		return ret;
-	}
-
+#if 0
 	/* configure peripheral pin selection */
 	switch (dev->pinctrl->reg) {
 #if CONFIG_NRF_UARTE_PERIPHERAL
@@ -86,6 +77,7 @@ int pinctrl_state_set(const struct device *dev, enum pinctrl_state_id id)
 			     NRF_GPIO_PIN_S0S1,
 			     NRF_GPIO_PIN_NOSENSE);
 	}
+#endif
 
 	return 0;
 }
