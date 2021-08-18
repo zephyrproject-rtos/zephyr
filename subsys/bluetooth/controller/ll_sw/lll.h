@@ -456,7 +456,8 @@ void ull_rx_put(memq_link_t *link, void *rx);
 void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
 void ull_rx_sched_done(void);
-void *ull_event_done_extra_get(void);
+struct event_done_extra *ull_event_done_extra_get(void);
+struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);
 
 int lll_prepare(lll_is_abort_cb_t is_abort_cb,
