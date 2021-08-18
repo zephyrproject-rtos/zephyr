@@ -1300,7 +1300,25 @@ isr_rx_do_close:
 	ull_rx_put(rx->hdr.link, rx);
 	ull_rx_sched();
 
-	radio_isr_set(isr_done, lll_aux);
+	if (lll->lll_aux) {
+		struct node_rx_pdu *node_rx;
+
+		/* Send message to flush Auxiliary PDU list */
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+
+		radio_isr_set(lll_scan_isr_resume, lll);
+	} else {
+		radio_isr_set(isr_done, lll_aux);
+	}
+
 	radio_disable();
 }
 
