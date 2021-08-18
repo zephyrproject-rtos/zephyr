@@ -5505,6 +5505,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 {
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
+	struct pdu_cte_info *cte_info = NULL;
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
@@ -5528,6 +5529,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	node_rx_curr = node_rx;
 	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 	do {
+		struct pdu_cte_info *cte_info_curr = NULL;
 		struct pdu_adv_com_ext_adv *p;
 		uint8_t data_len_curr = 0U;
 		uint8_t *data_curr = NULL;
@@ -5561,13 +5563,10 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		/* No TargetA */
 
 		if (h->cte_info) {
-			struct pdu_cte_info *cte_info;
-
-			cte_info = (void *)ptr;
-			cte_type = cte_info->type;
+			cte_info_curr = (void *)ptr;
 			ptr++;
 
-			BT_DBG("    CTE type= %d", cte_type);
+			BT_DBG("    CTE type= %d", cte_info_curr->type);
 		}
 
 		/* No ADI */
@@ -5637,12 +5636,17 @@ no_ext_hdr:
 		}
 
 		if (node_rx_curr == node_rx) {
+			cte_info = cte_info_curr;
 			data_len = data_len_curr;
 			total_data_len = data_len;
 			data = data_curr;
 		} else {
 			/* TODO: Validate current value with previous ??
 			 */
+
+			if (!cte_info) {
+				cte_info = cte_info_curr;
+			}
 
 			if (!data) {
 				data_len = data_len_curr;
@@ -5694,9 +5698,10 @@ no_ext_hdr:
 	/* else, data incomplete */
 	} else {
 		/* Data incomplete and no more to come */
-		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !data) {
-			/* No Tx Power value and no valid AD data parsed in this
-			 * chain of PDUs, skip HCI event generation.
+		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !cte_info &&
+		    !data) {
+			/* No Tx Power value, no CTE and no valid AD data parsed
+			 * in this chain of PDUs, skip HCI event generation.
 			 */
 			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 			return;
@@ -5711,6 +5716,10 @@ no_ext_hdr:
 	evt_buf = buf;
 	if (le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) {
 		struct bt_hci_evt_le_per_advertising_report *sep;
+
+		if (cte_info) {
+			cte_type = cte_info->type;
+		}
 
 		/* Start constructing periodic advertising report */
 		sep = meta_evt(evt_buf, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
