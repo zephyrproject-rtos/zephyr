@@ -358,9 +358,15 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		if (!dev_data->configured) {
 			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
 					dev_data);
+			dev_data->configured = true;
 		}
-		dev_data->configured = true;
-		dev_data->tx_ready = true;
+		if (!dev_data->tx_ready) {
+			dev_data->tx_ready = true;
+			/* if wait tx irq, invoke callback */
+			if (dev_data->cb != NULL && dev_data->tx_irq_ena) {
+				k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
+			}
+		}
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_INF("Device disconnected");
