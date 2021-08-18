@@ -726,7 +726,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		}
 
 		if (!lll_aux_to_use) {
-			return -ENOBUFS;
+			return -ECHILD;
 		}
 
 		/* Always use CSA#2 on secondary channel, we need 2 nodes for conn
@@ -1020,7 +1020,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 			ftr->param = lll;
 			ftr->scan_rsp = lll->lll_aux->state;
 		} else {
-			return -ECANCELED;
+			return -ECHILD;
 		}
 
 		/* Allocate before `lll_scan_aux_setup` call, so that a new
