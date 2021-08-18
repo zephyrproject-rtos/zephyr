@@ -791,5 +791,11 @@
 			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
 			#pwm-cells = <2>;
 		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it8xxx2-gctrl";
+			reg = <0x00f02000 0x100>;
+			label = "GCTRL";
+		};
 	};
 };
