@@ -51,8 +51,9 @@ static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t cte_ready,
-		  uint8_t rssi_ready, enum sync_status status);
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
+		  uint8_t phy_flags_rx, uint8_t cte_ready, uint8_t rssi_ready,
+		  enum sync_status status);
 static void isr_rx_adv_sync_estab(void *param);
 static void isr_rx_adv_sync(void *param);
 static void isr_rx_aux_chain(void *param);
@@ -615,19 +616,21 @@ static void isr_aux_setup(void *param)
 /**
  * @brief Common part of ISR responsible for handling PDU receive.
  *
- * @param lll        Pointer to LLL sync object.
- * @param node_type  Type of a receive node to be set for handling by ULL.
- * @param crc_ok     Informs if received PDU has correct CRC.
- * @param cte_ready  Informs if received PDU has CTEInfo present and IQ samples were collected.
- * @param rssi_ready Informs if RSSI for received PDU is ready.
- * @param status     Informs about periodic advertisement synchronization status.
+ * @param lll          Pointer to LLL sync object.
+ * @param node_type    Type of a receive node to be set for handling by ULL.
+ * @param crc_ok       Informs if received PDU has correct CRC.
+ * @param phy_flags_rx Received Coded PHY coding scheme (0 - S1, 1 - S8).
+ * @param cte_ready    Informs if received PDU has CTEInfo present and IQ samples were collected.
+ * @param rssi_ready   Informs if RSSI for received PDU is ready.
+ * @param status       Informs about periodic advertisement synchronization status.
  *
  * @return Zero in case of there is no chained PDU or there is a chained PDUs but spaced long enough
  *         to schedule its reception by ULL.
  * @return -EBUSY in case there is a chained PDU scheduled by LLL due to short spacing.
  */
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t cte_ready,
-		  uint8_t rssi_ready, enum sync_status status)
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
+		  uint8_t phy_flags_rx, uint8_t cte_ready, uint8_t rssi_ready,
+		  enum sync_status status)
 {
 	bool sched = false;
 	int err;
@@ -659,7 +662,8 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 			ftr->ticks_anchor = radio_tmr_start_get();
 			ftr->radio_end_us = radio_tmr_end_get() -
 					    radio_rx_chain_delay_get(lll->phy,
-								     1);
+								     phy_flags_rx);
+			ftr->phy_flags = phy_flags_rx;
 			ftr->sync_status = status;
 			ftr->sync_rx_enabled = lll->is_rx_enabled;
 
@@ -670,7 +674,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 			pdu = (void *)node_rx->pdu;
 
 			ftr->aux_lll_sched = lll_scan_aux_setup(pdu, lll->phy,
-								0,
+								phy_flags_rx,
 								isr_aux_setup,
 								lll);
 			if (ftr->aux_lll_sched) {
@@ -728,6 +732,7 @@ static void isr_rx_adv_sync_estab(void *param)
 {
 	enum sync_status sync_ok;
 	struct lll_sync *lll;
+	uint8_t phy_flags_rx;
 	uint8_t rssi_ready;
 	uint8_t cte_ready;
 	uint8_t trx_done;
@@ -741,6 +746,7 @@ static void isr_rx_adv_sync_estab(void *param)
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
+		phy_flags_rx = radio_phy_flags_rx_get();
 		sync_ok = sync_filtrate_by_cte_type(lll->cte_type, lll->filter_policy);
 		trx_cnt = 1U;
 
@@ -750,7 +756,7 @@ static void isr_rx_adv_sync_estab(void *param)
 			cte_ready = 0U;
 		}
 	} else {
-		crc_ok = rssi_ready = cte_ready = 0U;
+		crc_ok = phy_flags_rx = rssi_ready = cte_ready = 0U;
 		/* Initiated as allowed, crc_ok takes precended during handling of PDU
 		 * reception in the situation.
 		 */
@@ -775,8 +781,8 @@ static void isr_rx_adv_sync_estab(void *param)
 
 	/* Handle regular PDU reception if CTE type is acceptable */
 	if (sync_ok == SYNC_STAT_ALLOWED) {
-		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, cte_ready, rssi_ready,
-			     SYNC_STAT_ALLOWED);
+		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, phy_flags_rx,
+			     cte_ready, rssi_ready, SYNC_STAT_ALLOWED);
 		if (err == -EBUSY) {
 			return;
 		}
@@ -817,6 +823,7 @@ isr_rx_done:
 static void isr_rx_adv_sync(void *param)
 {
 	struct lll_sync *lll;
+	uint8_t phy_flags_rx;
 	uint8_t rssi_ready;
 	uint8_t cte_ready;
 	uint8_t trx_done;
@@ -830,6 +837,7 @@ static void isr_rx_adv_sync(void *param)
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
+		phy_flags_rx = radio_phy_flags_rx_get();
 		trx_cnt = 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)) {
@@ -838,7 +846,7 @@ static void isr_rx_adv_sync(void *param)
 			cte_ready = 0U;
 		}
 	} else {
-		crc_ok = rssi_ready = cte_ready = 0U;
+		crc_ok = phy_flags_rx = rssi_ready = cte_ready = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -861,8 +869,8 @@ static void isr_rx_adv_sync(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, cte_ready, rssi_ready,
-		     SYNC_STAT_READY_OR_CONT_SCAN);
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, phy_flags_rx,
+		     cte_ready, rssi_ready, SYNC_STAT_READY_OR_CONT_SCAN);
 	if (err == -EBUSY) {
 		return;
 	}
@@ -875,6 +883,7 @@ static void isr_rx_aux_chain(void *param)
 {
 	struct lll_scan_aux *lll_aux;
 	struct lll_sync *lll;
+	uint8_t phy_flags_rx;
 	uint8_t rssi_ready;
 	uint8_t cte_ready;
 	uint8_t trx_done;
@@ -900,6 +909,7 @@ static void isr_rx_aux_chain(void *param)
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
+		phy_flags_rx = radio_phy_flags_rx_get();
 		rssi_ready = radio_rssi_is_ready();
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)) {
@@ -908,7 +918,7 @@ static void isr_rx_aux_chain(void *param)
 			cte_ready = 0U;
 		}
 	} else {
-		crc_ok = rssi_ready = cte_ready = 0U;
+		crc_ok = phy_flags_rx = rssi_ready = cte_ready = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -928,8 +938,8 @@ static void isr_rx_aux_chain(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, cte_ready, rssi_ready,
-		     SYNC_STAT_READY_OR_CONT_SCAN);
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, phy_flags_rx,
+		     cte_ready, rssi_ready, SYNC_STAT_READY_OR_CONT_SCAN);
 
 	if (err == -EBUSY) {
 		return;
