@@ -1788,7 +1788,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	}
 }
 
-void *ull_event_done_extra_get(void)
+struct event_done_extra *ull_event_done_extra_get(void)
 {
 	struct node_rx_event_done *evdone;
 
@@ -1798,6 +1798,20 @@ void *ull_event_done_extra_get(void)
 	}
 
 	return &evdone->extra;
+}
+
+struct event_done_extra *ull_done_extra_type_set(uint8_t type)
+{
+	struct event_done_extra *extra;
+
+	extra = ull_event_done_extra_get();
+	if (!extra) {
+		return NULL;
+	}
+
+	extra->type = type;
+
+	return extra;
 }
 
 void *ull_event_done(void *param)
@@ -2575,16 +2589,4 @@ static inline void rx_demux_event_done(memq_link_t *link,
 static void disabled_cb(void *param)
 {
 	k_sem_give(param);
-}
-
-struct event_done_extra *ull_done_extra_type_set(uint8_t type)
-{
-	struct event_done_extra *extra;
-
-	extra = ull_event_done_extra_get();
-	LL_ASSERT(extra);
-
-	extra->type = type;
-
-	return extra;
 }
