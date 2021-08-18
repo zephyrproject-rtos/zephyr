@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,7 @@ DEFINE_TEST_VARIANT4(arm_add_q31, 8, in_com1, in_com2, ref_add, 8);
 DEFINE_TEST_VARIANT4(arm_add_q31, 11, in_com1, in_com2, ref_add, 11);
 DEFINE_TEST_VARIANT4(arm_add_q31, possat, in_maxpos, in_maxpos, ref_add_possat, 9);
 DEFINE_TEST_VARIANT4(arm_add_q31, negsat, in_maxneg, in_maxneg, ref_add_negsat, 9);
+DEFINE_TEST_VARIANT4(arm_add_q31, long, in_com1, in_com2, ref_add, ARRAY_SIZE(in_com1));
 
 static void test_arm_sub_q31(
 	const q31_t *input1, const q31_t *input2, const q31_t *ref, size_t length)
@@ -78,6 +79,7 @@ DEFINE_TEST_VARIANT4(arm_sub_q31, 8, in_com1, in_com2, ref_sub, 8);
 DEFINE_TEST_VARIANT4(arm_sub_q31, 11, in_com1, in_com2, ref_sub, 11);
 DEFINE_TEST_VARIANT4(arm_sub_q31, possat, in_maxpos, in_maxneg, ref_sub_possat, 9);
 DEFINE_TEST_VARIANT4(arm_sub_q31, negsat, in_maxneg, in_maxpos, ref_sub_negsat, 9);
+DEFINE_TEST_VARIANT4(arm_sub_q31, long, in_com1, in_com2, ref_sub, ARRAY_SIZE(in_com1));
 
 static void test_arm_mult_q31(
 	const q31_t *input1, const q31_t *input2, const q31_t *ref, size_t length)
@@ -108,6 +110,7 @@ DEFINE_TEST_VARIANT4(arm_mult_q31, 3, in_com1, in_com2, ref_mult, 3);
 DEFINE_TEST_VARIANT4(arm_mult_q31, 8, in_com1, in_com2, ref_mult, 8);
 DEFINE_TEST_VARIANT4(arm_mult_q31, 11, in_com1, in_com2, ref_mult, 11);
 DEFINE_TEST_VARIANT4(arm_mult_q31, possat, in_maxneg2, in_maxneg2, ref_mult_possat, 9);
+DEFINE_TEST_VARIANT4(arm_mult_q31, long, in_com1, in_com2, ref_mult, ARRAY_SIZE(in_com1));
 
 static void test_arm_negate_q31(
 	const q31_t *input1, const q31_t *ref, size_t length)
@@ -138,6 +141,7 @@ DEFINE_TEST_VARIANT3(arm_negate_q31, 3, in_com1, ref_negate, 3);
 DEFINE_TEST_VARIANT3(arm_negate_q31, 8, in_com1, ref_negate, 8);
 DEFINE_TEST_VARIANT3(arm_negate_q31, 11, in_com1, ref_negate, 11);
 DEFINE_TEST_VARIANT3(arm_negate_q31, possat, in_maxneg2, ref_negate_possat, 9);
+DEFINE_TEST_VARIANT3(arm_negate_q31, long, in_com1, ref_negate, ARRAY_SIZE(in_com1));
 
 static void test_arm_offset_q31(
 	const q31_t *input1, q31_t scalar, const q31_t *ref, size_t length)
@@ -169,6 +173,7 @@ DEFINE_TEST_VARIANT4(arm_offset_q31, 0p5_8, in_com1, 0x40000000, ref_offset, 8);
 DEFINE_TEST_VARIANT4(arm_offset_q31, 0p5_11, in_com1, 0x40000000, ref_offset, 11);
 DEFINE_TEST_VARIANT4(arm_offset_q31, possat, in_maxpos, 0x73333333, ref_offset_possat, 9);
 DEFINE_TEST_VARIANT4(arm_offset_q31, negsat, in_maxneg, 0x8ccccccd, ref_offset_negsat, 9);
+DEFINE_TEST_VARIANT4(arm_offset_q31, long, in_com1, 0x40000000, ref_offset, ARRAY_SIZE(in_com1));
 
 static void test_arm_scale_q31(
 	const q31_t *input1, q31_t scalar, const q31_t *ref, size_t length)
@@ -199,6 +204,7 @@ DEFINE_TEST_VARIANT4(arm_scale_q31, 0p5_3, in_com1, 0x40000000, ref_scale, 3);
 DEFINE_TEST_VARIANT4(arm_scale_q31, 0p5_8, in_com1, 0x40000000, ref_scale, 8);
 DEFINE_TEST_VARIANT4(arm_scale_q31, 0p5_11, in_com1, 0x40000000, ref_scale, 11);
 DEFINE_TEST_VARIANT4(arm_scale_q31, possat, in_maxneg2, 0x80000000, ref_scale_possat, 9);
+DEFINE_TEST_VARIANT4(arm_scale_q31, long, in_com1, 0x40000000, ref_scale, ARRAY_SIZE(in_com1));
 
 static void test_arm_dot_prod_q31(
 	const q31_t *input1, const q31_t *input2, const q63_t *ref, size_t length)
@@ -228,6 +234,8 @@ static void test_arm_dot_prod_q31(
 DEFINE_TEST_VARIANT4(arm_dot_prod_q31, 3, in_com1, in_com2, ref_dot_prod_3, 3);
 DEFINE_TEST_VARIANT4(arm_dot_prod_q31, 8, in_com1, in_com2, ref_dot_prod_4, 8);
 DEFINE_TEST_VARIANT4(arm_dot_prod_q31, 11, in_com1, in_com2, ref_dot_prod_4n1, 11);
+DEFINE_TEST_VARIANT4(arm_dot_prod_q31, long, in_com1, in_com2, ref_dot_prod_long,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_abs_q31(
 	const q31_t *input1, const q31_t *ref, size_t length)
@@ -257,6 +265,7 @@ static void test_arm_abs_q31(
 DEFINE_TEST_VARIANT3(arm_abs_q31, 3, in_com1, ref_abs, 3);
 DEFINE_TEST_VARIANT3(arm_abs_q31, 8, in_com1, ref_abs, 8);
 DEFINE_TEST_VARIANT3(arm_abs_q31, 11, in_com1, ref_abs, 11);
+DEFINE_TEST_VARIANT3(arm_abs_q31, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
 
 static void test_arm_shift_q31(
 	const q31_t *input1, const q31_t *ref, size_t length)
@@ -387,6 +396,34 @@ DEFINE_TEST_VARIANT4(arm_xor_u32, 3, in_bitwise1, in_bitwise2, ref_xor, 3);
 DEFINE_TEST_VARIANT4(arm_xor_u32, 8, in_bitwise1, in_bitwise2, ref_xor, 8);
 DEFINE_TEST_VARIANT4(arm_xor_u32, 11, in_bitwise1, in_bitwise2, ref_xor, 11);
 
+static void test_arm_clip_q31(
+	const q31_t *input, const q31_t *ref, q31_t min, q31_t max, size_t length)
+{
+	q31_t *output;
+
+	/* Allocate output buffer */
+	output = malloc(length * sizeof(q31_t));
+	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
+	/* Run test function */
+	arm_clip_q31(input, output, min, max, length);
+
+	/* Validate output */
+	zassert_true(
+		test_equal_q31(length, output, ref),
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	/* Free output buffer */
+	free(output);
+}
+
+DEFINE_TEST_VARIANT5(arm_clip_q31, c0000000_f3333333, in_clip, ref_clip1,
+		     0xc0000000, 0xf3333333, ARRAY_SIZE(ref_clip1));
+DEFINE_TEST_VARIANT5(arm_clip_q31, c0000000_40000000, in_clip, ref_clip2,
+		     0xc0000000, 0x40000000, ARRAY_SIZE(ref_clip2));
+DEFINE_TEST_VARIANT5(arm_clip_q31, 0ccccccd_40000000, in_clip, ref_clip3,
+		     0x0ccccccd, 0x40000000, ARRAY_SIZE(ref_clip3));
+
 void test_basicmath_q31(void)
 {
 	ztest_test_suite(basicmath_q31,
@@ -437,7 +474,18 @@ void test_basicmath_q31(void)
 		ztest_unit_test(test_arm_not_u32_11),
 		ztest_unit_test(test_arm_xor_u32_3),
 		ztest_unit_test(test_arm_xor_u32_8),
-		ztest_unit_test(test_arm_xor_u32_11)
+		ztest_unit_test(test_arm_xor_u32_11),
+		ztest_unit_test(test_arm_add_q31_long),
+		ztest_unit_test(test_arm_sub_q31_long),
+		ztest_unit_test(test_arm_mult_q31_long),
+		ztest_unit_test(test_arm_negate_q31_long),
+		ztest_unit_test(test_arm_offset_q31_long),
+		ztest_unit_test(test_arm_scale_q31_long),
+		ztest_unit_test(test_arm_dot_prod_q31_long),
+		ztest_unit_test(test_arm_abs_q31_long),
+		ztest_unit_test(test_arm_clip_q31_c0000000_f3333333),
+		ztest_unit_test(test_arm_clip_q31_c0000000_40000000),
+		ztest_unit_test(test_arm_clip_q31_0ccccccd_40000000)
 		);
 
 	ztest_run_test_suite(basicmath_q31);
