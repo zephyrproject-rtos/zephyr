@@ -33,13 +33,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if not config:
             default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
             if path.exists(default):
-                config = default
+                config = [default]
         self.openocd_config = config
 
-        if self.openocd_config is not None and path.exists(self.openocd_config):
-            search_args = ['-s', path.dirname(self.openocd_config)]
-        else:
-            search_args = []
+        search_args = []
+        for i in self.openocd_config:
+            if path.exists(i):
+                search_args.append('-s')
+                search_args.append(path.dirname(i))
 
         if cfg.openocd_search is not None:
             search_args.extend(['-s', cfg.openocd_search])
@@ -66,8 +67,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.add_argument('--config',
-                            help='if given, override default config file')
+        parser.add_argument('--config', action='append',
+                            help='''if given, override default config file;
+                            may be given multiple times''')
         parser.add_argument('--serial', default="",
                             help='if given, selects FTDI instance by its serial number, defaults to empty')
         parser.add_argument('--use-elf', default=False, action='store_true',
@@ -117,8 +119,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 'elftools missing; please "pip3 install elftools"')
 
         self.cfg_cmd = []
-        if self.openocd_config is not None:
-            self.cfg_cmd = ['-f', self.openocd_config]
+        for i in self.openocd_config:
+            self.cfg_cmd.append('-f')
+            self.cfg_cmd.append(i)
 
         if command == 'flash' and self.use_elf:
             self.do_flash_elf(**kwargs)
