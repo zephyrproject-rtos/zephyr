@@ -154,7 +154,9 @@ SECTIONS
     *(.data.*)
     *(.gnu.linkonce.d.*)
     *(.data1)
+#ifdef CONFIG_RISCV_GP
     __global_pointer$ = . + 0x800;
+#endif /* CONFIG_RISCV_GP */
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
