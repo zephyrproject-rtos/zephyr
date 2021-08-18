@@ -10,6 +10,10 @@ menuconfig PCIE
 
 if PCIE
 
+module = PCIE
+module-str = pcie
+source "subsys/logging/Kconfig.template.log_config"
+
 config PCIE_MSI
 	bool "Enable support for PCI(e) MSI"
 	help
