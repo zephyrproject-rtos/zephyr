@@ -5,7 +5,7 @@ description: |
     This binding provides resources required to build and run the
     tests/drivers/regulator/fixed test in Zephyr.
 
-compatible: "test,regulator-fixed"
+compatible: "test-regulator-fixed"
 
 properties:
     check-gpios:
