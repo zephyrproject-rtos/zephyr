@@ -53,10 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static uint8_t rf2xx_ack_psdu[RF2XX_ACK_FRAME_LEN] = { 0 };
 static struct net_buf rf2xx_ack_frame = {
-	.data  = rf2xx_ack_psdu,
-	.size  = RF2XX_ACK_FRAME_LEN,
-	.len   = RF2XX_ACK_FRAME_LEN,
-	.__buf = rf2xx_ack_psdu,
+	.b = NET_BUF_SIMPLE_INITIALIZER(rf2xx_ack_psdu, RF2XX_ACK_FRAME_LEN),
 	.frags = NULL,
 };
 static struct net_pkt rf2xx_ack_pkt = {

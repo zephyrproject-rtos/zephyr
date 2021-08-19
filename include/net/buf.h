@@ -55,13 +55,9 @@ extern "C" {
  *  @param _size Maximum data storage for the buffer.
  */
 #define NET_BUF_SIMPLE_DEFINE(_name, _size)     \
-	uint8_t net_buf_data_##_name[_size];       \
-	struct net_buf_simple _name = {         \
-		.data   = net_buf_data_##_name, \
-		.len    = 0,                    \
-		.size   = _size,                \
-		.__buf  = net_buf_data_##_name, \
-	}
+	uint8_t net_buf_data_##_name[_size];    \
+	struct net_buf_simple _name = 		\
+		NET_BUF_SIMPLE_INITIALIZER(net_buf_data_##_name, _size)
 
 /**
  * @def NET_BUF_SIMPLE_DEFINE_STATIC
@@ -73,14 +69,10 @@ extern "C" {
  * @param _name Name of the net_buf_simple object.
  * @param _size Maximum data storage for the buffer.
  */
-#define NET_BUF_SIMPLE_DEFINE_STATIC(_name, _size)        \
-	static __noinit uint8_t net_buf_data_##_name[_size]; \
-	static struct net_buf_simple _name = {            \
-		.data   = net_buf_data_##_name,           \
-		.len    = 0,                              \
-		.size   = _size,                          \
-		.__buf  = net_buf_data_##_name,           \
-	}
+#define NET_BUF_SIMPLE_DEFINE_STATIC(_name, _size)		\
+	static __noinit uint8_t net_buf_data_##_name[_size];	\
+	static struct net_buf_simple _name =			\
+		NET_BUF_SIMPLE_INITIALIZER(net_buf_data_##_name, _size)
 
 /**
  * @brief Simple network buffer representation.

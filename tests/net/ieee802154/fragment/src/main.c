@@ -441,10 +441,8 @@ static struct net_fragment_data test_data_8 = {
 static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
 
 static struct net_buf frame_buf = {
-	.data = frame_buffer_data,
-	.size = IEEE802154_MTU - 2,
+	.b = NET_BUF_SIMPLE_INITIALIZER(frame_buffer_data, IEEE802154_MTU - 2),
 	.frags = NULL,
-	.__buf = frame_buffer_data,
 };
 
 static bool test_fragment(struct net_fragment_data *data)

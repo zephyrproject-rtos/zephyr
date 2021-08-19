@@ -33,10 +33,8 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
 
 static struct net_buf frame_buf = {
-	.data = frame_buffer_data,
-	.size = IEEE802154_MTU - 2,
+	.b = NET_BUF_SIMPLE_INITIALIZER(frame_buffer_data, IEEE802154_MTU - 2),
 	.frags = NULL,
-	.__buf = frame_buffer_data,
 };
 
 #define PKT_TITLE      "IEEE 802.15.4 packet content:"
