@@ -2320,7 +2320,8 @@ static void iface_status_work_cb(struct k_work *work)
 	} else if (ictx.iface && net_if_is_up(ictx.iface)) {
 		hl7800_start_rssi_work();
 		/* get IP address info */
-		SEND_AT_CMD_IGNORE_ERROR("AT+CGCONTRDP=1");
+		(void)send_at_cmd(NULL, "AT+CGCONTRDP=1", MDM_CMD_SEND_TIMEOUT,
+				  CONFIG_MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS, false);
 		/* get active bands */
 		SEND_AT_CMD_IGNORE_ERROR("AT+KBND?");
 	}
