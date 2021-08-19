@@ -19,14 +19,18 @@ if(CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD)
     )
 endif()
 
-target_sources_ifdef(
-  CONFIG_CMSIS_DSP_TEST_FILTERING_FIR
-  app PRIVATE
-  src/fir_q7.c
-  src/fir_q15.c
-  src/fir_q31.c
-  src/fir_f32.c
-  )
+if(CONFIG_CMSIS_DSP_TEST_FILTERING_FIR)
+  target_sources(app PRIVATE
+    src/fir_q7.c
+    src/fir_q15.c
+    src/fir_q31.c
+    src/fir_f32.c
+    )
+
+  target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE
+    src/fir_f16.c
+    )
+endif()
 
 target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_FILTERING_MISC
