@@ -18,6 +18,11 @@
 #define CFG_FILTER_REMOVE  0x02
 #define CFG_FILTER_STATUS  0x03
 
+#define BT_MESH_PROXY_NET_PDU   0x00
+#define BT_MESH_PROXY_BEACON    0x01
+#define BT_MESH_PROXY_CONFIG    0x02
+#define BT_MESH_PROXY_PROV      0x03
+
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
 
 typedef int (*proxy_send_cb_t)(struct bt_conn *conn,

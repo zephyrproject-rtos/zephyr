@@ -21,6 +21,7 @@
 #include "adv.h"
 #include "net.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 
 /* Convert from ms to 0.625ms units */
 #define ADV_INT_FAST_MS    20
@@ -182,7 +183,7 @@ static void send_pending_adv(struct k_work *work)
 			BT_DBG("Proxy Advertising");
 		}
 	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		err = bt_mesh_prov_adv_start();
+		err = bt_mesh_pb_gatt_adv_start();
 		BT_DBG("PB-GATT Advertising");
 	}
 
