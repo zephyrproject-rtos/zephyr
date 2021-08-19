@@ -121,6 +121,12 @@ config LOG_BACKEND_RTT_SYST_ENABLE
 	help
 	  When enabled backend is using RTT to output syst format logs.
 
+config LOG_BACKEND_RTT_MODE_OVERWRITE
+	bool "Overwrite messages if up-buffer full"
+	help
+	  If there is not enough space in up-buffer for a message overwrite
+	  oldest one.
+
 endchoice
 
 config LOG_BACKEND_RTT_MESSAGE_SIZE
