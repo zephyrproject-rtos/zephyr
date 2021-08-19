@@ -9,7 +9,7 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_conn, 3);
 
 #include <errno.h>
 #include <sys/util.h>
@@ -829,7 +829,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		    net_pkt_family(pkt) == AF_PACKET) {
 		;
 	} else {
+#if !CONFIG_NET_STEALTH_UNREACHABLE_DESTINATION
 		conn_send_icmp_error(pkt);
+#endif
 
 		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
 			net_stats_update_tcp_seg_connrst(pkt_iface);

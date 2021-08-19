@@ -577,7 +577,11 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	struct net_pkt *pkt;
 	size_t copy_len;
 
+
 	net_pkt_cursor_init(orig);
+
+    //goto drop_no_pkt; /*** XXX */
+
 
 	ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(orig, &ipv4_access);
 	if (!ip_hdr) {

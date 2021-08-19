@@ -14,8 +14,8 @@ config MODEM_SHELL
 config MODEM_WNCM14A2A
 	default y
 
-config UART_INTERRUPT_DRIVEN
-	default y
+#config UART_INTERRUPT_DRIVEN
+#	default y
 
 # extend retry timing to 20 seconds for LTE/LTE-M
 config COAP_INIT_ACK_TIMEOUT_MS

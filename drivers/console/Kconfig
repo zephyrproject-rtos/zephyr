@@ -238,7 +238,7 @@ config UART_PIPE_ON_DEV_NAME
 
 config UART_MCUMGR
 	bool "Enable mcumgr UART driver"
-	select UART_INTERRUPT_DRIVEN
+	#select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
 	  communicate over UART using the mcumgr protocol for image upgrade and

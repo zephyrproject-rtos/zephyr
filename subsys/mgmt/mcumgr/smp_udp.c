@@ -63,6 +63,10 @@ static int smp_udp4_tx(struct zephyr_smp_transport *zst, struct net_buf *nb)
 			 0, addr, sizeof(*addr));
 	mcumgr_buf_free(nb);
 
+    if (ret <0) {
+        printf("%s: sendto failed!\n", __FUNCTION__);
+    }
+
 	return ret < 0 ? MGMT_ERR_EINVAL : MGMT_ERR_EOK;
 }
 #endif
@@ -106,6 +110,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	LOG_INF("Started (%s)", conf->proto);
+    printf("Starting rx thread\n");
 
 	while (1) {
 		struct sockaddr addr;
@@ -121,6 +126,10 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 
 			/* store sender address in user data for reply */
 			nb = mcumgr_buf_alloc();
+            if (nb == NULL) {
+                printf("%s: mcumgr_buf_alloc FAIL\n", __FUNCTION__);
+                continue;
+            }
 			net_buf_add_mem(nb, conf->recv_buffer, len);
 			ud = net_buf_user_data(nb);
 			net_ipaddr_copy(ud, &addr);
@@ -128,6 +137,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			zephyr_smp_rx_req(&conf->smp_transport, nb);
 		} else if (len < 0) {
 			LOG_ERR("recvfrom error (%s): %i", conf->proto, errno);
+			printf("recvfrom error (%s): %i", conf->proto, errno);
 		}
 	}
 }

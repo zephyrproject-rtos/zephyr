@@ -1,0 +1,6 @@
+config SCORPIO_SCPU
+    bool "Scorpio SCPU firmware in mcusvr"
+    default y
+
+source "Kconfig.zephyr"
+

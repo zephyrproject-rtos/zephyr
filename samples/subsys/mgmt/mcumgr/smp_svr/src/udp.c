@@ -38,7 +38,8 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		LOG_INF("Network disconnected");
 		smp_udp_close();
 		return;
-	}
+
+    }
 }
 
 void start_smp_udp(void)

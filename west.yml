@@ -39,8 +39,15 @@ manifest:
       path: modules/crypto/mbedtls
     - name: mcuboot
       path: modules/mcuboot
-      revision: c6eb82bc2037bfd27045f3fa9a772cacf1b0f5ad
+      revision: edbe282f70a215dfe25ac5b0d49d8555b51364e6
       remote: recogni-http
+    - name: mcumgr
+      revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
+      path: modules/lib/mcumgr
+    - name: tinycbor
+      revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
+      path: modules/lib/tinycbor
+
     
 
   self:
