@@ -30,6 +30,7 @@
 #include "access.h"
 #include "proxy.h"
 #include "proxy_msg.h"
+#include "pb_gatt_srv.h"
 
 #define CLIENT_BUF_SIZE 66
 
@@ -113,7 +114,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_mesh_pb_gatt_close(conn);
 
 	if (bt_mesh_is_provisioned()) {
-		(void)bt_mesh_proxy_prov_disable();
+		(void)bt_mesh_pb_gatt_disable();
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			(void)bt_mesh_proxy_gatt_enable();
@@ -126,7 +127,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_mesh_adv_update();
 }
 
-struct net_buf_simple *bt_mesh_proxy_get_buf(void)
+struct net_buf_simple *bt_mesh_pb_gatt_get_buf(void)
 {
 	struct net_buf_simple *buf = &cli.buf;
 
@@ -181,7 +182,7 @@ static struct bt_gatt_attr prov_attrs[] = {
 
 static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
 
-int bt_mesh_proxy_prov_enable(void)
+int bt_mesh_pb_gatt_enable(void)
 {
 	BT_DBG("");
 
@@ -200,7 +201,7 @@ int bt_mesh_proxy_prov_enable(void)
 	return 0;
 }
 
-int bt_mesh_proxy_prov_disable(void)
+int bt_mesh_pb_gatt_disable(void)
 {
 	BT_DBG("");
 
@@ -281,7 +282,7 @@ static int gatt_send(struct bt_conn *conn,
 	return bt_gatt_notify_cb(conn, &params);
 }
 
-int bt_mesh_prov_adv_start(void)
+int bt_mesh_pb_gatt_adv_start(void)
 {
 	BT_DBG("");
 

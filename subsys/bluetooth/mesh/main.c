@@ -36,6 +36,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 #include "settings.h"
 #include "mesh.h"
 
@@ -357,7 +358,7 @@ int bt_mesh_start(void)
 	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
 	    bt_mesh_prov_link.bearer->type == BT_MESH_PROV_ADV) {
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-			(void)bt_mesh_proxy_prov_disable();
+			(void)bt_mesh_pb_gatt_disable();
 		}
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
