@@ -439,6 +439,8 @@ static int i2c_sam_twi_initialize(const struct device *dev)
 static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 	.configure = i2c_sam_twi_configure,
 	.transfer = i2c_sam_twi_transfer,
+	.slave_register = i2c_sam_slave_register,
+	.slave_unregister = i2c_sam_slave_unregister,
 };
 
 #define I2C_TWI_SAM_INIT(n)						\
