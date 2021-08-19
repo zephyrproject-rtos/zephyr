@@ -318,7 +318,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	}
 
 	if (len < 0) {
-		LOG_ERR("OCAP Read Op failed with error: %d", len);
+		LOG_ERR("OCAP Read Op failed with error: %zd", len);
 
 		bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
 		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
