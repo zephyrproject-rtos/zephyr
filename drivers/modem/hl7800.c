@@ -505,6 +505,7 @@ struct hl7800_iface_ctx {
 	enum mdm_hl7800_radio_mode mdm_rat;
 	char mdm_active_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
 	char mdm_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
+	char mdm_imsi[MDM_HL7800_IMSI_MAX_STR_SIZE];
 	uint16_t mdm_bands_top;
 	uint32_t mdm_bands_middle;
 	uint32_t mdm_bands_bottom;
@@ -1517,6 +1518,42 @@ done:
 	return true;
 }
 
+static bool on_cmd_atcmdinfo_imsi(struct net_buf **buf, uint16_t len)
+{
+	struct net_buf *frag = NULL;
+	size_t out_len;
+
+	/* The handler for the IMSI is based on the command.
+	 *  waiting for: <IMSI>\r\n
+	 */
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
+					MDM_HL7800_IMSI_MIN_STR_SIZE);
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find IMSI end");
+		goto done;
+	}
+	if (len > MDM_HL7800_IMSI_MAX_STRLEN) {
+		LOG_WRN("IMSI too long (len:%d)", len);
+		len = MDM_HL7800_IMSI_MAX_STRLEN;
+	}
+
+	out_len = net_buf_linearize(ictx.mdm_imsi, MDM_HL7800_IMSI_MAX_STR_SIZE,
+				    *buf, 0, len);
+	ictx.mdm_imsi[out_len] = 0;
+
+	if (strstr(ictx.mdm_imsi, "ERROR") != NULL) {
+		LOG_ERR("Unable to read IMSI");
+		memset(ictx.mdm_imsi, 0, sizeof(ictx.mdm_imsi));
+	}
+
+	LOG_INF("IMSI: %s", log_strdup(ictx.mdm_imsi));
+done:
+	return true;
+}
+
 static void dns_work_cb(struct k_work *work)
 {
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
@@ -1554,6 +1591,11 @@ char *mdm_hl7800_get_imei(void)
 char *mdm_hl7800_get_fw_version(void)
 {
 	return ictx.mdm_revision;
+}
+
+char *mdm_hl7800_get_imsi(void)
+{
+	return ictx.mdm_imsi;
 }
 
 /* Handler: +CGCONTRDP: <cid>,<bearer_id>,<apn>,<local_addr and subnet_mask>,
@@ -3382,6 +3424,7 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+CGDCONT: 1", atcmdinfo_pdp_context),
 		CMD_HANDLER("AT+CEREG?", network_report_query),
 		CMD_HANDLER("+KCARRIERCFG: ", operator_index_query),
+		CMD_HANDLER("AT+CIMI", atcmdinfo_imsi),
 #ifdef CONFIG_NEWLIB_LIBC
 		CMD_HANDLER("+CCLK: ", rtc_query),
 #endif
@@ -4078,6 +4121,10 @@ reboot:
 
 	/* query SIM ICCID */
 	SEND_AT_CMD_IGNORE_ERROR("AT+CCID?");
+
+	/* query SIM IMSI */
+	(void)send_at_cmd(NULL, "AT+CIMI", MDM_CMD_SEND_TIMEOUT,
+			  MDM_DEFAULT_AT_CMD_RETRIES, true);
 
 	/* An empty string is used here so that it doesn't conflict
 	 * with the APN used in the +CGDCONT command.
