@@ -269,9 +269,27 @@ config MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS
 	int "Number of attempts to get IP address info during init"
 	default 4
 
-config MODEM_HL7800_DELAY_START
+choice
+	prompt "Modem Boot Type"
+	default MODEM_HL7800_BOOT_NORMAL
+
+config MODEM_HL7800_BOOT_NORMAL
+	bool "No Delay"
+
+config MODEM_HL7800_BOOT_DELAY
 	bool "Delay secondary initialization of driver and network attach"
 	help
-	 When true the application must call mdm_hl7800_reset.
+	  When true the application must call mdm_hl7800_reset.
+	  This mode delays the validity of modem info.
+
+config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
+	bool "Enter airplane mode during init"
+	help
+	  mdm_hl7800_set_functionality must be used by app to exit
+	  airplane mode.
+	  If bands are reconfigured, then this setting is overridden
+	  because modem is rebooted into full functionality mode.
+
+endchoice
 
 endif # MODEM_HL7800

@@ -64,6 +64,10 @@ struct mdm_hl7800_apn {
 #define MDM_HL7800_IMSI_MAX_STR_SIZE 16
 #define MDM_HL7800_IMSI_MAX_STRLEN (MDM_HL7800_IMSI_MAX_STR_SIZE - 1)
 
+#define MDM_HL7800_MODEM_FUNCTIONALITY_SIZE 2
+#define MDM_HL7800_MODEM_FUNCTIONALITY_STRLEN                                  \
+	(MDM_HL7800_MODEM_FUNCTIONALITY_SIZE - 1)
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -120,6 +124,12 @@ enum mdm_hl7800_fota_state {
 	HL7800_FOTA_INSTALL,
 	HL7800_FOTA_REBOOT_AND_RECONFIGURE,
 	HL7800_FOTA_COMPLETE,
+};
+
+enum mdm_hl7800_functionality {
+	HL7800_FUNCTIONALITY_MINIMUM = 0,
+	HL7800_FUNCTIONALITY_FULL = 1,
+	HL7800_FUNCTIONALITY_AIRPLANE = 4
 };
 
 /* The modem reports state values as an enumeration and a string */
@@ -282,6 +292,25 @@ int32_t mdm_hl7800_update_fw(char *file_path);
  * @retval negative error code, 0 on success
  */
 int32_t mdm_hl7800_get_operator_index(void);
+
+/**
+ * @brief Get modem functionality
+ *
+ * @return int32_t negative errno on failure, else mdm_hl7800_functionality
+ */
+int32_t mdm_hl7800_get_functionality(void);
+
+/**
+ * @brief Set airplane, normal, or reduced functionality mode.
+ * Airplane mode persists when reset.
+ *
+ * @note Boot functionality is also controlled by Kconfig
+ * MODEM_HL7800_BOOT_IN_AIRPLANE_MODE.
+ *
+ * @param mode
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
 
 #ifdef __cplusplus
 }
