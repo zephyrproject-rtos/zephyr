@@ -1503,7 +1503,7 @@ static void dns_work_cb(struct k_work *work)
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
-	const char *dns_servers_str[] = { ictx.dns_string };
+	static const char * const dns_servers_str[] = { ictx.dns_string, NULL };
 
 	/* set new DNS addr in DNS resolver */
 	LOG_DBG("Refresh DNS resolver");
