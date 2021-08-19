@@ -34,6 +34,17 @@ extern "C" {
 #define __net_buf_align __aligned(sizeof(void *))
 
 /**
+ * @cond INTERNAL_HIDDEN
+ */
+#define NET_BUF_SIMPLE_INITIALIZER(_data, _size)	\
+	{						\
+		.data  = _data,				\
+		.len   = 0,				\
+		.size  = _size,				\
+		.__buf = _data,				\
+	}
+
+/**
  *  @def NET_BUF_SIMPLE_DEFINE
  *  @brief Define a net_buf_simple stack variable.
  *
