@@ -155,7 +155,7 @@ typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 int32_t mdm_hl7800_power_off(void);
 
 /**
- * @brief Reset the HL7800
+ * @brief Reset the HL7800 (and allow it to reconfigure).
  *
  * @return int32_t 0 for success
  */

@@ -269,4 +269,9 @@ config MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS
 	int "Number of attempts to get IP address info during init"
 	default 4
 
+config MODEM_HL7800_DELAY_START
+	bool "Delay secondary initialization of driver and network attach"
+	help
+	 When true the application must call mdm_hl7800_reset.
+
 endif # MODEM_HL7800
