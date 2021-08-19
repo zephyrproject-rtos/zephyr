@@ -1241,6 +1241,9 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 		if (strcmp(arg, "scan-response") &&
 		    *data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
+			shell_print(shell, "Failed to set advertising data: "
+					   "Maximum entries limit reached");
+
 			return -ENOEXEC;
 		}
 
@@ -1258,6 +1261,8 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 			(*data_len)++;
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
+				shell_print(shell, "Failed to set advertising data: "
+						   "duplicate scan-response option");
 				return -ENOEXEC;
 			}
 
@@ -1270,11 +1275,13 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 				      sizeof(hex_data) - hex_data_len);
 
 			if (!len || (len - 1) != (hex_data[hex_data_len])) {
+				shell_print(shell, "Failed to set advertising data: "
+						   "malformed hex data");
 				return -ENOEXEC;
 			}
 
 			data[*data_len].type = hex_data[hex_data_len + 1];
-			data[*data_len].data_len = hex_data[hex_data_len];
+			data[*data_len].data_len = len - 2;
 			data[*data_len].data = &hex_data[hex_data_len + 2];
 			(*data_len)++;
 			hex_data_len += len;
