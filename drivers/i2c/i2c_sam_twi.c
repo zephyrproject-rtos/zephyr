@@ -64,6 +64,7 @@ struct twi_msg {
 struct i2c_sam_twi_dev_data {
 	struct k_sem sem;
 	struct twi_msg msg;
+	struct i2c_slave_config *slave_cfg;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -218,6 +219,13 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 			}
 		}
 
+		/* Ensure target mode is idle before enable controller mode */
+		if (!(twi->TWI_SR & TWI_SR_TXCOMP)) {
+			k_sem_take(&dev_data->sem, K_FOREVER);
+		}
+		twi->TWI_CR = TWI_CR_SVDIS;
+		twi->TWI_CR = TWI_CR_MSEN;
+
 		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			read_msg_start(twi, &dev_data->msg, addr);
 		} else {
@@ -235,6 +243,52 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 	return 0;
 }
 
+static int i2c_sam_slave_register(const struct device *dev,
+				       struct i2c_slave_config *cfg)
+{
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
+	Twi *const twi = dev_cfg->regs;
+
+	if(!cfg) {
+		LOG_ERR("cfg == NULL\n");
+		return -EINVAL;
+	}
+	if(cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS)
+		return -ENOTSUP;
+
+
+	dev_data->slave_cfg = cfg;
+
+	twi->TWI_SMR = TWI_SMR_SADR(cfg->address);
+	LOG_INF("I2C target is registered at 0x%08x\n", twi->TWI_SMR);
+
+	twi->TWI_IDR = twi->TWI_IMR;
+	twi->TWI_CR = TWI_CR_MSDIS;
+	twi->TWI_CR = TWI_CR_SVEN;
+	twi->TWI_IER = TWI_IER_SVACC | TWI_IER_EOSACC;
+
+	return 0;
+}
+
+static int i2c_sam_slave_unregister(const struct device *dev,
+					 struct i2c_slave_config *cfg)
+{
+	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
+	Twi *const twi = dev_cfg->regs;
+
+	if(!cfg)
+		return -EINVAL;
+
+	if(dev_data->slave_cfg != cfg)
+		return -EINVAL;
+
+	dev_data->slave_cfg = NULL;
+	twi->TWI_CR = TWI_CR_SVDIS;
+	return 0;
+}
+
 static void i2c_sam_twi_isr(const struct device *dev)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -242,54 +296,103 @@ static void i2c_sam_twi_isr(const struct device *dev)
 	Twi *const twi = dev_cfg->regs;
 	struct twi_msg *msg = &dev_data->msg;
 	uint32_t isr_status;
+	uint32_t status;
+	uint8_t val;
 
 	/* Retrieve interrupt status */
-	isr_status = twi->TWI_SR & twi->TWI_IMR;
+	status = twi->TWI_SR;
+	isr_status = status & twi->TWI_IMR;
 
-	/* Not Acknowledged */
-	if (isr_status & TWI_SR_NACK) {
-		msg->twi_sr = isr_status;
-		goto tx_comp;
-	}
-
-	/* Byte received */
-	if (isr_status & TWI_SR_RXRDY) {
-
-		msg->buf[msg->idx++] = twi->TWI_RHR;
-
-		if (msg->idx == msg->len - 1U) {
-			/* Send a STOP condition on the TWI */
-			twi->TWI_CR = TWI_CR_STOP;
+	/* Target mode access */
+	if (status & (TWI_SR_SVACC | TWI_SR_EOSACC)) {
+		/* Start */
+		if ((isr_status & TWI_SR_SVACC)) {
+			twi->TWI_IDR = TWI_IDR_SVACC;
+			if (status & TWI_SR_SVREAD) {
+				twi->TWI_IER = TWI_SR_TXRDY;
+				val = 0;
+				dev_data->slave_cfg->callbacks->read_requested(
+											dev_data->slave_cfg, &val);
+				twi->TWI_THR = val;
+			} else {
+				twi->TWI_IER = TWI_SR_RXRDY;
+				dev_data->slave_cfg->callbacks->write_requested(
+											dev_data->slave_cfg);
+			}
 		}
-	}
 
-	/* Byte sent */
-	if (isr_status & TWI_SR_TXRDY) {
-		if (msg->idx == msg->len) {
-			if (msg->flags & I2C_MSG_STOP) {
+		/* Read */
+		if (isr_status & TWI_SR_TXRDY) {
+			dev_data->slave_cfg->callbacks->read_processed(
+											dev_data->slave_cfg, &val);
+			twi->TWI_THR = val;
+		}
+
+		/* Write */
+		if (isr_status & TWI_SR_RXRDY) {
+			val = twi->TWI_RHR;
+			dev_data->slave_cfg->callbacks->write_received(
+											dev_data->slave_cfg, val);
+		}
+
+		/* Stop */
+		if(isr_status & TWI_SR_EOSACC) {
+			dev_data->slave_cfg->callbacks->stop(dev_data->slave_cfg);
+			goto tx_comp;
+		}
+	} else {
+		/* Not Acknowledged */
+		if (isr_status & TWI_SR_NACK) {
+			msg->twi_sr = isr_status;
+			goto tx_comp;
+		}
+
+		/* Byte received */
+		if (isr_status & TWI_SR_RXRDY) {
+
+			msg->buf[msg->idx++] = twi->TWI_RHR;
+
+			if (msg->idx == msg->len - 1U) {
 				/* Send a STOP condition on the TWI */
 				twi->TWI_CR = TWI_CR_STOP;
-				/* Disable Transmit Ready interrupt */
-				twi->TWI_IDR = TWI_IDR_TXRDY;
-			} else {
-				/* Transmission completed */
-				goto tx_comp;
 			}
-		} else {
-			twi->TWI_THR = msg->buf[msg->idx++];
+		}
+
+		/* Byte sent */
+		if (isr_status & TWI_SR_TXRDY) {
+			if (msg->idx == msg->len) {
+				if (msg->flags & I2C_MSG_STOP) {
+					/* Send a STOP condition on the TWI */
+					twi->TWI_CR = TWI_CR_STOP;
+					/* Disable Transmit Ready interrupt */
+					twi->TWI_IDR = TWI_IDR_TXRDY;
+				} else {
+					/* Transmission completed */
+					goto tx_comp;
+				}
+			} else {
+				twi->TWI_THR = msg->buf[msg->idx++];
+			}
+		}
+
+		/* Transmission completed */
+		if (isr_status & TWI_SR_TXCOMP) {
+			goto tx_comp;
 		}
 	}
-
-	/* Transmission completed */
-	if (isr_status & TWI_SR_TXCOMP) {
-		goto tx_comp;
-	}
-
 	return;
 
 tx_comp:
 	/* Disable all enabled interrupts */
 	twi->TWI_IDR = twi->TWI_IMR;
+
+	/* Enable target mode if it is registered */
+	if(dev_data->slave_cfg != NULL) {
+		twi->TWI_CR = TWI_CR_MSDIS;
+		twi->TWI_CR = TWI_CR_SVEN;
+		twi->TWI_IER = TWI_IER_SVACC | TWI_IER_EOSACC;
+	}
+
 	/* We are done */
 	k_sem_give(&dev_data->sem);
 }
