@@ -1162,6 +1162,64 @@ error:
 }
 #endif /* CONFIG_MODEM_HL7800_GPS */
 
+#ifdef CONFIG_MODEM_HL7800_POLTE
+int32_t mdm_hl7800_polte_register(void)
+{
+	int ret = -1;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	/* register for events */
+	SEND_AT_CMD_EXPECT_OK("AT%POLTEEV=\"REGISTER\",1");
+	SEND_AT_CMD_EXPECT_OK("AT%POLTEEV=\"LOCATION\",1");
+	/* register with polte.io */
+	SEND_AT_CMD_EXPECT_OK("AT%POLTECMD=\"REGISTER\"");
+error:
+	LOG_DBG("PoLTE register status: %d", ret);
+	allow_sleep(true);
+	hl7800_unlock();
+	return ret;
+}
+
+int32_t mdm_hl7800_polte_enable(char *user, char *password)
+{
+	int ret = -1;
+	char buf[sizeof(MDM_HL7800_SET_POLTE_USER_AND_PASSWORD_FMT_STR) +
+		 MDM_HL7800_MAX_POLTE_USER_ID_SIZE + MDM_HL7800_MAX_POLTE_PASSWORD_SIZE] = { 0 };
+
+	hl7800_lock();
+	wakeup_hl7800();
+
+	/* register for events */
+	SEND_AT_CMD_EXPECT_OK("AT%POLTEEV=\"REGISTER\",1");
+	SEND_AT_CMD_EXPECT_OK("AT%POLTEEV=\"LOCATION\",1");
+	/*  restore user and password (not saved in NV by modem) */
+	snprintk(buf, sizeof(buf), MDM_HL7800_SET_POLTE_USER_AND_PASSWORD_FMT_STR, user, password);
+	ret = send_at_cmd(NULL, buf, MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES, false);
+
+error:
+	LOG_DBG("PoLTE register status: %d", ret);
+	allow_sleep(true);
+	hl7800_unlock();
+	return ret;
+}
+
+int32_t mdm_hl7800_polte_locate(void)
+{
+	int ret = -1;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	SEND_AT_CMD_EXPECT_OK("AT%POLTECMD=\"LOCATE\",2,1");
+error:
+	LOG_DBG("PoLTE locate status: %d", ret);
+	allow_sleep(true);
+	hl7800_unlock();
+	return ret;
+}
+
+#endif /* CONFIG_MODEM_HL7800_POLTE */
+
 void mdm_hl7800_generate_status_events(void)
 {
 	hl7800_lock();
@@ -2547,6 +2605,240 @@ static bool on_cmd_ver_speed(struct net_buf **buf, uint16_t len)
 }
 #endif /* CONFIG_MODEM_HL7800_GPS */
 
+#ifdef CONFIG_MODEM_HL7800_POLTE
+/* Handler: %POLTEEVU: "REGISTER",0, <mqttAuthUser>, <mqttAuthPassword> */
+static bool on_cmd_polte_registration(struct net_buf **buf, uint16_t len)
+{
+	char rsp[MDM_MAX_RESP_SIZE] = { 0 };
+	size_t rsp_len = sizeof(rsp) - 1;
+	char *rsp_end = rsp + rsp_len;
+	struct mdm_hl7800_polte_registration_event_data data;
+	struct net_buf *frag = NULL;
+	size_t out_len;
+	char *location;
+	bool parsed;
+
+	memset(&data, 0, sizeof(data));
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf), sizeof(rsp));
+
+	location = rsp;
+	parsed = false;
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	do {
+		if (!frag) {
+			LOG_ERR("Unable to find end");
+			break;
+		}
+
+		if (len > rsp_len) {
+			LOG_WRN("string too long (len:%d)", len);
+			len = rsp_len;
+		}
+
+		out_len = net_buf_linearize(rsp, rsp_len, *buf, 0, len);
+		rsp[out_len] = 0;
+
+		/* Command handler looks for string up to the user field */
+		location = strstr(location, "\"");
+		if (location != NULL && location < rsp_end) {
+			location += 1;
+			if (location >= rsp_end) {
+				break;
+			}
+			data.user = location;
+		} else {
+			break;
+		}
+
+		/* Find end of user field and null terminate string */
+		location = strstr(location, "\"");
+		if (location != NULL && location < rsp_end) {
+			*location = 0;
+			location += 1;
+			if (location >= rsp_end) {
+				break;
+			}
+		} else {
+			break;
+		}
+
+		location = strstr(location, ",\"");
+		if (location != NULL && location < rsp_end) {
+			location += 2;
+			if (location >= rsp_end) {
+				break;
+			}
+			data.password = location;
+
+		} else {
+			break;
+		}
+
+		location = strstr(location, "\"");
+		if (location != NULL && location < rsp_end) {
+			*location = 0;
+		} else {
+			break;
+		}
+		parsed = true;
+	} while (0);
+
+	if (parsed && data.user && data.password) {
+		data.status = 0;
+	} else {
+		data.status = -1;
+		LOG_ERR("Unable to parse PoLTE registration");
+	}
+
+	event_handler(HL7800_EVENT_POLTE_REGISTRATION, &data);
+
+	return true;
+}
+
+/* Handler: %POLTECMD: "LOCATE",<res> */
+static bool on_cmd_polte_locate_cmd_rsp(struct net_buf **buf, uint16_t len)
+{
+	char rsp[sizeof("99")] = { 0 };
+	size_t rsp_len = sizeof(rsp) - 1;
+	size_t out_len;
+	struct net_buf *frag = NULL;
+	struct mdm_hl7800_polte_location_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf), sizeof(rsp));
+
+	data.status = -1;
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	do {
+		if (!frag) {
+			LOG_ERR("Unable to find end");
+			break;
+		}
+
+		if (len > rsp_len) {
+			LOG_WRN("string too long (len:%d)", len);
+			len = rsp_len;
+		}
+
+		out_len = net_buf_linearize(rsp, rsp_len, *buf, 0, len);
+		rsp[out_len] = 0;
+
+		data.status = (uint32_t)strtoul(rsp, NULL, 10);
+	} while (0);
+
+	event_handler(HL7800_EVENT_POLTE_LOCATE_STATUS, &data);
+
+	return true;
+}
+
+/* Handler:
+ * %POLTEEVU: "LOCATION",<stat>[,<latitude>,<longitude>,<time>,<confidence>]
+ */
+static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
+{
+	char rsp[MDM_MAX_RESP_SIZE] = { 0 };
+	size_t rsp_len = sizeof(rsp) - 1;
+	char *rsp_end = rsp + rsp_len;
+	struct net_buf *frag = NULL;
+	size_t out_len = 0;
+	char *start;
+	char *end;
+	bool parsed;
+	struct mdm_hl7800_polte_location_data data;
+	static const char POLTE_LOC_DELIMITER[] = "\",\"";
+
+	memset(&data, 0, sizeof(data));
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf), sizeof(rsp));
+
+	parsed = false;
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	do {
+		if (!frag) {
+			LOG_ERR("Unable to find end");
+			break;
+		}
+
+		if (len > rsp_len) {
+			LOG_WRN("string too long (len:%d)", len);
+			len = rsp_len;
+		}
+
+		out_len = net_buf_linearize(rsp, rsp_len, *buf, 0, len);
+		rsp[out_len] = 0;
+
+		data.status = -1;
+		start = rsp;
+		end = "";
+		/* Comma isn't present when there is an error. */
+		start = strstr(start, ",");
+		if (start != NULL && start < rsp_end) {
+			*start = ' ';
+			start += 1;
+		}
+		data.status = (uint32_t)strtoul(rsp, &end, 10);
+		if (data.status != 0) {
+			LOG_WRN("Response not received from PoLTE server: %d", data.status);
+			data.status = MDM_HL7800_POLTE_SERVER_ERROR;
+			parsed = true;
+			break;
+		} else if (start >= rsp_end) {
+			break;
+		}
+
+		start = strstr(start, "\"") + 1;
+		end = strstr(start, POLTE_LOC_DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.latitude, start, MIN(end - start, sizeof(data.latitude) - 1));
+		} else {
+			break;
+		}
+
+		start = end + strlen(POLTE_LOC_DELIMITER);
+		end = strstr(start, POLTE_LOC_DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.longitude, start, MIN(end - start, sizeof(data.longitude) - 1));
+		} else {
+			break;
+		}
+
+		start = end + strlen(POLTE_LOC_DELIMITER);
+		end = strstr(start, POLTE_LOC_DELIMITER);
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			data.timestamp = (uint32_t)strtoul(start, NULL, 10);
+		} else {
+			break;
+		}
+
+		start = end + strlen(POLTE_LOC_DELIMITER);
+		end = strstr(start, "\"");
+		if (start > rsp && start < rsp_end && end < rsp_end && end > start) {
+			memcpy(data.confidence_in_meters, start,
+			       MIN(end - start, sizeof(data.confidence_in_meters) - 1));
+		} else {
+			break;
+		}
+
+		parsed = true;
+	} while (0);
+
+	if (!parsed) {
+		LOG_HEXDUMP_ERR(rsp, out_len, "Unable to parse PoLTE location");
+	} else {
+		LOG_HEXDUMP_DBG(rsp, out_len, "PoLTE Location");
+	}
+
+	event_handler(HL7800_EVENT_POLTE, &data);
+
+	return true;
+}
+#endif /* CONFIG_MODEM_HL7800_POLTE */
+
 static void notify_all_tcp_sockets_closed(void)
 {
 	int i;
@@ -3768,6 +4060,11 @@ static void hl7800_rx(void)
 		CMD_HANDLER("VerSpeed: ", ver_speed),
 #endif
 
+#ifdef CONFIG_MODEM_HL7800_POLTE
+		CMD_HANDLER("%POLTEEVU: \"REGISTER\",0,", polte_registration),
+		CMD_HANDLER("%POLTECMD: \"LOCATE\",", polte_locate_cmd_rsp),
+		CMD_HANDLER("%POLTEEVU: \"LOCATION\",", polte_location),
+#endif
 	};
 
 	while (true) {
