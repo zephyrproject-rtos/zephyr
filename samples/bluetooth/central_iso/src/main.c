@@ -145,8 +145,6 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx = {
-	.interval = 10 * USEC_PER_MSEC, /* us */
-	.latency = 10,
 	.sdu = CONFIG_BT_ISO_TX_MTU,
 	.phy = BT_GAP_LE_PHY_2M,
 	.rtn = 1,
@@ -154,9 +152,6 @@ static struct bt_iso_chan_io_qos iso_tx = {
 };
 
 static struct bt_iso_chan_qos iso_qos = {
-	.sca = BT_GAP_SCA_UNKNOWN,
-	.packing = 0,
-	.framing = 0,
 	.tx = &iso_tx,
 	.rx = NULL,
 };
@@ -165,8 +160,10 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int iso_err;
-	struct bt_conn *conns[1];
-	struct bt_iso_chan *channels[1];
+	static struct bt_iso_chan *channels[1];
+	struct bt_iso_cig_create_param param;
+	struct bt_iso_connect_param connect_param;
+	struct bt_iso_cig *cig;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -186,17 +183,26 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 
-	conns[0] = default_conn;
 	channels[0] = &iso_chan;
+	param.cis_channels = channels;
+	param.num_cis = ARRAY_SIZE(channels);
+	param.sca = BT_GAP_SCA_UNKNOWN;
+	param.packing = 0;
+	param.framing = 0;
+	param.latency = 10; /* ms */
+	param.interval = 10 * USEC_PER_MSEC; /* us */
 
-	iso_err = bt_iso_chan_bind(conns, ARRAY_SIZE(conns), channels);
+	iso_err = bt_iso_cig_create(&param, &cig);
 
 	if (iso_err) {
 		printk("Failed to bind iso to connection (%d)\n", iso_err);
 		return;
 	}
 
-	iso_err = bt_iso_chan_connect(channels, ARRAY_SIZE(channels));
+	connect_param.conn = conn;
+	connect_param.iso = &iso_chan;
+
+	iso_err = bt_iso_chan_connect(&connect_param, ARRAY_SIZE(channels));
 
 	if (iso_err) {
 		printk("Failed to connect iso (%d)\n", iso_err);
