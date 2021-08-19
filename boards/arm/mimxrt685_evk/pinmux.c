@@ -961,6 +961,93 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	IOPCTL_PinMuxSet(IOPCTL, 2U, 9U, port2_pin9_config);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay) && CONFIG_ADC
+	/*
+	 * The current test and sample applications uses a single channel for
+	 * testing so we only need to enable the pin for that single use.
+	 *
+	 * If your application requires more then the mappings are as follows
+	 * for the rt685_evk:
+	 *
+	 * +---------+------+---------+-------+
+	 * |  Port#  | ADC  |Schematic|Arduino|
+	 * |   pin   | Chn# |         |header |
+	 * +---------+------+---------+-------+
+	 * | PIO0_5  | CH0A | ADC0_0  | J30.1 |
+	 * +---------+------+---------+-------+
+	 * | PIO0_6  | CH0B | ADC0_8  | J30.2 |
+	 * +---------+------+---------+-------+
+	 * | PIO0_12 | CH1A | ADC0_1  |       |
+	 * +---------+------+---------+-------+
+	 * | PIO0_13 | CH1B | ADC0_9  |       |
+	 * +---------+------+---------+-------+
+	 * | PIO0_19 | CH2A | ADC0_2  | J30.3 |
+	 * +---------+------+---------+-------+
+	 * | PIO0_20 | CH2B | ADC0_10 | J30.4 |
+	 * +---------+------+---------+-------+
+	 * | PIO0_26 | CH3A | ADC0_3  |       |
+	 * +---------+------+---------+-------+
+	 * | PIO0_27 | CH3B | ADC0_11 |       |
+	 * +---------+------+---------+-------+
+	 * | PIO1_8  | CH4A | ADC0_4  |       |
+	 * +---------+------+---------+-------+
+	 * | PIO1_9  | CH4B | ADC0_12 |       |
+	 * +---------+------+---------+-------+
+	 * | PIO3_23 | CH5A | ADC0_5  |       |
+	 * +---------+------+---------+-------+
+	 * | PIO3_24 | CH5B | ADC0_13 |       |
+	 * +---------+------+---------+-------+
+	 *
+	 * Per the mimxrt6xx reference manual, The channels 0-5 are analong input.
+	 * Optionally, channels 0A through 5A can be paired with channels 0B
+	 * through 5B for differential input on their respective ADC channel.
+	 *
+	 */
+	const uint32_t port0_pin5_config = (
+			/* Pin is configured as ADC0_0 */
+			IOPCTL_PIO_FUNC0 |
+			/* Disable pull-up / pull-down function */
+			IOPCTL_PIO_PUPD_DI |
+			/* Enable pull-down function */
+			IOPCTL_PIO_PULLDOWN_EN |
+			/* Disable input buffer function */
+			IOPCTL_PIO_INBUF_DI |
+			/* Normal mode */
+			IOPCTL_PIO_SLEW_RATE_NORMAL |
+			/* Normal drive */
+			IOPCTL_PIO_FULLDRIVE_DI |
+			/* Analog mux is enabled */
+			IOPCTL_PIO_ANAMUX_EN |
+			/* Pseudo Output Drain is disabled */
+			IOPCTL_PIO_PSEDRAIN_DI |
+			/* Input function is not inverted */
+			IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN5 (coords: F4) is configured as ADC0_0 */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 5U, port0_pin5_config);
+
+	const uint32_t port0_pin6_config = (
+			/* Pin is configured as ADC0_8 */
+			IOPCTL_PIO_FUNC0 |
+			/* Disable pull-up / pull-down function */
+			IOPCTL_PIO_PUPD_DI |
+			/* Enable pull-down function */
+			IOPCTL_PIO_PULLDOWN_EN |
+			/* Disable input buffer function */
+			IOPCTL_PIO_INBUF_DI |
+			/* Normal mode */
+			IOPCTL_PIO_SLEW_RATE_NORMAL |
+			/* Normal drive */
+			IOPCTL_PIO_FULLDRIVE_DI |
+			/* Analog mux is enabled */
+			IOPCTL_PIO_ANAMUX_EN |
+			/* Pseudo Output Drain is disabled */
+			IOPCTL_PIO_PSEDRAIN_DI |
+			/* Input function is not inverted */
+			IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN6 (coords: E1) is configured as ADC0_8 */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 6U, port0_pin6_config);
+#endif
+
 	return 0;
 }
 
