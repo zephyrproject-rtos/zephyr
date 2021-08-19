@@ -2034,6 +2034,42 @@ exit:
 	return ret;
 }
 
+static int ztls_socket_data_check(struct tls_context *ctx)
+{
+	int ret;
+
+	ctx->flags = ZSOCK_MSG_DONTWAIT;
+
+	ret = mbedtls_ssl_read(&ctx->ssl, NULL, 0);
+	if (ret < 0) {
+		if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			/* Don't reset the context for STREAM socket - the
+			 * application needs to reopen the socket anyway, and
+			 * resetting the context would result in an error instead
+			 * of 0 in a consecutive recv() call.
+			 */
+			if (ctx->type == SOCK_DGRAM) {
+				ret = tls_mbedtls_reset(ctx);
+				if (ret != 0) {
+					return -ENOMEM;
+				}
+			}
+
+			return -ENOTCONN;
+		}
+
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			return 0;
+		}
+
+		/* Treat any other error as fatal. */
+		return -EIO;
+	}
+
+	return mbedtls_ssl_get_bytes_avail(&ctx->ssl);
+}
+
 static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 				   struct zsock_pollfd *pfd)
 {
@@ -2056,17 +2092,20 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 		goto next;
 	}
 
-	ret = zsock_recv(fd, NULL, 0, ZSOCK_MSG_DONTWAIT);
-	if (ret == 0 && ctx->type == SOCK_STREAM) {
+	ret = ztls_socket_data_check(ctx);
+	if (ret == -ENOTCONN) {
+		/* Datagram does not return 0 on consecutive recv, but an error
+		 * code, hence clear POLLIN.
+		 */
+		if (ctx->type == SOCK_DGRAM) {
+			pfd->revents &= ~ZSOCK_POLLIN;
+		}
 		pfd->revents |= ZSOCK_POLLHUP;
 		goto next;
-	/* EAGAIN might happen during or just after DTLS  handshake. */
-	} else if (ret < 0 && errno != EAGAIN) {
+	} else if (ret < 0) {
 		pfd->revents |= ZSOCK_POLLERR;
 		goto next;
-	}
-
-	if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) == 0) {
+	} else if (ret == 0) {
 		goto again;
 	}
 
