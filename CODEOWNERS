@@ -190,6 +190,7 @@
 /drivers/*/*andes*                        @cwshu @Teng-Shih-Wei
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
+/drivers/audio/*nrfx*                     @anangl
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/cache/                           @carlocaione
