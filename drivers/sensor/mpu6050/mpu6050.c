@@ -223,6 +223,15 @@ int mpu6050_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_MPU6050_I2C_BYPASS
+	if (i2c_reg_update_byte(drv_data->i2c, cfg->i2c_addr,
+				MPU6050_REG_INT_CFG, MPU6050_I2C_BYPASS_EN,
+				1) < 0) {
+		LOG_ERR("Failed to set i2c bypass.");
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 

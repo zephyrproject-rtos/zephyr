@@ -30,6 +30,9 @@
 #define MPU6050_REG_PWR_MGMT1		0x6B
 #define MPU6050_SLEEP_EN		BIT(6)
 
+#define MPU6050_REG_INT_CFG     0x37
+#define MPU6050_I2C_BYPASS_EN   BIT(1)
+
 /* measured in degrees/sec x10 to avoid floating point */
 static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
 	1310, 655, 328, 164
