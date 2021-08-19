@@ -72,6 +72,18 @@ struct mdm_hl7800_apn {
 
 #define MDM_HL7800_MAX_GPS_STR_SIZE 33
 
+#define MDM_HL7800_MAX_POLTE_USER_ID_SIZE 16
+#define MDM_HL7800_MAX_POLTE_PASSWORD_SIZE 16
+#define MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE 33
+
+/* Assign the server error code (location response) to a value
+ * that isn't used by locate response so that a single status
+ * callback can be used.
+ */
+#define MDM_HL7800_POLTE_SERVER_ERROR 10
+
+#define MDM_HL7800_SET_POLTE_USER_AND_PASSWORD_FMT_STR "AT%%POLTECMD=\"SERVERAUTH\",\"%s\",\"%s\""
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -90,6 +102,9 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_REVISION,
 	HL7800_EVENT_GPS,
 	HL7800_EVENT_GPS_POSITION_STATUS,
+	HL7800_EVENT_POLTE_REGISTRATION,
+	HL7800_EVENT_POLTE_LOCATE_STATUS,
+	HL7800_EVENT_POLTE
 };
 
 enum mdm_hl7800_startup_state {
@@ -182,6 +197,26 @@ enum mdm_hl7800_gps_string_types {
 	HL7800_GPS_STR_VER_SPEED
 };
 
+/* status: negative errno, 0 on success
+ * user and password aren't valid if status is non-zero.
+ */
+struct mdm_hl7800_polte_registration_event_data {
+	int status;
+	char *user;
+	char *password;
+};
+
+/* status: negative errno, 0 on success, non-zero error code
+ * Data is not valid if status is non-zero.
+ */
+struct mdm_hl7800_polte_location_data {
+	uint32_t timestamp;
+	int status;
+	char latitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char longitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char confidence_in_meters[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+};
+
 /**
  * event - The type of event
  * event_data - Pointer to event specific data structure
@@ -199,6 +234,9 @@ enum mdm_hl7800_gps_string_types {
  * HL7800_EVENT_REVISION - string
  * HL7800_EVENT_GPS - compound event
  * HL7800_EVENT_GPS_POSITION_STATUS int
+ * HL7800_EVENT_POLTE_REGISTRATION mdm_hl7800_polte_registration_event_data
+ * HL7800_EVENT_POLTE mdm_hl7800_polte_location_data
+ * HL7800_EVENT_POLTE_LOCATE_STATUS int
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
@@ -369,6 +407,39 @@ int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
  * @return int32_t negative errno, 0 on success
  */
 int32_t mdm_hl7800_set_gps_rate(uint32_t rate);
+
+/**
+ * @brief Register modem/SIM with polte.io
+ *
+ * @note It takes around 30 seconds for HL7800_EVENT_POLTE_REGISTRATION to
+ * be generated.  If the applications saves the user and password
+ * information into non-volatile memory, then this command
+ * only needs to be run once.
+ *
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_register(void);
+
+/**
+ * @brief Enable PoLTE.
+ *
+ * @param user from polte.io or register command callback
+ * @param password from polte.io register command callback
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_enable(char *user, char *password);
+
+/**
+ * @brief Locate device using PoLTE.
+ *
+ * @note The first HL7800_EVENT_POLTE_LOCATE_STATUS event indicates
+ * the status of issuing the locate command. The second event
+ * requires 20-120 seconds to be generated and it contains the
+ * location information (or indicates server failure).
+ *
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_locate(void);
 
 #ifdef __cplusplus
 }

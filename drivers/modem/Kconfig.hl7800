@@ -244,7 +244,8 @@ endif # MODEM_HL7800_LOW_POWER_MODE
 
 config MODEM_HL7800_RX_STACK_SIZE
 	int "Size of the stack for the HL7800 modem driver RX thread"
-	default 1024
+	default 1536 if MODEM_HL7800_POLTE
+	default 1280
 	help
 	  This stack is used by the HL7800 RX thread.
 
@@ -298,5 +299,8 @@ config MODEM_HL7800_GPS
 config MODEM_HL7800_USE_GLONASS
 	bool "Use GLONASS in addition to GPS"
 	depends on MODEM_HL7800_GPS
+
+config MODEM_HL7800_POLTE
+	bool "Enable PoLTE commands and handlers"
 
 endif # MODEM_HL7800
