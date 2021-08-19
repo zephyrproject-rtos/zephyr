@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@ void test_gaussian_naive_bayes_predict_f32(void)
 	const float32_t *input = (const float32_t *)in_val;
 	float32_t *output_probs_buf, *output_probs;
 	uint16_t *output_preds_buf, *output_preds;
+	float32_t *temp;
 
 	/* Initialise instance */
 	inst.vectorDimension = vec_dims;
@@ -49,12 +50,15 @@ void test_gaussian_naive_bayes_predict_f32(void)
 	output_probs = output_probs_buf;
 	output_preds = output_preds_buf;
 
+	temp = malloc(pattern_count * class_count * sizeof(float32_t));
+	zassert_not_null(temp, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
 	/* Enumerate patterns */
 	for (index = 0; index < pattern_count; index++) {
 		/* Run test function */
 		*output_preds =
 			arm_gaussian_naive_bayes_predict_f32(
-				&inst, input, output_probs);
+				&inst, input, output_probs, temp);
 
 		/* Increment pointers */
 		input += vec_dims;
