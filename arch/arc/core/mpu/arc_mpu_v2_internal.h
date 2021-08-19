@@ -17,7 +17,12 @@
 #define AUX_MPU_RDP_SIZE_MASK (0xE03)
 
 /* For MPU version 2, the minimum protection region size is 2048 bytes */
+#if CONFIG_ARC_MPU_VER == 2
 #define ARC_FEATURE_MPU_ALIGNMENT_BITS 11
+/* For MPU version 3, the minimum protection region size is 32 bytes */
+#else
+#define ARC_FEATURE_MPU_ALIGNMENT_BITS 5
+#endif
 
 /**
  * This internal function initializes a MPU region
