@@ -57,10 +57,9 @@ def main():
 
     setup_edtlib_logging()
 
-    if args.vendor_prefixes:
-        vendor_prefixes = edtlib.load_vendor_prefixes_txt(args.vendor_prefixes)
-    else:
-        vendor_prefixes = None
+    vendor_prefixes = {}
+    for prefixes_file in args.vendor_prefixes:
+        vendor_prefixes.update(edtlib.load_vendor_prefixes_txt(prefixes_file))
 
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
@@ -214,8 +213,9 @@ def parse_args():
                         help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
-    parser.add_argument("--vendor-prefixes",
-                        help="vendor-prefixes.txt path; used for validation")
+    parser.add_argument("--vendor-prefixes", action='append', default=[],
+                        help="vendor-prefixes.txt path; used for validation; "
+                             "may be given multiple times")
     parser.add_argument("--edtlib-Werror", action="store_true",
                         help="if set, edtlib-specific warnings become errors. "
                              "(this does not apply to warnings shared "
