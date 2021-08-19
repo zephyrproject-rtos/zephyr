@@ -1812,7 +1812,13 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 	switch (ret) {
 	case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
 		/* Peer notified that it's closing the connection. */
-		return 0;
+		ret = tls_mbedtls_reset(ctx);
+		if (ret == 0) {
+			ret = -ENOTCONN;
+		} else {
+			ret = -ENOMEM;
+		}
+		break;
 
 	case MBEDTLS_ERR_SSL_TIMEOUT:
 		(void)mbedtls_ssl_close_notify(&ctx->ssl);
