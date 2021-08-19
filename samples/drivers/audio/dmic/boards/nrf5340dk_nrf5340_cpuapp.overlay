@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clock {
+	hfclkaudio-frequency = <12288000>;
+};
+
+dmic_dev: &pdm0 {
+	status = "okay";
+	clk-pin = <25>;
+	din-pin = <26>;
+	clock-source = "ACLK";
+};
