@@ -56,7 +56,7 @@ void main(void)
 	}
 
 	while (true) {
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_SECONDS(10));
 
 		mfg_data[2]++;
 
