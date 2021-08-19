@@ -1,0 +1,12 @@
+# Microchip XEC QMSPI V2
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XEC_QMSPI_V2
+	bool "Microchip XEC QMSPI driver"
+	default y
+	depends on SOC_SERIES_MEC172X
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for the Microchip XEC QMSPI V2 driver.

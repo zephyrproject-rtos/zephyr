@@ -1,0 +1,82 @@
+# Copyright (c) 2021, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC QMSPI controller V2
+
+compatible: "microchip,xec-qmspi-v2"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    port_sel:
+      type: int
+      required: true
+      description: SPI Port 0 or 1.
+
+    lines:
+      type: int
+      required: true
+      description: QMSPI lines 1, 2, or 4
+
+    chip_select:
+      type: int
+      required: true
+      description: Use QMSPI CS0# or CS1#
+
+    dcsckon:
+      type: int
+      required: true
+      description: |
+        Delay in system clocks from CS# assertion to first clock edge
+
+    dckcsoff:
+      type: int
+      required: true
+      description: |
+        Delay in system clocks from last clock edge to CS# de-assertion
+
+    dldh:
+      type: int
+      required: true
+      description: |
+        Delay in system clocks from CS# de-assertion to driving HOLD# and WP#
+
+    dcsda:
+      type: int
+      required: true
+      description: |
+        Delay in system clocks from CS# de-assertion to CS# assertion
+
+    girqs:
+      type: array
+      required: true
+      description: |
+        QMSPI GIRQ number and bit position
+
+    pcrs:
+      type: array
+      required: true
+      description: |
+        PCR register index and bit position for QMSPI clock control
+
+    "#girq-cells":
+      type: int
+      const: 2
+
+    "#pcr-cells":
+      type: int
+      const: 2
+
+pcr-cells:
+    - regidx
+    - bitpos
+
+girq-cells:
+    - girqnum
+    - bitpos

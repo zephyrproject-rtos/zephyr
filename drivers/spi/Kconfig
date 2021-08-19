@@ -81,4 +81,6 @@ source "drivers/spi/Kconfig.test"
 
 source "drivers/spi/Kconfig.psoc6"
 
+source "drivers/spi/Kconfig.xec_qmspi_v2"
+
 endif # SPI
