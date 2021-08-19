@@ -90,6 +90,7 @@ if(SUPPORTS_DTS)
   endforeach()
 
   unset(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
+  unset(DTS_ROOT_BINDINGS)
   foreach(dts_root ${DTS_ROOT})
     foreach(dts_root_path
         include
@@ -105,15 +106,12 @@ if(SUPPORTS_DTS)
           )
       endif()
     endforeach()
-  endforeach()
 
-  unset(DTS_ROOT_BINDINGS)
-  foreach(dts_root ${DTS_ROOT})
-    set(full_path ${dts_root}/dts/bindings)
-    if(EXISTS ${full_path})
+    set(bindings_path ${dts_root}/dts/bindings)
+    if(EXISTS ${bindings_path})
       list(APPEND
         DTS_ROOT_BINDINGS
-        ${full_path}
+        ${bindings_path}
         )
     endif()
   endforeach()
