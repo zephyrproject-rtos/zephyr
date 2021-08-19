@@ -265,4 +265,8 @@ config MODEM_HL7800_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS
+	int "Number of attempts to get IP address info during init"
+	default 4
+
 endif # MODEM_HL7800
