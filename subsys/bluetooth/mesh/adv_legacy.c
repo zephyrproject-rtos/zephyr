@@ -28,6 +28,7 @@
 #include "host/ecc.h"
 #include "prov.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 
 /* Pre-5.0 controllers enforce a minimum interval of 100ms
  * whereas 5.0+ controllers can go down to 20ms.
@@ -143,7 +144,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 						BT_DBG("Proxy Advertising");
 					}
 				} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-					(void)bt_mesh_prov_adv_start();
+					(void)bt_mesh_pb_gatt_adv_start();
 					BT_DBG("PB-GATT Advertising");
 				}
 

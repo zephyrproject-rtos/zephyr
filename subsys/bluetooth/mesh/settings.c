@@ -26,6 +26,7 @@
 #include "heartbeat.h"
 #include "access.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 #include "settings.h"
 #include "cfg.h"
 
@@ -61,7 +62,7 @@ static int mesh_commit(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		(void)bt_mesh_proxy_prov_disable();
+		(void)bt_mesh_pb_gatt_disable();
 	}
 
 	bt_mesh_net_settings_commit();
