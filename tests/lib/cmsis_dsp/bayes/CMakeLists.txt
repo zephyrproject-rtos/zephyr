@@ -4,5 +4,9 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cmsis_dsp_bayes)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE
+  src/f32.c
+  src/main.c
+  )
+
+target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE src/f16.c)
