@@ -147,7 +147,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
+      revision: 783c1f78c8e39751fe89d0883c8bce7336f55e94
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
