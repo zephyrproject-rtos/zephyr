@@ -2049,7 +2049,7 @@ def _binding_paths(bindings_dirs):
     for bindings_dir in bindings_dirs:
         for root, _, filenames in os.walk(bindings_dir):
             for filename in filenames:
-                if filename.endswith(".yaml"):
+                if filename.endswith(".yaml") or filename.endswith(".yml"):
                     binding_paths.append(os.path.join(root, filename))
 
     return binding_paths
