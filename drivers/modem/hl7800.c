@@ -557,6 +557,7 @@ static int write_apn(char *access_point_name);
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 static void mark_sockets_for_reconfig(void);
 #endif
+static void hl7800_build_mac(struct hl7800_iface_ctx *ictx);
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 static char *get_fota_state_string(enum mdm_hl7800_fota_state state);
@@ -4189,6 +4190,19 @@ reboot:
 	allow_sleep(sleep);
 	/* trigger APN update event */
 	event_handler(HL7800_EVENT_APN_UPDATE, &ictx.mdm_apn);
+
+#ifdef CONFIG_MODEM_HL7800_DELAY_START
+	if (!ictx.initialized) {
+		if (ictx.iface != NULL) {
+			hl7800_build_mac(&ictx);
+			net_if_set_link_addr(ictx.iface, ictx.mac_addr,
+					     sizeof(ictx.mac_addr),
+					     NET_LINK_ETHERNET);
+			ictx.initialized = true;
+		}
+	}
+#endif
+
 	return 0;
 
 error:
@@ -4810,19 +4824,15 @@ static struct net_offload offload_funcs = {
 	.put = offload_put,
 };
 
-static inline uint8_t *hl7800_get_mac(const struct device *dev)
+/* Use the last 6 digits of the IMEI as the mac address */
+static void hl7800_build_mac(struct hl7800_iface_ctx *ictx)
 {
-	struct hl7800_iface_ctx *ctx = dev->data;
-
-	/* use the last 6 digits of the IMEI as the mac address */
-	ctx->mac_addr[0] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 6];
-	ctx->mac_addr[1] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 5];
-	ctx->mac_addr[2] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 4];
-	ctx->mac_addr[3] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 3];
-	ctx->mac_addr[4] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 2];
-	ctx->mac_addr[5] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 1];
-
-	return ctx->mac_addr;
+	ictx->mac_addr[0] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 6];
+	ictx->mac_addr[1] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 5];
+	ictx->mac_addr[2] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 4];
+	ictx->mac_addr[3] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 3];
+	ictx->mac_addr[4] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 2];
+	ictx->mac_addr[5] = ictx->mdm_imei[MDM_HL7800_IMEI_STRLEN - 1];
 }
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
@@ -4903,7 +4913,6 @@ static int hl7800_init(const struct device *dev)
 	}
 	net_if_flag_set(ictx.iface, NET_IF_NO_AUTO_START);
 
-	(void)memset(&ictx, 0, sizeof(ictx));
 	/* init sockets */
 	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
 		ictx.sockets[i].socket_id = -1;
@@ -5064,7 +5073,11 @@ static int hl7800_init(const struct device *dev)
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT),
 		"hl7800 rx");
 
+#ifdef CONFIG_MODEM_HL7800_DELAY_START
+	modem_reset();
+#else
 	ret = modem_reset_and_configure();
+#endif
 
 	return ret;
 }
@@ -5075,10 +5088,14 @@ static void offload_iface_init(struct net_if *iface)
 	struct hl7800_iface_ctx *ctx = dev->data;
 
 	iface->if_dev->offload = &offload_funcs;
-	net_if_set_link_addr(iface, hl7800_get_mac(dev), sizeof(ctx->mac_addr),
-			     NET_LINK_ETHERNET);
 	ctx->iface = iface;
-	ictx.initialized = true;
+
+	if (!IS_ENABLED(CONFIG_MODEM_HL7800_DELAY_START)) {
+		hl7800_build_mac(&ictx);
+		net_if_set_link_addr(iface, ictx.mac_addr, sizeof(ictx.mac_addr),
+				     NET_LINK_ETHERNET);
+		ictx.initialized = true;
+	}
 }
 
 static struct net_if_api api_funcs = {
