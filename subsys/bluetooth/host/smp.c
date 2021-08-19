@@ -1895,7 +1895,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 						 security_err);
 		}
 
-		if (bt_auth && bt_auth->pairing_failed) {
+		/* Check SMP_FLAG_PAIRING as bt_conn_security_changed may
+		 * have called the pairing_failed callback already.
+		 */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) &&
+		    bt_auth && bt_auth->pairing_failed) {
 			bt_auth->pairing_failed(conn, security_err);
 		}
 	}
