@@ -196,7 +196,7 @@ class EDT:
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
         self._werror = bool(werror)
-        self._vendor_prefixes = vendor_prefixes
+        self._vendor_prefixes = vendor_prefixes or {}
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -516,7 +516,7 @@ class EDT:
                  'must match this regular expression: '
                  f"'{compat_re}'")
 
-        if ',' in compat and self._vendor_prefixes is not None:
+        if ',' in compat and self._vendor_prefixes:
             vendor = compat.split(',', 1)[0]
             # As an exception, the root node can have whatever
             # compatibles it wants. Other nodes get checked.
