@@ -31,12 +31,6 @@ config USB_UART_CONSOLE
 config UART_LINE_CTRL
 	default y
 
-config UART_CONSOLE_ON_DEV_NAME
-	default "CDC_ACM_0"
-
-config UART_SHELL_ON_DEV_NAME
-	default "CDC_ACM_0"
-
 endif # USB_DEVICE_STACK
 
 if IEEE802154
