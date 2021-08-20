@@ -79,7 +79,7 @@ The current minimum required version for the main dependencies are:
       #. Download, inspect and execute the Kitware archive script to add the
          Kitware APT repository to your sources list.
          A detailed explanation of ``kitware-archive.sh`` can be found here
-         `kitware third-party apt repository <https://apt.kitware.com/>`_::
+         `kitware third-party apt repository <https://apt.kitware.com/>`_:
 
          .. code-block:: bash
 
