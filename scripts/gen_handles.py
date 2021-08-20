@@ -241,7 +241,7 @@ def main():
         handle.dev_deps = []
         handle.ext_deps = []
         deps = handle.dev_deps
-        while True:
+        while hvi < len(hv):
             h = hv[hvi]
             if h == DEVICE_HANDLE_ENDS:
                 break
@@ -302,8 +302,10 @@ def main():
 
             # When CONFIG_USERSPACE is enabled the pre-built elf is
             # also used to get hashes that identify kernel objects by
-            # address.  We can't allow the size of any object in the
-            # final elf to change.
+            # address. We can't allow the size of any object in the
+            # final elf to change. We also must make sure at least one
+            # DEVICE_HANDLE_ENDS is inserted.
+            assert len(hdls) < len(hs.handles), "%s no DEVICE_HANDLE_ENDS inserted" % (dev.sym.name,)
             while len(hdls) < len(hs.handles):
                 hdls.append(DEVICE_HANDLE_ENDS)
             assert len(hdls) == len(hs.handles), "%s handle overflow" % (dev.sym.name,)
