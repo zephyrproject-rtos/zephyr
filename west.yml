@@ -42,8 +42,9 @@ manifest:
       revision: 5f0187d979f1d5dd0b6cda4e171438f662f63b24
       remote: recogni-http
     - name: mcumgr
-      revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
+      revision: 9b1ed3cc454d27b82d68010bdc23517a42244f50
       path: modules/lib/mcumgr
+      remote: recogni-http
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
