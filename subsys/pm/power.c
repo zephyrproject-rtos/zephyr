@@ -229,13 +229,13 @@ void pm_power_state_force(struct pm_state_info info)
 }
 
 #if CONFIG_PM_DEVICE
-static enum pm_state _handle_device_abort(struct pm_state_info info)
+static enum pm_state _handle_device_abort(struct pm_state_info *info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
 	resume_devices();
 
-	z_power_state.state = PM_STATE_ACTIVE;
-	return PM_STATE_ACTIVE;
+	info->state = PM_STATE_ACTIVE;
+	return info->state;
 }
 #endif
 
@@ -271,7 +271,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	if (suspend_devices(&z_power_state)) {
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
 					   ticks, _handle_device_abort(z_power_state));
-		return _handle_device_abort(z_power_state);
+		return _handle_device_abort(&z_power_state);
 	}
 #endif
 	/*
