@@ -22,6 +22,10 @@ config CMSIS_DSP_TEST_MATRIX_BINARY_Q15
 config CMSIS_DSP_TEST_MATRIX_BINARY_Q31
 	bool "Test: Matrix Binary Q31"
 
+config CMSIS_DSP_TEST_MATRIX_BINARY_F16
+	bool "Test: Matrix Binary F16"
+	depends on CMSIS_DSP_FLOAT16
+
 config CMSIS_DSP_TEST_MATRIX_BINARY_F32
 	bool "Test: Matrix Binary F32"
 
