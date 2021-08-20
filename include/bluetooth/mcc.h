@@ -40,7 +40,7 @@ typedef void (*bt_mcc_discover_mcs_cb_t)(struct bt_conn *conn, int err);
  * @param name          Player name, max length is PLAYER_NAME_MAX (mpl.h)
  */
 typedef void (*bt_mcc_player_name_read_cb_t)(struct bt_conn *conn, int err,
-					     char *name);
+					     const char *name);
 
 #ifdef CONFIG_BT_OTC
 /** @brief Callback function for mcc_read_icon_obj_id
@@ -60,7 +60,7 @@ typedef void (*bt_mcc_icon_obj_id_read_cb_t)(struct bt_conn *conn, int err,
  * @param icon_url      The URL of the Icon
  */
 typedef void (*bt_mcc_icon_url_read_cb_t)(struct bt_conn *conn, int err,
-					  char *icon_url);
+					  const char *icon_url);
 
 /** @brief Callback function for track_changed
  *
@@ -80,7 +80,7 @@ typedef void (*bt_mcc_track_changed_ntf_cb_t)(struct bt_conn *conn, int err);
  * @param title         The title of the track
  */
 typedef void (*bt_mcc_track_title_read_cb_t)(struct bt_conn *conn, int err,
-					     char *title);
+					     const char *title);
 
 /** @brief Callback function for mcc_read_track_dur
  *

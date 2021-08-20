@@ -38,7 +38,7 @@ static ssize_t player_name_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	char *name = media_proxy_sctrl_player_name_get();
+	const char *name = media_proxy_sctrl_player_name_get();
 
 	BT_DBG("Player name read: %s", log_strdup(name));
 
@@ -69,7 +69,7 @@ static ssize_t icon_url_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	char *url = media_proxy_sctrl_icon_url_get();
+	const char *url = media_proxy_sctrl_icon_url_get();
 
 	BT_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len,
 	       log_strdup(url));
@@ -87,7 +87,7 @@ static ssize_t track_title_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
-	char *title = media_proxy_sctrl_track_title_get();
+	const char *title = media_proxy_sctrl_track_title_get();
 
 	BT_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len,
 	       log_strdup(title));
@@ -805,7 +805,7 @@ void media_proxy_sctrl_track_changed_cb(void)
 	notify(BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
 }
 
-void media_proxy_sctrl_track_title_cb(char *title)
+void media_proxy_sctrl_track_title_cb(const char *title)
 {
 	BT_DBG("Notifying track title: %s", log_strdup(title));
 	notify(BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
