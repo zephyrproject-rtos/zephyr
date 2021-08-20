@@ -253,8 +253,8 @@ class EDT:
         return f"{self._dt}"
 
     def __repr__(self):
-        return "<EDT for '{}', binding directories '{}'>".format(
-            self.dts_path, self.bindings_dirs)
+        return f"<EDT for '{self.dts_path}', binding directories " \
+            f"'{self.bindings_dirs}'>"
 
     @property
     def scc_order(self):
@@ -674,7 +674,7 @@ class Node:
         try:
             addr = int(self.name.split("@", 1)[1], 16)
         except ValueError:
-            _err("{!r} has non-hex unit address".format(self))
+            _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
 
@@ -777,8 +777,7 @@ class Node:
         # parent of the flash node.
 
         if not self.parent or not self.parent.parent:
-            _err("flash partition {!r} lacks parent or grandparent node"
-                 .format(self))
+            _err(f"flash partition {self!r} lacks parent or grandparent node")
 
         controller = self.parent.parent
         if controller.matching_compat == "soc-nv-flash":
@@ -793,25 +792,26 @@ class Node:
             return None
 
         if not self.regs:
-            _err("{!r} needs a 'reg' property, to look up the chip select index "
-                 "for SPI".format(self))
+            _err(f"{self!r} needs a 'reg' property, to look up the "
+                 "chip select index for SPI")
 
         parent_cs_lst = self.bus_node.props["cs-gpios"].val
 
         # cs-gpios is indexed by the unit address
         cs_index = self.regs[0].addr
         if cs_index >= len(parent_cs_lst):
-            _err("index from 'regs' in {!r} ({}) is >= number of cs-gpios "
-                 "in {!r} ({})".format(
-                     self, cs_index, self.bus_node, len(parent_cs_lst)))
+            _err(f"index from 'regs' in {self!r} ({cs_index}) "
+                 "is >= number of cs-gpios in "
+                 f"{self.bus_node!r} ({len(parent_cs_lst)})")
 
         return parent_cs_lst[cs_index]
 
     def __repr__(self):
-        return "<Node {} in '{}', {}>".format(
-            self.path, self.edt.dts_path,
-            "binding " + self.binding_path if self.binding_path
-                else "no binding")
+        if self.binding_path:
+            binding = "binding " + self.binding_path
+        else:
+            binding = "no binding"
+        return f"<Node {self.path} in '{self.edt.dts_path}', {binding}>"
 
     def _init_binding(self):
         # Initializes Node.matching_compat, Node._binding, and
@@ -981,7 +981,7 @@ class Node:
         name = prop_spec.name
         prop_type = prop_spec.type
         if not prop_type:
-            _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
+            _err(f"'{name}' in {self.binding_path} lacks 'type'")
 
         val = self._prop_val(name, prop_type, prop_spec.deprecated,
                              prop_spec.required, prop_spec.default,
@@ -994,17 +994,16 @@ class Node:
 
         enum = prop_spec.enum
         if enum and val not in enum:
-            _err("value of property '{}' on {} in {} ({!r}) is not in 'enum' "
-                 "list in {} ({!r})"
-                 .format(name, self.path, self.edt.dts_path, val,
-                         self.binding_path, enum))
+            _err(f"value of property '{name}' on {self.path} in "
+                 f"{self.edt.dts_path} ({val!r}) is not in 'enum' list in "
+                 f"{self.binding_path} ({enum!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
-            _err("value of property '{}' on {} in {} ({!r}) is different from "
-                 "the 'const' value specified in {} ({!r})"
-                 .format(name, self.path, self.edt.dts_path, val,
-                         self.binding_path, const))
+            _err(f"value of property '{name}' on {self.path} in "
+                 f"{self.edt.dts_path} ({val!r}) "
+                 "is different from the 'const' value specified in "
+                 f"{self.binding_path} ({const!r})")
 
         # Skip properties that start with '#', like '#size-cells', and mapping
         # properties like 'gpio-map'/'interrupt-map'
@@ -1049,9 +1048,8 @@ class Node:
 
         if not prop:
             if required and self.status == "okay":
-                _err("'{}' is marked as required in 'properties:' in {}, but "
-                     "does not appear in {!r}".format(
-                         name, self.binding_path, node))
+                _err(f"'{name}' is marked as required in 'properties:' in "
+                     f"{self.binding_path}, but does not appear in {node!r}")
 
             if default is not None:
                 # YAML doesn't have a native format for byte arrays. We need to
@@ -1129,10 +1127,9 @@ class Node:
                 continue
 
             if prop_name not in self._binding.prop2specs:
-                _err("'{}' appears in {} in {}, but is not declared in "
-                     "'properties:' in {}"
-                     .format(prop_name, self._node.path, self.edt.dts_path,
-                             self.binding_path))
+                _err(f"'{prop_name}' appears in {self._node.path} in "
+                     f"{self.edt.dts_path}, but is not declared in "
+                     f"'properties:' in {self.binding_path}")
 
     def _init_regs(self):
         # Initializes self.regs
@@ -1148,8 +1145,8 @@ class Node:
         size_cells = _size_cells(node)
 
         for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells),
-                              "4*(<#address-cells> (= {}) + <#size-cells> (= {}))"
-                              .format(address_cells, size_cells)):
+                              f"4*(<#address-cells> (= {address_cells}) + "
+                              f"<#size-cells> (= {size_cells}))"):
             reg = Register()
             reg.node = self
             if address_cells == 0:
@@ -1161,9 +1158,9 @@ class Node:
             else:
                 reg.size = to_num(raw_reg[4*address_cells:])
             if size_cells != 0 and reg.size == 0:
-                _err("zero-sized 'reg' in {!r} seems meaningless (maybe you "
-                     "want a size of one or #size-cells = 0 instead)"
-                     .format(self._node))
+                _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
+                     "(maybe you want a size of one or #size-cells = 0 "
+                     "instead)")
 
             self.regs.append(reg)
 
@@ -1183,8 +1180,8 @@ class Node:
         # Check indices
         for i, prop in enumerate(pinctrl_props):
             if prop.name != "pinctrl-" + str(i):
-                _err("missing 'pinctrl-{}' property on {!r} - indices should "
-                     "be contiguous and start from zero".format(i, node))
+                _err(f"missing 'pinctrl-{i}' property on {node!r} "
+                     "- indices should be contiguous and start from zero")
 
         self.pinctrls = []
         for prop in pinctrl_props:
@@ -1277,8 +1274,8 @@ class Node:
         # byte array.
 
         if not controller._binding:
-            _err("{} controller {!r} for {!r} lacks binding"
-                 .format(basename, controller._node, self._node))
+            _err(f"{basename} controller {controller._node!r} "
+                 f"for {self._node!r} lacks binding")
 
         if basename in controller._binding.specifier2cells:
             cell_names = controller._binding.specifier2cells[basename]
@@ -1290,10 +1287,9 @@ class Node:
 
         data_list = to_nums(data)
         if len(data_list) != len(cell_names):
-            _err("unexpected '{}-cells:' length in binding for {!r} - {} "
-                 "instead of {}"
-                 .format(basename, controller._node, len(cell_names),
-                         len(data_list)))
+            _err(f"unexpected '{basename}-cells:' length in binding for "
+                 f"{controller._node!r} - {len(cell_names)} "
+                 f"instead of {len(data_list)}")
 
         return OrderedDict(zip(cell_names, data_list))
 
@@ -1365,8 +1361,8 @@ class ControllerAndData:
         if self.name is not None:
             fields.append("name: " + self.name)
 
-        fields.append("controller: {}".format(self.controller))
-        fields.append("data: {}".format(self.data))
+        fields.append(f"controller: {self.controller}")
+        fields.append(f"data: {self.data}")
 
         return "<ControllerAndData, {}>".format(", ".join(fields))
 
@@ -1497,7 +1493,7 @@ class Property:
                   "value: " + repr(self.val)]
 
         if self.enum_index is not None:
-            fields.append("enum index: {}".format(self.enum_index))
+            fields.append(f"enum index: {self.enum_index}")
 
         return "<Property, {}>".format(", ".join(fields))
 
@@ -2171,17 +2167,16 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
-            _err("{} (in '{}'): '{}' from included file overwritten "
-                 "('{}' replaced with '{}')".format(
-                     binding_path, parent, prop, from_dict[prop],
-                     to_dict[prop]))
+            _err(f"{binding_path} (in '{parent}'): '{prop}' "
+                 f"from included file overwritten ('{from_dict[prop]}' "
+                 f"replaced with '{to_dict[prop]}')")
         elif prop == "required":
             # Need a separate check here, because this code runs before
             # Binding._check()
             if not (isinstance(from_dict["required"], bool) and
                     isinstance(to_dict["required"], bool)):
-                _err("malformed 'required:' setting for '{}' in 'properties' "
-                     "in {}, expected true/false".format(parent, binding_path))
+                _err(f"malformed 'required:' setting for '{parent}' in "
+                     f"'properties' in {binding_path}, expected true/false")
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
@@ -2226,23 +2221,24 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
     # property named 'prop_name'
 
     if prop_type is None:
-        _err("missing 'type:' for '{}' in 'properties' in {}"
-             .format(prop_name, binding_path))
+        _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
+             f"{binding_path}")
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
     if prop_type not in ok_types:
-        _err("'{}' in 'properties:' in {} has unknown type '{}', expected one "
-             "of {}".format(prop_name, binding_path, prop_type,
-                            ", ".join(ok_types)))
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             f"has unknown type '{prop_type}', expected one of " +
+             ", ".join(ok_types))
 
     if prop_type == "phandle-array" and not prop_name.endswith("s"):
-        _err("'{}' in 'properties:' in {} is 'type: phandle-array', but its "
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             "is 'type: phandle-array', but its "
              "name does not end in -s. This is required since property names "
              "like '#pwm-cells' and 'pwm-names' get derived from 'pwms', for "
-             "example.".format(prop_name, binding_path))
+             "example.")
 
     # Check default
 
@@ -2251,8 +2247,9 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
 
     if prop_type in {"boolean", "compound", "phandle", "phandles",
                      "phandle-array", "path"}:
-        _err("'default:' can't be combined with 'type: {}' for '{}' in "
-             "'properties:' in {}".format(prop_type, prop_name, binding_path))
+        _err("'default:' can't be combined with "
+             f"'type: {prop_type}' for '{prop_name}' in "
+             f"'properties:' in {binding_path}")
 
     def ok_default():
         # Returns True if 'default' is an okay default for the property's type
@@ -2278,8 +2275,9 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
         return all(isinstance(val, str) for val in default)
 
     if not ok_default():
-        _err("'default: {}' is invalid for '{}' in 'properties:' in {}, which "
-             "has type {}".format(default, prop_name, binding_path, prop_type))
+        _err(f"'default: {default}' is invalid for '{prop_name}' "
+             f"in 'properties:' in {binding_path}, "
+             f"which has type {prop_type}")
 
 
 def _translate(addr, node):
@@ -2312,11 +2310,10 @@ def _translate(addr, node):
     entry_cells = child_address_cells + parent_address_cells + child_size_cells
 
     for raw_range in _slice(node.parent, "ranges", 4*entry_cells,
-                            "4*(<#address-cells> (= {}) + "
-                            "<#address-cells for parent> (= {}) + "
-                            "<#size-cells> (= {}))"
-                            .format(child_address_cells, parent_address_cells,
-                                    child_size_cells)):
+                            f"4*(<#address-cells> (= {child_address_cells}) + "
+                            "<#address-cells for parent> "
+                            f"(= {parent_address_cells}) + "
+                            f"<#size-cells> (= {child_size_cells}))"):
         child_addr = to_num(raw_range[:4*child_address_cells])
         raw_range = raw_range[4*child_address_cells:]
 
@@ -2351,9 +2348,9 @@ def _add_names(node, names_ident, objs):
     if full_names_ident in node.props:
         names = node.props[full_names_ident].to_strings()
         if len(names) != len(objs):
-            _err("{} property in {} in {} has {} strings, expected {} strings"
-                 .format(full_names_ident, node.path, node.dt.filename,
-                         len(names), len(objs)))
+            _err(f"{full_names_ident} property in {node.path} "
+                 f"in {node.dt.filename} has {len(names)} strings, "
+                 f"expected {len(objs)} strings")
 
         for obj, name in zip(objs, names):
             if obj is None:
@@ -2375,8 +2372,8 @@ def _interrupt_parent(node):
             return node.props["interrupt-parent"].to_node()
         node = node.parent
 
-    _err("{!r} has an 'interrupts' property, but neither the node nor any "
-         "of its parents has an 'interrupt-parent' property".format(node))
+    _err(f"{node!r} has an 'interrupts' property, but neither the node "
+         f"nor any of its parents has an 'interrupt-parent' property")
 
 
 def _interrupts(node):
@@ -2420,8 +2417,8 @@ def _map_interrupt(child, parent, child_spec):
 
         address_cells = node.props.get("#address-cells")
         if not address_cells:
-            _err("missing #address-cells on {!r} (while handling interrupt-map)"
-                 .format(node))
+            _err(f"missing #address-cells on {node!r} "
+                 "(while handling interrupt-map)")
         return address_cells.to_num()
 
     def spec_len_fn(node):
@@ -2443,10 +2440,10 @@ def _map_phandle_array_entry(child, parent, child_spec, basename):
     # _map_interrupt().
 
     def spec_len_fn(node):
-        prop_name = "#{}-cells".format(basename)
+        prop_name = f"#{basename}-cells"
         if prop_name not in node.props:
-            _err("expected '{}' property on {!r} (referenced by {!r})"
-                 .format(prop_name, node, child))
+            _err(f"expected '{prop_name}' property on {node!r} "
+                 f"(referenced by {child!r})")
         return node.props[prop_name].to_num()
 
     # Do not require <prefix>-controller for anything but interrupts for now
@@ -2483,8 +2480,8 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
     map_prop = parent.props.get(prefix + "-map")
     if not map_prop:
         if require_controller and prefix + "-controller" not in parent.props:
-            _err("expected '{}-controller' property on {!r} "
-                 "(referenced by {!r})".format(prefix, parent, child))
+            _err(f"expected '{prefix}-controller' property on {parent!r} "
+                 f"(referenced by {child!r})")
 
         # No mapping
         return (parent, child_spec)
@@ -2494,26 +2491,23 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
     raw = map_prop.value
     while raw:
         if len(raw) < len(child_spec):
-            _err("bad value for {!r}, missing/truncated child data"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated child data")
         child_spec_entry = raw[:len(child_spec)]
         raw = raw[len(child_spec):]
 
         if len(raw) < 4:
-            _err("bad value for {!r}, missing/truncated phandle"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated phandle")
         phandle = to_num(raw[:4])
         raw = raw[4:]
 
         # Parent specified in *-map
         map_parent = parent.dt.phandle2node.get(phandle)
         if not map_parent:
-            _err("bad phandle ({}) in {!r}".format(phandle, map_prop))
+            _err(f"bad phandle ({phandle}) in {map_prop!r}")
 
         map_parent_spec_len = 4*spec_len_fn(map_parent)
         if len(raw) < map_parent_spec_len:
-            _err("bad value for {!r}, missing/truncated parent data"
-                 .format(map_prop))
+            _err(f"bad value for {map_prop!r}, missing/truncated parent data")
         parent_spec = raw[:map_parent_spec_len]
         raw = raw[map_parent_spec_len:]
 
@@ -2527,8 +2521,8 @@ def _map(prefix, child, parent, child_spec, spec_len_fn, require_controller):
             return _map(prefix, parent, map_parent, parent_spec, spec_len_fn,
                         require_controller)
 
-    _err("child specifier for {!r} ({}) does not appear in {!r}"
-         .format(child, child_spec, map_prop))
+    _err(f"child specifier for {child!r} ({child_spec}) "
+         f"does not appear in {map_prop!r}")
 
 
 def _mask(prefix, child, parent, child_spec):
@@ -2542,8 +2536,8 @@ def _mask(prefix, child, parent, child_spec):
 
     mask = mask_prop.value
     if len(mask) != len(child_spec):
-        _err("{!r}: expected '{}-mask' in {!r} to be {} bytes, is {} bytes"
-             .format(child, prefix, parent, len(child_spec), len(mask)))
+        _err(f"{child!r}: expected '{prefix}-mask' in {parent!r} "
+             f"to be {len(child_spec)} bytes, is {len(mask)} bytes")
 
     return _and(child_spec, mask)
 
@@ -2564,8 +2558,8 @@ def _pass_thru(prefix, child, parent, child_spec, parent_spec):
 
     pass_thru = pass_thru_prop.value
     if len(pass_thru) != len(child_spec):
-        _err("{!r}: expected '{}-map-pass-thru' in {!r} to be {} bytes, is {} bytes"
-             .format(child, prefix, parent, len(child_spec), len(pass_thru)))
+        _err(f"{child!r}: expected '{prefix}-map-pass-thru' in {parent!r} "
+             f"to be {len(child_spec)} bytes, is {len(pass_thru)} bytes")
 
     res = _or(_and(child_spec, pass_thru),
               _and(parent_spec, _not(pass_thru)))
@@ -2579,14 +2573,14 @@ def _raw_unit_addr(node):
     # #address-cells) as a raw 'bytes'
 
     if 'reg' not in node.props:
-        _err("{!r} lacks 'reg' property (needed for 'interrupt-map' unit "
-             "address lookup)".format(node))
+        _err(f"{node!r} lacks 'reg' property "
+             "(needed for 'interrupt-map' unit address lookup)")
 
     addr_len = 4*_address_cells(node)
 
     if len(node.props['reg'].value) < addr_len:
-        _err("{!r} has too short 'reg' property (while doing 'interrupt-map' "
-             "unit address lookup)".format(node))
+        _err(f"{node!r} has too short 'reg' property "
+             "(while doing 'interrupt-map' unit address lookup)")
 
     return node.props['reg'].value[:addr_len]
 
@@ -2636,7 +2630,7 @@ def _phandle_val_list(prop, n_cells_name):
     # is the node pointed at by <phandle>. If <phandle> does not refer
     # to a node, the entire list element is None.
 
-    full_n_cells_name = "#{}-cells".format(n_cells_name)
+    full_n_cells_name = f"#{n_cells_name}-cells"
 
     res = []
 
@@ -2656,7 +2650,7 @@ def _phandle_val_list(prop, n_cells_name):
             continue
 
         if full_n_cells_name not in node.props:
-            _err("{!r} lacks {}".format(node, full_n_cells_name))
+            _err(f"{node!r} lacks {full_n_cells_name}")
 
         n_cells = node.props[full_n_cells_name].to_num()
         if len(raw) < 4*n_cells:
@@ -2691,7 +2685,7 @@ def _interrupt_cells(node):
     # 'node' has no #interrupt-cells property
 
     if "#interrupt-cells" not in node.props:
-        _err("{!r} lacks #interrupt-cells".format(node))
+        _err(f"{node!r} lacks #interrupt-cells")
     return node.props["#interrupt-cells"].to_num()
 
 
@@ -2703,11 +2697,10 @@ def _slice(node, prop_name, size, size_hint):
 
     raw = node.props[prop_name].value
     if len(raw) % size:
-        _err("'{}' property in {!r} has length {}, which is not evenly "
-             "divisible by {} (= {}). Note that #*-cells "
-             "properties come either from the parent node or from the "
-             "controller (in the case of 'interrupts')."
-             .format(prop_name, node, len(raw), size, size_hint))
+        _err(f"'{prop_name}' property in {node!r} has length {len(raw)}, "
+             f"which is not evenly divisible by {size} (= {size_hint}). "
+             "Note that #*-cells properties come either from the parent node or "
+             "from the controller (in the case of 'interrupts').")
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
 
@@ -2731,17 +2724,17 @@ def _check_dt(dt):
                 _err(str(e))
 
             if status_val not in ok_status:
-                _err("unknown 'status' value \"{}\" in {} in {}, expected one "
-                     "of {} (see the devicetree specification)"
-                     .format(status_val, node.path, node.dt.filename,
-                             ", ".join(ok_status)))
+                _err(f"unknown 'status' value \"{status_val}\" in {node.path} "
+                     f"in {node.dt.filename}, expected one of " +
+                     ", ".join(ok_status) +
+                     " (see the devicetree specification)")
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop:
             if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-                _err("expected 'ranges = < ... >;' in {} in {}, not '{}' "
-                     "(see the devicetree specification)"
-                     .format(node.path, node.dt.filename, ranges_prop))
+                _err(f"expected 'ranges = < ... >;' in {node.path} in "
+                     f"{node.dt.filename}, not '{ranges_prop}' "
+                     "(see the devicetree specification)")
 
 
 def _err(msg):
