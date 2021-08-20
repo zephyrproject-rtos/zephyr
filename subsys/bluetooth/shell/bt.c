@@ -36,9 +36,6 @@
 #include "ll.h"
 #include "hci.h"
 
-#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
-
 /* Multiply bt 1.25 to get MS */
 #define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 
