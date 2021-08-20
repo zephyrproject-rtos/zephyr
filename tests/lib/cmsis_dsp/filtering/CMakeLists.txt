@@ -32,11 +32,15 @@ if(CONFIG_CMSIS_DSP_TEST_FILTERING_FIR)
     )
 endif()
 
-target_sources_ifdef(
-  CONFIG_CMSIS_DSP_TEST_FILTERING_MISC
-  app PRIVATE
-  src/misc_q7.c
-  src/misc_q15.c
-  src/misc_q31.c
-  src/misc_f32.c
-  )
+if(CONFIG_CMSIS_DSP_TEST_FILTERING_MISC)
+  target_sources(app PRIVATE
+    src/misc_q7.c
+    src/misc_q15.c
+    src/misc_q31.c
+    src/misc_f32.c
+    )
+
+  target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE
+    src/misc_f16.c
+    )
+endif()
