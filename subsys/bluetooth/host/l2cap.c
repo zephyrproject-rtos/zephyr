@@ -1295,9 +1295,9 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
-	while (chan_count-- >= 0) {
-		BT_L2CAP_LE_CHAN(chans[chan_count])->tx.mtu = mtu;
-		BT_L2CAP_LE_CHAN(chans[chan_count])->tx.mps = mps;
+	for (int i = 0; i < chan_count; i++) {
+		BT_L2CAP_LE_CHAN(chans[i])->tx.mtu = mtu;
+		BT_L2CAP_LE_CHAN(chans[i])->tx.mps = mps;
 	}
 
 	BT_DBG("mtu %u mps %u", mtu, mps);
