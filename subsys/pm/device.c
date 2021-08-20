@@ -14,69 +14,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-#if defined(CONFIG_PM_DEVICE)
-extern const struct device *__pm_device_slots_start[];
-
-/* Number of devices successfully suspended. */
-static size_t num_susp;
-
-static int _pm_devices(enum pm_device_state state)
-{
-	const struct device *devs;
-	size_t devc;
-
-	devc = z_device_get_all_static(&devs);
-
-	num_susp = 0;
-
-	for (const struct device *dev = devs + devc - 1; dev >= devs; dev--) {
-		int ret;
-
-		/* ignore busy devices */
-		if (pm_device_is_busy(dev) || pm_device_wakeup_is_enabled(dev)) {
-			continue;
-		}
-
-		ret = pm_device_state_set(dev, state);
-		/* ignore devices not supporting or already at the given state */
-		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
-			continue;
-		} else if (ret < 0) {
-			LOG_ERR("Device %s did not enter %s state (%d)",
-				dev->name, pm_device_state_str(state), ret);
-			return ret;
-		}
-
-		__pm_device_slots_start[num_susp] = dev;
-		num_susp++;
-	}
-
-	return 0;
-}
-
-int pm_suspend_devices(void)
-{
-	return _pm_devices(PM_DEVICE_STATE_SUSPENDED);
-}
-
-int pm_low_power_devices(void)
-{
-	return _pm_devices(PM_DEVICE_STATE_LOW_POWER);
-}
-
-void pm_resume_devices(void)
-{
-	size_t i;
-
-	for (i = 0; i < num_susp; i++) {
-		pm_device_state_set(__pm_device_slots_start[i],
-				    PM_DEVICE_STATE_ACTIVE);
-	}
-
-	num_susp = 0;
-}
-#endif /* defined(CONFIG_PM_DEVICE) */
-
 const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
