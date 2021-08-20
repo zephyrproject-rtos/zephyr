@@ -478,8 +478,7 @@ device_required_handles_get(const struct device *dev,
 	if (rv != NULL) {
 		size_t i = 0;
 
-		while ((rv[i] != DEVICE_HANDLE_ENDS)
-		       && (rv[i] != DEVICE_HANDLE_SEP)) {
+		while (rv[i] != DEVICE_HANDLE_SEP) {
 			++i;
 		}
 		*count = i;
@@ -673,6 +672,22 @@ static inline bool device_is_ready(const struct device *dev)
  * from being captured when the original object file is compiled), and
  * in a distinct pass1 section (which will be replaced by
  * postprocessing).
+ *
+ * Before processing in gen_handles.py, the array format is:
+ * {
+ *     DEVICE_ORDINAL (or DEVICE_HANDLE_NULL if not a devicetree node),
+ *     List of devicetree dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of injected dependency ordinals (if any),
+ * }
+ *
+ * After processing in gen_handles.py, the format is updated to:
+ * {
+ *     List of existing devicetree dependency handles (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of injected dependency ordinals (if any),
+ *     DEVICE_HANDLE_NULL padding to original length (at least one)
+ * }
  *
  * It is also (experimentally) necessary to provide explicit alignment
  * on each object. Otherwise x86-64 builds will introduce padding
