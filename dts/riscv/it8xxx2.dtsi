@@ -32,6 +32,14 @@
 		#size-cells = <1>;
 		ranges;
 
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0xc0>;
+			label = "BBRAM";
+		};
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;

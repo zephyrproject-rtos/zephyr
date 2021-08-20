@@ -102,6 +102,8 @@ static const struct bbram_driver_api bbram_npcx_driver_api = {
 
 static int bbram_npcx_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	return 0;
 }
 
