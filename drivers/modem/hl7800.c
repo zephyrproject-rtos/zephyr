@@ -531,6 +531,11 @@ struct hl7800_iface_ctx {
 #endif
 	bool local_time_valid;
 	bool configured;
+
+#ifdef CONFIG_MODEM_HL7800_GPS
+	struct k_work_delayable gps_work;
+	uint32_t gps_query_location_rate_seconds;
+#endif
 };
 
 struct cmd_handler {
@@ -1110,6 +1115,52 @@ int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode)
 
 	return ret;
 }
+
+#ifdef CONFIG_MODEM_HL7800_GPS
+int32_t mdm_hl7800_set_gps_rate(uint32_t rate)
+{
+	int ret = -1;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ictx.gps_query_location_rate_seconds = rate;
+
+	/* Stopping first allows changing the rate between two non-zero values.
+	 * Ignore error if GNSS isn't running.
+	 */
+	SEND_AT_CMD_IGNORE_ERROR("AT+GNSSSTOP");
+
+	if (rate == 0) {
+		SEND_AT_CMD_EXPECT_OK("AT+CFUN=1,0");
+	} else {
+		/* Navigation doesn't work when LTE is on. */
+		SEND_AT_CMD_EXPECT_OK("AT+CFUN=4,0");
+
+		SEND_AT_CMD_EXPECT_OK("AT+GNSSCONF=1,1");
+
+		if (IS_ENABLED(CONFIG_MODEM_HL7800_USE_GLONASS)) {
+			SEND_AT_CMD_EXPECT_OK("AT+GNSSCONF=10,1");
+		}
+		/* Enable all NMEA sentences */
+		SEND_AT_CMD_EXPECT_OK("AT+GNSSNMEA=0,1000,0,1FF");
+		/* Enable GPS */
+		SEND_AT_CMD_EXPECT_OK("AT+GNSSSTART=0");
+	}
+
+error:
+	if (rate && ret == 0) {
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.gps_work,
+					    K_SECONDS(ictx.gps_query_location_rate_seconds));
+	} else {
+		k_work_cancel_delayable(&ictx.gps_work);
+	}
+	LOG_DBG("GPS status: %d rate: %u", ret, rate);
+
+	allow_sleep(true);
+	hl7800_unlock();
+	return ret;
+}
+#endif /* CONFIG_MODEM_HL7800_GPS */
 
 void mdm_hl7800_generate_status_events(void)
 {
@@ -2336,6 +2387,166 @@ static void hl7800_rssi_query_work(struct k_work *work)
 				    K_SECONDS(RSSI_TIMEOUT_SECS));
 }
 
+#ifdef CONFIG_MODEM_HL7800_GPS
+/* Unsolicited notification
+ * Handler: +GNSSEV: <eventType>,<eventStatus>
+ */
+static bool on_cmd_gps_event(struct net_buf **buf, uint16_t len)
+{
+	size_t out_len;
+	char value[MDM_MAX_RESP_SIZE];
+	char *start = NULL;
+	char *end = NULL;
+	int8_t event = -1;
+	int8_t status = -1;
+
+	memset(value, 0, sizeof(value));
+	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	if (out_len > 0) {
+		start = value;
+		event = strtol(start, &end, 10);
+		if (end == strchr(value, ',')) {
+			start = end + 1;
+			status = strtol(start, &end, 10);
+		}
+	}
+
+	LOG_INF("GPS event: %d status: %d", event, status);
+
+	if (event == HL7800_GNSS_EVENT_POSITION) {
+		event_handler(HL7800_EVENT_GPS_POSITION_STATUS, &status);
+	}
+
+	return true;
+}
+
+static void gps_work_callback(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	int r;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	r = send_at_cmd(NULL, "AT+GNSSLOC?", MDM_CMD_SEND_TIMEOUT, 1, false);
+	allow_sleep(true);
+	hl7800_unlock();
+
+	LOG_DBG("GPS location request status: %d", r);
+
+	if (ictx.gps_query_location_rate_seconds) {
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.gps_work,
+					    K_SECONDS(ictx.gps_query_location_rate_seconds));
+	}
+}
+
+/* The AT+GNSSLOC? command returns 1 of 2 things:
+ *
+ * +GNSSLOC:
+ * Latitude: "49 Deg 10 Min 21.49 Sec N"
+ * Longitude:  "123 Deg 4 Min 14.76 Sec W"
+ * GpsTime: "yyyy mm dd hh:mm:ss"
+ * FixType: "2D" or "3D"
+ * HEPE: "8.485 m" (Horizontal Estimated Position Error)
+ * Altitude: "-1 m"
+ * AltUnc: "3.0 m"
+ * Direction: "0.0 deg"
+ * HorSpeed: "0.0 m/s"
+ * VerSpeed: "0.0 m/s"
+ * OK
+ *
+ * OR
+ *
+ * +GNSSLOC:
+ * FIX NOT AVAILABLE
+ * OK
+ *
+ * Since each response is on its own line, the command handler is used
+ * to handle each one as an individual response.
+ */
+static bool gps_handler(struct net_buf **buf, uint16_t len,
+			enum mdm_hl7800_gps_string_types str_type)
+{
+	struct mdm_hl7800_compound_event event;
+	char gps_str[MDM_HL7800_MAX_GPS_STR_SIZE];
+	size_t gps_len = sizeof(gps_str) - 1;
+	struct net_buf *frag = NULL;
+	size_t out_len;
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf), sizeof(gps_str));
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find end");
+		goto done;
+	}
+
+	if (len > gps_len) {
+		LOG_WRN("GPS string too long (len:%d)", len);
+		len = gps_len;
+	}
+
+	out_len = net_buf_linearize(gps_str, gps_len, *buf, 0, len);
+	gps_str[out_len] = 0;
+
+	event.code = str_type;
+	event.string = gps_str;
+	event_handler(HL7800_EVENT_GPS, &event);
+done:
+	return true;
+}
+
+static bool on_cmd_latitude(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_LATITUDE);
+}
+
+static bool on_cmd_longitude(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_LONGITUDE);
+}
+
+static bool on_cmd_gps_time(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_GPS_TIME);
+}
+
+static bool on_cmd_fix_type(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_FIX_TYPE);
+}
+
+static bool on_cmd_hepe(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_HEPE);
+}
+
+static bool on_cmd_altitude(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_ALTITUDE);
+}
+
+static bool on_cmd_alt_unc(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_ALT_UNC);
+}
+
+static bool on_cmd_direction(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_DIRECTION);
+}
+
+static bool on_cmd_hor_speed(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_HOR_SPEED);
+}
+
+static bool on_cmd_ver_speed(struct net_buf **buf, uint16_t len)
+{
+	return gps_handler(buf, len, HL7800_GPS_STR_VER_SPEED);
+}
+#endif /* CONFIG_MODEM_HL7800_GPS */
+
 static void notify_all_tcp_sockets_closed(void)
 {
 	int i;
@@ -3542,6 +3753,21 @@ static void hl7800_rx(void)
 
 		/* FIRMWARE UPDATE RESPONSES */
 		CMD_HANDLER("+WDSI: ", device_service_ind),
+
+#ifdef CONFIG_MODEM_HL7800_GPS
+		CMD_HANDLER("+GNSSEV: ", gps_event),
+		CMD_HANDLER("Latitude: ", latitude),
+		CMD_HANDLER("Longitude: ", longitude),
+		CMD_HANDLER("GpsTime: ", gps_time),
+		CMD_HANDLER("FixType: ", fix_type),
+		CMD_HANDLER("HEPE: ", hepe),
+		CMD_HANDLER("Altitude: ", altitude),
+		CMD_HANDLER("AltUnc: ", alt_unc),
+		CMD_HANDLER("Direction: ", direction),
+		CMD_HANDLER("HorSpeed: ", hor_speed),
+		CMD_HANDLER("VerSpeed: ", ver_speed),
+#endif
+
 	};
 
 	while (true) {
@@ -5005,6 +5231,10 @@ static int hl7800_init(const struct device *dev)
 	k_work_init_delayable(&ictx.mdm_reset_work, mdm_reset_work_callback);
 	k_work_init_delayable(&ictx.allow_sleep_work,
 			      allow_sleep_work_callback);
+
+#ifdef CONFIG_MODEM_HL7800_GPS
+	k_work_init_delayable(&ictx.gps_work, gps_work_callback);
+#endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	k_work_init(&ictx.finish_fw_update_work,
