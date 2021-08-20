@@ -19,6 +19,12 @@ if(CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD)
     )
 endif()
 
+if(CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM)
+  target_sources(app PRIVATE
+    src/decim_q15.c
+    )
+endif()
+
 if(CONFIG_CMSIS_DSP_TEST_FILTERING_FIR)
   target_sources(app PRIVATE
     src/fir_q7.c
