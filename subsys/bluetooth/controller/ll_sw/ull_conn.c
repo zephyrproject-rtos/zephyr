@@ -809,8 +809,10 @@ uint8_t ull_conn_default_phy_rx_get(void)
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-bool ull_conn_peer_connected(uint8_t own_addr_type, uint8_t *own_addr,
-			     uint8_t peer_addr_type, uint8_t *peer_addr)
+bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
+			     uint8_t const *const own_id_addr,
+			     uint8_t const peer_id_addr_type,
+			     uint8_t const *const peer_id_addr)
 {
 	uint16_t handle;
 
@@ -818,10 +820,10 @@ bool ull_conn_peer_connected(uint8_t own_addr_type, uint8_t *own_addr,
 		struct ll_conn *conn = ll_connected_get(handle);
 
 		if (conn &&
-		    conn->peer_addr_type == peer_addr_type &&
-		    !memcmp(conn->peer_addr, peer_addr, BDADDR_SIZE) &&
-		    conn->own_addr_type == own_addr_type &&
-		    !memcmp(conn->own_addr, own_addr, BDADDR_SIZE)) {
+		    conn->peer_id_addr_type == peer_id_addr_type &&
+		    !memcmp(conn->peer_id_addr, peer_id_addr, BDADDR_SIZE) &&
+		    conn->own_id_addr_type == own_id_addr_type &&
+		    !memcmp(conn->own_id_addr, own_id_addr, BDADDR_SIZE)) {
 			return true;
 		}
 	}

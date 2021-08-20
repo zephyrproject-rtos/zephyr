@@ -1103,12 +1103,13 @@ static void conn_rpa_update(uint8_t rl_idx)
 	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
 		struct ll_conn *conn = ll_connected_get(handle);
 
-		/* The RPA of the connection matches the RPA that was just resolved */
-		if (conn &&
-		    conn->peer_addr_type < 2U &&
-		    !memcmp(conn->peer_addr, rl[rl_idx].curr_rpa.val, BDADDR_SIZE)) {
-			memcpy(conn->peer_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
-			conn->peer_addr_type += 2U;
+		/* The RPA of the connection matches the RPA that was just
+		 * resolved
+		 */
+		if (conn && !memcmp(conn->peer_id_addr, rl[rl_idx].curr_rpa.val,
+				    BDADDR_SIZE)) {
+			(void)memcpy(conn->peer_id_addr, rl[rl_idx].id_addr.val,
+				     BDADDR_SIZE);
 			break;
 		}
 	}
