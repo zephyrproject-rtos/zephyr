@@ -162,14 +162,11 @@ bool z_device_ready(const struct device *dev)
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
-int device_required_foreach(const struct device *dev,
-			  device_visitor_callback_t visitor_cb,
-			  void *context)
+static int device_visitor(const device_handle_t *handles,
+			   size_t handle_count,
+			   device_visitor_callback_t visitor_cb,
+			   void *context)
 {
-	size_t handle_count = 0;
-	const device_handle_t *handles =
-		device_required_handles_get(dev, &handle_count);
-
 	/* Iterate over fixed devices */
 	for (size_t i = 0; i < handle_count; ++i) {
 		device_handle_t dh = handles[i];
@@ -182,4 +179,24 @@ int device_required_foreach(const struct device *dev,
 	}
 
 	return handle_count;
+}
+
+int device_required_foreach(const struct device *dev,
+			    device_visitor_callback_t visitor_cb,
+			    void *context)
+{
+	size_t handle_count = 0;
+	const device_handle_t *handles = device_required_handles_get(dev, &handle_count);
+
+	return device_visitor(handles, handle_count, visitor_cb, context);
+}
+
+int device_supported_foreach(const struct device *dev,
+			     device_visitor_callback_t visitor_cb,
+			     void *context)
+{
+	size_t handle_count = 0;
+	const device_handle_t *handles = device_supported_handles_get(dev, &handle_count);
+
+	return device_visitor(handles, handle_count, visitor_cb, context);
 }

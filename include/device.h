@@ -489,6 +489,47 @@ device_required_handles_get(const struct device *dev,
 }
 
 /**
+ * @brief Get the set of handles that this device supports.
+ *
+ * The set of supported devices is inferred from devicetree, and does not
+ * include any software constructs that may depend on the device.
+ *
+ * @param dev the device for which supports are desired.
+ *
+ * @param count pointer to a place to store the number of devices provided at
+ * the returned pointer. The value is not set if the call returns a null
+ * pointer. The value may be set to zero.
+ *
+ * @return a pointer to a sequence of @p *count device handles, or a null
+ * pointer if @p dh does not provide dependency information.
+ */
+static inline const device_handle_t *
+device_supported_handles_get(const struct device *dev,
+			     size_t *count)
+{
+	const device_handle_t *rv = dev->handles;
+	size_t region = 0;
+	size_t i = 0;
+
+	if (rv != NULL) {
+		/* Fast forward to supporting devices */
+		while (region != 2) {
+			if (*rv == DEVICE_HANDLE_SEP) {
+				region++;
+			}
+			rv++;
+		}
+		/* Count supporting devices */
+		while (rv[i] != DEVICE_HANDLE_ENDS) {
+			++i;
+		}
+		*count = i;
+	}
+
+	return rv;
+}
+
+/**
  * @brief Visit every device that @p dev directly requires.
  *
  * Zephyr maintains information about which devices are directly required by
@@ -524,6 +565,42 @@ device_required_handles_get(const struct device *dev,
 int device_required_foreach(const struct device *dev,
 			  device_visitor_callback_t visitor_cb,
 			  void *context);
+
+/**
+ * @brief Visit every device that @p dev directly supports.
+ *
+ * Zephyr maintains information about which devices are directly supported by
+ * another device; for example an I2C controller will support an I2C-based
+ * sensor driver. Supported devices can derive from statically-defined
+ * devicetree relationships.
+ *
+ * This API supports operating on the set of supported devices. Example uses
+ * include iterating over the devices connected to a regulator when it is
+ * powered on.
+ *
+ * There is no guarantee on the order in which required devices are visited.
+ *
+ * If the @p visitor function returns a negative value iteration is halted,
+ * and the returned value from the visitor is returned from this function.
+ *
+ * @note This API is not available to unprivileged threads.
+ *
+ * @param dev a device of interest. The devices that this device supports
+ * will be used as the set of devices to visit. This parameter must not be
+ * null.
+ *
+ * @param visitor_cb the function that should be invoked on each device in the
+ * support set. This parameter must not be null.
+ *
+ * @param context state that is passed through to the visitor function. This
+ * parameter may be null if @p visitor tolerates a null @p context.
+ *
+ * @return The number of devices that were visited if all visits succeed, or
+ * the negative value returned from the first visit that did not succeed.
+ */
+int device_supported_foreach(const struct device *dev,
+			     device_visitor_callback_t visitor_cb,
+			     void *context);
 
 /**
  * @brief Retrieve the device structure for a driver by name
