@@ -93,6 +93,18 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	const uint8_t own_id_addr_type = (own_addr_type & 0x01);
+	const uint8_t *own_id_addr;
+
+	/* Do not connect twice to the same peer */
+	own_id_addr = ll_addr_get(own_id_addr_type, NULL);
+	if (ull_conn_peer_connected(own_id_addr_type, own_id_addr,
+				    peer_addr_type, peer_addr)) {
+		return BT_HCI_ERR_CONN_ALREADY_EXISTS;
+	}
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	struct ll_scan_set *scan_coded;
@@ -322,6 +334,14 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	/* Remember peer and own identity address */
+	conn->peer_id_addr_type = peer_addr_type;
+	(void)memcpy(conn->peer_id_addr, peer_addr, sizeof(conn->peer_id_addr));
+	conn->own_id_addr_type = own_id_addr_type;
+	(void)memcpy(conn->own_id_addr, own_id_addr, sizeof(conn->own_id_addr));
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 	lll->conn = conn_lll;
 
