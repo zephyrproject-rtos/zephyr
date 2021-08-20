@@ -683,6 +683,26 @@ static inline bool device_is_ready(const struct device *dev)
  * in a distinct pass1 section (which will be replaced by
  * postprocessing).
  *
+ * Before processing in gen_handles.py, the array format is:
+ * {
+ *     DEVICE_ORDINAL (or DEVICE_HANDLE_NULL if not a devicetree node),
+ *     List of devicetree dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of injected dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of devicetree supporting ordinals (if any),
+ * }
+ *
+ * After processing in gen_handles.py, the format is updated to:
+ * {
+ *     List of existing devicetree dependency handles (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of injected dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of existing devicetree support handles (if any),
+ *     DEVICE_HANDLE_NULL
+ * }
+ *
  * It is also (experimentally) necessary to provide explicit alignment
  * on each object. Otherwise x86-64 builds will introduce padding
  * between objects in the same input section in individual object
@@ -711,6 +731,9 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		))							\
 			DEVICE_HANDLE_SEP,				\
 			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
+			DEVICE_HANDLE_SEP,				\
+	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
+			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		};
 
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
