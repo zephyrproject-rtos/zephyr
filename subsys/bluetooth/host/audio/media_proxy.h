@@ -281,7 +281,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param name	   The name of the media player
 	 */
-	void (*player_name)(struct media_player *player, int err, char *name);
+	void (*player_name)(struct media_player *player, int err, const char *name);
 
 	/**
 	 * @brief Media Player Icon Object ID callback
@@ -307,7 +307,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param url	   The URL of the icon
 	 */
-	void (*icon_url)(struct media_player *player, int err, char *url);
+	void (*icon_url)(struct media_player *player, int err, const char *url);
 
 	/**
 	 * @brief Track changed callback
@@ -331,7 +331,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param title	   The title of the current track
 	 */
-	void (*track_title)(struct media_player *player, int err, char *title);
+	void (*track_title)(struct media_player *player, int err, const char *title);
 
 	/**
 	 * @brief Track Duration callback
@@ -994,7 +994,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @return The name of the media player
 	 */
-	char *(*player_name_get)(void);
+	const char *(*player_name_get)(void);
 
 	/**
 	 * @brief Read Icon Object ID
@@ -1016,14 +1016,14 @@ struct media_proxy_pl_calls {
 	 *
 	 * @return The URL of the Icon
 	 */
-	char *(*icon_url_get)(void);
+	const char *(*icon_url_get)(void);
 
 	/**
 	 * @brief Read Track Title
 	 *
 	 * @return The title of the current track
 	 */
-	char *(*track_title_get)(void);
+	const char *(*track_title_get)(void);
 
 	/**
 	 * @brief Read Track Duration
