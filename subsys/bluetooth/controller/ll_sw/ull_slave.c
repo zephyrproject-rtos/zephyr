@@ -112,22 +112,25 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	link = rx->link;
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	uint8_t own_addr_type = pdu_adv->rx_addr;
-	uint8_t *own_addr = adv->own_addr;
+	const uint8_t peer_id_addr_type = (peer_addr_type & 0x01);
+	const uint8_t own_id_addr_type = pdu_adv->rx_addr;
+	const uint8_t *own_id_addr = adv->own_id_addr;
 
 	/* Do not connect twice to the same peer */
-	if (ull_conn_peer_connected(own_addr_type, own_addr,
-				    peer_addr_type, peer_id_addr)) {
+	if (ull_conn_peer_connected(own_id_addr_type, own_id_addr,
+				    peer_id_addr_type, peer_id_addr)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
 	}
 
-	/* Remember peer and own identity */
-	conn->peer_addr_type = peer_addr_type;
-	memcpy(conn->peer_addr, peer_id_addr, sizeof(conn->peer_addr));
-	conn->own_addr_type = own_addr_type;
-	memcpy(conn->own_addr, own_addr, sizeof(conn->own_addr));
+	/* Remember peer and own identity address */
+	conn->peer_id_addr_type = peer_id_addr_type;
+	(void)memcpy(conn->peer_id_addr, peer_id_addr,
+		     sizeof(conn->peer_id_addr));
+	conn->own_id_addr_type = own_id_addr_type;
+	(void)memcpy(conn->own_id_addr, own_id_addr,
+		     sizeof(conn->own_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
