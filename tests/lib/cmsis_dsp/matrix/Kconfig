@@ -29,4 +29,7 @@ config CMSIS_DSP_TEST_MATRIX_BINARY_F16
 config CMSIS_DSP_TEST_MATRIX_BINARY_F32
 	bool "Test: Matrix Binary F32"
 
+config CMSIS_DSP_TEST_MATRIX_BINARY_F64
+	bool "Test: Matrix Binary F64"
+
 source "Kconfig"
