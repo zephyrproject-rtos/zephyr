@@ -1749,7 +1749,13 @@ done:
 	return true;
 }
 
-/* Handler: +COPS: <mode>[,<format>,<oper>[,<AcT>]] */
+/* Handler1: +COPS: <mode>[,<format>,<oper>[,<AcT>]]
+ *
+ * Handler2:
+ * +COPS: [list of supported (<stat>, long alphanumeric <oper>, short
+ * alphanumeric <oper>, numeric <oper>[,< AcT>])s][,,
+ * (list of supported <mode>s),(list of supported <format>s)]
+ */
 static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
@@ -1761,8 +1767,16 @@ static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
-	LOG_INF("Operator: %s", log_strdup(value));
 
+	/* For AT+COPS=?, result is most likely longer than size of log string */
+	if (strchr(value, '(') != NULL) {
+		LOG_HEXDUMP_DBG(value, out_len, "Operator: ");
+		goto done;
+	} else {
+		LOG_INF("Operator: %s", log_strdup(value));
+	}
+
+	/* Process AT+COPS? */
 	if (len == 1) {
 		/* only mode was returned, there is no operator info */
 		ictx.operator_status = NO_OPERATOR;
@@ -1775,8 +1789,7 @@ static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 	for (i = 0; i < num_delims; i++) {
 		delims[i] = strchr(search_start, ',');
 		if (!delims[i]) {
-			LOG_ERR("Could not find delim %d, val: %s", i,
-				log_strdup(value));
+			LOG_ERR("Could not find delim %d, val: %s", i, log_strdup(value));
 			goto done;
 		}
 		/* Start next search after current delim location */
