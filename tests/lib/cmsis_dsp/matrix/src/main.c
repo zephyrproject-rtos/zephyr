@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ extern void test_matrix_unary_q31(void);
 extern void test_matrix_unary_f32(void);
 extern void test_matrix_unary_f64(void);
 
+extern void test_matrix_binary_q7(void);
 extern void test_matrix_binary_q15(void);
 extern void test_matrix_binary_q31(void);
 extern void test_matrix_binary_f32(void);
@@ -31,6 +32,9 @@ void test_main(void)
 	test_matrix_unary_f64();
 #endif
 
+#ifdef CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q7
+	test_matrix_binary_q7();
+#endif
 #ifdef CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15
 	test_matrix_binary_q15();
 #endif

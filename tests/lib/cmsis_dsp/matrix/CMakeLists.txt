@@ -29,6 +29,11 @@ target_sources_ifdef(
   )
 
 target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q7
+  app PRIVATE src/binary_q7.c
+  )
+
+target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15
   app PRIVATE src/binary_q15.c
   )
