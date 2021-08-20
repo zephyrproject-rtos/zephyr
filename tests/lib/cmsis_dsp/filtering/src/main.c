@@ -13,6 +13,8 @@ extern void test_filtering_biquad_f16(void);
 extern void test_filtering_biquad_f32(void);
 extern void test_filtering_biquad_f64(void);
 
+extern void test_filtering_decim_q15(void);
+
 extern void test_filtering_fir_q7(void);
 extern void test_filtering_fir_q15(void);
 extern void test_filtering_fir_q31(void);
@@ -35,6 +37,10 @@ void test_main(void)
 #endif
 	test_filtering_biquad_f32();
 	test_filtering_biquad_f64();
+#endif
+
+#ifdef CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM
+	test_filtering_decim_q15();
 #endif
 
 #ifdef CONFIG_CMSIS_DSP_TEST_FILTERING_FIR
