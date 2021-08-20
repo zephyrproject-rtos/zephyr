@@ -1,6 +1,9 @@
 # Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
 # SPDX-License-Identifier: Apache-2.0
 
+config CMSIS_DSP_TEST_MATRIX_UNARY_Q7
+	bool "Test: Matrix Unary Q7"
+
 config CMSIS_DSP_TEST_MATRIX_UNARY_Q15
 	bool "Test: Matrix Unary Q15"
 
