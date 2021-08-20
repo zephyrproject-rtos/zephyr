@@ -45,6 +45,10 @@ hide-defaults-note
 venv
 .venv
 
+# CI output
+compliance.xml
+_error.types
+
 # Tag files
 GPATH
 GRTAGS
