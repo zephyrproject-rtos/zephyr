@@ -10,6 +10,7 @@
 extern void test_matrix_unary_q7(void);
 extern void test_matrix_unary_q15(void);
 extern void test_matrix_unary_q31(void);
+extern void test_matrix_unary_f16(void);
 extern void test_matrix_unary_f32(void);
 extern void test_matrix_unary_f64(void);
 
@@ -30,6 +31,9 @@ void test_main(void)
 #endif
 #ifdef CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q31
 	test_matrix_unary_q31();
+#endif
+#ifdef CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F16
+	test_matrix_unary_f16();
 #endif
 #ifdef CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32
 	test_matrix_unary_f32();
