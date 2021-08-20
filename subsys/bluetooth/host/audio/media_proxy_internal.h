@@ -33,7 +33,7 @@ struct media_proxy_sctrl_cbs {
 
 	void (*track_changed)(void);
 
-	void (*track_title)(char *title);
+	void (*track_title)(const char *title);
 
 	void (*track_duration)(int32_t duration);
 
@@ -71,16 +71,16 @@ struct media_proxy_sctrl_cbs {
 int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs);
 
 
-char *media_proxy_sctrl_player_name_get(void);
+const char *media_proxy_sctrl_player_name_get(void);
 
 #ifdef CONFIG_BT_OTS
 uint64_t media_proxy_sctrl_icon_id_get(void);
 #endif /* CONFIG_BT_OTS */
 
-char *media_proxy_sctrl_icon_url_get(void);
+const char *media_proxy_sctrl_icon_url_get(void);
 
 
-char *media_proxy_sctrl_track_title_get(void);
+const char *media_proxy_sctrl_track_title_get(void);
 
 int32_t media_proxy_sctrl_track_duration_get(void);
 

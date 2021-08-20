@@ -68,7 +68,7 @@ int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs)
 	return 0;
 };
 
-char *media_proxy_sctrl_player_name_get(void)
+const char *media_proxy_sctrl_player_name_get(void)
 {
 	/* TODO: Add check for whether function pointer is non-NULL everywhere */
 	return mprx.local_player.calls->player_name_get();
@@ -81,12 +81,12 @@ uint64_t media_proxy_sctrl_icon_id_get(void)
 }
 #endif /* CONFIG_BT_OTS */
 
-char *media_proxy_sctrl_icon_url_get(void)
+const char *media_proxy_sctrl_icon_url_get(void)
 {
 	return mprx.local_player.calls->icon_url_get();
 }
 
-char *media_proxy_sctrl_track_title_get(void)
+const char *media_proxy_sctrl_track_title_get(void)
 {
 	return mprx.local_player.calls->track_title_get();
 }
@@ -230,7 +230,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void mcc_player_name_read_cb(struct bt_conn *conn, int err, char *name)
+static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *name)
 {
 	/* Debug statements for at least a couple of the callbacks, to show flow */
 	BT_DBG("MCC player name callback");
@@ -263,7 +263,7 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, char *url)
+static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
 		BT_ERR("Icon URL read failed (%d)", err);
@@ -290,7 +290,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void mcc_track_title_read_cb(struct bt_conn *conn, int err, char *title)
+static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
 		BT_ERR("Track title read failed (%d)", err);
@@ -712,7 +712,7 @@ int media_proxy_ctrl_player_name_get(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		BT_DBG("Local player");
 		if (mprx.local_player.calls->player_name_get) {
-			char *name = mprx.local_player.calls->player_name_get();
+			const char *name = mprx.local_player.calls->player_name_get();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->player_name) {
 				mprx.ctrlr.cbs->player_name(&mprx.local_player, 0, name);
@@ -777,7 +777,7 @@ int media_proxy_ctrl_icon_url_get(struct media_player *player)
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->icon_url_get) {
-			char *url = mprx.local_player.calls->icon_url_get();
+			const char *url = mprx.local_player.calls->icon_url_get();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_url) {
 				mprx.ctrlr.cbs->icon_url(player, 0, url);
@@ -809,7 +809,7 @@ int media_proxy_ctrl_track_title_get(struct media_player *player)
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->track_title_get) {
-			char *title = mprx.local_player.calls->track_title_get();
+			const char *title = mprx.local_player.calls->track_title_get();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_title) {
 				mprx.ctrlr.cbs->track_title(player, 0, title);

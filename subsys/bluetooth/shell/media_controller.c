@@ -64,7 +64,7 @@ static void discover_player_cb(struct media_player *plr, int err)
 	current_player = remote_player;
 }
 
-static void player_name_cb(struct media_player *plr, int err, char *name)
+static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Player name failed (%d)", plr, err);
@@ -87,7 +87,7 @@ static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 	shell_print(ctx_shell, "Player: %p, Icon Object ID: %s", plr, str);
 }
 
-static void icon_url_cb(struct media_player *plr, int err, char *url)
+static void icon_url_cb(struct media_player *plr, int err, const char *url)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Icon URL failed (%d)", plr, err);
@@ -107,7 +107,7 @@ static void track_changed_cb(struct media_player *plr, int err)
 	shell_print(ctx_shell, "Player: %p, Track changed", plr);
 }
 
-static void track_title_cb(struct media_player *plr, int err, char *title)
+static void track_title_cb(struct media_player *plr, int err, const char *title)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Track title failed (%d)", plr, err);

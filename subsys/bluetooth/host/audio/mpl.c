@@ -2204,7 +2204,7 @@ void (*operation_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_op_t operation,
 	seeking_state_operation_handler
 };
 
-char *player_name_get(void)
+const char *player_name_get(void)
 {
 	return pl.name;
 }
@@ -2216,12 +2216,12 @@ uint64_t icon_id_get(void)
 }
 #endif /* CONFIG_BT_OTS */
 
-char *icon_url_get(void)
+const char *icon_url_get(void)
 {
 	return pl.icon_url;
 }
 
-char *track_title_get(void)
+const char *track_title_get(void)
 {
 	return pl.group->track->title;
 }
