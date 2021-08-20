@@ -11,6 +11,7 @@
 #include <init.h>
 #include <string.h>
 #include <pm/device.h>
+#include <pm/device_policy.h>
 #include <pm/pm.h>
 #include <pm/state.h>
 #include <pm/policy.h>
@@ -76,8 +77,9 @@ extern const struct device *__pm_device_slots_start[];
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static int _pm_devices(enum pm_device_state state)
+static int suspend_devices(const struct pm_state_info *soc_state)
 {
+	enum pm_device_state state;
 	const struct device *devs;
 	size_t devc;
 
@@ -93,6 +95,7 @@ static int _pm_devices(enum pm_device_state state)
 			continue;
 		}
 
+		state = pm_device_policy_next_state(dev, soc_state);
 		ret = pm_device_state_set(dev, state);
 		/* ignore devices not supporting or already at the given state */
 		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
@@ -110,7 +113,7 @@ static int _pm_devices(enum pm_device_state state)
 	return 0;
 }
 
-static void pm_resume_devices(void)
+static void resume_devices(void)
 {
 	size_t i;
 
@@ -229,7 +232,7 @@ void pm_power_state_force(struct pm_state_info info)
 static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
-	pm_resume_devices();
+	resume_devices();
 
 	z_power_state.state = PM_STATE_ACTIVE;
 	return PM_STATE_ACTIVE;
@@ -265,35 +268,10 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	}
 
 #if CONFIG_PM_DEVICE
-
-	bool should_resume_devices = true;
-
-	switch (z_power_state.state) {
-	case PM_STATE_RUNTIME_IDLE:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_IDLE:
-		__fallthrough;
-	case PM_STATE_STANDBY:
-		/* low power peripherals. */
-		if (_pm_devices(PM_DEVICE_STATE_LOW_POWER)) {
-			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
-					ticks, _handle_device_abort(z_power_state));
-			return _handle_device_abort(z_power_state);
-		}
-		break;
-	case PM_STATE_SUSPEND_TO_RAM:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_DISK:
-	case PM_STATE_SOFT_OFF:
-		if (_pm_devices(PM_DEVICE_STATE_SUSPENDED)) {
-			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
-					ticks, _handle_device_abort(z_power_state));
-			return _handle_device_abort(z_power_state);
-		}
-		break;
-	default:
-		should_resume_devices = false;
-		break;
+	if (suspend_devices(&z_power_state)) {
+		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
+					   ticks, _handle_device_abort(z_power_state));
+		return _handle_device_abort(z_power_state);
 	}
 #endif
 	/*
@@ -314,10 +292,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 
 	/* Wake up sequence starts here */
 #if CONFIG_PM_DEVICE
-	if (should_resume_devices) {
-		/* Turn on peripherals and restore device states as necessary */
-		pm_resume_devices();
-	}
+	resume_devices();
 #endif
 	pm_log_debug_info(z_power_state.state);
 	pm_system_resume();
