@@ -4,9 +4,12 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cmsis_dsp_matrix)
 
-FILE(GLOB app_sources src/*.c)
-
 target_sources(app PRIVATE src/main.c)
+
+target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q7
+  app PRIVATE src/unary_q7.c
+  )
 
 target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q15
