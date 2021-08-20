@@ -2365,18 +2365,18 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
-			engine_put_s32(&msg->out, &msg->path,
-				       (int32_t)*(uint32_t *)data_ptr);
+			engine_put_s64(&msg->out, &msg->path,
+				       (int64_t)*(uint32_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U16:
-			engine_put_s16(&msg->out, &msg->path,
-				       (int16_t)*(uint16_t *)data_ptr);
+			engine_put_s32(&msg->out, &msg->path,
+				       (int32_t)*(uint16_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_U8:
-			engine_put_s8(&msg->out, &msg->path,
-				      (int8_t)*(uint8_t *)data_ptr);
+			engine_put_s16(&msg->out, &msg->path,
+				       (int16_t)*(uint8_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_S64:
@@ -2640,8 +2640,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
-			engine_get_s32(&msg->in, &temp32);
-			*(uint32_t *)write_buf = temp32;
+			engine_get_s64(&msg->in, &temp64);
+			*(uint32_t *)write_buf = temp64;
 			len = 4;
 			break;
 
