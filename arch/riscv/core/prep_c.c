@@ -45,3 +45,10 @@ void _PrepC(void)
 	z_cstart();
 	CODE_UNREACHABLE;
 }
+
+void _SlaveCoreMain(const int hart_id)
+{
+	extern void slave_main(int slave_id);
+
+	slave_main(hart_id);
+}
