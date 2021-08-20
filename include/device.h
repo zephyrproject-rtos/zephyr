@@ -702,7 +702,6 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		))							\
 			DEVICE_HANDLE_SEP,				\
 			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
-			DEVICE_HANDLE_ENDS,				\
 		};
 
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
