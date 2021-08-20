@@ -8,7 +8,7 @@
 #include <drivers/gpio.h>
 #include <drivers/lora.h>
 #include <logging/log.h>
-#include <sys/atomic_builtin.h>
+#include <sys/atomic.h>
 #include <zephyr.h>
 
 /* LoRaMac-node specific includes */
