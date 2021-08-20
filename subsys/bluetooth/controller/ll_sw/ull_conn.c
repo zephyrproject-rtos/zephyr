@@ -3537,8 +3537,10 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 
 	ctrl_tx_enqueue(conn, tx);
 
-	/* procedure request acked */
-	conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+	/* Wait for connection update to be initiated by
+	 * peer central device
+	 */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_UPD_WAIT;
 }
 
 static inline void event_conn_param_app_req(struct ll_conn *conn)
@@ -3608,6 +3610,7 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 
 	case LLCP_CPR_STATE_APP_WAIT:
 	case LLCP_CPR_STATE_RSP_WAIT:
+	case LLCP_CPR_STATE_UPD_WAIT:
 	case LLCP_CPR_STATE_UPD:
 		/* Do nothing */
 		break;
@@ -4342,7 +4345,8 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
-	    (conn->llcp_conn_param.state == LLCP_CPR_STATE_RSP_WAIT)) {
+	    ((conn->llcp_conn_param.state == LLCP_CPR_STATE_RSP_WAIT) ||
+	     (conn->llcp_conn_param.state == LLCP_CPR_STATE_UPD_WAIT))) {
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 	}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
