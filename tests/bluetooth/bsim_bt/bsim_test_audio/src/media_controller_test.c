@@ -99,7 +99,7 @@ static void discover_player_cb(struct media_player *player, int err)
 	SET_FLAG(remote_player_instance);
 }
 
-static void player_name_cb(struct media_player *plr, int err, char *name)
+static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
 	if (err) {
 		FAIL("Player Name read failed (%d)\n", err);
@@ -130,7 +130,7 @@ static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 	SET_FLAG(icon_object_id_read);
 }
 
-static void icon_url_cb(struct media_player *plr, int err, char *url)
+static void icon_url_cb(struct media_player *plr, int err, const char *url)
 {
 	if (err) {
 		FAIL("Icon URL read failed (%d)", err);
@@ -144,7 +144,7 @@ static void icon_url_cb(struct media_player *plr, int err, char *url)
 	SET_FLAG(icon_url_read);
 }
 
-static void track_title_cb(struct media_player *plr, int err, char *title)
+static void track_title_cb(struct media_player *plr, int err, const char *title)
 {
 	if (err) {
 		FAIL("Track title read failed (%d)", err);

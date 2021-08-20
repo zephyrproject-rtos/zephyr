@@ -54,7 +54,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 	shell_print(ctx_shell, "Discovery complete");
 }
 
-static void mcc_player_name_read_cb(struct bt_conn *conn, int err, char *name)
+static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *name)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player Name read failed (%d)", err);
@@ -81,7 +81,7 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, char *url)
+static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
 		shell_error(ctx_shell, "Icon URL read failed (%d)", err);
@@ -91,7 +91,7 @@ static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, char *url)
 	shell_print(ctx_shell, "Icon URL: 0x%s", url);
 }
 
-static void mcc_track_title_read_cb(struct bt_conn *conn, int err, char *title)
+static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
 		shell_error(ctx_shell, "Track title read failed (%d)", err);
