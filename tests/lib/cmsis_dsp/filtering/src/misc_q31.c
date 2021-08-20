@@ -162,6 +162,7 @@ DEFINE_CONV_TEST(13, 3);
 DEFINE_CONV_TEST(13, 8);
 DEFINE_CONV_TEST(13, 11);
 
+#ifdef CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL
 static void test_arm_conv_partial_q31(
 	size_t first, size_t in1_length, size_t in2_length, const q31_t *ref,
 	size_t ref_length)
@@ -235,6 +236,21 @@ static void test_arm_conv_partial_fast_q31(
 	free(output);
 	free(temp);
 }
+#else
+static void test_arm_conv_partial_q31(
+	size_t first, size_t in1_length, size_t in2_length, const q31_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+
+static void test_arm_conv_partial_fast_q31(
+	size_t first, size_t in1_length, size_t in2_length, const q31_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL */
 
 #define DEFINE_CONV_PARTIAL_TEST(a, b, c) \
 	DEFINE_TEST_VARIANT5( \
