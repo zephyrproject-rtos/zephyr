@@ -10,4 +10,7 @@ config CMSIS_DSP_TEST_FILTERING_FIR
 config CMSIS_DSP_TEST_FILTERING_MISC
 	bool "Test: Filtering MISC"
 
+config CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL
+	bool "Test: Filtering MISC - Partial Convolution"
+
 source "Kconfig"
