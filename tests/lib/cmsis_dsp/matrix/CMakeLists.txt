@@ -22,6 +22,11 @@ target_sources_ifdef(
   )
 
 target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F16
+  app PRIVATE src/unary_f16.c
+  )
+
+target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32
   app PRIVATE src/unary_f32.c
   )
