@@ -679,6 +679,8 @@ static inline bool device_is_ready(const struct device *dev)
  *     List of devicetree dependency ordinals (if any),
  *     DEVICE_HANDLE_SEP,
  *     List of injected dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of devicetree supporting ordinals (if any),
  * }
  *
  * After processing in gen_handles.py, the format is updated to:
@@ -686,6 +688,8 @@ static inline bool device_is_ready(const struct device *dev)
  *     List of existing devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
  *     List of injected dependency ordinals (if any),
+ *     DEVICE_HANDLE_SEP,
+ *     List of existing devicetree support handles (if any),
  *     DEVICE_HANDLE_NULL padding to original length (at least one)
  * }
  *
@@ -717,6 +721,9 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		))							\
 			DEVICE_HANDLE_SEP,				\
 			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
+			DEVICE_HANDLE_SEP,				\
+	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
+			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		};
 
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
