@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/types.h>
+
 #ifdef CONFIG_NEWLIB_LIBC
 #include <time.h>
 #endif
@@ -68,6 +70,8 @@ struct mdm_hl7800_apn {
 #define MDM_HL7800_MODEM_FUNCTIONALITY_STRLEN                                  \
 	(MDM_HL7800_MODEM_FUNCTIONALITY_SIZE - 1)
 
+#define MDM_HL7800_MAX_GPS_STR_SIZE 33
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -83,7 +87,9 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_ACTIVE_BANDS,
 	HL7800_EVENT_FOTA_STATE,
 	HL7800_EVENT_FOTA_COUNT,
-	HL7800_EVENT_REVISION
+	HL7800_EVENT_REVISION,
+	HL7800_EVENT_GPS,
+	HL7800_EVENT_GPS_POSITION_STATUS,
 };
 
 enum mdm_hl7800_startup_state {
@@ -132,10 +138,48 @@ enum mdm_hl7800_functionality {
 	HL7800_FUNCTIONALITY_AIRPLANE = 4
 };
 
-/* The modem reports state values as an enumeration and a string */
+/* The modem reports state values as an enumeration and a string.
+ * GPS values are reported with a type of value and string.
+ */
 struct mdm_hl7800_compound_event {
 	uint8_t code;
 	char *string;
+};
+
+enum mdm_hl7800_gnss_event {
+	HL7800_GNSS_EVENT_INVALID = -1,
+	HL7800_GNSS_EVENT_INIT,
+	HL7800_GNSS_EVENT_START,
+	HL7800_GNSS_EVENT_STOP,
+	HL7800_GNSS_EVENT_POSITION,
+};
+
+enum mdm_hl7800_gnss_status {
+	HL7800_GNSS_STATUS_INVALID = -1,
+	HL7800_GNSS_STATUS_FAILURE,
+	HL7800_GNSS_STATUS_SUCCESS,
+};
+
+enum mdm_hl7800_gnss_position_event {
+	HL7800_GNSS_POSITION_EVENT_INVALID = -1,
+	HL7800_GNSS_POSITION_EVENT_LOST_OR_NOT_AVAILABLE_YET,
+	HL7800_GNSS_POSITION_EVENT_PREDICTION_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_2D_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_3D_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_FIXED_TO_INVALID,
+};
+
+enum mdm_hl7800_gps_string_types {
+	HL7800_GPS_STR_LATITUDE,
+	HL7800_GPS_STR_LONGITUDE,
+	HL7800_GPS_STR_GPS_TIME,
+	HL7800_GPS_STR_FIX_TYPE,
+	HL7800_GPS_STR_HEPE,
+	HL7800_GPS_STR_ALTITUDE,
+	HL7800_GPS_STR_ALT_UNC,
+	HL7800_GPS_STR_DIRECTION,
+	HL7800_GPS_STR_HOR_SPEED,
+	HL7800_GPS_STR_VER_SPEED
 };
 
 /**
@@ -153,6 +197,8 @@ struct mdm_hl7800_compound_event {
  * HL7800_EVENT_FOTA_STATE - compound event
  * HL7800_EVENT_FOTA_COUNT - uint32_t
  * HL7800_EVENT_REVISION - string
+ * HL7800_EVENT_GPS - compound event
+ * HL7800_EVENT_GPS_POSITION_STATUS int
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
@@ -311,6 +357,18 @@ int32_t mdm_hl7800_get_functionality(void);
  * @return int32_t negative errno, 0 on success
  */
 int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
+
+/**
+ * @brief When rate is non-zero: Put modem into Airplane mode. Enable GPS and
+ * generate HL7800_EVENT_GPS events.
+ * When zero: Disable GPS and put modem into normal mode.
+ *
+ * @note Airplane mode isn't cleared when the modem is reset.
+ *
+ * @param rate in seconds to query location
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_set_gps_rate(uint32_t rate);
 
 #ifdef __cplusplus
 }

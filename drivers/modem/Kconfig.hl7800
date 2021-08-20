@@ -292,4 +292,11 @@ config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
 
 endchoice
 
+config MODEM_HL7800_GPS
+	bool "Enable GPS command and handlers"
+
+config MODEM_HL7800_USE_GLONASS
+	bool "Use GLONASS in addition to GPS"
+	depends on MODEM_HL7800_GPS
+
 endif # MODEM_HL7800
