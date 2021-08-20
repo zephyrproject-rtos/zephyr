@@ -52,3 +52,8 @@ target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F32
   app PRIVATE src/binary_f32.c
   )
+
+target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F64
+  app PRIVATE src/binary_f64.c
+  )
