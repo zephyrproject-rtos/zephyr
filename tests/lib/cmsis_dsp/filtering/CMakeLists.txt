@@ -22,6 +22,7 @@ endif()
 if(CONFIG_CMSIS_DSP_TEST_FILTERING_DECIM)
   target_sources(app PRIVATE
     src/decim_q15.c
+    src/decim_q31.c
     )
 endif()
 
