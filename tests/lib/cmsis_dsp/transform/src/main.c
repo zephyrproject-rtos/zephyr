@@ -11,6 +11,7 @@ extern void test_transform_cq15(void);
 extern void test_transform_rq15(void);
 extern void test_transform_cq31(void);
 extern void test_transform_rq31(void);
+extern void test_transform_rf16(void);
 extern void test_transform_cf32(void);
 extern void test_transform_rf32(void);
 extern void test_transform_cf64(void);
@@ -29,6 +30,9 @@ void test_main(void)
 #endif
 #ifdef CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ31
 	test_transform_rq31();
+#endif
+#ifdef CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF16
+	test_transform_rf16();
 #endif
 #ifdef CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF32
 	test_transform_cf32();
