@@ -136,6 +136,16 @@ void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 	backend->control_block->state = SHELL_LOG_BACKEND_DISABLED;
 }
 
+void shell_log_backend_suspend(const struct shell_log_backend *backend)
+{
+	backend->control_block->state = SHELL_LOG_BACKEND_DISABLED;
+}
+
+void z_shell_log_backend_resume(const struct shell_log_backend *backend)
+{
+	backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+}
+
 static void msg_process(const struct log_output *log_output,
 			struct log_msg *msg, bool colors)
 {

@@ -85,6 +85,13 @@ static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		const struct shell *const sh = shell_backend_uart_get_ptr();
+
+		/* Reactivating the shell_log_backend */
+		z_shell_log_backend_resume(sh->log_backend);
+	}
+
 	/* Non-mcumgr byte received. */
 	return SMP_SHELL_MCUMGR_STATE_NONE;
 }
@@ -179,7 +186,11 @@ static int smp_shell_tx_pkt(struct zephyr_smp_transport *zst,
 			    struct net_buf *nb)
 {
 	int rc;
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		const struct shell *const sh = shell_backend_uart_get_ptr();
 
+		z_shell_log_backend_suspend(sh->log_backend);
+	}
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw, NULL);
 	mcumgr_buf_free(nb);
 

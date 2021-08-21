@@ -118,6 +118,20 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
  */
 void z_shell_log_backend_disable(const struct shell_log_backend *backend);
 
+/** @brief Suspend shell log backend.
+ *
+ * @param backend Shell log backend instance.
+ */
+void z_shell_log_backend_suspend(const struct shell_log_backend *backend);
+
+/** @brief Resume shell log backend.
+ *	   This function can be used after calling z_shell_log_backend_suspend
+ *	   function, to resume shell log backend operations.
+ *
+ * @param backend		Shell log backend instance.
+ */
+void z_shell_log_backend_resume(const struct shell_log_backend *backend);
+
 /** @brief Trigger processing of one log entry.
  *
  * @param backend Shell log backend instance.
