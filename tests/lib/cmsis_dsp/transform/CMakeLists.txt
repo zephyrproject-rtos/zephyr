@@ -29,6 +29,11 @@ target_sources_ifdef(
   )
 
 target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF16
+  app PRIVATE src/cf16.c
+  )
+
+target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF16
   app PRIVATE src/rf16.c
   )
