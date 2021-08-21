@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,10 +17,17 @@
 #define SNR_ERROR_THRESH	((float32_t)120)
 
 static void test_arm_cfft_f32_cmplx_backend(
-	const arm_cfft_instance_f32 * inst, bool inverse,
-	const uint32_t *input, const uint32_t *ref, size_t length)
+	bool inverse, const uint32_t *input, const uint32_t *ref, size_t length)
 {
+	arm_cfft_instance_f32 inst;
 	float32_t *output;
+	arm_status status;
+
+	/* Initialise instance */
+	status = arm_cfft_init_f32(&inst, length / 2);
+
+	zassert_equal(status, ARM_MATH_SUCCESS,
+		      ASSERT_MSG_INCORRECT_COMP_RESULT);
 
 	/* Allocate output buffer */
 	output = malloc(length * sizeof(float32_t));
@@ -30,7 +37,7 @@ static void test_arm_cfft_f32_cmplx_backend(
 	memcpy(output, input, length * sizeof(float32_t));
 
 	/* Run test function */
-	arm_cfft_f32(inst, output, inverse, true);
+	arm_cfft_f32(&inst, output, inverse, true);
 
 	/* Validate output */
 	zassert_true(
@@ -43,125 +50,123 @@ static void test_arm_cfft_f32_cmplx_backend(
 }
 
 static void test_arm_cfft_f32_cmplx(
-	const arm_cfft_instance_f32 * inst,
 	const uint32_t *input, const uint32_t *ref, size_t length)
 {
-	test_arm_cfft_f32_cmplx_backend(inst, false, input, ref, length);
+	test_arm_cfft_f32_cmplx_backend(false, input, ref, length);
 }
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_16, &arm_cfft_sR_f32_len16,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_16,
 	in_cfft_noisy_16, ref_cfft_noisy_16, 32);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_32, &arm_cfft_sR_f32_len32,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_32,
 	in_cfft_noisy_32, ref_cfft_noisy_32, 64);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_64, &arm_cfft_sR_f32_len64,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_64,
 	in_cfft_noisy_64, ref_cfft_noisy_64, 128);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_128, &arm_cfft_sR_f32_len128,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_128,
 	in_cfft_noisy_128, ref_cfft_noisy_128, 256);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_256, &arm_cfft_sR_f32_len256,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_256,
 	in_cfft_noisy_256, ref_cfft_noisy_256, 512);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_512, &arm_cfft_sR_f32_len512,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_512,
 	in_cfft_noisy_512, ref_cfft_noisy_512, 1024);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_1024, &arm_cfft_sR_f32_len1024,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_1024,
 	in_cfft_noisy_1024, ref_cfft_noisy_1024, 2048);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_2048, &arm_cfft_sR_f32_len2048,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_2048,
 	in_cfft_noisy_2048, ref_cfft_noisy_2048, 4096);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, noisy_4096, &arm_cfft_sR_f32_len4096,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, noisy_4096,
 	in_cfft_noisy_4096, ref_cfft_noisy_4096, 8192);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_16, &arm_cfft_sR_f32_len16,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_16,
 	in_cfft_step_16, ref_cfft_step_16, 32);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_32, &arm_cfft_sR_f32_len32,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_32,
 	in_cfft_step_32, ref_cfft_step_32, 64);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_64, &arm_cfft_sR_f32_len64,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_64,
 	in_cfft_step_64, ref_cfft_step_64, 128);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_128, &arm_cfft_sR_f32_len128,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_128,
 	in_cfft_step_128, ref_cfft_step_128, 256);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_256, &arm_cfft_sR_f32_len256,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_256,
 	in_cfft_step_256, ref_cfft_step_256, 512);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_512, &arm_cfft_sR_f32_len512,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_512,
 	in_cfft_step_512, ref_cfft_step_512, 1024);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_1024, &arm_cfft_sR_f32_len1024,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_1024,
 	in_cfft_step_1024, ref_cfft_step_1024, 2048);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_2048, &arm_cfft_sR_f32_len2048,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_2048,
 	in_cfft_step_2048, ref_cfft_step_2048, 4096);
 
-DEFINE_TEST_VARIANT4(arm_cfft_f32_cmplx, step_4096, &arm_cfft_sR_f32_len4096,
+DEFINE_TEST_VARIANT3(arm_cfft_f32_cmplx, step_4096,
 	in_cfft_step_4096, ref_cfft_step_4096, 8192);
 
 static void test_arm_cifft_f32_cmplx(
-	const arm_cfft_instance_f32 * inst,
 	const uint32_t *input, const uint32_t *ref, size_t length)
 {
-	test_arm_cfft_f32_cmplx_backend(inst, true, input, ref, length);
+	test_arm_cfft_f32_cmplx_backend(true, input, ref, length);
 }
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_16, &arm_cfft_sR_f32_len16,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_16,
 	in_cifft_noisy_16, in_cfft_noisy_16, 32);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_32, &arm_cfft_sR_f32_len32,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_32,
 	in_cifft_noisy_32, in_cfft_noisy_32, 64);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_64, &arm_cfft_sR_f32_len64,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_64,
 	in_cifft_noisy_64, in_cfft_noisy_64, 128);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_128, &arm_cfft_sR_f32_len128,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_128,
 	in_cifft_noisy_128, in_cfft_noisy_128, 256);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_256, &arm_cfft_sR_f32_len256,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_256,
 	in_cifft_noisy_256, in_cfft_noisy_256, 512);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_512, &arm_cfft_sR_f32_len512,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_512,
 	in_cifft_noisy_512, in_cfft_noisy_512, 1024);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_1024, &arm_cfft_sR_f32_len1024,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_1024,
 	in_cifft_noisy_1024, in_cfft_noisy_1024, 2048);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_2048, &arm_cfft_sR_f32_len2048,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_2048,
 	in_cifft_noisy_2048, in_cfft_noisy_2048, 4096);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, noisy_4096, &arm_cfft_sR_f32_len4096,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, noisy_4096,
 	in_cifft_noisy_4096, in_cfft_noisy_4096, 8192);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_16, &arm_cfft_sR_f32_len16,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_16,
 	in_cifft_step_16, in_cfft_step_16, 32);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_32, &arm_cfft_sR_f32_len32,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_32,
 	in_cifft_step_32, in_cfft_step_32, 64);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_64, &arm_cfft_sR_f32_len64,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_64,
 	in_cifft_step_64, in_cfft_step_64, 128);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_128, &arm_cfft_sR_f32_len128,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_128,
 	in_cifft_step_128, in_cfft_step_128, 256);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_256, &arm_cfft_sR_f32_len256,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_256,
 	in_cifft_step_256, in_cfft_step_256, 512);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_512, &arm_cfft_sR_f32_len512,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_512,
 	in_cifft_step_512, in_cfft_step_512, 1024);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_1024, &arm_cfft_sR_f32_len1024,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_1024,
 	in_cifft_step_1024, in_cfft_step_1024, 2048);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_2048, &arm_cfft_sR_f32_len2048,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_2048,
 	in_cifft_step_2048, in_cfft_step_2048, 4096);
 
-DEFINE_TEST_VARIANT4(arm_cifft_f32_cmplx, step_4096, &arm_cfft_sR_f32_len4096,
+DEFINE_TEST_VARIANT3(arm_cifft_f32_cmplx, step_4096,
 	in_cifft_step_4096, in_cfft_step_4096, 8192);
 
 void test_transform_cf32(void)
