@@ -15,4 +15,5 @@ target_sources(app PRIVATE
 
 target_sources_ifdef(CONFIG_CMSIS_DSP_FLOAT16 app PRIVATE
   src/f16.c
+  src/barycenter_f16.c
   )
