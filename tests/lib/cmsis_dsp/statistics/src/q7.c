@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,50 @@ DEFINE_TEST_VARIANT3(arm_min_q7, 15, in_com1, 0, 15);
 DEFINE_TEST_VARIANT3(arm_min_q7, 32, in_com1, 1, 32);
 DEFINE_TEST_VARIANT3(arm_min_q7, 47, in_com1, 2, 47);
 DEFINE_TEST_VARIANT3(arm_min_q7, max, in_min_maxidx, 3, 280);
+
+static void test_arm_absmax_q7(
+	const q7_t *input1, int ref_index, size_t length)
+{
+	q7_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmax_q7(input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ref_absmax_val[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmax_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmax_q7, 15, in_absminmax, 0, 15);
+DEFINE_TEST_VARIANT3(arm_absmax_q7, 32, in_absminmax, 1, 32);
+DEFINE_TEST_VARIANT3(arm_absmax_q7, 47, in_absminmax, 2, 47);
+DEFINE_TEST_VARIANT3(arm_absmax_q7, max, in_absmax_maxidx, 3, 280);
+
+static void test_arm_absmin_q7(
+	const q7_t *input1, int ref_index, size_t length)
+{
+	q7_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmin_q7(input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ref_absmin_val[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmin_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmin_q7, 15, in_absminmax, 0, 15);
+DEFINE_TEST_VARIANT3(arm_absmin_q7, 32, in_absminmax, 1, 32);
+DEFINE_TEST_VARIANT3(arm_absmin_q7, 47, in_absminmax, 2, 47);
+DEFINE_TEST_VARIANT3(arm_absmin_q7, max, in_absmin_maxidx, 3, 280);
 
 static void test_arm_mean_q7(
 	const q7_t *input1, int ref_index, size_t length)
@@ -138,6 +182,14 @@ void test_statistics_q7(void)
 		ztest_unit_test(test_arm_min_q7_32),
 		ztest_unit_test(test_arm_min_q7_47),
 		ztest_unit_test(test_arm_min_q7_max),
+		ztest_unit_test(test_arm_absmax_q7_15),
+		ztest_unit_test(test_arm_absmax_q7_32),
+		ztest_unit_test(test_arm_absmax_q7_47),
+		ztest_unit_test(test_arm_absmax_q7_max),
+		ztest_unit_test(test_arm_absmin_q7_15),
+		ztest_unit_test(test_arm_absmin_q7_32),
+		ztest_unit_test(test_arm_absmin_q7_47),
+		ztest_unit_test(test_arm_absmin_q7_max),
 		ztest_unit_test(test_arm_mean_q7_15),
 		ztest_unit_test(test_arm_mean_q7_32),
 		ztest_unit_test(test_arm_mean_q7_47),
