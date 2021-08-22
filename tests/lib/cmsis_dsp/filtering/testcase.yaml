@@ -1,5 +1,7 @@
 common:
   toolchain_exclude: llvm
+  # TODO: Remove when QEMU 6.2 is released with MVE emulation (see #37694).
+  platform_exclude: mps3_an547
 
 tests:
   libraries.cmsis_dsp.filtering:
