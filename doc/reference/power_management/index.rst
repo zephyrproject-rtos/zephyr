@@ -421,7 +421,58 @@ later calling :c:func:`pm_device_wakeup_enable`.
    It is responsability of driver or the application to do any additional
    configuration required by the device to support it.
 
+Device Power Management Policies
+================================
 
+The power management subsystem supports the following device power
+management policies:
+
+* Default
+* Application
+
+The device policy manager is responsible to inform the power subsystem
+which device power state the system should use for a device based on
+the system power state.
+
+When the system is changing its power state it iterates over available
+devices and asks the policy manager which state the device should be
+set based on the system power state. The policy is defined by
+:c:func:`pm_device_policy_next_state`.
+
+Default
+-------
+
+The default device power management policy is a hardcoded map between
+system power states and device power states. The relation between these
+states is:
+
+.. code-block::
+
+   PM_STATE_ACTIVE          -> PM_DEVICE_STATE_ACTIVE
+   PM_STATE_RUNTIME_IDLE    -> PM_DEVICE_STATE_LOW_POWER
+   PM_STATE_SUSPEND_TO_IDLE -> PM_DEVICE_STATE_LOW_POWER
+   PM_STATE_STANDBY         -> PM_DEVICE_STATE_LOW_POWER
+   PM_STATE_SUSPEND_TO_RAM  -> PM_DEVICE_STATE_SUSPENDED
+   PM_STATE_SUSPEND_TO_DISK -> PM_DEVICE_STATE_SUSPENDED
+   PM_STATE_SOFT_OFF        -> PM_DEVICE_STATE_OFF
+
+Application
+-----------
+
+The device power management policy is defined by the application which
+has to implement the following function.
+
+.. code-block:: c
+
+   enum pm_device_state pm_device_policy_next_state(const struct device *dev,
+                                        const struct pm_state_info *state);
+
+In this policy the application is free to decide which device power
+state the system should use for a given device based on system power
+state.
+
+An example of an application that defines its own policy can be found in
+:zephyr_file:`tests/subsys/pm/device_policy/`.
 
 Device Runtime Power Management
 *******************************
