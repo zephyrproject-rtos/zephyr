@@ -7,5 +7,6 @@ project(cmsis_dsp_interpolation)
 target_sources(app PRIVATE
   src/q7.c
   src/q15.c
+  src/q31.c
   src/main.c
   )
