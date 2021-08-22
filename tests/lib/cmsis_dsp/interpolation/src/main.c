@@ -8,8 +8,10 @@
 #include <zephyr.h>
 
 extern void test_interpolation_q7(void);
+extern void test_interpolation_q15(void);
 
 void test_main(void)
 {
 	test_interpolation_q7();
+	test_interpolation_q15();
 }
