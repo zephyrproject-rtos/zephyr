@@ -35,7 +35,7 @@
 
 #define SIFIVE_BACKUP_REG_BASE	     0x10000080
 
-#elif defined(CONFIG_SOC_RISCV_SIFIVE_FU540)
+#elif defined(CONFIG_SOC_RISCV_SIFIVE_FU540) || defined(CONFIG_SOC_RISCV_SIFIVE_FU740)
 
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10000000
