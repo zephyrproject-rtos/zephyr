@@ -14,8 +14,11 @@
 #include <linker/sections.h>
 #include <soc.h>
 
-/* exports */
-GTEXT(__soc_handle_irq)
+/*
+ * __soc_handle_irq is defined as .weak to allow re-implementation by
+ * SOCs that do not truly follow the riscv privilege specification.
+ */
+WTEXT(__soc_handle_irq)
 
 /*
  * SOC-specific function to handle pending IRQ number generating the interrupt.
@@ -32,7 +35,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by
- * SOCs that does not truly follow the riscv privilege specification.
+ * SOCs that do not truly follow the riscv privilege specification.
  */
 WTEXT(__soc_is_irq)
 
