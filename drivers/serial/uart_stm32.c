@@ -977,6 +977,9 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
+	/*when async rx is disabled, enable interruptable instance of uart to function normally*/
+	LL_USART_EnableIT_RXNE(UartInstance);
+
 	LOG_DBG("rx: disabled");
 
 	async_user_callback(data, &disabled_event);
