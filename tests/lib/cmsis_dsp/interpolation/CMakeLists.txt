@@ -8,5 +8,6 @@ target_sources(app PRIVATE
   src/q7.c
   src/q15.c
   src/q31.c
+  src/f32.c
   src/main.c
   )
