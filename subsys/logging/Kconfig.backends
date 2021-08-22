@@ -298,10 +298,13 @@ config LOG_BACKEND_ADSP
 	  family of audio processors
 
 config LOG_BACKEND_FS
-	bool "Enable LittleFS backend"
+	bool "Enable file system backend"
 	depends on FILE_SYSTEM
 	help
-	  When enabled backend is using LittleFS to output logs.
+	  When enabled, backend is using the configured file system to output logs.
+	  As the file system must be mounted for the logging to work, it must be
+	  either configured for auto-mount or manually mounted by the application.
+	  Log messages are discarded as long as the file system is not mounted.
 
 if LOG_BACKEND_FS
 
