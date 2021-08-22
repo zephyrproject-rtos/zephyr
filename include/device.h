@@ -37,7 +37,7 @@ extern "C" {
 
 /** @brief Type used to represent devices and functions.
  *
- * The extreme values and zero have special significance.  Negative
+ * The extreme values and zero have special significance. Negative
  * values identify functionality that does not correspond to a Zephyr
  * device, such as the system clock or a SYS_INIT() function.
  */
@@ -124,7 +124,7 @@ typedef int16_t device_handle_t;
  * @param cfg_ptr The address to the structure containing the
  * configuration information for this instance of the driver.
  *
- * @param level The initialization level.  See SYS_INIT() for
+ * @param level The initialization level. See SYS_INIT() for
  * details.
  *
  * @param prio Priority within the selected initialization level. See
@@ -160,14 +160,14 @@ typedef int16_t device_handle_t;
  * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node.
  *
  * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization.  The device
+ * configured by the kernel during system initialization. The device
  * object name is derived from the node identifier (encoding the
  * devicetree path to the node), and the driver name is from the @p
  * label property of the devicetree node.
  *
  * The device is declared with extern visibility, so device objects
  * defined through this API can be obtained directly through
- * DEVICE_DT_GET() using @p node_id.  Before using the pointer the
+ * DEVICE_DT_GET() using @p node_id. Before using the pointer the
  * referenced object should be checked using device_is_ready().
  *
  * @param node_id The devicetree node identifier.
@@ -182,7 +182,7 @@ typedef int16_t device_handle_t;
  * @param cfg_ptr The address to the structure containing the
  * configuration information for this instance of the driver.
  *
- * @param level The initialization level.  See SYS_INIT() for
+ * @param level The initialization level. See SYS_INIT() for
  * details.
  *
  * @param prio Priority within the selected initialization level. See
@@ -205,7 +205,7 @@ typedef int16_t device_handle_t;
  *
  * @brief Like DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
  *
- * @param inst instance number.  This is replaced by
+ * @param inst instance number. This is replaced by
  * <tt>DT_DRV_COMPAT(inst)</tt> in the call to DEVICE_DT_DEFINE.
  *
  * @param ... other parameters as expected by DEVICE_DT_DEFINE.
@@ -334,7 +334,7 @@ typedef int16_t device_handle_t;
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
- * Fields in this are expected to be default-initialized to zero.  The
+ * Fields in this are expected to be default-initialized to zero. The
  * kernel driver infrastructure and driver access functions are
  * responsible for ensuring that any non-zero initialization is done
  * before they are accessed.
@@ -344,7 +344,7 @@ struct device_state {
 	 *
 	 * The absolute value returned when the device initialization
 	 * function was invoked, or `UINT8_MAX` if the value exceeds
-	 * an 8-bit integer.  If initialized is also set, a zero value
+	 * an 8-bit integer. If initialized is also set, a zero value
 	 * indicates initialization succeeded.
 	 */
 	unsigned int init_res : 8;
@@ -377,7 +377,7 @@ struct device {
 	/** optional pointer to handles associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have
-	 * some relationship to this node.  The individual sets are
+	 * some relationship to this node. The individual sets are
 	 * extracted with dedicated API, such as
 	 * device_required_handles_get().
 	 */
@@ -463,8 +463,8 @@ typedef int (*device_visitor_callback_t)(const struct device *dev, void *context
  * @param dev the device for which dependencies are desired.
  *
  * @param count pointer to a place to store the number of devices provided at
- * the returned pointer.  The value is not set if the call returns a null
- * pointer.  The value may be set to zero.
+ * the returned pointer. The value is not set if the call returns a null
+ * pointer. The value may be set to zero.
  *
  * @return a pointer to a sequence of @p *count device handles, or a null
  * pointer if @p dh does not provide dependency information.
@@ -493,11 +493,11 @@ device_required_handles_get(const struct device *dev,
  *
  * Zephyr maintains information about which devices are directly required by
  * another device; for example an I2C-based sensor driver will require an I2C
- * controller for communication.  Required devices can derive from
+ * controller for communication. Required devices can derive from
  * statically-defined devicetree relationships or dependencies registered
  * at runtime.
  *
- * This API supports operating on the set of required devices.  Example uses
+ * This API supports operating on the set of required devices. Example uses
  * include making sure required devices are ready before the requiring device
  * is used, and releasing them when the requiring device is no longer needed.
  *
@@ -508,14 +508,14 @@ device_required_handles_get(const struct device *dev,
  *
  * @note This API is not available to unprivileged threads.
  *
- * @param dev a device of interest.  The devices that this device depends on
- * will be used as the set of devices to visit.  This parameter must not be
+ * @param dev a device of interest. The devices that this device depends on
+ * will be used as the set of devices to visit. This parameter must not be
  * null.
  *
  * @param visitor_cb the function that should be invoked on each device in the
- * dependency set.  This parameter must not be null.
+ * dependency set. This parameter must not be null.
  *
- * @param context state that is passed through to the visitor function.  This
+ * @param context state that is passed through to the visitor function. This
  * parameter may be null if @p visitor tolerates a null @p context.
  *
  * @return The number of devices that were visited if all visits succeed, or
@@ -533,7 +533,7 @@ int device_required_foreach(const struct device *dev,
  * it can use this function to retrieve the device structure of the lower level
  * driver by the name the driver exposes to the system.
  *
- * @param name device name to search for.  A null pointer, or a pointer to an
+ * @param name device name to search for. A null pointer, or a pointer to an
  * empty string, will cause NULL to be returned.
  *
  * @return pointer to device structure; NULL if not found or cannot be used.
@@ -543,7 +543,7 @@ __syscall const struct device *device_get_binding(const char *name);
 /** @brief Get access to the static array of static devices.
  *
  * @param devices where to store the pointer to the array of
- * statically allocated devices.  The array must not be mutated
+ * statically allocated devices. The array must not be mutated
  * through this pointer.
  *
  * @return the number of statically allocated devices.
@@ -596,7 +596,7 @@ static inline int z_impl_device_usable_check(const struct device *dev)
  * in a state where it can be used with its standard API.
  *
  * This can be used with device pointers captured from DEVICE_DT_GET(), which
- * does not include the readiness checks of device_get_binding().  At minimum
+ * does not include the readiness checks of device_get_binding(). At minimum
  * this means that the device has been successfully initialized, but it may
  * take on further conditions (e.g. is not powered down).
  *
@@ -619,7 +619,7 @@ static inline bool device_is_ready(const struct device *dev)
  * so synthesize a unique dev_name from the devicetree node.
  *
  * The ordinal used in this name can be mapped to the path by
- * examining zephyr/include/generated/device_extern.h header.  If the
+ * examining zephyr/include/generated/device_extern.h header. If the
  * format of this conversion changes, gen_defines should be updated to
  * match it.
  */
@@ -631,7 +631,7 @@ static inline bool device_is_ready(const struct device *dev)
 #define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
 
 /** Synthesize the name of the object that holds device ordinal and
- * dependency data.  If the object doesn't come from a devicetree
+ * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
  */
 #define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
@@ -658,7 +658,7 @@ static inline bool device_is_ready(const struct device *dev)
 #define Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 #endif
 
-/* Construct objects that are referenced from struct device.  These
+/* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
  */
 #define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
@@ -675,7 +675,7 @@ static inline bool device_is_ready(const struct device *dev)
  * postprocessing).
  *
  * It is also (experimentally) necessary to provide explicit alignment
- * on each object.  Otherwise x86-64 builds will introduce padding
+ * on each object. Otherwise x86-64 builds will introduce padding
  * between objects in the same input section in individual object
  * files, which will be retained in subsequent links both wasting
  * space and resulting in aggregate size changes relative to pass2
