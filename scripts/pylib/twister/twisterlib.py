@@ -2094,6 +2094,13 @@ class CMake():
         p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
 
+        # It might happen that the environment adds ANSI escape codes like \x1b[0m,
+        # for instance if twister is executed from inside a makefile. In such a
+        # scenario it is then necessary to remove them, as otherwise the JSON decoding
+        # will fail.
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        out = ansi_escape.sub('', out.decode())
+
         if p.returncode == 0:
             msg = "Finished running  %s" % (args[0])
             logger.debug(msg)
