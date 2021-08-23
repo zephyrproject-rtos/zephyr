@@ -109,7 +109,17 @@ void _Fault(z_arch_esf_t *esf)
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
 	ulong_t mtval;
+
+	/*
+ 	 *  mtval in 1.9-priv replaces mbadaddr in the older specs.
+	 *  See: https://www.five-embeddev.com/riscv-isa-manual/latest/machine.html
+	 */
+#ifdef CONFIG_SCORPIO_MIPIRX
+	__asm__ volatile("csrr %0, mbadaddr" : "=r" (mtval));
+#else
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+#endif
+
 #endif
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
