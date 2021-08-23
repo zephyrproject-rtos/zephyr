@@ -57,6 +57,26 @@
 		#size-cells = <1>;
 		ranges;
 
+		uart0: serial@ffffffa0 {
+			compatible = "neorv32-uart";
+			status = "disabled";
+			reg = <0xffffffa0 8>;
+			interrupts = <2>, <3>;
+			interrupt-names = "RX", "TX";
+			syscon = <&sysinfo>;
+			label = "UART_0";
+		};
+
+		uart1: serial@ffffffd0 {
+			compatible = "neorv32-uart";
+			status = "disabled";
+			reg = <0xffffffd0 8>;
+			interrupts = <4>, <5>;
+			interrupt-names = "RX", "TX";
+			syscon = <&sysinfo>;
+			label = "UART_1";
+		};
+
 		sysinfo: syscon@ffffffe0 {
 			compatible = "neorv-sysinfo", "syscon";
 			status = "okay";
