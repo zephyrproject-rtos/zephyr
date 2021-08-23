@@ -368,7 +368,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
  * or if the data should consumed immediately and the message disposed of.
  *
  * The data is consumed immediately in either of the following cases:
- *     1) The receiver requested immediate retrieval by suppling a buffer
+ *     1) The receiver requested immediate retrieval by supplying a buffer
  *        to receive the data.
  *     2) There is no data to be retrieved. (i.e. Data size is 0 bytes.)
  *
