@@ -5,6 +5,7 @@ on: pull_request
 jobs:
   footprint-cancel:
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -12,6 +13,7 @@ jobs:
           access_token: ${{ github.token }}
   footprint-delta:
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
     needs: footprint-cancel
     container:
       image: zephyrprojectrtos/ci:v0.18.2
