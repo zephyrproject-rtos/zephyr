@@ -20,11 +20,12 @@ static K_MEM_SLAB_DEFINE(msg_pool, sizeof(struct bt_mesh_test_msg),
 static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
+static void (*ra_cb)(uint8_t *, size_t);
 
 static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
-	size_t len = buf->len + BT_MESH_MODEL_OP_LEN(TEST_MSG_OP);
+	size_t len = buf->len + BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1);
 	static uint8_t prev_seq;
 	struct bt_mesh_test_msg *msg;
 	uint8_t seq = 0;
@@ -69,8 +70,25 @@ static int msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
+static int ra_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+		 struct net_buf_simple *buf)
+{
+	LOG_INF("\tlen: %d bytes", buf->len);
+	LOG_INF("\tsrc: 0x%04x", ctx->addr);
+	LOG_INF("\tdst: 0x%04x", ctx->recv_dst);
+	LOG_INF("\tttl: %u", ctx->recv_ttl);
+	LOG_INF("\trssi: %d", ctx->recv_rssi);
+
+	if (ra_cb) {
+		ra_cb(net_buf_simple_pull_mem(buf, buf->len), buf->len);
+	}
+
+	return 0;
+}
+
 static const struct bt_mesh_model_op model_op[] = {
-	{ TEST_MSG_OP, 0, msg_rx },
+	{ TEST_MSG_OP_1, 0, msg_rx },
+	{ TEST_MSG_OP_2, 0, ra_rx },
 };
 
 int __weak test_model_pub_update(struct bt_mesh_model *mod)
@@ -164,8 +182,16 @@ static void bt_enabled(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		LOG_INF("Loading stored settings");
+		settings_load();
+	}
+
 	err = bt_mesh_provision(test_net_key, 0, 0, 0, cfg->addr, cfg->dev_key);
-	if (err) {
+	if (err == -EALREADY) {
+		LOG_INF("Using stored settings");
+		return;
+	} else if (err) {
 		FAIL("Provisioning failed (err %d)", err);
 		return;
 	}
@@ -327,15 +353,15 @@ int bt_mesh_test_send_async(uint16_t addr, size_t len,
 	test_send_ctx.send_rel = (flags & FORCE_SEGMENTATION);
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP, BT_MESH_TX_SDU_MAX);
-	bt_mesh_model_msg_init(&buf, TEST_MSG_OP);
+	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_1, BT_MESH_TX_SDU_MAX);
+	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_1);
 
-	if (len > BT_MESH_MODEL_OP_LEN(TEST_MSG_OP)) {
+	if (len > BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1)) {
 		net_buf_simple_add_u8(&buf, count);
 	}
 
 	/* Subtract the length of the opcode and the sequence ID */
-	for (int i = 1; i < len - BT_MESH_MODEL_OP_LEN(TEST_MSG_OP); i++) {
+	for (int i = 1; i < len - BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1); i++) {
 		net_buf_simple_add_u8(&buf, i);
 	}
 
@@ -394,4 +420,33 @@ int bt_mesh_test_send(uint16_t addr, size_t len,
 	LOG_INF("Sending completed (%lld ms)", k_uptime_delta(&uptime));
 
 	return 0;
+}
+
+int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
+			 const struct bt_mesh_send_cb *send_cb,
+			 void *cb_data)
+{
+	int err;
+
+	test_send_ctx.addr = addr;
+	test_send_ctx.send_rel = 0;
+	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
+
+	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
+	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_2);
+
+	net_buf_simple_add_mem(&buf, data, len);
+
+	err = bt_mesh_model_send(test_model, &test_send_ctx, &buf, send_cb, cb_data);
+	if (err) {
+		LOG_ERR("bt_mesh_model_send failed (err: %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t))
+{
+	ra_cb = cb;
 }
