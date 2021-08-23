@@ -462,7 +462,6 @@ config BT_CTLR_ADV_SET
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
 	range 31 1650
-	default 251
 	help
 	  Maximum Extended Advertising Data Length.
 
