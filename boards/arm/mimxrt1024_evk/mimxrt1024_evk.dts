@@ -80,6 +80,13 @@
 	};
 };
 
+&enet {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
