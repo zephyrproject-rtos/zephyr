@@ -207,7 +207,7 @@ static void test_args_parse(int argc, char *argv[])
 		},
 	};
 
-	bs_args_parse_all_cmd_line(argc, argv, &args_struct);
+	bs_args_parse_all_cmd_line(argc, argv, args_struct);
 }
 
 static void check_mod_pub_params(struct bt_mesh_cfg_mod_pub *expected,
