@@ -86,25 +86,6 @@ static struct bt_mesh_prov prov = {
 	.node_added = prov_node_added,
 };
 
-static void bt_mesh_device_setup(void)
-{
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		FAIL("Bluetooth init failed (err %d)", err);
-		return;
-	}
-
-	LOG_INF("Bluetooth initialized");
-
-	err = bt_mesh_init(&prov, &comp);
-	if (err) {
-		FAIL("Initializing mesh failed (err %d)", err);
-		return;
-	}
-}
-
 /** @brief Verify that this device pb-adv provision.
  */
 static void test_device_pb_adv_no_oob(void)
@@ -113,7 +94,7 @@ static void test_device_pb_adv_no_oob(void)
 
 	k_sem_init(&prov_sem, 0, 1);
 
-	bt_mesh_device_setup();
+	bt_mesh_device_setup(&prov, &comp);
 
 	err = bt_mesh_prov_enable(BT_MESH_PROV_ADV);
 	ASSERT_OK(err, "Device PB-ADV Enable failed (err %d)", err);
@@ -135,7 +116,7 @@ static void test_provisioner_pb_adv_no_oob(void)
 
 	k_sem_init(&prov_sem, 0, 1);
 
-	bt_mesh_device_setup();
+	bt_mesh_device_setup(&prov, &comp);
 
 	err = bt_mesh_cdb_create(test_net_key);
 	ASSERT_OK(err, "Failed to create CDB (err %d)\n", err);
@@ -157,7 +138,7 @@ static void test_provisioner_pb_adv_multi(void)
 
 	k_sem_init(&prov_sem, 0, 1);
 
-	bt_mesh_device_setup();
+	bt_mesh_device_setup(&prov, &comp);
 
 	err = bt_mesh_cdb_create(test_net_key);
 	ASSERT_OK(err, "Failed to create CDB (err %d)\n", err);
@@ -181,7 +162,7 @@ static void test_provisioner_iv_update_flag_zero(void)
 	int err;
 	uint8_t flags = 0x00;
 
-	bt_mesh_device_setup();
+	bt_mesh_device_setup(&prov, &comp);
 
 	err = bt_mesh_provision(test_net_key, 0, flags, 0, 0x0001, dev_key);
 	ASSERT_OK(err, "Provisioning failed (err %d)", err);
@@ -201,7 +182,7 @@ static void test_provisioner_iv_update_flag_one(void)
 	int err;
 	uint8_t flags = 0x02; /* IV Update flag bit set to 1 */
 
-	bt_mesh_device_setup();
+	bt_mesh_device_setup(&prov, &comp);
 
 	err = bt_mesh_provision(test_net_key, 0, flags, 0, 0x0001, dev_key);
 	ASSERT_OK(err, "Provisioning failed (err %d)", err);
