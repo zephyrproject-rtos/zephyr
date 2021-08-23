@@ -393,10 +393,15 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	stat->f_bfree = f_bfree;
 
 	/*
-	 * FF_MIN_SS holds the sector size. It is one of the configuration
-	 * constants used by the FS module
+	 * If FF_MIN_SS and FF_MAX_SS differ, variable sector size support is
+	 * enabled and the file system object structure contains the actual sector
+	 * size, otherwise it is configured to a fixed value give by FF_MIN_SS.
 	 */
+#if FF_MAX_SS != FF_MIN_SS
+	stat->f_bsize = fs->ssize;
+#else
 	stat->f_bsize = FF_MIN_SS;
+#endif
 	stat->f_frsize = fs->csize * stat->f_bsize;
 	stat->f_blocks = (fs->n_fatent - 2);
 
