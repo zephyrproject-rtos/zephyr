@@ -111,6 +111,8 @@ void bt_mesh_test_cfg_set(const struct bt_mesh_test_cfg *cfg, int wait_time);
 void bt_mesh_test_setup(void);
 void bt_mesh_test_timeout(bs_time_t HW_device_time);
 
+void bt_mesh_device_setup(const struct bt_mesh_prov *prov, const struct bt_mesh_comp *comp);
+
 int bt_mesh_test_recv(uint16_t len, uint16_t dst, k_timeout_t timeout);
 int bt_mesh_test_recv_msg(struct bt_mesh_test_msg *msg, k_timeout_t timeout);
 int bt_mesh_test_recv_clear(void);
