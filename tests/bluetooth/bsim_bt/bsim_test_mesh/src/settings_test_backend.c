@@ -6,22 +6,23 @@
 
 #include "settings_test_backend.h"
 
-#include "kernel.h"
 #include <stdio.h>
-
-#include <zephyr/types.h>
 #include <stddef.h>
-#include <errno.h>
-#include <zephyr.h>
 
-#include <bluetooth/mesh.h>
+#include "kernel.h"
+#include "zephyr/types.h"
+#include "errno.h"
+#include "zephyr.h"
+
+#include "bluetooth/mesh.h"
+#include "argparse.h"
 
 #define LOG_MODULE_NAME settings_test_backend
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define SETTINGS_FILE "settings_data.log"
-#define SETTINGS_FILE_TMP "~settings_data.log"
+#define SETTINGS_FILE setting_file
+#define SETTINGS_FILE_TMP setting_file_tmp
 
 #define ENTRY_LEN_SIZE (4)
 #define ENTRY_NAME_MAX_LEN (SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN)
@@ -32,6 +33,9 @@ struct line_read_ctx {
 	int len;
 	const uint8_t *val;
 };
+
+static char setting_file[50];
+static char setting_file_tmp[sizeof(setting_file) + 1];
 
 static int entry_check_and_copy(FILE *fin, FILE *fout, const char *name)
 {
@@ -204,6 +208,9 @@ static struct settings_store settings_custom_store = {
 
 int settings_backend_init(void)
 {
+	snprintf(setting_file, sizeof(setting_file), "%s_%d.log", get_simid(), get_device_nbr());
+	snprintf(setting_file_tmp, sizeof(setting_file_tmp), "~%s", setting_file);
+
 	LOG_INF("file path: %s", SETTINGS_FILE);
 
 	/* register custom backend */
@@ -214,9 +221,9 @@ int settings_backend_init(void)
 
 void settings_test_backend_clear(void)
 {
-	FILE *fp = fopen(SETTINGS_FILE, "w");
+	snprintf(setting_file, sizeof(setting_file), "%s_%d.log", get_simid(), get_device_nbr());
 
-	if (fp) {
-		fclose(fp);
+	if (remove(setting_file)) {
+		LOG_INF("error deleting file: %s", setting_file);
 	}
 }
