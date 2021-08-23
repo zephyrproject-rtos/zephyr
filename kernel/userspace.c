@@ -223,7 +223,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	struct dyn_obj *ret;
 
 	/* For any dynamically allocated kernel object, the object
-	 * pointer is just a member of the conatining struct dyn_obj,
+	 * pointer is just a member of the containing struct dyn_obj,
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
@@ -665,7 +665,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
 	if (likely(init == _OBJ_INIT_TRUE)) {
-		/* Object MUST be intialized */
+		/* Object MUST be initialized */
 		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0U)) {
 			return -EINVAL;
 		}
