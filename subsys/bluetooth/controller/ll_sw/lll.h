@@ -304,6 +304,9 @@ struct node_rx_iso_meta {
 	uint8_t  status;              /* Status of reception (OK/not OK) */
 };
 
+/* Define invalid/unassigned Controller state/role instance handle */
+#define NODE_RX_HANDLE_INVALID 0xFFFF
+
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
