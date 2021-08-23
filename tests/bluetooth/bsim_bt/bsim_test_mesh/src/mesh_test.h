@@ -63,6 +63,15 @@
 		}                                                              \
 	} while (0)
 
+#define ASSERT_FALSE(cond, ...)                                                \
+	do {                                                                   \
+		if (cond) {                                                    \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond " is true.", ##__VA_ARGS__);             \
+		}                                                              \
+	} while (0)
+
 #define ASSERT_EQUAL(expected, got)                                            \
 	do {                                                                   \
 		if ((expected) != (got)) {                                     \
