@@ -51,6 +51,7 @@ CREATE_FLAG(discovery_done);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
 CREATE_FLAG(icon_url_read);
+CREATE_FLAG(track_change_notified);
 CREATE_FLAG(track_title_read);
 CREATE_FLAG(track_duration_read);
 CREATE_FLAG(track_position_read);
@@ -117,6 +118,16 @@ static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, const char *url)
 	}
 
 	SET_FLAG(icon_url_read);
+}
+
+static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		FAIL("Track change notification failed (%d)", err);
+		return;
+	}
+
+	SET_FLAG(track_change_notified);
 }
 
 static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *title)
@@ -460,6 +471,7 @@ int do_mcc_init(void)
 	mcc_cb.player_name_read = &mcc_player_name_read_cb;
 	mcc_cb.icon_obj_id_read = &mcc_icon_obj_id_read_cb;
 	mcc_cb.icon_url_read    = &mcc_icon_url_read_cb;
+	mcc_cb.track_changed_ntf = &mcc_track_changed_ntf_cb;
 	mcc_cb.track_title_read = &mcc_track_title_read_cb;
 	mcc_cb.track_dur_read   = &mcc_track_dur_read_cb;
 	mcc_cb.track_position_read = &mcc_track_position_read_cb;
@@ -910,10 +922,13 @@ static void test_cp_prev_track(void)
 	printk("PREV TRACK operation succeeded\n");
 }
 
-static void test_cp_next_track(void)
+static void test_cp_next_track_and_track_changed(void)
 {
 	uint64_t object_id;
 	struct mpl_op_t op;
+
+	/* This test is also used to test the track changed notification */
+	UNSET_FLAG(track_change_notified);
 
 	op.opcode = BT_MCS_OPC_NEXT_TRACK;
 	op.use_param = false;
@@ -927,6 +942,9 @@ static void test_cp_next_track(void)
 		FAIL("NEXT TRACK operation failed\n");
 		return;
 	}
+
+	WAIT_FOR_FLAG(track_change_notified);
+	printk("Track change notified\n");
 
 	test_read_current_track_object_id_wait_flags();
 
@@ -1374,6 +1392,12 @@ void test_main(void)
 	WAIT_FOR_FLAG(icon_url_read);
 	printk("Icon URL read succeeded\n");
 
+	/* Track changed ************************************************
+	 *
+	 * The track changed characteristic is tested as part of the control
+	 * point next track test
+	 */
+
 	/* Read track_title ******************************************/
 	UNSET_FLAG(track_title_read);
 	err = bt_mcc_read_track_title(default_conn);
@@ -1676,7 +1700,7 @@ void test_main(void)
 	/* Control point - track change opcodes */
 	/* The tests are ordered to ensure that each operation changes track */
 	/* Assumes we are not starting on the last track */
-	test_cp_next_track();
+	test_cp_next_track_and_track_changed();
 	test_cp_prev_track();
 	test_cp_last_track();
 	test_cp_first_track();
