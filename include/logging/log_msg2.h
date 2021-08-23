@@ -103,7 +103,7 @@ union log_msg2_generic {
  */
 enum z_log_msg2_mode {
 	/* Runtime mode is least efficient but supports all cases thus it is
-	 * threated as a fallback method when others cannot be used.
+	 * treated as a fallback method when others cannot be used.
 	 */
 	Z_LOG_MSG2_MODE_RUNTIME,
 	/* Mode creates statically a string package on stack and calls a

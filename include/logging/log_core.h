@@ -256,7 +256,7 @@ extern "C" {
 	))
 
 /*****************************************************************************/
-/****************** Defiinitions used by minimal logging *********************/
+/****************** Definitions used by minimal logging *********************/
 /*****************************************************************************/
 void z_log_minimal_hexdump_print(int level, const void *data, size_t size);
 void z_log_minimal_vprintk(const char *fmt, va_list ap);
