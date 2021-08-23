@@ -843,9 +843,17 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			/* The Track Changed characteristic can only be */
 			/* notified, so that is handled directly here */
 
+			int cb_err = 0;
+
 			BT_DBG("Track Changed notification");
+
+			if (length != 0) {
+				BT_DBG("Non-zero length: %u", length);
+				cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			}
+
 			if (mcc_cb && mcc_cb->track_changed_ntf) {
-				mcc_cb->track_changed_ntf(conn, 0);
+				mcc_cb->track_changed_ntf(conn, cb_err);
 			}
 
 		} else if (handle == cur_mcs_inst->track_title_handle) {
