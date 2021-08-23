@@ -222,9 +222,11 @@ Defining and Controlling a Workqueue
 ====================================
 
 A workqueue is defined using a variable of type :c:struct:`k_work_q`.
-The workqueue is initialized by defining the stack area used by its thread
-and then calling :c:func:`k_work_queue_start`. The stack area must be defined
-using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
+The workqueue is initialized by defining the stack area used by its
+thread, initializing the :c:struct:`k_work_q`, either zeroing its
+memory or calling :c:func:`k_work_queue_init`, and then calling
+:c:func:`k_work_queue_start`. The stack area must be defined using
+:c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
 memory.
 
 The following code defines and initializes a workqueue:
@@ -237,6 +239,8 @@ The following code defines and initializes a workqueue:
     K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
 
     struct k_work_q my_work_q;
+
+    k_work_queue_init(&my_work_q);
 
     k_work_queue_start(&my_work_q, my_stack_area,
                        K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY,

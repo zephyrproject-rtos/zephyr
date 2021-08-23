@@ -3061,7 +3061,9 @@ void k_work_queue_init(struct k_work_q *queue);
  * This configures the work queue thread and starts it running.  The function
  * should not be re-invoked on a queue.
  *
- * @param queue pointer to the queue structure.
+ * @param queue pointer to the queue structure. It must be initialized
+ *        in zeroed/bss memory or with @ref k_work_queue_init before
+ *        use.
  *
  * @param stack pointer to the work thread stack area.
  *
