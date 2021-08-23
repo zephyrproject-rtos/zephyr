@@ -17,6 +17,7 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
@@ -236,4 +237,8 @@ zephyr_udc0: &usb1 {
 &flexcan2 {
 	status = "okay";
 	bus-speed = <125000>;
+};
+
+&wdog0 {
+	status = "okay";
 };

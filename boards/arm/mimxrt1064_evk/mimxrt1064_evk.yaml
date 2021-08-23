@@ -28,3 +28,4 @@ supported:
   - video
   - kscan:touch
   - can
+  - watchdog
