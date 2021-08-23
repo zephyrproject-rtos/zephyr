@@ -513,7 +513,7 @@ void *k_mem_map(size_t size, uint32_t flags)
 
 		if (ret != 0) {
 			/* TODO: call k_mem_unmap(dst, pos - dst)  when
-			 * implmented in #28990 and release any guard virtual
+			 * implemented in #28990 and release any guard virtual
 			 * page as well.
 			 */
 			dst = NULL;

@@ -104,7 +104,7 @@ static inline void init_work_cancel(struct z_work_canceller *canceler,
  *
  * Reschedules.
  *
- * @param work the work structre that has completed cancellation
+ * @param work the work structure that has completed cancellation
  */
 static void finalize_cancel_locked(struct k_work *work)
 {
