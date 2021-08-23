@@ -3045,6 +3045,17 @@ int k_work_cancel(struct k_work *work);
  */
 bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
 
+/** @brief Initialize a work queue structure.
+ *
+ * This must be invoked before starting a work queue structure for the first time.
+ * It need not be invoked again on the same work queue structure.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param queue the queue structure to be initialized.
+ */
+void k_work_queue_init(struct k_work_q *queue);
+
 /** @brief Initialize a work queue.
  *
  * This configures the work queue thread and starts it running.  The function

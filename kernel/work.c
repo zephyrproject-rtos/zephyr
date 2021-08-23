@@ -676,6 +676,17 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 	}
 }
 
+void k_work_queue_init(struct k_work_q *queue)
+{
+	__ASSERT_NO_MSG(queue != NULL);
+
+	*queue = (struct k_work_q) {
+		.flags = 0,
+	};
+
+	SYS_PORT_TRACING_OBJ_INIT(k_work_queue, queue);
+}
+
 void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack,
 			size_t stack_size,
