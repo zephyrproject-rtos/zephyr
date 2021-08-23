@@ -193,6 +193,7 @@ est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea	Eukréa Electromatique
 everest	Everest Semiconductor Co. Ltd.
+everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
 evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
