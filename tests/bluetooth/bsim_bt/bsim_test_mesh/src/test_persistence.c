@@ -32,13 +32,16 @@ struct test_appkey_t {
 	uint8_t key[16];
 };
 
+#define TEST_PROV_ADDR 0x0001
 #define TEST_ADDR 0x0123
+static uint8_t test_prov_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa };
 static uint8_t test_dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
 static int test_ividx = 0x123456;
 static uint8_t test_flags;
 static uint8_t test_netkey_idx = 0x77;
 static uint8_t test_netkey[16] = { 0xaa };
 static uint8_t test_devkey[16] = { 0xdd };
+static uint8_t test_prov_devkey[16] = { 0x11 };
 
 #define TEST_GROUP_0 0xc001
 #define TEST_GROUP_1 0xfab3
@@ -92,11 +95,8 @@ static uint8_t test_mod_data[] = { 0xfa, 0xff, 0xf4, 0x43 };
 #define TEST_VND_MOD_DATA_NAME "vtmdata"
 static uint8_t vnd_test_mod_data[] = { 0xad, 0xdf, 0x14, 0x53, 0x54, 0x1f };
 
-static struct bt_mesh_prov prov = {
-	.uuid = test_dev_uuid
-};
-
 static ssize_t test_preset = -1;
+static bool test_settings_clear;
 static struct {
 	struct bt_mesh_cfg_mod_pub pub_params;
 
@@ -205,9 +205,50 @@ static void test_args_parse(int argc, char *argv[])
 			.option = "test-preset",
 			.descript = ""
 		},
+		{
+			.dest = &test_settings_clear,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "clear-settings",
+			.descript = "",
+		},
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
+}
+
+static struct k_sem prov_sem;
+
+static void prov_complete(uint16_t net_idx, uint16_t addr)
+{
+	LOG_INF("Device provisioning is complete, addr: %d", addr);
+	k_sem_give(&prov_sem);
+}
+
+static void device_reset(void)
+{
+	LOG_INF("Device is reset");
+	k_sem_give(&prov_sem);
+}
+
+static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info,
+				 uint32_t *uri_hash)
+{
+	static bool once;
+
+	if (once) {
+		return;
+	}
+
+	once = !once;
+
+	ASSERT_OK(bt_mesh_provision_adv(uuid, test_netkey_idx, TEST_ADDR, 0));
+}
+
+static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
+{
+	LOG_INF("Device 0x%04x provisioned", addr);
+	k_sem_give(&prov_sem);
 }
 
 static void check_mod_pub_params(struct bt_mesh_cfg_mod_pub *expected,
@@ -247,6 +288,11 @@ int test_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
+void test_model_reset(struct bt_mesh_model *model)
+{
+	ASSERT_OK(bt_mesh_model_data_store(test_model, false, TEST_MOD_DATA_NAME, NULL, 0));
+}
+
 int test_vnd_model_settings_set(struct bt_mesh_model *model,
 				const char *name, size_t len_rd,
 				settings_read_cb read_cb, void *cb_arg)
@@ -273,29 +319,62 @@ int test_vnd_model_settings_set(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int test_persistence_prov_setup(void)
+void test_vnd_model_reset(struct bt_mesh_model *model)
 {
-	int err = bt_enable(NULL);
+	ASSERT_OK(bt_mesh_model_data_store(test_vnd_model, true, TEST_VND_MOD_DATA_NAME, NULL, 0));
+}
 
-	if (err) {
-		FAIL("Bluetooth init failed (err %d)", err);
-		return err;
+static void device_setup(void)
+{
+	static struct bt_mesh_prov prov = {
+		.uuid = test_dev_uuid,
+		.complete = prov_complete,
+		.reset = device_reset,
+	};
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+}
+
+static int device_setup_and_self_provision(void)
+{
+	device_setup();
+
+	return bt_mesh_provision(test_netkey, test_netkey_idx, test_flags, test_ividx, TEST_ADDR,
+				 test_devkey);
+}
+
+static void provisioner_setup(void)
+{
+	static struct bt_mesh_prov prov = {
+		.uuid = test_prov_uuid,
+		.unprovisioned_beacon = unprovisioned_beacon,
+		.node_added = prov_node_added,
+	};
+	uint8_t primary_netkey[16] = { 0xad, 0xde, 0xfa, 0x32 };
+	struct bt_mesh_cdb_subnet *subnet;
+	uint8_t status;
+	int err;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	ASSERT_OK(bt_mesh_cdb_create(primary_netkey));
+	ASSERT_OK(bt_mesh_provision(primary_netkey, 0, test_flags, test_ividx, TEST_PROV_ADDR,
+				    test_prov_devkey));
+
+	/* Adding a subnet for test_netkey as it is not primary. */
+	subnet = bt_mesh_cdb_subnet_alloc(test_netkey_idx);
+	ASSERT_TRUE(subnet != NULL);
+	memcpy(subnet->keys[0].net_key, test_netkey, 16);
+	bt_mesh_cdb_subnet_store(subnet);
+
+	err = bt_mesh_cfg_net_key_add(0, TEST_PROV_ADDR, test_netkey_idx, test_netkey, &status);
+	if (err || status) {
+		FAIL("Failed to add test_netkey (err: %d, status: %d)", err, status);
 	}
-
-	LOG_INF("Bluetooth initialized");
-
-	err = bt_mesh_init(&prov, &comp);
-	if (err) {
-		FAIL("Initializing mesh failed (err %d)", err);
-		return err;
-	}
-
-	settings_load();
-
-	err = bt_mesh_provision(test_netkey, test_netkey_idx, test_flags,
-				test_ividx, TEST_ADDR, test_devkey);
-
-	return err;
 }
 
 static void test_provisioning_data_save(void)
@@ -303,7 +382,7 @@ static void test_provisioning_data_save(void)
 	settings_test_backend_clear();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup()) {
+	if (device_setup_and_self_provision()) {
 		FAIL("Mesh setup failed. Settings should not be loaded.");
 	}
 
@@ -317,7 +396,7 @@ static void test_provisioning_data_load(void)
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup() != -EALREADY) {
+	if (device_setup_and_self_provision() != -EALREADY) {
 		FAIL("Device should boot up as already provisioned");
 	}
 
@@ -370,19 +449,12 @@ static void test_provisioning_data_load(void)
 	PASS();
 }
 
-static void test_access_data_save(void)
+static void node_configure(void)
 {
 	int err;
 	uint8_t status;
 	uint16_t va;
 	struct bt_mesh_cfg_mod_pub pub_params;
-
-	settings_test_backend_clear();
-	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-
-	if (test_persistence_prov_setup()) {
-		FAIL("Mesh setup failed. Settings should not be loaded.");
-	}
 
 	struct test_appkey_t test_appkeys[] = {
 		{ .idx = TEST_APPKEY_0_IDX, .key = TEST_APPKEY_0_KEY },
@@ -473,13 +545,25 @@ static void test_access_data_save(void)
 		FAIL("Vnd mod data store failed (err %d)", err);
 		return;
 	}
+}
+
+static void test_access_data_save(void)
+{
+	settings_test_backend_clear();
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	if (device_setup_and_self_provision()) {
+		FAIL("Mesh setup failed. Settings should not be loaded.");
+	}
+
+	node_configure();
 
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
 
 	PASS();
 }
 
-static void test_access_data_load(void)
+static void node_configuration_check(size_t preset)
 {
 	uint16_t appkeys[CONFIG_BT_MESH_MODEL_KEY_COUNT + 1];
 	size_t appkeys_count = ARRAY_SIZE(appkeys);
@@ -487,15 +571,6 @@ static void test_access_data_load(void)
 	size_t subs_count = ARRAY_SIZE(subs);
 	uint8_t status;
 	int err;
-
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 2);
-
-	/* In this test stack should boot as provisioned */
-	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-
-	if (test_persistence_prov_setup() != -EALREADY) {
-		FAIL("Device should boot up as already provisioned");
-	}
 
 	for (size_t m = 0; m < 2; m++) {
 		bool vnd = m == 1;
@@ -513,9 +588,9 @@ static void test_access_data_load(void)
 			FAIL("Mod app get failed (err %d, status %u)", err, status);
 		}
 
-		ASSERT_EQUAL(test_access_presets[test_preset][m].appkeys_count, appkeys_count);
+		ASSERT_EQUAL(test_access_presets[preset][m].appkeys_count, appkeys_count);
 		for (size_t i = 0; i < appkeys_count; i++) {
-			ASSERT_EQUAL(test_access_presets[test_preset][m].appkeys[i], appkeys[i]);
+			ASSERT_EQUAL(test_access_presets[preset][m].appkeys[i], appkeys[i]);
 		}
 
 		if (!vnd) {
@@ -530,9 +605,9 @@ static void test_access_data_load(void)
 			FAIL("Mod sub get failed (err %d, status %u)", err, status);
 		}
 
-		ASSERT_EQUAL(test_access_presets[test_preset][m].subs_count, subs_count);
+		ASSERT_EQUAL(test_access_presets[preset][m].subs_count, subs_count);
 		for (size_t i = 0; i < subs_count; i++) {
-			ASSERT_EQUAL(test_access_presets[test_preset][m].subs[i], subs[i]);
+			ASSERT_EQUAL(test_access_presets[preset][m].subs[i], subs[i]);
 		}
 
 		struct bt_mesh_cfg_mod_pub pub_params = {};
@@ -549,8 +624,22 @@ static void test_access_data_load(void)
 			FAIL("Mod pub get failed (err %d, status %u)", err, status);
 		}
 
-		check_mod_pub_params(&test_access_presets[test_preset][m].pub_params, &pub_params);
+		check_mod_pub_params(&test_access_presets[preset][m].pub_params, &pub_params);
 	}
+}
+
+static void test_access_data_load(void)
+{
+	ASSERT_TRUE(test_preset >= 0 && test_preset <= 2);
+
+	/* In this test stack should boot as provisioned */
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	if (device_setup_and_self_provision() != -EALREADY) {
+		FAIL("Device should boot up as already provisioned");
+	}
+
+	node_configuration_check(test_preset);
 
 	PASS();
 }
@@ -564,7 +653,7 @@ static void test_access_sub_overwrite(void)
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup() != -EALREADY) {
+	if (device_setup_and_self_provision() != -EALREADY) {
 		FAIL("Device should boot up as already provisioned");
 	}
 
@@ -596,7 +685,7 @@ static void test_access_data_remove(void)
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup() != -EALREADY) {
+	if (device_setup_and_self_provision() != -EALREADY) {
 		FAIL("Device should boot up as already provisioned");
 	}
 
@@ -683,7 +772,7 @@ static void test_cfg_save(void)
 	settings_test_backend_clear();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup()) {
+	if (device_setup_and_self_provision()) {
 		FAIL("Mesh setup failed. Settings should not be loaded.");
 	}
 
@@ -744,7 +833,7 @@ static void test_cfg_load(void)
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 
-	if (test_persistence_prov_setup() != -EALREADY) {
+	if (device_setup_and_self_provision() != -EALREADY) {
 		FAIL("Device should boot up as already provisioned");
 	}
 
@@ -782,6 +871,69 @@ static void test_cfg_load(void)
 	PASS();
 }
 
+/** @brief Test reprovisioning with persistent storage, device side.
+ *
+ * Wait for being provisioned and configured, then wait for the node reset and store settings.
+ */
+static void test_reprovisioning_device(void)
+{
+	if (test_settings_clear) {
+		settings_test_backend_clear();
+	}
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	device_setup();
+
+	ASSERT_FALSE(bt_mesh_is_provisioned());
+
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+
+	LOG_INF("Waiting for being provisioned...");
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+	LOG_INF("Waiting for the node reset...");
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
+
+	PASS();
+}
+
+/** @brief Test reprovisioning with persistent storage, provisioner side.
+ *
+ * Verify that a device can clear its data from persistent storage after node reset.
+ */
+static void test_reprovisioning_provisioner(void)
+{
+	int err;
+	bool status;
+
+	settings_test_backend_clear();
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	provisioner_setup();
+
+	LOG_INF("Provisioning a remote device...");
+	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+	/* Verify that the remote device is not configured. */
+	node_configuration_check(2);
+
+	/* Configure the remote device. */
+	node_configure();
+
+	/* Let the remote device store configuration. */
+	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT * 2));
+
+	err = bt_mesh_cfg_node_reset(test_netkey_idx, TEST_ADDR, &status);
+	if (err || !status) {
+		FAIL("Reset failed (err %d, status: %d)", err, status);
+	}
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)		   \
 	{						   \
 		.test_id = "persistence_" #role "_" #name, \
@@ -800,6 +952,8 @@ static const struct bst_test_instance test_persistence[] = {
 	TEST_CASE(access, data_remove, "Remove stored access data"),
 	TEST_CASE(cfg, save, "Save mesh configuration"),
 	TEST_CASE(cfg, load, "Load previously stored mesh configuration and verify"),
+	TEST_CASE(reprovisioning, device, "Reprovisioning test, device role"),
+	TEST_CASE(reprovisioning, provisioner, "Reprovisioning test, provisioner role"),
 	BSTEST_END_MARKER
 };
 
