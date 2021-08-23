@@ -103,8 +103,14 @@ int __weak test_model_settings_set(struct bt_mesh_model *model,
 	return -1;
 }
 
+void __weak test_model_reset(struct bt_mesh_model *model)
+{
+	/* No-op. */
+}
+
 static const struct bt_mesh_model_cb test_model_cb = {
 	.settings_set = test_model_settings_set,
+	.reset = test_model_reset,
 };
 
 static struct bt_mesh_model_pub pub = {
@@ -128,8 +134,14 @@ int __weak test_vnd_model_settings_set(struct bt_mesh_model *model,
 	return -1;
 }
 
+void __weak test_vnd_model_reset(struct bt_mesh_model *model)
+{
+	/* No-op. */
+}
+
 static const struct bt_mesh_model_cb test_vnd_model_cb = {
 	.settings_set = test_vnd_model_settings_set,
+	.reset = test_vnd_model_reset,
 };
 
 static struct bt_mesh_model_pub vnd_pub = {
