@@ -161,4 +161,6 @@ source "drivers/serial/Kconfig.xec"
 
 source "drivers/serial/Kconfig.test"
 
+source "drivers/serial/Kconfig.neorv32"
+
 endif # SERIAL
