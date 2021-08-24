@@ -64,6 +64,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAGS_WS_ENABLED,
 	/** Indicates that the device is changing its state */
 	PM_DEVICE_FLAG_TRANSITIONING,
+	/** Indicates if the device has to ignore its children. */
+	PM_DEVICE_FLAG_IGNORE_CHILDREN,
 	/** Number of flags (internal use only). */
 	PM_DEVICE_FLAG_COUNT
 };
@@ -120,10 +122,18 @@ struct pm_device {
 		.lock = Z_MUTEX_INITIALIZER(obj.lock),			\
 		.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),		\
 		.state = PM_DEVICE_STATE_ACTIVE,			\
-		.flags = ATOMIC_INIT(COND_CODE_1(			\
+		.flags = ATOMIC_INIT((COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
-				(DT_PROP_OR(node_id, wakeup_source, 0)),\
-				(0)) << PM_DEVICE_FLAGS_WS_CAPABLE),	\
+				(DT_PROP_OR(				\
+				node_id, wakeup_source, 0)),		\
+				(0)) <<				\
+				PM_DEVICE_FLAGS_WS_CAPABLE) |		\
+				(COND_CODE_1(				\
+				DT_NODE_EXISTS(node_id),		\
+				(DT_PROP_OR(				\
+				node_id, ignore_children, 0)),		\
+				(0)) <<				\
+				PM_DEVICE_FLAG_IGNORE_CHILDREN)),	\
 	}
 
 /**
@@ -293,6 +303,31 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false if the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+
+/**
+ * @brief Enable or disable the "ignore-children" property on a device
+ *
+ * This property tells a device if it can ignore its children when it
+ * is going to a low power state (anything different from @ref
+ * PM_DEVICE_STATE_ACTIVE).
+ *
+ * @param dev device object to enable.
+ * @param enable @c true to enable or @c false to disable
+ *
+ * @retval true if the "ignore-children" property was successfully set.
+ * @retval false if the "ignore-children" property was not set.
+ */
+bool pm_device_ignore_children_enable(struct device *dev, bool enable);
+
+/**
+ * @brief Check if the property "ignore-children" is enabled
+ *
+ * @param dev device object to check.
+ *
+ * @retval true if the "ignore-children" property is enabled.
+ * @retval false if the "ignore-children" property is not enabled.
+ */
+bool pm_device_ignore_children_is_enabled(const struct device *dev);
 
 /** @} */
 

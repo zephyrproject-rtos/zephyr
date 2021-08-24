@@ -16,3 +16,10 @@ properties:
 
         Wake up capable devices are disabled (interruptions will not wake up
         the system) by default but they can be enabled at runtime if necessary.
+
+    ignore-children:
+      required: false
+      type: boolean
+      description: |
+        Ignore children (dependents) devices when going to a low power state
+        (any state different of PM_DEVICE_STATE_ACTIVE).
