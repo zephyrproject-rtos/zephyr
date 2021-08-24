@@ -82,6 +82,7 @@ Architectures
 
   * AARCH32
 
+     * Updated CMSIS version to 5.8.0
      * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
        tests in CI with FPU and FPU_SHARING options enabled.
 
