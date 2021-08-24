@@ -408,6 +408,30 @@ unlock:
 	(void)k_condvar_signal(&ctx->cond.recv);
 }
 
+int zsock_shutdown_ctx(struct net_context *ctx, int how)
+{
+	if (how == ZSOCK_SHUT_RD) {
+		if (net_context_get_state(ctx) == NET_CONTEXT_LISTENING) {
+			SET_ERRNO(net_context_accept(ctx, NULL, K_NO_WAIT, NULL));
+		} else {
+			SET_ERRNO(net_context_recv(ctx, NULL, K_NO_WAIT, NULL));
+		}
+
+		sock_set_eof(ctx);
+
+		zsock_flush_queue(ctx);
+
+		/* Let reader to wake if it was sleeping */
+		(void)k_condvar_signal(&ctx->cond.recv);
+	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
+		SET_ERRNO(-ENOTSUP);
+	} else {
+		SET_ERRNO(-EINVAL);
+	}
+
+	return 0;
+}
+
 int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		   socklen_t addrlen)
 {
@@ -2123,6 +2147,11 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int sock_shutdown_vmeth(void *obj, int how)
+{
+	return zsock_shutdown_ctx(obj, how);
+}
+
 static int sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			   socklen_t addrlen)
 {
@@ -2197,6 +2226,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 		.close = sock_close_vmeth,
 		.ioctl = sock_ioctl_vmeth,
 	},
+	.shutdown = sock_shutdown_vmeth,
 	.bind = sock_bind_vmeth,
 	.connect = sock_connect_vmeth,
 	.listen = sock_listen_vmeth,
