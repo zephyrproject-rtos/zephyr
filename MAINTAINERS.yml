@@ -1524,8 +1524,6 @@ USB:
     status: maintained
     maintainers:
         - jfischer-no
-    collaborators:
-        - mengxianglinx
     files:
         - drivers/usb/
         - dts/bindings/usb/
