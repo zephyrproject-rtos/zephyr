@@ -558,7 +558,7 @@ int stm32_clock_control_init(const struct device *dev)
 		if (IS_ENABLED(STM32_HSE_TCXO)) {
 			LL_RCC_HSE_EnableTcxo();
 		}
-#else
+#elif !defined(CONFIG_SOC_SERIES_STM32WBX)
 		/* Check if need to enable HSE bypass feature or not */
 		if (IS_ENABLED(STM32_HSE_BYPASS)) {
 			LL_RCC_HSE_EnableBypass();
