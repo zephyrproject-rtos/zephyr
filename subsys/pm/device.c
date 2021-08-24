@@ -150,7 +150,7 @@ static int device_supported_cb(const struct device *dev,
 int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state)
 {
-	int ret;
+	int ret = 0;
 	bool bringup = false;
 	enum pm_device_action action;
 
@@ -201,7 +201,9 @@ int pm_device_state_set(const struct device *dev,
 	if (bringup) {
 		ret = device_required_foreach(dev, device_required_cb, &state);
 	} else {
-		ret = device_supported_foreach(dev, device_supported_cb, &state);
+		if (!pm_device_ignore_children_is_enabled(dev)) {
+			ret = device_supported_foreach(dev, device_supported_cb, &state);
+		}
 	}
 
 	if (ret < 0) {
