@@ -14,6 +14,7 @@
 #include <sys/util.h>
 #include "hal/ccm.h"
 
+#include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 
@@ -22,6 +23,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 
 #include "ull_tx_queue.h"

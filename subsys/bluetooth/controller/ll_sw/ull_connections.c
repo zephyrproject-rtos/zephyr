@@ -30,6 +30,7 @@
 
 #include "lll.h"
 #include "lll_clock.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
