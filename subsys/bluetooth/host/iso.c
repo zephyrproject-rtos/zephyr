@@ -664,7 +664,50 @@ struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn)
 	return &conn->iso;
 }
 
+static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
+			      bool is_tx)
+{
+	const size_t max_mtu = (is_tx ? CONFIG_BT_ISO_TX_MTU : CONFIG_BT_ISO_RX_MTU) -
+					BT_ISO_CHAN_SEND_RESERVE;
+	const size_t max_sdu = MIN(max_mtu, BT_ISO_MAX_SDU);
+
+	if (io_qos->sdu > max_sdu) {
+		BT_DBG("sdu (%u) shall be smaller than %u",
+		       io_qos->sdu, max_sdu);
+		return false;
+	}
+
+	if (io_qos->phy > BT_GAP_LE_PHY_CODED) {
+		BT_DBG("Invalid phy %u", io_qos->phy);
+		return false;
+	}
+
+	return true;
+}
+
 #if defined(CONFIG_BT_ISO_UNICAST)
+static bool valid_chan_qos(const struct bt_iso_chan_qos *qos)
+{
+	if (qos->rx != NULL) {
+		if (!valid_chan_io_qos(qos->rx, false)) {
+			BT_DBG("Invalid rx qos");
+			return false;
+		}
+	} else if (qos->tx == NULL) {
+		BT_DBG("Both rx and tx qos are NULL");
+		return false;
+	}
+
+	if (qos->tx != NULL) {
+		if (!valid_chan_io_qos(qos->tx, true)) {
+			BT_DBG("Invalid tx qos");
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void bt_iso_cleanup(struct bt_conn *conn)
 {
 	struct bt_conn_iso *iso = bt_conn_iso(conn);
@@ -953,8 +996,13 @@ static int cig_init_cis(struct bt_iso_cig *cig)
 	for (int i = 0; i < cig->num_cis; i++) {
 		struct bt_iso_chan *cis = cig->cis[i];
 
-		if (cis == NULL) {
+		CHECKIF(cis == NULL) {
 			BT_DBG("CIS was NULL");
+			return -EINVAL;
+		}
+
+		CHECKIF(valid_chan_qos(cis->qos)) {
+			BT_DBG("Invalid QOS");
 			return -EINVAL;
 		}
 
@@ -1020,6 +1068,44 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 
 	CHECKIF(param->num_cis == 0) {
 		BT_DBG("Invalid number of CIS %u", param->num_cis);
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < param->num_cis; i++) {
+		CHECKIF(param->cis_channels[i] == NULL) {
+			BT_DBG("NULL channel in cis_channels[%d]", i);
+			return -EINVAL;
+		}
+	}
+
+	CHECKIF(param->framing != BT_ISO_FRAMING_UNFRAMED &&
+		param->framing != BT_ISO_FRAMING_FRAMED) {
+		BT_DBG("Invalid framing parameter: %u", param->framing);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+		param->packing != BT_ISO_PACKING_INTERLEAVED) {
+		BT_DBG("Invalid framing parameter: %u", param->framing);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->num_cis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+		param->num_cis > CONFIG_BT_ISO_MAX_CHAN) {
+		BT_DBG("num_cis (%u) shall be lower than: %u", param->num_cis,
+		       MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
+		return -EINVAL;
+	}
+
+	CHECKIF(param->interval < BT_ISO_INTERVAL_MIN ||
+		param->interval > BT_ISO_INTERVAL_MAX) {
+		BT_DBG("Invalid interval: %u", param->interval);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->latency < BT_ISO_LATENCY_MIN ||
+		param->latency > BT_ISO_LATENCY_MAX) {
+		BT_DBG("Invalid latency: %u", param->latency);
 		return -EINVAL;
 	}
 
@@ -1352,9 +1438,22 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 			return -EALREADY;
 		}
 
-		if (!bis->qos || (!bis->qos->tx && broadcaster)) {
-			BT_DBG("BIS QOS was invalid");
+		CHECKIF(bis->qos == NULL) {
+			BT_DBG("BIS QOS is NULL");
 			return -EINVAL;
+		}
+
+		if (broadcaster) {
+			CHECKIF(bis->qos->tx == NULL ||
+				valid_chan_io_qos(bis->qos->tx, true)) {
+				BT_DBG("Invalid BIS QOS");
+				return -EINVAL;
+			}
+		} else {
+			CHECKIF(bis->qos->rx == NULL) {
+				BT_DBG("Invalid BIS QOS");
+				return -EINVAL;
+			}
 		}
 
 		bis->conn = iso_new();
@@ -1446,10 +1545,41 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 	}
 
 	for (int i = 0; i < param->num_bis; i++) {
-		if (param->bis_channels[i] == NULL) {
+		CHECKIF(param->bis_channels[i] == NULL) {
 			BT_DBG("NULL channel in bis_channels[%d]", i);
 			return -EINVAL;
 		}
+	}
+
+	CHECKIF(param->framing != BT_ISO_FRAMING_UNFRAMED &&
+		param->framing != BT_ISO_FRAMING_FRAMED) {
+		BT_DBG("Invalid framing parameter: %u", param->framing);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+		param->packing != BT_ISO_PACKING_INTERLEAVED) {
+		BT_DBG("Invalid framing parameter: %u", param->framing);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->num_bis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+		param->num_bis > CONFIG_BT_ISO_MAX_CHAN) {
+		BT_DBG("num_bis (%u) shall be lower than: %u", param->num_bis,
+		       MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
+		return -EINVAL;
+	}
+
+	CHECKIF(param->interval < BT_ISO_INTERVAL_MIN ||
+		param->interval > BT_ISO_INTERVAL_MAX) {
+		BT_DBG("Invalid interval: %u", param->interval);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->latency < BT_ISO_LATENCY_MIN ||
+		param->latency > BT_ISO_LATENCY_MAX) {
+		BT_DBG("Invalid latency: %u", param->latency);
+		return -EINVAL;
 	}
 
 	big = get_free_big();
@@ -1722,7 +1852,7 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	req->sync_timeout = sys_cpu_to_le16(param->sync_timeout);
 	req->num_bis = big->num_bis;
 	/* Transform from bitfield to array */
-	for (int i = 0; i < 0x1F; i++) {
+	for (int i = 0; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if (param->bis_bitfield & BIT(i)) {
 			if (bit_idx == big->num_bis) {
 				BT_DBG("BIG cannot contain %u BISes", bit_idx + 1);
@@ -1755,12 +1885,13 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
-	CHECKIF(param->mse > 0x1F) {
+	CHECKIF(param->mse > BT_ISO_SYNC_MSE_MAX) {
 		BT_DBG("Invalid MSE 0x%02x", param->mse);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->sync_timeout < 0x000A || param->sync_timeout > 0x4000) {
+	CHECKIF(param->sync_timeout < BT_ISO_SYNC_TIMEOUT_MIN ||
+		param->sync_timeout > BT_ISO_SYNC_TIMEOUT_MAX) {
 		BT_DBG("Invalid sync timeout 0x%04x", param->sync_timeout);
 		return -EINVAL;
 	}
