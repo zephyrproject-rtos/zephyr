@@ -27,6 +27,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
 #define EVENT_DONE_MAX 3

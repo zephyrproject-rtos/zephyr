@@ -47,12 +47,19 @@
 #define LOG_MODULE_NAME bt_ctlr_lll_scan_aux
 #include "common/log.h"
 #include <soc.h>
+#include <ull_scan_types.h>
 #include "hal/debug.h"
+
+#if defined(CONFIG_BT_CENTRAL)
+static uint8_t lll_scan_connect_req_pdu[PDU_AC_LL_HEADER_SIZE +
+					sizeof(struct pdu_adv_connect_ind)];
+#endif /* CONFIG_BT_CENTRAL */
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
+static void isr_scan_aux_setup(void *param);
 static void isr_rx_ull_schedule(void *param);
 static void isr_rx_lll_schedule(void *param);
 static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
@@ -286,6 +293,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 		return 0;
 	}
 #endif /* CONFIG_BT_CENTRAL */
+
+	/* Initialize scanning state */
+	lll->state = 0U;
+
+	/* Reset Tx/rx count */
+	trx_cnt = 0U;
 
 	/* Start setting up Radio h/w */
 	radio_reset();
@@ -645,7 +658,6 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
-		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
 		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
 			phy_aux_flags_rx = 0U;
@@ -1245,6 +1257,8 @@ static void isr_tx_connect_req(void *param)
 static void isr_rx_connect_rsp(void *param)
 {
 	struct lll_scan_aux *lll_aux;
+	struct ll_scan_aux_set *aux;
+	struct ll_scan_set *scan;
 	struct pdu_adv *pdu_rx;
 	struct node_rx_pdu *rx;
 	struct lll_scan *lll;

@@ -14,6 +14,7 @@
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
+#include "util/util.h"
 #include "util/memq.h"
 
 #include "pdu.h"
@@ -21,6 +22,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_peripheral.h"
 #include "lll_chan.h"
