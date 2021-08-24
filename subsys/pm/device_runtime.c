@@ -109,8 +109,14 @@ static int pm_device_request(const struct device *dev,
 
 	if (state == PM_DEVICE_STATE_ACTIVE) {
 		dev->pm->usage++;
+		if (dev->pm->usage > 1) {
+			goto out_unlock;
+		}
 	} else {
 		dev->pm->usage--;
+		if (dev->pm->usage > 0) {
+			goto out_unlock;
+		}
 	}
 
 
