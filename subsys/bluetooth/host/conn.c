@@ -1488,21 +1488,21 @@ static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
-		struct bt_conn *iso_conn = bt_conn_ref(&iso_conns[i]);
+		struct bt_conn *iso = bt_conn_ref(&iso_conns[i]);
 
-		if (!iso_conn) {
+		if (iso == NULL) {
 			continue;
 		}
 
-		if (iso_conn == conn) {
-			return iso_conn;
+		if (iso == conn) {
+			return iso;
 		}
 
-		if (bt_conn_iso(iso_conn)->acl == conn) {
-			return iso_conn;
+		if (iso->iso.acl == conn) {
+			return iso;
 		}
 
-		bt_conn_unref(iso_conn);
+		bt_conn_unref(iso);
 	}
 #endif /* CONFIG_BT_ISO */
 	return NULL;
