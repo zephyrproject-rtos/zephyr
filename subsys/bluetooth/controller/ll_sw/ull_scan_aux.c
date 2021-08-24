@@ -477,15 +477,23 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		if (is_lll_aux) {
+		struct ull_hdr *hdr;
+
+		hdr = &aux->ull;
+
+		/* ref == 0
+		 * All PDUs were scheduled from LLL and there is no pending done
+		 * event, we can flush here.
+		 *
+		 * ref == 1
+		 * There is pending done event so we need to flush from disabled
+		 * callback. Flushing here would release aux context and thus
+		 * ull_hdr before done event was processed.
+		 */
+		LL_ASSERT(ull_ref_get(hdr) < 2);
+		if (ull_ref_get(hdr) == 0) {
 			flush(aux, rx);
 		} else {
-			struct ull_hdr *hdr;
-
-			/* Setup the disabled callback to flush the
-			 * auxiliary PDUs
-			 */
-			hdr = &aux->ull;
 			LL_ASSERT(!hdr->disabled_cb);
 
 			hdr->disabled_param = rx;
@@ -593,7 +601,17 @@ static void last_disabled_cb(void *param)
 	struct node_rx_hdr *rx;
 
 	rx = param;
-	aux = HDR_LLL2ULL(rx->rx_ftr.param);
+
+	if (ull_scan_is_valid_get(HDR_LLL2ULL(rx->rx_ftr.param))) {
+		struct lll_scan *lll;
+
+		lll = rx->rx_ftr.param;
+		LL_ASSERT(lll->lll_aux);
+		aux = HDR_LLL2ULL(lll->lll_aux);
+	} else {
+		aux = HDR_LLL2ULL(rx->rx_ftr.param);
+		LL_ASSERT(ull_scan_aux_is_valid_get(aux));
+	}
 
 	flush(aux, rx);
 }
