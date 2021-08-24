@@ -393,6 +393,12 @@
  */
 
 /**
+ * @brief Trace initialisation of a Work Queue structure
+ * @param queue Work Queue structure
+ */
+#define sys_port_trace_k_work_queue_init(queue)
+
+/**
  * @brief Trace start of a Work Queue call entry
  * @param queue Work Queue structure
  */
