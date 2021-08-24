@@ -15,6 +15,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
+#include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
@@ -22,6 +23,7 @@
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 
 #include "lll_internal.h"
