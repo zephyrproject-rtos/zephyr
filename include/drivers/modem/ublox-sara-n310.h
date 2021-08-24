@@ -15,6 +15,23 @@
 #define RELEASE_AFTER_UPLINK 1
 #define RELEASE_AFTER_FIRST_DOWNLINK 2
 
+/* PSM defines */
+#define PM0 0
+#define PM2 10
+#define PM3 9
+#define PSM_DISABLE 0
+#define PSM_ENABLE 1
+#define PSM_RESET 2
+
+/* +NVSETPM */
+int n310_psm_set_mode(int psm_mode);
+
+/* +CSCLK */
+int n310_psm_set_csclk(int setting);
+
+/* +CPSMS */
+int n310_psm_config(int mode, char *periodic_TAU, char *active_time);
+
 /* reset modem */
 int n310_modem_reset(void);
 
@@ -25,7 +42,7 @@ char *n310_get_imei(void);
 char *n310_get_manufacturer(void);
 char *n310_get_revision(void);
 char *n310_get_ip(void);
-int n310_get_state(void);
+int n310_get_network_state(void);
 
 /* network state */
 enum n310_network_state {

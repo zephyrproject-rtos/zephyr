@@ -20,5 +20,7 @@
     saran310 {
         compatible = "ublox,sara-n310";
         label = "SARAN310";
+        mdm-power-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>; /* PC1 */
+        mdm-vint-gpios = <&gpioc 3 0>; /* PC3 */
     };
 };
