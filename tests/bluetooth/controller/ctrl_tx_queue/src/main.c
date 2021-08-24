@@ -11,10 +11,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "util/util.h"
 #include "util/memq.h"
 #include "pdu.h"
 #include "lll.h"
 
+#include "lll_df_types.h"
 /* mock ccm which is used in lll_conn.h */
 struct ccm {
 };
