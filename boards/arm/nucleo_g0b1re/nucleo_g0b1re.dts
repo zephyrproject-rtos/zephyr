@@ -65,7 +65,7 @@
 	apb1-prescaler = <1>;
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	status = "okay";
 };
