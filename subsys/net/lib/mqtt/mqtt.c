@@ -578,9 +578,9 @@ error:
 
 int mqtt_abort(struct mqtt_client *client)
 {
-	mqtt_mutex_lock(client);
-
 	NULL_PARAM_CHECK(client);
+
+	mqtt_mutex_lock(client);
 
 	if (client->internal.state != MQTT_STATE_IDLE) {
 		client_disconnect(client, -ECONNABORTED, true);
