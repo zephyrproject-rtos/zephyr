@@ -216,9 +216,6 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	.get_top_value = mcux_lpc_ctimer_get_top_value,
 };
 
-#define CTIMER_CLOCK_SOURCE(id) TO_CTIMER_CLOCK_SOURCE(id, DT_INST_PROP(id, clk_source))
-#define TO_CTIMER_CLOCK_SOURCE(id, val) MUX_A(CM_CTIMERCLKSEL##id, val)
-
 #define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
 	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev);                     \
 	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = { \
