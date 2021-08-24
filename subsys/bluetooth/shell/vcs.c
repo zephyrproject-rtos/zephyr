@@ -193,6 +193,10 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 		vcs_param.aics_param[i].cb = &aics_cbs;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
+
 	vcs_param.cb = &vcs_cbs;
 
 	result = bt_vcs_register(&vcs_param, &vcs);
