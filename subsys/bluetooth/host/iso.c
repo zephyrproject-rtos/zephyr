@@ -31,6 +31,7 @@ NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
 
 static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 #define iso_info(buf) (&iso_info_data[net_buf_id(buf)])
+#define iso_chan(_conn) ((_conn)->iso.chan);
 
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
@@ -119,10 +120,10 @@ struct bt_conn *iso_new(void)
 
 	if (iso) {
 		iso->type = BT_CONN_TYPE_ISO;
-		sys_slist_init(&iso->channels);
 	} else {
 		BT_DBG("Could not create new ISO");
 	}
+
 	return iso;
 }
 
@@ -248,8 +249,8 @@ static int hci_le_remove_iso_data_path(struct bt_conn *conn, uint8_t dir)
 static void bt_iso_chan_add(struct bt_conn *conn, struct bt_iso_chan *chan)
 {
 	/* Attach channel to the connection */
-	sys_slist_append(&conn->channels, &chan->node);
 	chan->conn = conn;
+	conn->iso.chan = chan;
 
 	BT_DBG("conn %p chan %p", conn, chan);
 }
@@ -266,8 +267,8 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 	struct bt_iso_chan_io_qos *tx_qos;
 	struct bt_iso_chan_io_qos *rx_qos;
 
-	chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
-	if (!chan) {
+	chan = iso_chan(conn);
+	if (chan == NULL) {
 		return -EINVAL;
 	}
 
@@ -328,12 +329,16 @@ void bt_iso_connected(struct bt_conn *conn)
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		bt_iso_chan_set_state(chan, BT_ISO_CONNECTED);
+	chan = iso_chan(conn);
+	if (chan == NULL) {
+		BT_ERR("Could not lookup chan from connected ISO");
+		return;
+	}
 
-		if (chan->ops->connected) {
-			chan->ops->connected(chan);
-		}
+	bt_iso_chan_set_state(chan, BT_ISO_CONNECTED);
+
+	if (chan->ops->connected) {
+		chan->ops->connected(chan);
 	}
 }
 
@@ -346,8 +351,8 @@ void bt_iso_remove_data_path(struct bt_conn *conn)
 		struct bt_iso_chan_io_qos *tx_qos;
 		uint8_t dir;
 
-		chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
-		if (!chan) {
+		chan = iso_chan(conn);
+		if (chan == NULL) {
 			return;
 		}
 
@@ -374,11 +379,6 @@ void bt_iso_remove_data_path(struct bt_conn *conn)
 	}
 }
 
-bool bt_iso_chan_remove(struct bt_conn *conn, struct bt_iso_chan *chan)
-{
-	return sys_slist_find_and_remove(&conn->channels, &chan->node);
-}
-
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	BT_DBG("%p, reason 0x%02x", chan, reason);
@@ -392,9 +392,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	 */
 	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
 	    chan->conn->role == BT_HCI_ROLE_SLAVE) {
-		if (!bt_iso_chan_remove(chan->conn, chan)) {
-			BT_ERR("Could not remove chan from conn channels");
-		}
+		chan->conn->iso.chan = NULL;
 		bt_conn_unref(chan->conn);
 		chan->conn = NULL;
 	}
@@ -406,7 +404,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 void bt_iso_disconnected(struct bt_conn *conn)
 {
-	struct bt_iso_chan *chan, *next;
+	struct bt_iso_chan *chan;
 
 	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
 		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
@@ -416,13 +414,13 @@ void bt_iso_disconnected(struct bt_conn *conn)
 
 	BT_DBG("%p", conn);
 
-	if (sys_slist_is_empty(&conn->channels)) {
+	chan = iso_chan(conn);
+	if (chan == NULL) {
+		BT_ERR("Could not lookup chan from disconnected ISO");
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		bt_iso_chan_disconnected(chan, conn->err);
-	}
+	bt_iso_chan_disconnected(chan, conn->err);
 }
 
 #if defined(CONFIG_BT_DEBUG_ISO)
@@ -619,10 +617,11 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		if (chan->ops->recv) {
-			chan->ops->recv(chan, iso_info(conn->rx), conn->rx);
-		}
+	chan = iso_chan(conn);
+	if (chan == NULL) {
+		BT_ERR("Could not lookup chan from receiving ISO");
+	} else if (chan->ops->recv != NULL) {
+		chan->ops->recv(chan, iso_info(conn->rx), conn->rx);
 	}
 
 	bt_conn_reset_rx_state(conn);
