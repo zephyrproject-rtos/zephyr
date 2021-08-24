@@ -124,6 +124,13 @@ static void test_recvfrom(int sock,
 		      "unexpected data");
 }
 
+static void test_shutdown(int sock, int how)
+{
+	zassert_equal(shutdown(sock, how),
+		      0,
+		      "shutdown failed");
+}
+
 static void test_close(int sock)
 {
 	zassert_equal(close(sock),
@@ -433,6 +440,102 @@ void test_v6_recv_enotconn(void)
 	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
 	_test_recv_enotconn(c_sock, s_sock);
+}
+
+void test_shutdown_rd_synchronous(void)
+{
+	/* recv() after shutdown(..., ZSOCK_SHUT_RD) should return 0 (EOF).
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr, s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Connect and accept that connection */
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Shutdown reception */
+	test_shutdown(c_sock, ZSOCK_SHUT_RD);
+
+	/* EOF should be notified by recv() */
+	test_eof(c_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+struct shutdown_data {
+	struct k_work_delayable work;
+	int fd;
+	int how;
+};
+
+static void shutdown_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct shutdown_data *data = CONTAINER_OF(dwork, struct shutdown_data,
+						  work);
+
+	shutdown(data->fd, data->how);
+}
+
+void test_shutdown_rd_while_recv(void)
+{
+	/* Blocking recv() should return EOF after shutdown(..., ZSOCK_SHUT_RD) is
+	 * called from another thread.
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr, s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct shutdown_data shutdown_work_data;
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Connect and accept that connection */
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Schedule reception shutdown from workqueue */
+	k_work_init_delayable(&shutdown_work_data.work, shutdown_work);
+	shutdown_work_data.fd = c_sock;
+	shutdown_work_data.how = ZSOCK_SHUT_RD;
+	k_work_schedule(&shutdown_work_data.work, K_MSEC(10));
+
+	/* Start blocking recv(), which should be unblocked by shutdown() from
+	 * another thread and return EOF (0).
+	 */
+	test_eof(c_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 static void calc_net_context(struct net_context *context, void *user_data)
@@ -962,6 +1065,8 @@ void test_main(void)
 		ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest),
 		ztest_user_unit_test(test_v4_recv_enotconn),
 		ztest_user_unit_test(test_v6_recv_enotconn),
+		ztest_user_unit_test(test_shutdown_rd_synchronous),
+		ztest_unit_test(test_shutdown_rd_while_recv),
 		ztest_unit_test(test_open_close_immediately),
 		ztest_user_unit_test(test_v4_accept_timeout),
 		ztest_unit_test(test_so_type),
