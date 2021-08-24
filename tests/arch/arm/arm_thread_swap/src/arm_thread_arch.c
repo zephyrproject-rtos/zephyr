@@ -30,6 +30,16 @@
 #define EXC_RETURN_FTYPE           (0x00000010UL)
 #endif
 
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+/*
+ * For ARMv8.1-M, the FPSCR[18:16] LTPSIZE field may always read 0b010 if MVE
+ * is not implemented, so mask it when validating the value of the FPSCR.
+ */
+#define FPSCR_MASK		(~FPU_FPDSCR_LTPSIZE_Msk)
+#else
+#define FPSCR_MASK		(0xffffffffU)
+#endif
+
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 
 static struct k_thread alt_thread;
@@ -278,7 +288,7 @@ static void alt_thread_entry(void)
 
 
 	/* Verify that the _current_ (alt) thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	zassert_true((__get_FPSCR() & FPSCR_MASK) == 0,
 		"(Alt thread) FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
 	zassert_true((p_ztest_thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
@@ -461,7 +471,7 @@ void test_arm_thread_swap(void)
 		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
 		__get_CONTROL());
 	/* Verify that the main test thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	zassert_true((__get_FPSCR() & FPSCR_MASK) == 0,
 		"FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
 	/* Clear the thread's floating-point callee-saved registers' container.
