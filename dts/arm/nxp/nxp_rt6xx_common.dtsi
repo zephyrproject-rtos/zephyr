@@ -70,14 +70,14 @@
 
 	clkctl0: clkctl@1000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x1000 0x4000>;
+		reg = <0x1000 0x1000>;
 		label = "CLKCTL_0";
 		#clock-cells = <1>;
 	};
 
 	clkctl1: clkctl@21000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x21000 0x4000>;
+		reg = <0x21000 0x1000>;
 		label = "CLKCTL_1";
 		#clock-cells = <1>;
 	};
@@ -89,7 +89,7 @@
 
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
 		label = "GPIO_0";
 		gpio-controller;
@@ -99,7 +99,7 @@
 
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
 		label = "GPIO_1";
 		gpio-controller;
@@ -109,7 +109,7 @@
 
 	gpio2: gpio@2 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		label = "GPIO_2";
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -259,7 +259,7 @@
 
 	trng: random@138000 {
 		compatible = "nxp,kinetis-trng";
-		reg = <0x138000 0x4000>;
+		reg = <0x138000 0x1000>;
 		status = "okay";
 		interrupts = <31 0>;
 		label = "TRNG";
@@ -295,7 +295,7 @@
 
 	usdhc1: usdhc@136000 {
 		compatible = "nxp,imx-usdhc";
-		reg = <0x136000 0x4000>;
+		reg = <0x136000 0x1000>;
 		status = "disabled";
 		interrupts = <45 0>;
 		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
@@ -304,7 +304,7 @@
 
 	usdhc2: usdhc@137000 {
 		compatible = "nxp,imx-usdhc";
-		reg = <0x137000 0x4000>;
+		reg = <0x137000 0x1000>;
 		status = "disabled";
 		interrupts = <46 0>;
 		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
