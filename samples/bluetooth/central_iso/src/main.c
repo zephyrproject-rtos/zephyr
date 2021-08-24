@@ -199,8 +199,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	connect_param.conn = conn;
-	connect_param.iso = &iso_chan;
+	connect_param.acl = conn;
+	connect_param.iso_chan = &iso_chan;
 
 	iso_err = bt_iso_chan_connect(&connect_param, ARRAY_SIZE(channels));
 

@@ -125,11 +125,11 @@ static struct bt_iso_chan iso_chan = {
 	.qos = &iso_qos,
 };
 
-static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
+static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
 {
-	printk("Incoming conn %p\n", conn);
+	printk("Incoming request from %p\n", (void *)acl);
 
-	if (iso_chan.conn) {
+	if (iso_chan.iso) {
 		printk("No channels available\n");
 		return -ENOMEM;
 	}

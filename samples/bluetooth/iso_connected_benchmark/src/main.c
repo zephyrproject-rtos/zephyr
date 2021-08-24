@@ -272,9 +272,9 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
+static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
 {
-	LOG_INF("Incoming ISO request");
+	LOG_INF("Incoming ISO request from %p", (void *)acl);
 
 	for (int i = 0; i < ARRAY_SIZE(iso_chans); i++) {
 		if (iso_chans[i].state == BT_ISO_DISCONNECTED) {
@@ -788,8 +788,8 @@ static int central_create_cig(void)
 	LOG_INF("Connecting ISO channels");
 
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
-		connect_param[i].conn = default_conn;
-		connect_param[i].iso = &iso_chans[i];
+		connect_param[i].acl = default_conn;
+		connect_param[i].iso_chan = &iso_chans[i];
 	}
 
 	err = bt_iso_chan_connect(connect_param, cig_create_param.num_cis);

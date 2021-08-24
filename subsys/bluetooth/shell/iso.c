@@ -77,11 +77,11 @@ static struct bt_iso_cig *cig;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
 
-static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
+static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
 {
-	shell_print(ctx_shell, "Incoming conn %p", conn);
+	shell_print(ctx_shell, "Incoming request from %p", acl);
 
-	if (iso_chan.conn) {
+	if (iso_chan.iso) {
 		shell_print(ctx_shell, "No channels available");
 		return -ENOMEM;
 	}
@@ -251,12 +251,12 @@ static int cmd_cig_term(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_iso_connect_param connect_param = {
-		.conn = default_conn,
-		.iso = &iso_chan
+		.acl = default_conn,
+		.iso_chan = &iso_chan
 	};
 	int err;
 
-	if (iso_chan.conn == NULL) {
+	if (iso_chan.iso == NULL) {
 		shell_error(sh, "ISO channel not initialized in a CIG");
 		return 0;
 	}
@@ -283,7 +283,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	if (!iso_chan.conn) {
+	if (!iso_chan.iso) {
 		shell_error(shell, "Not bound");
 		return 0;
 	}
@@ -357,7 +357,7 @@ static int cmd_broadcast(const struct shell *shell, size_t argc, char *argv[])
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	if (!bis_iso_chan.conn) {
+	if (!bis_iso_chan.iso) {
 		shell_error(shell, "BIG not created");
 		return -ENOEXEC;
 	}
