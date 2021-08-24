@@ -156,6 +156,17 @@ config IMG_MGMT_UL_CHUNK_SIZE
 	  this size gets allocated on the stack during handling of a image upload
 	  command.
 
+config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+	int "Number of supported images"
+	default UPDATEABLE_IMAGE_NUMBER
+	range 1 2
+	help
+	  Sets how many application images are supported (pairs of secondary and primary slots).
+	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
+	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+	  needs to be set to the same value; this is due to the fact that the mcumgr uses
+	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
+	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
