@@ -471,7 +471,7 @@ static void http_timeout(struct k_work *work)
 	struct http_client_internal_data *data =
 		CONTAINER_OF(dwork, struct http_client_internal_data, work);
 
-	(void)zsock_close(data->sock);
+	(void)zsock_shutdown(data->sock, ZSOCK_SHUT_RD);
 }
 
 int http_client_req(int sock, struct http_request *req,
