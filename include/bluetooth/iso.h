@@ -96,7 +96,7 @@ enum {
 /** @brief ISO Channel structure. */
 struct bt_iso_chan {
 	/** Channel connection reference */
-	struct bt_conn			*conn;
+	struct bt_conn			*iso;
 	/** Channel operations reference */
 	struct bt_iso_chan_ops		*ops;
 	/** Channel QoS reference */
@@ -243,10 +243,10 @@ struct bt_iso_cig_create_param {
 
 struct bt_iso_connect_param {
 	/* The ISO channel to connect */
-	struct bt_iso_chan *iso;
+	struct bt_iso_chan *iso_chan;
 
 	/* The ACL connection */
-	struct bt_conn *conn;
+	struct bt_conn *acl;
 };
 
 /** Opaque type representing an Broadcast Isochronous Group (BIG). */
@@ -444,12 +444,12 @@ struct bt_iso_server {
 	 *  This callback is called whenever a new incoming connection requires
 	 *  authorization.
 	 *
-	 *  @param conn The connection that is requesting authorization
+	 *  @param acl The ACL connection that is requesting authorization
 	 *  @param chan Pointer to receive the allocated channel
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*accept)(struct bt_conn *conn, struct bt_iso_chan **chan);
+	int (*accept)(struct bt_conn *acl, struct bt_iso_chan **chan);
 };
 
 /** @brief Register ISO server.
