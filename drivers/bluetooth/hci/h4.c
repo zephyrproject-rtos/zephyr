@@ -510,8 +510,8 @@ static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	h4_dev = device_get_binding(CONFIG_BT_UART_ON_DEV_NAME);
-	if (!h4_dev) {
+	h4_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_uart));
+	if (!device_is_ready(h4_dev)) {
 		return -EINVAL;
 	}
 
