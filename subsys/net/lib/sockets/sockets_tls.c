@@ -2669,6 +2669,13 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int tls_sock_shutdown_vmeth(void *obj, int how)
+{
+	struct tls_context *ctx = obj;
+
+	return zsock_shutdown(ctx->sock, how);
+}
+
 static int tls_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			       socklen_t addrlen)
 {
@@ -2752,6 +2759,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 		.close = tls_sock_close_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
+	.shutdown = tls_sock_shutdown_vmeth,
 	.bind = tls_sock_bind_vmeth,
 	.connect = tls_sock_connect_vmeth,
 	.listen = tls_sock_listen_vmeth,
