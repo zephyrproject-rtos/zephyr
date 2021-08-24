@@ -31,6 +31,7 @@
 #include "lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
