@@ -66,7 +66,7 @@ extern "C" {
 #ifdef CONFIG_ARC_CORE_MPU
 #if CONFIG_ARC_MPU_VER == 2
 #define Z_ARC_MPU_ALIGN	2048
-#elif (CONFIG_ARC_MPU_VER == 3) || (CONFIG_ARC_MPU_VER == 4)
+#elif (CONFIG_ARC_MPU_VER == 3) || (CONFIG_ARC_MPU_VER == 4) || (CONFIG_ARC_MPU_VER == 6)
 #define Z_ARC_MPU_ALIGN	32
 #else
 #error "Unsupported MPU version"
