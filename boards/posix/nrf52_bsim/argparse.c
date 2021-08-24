@@ -226,15 +226,5 @@ void nrfbsim_cleanup_args(void)
 	bs_cleanup_dynargs(&args_struct);
 }
 
-char *get_simid(void)
-{
-	return arg.s_id;
-}
-
-unsigned int get_device_nbr(void)
-{
-	return arg.global_device_nbr;
-}
-
 NATIVE_TASK(nrfbsim_register_args, PRE_BOOT_1, 0);
 NATIVE_TASK(nrfbsim_cleanup_args, ON_EXIT, 10);

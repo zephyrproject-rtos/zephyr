@@ -7,7 +7,6 @@
 #include "mesh/net.h"
 #include "mesh/transport.h"
 #include <sys/byteorder.h>
-#include "argparse.h"
 
 #define LOG_MODULE_NAME test_friendship
 
@@ -71,8 +70,10 @@ static void test_lpn_init(void)
 	 * devkey based on the device number, which is guaranteed to be unique
 	 * for each device in the simulation.
 	 */
-	lpn_cfg.addr = LPN_ADDR_START + get_device_nbr();
-	lpn_cfg.dev_key[0] = get_device_nbr();
+	extern uint global_device_nbr;
+
+	lpn_cfg.addr = LPN_ADDR_START + global_device_nbr;
+	lpn_cfg.dev_key[0] = global_device_nbr;
 	test_common_init(&lpn_cfg);
 }
 
@@ -493,7 +494,7 @@ static void test_lpn_msg_mesh(void)
 	test_model->pub->ttl = BT_MESH_TTL_DEFAULT;
 
 	net_buf_simple_reset(test_model->pub->msg);
-	bt_mesh_model_msg_init(test_model->pub->msg, TEST_MSG_OP_1);
+	bt_mesh_model_msg_init(test_model->pub->msg, TEST_MSG_OP);
 	ASSERT_OK(bt_mesh_model_publish(test_model));
 
 	PASS();
