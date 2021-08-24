@@ -20,7 +20,6 @@
 #include "bs_utils.h"
 #include "bs_oswrap.h"
 #include "bs_pc_base_fifo_user.h"
-#include "argparse.h"
 
 /* Recheck if something arrived from the EDTT every 5ms */
 #define EDTT_IF_RECHECK_DELTA 5 /* ms */
@@ -42,6 +41,8 @@ static int edtt_autoshutdown;
 #define TO_BRIDGE 1
 static int fifo[2] = { -1, -1 };
 static char *fifo_path[2] = {NULL, NULL};
+
+extern unsigned int global_device_nbr;
 
 static void edttd_clean_up(void);
 static void edptd_create_fifo_if(void);
@@ -191,9 +192,9 @@ static void edptd_create_fifo_if(void)
 	fifo_path[TO_BRIDGE] = (char *)bs_calloc(pb_com_path_length + 30,
 						 sizeof(char));
 	sprintf(fifo_path[TO_DEVICE], "%s/Device%i.PTTin",
-		pb_com_path, get_device_nbr());
+		pb_com_path, global_device_nbr);
 	sprintf(fifo_path[TO_BRIDGE], "%s/Device%i.PTTout",
-		pb_com_path, get_device_nbr());
+		pb_com_path, global_device_nbr);
 
 	if ((pb_create_fifo_if_not_there(fifo_path[TO_DEVICE]) != 0)
 		|| (pb_create_fifo_if_not_there(fifo_path[TO_BRIDGE]) != 0)) {

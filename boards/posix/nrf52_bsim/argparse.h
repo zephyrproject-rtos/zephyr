@@ -26,8 +26,6 @@ struct NRF_bsim_args_t {
 
 struct NRF_bsim_args_t *nrfbsim_argsparse(int argc, char *argv[]);
 void bs_add_extra_dynargs(bs_args_struct_t *args_struct_toadd);
-char *get_simid(void);
-unsigned int get_device_nbr(void);
 
 #ifdef __cplusplus
 }

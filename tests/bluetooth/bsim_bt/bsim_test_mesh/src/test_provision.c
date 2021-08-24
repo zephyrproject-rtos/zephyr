@@ -5,7 +5,6 @@
  */
 #include "mesh_test.h"
 #include "mesh/net.h"
-#include "argparse.h"
 
 #include <sys/byteorder.h>
 
@@ -30,6 +29,7 @@ enum test_flags {
 static ATOMIC_DEFINE(flags, TEST_FLAGS);
 extern const struct bt_mesh_comp comp;
 extern const uint8_t test_net_key[16];
+extern uint global_device_nbr;
 
 /* Timeout semaphore */
 static struct k_sem prov_sem;
@@ -42,7 +42,7 @@ static uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
 static void test_device_init(void)
 {
 	/* Ensure that the UUID is unique: */
-	dev_uuid[6] = '0' + get_device_nbr();
+	dev_uuid[6] = '0' + global_device_nbr;
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 }
