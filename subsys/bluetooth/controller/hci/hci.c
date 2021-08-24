@@ -791,6 +791,26 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[39] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+#if defined(CONFIG_BT_CTLR_DF)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	/* LE Set Connectionless CTE Transmit Parameters,
+	 * LE Set Connectionless CTE Transmit Enable
+	 */
+	rp->commands[39] |= BIT(5) | BIT(6);
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	/* LE Set Connectionless IQ Sampling Enable */
+	rp->commands[39] |= BIT(7);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	/* LE Read Antenna Information */
+	rp->commands[40] |= BIT(4);
+#endif /* CONFIG_BT_CTLR_DF */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	/* LE Set Periodic Advertising Receive Enable */
+	rp->commands[40] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	bt_hci_ecc_supported_commands(rp->commands);
 #endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_TINYCRYPT_ECC */
