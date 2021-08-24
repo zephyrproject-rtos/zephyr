@@ -637,6 +637,9 @@ void main(void)
 					   &dtr);
 			if (dtr) {
 				break;
+			} else {
+				/* Give CPU resources to low priority threads. */
+				k_sleep(K_MSEC(100));
 			}
 		}
 
