@@ -37,6 +37,12 @@
 	 (((uint32_t)nxp_rt600_init >= 0x18000000U) &&		\
 	  ((uint32_t)nxp_rt600_init < 0x20000000U)))
 
+#define CTIMER_CLOCK_SOURCE(node_id) \
+	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
+#define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
+#define TO_CLOCK_ATTACH_ID(inst, val) CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
+#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+
 #ifdef CONFIG_INIT_SYS_PLL
 const clock_sys_pll_config_t g_sysPllConfig = {
 	.sys_pll_src  = kCLOCK_SysPllXtalIn,
@@ -268,6 +274,8 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Sdio0);
 	RESET_PeripheralReset(kSDIO0_RST_SHIFT_RSTn);
 #endif
+
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
