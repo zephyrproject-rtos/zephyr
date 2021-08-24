@@ -1,0 +1,6 @@
+tests:
+  tracing.tracing_sys.transport.uart:
+    platform_allow: qemu_x86 qemu_x86_64
+    extra_args: CONF_FILE="prj_uart.conf"
+    tags: tracing testing
+    harness: pytest
