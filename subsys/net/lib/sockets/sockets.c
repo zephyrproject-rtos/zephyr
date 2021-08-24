@@ -298,16 +298,31 @@ static inline int z_vrfy_zsock_close(int sock)
 
 int z_impl_zsock_shutdown(int sock, int how)
 {
-	/* shutdown() is described by POSIX as just disabling recv() and/or
-	 * send() operations on socket. Of course, real-world software mostly
-	 * calls it for side effects. We treat it as null operation so far.
-	 */
-	ARG_UNUSED(sock);
-	ARG_UNUSED(how);
+	const struct socket_op_vtable *vtable;
+	struct k_mutex *lock;
+	void *ctx;
+	int ret;
 
-	LOG_WRN("shutdown() not implemented");
+	ctx = get_sock_vtable(sock, &vtable, &lock);
+	if (ctx == NULL) {
+		errno = EBADF;
+		return -1;
+	}
 
-	return 0;
+	if (!vtable->shutdown) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	NET_DBG("shutdown: ctx=%p, fd=%d, how=%d", ctx, sock, how);
+
+	ret = vtable->shutdown(ctx, how);
+
+	k_mutex_unlock(lock);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
