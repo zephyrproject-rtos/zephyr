@@ -65,14 +65,6 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 				   CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	#define initialize_timeouts() do { \
-		sys_dlist_init(&_timeout_q); \
-	} while (false)
-#else
-	#define initialize_timeouts() do { } while ((0))
-#endif
-
 extern void idle(void *unused1, void *unused2, void *unused3);
 
 
@@ -311,8 +303,6 @@ static char *prepare_multithreading(void)
 			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
 			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
 	}
-
-	initialize_timeouts();
 
 	return stack_ptr;
 }
