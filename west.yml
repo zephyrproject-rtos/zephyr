@@ -35,8 +35,9 @@ manifest:
       revision: 9e4498d1c73009acd84bb36036ee5e2869112a6c
       path: modules/fs/littlefs
     - name: mbedtls
-      revision: 53044168b43f06ec5654b906a2cdd260bf477edd
+      revision: d9535d4fa440b0435934e5d19c38c4010fe73e6a
       path: modules/crypto/mbedtls
+      remote: recogni-http
     - name: mcuboot
       path: modules/mcuboot
       revision: 8df6c9f4b4ccd2af76bf60d34de06dbd87130343
