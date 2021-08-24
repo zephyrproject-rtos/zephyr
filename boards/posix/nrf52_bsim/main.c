@@ -57,6 +57,8 @@ void posix_exit(int exit_code)
 	exit(inner_main_clean_up(exit_code));
 }
 
+uint global_device_nbr;
+
 int main(int argc, char *argv[])
 {
 	/*
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
 	struct NRF_bsim_args_t *args;
 
 	args = nrfbsim_argsparse(argc, argv);
+	global_device_nbr = args->global_device_nbr;
 
 	bs_read_function_names_from_Tsymbols(argv[0]);
 
