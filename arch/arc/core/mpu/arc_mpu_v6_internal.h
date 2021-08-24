@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2019 Synopsys.
+ * Copyright (c) 2021 Synopsys.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V2_INTERNAL_H_
-#define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V2_INTERNAL_H_
+#ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V6_INTERNAL_H_
+#define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V6_INTERNAL_H_
 
+#define AUX_MPU_EN_BANK_MASK BIT(0)
+#define AUX_MPU_EN_IC		BIT(12)
+#define AUX_MPU_EN_DC		BIT(13)
 #define AUX_MPU_EN_ENABLE   BIT(30)
 #define AUX_MPU_EN_DISABLE  ~BIT(30)
 
@@ -36,22 +39,45 @@
 #define AUX_MPU_RDB_VALID_MASK BIT(0)
 #define AUX_MPU_RDP_ATTR_MASK  (BIT_MASK(6) << 3)
 #define AUX_MPU_RDP_SIZE_MASK  ((BIT_MASK(3) << 9) | BIT_MASK(2))
+/* Global code cacheability that applies to a region
+ * 0x0: (Default) Code is cacheable in all levels of the cache hierarchy
+ * 0x1: Code is not cacheable in any level of the cache hierarchy
+ */
+#define AUX_MPU_RDB_IC		BIT(12)
+/* Global data cacheability that applies to a region
+ * 0x0: (Default) Data is cacheable in all levels of the cache hierarchy
+ * 0x1: Data is not cacheable in any level of the cache hierarchy
+ */
+#define AUX_MPU_RDB_DC		BIT(13)
+/* Define a MPU region as non-volatile
+ * 0x0: (Default) The memory space for this MPU region is treated as a volatile uncached space.
+ * 0x1: The memory space for this MPU region is non-volatile
+ */
+#define AUX_MPU_RDB_NV		BIT(14)
 
-/* For MPU version 2, the minimum protection region size is 2048 bytes */
-#if CONFIG_ARC_MPU_VER == 2
-#define ARC_FEATURE_MPU_ALIGNMENT_BITS 11
-/* For MPU version 3, the minimum protection region size is 32 bytes */
-#else
+/* For MPU version 6, the minimum protection region size is 32 bytes */
 #define ARC_FEATURE_MPU_ALIGNMENT_BITS 5
-#endif
+#define ARC_FEATURE_MPU_BANK_SIZE      16
 
+/**
+ * This internal function select a MPU bank
+ */
+static inline void _bank_select(uint32_t bank)
+{
+	uint32_t val;
+
+	val = z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) & (~AUX_MPU_EN_BANK_MASK);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, val | bank);
+}
 /**
  * This internal function initializes a MPU region
  */
-static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
-				uint32_t region_attr)
+static inline void _region_init(uint32_t index, uint32_t region_addr,
+				uint32_t size, uint32_t region_attr)
 {
-	index = index * 2U;
+	uint32_t bank = index / ARC_FEATURE_MPU_BANK_SIZE;
+
+	index = (index % ARC_FEATURE_MPU_BANK_SIZE) * 2U;
 
 	if (size > 0) {
 		uint8_t bits = find_msb_set(size) - 1;
@@ -64,13 +90,21 @@ static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t s
 			bits++;
 		}
 
-		region_attr &= ~(AUX_MPU_RDP_SIZE_MASK);
-		region_attr |= AUX_MPU_RDP_REGION_SIZE(bits);
+		/* Clear size bits and IC, DC bits, and set NV bit
+		 * The default value of NV bit is 0 which means the region is volatile and uncached.
+		 * Setting the NV bit here has no effect on mpu v6 but is for the
+		 * forward compatibility to mpu v7. Currently we do not allow to toggle these bits
+		 * until we implement the control of these region properties
+		 * TODO: support uncacheable regions and volatile uncached regions
+		 */
+		region_attr &= ~(AUX_MPU_RDP_SIZE_MASK | AUX_MPU_RDB_IC | AUX_MPU_RDB_DC);
+		region_attr |= AUX_MPU_RDP_REGION_SIZE(bits) | AUX_MPU_RDB_NV;
 		region_addr |= AUX_MPU_RDB_VALID_MASK;
 	} else {
 		region_addr = 0U;
 	}
 
+	_bank_select(bank);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RDP0 + index, region_attr);
 	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RDB0 + index, region_addr);
 }
@@ -86,7 +120,7 @@ static inline int get_region_index_by_type(uint32_t type)
 	 * configured regions. The type is one-indexed rather than
 	 * zero-indexed.
 	 *
-	 * For ARC MPU v2, the smaller index has higher priority, so the
+	 * For ARC MPU v6, the smaller index has higher priority, so the
 	 * index is allocated in reverse order. Static regions start from
 	 * the biggest index, then thread related regions.
 	 *
@@ -113,7 +147,11 @@ static inline int get_region_index_by_type(uint32_t type)
  */
 static inline bool _is_enabled_region(uint32_t r_index)
 {
-	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
+	uint32_t bank = r_index / ARC_FEATURE_MPU_BANK_SIZE;
+	uint32_t index = (r_index % ARC_FEATURE_MPU_BANK_SIZE) * 2U;
+
+	_bank_select(bank);
+	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + index)
 		 & AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
 }
 
@@ -125,11 +163,12 @@ static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size
 	uint32_t r_addr_start;
 	uint32_t r_addr_end;
 	uint32_t r_size_lshift;
+	uint32_t bank = r_index / ARC_FEATURE_MPU_BANK_SIZE;
+	uint32_t index = (r_index % ARC_FEATURE_MPU_BANK_SIZE) * 2U;
 
-	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
-		       & (~AUX_MPU_RDB_VALID_MASK);
-	r_size_lshift = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + r_index * 2U)
-			& AUX_MPU_RDP_SIZE_MASK;
+	_bank_select(bank);
+	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + index) & (~AUX_MPU_RDB_VALID_MASK);
+	r_size_lshift = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + index) & AUX_MPU_RDP_SIZE_MASK;
 	r_size_lshift = AUX_MPU_RDP_SIZE_SHIFT(r_size_lshift);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
 
@@ -146,8 +185,11 @@ static inline bool _is_in_region(uint32_t r_index, uint32_t start, uint32_t size
 static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 {
 	uint32_t r_ap;
+	uint32_t bank = r_index / ARC_FEATURE_MPU_BANK_SIZE;
+	uint32_t index = (r_index % ARC_FEATURE_MPU_BANK_SIZE) * 2U;
 
-	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + r_index * 2U);
+	_bank_select(bank);
+	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + index);
 
 	r_ap &= AUX_MPU_RDP_ATTR_MASK;
 
@@ -160,4 +202,4 @@ static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 		(AUX_MPU_ATTR_UR | AUX_MPU_ATTR_KR));
 }
 
-#endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V2_INTERNAL_H_ */
+#endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V6_INTERNAL_H_ */
