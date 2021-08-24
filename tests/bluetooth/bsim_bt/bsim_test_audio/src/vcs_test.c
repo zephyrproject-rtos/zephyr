@@ -474,6 +474,9 @@ static void test_standalone(void)
 		vcs_param.aics_param[i].cb = &aics_cb;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
 	vcs_param.cb = &vcs_cb;
 
 	err = bt_vcs_register(&vcs_param, &vcs);
@@ -667,6 +670,9 @@ static void test_main(void)
 		vcs_param.aics_param[i].cb = &aics_cb;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
 	vcs_param.cb = &vcs_cb;
 
 	err = bt_vcs_register(&vcs_param, &vcs);
