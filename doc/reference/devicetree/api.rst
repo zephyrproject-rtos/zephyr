@@ -308,9 +308,9 @@ device.
      - Selects the UART used for host communication in the
        :ref:`bluetooth-hci-uart-sample`
    * - zephyr,bt-mon-uart
-     - Sets default :kconfig:`CONFIG_BT_MONITOR_ON_DEV_NAME`
+     - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-uart
-     - Sets default :kconfig:`CONFIG_BT_UART_ON_DEV_NAME`
+     - Sets UART device used by Bluetooth
    * - zephyr,can-primary
      - Sets the primary CAN controller
    * - zephyr,ccm
