@@ -54,6 +54,8 @@ Removed APIs in this release
   in favor of direct use of chosen node ``zephyr,uart-mcumgr``.
 * Removed ``CONFIG_UART_CONSOLE_ON_DEV_NAME`` Kconfig option
   in favor of direct use of chosen node ``zephyr,console``.
+* Removed ``CONFIG_UART_SHELL_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,shell-uart``.
 
 ============================
 

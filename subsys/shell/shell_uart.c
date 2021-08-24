@@ -293,14 +293,13 @@ const struct shell_transport_api shell_uart_transport_api = {
 static int enable_shell_uart(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	const struct device *dev =
-			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
 	uint32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
 
-	if (dev == NULL) {
+	if (!device_is_ready(dev)) {
 		return -ENODEV;
 	}
 

@@ -342,7 +342,7 @@ device.
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,shell-uart
-     - Sets default :kconfig:`CONFIG_UART_SHELL_ON_DEV_NAME`
+     - Sets UART device used by serial shell backend
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
