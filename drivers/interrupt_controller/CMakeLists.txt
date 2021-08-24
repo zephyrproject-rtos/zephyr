@@ -23,3 +23,6 @@ zephyr_library_sources_ifdef(CONFIG_SHARED_IRQ              intc_shared_irq.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_ESP32               intc_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.c)
+
+# Silence CMake warning when no interrupt controller driver is enabled
+zephyr_library_sources(${ZEPHYR_BASE}/misc/empty_file.c)
