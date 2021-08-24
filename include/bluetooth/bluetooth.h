@@ -807,8 +807,8 @@ struct bt_le_per_adv_param {
 		BT_LE_PER_ADV_PARAM_INIT(_int_min, _int_max, _options) \
 	})
 
-#define BT_LE_PER_ADV_DEFAULT BT_LE_PER_ADV_PARAM(BT_GAP_ADV_SLOW_INT_MIN, \
-						  BT_GAP_ADV_SLOW_INT_MAX, \
+#define BT_LE_PER_ADV_DEFAULT BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_SLOW_INT_MIN, \
+						  BT_GAP_PER_ADV_SLOW_INT_MAX, \
 						  BT_LE_PER_ADV_OPT_NONE)
 
 /**
