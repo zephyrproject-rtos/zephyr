@@ -46,7 +46,7 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
-static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
+static void flush(struct ll_scan_aux_set *aux);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
@@ -481,6 +481,8 @@ ull_scan_aux_rx_flush:
 
 		hdr = &aux->ull;
 
+		aux->rx_last->rx_ftr.extra = rx;
+
 		/* ref == 0
 		 * All PDUs were scheduled from LLL and there is no pending done
 		 * event, we can flush here.
@@ -492,11 +494,11 @@ ull_scan_aux_rx_flush:
 		 */
 		LL_ASSERT(ull_ref_get(hdr) < 2);
 		if (ull_ref_get(hdr) == 0) {
-			flush(aux, rx);
+			flush(aux);
 		} else {
 			LL_ASSERT(!hdr->disabled_cb);
 
-			hdr->disabled_param = rx;
+			hdr->disabled_param = aux;
 			hdr->disabled_cb = last_disabled_cb;
 		}
 
@@ -550,7 +552,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 	lll_aux = lll->lll_aux;
 	if (lll_aux) {
 		aux = HDR_LLL2ULL(lll_aux);
-		flush(aux, NULL);
+		flush(aux);
 	}
 
 	/* Mark for buffer for release */
@@ -597,49 +599,25 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 
 static void last_disabled_cb(void *param)
 {
-	struct ll_scan_aux_set *aux;
-	struct node_rx_hdr *rx;
-
-	rx = param;
-
-	if (ull_scan_is_valid_get(HDR_LLL2ULL(rx->rx_ftr.param))) {
-		struct lll_scan *lll;
-
-		lll = rx->rx_ftr.param;
-		LL_ASSERT(lll->lll_aux);
-		aux = HDR_LLL2ULL(lll->lll_aux);
-	} else {
-		aux = HDR_LLL2ULL(rx->rx_ftr.param);
-		LL_ASSERT(ull_scan_aux_is_valid_get(aux));
-	}
-
-	flush(aux, rx);
+	flush(param);
 }
 
 static void done_disabled_cb(void *param)
 {
-	flush(param, NULL);
+	flush(param);
 }
 
-static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
+static void flush(struct ll_scan_aux_set *aux)
 {
-	if (aux->rx_last) {
-		struct lll_scan *lll;
+	struct node_rx_hdr *rx;
+	struct lll_scan *lll;
 
-		if (rx) {
-			aux->rx_last->rx_ftr.extra = rx;
-		}
+	rx = aux->rx_head;
+	lll = rx->rx_ftr.param;
+	lll->lll_aux = NULL;
 
-		rx = aux->rx_head;
-		lll = rx->rx_ftr.param;
-		lll->lll_aux = NULL;
-
-		ll_rx_put(rx->link, rx);
-		ll_rx_sched();
-	} else if (rx) {
-		ll_rx_put(rx->link, rx);
-		ll_rx_sched();
-	}
+	ll_rx_put(rx->link, rx);
+	ll_rx_sched();
 
 	aux_release(aux);
 }
@@ -695,5 +673,5 @@ static void ticker_op_cb(uint32_t status, void *param)
 
 static void ticker_op_aux_failure(void *param)
 {
-	flush(param, NULL);
+	flush(param);
 }
