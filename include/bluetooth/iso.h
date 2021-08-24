@@ -64,7 +64,6 @@ struct bt_iso_chan {
 	struct bt_iso_chan_ops		*ops;
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
-	sys_snode_t			node;
 	uint8_t				state;
 	bt_security_t			required_sec_level;
 };

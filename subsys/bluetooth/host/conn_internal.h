@@ -99,6 +99,10 @@ struct bt_conn_sco {
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Reference to the struct bt_iso_chan */
+	struct bt_iso_chan      *chan;
+
 	union {
 		/* CIG ID */
 		uint8_t			cig_id;
@@ -179,7 +183,7 @@ struct bt_conn {
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* Active L2CAP/ISO channels */
+	/* Active L2CAP channels */
 	sys_slist_t		channels;
 
 	/* Delayed work deferred tasks:
