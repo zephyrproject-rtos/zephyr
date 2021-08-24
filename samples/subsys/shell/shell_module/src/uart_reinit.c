@@ -10,8 +10,7 @@
 
 void shell_init_from_work(struct k_work *work)
 {
-	const struct device *dev =
-			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
 	uint32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
@@ -86,8 +85,7 @@ K_TIMER_DEFINE(uart_poll_timer, uart_poll_timeout, uart_poll_timer_stopped);
 static void shell_uninit_cb(const struct shell *shell, int res)
 {
 	__ASSERT_NO_MSG(res >= 0);
-	const struct device *dev =
-			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 		/* connect uart to my handler */
