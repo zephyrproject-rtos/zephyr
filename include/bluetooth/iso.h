@@ -35,7 +35,44 @@ extern "C" {
 				  BT_HCI_ISO_DATA_HDR_SIZE)
 
 /** Value to set the ISO data path over HCi. */
-#define BT_ISO_DATA_PATH_HCI     0x00
+#define BT_ISO_DATA_PATH_HCI        0x00
+
+/** Minimum interval value in microseconds */
+#define BT_ISO_INTERVAL_MIN         0x0000FF
+/** Maximum interval value in microseconds */
+#define BT_ISO_INTERVAL_MAX         0x0FFFFF
+/** Minimum latency value in milliseconds */
+#define BT_ISO_LATENCY_MIN          0x0005
+/** Maximum latency value in milliseconds */
+#define BT_ISO_LATENCY_MAX          0x0FA0
+/** Packets will be sent sequentially between the channels in the group */
+#define BT_ISO_PACKING_SEQUENTIAL   0x00
+/** Packets will be sent interleaved between the channels in the group */
+#define BT_ISO_PACKING_INTERLEAVED  0x01
+/** Packets may be framed or unframed */
+#define BT_ISO_FRAMING_UNFRAMED     0x00
+/** Packets are always framed */
+#define BT_ISO_FRAMING_FRAMED       0x01
+/** Maximum number of isochronous channels in a single group */
+#define BT_ISO_MAX_GROUP_ISO_COUNT  0x1F
+/** Maximum SDU size */
+#define BT_ISO_MAX_SDU              0x0FFF
+/** Minimum BIG sync timeout value (N * 10 ms) */
+#define BT_ISO_SYNC_TIMEOUT_MIN     0x000A
+/** Maximum BIG sync timeout value (N * 10 ms) */
+#define BT_ISO_SYNC_TIMEOUT_MAX     0x4000
+/** Controller controlled maximum subevent count value */
+#define BT_ISO_SYNC_MSE_ANY         0x00
+/** Minimum BIG sync maximum subevent count value */
+#define BT_ISO_SYNC_MSE_MIN         0x01
+/** Maximum BIG sync maximum subevent count value */
+#define BT_ISO_SYNC_MSE_MAX         0x1F
+/** Maximum connected ISO retransmission value */
+#define BT_ISO_CONNECTED_RTN_MAX    0xFF
+/** Maximum broadcast ISO retransmission value */
+#define BT_ISO_BROADCAST_RTN_MAX    0x1E
+/** Broadcast code size */
+#define BT_ISO_BROADCAST_CODE_SIZE  16
 
 struct bt_iso_chan;
 
@@ -70,13 +107,13 @@ struct bt_iso_chan {
 
 /** @brief ISO Channel IO QoS structure. */
 struct bt_iso_chan_io_qos {
-	/** Channel SDU. Value range 0x0000 - 0x0FFF. */
+	/** Channel SDU. Maximum value is BT_ISO_MAX_SDU */
 	uint16_t			sdu;
 	/** Channel PHY - See BT_GAP_LE_PHY for values.
 	 *  Setting BT_GAP_LE_PHY_NONE is invalid.
 	 */
 	uint8_t				phy;
-	/** Channel Retransmission Number. Value range 0x00 - 0x0F. */
+	/** Channel Retransmission Number. */
 	uint8_t				rtn;
 	/** @brief Channel data path reference
 	 *
@@ -156,19 +193,29 @@ struct bt_iso_recv_info {
 struct bt_iso_cig;
 
 struct bt_iso_cig_create_param {
-	/** Array of pointers to CIS channels
+	/** @brief Array of pointers to CIS channels
 	 *
 	 * This array shall remain valid for the duration of the CIG.
 	 */
 	struct bt_iso_chan **cis_channels;
 
-	/** Number channels in @p cis_channels */
+	/** @brief Number channels in @p cis_channels
+	 *
+	 *  Maximum number of channels in a single group is
+	 *  BT_ISO_MAX_GROUP_ISO_COUNT
+	 */
 	uint8_t num_cis;
 
-	/** Channel interval in us. Value range 0x0000FF - 0xFFFFFF. */
+	/** @brief Channel interval in us.
+	 *
+	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 */
 	uint32_t interval;
 
-	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
+	/** @brief Channel Latency in ms.
+	 *
+	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
+	 */
 	uint16_t latency;
 
 	/** @brief Channel peripherals sleep clock accuracy Only for CIS
@@ -180,10 +227,17 @@ struct bt_iso_cig_create_param {
 	 */
 	uint8_t sca;
 
-	/** Channel packing mode. 0 for unpacked, 1 for packed. */
+	/** @brief Channel packing mode.
+	 *
+	 *  BT_ISO_PACKING_SEQUENTIAL or BT_ISO_PACKING_INTERLEAVED
+	 */
 	uint8_t packing;
 
-	/** Channel framing mode. 0 for unframed, 1 for framed. */
+	/** @brief Channel framing mode.
+	 *
+	 * BT_ISO_FRAMING_UNFRAMED for unframed and
+	 * BT_ISO_FRAMING_FRAMED for framed.
+	 */
 	uint8_t framing;
 };
 
@@ -205,37 +259,58 @@ struct bt_iso_big_create_param {
 	 */
 	struct bt_iso_chan **bis_channels;
 
-	/** Number channels in @p bis_channels */
+	/** @brief Number channels in @p bis_channels
+	 *
+	 *  Maximum number of channels in a single group is
+	 *  BT_ISO_MAX_GROUP_ISO_COUNT
+	 */
 	uint8_t num_bis;
 
-	/** Channel interval in us. Value range 0x0000FF - 0xFFFFFF. */
+	/** @brief Channel interval in us.
+	 *
+	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 */
 	uint32_t interval;
 
-	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
+	/** @brief Channel Latency in ms.
+	 *
+	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
+	 */
 	uint16_t latency;
 
-	/** Channel packing mode. 0 for unpacked, 1 for packed. */
+	/** @brief Channel packing mode.
+	 *
+	 *  BT_ISO_PACKING_SEQUENTIAL or BT_ISO_PACKING_INTERLEAVED
+	 */
 	uint8_t packing;
 
-	/** Channel framing mode. 0 for unframed, 1 for framed. */
+	/** @brief Channel framing mode.
+	 *
+	 * BT_ISO_FRAMING_UNFRAMED for unframed and
+	 * BT_ISO_FRAMING_FRAMED for framed.
+	 */
 	uint8_t framing;
 
 	/** Whether or not to encrypt the streams. */
-	bool  encryption;
+	bool encryption;
 
 	/** @brief Broadcast code
 	 *
 	 *  The code used to derive the session key that is used to encrypt and
 	 *  decrypt BIS payloads.
 	 */
-	uint8_t  bcode[16];
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
 
 struct bt_iso_big_sync_param {
 	/** Array of pointers to BIS channels */
 	struct bt_iso_chan **bis_channels;
 
-	/** Number channels in @p bis_channels */
+	/** @brief Number channels in @p bis_channels
+	 *
+	 *  Maximum number of channels in a single group is
+	 *  BT_ISO_MAX_GROUP_ISO_COUNT
+	 */
 	uint8_t num_bis;
 
 	/** Bitfield of the BISes to sync to */
@@ -243,12 +318,19 @@ struct bt_iso_big_sync_param {
 
 	/** @brief Maximum subevents
 	 *
-	 *  The MSE (Maximum Subevents) parameter is the maximum number of subevents that a
-	 *  Controller should use to receive data payloads in each interval for a BIS
+	 *  The MSE (Maximum Subevents) parameter is the maximum number of
+	 *  subevents that a  Controller should use to receive data payloads
+	 *  in each interval for a BIS.
+	 *
+	 *  Value range is BT_ISO_SYNC_MSE_MIN to BT_ISO_SYNC_MSE_MAX, or
+	 *  BT_ISO_SYNC_MSE_ANY to let the controller choose.
 	 */
 	uint32_t mse;
 
-	/** Synchronization timeout for the BIG (N * 10 MS) */
+	/** @brief Synchronization timeout for the BIG (N * 10 MS)
+	 *
+	 * Value range is BT_ISO_SYNC_TIMEOUT_MIN to BT_ISO_SYNC_TIMEOUT_MAX.
+	 */
 	uint16_t sync_timeout;
 
 	/** Whether or not the streams of the BIG are encrypted */
@@ -259,7 +341,7 @@ struct bt_iso_big_sync_param {
 	 *  The code used to derive the session key that is used to encrypt and
 	 *  decrypt BIS payloads.
 	 */
-	uint8_t  bcode[16];
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 };
 
 struct bt_iso_biginfo {
