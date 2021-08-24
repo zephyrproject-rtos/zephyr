@@ -734,6 +734,17 @@
 #define CLS			BIT(1)
 #define DLS			BIT(0)
 
+/*
+ * IT8XXX2 register structure size/offset checking macro function to mitigate
+ * the risk of unexpected compiling results.
+ */
+#define IT8XXX2_REG_SIZE_CHECK(reg_def, size) \
+	BUILD_ASSERT(sizeof(struct reg_def) == size, \
+		"Failed in size check of register structure!")
+#define IT8XXX2_REG_OFFSET_CHECK(reg_def, member, offset) \
+	BUILD_ASSERT(offsetof(struct reg_def, member) == offset, \
+		"Failed in offset check of register structure member!")
+
 /**
  *
  * (18xxh) PWM & SmartAuto Fan Control (PWM)
