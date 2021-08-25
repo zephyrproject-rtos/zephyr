@@ -261,26 +261,26 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
-static void operation_cb(struct media_player *plr, int err, struct mpl_op_ntf_t op_ntf)
+static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf_t cmd_ntf)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player: %p, Operation failed (%d)", plr, err);
+		shell_error(ctx_shell, "Player: %p, Command failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Operation: %u, result: %u",
-		    plr, op_ntf.requested_opcode, op_ntf.result_code);
+	shell_print(ctx_shell, "Player: %p, Command opcode: %u, result: %u",
+		    plr, cmd_ntf.requested_opcode, cmd_ntf.result_code);
 }
 
-static void operations_supported_cb(struct media_player *plr, int err, uint32_t operations)
+static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player: %p, Operations supported failed (%d)", plr, err);
+		shell_error(ctx_shell, "Player: %p, Commands supported failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Operations supported: %u", plr, operations);
-	/* TODO: Parse bitmap and output list of operations */
+	shell_print(ctx_shell, "Player: %p, Command opcodes supported: %u", plr, opcodes);
+	/* TODO: Parse bitmap and output list of opcodes */
 }
 
 #ifdef CONFIG_BT_OTS
@@ -357,8 +357,8 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	cbs.playing_order            = playing_order_cb;
 	cbs.playing_orders_supported = playing_orders_supported_cb;
 	cbs.media_state              = media_state_cb;
-	cbs.operation                = operation_cb;
-	cbs.operations_supported     = operations_supported_cb;
+	cbs.command                  = command_cb;
+	cbs.commands_supported       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.search                   = search_cb;
 	cbs.search_results_id        = search_results_id_cb;
@@ -661,36 +661,36 @@ static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char 
 	return err;
 }
 
-static int cmd_media_set_operation(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_send_command(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 	int err;
 
-	op.opcode = strtol(argv[1], NULL, 0);
+	cmd.opcode = strtol(argv[1], NULL, 0);
 
 	if (argc > 2) {
-		op.use_param = true;
-		op.param = strtol(argv[2], NULL, 0);
+		cmd.use_param = true;
+		cmd.param = strtol(argv[2], NULL, 0);
 	} else {
-		op.use_param = false;
-		op.param = 0;
+		cmd.use_param = false;
+		cmd.param = 0;
 	}
 
-	err = media_proxy_ctrl_operation_set(current_player, op);
+	err = media_proxy_ctrl_command_send(current_player, cmd);
 
 	if (err) {
-		shell_error(ctx_shell, "Operation set failed (%d)", err);
+		shell_error(ctx_shell, "Command send failed (%d)", err);
 	}
 
 	return err;
 }
 
-static int cmd_media_read_opcodes_supported(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_read_commands_supported(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err = media_proxy_ctrl_operations_supported_get(current_player);
+	int err = media_proxy_ctrl_commands_supported_get(current_player);
 
 	if (err) {
-		shell_error(ctx_shell, "Operation supported read failed (%d)", err);
+		shell_error(ctx_shell, "Commands supported read failed (%d)", err);
 	}
 
 	return err;
@@ -810,10 +810,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 		      cmd_media_read_playing_orders_supported, 1, 0),
 	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_media_read_media_state, 1, 0),
-	SHELL_CMD_ARG(set_operation, NULL, "Set operation <opcode> [argument]",
-		      cmd_media_set_operation, 2, 1),
-	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
-		      cmd_media_read_opcodes_supported, 1, 0),
+	SHELL_CMD_ARG(send_command, NULL, "Send command <opcode> [argument]",
+		      cmd_media_send_command, 2, 1),
+	SHELL_CMD_ARG(read_commands_supported, NULL, "Read Commands Supported",
+		      cmd_media_read_commands_supported, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(set_search, NULL, "Set search <search control item sequence>",
 		      cmd_media_set_search, 2, 0),

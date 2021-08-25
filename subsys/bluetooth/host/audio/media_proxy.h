@@ -43,18 +43,18 @@ extern "C" {
 
 
 /**
- * @brief Media operations
+ * @brief Media player command
  */
-struct mpl_op_t {
+struct mpl_cmd_t {
 	uint8_t  opcode;
 	bool  use_param;
 	int32_t param;
 };
 
 /**
- * @brief Media operation notification
+ * @brief Media command notification
  */
-struct mpl_op_ntf_t {
+struct mpl_cmd_ntf_t {
 	uint8_t requested_opcode;
 	uint8_t result_code;
 };
@@ -143,7 +143,7 @@ struct mpl_search_t {
 #define MEDIA_PROXY_STATE_LAST     0x04
 
 /**
- * @brief Media player operations
+ * @brief Media player command opcodes
  */
 #define MEDIA_PROXY_OP_PLAY          0x01
 #define MEDIA_PROXY_OP_PAUSE         0x02
@@ -172,12 +172,12 @@ struct mpl_search_t {
 #define MEDIA_PROXY_OP_GOTO_GROUP    0x44
 
 /**
- * @brief Media player supported operations length
+ * @brief Media player supported opcodes length
  */
 #define MEDIA_PROXY_OPCODES_SUPPORTED_LEN 4
 
 /**
- * @brief Media player supported operations
+ * @brief Media player supported command opcodes
  */
 #define MEDIA_PROXY_OP_SUP_PLAY          BIT(0)
 #define MEDIA_PROXY_OP_SUP_PAUSE         BIT(1)
@@ -206,12 +206,12 @@ struct mpl_search_t {
 #define MEDIA_PROXY_OP_SUP_GOTO_GROUP    BIT(20)
 
 /**
- * @brief Media player operation result codes
+ * @brief Media player command result codes
  */
-#define MEDIA_PROXY_OP_SUCCESS             0x01
-#define MEDIA_PROXY_OP_NOT_SUPPORTED       0x02
-#define MEDIA_PROXY_OP_PLAYER_INACTIVE     0x03
-#define MEDIA_PROXY_OP_CANNOT_BE_COMPLETED 0x04
+#define MEDIA_PROXY_CMD_SUCCESS             0x01
+#define MEDIA_PROXY_CMD_NOT_SUPPORTED       0x02
+#define MEDIA_PROXY_CMD_PLAYER_INACTIVE     0x03
+#define MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED 0x04
 
 /**
  * @brief Search operation type values
@@ -487,7 +487,7 @@ struct media_proxy_ctrl_cbs {
 	 *
 	 * Called when the Media State is read or changed
 	 * See also media_proxy_ctrl_media_state_get() and
-	 * media_proxy_ctrl_operation_set()
+	 * media_proxy_ctrl_command_send()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
@@ -497,31 +497,31 @@ struct media_proxy_ctrl_cbs {
 	void (*media_state)(struct media_player *player, int err, uint8_t state);
 
 	/**
-	 * @brief Operation callback
+	 * @brief Command callback
 	 *
-	 * Called when an operation has been set, to give the result of the
-	 * operation
-	 * See also media_proxy_ctrl_operation_set()
+	 * Called when a command has been sent, to give the result of the
+	 * command
+	 * See also media_proxy_ctrl_command_send()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param op_ntf   The result of the operation
+	 * @param cmd_ntf  The result of the command
 	 */
-	void (*operation)(struct media_player *player, int err, struct mpl_op_ntf_t op_ntf);
+	void (*command)(struct media_player *player, int err, struct mpl_cmd_ntf_t cmd_ntf);
 
 	/**
-	 * @brief Operations supported callback
+	 * @brief Commands supported callback
 	 *
-	 * Called when the Operations Supported is read or changed
-	 * See also media_proxy_ctrl_operations_supported_get()
+	 * Called when the Commands Supported is read or changed
+	 * See also media_proxy_ctrl_commands_supported_get()
 	 *
 	 * @param player       Media player instance pointer
 	 * @param err          Error value. 0 on success, GATT error on positive value
 	 *                     or errno on negative value.
-	 * @param operations   The supported operations
+	 * @param opcodes      The supported command opcodes (bitmap)
 	 */
-	void (*operations_supported)(struct media_player *player, int err, uint32_t operations);
+	void (*commands_supported)(struct media_player *player, int err, uint32_t opcodes);
 
 	/**
 	 * @brief Search callback
@@ -727,8 +727,7 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
  * forward seeking, negative values for backwards seeking.
  *
  * The seeking speed is not setable - a non-zero seeking speed
- * is the result of "fast rewind" of "fast forward"
- * operations.
+ * is the result of "fast rewind" of "fast forward" commands.
  *
  * @param player   Media player instance pointer
  *
@@ -774,7 +773,7 @@ int media_proxy_ctrl_current_track_id_get(struct media_player *player);
  * @brief Set Current Track Object ID
  *
  * Change the player's current track to the track given by the ID.
- * (Behaves similarly to the goto track operation.)
+ * (Behaves similarly to the goto track command.)
  *
  * Requires Object Transfer Service
  *
@@ -909,29 +908,29 @@ int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player);
 int media_proxy_ctrl_media_state_get(struct media_player *player);
 
 /**
- * @brief Set Operation
+ * @brief Send Command
  *
- * Write an operation (a command) to the media player.
- * Operations may cause the media player to change its state
+ * Send a command to the media player.
+ * Commands may cause the media player to change its state
  *
  * @param player      Media player instance pointer
- * @param operation   The operation to write
+ * @param command     The command to send
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t operation);
+int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd_t command);
 
 /**
- * @brief Read Operations Supported
+ * @brief Read Commands Supported
  *
  * Read a bitmap containing the media player's supported
- * operations.
+ * command opcodes.
  *
  * @param player   Media player instance pointer
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_operations_supported_get(struct media_player *player);
+int media_proxy_ctrl_commands_supported_get(struct media_player *player);
 
 /**
  * @brief Set Search
@@ -1104,8 +1103,7 @@ struct media_proxy_pl_calls {
 	 * forward seeking, negative values for backwards seeking.
 	 *
 	 * The seeking speed is not setable - a non-zero seeking speed
-	 * is the result of "fast rewind" of "fast forward"
-	 * operations.
+	 * is the result of "fast rewind" of "fast forward" commands.
 	 *
 	 * @return The seeking speed factor
 	 */
@@ -1141,7 +1139,7 @@ struct media_proxy_pl_calls {
 	 * @brief Set Current Track Object ID
 	 *
 	 * Change the player's current track to the track given by the ID.
-	 * (Behaves similarly to the goto track operation.)
+	 * (Behaves similarly to the goto track command.)
 	 *
 	 * @param id	The ID of a track object
 	 */
@@ -1247,28 +1245,28 @@ struct media_proxy_pl_calls {
 	uint8_t (*media_state_get)(void);
 
 	/**
-	 * @brief Set Operation
+	 * @brief Send Command
 	 *
-	 * Write an operation (a command) to the media player.
-	 * For operations (play, pause, ... - see the Media Control
+	 * Send a command to the media player.
+	 * For command opcodes (play, pause, ... - see the Media Control
 	 * Service spec, or the BT_MCS_OPC_* defines in the mcs.h
 	 * file.
 	 *
-	 * @param operation	The operation to write
+	 * @param command	The command to send
 	 */
-	void (*operation_set)(struct mpl_op_t operation);
+	void (*command_send)(struct mpl_cmd_t command);
 
 	/**
-	 * @brief Read Operations Supported
+	 * @brief Read Commands Supported
 	 *
 	 * Read a bitmap containing the media player's supported
-	 * operations.
+	 * command opcodes..
 	 * See the Media Control Service spec, or the
 	 * BT_MCS_OPC_SUP_* defines in the mcs.h file.
 	 *
-	 * @return The media player's supported operations
+	 * @return The media player's supported command opcodes
 	 */
-	uint32_t (*operations_supported_get)(void);
+	uint32_t (*commands_supported_get)(void);
 
 	/**
 	 * @brief Set Search
@@ -1449,25 +1447,25 @@ void media_proxy_pl_playing_order_cb(uint8_t order);
 void media_proxy_pl_media_state_cb(uint8_t state);
 
 /**
- * @brief Operation callback
+ * @brief Command callback
  *
- * To be called when an operation has been set, to notify whether the
- * operation was successfully performed or not.
+ * To be called when a command has been sent, to notify whether the
+ * command was successfully performed or not.
  * See the Media Control Service spec, or the BT_MCS_OPC_NTF_*
  * defines in the mcs.h file.
  *
- * @param op_ntf	The result of the operation
+ * @param cmd_ntf	The result of the command
  */
-void media_proxy_pl_operation_cb(struct mpl_op_ntf_t op_ntf);
+void media_proxy_pl_command_cb(struct mpl_cmd_ntf_t cmd_ntf);
 
 /**
- * @brief Operations supported callback
+ * @brief Commands supported callback
  *
- * To be called when the set of supported operations is changed
+ * To be called when the set of commands supported is changed
  *
- * @param operations	The supported operation
+ * @param opcodes   The supported commands opcodes
  */
-void media_proxy_pl_operations_supported_cb(uint32_t operations);
+void media_proxy_pl_commands_supported_cb(uint32_t opcodes);
 
 /**
  * @brief Search callback
