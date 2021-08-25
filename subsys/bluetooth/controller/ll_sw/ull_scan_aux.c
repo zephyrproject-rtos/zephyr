@@ -101,7 +101,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct lll_scan *lll;
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
-	bool is_lll_sched;
 	bool is_scan_req;
 	uint8_t acad_len;
 	uint8_t hdr_len;
@@ -246,11 +245,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		return;
 	}
 
-	/* Copy to local flag since we need to clear 'extra' field */
-	is_lll_sched = !!ftr->aux_sched;
-
 	rx->link = link;
 	ftr->extra = NULL;
+
+	ftr->aux_w4next = 0;
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -388,11 +386,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll_aux->chan = aux_ptr->chan_idx;
 	lll_aux->phy = BIT(aux_ptr->phy);
 
+	ftr->aux_w4next = 1;
+
 	/* See if this was already scheduled from LLL. If so, store aux context
 	 * in global scan struct so we can pick it when scanned node is received
 	 * with a valid context.
 	 */
-	if (is_lll_sched) {
+	if (ftr->aux_lll_sched) {
 		if (lll) {
 			lll->lll_aux = lll_aux;
 		} else {
