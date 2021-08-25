@@ -229,6 +229,13 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	}
 
 	ipm_register_callback(ipm_rx_handle, ipm_callback, NULL);
+
+	err = ipm_set_enabled(ipm_rx_handle, 1);
+	if (err != 0) {
+		LOG_ERR("Could not enable IPM interrupts and callbacks for RX");
+		return err;
+	}
+
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
 	ipm_handle = device_get_binding(CONFIG_RPMSG_SERVICE_IPM_NAME);
 

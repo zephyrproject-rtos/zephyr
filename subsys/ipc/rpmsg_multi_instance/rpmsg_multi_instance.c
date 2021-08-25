@@ -267,6 +267,12 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	/* Register IPM callback. This cb executes when msg has come. */
 	ipm_register_callback(ctx->ipm_rx_handle, ipm_callback, ctx);
 
+	err = ipm_set_enabled(ctx->ipm_rx_handle, 1);
+	if (err != 0) {
+		LOG_ERR("Could not enable IPM interrupts and callbacks for RX");
+		return err;
+	}
+
 	ctx->vq[RPMSG_VQ_0] = virtqueue_allocate(vring_size);
 	if (!ctx->vq[RPMSG_VQ_0]) {
 		LOG_ERR("virtqueue_allocate failed to alloc vq[RPMSG_VQ_0]");
