@@ -209,8 +209,8 @@ at build time via:
    $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
 
 
-Note, however, that the Ethos-U55 FPU is not available in QEMU. If you require
-the use of the FPU, please use the default FVP for device emulation.
+Note, however, that the Ethos-U55 NPU is not available in QEMU. If you require
+the use of the NPU, please use the default FVP for device emulation.
 
 .. _Corstone-300 FVP:
    https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps
