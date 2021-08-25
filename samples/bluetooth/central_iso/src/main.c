@@ -160,10 +160,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int iso_err;
-	static struct bt_iso_chan *channels[1];
-	struct bt_iso_cig_create_param param;
 	struct bt_iso_connect_param connect_param;
-	struct bt_iso_cig *cig;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -183,26 +180,10 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 
-	channels[0] = &iso_chan;
-	param.cis_channels = channels;
-	param.num_cis = ARRAY_SIZE(channels);
-	param.sca = BT_GAP_SCA_UNKNOWN;
-	param.packing = 0;
-	param.framing = 0;
-	param.latency = 10; /* ms */
-	param.interval = 10 * USEC_PER_MSEC; /* us */
-
-	iso_err = bt_iso_cig_create(&param, &cig);
-
-	if (iso_err) {
-		printk("Failed to bind iso to connection (%d)\n", iso_err);
-		return;
-	}
-
 	connect_param.acl = conn;
 	connect_param.iso_chan = &iso_chan;
 
-	iso_err = bt_iso_chan_connect(&connect_param, ARRAY_SIZE(channels));
+	iso_err = bt_iso_chan_connect(&connect_param, 1);
 
 	if (iso_err) {
 		printk("Failed to connect iso (%d)\n", iso_err);
@@ -236,6 +217,9 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 void main(void)
 {
 	int err;
+	static struct bt_iso_chan *channels[1];
+	struct bt_iso_cig_create_param param;
+	struct bt_iso_cig *cig;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -247,6 +231,22 @@ void main(void)
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
+
+	channels[0] = &iso_chan;
+	param.cis_channels = channels;
+	param.num_cis = ARRAY_SIZE(channels);
+	param.sca = BT_GAP_SCA_UNKNOWN;
+	param.packing = 0;
+	param.framing = 0;
+	param.latency = 10; /* ms */
+	param.interval = 10 * USEC_PER_MSEC; /* us */
+
+	err = bt_iso_cig_create(&param, &cig);
+
+	if (err != 0) {
+		printk("Failed to create CIG (%d)\n", err);
+		return;
+	}
 
 	start_scan();
 
