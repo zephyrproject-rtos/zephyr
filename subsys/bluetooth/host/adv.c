@@ -1045,6 +1045,11 @@ set_adv_state:
 
 static void adv_timeout(struct k_work *work);
 
+int bt_le_lim_adv_cancel_timeout(struct bt_le_ext_adv *adv)
+{
+	return k_work_cancel_delayable(&adv->lim_adv_timeout_work);
+}
+
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
@@ -1068,8 +1073,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	}
 
 	if (ad_is_limited(ad, ad_len)) {
-		k_work_init_delayable(&adv->timeout_work, adv_timeout);
-		k_work_reschedule(&adv->timeout_work,
+		k_work_init_delayable(&adv->lim_adv_timeout_work, adv_timeout);
+		k_work_reschedule(&adv->lim_adv_timeout_work,
 				  K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
 
@@ -1080,6 +1085,8 @@ int bt_le_adv_stop(void)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
 	int err;
+
+	(void)bt_le_lim_adv_cancel_timeout(adv);
 
 	if (!adv) {
 		BT_ERR("No valid legacy adv");
@@ -1332,6 +1339,8 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 {
+	(void)bt_le_lim_adv_cancel_timeout(adv);
+
 	atomic_clear_bit(adv->flags, BT_ADV_PERSIST);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
@@ -1406,13 +1415,13 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 static void adv_timeout(struct k_work *work)
 {
 	int err = 0;
-#if defined(CONFIG_BT_EXT_ADV)
 	struct k_work_delayable *dwork;
 	struct bt_le_ext_adv *adv;
 
 	dwork = k_work_delayable_from_work(work);
-	adv = CONTAINER_OF(dwork, struct bt_le_ext_adv, timeout_work);
+	adv = CONTAINER_OF(dwork, struct bt_le_ext_adv, lim_adv_timeout_work);
 
+#if defined(CONFIG_BT_EXT_ADV)
 	if (adv == bt_dev.adv) {
 		err = bt_le_adv_stop();
 	} else {
@@ -1628,6 +1637,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	adv = bt_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
+	(void)bt_le_lim_adv_cancel_timeout(adv);
 #if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	bt_dev.adv_conn_id = adv->id;
 	for (int i = 0; i < ARRAY_SIZE(bt_dev.cached_conn_complete); i++) {
