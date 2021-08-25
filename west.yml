@@ -191,7 +191,9 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
+      # DO NOT MERGE this commit does not exist in this repo yet!
+      # submitted for testing purposes.
+      revision: 84d5d660897dbf45c7d460d7e0db8dd395f541ac
       path: modules/audio/sof
     - name: tensorflow
       revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
