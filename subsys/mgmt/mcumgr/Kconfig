@@ -168,6 +168,18 @@ config IMG_MGMT_DUMMY_HDR
 	  Returns dummy image header data for imgr functions,
 	  useful when there are no images present, Eg: unit tests.
 
+config IMG_MGMT_DIRECT_IMAGE_UPLOAD
+	bool "Allow direct image upload"
+	help
+	  Enables directly uploading image to selected image partition.
+	  This changes how "image" is understood by mcumgr: normally the mcumgr allows to upload
+	  to first slot of the only image it knows, where image is understood as two slots
+	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
+	  target for upload, and more than two may be used (4 at this time).
+	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
+	  behaviour is, when image is not selected, to upload to image that represents secndary
+	  slot in normal operation.
+
 config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
 	help
