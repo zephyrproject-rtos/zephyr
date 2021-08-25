@@ -453,8 +453,7 @@ static int parse_rtn_arg(struct bt_iso_chan_io_qos *qos)
 	}
 
 	rtn = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (rtn > 16) {
+	if (rtn > BT_ISO_CONNECTED_RTN_MAX) {
 		printk("Invalid RTN %llu", rtn);
 		return -EINVAL;
 	}
@@ -478,7 +477,7 @@ static int parse_interval_arg(void)
 
 	interval = strtoul(buffer, NULL, 0);
 	/* TODO: Replace literal ints with a #define once it has been created */
-	if (interval < 0x100 || interval > 0xFFFFF) {
+	if (interval < BT_ISO_INTERVAL_MIN || interval > BT_ISO_INTERVAL_MAX) {
 		printk("Invalid interval %llu", interval);
 		return -EINVAL;
 	}
@@ -501,8 +500,7 @@ static int parse_latency_arg(void)
 	}
 
 	latency = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (latency > 0xFA0) {
+	if (latency < BT_ISO_LATENCY_MIN || latency > BT_ISO_LATENCY_MAX) {
 		printk("Invalid latency %llu", latency);
 		return -EINVAL;
 	}
@@ -551,8 +549,8 @@ static int parse_sdu_arg(struct bt_iso_chan_io_qos *qos)
 	}
 
 	sdu = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (sdu > 0xFFF || sdu < sizeof(uint32_t) /* room for the counter */) {
+	if (sdu > MIN(BT_ISO_MAX_SDU, sizeof(iso_data)) ||
+	    sdu < sizeof(uint32_t) /* room for the counter */) {
 		printk("Invalid SDU %llu", sdu);
 		return -EINVAL;
 	}
@@ -575,7 +573,7 @@ static int parse_cis_count_arg(void)
 	}
 
 	cis_count = strtoul(buffer, NULL, 0);
-	if (cis_count > CONFIG_BT_ISO_MAX_CHAN) {
+	if (cis_count > MAX(BT_ISO_MAX_GROUP_ISO_COUNT, CONFIG_BT_ISO_MAX_CHAN)) {
 		printk("Invalid CIS count %llu", cis_count);
 		return -EINVAL;
 	}
