@@ -401,14 +401,22 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
 
+	bt_iso_cleanup(chan->iso);
+
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
 	 */
-	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-	    chan->iso->role == BT_HCI_ROLE_SLAVE) {
-		chan->iso->iso.chan = NULL;
-		bt_conn_unref(chan->iso);
-		chan->iso = NULL;
+	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) && !chan->iso->iso.is_bis) {
+		if (chan->iso->role == BT_HCI_ROLE_SLAVE) {
+			bt_conn_unref(chan->iso);
+			chan->iso = NULL;
+		} else {
+			/* ISO data paths are automatically removed when the
+			 * peripheral/slave disconnects, so we only need to
+			 * move it for the central
+			 */
+			bt_iso_remove_data_path(chan->iso);
+		}
 	}
 
 	if (chan->ops->disconnected) {
@@ -443,8 +451,6 @@ const char *bt_iso_chan_state_str(uint8_t state)
 	switch (state) {
 	case BT_ISO_DISCONNECTED:
 		return "disconnected";
-	case BT_ISO_BOUND:
-		return "bound";
 	case BT_ISO_CONNECT:
 		return "connect";
 	case BT_ISO_CONNECTED:
@@ -466,17 +472,15 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 	/* check transitions validness */
 	switch (state) {
 	case BT_ISO_DISCONNECTED:
-	case BT_ISO_BOUND:
-		/* regardless of old state always allows these states */
+		/* regardless of old state always allows this states */
 		break;
 	case BT_ISO_CONNECT:
-		if (chan->state != BT_ISO_BOUND) {
+		if (chan->state != BT_ISO_DISCONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
 	case BT_ISO_CONNECTED:
-		if (chan->state != BT_ISO_BOUND &&
-		    chan->state != BT_ISO_CONNECT) {
+		if (chan->state != BT_ISO_CONNECT) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
@@ -1163,7 +1167,6 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 
 		/* Assign the connection handle */
 		chan->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i]);
-		bt_iso_chan_set_state(chan, BT_ISO_BOUND);
 	}
 
 	net_buf_unref(rsp);
@@ -1185,12 +1188,14 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 	for (int i = 0; i < cig->num_cis; i++) {
 		if (cig->cis[i]->state != BT_ISO_DISCONNECTED) {
 			BT_DBG("[%d]: Channel is not disconnected", i);
+			return -EINVAL;
 		}
 	}
 
 	err = hci_le_remove_cig(cig->id);
 	if (err != 0) {
 		BT_DBG("Failed to terminate CIG: %d", err);
+		return err;
 	}
 
 	cleanup_cig(cig);
@@ -1254,7 +1259,7 @@ int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 	}
 
 	bt_iso_chan_add(iso, chan);
-	bt_iso_chan_set_state(chan, BT_ISO_BOUND);
+	bt_iso_chan_set_state(chan, BT_ISO_CONNECT);
 
 	return 0;
 }
@@ -1301,8 +1306,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 			return -EINVAL;
 		}
 
-		if (param[i].iso_chan->state != BT_ISO_BOUND) {
-			BT_DBG("[%d]: ISO is not in the BT_ISO_BOUND state: %u",
+		if (param[i].iso_chan->state != BT_ISO_DISCONNECTED) {
+			BT_DBG("[%d]: ISO is not in the BT_ISO_DISCONNECTED state: %u",
 			       i, param[i].iso_chan->state);
 			return -EINVAL;
 		}
@@ -1480,7 +1485,6 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 		bis->iso->iso.bis_id = bt_conn_index(bis->iso);
 
 		bt_iso_chan_add(bis->iso, bis);
-		bt_iso_chan_set_state(bis, BT_ISO_BOUND);
 	}
 
 	return 0;
