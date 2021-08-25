@@ -109,7 +109,7 @@ struct mcs_instance_t {
 	 * - playing order     (1 octet)
 	 * - the control point (5 octets)
 	 *                     (1 octet opcode + optionally 4 octet param)
-	 *                     (mpl_op_t.opcode  + mpl_opt_t.param)
+	 *                     (mpl_cmd_t.opcode + mpl_cmd_t.param)
 	 * If the object transfer client is included, it is also used for
 	 * - object IDs (6 octets - BT_OTS_OBJ_ID_SIZE) and
 	 * - the search control point (64 octets - SEARCH_LEN_MAX)
@@ -121,10 +121,10 @@ struct mcs_instance_t {
 	char write_buf[SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
-	/* TODO: Rewrite the mpl_op_t to have the "use_param" parameter */
+	/* TODO: Rewrite the mpl_cmd_t to have the "use_param" parameter */
 	/* separately, and the opcode and param alone as a struct */
-	char write_buf[sizeof(((struct mpl_op_t *)0)->opcode) +
-		       sizeof(((struct mpl_op_t *)0)->param)];
+	char write_buf[sizeof(((struct mpl_cmd_t *)0)->opcode) +
+		       sizeof(((struct mpl_cmd_t *)0)->param)];
 #endif /* CONFIG_BT_MCC_OTS */
 
 	struct bt_gatt_write_params     write_params;
@@ -686,32 +686,32 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 			    struct bt_gatt_write_params *params)
 {
 	int cb_err = err;
-	struct mpl_op_t op = {0};
+	struct mpl_cmd_t cmd = {0};
 
 	cur_mcs_inst->busy = false;
 
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
 	} else if (!params->data ||
-		   (params->length != sizeof(op.opcode) &&
-		    params->length != sizeof(op.opcode) + sizeof(op.param))) {
+		   (params->length != sizeof(cmd.opcode) &&
+		    params->length != sizeof(cmd.opcode) + sizeof(cmd.param))) {
 		/* Above: No data pointer, or length not equal to any of the */
 		/* two possible values */
 		BT_DBG("length: %d, data: %p", params->length, params->data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
-		memcpy(&op.opcode, params->data, sizeof(op.opcode));
-		if (params->length == sizeof(op.opcode) + sizeof(op.param)) {
-			memcpy(&op.param,
-			       (char *)(params->data) + sizeof(op.opcode),
-			       sizeof(op.param));
-			op.use_param = true;
-			BT_DBG("Operation in callback: %d, param: %d", op.opcode, op.param);
+		memcpy(&cmd.opcode, params->data, sizeof(cmd.opcode));
+		if (params->length == sizeof(cmd.opcode) + sizeof(cmd.param)) {
+			memcpy(&cmd.param,
+			       (char *)(params->data) + sizeof(cmd.opcode),
+			       sizeof(cmd.param));
+			cmd.use_param = true;
+			BT_DBG("Command in callback: %d, param: %d", cmd.opcode, cmd.param);
 		}
 	}
 
-	if (mcc_cb && mcc_cb->cp_set) {
-		mcc_cb->cp_set(conn, cb_err, op);
+	if (mcc_cb && mcc_cb->cmd_send) {
+		mcc_cb->cmd_send(conn, cb_err, cmd);
 	}
 }
 
@@ -911,22 +911,22 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			/* writable and notifiable.  Handle directly here. */
 
 			int cb_err = 0;
-			struct mpl_op_ntf_t ntf = {0};
+			struct mpl_cmd_ntf_t ntf = {0};
 
 			BT_DBG("Control Point notification");
 			if (length == sizeof(ntf.requested_opcode) + sizeof(ntf.result_code)) {
 				ntf.requested_opcode = *(uint8_t *)data;
 				ntf.result_code = *((uint8_t *)data +
 						    sizeof(ntf.requested_opcode));
-				BT_DBG("Operation: %d, result: %d",
+				BT_DBG("Command: %d, result: %d",
 				       ntf.requested_opcode, ntf.result_code);
 			} else {
 				BT_DBG("length: %d, data: %p", length, data);
 				cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 			}
 
-			if (mcc_cb && mcc_cb->cp_ntf) {
-				mcc_cb->cp_ntf(conn, cb_err, ntf);
+			if (mcc_cb && mcc_cb->cmd_ntf) {
+				mcc_cb->cmd_ntf(conn, cb_err, ntf);
 			}
 
 		} else if (handle == cur_mcs_inst->opcodes_supported_handle) {
@@ -1953,10 +1953,10 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 	return err;
 }
 
-int bt_mcc_set_cp(struct bt_conn *conn, struct mpl_op_t op)
+int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd_t cmd)
 {
 	int err;
-	int length = sizeof(op.opcode);
+	int length = sizeof(cmd.opcode);
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1969,11 +1969,11 @@ int bt_mcc_set_cp(struct bt_conn *conn, struct mpl_op_t op)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &op.opcode, length);
-	if (op.use_param) {
-		length += sizeof(op.param);
-		memcpy(&cur_mcs_inst->write_buf[sizeof(op.opcode)], &op.param,
-		       sizeof(op.param));
+	memcpy(cur_mcs_inst->write_buf, &cmd.opcode, length);
+	if (cmd.use_param) {
+		length += sizeof(cmd.param);
+		memcpy(&cur_mcs_inst->write_buf[sizeof(cmd.opcode)], &cmd.param,
+		       sizeof(cmd.param));
 	}
 
 	cur_mcs_inst->write_params.offset = 0;
@@ -1982,8 +1982,8 @@ int bt_mcc_set_cp(struct bt_conn *conn, struct mpl_op_t op)
 	cur_mcs_inst->write_params.handle = cur_mcs_inst->cp_handle;
 	cur_mcs_inst->write_params.func = mcs_write_cp_cb;
 
-	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, sizeof(op),
-		       "Operation sent");
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, sizeof(cmd),
+		       "Command sent");
 
 	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
 	if (!err) {
