@@ -687,11 +687,6 @@ void ll_reset(void)
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
-#if defined(CONFIG_BT_CTLR_DF)
-	err = ull_df_reset();
-	LL_ASSERT(!err);
-#endif
-
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 	/* Reset initiator */
@@ -800,6 +795,15 @@ void ll_reset(void)
 	/* Common to init and reset */
 	err = init_reset();
 	LL_ASSERT(!err);
+
+#if defined(CONFIG_BT_CTLR_DF)
+	/* Direction Finding has to be reset after ull init_reset call because
+	 *  it uses mem_link_rx for node_rx_iq_report. The mem_linx_rx is reset
+	 *  in common ull init_reset.
+	 */
+	err = ull_df_reset();
+	LL_ASSERT(!err);
+#endif
 }
 
 /**
