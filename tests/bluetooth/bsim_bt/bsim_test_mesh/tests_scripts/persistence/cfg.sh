@@ -9,13 +9,13 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # First test: saves data; second test: verifies it.
 
 conf=prj_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest test-preset=0
+RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=0
 
 conf=prj_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest test-preset=0
+RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=0
 
 conf=prj_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest test-preset=1
+RunTest mesh_persistence_cfg_check persistence_cfg_save -- -argstest stack-cfg=1
 
 conf=prj_pst_conf
-RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest test-preset=1
+RunTest mesh_persistence_cfg_check persistence_cfg_load -- -argstest stack-cfg=1

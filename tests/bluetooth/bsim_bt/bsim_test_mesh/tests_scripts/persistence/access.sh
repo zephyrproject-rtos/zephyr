@@ -12,17 +12,21 @@ conf=prj_pst_conf
 RunTest mesh_persistence_access_data_check persistence_access_data_save
 
 conf=prj_pst_conf
-RunTest mesh_persistence_access_data_check persistence_access_data_load -- -argstest test-preset=0
+RunTest mesh_persistence_access_data_check persistence_access_data_load --\
+	-argstest access-cfg=configured
 
 conf=prj_pst_conf
 RunTest mesh_persistence_access_data_check persistence_access_sub_overwrite --\
-	-argstest test-preset=0
+	-argstest access-cfg=configured
 
 conf=prj_pst_conf
-RunTest mesh_persistence_access_data_check persistence_access_data_load -- -argstest test-preset=1
+RunTest mesh_persistence_access_data_check persistence_access_data_load --\
+	-argstest access-cfg=new-subs
 
 conf=prj_pst_conf
-RunTest mesh_persistence_access_data_check persistence_access_data_remove -- -argstest test-preset=1
+RunTest mesh_persistence_access_data_check persistence_access_data_remove --\
+	-argstest access-cfg=new-subs
 
 conf=prj_pst_conf
-RunTest mesh_persistence_access_data_check persistence_access_data_load -- -argstest test-preset=2
+RunTest mesh_persistence_access_data_check persistence_access_data_load --\
+	-argstest access-cfg=not-configured

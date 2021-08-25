@@ -95,9 +95,7 @@ static uint8_t test_mod_data[] = { 0xfa, 0xff, 0xf4, 0x43 };
 #define TEST_VND_MOD_DATA_NAME "vtmdata"
 static uint8_t vnd_test_mod_data[] = { 0xad, 0xdf, 0x14, 0x53, 0x54, 0x1f };
 
-static ssize_t test_preset = -1;
-static bool test_settings_clear;
-static struct {
+struct access_cfg {
 	struct bt_mesh_cfg_mod_pub pub_params;
 
 	size_t appkeys_count;
@@ -107,9 +105,15 @@ static struct {
 	uint16_t subs[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 
 	size_t mod_data_len;
-} test_access_presets[][2] = {
-	/* Default */
-	{
+};
+static const struct access_cfg (*current_access_cfg)[2];
+enum {
+	CONFIGURED,
+	NEW_SUBS,
+	NOT_CONFIGURED,
+};
+static const struct access_cfg access_cfgs[][2] = {
+	[CONFIGURED] = {
 		/* SIG model. */
 		{
 			.pub_params = TEST_MOD_PUB_PARAMS,
@@ -127,8 +131,7 @@ static struct {
 		},
 	},
 
-	/* After subscription overwrite */
-	{
+	[NEW_SUBS] = {
 		/* SIG model. */
 		{
 			.pub_params = TEST_MOD_PUB_PARAMS,
@@ -146,8 +149,7 @@ static struct {
 		},
 	},
 
-	/* After remove */
-	{
+	[NOT_CONFIGURED] = {
 		/* SIG model. */
 		{
 			.pub_params = DISABLED_MOD_PUB_PARAMS,
@@ -166,7 +168,7 @@ static struct {
 	},
 };
 
-static const struct {
+static const struct stack_cfg {
 	uint8_t beacon;
 	uint8_t ttl;
 	uint8_t gatt_proxy;
@@ -176,7 +178,7 @@ static const struct {
 		enum bt_mesh_feat_state state;
 		uint8_t transmit;
 	} relay;
-} test_cfg_presets[] = {
+} stack_cfgs[] = {
 	{
 		.beacon = 1,
 		.ttl = 12,
@@ -194,19 +196,32 @@ static const struct {
 		.relay = { .state = BT_MESH_FEATURE_ENABLED, .transmit = BT_MESH_TRANSMIT(1, 10) },
 	},
 };
+static const struct stack_cfg *current_stack_cfg;
+
+static bool clear_settings;
 
 static void test_args_parse(int argc, char *argv[])
 {
+	char *access_cfg_str = NULL;
+	int32_t stack_cfg = -1;
+
 	bs_args_struct_t args_struct[] = {
 		{
-			.dest = &test_preset,
-			.type = 'u',
-			.name = "{0, 1, 2}",
-			.option = "test-preset",
+			.dest = &access_cfg_str,
+			.type = 's',
+			.name = "{configured, new-subs, not-configured}",
+			.option = "access-cfg",
 			.descript = ""
 		},
 		{
-			.dest = &test_settings_clear,
+			.dest = &stack_cfg,
+			.type = 'i',
+			.name = "{0, 1}",
+			.option = "stack-cfg",
+			.descript = ""
+		},
+		{
+			.dest = &clear_settings,
 			.type = 'b',
 			.name = "{0, 1}",
 			.option = "clear-settings",
@@ -215,6 +230,20 @@ static void test_args_parse(int argc, char *argv[])
 	};
 
 	bs_args_parse_all_cmd_line(argc, argv, args_struct);
+
+	if (access_cfg_str != NULL) {
+		if (!strcmp(access_cfg_str, "configured")) {
+			current_access_cfg = &access_cfgs[CONFIGURED];
+		} else if (!strcmp(access_cfg_str, "new-subs")) {
+			current_access_cfg = &access_cfgs[NEW_SUBS];
+		} else if (!strcmp(access_cfg_str, "not-configured")) {
+			current_access_cfg = &access_cfgs[NOT_CONFIGURED];
+		}
+	}
+
+	if (stack_cfg >= 0 && stack_cfg < ARRAY_SIZE(stack_cfgs)) {
+		current_stack_cfg = &stack_cfgs[stack_cfg];
+	}
 }
 
 static struct k_sem prov_sem;
@@ -251,8 +280,8 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, u
 	k_sem_give(&prov_sem);
 }
 
-static void check_mod_pub_params(struct bt_mesh_cfg_mod_pub *expected,
-				 struct bt_mesh_cfg_mod_pub *got)
+static void check_mod_pub_params(const struct bt_mesh_cfg_mod_pub *expected,
+				 const struct bt_mesh_cfg_mod_pub *got)
 {
 	ASSERT_EQUAL(expected->addr, got->addr);
 	ASSERT_EQUAL(expected->app_idx, got->app_idx);
@@ -277,11 +306,11 @@ int test_model_settings_set(struct bt_mesh_model *model,
 	settings_name_next(name, &name);
 	ASSERT_TRUE(name == NULL);
 
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 2);
+	ASSERT_TRUE(current_access_cfg != NULL);
 	result = read_cb(cb_arg, &data, sizeof(data));
-	ASSERT_EQUAL(test_access_presets[test_preset][0].mod_data_len, result);
+	ASSERT_EQUAL((*current_access_cfg)[0].mod_data_len, result);
 
-	if (memcmp(data, test_mod_data, test_access_presets[test_preset][0].mod_data_len)) {
+	if (memcmp(data, test_mod_data, (*current_access_cfg)[0].mod_data_len)) {
 		FAIL("Incorrect data restored");
 	}
 
@@ -308,11 +337,11 @@ int test_vnd_model_settings_set(struct bt_mesh_model *model,
 	settings_name_next(name, &name);
 	ASSERT_TRUE(name == NULL);
 
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 2);
+	ASSERT_TRUE(current_access_cfg != NULL);
 	result = read_cb(cb_arg, &data, sizeof(data));
-	ASSERT_EQUAL(test_access_presets[test_preset][1].mod_data_len, result);
+	ASSERT_EQUAL((*current_access_cfg)[1].mod_data_len, result);
 
-	if (memcmp(data, vnd_test_mod_data, test_access_presets[test_preset][1].mod_data_len)) {
+	if (memcmp(data, vnd_test_mod_data, (*current_access_cfg)[1].mod_data_len)) {
 		FAIL("Incorrect data restored");
 	}
 
@@ -563,7 +592,7 @@ static void test_access_data_save(void)
 	PASS();
 }
 
-static void node_configuration_check(size_t preset)
+static void node_configuration_check(const struct access_cfg (*cfg)[2])
 {
 	uint16_t appkeys[CONFIG_BT_MESH_MODEL_KEY_COUNT + 1];
 	size_t appkeys_count = ARRAY_SIZE(appkeys);
@@ -588,9 +617,9 @@ static void node_configuration_check(size_t preset)
 			FAIL("Mod app get failed (err %d, status %u)", err, status);
 		}
 
-		ASSERT_EQUAL(test_access_presets[preset][m].appkeys_count, appkeys_count);
+		ASSERT_EQUAL((*cfg)[m].appkeys_count, appkeys_count);
 		for (size_t i = 0; i < appkeys_count; i++) {
-			ASSERT_EQUAL(test_access_presets[preset][m].appkeys[i], appkeys[i]);
+			ASSERT_EQUAL((*cfg)[m].appkeys[i], appkeys[i]);
 		}
 
 		if (!vnd) {
@@ -605,9 +634,9 @@ static void node_configuration_check(size_t preset)
 			FAIL("Mod sub get failed (err %d, status %u)", err, status);
 		}
 
-		ASSERT_EQUAL(test_access_presets[preset][m].subs_count, subs_count);
+		ASSERT_EQUAL((*cfg)[m].subs_count, subs_count);
 		for (size_t i = 0; i < subs_count; i++) {
-			ASSERT_EQUAL(test_access_presets[preset][m].subs[i], subs[i]);
+			ASSERT_EQUAL((*cfg)[m].subs[i], subs[i]);
 		}
 
 		struct bt_mesh_cfg_mod_pub pub_params = {};
@@ -624,13 +653,13 @@ static void node_configuration_check(size_t preset)
 			FAIL("Mod pub get failed (err %d, status %u)", err, status);
 		}
 
-		check_mod_pub_params(&test_access_presets[preset][m].pub_params, &pub_params);
+		check_mod_pub_params(&(*cfg)[m].pub_params, &pub_params);
 	}
 }
 
 static void test_access_data_load(void)
 {
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 2);
+	ASSERT_TRUE(current_access_cfg != NULL);
 
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -639,7 +668,7 @@ static void test_access_data_load(void)
 		FAIL("Device should boot up as already provisioned");
 	}
 
-	node_configuration_check(test_preset);
+	node_configuration_check(current_access_cfg);
 
 	PASS();
 }
@@ -767,7 +796,7 @@ static void test_cfg_save(void)
 	uint8_t status;
 	int err;
 
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 1);
+	ASSERT_TRUE(current_stack_cfg != NULL);
 
 	settings_test_backend_clear();
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -777,44 +806,44 @@ static void test_cfg_save(void)
 	}
 
 	err = bt_mesh_cfg_beacon_set(test_netkey_idx, TEST_ADDR,
-				     test_cfg_presets[test_preset].beacon, &status);
-	if (err || status != test_cfg_presets[test_preset].beacon) {
+				     current_stack_cfg->beacon, &status);
+	if (err || status != current_stack_cfg->beacon) {
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_ttl_set(test_netkey_idx, TEST_ADDR,
-				  test_cfg_presets[test_preset].ttl, &status);
-	if (err || status != test_cfg_presets[test_preset].ttl) {
+				  current_stack_cfg->ttl, &status);
+	if (err || status != current_stack_cfg->ttl) {
 		FAIL("TTL set failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_gatt_proxy_set(test_netkey_idx, TEST_ADDR,
-					 test_cfg_presets[test_preset].gatt_proxy, &status);
-	if (err || status != test_cfg_presets[test_preset].gatt_proxy) {
+					 current_stack_cfg->gatt_proxy, &status);
+	if (err || status != current_stack_cfg->gatt_proxy) {
 		FAIL("GATT Proxy set failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_friend_set(test_netkey_idx, TEST_ADDR,
-				     test_cfg_presets[test_preset].friend, &status);
-	if (err || status != test_cfg_presets[test_preset].friend) {
+				     current_stack_cfg->friend, &status);
+	if (err || status != current_stack_cfg->friend) {
 		FAIL("Friend set failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_net_transmit_set(test_netkey_idx, TEST_ADDR,
-					   test_cfg_presets[test_preset].net_transmit,
+					   current_stack_cfg->net_transmit,
 					   &transmit);
-	if (err || transmit != test_cfg_presets[test_preset].net_transmit) {
+	if (err || transmit != current_stack_cfg->net_transmit) {
 		FAIL("Net transmit set failed (err %d, trasmit %x)", err, transmit);
 	}
 
 	err = bt_mesh_cfg_relay_set(test_netkey_idx, TEST_ADDR,
-				    test_cfg_presets[test_preset].relay.state,
-				    test_cfg_presets[test_preset].relay.transmit,
+				    current_stack_cfg->relay.state,
+				    current_stack_cfg->relay.transmit,
 				    &status, &transmit);
-	if (err || status  != test_cfg_presets[test_preset].relay.state ||
-	    transmit != test_cfg_presets[test_preset].relay.transmit) {
+	if (err || status  != current_stack_cfg->relay.state ||
+	    transmit != current_stack_cfg->relay.transmit) {
 		FAIL("Relay set failed (err %d, status %u, transmit %x)", err, status,
-		     test_cfg_presets[test_preset].relay.transmit);
+		     current_stack_cfg->relay.transmit);
 	}
 
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
@@ -828,7 +857,7 @@ static void test_cfg_load(void)
 	uint8_t status;
 	int err;
 
-	ASSERT_TRUE(test_preset >= 0 && test_preset <= 1);
+	ASSERT_TRUE(current_stack_cfg != NULL);
 
 	/* In this test stack should boot as provisioned */
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -838,33 +867,33 @@ static void test_cfg_load(void)
 	}
 
 	err = bt_mesh_cfg_beacon_get(test_netkey_idx, TEST_ADDR, &status);
-	if (err || status != test_cfg_presets[test_preset].beacon) {
+	if (err || status != current_stack_cfg->beacon) {
 		FAIL("Beacon get failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_ttl_get(test_netkey_idx, TEST_ADDR, &status);
-	if (err || status != test_cfg_presets[test_preset].ttl) {
+	if (err || status != current_stack_cfg->ttl) {
 		FAIL("TTL get failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_gatt_proxy_get(test_netkey_idx, TEST_ADDR, &status);
-	if (err || status != test_cfg_presets[test_preset].gatt_proxy) {
+	if (err || status != current_stack_cfg->gatt_proxy) {
 		FAIL("GATT Proxy get failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_friend_get(test_netkey_idx, TEST_ADDR, &status);
-	if (err || status != test_cfg_presets[test_preset].friend) {
+	if (err || status != current_stack_cfg->friend) {
 		FAIL("Friend get failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_net_transmit_get(test_netkey_idx, TEST_ADDR, &status);
-	if (err || status != test_cfg_presets[test_preset].net_transmit) {
+	if (err || status != current_stack_cfg->net_transmit) {
 		FAIL("Net transmit get failed (err %d, status %u)", err, status);
 	}
 
 	err = bt_mesh_cfg_relay_get(test_netkey_idx, TEST_ADDR, &status, &transmit);
-	if (err || status != test_cfg_presets[test_preset].relay.state ||
-	    transmit != test_cfg_presets[test_preset].relay.transmit) {
+	if (err || status != current_stack_cfg->relay.state ||
+	    transmit != current_stack_cfg->relay.transmit) {
 		FAIL("Relay get failed (err %d, state %u, transmit %x)", err, status, transmit);
 	}
 
@@ -877,7 +906,7 @@ static void test_cfg_load(void)
  */
 static void test_reprovisioning_device(void)
 {
-	if (test_settings_clear) {
+	if (clear_settings) {
 		settings_test_backend_clear();
 	}
 
@@ -918,7 +947,7 @@ static void test_reprovisioning_provisioner(void)
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
 
 	/* Verify that the remote device is not configured. */
-	node_configuration_check(2);
+	node_configuration_check(&access_cfgs[NOT_CONFIGURED]);
 
 	/* Configure the remote device. */
 	node_configure();
