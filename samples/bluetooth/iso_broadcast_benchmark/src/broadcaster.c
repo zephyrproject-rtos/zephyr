@@ -114,8 +114,7 @@ static int parse_rtn_arg(void)
 	}
 
 	rtn = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (rtn > 16) {
+	if (rtn > BT_ISO_BROADCAST_RTN_MAX) {
 		printk("Invalid RTN %llu", rtn);
 		return -EINVAL;
 	}
@@ -138,8 +137,7 @@ static int parse_interval_arg(void)
 	}
 
 	interval = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (interval < 0x100 || interval > 0xFFFFF) {
+	if (interval < BT_ISO_INTERVAL_MIN || interval > BT_ISO_INTERVAL_MAX) {
 		printk("Invalid interval %llu", interval);
 		return -EINVAL;
 	}
@@ -162,8 +160,7 @@ static int parse_latency_arg(void)
 	}
 
 	latency = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (latency > 0xFA0) {
+	if (latency < BT_ISO_LATENCY_MIN || latency > BT_ISO_LATENCY_MAX) {
 		printk("Invalid latency %llu", latency);
 		return -EINVAL;
 	}
@@ -212,8 +209,7 @@ static int parse_sdu_arg(void)
 	}
 
 	sdu = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (sdu > 0xFFF) {
+	if (sdu > MIN(BT_ISO_MAX_SDU, sizeof(iso_data))) {
 		printk("Invalid SDU %llu", sdu);
 		return -EINVAL;
 	}
@@ -236,8 +232,8 @@ static int parse_packing_arg(void)
 	}
 
 	packing = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (packing > 1) {
+	if (packing != BT_ISO_PACKING_SEQUENTIAL &&
+	    packing != BT_ISO_PACKING_INTERLEAVED) {
 		printk("Invalid packing %llu", packing);
 		return -EINVAL;
 	}
@@ -260,8 +256,8 @@ static int parse_framing_arg(void)
 	}
 
 	framing = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (framing > 1) {
+	if (framing != BT_ISO_FRAMING_UNFRAMED &&
+	    framing != BT_ISO_FRAMING_FRAMED) {
 		printk("Invalid framing %llu", framing);
 		return -EINVAL;
 	}
@@ -284,7 +280,7 @@ static int parse_bis_count_arg(void)
 	}
 
 	bis_count = strtoul(buffer, NULL, 0);
-	if (bis_count > CONFIG_BT_ISO_MAX_CHAN) {
+	if (bis_count > MAX(BT_ISO_MAX_GROUP_ISO_COUNT, CONFIG_BT_ISO_MAX_CHAN)) {
 		printk("Invalid BIS count %llu", bis_count);
 		return -EINVAL;
 	}
