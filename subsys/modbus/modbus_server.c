@@ -950,6 +950,8 @@ bool modbus_server_handler(struct modbus_context *ctx)
 	}
 
 	/* Prepare response header */
+	ctx->tx_adu.trans_id = ctx->rx_adu.trans_id;
+	ctx->tx_adu.proto_id = ctx->rx_adu.proto_id;
 	ctx->tx_adu.unit_id = addr;
 	ctx->tx_adu.fc = fc;
 
