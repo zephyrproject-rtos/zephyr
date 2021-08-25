@@ -149,5 +149,13 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	range 0 32
 	default 2
 
+config OPENTHREAD_TCP_ENABLE
+	bool "Enable TCP"
+
+config OPENTHREAD_CLI_TCP_ENABLE
+	bool "Enable TCP in the CLI tool"
+	default y if SHELL
+	depends on OPENTHREAD_TCP_ENABLE
+
 config OPENTHREAD_HISTORY_TRACKER
 	bool "Enable history tracker support"
