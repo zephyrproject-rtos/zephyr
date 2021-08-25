@@ -361,22 +361,29 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			goto ull_scan_aux_rx_flush;
 		}
 
-		aux->rx_last = NULL;
+		aux->rx_head = aux->rx_last = NULL;
 		lll_aux = &aux->lll;
 
 		ull_hdr_init(&aux->ull);
 		lll_hdr_init(lll_aux, aux);
 
-		aux->parent = lll ? (void *)lll : (void *)lll_sync;
+		aux->parent = lll ? (void *)lll : (void *)sync_lll;
 	}
 
-	/* Enqueue the rx in aux context */
-	if (aux->rx_last) {
-		aux->rx_last->rx_ftr.extra = rx;
+	/* In sync context we can dispatch rx immediately, in scan context we
+	 * enqueue rx in aux context and will flush them after scan is complete.
+	 */
+	if (sync_lll) {
+		ll_rx_put(link, rx);
+		ll_rx_sched();
 	} else {
-		aux->rx_head = rx;
+		if (aux->rx_last) {
+			aux->rx_last->rx_ftr.extra = rx;
+		} else {
+			aux->rx_head = rx;
+		}
+		aux->rx_last = rx;
 	}
-	aux->rx_last = rx;
 
 	lll_aux->chan = aux_ptr->chan_idx;
 	lll_aux->phy = BIT(aux_ptr->phy);
@@ -511,7 +518,16 @@ ull_scan_aux_rx_flush:
 
 		hdr = &aux->ull;
 
-		aux->rx_last->rx_ftr.extra = rx;
+		/* Enqueue last rx in aux context if possible, otherwise send
+		 * immediately since we are in sync context.
+		 */
+		if (aux->rx_last) {
+			aux->rx_last->rx_ftr.extra = rx;
+		} else {
+			LL_ASSERT(sync_lll);
+			ll_rx_put(link, rx);
+			ll_rx_sched();
+		}
 
 		/* ref == 0
 		 * All PDUs were scheduled from LLL and there is no pending done
@@ -686,21 +702,23 @@ static void done_disabled_cb(void *param)
 static void flush(struct ll_scan_aux_set *aux)
 {
 	struct node_rx_hdr *rx;
-	struct lll_scan *lll;
 
+	/* Nodes are enqueued only in scan context so need to send them now */
 	rx = aux->rx_head;
-	lll = rx->rx_ftr.param;
-	if (ull_scan_is_valid_get(HDR_LLL2ULL(lll))) {
+	if (rx) {
+		struct lll_scan *lll;
+
+		lll = aux->parent;
 		lll->lll_aux = NULL;
+
+		ll_rx_put(rx->link, rx);
+		ll_rx_sched();
 	} else {
-		struct lll_sync *lll_sync;
+		struct lll_sync *lll;
 
-		lll_sync = rx->rx_ftr.param;
-		lll_sync->lll_aux = NULL;
+		lll = aux->parent;
+		lll->lll_aux = NULL;
 	}
-
-	ll_rx_put(rx->link, rx);
-	ll_rx_sched();
 
 	aux_release(aux);
 }
