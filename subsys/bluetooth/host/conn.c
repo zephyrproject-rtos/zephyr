@@ -1473,9 +1473,9 @@ static void tx_complete_work(struct k_work *work)
 	tx_notify(conn);
 }
 
+#if defined(CONFIG_BT_ISO_UNICAST)
 static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_ISO)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
@@ -1485,19 +1485,16 @@ static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 			continue;
 		}
 
-		if (iso == conn) {
-			return iso;
-		}
-
 		if (iso->iso.acl == conn) {
 			return iso;
 		}
 
 		bt_conn_unref(iso);
 	}
-#endif /* CONFIG_BT_ISO */
+
 	return NULL;
 }
+#endif /* CONFIG_BT_ISO */
 
 static void deferred_work(struct k_work *work)
 {
@@ -1507,26 +1504,33 @@ static void deferred_work(struct k_work *work)
 	BT_DBG("conn %p", conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
-		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			struct bt_conn *iso;
+#if defined(CONFIG_BT_ISO_UNICAST)
+		struct bt_conn *iso;
 
-			/* Disconnect all ISO channels associated
-			 * with ACL conn.
-			 */
-			iso = conn_lookup_iso(conn);
-			while (iso) {
-				iso->err = conn->err;
-
-				bt_iso_disconnected(iso);
-				bt_conn_unref(iso);
-
-				/* Stop if only ISO was Disconnected */
-				if (conn->type == BT_CONN_TYPE_ISO) {
-					return;
-				}
-				iso = conn_lookup_iso(conn);
-			}
+		if (conn->type == BT_CONN_TYPE_ISO) {
+			bt_iso_disconnected(conn);
+			bt_conn_unref(conn);
+			return;
 		}
+
+		/* Mark all ISO channels associated
+		 * with ACL conn as not connected, and
+		 * remove ACL reference
+		 */
+		iso = conn_lookup_iso(conn);
+		while (iso != NULL) {
+			struct bt_iso_chan *chan = iso->iso.chan;
+
+			if (chan != NULL) {
+				bt_iso_chan_set_state(chan, BT_ISO_DISCONNECT);
+			}
+
+			bt_iso_cleanup_acl(iso);
+
+			bt_conn_unref(iso);
+			iso = conn_lookup_iso(conn);
+		}
+#endif
 
 		bt_l2cap_disconnected(conn);
 		notify_disconnected(conn);
