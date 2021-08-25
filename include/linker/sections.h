@@ -65,6 +65,9 @@
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
+#ifdef CONFIG_USERSPACE
+#define _NOCACHE_USER_SECTION_NAME nocache_user
+#endif
 #endif
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)

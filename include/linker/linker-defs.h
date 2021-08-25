@@ -320,6 +320,11 @@ extern char __sg_size[];
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
+#ifdef CONFIG_USERSPACE
+extern char _nocache_user_ram_start[];
+extern char _nocache_user_ram_end[];
+extern char _nocache_user_ram_size[];
+#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
