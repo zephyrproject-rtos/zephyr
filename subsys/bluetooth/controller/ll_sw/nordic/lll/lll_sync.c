@@ -110,6 +110,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct node_rx_pdu *node_rx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
+	uint8_t data_chan_count;
+	uint8_t *data_chan_map;
 	uint16_t event_counter;
 	uint32_t remainder_us;
 	uint8_t data_chan_use;
@@ -141,10 +143,22 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
 
+	/* Process channel map update, if any */
+	if (lll->chm_first != lll->chm_last) {
+		uint16_t instant_latency;
+
+		instant_latency = (event_counter - lll->chm_instant) & 0xFFFF;
+		if (instant_latency <= 0x7FFF) {
+			/* At or past the instant, use channelMapNew */
+			lll->chm_first = lll->chm_last;
+		}
+	}
+
 	/* Calculate the radio channel to use */
+	data_chan_map = lll->chm[lll->chm_first].data_chan_map;
+	data_chan_count = lll->chm[lll->chm_first].data_chan_count;
 	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
-				       &lll->data_chan_map[0],
-				       lll->data_chan_count);
+				       data_chan_map, data_chan_count);
 
 	/* Start setting up Radio h/w */
 	radio_reset();

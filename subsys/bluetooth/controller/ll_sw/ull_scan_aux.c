@@ -102,7 +102,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint8_t aux_handle;
 	bool is_lll_sched;
 	bool is_scan_req;
+	uint8_t acad_len;
 	bool is_lll_aux;
+	uint8_t hdr_len;
 	uint8_t *ptr;
 	uint8_t phy;
 
@@ -243,19 +245,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 
 	h = (void *)p->ext_hdr_adv_data;
-	if (!h->aux_ptr && !sync) {
-		if (is_scan_req) {
-			LL_ASSERT(aux && aux->rx_last);
-
-			aux->rx_last->rx_ftr.extra = rx;
-			aux->rx_last = rx;
-
-			return;
-		}
-
-		goto ull_scan_aux_rx_flush;
-	}
-
 	ptr = h->data;
 
 	if (h->adv_addr) {
@@ -271,6 +260,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	if (h->tgt_addr) {
 		ptr += BDADDR_SIZE;
+	}
+
+	if (h->cte_info) {
+		ptr += sizeof(struct pdu_cte_info);
 	}
 
 	adi = NULL;
@@ -299,8 +292,43 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	}
 
+	if (h->tx_pwr) {
+		ptr++;
+	}
+
+	/* Calculate ACAD Len */
+	hdr_len = ptr - (uint8_t *)p;
+	if (hdr_len <= (p->ext_hdr_len + offsetof(struct pdu_adv_com_ext_adv,
+						  ext_hdr_adv_data))) {
+		acad_len = p->ext_hdr_len +
+			   offsetof(struct pdu_adv_com_ext_adv,
+				    ext_hdr_adv_data) -
+			   hdr_len;
+	} else {
+		acad_len = 0U;
+	}
+
+	/* Periodic Advertising Channel Map Indication and/or Broadcast ISO
+	 * synchronization
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
+	    (rx->type == NODE_RX_TYPE_SYNC_REPORT) &&
+	    acad_len) {
+		/* Periodic Advertising Channel Map Indication */
+		ull_sync_chm_update(rx->handle, ptr, acad_len);
+	}
+
 	if (!aux_ptr || !aux_ptr->offs ||
 	    (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED)) {
+		if (is_scan_req) {
+			LL_ASSERT(aux && aux->rx_last);
+
+			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
+
+			return;
+		}
+
 		goto ull_scan_aux_rx_flush;
 	}
 
