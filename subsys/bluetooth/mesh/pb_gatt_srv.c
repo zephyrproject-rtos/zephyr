@@ -127,15 +127,6 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_mesh_adv_update();
 }
 
-struct net_buf_simple *bt_mesh_pb_gatt_get_buf(void)
-{
-	struct net_buf_simple *buf = &cli.buf;
-
-	net_buf_simple_reset(buf);
-
-	return buf;
-}
-
 static void prov_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);

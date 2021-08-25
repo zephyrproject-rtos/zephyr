@@ -16,8 +16,6 @@ int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
 int bt_mesh_pb_gatt_enable(void);
 int bt_mesh_pb_gatt_disable(void);
 
-struct net_buf_simple *bt_mesh_pb_gatt_get_buf(void);
-
 int bt_mesh_pb_gatt_adv_start(void);
 
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_PB_GATT_SRV_H_ */
