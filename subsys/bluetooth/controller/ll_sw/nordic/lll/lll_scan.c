@@ -1454,11 +1454,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 					radio_rx_chain_delay_get(lll->phy,
 								 phy_flags_rx);
 				ftr->phy_flags = phy_flags_rx;
-				ftr->aux_sched =
+				ftr->aux_lll_sched =
 					lll_scan_aux_setup(lll, NULL, pdu_adv_rx,
 							   lll->phy,
 							   phy_flags_rx);
-				if (ftr->aux_sched) {
+				if (ftr->aux_lll_sched) {
 					err = -EBUSY;
 				}
 			}

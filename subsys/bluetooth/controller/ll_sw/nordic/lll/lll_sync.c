@@ -350,9 +350,9 @@ static void isr_rx(void *param)
 			pdu = (void *)node_rx->pdu;
 
 			ftr->aux_sched_from_lll = 0;
-			ftr->aux_sched = lll_scan_aux_setup(NULL, lll, pdu,
-							    lll->phy, 0);
-			if (ftr->aux_sched) {
+			ftr->aux_lll_sched = lll_scan_aux_setup(NULL, lll, pdu,
+								lll->phy, 0);
+			if (ftr->aux_lll_sched) {
 				err = -EBUSY;
 			}
 
