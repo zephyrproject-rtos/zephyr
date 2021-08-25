@@ -50,6 +50,7 @@
 #include <ull_scan_types.h>
 #include <ull_scan_internal.h>
 #include <ull_sync_types.h>
+#include <ull_sync_internal.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -264,7 +265,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 	aux_set = HDR_LLL2ULL(lll);
-	scan_set = HDR_LLL2ULL(aux_set->rx_head->rx_ftr.param);
+	scan_set = HDR_LLL2ULL(aux_set->parent);
 	scan_set = ull_scan_is_valid_get(scan_set);
 
 	if (scan_set) {
@@ -289,7 +290,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	} else {
 		/* We are in sync context */
 		scan_lll = NULL;
-		sync_set = HDR_LLL2ULL(aux_set->rx_head->rx_ftr.param);
+		sync_set = HDR_LLL2ULL(aux_set->parent);
 		sync_lll = &sync_set->lll;
 		LL_ASSERT(sync_lll);
 	}
@@ -633,7 +634,7 @@ static void isr_rx_ull_schedule(void *param)
 
 	lll_aux = param;
 	aux = HDR_LLL2ULL(lll_aux);
-	param_lll = aux->rx_head->rx_ftr.param;
+	param_lll = aux->parent;
 
 	if (ull_scan_is_valid_get(HDR_LLL2ULL(param_lll))) {
 		lll = param_lll;
