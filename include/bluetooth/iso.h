@@ -83,8 +83,6 @@ struct bt_iso_chan;
 enum {
 	/** Channel disconnected */
 	BT_ISO_DISCONNECTED,
-	/** Channel bound to a connection */
-	BT_ISO_BOUND,
 	/** Channel in connecting state */
 	BT_ISO_CONNECT,
 	/** Channel ready for upper layer traffic on it */
