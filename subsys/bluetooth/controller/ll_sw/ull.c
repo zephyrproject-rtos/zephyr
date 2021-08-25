@@ -818,10 +818,12 @@ uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 	uint8_t cmplt = 0U;
 
 #if defined(CONFIG_BT_CONN) || \
-	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT))
+	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
+	defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 ll_rx_get_again:
 #endif /* CONFIG_BT_CONN ||
-	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
+	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT) ||
+	* CONFIG_BT_CTLR_ADV_PERIODIC
 	*/
 
 	*node_rx = NULL;
@@ -865,6 +867,26 @@ ll_rx_get_again:
 #endif /* CONFIG_BT_CONN ||
 	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
 	*/
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			} else if (rx->type == NODE_RX_TYPE_SYNC_CHM_COMPLETE) {
+				(void)memq_dequeue(memq_ll_rx.tail,
+						   &memq_ll_rx.head, NULL);
+				mem_release(link, &mem_link_rx.free);
+
+				ll_rx_link_inc_quota(1);
+
+				/* Remove Channel Map Update Indication from
+				 * ACAD.
+				 */
+				ull_adv_sync_chm_complete(rx);
+
+				mem_release(rx, &mem_pdu_rx.free);
+
+				rx_alloc(1);
+
+				goto ll_rx_get_again;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 			}
 
 			*node_rx = rx;
@@ -2407,11 +2429,16 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_OBSERVER) || \
+	defined(CONFIG_BT_CTLR_ADV_PERIODIC) || \
 	defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
 	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
 	defined(CONFIG_BT_CTLR_SCAN_INDICATION) || \
 	defined(CONFIG_BT_CONN)
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	case NODE_RX_TYPE_SYNC_CHM_COMPLETE:
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
@@ -2441,6 +2468,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 #endif /* CONFIG_BT_OBSERVER ||
+	* CONFIG_BT_CTLR_ADV_PERIODIC ||
 	* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
 	* CONFIG_BT_CTLR_PROFILE_ISR ||
 	* CONFIG_BT_CTLR_ADV_INDICATION ||

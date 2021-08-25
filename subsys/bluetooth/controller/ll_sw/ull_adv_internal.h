@@ -164,14 +164,20 @@ int ull_adv_sync_reset_finalize(void);
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 
-/* helper function to update periodic advertising event time reservation */
-uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
-				 struct pdu_adv *pdu);
-
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor);
+
+/* helper function to update periodic advertising event time reservation */
+uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
+				 struct pdu_adv *pdu);
+
+/* helper function to initial channel map update indications */
+uint8_t ull_adv_sync_chm_update(void);
+
+/* helper function to cleanup after channel map update indications complete */
+void ull_adv_sync_chm_complete(struct node_rx_hdr *rx);
 
 /* helper function to fill initial value of sync_info structure */
 void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,

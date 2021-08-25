@@ -566,43 +566,6 @@ uint8_t ll_connect_disable(void **rx)
 	return err;
 }
 
-/* FIXME: Refactor out this interface so that its usable by extended
- * advertising channel classification, and also master role connections can
- * perform channel map update control procedure.
- */
-uint8_t ll_chm_update(uint8_t const *const chm)
-{
-	uint16_t handle;
-	uint8_t ret;
-
-	ull_chan_map_set(chm);
-
-	handle = CONFIG_BT_MAX_CONN;
-	while (handle--) {
-		struct ll_conn *conn;
-
-		conn = ll_connected_get(handle);
-		if (!conn || conn->lll.role) {
-			continue;
-		}
-
-		ret = ull_conn_llcp_req(conn);
-		if (ret) {
-			return ret;
-		}
-
-		memcpy(conn->llcp.chan_map.chm, chm,
-		       sizeof(conn->llcp.chan_map.chm));
-		/* conn->llcp.chan_map.instant     = 0; */
-		conn->llcp.chan_map.initiate = 1U;
-
-		conn->llcp_type = LLCP_CHAN_MAP;
-		conn->llcp_req++;
-	}
-
-	return 0;
-}
-
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 		     uint8_t const *const ediv, uint8_t const *const ltk)
@@ -1019,6 +982,36 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	ull_conn_tx_lll_enqueue(conn, UINT8_MAX);
 
 	DEBUG_RADIO_PREPARE_M(1);
+}
+
+uint8_t ull_master_chm_update(void)
+{
+	uint16_t handle;
+	uint8_t ret;
+
+	handle = CONFIG_BT_MAX_CONN;
+	while (handle--) {
+		struct ll_conn *conn;
+
+		conn = ll_connected_get(handle);
+		if (!conn || conn->lll.role) {
+			continue;
+		}
+
+		ret = ull_conn_llcp_req(conn);
+		if (ret) {
+			return ret;
+		}
+
+		/* Fill Channel Map here, fill instant when enqueued to LLL */
+		ull_chan_map_get(conn->llcp.chan_map.chm);
+		conn->llcp.chan_map.initiate = 1U;
+
+		conn->llcp_type = LLCP_CHAN_MAP;
+		conn->llcp_req++;
+	}
+
+	return 0;
 }
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param)

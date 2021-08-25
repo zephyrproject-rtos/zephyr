@@ -370,6 +370,11 @@ struct pdu_adv_sync_info {
 #define PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK    \
 		(0x07 << (PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS))
 
+struct pdu_adv_sync_chm_upd_ind {
+	uint8_t  chm[5];
+	uint16_t instant;
+} __packed;
+
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,
 	PDU_ADV_TYPE_DIRECT_IND = 0x01,
