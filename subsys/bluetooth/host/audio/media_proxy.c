@@ -183,14 +183,14 @@ uint8_t media_proxy_sctrl_media_state_get(void)
 	return mprx.local_player.calls->media_state_get();
 }
 
-void media_proxy_sctrl_operation_set(struct mpl_op_t operation)
+void media_proxy_sctrl_command_send(struct mpl_cmd_t cmd)
 {
-	mprx.local_player.calls->operation_set(operation);
+	mprx.local_player.calls->command_send(cmd);
 }
 
-uint32_t media_proxy_sctrl_operations_supported_get(void)
+uint32_t media_proxy_sctrl_commands_supported_get(void)
 {
-	return mprx.local_player.calls->operations_supported_get();
+	return mprx.local_player.calls->commands_supported_get();
 }
 
 #ifdef CONFIG_BT_OTS
@@ -502,41 +502,41 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 	}
 }
 
-static void mcc_cp_set_cb(struct bt_conn *conn, int err, struct mpl_op_t op)
+static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
 {
 	if (err) {
-		struct mpl_op_ntf_t ntf = {0};
+		struct mpl_cmd_ntf_t ntf = {0};
 
-		BT_ERR("Control Point set failed (%d) - operation: %d, param: %d",
-		       err, op.opcode, op.param);
+		BT_ERR("Command send failed (%d) - opcode: %d, param: %d",
+		       err, cmd.opcode, cmd.param);
 
 		/* If error, call the callback to propagate the error to the caller.
 		 * (A notification parameter is required for the callback - use an empty one.)
 		 */
 
-		if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operation) {
-			mprx.ctrlr.cbs->operation(&mprx.remote_player, err, ntf);
+		if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
+			mprx.ctrlr.cbs->command(&mprx.remote_player, err, ntf);
 		} else {
 			BT_DBG("No callback");
 		}
 	}
 
-	/* If no error, the result of the operation will come as a notification
-	 * which will be handled by the mcc_cp_ntf_cb() callback.
+	/* If no error, the result of the command will come as a notification
+	 * which will be handled by the mcc_cmd_ntf_cb() callback.
 	 * So, no need to call the callback here.
 	 */
 }
 
-static void mcc_cp_ntf_cb(struct bt_conn *conn, int err,
-			  struct mpl_op_ntf_t ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
+			   struct mpl_cmd_ntf_t ntf)
 {
 	if (err) {
-		BT_ERR("Control Point notification error (%d) - operation: %d, result: %d",
+		BT_ERR("Command notification error (%d) - command opcode: %d, result: %d",
 		       err, ntf.requested_opcode, ntf.result_code);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operation) {
-		mprx.ctrlr.cbs->operation(&mprx.remote_player, err, ntf);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
+		mprx.ctrlr.cbs->command(&mprx.remote_player, err, ntf);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -548,8 +548,8 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err, uint32_
 		BT_ERR("Opcodes supported read failed (%d)", err);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operations_supported) {
-		mprx.ctrlr.cbs->operations_supported(&mprx.remote_player, err, opcodes);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported) {
+		mprx.ctrlr.cbs->commands_supported(&mprx.remote_player, err, opcodes);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -672,8 +672,8 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.playing_order_set             = mcc_playing_order_set_cb;
 	mcc_cbs.playing_orders_supported_read = mcc_playing_orders_supported_read_cb;
 	mcc_cbs.media_state_read              = mcc_media_state_read_cb;
-	mcc_cbs.cp_set                        = mcc_cp_set_cb;
-	mcc_cbs.cp_ntf                        = mcc_cp_ntf_cb;
+	mcc_cbs.cmd_send                      = mcc_cmd_send_cb;
+	mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
 	mcc_cbs.opcodes_supported_read        = mcc_opcodes_supported_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
 	mcc_cbs.scp_set                       = mcc_scp_set_cb;
@@ -1375,7 +1375,7 @@ int media_proxy_ctrl_media_state_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t operation)
+int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd_t cmd)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1383,8 +1383,8 @@ int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t 
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->operation_set) {
-			mprx.local_player.calls->operation_set(operation);
+		if (mprx.local_player.calls->command_send) {
+			mprx.local_player.calls->command_send(cmd);
 
 			return 0;
 		}
@@ -1395,13 +1395,13 @@ int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t 
 
 	if (IS_ENABLED(CONFIG_BT_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_set_cp(mprx.remote_player.conn, operation);
+		return bt_mcc_send_cmd(mprx.remote_player.conn, cmd);
 	}
 
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_operations_supported_get(struct media_player *player)
+int media_proxy_ctrl_commands_supported_get(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1409,11 +1409,11 @@ int media_proxy_ctrl_operations_supported_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->operations_supported_get) {
-			uint32_t ops = mprx.local_player.calls->operations_supported_get();
+		if (mprx.local_player.calls->commands_supported_get) {
+			uint32_t opcodes = mprx.local_player.calls->commands_supported_get();
 
-			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operations_supported) {
-				mprx.ctrlr.cbs->operations_supported(player, 0, ops);
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported) {
+				mprx.ctrlr.cbs->commands_supported(player, 0, opcodes);
 			} else {
 				BT_DBG("No callback");
 			}
@@ -1685,25 +1685,25 @@ void media_proxy_pl_media_state_cb(uint8_t state)
 	}
 }
 
-void media_proxy_pl_operation_cb(struct mpl_op_ntf_t op_ntf)
+void media_proxy_pl_command_cb(struct mpl_cmd_ntf_t cmd_ntf)
 {
-	mprx.sctrlr.cbs->operation(op_ntf);
+	mprx.sctrlr.cbs->command(cmd_ntf);
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operation) {
-		mprx.ctrlr.cbs->operation(&mprx.local_player, 0, op_ntf);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
+		mprx.ctrlr.cbs->command(&mprx.local_player, 0, cmd_ntf);
 	} else {
-		BT_DBG("No ctrlr operations callback");
+		BT_DBG("No ctrlr command callback");
 	}
 }
 
-void media_proxy_pl_operations_supported_cb(uint32_t operations)
+void media_proxy_pl_commands_supported_cb(uint32_t opcodes)
 {
-	mprx.sctrlr.cbs->operations_supported(operations);
+	mprx.sctrlr.cbs->commands_supported(opcodes);
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operations_supported) {
-		mprx.ctrlr.cbs->operations_supported(&mprx.local_player, 0, operations);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported) {
+		mprx.ctrlr.cbs->commands_supported(&mprx.local_player, 0, opcodes);
 	} else {
-		BT_DBG("No ctrlr operations supported callback");
+		BT_DBG("No ctrlr commands supported callback");
 	}
 }
 

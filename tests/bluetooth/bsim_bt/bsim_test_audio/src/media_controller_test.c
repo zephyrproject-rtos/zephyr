@@ -39,8 +39,8 @@ static int32_t  g_pos;
 static int8_t   g_pb_speed;
 static uint8_t  g_playing_order;
 static uint8_t  g_state;
-static uint8_t  g_control_point_result;
-static uint32_t g_operations_supported;
+static uint8_t  g_command_result;
+static uint32_t g_commands_supported;
 static uint8_t  g_search_control_point_result;
 
 CREATE_FLAG(ble_is_initialized);
@@ -65,8 +65,8 @@ CREATE_FLAG(playing_order_flag);
 CREATE_FLAG(playing_orders_supported_read);
 CREATE_FLAG(ccid_read);
 CREATE_FLAG(media_state_read);
-CREATE_FLAG(operation_flag);
-CREATE_FLAG(operations_supported);
+CREATE_FLAG(command_flag);
+CREATE_FLAG(commands_supported);
 CREATE_FLAG(search_flag);
 
 
@@ -348,10 +348,10 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	SET_FLAG(media_state_read);
 }
 
-static void operation_cb(struct media_player *plr, int err, struct mpl_op_ntf_t op_ntf)
+static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf_t cmd_ntf)
 {
 	if (err) {
-		FAIL("Operation failed (%d)", err);
+		FAIL("Command failed (%d)", err);
 		return;
 	}
 
@@ -361,14 +361,14 @@ static void operation_cb(struct media_player *plr, int err, struct mpl_op_ntf_t 
 	}
 
 	/* TODO: Improve write callback / notification callback unification */
-	g_control_point_result = op_ntf.result_code;
-	SET_FLAG(operation_flag);
+	g_command_result = cmd_ntf.result_code;
+	SET_FLAG(command_flag);
 }
 
-static void operations_supported_cb(struct media_player *plr, int err, uint32_t operations)
+static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
 {
 	if (err) {
-		FAIL("Operations supported failed (%d)", err);
+		FAIL("Commands supported failed (%d)", err);
 		return;
 	}
 
@@ -377,8 +377,8 @@ static void operations_supported_cb(struct media_player *plr, int err, uint32_t 
 		return;
 	}
 
-	g_operations_supported = operations;
-	SET_FLAG(operations_supported);
+	g_commands_supported = opcodes;
+	SET_FLAG(commands_supported);
 }
 
 
@@ -460,8 +460,8 @@ void initialize_media(void)
 	cbs.playing_order            = playing_order_cb;
 	cbs.playing_orders_supported = playing_orders_supported_cb;
 	cbs.media_state              = media_state_cb;
-	cbs.operation                = operation_cb;
-	cbs.operations_supported     = operations_supported_cb;
+	cbs.command                  = command_cb;
+	cbs.commands_supported       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.search                   = search_cb;
 	cbs.search_results_id        = search_results_id_cb;
@@ -535,11 +535,12 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	return true;
 }
 
-/* Helper function to set the control point, including the flag handling.
- * Will FAIL on error to set the control point.
+/* Helper function to write commands to to the control point, including the
+ * flag handling.
+ * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.
  */
-static void test_set_cp_wait_flags(struct mpl_op_t op)
+static void test_send_cmd_wait_flags(struct mpl_cmd_t cmd)
 {
 	int err;
 
@@ -547,118 +548,117 @@ static void test_set_cp_wait_flags(struct mpl_op_t op)
 	 * Improve unification of control point write callback and control
 	 * point notification callback
 	 */
-
-	UNSET_FLAG(operation_flag);
-	err = media_proxy_ctrl_operation_set(current_player, op);
+	UNSET_FLAG(command_flag);
+	err = media_proxy_ctrl_command_send(current_player, cmd);
 	if (err) {
-		FAIL("Failed to write to control point: %d, operation: %u",
-		     err, op.opcode);
+		FAIL("Failed to send command: %d, opcode: %u",
+		     err, cmd.opcode);
 		return;
 	}
 
-	WAIT_FOR_FLAG(operation_flag);
+	WAIT_FOR_FLAG(command_flag);
 }
 
 static void test_cp_play(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_PLAY;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_PLAY;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("PLAY operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("PLAY command failed\n");
 		return;
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PLAYING)) {
-		printk("PLAY operation succeeded\n");
+		printk("PLAY command succeeded\n");
 	}
 }
 
 static void test_cp_pause(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_PAUSE;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_PAUSE;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("PAUSE operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("PAUSE command failed\n");
 		return;
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
-		printk("PAUSE operation succeeded\n");
+		printk("PAUSE command succeeded\n");
 	}
 }
 
 static void test_cp_fast_rewind(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_FAST_REWIND;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_FAST_REWIND;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("FAST REWIND operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("FAST REWIND command failed\n");
 		return;
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
-		printk("FAST REWIND operation succeeded\n");
+		printk("FAST REWIND command succeeded\n");
 	}
 }
 
 static void test_cp_fast_forward(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_FAST_FORWARD;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_FAST_FORWARD;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("FAST FORWARD operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("FAST FORWARD command failed\n");
 		return;
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
-		printk("FAST FORWARD operation succeeded\n");
+		printk("FAST FORWARD command succeeded\n");
 	}
 }
 
 static void test_cp_stop(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_STOP;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_STOP;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("STOP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("STOP command failed\n");
 		return;
 	}
 
 	/* There is no "STOPPED" state in the spec - STOP goes to PAUSED */
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
-		printk("STOP operation succeeded\n");
+		printk("STOP command succeeded\n");
 	}
 }
 
 static void test_cp_move_relative(void)
 {
 	int err;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
 	/* Assumes that the server is in a state where it is  able to change
 	 * the current track position
@@ -675,14 +675,14 @@ static void test_cp_move_relative(void)
 	WAIT_FOR_FLAG(track_position);
 	uint32_t tmp_pos = g_pos;
 
-	op.opcode = MEDIA_PROXY_OP_MOVE_RELATIVE;
-	op.use_param = true;
-	op.param = 1000;  /* Position change, measured in 1/100 of a second */
+	cmd.opcode = MEDIA_PROXY_OP_MOVE_RELATIVE;
+	cmd.use_param = true;
+	cmd.param = 1000;  /* Position change, measured in 1/100 of a second */
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("MOVE RELATIVE operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("MOVE RELATIVE command failed\n");
 		return;
 	}
 
@@ -700,12 +700,12 @@ static void test_cp_move_relative(void)
 		return;
 	}
 
-	printk("MOVE RELATIVE operation succeeded\n");
+	printk("MOVE RELATIVE command succeeded\n");
 }
 
 static void test_cp_prev_segment(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
 	/* Assumes that the server is in a state where there is a current
 	 * track that has segments, and where the server may switch between
@@ -720,86 +720,86 @@ static void test_cp_prev_segment(void)
 	 * For now, we will settle for seeing that the opcodes are accepted.
 	 */
 
-	op.opcode = MEDIA_PROXY_OP_PREV_SEGMENT;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_PREV_SEGMENT;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("PREV SEGMENT operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("PREV SEGMENT command failed\n");
 		return;
 	}
 
-	printk("PREV SEGMENT operation succeeded\n");
+	printk("PREV SEGMENT command succeeded\n");
 }
 
 static void test_cp_next_segment(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_NEXT_SEGMENT;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_NEXT_SEGMENT;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("NEXT SEGMENT operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("NEXT SEGMENT command failed\n");
 		return;
 	}
 
-	printk("NEXT SEGMENT operation succeeded\n");
+	printk("NEXT SEGMENT command succeeded\n");
 }
 
 static void test_cp_first_segment(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_FIRST_SEGMENT;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_FIRST_SEGMENT;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("FIRST SEGMENT operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("FIRST SEGMENT command failed\n");
 		return;
 	}
 
-	printk("FIRST SEGMENT operation succeeded\n");
+	printk("FIRST SEGMENT command succeeded\n");
 }
 
 static void test_cp_last_segment(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_LAST_SEGMENT;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_LAST_SEGMENT;
+	cmd.use_param = false;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("LAST SEGMENT operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("LAST SEGMENT command failed\n");
 		return;
 	}
 
-	printk("LAST SEGMENT operation succeeded\n");
+	printk("LAST SEGMENT command succeeded\n");
 }
 
 static void test_cp_goto_segment(void)
 {
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_GOTO_SEGMENT;
-	op.use_param = true;
-	op.param = 2;    /* Second segment - not the first, maybe not last */
+	cmd.opcode = MEDIA_PROXY_OP_GOTO_SEGMENT;
+	cmd.use_param = true;
+	cmd.param = 2;    /* Second segment - not the first, maybe not last */
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("GOTO SEGMENT operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("GOTO SEGMENT command failed\n");
 		return;
 	}
 
-	printk("GOTO SEGMENT operation succeeded\n");
+	printk("GOTO SEGMENT command succeeded\n");
 }
 
 /* Helper function to read the current track object ID, including flag handling
@@ -823,7 +823,7 @@ static void test_read_current_track_object_id_wait_flags(void)
 static void test_cp_prev_track(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
 	/* Assumes that the server is in a state where it has multiple tracks
 	 * and can change between them.
@@ -833,16 +833,16 @@ static void test_cp_prev_track(void)
 	 * current track object ID has changed.
 	 */
 
-	op.opcode = MEDIA_PROXY_OP_PREV_TRACK;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_PREV_TRACK;
+	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("PREV TRACK operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("PREV TRACK command failed\n");
 		return;
 	}
 
@@ -854,24 +854,24 @@ static void test_cp_prev_track(void)
 		return;
 	}
 
-	printk("PREV TRACK operation succeeded\n");
+	printk("PREV TRACK command succeeded\n");
 }
 
 static void test_cp_next_track(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_NEXT_TRACK;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_NEXT_TRACK;
+	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("NEXT TRACK operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("NEXT TRACK command failed\n");
 		return;
 	}
 
@@ -882,24 +882,24 @@ static void test_cp_next_track(void)
 		return;
 	}
 
-	printk("NEXT TRACK operation succeeded\n");
+	printk("NEXT TRACK command succeeded\n");
 }
 
 static void test_cp_first_track(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_FIRST_TRACK;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_FIRST_TRACK;
+	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("FIRST TRACK operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("FIRST TRACK command failed\n");
 		return;
 	}
 
@@ -910,24 +910,24 @@ static void test_cp_first_track(void)
 		return;
 	}
 
-	printk("FIRST TRACK operation succeeded\n");
+	printk("FIRST TRACK command succeeded\n");
 }
 
 static void test_cp_last_track(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_LAST_TRACK;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_LAST_TRACK;
+	cmd.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("LAST TRACK operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("LAST TRACK command failed\n");
 		return;
 	}
 
@@ -938,25 +938,25 @@ static void test_cp_last_track(void)
 		return;
 	}
 
-	printk("LAST TRACK operation succeeded\n");
+	printk("LAST TRACK command succeeded\n");
 }
 
 static void test_cp_goto_track(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_GOTO_TRACK;
-	op.use_param = true;
-	op.param = 2; /* Second track, not the first, maybe not the last */
+	cmd.opcode = MEDIA_PROXY_OP_GOTO_TRACK;
+	cmd.use_param = true;
+	cmd.param = 2; /* Second track, not the first, maybe not the last */
 
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("GOTO TRACK operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("GOTO TRACK command failed\n");
 		return;
 	}
 
@@ -967,7 +967,7 @@ static void test_cp_goto_track(void)
 		return;
 	}
 
-	printk("GOTO TRACK operation succeeded\n");
+	printk("GOTO TRACK command succeeded\n");
 }
 
 /* Helper function to read the current group object ID, including flag handling
@@ -991,7 +991,7 @@ static void test_read_current_group_object_id_wait_flags(void)
 static void test_cp_prev_group(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
 	/* Assumes that the server is in a state where it has multiple groups
 	 * and can change between them.
@@ -1001,16 +1001,16 @@ static void test_cp_prev_group(void)
 	 * current group object ID has changed.
 	 */
 
-	op.opcode = MEDIA_PROXY_OP_PREV_GROUP;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_PREV_GROUP;
+	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("PREV GROUP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("PREV GROUP command failed\n");
 		return;
 	}
 
@@ -1022,24 +1022,24 @@ static void test_cp_prev_group(void)
 		return;
 	}
 
-	printk("PREV GROUP operation succeeded\n");
+	printk("PREV GROUP command succeeded\n");
 }
 
 static void test_cp_next_group(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_NEXT_GROUP;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_NEXT_GROUP;
+	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("NEXT GROUP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("NEXT GROUP command failed\n");
 		return;
 	}
 
@@ -1050,24 +1050,24 @@ static void test_cp_next_group(void)
 		return;
 	}
 
-	printk("NEXT GROUP operation succeeded\n");
+	printk("NEXT GROUP command succeeded\n");
 }
 
 static void test_cp_first_group(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_FIRST_GROUP;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_FIRST_GROUP;
+	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("FIRST GROUP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("FIRST GROUP command failed\n");
 		return;
 	}
 
@@ -1078,24 +1078,24 @@ static void test_cp_first_group(void)
 		return;
 	}
 
-	printk("FIRST GROUP operation succeeded\n");
+	printk("FIRST GROUP command succeeded\n");
 }
 
 static void test_cp_last_group(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_LAST_GROUP;
-	op.use_param = false;
+	cmd.opcode = MEDIA_PROXY_OP_LAST_GROUP;
+	cmd.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("LAST GROUP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("LAST GROUP command failed\n");
 		return;
 	}
 
@@ -1106,25 +1106,25 @@ static void test_cp_last_group(void)
 		return;
 	}
 
-	printk("LAST GROUP operation succeeded\n");
+	printk("LAST GROUP command succeeded\n");
 }
 
 static void test_cp_goto_group(void)
 {
 	uint64_t object_id;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
-	op.opcode = MEDIA_PROXY_OP_GOTO_GROUP;
-	op.use_param = true;
-	op.param = 2; /* Second group, not the first, maybe not the last */
+	cmd.opcode = MEDIA_PROXY_OP_GOTO_GROUP;
+	cmd.use_param = true;
+	cmd.param = 2; /* Second group, not the first, maybe not the last */
 
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_set_cp_wait_flags(op);
+	test_send_cmd_wait_flags(cmd);
 
-	if (g_control_point_result != MEDIA_PROXY_OP_SUCCESS) {
-		FAIL("GOTO GROUP operation failed\n");
+	if (g_command_result != MEDIA_PROXY_CMD_SUCCESS) {
+		FAIL("GOTO GROUP command failed\n");
 		return;
 	}
 
@@ -1135,7 +1135,7 @@ static void test_cp_goto_group(void)
 		return;
 	}
 
-	printk("GOTO GROUP operation succeeded\n");
+	printk("GOTO GROUP command succeeded\n");
 }
 
 static void test_scp(void)
@@ -1477,7 +1477,7 @@ void test_media_controller_player(struct media_player *player)
 	/* It is assumed that the server starts the test in the paused state */
 	test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED);
 
-	/* The tests are ordered to ensure that each operation changes state */
+	/* The tests are ordered to ensure that each command changes state */
 	test_cp_play();
 	test_cp_fast_forward();
 	test_cp_pause();
@@ -1497,7 +1497,7 @@ void test_media_controller_player(struct media_player *player)
 
 
 	/* Control point - track change opcodes */
-	/* The tests are ordered to ensure that each operation changes track */
+	/* The tests are ordered to ensure that each command changes track */
 	/* Assumes we are not starting on the last track */
 	test_cp_next_track();
 	test_cp_prev_track();
@@ -1507,7 +1507,7 @@ void test_media_controller_player(struct media_player *player)
 
 
 	/* Control point - group change opcodes *******************************/
-	/* The tests are ordered to ensure that each operation changes group */
+	/* The tests are ordered to ensure that each command changes group */
 	/* Assumes we are not starting on the last group */
 	test_cp_next_group();
 	test_cp_prev_group();

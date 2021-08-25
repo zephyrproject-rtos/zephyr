@@ -311,29 +311,29 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 	shell_print(ctx_shell, "Media State: %d", state);
 }
 
-static void mcc_cp_set_cb(struct bt_conn *conn, int err, struct mpl_op_t op)
+static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
 {
 	if (err) {
 		shell_error(ctx_shell,
-			    "Control Point set failed (%d) - operation: %d, param: %d",
-			    err, op.opcode, op.param);
+			    "Command send failed (%d) - opcode: %d, param: %d",
+			    err, cmd.opcode, cmd.param);
 		return;
 	}
 
-	shell_print(ctx_shell, "Operation: %d, param: %d", op.opcode, op.param);
+	shell_print(ctx_shell, "Command opcode: %d, param: %d", cmd.opcode, cmd.param);
 }
 
-static void mcc_cp_ntf_cb(struct bt_conn *conn, int err,
-			  struct mpl_op_ntf_t ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
+			   struct mpl_cmd_ntf_t ntf)
 {
 	if (err) {
 		shell_error(ctx_shell,
-			    "Control Point notification error (%d) - operation: %d, result: %d",
+			    "Command notification error (%d) - opcode: %d, result: %d",
 			    err, ntf.requested_opcode, ntf.result_code);
 		return;
 	}
 
-	shell_print(ctx_shell, "Operation: %d, result: %d",
+	shell_print(ctx_shell, "Command opcode: %d, result: %d",
 		    ntf.requested_opcode, ntf.result_code);
 }
 
@@ -547,8 +547,8 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	cb.playing_order_set         = &mcc_playing_order_set_cb;
 	cb.playing_orders_supported_read = &mcc_playing_orders_supported_read_cb;
 	cb.media_state_read = &mcc_media_state_read_cb;
-	cb.cp_set           = &mcc_cp_set_cb;
-	cb.cp_ntf           = &mcc_cp_ntf_cb;
+	cb.cmd_send         = &mcc_cmd_send_cb;
+	cb.cmd_ntf          = &mcc_cmd_ntf_cb;
 	cb.opcodes_supported_read = &mcc_opcodes_supported_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
 	cb.scp_set            = &mcc_scp_set_cb;
@@ -840,25 +840,25 @@ int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 int cmd_mcc_set_cp(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
-	struct mpl_op_t op;
+	struct mpl_cmd_t cmd;
 
 
 	if (argc > 1) {
-		op.opcode = strtol(argv[1], NULL, 0);
+		cmd.opcode = strtol(argv[1], NULL, 0);
 	} else {
 		shell_error(sh, "Invalid parameter");
 		return -ENOEXEC;
 	}
 
 	if (argc > 2) {
-		op.use_param = true;
-		op.param = strtol(argv[2], NULL, 0);
+		cmd.use_param = true;
+		cmd.param = strtol(argv[2], NULL, 0);
 	} else {
-		op.use_param = false;
-		op.param = 0;
+		cmd.use_param = false;
+		cmd.param = 0;
 	}
 
-	result = bt_mcc_set_cp(default_conn, op);
+	result = bt_mcc_send_cmd(default_conn, cmd);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}

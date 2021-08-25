@@ -163,10 +163,10 @@ int cmd_mpl_test_state_changed_cb(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-int cmd_mpl_test_media_operations_supported_changed_cb(const struct shell *sh, size_t argc,
-						       char *argv[])
+int cmd_mpl_test_media_opcodes_supported_changed_cb(const struct shell *sh, size_t argc,
+						    char *argv[])
 {
-	mpl_test_operations_supported_changed_cb();
+	mpl_test_opcodes_supported_changed_cb();
 	return 0;
 }
 
@@ -243,9 +243,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(state_changed_cb, NULL,
 		      "Trigger Media State callback (test)",
 		      cmd_mpl_test_state_changed_cb, 1, 0),
-	SHELL_CMD_ARG(media_operations_changed_cb, NULL,
-		      "Trigger Operations Supported callback (test)",
-		      cmd_mpl_test_media_operations_supported_changed_cb, 1, 0),
+	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL,
+		      "Trigger Opcodes Supported callback (test)",
+		      cmd_mpl_test_media_opcodes_supported_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(search_results_changed_cb, NULL,
 		      "Trigger Search Results Object ID callback (test)",

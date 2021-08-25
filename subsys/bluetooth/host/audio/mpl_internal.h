@@ -78,7 +78,7 @@ struct mpl_mediaplayer_t {
 	int8_t               seeking_speed_factor;
 	uint8_t              playing_order;
 	uint16_t             playing_orders_supported;
-	uint32_t             operations_supported;
+	uint32_t             opcodes_supported;
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             search_results_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
@@ -132,7 +132,7 @@ void mpl_test_playing_order_changed_cb(void);
 void mpl_test_media_state_changed_cb(void);
 
 /* Trigger operations supported changed callback */
-void mpl_test_operations_supported_changed_cb(void);
+void mpl_test_opcodes_supported_changed_cb(void);
 
 /* Trigger search results changed callback */
 void mpl_test_search_results_changed_cb(void);

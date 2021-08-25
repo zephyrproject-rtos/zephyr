@@ -478,30 +478,30 @@ static ssize_t control_point_write(struct bt_conn *conn,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
 {
-	struct mpl_op_t operation;
+	struct mpl_cmd_t command;
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != sizeof(operation.opcode) &&
-	    len != sizeof(operation.opcode) + sizeof(operation.param)) {
+	if (len != sizeof(command.opcode) &&
+	    len != sizeof(command.opcode) + sizeof(command.param)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	memcpy(&operation.opcode, buf, sizeof(operation.opcode));
-	BT_DBG("Opcode: %d", operation.opcode);
-	operation.use_param = false;
+	memcpy(&command.opcode, buf, sizeof(command.opcode));
+	BT_DBG("Opcode: %d", command.opcode);
+	command.use_param = false;
 
-	if (len == sizeof(operation.opcode) + sizeof(operation.param)) {
-		memcpy(&operation.param,
-		       (char *)buf + sizeof(operation.opcode),
-		       sizeof(operation.param));
-		operation.use_param = true;
-		BT_DBG("Parameter: %d", operation.param);
+	if (len == sizeof(command.opcode) + sizeof(command.param)) {
+		memcpy(&command.param,
+		       (char *)buf + sizeof(command.opcode),
+		       sizeof(command.param));
+		command.use_param = true;
+		BT_DBG("Parameter: %d", command.param);
 	}
 
-	media_proxy_sctrl_operation_set(operation);
+	media_proxy_sctrl_command_send(command);
 
 	return len;
 }
@@ -516,7 +516,7 @@ static ssize_t opcodes_supported_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint32_t opcodes = media_proxy_sctrl_operations_supported_get();
+	uint32_t opcodes = media_proxy_sctrl_commands_supported_get();
 
 	BT_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
 
@@ -879,18 +879,18 @@ void media_proxy_sctrl_media_state_cb(uint8_t state)
 	notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
 }
 
-void media_proxy_sctrl_operation_cb(struct mpl_op_ntf_t op_ntf)
+void media_proxy_sctrl_command_cb(struct mpl_cmd_ntf_t cmd_ntf)
 {
-	BT_DBG("Notifying control point - opcode: %d, result: %d",
-	       op_ntf.requested_opcode, op_ntf.result_code);
-	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &op_ntf, sizeof(op_ntf));
+	BT_DBG("Notifying control point command - opcode: %d, result: %d",
+	       cmd_ntf.requested_opcode, cmd_ntf.result_code);
+	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
 }
 
-void media_proxy_sctrl_operations_supported_cb(uint32_t operations)
+void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
 {
-	BT_DBG("Notifying opcodes supported: %d (0x%08x)", operations,
-	       operations);
-	notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &operations,
+	BT_DBG("Notifying command opcodes supported: %d (0x%08x)", opcodes,
+	       opcodes);
+	notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes,
 	       BT_MCS_OPCODES_SUPPORTED_LEN);
 }
 
@@ -976,8 +976,8 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 #endif /* CONFIG_BT_OTS */
 	cbs.playing_order        = media_proxy_sctrl_playing_order_cb;
 	cbs.media_state          = media_proxy_sctrl_media_state_cb;
-	cbs.operation            = media_proxy_sctrl_operation_cb;
-	cbs.operations_supported = media_proxy_sctrl_operations_supported_cb;
+	cbs.command              = media_proxy_sctrl_command_cb;
+	cbs.commands_supported   = media_proxy_sctrl_commands_supported_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.search               = media_proxy_sctrl_search_cb;
 	cbs.search_results_id    = media_proxy_sctrl_search_results_id_cb;
