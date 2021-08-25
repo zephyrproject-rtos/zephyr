@@ -1084,14 +1084,14 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};								\
 									\
-	RING_BUF_DECLARE(rx_ringbuf_##x,				\
+	RING_BUF_DECLARE(cdc_acm_rx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
-	RING_BUF_DECLARE(tx_ringbuf_##x,				\
+	RING_BUF_DECLARE(cdc_acm_tx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
-		.rx_ringbuf = &rx_ringbuf_##x,				\
-		.tx_ringbuf = &tx_ringbuf_##x,				\
+		.rx_ringbuf = &cdc_acm_rx_rb_##x,			\
+		.tx_ringbuf = &cdc_acm_tx_rb_##x,			\
 	};
 
 #define DT_DRV_COMPAT zephyr_cdc_acm_uart
