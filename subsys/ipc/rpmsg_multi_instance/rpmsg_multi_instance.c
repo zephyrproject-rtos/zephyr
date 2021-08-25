@@ -146,7 +146,6 @@ static int ept_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t s
 			mi_ep->bound = true;
 			if (mi_ep->cb->bound) {
 				mi_ep->cb->bound(mi_ep->priv);
-				return 0;
 			}
 		}
 		return 0;
