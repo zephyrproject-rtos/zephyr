@@ -358,11 +358,13 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	uint32_t sync_offset_us;
 	uint32_t ready_delay_us;
 	struct node_rx_pdu *rx;
+	uint8_t *data_chan_map;
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
+	uint8_t chm_last;
 	uint32_t ret;
 	uint8_t sca;
 
@@ -373,12 +375,17 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* Copy channel map from sca_chm field in sync_info structure, and
 	 * clear the SCA bits.
 	 */
-	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));
-	lll->data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
+	chm_last = lll->chm_first;
+	lll->chm_last = chm_last;
+	data_chan_map = lll->chm[chm_last].data_chan_map;
+	(void)memcpy(data_chan_map, si->sca_chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
 		~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK;
-	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
-						   sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
 		/* Ignore sync setup, invalid available channel count */
 		return;
 	}
@@ -588,6 +595,71 @@ void ull_sync_done(struct node_rx_event_done *done)
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  ((void *)sync == ull_disable_mark_get()));
 	}
+}
+
+void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
+{
+	struct pdu_adv_sync_chm_upd_ind *chm_upd_ind;
+	struct ll_sync_set *sync;
+	struct lll_sync *lll;
+	uint8_t chm_last;
+	uint16_t ad_len;
+
+	/* Get reference to LLL context */
+	sync = ull_sync_set_get(sync_handle);
+	lll = &sync->lll;
+
+	/* Ignore if already in progress */
+	if (lll->chm_last != lll->chm_first) {
+		return;
+	}
+
+	/* Find the Channel Map Update Indication */
+	do {
+		/* Pick the length and find the Channel Map Update Indication */
+		ad_len = acad[0];
+		if (ad_len && (acad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+			break;
+		}
+
+		/* Add length field size */
+		ad_len += 1U;
+		if (ad_len < acad_len) {
+			acad_len -= ad_len;
+		} else {
+			return;
+		}
+
+		/* Move to next AD data */
+		acad += ad_len;
+	} while (acad_len);
+
+	/* Validate the size of the Channel Map Update Indication */
+	if (ad_len != (sizeof(*chm_upd_ind) + 1U)) {
+		return;
+	}
+
+	/* Pick the parameters into the procedure context */
+	chm_last = lll->chm_last + 1U;
+	if (chm_last == DOUBLE_BUFFER_SIZE) {
+		chm_last = 0U;
+	}
+
+	chm_upd_ind = (void *)&acad[2];
+	(void)memcpy(lll->chm[chm_last].data_chan_map, chm_upd_ind->chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(lll->chm[chm_last].data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
+		/* Ignore channel map, invalid available channel count */
+		return;
+	}
+
+	lll->chm_instant = sys_le16_to_cpu(chm_upd_ind->instant);
+
+	/* Set Channel Map Update Procedure in progress */
+	lll->chm_last = chm_last;
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)

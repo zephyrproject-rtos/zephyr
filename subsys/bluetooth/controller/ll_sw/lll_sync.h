@@ -14,9 +14,14 @@ struct lll_sync {
 	uint16_t skip_event;
 	uint16_t event_counter;
 
-	uint8_t data_chan_map[5];
-	uint8_t data_chan_count:6;
 	uint16_t data_chan_id;
+	struct {
+		uint8_t data_chan_map[5];
+		uint8_t data_chan_count:6;
+	} chm[DOUBLE_BUFFER_SIZE];
+	uint8_t  chm_first;
+	uint8_t  chm_last;
+	uint16_t chm_instant;
 
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;
