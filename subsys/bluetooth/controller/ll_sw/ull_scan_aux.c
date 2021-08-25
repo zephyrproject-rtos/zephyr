@@ -138,7 +138,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			lll_aux = ftr->param;
 			aux = HDR_LLL2ULL(lll_aux);
 			/* FIXME: pick the aux somehow */
-			lll = aux->rx_head->rx_ftr.param;
+			lll = aux->parent;
 		} else if (ull_scan_is_valid_get(HDR_LLL2ULL(ftr->param))) {
 			/* Node that does not have valid aux context but has
 			 * valid scan set was scheduled from LLL. We can
@@ -151,7 +151,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			LL_ASSERT(lll_aux);
 
 			aux = HDR_LLL2ULL(lll_aux);
-			LL_ASSERT(lll == aux->rx_head->rx_ftr.param);
+			LL_ASSERT(lll == aux->parent);
 		} else {
 			/* If none of the above, node is part of sync scanning
 			 */
@@ -366,6 +366,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 		ull_hdr_init(&aux->ull);
 		lll_hdr_init(lll_aux, aux);
+
+		aux->parent = lll ? (void *)lll : (void *)lll_sync;
 	}
 
 	/* Enqueue the rx in aux context */
