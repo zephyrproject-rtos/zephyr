@@ -195,7 +195,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	iso_err = bt_iso_cig_create(&param, &cig);
 
 	if (iso_err) {
-		printk("Failed to bind iso to connection (%d)\n", iso_err);
+		printk("Failed to create CIG (%d)\n", iso_err);
 		return;
 	}
 
