@@ -411,7 +411,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
-
 	k_sem_give(&sem_disconnected);
 }
 
@@ -855,6 +854,15 @@ static int cleanup(void)
 		}
 	} /* else ACL already disconnected */
 
+	if (cig) {
+		err = bt_iso_cig_terminate(cig);
+		if (err != 0) {
+			LOG_ERR("Could not terminate CIG: %d", err);
+			return err;
+		}
+		cig = NULL;
+	}
+
 	return err;
 }
 
@@ -899,6 +907,9 @@ static int run_central(void)
 		return err;
 	}
 
+	LOG_INF("Disconnected - Cleaning up");
+	(void)k_work_cancel_delayable(&iso_send_work);
+
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_disconnected, K_FOREVER);
 		if (err != 0) {
@@ -907,8 +918,12 @@ static int run_central(void)
 		}
 	}
 
-	LOG_INF("Disconnected - Cleaning up");
-	(void)k_work_cancel_delayable(&iso_send_work);
+	err = bt_iso_cig_terminate(cig);
+	if (err != 0) {
+		LOG_ERR("Could not terminate CIG: %d", err);
+		return err;
+	}
+	cig = NULL;
 
 	return 0;
 }
