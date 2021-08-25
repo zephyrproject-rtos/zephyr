@@ -219,26 +219,26 @@ typedef void (*bt_mcc_playing_orders_supported_read_cb_t)(struct bt_conn *conn,
 typedef void (*bt_mcc_media_state_read_cb_t)(struct bt_conn *conn, int err,
 					     uint8_t state);
 
-/** @brief Callback function for mcc_set_cp
+/** @brief Callback function for mcc_send_cmd
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param op            The operation written (or attempted to write)
+ * @param cmd           The command sent
  */
-typedef void (*bt_mcc_cp_set_cb_t)(struct bt_conn *conn, int err,
-				   struct mpl_op_t op);
+typedef void (*bt_mcc_cmd_send_cb_t)(struct bt_conn *conn, int err,
+				     struct mpl_cmd_t cmd);
 
-/** @brief Callback function for cp notifications
+/** @brief Callback function for command notifications
  *
- * Notifications for opcode writes have a different parameter structure
- * than opcode writes
+ * Notifications for commands use a different parameter structure
+ * than what is used for sending commands
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param ntf           The operation notification
+ * @param ntf           The command notification
  */
-typedef void (*bt_mcc_cp_ntf_cb_t)(struct bt_conn *conn, int err,
-				   struct mpl_op_ntf_t ntf);
+typedef void (*bt_mcc_cmd_ntf_cb_t)(struct bt_conn *conn, int err,
+				    struct mpl_cmd_ntf_t ntf);
 
 /** @brief Callback function for mcc_read_opcodes_supported
  *
@@ -406,8 +406,8 @@ struct bt_mcc_cb_t {
 	bt_mcc_playing_order_set_cb_t             playing_order_set;
 	bt_mcc_playing_orders_supported_read_cb_t playing_orders_supported_read;
 	bt_mcc_media_state_read_cb_t              media_state_read;
-	bt_mcc_cp_set_cb_t                        cp_set;
-	bt_mcc_cp_ntf_cb_t                        cp_ntf;
+	bt_mcc_cmd_send_cb_t                      cmd_send;
+	bt_mcc_cmd_ntf_cb_t                       cmd_ntf;
 	bt_mcc_opcodes_supported_read_cb_t        opcodes_supported_read;
 #ifdef CONFIG_BT_OTC
 	bt_mcc_scp_set_cb_t                       scp_set;
@@ -528,16 +528,16 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn);
 /** @brief Read Media State */
 int bt_mcc_read_media_state(struct bt_conn *conn);
 
-/** @brief Set Control Point
+/** @brief Send a command
  *
- * Write a command (e.g. "play", "pause") to the control point.
+ * Write a command (e.g. "play", "pause") to the server's control point.
  *
  * @param conn  Connection to the peer device
- * @param op    Media operation
+ * @param cmd   The command to send
  *
  * @return int  0 on success, GATT error value on fail.
  */
-int bt_mcc_set_cp(struct bt_conn *conn, struct mpl_op_t op);
+int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd_t cmd);
 
 /** @brief Read Opcodes Supported */
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);

@@ -56,9 +56,9 @@ struct media_proxy_sctrl_cbs {
 
 	void (*media_state)(uint8_t state);
 
-	void (*operation)(struct mpl_op_ntf_t op_ntf);
+	void (*command)(struct mpl_cmd_ntf_t cmd_ntf);
 
-	void (*operations_supported)(uint32_t operations);
+	void (*commands_supported)(uint32_t opcodes);
 
 #ifdef CONFIG_BT_OTS
 	void (*search)(uint8_t result_code);
@@ -114,9 +114,9 @@ uint16_t media_proxy_sctrl_playing_orders_supported_get(void);
 
 uint8_t media_proxy_sctrl_media_state_get(void);
 
-void media_proxy_sctrl_operation_set(struct mpl_op_t operation);
+void media_proxy_sctrl_command_send(struct mpl_cmd_t command);
 
-uint32_t media_proxy_sctrl_operations_supported_get(void);
+uint32_t media_proxy_sctrl_commands_supported_get(void);
 
 #ifdef CONFIG_BT_OTS
 void media_proxy_sctrl_search_set(struct mpl_search_t search);
