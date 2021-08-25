@@ -401,12 +401,12 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
 
-	bt_iso_cleanup(chan->iso);
-
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
 	 */
 	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) && !chan->iso->iso.is_bis) {
+		bt_iso_cleanup_acl(chan->iso);
+
 		if (chan->iso->role == BT_HCI_ROLE_SLAVE) {
 			bt_conn_unref(chan->iso);
 			chan->iso = NULL;
@@ -657,7 +657,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 
 	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
-	if (chan->iso == NULL) {
+	if (chan->state != BT_ISO_CONNECTED) {
 		BT_DBG("Not connected");
 		return -ENOTCONN;
 	}
@@ -669,17 +669,6 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 							BT_ISO_DATA_VALID));
 
 	return bt_conn_send_cb(chan->iso, buf, bt_iso_send_cb, NULL);
-}
-
-struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn)
-{
-	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
-		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
-		       conn ? conn->type : 0);
-		return NULL;
-	}
-
-	return &conn->iso;
 }
 
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
@@ -726,7 +715,7 @@ static bool valid_chan_qos(const struct bt_iso_chan_qos *qos)
 	return true;
 }
 
-void bt_iso_cleanup(struct bt_conn *iso)
+void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
 	BT_DBG("%p", iso);
 

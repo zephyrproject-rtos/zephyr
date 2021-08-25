@@ -255,7 +255,7 @@ struct bt_iso_create_param {
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 
 /* Cleanup ISO references */
-void bt_iso_cleanup(struct bt_conn *iso_conn);
+void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
