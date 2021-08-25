@@ -100,6 +100,8 @@ static uint8_t per_adv_data3[] = {
 		0xFF, 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF,
 	};
 
+static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
+
 static bool volatile is_scanned, is_connected, is_disconnected;
 static bool volatile connection_to_test;
 static uint8_t adv_data_expected_len;
@@ -725,6 +727,13 @@ static void test_advx_main(void)
 
 	printk("Disabling...");
 	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Periodic Advertising Channel Map Indication...");
+	err = ll_chm_update(chan_map);
 	if (err) {
 		goto exit;
 	}
