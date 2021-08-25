@@ -27,7 +27,6 @@ struct prov_link {
 	const struct prov_bearer_cb *cb;
 	void *cb_data;
 	struct prov_bearer_send_cb comp;
-	struct net_buf_simple *rx_buf;
 	struct k_work_delayable prot_timer;
 };
 
@@ -42,8 +41,6 @@ static void reset_state(void)
 
 	/* If this fails, the protocol timeout handler will exit early. */
 	(void)k_work_cancel_delayable(&link.prot_timer);
-
-	link.rx_buf = bt_mesh_pb_gatt_get_buf();
 }
 
 static void link_closed(enum prov_bearer_link_status status)
