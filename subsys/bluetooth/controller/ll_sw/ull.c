@@ -817,9 +817,12 @@ uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 	memq_link_t *link;
 	uint8_t cmplt = 0U;
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || \
+	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT))
 ll_rx_get_again:
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN ||
+	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
+	*/
 
 	*node_rx = NULL;
 
@@ -839,11 +842,15 @@ ll_rx_get_again:
 							  mfifo_tx_ack.l);
 			} while ((cmplt_prev != 0U) ||
 				 (cmplt_prev != cmplt_curr));
+#endif /* CONFIG_BT_CONN */
 
+			if (0) {
+#if defined(CONFIG_BT_CONN) || \
+	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT))
 			/* Do not send up buffers to Host thread that are
 			 * marked for release
 			 */
-			if (rx->type == NODE_RX_TYPE_RELEASE) {
+			} else if (rx->type == NODE_RX_TYPE_RELEASE) {
 				(void)memq_dequeue(memq_ll_rx.tail,
 						   &memq_ll_rx.head, NULL);
 				mem_release(link, &mem_link_rx.free);
@@ -855,8 +862,10 @@ ll_rx_get_again:
 				rx_alloc(1);
 
 				goto ll_rx_get_again;
+#endif /* CONFIG_BT_CONN ||
+	* (CONFIG_BT_OBSERVER && CONFIG_BT_CTLR_ADV_EXT)
+	*/
 			}
-#endif /* CONFIG_BT_CONN */
 
 			*node_rx = rx;
 
