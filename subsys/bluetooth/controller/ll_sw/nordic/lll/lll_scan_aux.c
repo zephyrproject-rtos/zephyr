@@ -1099,7 +1099,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_sync *lll_sync, struct ll
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		ftr->aux_sched = 0U;
+		ftr->aux_lll_sched = 0U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
@@ -1157,8 +1157,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_sync *lll_sync, struct ll
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		ftr->aux_sched = lll_scan_aux_setup(lll, lll_sync, pdu, phy_aux,
-						    phy_aux_flags_rx);
+		ftr->aux_lll_sched = lll_scan_aux_setup(lll, lll_sync, pdu, phy_aux,
+							phy_aux_flags_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
@@ -1178,7 +1178,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_sync *lll_sync, struct ll
 		/* Next aux scan is scheduled from LLL, we already handled radio
 		 * disable so prevent caller from doing it again.
 		 */
-		if (ftr->aux_sched) {
+		if (ftr->aux_lll_sched) {
 			return 0;
 		}
 
