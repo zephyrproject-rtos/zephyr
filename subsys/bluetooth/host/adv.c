@@ -1413,12 +1413,15 @@ static void adv_timeout(struct k_work *work)
 	dwork = k_work_delayable_from_work(work);
 	adv = CONTAINER_OF(dwork, struct bt_le_ext_adv, timeout_work);
 
-	err = bt_le_ext_adv_stop(adv);
+	if (adv == bt_dev.adv) {
+		err = bt_le_adv_stop();
+	} else {
+		err = bt_le_ext_adv_stop(adv);
+	}
 #else
 	err = bt_le_adv_stop();
 #endif
-	__ASSERT(err == 0, "Limited Advertising timeout reached, "
-			   "failed to stop advertising");
+	BT_WARN("Failed to stop advertising: %d", err);
 }
 
 #if defined(CONFIG_BT_PER_ADV)
