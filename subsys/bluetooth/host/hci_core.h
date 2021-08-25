@@ -149,7 +149,7 @@ struct bt_le_ext_adv {
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-	struct k_work_delayable	timeout_work;
+	struct k_work_delayable	lim_adv_timeout_work;
 };
 
 enum {
