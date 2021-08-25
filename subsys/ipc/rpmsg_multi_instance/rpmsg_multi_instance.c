@@ -99,7 +99,7 @@ static void ipm_callback(const struct device *dev, void *context, uint32_t id, v
 	k_work_submit_to_queue(&ctx->ipm_work_q, &ctx->ipm_work);
 }
 
-int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
+static void rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg)
 {
 	size_t vring_size = VRING_SIZE_GET(cfg->shm->size);
 	uintptr_t shm_addr = SHMEM_INST_ADDR_AUTOALLOC_GET(cfg->shm->addr,
@@ -133,8 +133,6 @@ int rpmsg_mi_configure_shm(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_c
 
 	ctx->vring_rx_addr = shm_local_start_addr + rpmsg_reg_size;
 	ctx->vring_tx_addr = ctx->vring_rx_addr + vring_region_size;
-
-	return 0;
 }
 
 static int ept_cb(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src, void *priv)
@@ -233,11 +231,7 @@ int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *c
 	sys_slist_init(&ctx->endpoints);
 
 	/* Configure share memory */
-	err = rpmsg_mi_configure_shm(ctx, cfg);
-	if (err) {
-		LOG_ERR("shmem configuration: failed - error code %d", err);
-		goto out;
-	}
+	rpmsg_mi_configure_shm(ctx, cfg);
 
 	/* Libmetal setup */
 	err = metal_init(&metal_params);
