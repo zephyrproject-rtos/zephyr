@@ -250,13 +250,13 @@ static int i2c_sam_slave_register(const struct device *dev,
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
 	Twi *const twi = dev_cfg->regs;
 
-	if(!cfg) {
+	if (!cfg) {
 		LOG_ERR("cfg == NULL\n");
 		return -EINVAL;
 	}
-	if(cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS)
-		return -ENOTSUP;
 
+	if (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS)
+		return -ENOTSUP;
 
 	dev_data->slave_cfg = cfg;
 
@@ -278,10 +278,10 @@ static int i2c_sam_slave_unregister(const struct device *dev,
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
 	Twi *const twi = dev_cfg->regs;
 
-	if(!cfg)
+	if (!cfg)
 		return -EINVAL;
 
-	if(dev_data->slave_cfg != cfg)
+	if (dev_data->slave_cfg != cfg)
 		return -EINVAL;
 
 	dev_data->slave_cfg = NULL;
@@ -312,19 +312,19 @@ static void i2c_sam_twi_isr(const struct device *dev)
 				twi->TWI_IER = TWI_SR_TXRDY;
 				val = 0;
 				dev_data->slave_cfg->callbacks->read_requested(
-											dev_data->slave_cfg, &val);
+					dev_data->slave_cfg, &val);
 				twi->TWI_THR = val;
 			} else {
 				twi->TWI_IER = TWI_SR_RXRDY;
 				dev_data->slave_cfg->callbacks->write_requested(
-											dev_data->slave_cfg);
+					dev_data->slave_cfg);
 			}
 		}
 
 		/* Read */
 		if (isr_status & TWI_SR_TXRDY) {
 			dev_data->slave_cfg->callbacks->read_processed(
-											dev_data->slave_cfg, &val);
+				dev_data->slave_cfg, &val);
 			twi->TWI_THR = val;
 		}
 
@@ -332,11 +332,11 @@ static void i2c_sam_twi_isr(const struct device *dev)
 		if (isr_status & TWI_SR_RXRDY) {
 			val = twi->TWI_RHR;
 			dev_data->slave_cfg->callbacks->write_received(
-											dev_data->slave_cfg, val);
+				dev_data->slave_cfg, val);
 		}
 
 		/* Stop */
-		if(isr_status & TWI_SR_EOSACC) {
+		if (isr_status & TWI_SR_EOSACC) {
 			dev_data->slave_cfg->callbacks->stop(dev_data->slave_cfg);
 			goto tx_comp;
 		}
@@ -387,7 +387,7 @@ tx_comp:
 	twi->TWI_IDR = twi->TWI_IMR;
 
 	/* Enable target mode if it is registered */
-	if(dev_data->slave_cfg != NULL) {
+	if (dev_data->slave_cfg != NULL) {
 		twi->TWI_CR = TWI_CR_MSDIS;
 		twi->TWI_CR = TWI_CR_SVEN;
 		twi->TWI_IER = TWI_IER_SVACC | TWI_IER_EOSACC;
