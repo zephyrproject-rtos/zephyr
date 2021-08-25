@@ -113,6 +113,11 @@ static int pm_device_request(const struct device *dev,
 			goto out_unlock;
 		}
 	} else {
+		/* Check if it is already 0 to avoid an underflow */
+		if (dev->pm->usage == 0) {
+			goto out_unlock;
+		}
+
 		dev->pm->usage--;
 		if (dev->pm->usage > 0) {
 			goto out_unlock;
