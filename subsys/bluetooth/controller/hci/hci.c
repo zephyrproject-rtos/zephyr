@@ -5573,8 +5573,13 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		ptr = h->data;
 
-		/* No AdvA */
-		/* No TargetA */
+		if (h->adv_addr) {
+			ptr += BDADDR_SIZE;
+		}
+
+		if (h->tgt_addr) {
+			ptr += BDADDR_SIZE;
+		}
 
 		if (h->cte_info) {
 			struct pdu_cte_info *cte_info;
@@ -5586,7 +5591,9 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 			BT_DBG("    CTE type= %d", cte_type);
 		}
 
-		/* No ADI */
+		if (h->adi) {
+			ptr += sizeof(struct pdu_adv_adi);
+		}
 
 		/* AuxPtr */
 		if (h->aux_ptr) {
@@ -5615,6 +5622,9 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		}
 
 		/* No SyncInfo */
+		if (h->sync_info) {
+			ptr += sizeof(struct pdu_adv_sync_info);
+		}
 
 		/* Tx Power */
 		if (h->tx_pwr) {
