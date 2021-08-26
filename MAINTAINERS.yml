@@ -1477,9 +1477,9 @@ ITE Platforms:
         - sjg20
     files:
         - boards/riscv/it8xxx2_evb/
-        - drivers/*/*_ite*
+        - drivers/*/*it8xxx2*
         - dts/bindings/*/*ite*
-        - dts/riscv/it8xxx2.dtsi
+        - dts/riscv/*it8xxx2*
         - soc/riscv/riscv-ite/
     labels:
         - "platform: ITE"
