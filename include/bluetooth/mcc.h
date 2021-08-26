@@ -226,7 +226,7 @@ typedef void (*bt_mcc_media_state_read_cb_t)(struct bt_conn *conn, int err,
  * @param cmd           The command sent
  */
 typedef void (*bt_mcc_cmd_send_cb_t)(struct bt_conn *conn, int err,
-				     struct mpl_cmd_t cmd);
+				     struct mpl_cmd cmd);
 
 /** @brief Callback function for command notifications
  *
@@ -238,7 +238,7 @@ typedef void (*bt_mcc_cmd_send_cb_t)(struct bt_conn *conn, int err,
  * @param ntf           The command notification
  */
 typedef void (*bt_mcc_cmd_ntf_cb_t)(struct bt_conn *conn, int err,
-				    struct mpl_cmd_ntf_t ntf);
+				    struct mpl_cmd_ntf ntf);
 
 /** @brief Callback function for mcc_read_opcodes_supported
  *
@@ -257,7 +257,7 @@ typedef void (*bt_mcc_opcodes_supported_read_cb_t)(struct bt_conn *conn,
  * @param search        The search written (or attempted to write)
  */
 typedef void (*bt_mcc_search_send_cb_t)(struct bt_conn *conn, int err,
-					struct mpl_search_t search);
+					struct mpl_search search);
 
 /** @brief Callback function for search notifications
  *
@@ -537,7 +537,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn);
  *
  * @return int  0 on success, GATT error value on fail.
  */
-int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd_t cmd);
+int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd);
 
 /** @brief Read Opcodes Supported */
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
@@ -552,7 +552,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
  *
  * @return int  0 on success, GATT error value on fail.
  */
-int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search_t search);
+int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search);
 
 /** @brief Search Results Group Object ID */
 int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);
