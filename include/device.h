@@ -831,21 +831,21 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef CONFIG_PM_DEVICE
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)			\
+	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm, node_id),
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
+	.pm_control = (pm_control_fn),					\
+	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
+#else
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+#endif
+
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate"))) = {			\
-		.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name), node_id) \
+		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
 	};
-
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
-	.pm_control = (pm_control_fn),				\
-	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
-#else
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name) \
-	__pinned_bss \
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name);
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
-#endif
 
 #ifdef __cplusplus
 }
