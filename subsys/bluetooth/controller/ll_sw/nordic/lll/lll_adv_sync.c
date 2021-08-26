@@ -352,8 +352,8 @@ static void isr_tx(void *param)
 static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu, uint32_t cte_len_us)
 {
 	while (pdu) {
-		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, 0, 0, ADV_SYNC_PDU_B2B_AFS,
-				       cte_len_us);
+		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, lll->adv->phy_flags, 0,
+				       ADV_SYNC_PDU_B2B_AFS, cte_len_us);
 		pdu = lll_adv_pdu_linked_next_get(pdu);
 	}
 }
@@ -386,7 +386,7 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 
 	/* Update AuxPtr */
 	aux = (void *)dptr;
-	offset_us += PKT_AC_US(pdu->len, phy);
+	offset_us += PDU_AC_US(pdu->len, phy, flags);
 	/* Add CTE length to PDUs that have CTE attached.
 	 * Periodic advertising chain may include PDUs without CTE.
 	 */
