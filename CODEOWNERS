@@ -537,6 +537,7 @@
 /lib/posix/                               @pfalcon
 /subsys/portability/                      @nashif
 /lib/libc/                                @nashif
+/lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
 /modules/                                 @nashif
 /modules/trusted-firmware-m/              @ioannisg @microbuilder
 /kernel/device.c                          @andyross @nashif
