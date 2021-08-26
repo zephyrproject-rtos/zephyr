@@ -607,6 +607,7 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 
 	/* Get reference to LLL context */
 	sync = ull_sync_set_get(sync_handle);
+	LL_ASSERT(sync);
 	lll = &sync->lll;
 
 	/* Ignore if already in progress */
