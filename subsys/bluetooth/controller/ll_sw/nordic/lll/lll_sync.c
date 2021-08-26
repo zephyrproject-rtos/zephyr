@@ -32,6 +32,8 @@
 #include "lll_df.h"
 #include "lll_df_internal.h"
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_sync
 #include "common/log.h"
@@ -154,7 +156,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((uint32_t)lll->crc_init[2] << 16) |
