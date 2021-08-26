@@ -21,9 +21,27 @@ static const char LOG_HEX_SEP[10] = "##ZLOGV1##";
 
 static const struct device *uart_dev;
 
+
+#if (CONFIG_LOG_BACKEND_UART_INACT_OFF_MSEC > 0)
+#include <kernel.h>
+static void _uart_disabler_kickoff(struct k_timer *timer)
+{
+	device_set_power_state(uart_dev, DEVICE_PM_OFF_STATE, NULL, NULL);
+}
+/* A one-shot timer that disable UART after a certain amount of inactivity time */
+static K_TIMER_DEFINE(uart_disabler, _uart_disabler_kickoff, NULL);
+#endif
+
 static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	ARG_UNUSED(ctx);
+
+#if (CONFIG_LOG_BACKEND_UART_INACT_OFF_MSEC > 0)
+	device_set_power_state(uart_dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	k_timer_start(&uart_disabler,
+		      K_MSEC(CONFIG_LOG_BACKEND_UART_INACT_OFF_MSEC),
+		      K_NO_WAIT);
+#endif
 
 	for (size_t i = 0; i < length; i++) {
 #if defined(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)

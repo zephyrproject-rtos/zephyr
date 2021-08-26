@@ -35,6 +35,15 @@ config LOG_BACKEND_UART_SYST_ENABLE
 	help
 	  When enabled backend is using UART to output syst format logs.
 
+config LOG_BACKEND_UART_INACT_OFF_MSEC
+	int "Disable UART after timeout (ms)"
+	default 0
+	depends on LOG_BACKEND_UART
+	help
+	  After a certain amount of time (ms), disable the UART.
+	  WARN: If SHELL is enabled, once the UART is disabled, you cant get any shell.
+	  Use 0 to disable
+
 config LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
 	bool "Dictionary (hexadecimal)"
 	depends on LOG2
