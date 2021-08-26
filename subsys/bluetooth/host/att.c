@@ -2882,13 +2882,16 @@ int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels)
 
 int bt_eatt_disconnect(struct bt_conn *conn)
 {
-	struct bt_att_chan *chan = att_get_fixed_chan(conn);
-	struct bt_att *att = chan->att;
+	struct bt_att_chan *chan;
+	struct bt_att *att;
 	int err = -ENOTCONN;
 
 	if (!conn) {
 		return -EINVAL;
 	}
+
+	chan = att_get_fixed_chan(conn);
+	att = chan->att;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
