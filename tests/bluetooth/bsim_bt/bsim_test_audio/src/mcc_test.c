@@ -43,7 +43,7 @@ static int8_t  g_pb_speed;
 static uint8_t g_playing_order;
 static uint8_t g_state;
 static uint8_t g_command_result;
-static uint8_t g_search_control_point_result;
+static uint8_t g_search_result;
 
 CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(ble_link_is_ready);
@@ -72,8 +72,8 @@ CREATE_FLAG(ccid_read);
 CREATE_FLAG(media_state_read);
 CREATE_FLAG(command_sent);
 CREATE_FLAG(command_notified);
-CREATE_FLAG(search_control_point_set);
-CREATE_FLAG(search_control_point_notified);
+CREATE_FLAG(search_sent);
+CREATE_FLAG(search_notified);
 CREATE_FLAG(object_selected);
 CREATE_FLAG(metadata_read);
 CREATE_FLAG(object_read);
@@ -333,27 +333,27 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, struct mpl_cmd_ntf_t n
 	SET_FLAG(command_notified);
 }
 
-static void mcc_scp_set_cb(struct bt_conn *conn, int err,
-			   struct mpl_search_t search)
+static void mcc_search_send_cb(struct bt_conn *conn, int err,
+			       struct mpl_search_t search)
 {
 	if (err) {
-		FAIL("Search Control Point set failed (%d)", err);
+		FAIL("Search send failed (%d)", err);
 		return;
 	}
 
-	SET_FLAG(search_control_point_set);
+	SET_FLAG(search_sent);
 }
 
-static void mcc_scp_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
+static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
 	if (err) {
-		FAIL("Search Control Point notification error (%d), result code: %u",
+		FAIL("Search notification error (%d), result code: %u",
 		     err, result_code);
 		return;
 	}
 
-	g_search_control_point_result = result_code;
-	SET_FLAG(search_control_point_notified);
+	g_search_result = result_code;
+	SET_FLAG(search_notified);
 }
 
 static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err,
@@ -490,8 +490,8 @@ int do_mcc_init(void)
 	mcc_cb.media_state_read = &mcc_media_state_read_cb;
 	mcc_cb.cmd_send         = &mcc_send_command_cb;
 	mcc_cb.cmd_ntf          = &mcc_cmd_ntf_cb;
-	mcc_cb.scp_set          = &mcc_scp_set_cb;
-	mcc_cb.scp_ntf          = &mcc_scp_ntf_cb;
+	mcc_cb.search_send      = &mcc_search_send_cb;
+	mcc_cb.search_ntf       = &mcc_search_ntf_cb;
 	mcc_cb.search_results_obj_id_read = &mcc_search_results_obj_id_read_cb;
 	mcc_cb.content_control_id_read = &mcc_content_control_id_read_cb;
 	mcc_cb.otc_obj_selected = &mcc_otc_obj_selected_cb;
@@ -1210,7 +1210,7 @@ static void test_cp_goto_group(void)
 	printk("GOTO GROUP command succeeded\n");
 }
 
-static void test_scp(void)
+static void test_search(void)
 {
 	struct mpl_search_t search;
 	struct mpl_sci_t sci = {0};
@@ -1258,20 +1258,20 @@ static void test_scp(void)
 	memcpy(&search.search[search.len], &sci.param, strlen(sci.param));
 	search.len += strlen(sci.param);
 
-	UNSET_FLAG(search_control_point_set);
-	UNSET_FLAG(search_control_point_notified);
+	UNSET_FLAG(search_sent);
+	UNSET_FLAG(search_notified);
 	UNSET_FLAG(search_results_object_id_read);
 
-	err = bt_mcc_set_scp(default_conn, search);
+	err = bt_mcc_send_search(default_conn, search);
 	if (err) {
 		FAIL("Failed to write to search control point\n");
 		return;
 	}
 
-	WAIT_FOR_FLAG(search_control_point_set);
-	WAIT_FOR_FLAG(search_control_point_notified);
+	WAIT_FOR_FLAG(search_sent);
+	WAIT_FOR_FLAG(search_notified);
 
-	if (g_search_control_point_result != BT_MCS_SCP_NTF_SUCCESS) {
+	if (g_search_result != BT_MCS_SCP_NTF_SUCCESS) {
 		FAIL("SEARCH operation failed\n");
 		return;
 	}
@@ -1719,7 +1719,7 @@ void test_main(void)
 
 
 	/* Search control point */
-	test_scp();
+	test_search();
 
 
 	/* TEST IS COMPLETE */

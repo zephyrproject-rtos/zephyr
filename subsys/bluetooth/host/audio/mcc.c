@@ -764,8 +764,8 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Length of returned value in callback: %d", search.len);
 	}
 
-	if (mcc_cb && mcc_cb->scp_set) {
-		mcc_cb->scp_set(conn, cb_err, search);
+	if (mcc_cb && mcc_cb->search_send) {
+		mcc_cb->search_send(conn, cb_err, search);
 	}
 }
 
@@ -951,8 +951,8 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 				cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 			}
 
-			if (mcc_cb && mcc_cb->scp_ntf) {
-				mcc_cb->scp_ntf(conn, cb_err, result_code);
+			if (mcc_cb && mcc_cb->search_ntf) {
+				mcc_cb->search_ntf(conn, cb_err, result_code);
 			}
 
 		} else if (handle == cur_mcs_inst->search_results_obj_id_handle) {
@@ -2020,7 +2020,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int bt_mcc_set_scp(struct bt_conn *conn, struct mpl_search_t search)
+int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search_t search)
 {
 	int err;
 
