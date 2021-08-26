@@ -34,6 +34,8 @@
 #include "lll_prof_internal.h"
 #include "lll_scan_internal.h"
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_scan_aux
 #include "common/log.h"
@@ -273,7 +275,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif
 
 	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -481,7 +483,7 @@ static void isr_scan_aux_setup(void *param)
 
 	/* Setup radio for auxiliary PDU scan */
 	radio_phy_set(phy_aux, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_aux << 1));
+	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
 	lll_chan_set(aux_ptr->chan_idx);
 
 	radio_pkt_rx_set(node_rx->pdu);
