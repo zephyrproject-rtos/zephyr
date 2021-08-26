@@ -465,6 +465,14 @@ config BT_CTLR_ADV_DATA_LEN_MAX
 	help
 	  Maximum Extended Advertising Data Length.
 
+config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
+	int "Maximum Advertising Extensions Receive PDU Length"
+	range 255 255 if BT_HCI_RAW
+	range 31 255
+	default 255
+	help
+	  Maximum Advertising Extensions Receive PDU Length.
+
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
