@@ -720,6 +720,25 @@ static inline bool device_is_ready(const struct device *dev)
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
+#ifdef CONFIG_PM_DEVICE
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)			\
+	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm, node_id),
+#else
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)
+#endif
+
+/**
+ * @brief Utility macro to define and initialize the device state.
+
+ * @param node_id Devicetree node id of the device.
+ * @param dev_name Device name.
+ */
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((__section__(".z_devstate"))) = {			\
+		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
+	};
+
 /* If device power management is enabled, this macro defines a pointer to a
  * device in the z_pm_device_slots region. When invoked for each device, this
  * will effectively result in a device pointer array with the same size of the
@@ -804,6 +823,14 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
 		};
 
+#ifdef CONFIG_PM_DEVICE
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
+	.pm_control = (pm_control_fn),					\
+	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
+#else
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+#endif
+
 #define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
 		.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),	\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
@@ -829,23 +856,6 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
-
-#ifdef CONFIG_PM_DEVICE
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)			\
-	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm, node_id),
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
-	.pm_control = (pm_control_fn),					\
-	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
-#else
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
-#endif
-
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate"))) = {			\
-		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
-	};
 
 #ifdef __cplusplus
 }
