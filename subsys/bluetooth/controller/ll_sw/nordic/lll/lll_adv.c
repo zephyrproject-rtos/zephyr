@@ -45,8 +45,6 @@
 #include "lll_prof_internal.h"
 #include "lll_df_internal.h"
 
-#include "ull_internal.h"
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
