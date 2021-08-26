@@ -1350,8 +1350,8 @@ void do_full_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
 }
 
 /* Command handlers (state machines) */
-void inactive_state_command_handler(struct mpl_cmd_t command,
-				    struct mpl_cmd_ntf_t ntf)
+void inactive_state_command_handler(struct mpl_cmd command,
+				    struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
@@ -1499,8 +1499,8 @@ void inactive_state_command_handler(struct mpl_cmd_t command,
 	}
 }
 
-void playing_state_command_handler(struct mpl_cmd_t command,
-				   struct mpl_cmd_ntf_t ntf)
+void playing_state_command_handler(struct mpl_cmd command,
+				   struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
@@ -1718,8 +1718,8 @@ void playing_state_command_handler(struct mpl_cmd_t command,
 	}
 }
 
-void paused_state_command_handler(struct mpl_cmd_t command,
-				  struct mpl_cmd_ntf_t ntf)
+void paused_state_command_handler(struct mpl_cmd command,
+				  struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
@@ -1937,8 +1937,8 @@ void paused_state_command_handler(struct mpl_cmd_t command,
 	}
 }
 
-void seeking_state_command_handler(struct mpl_cmd_t command,
-				   struct mpl_cmd_ntf_t ntf)
+void seeking_state_command_handler(struct mpl_cmd command,
+				   struct mpl_cmd_ntf ntf)
 {
 	BT_DBG("Command opcode: %d", command.opcode);
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
@@ -2196,8 +2196,8 @@ void seeking_state_command_handler(struct mpl_cmd_t command,
 	}
 }
 
-void (*command_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_cmd_t command,
-						  struct mpl_cmd_ntf_t ntf) = {
+void (*command_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_cmd command,
+						  struct mpl_cmd_ntf ntf) = {
 	inactive_state_command_handler,
 	playing_state_command_handler,
 	paused_state_command_handler,
@@ -2393,9 +2393,9 @@ uint8_t media_state_get(void)
 	return pl.state;
 }
 
-void command_send(struct mpl_cmd_t command)
+void command_send(struct mpl_cmd command)
 {
-	struct mpl_cmd_ntf_t ntf;
+	struct mpl_cmd_ntf ntf;
 
 	BT_DBG("opcode: %d, param: %d", command.opcode, command.param);
 
@@ -2413,10 +2413,10 @@ uint32_t commands_supported_get(void)
 }
 
 #ifdef CONFIG_BT_OTS
-static void parse_search(struct mpl_search_t search)
+static void parse_search(struct mpl_search search)
 {
 	uint8_t index = 0;
-	struct mpl_sci_t sci;
+	struct mpl_sci sci;
 	uint8_t sci_num = 0;
 	bool search_failed = false;
 
@@ -2467,7 +2467,7 @@ static void parse_search(struct mpl_search_t search)
 	media_proxy_pl_search_results_id_cb(pl.search_results_id);
 }
 
-void search_send(struct mpl_search_t search)
+void search_send(struct mpl_search search)
 {
 	if (search.len > SEARCH_LEN_MAX) {
 		BT_WARN("Search too long: %d", search.len);

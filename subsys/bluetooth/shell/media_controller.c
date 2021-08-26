@@ -261,7 +261,7 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
-static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf_t cmd_ntf)
+static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command failed (%d)", plr, err);
@@ -663,7 +663,7 @@ static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char 
 
 static int cmd_media_send_command(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct mpl_cmd_t cmd;
+	struct mpl_cmd cmd;
 	int err;
 
 	cmd.opcode = strtol(argv[1], NULL, 0);
@@ -703,7 +703,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 	 * and build the search item here
 	 */
 
-	struct mpl_search_t search;
+	struct mpl_search search;
 	int err;
 
 	search.len = strlen(argv[1]);

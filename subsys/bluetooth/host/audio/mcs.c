@@ -478,7 +478,7 @@ static ssize_t control_point_write(struct bt_conn *conn,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
 {
-	struct mpl_cmd_t command;
+	struct mpl_cmd command;
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -536,7 +536,7 @@ static ssize_t search_control_point_write(struct bt_conn *conn,
 					  const void *buf, uint16_t len,
 					  uint16_t offset, uint8_t flags)
 {
-	struct mpl_search_t search = {0};
+	struct mpl_search search = {0};
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -879,7 +879,7 @@ void media_proxy_sctrl_media_state_cb(uint8_t state)
 	notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
 }
 
-void media_proxy_sctrl_command_cb(struct mpl_cmd_ntf_t cmd_ntf)
+void media_proxy_sctrl_command_cb(struct mpl_cmd_ntf cmd_ntf)
 {
 	BT_DBG("Notifying control point command - opcode: %d, result: %d",
 	       cmd_ntf.requested_opcode, cmd_ntf.result_code);

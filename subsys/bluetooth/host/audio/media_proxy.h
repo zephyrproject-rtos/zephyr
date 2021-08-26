@@ -45,7 +45,7 @@ extern "C" {
 /**
  * @brief Media player command
  */
-struct mpl_cmd_t {
+struct mpl_cmd {
 	uint8_t  opcode;
 	bool  use_param;
 	int32_t param;
@@ -54,7 +54,7 @@ struct mpl_cmd_t {
 /**
  * @brief Media command notification
  */
-struct mpl_cmd_ntf_t {
+struct mpl_cmd_ntf {
 	uint8_t requested_opcode;
 	uint8_t result_code;
 };
@@ -62,7 +62,7 @@ struct mpl_cmd_ntf_t {
 /**
  * @brief Search control item
  */
-struct mpl_sci_t {
+struct mpl_sci {
 	uint8_t len;                     /**< Length of type and parameter */
 	uint8_t type;                    /**< MEDIA_PROXY_SEARCH_TYPE_<...> */
 	char    param[SEARCH_PARAM_MAX]; /**< Search parameter */
@@ -71,7 +71,7 @@ struct mpl_sci_t {
 /**
  * @brief Search
  */
-struct mpl_search_t {
+struct mpl_search {
 	uint8_t len;
 	char    search[SEARCH_LEN_MAX]; /* Concatenated search control items */
 };	                                /* - (type, length, param) */
@@ -508,7 +508,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param cmd_ntf  The result of the command
 	 */
-	void (*command)(struct media_player *player, int err, struct mpl_cmd_ntf_t cmd_ntf);
+	void (*command)(struct media_player *player, int err, struct mpl_cmd_ntf cmd_ntf);
 
 	/**
 	 * @brief Commands supported callback
@@ -918,7 +918,7 @@ int media_proxy_ctrl_media_state_get(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd_t command);
+int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd command);
 
 /**
  * @brief Read Commands Supported
@@ -946,7 +946,7 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search_t search);
+int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search search);
 
 /**
  * @brief Read Search Results Object ID
@@ -1254,7 +1254,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param command	The command to send
 	 */
-	void (*command_send)(struct mpl_cmd_t command);
+	void (*command_send)(struct mpl_cmd command);
 
 	/**
 	 * @brief Read Commands Supported
@@ -1277,7 +1277,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*search_send)(struct mpl_search_t search);
+	void (*search_send)(struct mpl_search search);
 
 	/**
 	 * @brief Read Search Results Object ID
@@ -1456,7 +1456,7 @@ void media_proxy_pl_media_state_cb(uint8_t state);
  *
  * @param cmd_ntf	The result of the command
  */
-void media_proxy_pl_command_cb(struct mpl_cmd_ntf_t cmd_ntf);
+void media_proxy_pl_command_cb(struct mpl_cmd_ntf cmd_ntf);
 
 /**
  * @brief Commands supported callback

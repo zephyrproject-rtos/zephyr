@@ -109,7 +109,7 @@ struct mcs_instance_t {
 	 * - playing order     (1 octet)
 	 * - the control point (5 octets)
 	 *                     (1 octet opcode + optionally 4 octet param)
-	 *                     (mpl_cmd_t.opcode + mpl_cmd_t.param)
+	 *                     (mpl_cmd.opcode + mpl_cmd.param)
 	 * If the object transfer client is included, it is also used for
 	 * - object IDs (6 octets - BT_OTS_OBJ_ID_SIZE) and
 	 * - the search control point (64 octets - SEARCH_LEN_MAX)
@@ -121,10 +121,10 @@ struct mcs_instance_t {
 	char write_buf[SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
-	/* TODO: Rewrite the mpl_cmd_t to have the "use_param" parameter */
+	/* TODO: Rewrite the mpl_cmd to have the "use_param" parameter */
 	/* separately, and the opcode and param alone as a struct */
-	char write_buf[sizeof(((struct mpl_cmd_t *)0)->opcode) +
-		       sizeof(((struct mpl_cmd_t *)0)->param)];
+	char write_buf[sizeof(((struct mpl_cmd *)0)->opcode) +
+		       sizeof(((struct mpl_cmd *)0)->param)];
 #endif /* CONFIG_BT_MCC_OTS */
 
 	struct bt_gatt_write_params     write_params;
@@ -686,7 +686,7 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 			    struct bt_gatt_write_params *params)
 {
 	int cb_err = err;
-	struct mpl_cmd_t cmd = {0};
+	struct mpl_cmd cmd = {0};
 
 	cur_mcs_inst->busy = false;
 
@@ -748,7 +748,7 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 			     struct bt_gatt_write_params *params)
 {
 	int cb_err = err;
-	struct mpl_search_t search = {0};
+	struct mpl_search search = {0};
 
 	cur_mcs_inst->busy = false;
 
@@ -911,7 +911,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			/* writable and notifiable.  Handle directly here. */
 
 			int cb_err = 0;
-			struct mpl_cmd_ntf_t ntf = {0};
+			struct mpl_cmd_ntf ntf = {0};
 
 			BT_DBG("Control Point notification");
 			if (length == sizeof(ntf.requested_opcode) + sizeof(ntf.result_code)) {
@@ -1953,7 +1953,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 	return err;
 }
 
-int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd_t cmd)
+int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd)
 {
 	int err;
 	int length = sizeof(cmd.opcode);
@@ -2020,7 +2020,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search_t search)
+int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search)
 {
 	int err;
 
