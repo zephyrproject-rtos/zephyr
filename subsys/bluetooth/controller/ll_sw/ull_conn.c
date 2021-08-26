@@ -1928,6 +1928,7 @@ static inline void disable(uint16_t handle)
 					conn, &conn->lll);
 	LL_ASSERT(err == 0 || err == -EALREADY);
 
+	conn->lll.handle = LLL_HANDLE_INVALID;
 	conn->lll.link_tx_free = NULL;
 }
 
