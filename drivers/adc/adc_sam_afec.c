@@ -62,16 +62,10 @@ struct adc_sam_cfg {
 	struct soc_gpio_pin afec_trg_pin;
 };
 
-#define DEV_CFG(dev) \
-	((const struct adc_sam_cfg *const)(dev)->config)
-
-#define DEV_DATA(dev) \
-	((struct adc_sam_data *)(dev)->data)
-
 static int adc_sam_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_sam_cfg * const cfg = DEV_CFG(dev);
+	const struct adc_sam_cfg * const cfg = dev->config;
 	Afec *const afec = cfg->regs;
 
 	uint8_t channel_id = channel_cfg->channel_id;
@@ -120,8 +114,8 @@ static int adc_sam_channel_setup(const struct device *dev,
 
 static void adc_sam_start_conversion(const struct device *dev)
 {
-	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam_data *data = DEV_DATA(dev);
+	const struct adc_sam_cfg *const cfg = dev->config;
+	struct adc_sam_data *data = dev->data;
 	Afec *const afec = cfg->regs;
 
 	data->channel_id = find_lsb_set(data->channels) - 1;
@@ -186,7 +180,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	struct adc_sam_data *data = DEV_DATA(dev);
+	struct adc_sam_data *data = dev->data;
 	int error = 0;
 	uint32_t channels = sequence->channels;
 
@@ -251,7 +245,7 @@ static int start_read(const struct device *dev,
 static int adc_sam_read(const struct device *dev,
 			const struct adc_sequence *sequence)
 {
-	struct adc_sam_data *data = DEV_DATA(dev);
+	struct adc_sam_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -263,8 +257,8 @@ static int adc_sam_read(const struct device *dev,
 
 static int adc_sam_init(const struct device *dev)
 {
-	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam_data *data = DEV_DATA(dev);
+	const struct adc_sam_cfg *const cfg = dev->config;
+	struct adc_sam_data *data = dev->data;
 	Afec *const afec = cfg->regs;
 
 	/* Reset the AFEC. */
@@ -306,7 +300,7 @@ static int adc_sam_read_async(const struct device *dev,
 			      const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
-	struct adc_sam_data *data = DEV_DATA(dev);
+	struct adc_sam_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -327,8 +321,8 @@ static const struct adc_driver_api adc_sam_api = {
 
 static void adc_sam_isr(const struct device *dev)
 {
-	struct adc_sam_data *data = DEV_DATA(dev);
-	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam_data *data = dev->data;
+	const struct adc_sam_cfg *const cfg = dev->config;
 	Afec *const afec = cfg->regs;
 	uint16_t result;
 

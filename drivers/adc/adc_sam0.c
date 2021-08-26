@@ -58,11 +58,6 @@ struct adc_sam0_cfg {
 	void (*config_func)(const struct device *dev);
 };
 
-#define DEV_CFG(dev) \
-	((const struct adc_sam0_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct adc_sam0_data *)(dev)->data)
-
 static void wait_synchronization(Adc *const adc)
 {
 #if defined(ADC_SYNCBUSY_MASK)
@@ -77,7 +72,7 @@ static void wait_synchronization(Adc *const adc)
 static int adc_sam0_acquisition_to_clocks(const struct device *dev,
 					  uint16_t acquisition_time)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	uint64_t scaled_acq;
 
 	switch (ADC_ACQ_TIME_UNIT(acquisition_time)) {
@@ -122,7 +117,7 @@ static int adc_sam0_acquisition_to_clocks(const struct device *dev,
 static int adc_sam0_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 	int retval;
 	uint8_t SAMPCTRL = 0;
@@ -182,7 +177,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		adc->REFCTRL.reg = REFCTRL;
 		wait_synchronization(adc);
 #ifdef ADC_SAM0_REFERENCE_GLITCH
-		struct adc_sam0_data *data = DEV_DATA(dev);
+		struct adc_sam0_data *data = dev->data;
 
 		data->reference_changed = 1;
 #endif
@@ -283,7 +278,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 
 static void adc_sam0_start_conversion(const struct device *dev)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 
 	LOG_DBG("Starting conversion");
@@ -336,8 +331,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
+	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
 	int error;
 
@@ -419,7 +414,7 @@ static int start_read(const struct device *dev,
 static int adc_sam0_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	struct adc_sam0_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -431,8 +426,8 @@ static int adc_sam0_read(const struct device *dev,
 
 static void adc_sam0_isr(const struct device *dev)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam0_data *data = dev->data;
+	const struct adc_sam0_cfg *const cfg = dev->config;
 	Adc *const adc = cfg->regs;
 	uint16_t result;
 
@@ -456,8 +451,8 @@ static void adc_sam0_isr(const struct device *dev)
 
 static int adc_sam0_init(const struct device *dev)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	const struct adc_sam0_cfg *const cfg = dev->config;
+	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
 
 #ifdef MCLK
@@ -502,7 +497,7 @@ static int adc_sam0_read_async(const struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
-	struct adc_sam0_data *data = DEV_DATA(dev);
+	struct adc_sam0_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -549,7 +544,7 @@ static const struct adc_driver_api adc_sam0_api = {
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);		\
+	const struct adc_sam0_cfg *const cfg = dev->config;		\
 	Adc * const adc = cfg->regs;					\
 	uint32_t comp = ADC_SAM0_BIASCOMP(n);				\
 	uint32_t r2r = ADC_SAM0_BIASR2R(n);				\
@@ -569,7 +564,7 @@ do {									\
 
 #define ADC_SAM0_CONFIGURE(n)						\
 do {									\
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);		\
+	const struct adc_sam0_cfg *const cfg = dev->config;		\
 	Adc * const adc = cfg->regs;					\
 	/* Linearity is split across two words */			\
 	uint32_t lin = ((*(uint32_t *)ADC_FUSES_LINEARITY_0_ADDR) &		\
