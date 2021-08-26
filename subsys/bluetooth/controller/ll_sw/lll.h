@@ -307,6 +307,9 @@ struct node_rx_iso_meta {
 /* Define invalid/unassigned Controller state/role instance handle */
 #define NODE_RX_HANDLE_INVALID 0xFFFF
 
+/* Define invalid/unassigned Controller LLL context handle */
+#define LLL_HANDLE_INVALID     0xFFFF
+
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {

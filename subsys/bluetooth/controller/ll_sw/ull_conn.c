@@ -1199,7 +1199,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	lll = &conn->lll;
 
 	/* Skip if connection terminated by local host */
-	if (unlikely(lll->handle == 0xFFFF)) {
+	if (unlikely(lll->handle == LLL_HANDLE_INVALID)) {
 		return;
 	}
 
@@ -1541,7 +1541,7 @@ void ull_conn_tx_demux(uint8_t count)
 			struct pdu_data *p = (void *)tx->pdu;
 
 			p->ll_id = PDU_DATA_LLID_RESV;
-			ll_tx_ack_put(0xFFFF, tx);
+			ll_tx_ack_put(LLL_HANDLE_INVALID, tx);
 		}
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
@@ -1657,7 +1657,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 	LL_ASSERT(pdu_tx->len);
 
 	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
-		if (handle != 0xFFFF) {
+		if (handle != LLL_HANDLE_INVALID) {
 			struct ll_conn *conn = ll_conn_get(handle);
 
 			ctrl_tx_ack(conn, &tx, pdu_tx);
@@ -1675,10 +1675,10 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		} else {
 			LL_ASSERT(!link->next);
 		}
-	} else if (handle == 0xFFFF) {
+	} else if (handle == LLL_HANDLE_INVALID) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
-		LL_ASSERT(handle != 0xFFFF);
+		LL_ASSERT(handle != LLL_HANDLE_INVALID);
 	}
 
 	ll_tx_ack_put(handle, tx);
@@ -1982,7 +1982,7 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 		  (ticker_status == TICKER_STATUS_BUSY));
 
 	/* Invalidate the connection context */
-	lll->handle = 0xFFFF;
+	lll->handle = LLL_HANDLE_INVALID;
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
@@ -2123,7 +2123,7 @@ static void tx_lll_flush(void *param)
 		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
 		LL_ASSERT(lll_tx);
 
-		lll_tx->handle = 0xFFFF;
+		lll_tx->handle = LLL_HANDLE_INVALID;
 		lll_tx->node = tx;
 
 		/* TX node UPSTREAM, i.e. Tx node ack path */
