@@ -987,11 +987,11 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 uint8_t ull_master_chm_update(void)
 {
 	uint16_t handle;
-	uint8_t ret;
 
 	handle = CONFIG_BT_MAX_CONN;
 	while (handle--) {
 		struct ll_conn *conn;
+		uint8_t ret;
 
 		conn = ll_connected_get(handle);
 		if (!conn || conn->lll.role) {
