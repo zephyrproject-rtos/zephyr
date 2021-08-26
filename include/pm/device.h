@@ -115,6 +115,27 @@ struct pm_device {
 };
 
 /**
+ * @brief Utility macro to initialize #pm_device.
+ *
+ * @note DT_PROP_OR is used to retrieve the wakeup_source property because
+ * it may not be defined on all devices.
+ *
+ * @param obj Name of the #pm_device structure being initialized.
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ */
+#define Z_PM_DEVICE_INIT(obj, node_id)					\
+	{								\
+		.usage = 0U,						\
+		.lock = Z_MUTEX_INITIALIZER(obj.pm.lock),		\
+		.condvar = Z_CONDVAR_INITIALIZER(obj.pm.condvar),	\
+		.state = PM_DEVICE_STATE_ACTIVE,			\
+		.flags = ATOMIC_INIT(COND_CODE_1(			\
+				DT_NODE_EXISTS(node_id),		\
+				(DT_PROP_OR(node_id, wakeup_source, 0)),\
+				(0)) << PM_DEVICE_FLAGS_WS_CAPABLE),	\
+	}
+
+/**
  * @brief Device power management control function callback.
  *
  * @param dev Device instance.
