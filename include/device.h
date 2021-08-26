@@ -839,7 +839,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate"))) = {			\
 		.pm = {						        \
-			.usage = ATOMIC_INIT(0),			\
+			.usage = 0U,					\
 			.lock = Z_MUTEX_INITIALIZER(			\
 				Z_DEVICE_STATE_NAME(dev_name).pm.lock),	\
 			.condvar = Z_CONDVAR_INITIALIZER(		\
