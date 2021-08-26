@@ -29,7 +29,7 @@ struct lll_sync {
 	uint32_t window_widening_event_us;
 	uint32_t window_size_event_us;
 
-	/* temporary storage when aux scan was scheduled from LLL */
+	/* used to store lll_aux when chain is being scanned */
 	struct lll_scan_aux *lll_aux;
 
 	uint8_t phy:3;
