@@ -399,11 +399,11 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 
 	if (i2s_cfg->frame_clk_freq == 0) { /* -> reset state */
 		purge_queue(dev, dir);
-		if (dir == I2S_DIR_TX || I2S_DIR_BOTH) {
+		if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 			drv_data->tx_configured = false;
 			memset(&drv_data->tx, 0, sizeof(drv_data->tx));
 		}
-		if (dir == I2S_DIR_RX || I2S_DIR_BOTH) {
+		if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
 			drv_data->rx_configured = false;
 			memset(&drv_data->rx, 0, sizeof(drv_data->rx));
 		}
