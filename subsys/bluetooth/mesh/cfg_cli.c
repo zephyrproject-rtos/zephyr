@@ -140,8 +140,7 @@ static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_KRP_STATUS, ctx->addr,
-				       (void **)&param)) {
+	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_KRP_STATUS, ctx->addr, (void **)&param)) {
 		return -ENOENT;
 	}
 
@@ -153,11 +152,11 @@ static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		return -ENOENT;
 	}
 
-	if (param && param->status) {
+	if (param->status) {
 		*param->status = status;
 	}
 
-	if (param && param->phase) {
+	if (param->phase) {
 		*param->phase = phase;
 	}
 
