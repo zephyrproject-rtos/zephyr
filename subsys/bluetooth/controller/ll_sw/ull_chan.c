@@ -52,6 +52,9 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	(void)ull_adv_sync_chm_update();
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
+	/* TODO: Should failure due to Channel Map Update being already in
+	 *       progress be returned to caller?
+	 */
 	return 0;
 }
 

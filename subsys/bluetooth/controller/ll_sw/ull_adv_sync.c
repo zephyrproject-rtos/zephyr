@@ -798,6 +798,9 @@ uint8_t ull_adv_sync_chm_update(void)
 		(void)sync_chm_update(handle);
 	}
 
+	/* TODO: Should failure due to Channel Map Update being already in
+	 *       progress be returned to caller?
+	 */
 	return 0;
 }
 
