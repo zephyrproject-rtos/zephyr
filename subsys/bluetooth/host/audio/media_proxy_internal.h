@@ -119,7 +119,7 @@ void media_proxy_sctrl_command_send(struct mpl_cmd_t command);
 uint32_t media_proxy_sctrl_commands_supported_get(void);
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_search_set(struct mpl_search_t search);
+void media_proxy_sctrl_search_send(struct mpl_search_t search);
 
 uint64_t media_proxy_sctrl_search_results_id_get(void);
 #endif /* CONFIG_BT_OTS */

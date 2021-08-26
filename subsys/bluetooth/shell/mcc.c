@@ -350,28 +350,28 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err,
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_scp_set_cb(struct bt_conn *conn, int err,
-			   struct mpl_search_t search)
+static void mcc_search_send_cb(struct bt_conn *conn, int err,
+			       struct mpl_search_t search)
 {
 	if (err) {
 		shell_error(ctx_shell,
-			    "Search Control Point set failed (%d)", err);
+			    "Search send failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Search Control Point set");
+	shell_print(ctx_shell, "Search sent");
 }
 
-static void mcc_scp_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
+static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
 	if (err) {
 		shell_error(ctx_shell,
-			    "Search Control Point notification error (%d), result code: %d",
+			    "Search notification error (%d), result code: %d",
 			    err, result_code);
 		return;
 	}
 
-	shell_print(ctx_shell, "Search control point notification result code: %d",
+	shell_print(ctx_shell, "Search notification result code: %d",
 		    result_code);
 }
 
@@ -551,8 +551,8 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	cb.cmd_ntf          = &mcc_cmd_ntf_cb;
 	cb.opcodes_supported_read = &mcc_opcodes_supported_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	cb.scp_set            = &mcc_scp_set_cb;
-	cb.scp_ntf            = &mcc_scp_ntf_cb;
+	cb.search_send        = &mcc_search_send_cb;
+	cb.search_ntf         = &mcc_search_ntf_cb;
 	cb.search_results_obj_id_read = &mcc_search_results_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 	cb.content_control_id_read = &mcc_content_control_id_read_cb;
@@ -878,7 +878,7 @@ int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_set_scp_raw(const struct shell *sh, size_t argc, char *argv[])
+int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	struct mpl_search_t search;
@@ -887,15 +887,15 @@ int cmd_mcc_set_scp_raw(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", log_strdup(argv[1]));
 
-	result = bt_mcc_set_scp(default_conn, search);
+	result = bt_mcc_send_search(default_conn, search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_set_scp_ioptest(const struct shell *sh, size_t argc,
-			    char *argv[])
+int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	/* Implementation follows Media control service testspec 0.9.0r13 */
 	/* Testcase MCS/SR/SCP/BV-01-C [Search Control Point], rounds 1 - 9 */
@@ -985,7 +985,7 @@ int cmd_mcc_set_scp_ioptest(const struct shell *sh, size_t argc,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_set_scp(default_conn, search);
+	result = bt_mcc_send_search(default_conn, search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -994,8 +994,8 @@ int cmd_mcc_set_scp_ioptest(const struct shell *sh, size_t argc,
 }
 
 #if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
-int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *sh,
-					  size_t argc, char *argv[])
+int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
+					      size_t argc, char *argv[])
 {
 	int result;
 	struct mpl_search_t search;
@@ -1008,7 +1008,7 @@ int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *sh,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_set_scp(default_conn, search);
+	result = bt_mcc_send_search(default_conn, search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -1016,8 +1016,8 @@ int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *sh,
 	return result;
 }
 
-int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *sh,
-					 size_t argc, char *argv[])
+int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
+					     size_t argc, char *argv[])
 {
 	/* Reproduce a search that caused hard fault when sent from peer */
 	/* in IOP testing */
@@ -1033,7 +1033,7 @@ int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *sh,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_set_scp(default_conn, search);
+	result = bt_mcc_send_search(default_conn, search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -1372,18 +1372,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
 		      cmd_mcc_read_opcodes_supported, 1, 0),
 #ifdef CONFIG_BT_MCC_OTS
-	SHELL_CMD_ARG(set_scp_raw, NULL, "Set search <search control item sequence>",
-		      cmd_mcc_set_scp_raw, 2, 0),
-	SHELL_CMD_ARG(set_scp_ioptest, NULL,
-		      "Set search - IOP test round as input <round number>",
-		      cmd_mcc_set_scp_ioptest, 2, 0),
+	SHELL_CMD_ARG(send_search_raw, NULL, "Send search <search control item sequence>",
+		      cmd_mcc_send_search_raw, 2, 0),
+	SHELL_CMD_ARG(send_search_scp_ioptest, NULL,
+		      "Send search - IOP test round as input <round number>",
+		      cmd_mcc_send_search_ioptest, 2, 0),
 #if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
-	SHELL_CMD_ARG(test_set_scp_iop_invalid_type, NULL,
-		      "Set search - IOP test, invalid type value (test)",
-		      cmd_mcc_test_set_scp_iop_invalid_type, 1, 0),
-	SHELL_CMD_ARG(test_set_scp_invalid_sci_len, NULL,
-		      "Set search - invalid sci length (test)",
-		      cmd_mcc_test_set_scp_invalid_sci_len, 1, 0),
+	SHELL_CMD_ARG(test_send_search_iop_invalid_type, NULL,
+		      "Send search - IOP test, invalid type value (test)",
+		      cmd_mcc_test_send_search_iop_invalid_type, 1, 0),
+	SHELL_CMD_ARG(test_send_Search_invalid_sci_len, NULL,
+		      "Send search - invalid sci length (test)",
+		      cmd_mcc_test_send_search_invalid_sci_len, 1, 0),
 #endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
 	SHELL_CMD_ARG(read_search_results_obj_id, NULL,
 		      "Read Search Results Object ID",

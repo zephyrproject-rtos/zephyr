@@ -710,9 +710,9 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", log_strdup(argv[1]));
 
-	err = media_proxy_ctrl_search_set(current_player, search);
+	err = media_proxy_ctrl_search_send(current_player, search);
 	if (err) {
-		shell_error(ctx_shell, "Search set failed (%d)", err);
+		shell_error(ctx_shell, "Search send failed (%d)", err);
 	}
 
 	return err;
