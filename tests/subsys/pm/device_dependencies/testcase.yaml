@@ -1,0 +1,4 @@
+tests:
+  pm-device-dependencies.dts:
+    tags: power
+    platform_allow: native_posix
