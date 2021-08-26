@@ -126,8 +126,8 @@ struct pm_device {
 #define Z_PM_DEVICE_INIT(obj, node_id)					\
 	{								\
 		.usage = 0U,						\
-		.lock = Z_MUTEX_INITIALIZER(obj.pm.lock),		\
-		.condvar = Z_CONDVAR_INITIALIZER(obj.pm.condvar),	\
+		.lock = Z_MUTEX_INITIALIZER(obj.lock),			\
+		.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),		\
 		.state = PM_DEVICE_STATE_ACTIVE,			\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
