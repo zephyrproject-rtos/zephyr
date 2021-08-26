@@ -27,12 +27,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include "spi_ll_stm32.h"
 
-#define DEV_CFG(dev)						\
-(const struct spi_stm32_config * const)(dev->config)
-
-#define DEV_DATA(dev)					\
-(struct spi_stm32_data * const)(dev->data)
-
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
@@ -92,8 +86,8 @@ static void dma_callback(const struct device *dev, void *arg,
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				 size_t len)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	int ret;
 
@@ -151,8 +145,8 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 				 size_t len)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	int ret;
 
@@ -209,7 +203,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 
 static int spi_dma_move_buffers(const struct device *dev, size_t len)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 	int ret;
 	size_t dma_segment_len;
 
@@ -454,8 +448,8 @@ static void spi_stm32_isr(const struct device *dev)
 static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	const uint32_t scaler[] = {
 		LL_SPI_BAUDRATEPRESCALER_DIV2,
 		LL_SPI_BAUDRATEPRESCALER_DIV4,
@@ -593,7 +587,7 @@ static int spi_stm32_configure(const struct device *dev,
 static int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -606,8 +600,8 @@ static int transceive(const struct device *dev,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
@@ -678,7 +672,7 @@ end:
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 	int res = -1;
 
 	while (1) {
@@ -705,8 +699,8 @@ static int transceive_dma(const struct device *dev,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
-	const struct spi_stm32_config *cfg = DEV_CFG(dev);
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	const struct spi_stm32_config *cfg = dev->config;
+	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
@@ -818,7 +812,7 @@ static int spi_stm32_transceive(const struct device *dev,
 				const struct spi_buf_set *rx_bufs)
 {
 #ifdef CONFIG_SPI_STM32_DMA
-	struct spi_stm32_data *data = DEV_DATA(dev);
+	struct spi_stm32_data *data = dev->data;
 
 	if ((data->dma_tx.dma_dev != NULL)
 	 && (data->dma_rx.dma_dev != NULL)) {
