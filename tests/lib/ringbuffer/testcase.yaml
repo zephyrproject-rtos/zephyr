@@ -1,5 +1,7 @@
 tests:
   libraries.data_structures:
     tags: ring_buffer circular_buffer
+    # FIXME: qemu_arc_hs6x excluded, see #37861
+    platform_exclude: qemu_arc_hs6x
     integration_platforms:
       - qemu_x86
