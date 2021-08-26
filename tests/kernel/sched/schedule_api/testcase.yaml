@@ -32,3 +32,10 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspace ignore_faults
+  kernel.scheduler.linker_generator:
+    platform_allow: qemu_cortex_m3
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+    tags: kernel threads sched userspace ignore_faults linker_generator
