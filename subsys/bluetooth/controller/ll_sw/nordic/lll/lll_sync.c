@@ -155,12 +155,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
-
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
-
-	radio_pkt_rx_set(node_rx->pdu);
-
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((uint32_t)lll->crc_init[2] << 16) |
@@ -168,6 +162,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[0])));
 
 	lll_chan_set(data_chan_use);
+
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	radio_pkt_rx_set(node_rx->pdu);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync_cfg *cfg;
