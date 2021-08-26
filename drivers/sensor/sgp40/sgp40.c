@@ -71,7 +71,7 @@ static int sgp40_attr_set(const struct device *dev,
 		int32_t tmp;
 
 		tmp = CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
-		t_ticks = ((tmp + 45U) * 0xFFFF / 175U) + 0.5;
+		t_ticks = ((tmp + 45) * 65535) / 175;
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
 	}
