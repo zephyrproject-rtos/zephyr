@@ -155,27 +155,29 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 		}
 	}
 
-	char bufvname[ENTRY_NAME_MAX_LEN + ENTRY_LEN_SIZE + 3];
+	if (val_len) {
+		char bufvname[ENTRY_NAME_MAX_LEN + ENTRY_LEN_SIZE + 3];
 
-	snprintk(bufvname, sizeof(bufvname), "%s=", name);
-	if (fputs(bufvname, fnew != NULL ? fnew : fcur) < 0) {
-		return -1;
-	}
+		snprintk(bufvname, sizeof(bufvname), "%s=", name);
+		if (fputs(bufvname, fnew != NULL ? fnew : fcur) < 0) {
+			return -1;
+		}
 
-	char bufval[ENTRY_VAL_MAX_LEN + 2] = {};
-	size_t valcnt = 0;
+		char bufval[ENTRY_VAL_MAX_LEN + 2] = {};
+		size_t valcnt = 0;
 
-	while (valcnt < (val_len * 2)) {
-		valcnt += snprintk(&bufval[valcnt], 3, "%02x",
-				   (uint8_t)value[valcnt / 2]);
-	};
+		while (valcnt < (val_len * 2)) {
+			valcnt += snprintk(&bufval[valcnt], 3, "%02x",
+					   (uint8_t)value[valcnt / 2]);
+		};
 
-	/* helps in making settings file redable */
-	bufval[valcnt++] = '\n';
-	bufval[valcnt] = 0;
+		/* helps in making settings file redable */
+		bufval[valcnt++] = '\n';
+		bufval[valcnt] = 0;
 
-	if (fputs(bufval, fnew != NULL ? fnew : fcur) < 0) {
-		return -1;
+		if (fputs(bufval, fnew != NULL ? fnew : fcur) < 0) {
+			return -1;
+		}
 	}
 
 	if (fnew != NULL) {
