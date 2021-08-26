@@ -376,10 +376,6 @@ static int run_test(struct unit_test *test)
 		run_test_functions(test);
 	}
 
-	phase = TEST_PHASE_TEARDOWN;
-	test->teardown();
-	phase = TEST_PHASE_FRAMEWORK;
-
 	if (test_result == -1) {
 		ret = TC_FAIL;
 	}
