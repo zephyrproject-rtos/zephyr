@@ -1189,7 +1189,7 @@ static void test_scp(void)
 	UNSET_FLAG(search_flag);
 	UNSET_FLAG(search_results_object_id_read);
 
-	err = media_proxy_ctrl_search_set(current_player, search);
+	err = media_proxy_ctrl_search_send(current_player, search);
 	if (err) {
 		FAIL("Failed to write to search control point\n");
 		return;

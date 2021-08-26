@@ -250,26 +250,26 @@ typedef void (*bt_mcc_opcodes_supported_read_cb_t)(struct bt_conn *conn,
 						   int err, uint32_t opcodes);
 
 #ifdef CONFIG_BT_OTC
-/** @brief Callback function for mcc_set_scp
+/** @brief Callback function for mcc_send_search
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param pos           The search written (or attempted to write)
+ * @param search        The search written (or attempted to write)
  */
-typedef void (*bt_mcc_scp_set_cb_t)(struct bt_conn *conn, int err,
-				    struct mpl_search_t search);
+typedef void (*bt_mcc_search_send_cb_t)(struct bt_conn *conn, int err,
+					struct mpl_search_t search);
 
-/** @brief Callback function for scp notifications
+/** @brief Callback function for search notifications
  *
  * Notifications for the search control points have a different parameter
- * structure than callbacks for search control point writes
+ * structure than callbacks for search sends
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param ntf           The search control point notification
+ * @param ntf           The search notification
  */
-typedef void (*bt_mcc_scp_ntf_cb_t)(struct bt_conn *conn, int err,
-				    uint8_t result_code);
+typedef void (*bt_mcc_search_ntf_cb_t)(struct bt_conn *conn, int err,
+				       uint8_t result_code);
 
 /** @brief Callback function for mcc_search_results_obj_id_read
  *
@@ -410,8 +410,8 @@ struct bt_mcc_cb_t {
 	bt_mcc_cmd_ntf_cb_t                       cmd_ntf;
 	bt_mcc_opcodes_supported_read_cb_t        opcodes_supported_read;
 #ifdef CONFIG_BT_OTC
-	bt_mcc_scp_set_cb_t                       scp_set;
-	bt_mcc_scp_ntf_cb_t                       scp_ntf;
+	bt_mcc_search_send_cb_t                   search_send;
+	bt_mcc_search_ntf_cb_t                    search_ntf;
 	bt_mcc_search_results_obj_id_read_cb_t    search_results_obj_id_read;
 #endif /* CONFIG_BT_OTC */
 	bt_mcc_content_control_id_read_cb_t       content_control_id_read;
@@ -543,16 +543,16 @@ int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd_t cmd);
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
 
 #ifdef CONFIG_BT_OTC
-/** @brief Set Search Control Point
+/** @brief Send a Search command
  *
- * Write a search to the search control point.
+ * Write a search to the server's search control point.
  *
  * @param conn   Connection to the peer device
  * @param search The search
  *
  * @return int  0 on success, GATT error value on fail.
  */
-int bt_mcc_set_scp(struct bt_conn *conn, struct mpl_search_t search);
+int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search_t search);
 
 /** @brief Search Results Group Object ID */
 int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);

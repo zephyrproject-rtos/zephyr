@@ -194,9 +194,9 @@ uint32_t media_proxy_sctrl_commands_supported_get(void)
 }
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_search_set(struct mpl_search_t search)
+void media_proxy_sctrl_search_send(struct mpl_search_t search)
 {
-	mprx.local_player.calls->search_set(search);
+	mprx.local_player.calls->search_send(search);
 }
 
 uint64_t media_proxy_sctrl_search_results_id_get(void)
@@ -556,10 +556,10 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err, uint32_
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_scp_set_cb(struct bt_conn *conn, int err, struct mpl_search_t search)
+static void mcc_search_send_cb(struct bt_conn *conn, int err, struct mpl_search_t search)
 {
 	if (err) {
-		BT_ERR("Search Control Point set failed (%d)", err);
+		BT_ERR("Search send failed (%d)", err);
 
 		/* If error, call the callback to propagate the error to the caller.
 		 * Return FAILURE, as an error indicates this was not a success
@@ -575,16 +575,16 @@ static void mcc_scp_set_cb(struct bt_conn *conn, int err, struct mpl_search_t se
 	}
 
 	/* If no error, the result of the search operation will come as a notification
-	 * which will be handled by the mcc_scp_ntf_cb() callback.
+	 * which will be handled by the mcc_search_ntf_cb() callback.
 	 * So, no need to call the callback here.
 	 * TODO: Add write callback here, along with for other writes
 	 */
 }
 
-static void mcc_scp_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
+static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
 	if (err) {
-		BT_ERR("Search Control Point notification error (%d), result code: %d",
+		BT_ERR("Search notification error (%d), result code: %d",
 		       err, result_code);
 	}
 
@@ -676,8 +676,8 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
 	mcc_cbs.opcodes_supported_read        = mcc_opcodes_supported_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	mcc_cbs.scp_set                       = mcc_scp_set_cb;
-	mcc_cbs.scp_ntf                       = mcc_scp_ntf_cb;
+	mcc_cbs.search_send                   = mcc_search_send_cb;
+	mcc_cbs.search_ntf                    = mcc_search_ntf_cb;
 	mcc_cbs.search_results_obj_id_read    = mcc_search_results_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 	mcc_cbs.content_control_id_read       = mcc_content_control_id_read_cb;
@@ -1433,7 +1433,7 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t search)
+int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search_t search)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1441,8 +1441,8 @@ int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->search_set) {
-			mprx.local_player.calls->search_set(search);
+		if (mprx.local_player.calls->search_send) {
+			mprx.local_player.calls->search_send(search);
 
 			return 0;
 		}
@@ -1453,7 +1453,7 @@ int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t
 
 	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_set_scp(mprx.remote_player.conn, search);
+		return bt_mcc_send_search(mprx.remote_player.conn, search);
 	}
 
 	return -EOPNOTSUPP;
