@@ -1205,6 +1205,7 @@ RISCV arch:
     collaborators:
         - mgielda
         - katsuster
+        - henrikbrixandersen
     files:
         - arch/riscv/
         - boards/riscv/
