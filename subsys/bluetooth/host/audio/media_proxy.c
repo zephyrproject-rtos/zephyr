@@ -183,7 +183,7 @@ uint8_t media_proxy_sctrl_media_state_get(void)
 	return mprx.local_player.calls->media_state_get();
 }
 
-void media_proxy_sctrl_command_send(struct mpl_cmd_t cmd)
+void media_proxy_sctrl_command_send(struct mpl_cmd cmd)
 {
 	mprx.local_player.calls->command_send(cmd);
 }
@@ -194,7 +194,7 @@ uint32_t media_proxy_sctrl_commands_supported_get(void)
 }
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_search_send(struct mpl_search_t search)
+void media_proxy_sctrl_search_send(struct mpl_search search)
 {
 	mprx.local_player.calls->search_send(search);
 }
@@ -502,10 +502,10 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 	}
 }
 
-static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
+static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
 {
 	if (err) {
-		struct mpl_cmd_ntf_t ntf = {0};
+		struct mpl_cmd_ntf ntf = {0};
 
 		BT_ERR("Command send failed (%d) - opcode: %d, param: %d",
 		       err, cmd.opcode, cmd.param);
@@ -528,7 +528,7 @@ static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
 }
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
-			   struct mpl_cmd_ntf_t ntf)
+			   struct mpl_cmd_ntf ntf)
 {
 	if (err) {
 		BT_ERR("Command notification error (%d) - command opcode: %d, result: %d",
@@ -556,7 +556,7 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err, uint32_
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_search_send_cb(struct bt_conn *conn, int err, struct mpl_search_t search)
+static void mcc_search_send_cb(struct bt_conn *conn, int err, struct mpl_search search)
 {
 	if (err) {
 		BT_ERR("Search send failed (%d)", err);
@@ -1375,7 +1375,7 @@ int media_proxy_ctrl_media_state_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd_t cmd)
+int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd cmd)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1433,7 +1433,7 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search_t search)
+int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search search)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1685,7 +1685,7 @@ void media_proxy_pl_media_state_cb(uint8_t state)
 	}
 }
 
-void media_proxy_pl_command_cb(struct mpl_cmd_ntf_t cmd_ntf)
+void media_proxy_pl_command_cb(struct mpl_cmd_ntf cmd_ntf)
 {
 	mprx.sctrlr.cbs->command(cmd_ntf);
 

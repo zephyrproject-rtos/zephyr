@@ -311,7 +311,7 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 	shell_print(ctx_shell, "Media State: %d", state);
 }
 
-static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
+static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -324,7 +324,7 @@ static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd_t cmd)
 }
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
-			   struct mpl_cmd_ntf_t ntf)
+			   struct mpl_cmd_ntf ntf)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -351,7 +351,7 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err,
 
 #ifdef CONFIG_BT_MCC_OTS
 static void mcc_search_send_cb(struct bt_conn *conn, int err,
-			       struct mpl_search_t search)
+			       struct mpl_search search)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -840,7 +840,7 @@ int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 int cmd_mcc_set_cp(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
-	struct mpl_cmd_t cmd;
+	struct mpl_cmd cmd;
 
 
 	if (argc > 1) {
@@ -881,7 +881,7 @@ int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
-	struct mpl_search_t search;
+	struct mpl_search search;
 
 	search.len = strlen(argv[1]);
 	memcpy(search.search, argv[1], search.len);
@@ -902,9 +902,9 @@ int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 
 	int result;
 	uint8_t testround;
-	struct mpl_sci_t sci_1 = {0};
-	struct mpl_sci_t sci_2 = {0};
-	struct mpl_search_t search;
+	struct mpl_sci sci_1 = {0};
+	struct mpl_sci sci_2 = {0};
+	struct mpl_search search;
 
 
 	testround = strtol(argv[1], NULL, 0);
@@ -998,7 +998,7 @@ int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 					      size_t argc, char *argv[])
 {
 	int result;
-	struct mpl_search_t search;
+	struct mpl_search search;
 
 	search.search[0] = 2;
 	search.search[1] = (char)14; /* Invalid type value */
@@ -1023,7 +1023,7 @@ int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 	/* in IOP testing */
 
 	int result;
-	struct mpl_search_t search;
+	struct mpl_search search;
 
 	char offending_search[9] = {6, 1, 't', 'r', 'a', 'c', 'k', 0, 1 };
 
