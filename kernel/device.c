@@ -25,19 +25,6 @@ extern const struct device __device_end[];
 
 extern uint32_t __device_init_status_start[];
 
-static inline void device_pm_state_init(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	*dev->pm = (struct pm_device){
-		.usage = ATOMIC_INIT(0),
-		.lock = Z_MUTEX_INITIALIZER(dev->pm->lock),
-		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
-		.state = PM_DEVICE_STATE_ACTIVE,
-		.flags = ATOMIC_INIT(dev->pm->flags),
-	};
-#endif /* CONFIG_PM_DEVICE */
-}
-
 /**
  * @brief Initialize state for all static devices.
  *
@@ -49,7 +36,6 @@ void z_device_state_init(void)
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
-		device_pm_state_init(dev);
 		z_object_init(dev);
 		++dev;
 	}
