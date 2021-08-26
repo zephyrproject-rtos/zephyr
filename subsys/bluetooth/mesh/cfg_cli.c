@@ -864,7 +864,7 @@ static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ct
 		return -ENOENT;
 	}
 
-	if (param && param->polltimeout) {
+	if (param->polltimeout) {
 		*param->polltimeout = polltimeout;
 	}
 
