@@ -1066,13 +1066,22 @@ void bt_mesh_net_pending_seq_store(void)
 	struct seq_val seq;
 	int err;
 
-	sys_put_le24(bt_mesh.seq, seq.val);
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		sys_put_le24(bt_mesh.seq, seq.val);
 
-	err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
-	if (err) {
-		BT_ERR("Failed to stor Seq value");
+		err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
+		if (err) {
+			BT_ERR("Failed to stor Seq value");
+		} else {
+			BT_DBG("Stored Seq value");
+		}
 	} else {
-		BT_DBG("Stored Seq value");
+		err = settings_delete("bt/mesh/Seq");
+		if (err) {
+			BT_ERR("Failed to clear Seq value");
+		} else {
+			BT_DBG("Cleared Seq value");
+		}
 	}
 }
 
@@ -1081,6 +1090,7 @@ void bt_mesh_net_clear(void)
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_NET_PENDING);
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_IV_PENDING);
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SEQ_PENDING);
 }
 
 void bt_mesh_net_settings_commit(void)

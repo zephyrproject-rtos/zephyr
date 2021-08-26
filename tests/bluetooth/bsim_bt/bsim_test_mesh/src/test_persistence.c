@@ -900,6 +900,14 @@ static void test_cfg_load(void)
 	PASS();
 }
 
+static int mesh_settings_load_cb(const char *key, size_t len, settings_read_cb read_cb,
+				 void *cb_arg, void *param)
+{
+	ASSERT_TRUE(len == 0);
+
+	return 0;
+}
+
 /** @brief Test reprovisioning with persistent storage, device side.
  *
  * Wait for being provisioned and configured, then wait for the node reset and store settings.
@@ -925,6 +933,9 @@ static void test_reprovisioning_device(void)
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
 
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
+
+	/* Check that all mesh settings were removed. */
+	settings_load_subtree_direct("bt/mesh", mesh_settings_load_cb, NULL);
 
 	PASS();
 }
@@ -959,6 +970,9 @@ static void test_reprovisioning_provisioner(void)
 	if (err || !status) {
 		FAIL("Reset failed (err %d, status: %d)", err, status);
 	}
+
+	/* Let the remote device store configuration. */
+	k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT * 2));
 
 	PASS();
 }
