@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Setup radio switch considering CTE RX state */
-void lll_sync_setup_radio_switch(struct lll_sync *lll, uint8_t chan_idx);
+void lll_sync_aux_prepare_cb(struct lll_sync *lll,
+			     struct lll_scan_aux *lll_aux);
