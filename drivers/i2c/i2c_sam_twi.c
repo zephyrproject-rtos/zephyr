@@ -248,7 +248,8 @@ static int i2c_sam_slave_register(const struct device *dev,
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
-	Twi *const twi = dev_cfg->regs;
+
+	Twi * const twi = dev_cfg->regs;
 
 	if (!cfg) {
 		LOG_ERR("cfg == NULL\n");
@@ -276,7 +277,8 @@ static int i2c_sam_slave_unregister(const struct device *dev,
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
-	Twi *const twi = dev_cfg->regs;
+
+	Twi * const twi = dev_cfg->regs;
 
 	if (!cfg)
 		return -EINVAL;
