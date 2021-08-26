@@ -15,7 +15,7 @@ RC_KERNEL_HEX = 'test-zephyr.hex'
 RC_KERNEL_BIN = 'test-zephyr.bin'
 RC_GDB = 'test-none-gdb'
 RC_OPENOCD = 'test-openocd'
-RC_OPENOCD_SEARCH = '/test/openocd/search'
+RC_OPENOCD_SEARCH = ['/test/openocd/search']
 
 
 @pytest.fixture
