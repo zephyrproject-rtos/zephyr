@@ -103,7 +103,7 @@ Once you have a path to bossac, you can pass it as an argument to west:
 
 .. code-block:: bash
 
-   west flash --bossac="<path to the arduino version of bossac>"
+   west flash --bossac="<path to the arduino version of bossac>" --bossac-port="<com port>"
 
 Flashing
 ========
