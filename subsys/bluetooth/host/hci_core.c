@@ -193,7 +193,8 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	if (!bt_conn_is_handle_valid(conn)) {
+	if (conn->state != BT_CONN_CONNECTED &&
+	    conn->state != BT_CONN_DISCONNECT) {
 		BT_WARN("Not reporting packet for non-connected conn");
 		bt_conn_unref(conn);
 		return;
