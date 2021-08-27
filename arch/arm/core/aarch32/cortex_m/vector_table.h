@@ -51,7 +51,9 @@ GTEXT(z_arm_pendsv)
 GTEXT(z_arm_exc_spurious)
 
 GTEXT(z_arm_prep_c)
+#if defined(CONFIG_GEN_ISR_TABLES)
 GTEXT(_isr_wrapper)
+#endif /* CONFIG_GEN_ISR_TABLES */
 
 #else /* _ASMLANGUAGE */
 
