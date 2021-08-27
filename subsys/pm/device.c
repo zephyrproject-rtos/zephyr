@@ -64,11 +64,6 @@ int pm_low_power_devices(void)
 	return _pm_devices(PM_DEVICE_STATE_LOW_POWER);
 }
 
-int pm_force_suspend_devices(void)
-{
-	return _pm_devices(PM_DEVICE_STATE_FORCE_SUSPEND);
-}
-
 void pm_resume_devices(void)
 {
 	size_t i;
@@ -91,8 +86,6 @@ const char *pm_device_state_str(enum pm_device_state state)
 		return "low power";
 	case PM_DEVICE_STATE_SUSPENDED:
 		return "suspended";
-	case PM_DEVICE_STATE_FORCE_SUSPEND:
-		return "force suspend";
 	case PM_DEVICE_STATE_OFF:
 		return "off";
 	default:
@@ -128,13 +121,6 @@ int pm_device_state_set(const struct device *dev,
 		}
 
 		action = PM_DEVICE_ACTION_RESUME;
-		break;
-	case PM_DEVICE_STATE_FORCE_SUSPEND:
-		if (dev->pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_FORCE_SUSPEND;
 		break;
 	case PM_DEVICE_STATE_LOW_POWER:
 		if (dev->pm->state == state) {
