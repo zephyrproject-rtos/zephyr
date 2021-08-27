@@ -24,6 +24,9 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	const struct device *dev = pm->dev;
 	int ret = 0;
 
+	/* Clear transitioning flags */
+	atomic_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
+
 	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
@@ -34,11 +37,6 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 		}
-		break;
-	case PM_DEVICE_STATE_SUSPENDING:
-		__fallthrough;
-	case PM_DEVICE_STATE_RESUMING:
-		/* Do nothing: We are waiting for resume/suspend to finish */
 		break;
 	default:
 		LOG_ERR("Invalid state!!\n");
@@ -127,13 +125,13 @@ static int pm_device_request(const struct device *dev,
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
+		atomic_set_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
 		(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 		goto out_unlock;
 	}
 
 	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
-		(dev->pm->state == PM_DEVICE_STATE_SUSPENDING) ||
-		(dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+	       atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
 		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
 			       K_FOREVER);
 		if (ret != 0) {
@@ -238,8 +236,7 @@ int pm_device_wait(const struct device *dev, k_timeout_t timeout)
 
 	k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
-		(dev->pm->state == PM_DEVICE_STATE_SUSPENDING) ||
-		(dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+	       atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
 		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
 			       timeout);
 		if (ret != 0) {

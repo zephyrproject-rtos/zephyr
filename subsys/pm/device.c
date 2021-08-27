@@ -103,10 +103,13 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
+		return -EBUSY;
+	}
+
 	switch (state) {
 	case PM_DEVICE_STATE_SUSPENDED:
-		if ((dev->pm->state == PM_DEVICE_STATE_SUSPENDED) ||
-		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
+		if (dev->pm->state == PM_DEVICE_STATE_SUSPENDED) {
 			return -EALREADY;
 		} else if (dev->pm->state == PM_DEVICE_STATE_OFF) {
 			return -ENOTSUP;
@@ -115,8 +118,7 @@ int pm_device_state_set(const struct device *dev,
 		action = PM_DEVICE_ACTION_SUSPEND;
 		break;
 	case PM_DEVICE_STATE_ACTIVE:
-		if ((dev->pm->state == PM_DEVICE_STATE_ACTIVE) ||
-		    (dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+		if (dev->pm->state == PM_DEVICE_STATE_ACTIVE) {
 			return -EALREADY;
 		}
 

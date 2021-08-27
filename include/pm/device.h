@@ -48,11 +48,7 @@ enum pm_device_state {
 	 * @note
 	 *     Device context is lost.
 	 */
-	PM_DEVICE_STATE_OFF,
-	/** Device is being resumed. */
-	PM_DEVICE_STATE_RESUMING,
-	/** Device is being suspended. */
-	PM_DEVICE_STATE_SUSPENDING,
+	PM_DEVICE_STATE_OFF
 };
 
 /** @brief Device PM flags. */
@@ -66,6 +62,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAGS_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
 	PM_DEVICE_FLAGS_WS_ENABLED,
+	/** Indicates that the device is changing its state */
+	PM_DEVICE_FLAG_TRANSITIONING,
 	/** Number of flags (internal use only). */
 	PM_DEVICE_FLAG_COUNT
 };
@@ -161,8 +159,9 @@ const char *pm_device_state_str(enum pm_device_state state);
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If requested state is not supported.
- * @retval -EALREADY If device is already at (or transitioning to) the requested
- *         state.
+ * @retval -EALREADY If device is already at the requested state.
+ * @retval -EBUSY If device is changing its state.
+
  * @retval Errno Other negative errno on failure.
  */
 int pm_device_state_set(const struct device *dev,
