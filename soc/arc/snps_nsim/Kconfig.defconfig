@@ -16,5 +16,6 @@ source "soc/arc/snps_nsim/Kconfig.defconfig.hs"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs_smp"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs6x"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs6x_smp"
+source "soc/arc/snps_nsim/Kconfig.defconfig.hs_mpuv6"
 
 endif # SOC_NSIM
