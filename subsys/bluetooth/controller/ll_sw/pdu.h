@@ -117,6 +117,9 @@
 #define WIN_DELAY_UNCODED    2500
 #define WIN_DELAY_CODED      3750
 
+/* Channel Map Size */
+#define PDU_CHANNEL_MAP_SIZE 5
+
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8
@@ -225,7 +228,7 @@ struct pdu_adv_connect_ind {
 		uint16_t interval;
 		uint16_t latency;
 		uint16_t timeout;
-		uint8_t  chan_map[5];
+		uint8_t  chan_map[PDU_CHANNEL_MAP_SIZE];
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		uint8_t  hop:5;
 		uint8_t  sca:3;
@@ -363,7 +366,7 @@ struct pdu_adv_sync_info {
 #error "Unsupported endianness"
 #endif
 	uint16_t interval;
-	uint8_t  sca_chm[5];
+	uint8_t  sca_chm[PDU_CHANNEL_MAP_SIZE];
 	uint32_t aa;
 	uint8_t  crc_init[3];
 	uint16_t evt_cntr;
@@ -375,7 +378,7 @@ struct pdu_adv_sync_info {
 		(0x07 << (PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS))
 
 struct pdu_adv_sync_chm_upd_ind {
-	uint8_t  chm[5];
+	uint8_t  chm[PDU_CHANNEL_MAP_SIZE];
 	uint16_t instant;
 } __packed;
 
@@ -481,7 +484,7 @@ struct pdu_data_llctrl_conn_update_ind {
 } __packed;
 
 struct pdu_data_llctrl_chan_map_ind {
-	uint8_t  chm[5];
+	uint8_t  chm[PDU_CHANNEL_MAP_SIZE];
 	uint16_t instant;
 } __packed;
 
@@ -807,7 +810,7 @@ enum pdu_big_ctrl_type {
 };
 
 struct pdu_big_ctrl_chan_map_ind {
-	uint8_t  chm[5];
+	uint8_t  chm[PDU_CHANNEL_MAP_SIZE];
 	uint16_t instant;
 } __packed;
 
@@ -907,7 +910,7 @@ struct pdu_big_info {
 
 	uint16_t base_crc_init;
 
-	uint8_t chm_phy[5]; /* 37 bit chm; 3 bit phy */
+	uint8_t chm_phy[PDU_CHANNEL_MAP_SIZE]; /* 37 bit chm; 3 bit phy */
 	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
 
 	uint8_t giv; /* encryption required */
