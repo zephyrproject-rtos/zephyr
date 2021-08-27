@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-static struct bt_mcc_cb_t cb;
+static struct bt_mcc_cb cb;
 
 #ifdef CONFIG_BT_MCC_OTS
 struct object_ids_t {
