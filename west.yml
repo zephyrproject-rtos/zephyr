@@ -191,7 +191,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 23c7e4739c301cc0dbc625aaf3f8e86042891565
+      revision: pull/12/head
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
