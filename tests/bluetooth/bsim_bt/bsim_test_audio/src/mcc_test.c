@@ -28,7 +28,7 @@
 extern enum bst_result_t bst_result;
 
 static struct bt_conn *default_conn;
-static struct bt_mcc_cb_t mcc_cb;
+static struct bt_mcc_cb mcc_cb;
 
 static uint64_t g_icon_object_id;
 static uint64_t g_track_segments_object_id;

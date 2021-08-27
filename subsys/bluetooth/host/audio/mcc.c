@@ -143,7 +143,7 @@ static struct mcs_instance_t *cur_mcs_inst;
 static struct mcs_instance_t mcs_inst;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-static struct bt_mcc_cb_t *mcc_cb;
+static struct bt_mcc_cb *mcc_cb;
 static bool subscribe_all;
 
 #ifdef CONFIG_BT_MCC_OTS
@@ -846,6 +846,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			int cb_err = 0;
 
 			BT_DBG("Track Changed notification");
+			BT_DBG("data: %p, length: %u", data, length);
 
 			if (length != 0) {
 				BT_DBG("Non-zero length: %u", length);
@@ -1361,7 +1362,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 }
 
 
-int bt_mcc_init(struct bt_mcc_cb_t *cb)
+int bt_mcc_init(struct bt_mcc_cb *cb)
 {
 	mcc_cb = cb;
 

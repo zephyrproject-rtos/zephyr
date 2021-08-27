@@ -52,7 +52,7 @@ struct mprx {
 
 static struct mprx mprx = { 0 };
 #ifdef CONFIG_BT_MCC
-static struct bt_mcc_cb_t mcc_cbs;
+static struct bt_mcc_cb mcc_cbs;
 #endif /* CONFIG_BT_MCC */
 
 /* Synchronous controller calls ***********************************************/
