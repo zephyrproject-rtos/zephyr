@@ -335,8 +335,8 @@ void test_dummy_device_pm(void)
 	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
 			"Error power status");
 
-	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_FORCE_SUSPEND);
+	/* Set device state to PM_DEVICE_STATE_SUSPENDED */
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 
