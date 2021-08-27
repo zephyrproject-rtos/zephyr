@@ -353,6 +353,24 @@ config BT_CTLR_TX_PWR_MINUS_40
 
 endchoice
 
+config BT_CTLR_TX_PWR_DBM
+	int
+	default 8 if BT_CTLR_TX_PWR_PLUS_8
+	default 7 if BT_CTLR_TX_PWR_PLUS_7
+	default 6 if BT_CTLR_TX_PWR_PLUS_6
+	default 5 if BT_CTLR_TX_PWR_PLUS_5
+	default 4 if BT_CTLR_TX_PWR_PLUS_4
+	default 3 if BT_CTLR_TX_PWR_PLUS_3
+	default 2 if BT_CTLR_TX_PWR_PLUS_2
+	default 0 if BT_CTLR_TX_PWR_0
+	default -4 if BT_CTLR_TX_PWR_MINUS_4
+	default -8 if BT_CTLR_TX_PWR_MINUS_8
+	default -12 if BT_CTLR_TX_PWR_MINUS_12
+	default -16 if BT_CTLR_TX_PWR_MINUS_16
+	default -20 if BT_CTLR_TX_PWR_MINUS_20
+	default -30 if BT_CTLR_TX_PWR_MINUS_30
+	default -40 if BT_CTLR_TX_PWR_MINUS_40
+
 config BT_CTLR_TX_PWR_ANTENNA
 	int "Set TX power (dBm)"
 	range -127 127
