@@ -71,7 +71,8 @@ static int sgp40_attr_set(const struct device *dev,
 		int32_t tmp;
 
 		tmp = CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
-		t_ticks = ((tmp + 45) * 65535) / 175;
+		/* adding +87 to avoid most rounding errors through truncation */
+		t_ticks = (((tmp + 45) * 65535) + 87) / 175;
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
 	}
@@ -82,7 +83,8 @@ static int sgp40_attr_set(const struct device *dev,
 		int32_t tmp;
 
 		tmp = CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
-		rh_ticks = (tmp * 65535) / 100;
+		/* adding +50 to eliminate rounding errors through truncation */
+		rh_ticks = ((tmp * 65535) + 50) / 100;
 		sys_put_be16(rh_ticks, data->rh_param);
 		data->rh_param[2] = sgp40_compute_crc(rh_ticks);
 	}
