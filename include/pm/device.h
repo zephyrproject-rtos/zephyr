@@ -59,9 +59,9 @@ enum pm_device_flag {
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
 	 */
-	PM_DEVICE_FLAGS_WS_CAPABLE,
+	PM_DEVICE_FLAG_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
-	PM_DEVICE_FLAGS_WS_ENABLED,
+	PM_DEVICE_FLAG_WS_ENABLED,
 	/** Indicates that the device is changing its state */
 	PM_DEVICE_FLAG_TRANSITIONING,
 	/** Indicates if the device has to ignore its children. */
@@ -127,7 +127,7 @@ struct pm_device {
 				(DT_PROP_OR(				\
 				node_id, wakeup_source, 0)),		\
 				(0)) <<				\
-				PM_DEVICE_FLAGS_WS_CAPABLE) |		\
+				PM_DEVICE_FLAG_WS_CAPABLE) |		\
 				(COND_CODE_1(				\
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(				\

@@ -269,15 +269,15 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 
 	flags =	 atomic_get(&dev->pm->flags);
 
-	if ((flags & BIT(PM_DEVICE_FLAGS_WS_CAPABLE)) == 0U) {
+	if ((flags & BIT(PM_DEVICE_FLAG_WS_CAPABLE)) == 0U) {
 		return false;
 	}
 
 	if (enable) {
 		new_flags = flags |
-			BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+			BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	} else {
-		new_flags = flags & ~BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+		new_flags = flags & ~BIT(PM_DEVICE_FLAG_WS_ENABLED);
 	}
 
 	return atomic_cas(&dev->pm->flags, flags, new_flags);
@@ -286,13 +286,13 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 bool pm_device_wakeup_is_enabled(const struct device *dev)
 {
 	return atomic_test_bit(&dev->pm->flags,
-			       PM_DEVICE_FLAGS_WS_ENABLED);
+			       PM_DEVICE_FLAG_WS_ENABLED);
 }
 
 bool pm_device_wakeup_is_capable(const struct device *dev)
 {
 	return atomic_test_bit(&dev->pm->flags,
-			       PM_DEVICE_FLAGS_WS_CAPABLE);
+			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
 
 bool pm_device_ignore_children_enable(struct device *dev, bool enable)
