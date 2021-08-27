@@ -516,13 +516,13 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 	}
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
 	else {
-		int err;
-
 		err = create_iq_report(lll, rssi_ready,
 				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
 			ull_rx_sched();
 		}
+
+		err = 0;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
