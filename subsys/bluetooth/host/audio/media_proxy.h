@@ -271,7 +271,7 @@ struct media_proxy_ctrl_cbs {
 	void (*discover_player)(struct media_player *player, int err);
 
 	/**
-	 * @brief Media Player Name callback
+	 * @brief Media Player Name receive callback
 	 *
 	 * Called when the Media Player Name is read or changed
 	 * See also media_proxy_ctrl_name_get()
@@ -281,10 +281,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param name	   The name of the media player
 	 */
-	void (*player_name)(struct media_player *player, int err, const char *name);
+	void (*player_name_recv)(struct media_player *player, int err, const char *name);
 
 	/**
-	 * @brief Media Player Icon Object ID callback
+	 * @brief Media Player Icon Object ID receive callback
 	 *
 	 * Called when the Media Player Icon Object ID is read
 	 * See also media_proxy_ctrl_icon_id_get()
@@ -294,10 +294,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the Icon object in the Object Transfer Service (48 bits)
 	 */
-	void (*icon_id)(struct media_player *player, int err, uint64_t id);
+	void (*icon_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Media Player Icon URL callback
+	 * @brief Media Player Icon URL receive callback
 	 *
 	 * Called when the Media Player Icon URL is read
 	 * See also media_proxy_ctrl_icon_url_get()
@@ -307,10 +307,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param url	   The URL of the icon
 	 */
-	void (*icon_url)(struct media_player *player, int err, const char *url);
+	void (*icon_url_recv)(struct media_player *player, int err, const char *url);
 
 	/**
-	 * @brief Track changed callback
+	 * @brief Track changed receive callback
 	 *
 	 * Called when the Current Track is changed
 	 *
@@ -318,10 +318,10 @@ struct media_proxy_ctrl_cbs {
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
 	 */
-	void (*track_changed)(struct media_player *player, int err);
+	void (*track_changed_recv)(struct media_player *player, int err);
 
 	/**
-	 * @brief Track Title callback
+	 * @brief Track Title receive callback
 	 *
 	 * Called when the Track Title is read or changed
 	 * See also media_proxy_ctrl_track_title_get()
@@ -331,10 +331,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param title	   The title of the current track
 	 */
-	void (*track_title)(struct media_player *player, int err, const char *title);
+	void (*track_title_recv)(struct media_player *player, int err, const char *title);
 
 	/**
-	 * @brief Track Duration callback
+	 * @brief Track Duration receive callback
 	 *
 	 * Called when the Track Duration is read or changed
 	 * Seel also media_proxy_ctrl_track_duration_get()
@@ -344,10 +344,10 @@ struct media_proxy_ctrl_cbs {
 	 *                   or errno on negative value.
 	 * @param duration   The duration of the current track
 	 */
-	void (*track_duration)(struct media_player *player, int err, int32_t duration);
+	void (*track_duration_recv)(struct media_player *player, int err, int32_t duration);
 
 	/**
-	 * @brief Track Position callback
+	 * @brief Track Position receive callback
 	 *
 	 * Called when the Track Position is read or changed
 	 * See also media_proxy_ctrl_track_position_get() and
@@ -358,10 +358,10 @@ struct media_proxy_ctrl_cbs {
 	 *                   or errno on negative value.
 	 * @param position   The player's position in the track
 	 */
-	void (*track_position)(struct media_player *player, int err, int32_t position);
+	void (*track_position_recv)(struct media_player *player, int err, int32_t position);
 
 	/**
-	 * @brief Playback Speed callback
+	 * @brief Playback Speed receive callback
 	 *
 	 * Called when the Playback Speed is read or changed
 	 * See also media_proxy_ctrl_playback_speed_get() and
@@ -372,10 +372,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param speed    The playback speed parameter
 	 */
-	void (*playback_speed)(struct media_player *player, int err, int8_t speed);
+	void (*playback_speed_recv)(struct media_player *player, int err, int8_t speed);
 
 	/**
-	 * @brief Seeking Speed callback
+	 * @brief Seeking Speed receive callback
 	 *
 	 * Called when the Seeking Speed is read or changed
 	 * See also media_proxy_ctrl_seeking_speed_get()
@@ -385,10 +385,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param speed    The seeking speed factor
 	 */
-	void (*seeking_speed)(struct media_player *player, int err, int8_t speed);
+	void (*seeking_speed_recv)(struct media_player *player, int err, int8_t speed);
 
 	/**
-	 * @brief Track Segments Object ID callback
+	 * @brief Track Segments Object ID receive callback
 	 *
 	 * Called when the Track Segments Object ID is read
 	 * See also media_proxy_ctrl_track_segments_id_get()
@@ -398,10 +398,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the track segments object in Object Transfer Service (48 bits)
 	 */
-	void (*track_segments_id)(struct media_player *player, int err, uint64_t id);
+	void (*track_segments_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Current Track Object ID callback
+	 * @brief Current Track Object ID receive callback
 	 *
 	 * Called when the Current Track Object ID is read or changed
 	 * See also media_proxy_ctrl_current_track_id_get() and
@@ -412,10 +412,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the current track object in Object Transfer Service (48 bits)
 	 */
-	void (*current_track_id)(struct media_player *player, int err, uint64_t id);
+	void (*current_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Next Track Object ID callback
+	 * @brief Next Track Object ID receive callback
 	 *
 	 * Called when the Next Track Object ID is read or changed
 	 * See also media_proxy_ctrl_next_track_id_get() and
@@ -426,10 +426,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the next track object in Object Transfer Service (48 bits)
 	 */
-	void (*next_track_id)(struct media_player *player, int err, uint64_t id);
+	void (*next_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Current Group Object ID callback
+	 * @brief Current Group Object ID receive callback
 	 *
 	 * Called when the Current Group Object ID is read or changed
 	 * See also media_proxy_ctrl_current_group_id_get() and
@@ -440,10 +440,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the current group object in Object Transfer Service (48 bits)
 	 */
-	void (*current_group_id)(struct media_player *player, int err, uint64_t id);
+	void (*current_group_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Parent Group Object ID callback
+	 * @brief Parent Group Object ID receive callback
 	 *
 	 * Called when the Parent Group Object ID is read or changed
 	 * See also media_proxy_ctrl_parent_group_id_get()
@@ -453,10 +453,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the parent group object in Object Transfer Service (48 bits)
 	 */
-	void (*parent_group_id)(struct media_player *player, int err, uint64_t id);
+	void (*parent_group_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Playing Order callback
+	 * @brief Playing Order receive callback
 	 *
 	 * Called when the Playing Order is read or changed
 	 * See also media_proxy_ctrl_playing_order_get() and
@@ -467,10 +467,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param order    The playing order
 	 */
-	void (*playing_order)(struct media_player *player, int err, uint8_t order);
+	void (*playing_order_recv)(struct media_player *player, int err, uint8_t order);
 
 	/**
-	 * @brief Playing Orders Supported callback
+	 * @brief Playing Orders Supported receive callback
 	 *
 	 * Called when the Playing Orders Supported is read
 	 * See also media_proxy_ctrl_playing_orders_supported_get()
@@ -480,10 +480,11 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param orders   The playing orders supported
 	 */
-	void (*playing_orders_supported)(struct media_player *player, int err, uint16_t orders);
+	void (*playing_orders_supported_recv)(struct media_player *player, int err,
+					      uint16_t orders);
 
 	/**
-	 * @brief Media State callback
+	 * @brief Media State receive callback
 	 *
 	 * Called when the Media State is read or changed
 	 * See also media_proxy_ctrl_media_state_get() and
@@ -494,10 +495,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param state    The media player state
 	 */
-	void (*media_state)(struct media_player *player, int err, uint8_t state);
+	void (*media_state_recv)(struct media_player *player, int err, uint8_t state);
 
 	/**
-	 * @brief Command callback
+	 * @brief Command receive callback
 	 *
 	 * Called when a command has been sent, to give the result of the
 	 * command
@@ -511,7 +512,7 @@ struct media_proxy_ctrl_cbs {
 	void (*command)(struct media_player *player, int err, struct mpl_cmd_ntf cmd_ntf);
 
 	/**
-	 * @brief Commands supported callback
+	 * @brief Commands supported receive callback
 	 *
 	 * Called when the Commands Supported is read or changed
 	 * See also media_proxy_ctrl_commands_supported_get()
@@ -521,10 +522,10 @@ struct media_proxy_ctrl_cbs {
 	 *                     or errno on negative value.
 	 * @param opcodes      The supported command opcodes (bitmap)
 	 */
-	void (*commands_supported)(struct media_player *player, int err, uint32_t opcodes);
+	void (*commands_supported_recv)(struct media_player *player, int err, uint32_t opcodes);
 
 	/**
-	 * @brief Search callback
+	 * @brief Search receive callback
 	 *
 	 * Called when a search operation has been set, to give the result
 	 * of the operation
@@ -538,7 +539,7 @@ struct media_proxy_ctrl_cbs {
 	void (*search)(struct media_player *player, int err, uint8_t result_code);
 
 	/**
-	 * @brief Search Results Object ID callback
+	 * @brief Search Results Object ID receive callback
 	 * See also media_proxy_ctrl_search_results_id_get()
 	 *
 	 * Called when the Search Results Object ID is read or changed
@@ -548,10 +549,10 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param id	   The ID of the search results object in Object Transfer Service (48 bits)
 	 */
-	void (*search_results_id)(struct media_player *player, int err, uint64_t id);
+	void (*search_results_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
-	 * @brief Content Control ID callback
+	 * @brief Content Control ID receive callback
 	 *
 	 * Called when the Content Control ID is read
 	 * See also media_proxy_ctrl_content_ctrl_id_get()
@@ -561,7 +562,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param ccid     The content control ID
 	 */
-	void (*content_ctrl_id)(struct media_player *player, int err, uint8_t ccid);
+	void (*content_ctrl_id_recv)(struct media_player *player, int err, uint8_t ccid);
 };
 
 /**

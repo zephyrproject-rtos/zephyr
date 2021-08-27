@@ -440,33 +440,33 @@ void initialize_media(void)
 	}
 
 	/* Set up the callback structure */
-	cbs.local_player_instance    = local_player_instance_cb;
-	cbs.discover_player          = discover_player_cb;
-	cbs.player_name              = player_name_cb;
-	cbs.icon_id                  = icon_id_cb;
-	cbs.icon_url                 = icon_url_cb;
-	cbs.track_title              = track_title_cb;
-	cbs.track_duration           = track_duration_cb;
-	cbs.track_position           = track_position_cb;
-	cbs.playback_speed           = playback_speed_cb;
-	cbs.seeking_speed            = seeking_speed_cb;
+	cbs.local_player_instance         = local_player_instance_cb;
+	cbs.discover_player               = discover_player_cb;
+	cbs.player_name_recv              = player_name_cb;
+	cbs.icon_id_recv                  = icon_id_cb;
+	cbs.icon_url_recv                 = icon_url_cb;
+	cbs.track_title_recv              = track_title_cb;
+	cbs.track_duration_recv           = track_duration_cb;
+	cbs.track_position_recv           = track_position_cb;
+	cbs.playback_speed_recv           = playback_speed_cb;
+	cbs.seeking_speed_recv            = seeking_speed_cb;
 #ifdef CONFIG_BT_OTS
-	cbs.track_segments_id        = track_segments_id_cb;
-	cbs.current_track_id         = current_track_id_cb;
-	cbs.next_track_id            = next_track_id_cb;
-	cbs.current_group_id         = current_group_id_cb;
-	cbs.parent_group_id          = parent_group_id_cb;
+	cbs.track_segments_id_recv        = track_segments_id_cb;
+	cbs.current_track_id_recv         = current_track_id_cb;
+	cbs.next_track_id_recv            = next_track_id_cb;
+	cbs.current_group_id_recv         = current_group_id_cb;
+	cbs.parent_group_id_recv          = parent_group_id_cb;
 #endif /* CONFIG_BT_OTS */
-	cbs.playing_order            = playing_order_cb;
-	cbs.playing_orders_supported = playing_orders_supported_cb;
-	cbs.media_state              = media_state_cb;
-	cbs.command                  = command_cb;
-	cbs.commands_supported       = commands_supported_cb;
+	cbs.playing_order_recv            = playing_order_cb;
+	cbs.playing_orders_supported_recv = playing_orders_supported_cb;
+	cbs.media_state_recv              = media_state_cb;
+	cbs.command                       = command_cb;
+	cbs.commands_supported_recv       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
-	cbs.search                   = search_cb;
-	cbs.search_results_id        = search_results_id_cb;
+	cbs.search                        = search_cb;
+	cbs.search_results_id_recv        = search_results_id_cb;
 #endif /* CONFIG_BT_OTS */
-	cbs.content_ctrl_id          = content_ctrl_id_cb;
+	cbs.content_ctrl_id_recv          = content_ctrl_id_cb;
 
 	UNSET_FLAG(local_player_instance);
 
