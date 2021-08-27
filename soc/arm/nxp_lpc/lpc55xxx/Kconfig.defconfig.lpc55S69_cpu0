@@ -49,4 +49,9 @@ config COUNTER_MCUX_CTIMER
 	default y
 	depends on COUNTER
 
+config I2S_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2S
+	select INIT_PLL0
+
 endif # SOC_LPC55S69_CPU0
