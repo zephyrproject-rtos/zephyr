@@ -283,6 +283,7 @@ struct node_rx_ftr {
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 	uint8_t  aux_lll_sched:1;
 	uint8_t  aux_w4next:1;
+	uint8_t  aux_failed:1;
 
 	uint8_t  phy_flags:1;
 	uint8_t  scan_req:1;

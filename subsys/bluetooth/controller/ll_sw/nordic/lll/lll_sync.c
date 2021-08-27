@@ -492,6 +492,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 
 			ftr = &(node_rx->hdr.rx_ftr);
 			ftr->param = lll;
+			ftr->aux_failed = 0U;
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 			ftr->ticks_anchor = radio_tmr_start_get();
@@ -580,6 +581,21 @@ static void isr_rx_aux_chain(void *param)
 
 	if (err == -EBUSY) {
 		return;
+	}
+
+	if (!trx_cnt || !crc_ok) {
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll;
+		node_rx->hdr.rx_ftr.aux_failed = 1U;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
 	}
 
 isr_rx_aux_chain_done:
