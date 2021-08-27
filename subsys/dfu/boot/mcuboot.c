@@ -32,14 +32,14 @@
 
 /* Header: */
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
-#define BOOT_HEADER_SIZE_V1 32
+#define BOOT_HEADER_SIZE_V1 (32 + 4)
 
 /*
  * Raw (on-flash) representation of the v1 image header.
  */
 struct mcuboot_v1_raw_header {
 	uint32_t header_magic;
-	uint32_t image_load_address;
+	uint64_t image_load_address;
 	uint16_t header_size;
 	uint16_t pad;
 	uint32_t image_size;
@@ -79,7 +79,7 @@ static int boot_read_v1_header(uint8_t area_id,
 
 	v1_raw->header_magic = sys_le32_to_cpu(v1_raw->header_magic);
 	v1_raw->image_load_address =
-		sys_le32_to_cpu(v1_raw->image_load_address);
+		sys_le64_to_cpu(v1_raw->image_load_address);
 	v1_raw->header_size = sys_le16_to_cpu(v1_raw->header_size);
 	v1_raw->image_size = sys_le32_to_cpu(v1_raw->image_size);
 	v1_raw->image_flags = sys_le32_to_cpu(v1_raw->image_flags);
