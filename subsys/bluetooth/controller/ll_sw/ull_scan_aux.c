@@ -245,6 +245,15 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 
 	h = (void *)p->ext_hdr_adv_data;
+
+	/* Regard PDU as invalid if a RFU field is set, we do not know the
+	 * size of this future field, hence will cause incorrect calculation of
+	 * offset to ACAD field.
+	 */
+	if (h->rfu) {
+		goto ull_scan_aux_rx_flush;
+	}
+
 	ptr = h->data;
 
 	if (h->adv_addr) {

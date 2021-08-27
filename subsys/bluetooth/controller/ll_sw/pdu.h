@@ -251,9 +251,9 @@ struct pdu_adv_ext_hdr {
 	uint8_t aux_ptr:1;
 	uint8_t sync_info:1;
 	uint8_t tx_pwr:1;
-	uint8_t rfu1:1;
+	uint8_t rfu:1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu1:1;
+	uint8_t rfu:1;
 	uint8_t tx_pwr:1;
 	uint8_t sync_info:1;
 	uint8_t aux_ptr:1;
