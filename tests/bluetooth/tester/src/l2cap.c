@@ -313,14 +313,9 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 	}
 
 	if (bt_conn_enc_key_size(conn) < req_keysize) {
-		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 0;
 		return -EPERM;
 	} else if (authorize_flag) {
-		/* TSPX_psm_authorization_required
-		 * we never authorize this connection, so return error
-		 * everytime this psm is used
-		 */
 		authorize_flag = false;
 		return -EACCES;
 	}
@@ -352,14 +347,12 @@ static void listen(uint8_t *data, uint16_t len)
 	server->accept = accept;
 	server->psm = cmd->psm;
 
-	if (server->psm == 0x00F4) {
+	if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY) {
 		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 16;
-	} else if (server->psm == 0x00F3) {
-		/* TSPX_psm_authentication_required */
+	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR) {
 		authorize_flag = true;
-	} else if (server->psm == 0x00F2) {
-		/* TSPX_psm_authentication_required */
+	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN) {
 		server->sec_level = BT_SECURITY_L3;
 	}
 
