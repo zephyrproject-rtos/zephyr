@@ -140,8 +140,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		uint16_t instant_latency;
 
 		/* At or past the instant, use channelMapNew */
-		instant_latency = (event_counter - lll->chm_instant) & 0xFFFF;
-		if (instant_latency <= 0x7FFF) {
+		instant_latency = (event_counter - lll->chm_instant) &
+				  EVENT_INSTANT_MAX;
+		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
 			lll->chm_first = lll->chm_last;
 		}
 	}
@@ -293,9 +294,9 @@ static void isr_done(void *param)
 		uint16_t instant_latency;
 
 		instant_latency = (lll->event_counter - lll->chm_instant) &
-				  0xFFFF;
+				  EVENT_INSTANT_MAX;
 		/* At or past the instant */
-		if (instant_latency <= 0x7FFF) {
+		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
 			struct node_rx_hdr *rx;
 
 			/* Allocate, prepare and dispatch Channel Map Update

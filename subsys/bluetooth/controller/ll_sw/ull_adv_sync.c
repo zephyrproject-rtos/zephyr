@@ -1537,8 +1537,8 @@ static void mfy_sync_offset_get(void *param)
 		uint16_t instant_latency;
 
 		instant_latency = (si->evt_cntr - lll_sync->chm_instant) &
-				  0xFFFF;
-		if (instant_latency <= 0x7FFF) {
+				  EVENT_INSTANT_MAX;
+		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
 			chm_first = lll_sync->chm_last;
 		} else {
 			chm_first = lll_sync->chm_first;
