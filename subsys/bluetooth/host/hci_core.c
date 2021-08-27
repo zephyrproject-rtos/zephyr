@@ -2007,6 +2007,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	if (cmd(buf)->opcode != opcode) {
 		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
 			opcode, cmd(buf)->opcode);
+		return;
 	}
 
 	if (cmd(buf)->state && !status) {
