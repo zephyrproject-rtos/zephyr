@@ -67,24 +67,24 @@ static int sgp40_attr_set(const struct device *dev,
 	switch ((enum sensor_attribute_sgp40)attr) {
 	case SENSOR_ATTR_SGP40_TEMPERATURE:
 	{
-		int16_t t_ticks;
-		int32_t tmp;
+		uint16_t t_ticks;
+		int16_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
+		tmp = (int16_t)CLAMP(val->val1, SGP40_COMP_MIN_T, SGP40_COMP_MAX_T);
 		/* adding +87 to avoid most rounding errors through truncation */
-		t_ticks = (((tmp + 45) * 65535) + 87) / 175;
+		t_ticks = (uint16_t)((((tmp + 45) * 65535) + 87) / 175);
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
 	}
 		break;
 	case SENSOR_ATTR_SGP40_HUMIDITY:
 	{
-		int16_t rh_ticks;
-		int32_t tmp;
+		uint16_t rh_ticks;
+		uint8_t tmp;
 
-		tmp = CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
+		tmp = (uint8_t)CLAMP(val->val1, SGP40_COMP_MIN_RH, SGP40_COMP_MAX_RH);
 		/* adding +50 to eliminate rounding errors through truncation */
-		rh_ticks = ((tmp * 65535) + 50) / 100;
+		rh_ticks = (uint16_t)(((tmp * 65535U) + 50U) / 100U);
 		sys_put_be16(rh_ticks, data->rh_param);
 		data->rh_param[2] = sgp40_compute_crc(rh_ticks);
 	}
