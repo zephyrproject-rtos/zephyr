@@ -413,7 +413,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
 {
-	uint8_t hdr_data[1 + sizeof(data)];
+	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
 	void *extra_data_prev, *extra_data;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
@@ -439,8 +440,9 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	hdr_data[0] = len;
-	memcpy(&hdr_data[1], &data, sizeof(data));
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = len;
+	(void)memcpy((void *)&hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET], &data,
+		     ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
 
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, &ter_idx);
@@ -806,7 +808,8 @@ uint8_t ull_adv_sync_chm_update(void)
 
 void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 {
-	uint8_t hdr_data[1 + sizeof(uint8_t *)];
+	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];
 	struct lll_adv_sync *lll_sync;
 	struct pdu_adv *pdu_prev;
 	struct ll_adv_set *adv;
@@ -830,15 +833,17 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
 	LL_ASSERT(!err);
 
-	/* Get the size of current ACAD */
-	hdr_data[0] = 0U;
+	/* Get the size of current ACAD, first octet returns the old length and
+	 * followed by pointer to previous offset to ACAD in the PDU.
+	 */
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = 0U;
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
 	LL_ASSERT(!err);
 
 	/* Dev assert if ACAD empty */
-	LL_ASSERT(hdr_data[0]);
+	LL_ASSERT(hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET]);
 
 	/* Get the pointer, prev content and size of current ACAD */
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
@@ -847,9 +852,10 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 	LL_ASSERT(!err);
 
 	/* Find the Channel Map Update Indication */
-	acad_len = hdr_data[0];
+	acad_len = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
 	len = acad_len;
-	(void)memcpy(&acad, &hdr_data[1], sizeof(acad));
+	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
+		     sizeof(acad));
 	ad = acad;
 	do {
 		ad_len = ad[0];
@@ -877,7 +883,7 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 	/* Adjust the next PDU for ACAD length, this is done by using the next
 	 * PDU to copy ACAD into same next PDU.
 	 */
-	hdr_data[0] = acad_len;
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = acad_len;
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
@@ -1004,6 +1010,8 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
  * - ULL_ADV_PDU_HDR_FIELD_ACAD:
  *   # @p hdr_data points to memory where first byte is size of ACAD, second
  *     byte is used to return offset to ACAD field.
+ *   # @p hdr_data memory returns previous ACAD length back in the first byte
+ *     and offset to new ACAD in the next PDU.
  *
  * @return Zero in case of success, other value in case of failure.
  */
@@ -1356,8 +1364,9 @@ static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 
 static uint8_t sync_chm_update(uint8_t handle)
 {
+	uint8_t hdr_data[ULL_ADV_HDR_DATA_LEN_SIZE +
+			 ULL_ADV_HDR_DATA_ACAD_PTR_SIZE];
 	struct pdu_adv_sync_chm_upd_ind *chm_upd_ind;
-	uint8_t hdr_data[1 + sizeof(uint8_t *)];
 	struct lll_adv_sync *lll_sync;
 	struct pdu_adv *pdu_prev;
 	struct ll_adv_set *adv;
@@ -1393,8 +1402,10 @@ static uint8_t sync_chm_update(uint8_t handle)
 		return err;
 	}
 
-	/* Try to allocate ACAD for channel map update indication */
-	hdr_data[0] = sizeof(*chm_upd_ind) + 2U;
+	/* Try to allocate ACAD for channel map update indication, previous
+	 * ACAD length with be returned back.
+	 */
+	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = sizeof(*chm_upd_ind) + 2U;
 	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
@@ -1402,10 +1413,13 @@ static uint8_t sync_chm_update(uint8_t handle)
 		return err;
 	}
 
-	/* Check if there are other ACAD data */
-	acad_len_prev = hdr_data[0];
+	/* Check if there are other ACAD data previously */
+	acad_len_prev = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
 	if (acad_len_prev) {
-		hdr_data[0] = acad_len_prev + sizeof(*chm_upd_ind) + 2U;
+		/* Append to end of other ACAD already present */
+		hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = acad_len_prev +
+							sizeof(*chm_upd_ind) +
+							2U;
 
 		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 						 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
@@ -1416,7 +1430,8 @@ static uint8_t sync_chm_update(uint8_t handle)
 	}
 
 	/* Populate the AD data length and opcode */
-	(void)memcpy(&acad, &hdr_data[1], sizeof(acad));
+	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
+		     sizeof(acad));
 	acad += acad_len_prev;
 	acad[0] = sizeof(*chm_upd_ind) + 1U;
 	acad[1] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
