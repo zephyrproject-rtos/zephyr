@@ -98,6 +98,10 @@
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MSS_MAX_US        (EVENT_MSS_US + EVENT_CLOCK_JITTER_US)
 
+/* Instant maximum value and maximum latency (or delta) past the instant */
+#define EVENT_INSTANT_MAX         0xffff
+#define EVENT_INSTANT_LATENCY_MAX 0x7fff
+
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
 #define OFFS_UNIT_300_US        300
