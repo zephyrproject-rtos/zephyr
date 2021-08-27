@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT	(2 * DT_PROP(DT_INST(0, soc_nv_flash), max_erase_time))
+#define STM32_FLASH_TIMEOUT	\
+	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 #if defined(FLASH_NSSR_NSBSY)		/* For STM32L5x in non-secure mode */
 #define FLASH_SECURITY_NS
