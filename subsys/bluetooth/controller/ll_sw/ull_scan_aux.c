@@ -636,9 +636,15 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 	if (ull_scan_is_valid_get(param_ull)) {
 		struct lll_scan *lll;
 
+		/* Mark for buffer for release */
+		rx->type = NODE_RX_TYPE_RELEASE;
+
 		lll = rx->rx_ftr.param;
 		lll_aux = lll->lll_aux;
 	} else if (ull_scan_aux_is_valid_get(param_ull)) {
+		/* Mark for buffer for release */
+		rx->type = NODE_RX_TYPE_RELEASE;
+
 		lll_aux = rx->rx_ftr.param;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	} else if (ull_sync_is_valid_get(param_ull)) {
@@ -646,6 +652,12 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 
 		lll = rx->rx_ftr.param;
 		lll_aux = lll->lll_aux;
+
+		/* Change node type so HCI can dispatch report for truncated
+		 * data properly.
+		 */
+		rx->type = NODE_RX_TYPE_SYNC_REPORT;
+		rx->handle = ull_sync_handle_get(HDR_LLL2ULL(lll));
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	} else {
 		LL_ASSERT(0);
@@ -654,13 +666,22 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 
 	if (lll_aux) {
 		struct ll_scan_aux_set *aux;
+		struct ull_hdr *hdr;
 
 		aux = HDR_LLL2ULL(lll_aux);
-		flush(aux);
-	}
+		hdr = &aux->ull;
 
-	/* Mark for buffer for release */
-	rx->type = NODE_RX_TYPE_RELEASE;
+		LL_ASSERT(ull_ref_get(hdr) < 2);
+		/* Flush from here of from done event, if one is pending */
+		if (ull_ref_get(hdr) == 0) {
+			flush(aux);
+		} else {
+			LL_ASSERT(!hdr->disabled_cb);
+
+			hdr->disabled_param = aux;
+			hdr->disabled_cb = last_disabled_cb;
+		}
+	}
 
 	ll_rx_put(link, rx);
 	ll_rx_sched();
