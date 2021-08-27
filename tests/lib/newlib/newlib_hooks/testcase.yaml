@@ -1,0 +1,9 @@
+tests:
+  libraries.libc.newlib.posix.hooks:
+    tags: clib newlib ignore_faults
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_POSIX_API=y
+  libraries.libc.newlib.no.posix.config:
+    tags: clib newlib ignore_faults
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
