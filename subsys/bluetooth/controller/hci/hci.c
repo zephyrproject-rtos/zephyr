@@ -5545,6 +5545,21 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		return;
 	}
 
+	if (node_rx->hdr.rx_ftr.aux_failed) {
+		sep = meta_evt(buf,
+			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
+			       sizeof(*sep));
+
+		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+		sep->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
+		sep->rssi = BT_HCI_LE_RSSI_NOT_AVAILABLE;
+		sep->cte_type = BT_HCI_LE_NO_CTE;
+		sep->data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+		sep->length = 0;
+
+		return;
+	}
+
 	/* The Link Layer currently returns RSSI as an absolute value */
 	rssi = -(node_rx->hdr.rx_ftr.rssi);
 
