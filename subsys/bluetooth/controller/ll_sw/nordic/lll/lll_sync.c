@@ -147,8 +147,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (lll->chm_first != lll->chm_last) {
 		uint16_t instant_latency;
 
-		instant_latency = (event_counter - lll->chm_instant) & 0xFFFF;
-		if (instant_latency <= 0x7FFF) {
+		instant_latency = (event_counter - lll->chm_instant) &
+				  EVENT_INSTANT_MAX;
+		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
 			/* At or past the instant, use channelMapNew */
 			lll->chm_first = lll->chm_last;
 		}
