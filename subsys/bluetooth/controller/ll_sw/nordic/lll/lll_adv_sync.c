@@ -102,6 +102,16 @@ static int init_reset(void)
 	return 0;
 }
 
+static bool is_instant_or_past(uint16_t event_counter, uint16_t instant)
+{
+	uint16_t instant_latency;
+
+	instant_latency = (event_counter - instant) &
+			  EVENT_INSTANT_MAX;
+
+	return instant_latency <= EVENT_INSTANT_LATENCY_MAX;
+}
+
 static int prepare_cb(struct lll_prepare_param *p)
 {
 	struct lll_adv_sync *lll;
@@ -136,15 +146,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0;
 
 	/* Process channel map update, if any */
-	if (lll->chm_first != lll->chm_last) {
-		uint16_t instant_latency;
-
+	if ((lll->chm_first != lll->chm_last) &&
+	    is_instant_or_past(event_counter, lll->chm_instant)) {
 		/* At or past the instant, use channelMapNew */
-		instant_latency = (event_counter - lll->chm_instant) &
-				  EVENT_INSTANT_MAX;
-		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
-			lll->chm_first = lll->chm_last;
-		}
+		lll->chm_first = lll->chm_last;
 	}
 
 	/* Calculate the radio channel to use */
@@ -290,28 +295,22 @@ static void isr_done(void *param)
 	/* Signal thread mode to remove Channel Map Update Indication in the
 	 * ACAD.
 	 */
-	if (lll->chm_first != lll->chm_last) {
-		uint16_t instant_latency;
+	if ((lll->chm_first != lll->chm_last) &&
+	    is_instant_or_past(lll->event_counter, lll->chm_instant)) {
+		struct node_rx_hdr *rx;
 
-		instant_latency = (lll->event_counter - lll->chm_instant) &
-				  EVENT_INSTANT_MAX;
-		/* At or past the instant */
-		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
-			struct node_rx_hdr *rx;
+		/* Allocate, prepare and dispatch Channel Map Update
+		 * complete message towards ULL, then subsequently to
+		 * the thread context.
+		 */
+		rx = ull_pdu_rx_alloc();
+		LL_ASSERT(rx);
 
-			/* Allocate, prepare and dispatch Channel Map Update
-			 * complete message towards ULL, then subsequently to
-			 * the thread context.
-			 */
-			rx = ull_pdu_rx_alloc();
-			LL_ASSERT(rx);
+		rx->type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
+		rx->rx_ftr.param = lll;
 
-			rx->type = NODE_RX_TYPE_SYNC_CHM_COMPLETE;
-			rx->rx_ftr.param = lll;
-
-			ull_rx_put(rx->link, rx);
-			ull_rx_sched();
-		}
+		ull_rx_put(rx->link, rx);
+		ull_rx_sched();
 	}
 
 	lll_isr_done(lll);
