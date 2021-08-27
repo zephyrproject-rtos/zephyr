@@ -386,7 +386,7 @@ enum {
 	 *  The application can set the device name itself by including the
 	 *  following in the advertising data.
 	 *  @code
-	 *  BT_DATA(BT_DATA_NAME_COMPLETE, name, strlen(name))
+	 *  BT_DATA(BT_DATA_NAME_COMPLETE, name, sizeof(name) - 1)
 	 *  @endcode
 	 */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
