@@ -5694,6 +5694,9 @@ no_ext_hdr:
 		}
 
 		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+		/* TODO: use actual TX power only on 1st report, subsequent
+		 *       reports can use 0x7F
+		 */
 		sep->tx_power = tx_pwr;
 		sep->rssi = rssi;
 		sep->cte_type = cte_type;
