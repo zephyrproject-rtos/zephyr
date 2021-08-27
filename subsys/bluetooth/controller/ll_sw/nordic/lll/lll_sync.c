@@ -120,8 +120,6 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
-	node_rx->hdr.rx_ftr.aux_sched_from_lll = 0U;
-
 	radio_pkt_rx_set(node_rx->pdu);
 
 	/* Set access address for sync */
@@ -235,8 +233,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
-
-	node_rx->hdr.rx_ftr.aux_sched_from_lll = 0U;
 
 	radio_pkt_rx_set(node_rx->pdu);
 
