@@ -219,7 +219,6 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	ftr = &(node_rx->hdr.rx_ftr);
 	ftr->param = param;
 	ftr->aux_ptr = aux_ptr;
-	ftr->aux_sched_from_lll = 1U;
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(pdu_phy,
 						     pdu_phy_flags_rx) -
@@ -301,8 +300,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
-
-	node_rx->hdr.rx_ftr.aux_sched_from_lll = 0U;
 
 	radio_pkt_rx_set(node_rx->pdu);
 
