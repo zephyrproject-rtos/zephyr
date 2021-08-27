@@ -42,7 +42,7 @@ struct lll_conn {
 	uint16_t latency_event;
 	uint16_t event_counter;
 
-	uint8_t data_chan_map[5];
+	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
 	uint8_t data_chan_sel:1;
 	uint8_t role:1;

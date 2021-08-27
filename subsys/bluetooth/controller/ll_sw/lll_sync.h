@@ -16,7 +16,7 @@ struct lll_sync {
 
 	uint16_t data_chan_id;
 	struct {
-		uint8_t data_chan_map[5];
+		uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 		uint8_t data_chan_count:6;
 	} chm[DOUBLE_BUFFER_SIZE];
 	uint8_t  chm_first;
