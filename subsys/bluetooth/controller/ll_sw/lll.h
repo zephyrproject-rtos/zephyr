@@ -281,7 +281,6 @@ struct node_rx_ftr {
 	uint32_t radio_end_us;
 	uint8_t  rssi;
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
-	uint8_t  aux_sched_from_lll:1;
 	uint8_t  aux_lll_sched:1;
 	uint8_t  aux_w4next:1;
 
