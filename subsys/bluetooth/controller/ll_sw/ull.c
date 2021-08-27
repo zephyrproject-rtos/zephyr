@@ -208,14 +208,21 @@
 #define BT_CTLR_MAX_CONNECTABLE 1
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
-#define BT_CTLR_ADV_EXT_RX_CNT  1
-#else
-#define BT_CTLR_ADV_EXT_RX_CNT  0
-#endif
 #else
 #define BT_CTLR_MAX_CONNECTABLE 0
 #define BT_CTLR_MAX_CONN        0
+#endif
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
+/* Note: Need node for PDU and CTE sample */
+#define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * \
+				 CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
+#else
+/* Note: Assume up to 7 PDUs per advertising train (max data length) */
+#define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * 7)
+#endif
+#else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
 #endif
 
