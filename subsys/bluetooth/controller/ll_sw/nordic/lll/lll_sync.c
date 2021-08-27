@@ -49,6 +49,10 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 		  uint8_t *crc_ok);
 static void isr_rx_adv_sync(void *param);
 static void isr_rx_aux_chain(void *param);
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+			    uint8_t packet_status);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 int lll_sync_init(void)
 {
@@ -504,7 +508,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			lll_create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
+			create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
 
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
@@ -514,7 +518,8 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 	else {
 		int err;
 
-		err = lll_create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+		err = create_iq_report(lll, rssi_ready,
+				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
 			ull_rx_sched();
 		}
@@ -583,7 +588,8 @@ static void isr_rx_aux_chain(void *param)
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-int lll_create_iq_report(struct lll_sync *lll, uint8_t rssi_ready, uint8_t packet_status)
+static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+				   uint8_t packet_status)
 {
 	struct node_rx_iq_report *iq_report;
 	struct lll_df_sync_cfg *cfg;

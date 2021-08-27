@@ -44,6 +44,4 @@ int lll_sync_init(void);
 int lll_sync_reset(void);
 void lll_sync_prepare(void *param);
 
-int lll_create_iq_report(struct lll_sync *lll, uint8_t rssi_ready, uint8_t packet_status);
-
 extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);
