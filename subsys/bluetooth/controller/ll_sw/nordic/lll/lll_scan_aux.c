@@ -190,6 +190,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	overhead_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	/* Add CTE time if samples are available (8us unit) */
+	/* TODO: check if CTE was actually enabled for rx */
 	if (cte_info && radio_df_iq_samples_amount_get()) {
 		overhead_us += cte_info->time << 3;
 	}
