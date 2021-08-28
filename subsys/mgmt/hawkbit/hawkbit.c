@@ -868,6 +868,16 @@ static bool send_request(enum http_method method,
 	const char *fini = hawkbit_status_finished(finished);
 	const char *exec = hawkbit_status_execution(execution);
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 };
+#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
+	static const char * const headers[] = {
+#ifdef CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY
+		"Authorization: GatewayToken "CONFIG_HAWKBIT_DDI_SECURITY_TOKEN"\r\n",
+#else
+		"Authorization: TargetToken "CONFIG_HAWKBIT_DDI_SECURITY_TOKEN"\r\n",
+#endif /* CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY */
+		NULL
+	};
+#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 	if (!hawkbit_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -883,6 +893,9 @@ static bool send_request(enum http_method method,
 	hb_context.http_req.response = response_cb;
 	hb_context.http_req.recv_buf = hb_context.recv_buf_tcp;
 	hb_context.http_req.recv_buf_len = sizeof(hb_context.recv_buf_tcp);
+#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
+	hb_context.http_req.header_fields = (const char **)headers;
+#endif
 	hb_context.final_data_received = false;
 
 	switch (type) {
