@@ -42,7 +42,6 @@
 			compatible = "mmio-sram";
 		};
 
-		/* Only used for HWINFO device ID */
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0a00 0x200>;
@@ -55,6 +54,7 @@
 				compatible = "soc-nv-flash";
 
 				write-block-size = <16>;
+				erase-block-size = <8192>;
 			};
 		};
 

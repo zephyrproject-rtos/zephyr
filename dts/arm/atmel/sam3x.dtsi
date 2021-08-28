@@ -47,7 +47,14 @@
 				reg = <0x00080000 0x80000>;
 
 				write-block-size = <16>;
+				erase-block-size = <512>;
 			};
+
+			/*
+			 * SAM3X doesn't support erase pages command and must
+			 * be keeped disabled.
+			 */
+			status = "disabled";
 		};
 
 		wdt: watchdog@400e1a50 {
