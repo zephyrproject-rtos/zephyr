@@ -25,6 +25,7 @@ void main(void)
 	int ret = -1;
 
 	LOG_INF("Hawkbit sample app started");
+	LOG_INF("Image build time: " __DATE__ " " __TIME__);
 
 	app_dhcpv4_startup();
 
