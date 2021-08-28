@@ -672,6 +672,47 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 	usart->DATA.reg = c;
 }
 
+static int uart_sam0_err_check(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+	uint32_t err = 0U;
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_FERR) {
+		err |= UART_ERROR_PARITY;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_PERR) {
+		err |= UART_ERROR_FRAMING;
+	}
+
+#if defined(SERCOM_REV500)
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_ISF) {
+		err |= UART_BREAK;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
+		err |= UART_ERROR_COLLISION;
+	}
+
+	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
+			 |	SERCOM_USART_STATUS_FERR
+			 |	SERCOM_USART_STATUS_PERR
+			 |	SERCOM_USART_STATUS_COLL
+			 |	SERCOM_USART_STATUS_ISF;
+#else
+	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
+			 |	SERCOM_USART_STATUS_FERR
+			 |	SERCOM_USART_STATUS_PERR;
+#endif
+
+	wait_synchronization(regs);
+	return err;
+}
+
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 
 static void uart_sam0_isr(const struct device *dev)
@@ -834,47 +875,6 @@ static int uart_sam0_irq_update(const struct device *dev)
 	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
-}
-
-static int uart_sam0_err_check(const struct device *dev)
-{
-	SercomUsart * const regs = DEV_CFG(dev)->regs;
-	uint32_t err = 0U;
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) {
-		err |= UART_ERROR_OVERRUN;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_FERR) {
-		err |= UART_ERROR_PARITY;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_PERR) {
-		err |= UART_ERROR_FRAMING;
-	}
-
-#if defined(SERCOM_REV500)
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_ISF) {
-		err |= UART_BREAK;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
-		err |= UART_ERROR_COLLISION;
-	}
-
-	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
-			 |	SERCOM_USART_STATUS_FERR
-			 |	SERCOM_USART_STATUS_PERR
-			 |	SERCOM_USART_STATUS_COLL
-			 |	SERCOM_USART_STATUS_ISF;
-#else
-	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
-			 |	SERCOM_USART_STATUS_FERR
-			 |	SERCOM_USART_STATUS_PERR;
-#endif
-
-	wait_synchronization(regs);
-	return err;
 }
 
 static void uart_sam0_irq_callback_set(const struct device *dev,
