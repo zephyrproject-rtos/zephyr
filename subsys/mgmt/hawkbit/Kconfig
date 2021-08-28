@@ -52,6 +52,35 @@ config HAWKBIT_PORT
 	help
 	  Configure the hawkbit port number.
 
+choice
+	prompt "Hawkbit DDI API authentication modes"
+	default HAWKBIT_DDI_NO_SECURITY
+
+config HAWKBIT_DDI_NO_SECURITY
+	bool "No authentication security"
+	help
+	  No authentication security for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_TARGET_SECURITY
+	bool "Use target security token authentication"
+	help
+	  Use target security token authentication for the Hawkbit DDI API.
+
+config HAWKBIT_DDI_GATEWAY_SECURITY
+	bool "Use gateway security token authentication"
+	help
+	  Use gateway security token authentication for the Hawkbit DDI API.
+
+endchoice
+
+config HAWKBIT_DDI_SECURITY_TOKEN
+	string "Authentication security token"
+	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
+	default ""
+	help
+	  Authentication security token for the configured Hawkbit DDI
+	  authentication mode.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.
