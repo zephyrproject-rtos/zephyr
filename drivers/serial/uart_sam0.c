@@ -139,28 +139,11 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 
 	struct uart_sam0_dev_data *const dev_data =
 		(struct uart_sam0_dev_data *const) arg;
-	const struct device *dev = dev_data->dev;
+	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 
-	k_work_cancel_delayable(&dev_data->tx_timeout_work);
+	SercomUsart * const regs = cfg->regs;
 
-	int key = irq_lock();
-
-	struct uart_event evt = {
-		.type = UART_TX_DONE,
-		.data.tx = {
-			.buf = dev_data->tx_buf,
-			.len = dev_data->tx_len,
-		},
-	};
-
-	dev_data->tx_buf = NULL;
-	dev_data->tx_len = 0U;
-
-	if (evt.data.tx.len != 0U && dev_data->async_cb) {
-		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-	}
-
-	irq_unlock(key);
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
 }
 
 static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
@@ -728,6 +711,31 @@ static void uart_sam0_isr(const struct device *dev)
 #if CONFIG_UART_ASYNC_API
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
 	SercomUsart * const regs = cfg->regs;
+
+	if (dev_data->tx_len && regs->INTFLAG.bit.TXC) {
+		regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
+
+		k_work_cancel_delayable(&dev_data->tx_timeout_work);
+
+		int key = irq_lock();
+
+		struct uart_event evt = {
+			.type = UART_TX_DONE,
+			.data.tx = {
+				.buf = dev_data->tx_buf,
+				.len = dev_data->tx_len,
+			},
+		};
+
+		dev_data->tx_buf = NULL;
+		dev_data->tx_len = 0U;
+
+		if (evt.data.tx.len != 0U && dev_data->async_cb) {
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+		}
+
+		irq_unlock(key);
+	}
 
 	if (dev_data->rx_len && regs->INTFLAG.bit.RXC &&
 	    dev_data->rx_waiting_for_irq) {
