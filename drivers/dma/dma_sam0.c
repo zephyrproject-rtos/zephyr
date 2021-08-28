@@ -458,5 +458,5 @@ static const struct dma_driver_api dma_sam0_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL,
-		    &dmac_data, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_sam0_api);
+		    &dmac_data, NULL, PRE_KERNEL_1,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dma_sam0_api);
