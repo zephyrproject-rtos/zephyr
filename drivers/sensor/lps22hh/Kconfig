@@ -72,4 +72,18 @@ config LPS22HH_SAMPLING_RATE
 
 endmenu
 
+config LPS22HH_LPF_BADWIDTH
+	int "Low-pass filter bandwidth"
+	range 0 3
+	default 0
+	help
+	  Low-pass filter configurations
+	  0: ODR/2 (LPF Disabled)
+	  1: N/A
+	  2: ODR/9
+	  3: ODR/20
+
+config LPS22HH_LOW_NOISE
+	bool "Low noise mode"
+
 endif # LPS22HH

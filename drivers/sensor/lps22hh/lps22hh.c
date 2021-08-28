@@ -26,7 +26,29 @@ static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	struct lps22hh_data *data = dev->data;
 
+#ifdef CONFIG_LPS22HH_LOW_NOISE
+	if (odr >= 0x1 && odr <= 0x5) {
+		/* Go to power-down mode before low noise enable */
+		/* as described in LPS22HH datasheet */
+		lps22hh_data_rate_set(data->ctx, 0x00);
+
+		/* Enable low noise mode */
+		lps22hh_data_rate_set(data->ctx, 0x10);
+
+		odr |= 0x10;
+	} else {
+		LOG_WRN("Low noise not supported with ODR >= 100 Hz");
+	}
+#endif
+
 	return lps22hh_data_rate_set(data->ctx, odr);
+}
+
+static inline int lps22hh_set_lpf_raw(const struct device *dev, uint8_t lpf)
+{
+	struct lps22hh_data *data = dev->data;
+
+	return lps22hh_lp_bandwidth_set(data->ctx, lpf);
 }
 
 static int lps22hh_sample_fetch(const struct device *dev,
@@ -164,6 +186,13 @@ static int lps22hh_init_chip(const struct device *dev)
 		LOG_DBG("Failed to set sampling rate");
 		return -EIO;
 	}
+
+#ifdef CONFIG_LPS22HH_LPF_BADWIDTH
+	if (lps22hh_set_lpf_raw(dev, CONFIG_LPS22HH_LPF_BADWIDTH) < 0) {
+		LOG_WRN("Failed to set low-pass filter config");
+		return -EIO;
+	}
+#endif
 
 	if (lps22hh_block_data_update_set(data->ctx, PROPERTY_ENABLE) < 0) {
 		LOG_DBG("Failed to set BDU");
