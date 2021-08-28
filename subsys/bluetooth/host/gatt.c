@@ -2371,6 +2371,8 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
 			return -ENOENT;
 		}
+
+		params->attr = data.attr;
 	} else {
 		if (!data.handle) {
 			return -ENOENT;
