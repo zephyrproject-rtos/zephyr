@@ -57,7 +57,7 @@ ssize_t console_write(void *dummy, const void *buf, size_t size);
  *  Return next input character from console. If no characters available,
  *  this function will block. This function is similar to ANSI C
  *  getchar() function and is intended to ease porting of existing
- *  software. Before this function can be used, console_getchar_init()
+ *  software. Before this function can be used, console_init()
  *  should be called once. This function is incompatible with native
  *  Zephyr callback-based console input processing, shell subsystem,
  *  or console_getline().
