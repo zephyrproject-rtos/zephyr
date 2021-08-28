@@ -385,7 +385,7 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 	const char *sleep = hawkbit_res->config.polling.sleep;
 
 	if (strlen(sleep) != HAWKBIT_SLEEP_LENGTH) {
-		LOG_ERR("Invalid poll sleep: %s", sleep);
+		LOG_ERR("Invalid poll sleep: %s", log_strdup(sleep));
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
 		if (sleep_time > 0 &&
@@ -415,14 +415,14 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res,
 	helper = strstr(href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
-		LOG_ERR("Missing cancelBase/ in href %s", href);
+		LOG_ERR("Missing cancelBase/ in href %s", log_strdup(href));
 		return -EINVAL;
 	}
 
 	len = strlen(helper);
 	if (len > CANCEL_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
-		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", helper,
+		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", log_strdup(helper),
 			len, CANCEL_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
@@ -468,7 +468,7 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
 	helper = strstr(href, "deploymentBase/");
 	if (!helper) {
 		/* A badly formatted deployment base is a server error */
-		LOG_ERR("Missing deploymentBase/ in href %s", href);
+		LOG_ERR("Missing deploymentBase/ in href %s", log_strdup(href));
 		return -EINVAL;
 	}
 
@@ -476,7 +476,7 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
 	if (len > DEPLOYMENT_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
 		LOG_ERR("deploymentBase %s is too big (len %zu, max %zu)",
-			helper, len, DEPLOYMENT_BASE_SIZE - 1);
+			log_strdup(helper), len, DEPLOYMENT_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
 
@@ -516,7 +516,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 	chunk = &res->deployment.chunks[0];
 	if (strcmp("bApp", chunk->part)) {
-		LOG_ERR("Only part 'bApp' is supported; got %s", chunk->part);
+		LOG_ERR("Only part 'bApp' is supported; got %s", log_strdup(chunk->part));
 		return -EINVAL;
 	}
 
@@ -553,7 +553,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 	helper = strstr(href, "/DEFAULT/controller/v1");
 	if (!helper) {
-		LOG_ERR("Unexpected download-http href format: %s", helper);
+		LOG_ERR("Unexpected download-http href format: %s", log_strdup(helper));
 		return -EINVAL;
 	}
 
@@ -563,7 +563,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 		return -EINVAL;
 	} else if (len > DOWNLOAD_HTTP_SIZE - 1) {
 		LOG_ERR("download-http %s is too big (len: %zu, max: %zu)",
-			helper, len, DOWNLOAD_HTTP_SIZE - 1);
+			log_strdup(helper), len, DOWNLOAD_HTTP_SIZE - 1);
 		return -ENOMEM;
 	}
 
