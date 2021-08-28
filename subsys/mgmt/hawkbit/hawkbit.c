@@ -689,16 +689,28 @@ static void response_cb(struct http_response *rsp,
 	case HAWKBIT_PROBE:
 		if (hb_context.dl.http_content_size == 0) {
 			body_data = rsp->body_start;
-			body_len = strlen(rsp->recv_buf);
+			body_len = rsp->data_len;
+			/*
+			 * subtract the size of the HTTP header from body_len
+			 */
 			body_len -= (rsp->body_start - rsp->recv_buf);
-			strncpy(hb_context.response_data, body_data, body_len);
 			hb_context.dl.http_content_size = rsp->content_length;
+		} else {
+			/*
+			 * more general case where body data is set, but no need
+			 * to take the HTTP header into account
+			 */
+			body_data = rsp->body_start;
+			body_len = rsp->data_len;
 		}
 
-		if ((body_data == NULL) && (final_data == HTTP_DATA_MORE)) {
+		if ((rsp->body_found == 1) && (body_data == NULL)) {
 			body_data = rsp->recv_buf;
-			body_len = body_len + (rsp->data_len);
-			if (body_len > response_buffer_size) {
+			body_len = rsp->data_len;
+		}
+
+		if (body_data != NULL) {
+			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
 						  response_buffer_size);
@@ -712,19 +724,22 @@ static void response_cb(struct http_response *rsp,
 
 				hb_context.response_data = rsp_tmp;
 			}
-
-			strncat(hb_context.response_data, body_data,
-				rsp->data_len);
+			strncpy(hb_context.response_data + hb_context.dl.downloaded_size,
+				body_data, body_len);
+			hb_context.dl.downloaded_size += body_len;
 		}
 
 		if (final_data == HTTP_DATA_FINAL) {
-			if (hb_context.dl.http_content_size != body_len) {
-				LOG_ERR("HTTP response len mismatch");
+			if (hb_context.dl.http_content_size != hb_context.dl.downloaded_size) {
+				LOG_ERR("HTTP response len mismatch, expected %d, got %d",
+					hb_context.dl.http_content_size,
+					hb_context.dl.downloaded_size);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
-			hb_context.response_data[body_len] = '\0';
-			ret = json_obj_parse(hb_context.response_data, body_len,
+			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
+			ret = json_obj_parse(hb_context.response_data,
+					     hb_context.dl.downloaded_size,
 					     json_ctl_res_descr,
 					     ARRAY_SIZE(json_ctl_res_descr),
 					     &hawkbit_results.base);
@@ -732,8 +747,6 @@ static void response_cb(struct http_response *rsp,
 				LOG_ERR("JSON parse error (HAWKBIT_PROBE): %d", ret);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
-
-			body_len = 0;
 		}
 
 		break;
@@ -750,16 +763,28 @@ static void response_cb(struct http_response *rsp,
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
 		if (hb_context.dl.http_content_size == 0) {
 			body_data = rsp->body_start;
-			body_len = strlen(rsp->recv_buf);
+			body_len = rsp->data_len;
+			/*
+			 * subtract the size of the HTTP header from body_len
+			 */
 			body_len -= (rsp->body_start - rsp->recv_buf);
-			strncpy(hb_context.response_data, body_data, body_len);
 			hb_context.dl.http_content_size = rsp->content_length;
+		} else {
+			/*
+			 * more general case where body data is set, but no need
+			 * to take the HTTP header into account
+			 */
+			body_data = rsp->body_start;
+			body_len = rsp->data_len;
 		}
 
-		if ((body_data == NULL) && (final_data == HTTP_DATA_MORE)) {
+		if ((rsp->body_found == 1) && (body_data == NULL)) {
 			body_data = rsp->recv_buf;
-			body_len = body_len + (rsp->data_len);
-			if (body_len > response_buffer_size) {
+			body_len = rsp->data_len;
+		}
+
+		if (body_data != NULL) {
+			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data,
 						  response_buffer_size);
@@ -773,19 +798,20 @@ static void response_cb(struct http_response *rsp,
 
 				hb_context.response_data = rsp_tmp;
 			}
-
-			strncat(hb_context.response_data, body_data,
-				rsp->data_len);
+			strncpy(hb_context.response_data + hb_context.dl.downloaded_size,
+				body_data, body_len);
+			hb_context.dl.downloaded_size += body_len;
 		}
 
 		if (final_data == HTTP_DATA_FINAL) {
-			if (hb_context.dl.http_content_size != body_len) {
+			if (hb_context.dl.http_content_size != hb_context.dl.downloaded_size) {
 				LOG_ERR("HTTP response len mismatch");
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
-			hb_context.response_data[body_len] = '\0';
-			ret = json_obj_parse(hb_context.response_data, body_len,
+			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
+			ret = json_obj_parse(hb_context.response_data,
+					     hb_context.dl.downloaded_size,
 					     json_dep_res_descr,
 					     ARRAY_SIZE(json_dep_res_descr),
 					     &hawkbit_results.dep);
@@ -793,8 +819,6 @@ static void response_cb(struct http_response *rsp,
 				LOG_ERR("DeploymentBase JSON parse error: %d", ret);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
-
-			body_len = 0;
 		}
 
 		break;
@@ -1092,6 +1116,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
+	hb_context.dl.downloaded_size = 0;
 	hb_context.url_buffer_size = URL_BUFFER_SIZE;
 	snprintk(hb_context.url_buffer, hb_context.url_buffer_size, "%s/%s-%s",
 		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id);
@@ -1171,6 +1196,7 @@ enum hawkbit_response hawkbit_probe(void)
 
 	memset(hb_context.url_buffer, 0, sizeof(hb_context.url_buffer));
 	hb_context.dl.http_content_size = 0;
+	hb_context.dl.downloaded_size = 0;
 	hb_context.url_buffer_size = URL_BUFFER_SIZE;
 	snprintk(hb_context.url_buffer, hb_context.url_buffer_size,
 		 "%s/%s-%s/%s", HAWKBIT_JSON_URL, CONFIG_BOARD, device_id,
