@@ -1334,6 +1334,9 @@ static void autohandler(struct k_work *work)
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		LOG_ERR("Image is unconfirmed");
 		LOG_ERR("Rebooting to previous confirmed image");
+		LOG_ERR("If this image is flashed using a hardware tool");
+		LOG_ERR("Make sure that it is a confirmed image");
+		k_sleep(K_SECONDS(1));
 		sys_reboot(SYS_REBOOT_WARM);
 		break;
 
