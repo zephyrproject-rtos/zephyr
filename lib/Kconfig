@@ -15,4 +15,6 @@ source "lib/open-amp/Kconfig"
 
 source "lib/util/Kconfig"
 
+source "lib/smf/Kconfig"
+
 endmenu
