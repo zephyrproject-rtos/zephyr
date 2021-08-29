@@ -56,8 +56,8 @@ static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_of
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-static void ticker_op_cb(uint32_t status, void *param);
-static void ticker_update_sync_op_cb(uint32_t status, void *param);
+static void ticker_start_op_cb(uint32_t status, void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
@@ -648,7 +648,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
+			   ticker_cb, sync,
+			   ticker_start_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -817,16 +818,21 @@ void ull_sync_done(struct node_rx_event_done *done)
 			uint32_t ticker_status;
 
 			/* Call to ticker_update can fail under the race
-			 * condition where in the periodic sync role is being stopped
-			 * but at the same time it is preempted by periodic sync event
-			 * that gets into close state. Accept failure when periodic sync
-			 * role is being stopped.
+			 * condition where in the periodic sync role is being
+			 * stopped but at the same time it is preempted by
+			 * periodic sync event that gets into close state.
+			 * Accept failure when periodic sync role is being
+			 * stopped.
 			 */
 			ticker_status =
-				ticker_update(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-					      (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
-					      ticks_drift_plus, ticks_drift_minus, 0, 0, lazy,
-					      force, ticker_update_sync_op_cb, sync);
+				ticker_update(TICKER_INSTANCE_ID_CTLR,
+					      TICKER_USER_ID_ULL_HIGH,
+					      (TICKER_ID_SCAN_SYNC_BASE +
+					       sync_handle),
+					      ticks_drift_plus,
+					      ticks_drift_minus, 0, 0,
+					      lazy, force,
+					      ticker_update_op_cb, sync);
 			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 				  (ticker_status == TICKER_STATUS_BUSY) ||
 				  ((void *)sync == ull_disable_mark_get()));
@@ -1017,13 +1023,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_O(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
+static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-static void ticker_update_sync_op_cb(uint32_t status, void *param)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());
