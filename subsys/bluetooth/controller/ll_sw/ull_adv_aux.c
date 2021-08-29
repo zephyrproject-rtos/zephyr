@@ -265,6 +265,11 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	/* If no length is provided, discard data */
 	if (!len) {
+		/* No scan response data, primary channel PDU's ADI update
+		 * should not copy into scan response ADI.
+		 */
+		sr_adi = NULL;
+
 		goto sr_data_set_did_update;
 	}
 
