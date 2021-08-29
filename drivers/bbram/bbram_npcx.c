@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nuvoton_npcx_bbram
 
 #include <drivers/bbram.h>
-#include <errono.h>
+#include <errno.h>
 #include <sys/util.h>
 
 #include <logging/log.h>
@@ -74,7 +74,7 @@ static int bbram_npcx_read(const struct device *dev, size_t offset, size_t size,
 	}
 
 
-	bytecpy(data, ((volatile uint8_t *)config->base_addr + offset), size);
+	bytecpy(data, ((uint8_t *)config->base_addr + offset), size);
 	return 0;
 }
 
@@ -87,7 +87,7 @@ static int bbram_npcx_write(const struct device *dev, size_t offset, size_t size
 		return -EFAULT;
 	}
 
-	bytecpy(((volatile uint8_t *)config->base_addr + offset), data, size);
+	bytecpy(((uint8_t *)config->base_addr + offset), data, size);
 	return 0;
 }
 
@@ -102,6 +102,8 @@ static const struct bbram_driver_api bbram_npcx_driver_api = {
 
 static int bbram_npcx_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	return 0;
 }
 
