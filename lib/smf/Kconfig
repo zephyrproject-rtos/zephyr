@@ -1,0 +1,24 @@
+# Copyright 2021 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config SMF
+	bool "Enable Hierarchical State Machine"
+	help
+	  This option enables the Hierarchical State Machine library
+
+if SMF
+
+config SMF_FLAT
+	bool "Restrict to Flat State Machine"
+	help
+	  Enabling this option will not allow any parent states, resulting
+	  in a Flat State Machine.
+
+config SMF_PRINT_MSG
+	bool "Print State Entry and Exit message"
+	help
+	  Enabling this option will, on state entry and exit, print a message
+	  to the console if the states entry or exit message is not NULL.
+	  Note that performance could be adversely affected.
+
+endif # SMF
