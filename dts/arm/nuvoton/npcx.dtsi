@@ -101,6 +101,18 @@
 			label = "SCFG";
 		};
 
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+
 		miwu0: miwu@400bb000 {
 			compatible = "nuvoton,npcx-miwu";
 			reg = <0x400bb000 0x2000>;
