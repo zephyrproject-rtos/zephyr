@@ -34,7 +34,7 @@ extern void z_cstart(void);
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
