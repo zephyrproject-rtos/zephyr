@@ -17,6 +17,15 @@ human presence.
 Building and Running
 ********************
 
+This project outputs sensor data to the console. It requires a CCS811 sensor,
+which is present on the ``thingy52_nrf52832`` board.
+
+On other platforms, ensure the :ref:`devicetree <dt-guide>` has an enabled
+:dtcompatible:`ams,ccs811` node.
+
+If you get an error on the line of code using :c:macro:`DEVICE_DT_GET_ONE`,
+your devicetree is likely to be missing this node.
+
 Building and Running on thingy52_nrf52832
 =========================================
 
@@ -37,7 +46,7 @@ After a soft reset, there is a 5-second startup period
 where readings are unstable, and then we can see steady
 reported measurements of about 400 ppm eC02 and 0 ppb eTVOC.
 
-.. code-block::console
+.. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v2.1.0-310-g32a3e9907bab  ***
    device is 0x20001088, name is CCS811
