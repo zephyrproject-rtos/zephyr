@@ -59,6 +59,10 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
+#ifndef MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED
+#define MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED MBEDTLS_ERR_SSL_UNEXPECTED_MESSAGE
+#endif
+
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
 	/** An array of secure tags referencing TLS credentials. */
