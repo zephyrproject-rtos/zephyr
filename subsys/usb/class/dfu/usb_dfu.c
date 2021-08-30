@@ -431,6 +431,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 		case dfuIDLE:
 			dfu_reset_counters();
 			LOG_DBG("DFU_UPLOAD start");
+			__fallthrough;
 		case dfuUPLOAD_IDLE:
 			if (!setup->wLength ||
 			    dfu_data.block_nr != setup->wValue) {
