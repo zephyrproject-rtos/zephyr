@@ -1214,7 +1214,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->vt100_ctx.cons.terminal_hei =
 					CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 	shell->ctx->vt100_ctx.cons.name_len = z_shell_strlen(shell->ctx->prompt);
-	z_flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
+	z_flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS) && use_colors);
 
 	int ret = shell->iface->api->init(shell->iface, p_config,
 					  transport_evt_handler,
