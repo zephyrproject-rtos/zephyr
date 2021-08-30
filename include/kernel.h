@@ -5024,6 +5024,33 @@ void k_heap_free(struct k_heap *h, void *mem);
 #define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
 
 /**
+ * @brief Define a static k_heap in the specified linker section
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in the specified linker section.
+ * After kernel start, &name can be used as if k_heap_init() had
+ * been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ * @param in_section __attribute__((section(name))
+ */
+#define Z_HEAP_DEFINE_IN_SECT(name, bytes, in_section)		\
+	char in_section						\
+	     __aligned(8) /* CHUNK_UNIT */			\
+	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
+	STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
+		.heap = {					\
+			.init_mem = kheap_##name,		\
+			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
+		 },						\
+	}
+
+/**
  * @brief Define a static k_heap
  *
  * This macro defines and initializes a static memory region and
@@ -5038,15 +5065,25 @@ void k_heap_free(struct k_heap *h, void *mem);
  * @param bytes Size of memory region, in bytes
  */
 #define K_HEAP_DEFINE(name, bytes)				\
-	char __noinit_named(kheap_buf_##name)			\
-	     __aligned(8) /* CHUNK_UNIT */			\
-	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
-	STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
-		.heap = {					\
-			.init_mem = kheap_##name,		\
-			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
-		 },						\
-	}
+	Z_HEAP_DEFINE_IN_SECT(name, bytes,			\
+			      __noinit_named(kheap_buf_##name))
+
+/**
+ * @brief Define a static k_heap in uncached memory
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in uncache memory.  After kernel
+ * start, &name can be used as if k_heap_init() had been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ */
+#define K_HEAP_DEFINE_NOCACHE(name, bytes)			\
+	Z_HEAP_DEFINE_IN_SECT(name, bytes, __nocache)
 
 /**
  * @}
