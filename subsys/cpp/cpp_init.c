@@ -20,11 +20,11 @@ void z_cpp_init_static(void)
 #else
 
 #ifdef __CCAC__
-void _init(void);
+void __do_global_ctors_aux(void);
 
 void z_cpp_init_static(void)
 {
-	_init();
+	__do_global_ctors_aux();
 }
 #endif /* __CCAC__ */
 
