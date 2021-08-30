@@ -144,3 +144,11 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	int "The maximum number of supported IPv6 multicast addresses allows to be externally added"
 	range 0 32
 	default 2
+
+config OPENTHREAD_TCP_ENABLE
+	bool "Enable TCP"
+
+config OPENTHREAD_CLI_TCP_ENABLE
+	bool "Enable TCP in the CLI tool"
+	default y if SHELL
+	depends on OPENTHREAD_TCP_ENABLE
