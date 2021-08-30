@@ -84,7 +84,7 @@ psa_status_t al_psa_status(psa_status_t status, const char *func_name)
 	case PSA_ERROR_INSUFFICIENT_ENTROPY:
 		LOG_ERR("CRYPTO: Insufficient entropy");
 		break;
-	case PSA_ERROR_TAMPERING_DETECTED:
+	case PSA_ERROR_CORRUPTION_DETECTED:
 		LOG_ERR("CRYPTO: Tampering detected");
 		break;
 

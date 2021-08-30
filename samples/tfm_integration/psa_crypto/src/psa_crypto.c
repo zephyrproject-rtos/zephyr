@@ -98,7 +98,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 	psa_status_t status = PSA_SUCCESS;
 	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_type_t key_type =
-		PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP256R1);
+		PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
 	psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
 	psa_key_handle_t key_handle;
 	size_t key_len = 32;
@@ -242,7 +242,7 @@ static psa_status_t crp_hash_payload(uint8_t *msg, size_t msg_len,
 	}
 
 	/* Display the SHA-256 hash for debug purposes */
-	sf_hex_tabulate_16(&crp_fmt, hash, (size_t)(PSA_HASH_SIZE(alg)));
+	sf_hex_tabulate_16(&crp_fmt, hash, (size_t)(PSA_HASH_MAX_SIZE));
 
 	return status;
 err:
@@ -416,7 +416,7 @@ void crp_test(void)
 {
 	psa_status_t status;
 	uint8_t msg[] = "Please hash and sign this message.";
-	uint8_t hash[PSA_HASH_SIZE(PSA_ALG_SHA_256)] = { 0 };
+	uint8_t hash[PSA_HASH_MAX_SIZE] = { 0 };
 	size_t hash_len;
 	uint8_t sig[PSA_VENDOR_ECDSA_SIGNATURE_MAX_SIZE] = { 0 };
 	size_t sig_len;
