@@ -68,7 +68,7 @@ static void usb_isr_handler(void);
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define EP_BUF_NONCACHED
-__nocache K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
+K_HEAP_DEFINE_NOCACHE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 #else
 K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 #endif
