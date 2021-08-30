@@ -84,6 +84,13 @@
 				reg = <0x5>;
 				#io-channel-cells = <1>;
 			};
+
+			test_i2c_ads1119: ads1119@6 {
+				compatible = "ti,ads1119";
+				label = "ADS1119";
+				reg = <0x6>;
+				#io-channel-cells = <1>;
+  			};
 		};
 
 		test_spi: spi@33334444 {
