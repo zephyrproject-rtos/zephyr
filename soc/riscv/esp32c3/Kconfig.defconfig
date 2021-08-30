@@ -9,7 +9,7 @@ config SOC
 	default "esp32c3"
 
 config NUM_IRQS
-	default 32
+	default 62
 
 config GEN_ISR_TABLES
 	default y

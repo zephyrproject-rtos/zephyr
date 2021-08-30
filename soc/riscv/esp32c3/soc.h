@@ -41,6 +41,8 @@ extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
 extern STATUS esp_rom_uart_tx_one_char(uint8_t chr);
 extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
 extern void esp_rom_ets_set_user_start(uint32_t start);
+extern void esprv_intc_int_set_threshold(int priority_threshold);
+uint32_t soc_intr_get_next_source(void);
 
 #endif /* _ASMLANGUAGE */
 

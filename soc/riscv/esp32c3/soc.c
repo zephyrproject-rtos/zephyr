@@ -13,18 +13,15 @@
 #include <soc/cache_memory.h>
 #include "hal/soc_ll.h"
 #include "esp_spi_flash.h"
-#include <riscv/interrupt.h>
 #include <soc/interrupt_reg.h>
+#include <drivers/interrupt_controller/intc_esp32c3.h>
 
 #include <kernel_structs.h>
 #include <string.h>
 #include <toolchain/gcc.h>
 #include <soc.h>
 
-#define ESP32C3_INTC_DEFAULT_PRIO 15
-
 extern void _PrepC(void);
-extern void esprv_intc_int_set_threshold(int priority_threshold);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -94,14 +91,14 @@ void __attribute__((section(".iram1"))) __start(void)
 	esp_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
 		CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 
-	/* set global esp32c3's INTC masking level */
-	esprv_intc_int_set_threshold(1);
-
 	/* Enable wireless phy subsystem clock,
 	 * This needs to be done before the kernel starts
 	 */
 	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
+
+	/*Initialize the esp32c3 interrupt controller */
+	esp_intr_initialize();
 
 	/* Start Zephyr */
 	_PrepC();
@@ -166,25 +163,4 @@ void IRAM_ATTR esp_restart_noos(void)
 void sys_arch_reboot(int type)
 {
 	esp_restart_noos();
-}
-
-void arch_irq_enable(unsigned int irq)
-{
-	uint32_t key = irq_lock();
-
-	esprv_intc_int_set_priority(irq, ESP32C3_INTC_DEFAULT_PRIO);
-	esprv_intc_int_set_type(irq, 0);
-	esprv_intc_int_enable(1 << irq);
-
-	irq_unlock(key);
-}
-
-void arch_irq_disable(unsigned int irq)
-{
-	esprv_intc_int_disable(1 << irq);
-}
-
-int arch_irq_is_enabled(unsigned int irq)
-{
-	return (REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG) & (1 << irq));
 }

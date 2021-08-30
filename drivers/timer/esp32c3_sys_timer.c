@@ -13,11 +13,10 @@
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
 
+#include <drivers/interrupt_controller/intc_esp32c3.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <soc.h>
-
-#define SYS_TIMER_CPU_IRQ               16
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -45,7 +44,6 @@ static uint64_t systimer_alarm(void)
 static void sys_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-
 	systimer_ll_clear_alarm_int(SYSTIMER_ALARM_0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -72,17 +70,18 @@ int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	esp_rom_intr_matrix_set(0,
-		ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,
-		SYS_TIMER_CPU_IRQ);
-	IRQ_CONNECT(SYS_TIMER_CPU_IRQ, 0, sys_timer_isr, NULL, 0);
+	esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,
+		0,
+		sys_timer_isr,
+		NULL,
+		NULL);
+
 	systimer_hal_init();
 	systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_0, SYSTIMER_COUNTER_1);
 	systimer_hal_enable_counter(SYSTIMER_COUNTER_1);
 	systimer_hal_counter_can_stall_by_cpu(SYSTIMER_COUNTER_1, 0, true);
 	last_count = systimer_alarm();
 	set_systimer_alarm(last_count + CYC_PER_TICK);
-	irq_enable(SYS_TIMER_CPU_IRQ);
 
 	return 0;
 }
