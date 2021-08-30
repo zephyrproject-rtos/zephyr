@@ -272,6 +272,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
+	scan_lll->is_aux_prep = 1U;
+
 #if defined(CONFIG_BT_CENTRAL)
 	/* Check if stopped (on connection establishment race between
 	 * LL and ULL.
@@ -683,25 +685,29 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	}
 
 isr_rx_do_close:
-	if (lll_aux) {
+	/* In case of any error we need to send message to flush aux context,
+	 * otherwise we already sent a PDU and can decide in ULL what to do.
+	 */
+	if (err != -ECANCELED) {
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_pdu_rx_alloc();
+		LL_ASSERT(node_rx);
+
+		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+		node_rx->hdr.rx_ftr.param = lll_aux ? (void *)lll_aux :
+						      (void *)lll;
+
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
+
+	if (lll->is_aux_prep) {
+		/* This aux scan was started from aux ticker, we're done. */
 		radio_isr_set(isr_done, NULL);
 	} else {
-		/* Send message to flush Auxiliary PDU list */
-		if (err != -ECANCELED) {
-			struct node_rx_pdu *node_rx;
-
-			node_rx = ull_pdu_rx_alloc();
-			LL_ASSERT(node_rx);
-
-			node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
-
-			node_rx->hdr.rx_ftr.param = lll->lll_aux;
-
-			ull_rx_put(node_rx->hdr.link, node_rx);
-			ull_rx_sched();
-		}
-
-		/* Resume scan if scanning ADV_AUX_IND chain */
+		/* This aux scan was started from scan ticker, resume scan */
 		radio_isr_set(lll_scan_isr_resume, lll);
 	}
 	radio_disable();

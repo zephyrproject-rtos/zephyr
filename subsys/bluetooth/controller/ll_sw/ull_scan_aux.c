@@ -45,7 +45,6 @@ static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void last_disabled_cb(void *param);
-static void done_disabled_cb(void *param);
 static void flush(struct ll_scan_aux_set *aux);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -562,35 +561,10 @@ ull_scan_aux_rx_flush:
 
 void ull_scan_aux_done(struct node_rx_event_done *done)
 {
-	struct ll_scan_aux_set *aux;
-	struct ull_hdr *hdr;
-
-	/* Get reference to ULL context */
-	aux = CONTAINER_OF(done->param, struct ll_scan_aux_set, ull);
-
-	if (0) {
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	} else if (!ull_scan_aux_is_valid_get(aux)) {
-		struct ll_sync_set *sync;
-
-		sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
-		LL_ASSERT(ull_sync_is_valid_get(sync));
-		hdr = &sync->ull;
-
-		if (!sync->lll.lll_aux) {
-			return;
-		}
-
-		aux = HDR_LLL2ULL(sync->lll.lll_aux);
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-	} else {
-		/* Setup the disabled callback to flush the auxiliary PDUs */
-		hdr = &aux->ull;
-	}
-
-	LL_ASSERT(!hdr->disabled_cb);
-	hdr->disabled_param = aux;
-	hdr->disabled_cb = done_disabled_cb;
+	/* No need to do anything, aux context is flushed either from PDU node
+	 * or aux release node.
+	 */
+	/* TODO: remove? */
 }
 
 uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
@@ -722,27 +696,6 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 static void last_disabled_cb(void *param)
 {
 	flush(param);
-}
-
-static void done_disabled_cb(void *param)
-{
-	struct ll_scan_aux_set *aux;
-
-	aux = param;
-	LL_ASSERT(ull_scan_aux_is_valid_get(aux));
-
-	aux = ull_scan_aux_is_valid_get(aux);
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (!aux) {
-		struct lll_sync *sync_lll;
-
-		sync_lll = param;
-		LL_ASSERT(sync_lll->lll_aux);
-		aux = HDR_LLL2ULL(sync_lll->lll_aux);
-	}
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-
-	flush(aux);
 }
 
 static void flush(struct ll_scan_aux_set *aux)

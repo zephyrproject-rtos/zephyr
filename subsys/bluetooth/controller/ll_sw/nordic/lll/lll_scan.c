@@ -353,6 +353,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 
 	lll->is_adv_ind = 0U;
+	lll->is_aux_prep = 0U;
 	lll->is_aux_sched = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
