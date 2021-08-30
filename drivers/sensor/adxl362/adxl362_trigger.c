@@ -124,24 +124,26 @@ int adxl362_init_interrupt(const struct device *dev)
 
 	if (!device_is_ready(cfg->interrupt.port)) {
 		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	ret = adxl362_set_interrupt_mode(dev, CONFIG_ADXL362_INTERRUPT_MODE);
-
-	if (ret) {
-		return -EFAULT;
+	if (ret < 0) {
+		return ret;
 	}
 
-	gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl362_gpio_callback,
 			   BIT(cfg->interrupt.pin));
 
-	if (gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb) < 0) {
-		LOG_ERR("Failed to set gpio callback!");
-		return -EIO;
+	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
+	if (ret < 0) {
+		return ret;
 	}
 
 	drv_data->dev = dev;
@@ -158,7 +160,11 @@ int adxl362_init_interrupt(const struct device *dev)
 	drv_data->work.handler = adxl362_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
