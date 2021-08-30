@@ -58,23 +58,6 @@ void __attribute__((section(".iram1"))) __start(void)
 		: "g"(&_bss_start)
 		: "memory");
 
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
-	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
-#endif
-
 	/* Disable normal interrupts. */
 	__asm__ __volatile__ (
 		"wsr %0, PS"
@@ -87,15 +70,13 @@ void __attribute__((section(".iram1"))) __start(void)
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
-#if CONFIG_BOOTLOADER_ESP_IDF
-	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
+	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
 	 */
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
-#endif
 
 #if CONFIG_ESP_SPIRAM
 	esp_err_t err = esp_spiram_init();
