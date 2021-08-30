@@ -13,11 +13,17 @@ VOC. The values are fetched and printed every second.
 Building and Running
 ********************
 
-This sample application uses the sensor connected to the i2c stated in the
-iaq_core.overlay file.
-Flash the binary to a board of choice with a sensor connected.
-This sample can run on every board with i2c.
-For example build for a nucleo_f446re board:
+This sample can be built as-is for any board with an Arduino-style I2C header
+configured in its :ref:`devicetree <dt-guide>`, as configured in the
+:zephyr_file:`samples/sensor/ams_iAQcore/app.overlay` devicetree overlay file.
+
+(To build the sample on other platforms, use another devicetree overlay file.
+See :ref:`set-devicetree-overlays`.)
+
+Flash the binary to your board with a sensor connected to the I2C bus
+configured via devicetree.
+
+For example, to build and flash for the ``nucleo_f446re`` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ams_iAQcore

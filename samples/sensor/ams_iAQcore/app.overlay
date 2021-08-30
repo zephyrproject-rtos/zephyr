@@ -7,7 +7,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
-	iaqcore: iaqcore@5a {
+	iaqcore@5a {
 		compatible = "ams,iaqcore";
 		reg = <0x5a>;
 		label = "IAQ_CORE";

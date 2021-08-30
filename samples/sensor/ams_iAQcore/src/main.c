@@ -11,12 +11,13 @@
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET_ONE(ams_iaqcore);
 	struct sensor_value co2, voc;
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, ams_iaqcore)));
-	if (!dev) {
-		printk("Failed to get device binding");
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready; "
+		       "check its initialization function return value\n",
+		       dev->name);
 		return;
 	}
 
