@@ -281,6 +281,13 @@ struct ieee802154_config {
 			const uint8_t *data;
 			uint16_t data_len;
 			uint16_t short_addr;
+			/**
+			 * The extended address is expected to be passed starting
+			 * with the leftmost octet and ending with the rightmost octet.
+			 * A device with an extended address 01:23:45:67:89:ab:cd:ef
+			 * should provide a pointer to array containing values in the
+			 * same exact order.
+			 */
 			const uint8_t *ext_addr;
 		} ack_ie;
 	};
