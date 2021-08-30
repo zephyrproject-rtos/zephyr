@@ -21,6 +21,7 @@ static void adxl372_thread_cb(const struct device *dev)
 	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_data *drv_data = dev->data;
 	uint8_t status1, status2;
+	int ret;
 
 	/* Clear the status */
 	if (adxl372_get_status(dev, &status1, &status2, NULL) < 0) {
@@ -46,7 +47,9 @@ static void adxl372_thread_cb(const struct device *dev)
 		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
 
 static void adxl372_gpio_callback(const struct device *dev,
@@ -93,7 +96,11 @@ int adxl372_trigger_set(const struct device *dev,
 	uint8_t int_mask, int_en, status1, status2;
 	int ret;
 
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_DISABLE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -109,8 +116,7 @@ int adxl372_trigger_set(const struct device *dev,
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
-		ret = -ENOTSUP;
-		goto out;
+		return -ENOTSUP;
 	}
 
 	if (handler) {
@@ -120,34 +126,50 @@ int adxl372_trigger_set(const struct device *dev,
 	}
 
 	ret = adxl372_reg_write_mask(dev, ADXL372_INT1_MAP, int_mask, int_en);
+	if (ret < 0) {
+		return ret;
+	}
 
-	adxl372_get_status(dev, &status1, &status2, NULL); /* Clear status */
-out:
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = adxl372_get_status(dev, &status1, &status2, NULL); /* Clear status */
+	if (ret < 0) {
+		return ret;
+	}
 
-	return ret;
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
 
 int adxl372_init_interrupt(const struct device *dev)
 {
 	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_data *drv_data = dev->data;
+	int ret;
 
 	if (!device_is_ready(cfg->interrupt.port)) {
 		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl372_gpio_callback,
 			   BIT(cfg->interrupt.pin));
 
-	if (gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb) < 0) {
+	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
+	if (ret < 0) {
 		LOG_ERR("Failed to set gpio callback!");
-		return -EIO;
+		return ret;
 	}
+
 	drv_data->dev = dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
