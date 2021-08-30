@@ -11,6 +11,7 @@
 
 #include "hal/cpu.h"
 #include "hal/ticker.h"
+#include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"

@@ -13,6 +13,7 @@
 #include "util/util.h"
 
 #include "hal/ticker.h"
+#include "hal/ccm.h"
 
 #include "ticker/ticker.h"
 

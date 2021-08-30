@@ -381,6 +381,7 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
@@ -400,6 +401,7 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_put(ntf->hdr.link, ntf);
 	ll_rx_sched();
 }
+#endif
 
 static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
