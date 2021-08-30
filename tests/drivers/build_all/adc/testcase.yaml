@@ -8,8 +8,8 @@ tests:
     extra_args: "CONFIG_GPIO=y CONFIG_SPI=y CONFIG_ADC_MCP320X=y CONFIG_ADC_LMP90XXX=y"
   drivers.adc.i2c.build:
     platform_allow: native_posix
-    tags: adc_ads1x1x
-    extra_args: "CONFIG_I2C=y CONFIG_ADC_ADS1X1X=y"
+    tags: adc_ads1x1x adc_ads1119
+    extra_args: "CONFIG_I2C=y CONFIG_ADC_ADS1X1X=y CONFIG_ADC_ADS1119=y"
   drivers.adc.emul.build:
     platform_allow: native_posix
     tags: adc_emul
