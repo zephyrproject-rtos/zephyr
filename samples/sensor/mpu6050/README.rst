@@ -23,8 +23,17 @@ control the sensor.
 Building and Running
 ********************
 
-After providing a devicetree overlay that specifies the sensor location,
-build this sample app using:
+This sample can be built as-is for any board with an Arduino-style I2C header
+configured in its :ref:`devicetree <dt-guide>`, as configured in the
+:zephyr_file:`samples/sensor/mpu6050/app.overlay` devicetree overlay file.
+
+(To build the sample on other platforms, use another devicetree overlay file.
+See :ref:`set-devicetree-overlays`.)
+
+Flash the binary to your board with a sensor connected to the I2C bus
+configured via devicetree.
+
+For example, to build and flash for the ``nrf52dk_nrf52832`` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mpu6050
