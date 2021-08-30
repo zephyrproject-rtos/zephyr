@@ -1603,8 +1603,17 @@ if(HEX_FILES_TO_MERGE)
   message(VERBOSE "Merging hex files: ${HEX_FILES_TO_MERGE}")
 endif()
 
-if(EMU_PLATFORM)
-  include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+if(SUPPORTED_EMU_PLATFORMS)
+  list(GET SUPPORTED_EMU_PLATFORMS 0 default_emu)
+  add_custom_target(run DEPENDS run_${default_emu})
+
+  foreach(EMU_PLATFORM ${SUPPORTED_EMU_PLATFORMS})
+    include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+  endforeach()
+
+  if(TARGET debugserver_${default_emu})
+    add_custom_target(debugserver DEPENDS debugserver_${default_emu})
+  endif()
 else()
   add_custom_target(run
     COMMAND
