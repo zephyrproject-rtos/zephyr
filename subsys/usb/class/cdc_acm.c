@@ -588,7 +588,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	if (dev_data->tx_ready) {
+	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
 		return 1;
 	}
 
