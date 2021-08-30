@@ -1,0 +1,30 @@
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+# Copyright (c) 2020 Innoseis B.V
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_TI_ADS1119_ADC := ti,ads1119
+
+config ADC_ADS1119
+	bool "Texas instruments ADS1119 I2C"
+	default $(dt_compat_enabled,$(DT_COMPAT_TI_ADS1119_ADC))
+	depends on I2C
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the ADS1119
+
+if ADC_ADS1119
+
+config ADC_ADS1119_ASYNC_THREAD_INIT_PRIO
+	int "ADC ADS1119 async thread priority"
+	default 0
+
+config ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+endif
