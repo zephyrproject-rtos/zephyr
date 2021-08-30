@@ -1160,6 +1160,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		 * object to keep host in sync with controller state.
 		 */
 		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		(void)bt_le_lim_adv_cancel_timeout(adv);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -1323,12 +1324,6 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	struct bt_hci_evt_le_enh_conn_complete enh;
-
-#if defined(CONFIG_BT_BROADCASTER)
-	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
-
-	(void)bt_le_lim_adv_cancel_timeout(adv);
-#endif
 
 	BT_DBG("status 0x%02x role %u %s", evt->status, evt->role,
 	       bt_addr_le_str(&evt->peer_addr));
