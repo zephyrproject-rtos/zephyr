@@ -35,6 +35,63 @@ extern "C" {
  * @{
  */
 
+/**
+ * Test whether or not the current Zephyr version being built is equal to a given major/minor
+ * version.
+ *
+ * @param major The Zephyr major version to test against.
+ * @param minor The Zephyr minor version to test against.
+ * @return True if the current Zephyr version is exactly {major}.{minor}
+ */
+#define IS_ZEPHYR_VERSION_EQ(major, minor)                                                         \
+	(KERNEL_VERSION_MAJOR == (major) && KERNEL_VERSION_MINOR == (minor))
+
+/**
+ * Test whether or not the current Zephyr version being built is greater than a given major/minor
+ * version.
+ *
+ * @param major The Zephyr major version to test against.
+ * @param minor The Zephyr minor version to test against.
+ * @return True if the current Zephyr version is greater than {major}.{minor}
+ */
+#define IS_ZEPHYR_VERSION_GT(major, minor)                                                         \
+	(KERNEL_VERSION_MAJOR > (major) ||                                                         \
+	(KERNEL_VERSION_MAJOR == (major) && KERNEL_VERSION_MINOR > (minor))
+
+/**
+ * Test whether or not the current Zephyr version being built is greater than or equal to a given
+ * major/minor version.
+ *
+ * @param major The Zephyr major version to test against.
+ * @param minor The Zephyr minor version to test against.
+ * @return True if the current Zephyr version is greater than or equal to {major}.{minor}
+ */
+#define IS_ZEPHYR_VERSION_GTE(major, minor)                                                        \
+	(IS_ZEPHYR_VERSION_GT(major, minor) || IS_ZEPHYR_VERSION_EQ(major, minor)
+
+/**
+ * Test whether or not the current Zephyr version being built is less than a given major/minor
+ * version.
+ *
+ * @param major The Zephyr major version to test against.
+ * @param minor The Zephyr minor version to test against.
+ * @return True if the current Zephyr version is less than {major}.{minor}
+ */
+#define IS_ZEPHYR_VERSION_LT(major, minor)                                                         \
+	(KERNEL_VERSION_MAJOR < (major) ||                                                         \
+	(KERNEL_VERSION_MAJOR == (major) && KERNEL_VERSION_MINOR < (minor))
+
+/**
+ * Test whether or not the current Zephyr version being built is less than or equal to a given
+ * major/minor version.
+ *
+ * @param major The Zephyr major version to test against.
+ * @param minor The Zephyr minor version to test against.
+ * @return True if the current Zephyr version is less than or equal to {major}.{minor}
+ */
+#define IS_ZEPHYR_VERSION_LTE(major, minor)                                                        \
+	(IS_ZEPHYR_VERSION_LT(major, minor) || IS_ZEPHYR_VERSION_EQ(major, minor))
+
 /** @brief Cast @p x, a pointer, to an unsigned integer. */
 #define POINTER_TO_UINT(x) ((uintptr_t) (x))
 /** @brief Cast @p x, an unsigned integer, to a <tt>void*</tt>. */
