@@ -22,14 +22,20 @@ References
 Building and Running
 ********************
 
- This project outputs sensor data to the console. It requires an HTS221
- sensor, which is present on the disco_l475_iot1 board.
+This project outputs sensor data to the console. It requires an HTS221 sensor,
+which is present on the ``disco_l475_iot1`` board. To build for that platform:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/hts221
    :board: disco_l475_iot1
    :goals: build
    :compact:
+
+On other platforms, ensure the :ref:`devicetree <dt-guide>` has an enabled
+:dtcompatible:`st,hts221` node.
+
+If you get an error on the line of code using :c:macro:`DEVICE_DT_GET_ONE`,
+your devicetree is likely to be missing this node.
 
 Sample Output
 =============
