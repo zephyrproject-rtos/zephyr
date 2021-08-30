@@ -842,11 +842,16 @@ static int nrf5_configure(const struct device *dev,
 		uint8_t ext_addr_le[EXTENDED_ADDRESS_SIZE];
 
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		memcpy(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
-#else
+		/**
+		 * The extended address field passed to this function starts
+		 * with the leftmost octet and ends with the rightmost octet.
+		 * The IEEE 802.15.4 transmission order mandates this order to be
+		 * reversed in a transmitted frame.
+		 *
+		 * The nrf_802154_ack_data_set expects extended address in transmission
+		 * order.
+		 */
 		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
-#endif
 
 		if (config->ack_ie.data_len > 0) {
 			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.data,
