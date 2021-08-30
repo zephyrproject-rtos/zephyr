@@ -10,6 +10,15 @@
 		compatible = "ti,tmp116";
 		reg = <0x4B>;
 		label = "TMP116";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eeprom: ti_tmp116_eeprom@0 {
+			compatible = "ti,tmp116-eeprom";
+			reg = <0x0>;
+			label = "TMP116_EEPROM";
+			read-only;
+		};
 	};
 
 };
