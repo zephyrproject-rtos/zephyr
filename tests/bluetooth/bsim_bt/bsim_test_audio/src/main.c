@@ -40,8 +40,10 @@ bst_test_install_t test_installers[] = {
 	test_bass_install,
 	test_bass_client_install,
 	test_bass_broadcaster_install,
+#ifdef CONFIG_BT_BAP
 	test_broadcast_source_install,
 	test_broadcast_sink_install,
+#endif /* CONFIG_BT_BAP */
 	NULL
 };
 
