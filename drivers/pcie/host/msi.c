@@ -6,6 +6,7 @@
 
 #include <kernel.h>
 #include <drivers/pcie/msi.h>
+#include <drivers/pcie/cap.h>
 
 /* functions documented in include/drivers/pcie/msi.h */
 
@@ -118,12 +119,12 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 	uint32_t base;
 	uint32_t req_vectors;
 
-	base = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
+	base = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		uint32_t base_msix;
 
-		base_msix = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+		base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 		if (base_msix != 0U) {
 			msi = false;
 			base = base_msix;
@@ -161,12 +162,12 @@ bool pcie_msi_vector_connect(pcie_bdf_t bdf,
 {
 	uint32_t base;
 
-	base = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
+	base = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		uint32_t base_msix;
 
-		base_msix = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+		base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 		if (base_msix != 0U) {
 			base = base_msix;
 		}
@@ -265,12 +266,12 @@ bool pcie_msi_enable(pcie_bdf_t bdf,
 	bool msi = true;
 	uint32_t base;
 
-	base = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
+	base = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		uint32_t base_msix;
 
-		base_msix = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+		base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 		if ((base_msix != 0U) && (base != 0U)) {
 			disable_msi(bdf, base);
 		}

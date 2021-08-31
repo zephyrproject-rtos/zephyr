@@ -9,6 +9,7 @@
 
 #ifdef CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>
+#include <drivers/pcie/cap.h>
 #endif
 
 static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
@@ -17,7 +18,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 	uint32_t msi;
 	uint32_t data;
 
-	msi = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
+	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
 	if (msi) {
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
@@ -26,7 +27,7 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 			      (data & PCIE_MSI_MCR_EN) ? ", enabled" : "");
 	}
 
-	msi = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 
 	if (msi) {
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI-X support\n");
