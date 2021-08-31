@@ -45,6 +45,10 @@ static int stm32wb_init(const struct device *arg)
 	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
 
+	/* Set C2 Power Mode to shutdown */
+	/* It will be udated by C2 when required */
+	LL_C2_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+
 	return 0;
 }
 
