@@ -1939,11 +1939,6 @@ _byte_re = re.compile(r"[0-9a-fA-F]{2}")
 # '\c', where c might be a single character or an octal/hex escape.
 _unescape_re = re.compile(br'\\([0-7]{1,3}|x[0-9A-Fa-f]{1,2}|.)')
 
-# #line directive (this is the regex the C tools use)
-_line_re = re.compile(
-    r'^#(?:line)?[ \t]+([0-9]+)[ \t]+"((?:[^\\"]|\\.)*)"(?:[ \t]+[0-9]+)?',
-    re.MULTILINE)
-
 def _init_tokens():
     # Builds a (<token 1>)|(<token 2>)|... regex and returns it. The
     # way this is constructed makes the token's value as an int appear
