@@ -110,13 +110,6 @@ extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    unsigned int irq);
 
 /*
- * MSI capability IDs in the PCI configuration capability list.
- */
-
-#define PCIE_MSI_CAP_ID		0x05U
-#define PCIE_MSIX_CAP_ID	0x11U
-
-/*
  * The first word of the MSI capability is shared with the
  * capability ID and list link.  The high 16 bits are the MCR.
  */
