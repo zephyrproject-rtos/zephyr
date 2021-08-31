@@ -460,6 +460,9 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     . = ALIGN (4);
     _btdm_bss_end = ABSOLUTE(.);
 
+    /* Buffer for system heap should be placed in dram0_0_seg */
+    *libkernel.a:mempool.*(.noinit.kheap_buf__system_heap .noinit.*.kheap_buf__system_heap)
+
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
