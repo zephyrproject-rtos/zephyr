@@ -17,6 +17,7 @@ import enum
 import errno
 import os
 import re
+import string
 import sys
 import textwrap
 from typing import Any, Dict, Iterable, List, \
@@ -91,6 +92,14 @@ class Node:
         self.name = name
         self.parent = parent
         self.dt = dt
+
+        if name.count("@") > 1:
+            dt._parse_error("multiple '@' in node name")
+        if not name == "/":
+            for char in name:
+                if char not in _nodename_chars:
+                    dt._parse_error(f"{self.path}: bad character '{char}' "
+                                    "in node name")
 
         self.props: Dict[str, 'Property'] = collections.OrderedDict()
         self.nodes: Dict[str, 'Node'] = collections.OrderedDict()
@@ -949,9 +958,6 @@ class DT:
             if tok.id == _T.PROPNODENAME:
                 if self._peek_token().val == "{":
                     # '<tok> { ...', expect node
-
-                    if tok.val.count("@") > 1:
-                        self._parse_error("multiple '@' in node name")
 
                     # Fetch the existing node if it already exists. This
                     # happens when overriding nodes.
@@ -1924,6 +1930,9 @@ _num_re = re.compile(r"(0[xX][0-9a-fA-F]+|[0-9]+)(?:ULL|UL|LL|U|L)?")
 # A leading \ is allowed property and node names, probably to allow weird node
 # names that would clash with other stuff
 _propnodename_re = re.compile(r"\\?([a-zA-Z0-9,._+*#?@-]+)")
+
+# Node names are more restrictive than property names.
+_nodename_chars = set(string.ascii_letters + string.digits + ',._+-@')
 
 # Misc. tokens that are tried after a property/node name. This is important, as
 # there's overlap with the allowed characters in names.
