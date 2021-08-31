@@ -718,7 +718,6 @@ static void response_cb(struct http_response *rsp,
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status =
 						HAWKBIT_METADATA_ERROR;
-					cleanup_connection();
 					break;
 				}
 
@@ -793,7 +792,6 @@ static void response_cb(struct http_response *rsp,
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status =
 						HAWKBIT_METADATA_ERROR;
-					cleanup_connection();
 					break;
 				}
 
@@ -1133,7 +1131,7 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	if (hb_context.code_status == HAWKBIT_METADATA_ERROR) {
-		goto error;
+		goto cleanup;
 	}
 
 	if (hawkbit_results.base.config.polling.sleep) {
@@ -1216,7 +1214,7 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	if (hb_context.code_status == HAWKBIT_METADATA_ERROR) {
-		goto error;
+		goto cleanup;
 	}
 
 	hawkbit_dump_deployment(&hawkbit_results.dep);
