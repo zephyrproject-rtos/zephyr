@@ -437,6 +437,15 @@ struct bt_iso_chan_ops {
 	 */
 	void (*recv)(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 			struct net_buf *buf);
+
+	/** @brief Channel sent callback
+	 *
+	 *  If this callback is provided it will be called whenever a SDU has
+	 *  been completely sent.
+	 *
+	 *  @param chan The channel which has sent data.
+	 */
+	void (*sent)(struct bt_iso_chan *chan);
 };
 
 /** @brief ISO Server structure. */
