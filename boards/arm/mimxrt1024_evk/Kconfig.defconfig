@@ -12,4 +12,10 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
+config FLASH_MCUX_FLEXSPI_NOR
+	default y if FLASH
+
+config FLASH_MCUX_FLEXSPI_XIP
+	default y if FLASH
+
 endif # BOARD_MIMXRT1024_EVK
