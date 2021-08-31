@@ -735,6 +735,7 @@ static void response_cb(struct http_response *rsp,
 					hb_context.dl.http_content_size,
 					hb_context.dl.downloaded_size);
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
+				break;
 			}
 
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
@@ -807,6 +808,7 @@ static void response_cb(struct http_response *rsp,
 			if (hb_context.dl.http_content_size != hb_context.dl.downloaded_size) {
 				LOG_ERR("HTTP response len mismatch");
 				hb_context.code_status = HAWKBIT_METADATA_ERROR;
+				break;
 			}
 
 			hb_context.response_data[hb_context.dl.downloaded_size] = '\0';
@@ -855,6 +857,7 @@ static void response_cb(struct http_response *rsp,
 			if (ret < 0) {
 				LOG_ERR("Flash write error: %d", ret);
 				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+				break;
 			}
 		}
 
