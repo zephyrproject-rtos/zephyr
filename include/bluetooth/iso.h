@@ -313,7 +313,12 @@ struct bt_iso_big_sync_param {
 	 */
 	uint8_t num_bis;
 
-	/** Bitfield of the BISes to sync to */
+	/** Bitfield of the BISes to sync to
+	 *
+	 *  The BIS indexes start from 0x01, so the lowest allowed bit is
+	 *  BIT(1) that represents index 0x01. To synchronize to e.g. BIS
+	 *  indexes 0x01 and 0x02, the bitfield value should be BIT(1) | BIT(2).
+	 */
 	uint32_t bis_bitfield;
 
 	/** @brief Maximum subevents

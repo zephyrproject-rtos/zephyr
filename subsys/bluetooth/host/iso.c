@@ -1850,13 +1850,13 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	req->sync_timeout = sys_cpu_to_le16(param->sync_timeout);
 	req->num_bis = big->num_bis;
 	/* Transform from bitfield to array */
-	for (int i = 0; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+	for (int i = 1; i <= BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if (param->bis_bitfield & BIT(i)) {
 			if (bit_idx == big->num_bis) {
 				BT_DBG("BIG cannot contain %u BISes", bit_idx + 1);
 				return -EINVAL;
 			}
-			req->bis[bit_idx++] = i + 1; /* indices start from 1 */
+			req->bis[bit_idx++] = i;
 		}
 	}
 
@@ -1894,7 +1894,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
-	CHECKIF(!param->bis_bitfield) {
+	CHECKIF(param->bis_bitfield <= BIT(0)) {
 		BT_DBG("Invalid BIS bitfield 0x%08x", param->bis_bitfield);
 		return -EINVAL;
 	}
