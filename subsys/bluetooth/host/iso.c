@@ -74,6 +74,20 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 	return buf;
 }
 
+static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
+{
+	struct bt_iso_chan *chan = iso->iso.chan;
+	struct bt_iso_chan_ops *ops;
+
+	__ASSERT(chan != NULL, "NULL chan for iso %p", iso);
+
+	ops = chan->ops;
+
+	if (ops != NULL && ops->sent != NULL) {
+		ops->sent(chan);
+	}
+}
+
 void hci_iso(struct net_buf *buf)
 {
 	struct bt_hci_iso_hdr *hdr;
@@ -650,7 +664,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 							- sizeof(*hdr),
 							BT_ISO_DATA_VALID));
 
-	return bt_conn_send(chan->iso, buf);
+	return bt_conn_send_cb(chan->iso, buf, bt_iso_send_cb, NULL);
 }
 
 struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn)
