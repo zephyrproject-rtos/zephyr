@@ -2734,12 +2734,12 @@ function(dt_reg_size var)
   cmake_parse_arguments(DT_REG "" "${req_single_args};${single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
-    message(FATAL_ERROR "dt_reg_addr(${ARGV0} ...) missing return parameter.")
+    message(FATAL_ERROR "dt_reg_size(${ARGV0} ...) missing return parameter.")
   endif()
 
   foreach(arg ${req_single_args})
     if(NOT DEFINED DT_REG_${arg})
-      message(FATAL_ERROR "dt_reg_addr(${ARGV0} ...) "
+      message(FATAL_ERROR "dt_reg_size(${ARGV0} ...) "
                           "missing required argument: ${arg}"
       )
     endif()
