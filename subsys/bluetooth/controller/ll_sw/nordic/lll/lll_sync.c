@@ -45,14 +45,17 @@
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
-		  uint8_t *crc_ok);
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok);
 static void isr_rx_adv_sync(void *param);
 static void isr_rx_aux_chain(void *param);
+static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok);
+static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 			    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+static uint8_t trx_cnt;
 
 int lll_sync_init(void)
 {
@@ -198,6 +201,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
 
+	/* Initialize Trx count */
+	trx_cnt = 0U;
+
 	/* Process channel map update, if any */
 	if (lll->chm_first != lll->chm_last) {
 		uint16_t instant_latency;
@@ -297,7 +303,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_BASE +
 				   ull_sync_lll_handle_get(lll)),
 			     ticks_at_event)) {
-		radio_isr_set(lll_isr_abort, lll);
+		radio_isr_set(isr_done, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -323,7 +329,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
 		 */
-		radio_isr_set(lll_isr_done, param);
+		radio_isr_set(isr_done, param);
 		radio_disable();
 		return;
 	}
@@ -443,8 +449,7 @@ static void isr_aux_setup(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
-		  uint8_t *crc_ok)
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 {
 	uint8_t rssi_ready;
 	uint8_t trx_done;
@@ -463,7 +468,6 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 	lll_isr_rx_status_reset();
 
 	/* No Rx */
-	*trx_cnt = 0U;
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
@@ -471,7 +475,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *trx_cnt,
 	}
 
 	/* Rx-ed */
-	*trx_cnt = 1U;
+	trx_cnt++;
 
 	/* Check CRC and generate Periodic Advertising Report */
 	if (*crc_ok) {
@@ -532,15 +536,49 @@ isr_rx_done:
 
 static void isr_rx_adv_sync(void *param)
 {
-	struct event_done_extra *e;
 	struct lll_sync *lll;
-	uint8_t trx_cnt;
 	uint8_t crc_ok;
 	int err;
 
 	lll = param;
 
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, &trx_cnt, &crc_ok);
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, &crc_ok);
+
+	/* Save radio ready and address capture timestamp for later use for
+	 * drift compensation.
+	 */
+	radio_tmr_aa_save(radio_tmr_aa_get());
+	radio_tmr_ready_save(radio_tmr_ready_get());
+
+	if (err == -EBUSY) {
+		return;
+	}
+
+	isr_rx_done_cleanup(lll, crc_ok);
+}
+
+static void isr_rx_aux_chain(void *param)
+{
+	struct lll_scan_aux *aux_lll;
+	struct lll_sync *lll;
+	uint8_t crc_ok;
+	int err;
+
+	lll = param;
+	aux_lll = lll->lll_aux;
+
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, &crc_ok);
+
+	if (err == -EBUSY) {
+		return;
+	}
+
+	isr_rx_done_cleanup(lll, 1U);
+}
+
+static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok)
+{
+	struct event_done_extra *e;
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
@@ -550,41 +588,25 @@ static void isr_rx_adv_sync(void *param)
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
-	e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+	if (trx_cnt) {
+		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+		e->drift.start_to_address_actual_us =
+			radio_tmr_aa_restore() - radio_tmr_ready_restore();
+		e->drift.window_widening_event_us =
+			lll->window_widening_event_us;
 
-	e->drift.start_to_address_actual_us = radio_tmr_aa_get() -
-					      radio_tmr_ready_get();
-	e->drift.window_widening_event_us = lll->window_widening_event_us;
-
-	/* Reset window widening, as anchor point sync-ed */
-	lll->window_widening_event_us = 0U;
-	lll->window_size_event_us = 0U;
-
-	if (err == -EBUSY) {
-		return;
+		/* Reset window widening, as anchor point sync-ed */
+		lll->window_widening_event_us = 0U;
+		lll->window_size_event_us = 0U;
 	}
 
-	lll_isr_cleanup(param);
+	lll_isr_cleanup(lll);
 }
 
-static void isr_rx_aux_chain(void *param)
+static void isr_done(void *param)
 {
-	struct lll_scan_aux *aux_lll;
-	struct lll_sync *lll;
-	uint8_t trx_cnt;
-	uint8_t crc_ok;
-	int err;
-
-	lll = param;
-	aux_lll = lll->lll_aux;
-
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, &trx_cnt, &crc_ok);
-
-	if (err == -EBUSY) {
-		return;
-	}
-
-	lll_isr_cleanup(param);
+	lll_isr_status_reset();
+	isr_rx_done_cleanup(param, ((trx_cnt > 1U) ? 1U : 0U));
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
