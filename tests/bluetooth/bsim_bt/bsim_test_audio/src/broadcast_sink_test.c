@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_BT_BAP
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio.h>
 #include "common.h"
@@ -139,3 +141,5 @@ struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_broadcast_sink);
 }
+
+#endif /* CONFIG_BT_BAP */

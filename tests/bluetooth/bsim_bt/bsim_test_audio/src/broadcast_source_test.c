@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_BT_BAP
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio.h>
+#include "../../../../subsys/bluetooth/host/audio/endpoint.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -36,7 +39,7 @@ static void test_main(void)
 			   BT_CODEC_LC3_CONFIG_48_2,
 			   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u,
 							    40000u));
-	struct bt_audio_chan broadcast_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_audio_chan broadcast_chans[BROADCAST_STREAM_CNT];
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -95,3 +98,5 @@ struct bst_test_list *test_broadcast_source_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_broadcast_source);
 }
+
+#endif /* CONFIG_BT_BAP */
