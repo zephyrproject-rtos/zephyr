@@ -186,12 +186,15 @@ static ALWAYS_INLINE void enable_l1_cache(void)
 	 * hardware register), but it generates significantly larger
 	 * code.
 	 */
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	/* Already set up by the ROM on older hardware. */
 	const uint8_t attribs[] = { 2, 15, 15, 15, 2, 4, 15, 15 };
 
 	for (int region = 0; region < 8; region++) {
 		reg = 0x20000000 * region;
 		__asm__ volatile("wdtlb %0, %1" :: "r"(attribs[region]), "r"(reg));
 	}
+#endif
 }
 
 void z_mp_entry(void)
@@ -331,6 +334,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	start_rec.alive = 0;
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
+
+	/* Pre-2.x cAVS delivers the IDC to ROM code, so unmask it */
+	CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
 
 	/* Disable automatic power and clock gating for that CPU, so
 	 * it won't just go back to sleep.  Note that after startup,
