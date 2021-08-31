@@ -664,6 +664,10 @@ class _Token(NamedTuple):
     id: int
     val: _TokVal
 
+    def __repr__(self):
+        id_repr = _T(self.id).name
+        return f'Token(id=_T.{id_repr}, val={repr(self.val)})'
+
 class DT:
     """
     Represents a devicetree parsed from a .dts file (or from many files, if the
