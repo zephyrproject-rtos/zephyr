@@ -141,8 +141,8 @@ void common_create_per_adv_chain(struct ll_adv_set *adv_set, uint8_t pdu_count)
 	pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 	ull_adv_sync_pdu_init(pdu, 0);
 
-	err = ull_adv_sync_pdu_alloc(adv_set, 0, 0, NULL, &pdu_prev, &pdu, &extra_data_prev,
-				     &extra_data, &pdu_idx);
+	err = ull_adv_sync_pdu_alloc(adv_set, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev,
+				     &pdu, &extra_data_prev, &extra_data, &pdu_idx);
 	zassert_equal(err, 0, "Unexpected error while PDU allocation, err: %d", err);
 
 	if (extra_data) {
