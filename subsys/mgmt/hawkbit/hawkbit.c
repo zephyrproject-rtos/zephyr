@@ -847,11 +847,17 @@ static void response_cb(struct http_response *rsp,
 		}
 
 		if (body_data != NULL) {
+			ret = mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
+					  body_len);
+			if (ret != 0) {
+				LOG_ERR("mbedTLS md update error: %d", ret);
+				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+				break;
+			}
+
 			ret = flash_img_buffered_write(
 				&hb_context.flash_ctx, body_data, body_len,
 				final_data == HTTP_DATA_FINAL);
-			mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
-					  body_len);
 			if (ret < 0) {
 				LOG_ERR("Flash write error: %d", ret);
 				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
