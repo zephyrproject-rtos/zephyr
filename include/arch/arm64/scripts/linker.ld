@@ -218,6 +218,16 @@ SECTIONS
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
 #define SMEM_PARTITION_ALIGN(size) MMU_ALIGN
 
+#if defined(CONFIG_ARM_MPU)
+/*
+ * When _app_smem region is empty, alignment is also needed. If there
+ * is no alignment, the _app_smem_start used by arm mpu can be lower
+ * than __rodata_region_end, and this two regions can overlap.
+ * The Armv8-R aarch64 MPU does not allow overlapped regions.
+ */
+#define EMPTY_APP_SHARED_ALIGN APP_SHARED_ALIGN
+#endif
+
 #include <app_smem.ld>
 
     _app_smem_size = _app_smem_end - _app_smem_start;
