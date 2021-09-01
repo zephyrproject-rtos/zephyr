@@ -88,8 +88,6 @@ static __aligned(XCHAL_DCACHE_LINESIZE) union {
 	(*((volatile struct cpustart_rec *) \
 	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
 
-static uint32_t cpu_mask;
-
 /* Simple array of CPUs that are active and available for an IPI.  The
  * IDC interrupt is ALSO used to bring a CPU out of reset, so we need
  * to be absolutely sure we don't try to IPI a CPU that isn't ready to
@@ -276,7 +274,7 @@ void z_mp_entry(void)
 
 bool arch_cpu_active(int cpu_num)
 {
-	return !!(cpu_mask & BIT(cpu_num));
+	return cpus_active[cpu_num];
 }
 
 static ALWAYS_INLINE uint32_t prid(void)
@@ -381,12 +379,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	while (!start_rec.alive)
 		;
-
-	/*
-	 * No locking needed as long as CPUs can only be powered on by the main
-	 * CPU and cannot be powered off
-	 */
-	cpu_mask |= BIT(cpu_num);
 }
 
 void arch_sched_ipi(void)
