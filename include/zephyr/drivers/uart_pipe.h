@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_PIPE_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_PIPE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UART_PIPE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UART_PIPE_H_
 
 #include <stdlib.h>
 
@@ -59,4 +59,4 @@ int uart_pipe_send(const uint8_t *data, int len);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_PIPE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UART_PIPE_H_ */
