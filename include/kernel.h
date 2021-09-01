@@ -4772,8 +4772,8 @@ struct k_mem_slab {
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
 			       slab_num_blocks) \
 	{ \
-	.lock = {}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.lock = {}, \
 	.num_blocks = slab_num_blocks, \
 	.block_size = slab_block_size, \
 	.buffer = slab_buffer, \
