@@ -84,6 +84,13 @@ struct mdm_hl7800_apn {
 
 #define MDM_HL7800_SET_POLTE_USER_AND_PASSWORD_FMT_STR "AT%%POLTECMD=\"SERVERAUTH\",\"%s\",\"%s\""
 
+struct mdm_hl7800_site_survey {
+	uint32_t earfcn; /* EUTRA Absolute Radio Frequency Channel Number */
+	uint32_t cell_id;
+	int rsrp;
+	int rsrq;
+};
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -104,7 +111,8 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_GPS_POSITION_STATUS,
 	HL7800_EVENT_POLTE_REGISTRATION,
 	HL7800_EVENT_POLTE_LOCATE_STATUS,
-	HL7800_EVENT_POLTE
+	HL7800_EVENT_POLTE,
+	HL7800_EVENT_SITE_SURVEY,
 };
 
 enum mdm_hl7800_startup_state {
@@ -237,6 +245,7 @@ struct mdm_hl7800_polte_location_data {
  * HL7800_EVENT_POLTE_REGISTRATION mdm_hl7800_polte_registration_event_data
  * HL7800_EVENT_POLTE mdm_hl7800_polte_location_data
  * HL7800_EVENT_POLTE_LOCATE_STATUS int
+ * HL7800_EVENT_SITE_SURVEY mdm_hl7800_site_survey
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
@@ -440,6 +449,16 @@ int32_t mdm_hl7800_polte_enable(char *user, char *password);
  * @return int32_t negative errno, 0 on success
  */
 int32_t mdm_hl7800_polte_locate(void);
+
+/**
+ * @brief Perform a site survey.  This command may return different values
+ * each time it is run (depending on what is in range).
+ *
+ * HL7800_EVENT_SITE_SURVEY is generated for each response received from modem.
+ *
+ * @retval negative error code, 0 on success
+ */
+int32_t mdm_hl7800_perform_site_survey(void);
 
 #ifdef __cplusplus
 }
