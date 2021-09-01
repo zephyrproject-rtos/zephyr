@@ -672,7 +672,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 	const size_t max_sdu = MIN(max_mtu, BT_ISO_MAX_SDU);
 
 	if (io_qos->sdu > max_sdu) {
-		BT_DBG("sdu (%u) shall be smaller than %u",
+		BT_DBG("sdu (%u) shall be smaller than %zu",
 		       io_qos->sdu, max_sdu);
 		return false;
 	}
