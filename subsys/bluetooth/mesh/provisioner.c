@@ -109,7 +109,6 @@ static void start_sent(int err, void *cb_data)
 static void send_start(void)
 {
 	BT_DBG("");
-	uint8_t method, action;
 
 	PROV_BUF(start, PDU_LEN_START);
 
@@ -125,26 +124,6 @@ static void send_start(void)
 		net_buf_simple_add_u8(&start, PUB_KEY_NO_OOB);
 	}
 
-	if (bt_mesh_prov_link.oob_method == AUTH_METHOD_INPUT) {
-		method = AUTH_METHOD_OUTPUT;
-		if (bt_mesh_prov_link.oob_action == INPUT_OOB_STRING) {
-			action = OUTPUT_OOB_STRING;
-		} else {
-			action = OUTPUT_OOB_NUMBER;
-		}
-
-	} else if (bt_mesh_prov_link.oob_method == AUTH_METHOD_OUTPUT) {
-		method = AUTH_METHOD_INPUT;
-		if (bt_mesh_prov_link.oob_action == OUTPUT_OOB_STRING) {
-			action = INPUT_OOB_STRING;
-		} else {
-			action = INPUT_OOB_NUMBER;
-		}
-	} else {
-		method = bt_mesh_prov_link.oob_method;
-		action = 0x00;
-	}
-
 	net_buf_simple_add_u8(&start, bt_mesh_prov_link.oob_method);
 
 	net_buf_simple_add_u8(&start, bt_mesh_prov_link.oob_action);
@@ -153,10 +132,11 @@ static void send_start(void)
 
 	memcpy(bt_mesh_prov_link.conf_inputs.start, &start.data[1], PDU_LEN_START);
 
-	if (bt_mesh_prov_auth(method, action, bt_mesh_prov_link.oob_size) < 0) {
+	if (bt_mesh_prov_auth(true, bt_mesh_prov_link.oob_method,
+		bt_mesh_prov_link.oob_action, bt_mesh_prov_link.oob_size) < 0) {
 		BT_ERR("Invalid authentication method: 0x%02x; "
-		       "action: 0x%02x; size: 0x%02x", method,
-		       action, bt_mesh_prov_link.oob_size);
+		       "action: 0x%02x; size: 0x%02x", bt_mesh_prov_link.oob_method,
+		       bt_mesh_prov_link.oob_action, bt_mesh_prov_link.oob_size);
 		return;
 	}
 
@@ -691,7 +671,7 @@ static void prov_set_method(uint8_t method, uint8_t action, uint8_t size)
 
 int bt_mesh_auth_method_set_input(bt_mesh_input_action_t action, uint8_t size)
 {
-	if (!action || !size || size > 8) {
+	if (!action || !size || size > PROV_IO_OOB_SIZE_MAX) {
 		return -EINVAL;
 	}
 
@@ -701,7 +681,7 @@ int bt_mesh_auth_method_set_input(bt_mesh_input_action_t action, uint8_t size)
 
 int bt_mesh_auth_method_set_output(bt_mesh_output_action_t action, uint8_t size)
 {
-	if (!action || !size || size > 8) {
+	if (!action || !size || size > PROV_IO_OOB_SIZE_MAX) {
 		return -EINVAL;
 	}
 

@@ -150,8 +150,11 @@ static void prov_start(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf_inputs.start, data, PDU_LEN_START);
 
 	bt_mesh_prov_link.expect = PROV_PUB_KEY;
+	bt_mesh_prov_link.oob_method = data[2];
+	bt_mesh_prov_link.oob_action = data[3];
+	bt_mesh_prov_link.oob_size = data[4];
 
-	if (bt_mesh_prov_auth(data[2], data[3], data[4]) < 0) {
+	if (bt_mesh_prov_auth(false, data[2], data[3], data[4]) < 0) {
 		BT_ERR("Invalid authentication method: 0x%02x; "
 		       "action: 0x%02x; size: 0x%02x", data[2], data[3],
 		       data[4]);
