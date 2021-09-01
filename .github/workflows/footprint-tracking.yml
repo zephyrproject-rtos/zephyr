@@ -27,7 +27,7 @@ jobs:
     if: github.repository == 'zephyrproject-rtos/zephyr'
     needs: footprint-tracking-cancel
     container:
-      image: zephyrprojectrtos/ci:v0.18.2
+      image: zephyrprojectrtos/ci:v0.18.3
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false

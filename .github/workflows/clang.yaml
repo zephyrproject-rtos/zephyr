@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: clang-build-cancel
     container:
-      image: zephyrprojectrtos/ci:v0.18.2
+      image: zephyrprojectrtos/ci:v0.18.3
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false

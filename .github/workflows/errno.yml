@@ -8,7 +8,7 @@ jobs:
   check-errno:
     runs-on: ubuntu-latest
     container:
-      image: zephyrprojectrtos/ci:v0.18.2
+      image: zephyrprojectrtos/ci:v0.18.3
 
     steps:
       - name: checkout
