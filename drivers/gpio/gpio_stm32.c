@@ -259,7 +259,8 @@ static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 	return (((pin * 8) % 32) << 16) | (pin / 4);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
 #else
 	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
