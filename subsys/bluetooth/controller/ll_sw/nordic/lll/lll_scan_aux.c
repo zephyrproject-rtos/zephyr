@@ -695,7 +695,16 @@ isr_rx_do_close:
 
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-			node_rx->hdr.rx_ftr.param = lll->lll_aux;
+			/* Use LLL scan context pointer which will be resolved
+			 * to LLL aux context in the `ull_scan_aux_release`
+			 * function in ULL execution context.
+			 * As ULL execution context is the one assigning the
+			 * `lll->lll_aux`, if it has not been assigned then
+			 * `ull_scan_aux_release` will not dereference it, but
+			 * under race, if ULL execution did assign one, it will
+			 * free it.
+			 */
+			node_rx->hdr.rx_ftr.param = lll;
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
 			ull_rx_sched();
