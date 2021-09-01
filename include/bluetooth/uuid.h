@@ -446,6 +446,51 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_VAL)
+/** @def BT_UUID_CSIS_VAL
+ *  @brief Coordinated Set Identification Service value
+ */
+#define BT_UUID_CSIS_VAL 0x1846
+/** @def BT_UUID_CSIS
+ *  @brief Coordinated Set Identification Service
+ */
+#define BT_UUID_CSIS \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_VAL)
+/** @def BT_UUID_MCS_VAL
+ *  @brief Media Control Service value
+ */
+#define BT_UUID_MCS_VAL 0x1848
+/** @def BT_UUID_MCS
+ *  @brief Media Control Service
+ */
+#define BT_UUID_MCS \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_VAL)
+/** @def BT_UUID_GMCS_VAL
+ *  @brief Generic Media Control Service value
+ */
+#define BT_UUID_GMCS_VAL 0x1849
+/** @def BT_UUID_GMCS
+ *  @brief Generic Media Control Service
+ */
+#define BT_UUID_GMCS \
+	BT_UUID_DECLARE_16(BT_UUID_GMCS_VAL)
+/** @def BT_UUID_TBS_VAL
+ *  @brief Telephone Bearer Service value
+ */
+#define BT_UUID_TBS_VAL 0x184B
+/** @def BT_UUID_TBS
+ *  @brief Telephone Bearer Service
+ */
+#define BT_UUID_TBS \
+	BT_UUID_DECLARE_16(BT_UUID_TBS_VAL)
+/** @def BT_UUID_GTBS_VAL
+ *  @brief Generic Telephone Bearer Service value
+ */
+#define BT_UUID_GTBS_VAL 0x184C
+/** @def BT_UUID_GTBS
+ *  @brief Generic Telephone Bearer Service
+ */
+#define BT_UUID_GTBS \
+	BT_UUID_DECLARE_16(BT_UUID_GTBS_VAL)
 /** @def BT_UUID_MICS_VAL
  *  @brief Microphone Input Control Service value
  */
@@ -455,15 +500,51 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MICS \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_VAL)
-/** @def BT_UUID_CCID_VAL
- *  @brief Content Control ID value
+/** @def BT_UUID_ASCS_VAL
+ *  @brief Audio Stream Control Service value
  */
-#define BT_UUID_CCID_VAL 0x2BBA
-/** @def BT_UUID_CCID
- *  @brief Content Control ID
+#define BT_UUID_ASCS_VAL 0x184E
+/** @def BT_UUID_ASCS
+ *  @brief Audio Stream Control Service
  */
-#define BT_UUID_CCID \
-	BT_UUID_DECLARE_16(BT_UUID_CCID_VAL)
+#define BT_UUID_ASCS \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_VAL)
+/** @def BT_UUID_BASS_VAL
+ *  @brief Broadcast Audio Scan Service value
+ */
+#define BT_UUID_BASS_VAL 0x184F
+/** @def BT_UUID_BASS
+ *  @brief Broadcast Audio Scan Service
+ */
+#define BT_UUID_BASS \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_VAL)
+/** @def BT_UUID_PACS_VAL
+ *  @brief Published Audio Capabilities Service value
+ */
+#define BT_UUID_PACS_VAL 0x1850
+/** @def BT_UUID_PACS
+ *  @brief Published Audio Capabilities Service
+ */
+#define BT_UUID_PACS \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_VAL)
+/** @def BT_UUID_BASIC_AUDIO_VAL
+ *  @brief Basic Audio Announcement Service value
+ */
+#define BT_UUID_BASIC_AUDIO_VAL 0x1851
+/** @def BT_UUID_BASIC_AUDIO
+ *  @brief Basic Audio Announcement Service
+ */
+#define BT_UUID_BASIC_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BASIC_AUDIO_VAL)
+/** @def BT_UUID_BROADCAST_AUDIO_VAL
+ *  @brief Broadcast Audio Announcement Service value
+ */
+#define BT_UUID_BROADCAST_AUDIO_VAL 0x1852
+/** @def BT_UUID_BROADCAST_AUDIO
+ *  @brief Broadcast Audio Announcement Service
+ */
+#define BT_UUID_BROADCAST_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
 /** @def BT_UUID_GATT_PRIMARY_VAL
  *  @brief GATT Primary Service UUID value
  */
@@ -1365,7 +1446,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_DB_HASH \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_DB_HASH_VAL)
-
 /** @def BT_UUID_GATT_SERVER_FEATURES_VAL
  *  @brief Server Supported Features UUID value
  */
@@ -1375,52 +1455,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_SERVER_FEATURES      \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SERVER_FEATURES_VAL)
-/** @def BT_UUID_CSIS_VAL
- *  @brief Coordinated Set Identification Service value
- */
-#define BT_UUID_CSIS_VAL 0x1846
-/** @def BT_UUID_CSIS
- *  @brief Coordinated Set Identification Service
- */
-#define BT_UUID_CSIS \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_VAL)
-/** @def BT_UUID_CSIS_SET_SIRK_VAL
- *  @brief Set Identity Resolving Key value
- */
-#define BT_UUID_CSIS_SET_SIRK_VAL 0x2B84
-/** @def BT_UUID_CSIS_SET_SIRK
- *  @brief Set Identity Resolving Key
- */
-#define BT_UUID_CSIS_SET_SIRK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
-/** @def BT_UUID_CSIS_SET_SIZE_VAL
- *  @brief Set size value
- */
-#define BT_UUID_CSIS_SET_SIZE_VAL 0x2B85
-/** @def BT_UUID_CSIS_SET_SIZE
- *  @brief Set size
- */
-#define BT_UUID_CSIS_SET_SIZE \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIZE_VAL)
-/** @def BT_UUID_CSIS_SET_LOCK_VAL
- *  @brief Set lock value
- */
-#define BT_UUID_CSIS_SET_LOCK_VAL 0x2B86
-/** @def BT_UUID_CSIS_SET_LOCK
- *  @brief Set lock
- */
-#define BT_UUID_CSIS_SET_LOCK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_LOCK_VAL)
-/** @def BT_UUID_CSIS_RANK_VAL
- *  @brief Rank value
- */
-#define BT_UUID_CSIS_RANK_VAL 0x2B87
-/** @def BT_UUID_CSIS_RANK
- *  @brief Rank
- */
-#define BT_UUID_CSIS_RANK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
-
 /** @def BT_UUID_AICS_STATE_VAL
  *  @brief Audio Input Control Service State value
  */
@@ -1538,34 +1572,42 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS_DESCRIPTION \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_DESCRIPTION_VAL)
-/** @def BT_UUID_MICS_MUTE_VAL
- *  @brief Microphone Input Control Service Mute value
+/** @def BT_UUID_CSIS_SET_SIRK_VAL
+ *  @brief Set Identity Resolving Key value
  */
-#define BT_UUID_MICS_MUTE_VAL 0x2BC3
-/** @def BT_UUID_MICS_MUTE
- *  @brief Microphone Input Control Service Mute
+#define BT_UUID_CSIS_SET_SIRK_VAL 0x2B84
+/** @def BT_UUID_CSIS_SET_SIRK
+ *  @brief Set Identity Resolving Key
  */
-#define BT_UUID_MICS_MUTE \
-	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
-/* TODO: Update MCS UUIDs when permanent UUIDs are assigned */
-/** @def BT_UUID_MCS_VAL
- *  @brief Media Control Service value
+#define BT_UUID_CSIS_SET_SIRK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
+/** @def BT_UUID_CSIS_SET_SIZE_VAL
+ *  @brief Set size value
  */
-#define BT_UUID_MCS_VAL 0x1848
-/** @def BT_UUID_MCS
- *  @brief Media Control Service
+#define BT_UUID_CSIS_SET_SIZE_VAL 0x2B85
+/** @def BT_UUID_CSIS_SET_SIZE
+ *  @brief Set size
  */
-#define BT_UUID_MCS \
-	BT_UUID_DECLARE_16(BT_UUID_MCS_VAL)
-/** @def BT_UUID_GMCS_VAL
- *  @brief Generic Media Control Service value
+#define BT_UUID_CSIS_SET_SIZE \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIZE_VAL)
+/** @def BT_UUID_CSIS_SET_LOCK_VAL
+ *  @brief Set lock value
  */
-#define BT_UUID_GMCS_VAL 0x1849
-/** @def BT_UUID_GMCS
- *  @brief Generic Media Control Service
+#define BT_UUID_CSIS_SET_LOCK_VAL 0x2B86
+/** @def BT_UUID_CSIS_SET_LOCK
+ *  @brief Set lock
  */
-#define BT_UUID_GMCS \
-	BT_UUID_DECLARE_16(BT_UUID_GMCS_VAL)
+#define BT_UUID_CSIS_SET_LOCK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_LOCK_VAL)
+/** @def BT_UUID_CSIS_RANK_VAL
+ *  @brief Rank value
+ */
+#define BT_UUID_CSIS_RANK_VAL 0x2B87
+/** @def BT_UUID_CSIS_RANK
+ *  @brief Rank
+ */
+#define BT_UUID_CSIS_RANK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
 /** @def BT_UUID_MCS_PLAYER_NAME_VAL
  *  @brief Media player name value
  */
@@ -1674,15 +1716,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_NEXT_TRACK_OBJ_ID \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_NEXT_TRACK_OBJ_ID_VAL)
-/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL
- *  @brief Group Object ID value
- */
-#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL 0x2BA0
-/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID
- *  @brief Group Object ID
- */
-#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID \
-	BT_UUID_DECLARE_16(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL)
 /** @def BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL
  *  @brief Parent Group Object ID value
  */
@@ -1692,6 +1725,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_PARENT_GROUP_OBJ_ID \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL
+ *  @brief Group Object ID value
+ */
+#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL 0x2BA0
+/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID
+ *  @brief Group Object ID
+ */
+#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL)
 /** @def BT_UUID_MCS_PLAYING_ORDER_VAL
  *  @brief Playing Order value
  */
@@ -1737,15 +1779,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_MEDIA_CONTROL_OPCODES \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_MEDIA_CONTROL_OPCODES_VAL)
-/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL
- *  @brief Search control point value
- */
-#define BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL 0x2BA7
-/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT
- *  @brief Search control point
- */
-#define BT_UUID_MCS_SEARCH_CONTROL_POINT \
-	BT_UUID_DECLARE_16(BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL)
 /** @def BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID_VAL
  *  @brief Search result object ID value
  */
@@ -1755,69 +1788,60 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID_VAL)
-/** @def BT_UUID_BASS_VAL
- *  @brief Broadcast Audio Scan Service value
+/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL
+ *  @brief Search control point value
  */
-#define BT_UUID_BASS_VAL 0x184F
-/** @def BT_UUID_BASS
- *  @brief Broadcast Audio Scan Service
+#define BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL 0x2BA7
+/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT
+ *  @brief Search control point
  */
-#define BT_UUID_BASS \
-	BT_UUID_DECLARE_16(BT_UUID_BASS_VAL)
-/** @def BT_UUID_BASS_CONTROL_POINT_VAL
- *  @brief Broadcast Audio Scan Service Scan State value
+#define BT_UUID_MCS_SEARCH_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL)
+/** @def BT_UUID_OTS_TYPE_MPL_ICON_VAL
+ *  @brief Media Player Icon Object Type value
  */
-#define BT_UUID_BASS_CONTROL_POINT_VAL 0x2BC7
-/** @def BT_UUID_BASS_CONTROL_POINT
- *  @brief Broadcast Audio Scan Service Scan State
+#define BT_UUID_OTS_TYPE_MPL_ICON_VAL 0x2BA9
+/** @def BT_UUID_OTS_TYPE_MPL_ICON
+ *  @brief Media Player Icon Object Type
  */
-#define BT_UUID_BASS_CONTROL_POINT \
-	BT_UUID_DECLARE_16(BT_UUID_BASS_CONTROL_POINT_VAL)
-/** @def BT_UUID_BASS_RECV_STATE_VAL
- *  @brief Broadcast Audio Scan Service Receive State value
+#define BT_UUID_OTS_TYPE_MPL_ICON \
+	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_MPL_ICON_VAL)
+/** @def BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL
+ *  @brief Track Segments Object Type value
  */
-#define BT_UUID_BASS_RECV_STATE_VAL 0x2BC8
-/** @def BT_UUID_BASS_RECV_STATE
- *  @brief Broadcast Audio Scan Service Receive State
+#define BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL 0x2BAA
+/** @def BT_UUID_OTS_TYPE_TRACK_SEGMENT
+ *  @brief Track Segments Object Type
  */
-#define BT_UUID_BASS_RECV_STATE \
-	BT_UUID_DECLARE_16(BT_UUID_BASS_RECV_STATE_VAL)
-/** @def BT_UUID_BASIC_AUDIO_VAL
- *  @brief Basic Audio Announcement Service value
+#define BT_UUID_OTS_TYPE_TRACK_SEGMENT \
+	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL)
+/** @def BT_UUID_OTS_TYPE_TRACK_VAL
+ *  @brief Track Object Type value
  */
-#define BT_UUID_BASIC_AUDIO_VAL 0x1851
-/** @def BT_UUID_BASIC_AUDIO
- *  @brief Basic Audio Announcement Service
+#define BT_UUID_OTS_TYPE_TRACK_VAL 0x2BAB
+/** @def BT_UUID_OTS_TYPE_TRACK
+ *  @brief Track Object Type
  */
-#define BT_UUID_BASIC_AUDIO \
-	BT_UUID_DECLARE_16(BT_UUID_BASIC_AUDIO_VAL)
-/** @def BT_UUID_BROADCAST_AUDIO_VAL
- *  @brief Broadcast Audio Announcement Service value
+#define BT_UUID_OTS_TYPE_TRACK \
+	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_TRACK_VAL)
+/** @def BT_UUID_OTS_TYPE_GROUP_VAL
+ *  @brief Group Object Type value
  */
-#define BT_UUID_BROADCAST_AUDIO_VAL 0x1852
-/** @def BT_UUID_BROADCAST_AUDIO
- *  @brief Broadcast Audio Announcement Service
+#define BT_UUID_OTS_TYPE_GROUP_VAL 0x2BAC
+/** @def BT_UUID_OTS_TYPE_GROUP
+ *  @brief Group Object Type
  */
-#define BT_UUID_BROADCAST_AUDIO \
-	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
-/** @def BT_UUID_GTBS_VAL
- *  @brief Generic Telephone Bearer Service value
+#define BT_UUID_OTS_TYPE_GROUP \
+	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_GROUP_VAL)
+/** @def BT_UUID_OTS_TYPE_DIR_LISTING_VAL
+ *  @brief OTS Directory Listing Object Type value
  */
-#define BT_UUID_GTBS_VAL 0x184C
-/** @def BT_UUID_GTBS
- *  @brief Generic Telephone Bearer Service
+#define BT_UUID_OTS_TYPE_DIR_LISTING_VAL 0x2ACB
+/** @def BT_UUID_OTS_TYPE_DIR_LISTING
+ *  @brief OTS Directory Listing Object Type
  */
-#define BT_UUID_GTBS \
-	BT_UUID_DECLARE_16(BT_UUID_GTBS_VAL)
-/** @def BT_UUID_TBS_VAL
- *  @brief Telephone Bearer Service value
- */
-#define BT_UUID_TBS_VAL 0x184B
-/** @def BT_UUID_TBS
- *  @brief Telephone Bearer Service
- */
-#define BT_UUID_TBS \
-	BT_UUID_DECLARE_16(BT_UUID_TBS_VAL)
+#define BT_UUID_OTS_TYPE_DIR_LISTING \
+	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_DIR_LISTING_VAL)
 /** @def BT_UUID_TBS_PROVIDER_NAME_VAL
  *  @brief Bearer Provider Name value
  */
@@ -1881,6 +1905,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_TBS_LIST_CURRENT_CALLS \
 	BT_UUID_DECLARE_16(BT_UUID_TBS_LIST_CURRENT_CALLS_VAL)
+/** @def BT_UUID_CCID_VAL
+ *  @brief Content Control ID value
+ */
+#define BT_UUID_CCID_VAL 0x2BBA
+/** @def BT_UUID_CCID
+ *  @brief Content Control ID
+ */
+#define BT_UUID_CCID \
+	BT_UUID_DECLARE_16(BT_UUID_CCID_VAL)
 /** @def BT_UUID_TBS_STATUS_FLAGS_VAL
  *  @brief Status flags value
  */
@@ -1953,16 +1986,60 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_TBS_FRIENDLY_NAME \
 	BT_UUID_DECLARE_16(BT_UUID_TBS_FRIENDLY_NAME_VAL)
-/* TODO: Update BAPS UUIDs when permanent UUIDs are assigned */
-/** @def BT_UUID_PACS_VAL
- *  @brief Published Audio Capabilities Service value
+/** @def BT_UUID_MICS_MUTE_VAL
+ *  @brief Microphone Input Control Service Mute value
  */
-#define BT_UUID_PACS_VAL 0x1850
-/** @def BT_UUID_PACS
- *  @brief Published Audio Capabilities Service
+#define BT_UUID_MICS_MUTE_VAL 0x2BC3
+/** @def BT_UUID_MICS_MUTE
+ *  @brief Microphone Input Control Service Mute
  */
-#define BT_UUID_PACS \
-	BT_UUID_DECLARE_16(BT_UUID_PACS_VAL)
+#define BT_UUID_MICS_MUTE \
+	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
+/** @def BT_UUID_ASCS_ASE_SNK_VAL
+ *  @brief Audio Stream Endpoint Sink Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_SNK_VAL 0x2BC4
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Sink Characteristic
+ */
+#define BT_UUID_ASCS_ASE_SNK \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SNK_VAL)
+/** @def BT_UUID_ASCS_ASE_SRC_VAL
+ *  @brief Audio Stream Endpoint Source Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_SRC_VAL 0x2BC5
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Source Characteristic
+ */
+#define BT_UUID_ASCS_ASE_SRC \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SRC_VAL)
+/** @def BT_UUID_ASCS_ASE_CP_VAL
+ *  @brief Audio Stream Endpoint Control Point Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_CP_VAL 0x2BC6
+/** @def BT_UUID_ASCS_ASE_CP
+ *  @brief Audio Stream Endpoint Control Point Characteristic
+ */
+#define BT_UUID_ASCS_ASE_CP \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_CP_VAL)
+/** @def BT_UUID_BASS_CONTROL_POINT_VAL
+ *  @brief Broadcast Audio Scan Service Scan State value
+ */
+#define BT_UUID_BASS_CONTROL_POINT_VAL 0x2BC7
+/** @def BT_UUID_BASS_CONTROL_POINT
+ *  @brief Broadcast Audio Scan Service Scan State
+ */
+#define BT_UUID_BASS_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_CONTROL_POINT_VAL)
+/** @def BT_UUID_BASS_RECV_STATE_VAL
+ *  @brief Broadcast Audio Scan Service Receive State value
+ */
+#define BT_UUID_BASS_RECV_STATE_VAL 0x2BC8
+/** @def BT_UUID_BASS_RECV_STATE
+ *  @brief Broadcast Audio Scan Service Receive State
+ */
+#define BT_UUID_BASS_RECV_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_RECV_STATE_VAL)
 /** @def BT_UUID_PACS_SNK_VAL
  *  @brief Sink PAC Characteristic value
  */
@@ -2017,87 +2094,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PACS_SUPPORTED_CONTEXT \
 	BT_UUID_DECLARE_16(BT_UUID_PACS_SUPPORTED_CONTEXT_VAL)
-/** @def BT_UUID_ASCS_VAL
- *  @brief Audio Stream Control Service value
- */
-#define BT_UUID_ASCS_VAL 0x184E
-/** @def BT_UUID_ASCS
- *  @brief Audio Stream Control Service
- */
-#define BT_UUID_ASCS \
-	BT_UUID_DECLARE_16(BT_UUID_ASCS_VAL)
-/** @def BT_UUID_ASCS_ASE_SNK_VAL
- *  @brief Audio Stream Endpoint Sink Characteristic value
- */
-#define BT_UUID_ASCS_ASE_SNK_VAL 0x2BC4
-/** @def BT_UUID_ASCS_ASE_SNK
- *  @brief Audio Stream Endpoint Sink Characteristic
- */
-#define BT_UUID_ASCS_ASE_SNK \
-	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SNK_VAL)
-/** @def BT_UUID_ASCS_ASE_SRC_VAL
- *  @brief Audio Stream Endpoint Source Characteristic value
- */
-#define BT_UUID_ASCS_ASE_SRC_VAL 0x2BC5
-/** @def BT_UUID_ASCS_ASE_SNK
- *  @brief Audio Stream Endpoint Source Characteristic
- */
-#define BT_UUID_ASCS_ASE_SRC \
-	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SRC_VAL)
-/** @def BT_UUID_ASCS_ASE_CP_VAL
- *  @brief Audio Stream Endpoint Control Point Characteristic value
- */
-#define BT_UUID_ASCS_ASE_CP_VAL 0x2BC6
-/** @def BT_UUID_ASCS_ASE_CP
- *  @brief Audio Stream Endpoint Control Point Characteristic
- */
-#define BT_UUID_ASCS_ASE_CP \
-	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_CP_VAL)
-/** @def BT_UUID_OTS_TYPE_MPL_ICON_VAL
- *  @brief Media Player Icon Object Type value
- */
-#define BT_UUID_OTS_TYPE_MPL_ICON_VAL 0x2BA9
-/** @def BT_UUID_OTS_TYPE_MPL_ICON
- *  @brief Media Player Icon Object Type
- */
-#define BT_UUID_OTS_TYPE_MPL_ICON \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_MPL_ICON_VAL)
-/** @def BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL
- *  @brief Track Segments Object Type value
- */
-#define BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL 0x2BAA
-/** @def BT_UUID_OTS_TYPE_TRACK_SEGMENT
- *  @brief Track Segments Object Type
- */
-#define BT_UUID_OTS_TYPE_TRACK_SEGMENT \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_TRACK_SEGMENT_VAL)
-/** @def BT_UUID_OTS_TYPE_TRACK_VAL
- *  @brief Track Object Type value
- */
-#define BT_UUID_OTS_TYPE_TRACK_VAL 0x2BAB
-/** @def BT_UUID_OTS_TYPE_TRACK
- *  @brief Track Object Type
- */
-#define BT_UUID_OTS_TYPE_TRACK \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_TRACK_VAL)
-/** @def BT_UUID_OTS_TYPE_GROUP_VAL
- *  @brief Group Object Type value
- */
-#define BT_UUID_OTS_TYPE_GROUP_VAL 0x2BAC
-/** @def BT_UUID_OTS_TYPE_GROUP
- *  @brief Group Object Type
- */
-#define BT_UUID_OTS_TYPE_GROUP \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_GROUP_VAL)
-/** @def BT_UUID_OTS_TYPE_DIR_LISTING_VAL
- *  @brief OTS Directory Listing Object Type value
- */
-#define BT_UUID_OTS_TYPE_DIR_LISTING_VAL 0x2ACB
-/** @def BT_UUID_OTS_TYPE_DIR_LISTING
- *  @brief OTS Directory Listing Object Type
- */
-#define BT_UUID_OTS_TYPE_DIR_LISTING \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_DIR_LISTING_VAL)
 
 /*
  * Protocol UUIDs
