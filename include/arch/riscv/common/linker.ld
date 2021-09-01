@@ -187,7 +187,6 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 	__rodata_region_end = .;
-	MPU_ALIGN(__rodata_region_end - __rom_region_start);
 
 	/* For non-XIP system, __rom_region_end symbol should be set to
 	 * the end of common ROMABLE_REGIONs (text and rodata) instead of
@@ -195,6 +194,13 @@ SECTIONS
 	 * RAMABLE_REGION in it.
 	 */
 #ifndef CONFIG_XIP
+#ifdef CONFIG_RISCV_PMP
+	SECTION_PROLOGUE(rom_mpu_padding,,)
+	{
+		MPU_ALIGN(__rodata_region_end - __rom_region_start);
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_RISCV_PMP */
+
 	__rom_region_end = .;
 	__rom_region_size = __rom_region_end - __rom_region_start;
 #endif /* CONFIG_XIP */
