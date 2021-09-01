@@ -117,7 +117,7 @@ SECTIONS
 	}
 
     GROUP_START(ROMABLE_REGION)
-    _image_rom_start = ROM_BASE;
+    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
@@ -154,7 +154,7 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
-		_image_text_start = .;
+		__text_region_start = .;
 
 		*(.text)
 		*(".text.*")
@@ -170,9 +170,9 @@ SECTIONS
 #endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
 
@@ -195,8 +195,8 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
-	_image_rodata_end = .;
-	MPU_ALIGN(_image_rodata_end - _image_rom_start);
+	__rodata_region_end = .;
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -238,11 +238,13 @@ SECTIONS
 #include <linker/common-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
+    __data_region_start = .;
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(".data.*")
@@ -269,10 +271,13 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+		 __data_end = .;
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
@@ -287,7 +292,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-    __data_ram_end = .;
+    __data_region_end = .;
 
     MPU_MIN_SIZE_ALIGN
 
@@ -373,7 +378,7 @@ SECTION_PROLOGUE(.last_section,(NOLOAD),)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
-_image_rom_end = LOADADDR(.last_section);
-_image_rom_size = _image_rom_end - _image_rom_start;
+__rom_region_end = LOADADDR(.last_section);
+__rom_region_size = __rom_region_end - __rom_region_start;
 
 }
