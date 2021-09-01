@@ -838,12 +838,29 @@ struct ifreq {
 #define SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
-/** sockopt: Enable server address reuse (ignored, for compatibility) */
+
+/** sockopt: Recording debugging information (ignored, for compatibility) */
+#define SO_DEBUG 1
+/** sockopt: address reuse (ignored, for compatibility) */
 #define SO_REUSEADDR 2
 /** sockopt: Type of the socket */
 #define SO_TYPE 3
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
+/** sockopt: Bypass normal routing and send directly to host (ignored, for compatibility) */
+#define SO_DONTROUTE 5
+/** sockopt: Transmission of broadcast messages is supported (ignored, for compatibility) */
+#define SO_BROADCAST 6
+
+/** sockopt: Size of socket socket send buffer (ignored, for compatibility) */
+#define SO_SNDBUF 7
+
+/** sockopt: Enable sending keep-alive messages on connections (ignored, for compatibility) */
+#define SO_KEEPALIVE 9
+/** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
+#define SO_OOBINLINE 10
+/** sockopt: Allow multiple sockets to reuse a single port (ignored, for compatibility) */
+#define SO_REUSEPORT 15
 
 /**
  * sockopt: Receive timeout
@@ -856,10 +873,18 @@ struct ifreq {
 /** sockopt: Bind a socket to an interface */
 #define SO_BINDTODEVICE	25
 
+/** sockopt: Socket accepts incoming connections (ignored, for compatibility) */
+#define SO_ACCEPTCONN 30
+
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
 /** sockopt: Protocol used with the socket */
 #define SO_PROTOCOL 38
+
+/** sockopt: Domain used with SOCKET (ignored, for compatibility) */
+#define SO_DOMAIN 39
+
+/** End Socket options for SOL_SOCKET level */
 
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
