@@ -1,0 +1,33 @@
+# NXP S32K14X MCU line
+
+# Copyright (c) 2021, Dung Tran
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NXP S32K14X MCU Selection"
+	depends on SOC_SERIES_S32K14X
+
+config SOC_S32K144
+	bool "SOC_S32K144"
+	select HAS_S32K_HAL
+	select HAS_S32K_GPIO
+	select HAS_S32K_GMAC
+	select HAS_S32K_SPI
+	select HAS_S32K_UART
+	select HAS_S32K_CAN
+	select HAS_S32K_LIN
+
+endchoice
+
+config SOC_PART_NUMBER_S32K144
+	bool
+
+config SOC_PART_NUMBER_S32K14X
+	string
+	default "S32K144" if SOC_PART_NUMBER_S32K144
+	help
+	  This string holds the full part number of the SoC. It is a hidden
+	  option that you should not set directly. The part number selection
+	  choice defines the default value for this string.
+
+endif # SOC_SERIES_S32K14X

@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Dung Tran
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_S32K1
+	bool
+	select HAS_SEGGER_RTT
+
+if SOC_FAMILY_S32K1
+
+config SOC_FAMILY
+	string
+	default "nxp_s32k1"
+
+source "soc/arm/nxp_s32/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_S32K14X if SOC_PART_NUMBER_S32K14X
+
+endif # SOC_FAMILY_LPC

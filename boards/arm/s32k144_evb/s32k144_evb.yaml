@@ -1,0 +1,15 @@
+identifier: s32k144evb
+name: NXP S32K144EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - clock_controller
+  - pinmux
+  - gpio
+  - i2c
+  - serial
+  - can
+  - lin
+  - ethernet

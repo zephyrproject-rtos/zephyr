@@ -1,0 +1,9 @@
+# S32K144EVB board
+
+# Copyright (c) 2020, Dung Tran
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_S32K144EVB
+	bool "NXP S32K144EVB"
+	depends on SOC_SERIES_S32K14X
+	select SOC_PART_NUMBER_S32K144

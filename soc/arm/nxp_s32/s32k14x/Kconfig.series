@@ -1,0 +1,14 @@
+# NXP S32K14X MCU line
+
+# Copyright (c) 2021, Dung
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32K14X
+	bool "NXP S32K14x Series MCU"
+	select ARM
+    select CPU_CORTEX_M4F
+    select SOC_FAMILY_S32K1
+    select PINMUX
+    select CLOCK_CONTROL
+	help
+	  Enable support for NXP S32K14X MCU series

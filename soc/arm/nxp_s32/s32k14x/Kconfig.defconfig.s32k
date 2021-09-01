@@ -1,0 +1,11 @@
+# NXP S32K platform configuration options
+
+# Copyright (c) 2021, Dung
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_S32K_M4
+
+config SOC
+	default "s32k"
+
+endif # SOC_S32K_M4
