@@ -316,6 +316,7 @@
 			compatible = "atmel,sam0-adc";
 			reg = <0x43001C00 0x4A>;
 			interrupts = <118 0>, <119 0>;
+			interrupt-names = "overrun", "resrdy";
 			label = "ADC_0";
 
 			/*
@@ -336,6 +337,7 @@
 			compatible = "atmel,sam0-adc";
 			reg = <0x43002000 0x4A>;
 			interrupts = <120 0>, <121 0>;
+			interrupt-names = "overrun", "resrdy";
 			label = "ADC_1";
 
 			/*
