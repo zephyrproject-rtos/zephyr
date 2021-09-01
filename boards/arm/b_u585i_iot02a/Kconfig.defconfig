@@ -1,0 +1,11 @@
+# B_U585I_IOT02A discovery kit board configuration
+
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_B_U585I_IOT02A
+
+config BOARD
+	default "b_u585i_iot02a"
+
+endif # BOARD_B_U585I_IOT02A
