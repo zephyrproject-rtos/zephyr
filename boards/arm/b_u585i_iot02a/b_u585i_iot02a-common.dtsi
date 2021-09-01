@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u585Xi.dtsi>
+#include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD7";
+		};
+		red_led_1: led_3 {
+			gpios = <&gpioh 6 GPIO_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
