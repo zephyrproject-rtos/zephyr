@@ -311,7 +311,7 @@ void bt_iso_connected(struct bt_conn *iso)
 {
 	struct bt_iso_chan *chan;
 
-	if (iso || iso->type != BT_CONN_TYPE_ISO) {
+	if (iso == NULL || iso->type != BT_CONN_TYPE_ISO) {
 		BT_DBG("Invalid parameters: iso %p iso->type %u", iso,
 		       iso ? iso->type : 0);
 		return;
