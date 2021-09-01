@@ -310,7 +310,7 @@ __weak uint8_t *usb_update_sn_string_descriptor(void)
 	 * unless the user requested a longer serial number.
 	 */
 	const int usblen = sizeof(CONFIG_USB_DEVICE_SN) / 2;
-	uint8_t hwid[MAX(16, usblen)];
+	uint8_t hwid[MAX(16, sizeof(CONFIG_USB_DEVICE_SN) / 2)];
 	static uint8_t sn[sizeof(CONFIG_USB_DEVICE_SN) + 1];
 	const char hex[] = "0123456789ABCDEF";
 	int hwlen, skip;
