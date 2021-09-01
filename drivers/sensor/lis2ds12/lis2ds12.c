@@ -258,9 +258,10 @@ static int lis2ds12_init(const struct device *dev)
 	}
 
 	/* set sensor default scale */
-	ret = lis2ds12_set_range(dev, CONFIG_LIS2DS12_FS);
+	LOG_DBG("%s: range is %d", dev->name, cfg->range);
+	ret = lis2ds12_set_range(dev, cfg->range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, CONFIG_LIS2DS12_FS);
+		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
 		return ret;
 	}
 
@@ -317,6 +318,7 @@ static int lis2ds12_init(const struct device *dev)
 					   LIS2DS12_SPI_OPERATION,	\
 					   0),				\
 		},							\
+		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DS12_CFG_IRQ(inst)), ())			\
 	}
@@ -338,6 +340,7 @@ static int lis2ds12_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
+		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DS12_CFG_IRQ(inst)), ())			\
 	}
