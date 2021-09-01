@@ -1503,7 +1503,7 @@ void bt_otc_metadata_display(struct bt_otc_obj_metadata *metadata,
 					BT_UUID_OTS_TYPE_GROUP)) {
 			BT_INFO("Type: Group Obj Type");
 		} else if (!bt_uuid_cmp(&metadata->type_uuid.uuid,
-					BT_UUID_OTS_TYPE_DIR_LISTING)) {
+					BT_UUID_OTS_DIRECTORY_LISTING)) {
 			BT_INFO("Type: Directory Listing");
 		}
 

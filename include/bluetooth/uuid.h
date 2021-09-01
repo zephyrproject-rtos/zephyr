@@ -1833,15 +1833,6 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_OTS_TYPE_GROUP \
 	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_GROUP_VAL)
-/** @def BT_UUID_OTS_TYPE_DIR_LISTING_VAL
- *  @brief OTS Directory Listing Object Type value
- */
-#define BT_UUID_OTS_TYPE_DIR_LISTING_VAL 0x2ACB
-/** @def BT_UUID_OTS_TYPE_DIR_LISTING
- *  @brief OTS Directory Listing Object Type
- */
-#define BT_UUID_OTS_TYPE_DIR_LISTING \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_TYPE_DIR_LISTING_VAL)
 /** @def BT_UUID_TBS_PROVIDER_NAME_VAL
  *  @brief Bearer Provider Name value
  */
