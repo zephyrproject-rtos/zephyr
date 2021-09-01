@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2021 Marius Scholtz, RIC Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -255,6 +256,26 @@
 			label = "BACKUP_SRAM";
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
+		};
+
+		adc2: adc@40012100 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012100 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		adc3: adc@40012200 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012200 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_3";
+			#io-channel-cells = <1>;
 		};
 
 		dac1: dac@40007400 {
