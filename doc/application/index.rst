@@ -618,7 +618,9 @@ highest priority listed first.
    ``find_package(Zephyr)`` then this folder is used a the application's
    configuration directory.
 
-2. The application's source directory.
+2. The directory :file:`boards/<BOARD>`, if it exists.
+
+3. The application's source directory.
 
 .. _application-kconfig:
 

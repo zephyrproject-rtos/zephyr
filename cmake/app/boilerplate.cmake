@@ -438,9 +438,14 @@ if(DEFINED APPLICATION_CONFIG_DIR)
     get_filename_component(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} ABSOLUTE)
   endif()
 else()
-  # Application config dir is not set, so we default to the  application
-  # source directory as configuration directory.
-  set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
+  # Application config dir is not set, so we default to the board specific
+  # folder application directory <app>/boards/<board>/ if it exists, else use
+  # the application source directory as configuration directory.
+  if(IS_DIRECTORY ${APPLICATION_SOURCE_DIR}/boards/${BOARD})
+    set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR}/boards/${BOARD})
+  else()
+    set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
+  endif()
 endif()
 
 if(DEFINED CONF_FILE)
