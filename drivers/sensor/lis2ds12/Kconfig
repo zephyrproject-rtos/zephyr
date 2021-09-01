@@ -57,19 +57,6 @@ config LIS2DS12_ENABLE_TEMP
 
 menu "Attributes"
 
-config LIS2DS12_FS
-	int "Accelerometer full-scale range"
-	default 0
-	help
-	  Specify the default accelerometer full-scale range.
-	  An X value for the config represents a range of +/- X G. Valid values
-	  are:
-	  0:  Full Scale selected at runtime
-	  2:  +/- 2g
-	  4:  +/- 4g
-	  8:  +/- 8g
-	  16: +/- 16g
-
 config LIS2DS12_ODR
 	int "Accelerometer Output data rate frequency"
 	range 0 10

@@ -40,6 +40,7 @@ struct lis2ds12_config {
 		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
+	uint8_t range;
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	struct gpio_dt_spec gpio_int;
 #endif
