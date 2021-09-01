@@ -199,7 +199,7 @@ foreach(f ${merge_config_files})
   if(IS_ABSOLUTE ${f})
     set(path ${f})
   else()
-    set(path ${APPLICATION_SOURCE_DIR}/${f})
+    set(path ${APPLICATION_CONFIG_DIR}/${f})
   endif()
 
   list(APPEND merge_config_files_with_absolute_paths ${path})
