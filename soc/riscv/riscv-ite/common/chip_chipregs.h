@@ -1216,6 +1216,44 @@ struct wdt_it8xxx2_regs {
 #define IT8XXX2_EXT_ETXRST		BIT(1)
 #define IT8XXX2_EXT_ETXEN		BIT(0)
 
+/* Control external timer3~8 */
+#define IT8XXX2_EXT_TIMER_BASE  DT_REG_ADDR(DT_NODELABEL(timer))  /*0x00F01F10*/
+#define IT8XXX2_EXT_CTRLX(n)    ECREG(IT8XXX2_EXT_TIMER_BASE + (n << 3))
+#define IT8XXX2_EXT_PSRX(n)     ECREG(IT8XXX2_EXT_TIMER_BASE + 0x01 + (n << 3))
+#define IT8XXX2_EXT_CNTX(n)     ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x04 + \
+					(n << 3))
+#define IT8XXX2_EXT_CNTOX(n)    ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x38 + \
+					(n << 2))
+
+/* Free run timer configurations */
+#define FREE_RUN_TIMER          EXT_TIMER_4
+#define FREE_RUN_TIMER_IRQ      DT_IRQ_BY_IDX(DT_NODELABEL(timer), 1, irq)
+/* Free run timer configurations */
+#define FREE_RUN_TIMER_FLAG     DT_IRQ_BY_IDX(DT_NODELABEL(timer), 1, flags)
+/* Free run timer max count is 36.4 hr (base on clock source 32768Hz) */
+#define FREE_RUN_TIMER_MAX_CNT  0xFFFFFFFFUL
+
+#ifndef __ASSEMBLER__
+enum ext_clk_src_sel {
+	EXT_PSR_32P768K = 0,
+	EXT_PSR_1P024K,
+	EXT_PSR_32,
+	EXT_PSR_8M,
+};
+/*
+ * 24-bit timers: external timer 3, 5, and 7
+ * 32-bit timers: external timer 4, 6, and 8
+ */
+enum ext_timer_idx {
+	EXT_TIMER_3 = 0,	/* Event timer */
+	EXT_TIMER_4,		/* Free run timer */
+	EXT_TIMER_5,
+	EXT_TIMER_6,
+	EXT_TIMER_7,
+	EXT_TIMER_8,
+};
+#endif
+
 /**
  *
  * Observation external timer
