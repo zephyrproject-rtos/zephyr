@@ -1220,6 +1220,22 @@ error:
 
 #endif /* CONFIG_MODEM_HL7800_POLTE */
 
+/**
+ * @brief Perform a site survey.
+ *
+ */
+int32_t mdm_hl7800_perform_site_survey(void)
+{
+	int ret;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ret = send_at_cmd(NULL, "at%meas=\"97\"", MDM_CMD_SEND_TIMEOUT, 0, false);
+	allow_sleep(true);
+	hl7800_unlock();
+	return ret;
+}
+
 void mdm_hl7800_generate_status_events(void)
 {
 	hl7800_lock();
@@ -3045,6 +3061,74 @@ done:
 	return true;
 }
 
+/* There can be multiple responses from a single command.
+ * %MEAS: EARFCN=5826, CellID=420, RSRP=-99, RSRQ=-15
+ * %MEAS: EARFCN=6400, CellID=201, RSRP=-93, RSRQ=-21
+ */
+static bool on_cmd_survey_status(struct net_buf **buf, uint16_t len)
+{
+	struct net_buf *frag = NULL;
+	char response[sizeof("EARFCN=XXXXXXXXXXX, CellID=XXXXXXXXXXX, RSRP=-XXX, RSRQ=-XXX")];
+	char *key;
+	size_t out_len;
+	char *value;
+	struct mdm_hl7800_site_survey site_survey;
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
+					sizeof(response));
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find end");
+		goto done;
+	}
+
+	out_len = net_buf_linearize(response, sizeof(response), *buf, 0, len);
+	LOG_HEXDUMP_DBG(response, out_len, "Site Survey");
+
+	key = "EARFCN=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		site_survey.earfcn = strtoul(value, NULL, 10);
+	}
+
+	key = "CellID=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		site_survey.cell_id = strtoul(value, NULL, 10);
+	}
+
+	key = "RSRP=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		site_survey.rsrp = strtol(value, NULL, 10);
+	}
+
+	key = "RSRQ=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		site_survey.rsrq = strtol(value, NULL, 10);
+	}
+
+	event_handler(HL7800_EVENT_SITE_SURVEY, &site_survey);
+
+done:
+	return true;
+}
+
 #ifdef CONFIG_NEWLIB_LIBC
 /* Handler: +CCLK: "yy/MM/dd,hh:mm:ss±zz" */
 static bool on_cmd_rtc_query(struct net_buf **buf, uint16_t len)
@@ -4012,6 +4096,7 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+KCARRIERCFG: ", operator_index_query),
 		CMD_HANDLER("AT+CIMI", atcmdinfo_imsi),
 		CMD_HANDLER("+CFUN: ", modem_functionality),
+		CMD_HANDLER("%MEAS: ", survey_status),
 #ifdef CONFIG_NEWLIB_LIBC
 		CMD_HANDLER("+CCLK: ", rtc_query),
 #endif
