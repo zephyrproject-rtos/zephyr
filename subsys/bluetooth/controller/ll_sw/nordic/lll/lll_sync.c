@@ -566,6 +566,15 @@ static void isr_rx_aux_chain(void *param)
 
 	lll = param;
 	aux_lll = lll->lll_aux;
+	if (!aux_lll) {
+		/* auxiliary context not assigned (yet) in ULL execution
+		 * context, drop current reception and abort further chain PDU
+		 * receptions, if any.
+		 */
+		lll_isr_status_reset();
+
+		goto isr_rx_aux_chain_done;
+	}
 
 	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, &crc_ok);
 
@@ -573,6 +582,7 @@ static void isr_rx_aux_chain(void *param)
 		return;
 	}
 
+isr_rx_aux_chain_done:
 	isr_rx_done_cleanup(lll, 1U);
 }
 
