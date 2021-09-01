@@ -15,7 +15,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/drivers/uart_pipe.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester
