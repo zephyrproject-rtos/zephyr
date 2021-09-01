@@ -39,7 +39,7 @@ and the documentation's `Getting Started Guide`_ to start developing.
 Community Support
 *****************
 
-Community support is provided via mailing lists and Slack; see the Resources
+Community support is provided via mailing lists and Discord; see the Resources
 below for details.
 
 .. _project-resources:
@@ -64,8 +64,8 @@ Here's a quick summary of resources to help you find your way around:
 * **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
   The builds@lists.zephyrproject.org mailing list archives the CI
   (buildkite) nightly build results.
-* **Chat**: Zephyr's Slack workspace is https://zephyrproject.slack.com.  Use
-  this `Slack Invite`_ to register.
+* **Chat**: Real-time chat happens in Zephyr's Discord Server. Use
+  this `Discord Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_
 * **Wiki**: `Zephyr GitHub wiki`_
 * **Issues**: https://github.com/zephyrproject-rtos/zephyr/issues
@@ -74,7 +74,7 @@ Here's a quick summary of resources to help you find your way around:
   tracked separately at https://zephyrprojectsec.atlassian.net.
 * **Zephyr Project Website**: https://zephyrproject.org
 
-.. _Slack Invite: https://tinyurl.com/2vue8666
+.. _Discord Invite: https://chat.zephyrproject.org
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html
