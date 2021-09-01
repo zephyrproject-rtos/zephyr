@@ -1341,7 +1341,7 @@ isr_rx_do_close:
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->hdr.rx_ftr.param = lll;
+		node_rx->hdr.rx_ftr.param = lll->lll_aux;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
 		ull_rx_sched();
