@@ -71,6 +71,13 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	help
 	  Determines how often UART is polled for RX byte.
 
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	bool "Check DTR signal before TX"
+	default y if USB_UART_CONSOLE
+	depends on UART_LINE_CTRL
+	help
+	  Check DTR signal before TX.
+
 module = SHELL_BACKEND_SERIAL
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
