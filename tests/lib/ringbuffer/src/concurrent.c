@@ -343,6 +343,7 @@ static void thread_entry_spsc(void *p1, void *p2, void *p3)
 		     NULL);
 	k_timer_user_data_set(&timer, rbuf);
 
+	preempt_cnt = 0;
 	consume_fn(rbuf, true);
 	produce_fn(rbuf, true);
 
