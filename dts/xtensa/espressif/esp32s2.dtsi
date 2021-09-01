@@ -75,6 +75,42 @@
 			label = "GPIO_1";
 			ngpios = <22>;   /* 32..53 */
 		};
+
+		timer0: counter@3f41f000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f41f000 DT_SIZE_K(4)>;
+			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG0_T0";
+			status = "disabled";
+		};
+
+		timer1: counter@3f41f024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff5f024 DT_SIZE_K(4)>;
+			interrupts = <TG0_T1_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG0_T1";
+			status = "disabled";
+		};
+
+		timer2: counter@3f420000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f420000 DT_SIZE_K(4)>;
+			interrupts = <TG0_T1_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG1_T0";
+			status = "disabled";
+		};
+
+		timer3: counter@3f420024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f420024 DT_SIZE_K(4)>;
+			interrupts = <TG1_T1_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG1_T1";
+			status = "disabled";
+		};
 	};
 
 };
