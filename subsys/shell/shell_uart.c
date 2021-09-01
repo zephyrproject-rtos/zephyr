@@ -101,6 +101,25 @@ static void uart_rx_handle(const struct device *dev,
 	}
 }
 
+static void uart_dtr_wait(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_CHECK_DTR)) {
+		int dtr, err;
+
+		while (true) {
+			err = uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+			if (err == -ENOSYS || err == -ENOTSUP) {
+				break;
+			}
+			if (dtr) {
+				break;
+			}
+			/* Give CPU resources to low priority threads. */
+			k_sleep(K_MSEC(100));
+		}
+	}
+}
+
 static void uart_tx_handle(const struct device *dev,
 			   const struct shell_uart *sh_uart)
 {
@@ -111,6 +130,8 @@ static void uart_tx_handle(const struct device *dev,
 	len = ring_buf_get_claim(sh_uart->tx_ringbuf, (uint8_t **)&data,
 				 sh_uart->tx_ringbuf->size);
 	if (len) {
+		/* Wait for DTR signal before sending anything to output. */
+		uart_dtr_wait(dev);
 		len = uart_fifo_fill(dev, data, len);
 		err = ring_buf_get_finish(sh_uart->tx_ringbuf, len);
 		__ASSERT_NO_MSG(err == 0);
