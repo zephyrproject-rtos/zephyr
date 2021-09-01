@@ -623,13 +623,12 @@ Here are some next steps for exploring Zephyr:
 Asking for Help
 ***************
 
-You can ask for help on a mailing list or on Slack. Please send bug reports and
+You can ask for help on a mailing list or on Discord. Please send bug reports and
 feature requests to GitHub.
 
 * **Mailing Lists**: users@lists.zephyrproject.org is usually the right list to
   ask for help. `Search archives and sign up here`_.
-* **Slack**: Zephyr's workspace is https://zephyrproject.slack.com; you can
-  register with this `Slack invite`_.
+* **Discord**: You can join with this `Discord invite`_.
 * **GitHub**: Use `GitHub issues`_ for bugs and feature requests.
 
 How to Ask
@@ -656,9 +655,9 @@ Text includes source code, terminal commands, and their output.
 Doing this makes it easier for people to help you, and also helps other users
 search the archives.
 
-When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
+When copy/pasting more than 5 lines of text into Discord, create a snippet using
+three backticks to delimit the snippet.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
-.. _Slack invite: https://tinyurl.com/2vue8666
+.. _Discord invite: https://chat.zephyrproject.org
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
-.. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet

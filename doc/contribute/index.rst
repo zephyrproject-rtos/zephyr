@@ -205,15 +205,16 @@ Pull Requests and Issues
 
 .. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
-.. _Zephyr Slack channel: https://zephyrproject.slack.com
+.. _Zephyr Discord Server: https://chat.zephyrproject.org
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Slack channel`_)
-to see what others think of your issue (and proposed solution).  You may find
-others that have encountered the issue you're finding, or that have similar
-ideas for changes or additions.  Send a message to the `Zephyr devel mailing list`_
-to introduce and discuss your idea with the development community.
+conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+Server`_) to see what others think of your issue (and proposed solution).  You
+may find others that have encountered the issue you're finding, or that have
+similar ideas for changes or additions.  Send a message to the `Zephyr devel
+mailing list`_ to introduce and discuss your idea with the development
+community.
 
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
