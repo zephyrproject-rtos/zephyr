@@ -579,6 +579,29 @@ documentation `runningcmake`_ .
 Application Configuration
 *************************
 
+.. _application-configuration-directory:
+
+Application Configuration Directory
+===================================
+
+Zephyr will use configuration files from the application's configuration
+directory except for files with an absolute path provided by the arguments
+described earlier, for example ``CONF_FILE``, ``OVERLAY_CONFIG``, and
+``DTC_OVERLAY_FILE``.
+
+The application configuration directory is defined by the
+``APPLICATION_CONFIG_DIR`` variable.
+
+``APPLICATION_CONFIG_DIR`` will be set by one of the sources below with the
+highest priority listed first.
+
+1. If ``APPLICATION_CONFIG_DIR`` is specified by the user with
+   ``-DAPPLICATION_CONFIG_DIR=<path>`` or in a CMake file before
+   ``find_package(Zephyr)`` then this folder is used a the application's
+   configuration directory.
+
+2. The application's source directory.
+
 .. _application-kconfig:
 
 Kconfig Configuration
