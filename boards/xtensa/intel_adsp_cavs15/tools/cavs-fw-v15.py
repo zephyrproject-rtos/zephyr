@@ -62,7 +62,7 @@ def main():
     # sleep seems to be needed; if we're banging on the memory window
     # during initial boot (before/while the window control registers
     # are configured?) the DSP hardware will hang fairly reliably.
-    time.sleep(0.01)
+    time.sleep(0.1)
     while (dsp.SRAM_FW_STATUS >> 24) != 5: pass
 
     # Send the DSP an IPC message to tell the device how to boot
