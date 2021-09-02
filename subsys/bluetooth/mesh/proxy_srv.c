@@ -58,8 +58,6 @@ static struct bt_mesh_proxy_client {
 	},
 };
 
-static uint8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
-
 static bool service_registered;
 static int conn_count;
 
@@ -824,7 +822,8 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	client->cli.conn = bt_conn_ref(conn);
 	client->filter_type = NONE;
 	(void)memset(client->filter, 0, sizeof(client->filter));
-	net_buf_simple_reset(&client->cli.buf);
+
+	bt_mesh_proxy_msg_init(&client->cli);
 }
 
 static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -893,20 +892,3 @@ BT_CONN_CB_DEFINE(conn_callbacks_1) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
 };
-
-int bt_mesh_proxy_init(void)
-{
-	int i;
-
-	/* Initialize the client receive buffers */
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		struct bt_mesh_proxy_client *client = &clients[i];
-
-		net_buf_simple_init_with_data(&client->cli.buf,
-			client_buf_data + (i * CLIENT_BUF_SIZE), CLIENT_BUF_SIZE);
-
-		bt_mesh_proxy_msg_init(&client->cli);
-	}
-
-	return 0;
-}
