@@ -47,5 +47,3 @@ void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);
 
 bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst);
 void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, uint16_t addr);
-
-int bt_mesh_proxy_init(void);

@@ -306,10 +306,6 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		bt_mesh_proxy_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		err = bt_mesh_prov_init(prov);
 		if (err) {

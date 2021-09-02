@@ -48,6 +48,18 @@
 
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
 
+#define PB_GATT_BUF_LEN_MAX	66
+#define PROXY_BUF_LEN_MAX	30
+
+#if defined(CONFIG_BT_MESH_PB_GATT)
+#define PROXY_MSG_FIRST_BUF_LEN PB_GATT_BUF_LEN_MAX
+#else
+#define PROXY_MSG_FIRST_BUF_LEN PROXY_BUF_LEN_MAX
+#endif
+
+static uint8_t __noinit bufs[PROXY_MSG_FIRST_BUF_LEN +
+			     ((CONFIG_BT_MAX_CONN - 1) * PROXY_BUF_LEN_MAX)];
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -245,5 +257,29 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 
 void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
+	uint8_t i, len;
+	uint8_t *buf;
+
+	/* Check if buf has been allocated, in this way, we no longer need
+	 * to repeat the operation.
+	 */
+	if (role->buf.__buf) {
+		net_buf_simple_reset(&role->buf);
+		return;
+	}
+
+	i = bt_conn_index(role->conn);
+	if (!i) {
+		len = PROXY_MSG_FIRST_BUF_LEN;
+		buf = bufs;
+	} else {
+		len = PROXY_BUF_LEN_MAX;
+		buf = &bufs[PROXY_MSG_FIRST_BUF_LEN + (PROXY_BUF_LEN_MAX * (i - 1))];
+	}
+
+	net_buf_simple_init_with_data(&role->buf, buf, len);
+
+	net_buf_simple_reset(&role->buf);
+
 	k_work_init_delayable(&role->sar_timer, proxy_sar_timeout);
 }
