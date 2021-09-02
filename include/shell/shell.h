@@ -793,6 +793,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  * @param[in] shell		Pointer to shell instance.
  * @param[in] transport_config	Transport configuration during initialization.
  * @param[in] use_colors	Enables colored prints.
+ * @param[in] echo		Enables echo.
  * @param[in] log_backend	If true, the console will be used as logger
  *				backend.
  * @param[in] init_log_level	Default severity level for the logger.
@@ -800,7 +801,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  * @return Standard error code.
  */
 int shell_init(const struct shell *shell, const void *transport_config,
-	       bool use_colors, bool log_backend, uint32_t init_log_level);
+	       bool use_colors, bool echo, bool log_backend, uint32_t init_log_level);
 
 /**
  * @brief Uninitializes the transport layer and the internal shell state.

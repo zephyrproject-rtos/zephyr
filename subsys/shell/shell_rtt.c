@@ -114,7 +114,7 @@ static int enable_shell_rtt(const struct device *arg)
 	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;
 
-	shell_init(&shell_rtt, NULL, true, log_backend, level);
+	shell_init(&shell_rtt, NULL, true, true, log_backend, level);
 
 	return 0;
 }

@@ -496,7 +496,7 @@ static int enable_shell_telnet(const struct device *arg)
 	uint32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_TELNET_INIT_LOG_LEVEL;
 
-	return shell_init(&shell_telnet, NULL, true, log_backend, level);
+	return shell_init(&shell_telnet, NULL, true, true, log_backend, level);
 }
 
 SYS_INIT(enable_shell_telnet, APPLICATION, 0);

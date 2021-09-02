@@ -1177,7 +1177,7 @@ static void shell_log_process(const struct shell *shell)
 }
 
 static int instance_init(const struct shell *shell, const void *p_config,
-			 bool use_colors)
+			 bool use_colors, bool echo)
 {
 	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
 			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
@@ -1205,7 +1205,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	}
 
 	z_flag_tx_rdy_set(shell, true);
-	z_flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS));
+	z_flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS) && echo);
 	z_flag_obscure_set(shell, IS_ENABLED(CONFIG_SHELL_START_OBSCURED));
 	z_flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
@@ -1339,7 +1339,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 }
 
 int shell_init(const struct shell *shell, const void *transport_config,
-	       bool use_colors, bool log_backend, uint32_t init_log_level)
+	       bool use_colors, bool echo, bool log_backend, uint32_t init_log_level)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
@@ -1348,7 +1348,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 		return -EALREADY;
 	}
 
-	int err = instance_init(shell, transport_config, use_colors);
+	int err = instance_init(shell, transport_config, use_colors, echo);
 
 	if (err != 0) {
 		return err;
