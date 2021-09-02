@@ -594,22 +594,11 @@ add_custom_command(
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 
-# This only works for CMake version >=3.15, but as the property is ignored on
-# older CMake versions there is no reason to check for version.
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
              ADDITIONAL_CLEAN_FILES
              ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
 )
-
-# Only works with make.
-if(${CMAKE_VERSION} VERSION_LESS 3.15)
-  set_property(DIRECTORY
-               APPEND PROPERTY
-               ADDITIONAL_MAKE_CLEAN_FILES
-               ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
-  )
-endif()
 
 add_custom_target(${PARSE_SYSCALLS_TARGET}
   DEPENDS
