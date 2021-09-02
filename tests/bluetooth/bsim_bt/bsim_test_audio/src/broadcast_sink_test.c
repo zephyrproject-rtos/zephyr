@@ -142,4 +142,11 @@ struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_broadcast_sink);
 }
 
+#else /* !CONFIG_BT_BAP */
+
+struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)
+{
+	return tests;
+}
+
 #endif /* CONFIG_BT_BAP */
