@@ -32,23 +32,14 @@
 #include "proxy_msg.h"
 #include "pb_gatt_srv.h"
 
-#define CLIENT_BUF_SIZE 66
-
 static bool prov_fast_adv;
 
 static int gatt_send(struct bt_conn *conn,
 		     const void *data, uint16_t len,
 		     bt_gatt_complete_func_t end, void *user_data);
 
-static uint8_t __noinit client_buf_data[CLIENT_BUF_SIZE];
 static struct bt_mesh_proxy_role cli = {
 	.cb.send = gatt_send,
-	.buf = {
-		.__buf = client_buf_data,
-		.data  = client_buf_data,
-		.size  = CLIENT_BUF_SIZE,
-		.len   = CLIENT_BUF_SIZE,
-	},
 };
 
 static bool service_registered;
@@ -91,7 +82,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
 
-	net_buf_simple_reset(&cli.buf);
+	bt_mesh_proxy_msg_init(&cli);
 }
 
 static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
