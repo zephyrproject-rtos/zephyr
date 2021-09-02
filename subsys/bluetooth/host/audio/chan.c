@@ -1129,11 +1129,16 @@ int bt_audio_chan_unbind(struct bt_audio_chan *chan)
 
 int bt_audio_chan_connect(struct bt_audio_chan *chan)
 {
+	struct bt_iso_connect_param param;
+
 	BT_DBG("chan %p iso %p", chan, chan ? chan->iso : NULL);
 
 	if (!chan || !chan->iso) {
 		return -EINVAL;
 	}
+
+	param.acl = chan->conn;
+	param.iso_chan = chan->iso;
 
 	switch (chan->iso->state) {
 	case BT_ISO_DISCONNECTED:
@@ -1141,13 +1146,13 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 			return -ENOTCONN;
 		}
 
-		return bt_iso_chan_connect(&chan->iso, 1);
+		return bt_iso_chan_connect(&param, 1);
 	case BT_ISO_CONNECT:
 		return 0;
 	case BT_ISO_CONNECTED:
 		return -EALREADY;
 	default:
-		return bt_iso_chan_connect(&chan->iso, 1);
+		return bt_iso_chan_connect(&param, 1);
 	}
 }
 
