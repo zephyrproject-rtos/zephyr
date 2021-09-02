@@ -25,13 +25,13 @@
 
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
 
+struct bt_mesh_proxy_role;
+
 typedef int (*proxy_send_cb_t)(struct bt_conn *conn,
 			       const void *data, uint16_t len,
 			       bt_gatt_complete_func_t end, void *user_data);
 
-typedef void (*proxy_recv_cb_t)(struct bt_conn *conn,
-				struct bt_mesh_net_rx *rx,
-				struct net_buf_simple *buf);
+typedef void (*proxy_recv_cb_t)(struct bt_mesh_proxy_role *role);
 
 struct bt_mesh_proxy_role {
 	struct bt_conn *conn;

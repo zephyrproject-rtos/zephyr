@@ -32,8 +32,7 @@
 #include "proxy_msg.h"
 
 static void proxy_send_beacons(struct k_work *work);
-static void proxy_filter_recv(struct bt_conn *conn,
-			      struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
+static void proxy_complete_pdu(struct bt_mesh_proxy_role *role);
 static int proxy_send(struct bt_conn *conn,
 		      const void *data, uint16_t len,
 		      bt_gatt_complete_func_t end, void *user_data);
@@ -53,7 +52,7 @@ static struct bt_mesh_proxy_client {
 		.send_beacons = Z_WORK_INITIALIZER(proxy_send_beacons),
 		.cli.cb = {
 			.send = proxy_send,
-			.recv = proxy_filter_recv,
+			.recv = proxy_complete_pdu,
 		},
 	},
 };
@@ -259,6 +258,61 @@ static void proxy_filter_recv(struct bt_conn *conn,
 		break;
 	default:
 		BT_WARN("Unhandled configuration OpCode 0x%02x", opcode);
+		break;
+	}
+}
+
+static void proxy_cfg(struct bt_mesh_proxy_role *role)
+{
+	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_NET_MAX_PDU_LEN);
+	struct bt_mesh_net_rx rx;
+	int err;
+
+	err = bt_mesh_net_decode(&role->buf, BT_MESH_NET_IF_PROXY_CFG,
+				 &rx, &buf);
+	if (err) {
+		BT_ERR("Failed to decode Proxy Configuration (err %d)", err);
+		return;
+	}
+
+	rx.local_match = 1U;
+
+	if (bt_mesh_rpl_check(&rx, NULL)) {
+		BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
+			rx.ctx.addr, rx.ctx.recv_dst, rx.seq);
+		return;
+	}
+
+	/* Remove network headers */
+	net_buf_simple_pull(&buf, BT_MESH_NET_HDR_LEN);
+
+	BT_DBG("%u bytes: %s", buf.len, bt_hex(buf.data, buf.len));
+
+	if (buf.len < 1) {
+		BT_WARN("Too short proxy configuration PDU");
+		return;
+	}
+
+	proxy_filter_recv(role->conn, &rx, &buf);
+}
+
+static void proxy_complete_pdu(struct bt_mesh_proxy_role *role)
+{
+	switch (role->msg_type) {
+	case BT_MESH_PROXY_NET_PDU:
+		BT_DBG("Mesh Network PDU");
+		bt_mesh_net_recv(&role->buf, 0, BT_MESH_NET_IF_PROXY);
+		break;
+	case BT_MESH_PROXY_BEACON:
+		BT_DBG("Mesh Beacon PDU");
+		bt_mesh_beacon_recv(&role->buf);
+		break;
+	case BT_MESH_PROXY_CONFIG:
+		BT_DBG("Mesh Configuration PDU");
+		proxy_cfg(role);
+		break;
+	default:
+		BT_WARN("Unhandled Message Type 0x%02x", role->msg_type);
 		break;
 	}
 }
