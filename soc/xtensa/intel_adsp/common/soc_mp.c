@@ -264,6 +264,14 @@ bool arch_cpu_active(int cpu_num)
 	return !!(cpu_mask & BIT(cpu_num));
 }
 
+static ALWAYS_INLINE uint32_t prid(void)
+{
+	uint32_t prid;
+
+	__asm__ volatile("rsr %0, PRID" : "=r"(prid));
+	return prid;
+}
+
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
