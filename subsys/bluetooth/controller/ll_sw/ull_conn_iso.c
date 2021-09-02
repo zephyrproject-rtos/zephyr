@@ -473,11 +473,11 @@ static void cis_disabled_cb(void *param)
 	struct ll_conn_iso_stream *cis;
 	uint32_t ticker_status;
 	uint16_t handle_iter;
+	uint8_t is_last_cis;
 	uint8_t cis_idx;
-	uint8_t num_cis;
 
 	cig = HDR_LLL2ULL(param);
-	num_cis = cig->lll.num_cis;
+	is_last_cis = cig->lll.num_cis == 1;
 	handle_iter = UINT16_MAX;
 
 	/* Remove all CISes marked for teardown */
@@ -505,7 +505,7 @@ static void cis_disabled_cb(void *param)
 		}
 	}
 
-	if (num_cis && cig->lll.num_cis == 0) {
+	if (is_last_cis && cig->lll.num_cis == 0) {
 		/* This was the last CIS of the CIG. Initiate CIG teardown by
 		 * stopping ticker.
 		 */
