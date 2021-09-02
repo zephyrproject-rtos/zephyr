@@ -60,6 +60,8 @@
 static uint8_t __noinit bufs[PROXY_MSG_FIRST_BUF_LEN +
 			     ((CONFIG_BT_MAX_CONN - 1) * PROXY_BUF_LEN_MAX)];
 
+static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
+
 static void proxy_sar_timeout(struct k_work *work)
 {
 	struct bt_mesh_proxy_role *role;
@@ -190,7 +192,7 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 	return 0;
 }
 
-void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role)
+static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
 	uint8_t i, len;
 	uint8_t *buf;
@@ -218,3 +220,42 @@ void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role)
 
 	k_work_init_delayable(&role->sar_timer, proxy_sar_timeout);
 }
+
+struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
+						    proxy_send_cb_t send,
+						    proxy_recv_cb_t recv)
+{
+	struct bt_mesh_proxy_role *role;
+
+	role = &roles[bt_conn_index(conn)];
+
+	role->conn = bt_conn_ref(conn);
+	proxy_msg_init(role);
+
+	role->cb.recv = recv;
+	role->cb.send = send;
+
+	return role;
+}
+
+static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_mesh_proxy_role *role;
+
+	BT_DBG("conn %p reason 0x%02x", (void *)conn, reason);
+
+	role = &roles[bt_conn_index(conn)];
+
+	/* If this fails, the work handler exits early, as
+	 * there's no active connection.
+	 */
+	(void)k_work_cancel_delayable(&role->sar_timer);
+	bt_conn_unref(role->conn);
+	role->conn = NULL;
+
+	bt_mesh_adv_update();
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = gatt_disconnected,
+};
