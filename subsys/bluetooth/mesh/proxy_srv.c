@@ -32,13 +32,12 @@
 #include "proxy_msg.h"
 
 static void proxy_send_beacons(struct k_work *work);
-static void proxy_complete_pdu(struct bt_mesh_proxy_role *role);
 static int proxy_send(struct bt_conn *conn,
 		      const void *data, uint16_t len,
 		      bt_gatt_complete_func_t end, void *user_data);
 
 static struct bt_mesh_proxy_client {
-	struct bt_mesh_proxy_role cli;
+	struct bt_mesh_proxy_role *cli;
 	uint16_t filter[CONFIG_BT_MESH_PROXY_FILTER_SIZE];
 	enum __packed {
 		NONE,
@@ -50,10 +49,6 @@ static struct bt_mesh_proxy_client {
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 		.send_beacons = Z_WORK_INITIALIZER(proxy_send_beacons),
-		.cli.cb = {
-			.send = proxy_send,
-			.recv = proxy_complete_pdu,
-		},
 	},
 };
 
@@ -62,15 +57,7 @@ static int conn_count;
 
 static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli.conn == conn) {
-			return &clients[i];
-		}
-	}
-
-	return NULL;
+	return &clients[bt_conn_index(conn)];
 }
 
 static ssize_t gatt_recv(struct bt_conn *conn,
@@ -79,10 +66,6 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 {
 	const uint8_t *data = buf;
 	struct bt_mesh_proxy_client *client = find_client(conn);
-
-	if (!client) {
-		return -ENOTCONN;
-	}
 
 	if (len < 1) {
 		BT_WARN("Too small Proxy PDU");
@@ -94,7 +77,7 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return bt_mesh_proxy_msg_recv(&client->cli, buf, len);
+	return bt_mesh_proxy_msg_recv(client->cli, buf, len);
 }
 
 /* Next subnet in queue to be advertised */
@@ -214,7 +197,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		return;
 	}
 
-	err = bt_mesh_proxy_msg_send(&client->cli, BT_MESH_PROXY_CONFIG,
+	err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_CONFIG,
 				     buf, NULL, NULL);
 	if (err) {
 		BT_ERR("Failed to send proxy cfg message (err %d)", err);
@@ -228,9 +211,6 @@ static void proxy_filter_recv(struct bt_conn *conn,
 	uint8_t opcode;
 
 	client = find_client(conn);
-	if (!client) {
-		return;
-	}
 
 	opcode = net_buf_simple_pull_u8(buf);
 	switch (opcode) {
@@ -296,7 +276,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 	proxy_filter_recv(role->conn, &rx, &buf);
 }
 
-static void proxy_complete_pdu(struct bt_mesh_proxy_role *role)
+static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 {
 	switch (role->msg_type) {
 	case BT_MESH_PROXY_NET_PDU:
@@ -325,7 +305,7 @@ static int beacon_send(struct bt_mesh_proxy_client *client,
 	net_buf_simple_reserve(&buf, 1);
 	bt_mesh_beacon_create(sub, &buf);
 
-	return bt_mesh_proxy_msg_send(&client->cli, BT_MESH_PROXY_BEACON,
+	return bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_BEACON,
 				      &buf, NULL, NULL);
 }
 
@@ -356,7 +336,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli.conn) {
+		if (clients[i].cli) {
 			beacon_send(&clients[i], sub);
 		}
 	}
@@ -652,10 +632,7 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
-	/* If a connection exists there must be a client */
 	client = find_client(conn);
-	__ASSERT(client, "No client for connection");
-
 	if (client->filter_type == NONE) {
 		client->filter_type = ACCEPT;
 		k_work_submit(&client->send_beacons);
@@ -724,7 +701,7 @@ void bt_mesh_proxy_gatt_disconnect(void)
 		if (client->cli.conn && (client->filter_type == ACCEPT ||
 				     client->filter_type == REJECT)) {
 			client->filter_type = NONE;
-			bt_conn_disconnect(client->cli.conn,
+			bt_conn_disconnect(client->cli->conn,
 					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		}
 	}
@@ -748,8 +725,11 @@ int bt_mesh_proxy_gatt_disable(void)
 
 void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, uint16_t addr)
 {
-	struct bt_mesh_proxy_client *client =
-		CONTAINER_OF(buf, struct bt_mesh_proxy_client, cli.buf);
+	struct bt_mesh_proxy_client *client;
+	struct bt_mesh_proxy_role *cli =
+		CONTAINER_OF(buf, struct bt_mesh_proxy_role, buf);
+
+	client = find_client(cli->conn);
 
 	BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
@@ -811,7 +791,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 
 		NET_BUF_SIMPLE_DEFINE(msg, 32);
 
-		if (!client->cli.conn) {
+		if (!client->cli) {
 			continue;
 		}
 
@@ -825,7 +805,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 		net_buf_simple_reserve(&msg, 1);
 		net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-		err = bt_mesh_proxy_msg_send(&client->cli, BT_MESH_PROXY_NET_PDU,
+		err = bt_mesh_proxy_msg_send(client->cli, BT_MESH_PROXY_NET_PDU,
 					     &msg, buf_send_end, net_buf_ref(buf));
 
 		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
@@ -862,22 +842,17 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 	conn_count++;
 
+	client = find_client(conn);
+
+	client->filter_type = NONE;
+	(void)memset(client->filter, 0, sizeof(client->filter));
+	client->cli = bt_mesh_proxy_role_setup(conn, proxy_send,
+					       proxy_msg_recv);
+
 	/* Try to re-enable advertising in case it's possible */
 	if (conn_count < CONFIG_BT_MAX_CONN) {
 		bt_mesh_adv_update();
 	}
-
-	client = find_client(NULL);
-	if (!client) {
-		BT_ERR("No free Proxy Client objects");
-		return;
-	}
-
-	client->cli.conn = bt_conn_ref(conn);
-	client->filter_type = NONE;
-	(void)memset(client->filter, 0, sizeof(client->filter));
-
-	bt_mesh_proxy_msg_init(&client->cli);
 }
 
 static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -891,24 +866,10 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	BT_DBG("conn %p reason 0x%02x", (void *)conn, reason);
-
 	conn_count--;
 
 	client = find_client(conn);
-	if (!client) {
-		BT_WARN("No Gatt Client found");
-		return;
-	}
-
-	/* If this fails, the work handler exits early, as
-	 * there's no active connection.
-	 */
-	(void)k_work_cancel_delayable(&client->cli.sar_timer);
-	bt_conn_unref(client->cli.conn);
-	client->cli.conn = NULL;
-
-	bt_mesh_adv_update();
+	client->cli = NULL;
 }
 
 static int proxy_send(struct bt_conn *conn,
