@@ -1006,7 +1006,7 @@ static int cig_init_cis(struct bt_iso_cig *cig)
 			return -EINVAL;
 		}
 
-		CHECKIF(valid_chan_qos(cis->qos)) {
+		CHECKIF(!valid_chan_qos(cis->qos)) {
 			BT_DBG("Invalid QOS");
 			return -EINVAL;
 		}
@@ -1091,7 +1091,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 
 	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
 		param->packing != BT_ISO_PACKING_INTERLEAVED) {
-		BT_DBG("Invalid framing parameter: %u", param->framing);
+		BT_DBG("Invalid packing parameter: %u", param->packing);
 		return -EINVAL;
 	}
 
@@ -1564,7 +1564,7 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 
 	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
 		param->packing != BT_ISO_PACKING_INTERLEAVED) {
-		BT_DBG("Invalid framing parameter: %u", param->framing);
+		BT_DBG("Invalid packing parameter: %u", param->packing);
 		return -EINVAL;
 	}
 
