@@ -16,6 +16,7 @@
 #include <bluetooth/audio.h>
 
 #include "../conn_internal.h"
+#include "../iso_internal.h"
 
 #include "endpoint.h"
 #include "chan.h"
@@ -70,6 +71,7 @@ struct bt_audio_base_ad {
 	struct bt_audio_base_ad_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 } __packed;
 
+static struct bt_iso_cig *cigs[CONNECTED_AUDIO_GROUP_COUNT];
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_audio_broadcaster broadcasters[BROADCAST_SRC_CNT];
 static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
@@ -1033,9 +1035,6 @@ static int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
 		return -EINVAL;
 	}
 
-	qos->framing = codec->framing;
-	io->interval = codec->interval;
-	io->latency = codec->latency;
 	io->sdu = codec->sdu;
 	io->phy = codec->phy;
 	io->rtn = codec->rtn;
@@ -1046,9 +1045,6 @@ static int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
 struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 				       struct bt_codec_qos *qos)
 {
-	struct bt_conn *conns[1];
-	struct bt_iso_chan *chans[1];
-
 	BT_DBG("chan %p iso %p qos %p", chan, chan->iso, qos);
 
 	if (!chan->iso) {
@@ -1071,16 +1067,35 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 		}
 	}
 
-	conns[0] = chan->conn;
-	chans[0] = chan->iso;
-
-	/* Attempt to bind if not bound yet */
 	if (!chan->iso->iso) {
+		struct bt_iso_cig_create_param param;
+		struct bt_iso_cig **free_cig;
 		int err;
 
-		err = bt_iso_chan_bind(conns, 1, chans);
-		if (err) {
-			BT_ERR("bt_iso_chan_bind: %d", err);
+		free_cig = NULL;
+		for (int i = 0; i < ARRAY_SIZE(cigs); i++) {
+			if (cigs[i] == NULL) {
+				free_cig = &cigs[i];
+				break;
+			}
+		}
+
+		if (free_cig == NULL) {
+			return NULL;
+		}
+
+		/* TODO: Support more than a single CIS in a CIG */
+		param.num_cis = 1;
+		param.cis_channels = &chan->iso;
+		param.framing = qos->framing;
+		param.packing = 0; /*  TODO: Add to QoS struct */
+		param.interval = qos->interval;
+		param.latency = qos->latency;
+		param.sca = BT_GAP_SCA_UNKNOWN;
+
+		err = bt_iso_cig_create(&param, free_cig);
+		if (err != 0) {
+			BT_ERR("bt_iso_cig_create failed: %d", err);
 			return NULL;
 		}
 	}
@@ -1092,7 +1107,24 @@ int bt_audio_chan_unbind(struct bt_audio_chan *chan)
 {
 	BT_DBG("chan %p", chan);
 
-	return bt_iso_chan_unbind(chan->iso);
+	if (chan->iso == NULL) {
+		BT_DBG("Channel not bound");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(cigs); i++) {
+		struct bt_iso_cig *cig;
+
+		cig = cigs[i];
+		if (cig != NULL &&
+		    cig->cis != NULL &&
+		    cig->cis[0] == chan->iso) {
+			return bt_iso_cig_terminate(cig);
+		}
+	}
+
+	BT_DBG("CIG not found for chan %p", chan);
+	return -EINVAL;
 }
 
 int bt_audio_chan_connect(struct bt_audio_chan *chan)
