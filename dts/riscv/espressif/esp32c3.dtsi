@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 
 / {
 	#address-cells = <1>;
@@ -32,6 +33,24 @@
 		sram0: memory@3fc7c000 {
 			compatible = "mmio-sram";
 			reg = <0x3fc7c000 0x50000>;
+		};
+
+		intc: interrupt-controller@600c2000 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x600c2000 0x198>;
+			label = "INTC_0";
+			status = "okay";
+		};
+
+		systimer0: systimer@60023000 {
+			compatible = "espressif,esp32-systimer";
+			reg = <0x60023000 0x80>;
+			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "SYSTIMER_0";
+			status = "okay";
 		};
 
 		uart0: uart@60000000 {

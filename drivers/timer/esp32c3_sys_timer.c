@@ -17,6 +17,7 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <soc.h>
+#include <device.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -70,7 +71,7 @@ int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,
+	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
 		0,
 		sys_timer_isr,
 		NULL,
