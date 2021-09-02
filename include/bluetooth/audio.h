@@ -36,13 +36,13 @@ struct bt_audio_cap;
 
 #define BT_BROADCAST_ID_SIZE             3 /* octets */
 
-#if defined(CONFIG_BT_BAP)
+#if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_BROADCAST)
 #define BROADCAST_SNK_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT
 #define BROADCAST_SUBGROUP_CNT CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT
-#else
+#else /* !(CONFIG_BT_BAP && CONFIG_BT_AUDIO_BROADCAST) */
 #define BROADCAST_SNK_STREAM_CNT 0
 #define BROADCAST_SUBGROUP_CNT 0
-#endif
+#endif /* CONFIG_BT_BAP && CONFIG_BT_AUDIO_BROADCAST*/
 
 /** @brief Abstract Audio endpoint structure. */
 struct bt_audio_endpoint;
