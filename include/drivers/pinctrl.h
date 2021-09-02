@@ -74,6 +74,11 @@ struct pinctrl_dev_config {
 
 /** @cond INTERNAL_HIDDEN */
 
+#ifndef CONFIG_PM_DEVICE
+/** If device power management is not enabled, "sleep" state will be ignored. */
+#define PINCTRL_SKIP_SLEEP 1
+#endif
+
 /**
  * @brief Obtain the state identifier for the given node and state index.
  *
@@ -113,15 +118,31 @@ struct pinctrl_dev_config {
 	_CONCAT(__pinctrl_state_pins_ ## state_idx, DEVICE_DT_NAME_GET(node_id))
 
 /**
+ * @brief Utility macro to check if given state has to be skipped.
+ *
+ * If a certain state has to be skipped, a macro named PINCTRL_SKIP_<STATE>
+ * can be defined evaluating to 1. This can be useful, for example, to
+ * automatically ignore the sleep state if no device power management is
+ * enabled.
+ *
+ * @param state_idx State index.
+ * @param node_id Node identifier.
+ */
+#define Z_PINCTRL_SKIP_STATE(state_idx, node_id)			       \
+	_CONCAT(PINCTRL_SKIP_,						       \
+		DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(node_id, state_idx))
+
+/**
  * @brief Helper macro to define pins for a given pin control state.
  *
  * @param state_idx State index.
  * @param node_id Node identifier.
  */
 #define Z_PINCTRL_STATE_PINS_DEFINE(state_idx, node_id)			       \
-	static const pinctrl_soc_pin_t					       \
+	COND_CODE_1(Z_PINCTRL_SKIP_STATE(state_idx, node_id), (),	       \
+	(static const pinctrl_soc_pin_t					       \
 	Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id)[] =		       \
-	Z_PINCTRL_STATE_PINS_INIT(node_id, pinctrl_ ## state_idx);
+	Z_PINCTRL_STATE_PINS_INIT(node_id, pinctrl_ ## state_idx);))
 
 /**
  * @brief Helper macro to initialize a pin control state.
@@ -130,12 +151,13 @@ struct pinctrl_dev_config {
  * @param node_id Node identifier.
  */
 #define Z_PINCTRL_STATE_INIT(state_idx, node_id)			       \
-	{								       \
+	COND_CODE_1(Z_PINCTRL_SKIP_STATE(state_idx, node_id), (),	       \
+	({								       \
 		.id = Z_PINCTRL_STATE_ID(state_idx, node_id),		       \
 		.pins = Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id),	       \
 		.pin_cnt = ARRAY_SIZE(Z_PINCTRL_STATE_PINS_NAME(state_idx,     \
 								node_id))      \
-	},
+	},))
 
 /**
  * @brief Define all the states for the given node identifier.
@@ -200,7 +222,8 @@ struct pinctrl_dev_config {
  * This helper macro should be called together with device definition. It
  * defines and initializes the pin control configuration for the device
  * represented by node_id. Each pin control state (pinctrl-0, ..., pinctrl-N) is
- * also defined and initialized.
+ * also defined and initialized. Note that states marked to be skipped will not
+ * be defined (refer to Z_PINCTRL_SKIP_STATE for more details).
  *
  * @param node_id Node identifier.
  */
