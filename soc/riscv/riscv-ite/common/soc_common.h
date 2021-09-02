@@ -92,6 +92,8 @@ extern void ite_intc_isr_clear(unsigned int irq);
 void timer_5ms_one_shot(void);
 #endif
 
+void chip_pll_ctrl(enum chip_pll_mode mode);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* __SOC_COMMON_H_ */
