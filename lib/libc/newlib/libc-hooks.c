@@ -130,6 +130,20 @@ static int malloc_prepare(const struct device *unused)
 		 "minimum required size specified by "
 		 "CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE");
 
+#ifdef CONFIG_XTENSA
+	/*
+	 * FIXME: For Xtensa, the first `malloc` call may fail if the HEAP_BASE
+	 *        is such that the first `sbrk` call returns a 4096-byte
+	 *        aligned address.
+	 *
+	 *        This is a very ugly workaround for the issue #38258 and must
+	 *        be removed once it is fixed.
+	 */
+	void *ptr = malloc(16);
+
+	free(ptr);
+#endif /* CONFIG_XTENSA */
+
 	return 0;
 }
 
