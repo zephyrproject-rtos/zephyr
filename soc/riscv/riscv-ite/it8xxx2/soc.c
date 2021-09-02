@@ -136,6 +136,12 @@ static int ite_it8xxx2_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
+	/*
+	 * bit7: wake up CPU if it is in low power mode and
+	 * an interrupt is pending.
+	 */
+	IT83XX_GCTRL_WMCR |= BIT(7);
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	/* UART1 board init */
 	/* bit2: clocks to UART1 modules are not gated. */
