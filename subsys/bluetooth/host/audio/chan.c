@@ -1075,7 +1075,7 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 	chans[0] = chan->iso;
 
 	/* Attempt to bind if not bound yet */
-	if (!chan->iso->conn) {
+	if (!chan->iso->iso) {
 		int err;
 
 		err = bt_iso_chan_bind(conns, 1, chans);
@@ -1085,7 +1085,7 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 		}
 	}
 
-	return &chan->iso->conn->iso;
+	return &chan->iso->iso->iso;
 }
 
 int bt_audio_chan_unbind(struct bt_audio_chan *chan)
@@ -1136,7 +1136,7 @@ int bt_audio_chan_disconnect(struct bt_audio_chan *chan)
 		}
 	}
 
-	if (!chan->iso || !chan->iso->conn) {
+	if (!chan->iso || !chan->iso->iso) {
 		return -ENOTCONN;
 	}
 
