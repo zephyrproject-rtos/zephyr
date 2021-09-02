@@ -146,3 +146,8 @@
 	cs-gpios = <&gpioe 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
+	status = "okay";
+};
