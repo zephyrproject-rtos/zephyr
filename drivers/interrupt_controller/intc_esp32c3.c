@@ -21,6 +21,17 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 
+/*
+ * Define this to debug the choices made when allocating the interrupt. This leads to much debugging
+ * output within a critical region, which can lead to weird effects like e.g. the interrupt watchdog
+ * being triggered, that is why it is separate from the normal LOG* scheme.
+ */
+#ifdef CONFIG_INTC_ESP32C3_DECISIONS_LOG
+# define INTC_LOG(...) LOG_INF(__VA_ARGS__)
+#else
+# define INTC_LOG(...) do {} while (0)
+#endif
+
 #define ESP32C3_INTC_DEFAULT_PRIORITY   15
 #define ESP32C3_INTC_DEFAULT_THRESHOLD  1
 #define ESP32C3_INTC_DISABLED_SLOT      31
@@ -37,7 +48,7 @@ static void esp_intr_default_isr(const void *arg)
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
-	LOG_DBG("Spurious interrupt, mcause: %ld, source %d", mcause, soc_intr_get_next_source());
+	INTC_LOG("Spurious interrupt, mcause: %ld, source %d", mcause, soc_intr_get_next_source());
 }
 
 static uint32_t esp_intr_find_irq_for_source(uint32_t source)
@@ -48,13 +59,13 @@ static uint32_t esp_intr_find_irq_for_source(uint32_t source)
 	uint32_t irq = (source / ESP32C3_INTC_SRCS_PER_IRQ);
 
 	if (irq > ESP32C3_INTC_AVAILABLE_IRQS) {
-		LOG_DBG("Clamping the source: %d no more IRQs available", source);
+		INTC_LOG("Clamping the source: %d no more IRQs available", source);
 		irq = ESP32C3_INTC_AVAILABLE_IRQS;
 	} else if (irq == 0) {
 		irq = 1;
 	}
 
-	LOG_DBG("Found IRQ: %d for source: %d", irq, source);
+	INTC_LOG("Found IRQ: %d for source: %d", irq, source);
 
 	return irq;
 }
@@ -118,7 +129,7 @@ int esp_intr_alloc(int source,
 		esp_intr_enabled_mask[1] |= (1 << (source - 32));
 	}
 
-	LOG_DBG("Enabled isrs -- 0: 0x%X -- 1: 0x%X",
+	INTC_LOG("Enabled ISRs -- 0: 0x%X -- 1: 0x%X",
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
 	irq_unlock(key);
@@ -145,7 +156,7 @@ int esp_intr_disable(int source)
 		esp_intr_enabled_mask[1] &= ~(1 << (source - 32));
 	}
 
-	LOG_DBG("Enabled isrs -- 0: 0x%X -- 1: 0x%X",
+	INTC_LOG("Enabled ISRs -- 0: 0x%X -- 1: 0x%X",
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
 	irq_unlock(key);
@@ -171,7 +182,7 @@ int esp_intr_enable(int source)
 		esp_intr_enabled_mask[1] |= (1 << (source - 32));
 	}
 
-	LOG_DBG("Enabled isrs -- 0: 0x%X -- 1: 0x%X",
+	INTC_LOG("Enabled ISRs -- 0: 0x%X -- 1: 0x%X",
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
 	irq_enable(irq);
@@ -182,7 +193,7 @@ int esp_intr_enable(int source)
 
 uint32_t esp_intr_get_enabled_intmask(int status_mask_number)
 {
-	LOG_DBG("Enabled isrs -- 0: 0x%X -- 1: 0x%X",
+	INTC_LOG("Enabled ISRs -- 0: 0x%X -- 1: 0x%X",
 		esp_intr_enabled_mask[0], esp_intr_enabled_mask[1]);
 
 	if (status_mask_number == 0) {
