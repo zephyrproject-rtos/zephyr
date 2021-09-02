@@ -13,7 +13,6 @@
 /*
  * Interrupt allocation flags - These flags can be used to specify
  * which interrupt qualities the code calling esp_intr_alloc* needs.
- *
  */
 
 /* Keep the LEVELx values as they are here; they match up with (1<<level) */
