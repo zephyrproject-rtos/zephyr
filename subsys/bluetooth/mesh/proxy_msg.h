@@ -51,6 +51,8 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data);
-void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role);
+struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
+						    proxy_send_cb_t send,
+						    proxy_recv_cb_t recv);
 
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_MSG_H_ */
