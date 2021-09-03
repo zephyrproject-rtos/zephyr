@@ -1217,9 +1217,13 @@ static void isr_done(void *param)
 		start_us = radio_tmr_start_now(1);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if (lll->aux) {
-			ull_adv_aux_lll_offset_fill(lll->aux->ticks_offset,
-						    start_us, pdu);
+		struct lll_adv_aux *lll_aux;
+
+		lll_aux = lll->aux;
+		if (lll_aux) {
+			(void)ull_adv_aux_lll_offset_fill(pdu,
+							  lll_aux->ticks_offset,
+							  start_us);
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		ARG_UNUSED(pdu);

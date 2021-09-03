@@ -76,6 +76,9 @@ uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
 uint8_t const *ull_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 					   uint8_t *const addr);
 
+/* Helper function to apply Channel Map Update for auxiliary PDUs */
+uint8_t ull_adv_aux_chm_update(void);
+
 /* helper function to initialize event timings */
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux);
 

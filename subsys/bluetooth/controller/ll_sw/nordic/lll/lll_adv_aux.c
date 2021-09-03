@@ -164,6 +164,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 		return 0;
 	}
 
+	/* Increment counter used in ULL for channel index calculation */
+	lll->data_chan_counter++;
+
 	/* Set up Radio H/W */
 	radio_reset();
 
