@@ -84,6 +84,10 @@ void arm_gic_irq_enable(unsigned int intid)
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
 	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
+
+	/* Set SPI's affinity to be the PE on which it is enabled */
+	if (GIC_IS_SPI(intid))
+		sys_write64(MPIDR_TO_CORE(GET_MPIDR()), IROUTER(GET_DIST_BASE(intid), intid));
 }
 
 void arm_gic_irq_disable(unsigned int intid)
