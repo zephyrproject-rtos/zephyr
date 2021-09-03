@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Devicetree node identifier for the radio node. */
+#define RADIO_NODE DT_NODELABEL(radio)
+/* Check if radio has hardware support to parse PDU for CTE info */
+#if IS_ENABLED(DT_PROP_OR(RADIO_NODE, dfe_supported, 0))
+#define HAS_CTEINLINE_SUPPORT
+#endif
+
 /* Function configures Radio with information about GPIO pins that may be
  * used to drive antenna switching during CTE Tx/RX.
  */
@@ -54,10 +61,6 @@ void radio_switch_complete_and_phy_end_disable(void);
 void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 					      uint8_t phy_next, uint8_t flags_next);
 
-/* Enables CTE inline configuration to automatically setup sampling and
- * switching according to CTEInfo in received PDU.
- */
-void radio_df_cte_inline_set_enabled(bool cte_info_in_s1);
 /* Set buffer to store IQ samples collected during CTE sampling */
 void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len);
 /* Get number of stored IQ samples during CTE receive */
