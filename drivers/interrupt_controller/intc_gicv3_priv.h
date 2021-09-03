@@ -47,4 +47,8 @@
 #define GICR_WAKER_PS			1
 #define GICR_WAKER_CA			2
 
+/* GITCD_IROUTER */
+#define GIC_DIST_IROUTER		0x6000
+#define IROUTER(base, n)		(base + GIC_DIST_IROUTER + (n) * 8)
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTC_GICV3_PRIV_H_ */
