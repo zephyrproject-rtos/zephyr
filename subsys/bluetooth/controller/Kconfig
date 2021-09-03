@@ -430,7 +430,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
