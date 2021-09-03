@@ -18,6 +18,7 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
+#include <stm32_ll_system.h>
 #include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -42,6 +43,33 @@ const struct device * const gpio_ports[STM32_PORTS_MAX] = {
 	GPIO_DEVICE(gpioj),
 	GPIO_DEVICE(gpiok),
 };
+
+#if defined(CONFIG_PINMUX_STM32_PA11_12_ARE_PA9_10) ||			\
+	defined(CONFIG_PINMUX_STM32_PA11_IS_PA9) ||			\
+	defined(CONFIG_PINMUX_STM32_PA12_IS_PA10)
+int stm32_pinmux_init_remap(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_PINMUX_STM32_PA11_12_ARE_PA9_10
+	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
+	LL_SYSCFG_EnablePinRemap();
+#else
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+#ifdef CONFIG_PINMUX_STM32_PA11_IS_PA9
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA11);
+#endif /* CONFIG_PINMUX_STM32_PA11_IS_PA9 */
+#ifdef CONFIG_PINMUX_STM32_PA12_IS_PA10
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA12);
+#endif /* CONFIG_PINMUX_STM32_PA12_IS_PA10 */
+#endif /* CONFIG_PINMUX_STM32_PA11_12_ARE_PA9_10 */
+
+	return 0;
+}
+
+SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
+	 CONFIG_PINMUX_STM32_REMAP_INIT_PRIORITY);
+#endif
 
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {

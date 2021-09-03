@@ -19,3 +19,31 @@ config PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY
 	  the startup cycle. Note that the pinmux device needs to be initialized
 	  after clock control device, but possibly before all other devices.
 	  If unsure, leave at default value 2
+
+config PINMUX_STM32_PA11_12_ARE_PA9_10
+	bool "Remap pins PA11 and PA12 to PA9 and PA10"
+	depends on SOC_SERIES_STM32F0X
+	help
+	  If enabled, pins PA11 and PA12 will function as PA9 and PA10 respectively.
+	  Note that this functionality is not available on all STM32F0 SoCs.
+
+config PINMUX_STM32_PA11_IS_PA9
+	bool "Remap pin PA11 to PA9"
+	depends on SOC_SERIES_STM32G0X
+	help
+	  If enabled, pin PA11 will function as PA9.
+
+config PINMUX_STM32_PA12_IS_PA10
+	bool "Remap pin PA12 to PA10"
+	depends on SOC_SERIES_STM32G0X
+	help
+	  If enabled, pin PA12 will function as PA10.
+
+config PINMUX_STM32_REMAP_INIT_PRIORITY
+	int "Remap initialization priority"
+	default 2
+	depends on PINMUX_STM32_PA11_12_ARE_PA9_10 || PINMUX_STM32_PA11_IS_PA9 || \
+			   PINMUX_STM32_PA12_IS_PA10
+	help
+	  Initialization priority for the routine in charge of configuring the
+	  remap for pins PA11/12.
