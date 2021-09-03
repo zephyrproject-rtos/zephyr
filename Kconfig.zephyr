@@ -272,7 +272,7 @@ config NATIVE_APPLICATION
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
 
-choice
+choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG

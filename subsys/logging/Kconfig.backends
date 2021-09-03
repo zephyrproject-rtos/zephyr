@@ -19,7 +19,7 @@ config LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	help
 	  UART backend is in dictionary-based logging output mode.
 
-choice
+choice LOG_BACKEND_UART_OUTPUT
 	prompt "UART Backend Output Mode"
 	default LOG_BACKEND_UART_OUTPUT_TEXT
 
@@ -99,7 +99,7 @@ config LOG_BACKEND_RTT
 
 if LOG_BACKEND_RTT
 
-choice
+choice LOG_BACKEND_RTT_MODE
 	prompt "Logger behavior"
 	default LOG_BACKEND_RTT_MODE_BLOCK
 
@@ -321,7 +321,7 @@ config LOG_BACKEND_FS_OUTPUT_DICTIONARY
 	help
 	  FS backend is in dictionary-based logging output mode.
 
-choice
+choice LOG_BACKEND_FS_OUTPUT
 	prompt "FS Backend Output Mode"
 	default LOG_BACKEND_FS_OUTPUT_TEXT
 
