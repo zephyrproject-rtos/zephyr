@@ -138,8 +138,15 @@ static int bap_reconfig(struct bt_audio_chan *chan,
 		tmp->codec = codec;
 	}
 
-	/* Unbind if there is an existing QoS */
-	bt_audio_chan_unbind(chan);
+	/* Terminate CIG if there is an existing QoS,
+	 * so that we can create a new one
+	 */
+	if (chan->iso != NULL) {
+		err = bt_audio_cig_terminate(chan);
+		if (err != 0) {
+			return err;
+		}
+	}
 
 	return 0;
 }
@@ -161,7 +168,7 @@ static int bap_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 	op = net_buf_simple_add(buf, sizeof(*op));
 	op->num_ases = 0x01;
 
-	iso = bt_audio_chan_bind(chan, qos);
+	iso = bt_audio_cig_create(chan, qos);
 	if (iso) {
 		cig_id = iso->cig_id;
 		cis_id = iso->cis_id;

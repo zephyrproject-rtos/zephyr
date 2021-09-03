@@ -121,7 +121,7 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	switch (ep->status.state) {
 	case BT_ASCS_ASE_STATE_QOS:
-		bt_audio_chan_bind(ep->chan, ep->chan->qos);
+		/* noop */
 		break;
 	case BT_ASCS_ASE_STATE_DISABLING:
 		bt_audio_chan_stop(ep->chan);
