@@ -52,7 +52,7 @@ struct friend_pdu_info {
 };
 
 NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
-			  BT_MESH_ADV_DATA_SIZE, NULL);
+			  BT_MESH_ADV_DATA_SIZE, bt_mesh_adv_buf_destroy);
 
 static struct friend_adv {
 	struct bt_mesh_adv adv;
