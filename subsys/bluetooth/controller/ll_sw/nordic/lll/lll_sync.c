@@ -42,18 +42,33 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+/* Periodic advertisements filtering results. */
+enum sync_filtering_result {
+	SYNC_ALLOWED,
+	SYNC_SCAN_CONTINUE,
+	SYNC_SCAN_TERM
+};
+
 static int init_reset(void);
+static void prepare(void *param);
+static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
+static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok);
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
+		  enum sync_status status);
+static void isr_rx_adv_sync_estab(void *param);
 static void isr_rx_adv_sync(void *param);
 static void isr_rx_aux_chain(void *param);
-static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok);
+static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_term);
 static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 			    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+static uint8_t data_channel_calc(struct lll_sync *lll);
+static enum sync_filtering_result sync_filtrate_by_cte_type(uint8_t cte_type_mask,
+							    uint8_t filter_policy);
 
 static uint8_t trx_cnt;
 
@@ -81,7 +96,29 @@ int lll_sync_reset(void)
 	return 0;
 }
 
+void lll_sync_create_prepare(void *param)
+{
+	int err;
+
+	prepare(param);
+
+	/* Invoke common pipeline handling of prepare */
+	err = lll_prepare(lll_is_abort_cb, abort_cb, create_prepare_cb, 0, param);
+	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
 void lll_sync_prepare(void *param)
+{
+	int err;
+
+	prepare(param);
+
+	/* Invoke common pipeline handling of prepare */
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
+	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
+static void prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_sync *lll;
@@ -101,10 +138,6 @@ void lll_sync_prepare(void *param)
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
-
-	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
-	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
 void lll_sync_aux_prepare_cb(struct lll_sync *lll,
@@ -166,20 +199,12 @@ static int init_reset(void)
 	return 0;
 }
 
-static int prepare_cb(struct lll_prepare_param *p)
+static int create_prepare_cb(struct lll_prepare_param *p)
 {
-	struct node_rx_pdu *node_rx;
-	uint32_t ticks_at_event;
-	uint32_t ticks_at_start;
-	uint8_t data_chan_count;
-	uint8_t *data_chan_map;
 	uint16_t event_counter;
-	uint32_t remainder_us;
-	uint8_t data_chan_use;
 	struct lll_sync *lll;
-	struct ull_hdr *ull;
-	uint32_t remainder;
-	uint32_t hcto;
+	uint8_t chan_idx;
+	int err;
 
 	DEBUG_RADIO_START_O(1);
 
@@ -191,11 +216,113 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
 
+	/* Reset accumulated latencies */
+	lll->skip_prepare = 0;
+
+	chan_idx = data_channel_calc(lll);
+
 	/* Update event counter to next value */
 	lll->event_counter = (event_counter + 1);
 
+	err = prepare_cb_common(p, chan_idx);
+	if (err) {
+		DEBUG_RADIO_START_O(1);
+
+		return 0;
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_df_sync_cfg *cfg;
+
+	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+
+	if (cfg->is_enabled) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
+					  chan_idx);
+		cfg->cte_count = 0;
+
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_df_cte_inline_set_enabled(false);
+		radio_switch_complete_and_disable();
+	}
+
+	radio_isr_set(isr_rx_adv_sync_estab, lll);
+
+	DEBUG_RADIO_START_O(1);
+
+	return 0;
+}
+
+static int prepare_cb(struct lll_prepare_param *p)
+{
+	uint16_t event_counter;
+	struct lll_sync *lll;
+	uint8_t chan_idx;
+	int err;
+
+	DEBUG_RADIO_START_O(1);
+
+	lll = p->param;
+
+	/* Calculate the current event latency */
+	lll->skip_event = lll->skip_prepare + p->lazy;
+
+	/* Calculate the current event counter value */
+	event_counter = lll->event_counter + lll->skip_event;
+
 	/* Reset accumulated latencies */
 	lll->skip_prepare = 0;
+
+	chan_idx = data_channel_calc(lll);
+
+	/* Update event counter to next value */
+	lll->event_counter = (event_counter + 1);
+
+	err = prepare_cb_common(p, chan_idx);
+	if (err) {
+		DEBUG_RADIO_START_O(1);
+		return 0;
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_df_sync_cfg *cfg;
+
+	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+
+	if (cfg->is_enabled) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
+					  chan_idx);
+		cfg->cte_count = 0;
+
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_switch_complete_and_disable();
+	}
+
+	radio_isr_set(isr_rx_adv_sync, lll);
+
+	DEBUG_RADIO_START_O(1);
+
+	return 0;
+}
+
+static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
+{
+	struct node_rx_pdu *node_rx;
+	uint32_t ticks_at_event;
+	uint32_t ticks_at_start;
+	uint32_t remainder_us;
+	struct lll_sync *lll;
+	struct ull_hdr *ull;
+	uint32_t remainder;
+	uint32_t hcto;
+
+	lll = p->param;
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
@@ -209,24 +336,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialize Trx count */
 	trx_cnt = 0U;
-
-	/* Process channel map update, if any */
-	if (lll->chm_first != lll->chm_last) {
-		uint16_t instant_latency;
-
-		instant_latency = (event_counter - lll->chm_instant) &
-				  EVENT_INSTANT_MAX;
-		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
-			/* At or past the instant, use channelMapNew */
-			lll->chm_first = lll->chm_last;
-		}
-	}
-
-	/* Calculate the radio channel to use */
-	data_chan_map = lll->chm[lll->chm_first].data_chan_map;
-	data_chan_count = lll->chm[lll->chm_first].data_chan_count;
-	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
-				       data_chan_map, data_chan_count);
 
 	/* Start setting up Radio h/w */
 	radio_reset();
@@ -245,31 +354,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[1] << 8) |
 			     ((uint32_t)lll->crc_init[0])));
 
-	lll_chan_set(data_chan_use);
+	lll_chan_set(chan_idx);
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
-
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	struct lll_df_sync_cfg *cfg;
-
-	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
-
-	if (cfg->is_enabled) {
-		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
-					  cfg->ant_ids, data_chan_use);
-		cfg->cte_count = 0;
-
-		radio_switch_complete_and_phy_end_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		radio_switch_complete_and_disable();
-	}
-
-	radio_isr_set(isr_rx_adv_sync, lll);
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -284,8 +374,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tmr_aa_capture();
 
 	hcto = remainder_us +
-	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
-		 lll->window_widening_event_us) << 1) +
+	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US + lll->window_widening_event_us)
+		<< 1) +
 	       lll->window_size_event_us;
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
@@ -311,6 +401,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ticks_at_event)) {
 		radio_isr_set(isr_done, lll);
 		radio_disable();
+
+		return -ECANCELED;
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
@@ -321,6 +413,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	DEBUG_RADIO_START_O(1);
+
 	return 0;
 }
 
@@ -337,6 +430,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 */
 		radio_isr_set(isr_done, param);
 		radio_disable();
+
 		return;
 	}
 
@@ -455,33 +549,26 @@ static void isr_aux_setup(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
+/**
+ * @brief Common part of ISR responsbile for handling PDU receive.
+ *
+ * @param lll        Pointer to LLL sync object.
+ * @param node_type  Type of a receive node to be set for handling by ULL.
+ * @param crc_ok     Informs if received PDU has correct CRC.
+ * @param rssi_ready Informs if RSSI for received PDU is ready.
+ * @param status     Informs about periodic advertisement synchronization status.
+ *
+ * @return Zero in case of there is no chained PDU or there is a chained PDUs but spaced long enough
+ *         to schedule its reception by ULL.
+ * @return -EBUSY in case there is a chained PDU scheduled by LLL due to short spacing.
+ */
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
+		  enum sync_status status)
 {
-	uint8_t rssi_ready;
-	uint8_t trx_done;
 	int err;
 
-	/* Read radio status and events */
-	trx_done = radio_is_done();
-	if (trx_done) {
-		*crc_ok = radio_crc_is_valid();
-		rssi_ready = radio_rssi_is_ready();
-	} else {
-		*crc_ok = rssi_ready = 0U;
-	}
-
-	/* Clear radio rx status and events */
-	lll_isr_rx_status_reset();
-
-	/* No Rx */
-	if (!trx_done) {
-		err = -EINVAL;
-
-		goto isr_rx_done;
-	}
-
 	/* Check CRC and generate Periodic Advertising Report */
-	if (*crc_ok) {
+	if (crc_ok) {
 		struct node_rx_pdu *node_rx;
 
 		node_rx = ull_pdu_rx_alloc_peek(3);
@@ -502,6 +589,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 			ftr->radio_end_us = radio_tmr_end_get() -
 					    radio_rx_chain_delay_get(lll->phy,
 								     1);
+			ftr->sync_status = status;
 
 			pdu = (void *)node_rx->pdu;
 
@@ -529,51 +617,149 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 		}
 	} else {
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-		err = create_iq_report(lll, rssi_ready,
-				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+		err = create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
 			ull_rx_sched();
 		}
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
-
 		err = 0;
 	}
 
-isr_rx_done:
 	return err;
 }
 
-static void isr_rx_adv_sync(void *param)
+static void isr_rx_adv_sync_estab(void *param)
 {
+	enum sync_filtering_result sync_ok;
 	struct lll_sync *lll;
+	uint8_t rssi_ready;
+	uint8_t trx_done;
 	uint8_t crc_ok;
 	int err;
 
 	lll = param;
 
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, &crc_ok);
+	/* Read radio status and events */
+	trx_done = radio_is_done();
+	if (trx_done) {
+		crc_ok = radio_crc_is_valid();
+		rssi_ready = radio_rssi_is_ready();
+		sync_ok = sync_filtrate_by_cte_type(lll->cte_type, lll->filter_policy);
+		trx_cnt = 1U;
+	} else {
+		crc_ok = rssi_ready = 0U;
+		/* Initiated as allowed, crc_ok takes precended during handling of PDU
+		 * reception in the situation.
+		 */
+		sync_ok = SYNC_ALLOWED;
+	}
+
+	/* Clear radio rx status and events */
+	lll_isr_rx_status_reset();
+
+	/* No Rx */
+	if (!trx_done) {
+		/* TODO: Combine the early exit with above if-then-else block
+		 */
+		goto isr_rx_done;
+	}
 
 	/* Save radio ready and address capture timestamp for later use for
 	 * drift compensation.
 	 */
-	if (err != -EINVAL) {
-		trx_cnt = 1U;
+	radio_tmr_aa_save(radio_tmr_aa_get());
+	radio_tmr_ready_save(radio_tmr_ready_get());
 
-		radio_tmr_aa_save(radio_tmr_aa_get());
-		radio_tmr_ready_save(radio_tmr_ready_get());
+	/* Handle regular PDU reception if CTE type is acceptable */
+	if (sync_ok == SYNC_ALLOWED) {
+		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, rssi_ready, SYNC_STAT_FOUND);
+		if (err == -EBUSY) {
+			return;
+		}
+	} else if (sync_ok == SYNC_SCAN_TERM) {
+		struct node_rx_pdu *node_rx;
+
+		/* Verify if there are free RX buffers for:
+		 * - reporting just received PDU
+		 * - a buffer for receiving data in a connection
+		 * - a buffer for receiving empty PDU
+		 */
+		node_rx = ull_pdu_rx_alloc_peek(3);
+		if (node_rx) {
+			struct node_rx_ftr *ftr;
+
+			ull_pdu_rx_alloc();
+
+			node_rx->hdr.type = NODE_RX_TYPE_SYNC;
+
+			ftr = &node_rx->hdr.rx_ftr;
+			ftr->param = lll;
+			ftr->sync_status = SYNC_STAT_TERM;
+
+			ull_rx_put(node_rx->hdr.link, node_rx);
+			ull_rx_sched();
+		}
 	}
 
+isr_rx_done:
+	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_SCAN_TERM);
+}
+
+static void isr_rx_adv_sync(void *param)
+{
+	struct lll_sync *lll;
+	uint8_t rssi_ready;
+	uint8_t trx_done;
+	uint8_t crc_ok;
+	int err;
+
+	lll = param;
+
+	/* Read radio status and events */
+	trx_done = radio_is_done();
+	if (trx_done) {
+		crc_ok = radio_crc_is_valid();
+		rssi_ready = radio_rssi_is_ready();
+		trx_cnt = 1U;
+	} else {
+		crc_ok = rssi_ready = 0U;
+	}
+
+	/* Clear radio rx status and events */
+	lll_isr_rx_status_reset();
+
+	/* No Rx */
+	if (!trx_done) {
+		/* TODO: Combine the early exit with above if-then-else block
+		 */
+		goto isr_rx_done;
+	}
+
+	/* Save radio ready and address capture timestamp for later use for
+	 * drift compensation.
+	 */
+	radio_tmr_aa_save(radio_tmr_aa_get());
+	radio_tmr_ready_save(radio_tmr_ready_get());
+
+	/* When periodic advertisement is synchronized, the CTEType may change. It should not
+	 * affect sychronization even when new CTE type is not allowed by sync parameters.
+	 * Hence the SYNC_STAT_READY is set.
+	 */
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, rssi_ready, SYNC_STAT_READY);
 	if (err == -EBUSY) {
 		return;
 	}
 
-	isr_rx_done_cleanup(lll, crc_ok);
+isr_rx_done:
+	isr_rx_done_cleanup(lll, crc_ok, false);
 }
 
 static void isr_rx_aux_chain(void *param)
 {
 	struct lll_scan_aux *lll_aux;
 	struct lll_sync *lll;
+	uint8_t rssi_ready;
+	uint8_t trx_done;
 	uint8_t crc_ok;
 	int err;
 
@@ -589,7 +775,30 @@ static void isr_rx_aux_chain(void *param)
 		goto isr_rx_aux_chain_done;
 	}
 
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, &crc_ok);
+	/* Read radio status and events */
+	trx_done = radio_is_done();
+	if (trx_done) {
+		crc_ok = radio_crc_is_valid();
+		rssi_ready = radio_rssi_is_ready();
+	} else {
+		crc_ok = rssi_ready = 0U;
+	}
+
+	/* Clear radio rx status and events */
+	lll_isr_rx_status_reset();
+
+	/* No Rx */
+	if (!trx_done) {
+		/* TODO: Combine the early exit with above if-then-else block
+		 */
+		goto isr_rx_aux_chain_done;
+	}
+
+	/* When periodic advertisement is synchronized, the CTEType may change. It should not
+	 * affect sychronization even when new CTE type is not allowed by sync parameters.
+	 * Hence the SYNC_STAT_READY is set.
+	 */
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, rssi_ready, SYNC_STAT_READY);
 
 	if (err == -EBUSY) {
 		return;
@@ -614,13 +823,13 @@ isr_rx_aux_chain_done:
 	if (lll->is_aux_sched) {
 		lll->is_aux_sched = 0U;
 
-		isr_rx_done_cleanup(lll, 1U);
+		isr_rx_done_cleanup(lll, 1U, false);
 	} else {
 		lll_isr_cleanup(lll);
 	}
 }
 
-static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok)
+static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_term)
 {
 	struct event_done_extra *e;
 
@@ -631,13 +840,13 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok)
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
+	e->sync_term = sync_term;
 
 	if (trx_cnt) {
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 		e->drift.start_to_address_actual_us =
 			radio_tmr_aa_restore() - radio_tmr_ready_restore();
-		e->drift.window_widening_event_us =
-			lll->window_widening_event_us;
+		e->drift.window_widening_event_us = lll->window_widening_event_us;
 
 		/* Reset window widening, as anchor point sync-ed */
 		lll->window_widening_event_us = 0U;
@@ -650,7 +859,7 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok)
 static void isr_done(void *param)
 {
 	lll_isr_status_reset();
-	isr_rx_done_cleanup(param, ((trx_cnt > 1U) ? 1U : 0U));
+	isr_rx_done_cleanup(param, ((trx_cnt > 1U) ? 1U : 0U), false);
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
@@ -701,3 +910,82 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+static uint8_t data_channel_calc(struct lll_sync *lll)
+{
+	uint8_t data_chan_count;
+	uint8_t *data_chan_map;
+
+	/* Process channel map update, if any */
+	if (lll->chm_first != lll->chm_last) {
+		uint16_t instant_latency;
+
+		instant_latency = (lll->event_counter + lll->skip_event - lll->chm_instant) &
+				  EVENT_INSTANT_MAX;
+		if (instant_latency <= EVENT_INSTANT_LATENCY_MAX) {
+			/* At or past the instant, use channelMapNew */
+			lll->chm_first = lll->chm_last;
+		}
+	}
+
+	/* Calculate the radio channel to use */
+	data_chan_map = lll->chm[lll->chm_first].data_chan_map;
+	data_chan_count = lll->chm[lll->chm_first].data_chan_count;
+	return lll_chan_sel_2(lll->event_counter + lll->skip_event, lll->data_chan_id,
+			      data_chan_map, data_chan_count);
+}
+
+static enum sync_filtering_result sync_filtrate_by_cte_type(uint8_t cte_type_mask,
+							    uint8_t filter_policy)
+{
+	if (cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING) {
+		return SYNC_ALLOWED;
+	}
+
+#if defined(HAS_CTEINLINE_SUPPORT)
+	uint8_t rx_cte_time;
+	uint8_t rx_cte_type;
+	bool cte_ok;
+
+	rx_cte_time = nrf_radio_cte_time_get(NRF_RADIO);
+	rx_cte_type = nrf_radio_cte_type_get(NRF_RADIO);
+
+	/* If there is no CTEInfo in advertising PDU, Radio will not parse the S0 byte and
+	 * CTESTATUS register will hold zeros only.
+	 * Zero value in CTETime field of CTESTATUS may be used to distinguish between PDU that
+	 * includes CTEInfo or not. Allowed range for CTETime is 2-20.
+	 */
+	if (rx_cte_time == 0 && cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE) {
+		cte_ok = false;
+	}
+
+	if (rx_cte_time > 0) {
+		if (cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE) {
+			cte_ok = false;
+		} else {
+			switch (rx_cte_type) {
+			case BT_HCI_LE_AOA_CTE:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA);
+				break;
+			case BT_HCI_LE_AOD_CTE_1US:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US);
+				break;
+			case BT_HCI_LE_AOD_CTE_2US:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US);
+				break;
+			default:
+				/* Unknown or forbidden CTE type */
+				cte_ok = false;
+			}
+		}
+	}
+
+	if (!cte_ok) {
+		return filter_policy ? SYNC_SCAN_CONTINUE : SYNC_SCAN_TERM;
+	}
+#endif /* HAS_CTEINLINE_SUPPORT */
+	return SYNC_ALLOWED;
+}
