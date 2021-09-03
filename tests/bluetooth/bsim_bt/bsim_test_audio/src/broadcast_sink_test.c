@@ -36,7 +36,7 @@ static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
 			 struct bt_le_per_adv_sync *sync,
 			 uint32_t broadcast_id)
 {
-	printk("PA synced to broadcaster %p with broadcast ID 0x%06X\n",
+	printk("PA synced for broadcast sink %p with broadcast ID 0x%06X\n",
 	       sink, broadcast_id);
 
 	SET_FLAG(pa_synced);
@@ -49,7 +49,7 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 		return;
 	}
 
-	printk("Received BASE with %u subgroups from broadcaster %p\n",
+	printk("Received BASE with %u subgroups from broadcast sink %p\n",
 	       base->subgroup_count, sink);
 
 	SET_FLAG(base_received);
@@ -109,7 +109,7 @@ static void test_main(void)
 	UNSET_FLAG(base_received);
 	UNSET_FLAG(pa_synced);
 	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcaster_scan_start(BT_LE_SCAN_ACTIVE);
+	err = bt_audio_broadcast_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
 		return;
