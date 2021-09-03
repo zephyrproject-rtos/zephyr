@@ -73,10 +73,10 @@ static void dma_callback(const struct device *dev, void *arg,
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
-		if (channel == data->dma_tx.channel) {
+		if (channel + 1 == data->dma_tx.channel) {
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
-		} else if (channel == data->dma_rx.channel) {
+		} else if (channel + 1 == data->dma_rx.channel) {
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
 		} else {
