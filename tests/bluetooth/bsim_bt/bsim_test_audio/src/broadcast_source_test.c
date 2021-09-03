@@ -39,7 +39,7 @@ static void test_main(void)
 			   BT_CODEC_LC3_CONFIG_48_2,
 			   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u,
 							    40000u));
-	struct bt_audio_chan broadcast_chans[BROADCAST_STREAM_CNT];
+	struct bt_audio_chan broadcast_source_chans[BROADCAST_STREAM_CNT];
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -50,23 +50,23 @@ static void test_main(void)
 	printk("Bluetooth initialized\n");
 
 	/* Link all channels */
-	memset(broadcast_chans, 0, sizeof(broadcast_chans));
-	for (int i = 0; i < ARRAY_SIZE(broadcast_chans); i++) {
-		for (int j = i + 1; j < ARRAY_SIZE(broadcast_chans); j++) {
-			bt_audio_chan_link(&broadcast_chans[i],
-					   &broadcast_chans[j]);
+	memset(broadcast_source_chans, 0, sizeof(broadcast_source_chans));
+	for (int i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
+		for (int j = i + 1; j < ARRAY_SIZE(broadcast_source_chans); j++) {
+			bt_audio_chan_link(&broadcast_source_chans[i],
+					   &broadcast_source_chans[j]);
 		}
 	}
 
-	err = bt_audio_broadcaster_create(&broadcast_chans[0],
-					  &preset_48_1_2.codec,
-					  &preset_48_1_2.qos);
+	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
+					       &preset_48_1_2.codec,
+					       &preset_48_1_2.qos);
 	if (err != 0) {
-		FAIL("Unable to create broadcaster: %d", err);
+		FAIL("Unable to create broadcast source: %d", err);
 		return;
 	}
 
-	err = bt_audio_chan_reconfig(&broadcast_chans[0], NULL,
+	err = bt_audio_chan_reconfig(&broadcast_source_chans[0], NULL,
 				     &preset_48_2_2.codec);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d", err);
@@ -75,13 +75,13 @@ static void test_main(void)
 
 	k_sleep(K_SECONDS(10));
 
-	err = bt_audio_chan_release(&broadcast_chans[0], false);
+	err = bt_audio_chan_release(&broadcast_source_chans[0], false);
 	if (err != 0) {
 		FAIL("Unable to release broadcast channels: %d", err);
 		return;
 	}
 
-	PASS("Broadcaster passed\n");
+	PASS("Broadcast source passed\n");
 }
 
 static const struct bst_test_instance test_broadcast_source[] = {
