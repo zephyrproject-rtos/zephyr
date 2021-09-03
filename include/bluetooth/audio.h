@@ -983,15 +983,17 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
  *  Starting any one channel for a broadcaster will start all the others
  *  supplied to this function.
  *
- *  @param chan        Channel object being used for the broadcaster.
- *  @param codec       Codec configuration.
- *  @param qos         Quality of Service configuration
+ *  @param[in]  chan        Channel object being used for the broadcaster.
+ *  @param[in]  codec       Codec configuration.
+ *  @param[in]  qos         Quality of Service configuration
+ *  @param[out] source      Pointer to the broadcast source created
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 				     struct bt_codec *codec,
-				     struct bt_codec_qos *qos);
+				     struct bt_codec_qos *qos,
+				     struct bt_audio_broadcast_source **source);
 
 /** @brief Start scan for broadcast sources.
  *
