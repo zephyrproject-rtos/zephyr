@@ -576,18 +576,30 @@ struct media_proxy_ctrl_cbs {
 	void (*media_state_recv)(struct media_player *player, int err, uint8_t state);
 
 	/**
-	 * @brief Command receive callback
+	 * @brief Command send callback
 	 *
-	 * Called when a command has been sent, to give the result of the
-	 * command
+	 * Called when a command has been sent
 	 * See also media_proxy_ctrl_command_send()
 	 *
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param cmd_ntf  The result of the command
+	 * @param cmd      The command sent
 	 */
-	void (*command)(struct media_player *player, int err, struct mpl_cmd_ntf cmd_ntf);
+	void (*command_send)(struct media_player *player, int err, struct mpl_cmd cmd);
+
+	/**
+	 * @brief Command result receive callback
+	 *
+	 * Called when a command result has been received
+	 * See also media_proxy_ctrl_command_send()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param result   The result received
+	 */
+	void (*command_recv)(struct media_player *player, int err, struct mpl_cmd_ntf result);
 
 	/**
 	 * @brief Commands supported receive callback
@@ -991,6 +1003,8 @@ int media_proxy_ctrl_media_state_get(struct media_player *player);
  *
  * Send a command to the media player.
  * Commands may cause the media player to change its state
+ * May result in two callbacks - one for the actual sending of the command to the
+ * player, one for the result of the command from the player.
  *
  * @param player      Media player instance pointer
  * @param command     The command to send

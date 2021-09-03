@@ -510,26 +510,15 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
 {
 	if (err) {
-		struct mpl_cmd_ntf ntf = {0};
-
 		BT_ERR("Command send failed (%d) - opcode: %d, param: %d",
 		       err, cmd.opcode, cmd.param);
-
-		/* If error, call the callback to propagate the error to the caller.
-		 * (A notification parameter is required for the callback - use an empty one.)
-		 */
-
-		if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
-			mprx.ctrlr.cbs->command(&mprx.remote_player, err, ntf);
-		} else {
-			BT_DBG("No callback");
-		}
 	}
 
-	/* If no error, the result of the command will come as a notification
-	 * which will be handled by the mcc_cmd_ntf_cb() callback.
-	 * So, no need to call the callback here.
-	 */
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_send) {
+		mprx.ctrlr.cbs->command_send(&mprx.remote_player, err, cmd);
+	} else {
+		BT_DBG("No callback");
+	}
 }
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
@@ -540,8 +529,8 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 		       err, ntf.requested_opcode, ntf.result_code);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
-		mprx.ctrlr.cbs->command(&mprx.remote_player, err, ntf);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_recv) {
+		mprx.ctrlr.cbs->command_recv(&mprx.remote_player, err, ntf);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -1427,6 +1416,12 @@ int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd cm
 		if (mprx.local_player.calls->command_send) {
 			mprx.local_player.calls->command_send(cmd);
 
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_send) {
+				mprx.ctrlr.cbs->command_send(player, 0, cmd);
+			} else {
+				BT_DBG("No callback");
+			}
+
 			return 0;
 		}
 
@@ -1730,8 +1725,8 @@ void media_proxy_pl_command_cb(struct mpl_cmd_ntf cmd_ntf)
 {
 	mprx.sctrlr.cbs->command(cmd_ntf);
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command) {
-		mprx.ctrlr.cbs->command(&mprx.local_player, 0, cmd_ntf);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_recv) {
+		mprx.ctrlr.cbs->command_recv(&mprx.local_player, 0, cmd_ntf);
 	} else {
 		BT_DBG("No ctrlr command callback");
 	}
