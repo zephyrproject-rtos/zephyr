@@ -427,6 +427,9 @@ void end_report(void)
 	} else {
 		TC_END_REPORT(TC_PASS);
 	}
+#ifdef CONFIG_STM32_LPTIM_TIMER
+	k_busy_wait(100);
+#endif /* CONFIG_STM32_LPTIM_TIMER */
 }
 
 #ifdef CONFIG_USERSPACE
