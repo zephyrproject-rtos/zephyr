@@ -10,7 +10,7 @@
 #include <kernel.h>
 #include <sys/sys_io.h>
 
-static int pinmux_stm32_init(const struct device *port)
+static int pins_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 	const struct device *gpioa, *gpiob, *gpioh;
@@ -49,4 +49,4 @@ static int pinmux_stm32_init(const struct device *port)
 }
 
 /* Need to be initialised after GPIO driver */
-SYS_INIT(pinmux_stm32_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(pins_stm32_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
