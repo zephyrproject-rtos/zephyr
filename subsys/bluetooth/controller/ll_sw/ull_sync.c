@@ -52,7 +52,7 @@
 
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
-static void timeout_cleanup(struct ll_sync_set *sync);
+static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_of_cb);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
@@ -72,6 +72,9 @@ static void *sync_free;
 /* Semaphore to wakeup thread on ticker API callback */
 static struct k_sem sem_ticker_cb;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+static memq_link_t link_lll_prepare;
+static struct mayfly mfy_lll_prepare = { 0, 0, &link_lll_prepare, NULL, lll_sync_prepare };
 
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 			    uint8_t *adv_addr, uint16_t skip,
@@ -133,15 +136,11 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	node_rx->link = link_sync_estab;
-	scan->per_scan.node_rx_estab = node_rx;
 	scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	scan->per_scan.filter_policy =
 		options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
-		scan_coded->per_scan.node_rx_estab =
-			scan->per_scan.node_rx_estab;
 		scan_coded->per_scan.filter_policy =
 			scan->per_scan.filter_policy;
 	}
@@ -163,9 +162,9 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	sync->skip = skip;
 	sync->timeout = sync_timeout;
 
-	/* TODO: Support for CTE type */
-
 	/* Initialize sync context */
+	node_rx->link = link_sync_estab;
+	sync->node_rx_sync_estab = node_rx;
 	sync->timeout_reload = 0U;
 	sync->timeout_expire = 0U;
 
@@ -180,6 +179,8 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->skip_event = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
 	lll_sync->window_widening_event_us = 0U;
+	lll_sync->cte_type = sync_cte_type;
+	lll_sync->filter_policy = scan->per_scan.filter_policy;
 
 	/* TODO: Add support for reporting initially enabled/disabled */
 	lll_sync->is_rx_enabled =
@@ -247,7 +248,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	node_rx = (void *)scan->per_scan.node_rx_estab;
+	node_rx = (void *)sync->node_rx_sync_estab;
 	link_sync_estab = node_rx->hdr.link;
 	link_sync_lost = sync->node_rx_lost.hdr.link;
 
@@ -527,18 +528,14 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_handle = ull_sync_handle_get(sync);
 
 	/* Prepare and dispatch sync notification */
-	rx = (void *)scan->per_scan.node_rx_estab;
+	rx = (void *)sync->node_rx_sync_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC;
 	rx->hdr.handle = sync_handle;
 	rx->hdr.rx_ftr.param = scan;
 	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_SUCCESS;
 	se->interval = interval;
 	se->phy = lll->phy;
 	se->sca = sca;
-
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
 
 	/* Calculate offset and schedule sync radio events */
 	ftr = &node_rx->rx_ftr;
@@ -577,6 +574,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
+	mfy_lll_prepare.fp = lll_sync_create_prepare;
+
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
 			   ftr->ticks_anchor - ticks_slot_offset,
@@ -588,6 +587,52 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+}
+
+void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
+{
+	struct node_rx_pdu *rx_establ;
+	struct ll_sync_set *ull_sync;
+	struct node_rx_ftr *ftr;
+	struct node_rx_sync *se;
+	struct lll_sync *lll;
+
+	ftr = &rx->rx_ftr;
+
+	/* Send periodic advertisement sync established report when sync has correct CTE type
+	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
+	 */
+	if (ftr->sync_status != SYNC_STAT_READY) {
+		/* Set the sync handle corresponding to the LLL context passed in the node rx
+		 * footer field.
+		 */
+		lll = ftr->param;
+		ull_sync = HDR_LLL2ULL(lll);
+
+		/* Prepare and dispatch sync notification */
+		rx_establ = (void *)ull_sync->node_rx_sync_estab;
+		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
+		se = (void *)rx_establ->pdu;
+		se->status = (ftr->sync_status == SYNC_STAT_TERM) ?
+					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
+					   BT_HCI_ERR_SUCCESS;
+
+		ll_rx_put(rx_establ->hdr.link, rx_establ);
+		ll_rx_sched();
+	}
+
+	/* Handle periodic advertising PDU and send periodic advertising scan report when
+	 * the sync was found or was established in the past. The report is not send if
+	 * scanning is terminated due to wrong CTE type.
+	 */
+	if (ftr->sync_status != SYNC_STAT_TERM) {
+		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
+		mfy_lll_prepare.fp = lll_sync_prepare;
+
+		/* Change node type to appropriately handle periodic advertising PDU report */
+		rx->type = NODE_RX_TYPE_SYNC_REPORT;
+		ull_scan_aux_setup(link, rx);
+	}
 }
 
 void ull_sync_done(struct node_rx_event_done *done)
@@ -605,84 +650,79 @@ void ull_sync_done(struct node_rx_event_done *done)
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 	lll = &sync->lll;
 
-	/* Events elapsed used in timeout checks below */
-	skip_event = lll->skip_event;
-	elapsed_event = skip_event + 1;
+	if (done->extra.sync_term) {
+		/* Stop periodic advertising scan ticker */
+		sync_ticker_cleanup(sync, NULL);
+	} else {
+		/* Events elapsed used in timeout checks below */
+		skip_event = lll->skip_event;
+		elapsed_event = skip_event + 1;
 
-	/* Sync drift compensation and new skip calculation
-	 */
-	ticks_drift_plus = 0U;
-	ticks_drift_minus = 0U;
-	if (done->extra.trx_cnt) {
-		/* Calculate drift in ticks unit */
-		ull_drift_ticks_get(done, &ticks_drift_plus,
-				    &ticks_drift_minus);
+		/* Sync drift compensation and new skip calculation */
+		ticks_drift_plus = 0U;
+		ticks_drift_minus = 0U;
+		if (done->extra.trx_cnt) {
+			/* Calculate drift in ticks unit */
+			ull_drift_ticks_get(done, &ticks_drift_plus, &ticks_drift_minus);
 
-		/* Enforce skip */
-		lll->skip_event = sync->skip;
-	}
+			/* Enforce skip */
+			lll->skip_event = sync->skip;
+		}
 
-	/* Reset supervision countdown */
-	if (done->extra.crc_valid) {
-		sync->timeout_expire = 0U;
-	}
-
-	/* if anchor point not sync-ed, start timeout countdown, and break
-	 * skip if any.
-	 */
-	else {
-		if (!sync->timeout_expire) {
+		/* Reset supervision countdown */
+		if (done->extra.crc_valid) {
+			sync->timeout_expire = 0U;
+		}
+		/* If anchor point not sync-ed, start timeout countdown, and break skip if any */
+		else if (!sync->timeout_expire) {
 			sync->timeout_expire = sync->timeout_reload;
 		}
-	}
 
-	/* check timeout */
-	force = 0U;
-	if (sync->timeout_expire) {
-		if (sync->timeout_expire > elapsed_event) {
-			sync->timeout_expire -= elapsed_event;
+		/* check timeout */
+		force = 0U;
+		if (sync->timeout_expire) {
+			if (sync->timeout_expire > elapsed_event) {
+				sync->timeout_expire -= elapsed_event;
 
-			/* break skip */
-			lll->skip_event = 0U;
+				/* break skip */
+				lll->skip_event = 0U;
 
-			if (skip_event) {
-				force = 1U;
+				if (skip_event) {
+					force = 1U;
+				}
+			} else {
+				sync_ticker_cleanup(sync, ticker_stop_op_cb);
+
+				return;
 			}
-		} else {
-			timeout_cleanup(sync);
-
-			return;
 		}
-	}
 
-	/* check if skip needs update */
-	lazy = 0U;
-	if ((force) || (skip_event != lll->skip_event)) {
-		lazy = lll->skip_event + 1U;
-	}
+		/* Check if skip needs update */
+		lazy = 0U;
+		if ((force) || (skip_event != lll->skip_event)) {
+			lazy = lll->skip_event + 1U;
+		}
 
-	/* Update Sync ticker instance */
-	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
-		uint16_t sync_handle = ull_sync_handle_get(sync);
-		uint32_t ticker_status;
+		/* Update Sync ticker instance */
+		if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
+			uint16_t sync_handle = ull_sync_handle_get(sync);
+			uint32_t ticker_status;
 
-		/* Call to ticker_update can fail under the race
-		 * condition where in the periodic sync role is being stopped
-		 * but at the same time it is preempted by periodic sync event
-		 * that gets into close state. Accept failure when periodic sync
-		 * role is being stopped.
-		 */
-		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
-					      TICKER_USER_ID_ULL_HIGH,
-					      (TICKER_ID_SCAN_SYNC_BASE +
-					       sync_handle),
-					      ticks_drift_plus,
-					      ticks_drift_minus, 0, 0,
-					      lazy, force,
-					      ticker_update_sync_op_cb, sync);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY) ||
-			  ((void *)sync == ull_disable_mark_get()));
+			/* Call to ticker_update can fail under the race
+			 * condition where in the periodic sync role is being stopped
+			 * but at the same time it is preempted by periodic sync event
+			 * that gets into close state. Accept failure when periodic sync
+			 * role is being stopped.
+			 */
+			ticker_status =
+				ticker_update(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+					      (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
+					      ticks_drift_plus, ticks_drift_minus, 0, 0, lazy,
+					      force, ticker_update_sync_op_cb, sync);
+			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+				  (ticker_status == TICKER_STATUS_BUSY) ||
+				  ((void *)sync == ull_disable_mark_get()));
+		}
 	}
 }
 
@@ -824,15 +864,14 @@ static inline struct ll_sync_set *sync_acquire(void)
 	return mem_acquire(&sync_free);
 }
 
-static void timeout_cleanup(struct ll_sync_set *sync)
+static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_of_cb)
 {
 	uint16_t sync_handle = ull_sync_handle_get(sync);
 	uint32_t ret;
 
 	/* Stop Periodic Sync Ticker */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  TICKER_ID_SCAN_SYNC_BASE + sync_handle,
-			  ticker_stop_op_cb, (void *)sync);
+			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_of_cb, (void *)sync);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -841,8 +880,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};
 	static struct lll_prepare_param p;
 	struct ll_sync_set *sync = param;
 	struct lll_sync *lll;
@@ -863,11 +900,10 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.lazy = lazy;
 	p.force = force;
 	p.param = lll;
-	mfy.param = &p;
+	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-			     TICKER_USER_ID_LLL, 0, &mfy);
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy_lll_prepare);
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
@@ -876,7 +912,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
-
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
