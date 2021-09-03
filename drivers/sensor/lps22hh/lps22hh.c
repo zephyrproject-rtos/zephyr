@@ -62,7 +62,11 @@ static inline void lps22hh_press_convert(struct sensor_value *val,
 	/* Also convert hPa into kPa */
 
 	val->val1 = press_tmp / 40960;
-	val->val2 = (press_tmp % 40960) * 1000000 / 40960;
+
+	/* For the decimal part use (3125 / 128) as a factor instead of
+	 * (1000000 / 40960) to avoid int32 overflow
+	 */
+	val->val2 = (press_tmp % 40960) * 3125 / 128;
 }
 
 static inline void lps22hh_temp_convert(struct sensor_value *val,
