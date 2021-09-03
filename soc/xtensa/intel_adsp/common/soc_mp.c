@@ -24,34 +24,20 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #include <soc/shim.h>
 
-#include <drivers/ipm.h>
-#include <ipm/ipm_cavs_idc.h>
-
 extern void z_sched_ipi(void);
 extern void z_smp_start_cpu(int id);
 extern void z_reinit_idle_thread(int i);
 
-/* ROM wake version parsed by ROM during core wake up. */
-#define IDC_ROM_WAKE_VERSION	0x2
+/* IDC power up message to the ROM firmware.  This isn't documented
+ * anywhere, it's basically just a magic number (except the high bit,
+ * which signals the hardware)
+ */
+#define IDC_MSG_POWER_UP				  \
+	(BIT(31) |     /* Latch interrupt in ITC write */ \
+	 (0x1 << 24) | /* "ROM control version" = 1 */	  \
+	 (0x2 << 0))   /* "Core wake version" = 2 */
 
-/* IDC message type. */
-#define IDC_TYPE_SHIFT		24
-#define IDC_TYPE_MASK		0x7f
-#define IDC_TYPE(x)		(((x) & IDC_TYPE_MASK) << IDC_TYPE_SHIFT)
-
-/* IDC message header. */
-#define IDC_HEADER_MASK		0xffffff
-#define IDC_HEADER(x)		((x) & IDC_HEADER_MASK)
-
-/* IDC message extension. */
-#define IDC_EXTENSION_MASK	0x3fffffff
-#define IDC_EXTENSION(x)	((x) & IDC_EXTENSION_MASK)
-
-/* IDC power up message. */
-#define IDC_MSG_POWER_UP	\
-	(IDC_TYPE(0x1) | IDC_HEADER(IDC_ROM_WAKE_VERSION))
-
-#define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
+#define IDC_ALL_CORES (BIT(CONFIG_MP_NUM_CPUS) - 1)
 
 struct cpustart_rec {
 	uint32_t		cpu;
@@ -251,9 +237,24 @@ void z_mp_entry(void)
 	/* Interrupt must be enabled while running on current core */
 	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 
-#ifdef CONFIG_SMP_BOOT_DELAY
-	cavs_idc_smp_init(NULL);
-#endif
+	/* Unfortunately the interrupt controller doesn't understand
+	 * that each CPU has its own mask register (the timer has a
+	 * similar hook).  Needed only on hardware with ROMs that
+	 * disable this; cAVS 2.5 starts with an unmasked hardware
+	 * default.
+	 */
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		CAVS_INTCTRL[start_rec.cpu].l2.clear = CAVS_L2_IDC;
+	}
+
+	/* Unmask IDC interrupts from this core to all others.  A
+	 * delay is needed following the write on older hardware, or
+	 * else the modification gets lots.  Voodoo.
+	 */
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		k_busy_wait(10);
+	}
+	IDC[start_rec.cpu].busy_int = IDC_ALL_CORES;
 
 	cpus_active[start_rec.cpu] = true;
 	start_rec.alive = 1;
@@ -350,31 +351,26 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		shim->clkctl |= BIT(16 + cpu_num);
 	}
 
-	/* Send power up message to the other core */
-	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
+	/* Send power-up message to the other core.  Start address
+	 * gets passed via the IETC scratch register (only 30 bits
+	 * available, so it's sent shifted).  The write to ITC
+	 * triggers the interrupt, so that comes last.
+	 */
+	uint32_t ietc = ((long) z_soc_mp_asm_entry) >> 2;
 
 	IDC[curr_cpu].core[cpu_num].ietc = ietc;
-	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP | IPC_IDCITC_BUSY;
+	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;
 
 #ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	/* Early DSPs have a ROM that actually receives the startup
 	 * IDC as an interrupt, and we don't want that to be confused
 	 * by IPIs sent by the OS elsewhere.  Mask the IDC interrupt
-	 * on other core so IPI won't cause them to jump to ISR until
-	 * the core is fully initialized.
+	 * on the new core so Zephyr IPIs from existing cores won't
+	 * cause it to jump to ISR until the core is fully
+	 * initialized.  Wait for the startup IDC to arrive though.
 	 */
-	uint32_t idc_reg = idc_read(IPC_IDCCTL, cpu_num);
-
-	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
-	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
-		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
-
-	k_busy_wait(100);
-
-#ifdef CONFIG_SMP_BOOT_DELAY
-	cavs_idc_smp_init(NULL);
-#endif
+	k_busy_wait(10);
+	IDC[cpu_num].busy_int &= ~IDC_ALL_CORES;
 #endif
 
 	while (!start_rec.alive)
@@ -383,7 +379,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 void arch_sched_ipi(void)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V25
 	uint32_t curr = prid();
 
 	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
@@ -391,17 +386,6 @@ void arch_sched_ipi(void)
 			IDC[curr].core[c].itc = BIT(31);
 		}
 	}
-#else
-	/* Legacy implementation for cavs15 based on the 2-core-only
-	 * IPM driver.  To be replaced with the general one when
-	 * validated.
-	 */
-	const struct device *idcdev =
-		device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
-
-	ipm_send(idcdev, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-		 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
-#endif
 }
 
 void idc_isr(void *param)
@@ -423,36 +407,22 @@ void idc_isr(void *param)
 	}
 }
 
-#ifndef CONFIG_IPM_CAVS_IDC
-/* Fallback stub for external SOF code */
-int cavs_idc_smp_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-#endif
-
 void soc_idc_init(void)
 {
-#ifndef CONFIG_IPM_CAVS_IDC
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(idc)), 0, idc_isr, NULL, 0);
-#endif
 
 	/* Every CPU should be able to receive an IDC interrupt from
 	 * every other CPU, but not to be back-interrupted when the
 	 * target core clears the busy bit.
 	 */
 	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
-		uint32_t coremask = BIT(CONFIG_MP_NUM_CPUS) - 1;
-
-		IDC[core].busy_int |= coremask;
-		IDC[core].done_int &= ~coremask;
+		IDC[core].busy_int |= IDC_ALL_CORES;
+		IDC[core].done_int &= ~IDC_ALL_CORES;
 
 		/* Also unmask the IDC interrupt for every core in the
 		 * L2 mask register.
 		 */
 		CAVS_INTCTRL[core].l2.clear = CAVS_L2_IDC;
-
 	}
 
 	/* Clear out any existing pending interrupts that might be present */
