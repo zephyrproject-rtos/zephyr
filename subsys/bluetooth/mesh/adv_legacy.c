@@ -119,6 +119,8 @@ static inline void adv_send(struct net_buf *buf)
 		return;
 	}
 
+	bt_mesh_adv_send_end(err, BT_MESH_ADV(buf));
+
 	BT_DBG("Advertising stopped (%u ms)", (uint32_t) k_uptime_delta(&time));
 }
 

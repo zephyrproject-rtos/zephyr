@@ -91,9 +91,10 @@ static inline void bt_mesh_adv_send_start(uint16_t duration, int err,
 }
 
 static inline void bt_mesh_adv_send_end(
-	int err, struct bt_mesh_adv const *adv)
+	int err, struct bt_mesh_adv *adv)
 {
 	if (adv->started && adv->cb && adv->cb->end) {
+		adv->started = 0;
 		adv->cb->end(err, adv->cb_data);
 	}
 }
