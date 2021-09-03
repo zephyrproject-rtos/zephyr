@@ -149,6 +149,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 		pri_dptr += BDADDR_SIZE;
 	}
 
+	/* traverse through tgt_addr, if present */
+	if (pri_hdr->tgt_addr) {
+		pri_dptr += BDADDR_SIZE;
+	}
+
+	/* No CTEInfo flag in primary and secondary channel PDU */
+
 	/* traverse through adi, if present */
 	if (pri_hdr->adi) {
 		pri_dptr += sizeof(struct pdu_adv_adi);
