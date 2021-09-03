@@ -228,6 +228,11 @@
 
 #define GIC_SPI_INT_BASE		32
 
+#define GIC_SPI_MAX_INTID		1019
+
+#define GIC_IS_SPI(intid)		(((intid) >= GIC_SPI_INT_BASE) && \
+					((intid) <= GIC_SPI_MAX_INTID))
+
 #define GIC_NUM_INTR_PER_REG		32
 
 #define GIC_NUM_CFG_PER_REG		16
