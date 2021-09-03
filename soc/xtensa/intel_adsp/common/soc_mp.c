@@ -54,39 +54,17 @@ extern void z_reinit_idle_thread(int i);
 #define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
 
 struct cpustart_rec {
-	uint32_t		cpu;
-
+	uint32_t        cpu;
 	arch_cpustart_t	fn;
-	void		*arg;
-	uint32_t		vecbase;
-
-	uint32_t		alive;
+	void            *arg;
+	uint32_t        vecbase;
 };
+
+static struct cpustart_rec start_rec;
 
 static struct k_spinlock mplock;
 
 char *z_mp_stack_top;
-
-#ifdef CONFIG_KERNEL_COHERENCE
-/* Coherence guarantees that normal .data will be coherent and that it
- * won't overlap any cached memory.
- */
-static struct {
-	struct cpustart_rec cpustart;
-} cpustart_mem;
-#else
-/* If .data RAM is by default incoherent, then the start record goes
- * into its own dedicated cache line(s)
- */
-static __aligned(XCHAL_DCACHE_LINESIZE) union {
-	struct cpustart_rec cpustart;
-	char pad[XCHAL_DCACHE_LINESIZE];
-} cpustart_mem;
-#endif
-
-#define start_rec \
-	(*((volatile struct cpustart_rec *) \
-	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
 
 /* Simple array of CPUs that are active and available for an IPI.  The
  * IDC interrupt is ALSO used to bring a CPU out of reset, so we need
@@ -118,8 +96,6 @@ __asm__(".align 4                   \n\t"
 	"  l32i  a1, a1, 0          \n\t"
 	"  call4 z_mp_entry         \n\t");
 BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
-
-int cavs_idc_smp_init(const struct device *dev);
 
 #define CxL1CCAP (*(volatile uint32_t *)0x9F080080)
 #define CxL1CCFG (*(volatile uint32_t *)0x9F080084)
@@ -197,7 +173,6 @@ static ALWAYS_INLINE void enable_l1_cache(void)
 
 void z_mp_entry(void)
 {
-	volatile int ie;
 	uint32_t reg;
 
 	enable_l1_cache();
@@ -219,17 +194,17 @@ void z_mp_entry(void)
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	z_xtensa_cache_flush_inv_all();
-#endif
+	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V25)) {
+		z_xtensa_cache_flush_inv_all();
+	}
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
 	 * change interrupt vectors at runtime).
 	 */
-	ie = 0;
-	__asm__ volatile("wsr.INTENABLE %0" : : "r"(ie));
-	__asm__ volatile("wsr.VECBASE %0" : : "r"(start_rec.vecbase));
+	reg = 0;
+	__asm__ volatile("wsr %0, INTENABLE" : : "r"(reg));
+	__asm__ volatile("wsr %0, VECBASE" : : "r"(start_rec.vecbase));
 	__asm__ volatile("rsync");
 
 	/* Set up the CPU pointer. */
@@ -256,20 +231,9 @@ void z_mp_entry(void)
 #endif
 
 	cpus_active[start_rec.cpu] = true;
-	start_rec.alive = 1;
 
 	start_rec.fn(start_rec.arg);
-
-#if CONFIG_MP_NUM_CPUS == 1
-	/* CPU#1 can be under manual control running custom functions
-	 * instead of participating in general thread execution.
-	 * Put the CPU into idle after those functions return
-	 * so this won't return.
-	 */
-	for (;;) {
-		k_cpu_idle();
-	}
-#endif
+	__ASSERT(false, "arch_start_cpu() handler should never return");
 }
 
 bool arch_cpu_active(int cpu_num)
@@ -323,13 +287,12 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	lpsram[1] = z_soc_mp_asm_entry;
 #endif
 
-	__asm__ volatile("rsr.VECBASE %0\n\t" : "=r"(vecbase));
+	__asm__ volatile("rsr %0, VECBASE\n\t" : "=r"(vecbase));
 
 	start_rec.cpu = cpu_num;
 	start_rec.fn = fn;
 	start_rec.arg = arg;
 	start_rec.vecbase = vecbase;
-	start_rec.alive = 0;
 
 	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
@@ -376,9 +339,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	cavs_idc_smp_init(NULL);
 #endif
 #endif
-
-	while (!start_rec.alive)
-		;
 }
 
 void arch_sched_ipi(void)
