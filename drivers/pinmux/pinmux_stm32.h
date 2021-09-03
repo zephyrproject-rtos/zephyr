@@ -24,11 +24,6 @@
 extern "C" {
 #endif
 
-struct pin_config {
-	uint8_t pin_num;
-	uint32_t mode;
-};
-
 /**
  * @brief structure to convey pinctrl information for stm32 soc
  * value
@@ -119,31 +114,6 @@ struct stm32_pinmux_conf {
  * @return clock subsystem ID
  */
 clock_control_subsys_t stm32_get_port_clock(int port);
-
-/**
- * @brief helper for configuration of IO pin
- *
- * @param pin IO pin, STM32PIN() encoded
- * @param func IO function encoded
- * @param clk clock control device, for enabling/disabling clock gate
- * for the port
- */
-int z_pinmux_stm32_set(uint32_t pin, uint32_t func);
-
-/**
- * @brief helper for obtaining pin configuration for the board
- *
- * @param[out] pins  set to the number of pins in the array
- *
- * Obtain pin assignment/configuration for current board. This call
- * needs to be implemented at the board integration level. After
- * restart all pins are already configured as GPIO and can be skipped
- * in the configuration array. Pin numbers in @pin_num field are
- * STM32PIN() encoded.
- *
- */
-void stm32_setup_pins(const struct pin_config *pinconf,
-		      size_t pins);
 
 /**
  * @brief helper for converting dt stm32 pinctrl format to existing pin config
