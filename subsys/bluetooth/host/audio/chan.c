@@ -1042,8 +1042,8 @@ static int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
 	return 0;
 }
 
-struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
-				       struct bt_codec_qos *qos)
+struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
+					struct bt_codec_qos *qos)
 {
 	BT_DBG("chan %p iso %p qos %p", chan, chan->iso, qos);
 
@@ -1103,7 +1103,7 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 	return &chan->iso->iso->iso;
 }
 
-int bt_audio_chan_unbind(struct bt_audio_chan *chan)
+int bt_audio_cig_terminate(struct bt_audio_chan *chan)
 {
 	BT_DBG("chan %p", chan);
 
@@ -1142,7 +1142,7 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 
 	switch (chan->iso->state) {
 	case BT_ISO_DISCONNECTED:
-		if (!bt_audio_chan_bind(chan, chan->qos)) {
+		if (!bt_audio_cig_create(chan, chan->qos)) {
 			return -ENOTCONN;
 		}
 
@@ -1182,13 +1182,18 @@ int bt_audio_chan_disconnect(struct bt_audio_chan *chan)
 
 void bt_audio_chan_reset(struct bt_audio_chan *chan)
 {
+	int err;
+
 	BT_DBG("chan %p", chan);
 
 	if (!chan || !chan->conn) {
 		return;
 	}
 
-	bt_audio_chan_unbind(chan);
+	err = bt_audio_cig_terminate(chan);
+	if (err != 0) {
+		BT_ERR("Failed to terminate CIG: %d", err);
+	}
 	bt_audio_chan_unlink(chan, NULL);
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
 }
