@@ -1131,10 +1131,19 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 	h = (void *)pri_com_hdr->ext_hdr_adv_data;
 	ptr = h->data;
 
+	/* traverse through adv_addr, if present */
 	if (h->adv_addr) {
 		ptr += BDADDR_SIZE;
 	}
 
+	/* traverse through tgt_addr, if present */
+	if (h->tgt_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	/* No CTEInfo flag in primary and secondary channel PDU */
+
+	/* traverse through adi, if present */
 	if (h->adi) {
 		ptr += sizeof(struct pdu_adv_adi);
 	}
