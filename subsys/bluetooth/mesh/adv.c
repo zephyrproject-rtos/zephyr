@@ -40,7 +40,7 @@ const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES] = {
 
 K_FIFO_DEFINE(bt_mesh_adv_queue);
 
-static void adv_buf_destroy(struct net_buf *buf)
+void bt_mesh_adv_buf_destroy(struct net_buf *buf)
 {
 	struct bt_mesh_adv adv = *BT_MESH_ADV(buf);
 
@@ -50,7 +50,8 @@ static void adv_buf_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
-		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, adv_buf_destroy);
+		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE,
+		    bt_mesh_adv_buf_destroy);
 
 static struct bt_mesh_adv adv_pool[CONFIG_BT_MESH_ADV_BUF_COUNT];
 
