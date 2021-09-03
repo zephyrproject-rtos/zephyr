@@ -65,7 +65,8 @@ CREATE_FLAG(playing_order_flag);
 CREATE_FLAG(playing_orders_supported_read);
 CREATE_FLAG(ccid_read);
 CREATE_FLAG(media_state_read);
-CREATE_FLAG(command_flag);
+CREATE_FLAG(command_sent_flag);
+CREATE_FLAG(command_results_flag);
 CREATE_FLAG(commands_supported);
 CREATE_FLAG(search_flag);
 
@@ -396,7 +397,22 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	SET_FLAG(media_state_read);
 }
 
-static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
+static void command_send_cb(struct media_player *plr, int err, struct mpl_cmd cmd)
+{
+	if (err) {
+		FAIL("Command send failed (%d)", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	SET_FLAG(command_sent_flag);
+}
+
+static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
 {
 	if (err) {
 		FAIL("Command failed (%d)", err);
@@ -408,9 +424,8 @@ static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd
 		return;
 	}
 
-	/* TODO: Improve write callback / notification callback unification */
 	g_command_result = cmd_ntf.result_code;
-	SET_FLAG(command_flag);
+	SET_FLAG(command_results_flag);
 }
 
 static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
@@ -511,7 +526,8 @@ void initialize_media(void)
 	cbs.playing_order_write           = playing_order_write_cb;
 	cbs.playing_orders_supported_recv = playing_orders_supported_cb;
 	cbs.media_state_recv              = media_state_cb;
-	cbs.command                       = command_cb;
+	cbs.command_send                  = command_send_cb;
+	cbs.command_recv                  = command_recv_cb;
 	cbs.commands_supported_recv       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.search                        = search_cb;
@@ -595,11 +611,8 @@ static void test_send_cmd_wait_flags(struct mpl_cmd cmd)
 {
 	int err;
 
-	/* TODO:
-	 * Improve unification of control point write callback and control
-	 * point notification callback
-	 */
-	UNSET_FLAG(command_flag);
+	UNSET_FLAG(command_sent_flag);
+	UNSET_FLAG(command_results_flag);
 	err = media_proxy_ctrl_command_send(current_player, cmd);
 	if (err) {
 		FAIL("Failed to send command: %d, opcode: %u",
@@ -607,7 +620,8 @@ static void test_send_cmd_wait_flags(struct mpl_cmd cmd)
 		return;
 	}
 
-	WAIT_FOR_FLAG(command_flag);
+	WAIT_FOR_FLAG(command_sent_flag);
+	WAIT_FOR_FLAG(command_results_flag);
 }
 
 static void test_cp_play(void)
