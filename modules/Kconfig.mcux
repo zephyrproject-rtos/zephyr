@@ -171,6 +171,12 @@ config HAS_MCUX_SIM
 	  Set if the system integration module (SIM) module is present in the
 	  SoC.
 
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
+	  SoC.
+
 config HAS_MCUX_TRNG
 	bool
 	help
