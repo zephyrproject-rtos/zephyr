@@ -8,7 +8,7 @@ menuconfig BT_HRS
 
 if BT_HRS
 
-choice
+choice BT_HRS_DEFAULT_PERM
 	prompt "Default permissions used for HRS characteristics"
 	default BT_HRS_DEFAULT_PERM_RW
 	help
