@@ -56,6 +56,14 @@ struct lll_adv_aux {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
 
+	/* Implementation defined radio event counter to calculate auxiliary
+	 * PDU channel index.
+	 */
+	uint16_t data_chan_counter;
+
+	/* Temporary stored use by primary channel PDU event to fill the
+	 * auxiliary offset to this auxiliary PDU event.
+	 */
 	uint32_t ticks_offset;
 
 	struct lll_adv_pdu data;
