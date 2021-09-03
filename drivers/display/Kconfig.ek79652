@@ -1,0 +1,10 @@
+# EK79652 display controller configuration options
+
+# Copyright (c) 2021 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config EK79652
+	bool "EK79652 compatible display controller driver"
+	depends on SPI
+	help
+	  Enable driver for EK79652 compatible controller.
