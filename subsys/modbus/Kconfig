@@ -32,6 +32,9 @@ config MODBUS_ROLE_CLIENT_SERVER
 
 endchoice
 
+config MODBUS_SERIAL_USE_TXC
+	bool "RS485 transmissionion completion support"
+
 config MODBUS_SERVER
 	bool
 	default y if MODBUS_ROLE_SERVER || MODBUS_ROLE_CLIENT_SERVER

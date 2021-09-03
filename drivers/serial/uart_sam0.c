@@ -757,6 +757,36 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 	return regs->INTFLAG.bit.DRE != 0;
 }
 
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+static void uart_sam0_irq_txc_enable(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
+}
+
+static void uart_sam0_irq_txc_disable(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
+}
+
+static void uart_sam0_irq_txc_clear(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	regs->INTFLAG.bit.TXC = 1;
+}
+
+static int uart_sam0_irq_txc_ready(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+
+	return (regs->INTFLAG.bit.TXC & regs->INTENSET.bit.TXC) != 0;
+}
+#endif
+
 static void uart_sam0_irq_rx_enable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
@@ -1133,6 +1163,12 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	.irq_tx_enable = uart_sam0_irq_tx_enable,
 	.irq_tx_disable = uart_sam0_irq_tx_disable,
 	.irq_tx_ready = uart_sam0_irq_tx_ready,
+#if CONFIG_MODBUS_SERIAL_USE_TXC	
+	.irq_txc_enable = uart_sam0_irq_txc_enable,
+	.irq_txc_disable = uart_sam0_irq_txc_disable,
+	.irq_txc_ready = uart_sam0_irq_txc_ready,
+	.irq_txc_clear = uart_sam0_irq_txc_clear,
+#endif	
 	.irq_rx_enable = uart_sam0_irq_rx_enable,
 	.irq_rx_disable = uart_sam0_irq_rx_disable,
 	.irq_rx_ready = uart_sam0_irq_rx_ready,

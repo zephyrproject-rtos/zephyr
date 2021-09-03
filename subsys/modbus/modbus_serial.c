@@ -44,10 +44,31 @@ static void modbus_serial_tx_off(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	uart_irq_tx_disable(cfg->dev);
+#ifndef CONFIG_MODBUS_SERIAL_USE_TXC
+	if (cfg->de != NULL) {
+		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
+	}
+#endif	
+}
+
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+static void modbus_serial_txc_on(struct modbus_context *ctx)
+{
+	struct modbus_serial_config *cfg = ctx->cfg;
+
+	uart_irq_txc_enable(cfg->dev);
+}
+
+static void modbus_serial_txc_off(struct modbus_context *ctx)
+{
+	struct modbus_serial_config *cfg = ctx->cfg;
+
+	uart_irq_txc_disable(cfg->dev);
 	if (cfg->de != NULL) {
 		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
 	}
 }
+#endif
 
 static void modbus_serial_rx_on(struct modbus_context *ctx)
 {
@@ -332,6 +353,9 @@ static void rtu_tx_adu(struct modbus_context *ctx)
 	LOG_HEXDUMP_DBG(cfg->uart_buf, cfg->uart_buf_ctr, "uart_buf");
 	LOG_DBG("Start frame transmission");
 	modbus_serial_rx_off(ctx);
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+	modbus_serial_txc_on(ctx);
+#endif		
 	modbus_serial_tx_on(ctx);
 }
 
@@ -397,9 +421,27 @@ static void cb_handler_tx(struct modbus_context *ctx)
 		/* Disable transmission */
 		cfg->uart_buf_ptr = &cfg->uart_buf[0];
 		modbus_serial_tx_off(ctx);
+#ifndef CONFIG_MODBUS_SERIAL_USE_TXC		
 		modbus_serial_rx_on(ctx);
+#endif		
 	}
 }
+
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+static void cb_handler_txc(struct modbus_context *ctx)
+{
+	struct modbus_serial_config *cfg = ctx->cfg;
+
+	/* Disable transmission */
+	if (cfg->uart_buf_ctr == 0)
+	{
+		modbus_serial_txc_off(ctx);
+		modbus_serial_rx_on(ctx);
+	}
+	/* clear interrupt flag */
+	uart_irq_txc_clear(cfg->dev);
+}
+#endif
 
 static void uart_cb_handler(const struct device *dev, void *app_data)
 {
@@ -413,8 +455,9 @@ static void uart_cb_handler(const struct device *dev, void *app_data)
 
 	cfg = ctx->cfg;
 
+#ifndef CONFIG_MODBUS_SERIAL_USE_TXC
 	while (uart_irq_update(cfg->dev) && uart_irq_is_pending(cfg->dev)) {
-
+#endif
 		if (uart_irq_rx_ready(cfg->dev)) {
 			cb_handler_rx(ctx);
 		}
@@ -422,7 +465,14 @@ static void uart_cb_handler(const struct device *dev, void *app_data)
 		if (uart_irq_tx_ready(cfg->dev)) {
 			cb_handler_tx(ctx);
 		}
+
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+		if (uart_irq_txc_ready(cfg->dev)) {
+			cb_handler_txc(ctx);
+		}
+#else
 	}
+#endif	
 }
 
 /* This function is called when the RTU framing timer expires. */
@@ -604,5 +654,8 @@ void modbus_serial_disable(struct modbus_context *ctx)
 {
 	modbus_serial_tx_off(ctx);
 	modbus_serial_rx_off(ctx);
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+	modbus_serial_txc_off(ctx);
+#endif	
 	k_timer_stop(&ctx->cfg->rtu_timer);
 }

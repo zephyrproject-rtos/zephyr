@@ -399,6 +399,20 @@ __subsystem struct uart_driver_api {
 	/** Interrupt driven transfer ready function */
 	int (*irq_tx_ready)(const struct device *dev);
 
+	#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+	/** Interrupt driven transfer complete enabling function */
+	void (*irq_txc_enable)(const struct device *dev);
+
+	/** Interrupt driven transfer complete disabling function */
+	void (*irq_txc_disable)(const struct device *dev);
+
+	/** Interrupt driven transfer complete ready function */
+	int (*irq_txc_ready)(const struct device *dev);
+
+	/** Interrupt driven transfer complete clearing function */
+	void (*irq_txc_clear)(const struct device *dev);
+#endif
+
 	/** Interrupt driven receiver enabling function */
 	void (*irq_rx_enable)(const struct device *dev);
 
@@ -897,6 +911,97 @@ static inline int uart_irq_tx_ready(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_MODBUS_SERIAL_USE_TXC
+/**
+ * @brief Enable TXC interrupt in IER.
+ *
+ * @param dev UART device structure.
+ *
+ * @return N/A
+ */
+__syscall void uart_irq_txc_enable(const struct device *dev);
+
+static inline void z_impl_uart_irq_txc_enable(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->irq_txc_enable != NULL) {
+		api->irq_txc_enable(dev);
+	}
+#endif
+}
+/**
+ * @brief Disable TXC interrupt in IER.
+ *
+ * @param dev UART device structure.
+ *
+ * @return N/A
+ */
+__syscall void uart_irq_txc_disable(const struct device *dev);
+
+static inline void z_impl_uart_irq_txc_disable(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->irq_txc_disable != NULL) {
+		api->irq_txc_disable(dev);
+	}
+#endif
+}
+/**
+ * @brief Clear TXC interrupt in IER.
+ *
+ * @param dev UART device structure.
+ *
+ * @return N/A
+ */
+__syscall void uart_irq_txc_clear(const struct device *dev);
+
+static inline void z_impl_uart_irq_txc_clear(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->irq_txc_clear != NULL) {
+		api->irq_txc_clear(dev);
+	}
+#endif
+}
+
+/**
+ * @brief Check if UART TX has completed
+ *
+ * @details Check if UART TX has completed, buffer is empty i.e. all data has 
+ * been transmitted. This function must be called in a UART interrupt
+ * handler, or its result is undefined. Before calling this function
+ * in the interrupt handler, uart_irq_update() must be called once per
+ * the handler invocation.
+ *
+ * @param dev UART device structure.
+ *
+ * @retval 1 If the transmission is complete.
+ * @retval 0 Otherwise.
+ */
+static inline int uart_irq_txc_ready(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->irq_txc_ready != NULL) {
+		return api->irq_txc_ready(dev);
+	}
+#endif
+
+	return 0;
+}
+#endif 
 
 /**
  * @brief Enable RX interrupt.
