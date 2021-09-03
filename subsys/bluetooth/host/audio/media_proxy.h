@@ -361,6 +361,19 @@ struct media_proxy_ctrl_cbs {
 	void (*track_position_recv)(struct media_player *player, int err, int32_t position);
 
 	/**
+	 * @brief Track Position write callback
+	 *
+	 * Called when the Track Position is written
+	 * See also media_proxy_ctrl_track_position_set().
+	 *
+	 * @param player     Media player instance pointer
+	 * @param err        Error value. 0 on success, GATT error on positive value
+	 *                   or errno on negative value.
+	 * @param position   The position given attempted to write
+	 */
+	void (*track_position_write)(struct media_player *player, int err, int32_t position);
+
+	/**
 	 * @brief Playback Speed receive callback
 	 *
 	 * Called when the Playback Speed is read or changed
@@ -373,6 +386,19 @@ struct media_proxy_ctrl_cbs {
 	 * @param speed    The playback speed parameter
 	 */
 	void (*playback_speed_recv)(struct media_player *player, int err, int8_t speed);
+
+	/**
+	 * @brief Playback Speed write callback
+	 *
+	 * Called when the Playback Speed is written
+	 * See also media_proxy_ctrl_playback_speed_set()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param speed    The playback speed parameter attempted to write
+	 */
+	void (*playback_speed_write)(struct media_player *player, int err, int8_t speed);
 
 	/**
 	 * @brief Seeking Speed receive callback
@@ -415,6 +441,19 @@ struct media_proxy_ctrl_cbs {
 	void (*current_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
+	 * @brief Current Track Object ID write callback
+	 *
+	 * Called when the Current Track Object ID is written
+	 * See also media_proxy_ctrl_current_track_id_set()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param id	   The ID (48 bits) attempted to write
+	 */
+	void (*current_track_id_write)(struct media_player *player, int err, uint64_t id);
+
+	/**
 	 * @brief Next Track Object ID receive callback
 	 *
 	 * Called when the Next Track Object ID is read or changed
@@ -429,6 +468,19 @@ struct media_proxy_ctrl_cbs {
 	void (*next_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
+	 * @brief Next Track Object ID write callback
+	 *
+	 * Called when the Next Track Object ID is written
+	 * See also media_proxy_ctrl_next_track_id_set()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param id	   The ID (48 bits) attempted to write
+	 */
+	void (*next_track_id_write)(struct media_player *player, int err, uint64_t id);
+
+	/**
 	 * @brief Current Group Object ID receive callback
 	 *
 	 * Called when the Current Group Object ID is read or changed
@@ -441,6 +493,19 @@ struct media_proxy_ctrl_cbs {
 	 * @param id	   The ID of the current group object in Object Transfer Service (48 bits)
 	 */
 	void (*current_group_id_recv)(struct media_player *player, int err, uint64_t id);
+
+	/**
+	 * @brief Current Group Object ID write callback
+	 *
+	 * Called when the Current Group Object ID is written
+	 * See also media_proxy_ctrl_current_group_id_set()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param id	   The ID (48 bits) attempted to write
+	 */
+	void (*current_group_id_write)(struct media_player *player, int err, uint64_t id);
 
 	/**
 	 * @brief Parent Group Object ID receive callback
@@ -468,6 +533,19 @@ struct media_proxy_ctrl_cbs {
 	 * @param order    The playing order
 	 */
 	void (*playing_order_recv)(struct media_player *player, int err, uint8_t order);
+
+	/**
+	 * @brief Playing Order write callback
+	 *
+	 * Called when the Playing Order is written
+	 * See also media_proxy_ctrl_playing_order_set()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param order    The playing order attempted to write
+	 */
+	void (*playing_order_write)(struct media_player *player, int err, uint8_t order);
 
 	/**
 	 * @brief Playing Orders Supported receive callback
