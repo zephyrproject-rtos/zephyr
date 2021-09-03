@@ -399,10 +399,13 @@ static const struct rtc_stm32_config rtc_config = {
 		/* prescaler values for LSI @ 32 KHz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00F9,
-#else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(clk_lse), okay)
+		/* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00FF,
+#else
+	#error "clock LSE is disabled in DT"
 #endif
 	},
 };
