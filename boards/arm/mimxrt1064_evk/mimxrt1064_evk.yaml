@@ -21,6 +21,7 @@ supported:
   - display
   - dma
   - gpio
+  - hwinfo
   - i2c
   - netif:eth
   - pwm
