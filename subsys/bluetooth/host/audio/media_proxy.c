@@ -335,9 +335,8 @@ static void mcc_track_position_set_cb(struct bt_conn *conn, int err, int32_t pos
 		BT_ERR("Track Position set failed (%d)", err);
 	}
 
-	/* MCC has separate callbacks for read and set - media_proxy has a common one */
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_recv) {
-		mprx.ctrlr.cbs->track_position_recv(&mprx.remote_player, err, pos);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_write) {
+		mprx.ctrlr.cbs->track_position_write(&mprx.remote_player, err, pos);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -362,8 +361,8 @@ static void mcc_playback_speed_set_cb(struct bt_conn *conn, int err, int8_t spee
 		BT_ERR("Playback speed set failed (%d)", err);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_recv) {
-		mprx.ctrlr.cbs->playback_speed_recv(&mprx.remote_player, err, speed);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_write) {
+		mprx.ctrlr.cbs->playback_speed_write(&mprx.remote_player, err, speed);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -409,6 +408,8 @@ static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err, uint
 	}
 }
 
+/* TODO: current track set callback - must be added to MCC first */
+
 static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
@@ -422,6 +423,8 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_
 	}
 }
 
+/* TODO: next track set callback - must be added to MCC first */
+
 static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
@@ -434,6 +437,8 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint
 		BT_DBG("No callback");
 	}
 }
+
+/* TODO: current group set callback - must be added to MCC first */
 
 static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 {
@@ -469,8 +474,8 @@ static void mcc_playing_order_set_cb(struct bt_conn *conn, int err, uint8_t orde
 		BT_ERR("Playing order set failed (%d)", err);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_recv) {
-		mprx.ctrlr.cbs->playing_order_recv(&mprx.remote_player, err, order);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_write) {
+		mprx.ctrlr.cbs->playing_order_write(&mprx.remote_player, err, order);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -906,6 +911,12 @@ int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t pos
 		if (mprx.local_player.calls->track_position_set) {
 			mprx.local_player.calls->track_position_set(position);
 
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_write) {
+				mprx.ctrlr.cbs->track_position_write(player, 0, position);
+			} else {
+				BT_DBG("No callback");
+			}
+
 			return 0;
 		}
 
@@ -963,6 +974,12 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->playback_speed_set) {
 			mprx.local_player.calls->playback_speed_set(speed);
+
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_write) {
+				mprx.ctrlr.cbs->playback_speed_write(player, 0, speed);
+			} else {
+				BT_DBG("No callback");
+			}
 
 			return 0;
 		}
@@ -1086,6 +1103,12 @@ int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t 
 		if (mprx.local_player.calls->current_track_id_set) {
 			mprx.local_player.calls->current_track_id_set(id);
 
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id_write) {
+				mprx.ctrlr.cbs->current_track_id_write(player, 0, id);
+			} else {
+				BT_DBG("No callback");
+			}
+
 			return 0;
 		}
 
@@ -1145,6 +1168,12 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 		if (mprx.local_player.calls->next_track_id_set) {
 			mprx.local_player.calls->next_track_id_set(id);
 
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id_write) {
+				mprx.ctrlr.cbs->next_track_id_write(player, 0, id);
+			} else {
+				BT_DBG("No callback");
+			}
+
 			return 0;
 		}
 
@@ -1203,6 +1232,12 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->current_group_id_set) {
 			mprx.local_player.calls->current_group_id_set(id);
+
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_write) {
+				mprx.ctrlr.cbs->current_group_id_write(player, 0, id);
+			} else {
+				BT_DBG("No callback");
+			}
 
 			return 0;
 		}
@@ -1295,6 +1330,12 @@ int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t orde
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->playing_order_set) {
 			mprx.local_player.calls->playing_order_set(order);
+
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_write) {
+				mprx.ctrlr.cbs->playing_order_write(player, 0, order);
+			} else {
+				BT_DBG("No callback");
+			}
 
 			return 0;
 		}
