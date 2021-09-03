@@ -861,8 +861,12 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct bt_mesh_proxy_client *client;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
-	    !service_registered) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL) {
+		return;
+	}
+
+	if (!service_registered && bt_mesh_is_provisioned()) {
+		(void)bt_mesh_proxy_gatt_enable();
 		return;
 	}
 
@@ -900,10 +904,7 @@ int bt_mesh_proxy_adv_start(void)
 	return gatt_proxy_advertise(next_sub());
 }
 
-/* Add `_1` suffix forces proxy conn_cb to precede pb_gatt conn_cb.
- * As we may register proxy services in pb_gatt disconnect cb.
- */
-BT_CONN_CB_DEFINE(conn_callbacks_1) = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
 };
