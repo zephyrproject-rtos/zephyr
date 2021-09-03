@@ -71,6 +71,14 @@ struct ll_adv_aux_set {
 
 	uint16_t interval;
 
+	uint16_t data_chan_id;
+	struct {
+		uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
+		uint8_t data_chan_count:6;
+	} chm[DOUBLE_BUFFER_SIZE];
+	uint8_t  chm_first;
+	uint8_t  chm_last;
+
 	uint8_t is_started:1;
 };
 
