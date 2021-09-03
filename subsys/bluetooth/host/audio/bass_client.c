@@ -480,7 +480,7 @@ static int bt_bass_client_common_cp(struct bt_conn *conn, const struct net_buf_s
 }
 
 
-static bool broadcaster_found(struct bt_data *data, void *user_data)
+static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
 	struct bt_uuid_16 adv_uuid;
@@ -521,7 +521,7 @@ void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *a
 		return;
 	}
 
-	bt_data_parse(ad, broadcaster_found, (void *)info);
+	bt_data_parse(ad, broadcast_source_found, (void *)info);
 }
 
 static struct bt_le_scan_cb scan_cb = {
