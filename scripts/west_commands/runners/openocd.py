@@ -47,8 +47,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                     search_args.append('-s')
                     search_args.append(path.dirname(i))
 
-        for p in cfg.openocd_search:
-            search_args.extend(['-s', p])
+        if cfg.openocd_search is not None:
+            for p in cfg.openocd_search:
+                search_args.extend(['-s', p])
         self.openocd_cmd = [cfg.openocd] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
