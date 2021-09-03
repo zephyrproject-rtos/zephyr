@@ -84,7 +84,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_SLAVE ||
+	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
 	    !service_registered || bt_mesh_is_provisioned()) {
 		return;
 	}
@@ -99,7 +99,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_SLAVE ||
+	if (info.role != BT_CONN_ROLE_PERIPHERAL ||
 	    !service_registered) {
 		return;
 	}
@@ -108,14 +108,8 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_mesh_pb_gatt_close(conn);
 
-	if (!bt_mesh_is_provisioned()) {
-		return;
-	}
-
-	(void)bt_mesh_pb_gatt_disable();
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		(void)bt_mesh_proxy_gatt_enable();
+	if (bt_mesh_is_provisioned()) {
+		(void)bt_mesh_pb_gatt_disable();
 	}
 }
 
@@ -304,10 +298,7 @@ int bt_mesh_pb_gatt_adv_start(void)
 	return err;
 }
 
-/* Add `_2` suffix forces this callback to be called
- * after proxy_srv's conn_cb.
- */
-BT_CONN_CB_DEFINE(conn_callbacks_2) = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
 };
