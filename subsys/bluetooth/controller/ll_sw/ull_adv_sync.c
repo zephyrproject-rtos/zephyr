@@ -1597,18 +1597,29 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 	h = (void *)p->ext_hdr_adv_data;
 	ptr = h->data;
 
+	/* traverse through adv_addr, if present */
 	if (h->adv_addr) {
 		ptr += BDADDR_SIZE;
 	}
 
+	/* traverse through tgt_addr, if present */
+	if (h->tgt_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	/* No CTEInfo flag in primary and secondary channel PDU */
+
+	/* traverse through adi, if present */
 	if (h->adi) {
 		ptr += sizeof(struct pdu_adv_adi);
 	}
 
+	/* traverse through aux ptr, if present */
 	if (h->aux_ptr) {
 		ptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
+	/* return pointer offset to sync_info */
 	return (void *)ptr;
 }
 
