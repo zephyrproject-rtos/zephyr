@@ -595,6 +595,11 @@ static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)
 		ptr += sizeof(struct pdu_cte_info);
 	}
 
+	/* traverse through ADI, if present */
+	if (h->adi) {
+		ptr += sizeof(struct pdu_adv_adi);
+	}
+
 	/* traverse through aux ptr, if present */
 	if (h->aux_ptr) {
 		ptr += sizeof(struct pdu_adv_aux_ptr);
