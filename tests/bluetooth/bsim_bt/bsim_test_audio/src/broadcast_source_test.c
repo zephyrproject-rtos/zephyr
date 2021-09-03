@@ -40,6 +40,7 @@ static void test_main(void)
 			   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u,
 							    40000u));
 	struct bt_audio_chan broadcast_source_chans[BROADCAST_STREAM_CNT];
+	struct bt_audio_broadcast_source *source;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -60,7 +61,8 @@ static void test_main(void)
 
 	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
 					       &preset_48_1_2.codec,
-					       &preset_48_1_2.qos);
+					       &preset_48_1_2.qos,
+					       &source);
 	if (err != 0) {
 		FAIL("Unable to create broadcast source: %d", err);
 		return;
@@ -80,6 +82,7 @@ static void test_main(void)
 		FAIL("Unable to release broadcast channels: %d", err);
 		return;
 	}
+	source = NULL;
 
 	PASS("Broadcast source passed\n");
 }
