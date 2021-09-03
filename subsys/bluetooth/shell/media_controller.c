@@ -291,7 +291,17 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
-static void command_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
+static void command_send_cb(struct media_player *plr, int err, struct mpl_cmd cmd)
+{
+	if (err) {
+		shell_error(ctx_shell, "Player: %p, Command send failed (%d)", plr, err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Player: %p, Command opcode sent: %u", plr, cmd.opcode);
+}
+
+static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command failed (%d)", plr, err);
@@ -390,7 +400,8 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	cbs.playing_order_write           = playing_order_write_cb;
 	cbs.playing_orders_supported_recv = playing_orders_supported_cb;
 	cbs.media_state_recv              = media_state_cb;
-	cbs.command                       = command_cb;
+	cbs.command_send                  = command_send_cb;
+	cbs.command_recv                  = command_recv_cb;
 	cbs.commands_supported_recv       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.search                        = search_cb;
