@@ -58,11 +58,11 @@ static void test_main(void)
 		}
 	}
 
-	err = bt_audio_broadcaster_create(&broadcast_chans[0],
-					  &preset_48_1_2.codec,
-					  &preset_48_1_2.qos);
+	err = bt_audio_broadcast_source_create(&broadcast_chans[0],
+					       &preset_48_1_2.codec,
+					       &preset_48_1_2.qos);
 	if (err != 0) {
-		FAIL("Unable to create broadcaster: %d", err);
+		FAIL("Unable to create broadcast source: %d", err);
 		return;
 	}
 
@@ -81,7 +81,7 @@ static void test_main(void)
 		return;
 	}
 
-	PASS("Broadcaster passed\n");
+	PASS("Broadcast source passed\n");
 }
 
 static const struct bst_test_instance test_broadcast_source[] = {

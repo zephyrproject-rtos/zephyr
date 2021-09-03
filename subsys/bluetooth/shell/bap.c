@@ -1139,8 +1139,8 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_audio_broadcaster_create(free_chan, &preset->codec,
-					  &preset->qos);
+	err = bt_audio_broadcast_source_create(free_chan, &preset->codec,
+					       &preset->qos);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcaster: %d", err);
 		return err;
@@ -1168,12 +1168,12 @@ static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 			.timeout    = 0 };
 
 	if (strcmp(argv[1], "on") == 0) {
-		err =  bt_audio_broadcaster_scan_start(&param);
+		err =  bt_audio_broadcast_scan_start(&param);
 		if (err != 0) {
 			shell_error(sh, "Could not start scan: %d", err);
 		}
 	} else if (strcmp(argv[1], "off") == 0) {
-		err = bt_audio_broadcaster_scan_stop();
+		err = bt_audio_broadcast_scan_stop();
 		if (err != 0) {
 			shell_error(sh, "Could not stop scan: %d", err);
 		}
