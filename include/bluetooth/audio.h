@@ -50,6 +50,9 @@ struct bt_audio_endpoint;
 /** @brief Abstract Audio Broadcast Sink structure. */
 struct bt_audio_broadcast_sink;
 
+/** @brief Abstract Audio Broadcast Source structure. */
+struct bt_audio_broadcast_source;
+
 /** @brief Codec configuration structure */
 struct bt_codec_data {
 	struct bt_data data;
@@ -590,8 +593,8 @@ struct bt_audio_capability_ops {
 	/** @brief Scan terminated callback
 	 *
 	 *  Scan terminated callback is called whenever a scan started by
-	 *  bt_audio_broadcaster_scan_start is terminated before
-	 *  bt_audio_broadcaster_scan_stop.
+	 *  bt_audio_broadcast_scan_start() is terminated before
+	 *  bt_audio_broadcast_scan_stop().
 	 *
 	 *  Typical reasons for this are that the periodic advertising has
 	 *  synchronized (success criteria) or the scan timed out.
@@ -607,7 +610,7 @@ struct bt_audio_capability_ops {
 	 *  The periodic advertising synchronization lost callback is called if
 	 *  the periodic advertising sync is lost. If this happens, the sink
 	 *  object is released. To synchronize to the broadcaster again,
-	 *  bt_audio_broadcaster_scan_start  must be called.
+	 *  bt_audio_broadcast_scan_start() must be called.
 	 *
 	 *  @param sink          Pointer to the sink structure.
 	 */
@@ -986,9 +989,9 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
-				struct bt_codec *codec,
-				struct bt_codec_qos *qos);
+int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
+				     struct bt_codec *codec,
+				     struct bt_codec_qos *qos);
 
 /** @brief Start scan for broadcast sources.
  *
@@ -1002,7 +1005,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param);
+int bt_audio_broadcast_scan_start(const struct bt_le_scan_param *param);
 
 /**
  * @brief Stop scan for broadcast sources.
@@ -1011,7 +1014,7 @@ int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcaster_scan_stop(void);
+int bt_audio_broadcast_scan_stop(void);
 
 /** @brief Sync to a broadcaster's audio
  *

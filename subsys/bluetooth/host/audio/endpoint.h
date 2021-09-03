@@ -33,7 +33,7 @@ struct bt_audio_ep_cb {
 #define BT_AUDIO_EP_LOCAL	0x00
 #define BT_AUDIO_EP_REMOTE	0x01
 
-struct bt_audio_broadcaster {
+struct bt_audio_broadcast_source {
 	uint8_t bis_count;
 	uint8_t subgroup_count;
 	uint32_t pd; /** QoS Presentation Delay */
@@ -81,7 +81,7 @@ struct bt_audio_ep {
 
 	/* Broadcast fields */
 	/* TODO: Create a union to reduce memory usage */
-	struct bt_audio_broadcaster *broadcaster;
+	struct bt_audio_broadcast_source *broadcast_source;
 	struct bt_audio_broadcast_sink *broadcast_sink;
 };
 

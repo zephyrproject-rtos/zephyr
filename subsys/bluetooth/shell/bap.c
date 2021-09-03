@@ -27,7 +27,7 @@
 #define MAX_ASE (CONFIG_BT_BAP_ASE_SNK_COUNT + CONFIG_BT_BAP_ASE_SRC_COUNT)
 
 static struct bt_audio_chan chans[MAX_PAC];
-static struct bt_audio_chan broadcast_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_chan broadcast_source_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_chan broadcast_sink_chans[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 static uint64_t broadcast_chan_index_bits;
@@ -706,7 +706,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 2) {
 		if (strcmp(argv[2], "broadcast") == 0) {
 			broadcast = true;
-			if (index > ARRAY_SIZE(broadcast_chans)) {
+			if (index > ARRAY_SIZE(broadcast_source_chans)) {
 				shell_error(sh,
 					    "Invalid index for broadcast: %d",
 					    index);
@@ -717,7 +717,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (broadcast) {
-		chan = &broadcast_chans[index];
+		chan = &broadcast_source_chans[index];
 	} else {
 		chan = &chans[index];
 		if (!chan->conn) {
@@ -1122,9 +1122,9 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	int i;
 
 	/* TODO: Support multiple channels for the broadcaster */
-	for (i = 0; i < ARRAY_SIZE(broadcast_chans); i++) {
+	for (i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
 		if ((BIT(i) & broadcast_chan_index_bits) == 0) {
-			free_chan = &broadcast_chans[i];
+			free_chan = &broadcast_source_chans[i];
 			break;
 		}
 	}
@@ -1139,8 +1139,8 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_audio_broadcaster_create(free_chan, &preset->codec,
-					  &preset->qos);
+	err = bt_audio_broadcast_source_create(free_chan, &preset->codec,
+					       &preset->qos);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcaster: %d", err);
 		return err;
@@ -1168,12 +1168,12 @@ static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 			.timeout    = 0 };
 
 	if (strcmp(argv[1], "on") == 0) {
-		err =  bt_audio_broadcaster_scan_start(&param);
+		err =  bt_audio_broadcast_scan_start(&param);
 		if (err != 0) {
 			shell_error(sh, "Could not start scan: %d", err);
 		}
 	} else if (strcmp(argv[1], "off") == 0) {
-		err = bt_audio_broadcaster_scan_stop();
+		err = bt_audio_broadcast_scan_stop();
 		if (err != 0) {
 			shell_error(sh, "Could not stop scan: %d", err);
 		}
@@ -1281,8 +1281,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_audio_chan_cb_register(&chans[i], &chan_ops);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(broadcast_chans); i++) {
-		bt_audio_chan_cb_register(&broadcast_chans[i], &chan_ops);
+	for (i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
+		bt_audio_chan_cb_register(&broadcast_source_chans[i], &chan_ops);
 	}
 
 	return 0;

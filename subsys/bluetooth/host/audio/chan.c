@@ -73,11 +73,11 @@ struct bt_audio_base_ad {
 
 static struct bt_iso_cig *cigs[CONNECTED_AUDIO_GROUP_COUNT];
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
-static struct bt_audio_broadcaster broadcasters[BROADCAST_SRC_CNT];
+static struct bt_audio_broadcast_source broadcast_sources[BROADCAST_SRC_CNT];
 static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
 
-static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
+static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec);
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
@@ -166,11 +166,11 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 	}
 
 	if (bt_audio_ep_is_broadcast(chan->ep)) {
-		struct bt_audio_broadcaster *broadcaster;
+		struct bt_audio_broadcast_source *source;
 		struct bt_audio_chan *tmp;
 		int err;
 
-		broadcaster = chan->ep->broadcaster;
+		source = chan->ep->broadcast_source;
 
 		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
 			BT_DBG("Channel is not in the configured state");
@@ -184,7 +184,7 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 			chan_attach(NULL, tmp, tmp->ep, NULL, codec);
 		}
 
-		err = bt_audio_set_base(broadcaster, codec);
+		err = bt_audio_set_base(source, codec);
 		if (err != 0) {
 			BT_DBG("Failed to set base data (err %d)", err);
 			/* TODO: cleanup */
@@ -616,16 +616,16 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 
 	if (bt_audio_ep_is_broadcast_src(chan->ep)) {
 		struct bt_iso_big_create_param big_create_param = { 0 };
-		struct bt_audio_broadcaster *broadcaster;
+		struct bt_audio_broadcast_source *source;
 
-		broadcaster = chan->ep->broadcaster;
+		source = chan->ep->broadcast_source;
 
 		/* Create BIG */
-		big_create_param.num_bis = broadcaster->bis_count;
-		big_create_param.bis_channels = broadcaster->bis;
+		big_create_param.num_bis = source->bis_count;
+		big_create_param.bis_channels = source->bis;
 
-		err = bt_iso_big_create(broadcaster->adv, &big_create_param,
-					&broadcaster->big);
+		err = bt_iso_big_create(source->adv, &big_create_param,
+					&source->big);
 		if (err) {
 			BT_DBG("Failed to create BIG (err %d)", err);
 			return err;
@@ -689,7 +689,7 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan)
 		}
 
 		if (bt_audio_ep_is_broadcast_src(ep)) {
-			err = bt_iso_big_terminate(ep->broadcaster->big);
+			err = bt_iso_big_terminate(ep->broadcast_source->big);
 		} else { /* broadcast sink */
 			err = bt_iso_big_terminate(ep->broadcast_sink->big);
 		}
@@ -751,10 +751,10 @@ static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
 {
 	int err;
 	struct bt_audio_chan *tmp;
-	struct bt_audio_broadcaster *source;
+	struct bt_audio_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 
-	source = chan->ep->broadcaster;
+	source = chan->ep->broadcast_source;
 	adv = source->adv;
 
 	/* Stop periodic advertising */
@@ -781,11 +781,11 @@ static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
 	/* Reset the broadcast source */
 	memset(source, 0, sizeof(*source));
 
-	chan->ep->broadcaster = NULL;
+	chan->ep->broadcast_source = NULL;
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->broadcaster = NULL;
+		tmp->ep->broadcast_source = NULL;
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
 	}
 
@@ -1229,10 +1229,10 @@ void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_
 	chan->ops = ops;
 }
 
-static int bt_audio_broadcaster_setup_chan(uint8_t index,
-					   struct bt_audio_chan *chan,
-					   struct bt_codec *codec,
-					   struct bt_codec_qos *qos)
+static int bt_audio_broadcast_source_setup_chan(uint8_t index,
+						struct bt_audio_chan *chan,
+						struct bt_codec *codec,
+						struct bt_codec_qos *qos)
 {
 	struct bt_audio_ep *ep;
 	int err;
@@ -1259,7 +1259,7 @@ static int bt_audio_broadcaster_setup_chan(uint8_t index,
 	return 0;
 }
 
-static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
+static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 				 struct bt_codec *codec,
 				 struct net_buf_simple *buf)
 {
@@ -1267,16 +1267,16 @@ static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
 	uint8_t *start;
 	uint8_t len;
 
-	__ASSERT(broadcaster->subgroup_count == BROADCAST_SUBGROUP_CNT,
+	__ASSERT(source->subgroup_count == BROADCAST_SUBGROUP_CNT,
 		 "Cannot encode BASE with more than a single subgroup");
 
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
-	net_buf_simple_add_le24(buf, broadcaster->pd);
-	net_buf_simple_add_u8(buf, broadcaster->subgroup_count);
+	net_buf_simple_add_le24(buf, source->pd);
+	net_buf_simple_add_u8(buf, source->subgroup_count);
 	/* TODO: The following encoding should be done for each subgroup once
 	 * supported
 	 */
-	net_buf_simple_add_u8(buf, broadcaster->bis_count);
+	net_buf_simple_add_u8(buf, source->bis_count);
 	net_buf_simple_add_u8(buf, codec->id);
 	net_buf_simple_add_le16(buf, codec->cid);
 	net_buf_simple_add_le16(buf, codec->vid);
@@ -1316,7 +1316,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
 
 	/* Create BIS index bitfield */
 	bis_index = 0;
-	for (int i = 0; i < broadcaster->bis_count; i++) {
+	for (int i = 0; i < source->bis_count; i++) {
 		bis_index++;
 		net_buf_simple_add_u8(buf, bis_index);
 		net_buf_simple_add_u8(buf, 0); /* unused length field */
@@ -1329,26 +1329,26 @@ static void bt_audio_encode_base(const struct bt_audio_broadcaster *broadcaster,
 }
 
 
-static int generate_broadcast_id(struct bt_audio_broadcaster *broadcaster)
+static int generate_broadcast_id(struct bt_audio_broadcast_source *source)
 {
 	bool unique;
 
 	do {
 		int err;
 
-		err = bt_rand(&broadcaster->broadcast_id, BT_BROADCAST_ID_SIZE);
+		err = bt_rand(&source->broadcast_id, BT_BROADCAST_ID_SIZE);
 		if (err) {
 			return err;
 		}
 
 		/* Ensure uniqueness */
 		unique = true;
-		for (int i = 0; i < ARRAY_SIZE(broadcasters); i++) {
-			if (&broadcasters[i] == broadcasters) {
+		for (int i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
+			if (&broadcast_sources[i] == source) {
 				continue;
 			}
 
-			if (broadcasters[i].broadcast_id == broadcaster->broadcast_id) {
+			if (broadcast_sources[i].broadcast_id == source->broadcast_id) {
 				unique = false;
 				break;
 			}
@@ -1358,7 +1358,7 @@ static int generate_broadcast_id(struct bt_audio_broadcaster *broadcaster)
 	return 0;
 }
 
-static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
+static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec)
 {
 	struct bt_data base_ad_data;
@@ -1367,13 +1367,13 @@ static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base_ad));
 
-	bt_audio_encode_base(broadcaster, codec, &base_buf);
+	bt_audio_encode_base(source, codec, &base_buf);
 
 	base_ad_data.type = BT_DATA_SVC_DATA16;
 	base_ad_data.data_len = base_buf.len;
 	base_ad_data.data = base_buf.data;
 
-	err = bt_le_per_adv_set_data(broadcaster->adv, &base_ad_data, 1);
+	err = bt_le_per_adv_set_data(source->adv, &base_ad_data, 1);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
 		return err;
@@ -1382,11 +1382,11 @@ static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
 	return 0;
 }
 
-int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
-				struct bt_codec *codec,
-				struct bt_codec_qos *qos)
+int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
+				     struct bt_codec *codec,
+				     struct bt_codec_qos *qos)
 {
-	struct bt_audio_broadcaster *broadcaster;
+	struct bt_audio_broadcast_source *source;
 	struct bt_audio_chan *tmp;
 	struct bt_data ad;
 	uint8_t index;
@@ -1404,7 +1404,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	 *
 	 * The caveat of that type of API, instead of this, where we, the stack,
 	 * control the advertiser, is that the user will be able to change the
-	 * advertising data (thus making the broadcaster non-functional in
+	 * advertising data (thus making the broadcast source non-functional in
 	 * terms of BAP compliance), or even stop the advertiser without
 	 * stopping the BIG (which also goes against the BAP specification).
 	 */
@@ -1419,42 +1419,43 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return -EINVAL;
 	}
 
-	broadcaster = NULL;
-	for (index = 0; index < ARRAY_SIZE(broadcasters); index++) {
-		if (broadcasters[index].bis[0] == NULL) { /* Find free entry */
-			broadcaster = &broadcasters[index];
+	source = NULL;
+	for (index = 0; index < ARRAY_SIZE(broadcast_sources); index++) {
+		if (broadcast_sources[index].bis[0] == NULL) { /* Find free entry */
+			source = &broadcast_sources[index];
 			break;
 		}
 	}
 
-	if (broadcaster == NULL) {
-		BT_DBG("Could not allocate any more broadcasters");
+	if (source == NULL) {
+		BT_DBG("Could not allocate any more broadcast sources");
 		return -ENOMEM;
 	}
 
-	err = bt_audio_broadcaster_setup_chan(index, chan, codec, qos);
+	err = bt_audio_broadcast_source_setup_chan(index, chan, codec, qos);
 	if (err != 0) {
 		BT_DBG("Failed to setup chan %p: %d", chan, err);
 		return err;
 	}
 
-	broadcaster->bis_count = 0;
-	broadcaster->bis[broadcaster->bis_count++] = &chan->ep->iso;
+	source->bis_count = 0;
+	source->bis[source->bis_count++] = &chan->ep->iso;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		err = bt_audio_broadcaster_setup_chan(index, tmp, codec, qos);
+		err = bt_audio_broadcast_source_setup_chan(index, tmp, codec,
+							   qos);
 		if (err != 0) {
 			BT_DBG("Failed to setup chan %p: %d", chan, err);
 			/* TODO: Cleanup already setup channels */
 			return err;
 		}
 
-		broadcaster->bis[broadcaster->bis_count++] = &tmp->ep->iso;
+		source->bis[source->bis_count++] = &tmp->ep->iso;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL,
-				   &broadcaster->adv);
+				   &source->adv);
 	if (err != 0) {
 		BT_DBG("Failed to create advertising set (err %d)", err);
 		/* TODO: cleanup */
@@ -1462,7 +1463,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(broadcaster->adv, BT_LE_PER_ADV_DEFAULT);
+	err = bt_le_per_adv_set_param(source->adv, BT_LE_PER_ADV_DEFAULT);
 	if (err != 0) {
 		BT_DBG("Failed to set periodic advertising parameters (err %d)",
 		       err);
@@ -1476,26 +1477,26 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	 * that the audio advertising data is still present, similar to how
 	 * the GAP device name is added.
 	 */
-	err = generate_broadcast_id(broadcaster);
+	err = generate_broadcast_id(source);
 	if (err != 0) {
 		BT_DBG("Could not generate broadcast id: %d", err);
 		return err;
 	}
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
-	net_buf_simple_add_le24(&ad_buf, broadcaster->broadcast_id);
+	net_buf_simple_add_le24(&ad_buf, source->broadcast_id);
 	ad.type = BT_DATA_SVC_DATA16;
 	ad.data_len = ad_buf.len + sizeof(ad.type);
 	ad.data = ad_buf.data;
-	err = bt_le_ext_adv_set_data(broadcaster->adv, &ad, 1, NULL, 0);
+	err = bt_le_ext_adv_set_data(source->adv, &ad, 1, NULL, 0);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
 		/* TODO: cleanup */
 		return err;
 	}
 
-	broadcaster->subgroup_count = BROADCAST_SUBGROUP_CNT;
-	broadcaster->pd = qos->pd;
-	err = bt_audio_set_base(broadcasters, codec);
+	source->subgroup_count = BROADCAST_SUBGROUP_CNT;
+	source->pd = qos->pd;
+	err = bt_audio_set_base(source, codec);
 	if (err != 0) {
 		BT_DBG("Failed to set base data (err %d)", err);
 		/* TODO: cleanup */
@@ -1503,7 +1504,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(broadcaster->adv);
+	err = bt_le_per_adv_start(source->adv);
 	if (err != 0) {
 		BT_DBG("Failed to enable periodic advertising (err %d)", err);
 		/* TODO: cleanup */
@@ -1511,7 +1512,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Start extended advertising */
-	err = bt_le_ext_adv_start(broadcaster->adv,
+	err = bt_le_ext_adv_start(source->adv,
 				  BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		BT_DBG("Failed to start extended advertising (err %d)", err);
@@ -1519,16 +1520,16 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	chan->ep->broadcaster = broadcaster;
+	chan->ep->broadcast_source = source;
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->broadcaster = broadcaster;
+		tmp->ep->broadcast_source = source;
 
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
 	}
 
-	BT_DBG("Broadcasting with ID 0x%6X", broadcaster->broadcast_id);
+	BT_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
 	return 0;
 }
@@ -1581,11 +1582,11 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	BT_DBG("Synced to broadcaster with ID 0x%06X", sink->broadcast_id);
+	BT_DBG("Synced to broadcast source with ID 0x%06X", sink->broadcast_id);
 
 	sink->syncing = false;
 
-	bt_audio_broadcaster_scan_stop();
+	bt_audio_broadcast_scan_stop();
 
 	lst = bt_audio_capability_get(BT_AUDIO_SINK);
 	if (lst == NULL) {
@@ -1607,8 +1608,8 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	/* TODO: Wait for an parse PA data and use the capability ops to
 	 * get audio channels from the upper layer
-	 * TBD: What if sync to a bad broadcaster that does not send properly
-	 * formatted (or any) BASE?
+	 * TBD: What if sync to a bad broadcast source that does not send
+	 * properly formatted (or any) BASE?
 	 */
 }
 
@@ -1625,7 +1626,8 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	BT_DBG("PA sync with broadcaster with ID 0x%06X lost", sink->broadcast_id);
+	BT_DBG("PA sync with broadcast source with ID 0x%06X lost",
+	       sink->broadcast_id);
 
 	memset(sink, 0, sizeof(*sink));
 
@@ -2147,7 +2149,7 @@ static void broadcast_scan_timeout(void)
 	}
 }
 
-int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param)
+int bt_audio_broadcast_scan_start(const struct bt_le_scan_param *param)
 {
 	sys_slist_t *lst;
 	int err;
@@ -2187,7 +2189,7 @@ int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param)
 	return err;
 }
 
-int bt_audio_broadcaster_scan_stop(void)
+int bt_audio_broadcast_scan_stop(void)
 {
 	struct bt_audio_broadcast_sink *sink;
 	struct bt_audio_capability *cap;
