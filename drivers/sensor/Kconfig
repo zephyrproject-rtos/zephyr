@@ -102,6 +102,8 @@ source "drivers/sensor/hts221/Kconfig"
 
 source "drivers/sensor/i3g4250d/Kconfig"
 
+source "drivers/sensor/htu21d/Kconfig"
+
 source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"

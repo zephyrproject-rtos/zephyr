@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Jonas Norling
+# SPDX-License-Identifier: Apache-2.0
+
+config HTU21D
+	bool "HTU21D temperature and humidity sensor"
+	depends on I2C
+	help
+	  Enable driver for HTU21D temperature and humidity sensor

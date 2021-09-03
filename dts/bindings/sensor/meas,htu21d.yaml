@@ -1,0 +1,10 @@
+# Copyright (c) 2021, Jonas Norling
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Measurement Specialties (a TE Connectivity company) HTU21D temperature
+    and humidity sensor
+
+compatible: "meas,htu21d"
+
+include: i2c-device.yaml

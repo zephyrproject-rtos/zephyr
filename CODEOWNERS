@@ -328,6 +328,7 @@
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
 /drivers/sensor/hts*/                     @avisconti
+/drivers/sensor/htu21d/                   @JonasNorling
 /drivers/sensor/ina23*/                   @bbilas
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
