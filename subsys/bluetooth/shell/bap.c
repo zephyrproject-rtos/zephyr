@@ -28,6 +28,7 @@
 
 static struct bt_audio_chan chans[MAX_PAC];
 static struct bt_audio_chan broadcast_source_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_broadcast_source *default_source;
 static struct bt_audio_chan broadcast_sink_chans[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 static uint64_t broadcast_chan_index_bits;
@@ -476,6 +477,10 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 	if (err) {
 		shell_error(sh, "Unable to release Channel");
 		return -ENOEXEC;
+	} else {
+		if (PART_OF_ARRAY(broadcast_source_chans, default_chan)) {
+			default_source = NULL;
+		}
 	}
 
 	return 0;
@@ -1121,6 +1126,11 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_audio_chan *free_chan;
 	int i;
 
+	if (default_source != NULL) {
+		shell_info(sh, "Broadcast source already created");
+		return -ENOEXEC;
+	}
+
 	/* TODO: Support multiple channels for the broadcaster */
 	for (i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
 		if ((BIT(i) & broadcast_chan_index_bits) == 0) {
@@ -1140,7 +1150,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	}
 
 	err = bt_audio_broadcast_source_create(free_chan, &preset->codec,
-					       &preset->qos);
+					       &preset->qos, &default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcaster: %d", err);
 		return err;

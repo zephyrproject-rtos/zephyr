@@ -1384,7 +1384,8 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 
 int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 				     struct bt_codec *codec,
-				     struct bt_codec_qos *qos)
+				     struct bt_codec_qos *qos,
+				     struct bt_audio_broadcast_source **out_source)
 {
 	struct bt_audio_broadcast_source *source;
 	struct bt_audio_chan *tmp;
@@ -1408,6 +1409,13 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 	 * terms of BAP compliance), or even stop the advertiser without
 	 * stopping the BIG (which also goes against the BAP specification).
 	 */
+
+	CHECKIF(out_source == NULL) {
+		BT_DBG("out_source is NULL");
+		return -EINVAL;
+	}
+	/* Set out_source to NULL until the source has actually been created */
+	*out_source = NULL;
 
 	CHECKIF(chan == NULL) {
 		BT_DBG("chan is NULL");
@@ -1530,6 +1538,8 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 	}
 
 	BT_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
+
+	*out_source = source;
 
 	return 0;
 }
