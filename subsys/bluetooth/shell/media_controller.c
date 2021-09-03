@@ -127,24 +127,44 @@ static void track_duration_cb(struct media_player *plr, int err, int32_t duratio
 	shell_print(ctx_shell, "Player: %p, Track duration: %d", plr, duration);
 }
 
-static void track_position_cb(struct media_player *plr, int err, int32_t position)
+static void track_position_recv_cb(struct media_player *plr, int err, int32_t position)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player: %p, Track position failed (%d)", plr, err);
+		shell_error(ctx_shell, "Player: %p, Track position receive failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Track Position: %d", plr, position);
+	shell_print(ctx_shell, "Player: %p, Track Position received: %d", plr, position);
 }
 
-static void playback_speed_cb(struct media_player *plr, int err, int8_t speed)
+static void track_position_write_cb(struct media_player *plr, int err, int32_t position)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player: %p, Playback speed failed (%d)", plr, err);
+		shell_error(ctx_shell, "Player: %p, Track position write failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Playback speed: %d", plr, speed);
+	shell_print(ctx_shell, "Player: %p, Track Position write: %d", plr, position);
+}
+
+static void playback_speed_recv_cb(struct media_player *plr, int err, int8_t speed)
+{
+	if (err) {
+		shell_error(ctx_shell, "Player: %p, Playback speed receive failed (%d)", plr, err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Player: %p, Playback speed received: %d", plr, speed);
+}
+
+static void playback_speed_write_cb(struct media_player *plr, int err, int8_t speed)
+{
+	if (err) {
+		shell_error(ctx_shell, "Player: %p, Playback speed write failed (%d)", plr, err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Player: %p, Playback speed write: %d", plr, speed);
 }
 
 static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
@@ -228,14 +248,24 @@ static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_OTS */
 
-static void playing_order_cb(struct media_player *plr, int err, uint8_t order)
+static void playing_order_recv_cb(struct media_player *plr, int err, uint8_t order)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player: %p, Playing order failed (%d)", plr, err);
+		shell_error(ctx_shell, "Player: %p, Playing order receive_failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Playing order: %u", plr, order);
+	shell_print(ctx_shell, "Player: %p, Playing received: %u", plr, order);
+}
+
+static void playing_order_write_cb(struct media_player *plr, int err, uint8_t order)
+{
+	if (err) {
+		shell_error(ctx_shell, "Player: %p, Playing order write_failed (%d)", plr, err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Player: %p, Playing written: %u", plr, order);
 }
 
 static void playing_orders_supported_cb(struct media_player *plr, int err, uint16_t orders)
@@ -344,8 +374,10 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	cbs.track_changed_recv            = track_changed_cb;
 	cbs.track_title_recv              = track_title_cb;
 	cbs.track_duration_recv           = track_duration_cb;
-	cbs.track_position_recv           = track_position_cb;
-	cbs.playback_speed_recv           = playback_speed_cb;
+	cbs.track_position_recv           = track_position_recv_cb;
+	cbs.track_position_write          = track_position_write_cb;
+	cbs.playback_speed_recv           = playback_speed_recv_cb;
+	cbs.playback_speed_write          = playback_speed_write_cb;
 	cbs.seeking_speed_recv            = seeking_speed_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.track_segments_id_recv        = track_segments_id_cb;
@@ -354,7 +386,8 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	cbs.current_group_id_recv         = current_group_id_cb;
 	cbs.parent_group_id_recv          = parent_group_id_cb;
 #endif /* CONFIG_BT_OTS */
-	cbs.playing_order_recv            = playing_order_cb;
+	cbs.playing_order_recv            = playing_order_recv_cb;
+	cbs.playing_order_write           = playing_order_write_cb;
 	cbs.playing_orders_supported_recv = playing_orders_supported_cb;
 	cbs.media_state_recv              = media_state_cb;
 	cbs.command                       = command_cb;
