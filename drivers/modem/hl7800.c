@@ -3417,7 +3417,7 @@ static bool on_cmd_sockerror(struct net_buf **buf, uint16_t len)
 }
 
 /* Handler: CME/CMS Error */
-static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
+static bool on_cmd_error_code(struct net_buf **buf, uint16_t len)
 {
 	struct hl7800_socket *sock = NULL;
 	char value[MDM_MAX_RESP_SIZE];
@@ -3426,7 +3426,7 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 
-	LOG_ERR("Sock Error code: %s", log_strdup(value));
+	LOG_ERR("Error code: %s", log_strdup(value));
 
 	ictx.last_error = -EIO;
 	sock = socket_from_id(ictx.last_socket_id);
@@ -4141,8 +4141,8 @@ static void hl7800_rx(void)
 		CMD_HANDLER("ERROR", sockerror),
 
 		/* SOLICITED SOCKET RESPONSES */
-		CMD_HANDLER("+CME ERROR: ", sock_error_code),
-		CMD_HANDLER("+CMS ERROR: ", sock_error_code),
+		CMD_HANDLER("+CME ERROR: ", error_code),
+		CMD_HANDLER("+CMS ERROR: ", error_code),
 		CMD_HANDLER("+CEER: ", sockerror),
 		CMD_HANDLER("+KTCPCFG: ", sockcreate),
 		CMD_HANDLER("+KUDPCFG: ", sockcreate),
