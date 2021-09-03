@@ -174,7 +174,7 @@ static void track_duration_cb(struct media_player *plr, int err, int32_t duratio
 	SET_FLAG(track_duration_read);
 }
 
-static void track_position_cb(struct media_player *plr, int err, int32_t position)
+static void track_position_recv_cb(struct media_player *plr, int err, int32_t position)
 {
 	if (err) {
 		FAIL("Track position read failed (%d)", err);
@@ -190,10 +190,42 @@ static void track_position_cb(struct media_player *plr, int err, int32_t positio
 	SET_FLAG(track_position);
 }
 
-static void playback_speed_cb(struct media_player *plr, int err, int8_t speed)
+static void track_position_write_cb(struct media_player *plr, int err, int32_t position)
+{
+	if (err) {
+		FAIL("Track position write failed (%d)", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	g_pos = position;
+	SET_FLAG(track_position);
+}
+
+static void playback_speed_recv_cb(struct media_player *plr, int err, int8_t speed)
 {
 	if (err) {
 		FAIL("Playback speed read failed (%d)", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	g_pb_speed = speed;
+	SET_FLAG(playback_speed);
+}
+
+static void playback_speed_write_cb(struct media_player *plr, int err, int8_t speed)
+{
+	if (err) {
+		FAIL("Playback speed write failed (%d)", err);
 		return;
 	}
 
@@ -301,10 +333,26 @@ static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 	SET_FLAG(parent_group_object_id_read);
 }
 
-static void playing_order_cb(struct media_player *plr, int err, uint8_t order)
+static void playing_order_recv_cb(struct media_player *plr, int err, uint8_t order)
 {
 	if (err) {
 		FAIL("Playing order read failed (%d)", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	g_playing_order = order;
+	SET_FLAG(playing_order_flag);
+}
+
+static void playing_order_write_cb(struct media_player *plr, int err, uint8_t order)
+{
+	if (err) {
+		FAIL("Playing order write failed (%d)", err);
 		return;
 	}
 
@@ -447,8 +495,10 @@ void initialize_media(void)
 	cbs.icon_url_recv                 = icon_url_cb;
 	cbs.track_title_recv              = track_title_cb;
 	cbs.track_duration_recv           = track_duration_cb;
-	cbs.track_position_recv           = track_position_cb;
-	cbs.playback_speed_recv           = playback_speed_cb;
+	cbs.track_position_recv           = track_position_recv_cb;
+	cbs.track_position_write          = track_position_write_cb;
+	cbs.playback_speed_recv           = playback_speed_recv_cb;
+	cbs.playback_speed_write          = playback_speed_write_cb;
 	cbs.seeking_speed_recv            = seeking_speed_cb;
 #ifdef CONFIG_BT_OTS
 	cbs.track_segments_id_recv        = track_segments_id_cb;
@@ -457,7 +507,8 @@ void initialize_media(void)
 	cbs.current_group_id_recv         = current_group_id_cb;
 	cbs.parent_group_id_recv          = parent_group_id_cb;
 #endif /* CONFIG_BT_OTS */
-	cbs.playing_order_recv            = playing_order_cb;
+	cbs.playing_order_recv            = playing_order_recv_cb;
+	cbs.playing_order_write           = playing_order_write_cb;
 	cbs.playing_orders_supported_recv = playing_orders_supported_cb;
 	cbs.media_state_recv              = media_state_cb;
 	cbs.command                       = command_cb;
