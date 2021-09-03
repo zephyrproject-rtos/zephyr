@@ -588,17 +588,26 @@ static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)
 	h = (void *)p->ext_hdr_adv_data;
 	ptr = h->data;
 
-	/* FIXME: CTEInfo */
+	/* No AdvA and TargetA */
 
+	/* traverse through CTE Info, if present */
+	if (h->cte_info) {
+		ptr += sizeof(struct pdu_cte_info);
+	}
+
+	/* traverse through aux ptr, if present */
 	if (h->aux_ptr) {
 		ptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
+	/* No SyncInfo */
+
+	/* traverse through Tx Power, if present */
 	if (h->tx_pwr) {
 		ptr++;
 	}
 
-	/* Length encoded AD Format */
+	/* FIXME: Parse and find the Length encoded AD Format */
 	ptr += 2;
 
 	return (void *)ptr;
