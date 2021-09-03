@@ -33,6 +33,8 @@ struct ll_sync_set {
 		};
 	} node_rx_lost;
 
+	struct node_rx_hdr *node_rx_sync_estab;
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct {
 		struct node_rx_hdr *node_rx_estab;
