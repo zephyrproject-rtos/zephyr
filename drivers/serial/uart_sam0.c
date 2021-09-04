@@ -889,7 +889,7 @@ static int uart_sam0_irq_update(const struct device *dev)
 			   |	SERCOM_USART_INTENCLR_CTSIC
 			   |	SERCOM_USART_INTENCLR_RXS;
 #else
-	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_RXS;
+	regs->INTFLAG.reg =	SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
 }
