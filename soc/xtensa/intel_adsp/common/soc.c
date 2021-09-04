@@ -192,12 +192,12 @@ irq_connect_out:
 }
 #endif
 
-static inline void soc_set_power_and_clock(void)
+static void power_init_v15(void)
 {
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
 		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/*
 	 * HP domain clocked by PLL
 	 * LP domain clocked by PLL
@@ -223,11 +223,14 @@ static inline void soc_set_power_and_clock(void)
 
 	/* Rewrite the low power sequencing control bits */
 	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
-#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V15 */
+#endif
+}
 
-#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18) || \
-	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20) || \
-	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
+static void power_init(void)
+{
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
+		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 
 	/*
 	 * Request HP ring oscillator and
@@ -261,15 +264,6 @@ static inline void soc_set_power_and_clock(void)
 	/* Disable power gating for first cores */
 	dsp_shim_regs->pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
 
-#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V18 ||
-	* CONFIG_SOC_SERIES_INTEL_CAVS_V20 ||
-	* CONFIG_SOC_SERIES_INTEL_CAVS_V25
-	*/
-}
-
-static int soc_init(const struct device *dev)
-{
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On cAVS 1.8+, we must demand ownership of the timestamping
 	 * and clock generator registers.  Lacking the former will
 	 * prevent wall clock timer interrupts from arriving, even
@@ -281,13 +275,17 @@ static int soc_init(const struct device *dev)
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
 		    DSP_INIT_LPGPDMA(1));
 #endif
+}
 
-	soc_set_power_and_clock();
+static int soc_init(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+		power_init_v15();
+	} else {
+		power_init();
+	}
 
-#if CONFIG_MP_NUM_CPUS > 1
 	soc_idc_init();
-#endif
-
 	return 0;
 }
 
