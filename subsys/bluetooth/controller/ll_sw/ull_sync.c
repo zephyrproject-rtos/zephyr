@@ -60,6 +60,9 @@ static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
+#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu);
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static void ticker_update_op_status_give(uint32_t status, void *param);
@@ -591,6 +594,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 {
+	enum sync_status sync_status;
 	struct node_rx_pdu *rx_establ;
 	struct ll_sync_set *ull_sync;
 	struct node_rx_ftr *ftr;
@@ -599,14 +603,33 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ftr = &rx->rx_ftr;
 
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+	sync_status = ftr->sync_status;
+#else
+	struct pdu_cte_info *rx_cte_info;
+
+	lll = ftr->param;
+
+	rx_cte_info = pdu_cte_info_get((struct pdu_adv *)((struct node_rx_pdu *)rx)->pdu);
+	if (rx_cte_info != NULL) {
+		sync_status = lll_sync_cte_is_allowed(lll->cte_type, lll->filter_policy,
+						      rx_cte_info->time, rx_cte_info->type);
+	} else {
+		sync_status = lll_sync_cte_is_allowed(lll->cte_type, lll->filter_policy, 0,
+						      BT_HCI_LE_NO_CTE);
+	}
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+
 	/* Send periodic advertisement sync established report when sync has correct CTE type
 	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
 	 */
-	if (ftr->sync_status != SYNC_STAT_READY) {
+	if (sync_status != SYNC_STAT_READY_OR_CONT_SCAN) {
 		/* Set the sync handle corresponding to the LLL context passed in the node rx
 		 * footer field.
 		 */
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 		lll = ftr->param;
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		ull_sync = HDR_LLL2ULL(lll);
 
 		/* Prepare and dispatch sync notification */
@@ -617,6 +640,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
 					   BT_HCI_ERR_SUCCESS;
 
+		/* Notify done event handler to terminate sync scan */
+#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+		ull_sync->sync_term = sync_status == SYNC_STAT_TERM;
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		ll_rx_put(rx_establ->hdr.link, rx_establ);
 		ll_rx_sched();
 	}
@@ -625,7 +652,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * the sync was found or was established in the past. The report is not send if
 	 * scanning is terminated due to wrong CTE type.
 	 */
-	if (ftr->sync_status != SYNC_STAT_TERM) {
+	if (sync_status != SYNC_STAT_TERM) {
 		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
 		mfy_lll_prepare.fp = lll_sync_prepare;
 
@@ -650,7 +677,11 @@ void ull_sync_done(struct node_rx_event_done *done)
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 	lll = &sync->lll;
 
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	if (done->extra.sync_term) {
+#else
+	if (sync->sync_term) {
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		/* Stop periodic advertising scan ticker */
 		sync_ticker_cleanup(sync, NULL);
 	} else {
@@ -960,3 +991,28 @@ static void ticker_update_op_status_give(uint32_t status, void *param)
 	k_sem_give(&sem_ticker_cb);
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *hdr;
+	uint8_t *dptr;
+
+	com_hdr = &pdu->adv_ext_ind;
+	hdr = &com_hdr->ext_hdr;
+
+	if (!com_hdr->ext_hdr_len || (com_hdr->ext_hdr_len != 0 && !hdr->cte_info)) {
+		return NULL;
+	}
+
+	/* Skip flags in extended advertising header */
+	dptr = hdr->data;
+
+	/* Make sure there are no fields that are not allowd for AUX_SYNC_IND and AUX_CHAIN_IND */
+	LL_ASSERT(!hdr->adv_addr);
+	LL_ASSERT(!hdr->tgt_addr);
+
+	return (struct pdu_cte_info *)hdr->data;
+}
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
