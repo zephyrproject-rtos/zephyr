@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Devicetree node identifier for the radio node. */
-#define RADIO_NODE DT_NODELABEL(radio)
-/* Check if radio has hardware support to parse PDU for CTE info */
-#if IS_ENABLED(DT_PROP_OR(RADIO_NODE, dfe_supported, 0))
-#define HAS_CTEINLINE_SUPPORT
-#endif
-
 /* Function configures Radio with information about GPIO pins that may be
  * used to drive antenna switching during CTE Tx/RX.
  */

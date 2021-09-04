@@ -42,13 +42,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-/* Periodic advertisements filtering results. */
-enum sync_filtering_result {
-	SYNC_ALLOWED,
-	SYNC_SCAN_CONTINUE,
-	SYNC_SCAN_TERM
-};
-
 static int init_reset(void);
 static void prepare(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
@@ -67,8 +60,7 @@ static int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 			    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 static uint8_t data_channel_calc(struct lll_sync *lll);
-static enum sync_filtering_result sync_filtrate_by_cte_type(uint8_t cte_type_mask,
-							    uint8_t filter_policy);
+static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t filter_policy);
 
 static uint8_t trx_cnt;
 
@@ -192,6 +184,57 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	{
 		radio_switch_complete_and_disable();
 	}
+}
+
+enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_policy,
+					 uint8_t rx_cte_time, uint8_t rx_cte_type)
+{
+	bool cte_ok;
+
+	if (cte_type_mask == BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING) {
+		return SYNC_STAT_ALLOWED;
+	}
+
+	if (rx_cte_time > 0) {
+		if ((cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE) != 0) {
+			cte_ok = false;
+		} else {
+			switch (rx_cte_type) {
+			case BT_HCI_LE_AOA_CTE:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA);
+				break;
+			case BT_HCI_LE_AOD_CTE_1US:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US);
+				break;
+			case BT_HCI_LE_AOD_CTE_2US:
+				cte_ok = !(cte_type_mask &
+					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US);
+				break;
+			default:
+				/* Unknown or forbidden CTE type */
+				cte_ok = false;
+			}
+		}
+	} else {
+		/* If there is no CTEInfo in advertising PDU, Radio will not parse the S0 byte and
+		 * CTESTATUS register will hold zeros only.
+		 * Zero value in CTETime field of CTESTATUS may be used to distinguish between PDU
+		 * that includes CTEInfo or not. Allowed range for CTETime is 2-20.
+		 */
+		if ((cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE) != 0) {
+			cte_ok = false;
+		} else {
+			cte_ok = true;
+		}
+	}
+
+	if (!cte_ok) {
+		return filter_policy ? SYNC_STAT_READY_OR_CONT_SCAN : SYNC_STAT_TERM;
+	}
+
+	return SYNC_STAT_ALLOWED;
 }
 
 static int init_reset(void)
@@ -630,7 +673,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 
 static void isr_rx_adv_sync_estab(void *param)
 {
-	enum sync_filtering_result sync_ok;
+	enum sync_status sync_ok;
 	struct lll_sync *lll;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
@@ -651,7 +694,7 @@ static void isr_rx_adv_sync_estab(void *param)
 		/* Initiated as allowed, crc_ok takes precended during handling of PDU
 		 * reception in the situation.
 		 */
-		sync_ok = SYNC_ALLOWED;
+		sync_ok = SYNC_STAT_ALLOWED;
 	}
 
 	/* Clear radio rx status and events */
@@ -671,12 +714,12 @@ static void isr_rx_adv_sync_estab(void *param)
 	radio_tmr_ready_save(radio_tmr_ready_get());
 
 	/* Handle regular PDU reception if CTE type is acceptable */
-	if (sync_ok == SYNC_ALLOWED) {
-		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, rssi_ready, SYNC_STAT_FOUND);
+	if (sync_ok == SYNC_STAT_ALLOWED) {
+		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, rssi_ready, SYNC_STAT_ALLOWED);
 		if (err == -EBUSY) {
 			return;
 		}
-	} else if (sync_ok == SYNC_SCAN_TERM) {
+	} else if (sync_ok == SYNC_STAT_TERM) {
 		struct node_rx_pdu *node_rx;
 
 		/* Verify if there are free RX buffers for:
@@ -702,7 +745,11 @@ static void isr_rx_adv_sync_estab(void *param)
 	}
 
 isr_rx_done:
-	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_SCAN_TERM);
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_STAT_TERM);
+#else
+	isr_rx_done_cleanup(lll, crc_ok, false);
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 }
 
 static void isr_rx_adv_sync(void *param)
@@ -745,7 +792,8 @@ static void isr_rx_adv_sync(void *param)
 	 * affect sychronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, rssi_ready, SYNC_STAT_READY);
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, rssi_ready,
+		     SYNC_STAT_READY_OR_CONT_SCAN);
 	if (err == -EBUSY) {
 		return;
 	}
@@ -798,7 +846,8 @@ static void isr_rx_aux_chain(void *param)
 	 * affect sychronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, rssi_ready, SYNC_STAT_READY);
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, rssi_ready,
+		     SYNC_STAT_READY_OR_CONT_SCAN);
 
 	if (err == -EBUSY) {
 		return;
@@ -840,8 +889,9 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	e->sync_term = sync_term;
-
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 	if (trx_cnt) {
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 		e->drift.start_to_address_actual_us =
@@ -935,57 +985,17 @@ static uint8_t data_channel_calc(struct lll_sync *lll)
 			      data_chan_map, data_chan_count);
 }
 
-static enum sync_filtering_result sync_filtrate_by_cte_type(uint8_t cte_type_mask,
-							    uint8_t filter_policy)
+static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t filter_policy)
 {
-	if (cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING) {
-		return SYNC_ALLOWED;
-	}
-
-#if defined(HAS_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	uint8_t rx_cte_time;
 	uint8_t rx_cte_type;
-	bool cte_ok;
 
 	rx_cte_time = nrf_radio_cte_time_get(NRF_RADIO);
 	rx_cte_type = nrf_radio_cte_type_get(NRF_RADIO);
 
-	/* If there is no CTEInfo in advertising PDU, Radio will not parse the S0 byte and
-	 * CTESTATUS register will hold zeros only.
-	 * Zero value in CTETime field of CTESTATUS may be used to distinguish between PDU that
-	 * includes CTEInfo or not. Allowed range for CTETime is 2-20.
-	 */
-	if (rx_cte_time == 0 && cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE) {
-		cte_ok = false;
-	}
+	return lll_sync_cte_is_allowed(cte_type_mask, filter_policy, rx_cte_time, rx_cte_type);
 
-	if (rx_cte_time > 0) {
-		if (cte_type_mask & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE) {
-			cte_ok = false;
-		} else {
-			switch (rx_cte_type) {
-			case BT_HCI_LE_AOA_CTE:
-				cte_ok = !(cte_type_mask &
-					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA);
-				break;
-			case BT_HCI_LE_AOD_CTE_1US:
-				cte_ok = !(cte_type_mask &
-					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US);
-				break;
-			case BT_HCI_LE_AOD_CTE_2US:
-				cte_ok = !(cte_type_mask &
-					   BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US);
-				break;
-			default:
-				/* Unknown or forbidden CTE type */
-				cte_ok = false;
-			}
-		}
-	}
-
-	if (!cte_ok) {
-		return filter_policy ? SYNC_SCAN_CONTINUE : SYNC_SCAN_TERM;
-	}
-#endif /* HAS_CTEINLINE_SUPPORT */
-	return SYNC_ALLOWED;
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+	return SYNC_STAT_ALLOWED;
 }
