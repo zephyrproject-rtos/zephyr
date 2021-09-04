@@ -120,6 +120,14 @@ config BT_MESH_PB_GATT
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
 
+config BT_MESH_PB_GATT_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_PB_GATT
+	default y
+	help
+	  This option includes GAP device name in scan response when
+	  the PB-GATT is enabled.
+
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
 	select BT_MESH_GATT_SERVER

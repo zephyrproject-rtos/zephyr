@@ -31,6 +31,17 @@
 #include "proxy.h"
 #include "proxy_msg.h"
 
+#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
+#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
+#else
+#define ADV_OPT_USE_NAME 0
+#endif
+
+#define ADV_OPT_PROXY                                                           \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 ADV_OPT_USE_NAME)
+
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
 		      const void *data, uint16_t len,
@@ -43,7 +54,6 @@ static struct bt_mesh_proxy_client {
 		NONE,
 		ACCEPT,
 		REJECT,
-		PROV,
 	} filter_type;
 	struct k_work send_beacons;
 } clients[CONFIG_BT_MAX_CONN] = {
@@ -681,7 +691,7 @@ int bt_mesh_proxy_gatt_enable(void)
 	service_registered = true;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].cli.conn) {
+		if (clients[i].cli) {
 			clients[i].filter_type = ACCEPT;
 		}
 	}
@@ -698,7 +708,7 @@ void bt_mesh_proxy_gatt_disconnect(void)
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
 
-		if (client->cli.conn && (client->filter_type == ACCEPT ||
+		if (client->cli && (client->filter_type == ACCEPT ||
 				     client->filter_type == REJECT)) {
 			client->filter_type = NONE;
 			bt_conn_disconnect(client->cli->conn,
