@@ -6,8 +6,8 @@
 
 /* Periodic advertisements synchronization status. */
 enum sync_status {
-	SYNC_STAT_FOUND,
-	SYNC_STAT_READY,
+	SYNC_STAT_ALLOWED,
+	SYNC_STAT_READY_OR_CONT_SCAN,
 	SYNC_STAT_TERM
 };
 
@@ -58,5 +58,6 @@ int lll_sync_init(void);
 int lll_sync_reset(void);
 void lll_sync_create_prepare(void *param);
 void lll_sync_prepare(void *param);
-
+enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_policy,
+					 uint8_t rx_cte_time, uint8_t rx_cte_type);
 extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);

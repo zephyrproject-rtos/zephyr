@@ -18,6 +18,9 @@
 #include "radio_df.h"
 #include "radio_internal.h"
 
+/* Devicetree node identifier for the radio node. */
+#define RADIO_NODE DT_NODELABEL(radio)
+
 /* Value to set for unconnected antenna GPIO pins. */
 #define DFE_PSEL_NOT_SET 0xFF
 /* Number of PSEL_DFEGPIO[n] registers in the radio peripheral. */

@@ -22,7 +22,6 @@
 #include "ll_sw/pdu.h"
 
 #include "radio_internal.h"
-#include "radio_df.h"
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
@@ -1518,7 +1517,7 @@ void radio_ar_resolve(uint8_t *addr)
  */
 void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 {
-#if defined(HAS_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	const nrf_radio_cteinline_conf_t inline_conf = {
 		.enable = true,
 		/* Indicates whether CTEInfo is in S1 byte or not. */
@@ -1542,5 +1541,5 @@ void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 	};
 
 	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
-#endif /* HAS_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 }
