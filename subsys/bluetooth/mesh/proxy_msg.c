@@ -52,13 +52,12 @@
 #define PROXY_BUF_LEN_MAX	30
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-#define PROXY_MSG_FIRST_BUF_LEN PB_GATT_BUF_LEN_MAX
+#define PROXY_MSG_BUF_LEN PB_GATT_BUF_LEN_MAX
 #else
-#define PROXY_MSG_FIRST_BUF_LEN PROXY_BUF_LEN_MAX
+#define PROXY_MSG_BUF_LEN PROXY_BUF_LEN_MAX
 #endif
 
-static uint8_t __noinit bufs[PROXY_MSG_FIRST_BUF_LEN +
-			     ((CONFIG_BT_MAX_CONN - 1) * PROXY_BUF_LEN_MAX)];
+static uint8_t __noinit bufs[CONFIG_BT_MAX_CONN * PROXY_MSG_BUF_LEN];
 
 static struct bt_mesh_proxy_role roles[CONFIG_BT_MAX_CONN];
 
@@ -194,9 +193,6 @@ int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 
 static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 {
-	uint8_t i, len;
-	uint8_t *buf;
-
 	/* Check if buf has been allocated, in this way, we no longer need
 	 * to repeat the operation.
 	 */
@@ -205,16 +201,9 @@ static void proxy_msg_init(struct bt_mesh_proxy_role *role)
 		return;
 	}
 
-	i = bt_conn_index(role->conn);
-	if (!i) {
-		len = PROXY_MSG_FIRST_BUF_LEN;
-		buf = bufs;
-	} else {
-		len = PROXY_BUF_LEN_MAX;
-		buf = &bufs[PROXY_MSG_FIRST_BUF_LEN + (PROXY_BUF_LEN_MAX * (i - 1))];
-	}
-
-	net_buf_simple_init_with_data(&role->buf, buf, len);
+	net_buf_simple_init_with_data(&role->buf,
+				      &bufs[bt_conn_index(role->conn) * PROXY_MSG_BUF_LEN],
+				      PROXY_MSG_BUF_LEN);
 
 	net_buf_simple_reset(&role->buf);
 
