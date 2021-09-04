@@ -10,22 +10,6 @@
 #define ADV_OPT_USE_IDENTITY 0
 #endif
 
-#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
-#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
-#else
-#define ADV_OPT_USE_NAME 0
-#endif
-
-#define ADV_OPT_PROXY                                                          \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
-	 ADV_OPT_USE_NAME)
-
-#define ADV_OPT_PROV                                                           \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
-	 BT_LE_ADV_OPT_USE_NAME)
-
 #define ADV_SLOW_INT                                                           \
 	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
 	.interval_max = BT_GAP_ADV_SLOW_INT_MAX

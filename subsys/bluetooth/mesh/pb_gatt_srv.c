@@ -32,6 +32,17 @@
 #include "proxy_msg.h"
 #include "pb_gatt_srv.h"
 
+#if defined(CONFIG_BT_MESH_PB_GATT_USE_DEVICE_NAME)
+#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
+#else
+#define ADV_OPT_USE_NAME 0
+#endif
+
+#define ADV_OPT_PROV                                                           \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 ADV_OPT_USE_NAME)
+
 static bool prov_fast_adv;
 
 static int gatt_send(struct bt_conn *conn,
