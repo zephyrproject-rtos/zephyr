@@ -37,6 +37,11 @@
 	};
 
 	soc {
+		shim: shim@1000 {
+			compatible = "intel,cavs-shim";
+			reg = <0x1000 0x100>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;

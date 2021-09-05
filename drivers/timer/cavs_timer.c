@@ -8,6 +8,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <cavs-idc.h>
+#include <cavs-shim.h>
 
 /**
  * @file
@@ -27,30 +28,26 @@
 #define MIN_DELAY	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
 
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
+BUILD_ASSERT(TIMER >= 0 && TIMER <= 1);
 
 static struct k_spinlock lock;
 static uint64_t last_count;
 
-static volatile struct soc_dsp_shim_regs *shim_regs =
-	(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
-
 static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */
-	shim_regs->dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
+	CAVS_SHIM.dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
 
-#if (TIMER == 0)
-	/* Set compare register */
-	shim_regs->dspwct0c = time;
-#elif (TIMER == 1)
-	/* Set compare register */
-	shim_regs->dspwct1c = time;
-#else
-#error "TIMER has to be 0 or 1!"
-#endif
+	if (TIMER == 0) {
+		CAVS_SHIM.dspwct0c_lo = (uint32_t)time;
+		CAVS_SHIM.dspwct0c_hi = (uint32_t)(time >> 32);
+	} else {
+		CAVS_SHIM.dspwct1c_lo = (uint32_t)time;
+		CAVS_SHIM.dspwct1c_hi = (uint32_t)(time >> 32);
+	}
 
 	/* Arm the timer */
-	shim_regs->dspwctcs |= DSP_WCT_CS_TA(TIMER);
+	CAVS_SHIM.dspwctcs |= DSP_WCT_CS_TA(TIMER);
 }
 
 static uint64_t count(void)
@@ -61,13 +58,12 @@ static uint64_t count(void)
 	 * word.  Wrap the low read between two reads of the high word
 	 * and make sure it didn't change.
 	 */
-	volatile uint32_t *wc = (void *)&shim_regs->walclk;
 	uint32_t hi0, hi1, lo;
 
 	do {
-		hi0 = wc[1];
-		lo = wc[0];
-		hi1 = wc[1];
+		hi0 = CAVS_SHIM.dspwc_hi;
+		lo = CAVS_SHIM.dspwc_lo;
+		hi1 = CAVS_SHIM.dspwc_hi;
 	} while (hi0 != hi1);
 
 	return (((uint64_t)hi0) << 32) | lo;
@@ -75,7 +71,7 @@ static uint64_t count(void)
 
 static uint32_t count32(void)
 {
-	return shim_regs->walclk32_lo;
+	return CAVS_SHIM.dspwc_lo;
 }
 
 static void compare_isr(const void *arg)
@@ -104,7 +100,7 @@ static void compare_isr(const void *arg)
 	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
 
 	/* Clear the triggered bit */
-	shim_regs->dspwctcs |= DSP_WCT_CS_TT(TIMER);
+	CAVS_SHIM.dspwctcs |= DSP_WCT_CS_TT(TIMER);
 
 	last_count += dticks * CYC_PER_TICK;
 
