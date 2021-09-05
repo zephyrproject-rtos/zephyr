@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <adsp/io.h>
 
 #include <soc/shim.h>
+#include <cavs-shim.h>
 
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
@@ -306,11 +307,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	 * turn itself off when it gets to the WAITI instruction in
 	 * the idle thread.
 	 */
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
-
-	shim->pwrctl |= BIT(cpu_num);
+	CAVS_SHIM.pwrctl |= BIT(cpu_num);
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
-		shim->clkctl |= BIT(16 + cpu_num);
+		CAVS_SHIM.clkctl |= BIT(16 + cpu_num);
 	}
 
 	/* Send power up message to the other core */
@@ -437,7 +436,6 @@ void soc_idc_init(void)
  */
 int soc_relaunch_cpu(int id)
 {
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
 
@@ -446,7 +444,7 @@ int soc_relaunch_cpu(int id)
 		goto out;
 	}
 
-	if (shim->pwrsts & BIT(id)) {
+	if (CAVS_SHIM.pwrsts & BIT(id)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -477,7 +475,6 @@ int soc_relaunch_cpu(int id)
  */
 int soc_halt_cpu(int id)
 {
-	volatile struct soc_dsp_shim_regs *shim = (void *)SOC_DSP_SHIM_REG_BASE;
 	int ret = 0;
 	k_spinlock_key_t k = k_spin_lock(&mplock);
 
@@ -491,11 +488,11 @@ int soc_halt_cpu(int id)
 	 * be woken up by scheduler IPIs
 	 */
 	CAVS_INTCTRL[id].l2.set = CAVS_L2_IDC;
-	shim->pwrctl &= ~BIT(id);
-	shim->clkctl &= ~BIT(16 + id);
+	CAVS_SHIM.pwrctl &= ~BIT(id);
+	CAVS_SHIM.clkctl &= ~BIT(16 + id);
 
 	/* Wait for the CPU to reach an idle state before returing */
-	while (shim->pwrsts & BIT(id)) {
+	while (CAVS_SHIM.pwrsts & BIT(id)) {
 	}
 
  out:

@@ -140,10 +140,6 @@
 #define SRAM_ALIAS_MASK		0xFF000000
 #define SRAM_ALIAS_OFFSET	0x20000000
 
-/* shim */
-#define SHIM_BASE		0x00001000
-#define SHIM_SIZE		0x00000100
-
 /* IRQ controller */
 #define IRQ_BASE		0x00001600
 #define IRQ_SIZE		0x00000200
