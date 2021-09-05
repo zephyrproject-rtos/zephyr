@@ -16,10 +16,12 @@
 #include <devicetree.h>
 #include <soc/shim.h>
 #include <cavs-shim.h>
-#include <soc/platform.h>
 #include <soc/memory.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
+#include "platform.h"
+
+#define PLATFORM_PRIMARY_CORE_ID 0
 
 #define SHIM_ADDR DT_REG_ADDR(DT_NODELABEL(shim))
 #define SHIM_L2_MECS (SHIM_ADDR + 0xd0)
