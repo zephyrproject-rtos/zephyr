@@ -969,16 +969,14 @@ static void gsm_configure(struct k_work *work)
 
 		ret = mux_enable(gsm);
 		if (ret == 0) {
-			gsm->mux_enabled = true;
+			LOG_DBG("GSM muxing %s", "enabled");
+			gsm->gsm_state = GSM_PPP_STATE_MUX_ENABLED;
 		} else {
-			gsm->mux_enabled = false;
+			LOG_DBG("GSM muxing %s", "disabled");
 			(void)k_work_reschedule(&gsm->gsm_configure_work,
 						K_NO_WAIT);
 			return;
 		}
-
-		LOG_DBG("GSM muxing %s", gsm->mux_enabled ? "enabled" :
-							    "disabled");
 
 		if (gsm->mux_enabled) {
 			gsm->state = STATE_INIT;
