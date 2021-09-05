@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RSSI_RETRIES                10
 #define GSM_RSSI_INVALID                -1000
 
-#if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
+#if IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 	#define GSM_RSSI_MAXVAL          0
 #else
 	#define GSM_RSSI_MAXVAL         -51
@@ -91,7 +91,7 @@ K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 struct k_thread gsm_rx_thread;
 static struct k_work_delayable rssi_work_handle;
 
-#if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
+#if IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 	/* helper macro to keep readability */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
 
@@ -120,7 +120,7 @@ static int modem_atoi(const char *s, const int err_value,
 
 	return ret;
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI) */
 
 static void gsm_rx(struct gsm_modem *gsm)
 {
@@ -172,7 +172,7 @@ static int unquoted_atoi(const char *s, int base)
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 {
 	if (argc >= 3) {
-#if defined(CONFIG_MODEM_CELL_INFO)
+#if IS_ENABLED(CONFIG_MODEM_CELL_INFO)
 		gsm.context.data_operator = unquoted_atoi(argv[2], 10);
 		LOG_INF("operator: %u",
 			gsm.context.data_operator);
@@ -187,7 +187,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 	return 0;
 }
 
-#if defined(CONFIG_MODEM_SHELL)
+#if IS_ENABLED(CONFIG_MODEM_SHELL)
 #define MDM_MANUFACTURER_LENGTH  10
 #define MDM_MODEL_LENGTH         16
 #define MDM_REVISION_LENGTH      64
@@ -200,7 +200,7 @@ struct modem_info {
 	char mdm_model[MDM_MODEL_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
-#if defined(CONFIG_MODEM_SIM_NUMBERS)
+#if IS_ENABLED(CONFIG_MODEM_SIM_NUMBERS)
 	char mdm_imsi[MDM_IMSI_LENGTH];
 	char mdm_iccid[MDM_ICCID_LENGTH];
 #endif
@@ -268,7 +268,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 	return 0;
 }
 
-#if defined(CONFIG_MODEM_SIM_NUMBERS)
+#if IS_ENABLED(CONFIG_MODEM_SIM_NUMBERS)
 /* Handler: <IMSI> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 {
@@ -308,8 +308,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 
-#if defined(CONFIG_MODEM_CELL_INFO)
-
+#if IS_ENABLED(CONFIG_MODEM_CELL_INFO)
 /*
  * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
  */
@@ -352,7 +351,7 @@ static int gsm_query_cellinfo(struct gsm_modem *gsm)
 #endif /* CONFIG_MODEM_CELL_INFO */
 #endif /* CONFIG_MODEM_SHELL */
 
-#if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
+#if IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 /*
  * Handler: +CESQ: <rxlev>[0],<ber>[1],<rscp>[2],<ecn0>[3],<rsrq>[4],<rsrp>[5]
  */
@@ -402,15 +401,15 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI */
 
-#if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
+#if IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 static const struct modem_cmd read_rssi_cmd =
 	MODEM_CMD("+CESQ:", on_cmd_atcmdinfo_rssi_cesq, 6U, ",");
 #else
 static const struct modem_cmd read_rssi_cmd =
 	MODEM_CMD("+CSQ:", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
-#endif
+#endif /* CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI */
 
 static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
@@ -420,17 +419,17 @@ static const struct setup_cmd setup_cmds[] = {
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
-#if defined(CONFIG_MODEM_SHELL)
+#if IS_ENABLED(CONFIG_MODEM_SHELL)
 	/* query modem info */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
-# if defined(CONFIG_MODEM_SIM_NUMBERS)
+# if IS_ENABLED(CONFIG_MODEM_SIM_NUMBERS)
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
 # endif
 	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
-#endif
+#endif /* CONFIG_MODEM_SHELL */
 
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
@@ -552,24 +551,24 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 static void rssi_handler(struct k_work *work)
 {
 	int ret;
-#if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
+#if IS_ENABLED(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 	ret = modem_cmd_send_nolock(&gsm.context.iface, &gsm.context.cmd_handler,
 		&read_rssi_cmd, 1, "AT+CESQ", &gsm.sem_response, GSM_CMD_SETUP_TIMEOUT);
 #else
 	ret = modem_cmd_send_nolock(&gsm.context.iface, &gsm.context.cmd_handler,
 		&read_rssi_cmd, 1, "AT+CSQ", &gsm.sem_response, GSM_CMD_SETUP_TIMEOUT);
-#endif
+#endif /* CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI */
 
 	if (ret < 0) {
 		LOG_DBG("No answer to RSSI readout, %s", "ignoring...");
 	}
 
-#if defined(CONFIG_GSM_MUX)
-#if defined(CONFIG_MODEM_CELL_INFO)
+#if IS_ENABLED(CONFIG_GSM_MUX)
+#if IS_ENABLED(CONFIG_MODEM_CELL_INFO)
 	(void) gsm_query_cellinfo(&gsm);
 #endif
 	k_work_reschedule(&rssi_work_handle, K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
-#endif
+#endif /* CONFIG_GSM_MUX */
 
 }
 
@@ -587,7 +586,8 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		goto attaching;
 	}
 
-	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
+#if IS_ENABLED(CONFIG_GSM_MUX)
+	if (gsm->mux_enabled) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
 					    &response_cmds[0],
@@ -602,16 +602,17 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 			return;
 		}
 	}
+#endif
 
-	if (IS_ENABLED(CONFIG_MODEM_GSM_FACTORY_RESET_AT_BOOT)) {
-		(void)modem_cmd_send_nolock(&gsm->context.iface,
-					    &gsm->context.cmd_handler,
-					    &response_cmds[0],
-					    ARRAY_SIZE(response_cmds),
-					    "AT&F", &gsm->sem_response,
-					    GSM_CMD_AT_TIMEOUT);
-		k_sleep(K_SECONDS(1));
-	}
+#if IS_ENABLED(CONFIG_MODEM_GSM_FACTORY_RESET_AT_BOOT)
+	(void)modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &response_cmds[0],
+				    ARRAY_SIZE(response_cmds),
+				    "AT&F", &gsm->sem_response,
+				    GSM_CMD_AT_TIMEOUT);
+	k_sleep(K_SECONDS(1));
+#endif
 
 	ret = gsm_setup_mccmno(gsm);
 
@@ -674,24 +675,24 @@ attaching:
 
  attached:
 
-	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
-		/* Read connection quality (RSSI) before PPP carrier is ON */
-		rssi_handler(NULL);
+#if !IS_ENABLED(CONFIG_GSM_MUX)
+	/* Read connection quality (RSSI) before PPP carrier is ON */
+	rssi_handler(NULL);
 
-		if (!(gsm->context.data_rssi && gsm->context.data_rssi != GSM_RSSI_INVALID &&
-			gsm->context.data_rssi < GSM_RSSI_MAXVAL)) {
+	if (!(gsm->context.data_rssi && gsm->context.data_rssi != GSM_RSSI_INVALID &&
+		gsm->context.data_rssi < GSM_RSSI_MAXVAL)) {
 
-			LOG_DBG("Not valid RSSI, %s", "retrying...");
-			if (gsm->rssi_retries-- > 0) {
-				(void)k_work_reschedule(&gsm->gsm_configure_work,
-							K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
-				return;
-			}
+		LOG_DBG("Not valid RSSI, %s", "retrying...");
+		if (gsm->rssi_retries-- > 0) {
+			(void)k_work_reschedule(&gsm->gsm_configure_work,
+						K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
+			return;
 		}
-#if defined(CONFIG_MODEM_CELL_INFO)
-		(void) gsm_query_cellinfo(gsm);
-#endif
 	}
+#if IS_ENABLED(CONFIG_MODEM_CELL_INFO)
+	(void) gsm_query_cellinfo(gsm);
+#endif
+#endif /* !IS_ENABLED(CONFIG_GSM_MUX) */
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
@@ -710,7 +711,8 @@ attaching:
 
 	set_ppp_carrier_on(gsm);
 
-	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
+#if IS_ENABLED(CONFIG_GSM_MUX)
+	if (gsm->mux_enabled) {
 		/* Re-use the original iface for AT channel */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
 						gsm->at_dev);
@@ -736,6 +738,7 @@ attaching:
 		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
 		k_work_schedule(&rssi_work_handle, K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 	}
+#endif /* CONFIG_GSM_MUX */
 }
 
 static int mux_enable(struct gsm_modem *gsm)
@@ -760,7 +763,7 @@ static int mux_enable(struct gsm_modem *gsm)
 			"+CMUXSRVPORT=" STRINGIFY(DLCI_AT) ",1;"
 #else
 			"AT"
-#endif
+#endif /* SIMCOM_LTE */
 			"+CMUX=0,0,5,"
 			STRINGIFY(CONFIG_GSM_MUX_MRU_DEFAULT_LEN),
 			&gsm->sem_response,
@@ -940,8 +943,8 @@ static void gsm_configure(struct k_work *work)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_GSM_MUX) && ret == 0 &&
-	    gsm->mux_enabled == false) {
+#if IS_ENABLED(CONFIG_GSM_MUX)
+	if (ret == 0 && gsm->mux_enabled == false) {
 
 		ret = mux_enable(gsm);
 		if (ret == 0) {
@@ -964,11 +967,11 @@ static void gsm_configure(struct k_work *work)
 
 			(void)k_work_reschedule(&gsm->gsm_configure_work,
 						K_NO_WAIT);
-			return;
 		}
 	}
-
+#else
 	gsm_finalize_connection(gsm);
+#endif /* CONFIG_GSM_MUX */
 }
 
 void gsm_ppp_start(const struct device *dev)
@@ -986,7 +989,7 @@ void gsm_ppp_start(const struct device *dev)
 	k_work_init_delayable(&gsm->gsm_configure_work, gsm_configure);
 	(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 
-#if defined(CONFIG_GSM_MUX)
+#if IS_ENABLED(CONFIG_GSM_MUX)
 	k_work_init_delayable(&rssi_work_handle, rssi_handler);
 #endif
 }
@@ -998,14 +1001,14 @@ void gsm_ppp_stop(const struct device *dev)
 
 	net_if_l2(iface)->enable(iface, false);
 
-	if (IS_ENABLED(CONFIG_GSM_MUX)) {
-		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
-		gsm->mux_enabled = false;
+#if IS_ENABLED(CONFIG_GSM_MUX)
+	/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
+	gsm->mux_enabled = false;
 
-		if (gsm->ppp_dev) {
-			uart_mux_disable(gsm->ppp_dev);
-		}
+	if (gsm->ppp_dev) {
+		uart_mux_disable(gsm->ppp_dev);
 	}
+#endif
 
 	if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
 				      K_SECONDS(10))) {
@@ -1037,13 +1040,13 @@ static int gsm_init(const struct device *dev)
 		return r;
 	}
 
-#if defined(CONFIG_MODEM_SHELL)
+#if IS_ENABLED(CONFIG_MODEM_SHELL)
 	/* modem information storage */
 	gsm->context.data_manufacturer = minfo.mdm_manufacturer;
 	gsm->context.data_model = minfo.mdm_model;
 	gsm->context.data_revision = minfo.mdm_revision;
 	gsm->context.data_imei = minfo.mdm_imei;
-#if defined(CONFIG_MODEM_SIM_NUMBERS)
+#if IS_ENABLED(CONFIG_MODEM_SIM_NUMBERS)
 	gsm->context.data_imsi = minfo.mdm_imsi;
 	gsm->context.data_iccid = minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
