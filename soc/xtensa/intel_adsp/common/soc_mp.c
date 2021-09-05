@@ -67,6 +67,15 @@ static struct k_spinlock mplock;
 
 char *z_mp_stack_top;
 
+/* Vestigial silliness: An old mechanism for core startup would embed
+ * a "manifest" of code to copy to LP-SRAM at startup (vs. the tiny
+ * trampoline we use here).  This was constructed in the linker
+ * script, and the first word would encode the number of entries.  As
+ * it happens, SOF still emits the code to copy this data, so it needs
+ * to see this symbol point to a zero.
+ */
+uint32_t _loader_storage_manifest_start;
+
 /* Simple array of CPUs that are active and available for an IPI.  The
  * IDC interrupt is ALSO used to bring a CPU out of reset, so we need
  * to be absolutely sure we don't try to IPI a CPU that isn't ready to
