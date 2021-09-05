@@ -6,3 +6,25 @@ description: GSM PPP modem
 compatible: "zephyr,gsm-ppp"
 
 include: uart-device.yaml
+
+properties:
+  power-src-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Pin to enable the power supply to the modem.
+  power-key-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Power key pin of the modem.
+  power-key-on-ms:
+    type: int
+    required: false
+    description: |
+      Duration required to hold the power key for the modem to turn on.
+  power-key-off-ms:
+    type: int
+    required: false
+    description: |
+      Duration required to hold the power key for the modem to turn off.

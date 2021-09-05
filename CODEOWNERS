@@ -282,6 +282,7 @@
 /drivers/misc/ft8xx/                      @hubertmis
 /drivers/modem/hl7800.c                   @LairdCP/zephyr
 /drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
+/drivers/modem/gsm_ppp.h                  @ycsin
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/*b91*                     @yurvyn
