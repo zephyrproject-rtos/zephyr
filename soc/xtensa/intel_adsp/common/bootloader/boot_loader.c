@@ -6,6 +6,7 @@
  * Author: Liam Girdwood <liam.r.girdwood@linux.intel.com>
  */
 
+#include <devicetree.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <cavs/version.h>
@@ -16,6 +17,7 @@
 #include <adsp/io.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
+#include <cavs-shim.h>
 #include "manifest.h"
 
 #if CONFIG_SOC_INTEL_S1000
@@ -191,7 +193,7 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	uint32_t ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1;
 	uint32_t total_banks_count = PLATFORM_HPSRAM_EBB_COUNT;
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_HPSRAM_LDO_ON);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_ON;
 
 	/* add some delay before touch power register */
 	idelay(delay_count);
@@ -245,7 +247,7 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	/* add some delay before touch power register */
 	idelay(delay_count);
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_HPSRAM_LDO_BYPASS);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_HPSRAM_LDO_BYPASS;
 
 	return 0;
 }
@@ -293,19 +295,17 @@ static uint32_t hp_sram_init(void)
 
 static int32_t lp_sram_init(void)
 {
-	uint32_t status;
-	uint32_t lspgctl_value;
+	uint32_t status = 0;
 	uint32_t timeout_counter, delay_count = 256;
 
 	timeout_counter = delay_count;
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_LPSRAM_LDO_ON);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_ON;
 
 	/* add some delay before writing power registers */
 	idelay(delay_count);
 
-	lspgctl_value = io_reg_read(LSPGISTS);
-	io_reg_write(LSPGCTL, lspgctl_value & ~LPSRAM_MASK(0));
+	CAVS_SHIM.lspgctl = CAVS_SHIM.lspgists & ~LPSRAM_MASK(0);
 
 	/* add some delay before checking the status */
 	idelay(delay_count);
@@ -313,16 +313,15 @@ static int32_t lp_sram_init(void)
 	/* query the power status of first part of LP memory */
 	/* to check whether it has been powered up. A few    */
 	/* cycles are needed for it to be powered up         */
-	status = io_reg_read(LSPGISTS);
-	while (status) {
+	while (CAVS_SHIM.lspgists) {
 		if (!timeout_counter--) {
+			status = 1;
 			break;
 		}
 		idelay(delay_count);
-		status = io_reg_read(LSPGISTS);
 	}
 
-	shim_write(SHIM_LDOCTL, SHIM_LDOCTL_LPSRAM_LDO_BYPASS);
+	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 
 	return status;
 }
