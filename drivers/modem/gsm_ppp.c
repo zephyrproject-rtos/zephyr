@@ -81,8 +81,6 @@ static struct gsm_modem {
 	int rssi_retries;
 	int attach_retries;
 	bool mux_enabled : 1;
-	bool mux_setup_done : 1;
-	bool setup_done : 1;
 	bool attached : 1;
 } gsm;
 
@@ -710,8 +708,6 @@ attaching:
 		return;
 	}
 
-	gsm->setup_done = true;
-
 	set_ppp_carrier_on(gsm);
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
@@ -946,7 +942,6 @@ static void gsm_configure(struct k_work *work)
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && ret == 0 &&
 	    gsm->mux_enabled == false) {
-		gsm->mux_setup_done = false;
 
 		ret = mux_enable(gsm);
 		if (ret == 0) {
