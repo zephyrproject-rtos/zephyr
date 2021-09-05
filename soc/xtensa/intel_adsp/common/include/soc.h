@@ -65,56 +65,12 @@
 
 #define PDM_BASE				DMIC_BASE
 
-/* SOC DSP SHIM Registers */
-#if CAVS_VERSION == CAVS_VERSION_1_5
-#define SOC_DSP_SHIM_REG_BASE			0x00001000
-#else
-#define SOC_DSP_SHIM_REG_BASE			0x00071f00
-#endif
-
 /* DSP Wall Clock Timers (0 and 1) */
 #define DSP_WCT_IRQ(x) \
 	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
 
 #define DSP_WCT_CS_TA(x)			BIT(x)
 #define DSP_WCT_CS_TT(x)			BIT(4 + x)
-
-struct soc_dsp_shim_regs {
-	uint32_t	reserved[8];
-	union {
-		struct {
-			uint32_t walclk32_lo;
-			uint32_t walclk32_hi;
-		};
-		uint64_t	walclk;
-	};
-	uint32_t	dspwctcs;
-	uint32_t	reserved1[1];
-	union {
-		struct {
-			uint32_t dspwct0c32_lo;
-			uint32_t dspwct0c32_hi;
-		};
-		uint64_t	dspwct0c;
-	};
-	union {
-		struct {
-			uint32_t dspwct1c32_lo;
-			uint32_t dspwct1c32_hi;
-		};
-		uint64_t	dspwct1c;
-	};
-	uint32_t	reserved2[14];
-	uint32_t	clkctl;
-	uint32_t	clksts;
-	uint32_t	reserved3[4];
-	uint16_t	pwrctl;
-	uint16_t	pwrsts;
-	uint32_t	lpsctl;
-	uint32_t	lpsdmas0;
-	uint32_t	lpsdmas1;
-	uint32_t	reserved4[22];
-};
 
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);

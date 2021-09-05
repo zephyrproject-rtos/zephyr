@@ -11,6 +11,7 @@
 #include <init.h>
 
 #include <soc/shim.h>
+#include <cavs-shim.h>
 #include <cavs-idc.h>
 #include "soc.h"
 
@@ -194,12 +195,7 @@ irq_connect_out:
 
 static void power_init_v15(void)
 {
-#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
-		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
-
-	/*
-	 * HP domain clocked by PLL
+	/* HP domain clocked by PLL
 	 * LP domain clocked by PLL
 	 * DSP Core 0 PLL Clock Select divide by 1
 	 * DSP Core 1 PLL Clock Select divide by 1
@@ -210,60 +206,43 @@ static void power_init_v15(void)
 	 * Disable Tensilica Core Prevent Local Clock Gating (Core 1)
 	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
-	dsp_shim_regs->clkctl =
-		SHIM_CLKCTL_HDCS_PLL |
-		SHIM_CLKCTL_LDCS_PLL |
-		SHIM_CLKCTL_DPCS_DIV1(0) |
-		SHIM_CLKCTL_DPCS_DIV1(1) |
-		SHIM_CLKCTL_HPMPCS_DIV2 |
-		SHIM_CLKCTL_LPMPCS_DIV4 |
-		SHIM_CLKCTL_TCPAPLLS_DIS |
-		SHIM_CLKCTL_TCPLCG_DIS(0) |
-		SHIM_CLKCTL_TCPLCG_DIS(1);
+	CAVS_SHIM.clkctl = CAVS15_CLKCTL_LMPCS;
 
 	/* Rewrite the low power sequencing control bits */
-	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
-#endif
+	CAVS_SHIM.lpsctl = CAVS_SHIM.lpsctl;
 }
 
 static void power_init(void)
 {
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
-	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
-		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
-
-	/*
-	 * Request HP ring oscillator and
+	/* Request HP ring oscillator and
 	 * wait for status to indicate it's ready.
 	 */
-	dsp_shim_regs->clkctl |= SHIM_CLKCTL_RHROSCC;
-	while ((dsp_shim_regs->clkctl & SHIM_CLKCTL_RHROSCC) !=
-	       SHIM_CLKCTL_RHROSCC) {
+	CAVS_SHIM.clkctl |= CAVS_CLKCTL_RHROSCC;
+	while ((CAVS_SHIM.clkctl & CAVS_CLKCTL_RHROSCC) != CAVS_CLKCTL_RHROSCC) {
 		k_busy_wait(10);
 	}
 
-	/*
-	 * Request HP Ring Oscillator
+	/* Request HP Ring Oscillator
 	 * Select HP Ring Oscillator
 	 * High Power Domain PLL Clock Select device by 2
 	 * Low Power Domain PLL Clock Select device by 4
 	 * Disable Tensilica Core(s) Prevent Local Clock Gating
 	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
-	dsp_shim_regs->clkctl =
-		SHIM_CLKCTL_RHROSCC |
-		SHIM_CLKCTL_OCS_HP_RING |
-		SHIM_CLKCTL_HMCS_DIV2 |
-		SHIM_CLKCTL_LMCS_DIV4 |
-		SHIM_CLKCTL_TCPLCG_DIS_ALL;
+	CAVS_SHIM.clkctl = (CAVS_CLKCTL_RHROSCC |
+			    CAVS_CLKCTL_OCS |
+			    CAVS_CLKCTL_LMCS);
 
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* Prevent LP GPDMA 0 & 1 clock gating */
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(0));
 	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(1));
+#endif
 
 	/* Disable power gating for first cores */
-	dsp_shim_regs->pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
+	CAVS_SHIM.pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
 
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* On cAVS 1.8+, we must demand ownership of the timestamping
 	 * and clock generator registers.  Lacking the former will
 	 * prevent wall clock timer interrupts from arriving, even

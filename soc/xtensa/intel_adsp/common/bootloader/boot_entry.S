@@ -13,11 +13,17 @@
  * 2) Stack is in first HPSRAM bank.
  */
 
+#include <devicetree.h>
 #include <soc/shim.h>
+#include <cavs-shim.h>
 #include <soc/platform.h>
 #include <soc/memory.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
+
+#define SHIM_ADDR DT_REG_ADDR(DT_NODELABEL(shim))
+#define SHIM_L2_MECS (SHIM_ADDR + 0xd0)
+#define SHIM_L2_PREF_CFG (SHIM_ADDR + 0x508)
 
 	.type   boot_master_core, @function
 
@@ -66,7 +72,7 @@ wnd0_error_address:
 
 #if defined(PLATFORM_MEM_INIT_AT_BOOT)
 shim_ldoctl_address:
-	.word SHIM_BASE + SHIM_LDOCTL
+	.word (SHIM_ADDR + 0xa4)
 
 ldoctl_hpsram_ldo_on:
 	.word SHIM_LDOCTL_HPSRAM_LDO_ON
