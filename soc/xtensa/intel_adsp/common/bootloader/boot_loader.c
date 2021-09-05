@@ -11,13 +11,13 @@
 #include <stdint.h>
 #include <cavs/version.h>
 
-#include <soc/platform.h>
 #include <soc/memory.h>
 #include <soc/shim.h>
 #include <adsp/io.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
 #include <cavs-shim.h>
+#include "platform.h"
 #include "manifest.h"
 
 #if CONFIG_SOC_INTEL_S1000
