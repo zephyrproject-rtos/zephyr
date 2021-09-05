@@ -1047,6 +1047,11 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
 	uint32_t ret;
 
+	/* NOTE: Single mayfly instance is sufficient as primary channel PDUs
+	 *       use time reservation, and this mayfly shall complete within
+	 *       the radio event. Multiple advertising sets do not need
+	 *       independent mayfly allocations.
+	 */
 	mfy.param = adv;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
 			     &mfy);

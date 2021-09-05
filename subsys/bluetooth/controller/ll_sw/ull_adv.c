@@ -2128,6 +2128,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		if (adv->lll.aux) {
+			ull_adv_aux_offset_get(adv);
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		adv->ticks_at_expire = ticks_at_expire;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
@@ -2163,12 +2169,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-	if (adv->lll.aux) {
-		ull_adv_aux_offset_get(adv);
-	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }
