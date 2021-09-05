@@ -592,20 +592,18 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 #if IS_ENABLED(CONFIG_GSM_MUX)
-	if (gsm->mux_enabled) {
-		ret = modem_cmd_send_nolock(&gsm->context.iface,
-					    &gsm->context.cmd_handler,
-					    &response_cmds[0],
-					    ARRAY_SIZE(response_cmds),
-					    "AT", &gsm->sem_response,
-					    GSM_CMD_AT_TIMEOUT);
-		if (ret < 0) {
-			LOG_ERR("modem setup returned %d, %s",
-				ret, "retrying...");
-			(void)k_work_reschedule(&gsm->gsm_configure_work,
-						K_SECONDS(1));
-			return;
-		}
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &response_cmds[0],
+				    ARRAY_SIZE(response_cmds),
+				    "AT", &gsm->sem_response,
+				    GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("modem setup returned %d, %s",
+			ret, "retrying...");
+		(void)k_work_reschedule(&gsm->gsm_configure_work,
+					K_SECONDS(1));
+		return;
 	}
 #endif
 
@@ -717,32 +715,29 @@ attaching:
 	set_ppp_carrier_on(gsm);
 
 #if IS_ENABLED(CONFIG_GSM_MUX)
-	if (gsm->mux_enabled) {
-		/* Re-use the original iface for AT channel */
-		ret = modem_iface_uart_init_dev(&gsm->context.iface,
-						gsm->at_dev);
+	/* Re-use the original iface for AT channel */
+	ret = modem_iface_uart_init_dev(&gsm->context.iface,
+					gsm->at_dev);
+	if (ret < 0) {
+		LOG_DBG("iface %suart error %d", "AT ", ret);
+	} else {
+		/* Do a test and try to send AT command to modem */
+		ret = modem_cmd_send_nolock(&gsm->context.iface,
+					    &gsm->context.cmd_handler,
+					    &response_cmds[0],
+					    ARRAY_SIZE(response_cmds),
+					    "AT", &gsm->sem_response,
+					    GSM_CMD_AT_TIMEOUT);
 		if (ret < 0) {
-			LOG_DBG("iface %suart error %d", "AT ", ret);
+			LOG_WRN("modem setup returned %d, %s",
+				ret, "AT cmds failed");
 		} else {
-			/* Do a test and try to send AT command to modem */
-			ret = modem_cmd_send_nolock(
-				&gsm->context.iface,
-				&gsm->context.cmd_handler,
-				&response_cmds[0],
-				ARRAY_SIZE(response_cmds),
-				"AT", &gsm->sem_response,
-				GSM_CMD_AT_TIMEOUT);
-			if (ret < 0) {
-				LOG_WRN("modem setup returned %d, %s",
-					ret, "AT cmds failed");
-			} else {
-				LOG_INF("AT channel %d connected to %s",
-					DLCI_AT, gsm->at_dev->name);
-			}
+			LOG_INF("AT channel %d connected to %s",
+				DLCI_AT, gsm->at_dev->name);
 		}
-		modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
-		k_work_schedule(&rssi_work_handle, K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 	}
+	modem_cmd_handler_tx_unlock(&gsm->context.cmd_handler);
+	k_work_schedule(&rssi_work_handle, K_SECONDS(CONFIG_MODEM_GSM_RSSI_POLLING_PERIOD));
 #endif /* CONFIG_GSM_MUX */
 }
 
@@ -907,7 +902,6 @@ static void mux_setup(struct k_work *work)
 						gsm->ppp_dev);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "PPP ", ret);
-			gsm->mux_enabled = false;
 			goto fail;
 		}
 
@@ -963,15 +957,13 @@ static void gsm_configure(struct k_work *work)
 			return;
 		}
 
-		if (gsm->mux_enabled) {
-			gsm->state = STATE_INIT;
+		gsm->state = STATE_INIT;
 
-			k_work_init_delayable(&gsm->gsm_configure_work,
-					      mux_setup);
+		k_work_init_delayable(&gsm->gsm_configure_work,
+					mux_setup);
 
-			(void)k_work_reschedule(&gsm->gsm_configure_work,
-						K_NO_WAIT);
-		}
+		(void)k_work_reschedule(&gsm->gsm_configure_work,
+					K_NO_WAIT);
 	}
 #else
 	gsm_finalize_connection(gsm);
