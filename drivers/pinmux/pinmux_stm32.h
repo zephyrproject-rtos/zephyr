@@ -87,20 +87,6 @@ struct soc_gpio_pinctrl {
 #define STM32_PIN(__pin) \
 	((__pin) & 0xf)
 
-
-/**
- * @brief helper for mapping IO port to its clock subsystem
- *
- * @param port  IO port
- *
- * Map given IO @port to corresponding clock subsystem. The returned
- * clock subsystem ID must suitable for passing as parameter to
- * clock_control_on(). Implement this function at the SoC level.
- *
- * @return clock subsystem ID
- */
-clock_control_subsys_t stm32_get_port_clock(int port);
-
 /**
  * @brief helper for configuration of IO pin
  *
