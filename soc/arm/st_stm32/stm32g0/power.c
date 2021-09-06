@@ -20,7 +20,7 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", info.state);
@@ -50,7 +50,7 @@ void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power substate %u", info.state);
