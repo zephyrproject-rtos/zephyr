@@ -301,3 +301,39 @@ void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 {
 	TRACING_STRING("%s: %p\n", __func__, timer);
 }
+
+void sys_trace_k_heap_init(struct k_heap *h, void *mem, size_t bytes)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_aligned_alloc_enter(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_alloc_enter(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_free(struct k_heap *h, void *mem)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_aligned_alloc_blocking(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_alloc_exit(struct k_heap *h, size_t bytes, k_timeout_t timeout, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
+
+void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, size_t bytes,
+		k_timeout_t timeout, void *ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, h);
+}
