@@ -855,6 +855,12 @@ struct mesh_read_supported_commands_rp {
 #define MESH_IN_ENTER_STRING		BIT(3)
 
 #define MESH_CONFIG_PROVISIONING	0x02
+
+struct set_keys {
+	uint8_t pub_key[64];
+	uint8_t priv_key[32];
+} __packed;
+
 struct mesh_config_provisioning_cmd {
 	uint8_t uuid[16];
 	uint8_t static_auth[16];
@@ -862,6 +868,8 @@ struct mesh_config_provisioning_cmd {
 	uint16_t out_actions;
 	uint8_t in_size;
 	uint16_t in_actions;
+	uint8_t auth_method;
+	struct set_keys set_keys[0];
 } __packed;
 
 #define MESH_PROVISION_NODE		0x03
@@ -873,6 +881,7 @@ struct mesh_provision_node_cmd {
 	uint32_t seq_num;
 	uint16_t addr;
 	uint8_t dev_key[16];
+	uint8_t pub_key[0];
 } __packed;
 
 #define MESH_INIT			0x04
