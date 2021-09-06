@@ -77,6 +77,27 @@ void pm_resume_devices(void)
 }
 #endif /* defined(CONFIG_PM_DEVICE) */
 
+/**
+ * @brief Check if a PM action can be run on a device.
+ *
+ * @param dev Device instance.
+ *
+ * @retval -ENOSYS If device does not implement PM.
+ * @retval -EBUSY If device is busy transitioning to a new state.
+ */
+static int pm_device_is_actionable(const struct device *dev)
+{
+	if (dev->pm_control == NULL) {
+		return -ENOSYS;
+	}
+
+	if (atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
 const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
@@ -91,6 +112,100 @@ const char *pm_device_state_str(enum pm_device_state state)
 	default:
 		return "";
 	}
+}
+
+int pm_device_resume(const struct device *dev)
+{
+	int ret;
+
+	ret = pm_device_is_actionable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dev->pm->state == PM_DEVICE_STATE_ACTIVE) {
+		return -EALREADY;
+	}
+
+	ret = dev->pm_control(dev, PM_DEVICE_ACTION_RESUME);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = PM_DEVICE_STATE_ACTIVE;
+
+	return 0;
+}
+
+int pm_device_suspend(const struct device *dev)
+{
+	int ret;
+
+	ret = pm_device_is_actionable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dev->pm->state == PM_DEVICE_STATE_SUSPENDED) {
+		return -EALREADY;
+	} else if (dev->pm->state == PM_DEVICE_STATE_OFF) {
+		return -ENOTSUP;
+	}
+
+	ret = dev->pm_control(dev, PM_DEVICE_ACTION_SUSPEND);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
+
+	return 0;
+}
+
+int pm_device_turn_off(const struct device *dev)
+{
+	int ret;
+
+	ret = pm_device_is_actionable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dev->pm->state == PM_DEVICE_STATE_OFF) {
+		return -EALREADY;
+	}
+
+	ret = dev->pm_control(dev, PM_DEVICE_ACTION_TURN_OFF);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = PM_DEVICE_STATE_OFF;
+
+	return 0;
+}
+
+int pm_device_low_power(const struct device *dev)
+{
+	int ret;
+
+	ret = pm_device_is_actionable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dev->pm->state == PM_DEVICE_STATE_LOW_POWER) {
+		return -EALREADY;
+	}
+
+	ret = dev->pm_control(dev, PM_DEVICE_ACTION_LOW_POWER);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = PM_DEVICE_STATE_LOW_POWER;
+
+	return 0;
 }
 
 int pm_device_state_set(const struct device *dev,

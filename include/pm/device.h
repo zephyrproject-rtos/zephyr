@@ -147,6 +147,72 @@ typedef int (*pm_device_control_callback_t)(const struct device *dev,
 const char *pm_device_state_str(enum pm_device_state state);
 
 /**
+ * @brief Resume a device.
+ *
+ * A device can be resumed from #PM_DEVICE_STATE_SUSPENDED or
+ * #PM_DEVICE_STATE_OFF states.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the device does not implement support for power management.
+ * @retval -EALREADY If the device is already active.
+ * @retval -EBUSY If the device is busy transitioning to a new state.
+ * @retval -errno Other negative errno on failure.
+ */
+int pm_device_resume(const struct device *dev);
+
+/**
+ * @brief Suspend a device.
+ *
+ * A device can only be suspended if its state is #PM_DEVICE_STATE_ACTIVE.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the device does not implement support for power management.
+ * @retval -ENOTSUP If the operation is not supported given the current device state.
+ * @retval -EALREADY If the device is already active.
+ * @retval -EBUSY If the device is busy transitioning to a new state.
+ * @retval -errno Other negative errno on failure.
+ */
+int pm_device_suspend(const struct device *dev);
+
+/**
+ * @brief Turn off a device.
+ *
+ * A device can be turned off from #PM_DEVICE_STATE_ACTIVE or
+ * #PM_DEVICE_STATE_SUSPENDED states. A device may not implement support for
+ * turn off.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the device does not implement support for power management.
+ * @retval -ENOTSUP If the operation is not supported.
+ * @retval -EALREADY If the device is already active.
+ * @retval -EBUSY If the device is busy transitioning to a new state.
+ * @retval -errno Other negative errno on failure.
+ */
+int pm_device_turn_off(const struct device *dev);
+
+/**
+ * @brief Put a device into low power state.
+ *
+ * @warning Provided for compatibility, use pm_device_suspend() instead.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the device does not implement support for power management.
+ * @retval -ENOTSUP If the operation is not supported.
+ * @retval -EALREADY If the device is already active.
+ * @retval -EBUSY If the device is busy transitioning to a new state.
+ * @retval -errno Other negative errno on failure.
+ */
+int pm_device_low_power(const struct device *dev);
+
+/**
  * @brief Set the power state of a device.
  *
  * This function calls the device PM control callback so that the device does
@@ -158,7 +224,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @param state Device power state to be set.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP If requested state is not supported.
+ * @retval -ENOTSUP If operation is not supported given current device state.
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
 
