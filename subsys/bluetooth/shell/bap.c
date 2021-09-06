@@ -1152,16 +1152,36 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	err = bt_audio_broadcast_source_create(free_chan, &preset->codec,
 					       &preset->qos, &default_source);
 	if (err != 0) {
-		shell_error(sh, "Unable to create broadcaster: %d", err);
+		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
 	}
 
 	broadcast_chan_index_bits |= BIT(i);
 
-	shell_print(sh, "Broadcaster created: preset %s", preset->name);
+	shell_print(sh, "Broadcast source created: preset %s", preset->name);
 
 	if (default_chan == NULL) {
 		default_chan = free_chan;
+	}
+
+	return 0;
+}
+
+
+static int cmd_start_broadcast(const struct shell *sh, size_t argc,
+			       char *argv[])
+{
+	int err;
+
+	if (default_source == NULL) {
+		shell_info(sh, "Broadcast source not created");
+		return -ENOEXEC;
+	}
+
+	err = bt_audio_broadcast_source_start(default_source);
+	if (err != 0) {
+		shell_error(sh, "Unable to start broadcast source: %d", err);
+		return err;
 	}
 
 	return 0;
@@ -1359,6 +1379,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      cmd_config, 3, 2),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[codec] [preset]",
 		      cmd_create_broadcast, 1, 2),
+	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(broadcast_scan, NULL, "<on, off>",
 		      cmd_broadcast_scan, 2, 0),
 	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>",

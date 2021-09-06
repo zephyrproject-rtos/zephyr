@@ -891,8 +891,9 @@ int bt_audio_chan_disable(struct bt_audio_chan *chan);
  *
  *  This procedure is used by a client to make a channel start streaming.
  *
- *  This shall only be called for unicast and broadcast source channels, as
- *  broadcast sinks will always be started once synchronized.
+ *  This shall only be called for unicast channels.
+ *  Broadcast sinks will always be started once synchronized, and broadcast
+ *  source channels shall be started with bt_audio_broadcast_source_start().
  *
  *  @param chan Channel object
  *
@@ -968,20 +969,18 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
  */
 int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
 
-/** @brief Create audio broadcaster.
+/** @brief Create audio broadcast source.
  *
- *  Create a new audio broadcaster with one or more audio channels. To create a
- *  broadcaster with multiple channels, the channels must be linked with
- *  bt_audio_chan_link.
+ *  Create a new audio broadcast source with one or more audio channels.
+ *  To create a broadcast source with multiple channels, the channels must be
+ *  linked with bt_audio_chan_link().
  *
- *  The broadcaster will be visible for scanners once this has been called, and
- *  the device will advertise audio announcements.
+ *  The broadcast source will be visible for scanners once this has been called,
+ *  and the device will advertise audio announcements.
  *
- *  No audio data can be sent until bt_audio_chan_start has been called.
- *  No audio information (BIGInfo) will be visible to scanners
- *  (see bt_le_per_adv_sync_cb) until bt_audio_chan_start has been called.
- *  Starting any one channel for a broadcaster will start all the others
- *  supplied to this function.
+ *  No audio data can be sent until bt_audio_broadcast_source_start() has been
+ *  called and no audio information (BIGInfo) will be visible to scanners
+ *  (see bt_le_per_adv_sync_cb).
  *
  *  @param[in]  chan        Channel object being used for the broadcaster.
  *  @param[in]  codec       Codec configuration.
@@ -994,6 +993,18 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **source);
+
+/** @brief Start audio broadcast source.
+ *
+ *  Start an audio broadcast source with one or more audio channels.
+ *  The broadcast source will start advertising BIGInfo, and audio data can
+ *  be streamed.
+ *
+ *  @param source      Pointer to the broadcast source
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source);
 
 /** @brief Start scan for broadcast sources.
  *
