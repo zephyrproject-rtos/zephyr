@@ -324,7 +324,17 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 }
 
 #ifdef CONFIG_BT_OTS
-static void search_cb(struct media_player *plr, int err, uint8_t result_code)
+static void search_send_cb(struct media_player *plr, int err, struct mpl_search search)
+{
+	if (err) {
+		shell_error(ctx_shell, "Player: %p, Search send failed (%d)", plr, err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Player: %p, Search sent with len %u", plr, search.len);
+}
+
+static void search_recv_cb(struct media_player *plr, int err, uint8_t result_code)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Search failed (%d)", plr, err);
@@ -404,7 +414,8 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	cbs.command_recv                  = command_recv_cb;
 	cbs.commands_supported_recv       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
-	cbs.search                        = search_cb;
+	cbs.search_send                   = search_send_cb;
+	cbs.search_recv                   = search_recv_cb;
 	cbs.search_results_id_recv        = search_results_id_cb;
 #endif /* CONFIG_BT_OTS */
 	cbs.content_ctrl_id_recv          = content_ctrl_id_cb;

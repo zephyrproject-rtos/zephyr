@@ -554,25 +554,13 @@ static void mcc_search_send_cb(struct bt_conn *conn, int err, struct mpl_search 
 {
 	if (err) {
 		BT_ERR("Search send failed (%d)", err);
-
-		/* If error, call the callback to propagate the error to the caller.
-		 * Return FAILURE, as an error indicates this was not a success
-		 * TODO: Is there a better way to handle this situation?
-		 */
-
-		if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search) {
-			mprx.ctrlr.cbs->search(&mprx.remote_player, err,
-					       MEDIA_PROXY_SEARCH_FAILURE);
-		} else {
-			BT_DBG("No callback");
-		}
 	}
 
-	/* If no error, the result of the search operation will come as a notification
-	 * which will be handled by the mcc_search_ntf_cb() callback.
-	 * So, no need to call the callback here.
-	 * TODO: Add write callback here, along with for other writes
-	 */
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_send) {
+		mprx.ctrlr.cbs->search_send(&mprx.remote_player, err, search);
+	} else {
+		BT_DBG("No callback");
+	}
 }
 
 static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
@@ -582,8 +570,8 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 		       err, result_code);
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search) {
-		mprx.ctrlr.cbs->search(&mprx.remote_player, err, result_code);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_recv) {
+		mprx.ctrlr.cbs->search_recv(&mprx.remote_player, err, result_code);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -1480,6 +1468,12 @@ int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search 
 		if (mprx.local_player.calls->search_send) {
 			mprx.local_player.calls->search_send(search);
 
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_send) {
+				mprx.ctrlr.cbs->search_send(player, 0, search);
+			} else {
+				BT_DBG("No callback");
+			}
+
 			return 0;
 		}
 
@@ -1748,8 +1742,8 @@ void media_proxy_pl_search_cb(uint8_t result_code)
 {
 	mprx.sctrlr.cbs->search(result_code);
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search) {
-		mprx.ctrlr.cbs->search(&mprx.local_player, 0, result_code);
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_recv) {
+		mprx.ctrlr.cbs->search_recv(&mprx.local_player, 0, result_code);
 	} else {
 		BT_DBG("No ctrlr search callback");
 	}
