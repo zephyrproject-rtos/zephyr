@@ -114,56 +114,36 @@ static void communication_verify(const struct device *dev, bool active)
 	polling_verify(dev, is_async, active);
 }
 
-#define state_verify(dev, exp_state) do {\
-	enum pm_device_state power_state; \
-	int err = pm_device_state_get(dev, &power_state); \
-	zassert_equal(err, 0, "Unexpected err: %d", err); \
-	zassert_equal(power_state, exp_state, NULL); \
-} while (0)
-
-static void state_set(const struct device *dev, enum pm_device_state state,
-		      int exp_err)
-{
-	int err;
-	enum pm_device_state prev_state;
-
-	err = pm_device_state_get(dev, &prev_state);
-	zassert_equal(err, 0, "Unexpected err: %d", err);
-
-	err = pm_device_state_set(dev, state);
-	zassert_equal(err, exp_err, "Unexpected err: %d", err);
-
-	enum pm_device_state exp_state = err == 0 ? state : prev_state;
-
-	state_verify(dev, exp_state);
-}
-
 static void test_uart_pm_in_idle(void)
 {
 	const struct device *dev;
+	enum pm_device_state state;
+	int err;
 
 	dev = device_get_binding(UART_DEVICE_NAME);
 	zassert_true(dev != NULL, NULL);
 
-	state_verify(dev, PM_DEVICE_STATE_ACTIVE);
+	err = pm_device_state_get(dev, &state);
+	zassert_equal(err, 0, "Could not get state");
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE, "Unexpected state");
+
 	communication_verify(dev, true);
 
-	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
+	err = pm_device_suspend(dev);
+	zassert_equal(err, 0, "Could not suspend");
+
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
-	communication_verify(dev, true);
+	err = pm_device_resume(dev);
+	zassert_equal(err, 0, "Could not resume");
 
-	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
-	communication_verify(dev, false);
-
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
 	communication_verify(dev, true);
 }
 
 static void test_uart_pm_poll_tx(void)
 {
 	const struct device *dev;
+	int err;
 
 	dev = device_get_binding(UART_DEVICE_NAME);
 	zassert_true(dev != NULL, NULL);
@@ -171,21 +151,14 @@ static void test_uart_pm_poll_tx(void)
 	communication_verify(dev, true);
 
 	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
+
+	err = pm_device_suspend(dev);
+	zassert_equal(err, 0, "Could not suspend");
 
 	communication_verify(dev, false);
 
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
-
-	communication_verify(dev, true);
-
-	/* Now same thing but with callback */
-	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
-
-	communication_verify(dev, false);
-
-	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	err = pm_device_resume(dev);
+	zassert_equal(err, 0, "Could not resume");
 
 	communication_verify(dev, true);
 }
@@ -193,8 +166,10 @@ static void test_uart_pm_poll_tx(void)
 static void timeout(struct k_timer *timer)
 {
 	const struct device *uart = k_timer_user_data_get(timer);
+	int err;
 
-	state_set(uart, PM_DEVICE_STATE_SUSPENDED, 0);
+	err = pm_device_suspend(uart);
+	zassert_equal(err, 0, "Could not suspend");
 }
 
 static K_TIMER_DEFINE(pm_timer, timeout, NULL);
@@ -213,6 +188,8 @@ static void test_uart_pm_poll_tx_interrupted(void)
 	k_timer_user_data_set(&pm_timer, (void *)dev);
 
 	for (int i = 1; i < 100; i++) {
+		int err;
+
 		k_timer_start(&pm_timer, K_USEC(i * 10), K_NO_WAIT);
 
 		for (int j = 0; j < sizeof(str); j++) {
@@ -221,7 +198,8 @@ static void test_uart_pm_poll_tx_interrupted(void)
 
 		k_timer_status_sync(&pm_timer);
 
-		state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
+		err = pm_device_resume(dev);
+		zassert_equal(err, 0, "Could not resume");
 
 		communication_verify(dev, true);
 	}
