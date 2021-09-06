@@ -905,8 +905,9 @@ int bt_audio_chan_start(struct bt_audio_chan *chan);
  *
  *  This procedure is used by a client to make a channel stop streaming.
  *
- *  This shall only be called for unicast and broadcast source channels, as
- *  broadcast sinks will always be started once synchronized.
+ *  This shall only be called for unicast channels.
+ *  Broadcast sinks cannot be stopped.
+ *  Broadcast sources shall be stopped with bt_audio_broadcast_source_stop().
  *
  *  @param chan Channel object
  *
@@ -1005,6 +1006,18 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source);
+
+/** @brief Stop audio broadcast source.
+ *
+ *  Stop an audio broadcast source.
+ *  The broadcast source will stop advertising BIGInfo, and audio data can no
+ *  longer be streamed.
+ *
+ *  @param source      Pointer to the broadcast source
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source);
 
 /** @brief Start scan for broadcast sources.
  *
