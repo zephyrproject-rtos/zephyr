@@ -167,8 +167,8 @@ void test_power_state_trans(void)
  *  - system inform device system power state change through device interface
  *    pm_control
  *
- * @see pm_device_get_async(), pm_device_put_async(), pm_device_state_set(),
- *      pm_device_state_get()
+ * @see pm_device_get_async(), pm_device_put_async(), pm_device_resume(),
+ *      pm_device_suspend(), pm_device_turn_off(), pm_device_state_get()
  *
  * @ingroup power_tests
  */

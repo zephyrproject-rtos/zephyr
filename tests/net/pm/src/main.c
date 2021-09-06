@@ -148,14 +148,14 @@ void test_pm(void)
 	 */
 	k_yield();
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
-	zassert_true(ret == 0, "Could not set state");
+	ret = pm_device_suspend(dev);
+	zassert_true(ret == 0, "Could not suspend");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's try to suspend it again, it should fail relevantly */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
-	zassert_true(ret == -EALREADY, "Could change state");
+	ret = pm_device_suspend(dev);
+	zassert_true(ret == -EALREADY, "Could suspend");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
@@ -164,13 +164,13 @@ void test_pm(void)
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-	zassert_true(ret == 0, "Could not set state");
+	ret = pm_device_resume(dev);
+	zassert_true(ret == 0, "Could not resume");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is suspended");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-	zassert_true(ret == -EALREADY, "Could change state");
+	ret = pm_device_resume(dev);
+	zassert_true(ret == -EALREADY, "Could resume");
 
 	/* Let's send some data, it should go through */
 	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
