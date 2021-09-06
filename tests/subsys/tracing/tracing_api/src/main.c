@@ -25,6 +25,8 @@
 /* Check flags */
 static bool data_format_found;
 static bool raw_data_format_found;
+static bool error_data_format_found;
+static bool error_raw_data_format_found;
 static bool sync_string_format_found;
 #ifdef CONFIG_TRACING_ASYNC
 static bool tracing_api_found;
@@ -84,6 +86,12 @@ static void tracing_backends_output(
 	}
 	if (strstr(data, "tracing_format_raw_data_testing") != NULL) {
 		raw_data_format_found = true;
+	}
+	if (strstr(data, "error_data_testing") != NULL) {
+		error_data_format_found = true;
+	}
+	if (strstr(data, "error_raw_data_testing") != NULL) {
+		error_raw_data_format_found = true;
 	}
 	if (strstr(data, "tracing_format_string_testing") != NULL) {
 		sync_string_format_found = true;
@@ -214,14 +222,21 @@ void test_tracing_sys_api(void)
 void test_tracing_data_format(void)
 {
 	tracing_data_t tracing_data, tracing_raw_data;
+	tracing_data_t tracing_error_data, tracing_error_raw_data;
 	uint8_t data[] = "tracing_format_data_testing";
+	uint8_t error_data[] = "error_data_testing";
 	uint8_t raw_data[] = "tracing_format_raw_data_testing";
+	uint8_t error_raw_data[] = "error_raw_data_testing";
 
 	tracing_buffer_init();
 	tracing_data.data = data;
+	tracing_error_data.data = error_data;
 	tracing_data.length = sizeof(data);
+	tracing_error_data.length = sizeof(error_data);
 	tracing_raw_data.data = raw_data;
+	tracing_error_raw_data.data = error_raw_data;
 	tracing_raw_data.length = sizeof(raw_data);
+	tracing_error_raw_data.length = sizeof(error_raw_data);
 
 	tracing_format_data(&tracing_data, 1);
 	k_sleep(K_MSEC(100));
@@ -230,6 +245,32 @@ void test_tracing_data_format(void)
 	tracing_format_raw_data(tracing_raw_data.data, tracing_raw_data.length);
 	k_sleep(K_MSEC(100));
 	zassert_true(raw_data_format_found == true, "Failded to check output from backend");
+
+	/* make tracing buffer full */
+	uint8_t *buf = data;
+	int ret = 0;
+
+	do {
+		ret = tracing_buffer_put_claim(&buf, 5);
+	} while (ret);
+
+	tracing_format_data(&tracing_error_data, 1);
+	zassert_false(error_data_format_found, "Failded to check output from backend");
+	tracing_format_raw_data(tracing_raw_data.data, 2048);
+	zassert_false(error_raw_data_format_found, "Failded to check output from backend");
+	tracing_buffer_init();
+
+	/* Disable tracing */
+	tracing_cmd_handle("disable", 8);
+	tracing_format_data(&tracing_error_data, 1);
+	k_sleep(K_MSEC(10));
+	zassert_false(error_data_format_found, "Failded to check output from backend");
+	tracing_format_raw_data(tracing_error_raw_data.data, tracing_error_raw_data.length);
+	k_sleep(K_MSEC(10));
+	zassert_false(error_raw_data_format_found, "Failded to check output from backend");
+
+	/* Keep default */
+	tracing_cmd_handle("enable", 7);
 }
 
 /**
