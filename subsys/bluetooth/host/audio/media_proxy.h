@@ -615,18 +615,35 @@ struct media_proxy_ctrl_cbs {
 	void (*commands_supported_recv)(struct media_player *player, int err, uint32_t opcodes);
 
 	/**
-	 * @brief Search receive callback
+	 * @brief Search send callback
 	 *
-	 * Called when a search operation has been set, to give the result
-	 * of the operation
+	 * Called when a search has been sent
 	 * See also media_proxy_ctrl_search_send()
 	 *
 	 * @param player        Media player instance pointer
 	 * @param err           Error value. 0 on success, GATT error on positive value
 	 *                      or errno on negative value.
-	 * @param result_code   The result of the operation
+	 * @param search        The search sent
 	 */
-	void (*search)(struct media_player *player, int err, uint8_t result_code);
+	void (*search_send)(struct media_player *player, int err, struct mpl_search search);
+
+	/**
+	 * @brief Search result code receive callback
+	 *
+	 * Called when a search result code has been received
+	 * See also media_proxy_ctrl_search_send()
+	 *
+	 * The search result code tells whether the search was successful or not.
+	 * For a successful search, the actual results of the search (i.e. what was found
+	 * as a result of the search)can be accessed using the Search Results Object ID.
+	 * The Search Results Object ID has a separate callback - search_results_id_recv().
+	 *
+	 * @param player        Media player instance pointer
+	 * @param err           Error value. 0 on success, GATT error on positive value
+	 *                      or errno on negative value.
+	 * @param result_code   Search result code
+	 */
+	void (*search_recv)(struct media_player *player, int err, uint8_t result_code);
 
 	/**
 	 * @brief Search Results Object ID receive callback
@@ -1029,8 +1046,13 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player);
  * @brief Set Search
  *
  * Write a search to the media player.
- * If the search is successful, the search result will be available as an object
- * in the Object Transfer Service.
+ * If the search is successful, the search results will be available as a group object
+ * in the Object Transfer Service (OTS).
+ *
+ * May result in up to three callbacks
+ * - one for the actual sending of the search to the player
+ * - one for the result code for the search from the player
+ * - if the search is successful, one for the the search results object ID in the OTs
  *
  * Requires Object Transfer Service
  *
