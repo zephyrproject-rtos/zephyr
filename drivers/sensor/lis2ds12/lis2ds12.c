@@ -23,21 +23,73 @@
 
 LOG_MODULE_REGISTER(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lis2ds12_set_odr(const struct device *dev, uint16_t odr)
+static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 {
 	const struct lis2ds12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	uint8_t val;
+	lis2ds12_odr_t val;
 
 	/* check if power off */
 	if (odr == 0U) {
+		LOG_DBG("%s: set power-down", dev->name);
 		return lis2ds12_xl_data_rate_set(ctx, LIS2DS12_XL_ODR_OFF);
 	}
 
-	val = LIS2DS12_HR_ODR_TO_REG(odr);
-	if (val > LIS2DS12_XL_ODR_800Hz_HR) {
-		LOG_ERR("ODR too high");
-		return -EINVAL;
+	/*
+	 * odr >= 1600Hz are available in HF mode only
+	 * 12,5Hz <= odr <= 800Hz are available in LP and HR mode only
+	 * odr == 1Hz is available in LP mode only
+	 */
+	if ((odr >= 9 && cfg->pm != 3) || (odr < 9 && cfg->pm == 3) ||
+	    (odr == 1 && cfg->pm != 1)) {
+		LOG_ERR("%s: bad odr and pm combination", dev->name);
+		return -ENOTSUP;
+	}
+
+	switch (odr) {
+	case 1:
+		val = LIS2DS12_XL_ODR_1Hz_LP;
+		break;
+	case 2:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_12Hz5_LP :
+				       LIS2DS12_XL_ODR_12Hz5_HR;
+		break;
+	case 3:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_25Hz_LP :
+				       LIS2DS12_XL_ODR_25Hz_HR;
+		break;
+	case 4:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_50Hz_LP :
+				       LIS2DS12_XL_ODR_50Hz_HR;
+		break;
+	case 5:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_100Hz_LP :
+				       LIS2DS12_XL_ODR_100Hz_HR;
+		break;
+	case 6:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_200Hz_LP :
+				       LIS2DS12_XL_ODR_200Hz_HR;
+		break;
+	case 7:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_400Hz_LP :
+				       LIS2DS12_XL_ODR_400Hz_HR;
+		break;
+	case 8:
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_800Hz_LP :
+				       LIS2DS12_XL_ODR_800Hz_HR;
+		break;
+	case 9:
+		val = LIS2DS12_XL_ODR_1k6Hz_HF;
+		break;
+	case 10:
+		val = LIS2DS12_XL_ODR_3k2Hz_HF;
+		break;
+	case 11:
+		val = LIS2DS12_XL_ODR_6k4Hz_HF;
+		break;
+	default:
+		LOG_ERR("%s: bad odr %d", dev->name, odr);
+		return -ENOTSUP;
 	}
 
 	return lis2ds12_xl_data_rate_set(ctx, val);
@@ -82,7 +134,8 @@ static int lis2ds12_accel_config(const struct device *dev,
 	case SENSOR_ATTR_FULL_SCALE:
 		return lis2ds12_set_range(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lis2ds12_set_odr(dev, val->val1);
+		LOG_DBG("%s: set odr to %d Hz", dev->name, val->val1);
+		return lis2ds12_set_odr(dev, LIS2DS12_ODR_TO_REG(val->val1));
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -250,8 +303,9 @@ static int lis2ds12_init(const struct device *dev)
 	}
 #endif
 
-	/* set sensor default odr */
-	ret = lis2ds12_set_odr(dev, 12);
+	/* set sensor default pm and odr */
+	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
+	ret = lis2ds12_set_odr(dev, (cfg->pm == 0) ? 0 : cfg->odr);
 	if (ret < 0) {
 		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;
@@ -319,6 +373,8 @@ static int lis2ds12_init(const struct device *dev)
 					   0),				\
 		},							\
 		.range = DT_INST_PROP(inst, range),			\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP(inst, odr),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DS12_CFG_IRQ(inst)), ())			\
 	}
@@ -341,6 +397,8 @@ static int lis2ds12_init(const struct device *dev)
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.range = DT_INST_PROP(inst, range),			\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP(inst, odr),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DS12_CFG_IRQ(inst)), ())			\
 	}
