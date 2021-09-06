@@ -192,7 +192,6 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 			/* Setup Radio Filter */
-
 			struct lll_filter *fal = ull_filter_lll_get(true);
 
 			radio_filter_configure(fal->enable_bitmask,
