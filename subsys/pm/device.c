@@ -211,65 +211,6 @@ int pm_device_low_power(const struct device *dev)
 	return 0;
 }
 
-int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state)
-{
-	int ret;
-	enum pm_device_action action;
-
-	if (dev->pm_control == NULL) {
-		return -ENOSYS;
-	}
-
-	if (atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
-		return -EBUSY;
-	}
-
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
-		if (dev->pm->state == PM_DEVICE_STATE_SUSPENDED) {
-			return -EALREADY;
-		} else if (dev->pm->state == PM_DEVICE_STATE_OFF) {
-			return -ENOTSUP;
-		}
-
-		action = PM_DEVICE_ACTION_SUSPEND;
-		break;
-	case PM_DEVICE_STATE_ACTIVE:
-		if (dev->pm->state == PM_DEVICE_STATE_ACTIVE) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_RESUME;
-		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		if (dev->pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_LOW_POWER;
-		break;
-	case PM_DEVICE_STATE_OFF:
-		if (dev->pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_TURN_OFF;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	ret = dev->pm_control(dev, action);
-	if (ret < 0) {
-		return ret;
-	}
-
-	dev->pm->state = state;
-
-	return 0;
-}
-
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state)
 {

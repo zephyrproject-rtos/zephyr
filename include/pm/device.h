@@ -213,27 +213,6 @@ int pm_device_turn_off(const struct device *dev);
 int pm_device_low_power(const struct device *dev);
 
 /**
- * @brief Set the power state of a device.
- *
- * This function calls the device PM control callback so that the device does
- * the necessary operations to put the device into the given state.
- *
- * @note Some devices may not support all device power states.
- *
- * @param dev Device instance.
- * @param state Device power state to be set.
- *
- * @retval 0 If successful.
- * @retval -ENOTSUP If operation is not supported given current device state.
- * @retval -EALREADY If device is already at the requested state.
- * @retval -EBUSY If device is changing its state.
-
- * @retval Errno Other negative errno on failure.
- */
-int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state);
-
-/**
  * @brief Obtain the power state of a device.
  *
  * @param dev Device instance.
