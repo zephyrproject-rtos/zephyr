@@ -615,25 +615,11 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 	}
 
 	if (bt_audio_ep_is_broadcast_src(chan->ep)) {
-		struct bt_iso_big_create_param big_create_param = { 0 };
-		struct bt_audio_broadcast_source *source;
-
-		source = chan->ep->broadcast_source;
-
-		/* Create BIG */
-		big_create_param.num_bis = source->bis_count;
-		big_create_param.bis_channels = source->bis;
-
-		err = bt_iso_big_create(source->adv, &big_create_param,
-					&source->big);
-		if (err) {
-			BT_DBG("Failed to create BIG (err %d)", err);
-			return err;
-		}
-
-		return 0;
+		BT_DBG("Cannot use %s to start broadcast source channels",
+		       __func__);
+		return -EINVAL;
 	} else if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
-		BT_DBG("Broadcast sinks are always started once synced");
+		BT_DBG("Cannot start broadcast sink channels");
 		return -EINVAL;
 	}
 
@@ -1537,9 +1523,48 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
 	}
 
+	source->qos = qos;
+	source->chan = chan;
+
 	BT_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
 	*out_source = source;
+
+	return 0;
+}
+
+int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
+{
+	struct bt_iso_big_create_param param = { 0 };
+	struct bt_audio_chan *chan;
+	int err;
+
+	CHECKIF(source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	chan = source->chan;
+
+	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+		       chan, chan->state);
+		return -EBADMSG;
+	}
+
+	/* Create BIG */
+	param.num_bis = source->bis_count;
+	param.bis_channels = source->bis;
+	param.framing = source->qos->framing;
+	param.packing = 0; /*  TODO: Add to QoS struct */
+	param.interval = source->qos->interval;
+	param.latency = source->qos->latency;
+
+	err = bt_iso_big_create(source->adv, &param, &source->big);
+	if (err != 0) {
+		BT_DBG("Failed to create BIG: %d", err);
+		return err;
+	}
 
 	return 0;
 }
