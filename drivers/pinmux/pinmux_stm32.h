@@ -69,7 +69,7 @@ struct soc_gpio_pinctrl {
  * value
  */
 #define STM32_DT_PINMUX_REMAP(__pin) \
-	((__pin) & 0x1f)
+	((__pin) & 0x1fU)
 #endif
 
 /**
