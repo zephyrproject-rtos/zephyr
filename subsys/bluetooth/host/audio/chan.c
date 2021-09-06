@@ -668,18 +668,17 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan)
 
 	ep = chan->ep;
 
-	if (bt_audio_ep_is_broadcast(ep)) {
+	if (bt_audio_ep_is_broadcast_src(ep)) {
+		BT_DBG("Cannot use %s to stop broadcast source channels",
+		       __func__);
+		return -EINVAL;
+	} else if (bt_audio_ep_is_broadcast_snk(ep)) {
 		if (chan->state != BT_AUDIO_CHAN_STREAMING) {
 			BT_DBG("Channel is not streaming");
 			return -EALREADY;
 		}
 
-		if (bt_audio_ep_is_broadcast_src(ep)) {
-			err = bt_iso_big_terminate(ep->broadcast_source->big);
-		} else { /* broadcast sink */
-			err = bt_iso_big_terminate(ep->broadcast_sink->big);
-		}
-
+		err = bt_iso_big_terminate(ep->broadcast_sink->big);
 		if (err) {
 			BT_DBG("Failed to terminate BIG (err %d)", err);
 			return err;
@@ -1565,6 +1564,40 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 		BT_DBG("Failed to create BIG: %d", err);
 		return err;
 	}
+
+	return 0;
+}
+
+int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
+{
+	struct bt_audio_chan *chan;
+	int err;
+
+	CHECKIF(source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	chan = source->chan;
+
+	if (chan->state != BT_AUDIO_CHAN_STREAMING) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_STREAMING state: %u",
+		       chan, chan->state);
+		return -EBADMSG;
+	}
+
+	if (source->big == NULL) {
+		BT_DBG("Source is not started");
+		return -EALREADY;
+	}
+
+	err =  bt_iso_big_terminate(source->big);
+	if (err) {
+		BT_DBG("Failed to terminate BIG (err %d)", err);
+		return err;
+	}
+
+	source->big = NULL;
 
 	return 0;
 }
