@@ -12,7 +12,6 @@
 #define ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_
 
 #include <zephyr/types.h>
-#include <stddef.h>
 #include <drivers/clock_control.h>
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 #include <dt-bindings/pinctrl/stm32f1-pinctrl.h>
