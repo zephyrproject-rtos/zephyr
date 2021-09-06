@@ -821,7 +821,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
  *  This procedure is used by a client to reconfigure a channel using the
  *  a different local capability and/or codec configuration.
  *
- *  This can only be done for unicast and broadcast source channels.
+ *  This can only be done for unicast channels.
  *
  *  @param chan Channel object being reconfigured
  *  @param cap Local Audio Capability being reconfigured
@@ -996,6 +996,21 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **source);
+
+/** @brief Reconfigure audio broadcast source.
+ *
+ *  Reconfigure an audio broadcast source with a new codec and codec quality of
+ *  service parameters.
+ *
+ *  @param source      Pointer to the broadcast source
+ *  @param codec       Codec configuration.
+ *  @param qos         Quality of Service configuration
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
+				       struct bt_codec *codec,
+				       struct bt_codec_qos *qos);
 
 /** @brief Start audio broadcast source.
  *
