@@ -24,23 +24,18 @@
 #include <pinmux/pinmux_stm32.h>
 #include <pm/device_runtime.h>
 
-#define GPIO_DEVICE(gpio_port)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_port), okay),	\
-		    (DEVICE_DT_GET(DT_NODELABEL(gpio_port))),		\
-		    ((const struct device *)NULL))
-
 const struct device * const gpio_ports[STM32_PORTS_MAX] = {
-	GPIO_DEVICE(gpioa),
-	GPIO_DEVICE(gpiob),
-	GPIO_DEVICE(gpioc),
-	GPIO_DEVICE(gpiod),
-	GPIO_DEVICE(gpioe),
-	GPIO_DEVICE(gpiof),
-	GPIO_DEVICE(gpiog),
-	GPIO_DEVICE(gpioh),
-	GPIO_DEVICE(gpioi),
-	GPIO_DEVICE(gpioj),
-	GPIO_DEVICE(gpiok),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
 };
 
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
