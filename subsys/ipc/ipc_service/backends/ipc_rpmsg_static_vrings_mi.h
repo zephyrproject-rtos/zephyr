@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SHM_DEVICE_NAME		"sram0.shm"
+#define SHM_START_ADDR		CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_SHM_BASE_ADDRESS
+#define SHM_SIZE		CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_SHM_SIZE
 
-#define RPMSG_VQ_0		(0) /* TX virtqueue queue index */
-#define RPMSG_VQ_1		(1) /* RX virtqueue queue index */
+#define VRING_ALIGNMENT		(4)   /* Alignment of vring buffer */
+#define VDEV_STATUS_SIZE	(0x4) /* Size of status region */
+
 #define VRING_COUNT		(2) /* Number of used vring buffers. */
 
-#define IPC_INSTANCE_COUNT	(CONFIG_RPMSG_MULTI_INSTANCES_NO) /* Number of IPC instances.*/
+#define NUM_INSTANCES		(CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_NUM_INSTANCES)
 
 /* Private macros. */
 #define VRING_DESC_SIZEOF(num)	((num) * (sizeof(struct vring_desc)))
@@ -37,7 +39,7 @@
 					(VRING_ALIGNMENT))))
 
 /* Returns size of used shared memory consumed by all IPC instances*/
-#define SHMEM_CONSUMED_SIZE_GET(vring_size)	(IPC_INSTANCE_COUNT * \
+#define SHMEM_CONSUMED_SIZE_GET(vring_size)	(NUM_INSTANCES * \
 						 SHMEM_INST_SIZE_GET((vring_size)))
 
 /* Returns maximum allowable size of vring buffers to fit memory requirements. */
@@ -60,8 +62,5 @@
 					((shmem_addr) + \
 					((id) * (SHMEM_INST_SIZE_AUTOALLOC_GET(shmem_size))))
 
-#ifdef CONFIG_RPMSG_MULTI_INSTANCE_MASTER
-#define VIRTQUEUE_ID	(0)
-#else
-#define VIRTQUEUE_ID	(1)
-#endif
+#define VIRTQUEUE_ID_MASTER	(0)
+#define VIRTQUEUE_ID_REMOTE	(1)

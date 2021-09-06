@@ -11,23 +11,15 @@ menuconfig IPC_SERVICE
 
 if IPC_SERVICE
 
-choice IPC_SERVICE_BACKEND
-	prompt "IPC Service backend"
+rsource "backends/Kconfig"
 
-config IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-	bool "RPMsg multiple instance backend"
-	select RPMSG_MULTI_INSTANCE
+config IPC_SERVICE_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance.
 
-endchoice
-
-if IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-
-rsource "backends/Kconfig.rpmsg_mi"
-
-endif # IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-
-
-config IPC_SERVICE_BACKEND_REG_PRIORITY
+config IPC_SERVICE_REG_BACKEND_PRIORITY
 	int "Initialization priority of modules registering IPC backend"
 	default 46
 	help
