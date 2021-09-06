@@ -20,7 +20,7 @@ extern const struct device *__pm_device_slots_start[];
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static int _pm_devices(enum pm_device_state state)
+static int _pm_devices(enum pm_device_action action)
 {
 	const struct device *devs;
 	size_t devc;
@@ -37,13 +37,17 @@ static int _pm_devices(enum pm_device_state state)
 			continue;
 		}
 
-		ret = pm_device_state_set(dev, state);
-		/* ignore devices not supporting or already at the given state */
+		if (action == PM_DEVICE_ACTION_SUSPEND) {
+			ret = pm_device_suspend(dev);
+		} else {
+			ret = pm_device_low_power(dev);
+		}
+
+		/* ignore devices not supporting suspend or already suspended */
 		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
 			continue;
 		} else if (ret < 0) {
-			LOG_ERR("Device %s did not enter %s state (%d)",
-				dev->name, pm_device_state_str(state), ret);
+			LOG_ERR("Could not suspend %s (%d)", dev->name, ret);
 			return ret;
 		}
 
@@ -56,12 +60,12 @@ static int _pm_devices(enum pm_device_state state)
 
 int pm_suspend_devices(void)
 {
-	return _pm_devices(PM_DEVICE_STATE_SUSPENDED);
+	return _pm_devices(PM_DEVICE_ACTION_SUSPEND);
 }
 
 int pm_low_power_devices(void)
 {
-	return _pm_devices(PM_DEVICE_STATE_LOW_POWER);
+	return _pm_devices(PM_DEVICE_ACTION_LOW_POWER);
 }
 
 void pm_resume_devices(void)
@@ -69,8 +73,7 @@ void pm_resume_devices(void)
 	size_t i;
 
 	for (i = 0; i < num_susp; i++) {
-		pm_device_state_set(__pm_device_slots_start[i],
-				    PM_DEVICE_STATE_ACTIVE);
+		pm_device_resume(__pm_device_slots_start[i]);
 	}
 
 	num_susp = 0;
