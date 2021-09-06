@@ -74,7 +74,7 @@ struct mpl_sci {
 struct mpl_search {
 	uint8_t len;
 	char    search[SEARCH_LEN_MAX]; /* Concatenated search control items */
-};	                                /* - (type, length, param) */
+};                                      /* - (type, length, param) */
 
 
 /* PUBLIC API FOR CONTROLLERS */
@@ -279,7 +279,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param name	   The name of the media player
+	 * @param name     The name of the media player
 	 */
 	void (*player_name_recv)(struct media_player *player, int err, const char *name);
 
@@ -292,7 +292,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the Icon object in the Object Transfer Service (48 bits)
+	 * @param id       The ID of the Icon object in the Object Transfer Service (48 bits)
 	 */
 	void (*icon_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -305,7 +305,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param url	   The URL of the icon
+	 * @param url      The URL of the icon
 	 */
 	void (*icon_url_recv)(struct media_player *player, int err, const char *url);
 
@@ -329,7 +329,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param title	   The title of the current track
+	 * @param title    The title of the current track
 	 */
 	void (*track_title_recv)(struct media_player *player, int err, const char *title);
 
@@ -422,7 +422,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the track segments object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the track segments object in Object Transfer Service (48 bits)
 	 */
 	void (*track_segments_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -436,7 +436,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the current track object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the current track object in Object Transfer Service (48 bits)
 	 */
 	void (*current_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -449,7 +449,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID (48 bits) attempted to write
+	 * @param id       The ID (48 bits) attempted to write
 	 */
 	void (*current_track_id_write)(struct media_player *player, int err, uint64_t id);
 
@@ -463,7 +463,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the next track object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the next track object in Object Transfer Service (48 bits)
 	 */
 	void (*next_track_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -476,7 +476,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID (48 bits) attempted to write
+	 * @param id       The ID (48 bits) attempted to write
 	 */
 	void (*next_track_id_write)(struct media_player *player, int err, uint64_t id);
 
@@ -490,7 +490,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the current group object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the current group object in Object Transfer Service (48 bits)
 	 */
 	void (*current_group_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -503,7 +503,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID (48 bits) attempted to write
+	 * @param id       The ID (48 bits) attempted to write
 	 */
 	void (*current_group_id_write)(struct media_player *player, int err, uint64_t id);
 
@@ -516,7 +516,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the parent group object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the parent group object in Object Transfer Service (48 bits)
 	 */
 	void (*parent_group_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -654,7 +654,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param player   Media player instance pointer
 	 * @param err      Error value. 0 on success, GATT error on positive value
 	 *                 or errno on negative value.
-	 * @param id	   The ID of the search results object in Object Transfer Service (48 bits)
+	 * @param id       The ID of the search results object in Object Transfer Service (48 bits)
 	 */
 	void (*search_results_id_recv)(struct media_player *player, int err, uint64_t id);
 
@@ -886,7 +886,7 @@ int media_proxy_ctrl_current_track_id_get(struct media_player *player);
  * Requires Object Transfer Service
  *
  * @param player   Media player instance pointer
- * @param id	   The ID of a track object
+ * @param id       The ID of a track object
  *
  * @return 0 if success, errno on failure.
  */
@@ -946,7 +946,7 @@ int media_proxy_ctrl_current_group_id_get(struct media_player *player);
  * Requires Object Transfer Service
  *
  * @param player   Media player instance pointer
- * @param id	   The ID of a group object
+ * @param id       The ID of a group object
  *
  * @return 0 if success, errno on failure.
  */
@@ -986,7 +986,7 @@ int media_proxy_ctrl_playing_order_get(struct media_player *player);
  * Set the media player's playing order
  *
  * @param player   Media player instance pointer
- * @param order	   The playing order to set
+ * @param order    The playing order to set
  *
  * @return 0 if success, errno on failure.
  */
@@ -1169,7 +1169,7 @@ struct media_proxy_pl_calls {
 	 * values, and (backwards) from the end of the track for
 	 * negative values.
 	 *
-	 * @param position	The player position to set
+	 * @param position    The player position to set
 	 */
 	void (*track_position_set)(int32_t position);
 
@@ -1256,7 +1256,7 @@ struct media_proxy_pl_calls {
 	 * Change the player's current track to the track given by the ID.
 	 * (Behaves similarly to the goto track command.)
 	 *
-	 * @param id	The ID of a track object
+	 * @param id    The ID of a track object
 	 */
 	void (*current_track_id_set)(uint64_t id);
 
@@ -1275,7 +1275,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * Change the player's next track to the track given by the ID.
 	 *
-	 * @param id	The ID of a track object
+	 * @param id    The ID of a track object
 	 */
 	void (*next_track_id_set)(uint64_t id);
 
@@ -1298,7 +1298,7 @@ struct media_proxy_pl_calls {
 	 * Change the player's current group to the group given by the
 	 * ID, and the current track to the first track in that group.
 	 *
-	 * @param id	The ID of a group object
+	 * @param id    The ID of a group object
 	 */
 	void (*current_group_id_set)(uint64_t id);
 
@@ -1603,7 +1603,7 @@ void media_proxy_pl_search_cb(uint8_t result_code);
  * To be called when the ID of the search results is changed
  * (typically as the result of a new successful search).
  *
- * @param id	The ID of the search results object in the OTS
+ * @param id    The ID of the search results object in the OTS
  */
 void media_proxy_pl_search_results_id_cb(uint64_t id);
 
