@@ -477,10 +477,6 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 	if (err) {
 		shell_error(sh, "Unable to release Channel");
 		return -ENOEXEC;
-	} else {
-		if (PART_OF_ARRAY(broadcast_source_chans, default_chan)) {
-			default_source = NULL;
-		}
 	}
 
 	return 0;
@@ -1204,6 +1200,26 @@ static int cmd_stop_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_delete_broadcast(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	int err;
+
+	if (default_source == NULL) {
+		shell_info(sh, "Broadcast source not created");
+		return -ENOEXEC;
+	}
+
+	err = bt_audio_broadcast_source_delete(default_source);
+	if (err != 0) {
+		shell_error(sh, "Unable to delete broadcast source: %d", err);
+		return err;
+	}
+	default_source = NULL;
+
+	return 0;
+}
+
 static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -1398,6 +1414,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      cmd_create_broadcast, 1, 2),
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
 	SHELL_CMD_ARG(stop_broadcast, NULL, "", cmd_stop_broadcast, 1, 0),
+	SHELL_CMD_ARG(delete_broadcast, NULL, "", cmd_delete_broadcast, 1, 0),
 	SHELL_CMD_ARG(broadcast_scan, NULL, "<on, off>",
 		      cmd_broadcast_scan, 2, 0),
 	SHELL_CMD_ARG(accept_broadcast, NULL, "0x<broadcast_id>",
