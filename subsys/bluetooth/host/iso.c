@@ -1451,7 +1451,7 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 
 		if (broadcaster) {
 			CHECKIF(bis->qos->tx == NULL ||
-				valid_chan_io_qos(bis->qos->tx, true)) {
+				!valid_chan_io_qos(bis->qos->tx, true)) {
 				BT_DBG("Invalid BIS QOS");
 				return -EINVAL;
 			}
