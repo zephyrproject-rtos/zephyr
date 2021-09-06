@@ -2697,7 +2697,7 @@ static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
 static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	const uint8_t *rpa = ull_filter_adva_get(adv);
+	const uint8_t *rpa = ull_filter_adva_get(adv->lll.rl_idx);
 #else
 	const uint8_t *rpa = NULL;
 #endif
@@ -2739,7 +2739,7 @@ static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 	const uint8_t *rx_addr = NULL;
 	uint8_t *tgt_addr;
 
-	rx_addr = ull_filter_tgta_get(adv);
+	rx_addr = ull_filter_tgta_get(adv->lll.rl_idx);
 	if (rx_addr) {
 		pdu->rx_addr = 1;
 
