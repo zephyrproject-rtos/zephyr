@@ -225,10 +225,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
-/* LCOV_EXCL_START */
-
-/* LCOV_EXCL_STOP */
-
 #if defined(CONFIG_MULTITHREADING)
 __boot_func
 static void init_idle_thread(int i)
