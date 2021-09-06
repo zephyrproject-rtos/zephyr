@@ -34,20 +34,20 @@ static void trigger_handler(const struct device *dev,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static void pm_info(enum pm_device_state state, int status)
+static void pm_info(enum pm_device_action action, int status)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(arg);
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
-		printk("Enter ACTIVE_STATE ");
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		printk("Resume: ");
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
-		printk("Enter SUSPEND_STATE ");
+	case PM_DEVICE_ACTION_SUSPEND:
+		printk("Suspend: ");
 		break;
-	case PM_DEVICE_STATE_OFF:
-		printk("Enter OFF_STATE ");
+	case PM_DEVICE_ACTION_TURN_OFF:
+		printk("Turn off: ");
 		break;
 	}
 
@@ -92,20 +92,16 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Testing the power modes */
-	enum pm_device_state p_state;
 	int ret;
 
-	p_state = PM_DEVICE_STATE_SUSPENDED;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	ret = pm_device_suspend(dev);
+	pm_info(PM_DEVICE_ACTION_SUSPEND, ret);
 
-	p_state = PM_DEVICE_STATE_OFF;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	ret = pm_device_turn_off(dev);
+	pm_info(PM_DEVICE_ACTION_TURN_OFF, ret);
 
-	p_state = PM_DEVICE_STATE_ACTIVE;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
+	ret = pm_device_resume(dev);
+	pm_info(PM_DEVICE_ACTION_RESUME, ret);
 #endif
 
 	while (1) {
@@ -133,13 +129,11 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = PM_DEVICE_STATE_OFF;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		ret = pm_device_turn_off(dev);
+		pm_info(PM_DEVICE_ACTION_TURN_OFF, ret);
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_STATE_ACTIVE;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
+		ret = pm_device_resume(dev);
+		pm_info(PM_DEVICE_ACTION_RESUME, ret);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif
