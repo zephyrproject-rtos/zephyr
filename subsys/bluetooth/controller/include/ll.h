@@ -219,6 +219,11 @@ uint8_t ll_fal_clear(void);
 uint8_t ll_fal_add(bt_addr_le_t *addr);
 uint8_t ll_fal_remove(bt_addr_le_t *addr);
 
+uint8_t ll_pal_size_get(void);
+uint8_t ll_pal_clear(void);
+uint8_t ll_pal_add(const bt_addr_le_t *const addr, const uint8_t sid);
+uint8_t ll_pal_remove(const bt_addr_le_t *const addr, const uint8_t sid);
+
 void ll_rl_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type, uint8_t *id_addr);
 uint8_t ll_rl_size_get(void);
 uint8_t ll_rl_clear(void);
