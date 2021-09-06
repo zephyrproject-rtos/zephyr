@@ -73,25 +73,6 @@ struct soc_gpio_pinctrl {
 	((__pin) & 0x1f)
 #endif
 
-/* pretend that array will cover pin functions */
-typedef int stm32_pin_func_t;
-
-/**
- * @brief pinmux config wrapper
- *
- * GPIO function is assumed to be always available, as such it's not listed
- * in @funcs array
- */
-struct stm32_pinmux_conf {
-	uint32_t pin;                      /* pin ID */
-	const stm32_pin_func_t *funcs;  /* functions array, indexed with
-					 * (stm32_pin_alt_func - 1)
-					 */
-	const size_t nfuncs;            /* number of alternate functions, not
-					 * counting GPIO
-					 */
-};
-
 /**
  * @brief helper to extract IO port number from STM32PIN() encoded
  * value
