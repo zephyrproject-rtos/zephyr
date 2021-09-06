@@ -3,9 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdlib.h>
+
 #include "mesh_test.h"
 #include "mesh/net.h"
 #include "argparse.h"
+#include <bs_pc_backchannel.h>
 
 #include <sys/byteorder.h>
 
@@ -21,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PROV_MULTI_COUNT 3
 #define PROV_REPROV_COUNT 10
+#define WAIT_TIME 60 /*seconds*/
 
 enum test_flags {
 	IS_PROVISIONER,
@@ -28,7 +32,33 @@ enum test_flags {
 	TEST_FLAGS,
 };
 
+static uint8_t static_key1[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F,
+		0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31};
+static uint8_t static_key2[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F};
+
+static struct {
+	const uint8_t *static_val;
+	uint8_t        static_val_len;
+	uint8_t        output_size;
+	uint16_t       output_actions;
+	uint8_t        input_size;
+	uint16_t       input_actions;
+} oob_auth_test_vector[] = {
+	{static_key1, sizeof(static_key1), 0, 0, 0, 0},
+	{static_key2, sizeof(static_key2), 0, 0, 0, 0},
+	{NULL, 0, 3, BT_MESH_BLINK, 0, 0},
+	{NULL, 0, 5, BT_MESH_BEEP, 0, 0},
+	{NULL, 0, 6, BT_MESH_VIBRATE, 0, 0},
+	{NULL, 0, 7, BT_MESH_DISPLAY_NUMBER, 0, 0},
+	{NULL, 0, 8, BT_MESH_DISPLAY_STRING, 0, 0},
+	{NULL, 0, 0, 0, 4, BT_MESH_PUSH},
+	{NULL, 0, 0, 0, 5, BT_MESH_TWIST},
+	{NULL, 0, 0, 0, 8, BT_MESH_ENTER_NUMBER},
+	{NULL, 0, 0, 0, 7, BT_MESH_ENTER_STRING},
+};
+
 static ATOMIC_DEFINE(flags, TEST_FLAGS);
+
 extern const struct bt_mesh_comp comp;
 extern const uint8_t test_net_key[16];
 extern const uint8_t test_app_key[16];
@@ -40,7 +70,11 @@ static uint16_t current_dev_addr;
 static const uint8_t dev_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
 
-#define WAIT_TIME 60 /*seconds*/
+/* Delayed work to avoid requesting OOB info before generation of this. */
+static struct k_work_delayable oob_timer;
+static void delayed_input(struct k_work *work);
+
+static uint *oob_channel_id;
 
 static void test_device_init(void)
 {
@@ -48,12 +82,21 @@ static void test_device_init(void)
 	dev_uuid[6] = '0' + get_device_nbr();
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	k_work_init_delayable(&oob_timer, delayed_input);
 }
 
 static void test_provisioner_init(void)
 {
 	atomic_set_bit(flags, IS_PROVISIONER);
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	k_work_init_delayable(&oob_timer, delayed_input);
+}
+
+static void test_terminate(void)
+{
+	if (oob_channel_id) {
+		bs_clean_back_channels();
+	}
 }
 
 static void unprovisioned_beacon(uint8_t uuid[16],
@@ -87,13 +130,116 @@ static void prov_reset(void)
 	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
 }
 
+static bt_mesh_input_action_t gact;
+static uint8_t gsize;
+static int input(bt_mesh_input_action_t act, uint8_t size)
+{
+	/* The test system requests the input OOB data earlier than
+	 * the output OOB is generated. Need to release context here
+	 * to allow output OOB creation. OOB will be inserted later
+	 * after the delay.
+	 */
+	gact = act;
+	gsize = size;
+
+	k_work_reschedule(&oob_timer, K_SECONDS(1));
+
+	return 0;
+}
+
+static void delayed_input(struct k_work *work)
+{
+	char oob_str[16];
+	uint32_t oob_number;
+	int size = bs_bc_is_msg_received(*oob_channel_id);
+
+	if (size <= 0) {
+		FAIL("OOB data is not gotten");
+	}
+
+	switch (gact) {
+	case BT_MESH_PUSH:
+	case BT_MESH_TWIST:
+	case BT_MESH_ENTER_NUMBER:
+		ASSERT_TRUE(size == sizeof(uint32_t));
+		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)&oob_number, size);
+		ASSERT_OK(bt_mesh_input_number(oob_number));
+		break;
+	case BT_MESH_ENTER_STRING:
+		bs_bc_receive_msg(*oob_channel_id, (uint8_t *)oob_str, size);
+		ASSERT_OK(bt_mesh_input_string(oob_str));
+		break;
+	default:
+		FAIL("Unknown input action %u (size %u) requested!", gact, gsize);
+	}
+}
+
+static void prov_input_complete(void)
+{
+	LOG_INF("Input OOB data completed");
+}
+
+static int output_number(bt_mesh_output_action_t action, uint32_t number);
+static int output_string(const char *str);
+static void capabilities(const struct bt_mesh_dev_capabilities *cap);
 static struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 	.unprovisioned_beacon = unprovisioned_beacon,
 	.complete = prov_complete,
 	.node_added = prov_node_added,
+	.output_number = output_number,
+	.output_string = output_string,
+	.input = input,
+	.input_complete = prov_input_complete,
+	.capabilities = capabilities,
 	.reset = prov_reset,
 };
+
+static int output_number(bt_mesh_output_action_t action, uint32_t number)
+{
+	LOG_INF("OOB Number: %u", number);
+
+	bs_bc_send_msg(*oob_channel_id, (uint8_t *)&number, sizeof(uint32_t));
+	return 0;
+}
+
+static int output_string(const char *str)
+{
+	LOG_INF("OOB String: %s", str);
+
+	bs_bc_send_msg(*oob_channel_id, (uint8_t *)str, strlen(str) + 1);
+	return 0;
+}
+
+static void capabilities(const struct bt_mesh_dev_capabilities *cap)
+{
+	if (cap->static_oob) {
+		LOG_INF("Static OOB authentication");
+		ASSERT_OK(bt_mesh_auth_method_set_static(prov.static_val, prov.static_val_len));
+	} else if (cap->output_actions) {
+		LOG_INF("Output OOB authentication");
+		ASSERT_OK(bt_mesh_auth_method_set_output(prov.output_actions, prov.output_size));
+	} else if (cap->input_actions) {
+		LOG_INF("Input OOB authentication");
+		ASSERT_OK(bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size));
+	} else if (!oob_channel_id) {
+		bt_mesh_auth_method_set_none();
+	} else {
+		FAIL("No OOB in capability frame");
+	}
+}
+
+static void oob_auth_set(int test_step)
+{
+	ASSERT_TRUE(test_step < ARRAY_SIZE(oob_auth_test_vector));
+
+	prov.static_val = oob_auth_test_vector[test_step].static_val;
+	prov.static_val_len = oob_auth_test_vector[test_step].static_val_len;
+	prov.output_size = oob_auth_test_vector[test_step].output_size;
+	prov.output_actions = oob_auth_test_vector[test_step].output_actions;
+	prov.input_size = oob_auth_test_vector[test_step].input_size;
+	prov.input_actions = oob_auth_test_vector[test_step].input_actions;
+}
 
 /** @brief Verify that this device pb-adv provision.
  */
@@ -147,6 +293,71 @@ static void test_provisioner_pb_adv_no_oob(void)
 	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
 
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(5)));
+
+	PASS();
+}
+
+static void test_device_pb_adv_oob_auth(void)
+{
+	int err = 0;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	oob_channel_id = bs_open_back_channel(get_device_nbr(),
+			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
+	if (!oob_channel_id) {
+		FAIL("Can't open OOB interface (err %d)\n", err);
+	}
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
+		oob_auth_set(i);
+
+		err = bt_mesh_prov_enable(BT_MESH_PROV_ADV);
+		ASSERT_OK(err, "Device PB-ADV Enable failed (err %d)", err);
+
+		/* Keep a long timeout so the prov multi case has time to finish: */
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)),
+			  "Device provision fail");
+
+		/* Delay to complete procedure with Provisioning Complete PDU frame. */
+		k_sleep(K_SECONDS(1));
+
+		bt_mesh_reset();
+	}
+
+	PASS();
+}
+
+static void test_provisioner_pb_adv_oob_auth(void)
+{
+	int err = 0;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	oob_channel_id = bs_open_back_channel(get_device_nbr(),
+			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
+	if (!oob_channel_id) {
+		FAIL("Can't open OOB interface (err %d)\n", err);
+	}
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	err = bt_mesh_cdb_create(test_net_key);
+	ASSERT_OK(err, "Failed to create CDB (err %d)\n", err);
+
+	err = bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key);
+	ASSERT_OK(err, "Provisioning failed (err %d)", err);
+
+	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
+		oob_auth_set(i);
+
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)),
+			  "Provisioner provision fail");
+
+		bt_mesh_cdb_node_del(bt_mesh_cdb_node_get(prov_addr - 1), true);
+	}
 
 	PASS();
 }
@@ -288,13 +499,17 @@ static void test_provisioner_pb_adv_reprovision(void)
 		.test_post_init_f = test_##role##_init,                        \
 		.test_tick_f = bt_mesh_test_timeout,                           \
 		.test_main_f = test_##role##_##name,                           \
+		.test_delete_f = test_terminate                                \
 	}
 
 static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(device, pb_adv_no_oob,
 		  "Device: pb-adv provisioning use no-oob method"),
+	TEST_CASE(device, pb_adv_oob_auth,
+		  "Device: pb-adv provisioning use oob authentication"),
 	TEST_CASE(device, pb_adv_reprovision,
 		  "Device: pb-adv provisioning, reprovision"),
+
 	TEST_CASE(provisioner, pb_adv_no_oob,
 		  "Provisioner: pb-adv provisioning use no-oob method"),
 	TEST_CASE(provisioner, pb_adv_multi,
@@ -303,6 +518,8 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to zero"),
 	TEST_CASE(provisioner, iv_update_flag_one,
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to one"),
+	TEST_CASE(provisioner, pb_adv_oob_auth,
+		  "Provisioner: pb-adv provisioning use oob authentication"),
 	TEST_CASE(provisioner, pb_adv_reprovision,
 		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
 
