@@ -1,0 +1,40 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: IPC service RPMsg multi-core backend
+
+compatible: "ipc-rpmsg-mc"
+
+include: base.yaml
+
+properties:
+
+  target:
+    type: string
+    required: true
+    description: Name of instance, usually the name of the targed domain.
+
+  priority:
+    type: int
+    required: true
+    description: Priority of the work queue.
+
+  ipc_shm:
+    type: phandle
+    required: true
+    description: phandle to the shared memory region for the instance.
+
+  ipm_tx:
+    type: phandle
+    required: true
+    description: phanble to the IPM for TX.
+
+  ipm_rx:
+    type: phandle
+    required: true
+    description: phandle to the IPM for RX.
+
+  ipm_tx_id:
+    type: int
+    required: true
+    description: ID used by the TX IPM.

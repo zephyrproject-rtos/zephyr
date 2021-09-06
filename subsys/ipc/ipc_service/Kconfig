@@ -18,14 +18,27 @@ config IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
 	bool "RPMsg multiple instance backend"
 	select RPMSG_MULTI_INSTANCE
 
+config IPC_SERVICE_BACKEND_RPMSG_MULTI_CORE
+	bool "RPMsg multiple core backend"
+	select RPMSG_MULTI_INSTANCE
+
 endchoice
 
-if IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
+config IPC_BACKEND_RPMSG_WORK_QUEUE_STACK_SIZE
 
-rsource "backends/Kconfig.rpmsg_mi"
+int "Size of RX work queue stack"
+	default 1024
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created in the multi-instance / multi-core RPMsg backend module to
+	  prevent notifying service users about received data from the system
+	  work queue.  Size is the same for all instances.
 
-endif # IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
-
+config IPC_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance.
 
 config IPC_SERVICE_BACKEND_REG_PRIORITY
 	int "Initialization priority of modules registering IPC backend"

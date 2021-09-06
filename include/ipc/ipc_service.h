@@ -68,6 +68,9 @@ struct ipc_ept_cfg {
 
 	/** Private user data. */
 	void *priv;
+
+	/** Name of the target instance. */
+	const char *target_inst;
 };
 
 /** @brief Register IPC endpoint.
