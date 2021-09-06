@@ -922,6 +922,8 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan);
  *
  *  Broadcast sink channels shall be released using
  *  bt_audio_broadcast_sink_release.
+ *  Broadcast source channels cannot be released, but can be deleted by
+ *  bt_audio_broadcast_source_delete().
  *
  *  @param chan Channel object
  *  @param cache True to cache the codec configuration or false to forget it
@@ -1018,6 +1020,18 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source);
+
+/** @brief Delete audio broadcast source.
+ *
+ *  Delete an audio broadcast source.
+ *  The broadcast source will stop advertising entirely, and the source can
+ *  no longer be used.
+ *
+ *  @param source      Pointer to the broadcast source
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source);
 
 /** @brief Start scan for broadcast sources.
  *

@@ -732,51 +732,6 @@ done:
 	return err;
 }
 
-static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
-{
-	int err;
-	struct bt_audio_chan *tmp;
-	struct bt_audio_broadcast_source *source;
-	struct bt_le_ext_adv *adv;
-
-	source = chan->ep->broadcast_source;
-	adv = source->adv;
-
-	/* Stop periodic advertising */
-	err = bt_le_per_adv_stop(adv);
-	if (err != 0) {
-		BT_DBG("Failed to stop periodic advertising (err %d)", err);
-		return err;
-	}
-
-	/* Stop extended advertising */
-	err = bt_le_ext_adv_stop(adv);
-	if (err != 0) {
-		BT_DBG("Failed to stop extended advertising (err %d)", err);
-		return err;
-	}
-
-	/* Delete extended advertising set */
-	err = bt_le_ext_adv_delete(adv);
-	if (err != 0) {
-		BT_DBG("Failed to delete extended advertising set (err %d)", err);
-		return err;
-	}
-
-	/* Reset the broadcast source */
-	memset(source, 0, sizeof(*source));
-
-	chan->ep->broadcast_source = NULL;
-	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->broadcast_source = NULL;
-		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
-	}
-
-	return 0;
-}
-
 int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 {
 	int err;
@@ -794,12 +749,8 @@ int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 	}
 
 	if (bt_audio_ep_is_broadcast_src(chan->ep)) {
-		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
-			BT_DBG("Broadcast must be stopped before release");
-			return -EBADMSG;
-		}
-
-		return bt_audio_chan_broadcast_release(chan);
+		BT_DBG("Cannot release a broadcast source");
+		return -EINVAL;
 	} else if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
 		BT_DBG("Broadcast sink shall be released with bt_audio_broadcast_sink_release");
 		return -EINVAL;
@@ -1598,6 +1549,65 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 	}
 
 	source->big = NULL;
+
+	return 0;
+}
+
+int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
+{
+	struct bt_audio_chan *chan;
+	struct bt_audio_chan *tmp;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	CHECKIF(source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	chan = source->chan;
+
+	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+		       chan, chan->state);
+		return -EBADMSG;
+	}
+
+	adv = source->adv;
+
+	__ASSERT(adv != NULL, "source %p adv is NULL", source);
+
+	/* Stop periodic advertising */
+	err = bt_le_per_adv_stop(adv);
+	if (err != 0) {
+		BT_DBG("Failed to stop periodic advertising (err %d)", err);
+		return err;
+	}
+
+	/* Stop extended advertising */
+	err = bt_le_ext_adv_stop(adv);
+	if (err != 0) {
+		BT_DBG("Failed to stop extended advertising (err %d)", err);
+		return err;
+	}
+
+	/* Delete extended advertising set */
+	err = bt_le_ext_adv_delete(adv);
+	if (err != 0) {
+		BT_DBG("Failed to delete extended advertising set (err %d)", err);
+		return err;
+	}
+
+	/* Reset the broadcast source */
+	(void)memset(source, 0, sizeof(*source));
+
+	chan->ep->broadcast_source = NULL;
+	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		tmp->ep->broadcast_source = NULL;
+		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
+	}
 
 	return 0;
 }

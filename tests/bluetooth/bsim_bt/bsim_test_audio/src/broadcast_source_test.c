@@ -77,9 +77,9 @@ static void test_main(void)
 
 	k_sleep(K_SECONDS(10));
 
-	err = bt_audio_chan_release(&broadcast_source_chans[0], false);
+	err = bt_audio_broadcast_source_delete(source);
 	if (err != 0) {
-		FAIL("Unable to release broadcast channels: %d", err);
+		FAIL("Unable to delete broadcast source: %d", err);
 		return;
 	}
 	source = NULL;
