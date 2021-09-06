@@ -391,7 +391,7 @@ config BT_CTLR_FAL_SIZE
 	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	help
-	  Set the size of the White List for LE Controller-based Privacy.
+	  Set the size of the Filter Accept List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
 	  On OpenISA-based controllers, the hardware imposes a limit of 8 devices.
 

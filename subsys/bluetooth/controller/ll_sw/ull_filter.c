@@ -51,9 +51,6 @@
 
 /* Hardware Filter Accept List */
 static struct lll_filter fal_filter;
-uint8_t fal_anon;
-
-#define IRK_SIZE 16
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
@@ -61,9 +58,9 @@ uint8_t fal_anon;
 /* Filter Accept List peer list */
 static struct lll_fal fal[FAL_SIZE];
 
+/* Resolving list */
+static struct lll_resolve_list rl[CONFIG_BT_CTLR_RL_SIZE];
 static uint8_t rl_enable;
-
-static struct lll_resolvelist rl[CONFIG_BT_CTLR_RL_SIZE];
 
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 /* Cache of known unknown peer RPAs */
@@ -138,8 +135,8 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 			   uint8_t *bdaddr);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-static void filter_insert(struct lll_filter *filter, int index, uint8_t addr_type,
-			   uint8_t *bdaddr);
+static void filter_insert(struct lll_filter *filter, int index,
+			  uint8_t addr_type, uint8_t *bdaddr);
 static void filter_clear(struct lll_filter *filter);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY) && \
@@ -181,8 +178,6 @@ uint8_t ll_fal_clear(void)
 	filter_clear(&fal_filter);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	fal_anon = 0U;
-
 	return 0;
 }
 
@@ -201,7 +196,6 @@ uint8_t ll_fal_add(bt_addr_le_t *addr)
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
-		fal_anon = 1U;
 		return 0;
 	}
 
@@ -227,7 +221,6 @@ uint8_t ll_fal_remove(bt_addr_le_t *addr)
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
-		fal_anon = 0U;
 		return 0;
 	}
 
@@ -245,7 +238,7 @@ void ll_rl_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type, uint8_t *id_addr)
 	LL_ASSERT(rl[rl_idx].taken);
 
 	*id_addr_type = rl[rl_idx].id_addr_type;
-	memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
+	(void)memcpy(id_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
 }
 
 uint8_t ll_rl_size_get(void)
@@ -301,7 +294,7 @@ uint8_t ll_rl_add(bt_addr_le_t *id_addr, const uint8_t pirk[IRK_SIZE],
 #endif
 	}
 	if (rl[i].lirk) {
-		memcpy(rl[i].local_irk, lirk, IRK_SIZE);
+		(void)memcpy(rl[i].local_irk, lirk, IRK_SIZE);
 		rl[i].local_rpa = NULL;
 	}
 	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
@@ -319,6 +312,7 @@ uint8_t ll_rl_add(bt_addr_le_t *id_addr, const uint8_t pirk[IRK_SIZE],
 	} else {
 		rl[i].fal = 0U;
 	}
+
 	rl[i].taken = 1U;
 
 	return 0;
@@ -342,7 +336,8 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 			uint8_t pi = rl[i].pirk_idx, pj = peer_irk_count - 1;
 
 			if (pj && pi != pj) {
-				memcpy(peer_irks[pi], peer_irks[pj], IRK_SIZE);
+				(void)memcpy(peer_irks[pi], peer_irks[pj],
+					     IRK_SIZE);
 				for (k = 0U;
 				     k < CONFIG_BT_CTLR_RL_SIZE;
 				     k++) {
@@ -363,6 +358,7 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 		if (j < ARRAY_SIZE(fal)) {
 			fal[j].rl_idx = FILTER_IDX_NONE;
 		}
+
 		rl[i].taken = 0U;
 		return 0;
 	}
@@ -370,18 +366,20 @@ uint8_t ll_rl_remove(bt_addr_le_t *id_addr)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-void ll_rl_crpa_set(uint8_t id_addr_type, uint8_t *id_addr, uint8_t rl_idx, uint8_t *crpa)
+void ll_rl_crpa_set(uint8_t id_addr_type, uint8_t *id_addr, uint8_t rl_idx,
+		    uint8_t *crpa)
 {
 	if ((crpa[5] & 0xc0) == 0x40) {
 
 		if (id_addr) {
 			/* find the device and return its RPA */
-			rl_idx = ull_filter_rl_find(id_addr_type, id_addr, NULL);
+			rl_idx = ull_filter_rl_find(id_addr_type, id_addr,
+						    NULL);
 		}
 
 		if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].taken) {
-			memcpy(rl[rl_idx].curr_rpa.val, crpa,
-			       sizeof(bt_addr_t));
+			(void)memcpy(rl[rl_idx].curr_rpa.val, crpa,
+				     sizeof(bt_addr_t));
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 			conn_rpa_update(rl_idx);
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN) */
@@ -617,19 +615,20 @@ const uint8_t *ull_filter_tgta_get(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_BROADCASTER */
 
 uint8_t ull_filter_rl_find(uint8_t id_addr_type, uint8_t const *const id_addr,
-			uint8_t *const free)
+			   uint8_t *const free_idx)
 {
 	uint8_t i;
 
-	if (free) {
-		*free = FILTER_IDX_NONE;
+	if (free_idx) {
+		*free_idx = FILTER_IDX_NONE;
 	}
 
 	for (i = 0U; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if (LIST_MATCH(rl, i, id_addr_type, id_addr)) {
 			return i;
-		} else if (free && !rl[i].taken && (*free == FILTER_IDX_NONE)) {
-			*free = i;
+		} else if (free_idx && !rl[i].taken &&
+			   (*free_idx == FILTER_IDX_NONE)) {
+			*free_idx = i;
 		}
 	}
 
@@ -639,8 +638,6 @@ uint8_t ull_filter_rl_find(uint8_t id_addr_type, uint8_t const *const id_addr,
 
 void ull_filter_reset(bool init)
 {
-	fal_anon = 0U;
-
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	fal_clear();
 
@@ -747,7 +744,7 @@ struct lll_fal *ull_filter_lll_fal_get(void)
 	return fal;
 }
 
-struct lll_resolvelist *ull_filter_lll_resolvelist_get(void)
+struct lll_resolve_list *ull_filter_lll_resolve_list_get(void)
 {
 	return rl;
 }
@@ -767,7 +764,8 @@ bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx)
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
 }
 
-bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr, uint8_t *rl_idx)
+bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
+				    uint8_t *rl_idx)
 {
 	uint8_t i, j;
 
@@ -798,7 +796,8 @@ bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr, uint
 	return true;
 }
 
-bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type, uint8_t *id_addr, uint8_t rl_idx)
+bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type, uint8_t *id_addr,
+				    uint8_t rl_idx)
 {
 	/* Unable to resolve if AR is disabled, no RL entry or no local IRK */
 	if (!rl_enable || rl_idx >= ARRAY_SIZE(rl) || !rl[rl_idx].lirk) {
@@ -824,7 +823,8 @@ uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 	if (rl_enable) {
 		if (!k_work_is_pending(&(resolve_work.prpa_work))) {
 			/* copy input param to work variable */
-			memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			(void)memcpy(resolve_work.rpa.val, rpa->val,
+				     sizeof(bt_addr_t));
 			resolve_work.cb = cb;
 
 			k_work_submit(&(resolve_work.prpa_work));
@@ -842,7 +842,8 @@ uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 	if (rl_enable) {
 		if (!k_work_is_pending(&(t_work.target_work))) {
 			/* copy input param to work variable */
-			memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			(void)memcpy(t_work.rpa.val, rpa->val,
+				     sizeof(bt_addr_t));
 			t_work.cb = cb;
 			t_work.idx = rl_idx;
 
@@ -929,6 +930,7 @@ static uint32_t fal_remove(bt_addr_le_t *id_addr)
 			rl[j].fal = 0U;
 		}
 		fal[i].taken = 0U;
+
 		return 0;
 	}
 
@@ -989,7 +991,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 
-	memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + prev->len);
+	(void)memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + prev->len);
 	ull_adv_pdu_update_addrs(adv, pdu);
 
 	lll_adv_data_enqueue(&adv->lll, idx);
@@ -1085,12 +1087,12 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 }
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-static void filter_insert(struct lll_filter *filter, int index, uint8_t addr_type,
-			   uint8_t *bdaddr)
+static void filter_insert(struct lll_filter *filter, int index,
+			  uint8_t addr_type, uint8_t *bdaddr)
 {
 	filter->enable_bitmask |= BIT(index);
 	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
-	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
+	(void)memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
 }
 
 static void filter_clear(struct lll_filter *filter)
@@ -1140,8 +1142,8 @@ static void target_resolve(struct k_work *work)
 		/* No match - so not in list Need to see if we can resolve */
 		if (bt_rpa_irk_matches(rl[idx].local_irk, search_rpa)) {
 			/* Could resolve, store RPA */
-			memcpy(rl[idx].target_rpa.val, search_rpa->val,
-			       sizeof(bt_addr_t));
+			(void)memcpy(rl[idx].target_rpa.val, search_rpa->val,
+				     sizeof(bt_addr_t));
 			j = idx;
 		} else {
 			/* Could not resolve, and not in table */
@@ -1207,8 +1209,8 @@ static void prpa_cache_resolve(struct k_work *work)
 			/* Address could be resolved, so update current RPA
 			 * in list
 			 */
-			memcpy(rl[j].curr_rpa.val, search_rpa->val,
-			       sizeof(bt_addr_t));
+			(void)memcpy(rl[j].curr_rpa.val, search_rpa->val,
+				     sizeof(bt_addr_t));
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 			conn_rpa_update(j);
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
@@ -1250,7 +1252,8 @@ static void prpa_cache_add(bt_addr_t *rpa)
 {
 	newest_prpa = (newest_prpa + 1) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
 
-	memcpy(prpa_cache[newest_prpa].rpa.val, rpa->val, sizeof(bt_addr_t));
+	(void)memcpy(prpa_cache[newest_prpa].rpa.val, rpa->val,
+		     sizeof(bt_addr_t));
 	prpa_cache[newest_prpa].taken = 1U;
 }
 
