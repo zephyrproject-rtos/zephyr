@@ -26,9 +26,9 @@
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /* Return ODR reg value based on data rate set */
-#define LIS2DS12_HR_ODR_TO_REG(_odr) \
-	((_odr <= 12) ? LIS2DS12_XL_ODR_12Hz5_HR : \
-	 ((31 - __builtin_clz(_odr / 25))) + 2)
+#define LIS2DS12_ODR_TO_REG(_odr) \
+	((_odr <= 1) ? 1 : \
+	((31 - __builtin_clz(_odr / 25))) + 3)
 
 struct lis2ds12_config {
 	stmdev_ctx_t ctx;
@@ -41,6 +41,8 @@ struct lis2ds12_config {
 #endif
 	} stmemsc_cfg;
 	uint8_t range;
+	uint8_t pm;
+	uint8_t odr;
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	struct gpio_dt_spec gpio_int;
 #endif
