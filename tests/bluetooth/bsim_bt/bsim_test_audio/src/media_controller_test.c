@@ -41,7 +41,7 @@ static uint8_t  g_playing_order;
 static uint8_t  g_state;
 static uint8_t  g_command_result;
 static uint32_t g_commands_supported;
-static uint8_t  g_search_control_point_result;
+static uint8_t  g_search_control_point_result_code;
 
 CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(ble_link_is_ready);
@@ -68,7 +68,8 @@ CREATE_FLAG(media_state_read);
 CREATE_FLAG(command_sent_flag);
 CREATE_FLAG(command_results_flag);
 CREATE_FLAG(commands_supported);
-CREATE_FLAG(search_flag);
+CREATE_FLAG(search_sent_flag);
+CREATE_FLAG(search_result_code_flag);
 
 
 static struct media_proxy_ctrl_cbs cbs;
@@ -446,7 +447,22 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 
 
 
-static void search_cb(struct media_player *plr, int err, uint8_t result_code)
+static void search_send_cb(struct media_player *plr, int err, struct mpl_search search)
+{
+	if (err) {
+		FAIL("Search failed (%d)", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	SET_FLAG(search_sent_flag);
+}
+
+static void search_recv_cb(struct media_player *plr, int err, uint8_t result_code)
 {
 	if (err) {
 		FAIL("Search failed (%d), result code: %u", err, result_code);
@@ -458,8 +474,8 @@ static void search_cb(struct media_player *plr, int err, uint8_t result_code)
 		return;
 	}
 
-	g_search_control_point_result = result_code;
-	SET_FLAG(search_flag);
+	g_search_control_point_result_code = result_code;
+	SET_FLAG(search_result_code_flag);
 }
 
 static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -530,7 +546,8 @@ void initialize_media(void)
 	cbs.command_recv                  = command_recv_cb;
 	cbs.commands_supported_recv       = commands_supported_cb;
 #ifdef CONFIG_BT_OTS
-	cbs.search                        = search_cb;
+	cbs.search_send                   = search_send_cb;
+	cbs.search_recv                   = search_recv_cb;
 	cbs.search_results_id_recv        = search_results_id_cb;
 #endif /* CONFIG_BT_OTS */
 	cbs.content_ctrl_id_recv          = content_ctrl_id_cb;
@@ -1251,7 +1268,8 @@ static void test_scp(void)
 	memcpy(&search.search[search.len], &sci.param, strlen(sci.param));
 	search.len += strlen(sci.param);
 
-	UNSET_FLAG(search_flag);
+	UNSET_FLAG(search_sent_flag);
+	UNSET_FLAG(search_result_code_flag);
 	UNSET_FLAG(search_results_object_id_read);
 
 	err = media_proxy_ctrl_search_send(current_player, search);
@@ -1260,9 +1278,10 @@ static void test_scp(void)
 		return;
 	}
 
-	WAIT_FOR_FLAG(search_flag);
+	WAIT_FOR_FLAG(search_sent_flag);
+	WAIT_FOR_FLAG(search_result_code_flag);
 
-	if (g_search_control_point_result != MEDIA_PROXY_SEARCH_SUCCESS) {
+	if (g_search_control_point_result_code != MEDIA_PROXY_SEARCH_SUCCESS) {
 		FAIL("SEARCH operation failed\n");
 		return;
 	}
