@@ -130,16 +130,15 @@ static int led_pwm_pm_control(const struct device *dev,
 		/* NOTE: temporary solution, deserves proper fix */
 		switch (action) {
 		case PM_DEVICE_ACTION_RESUME:
-			state = PM_DEVICE_STATE_ACTIVE;
+			err = pm_device_resume(dev);
 			break;
 		case PM_DEVICE_ACTION_SUSPEND:
-			state = PM_DEVICE_STATE_SUSPENDED;
+			err = pm_device_suspend(dev);
 			break;
 		default:
 			return -ENOTSUP;
 		}
 
-		err = pm_device_state_set(led_pwm->dev, state);
 		if (err) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
 		}
