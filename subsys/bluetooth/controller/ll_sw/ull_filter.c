@@ -468,7 +468,48 @@ uint8_t ll_priv_mode_set(bt_addr_le_t *id_addr, uint8_t mode)
 
 	return 0;
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
+void ull_filter_reset(bool init)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	fal_clear();
+
+	rl_enable = 0U;
+	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
+	rpa_last_ms = -1;
+	rl_clear();
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+	prpa_cache_clear();
+#endif
+	if (init) {
+		k_work_init_delayable(&rpa_work, rpa_timeout);
+#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
+		k_work_init(&(resolve_work.prpa_work), prpa_cache_resolve);
+		k_work_init(&(t_work.target_work), target_resolve);
+#endif
+	} else {
+		k_work_cancel_delayable(&rpa_work);
+	}
+#else
+	filter_clear(&fal_filter);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+}
+
+struct lll_filter *ull_filter_lll_get(bool filter)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (filter) {
+		return &fal_filter;
+	}
+	return &rl_filter;
+#else
+	LL_ASSERT(filter);
+	return &fal_filter;
+#endif
+}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 void ull_filter_adv_scan_state_cb(uint8_t bm)
 {
 	if (bm) {
@@ -588,26 +629,22 @@ void ull_filter_rpa_update(bool timeout)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-const uint8_t *ull_filter_adva_get(struct ll_adv_set *adv)
+const uint8_t *ull_filter_adva_get(uint8_t rl_idx)
 {
-	uint8_t idx = adv->lll.rl_idx;
-
 	/* AdvA */
-	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
-		LL_ASSERT(rl[idx].rpas_ready);
-		return rl[idx].local_rpa->val;
+	if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].lirk) {
+		LL_ASSERT(rl[rl_idx].rpas_ready);
+		return rl[rl_idx].local_rpa->val;
 	}
 
 	return NULL;
 }
 
-const uint8_t *ull_filter_tgta_get(struct ll_adv_set *adv)
+const uint8_t *ull_filter_tgta_get(uint8_t rl_idx)
 {
-	uint8_t idx = adv->lll.rl_idx;
-
 	/* TargetA */
-	if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
-		return rl[idx].peer_rpa.val;
+	if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].pirk) {
+		return rl[rl_idx].peer_rpa.val;
 	}
 
 	return NULL;
@@ -634,35 +671,7 @@ uint8_t ull_filter_rl_find(uint8_t id_addr_type, uint8_t const *const id_addr,
 
 	return FILTER_IDX_NONE;
 }
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-void ull_filter_reset(bool init)
-{
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	fal_clear();
-
-	rl_enable = 0U;
-	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
-	rpa_last_ms = -1;
-	rl_clear();
-#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
-	prpa_cache_clear();
-#endif
-	if (init) {
-		k_work_init_delayable(&rpa_work, rpa_timeout);
-#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
-		k_work_init(&(resolve_work.prpa_work), prpa_cache_resolve);
-		k_work_init(&(t_work.target_work), target_resolve);
-#endif
-	} else {
-		k_work_cancel_delayable(&rpa_work);
-	}
-#else
-	filter_clear(&fal_filter);
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-}
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
 bool ull_filter_lll_lrpa_used(uint8_t rl_idx)
 {
 	return rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].lirk;
@@ -723,22 +732,7 @@ bool ull_filter_lll_irk_in_fal(uint8_t rl_idx)
 
 	return rl[rl_idx].fal;
 }
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-struct lll_filter *ull_filter_lll_get(bool filter)
-{
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (filter) {
-		return &fal_filter;
-	}
-	return &rl_filter;
-#else
-	LL_ASSERT(filter);
-	return &fal_filter;
-#endif
-}
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
 struct lll_fal *ull_filter_lll_fal_get(void)
 {
 	return fal;
