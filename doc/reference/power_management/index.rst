@@ -50,7 +50,6 @@ abstraction layers.
 
 The power management features are classified into the following categories.
 
-* Tickless Idle
 * System Power Management
 * Device Power Management
 
