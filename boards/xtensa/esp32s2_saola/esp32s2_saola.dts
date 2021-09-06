@@ -43,3 +43,7 @@
 &timer3 {
 	status = "okay";
 };
+
+&trng0 {
+	status = "okay";
+};

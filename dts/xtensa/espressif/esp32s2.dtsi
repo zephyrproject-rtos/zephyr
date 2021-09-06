@@ -13,6 +13,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -127,6 +131,12 @@
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "TIMG1_T1";
+		};
+
+		trng0: trng@3f435110 {
+			compatible = "espressif,esp32-trng";
+			reg = <0x3f435110 0x4>;
+			label = "TRNG_0";
 			status = "disabled";
 		};
 	};

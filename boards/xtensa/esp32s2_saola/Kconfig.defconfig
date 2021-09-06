@@ -6,3 +6,9 @@
 config BOARD
 	default "esp32s2_saola"
 	depends on BOARD_ESP32S2_SAOLA
+
+config ENTROPY_GENERATOR
+	default y
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
