@@ -14,7 +14,16 @@
 #include <zephyr/types.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
+#include <stmemsc.h>
 #include "lis2ds12_reg.h"
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /* Return ODR reg value based on data rate set */
 #define LIS2DS12_HR_ODR_TO_REG(_odr) \
@@ -22,25 +31,27 @@
 	 ((31 - __builtin_clz(_odr / 25))) + 2)
 
 struct lis2ds12_config {
-	char *comm_master_dev_name;
-	int (*bus_init)(const struct device *dev);
+	stmdev_ctx_t ctx;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		const struct i2c_dt_spec i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+#endif
+	} stmemsc_cfg;
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	const char *irq_port;
-	gpio_pin_t irq_pin;
-	gpio_dt_flags_t irq_flags;
+	struct gpio_dt_spec gpio_int;
 #endif
 };
 
 struct lis2ds12_data {
-	stmdev_ctx_t *ctx;
-	const struct device *comm_master;
 	int sample_x;
 	int sample_y;
 	int sample_z;
 	float gain;
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -57,9 +68,6 @@ struct lis2ds12_data {
 
 #endif /* CONFIG_LIS2DS12_TRIGGER */
 };
-
-int lis2ds12_spi_init(const struct device *dev);
-int lis2ds12_i2c_init(const struct device *dev);
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
 int lis2ds12_trigger_set(const struct device *dev,

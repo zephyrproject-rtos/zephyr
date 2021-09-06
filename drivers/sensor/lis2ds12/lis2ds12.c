@@ -23,28 +23,10 @@
 
 LOG_MODULE_REGISTER(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static struct lis2ds12_data lis2ds12_data;
-
-static struct lis2ds12_config lis2ds12_config = {
-	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lis2ds12_spi_init,
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lis2ds12_i2c_init,
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-#ifdef CONFIG_LIS2DS12_TRIGGER
-	.irq_port	= DT_INST_GPIO_LABEL(0, irq_gpios),
-	.irq_pin	= DT_INST_GPIO_PIN(0, irq_gpios),
-	.irq_flags	= DT_INST_GPIO_FLAGS(0, irq_gpios),
-#endif
-};
-
 static int lis2ds12_set_odr(const struct device *dev, uint16_t odr)
 {
-	const struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t val;
 
 	/* check if power off */
@@ -65,7 +47,8 @@ static int lis2ds12_set_range(const struct device *dev, uint8_t range)
 {
 	int err;
 	struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	switch (range) {
 	default:
@@ -127,7 +110,8 @@ static int lis2ds12_attr_set(const struct device *dev,
 static int lis2ds12_sample_fetch_accel(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int16_t buf[3];
 
 	/* fetch raw data sample */
@@ -220,7 +204,7 @@ static int lis2ds12_channel_get(const struct device *dev,
 	return lis2ds12_get_channel(chan, val, data, data->gain);
 }
 
-static const struct sensor_driver_api lis2ds12_api_funcs = {
+static const struct sensor_driver_api lis2ds12_driver_api = {
 	.attr_set = lis2ds12_attr_set,
 #if defined(CONFIG_LIS2DS12_TRIGGER)
 	.trigger_set = lis2ds12_trigger_set,
@@ -231,31 +215,20 @@ static const struct sensor_driver_api lis2ds12_api_funcs = {
 
 static int lis2ds12_init(const struct device *dev)
 {
-	const struct lis2ds12_config * const config = dev->config;
-	struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx;
+	const struct lis2ds12_config * const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
 	int ret;
 
-	data->comm_master = device_get_binding(config->comm_master_dev_name);
-	if (!data->comm_master) {
-		LOG_ERR("master not found: %s",
-			    config->comm_master_dev_name);
-		return -EINVAL;
-	}
-
-	config->bus_init(dev);
-
-	ctx = (stmdev_ctx_t *)data->ctx;
 	/* check chip ID */
 	ret = lis2ds12_device_id_get(ctx, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("Not able to read dev id");
+		LOG_ERR("%s: Not able to read dev id", dev->name);
 		return ret;
 	}
 
 	if (chip_id != LIS2DS12_ID) {
-		LOG_ERR("Invalid chip ID 0x%02x", chip_id);
+		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EINVAL;
 	}
 
@@ -267,32 +240,119 @@ static int lis2ds12_init(const struct device *dev)
 
 	k_busy_wait(100);
 
-	LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	if (lis2ds12_trigger_init(dev) < 0) {
-		LOG_ERR("Failed to initialize triggers.");
-		return -EIO;
+	ret = lis2ds12_trigger_init(dev);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to initialize triggers", dev->name);
+		return ret;
 	}
 #endif
 
 	/* set sensor default odr */
 	ret = lis2ds12_set_odr(dev, 12);
 	if (ret < 0) {
-		LOG_ERR("odr init error (12.5 Hz)");
+		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;
 	}
 
 	/* set sensor default scale */
 	ret = lis2ds12_set_range(dev, CONFIG_LIS2DS12_FS);
 	if (ret < 0) {
-		LOG_ERR("range init error %d", CONFIG_LIS2DS12_FS);
+		LOG_ERR("%s: range init error %d", dev->name, CONFIG_LIS2DS12_FS);
 		return ret;
 	}
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, lis2ds12_init, NULL,
-		    &lis2ds12_data, &lis2ds12_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_api_funcs);
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LIS2DS12 driver enabled without any devices"
+#endif
+
+/*
+ * Device creation macro, shared by LIS2DS12_DEFINE_SPI() and
+ * LIS2DS12_DEFINE_I2C().
+ */
+
+#define LIS2DS12_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    lis2ds12_init,				\
+			    NULL,					\
+			    &lis2ds12_data_##inst,			\
+			    &lis2ds12_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2ds12_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#ifdef CONFIG_LIS2DS12_TRIGGER
+#define LIS2DS12_CFG_IRQ(inst) \
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
+#else
+#define LIS2DS12_CFG_IRQ(inst)
+#endif /* CONFIG_LIS2DS12_TRIGGER */
+
+#define LIS2DS12_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
+
+#define LIS2DS12_CONFIG_SPI(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_spi_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.handle =					\
+			   (void *)&lis2ds12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
+					   LIS2DS12_SPI_OPERATION,	\
+					   0),				\
+		},							\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DS12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LIS2DS12_CONFIG_I2C(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i2c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.handle =					\
+			   (void *)&lis2ds12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
+		},							\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DS12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LIS2DS12_DEFINE(inst)						\
+	static struct lis2ds12_data lis2ds12_data_##inst;		\
+	static const struct lis2ds12_config lis2ds12_config_##inst =	\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (LIS2DS12_CONFIG_SPI(inst)),			\
+		    (LIS2DS12_CONFIG_I2C(inst)));			\
+	LIS2DS12_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(LIS2DS12_DEFINE)

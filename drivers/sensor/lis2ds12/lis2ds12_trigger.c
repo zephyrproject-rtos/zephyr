@@ -8,12 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2ds12.pdf
  */
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#define DT_DRV_COMPAT st_lis2ds12
+
 #include <logging/log.h>
 #include "lis2ds12.h"
 
@@ -25,11 +21,14 @@ static void lis2ds12_gpio_callback(const struct device *dev,
 	struct lis2ds12_data *data =
 		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
 	const struct lis2ds12_config *cfg = data->dev->config;
+	int ret;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
-				     GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+	}
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -49,10 +48,10 @@ static void lis2ds12_handle_drdy_int(const struct device *dev)
 
 static void lis2ds12_handle_int(const struct device *dev)
 {
-	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2ds12_all_sources_t sources;
+	int ret;
 
 	lis2ds12_all_sources_get(ctx, &sources);
 
@@ -60,8 +59,11 @@ static void lis2ds12_handle_int(const struct device *dev)
 		lis2ds12_handle_drdy_int(dev);
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+	}
 }
 
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
@@ -86,8 +88,8 @@ static void lis2ds12_work_cb(struct k_work *work)
 
 static int lis2ds12_init_interrupt(const struct device *dev)
 {
-	struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
+	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2ds12_pin_int1_route_t route;
 	int err;
 
@@ -117,26 +119,40 @@ int lis2ds12_trigger_init(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
+	int ret;
 
-	/* setup data ready gpio interrupt */
-	data->gpio = device_get_binding(cfg->irq_port);
-	if (data->gpio == NULL) {
-		LOG_ERR("Cannot get pointer to %s device.", cfg->irq_port);
-		return -EINVAL;
+	/* setup data ready gpio interrupt (INT1 or INT2) */
+	if (!device_is_ready(cfg->gpio_int.port)) {
+		if (cfg->gpio_int.port) {
+			LOG_ERR("%s: device %s is not ready", dev->name,
+						cfg->gpio_int.port->name);
+			return -ENODEV;
+		}
+
+		LOG_DBG("%s: gpio_int not defined in DT", dev->name);
+		return 0;
 	}
 
-	gpio_pin_configure(data->gpio, cfg->irq_pin,
-			   GPIO_INPUT | cfg->irq_flags);
+	data->dev = dev;
+
+	ret = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure gpio");
+		return ret;
+	}
+
+	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
+				      cfg->gpio_int.pin);
 
 	gpio_init_callback(&data->gpio_cb,
 			   lis2ds12_gpio_callback,
-			   BIT(cfg->irq_pin));
+			   BIT(cfg->gpio_int.pin));
 
-	if (gpio_add_callback(data->gpio, &data->gpio_cb) < 0) {
-		LOG_ERR("Could not set gpio callback.");
-		return -EIO;
+	ret = gpio_add_callback(cfg->gpio_int.port, &data->gpio_cb);
+	if (ret < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return ret;
 	}
-	data->dev = dev;
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
@@ -151,10 +167,8 @@ int lis2ds12_trigger_init(const struct device *dev)
 	data->work.handler = lis2ds12_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
-
-	return 0;
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
+					       GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 int lis2ds12_trigger_set(const struct device *dev,
@@ -162,14 +176,23 @@ int lis2ds12_trigger_set(const struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)data->ctx;
 	const struct lis2ds12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int16_t raw[3];
+	int ret;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
-				     GPIO_INT_DISABLE);
+	if (cfg->gpio_int.port == NULL) {
+		LOG_ERR("trigger_set is not supported");
+		return -ENOTSUP;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		return ret;
+	}
 
 	data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -183,8 +206,6 @@ int lis2ds12_trigger_set(const struct device *dev,
 	data->data_ready_trigger = *trig;
 
 	lis2ds12_init_interrupt(dev);
-	gpio_pin_interrupt_configure(data->gpio, cfg->irq_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
-
-	return 0;
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
+					       GPIO_INT_EDGE_TO_ACTIVE);
 }
