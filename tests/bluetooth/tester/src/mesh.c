@@ -38,6 +38,8 @@ static uint32_t iv_index;
 static uint16_t addr;
 static uint8_t dev_key[16];
 static uint8_t input_size;
+static uint8_t pub_key[64];
+static uint8_t priv_key[32];
 
 /* Configured provisioning data */
 static uint8_t dev_uuid[16];
@@ -50,6 +52,11 @@ static uint16_t vnd_app_key_idx = 0x000f;
 
 /* Model send data */
 #define MODEL_BOUNDS_MAX 2
+
+/* Model Authentication Method */
+#define AUTH_METHOD_STATIC 0x01
+#define AUTH_METHOD_OUTPUT 0x02
+#define AUTH_METHOD_INPUT 0x03
 
 static struct model_data {
 	struct bt_mesh_model *model;
@@ -436,6 +443,7 @@ static struct bt_mesh_prov prov = {
 static void config_prov(uint8_t *data, uint16_t len)
 {
 	const struct mesh_config_provisioning_cmd *cmd = (void *) data;
+	int err = 0;
 
 	LOG_DBG("");
 
@@ -447,8 +455,27 @@ static void config_prov(uint8_t *data, uint16_t len)
 	prov.input_size = cmd->in_size;
 	prov.input_actions = sys_le16_to_cpu(cmd->in_actions);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+	if (cmd->auth_method == AUTH_METHOD_OUTPUT) {
+		err = bt_mesh_auth_method_set_output(prov.output_actions, prov.output_size);
+	} else if (cmd->auth_method == AUTH_METHOD_INPUT) {
+		err = bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size);
+	} else if (cmd->auth_method == AUTH_METHOD_STATIC) {
+		err = bt_mesh_auth_method_set_static(static_auth, sizeof(static_auth));
+	}
+
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->set_keys->pub_key, sizeof(cmd->set_keys->pub_key));
+		memcpy(priv_key, cmd->set_keys->priv_key, sizeof(cmd->set_keys->priv_key));
+		prov.public_key_be = pub_key;
+		prov.private_key_be = priv_key;
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void provision_node(uint8_t *data, uint16_t len)
@@ -465,6 +492,16 @@ static void provision_node(uint8_t *data, uint16_t len)
 	flags = cmd->flags;
 	iv_index = sys_le32_to_cpu(cmd->iv_index);
 	net_key_idx = sys_le16_to_cpu(cmd->net_key_idx);
+
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->pub_key, sizeof(pub_key));
+
+		err = bt_mesh_prov_remote_pub_key_set(pub_key);
+		if (err) {
+			LOG_ERR("err %d", err);
+			goto fail;
+		}
+	}
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 	err = bt_mesh_cdb_create(net_key);
 	if (err) {
