@@ -712,9 +712,12 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
     if(NOT source_list
        AND NOT ${lib_imported}
     )
-      message(WARNING
-        "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
-      )
+      get_property(allow_empty TARGET ${zephyr_lib} PROPERTY ALLOW_EMPTY)
+      if(NOT "${allow_empty}")
+        message(WARNING
+          "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+        )
+      endif()
       target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
       set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
       list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})

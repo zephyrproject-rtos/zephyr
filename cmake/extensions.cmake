@@ -565,6 +565,31 @@ function(zephyr_library_app_memory partition)
                "-l" $<TARGET_FILE_NAME:${ZEPHYR_CURRENT_LIBRARY}> "${partition}")
 endfunction()
 
+# Configure a Zephyr library specific property.
+#
+# Usage:
+#   zephyr_library_property(<property> <value>)
+#
+# Current Zephyr library specific properties that are supported:
+# ALLOW_EMPTY <TRUE:FALSE>: Allow a Zephyr library to be empty.
+#                           An empty Zephyr library will generate a CMake
+#                           configure time warning unless `ALLOW_EMPTY` is TRUE.
+function(zephyr_library_property)
+  set(single_args "ALLOW_EMPTY")
+  cmake_parse_arguments(LIB_PROP "" "${single_args}" "" ${ARGN})
+  target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
+
+  if(LIB_PROP_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "zephyr_library_property(${ARGV0} ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
+  endif()
+
+  foreach(arg ${single_args})
+    if(DEFINED LIB_PROP_${arg})
+      set_property(TARGET ${ZEPHYR_CURRENT_LIBRARY} PROPERTY ${arg} ${LIB_PROP_${arg}})
+    endif()
+  endforeach()
+endfunction()
+
 # 1.2.1 zephyr_interface_library_*
 #
 # A Zephyr interface library is a thin wrapper over a CMake INTERFACE
