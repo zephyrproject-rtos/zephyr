@@ -96,6 +96,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		}
 	}
 
+	/* FIXME: Check for already synchronized to same peer */
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
+	    (options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
 	link_sync_estab = ll_rx_link_alloc();
 	if (!link_sync_estab) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -128,7 +135,8 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	node_rx->link = link_sync_estab;
 	scan->per_scan.node_rx_estab = node_rx;
 	scan->per_scan.state = LL_SYNC_STATE_IDLE;
-	scan->per_scan.filter_policy = options & BIT(0);
+	scan->per_scan.filter_policy =
+		options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
 		scan_coded->per_scan.node_rx_estab =
@@ -172,8 +180,11 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->window_widening_prepare_us = 0U;
 	lll_sync->window_widening_event_us = 0U;
 
-	/* Reporting initially enabled/disabled */
-	lll_sync->is_rx_enabled = options & BIT(1);
+	/* TODO: Add support for reporting initially enabled/disabled */
+	lll_sync->is_rx_enabled =
+		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
+
+	/* TODO: Add support for duplicate filtering */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll_sync->df_cfg);
@@ -291,7 +302,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable)
 {
-	/* TODO: */
+	/* TODO: Add support for reporting enable/disable */
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 

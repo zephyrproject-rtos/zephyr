@@ -497,6 +497,22 @@ config BT_CTLR_SYNC_PERIODIC
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	bool "LE Periodic Advertiser List support"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for LE Periodic Advertiser List support.
+
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
+	int "LE Periodic Advertiser List size"
+	depends on BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	range 1 255
+	default 8
+	help
+	  Set Periodic Advertiser List size, this will be return in the HCI LE
+	  Read Periodic Advertiser List Command.
+
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
