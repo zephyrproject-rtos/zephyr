@@ -68,8 +68,9 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_audio_chan_reconfig(&broadcast_source_chans[0], NULL,
-				     &preset_48_2_2.codec);
+	err = bt_audio_broadcast_source_reconfig(source,
+						    &preset_48_2_2.codec,
+						    &preset_48_2_2.qos);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d", err);
 		return;

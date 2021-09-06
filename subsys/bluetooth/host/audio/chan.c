@@ -165,33 +165,13 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 		return -EINVAL;
 	}
 
-	if (bt_audio_ep_is_broadcast(chan->ep)) {
-		struct bt_audio_broadcast_source *source;
-		struct bt_audio_chan *tmp;
-		int err;
-
-		source = chan->ep->broadcast_source;
-
-		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
-			BT_DBG("Channel is not in the configured state");
-			return -EBADMSG;
-		}
-
-		chan_attach(NULL, chan, chan->ep, NULL, codec);
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-
-			chan_attach(NULL, tmp, tmp->ep, NULL, codec);
-		}
-
-		err = bt_audio_set_base(source, codec);
-		if (err != 0) {
-			BT_DBG("Failed to set base data (err %d)", err);
-			/* TODO: cleanup */
-			return err;
-		}
-
-		return 0;
+	if (bt_audio_ep_is_broadcast_src(chan->ep)) {
+		BT_DBG("Cannot use %s to reconfigure broadcast source channels",
+		       __func__);
+		return -EINVAL;
+	} else if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
+		BT_DBG("Cannot reconfigure broadcast sink channels");
+		return -EINVAL;
 	}
 
 	if (!chan->cap || !chan->cap->ops) {
@@ -1479,6 +1459,44 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 	BT_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
 	*out_source = source;
+
+	return 0;
+}
+
+int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
+					  struct bt_codec *codec,
+					  struct bt_codec_qos *qos)
+{
+	struct bt_audio_chan *chan;
+	struct bt_audio_chan *tmp;
+	int err;
+
+	CHECKIF(source == NULL) {
+		BT_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	chan = source->chan;
+
+	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+		       chan, chan->state);
+		return -EBADMSG;
+	}
+
+	chan_attach(NULL, chan, chan->ep, NULL, codec);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		chan_attach(NULL, tmp, tmp->ep, NULL, codec);
+	}
+
+	err = bt_audio_set_base(source, codec);
+	if (err != 0) {
+		BT_DBG("Failed to set base data (err %d)", err);
+		return err;
+	}
+
+	source->qos = qos;
 
 	return 0;
 }
