@@ -1460,6 +1460,10 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	}
 }
 
+#ifdef CONFIG_CMSIS_RTOS_V1
+extern void z_thread_cmsis_status_mask_clear(struct k_thread *thread);
+#endif
+
 static void end_thread(struct k_thread *thread)
 {
 	/* We hold the lock, and the thread is known not to be running
@@ -1481,6 +1485,10 @@ static void end_thread(struct k_thread *thread)
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
+
+#ifdef CONFIG_CMSIS_RTOS_V1
+		z_thread_cmsis_status_mask_clear(thread);
+#endif
 
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);
