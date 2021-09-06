@@ -707,6 +707,14 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* LE PA Create Sync, LE PA Create Sync Cancel, LE PA Terminate Sync */
 	rp->commands[38] |= BIT(0) | BIT(1) | BIT(2);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+	/* LE PA Add Device to Periodic Advertiser List,
+	 * LE PA Remove Device from Periodic Advertiser List,
+	 * LE Clear Periodic Advertiser List,
+	 * LE Read Periodic Adveritiser List Size
+	 */
+	rp->commands[38] |= BIT(3) | BIT(4) | BIT(5) | BIT(6);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 	/* LE Set PA Receive Enable */
 	rp->commands[40] |= BIT(5);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -805,11 +813,6 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Read Antenna Information */
 	rp->commands[40] |= BIT(4);
 #endif /* CONFIG_BT_CTLR_DF */
-
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	/* LE Set Periodic Advertising Receive Enable */
-	rp->commands[40] |= BIT(5);
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	bt_hci_ecc_supported_commands(rp->commands);
@@ -3347,6 +3350,63 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+static void le_add_dev_to_pal(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_add_dev_to_per_adv_list *cmd = (void *)buf->data;
+	uint8_t status;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	status = ll_pal_add(&cmd->addr, cmd->sid);
+
+	*evt = cmd_complete_status(status);
+}
+
+static void le_rem_dev_from_pal(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_rem_dev_from_per_adv_list *cmd = (void *)buf->data;
+	uint8_t status;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	status = ll_pal_remove(&cmd->addr, cmd->sid);
+
+	*evt = cmd_complete_status(status);
+}
+
+static void le_clear_pal(struct net_buf *buf, struct net_buf **evt)
+{
+	uint8_t status;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	status = ll_pal_clear();
+
+	*evt = cmd_complete_status(status);
+}
+
+static void le_read_pal_size(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_per_adv_list_size *rp;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = 0x00;
+
+	rp->list_size = ll_pal_size_get();
+}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -3876,6 +3936,24 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE):
 		le_per_adv_recv_enable(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST):
+		le_add_dev_to_pal(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST):
+		le_rem_dev_from_pal(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_CLEAR_PER_ADV_LIST):
+		le_clear_pal(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_PER_ADV_LIST_SIZE):
+		le_read_pal_size(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 

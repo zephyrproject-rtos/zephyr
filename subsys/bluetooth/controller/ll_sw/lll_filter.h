@@ -35,6 +35,18 @@ struct lll_fal {
 	bt_addr_t id_addr;
 };
 
+/* Periodic Advertising List */
+struct lll_pal {
+	bt_addr_t id_addr;
+	uint8_t   taken:1;
+	uint8_t   id_addr_type:1;
+	uint8_t   sid;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t   rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+};
+
 /* Resolve list */
 struct lll_resolve_list {
 	uint8_t   taken:1;
@@ -55,6 +67,10 @@ struct lll_resolve_list {
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 	bt_addr_t target_rpa;
 #endif
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+	uint16_t   pal:9; /* 0 - not present, 1 to 256 - lll_pal entry index */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 };
 
 extern bool ull_filter_lll_lrpa_used(uint8_t rl_idx);

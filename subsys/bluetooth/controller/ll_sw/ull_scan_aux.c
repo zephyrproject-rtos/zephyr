@@ -26,6 +26,7 @@
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
+#include "ull_filter.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
 
@@ -273,9 +274,57 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	if (h->adv_addr) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		if (sync && (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
-		    !memcmp(ptr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
-			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		/* Check if Periodic Advertising Synchronization to be created
+		 */
+		if (sync) {
+			if (0) {
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+			/* Check if Periodic Advertiser list to be used */
+			} else if (scan->per_scan.filter_policy) {
+				uint8_t addr_type;
+
+				/* Check in Periodic Advertiser List */
+				if (ull_filter_ull_pal_addr_match(pdu->tx_addr,
+								  ptr)) {
+					/* Remember the address, to check with
+					 * SID in Sync Info
+					 */
+					scan->per_scan.adv_addr_type =
+						pdu->tx_addr;
+					(void)memcpy(scan->per_scan.adv_addr,
+						     ptr, BDADDR_SIZE);
+
+					/* Address matched */
+					scan->per_scan.state =
+						LL_SYNC_STATE_ADDR_MATCH;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+				} else if (ull_filter_ull_pal_listed(ftr->rl_idx,
+						&addr_type,
+						scan->per_scan.adv_addr)) {
+					/* Remember the address, to check with
+					 * SID in Sync Info
+					 */
+					scan->per_scan.adv_addr_type =
+						addr_type;
+					/* Address matched */
+					scan->per_scan.state =
+						LL_SYNC_STATE_ADDR_MATCH;
+#else /* !CONFIG_BT_CTLR_PRIVACY */
+					ARG_UNUSED(addr_type);
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
+				}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
+
+			/* Check with explicitly supplied address */
+			} else if ((pdu->tx_addr ==
+				    scan->per_scan.adv_addr_type) &&
+				   !memcmp(ptr, scan->per_scan.adv_addr,
+					   BDADDR_SIZE)) {
+				/* Address matched */
+				scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+			}
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
@@ -309,8 +358,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		ptr += sizeof(*si);
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		if (sync && adi && (adi->sid == scan->per_scan.sid) &&
-		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH)) {
+		/* Check if Periodic Advertising Synchronization to be created.
+		 * Setup synchronization if address and SID match in the
+		 * Periodic Advertiser List or with the explicitly supplied.
+		 */
+		if (sync && adi &&
+		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH) &&
+		    (0 ||
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+		     (scan->per_scan.filter_policy &&
+		      ull_filter_ull_pal_match(scan->per_scan.adv_addr_type,
+					       scan->per_scan.adv_addr,
+					       adi->sid)) ||
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
+		     (!scan->per_scan.filter_policy &&
+		      (adi->sid == scan->per_scan.sid)))) {
 			ull_sync_setup(scan, aux, rx, si);
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
