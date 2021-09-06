@@ -302,6 +302,19 @@ typedef int16_t device_handle_t;
 		    (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
+ * @def DEVICE_DT_GET_OR_NULL
+ *
+ * @brief Utility macro to obtain an optional reference to a device.
+ *
+ * @param node_id Node identifier.
+ *
+ * @return Pointer to a device if it exists, NULL otherwise.
+ */
+#define DEVICE_DT_GET_OR_NULL(node_id)					\
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),			\
+		    (DEVICE_DT_GET(node_id)), (NULL))
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
