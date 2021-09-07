@@ -14,10 +14,10 @@
 /*
  * SPI read
  */
-int stmemsc_spi_read(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 		     uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	const struct spi_config *spi_cfg = &stmemsc->spi_cfg;
+	const struct spi_config *spi_cfg = &stmemsc->config;
 	uint8_t buffer_tx[2] = { reg_addr | SPI_READ, 0 };
 
 	/*  write 1 byte with reg addr (msb at 1) + 1 dummy byte */
@@ -40,10 +40,10 @@ int stmemsc_spi_read(const struct stmemsc_cfg_spi *stmemsc,
 /*
  * SPI write
  */
-int stmemsc_spi_write(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 		      uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
-	const struct spi_config *spi_cfg = &stmemsc->spi_cfg;
+	const struct spi_config *spi_cfg = &stmemsc->config;
 	uint8_t buffer_tx[1] = { reg_addr & ~SPI_READ };
 
 	/*
