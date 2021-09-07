@@ -87,17 +87,20 @@
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6
 		     &usart2_rts_pd4 &usart2_cts_pd3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };

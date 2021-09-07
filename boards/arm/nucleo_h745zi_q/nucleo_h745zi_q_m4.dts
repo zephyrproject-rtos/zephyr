@@ -27,6 +27,7 @@
 
 &uart8 {
 	pinctrl-0 = <&uart8_tx_pe1 &uart8_rx_pe0>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
