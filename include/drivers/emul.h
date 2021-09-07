@@ -98,6 +98,20 @@ extern const struct emul __emul_list_end[];
 int emul_init_for_bus_from_list(const struct device *dev,
 				const struct emul_list_for_bus *list);
 
+/**
+ * @brief Retrieve the emul structure for an emulator by name
+ *
+ * @details Emulator objects are created via the EMUL_DEFINE() macro and placed in memory by the
+ * linker. If the emulator structure is needed for custom API calls, it can be retrieved by the name
+ * that the emulator exposes to the system (this is the devicetree node's label by default).
+ *
+ * @param name Emulator name to search for.  A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to emulator structure; NULL if not found or cannot be used.
+ */
+const struct emul *emul_get_binding(const char *name);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
