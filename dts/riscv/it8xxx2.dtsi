@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <dt-bindings/dt-util.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/i2c/it8xxx2-i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
@@ -15,6 +16,7 @@
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
 #include <dt-bindings/sensor/it8xxx2_tach.h>
 #include "it8xxx2-alts-map.dtsi"
+#include "ite/it8xxx2-wuc-map.dtsi"
 
 / {
 	#address-cells = <1>;
@@ -252,6 +254,167 @@
 			compatible = "mmio-sram";
 			reg = <0x80101000 DT_SIZE_K(56)>;
 		};
+		wuc1: wakeup-controller@f01b00 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b00 1   /* WUEMR1 */
+			       0x00f01b04 1   /* WUESR1 */
+			       0x00f01b08 1   /* WUENR1 */
+			       0x00f01b3c 1>; /* WUBEMR1 */
+			label = "WUC_1";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc2: wakeup-controller@f01b01 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b01             1   /* WUEMR2 */
+			       0x00f01b05             1   /* WUESR2 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR2 */
+			       0x00f01b3d             1>; /* WUBEMR2 */
+			label = "WUC_2";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc3: wakeup-controller@f01b02 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b02 1   /* WUEMR3 */
+			       0x00f01b06 1   /* WUESR3 */
+			       0x00f01b0a 1   /* WUENR3 */
+			       0x00f01b3e 1>; /* WUBEMR3 */
+			label = "WUC_3";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc4: wakeup-controller@f01b03 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b03 1   /* WUEMR4 */
+			       0x00f01b07 1   /* WUESR4 */
+			       0x00f01b0b 1   /* WUENR4 */
+			       0x00f01b3f 1>; /* WUBEMR4 */
+			label = "WUC_4";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc5: wakeup-controller@f01b0c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b0c             1   /* WUEMR5 */
+			       0x00f01b0d             1   /* WUESR5 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR5 */
+			       0x00f01b0f             1>; /* WUBEMR5 */
+			label = "WUC_5";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc6: wakeup-controller@f01b10 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b10             1   /* WUEMR6 */
+			       0x00f01b11             1   /* WUESR6 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR6 */
+			       0x00f01b13             1>; /* WUBEMR6 */
+			label = "WUC_6";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc7: wakeup-controller@f01b14 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b14             1   /* WUEMR7 */
+			       0x00f01b15             1   /* WUESR7 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR7 */
+			       0x00f01b17             1>; /* WUBEMR7 */
+			label = "WUC_7";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc8: wakeup-controller@f01b18 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b18             1   /* WUEMR8 */
+			       0x00f01b19             1   /* WUESR8 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR8 */
+			       0x00f01b1b             1>; /* WUBEMR8 */
+			label = "WUC_8";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc9: wakeup-controller@f01b1c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b1c             1   /* WUEMR9 */
+			       0x00f01b1d             1   /* WUESR9 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR9 */
+			       0x00f01b1f             1>; /* WUBEMR9 */
+			label = "WUC_9";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc10: wakeup-controller@f01b20 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b20             1   /* WUEMR10 */
+			       0x00f01b21             1   /* WUESR10 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR10 */
+			       0x00f01b23             1>; /* WUBEMR10 */
+			label = "WUC_10";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc11: wakeup-controller@f01b24 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b24             1   /* WUEMR11 */
+			       0x00f01b25             1   /* WUESR11 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR11 */
+			       0x00f01b27             1>; /* WUBEMR11 */
+			label = "WUC_11";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc12: wakeup-controller@f01b28 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b28             1   /* WUEMR12 */
+			       0x00f01b29             1   /* WUESR12 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR12 */
+			       0x00f01b2b             1>; /* WUBEMR12 */
+			label = "WUC_12";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc13: wakeup-controller@f01b2c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b2c             1   /* WUEMR13 */
+			       0x00f01b2d             1   /* WUESR13 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR13 */
+			       0x00f01b2f             1>; /* WUBEMR13 */
+			label = "WUC_13";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc14: wakeup-controller@f01b30 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b30             1   /* WUEMR14 */
+			       0x00f01b31             1   /* WUESR14 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR14 */
+			       0x00f01b33             1>; /* WUBEMR14 */
+			label = "WUC_14";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc15: wakeup-controller@f01b34 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b34             1   /* WUEMR15 */
+			       0x00f01b35             1   /* WUESR15 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR15 */
+			       0x00f01b37             1>; /* WUBEMR15 */
+			label = "WUC_15";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+		wuc16: wakeup-controller@f01b38 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b38             1   /* WUEMR16 */
+			       0x00f01b39             1   /* WUESR16 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR16 */
+			       0x00f01b3b             1>; /* WUBEMR16 */
+			label = "WUC_16";
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
 		intc: interrupt-controller@f03f00 {
 			#interrupt-cells = <2>;
 			compatible = "ite,it8xxx2-intc";
