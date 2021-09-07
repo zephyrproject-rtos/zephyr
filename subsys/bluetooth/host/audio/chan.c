@@ -734,7 +734,7 @@ int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 		BT_DBG("Cannot release a broadcast source");
 		return -EINVAL;
 	} else if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
-		BT_DBG("Broadcast sink shall be released with bt_audio_broadcast_sink_release");
+		BT_DBG("Cannot release a broadcast sink");
 		return -EINVAL;
 	}
 
@@ -2484,12 +2484,12 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	return err;
 }
 
-int bt_audio_broadcast_sink_release(struct bt_audio_broadcast_sink *sink)
+int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
 	int err;
 
 	if (sink->big != NULL) {
-		BT_DBG("Broadcast sink can only be released when stopped");
+		BT_DBG("Broadcast sink can only be delete when stopped");
 		return -EINVAL;
 	}
 
@@ -2505,8 +2505,8 @@ int bt_audio_broadcast_sink_release(struct bt_audio_broadcast_sink *sink)
 		return err;
 	}
 
-	/* Reset the broadcast source */
-	memset(sink, 0, sizeof(*sink));
+	/* Reset the broadcast sink */
+	(void)memset(sink, 0, sizeof(*sink));
 
 	return 0;
 }

@@ -1310,7 +1310,7 @@ static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	err = bt_audio_broadcast_sink_release(default_sink);
+	err = bt_audio_broadcast_sink_delete(default_sink);
 	if (err != 0) {
 		shell_error(sh, "Failed to term sink: %d", err);
 		return err;
