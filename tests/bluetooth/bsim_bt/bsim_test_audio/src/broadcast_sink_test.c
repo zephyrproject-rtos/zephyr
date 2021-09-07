@@ -109,7 +109,7 @@ static void test_main(void)
 	UNSET_FLAG(base_received);
 	UNSET_FLAG(pa_synced);
 	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcast_scan_start(BT_LE_SCAN_ACTIVE);
+	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
 		return;

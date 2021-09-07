@@ -1688,7 +1688,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	sink->syncing = false;
 
-	bt_audio_broadcast_scan_stop();
+	bt_audio_broadcast_sink_scan_stop();
 
 	lst = bt_audio_capability_get(BT_AUDIO_SINK);
 	if (lst == NULL) {
@@ -2251,7 +2251,7 @@ static void broadcast_scan_timeout(void)
 	}
 }
 
-int bt_audio_broadcast_scan_start(const struct bt_le_scan_param *param)
+int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 {
 	sys_slist_t *lst;
 	int err;
@@ -2291,7 +2291,7 @@ int bt_audio_broadcast_scan_start(const struct bt_le_scan_param *param)
 	return err;
 }
 
-int bt_audio_broadcast_scan_stop(void)
+int bt_audio_broadcast_sink_scan_stop(void)
 {
 	struct bt_audio_broadcast_sink *sink;
 	struct bt_audio_capability *cap;
@@ -2370,10 +2370,10 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 	return 0;
 }
 
-int bt_audio_broadcast_sync(struct bt_audio_broadcast_sink *sink,
-			    uint32_t indexes_bitfield,
-			    struct bt_audio_chan *chan,
-			    const uint8_t broadcast_code[16])
+int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
+				 uint32_t indexes_bitfield,
+				 struct bt_audio_chan *chan,
+				 const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
 	struct bt_audio_chan *tmp;
