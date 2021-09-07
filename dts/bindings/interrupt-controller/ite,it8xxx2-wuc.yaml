@@ -1,0 +1,28 @@
+# Copyright 2022 ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE Wake-Up Controller (WUC)
+compatible: "ite,it8xxx2-wuc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  label:
+    required: true
+
+  "wakeup-controller":
+    type: boolean
+    required: true
+    description: conveys that this node is a wakeup controller
+
+  "#wuc-cells":
+    type: int
+    required: true
+    description: number of items to expect in a wakeup controller specifier
+    const: 1
+
+wuc-cells:
+  - mask

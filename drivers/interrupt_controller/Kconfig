@@ -45,6 +45,10 @@ config LEON_IRQMP
 	help
 	  GRLIB IRQMP and IRQAMP
 
+module = INTC
+module-str = intc
+source "subsys/logging/Kconfig.template.log_config"
+
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
