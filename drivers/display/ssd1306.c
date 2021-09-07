@@ -430,8 +430,7 @@ static const struct ssd1306_config ssd1306_config = {
 	.bus = I2C_DT_SPEC_INST_GET(0),
 #elif DT_INST_ON_BUS(0, spi)
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-		SPI_WORD_SET(8) | SPI_LINES_SINGLE, 0),
+		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),
 	.data_cmd = GPIO_DT_SPEC_INST_GET(0, data_cmd_gpios),
 #endif
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 })

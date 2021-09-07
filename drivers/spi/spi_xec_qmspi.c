@@ -138,6 +138,7 @@ static void qmspi_set_signalling_mode(QMSPI_Type *regs, uint32_t smode)
  */
 static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 {
+#ifdef CONFIG_SPI_EXTENDED_MODES
 	uint32_t qlines;
 
 	switch (config->operation & SPI_LINES_MASK) {
@@ -159,6 +160,9 @@ static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 	}
 
 	return qlines;
+#else
+	return MCHP_QMSPI_C_IFM_1X;
+#endif
 }
 
 /*
