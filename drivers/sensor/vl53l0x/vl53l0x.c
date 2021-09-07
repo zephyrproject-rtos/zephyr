@@ -226,7 +226,7 @@ static int vl53l0x_init(const struct device *dev)
 	}
 
 	gpio_pin_set(gpio, DT_INST_GPIO_PIN(0, xshut_gpios), 1);
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(2));
 #endif
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
