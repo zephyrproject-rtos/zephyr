@@ -78,7 +78,7 @@ static bool valid_type(uint8_t type)
 static uint32_t get_len(const uint8_t *hdr_buf, uint8_t type)
 {
 	switch (type) {
-	case BT_BUF_CMD:
+	case H4_CMD:
 		return ((const struct bt_hci_cmd_hdr *)hdr_buf)->param_len;
 	case H4_ISO:
 		return sys_le16_to_cpu(((const struct bt_hci_iso_data_hdr *)hdr_buf)->slen);
