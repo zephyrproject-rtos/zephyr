@@ -54,3 +54,7 @@
 		jedec-id = [9d 70 17];
 	};
 };
+
+&lpadc0 {
+	status = "okay";
+};
