@@ -605,7 +605,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  The periodic advertising synchronization lost callback is called if
 	 *  the periodic advertising sync is lost. If this happens, the sink
-	 *  object is released. To synchronize to the broadcaster again,
+	 *  object is deleted. To synchronize to the broadcaster again,
 	 *  bt_audio_broadcast_sink_scan_start() must be called.
 	 *
 	 *  @param sink          Pointer to the sink structure.
@@ -916,8 +916,8 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan);
  *  This procedure is used by a client to release a unicast or broadcast
  *  source channel.
  *
- *  Broadcast sink channels shall be released using
- *  bt_audio_broadcast_sink_release().
+ *  Broadcast sink channels cannot be released, but can be deleted by
+ *  bt_audio_broadcast_sink_delete().
  *  Broadcast source channels cannot be released, but can be deleted by
  *  bt_audio_broadcast_source_delete().
  *
@@ -1097,15 +1097,15 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 /** @brief Release a broadcast sink
  *
  *  Once a broadcast sink has been allocated after the pa_synced callback,
- *  it can be released using this function. If the sink has synchronized to any
+ *  it can be deleted using this function. If the sink has synchronized to any
  *  broadcast audio channels, these must first be stopped using
  *  bt_audio_chan_stop.
  *
- *  @param sink Pointer to the sink object to release.
+ *  @param sink Pointer to the sink object to delete.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_broadcast_sink_release(struct bt_audio_broadcast_sink *sink);
+int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink);
 
 /** @} */
 
