@@ -2152,6 +2152,7 @@ USB:
     - samples/subsys/usb/
     - subsys/usb/
     - tests/subsys/usb/
+    - tests/drivers/udc/
   labels:
     - "area: USB"
 
