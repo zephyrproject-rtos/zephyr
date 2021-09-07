@@ -97,6 +97,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | flexan                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1160_evk/mimxrt1160_evk_cm7_defconfig``
@@ -118,6 +120,10 @@ The MIMXRT1160 SoC has six pairs of pinmux/gpio controllers.
 | GPIO_AD_24    | LPUART1_TX      | UART Console              |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_25    | LPUART1_RX      | UART Console              |
++---------------+-----------------+---------------------------+
+| GPIO_LPSR_00  | CAN3_TX         | flexcan                   |
++---------------+-----------------+---------------------------+
+| GPIO_LPSR_01  | CAN3_RX         | flexcan                   |
 +---------------+-----------------+---------------------------+
 
 System Clock

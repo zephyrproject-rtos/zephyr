@@ -33,6 +33,11 @@
 	current-speed = <115200>;
 };
 
+&flexcan3 {
+	status = "okay";
+	bus-speed = <125000>;
+};
+
 &flexspi1 {
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	is25wp128: is25wp128@0 {
