@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state */
 struct ipso_button_data {
-	uint64_t counter;
+	int64_t counter;
 	uint16_t obj_inst_id;
 	bool last_state;
 	bool state;
@@ -53,7 +53,7 @@ static struct ipso_button_data button_data[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_obj onoff_switch;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
-	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, U64),
+	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, S64),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 #if defined(CONFIG_LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1)
 	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
@@ -97,6 +97,9 @@ static int state_post_write_cb(uint16_t obj_inst_id,
 	if (button_data[i].state && !button_data[i].last_state) {
 		/* off to on transition */
 		button_data[i].counter++;
+		if (button_data[i].counter < 0) {
+			button_data[i].counter = 0;
+		}
 	}
 
 	button_data[i].last_state = button_data[i].state;
