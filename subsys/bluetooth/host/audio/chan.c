@@ -1127,7 +1127,10 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 		return -EBADMSG;
 	}
 
-	if (!bt_audio_ep_is_broadcast(chan->ep)) {
+	if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
+		BT_DBG("Cannot send on a broadcast sink channel");
+		return -EINVAL;
+	} else if (!bt_audio_ep_is_broadcast_src(chan->ep)) {
 		switch (chan->ep->status.state) {
 		/* or 0x04 (Streaming) */
 		case BT_ASCS_ASE_STATE_STREAMING:
