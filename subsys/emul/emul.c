@@ -13,20 +13,13 @@ LOG_MODULE_REGISTER(emul);
 #include <drivers/emul.h>
 #include <string.h>
 
-/**
- * Find a an emulator using its link information
- *
- * @param emul Emulator info to find
- * @return pointer to emulator, or NULL if not found
- */
-static const struct emul *
-emul_find_by_link(const struct emul_link_for_bus *emul)
+const struct emul *emul_get_binding(const char *name)
 {
-	const struct emul *erp;
+	const struct emul *emul_it;
 
-	for (erp = __emul_list_start; erp < __emul_list_end; erp++) {
-		if (strcmp(erp->dev_label, emul->label) == 0) {
-			return erp;
+	for (emul_it = __emul_list_start; emul_it < __emul_list_end; emul_it++) {
+		if (strcmp(emul_it->dev_label, name) == 0) {
+			return emul_it;
 		}
 	}
 
@@ -49,7 +42,7 @@ int emul_init_for_bus_from_list(const struct device *dev,
 	LOG_INF("Registering %d emulator(s) for %s", cfg->num_children,
 		dev->name);
 	for (elp = cfg->children; elp < end; elp++) {
-		const struct emul *emul = emul_find_by_link(elp);
+		const struct emul *emul = emul_get_binding(elp->label);
 
 		__ASSERT(emul, "Cannot find emulator for '%s'", elp->label);
 
