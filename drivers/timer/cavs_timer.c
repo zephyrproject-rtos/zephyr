@@ -182,7 +182,6 @@ uint32_t sys_clock_cycle_get_32(void)
 	return count32();
 }
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_SMP_BOOT_DELAY)
 /* Runs on secondary cores */
 void smp_timer_init(void)
 {
@@ -197,4 +196,3 @@ void smp_timer_init(void)
 		    22 + TIMER);
 	irq_enable(TIMER_IRQ);
 }
-#endif
