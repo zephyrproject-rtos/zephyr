@@ -309,6 +309,8 @@ SECTIONS
     *(".srodata.*")
     *(.rodata)
     *(.rodata.*)
+    *(.rodata_wlog)
+    *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
