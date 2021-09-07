@@ -461,14 +461,14 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 }
 
 static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
-			      bool master_cred)
+			      bool flooding_cred)
 {
 	const struct bt_mesh_net_cred *cred;
 	uint32_t iv_index;
 	uint16_t src;
 	int err;
 
-	if (master_cred) {
+	if (flooding_cred) {
 		cred = &frnd->subnet->keys[SUBNET_KEY_TX_IDX(frnd->subnet)]
 				.msg;
 	} else {
