@@ -197,8 +197,8 @@ int lwm2m_b32_to_f32(uint8_t *b32, size_t len, float32_value_t *f32)
 	/* remove bias */
 	e -= 127;
 
-	/* enable "hidden" fraction bit 23 which is always 1 */
-	f  = ((int32_t)1 << 22);
+	/* enable "hidden" fraction bit 24 which is always 1 */
+	f  = ((int32_t)1 << 23);
 	/* calc fraction: bits 22-0 */
 	f += ((int32_t)(b32[1] & 0x7F) << 16);
 	f += ((int32_t)b32[2] << 8);
