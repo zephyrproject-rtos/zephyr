@@ -101,6 +101,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | CAN       | on-chip    | flexcan                             |
 +-----------+------------+-------------------------------------+
 
@@ -108,6 +110,7 @@ The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1160_evk/mimxrt1160_evk_cm7_defconfig``
 
 Other hardware features are not currently supported by the port.
+
 
 Connections and I/Os
 ====================
@@ -128,6 +131,14 @@ The MIMXRT1160 SoC has six pairs of pinmux/gpio controllers.
 | GPIO_LPSR_00  | CAN3_TX         | flexcan                   |
 +---------------+-----------------+---------------------------+
 | GPIO_LPSR_01  | CAN3_RX         | flexcan                   |
++---------------+-----------------+---------------------------+
+| GPIO_AD_29    | SPI1_CS0        | spi                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_28    | SPI1_CLK        | spi                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_30    | SPI1_SDO        | spi                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_31    | SPI1_SDI        | spi                       |
 +---------------+-----------------+---------------------------+
 
 System Clock
