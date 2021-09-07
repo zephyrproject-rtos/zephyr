@@ -20,8 +20,6 @@
 #include <soc.h>
 #include <init.h>
 #include <drivers/uart.h>
-#include <drivers/pinmux.h>
-#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control.h>
 #include <pm/pm.h>
 
@@ -1507,9 +1505,7 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	err = stm32_dt_pinctrl_configure(config->pinctrl_list,
-					 config->pinctrl_list_size,
-					 (uint32_t)UART_STRUCT(dev));
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
@@ -1657,8 +1653,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define STM32_UART_INIT(index)						\
 STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
-static const struct soc_gpio_pinctrl uart_pins_##index[] =		\
-				ST_STM32_DT_INST_PINCTRL(index, 0);	\
+PINCTRL_DT_INST_DEFINE(index)						\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
@@ -1670,9 +1665,8 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	},								\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
 	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
-	.pinctrl_list = uart_pins_##index,				\
-	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
