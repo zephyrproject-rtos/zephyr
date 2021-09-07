@@ -42,10 +42,11 @@ PROVIDE(_MemErrorHandler = 0x00000000);
  * the output tooling ignores it, but it will cause the linker to emit
  * 512MB of unused data into the output file!)
  *
+ * (Note clumsy syntax because XCC doesn't understand the "~" operator)
  */
 #ifdef CONFIG_KERNEL_COHERENCE
 #define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
-#define SEGSTART_UNCACHED (ALIGN(64) & ~0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
 #else
 #define SEGSTART_CACHED   /**/
 #define SEGSTART_UNCACHED /**/
