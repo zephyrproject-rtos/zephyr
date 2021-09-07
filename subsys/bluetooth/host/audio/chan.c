@@ -2470,6 +2470,12 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		return err;
 	}
 
+	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
+	}
+
 	sink->bis_count = num_bis;
 	sink->chan = chan;
 
@@ -2508,15 +2514,24 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
+	struct bt_audio_chan *chan;
 	int err;
 
-	if (sink->big != NULL) {
-		BT_DBG("Broadcast sink can only be delete when stopped");
+	CHECKIF(sink == NULL) {
+		BT_DBG("sink is NULL");
 		return -EINVAL;
 	}
 
+	chan = sink->chan;
+
+	if (chan != NULL && chan->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("Sink chan %p is not in the BT_AUDIO_CHAN_IDLE state: %u",
+		       chan, chan->state);
+		return -EBADMSG;
+	}
+
 	if (sink->pa_sync == NULL) {
-		BT_DBG("Broadcast sink is already released");
+		BT_DBG("Broadcast sink is already deleted");
 		return -EALREADY;
 	}
 
