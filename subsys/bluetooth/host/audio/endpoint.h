@@ -62,6 +62,8 @@ struct bt_audio_broadcast_sink {
 	struct bt_audio_capability *cap; /* Capability that accepted the PA sync */
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
+	/* The "main" channel used to create the broadcast sink */
+	struct bt_audio_chan *chan;
 };
 
 struct bt_audio_ep {
