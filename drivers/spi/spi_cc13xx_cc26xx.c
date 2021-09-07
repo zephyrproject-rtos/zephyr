@@ -76,7 +76,8 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Multiple lines are not supported");
 		return -EINVAL;
 	}

@@ -220,8 +220,10 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		}
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB |
-				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if ((config->operation & SPI_TRANSFER_LSB) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation & (SPI_LINES_DUAL |
+				   SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}

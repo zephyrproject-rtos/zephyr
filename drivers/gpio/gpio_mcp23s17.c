@@ -378,8 +378,7 @@ static int mcp23s17_init(const struct device *dev)
 		.bus = SPI_DT_SPEC_INST_GET(				 \
 			inst,						 \
 			SPI_OP_MODE_MASTER | SPI_MODE_CPOL |		 \
-			SPI_MODE_CPHA | SPI_WORD_SET(8) |		 \
-			SPI_LINES_SINGLE, 0),				 \
+			SPI_MODE_CPHA | SPI_WORD_SET(8), 0),		 \
 	};								 \
 									 \
 	static struct mcp23s17_drv_data mcp23s17_##inst##_drvdata = {	 \
