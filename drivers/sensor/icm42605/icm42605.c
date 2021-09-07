@@ -410,8 +410,7 @@ static int icm42605_init(const struct device *dev)
 	drv_data->spi_cfg.frequency = cfg->frequency;
 	drv_data->spi_cfg.slave = cfg->slave;
 	drv_data->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
-			SPI_TRANSFER_MSB);
+			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
 	drv_data->spi_cfg.cs = &drv_data->spi_cs;
 
 	icm42605_spi_init(drv_data->spi, &drv_data->spi_cfg);

@@ -72,7 +72,8 @@ static int spi_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only supports single mode");
 		return -ENOTSUP;
 	}

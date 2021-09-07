@@ -513,7 +513,6 @@ static int lis2mdl_pm_action(const struct device *dev,
 
 #define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
 				SPI_OP_MODE_MASTER |			\
-				SPI_LINES_SINGLE |			\
 				SPI_MODE_CPOL |				\
 				SPI_MODE_CPHA)				\
 

@@ -240,10 +240,8 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	/* SPI BUS */
 	spi->bus = (struct spi_dt_spec) SPI_DT_SPEC_INST_GET(0,
 							     SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-							     SPI_WORD_SET(16) | SPI_LINES_SINGLE |
-							     SPI_HOLD_ON_CS | SPI_LOCK_ON,
-							     1000U);
-
+							     SPI_WORD_SET(16) | SPI_HOLD_ON_CS |
+							     SPI_LOCK_ON, 1000U);
 	eswifi->bus_data = spi;
 
 	LOG_DBG("success");

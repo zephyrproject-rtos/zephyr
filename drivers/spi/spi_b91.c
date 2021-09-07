@@ -267,13 +267,16 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 	}
 
 	/* check for lines configuration */
-	if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
-		LOG_ERR("SPI lines Octal configuration is not supported");
-		return false;
-	} else if (((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD) &&
-		   (b91_config->peripheral_id == PSPI_MODULE)) {
-		LOG_ERR("SPI lines Quad configuration is not supported by PSPI");
-		return false;
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
+			LOG_ERR("SPI lines Octal is not supported");
+			return false;
+		} else if (((config->operation & SPI_LINES_MASK) ==
+			    SPI_LINES_QUAD) &&
+			   (b91_config->peripheral_id == PSPI_MODULE)) {
+			LOG_ERR("SPI lines Quad is not supported by PSPI");
+			return false;
+		}
 	}
 
 	/* check for slave configuration */
@@ -326,12 +329,19 @@ static int spi_b91_config(const struct device *dev,
 	spi_master_config(b91_config->peripheral_id, SPI_NOMAL);
 
 	/* set lines configuration */
-	if ((config->operation & SPI_LINES_MASK) == SPI_LINES_SINGLE) {
-		spi_set_io_mode(b91_config->peripheral_id, SPI_SINGLE_MODE);
-	} else if ((config->operation & SPI_LINES_MASK) == SPI_LINES_DUAL) {
-		spi_set_io_mode(b91_config->peripheral_id, SPI_DUAL_MODE);
-	} else if ((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD) {
-		spi_set_io_mode(b91_config->peripheral_id, HSPI_QUAD_MODE);
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		uint32_t lines = config->operation & SPI_LINES_MASK;
+
+		if (lines == SPI_LINES_SINGLE) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					SPI_SINGLE_MODE);
+		} else if (lines == SPI_LINES_DUAL) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					SPI_DUAL_MODE);
+		} else if (lines == SPI_LINES_QUAD) {
+			spi_set_io_mode(b91_config->peripheral_id,
+					HSPI_QUAD_MODE);
+		}
 	}
 
 	/* get pinmux driver */

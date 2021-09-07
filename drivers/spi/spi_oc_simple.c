@@ -48,8 +48,10 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB |
-				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if ((config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB)) ||
+	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     (config->operation &
+	      (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}

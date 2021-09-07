@@ -195,18 +195,22 @@ static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
 
 static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
 {
-	switch (operation & SPI_LINES_MASK) {
-	case SPI_LINES_SINGLE:
-		return SPI_LL_IO_MODE_NORMAL;
-	case SPI_LINES_DUAL:
-		return SPI_LL_IO_MODE_DUAL;
-	case SPI_LINES_OCTAL:
-		return SPI_LL_IO_MODE_QIO;
-	case SPI_LINES_QUAD:
-		return SPI_LL_IO_MODE_QUAD;
-	default:
-		return SPI_LL_IO_MODE_NORMAL;
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
+		switch (operation & SPI_LINES_MASK) {
+		case SPI_LINES_SINGLE:
+			return SPI_LL_IO_MODE_NORMAL;
+		case SPI_LINES_DUAL:
+			return SPI_LL_IO_MODE_DUAL;
+		case SPI_LINES_OCTAL:
+			return SPI_LL_IO_MODE_QIO;
+		case SPI_LINES_QUAD:
+			return SPI_LL_IO_MODE_QUAD;
+		default:
+			break;
+		}
 	}
+
+	return SPI_LL_IO_MODE_NORMAL;
 }
 
 static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
