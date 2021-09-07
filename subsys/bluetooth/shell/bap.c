@@ -27,11 +27,13 @@
 #define MAX_ASE (CONFIG_BT_BAP_ASE_SNK_COUNT + CONFIG_BT_BAP_ASE_SRC_COUNT)
 
 static struct bt_audio_chan chans[MAX_PAC];
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 static struct bt_audio_chan broadcast_source_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_broadcast_source *default_source;
 static struct bt_audio_chan broadcast_sink_chans[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 static uint64_t broadcast_chan_index_bits;
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
@@ -696,7 +698,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan;
 	int index;
-	bool broadcast;
+	bool broadcast = false;
 
 	index = strtol(argv[1], NULL, 0);
 	if (index < 0 || index > ARRAY_SIZE(chans)) {
@@ -705,6 +707,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 2) {
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 		if (strcmp(argv[2], "broadcast") == 0) {
 			broadcast = true;
 			if (index > ARRAY_SIZE(broadcast_source_chans)) {
@@ -715,6 +718,9 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 		} else {
 			shell_error(sh, "Invalid argument %s", argv[2]);
 		}
+#else
+		shell_error(sh, "Invalid argument %s", argv[2]);
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 	}
 
 	if (broadcast) {
@@ -941,6 +947,7 @@ static int lc3_release(struct bt_audio_chan *chan)
 	return 0;
 }
 
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 static uint32_t accepted_broadcast_id;
 
 static bool scan_recv(const struct bt_le_scan_recv_info *info,
@@ -1050,7 +1057,7 @@ static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
 		default_sink = NULL;
 	}
 }
-
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
@@ -1114,6 +1121,7 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 	},
 };
 
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
@@ -1323,6 +1331,7 @@ static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
 
 	return err;
 }
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -1344,9 +1353,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_audio_chan_cb_register(&chans[i], &chan_ops);
 	}
 
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 	for (i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
 		bt_audio_chan_cb_register(&broadcast_source_chans[i], &chan_ops);
 	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 
 	return 0;
 }
@@ -1410,6 +1421,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(config, NULL,
 		      "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 	SHELL_CMD_ARG(create_broadcast, NULL, "[codec] [preset]",
 		      cmd_create_broadcast, 1, 2),
 	SHELL_CMD_ARG(start_broadcast, NULL, "", cmd_start_broadcast, 1, 0),
@@ -1423,6 +1435,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      cmd_sync_broadcast, 2, 0),
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",
 		      cmd_term_broadcast_sink, 1, 0),
+#endif /* CONFIG_BT_AUDIO_BROADCAST */
 	SHELL_CMD_ARG(qos, NULL,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]", cmd_qos, 1, 8),
