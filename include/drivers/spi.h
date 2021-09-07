@@ -85,29 +85,25 @@ extern "C" {
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
 
 /**
- * @brief SPI MISO lines
+ * @brief SPI duplex modes
  *
- * Some controllers support dual, quad or octal MISO lines connected to slaves.
- * Default is single, which is the case most of the time.
+ * Some controllers support half duplex transfer, which results in 3-wire usage.
+ * By default, full duplex will prevail.
  */
-#define SPI_LINES_SINGLE	(0U << 11)
-#define SPI_LINES_DUAL		(1U << 11)
-#define SPI_LINES_QUAD		(2U << 11)
-#define SPI_LINES_OCTAL		(3U << 11)
-
-#define SPI_LINES_MASK		(0x3U << 11)
+#define SPI_FULL_DUPLEX		(0U << 11)
+#define SPI_HALF_DUPLEX		(1U << 11)
 
 /**
  * @brief Specific SPI devices control bits
  */
 /* Requests - if possible - to keep CS asserted after the transaction */
-#define SPI_HOLD_ON_CS		BIT(13)
+#define SPI_HOLD_ON_CS		BIT(12)
 /* Keep the device locked after the transaction for the current config.
  * Use this with extreme caution (see spi_release() below) as it will
  * prevent other callers to access the SPI device until spi_release() is
  * properly called.
  */
-#define SPI_LOCK_ON		BIT(14)
+#define SPI_LOCK_ON		BIT(13)
 
 /* Active high logic on CS - Usually, and by default, CS logic is active
  * low. However, some devices may require the reverse logic: active high.
@@ -116,7 +112,22 @@ extern "C" {
  * the CS control to a gpio line through struct spi_cs_control would be
  * the solution.
  */
-#define SPI_CS_ACTIVE_HIGH	BIT(15)
+#define SPI_CS_ACTIVE_HIGH	BIT(14)
+
+/**
+ * @brief SPI MISO lines (if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled)
+ *
+ * Some controllers support dual, quad or octal MISO lines connected to slaves.
+ * Default is single, which is the case most of the time.
+ * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
+ * only supported one.
+ */
+#define SPI_LINES_SINGLE	(0U << 16)
+#define SPI_LINES_DUAL		(1U << 16)
+#define SPI_LINES_QUAD		(2U << 16)
+#define SPI_LINES_OCTAL		(3U << 16)
+
+#define SPI_LINES_MASK		(0x3U << 16)
 
 /**
  * @brief SPI Chip Select control structure
@@ -228,10 +239,14 @@ struct spi_cs_control {
  *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
  *     transfer            [ 4 ]       - LSB or MSB first.
  *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad/Octal.
- *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
- *     lock_on             [ 14 ]      - Keep resource locked for the caller.
- *     cs_active_high      [ 15 ]      - Active high CS logic.
+ *     duplex              [ 11 ]      - full/half duplex.
+ *     cs_hold             [ 12 ]      - Hold on the CS line if possible.
+ *     lock_on             [ 13 ]      - Keep resource locked for the caller.
+ *     cs_active_high      [ 14 ]      - Active high CS logic.
+ *     reserved            [ 15 ]      - reserved for future use.
+ * if @kconfig{CONFIG_SPI_EXTENDED_MODES} is defined:
+ *     lines               [ 16 : 17 ] - MISO lines: Single/Dual/Quad/Octal.
+ *     reserved            [ 18 : 31 ] - reserved for future use.
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
@@ -242,8 +257,14 @@ struct spi_cs_control {
  */
 struct spi_config {
 	uint32_t		frequency;
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+	uint32_t		operation;
+	uint16_t		slave;
+	uint16_t		_unused;
+#else
 	uint16_t		operation;
 	uint16_t		slave;
+#endif /* CONFIG_SPI_EXTENDED_MODES */
 
 	const struct spi_cs_control *cs;
 };
