@@ -51,6 +51,10 @@ config INTC_INIT_PRIORITY
 	help
 	  Interrupt controller device initialization priority.
 
+module = INTC
+module-str = intc
+source "subsys/logging/Kconfig.template.log_config"
+
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
