@@ -1239,12 +1239,12 @@ static int cmd_broadcast_scan(const struct shell *sh, size_t argc, char *argv[])
 			.timeout    = 0 };
 
 	if (strcmp(argv[1], "on") == 0) {
-		err =  bt_audio_broadcast_scan_start(&param);
+		err =  bt_audio_broadcast_sink_scan_start(&param);
 		if (err != 0) {
 			shell_error(sh, "Could not start scan: %d", err);
 		}
 	} else if (strcmp(argv[1], "off") == 0) {
-		err = bt_audio_broadcast_scan_stop();
+		err = bt_audio_broadcast_sink_scan_stop();
 		if (err != 0) {
 			shell_error(sh, "Could not stop scan: %d", err);
 		}
@@ -1301,7 +1301,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		chans_linked = true;
 	}
 
-	err = bt_audio_broadcast_sync(default_sink, bis_bitfield,
+	err = bt_audio_broadcast_sink_sync(default_sink, bis_bitfield,
 				      broadcast_sink_chans, NULL);
 	if (err != 0) {
 		shell_error(sh, "Failed to sync to broadcast: %d", err);
