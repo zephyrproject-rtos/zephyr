@@ -17,3 +17,4 @@ flash: 16384
 supported:
   - gpio
   - counter
+  - can
