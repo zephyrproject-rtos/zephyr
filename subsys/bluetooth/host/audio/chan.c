@@ -650,23 +650,14 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan)
 
 	ep = chan->ep;
 
-	if (bt_audio_ep_is_broadcast_src(ep)) {
+	if (bt_audio_ep_is_broadcast_src(chan->ep)) {
 		BT_DBG("Cannot use %s to stop broadcast source channels",
 		       __func__);
 		return -EINVAL;
-	} else if (bt_audio_ep_is_broadcast_snk(ep)) {
-		if (chan->state != BT_AUDIO_CHAN_STREAMING) {
-			BT_DBG("Channel is not streaming");
-			return -EALREADY;
-		}
-
-		err = bt_iso_big_terminate(ep->broadcast_sink->big);
-		if (err) {
-			BT_DBG("Failed to terminate BIG (err %d)", err);
-			return err;
-		}
-
-		return 0;
+	} else if (bt_audio_ep_is_broadcast_snk(chan->ep)) {
+		BT_DBG("Cannot use %s to stop broadcast sink channels",
+		       __func__);
+		return -EINVAL;
 	}
 
 	if (!chan->cap || !chan->cap->ops) {
@@ -2480,8 +2471,39 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	}
 
 	sink->bis_count = num_bis;
+	sink->chan = chan;
 
 	return err;
+}
+
+int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
+{
+	struct bt_audio_chan *chan;
+	int err;
+
+	CHECKIF(sink == NULL) {
+		BT_DBG("sink is NULL");
+		return -EINVAL;
+	}
+
+	chan = sink->chan;
+
+	if (chan->state != BT_AUDIO_CHAN_STREAMING &&
+	    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		BT_DBG("Channel is not configured or streaming");
+		return -EALREADY;
+	}
+
+	err = bt_iso_big_terminate(sink->big);
+	if (err) {
+		BT_DBG("Failed to terminate BIG (err %d)", err);
+		return err;
+	}
+
+	sink->big = NULL;
+	/* Channel states will be updated in the ep_iso_disconnected function */
+
+	return 0;
 }
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
