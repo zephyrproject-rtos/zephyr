@@ -356,9 +356,8 @@ static int lis2dw12_init(const struct device *dev)
 			.handle =					\
 			   (void *)&lis2dw12_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LIS2DW12_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -383,9 +382,8 @@ static int lis2dw12_init(const struct device *dev)
 			.handle =					\
 			   (void *)&lis2dw12_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\
