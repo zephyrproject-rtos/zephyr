@@ -88,8 +88,8 @@ static struct bt_mesh_proxy_client {
 	uint16_t filter[CONFIG_BT_MESH_PROXY_FILTER_SIZE];
 	enum __packed {
 		NONE,
-		WHITELIST,
-		BLACKLIST,
+		ACCEPT,
+		REJECT,
 		PROV,
 	} filter_type;
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -180,11 +180,11 @@ static int filter_set(struct bt_mesh_proxy_client *client,
 	switch (type) {
 	case 0x00:
 		(void)memset(client->filter, 0, sizeof(client->filter));
-		client->filter_type = WHITELIST;
+		client->filter_type = ACCEPT;
 		break;
 	case 0x01:
 		(void)memset(client->filter, 0, sizeof(client->filter));
-		client->filter_type = BLACKLIST;
+		client->filter_type = REJECT;
 		break;
 	default:
 		BT_WARN("Prohibited Filter Type 0x%02x", type);
@@ -256,7 +256,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
 	net_buf_simple_add_u8(buf, CFG_FILTER_STATUS);
 
-	if (client->filter_type == WHITELIST) {
+	if (client->filter_type == ACCEPT) {
 		net_buf_simple_add_u8(buf, 0x00);
 	} else {
 		net_buf_simple_add_u8(buf, 0x01);
@@ -666,7 +666,7 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	__ASSERT(client, "No client for connection");
 
 	if (client->filter_type == NONE) {
-		client->filter_type = WHITELIST;
+		client->filter_type = ACCEPT;
 		k_work_submit(&client->send_beacons);
 	}
 
@@ -714,7 +714,7 @@ int bt_mesh_proxy_gatt_enable(void)
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		if (clients[i].cli.conn) {
-			clients[i].filter_type = WHITELIST;
+			clients[i].filter_type = ACCEPT;
 		}
 	}
 
@@ -730,8 +730,8 @@ void bt_mesh_proxy_gatt_disconnect(void)
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
 
-		if (client->cli.conn && (client->filter_type == WHITELIST ||
-				     client->filter_type == BLACKLIST)) {
+		if (client->cli.conn && (client->filter_type == ACCEPT ||
+				     client->filter_type == REJECT)) {
 			client->filter_type = NONE;
 			bt_conn_disconnect(client->cli.conn,
 					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -766,9 +766,9 @@ void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, uint16_t addr)
 
 	BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
-	if (client->filter_type == WHITELIST) {
+	if (client->filter_type == ACCEPT) {
 		filter_add(client, addr);
-	} else if (client->filter_type == BLACKLIST) {
+	} else if (client->filter_type == REJECT) {
 		filter_remove(client, addr);
 	}
 }
@@ -780,7 +780,7 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 
 	BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
-	if (client->filter_type == BLACKLIST) {
+	if (client->filter_type == REJECT) {
 		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
 			if (client->filter[i] == addr) {
 				return false;
@@ -794,7 +794,7 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 		return true;
 	}
 
-	if (client->filter_type == WHITELIST) {
+	if (client->filter_type == ACCEPT) {
 		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
 			if (client->filter[i] == addr) {
 				return true;
