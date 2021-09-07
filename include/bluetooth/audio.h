@@ -1094,6 +1094,18 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 struct bt_audio_chan *chan,
 				 const uint8_t broadcast_code[16]);
 
+/** @brief Stop audio broadcast sink.
+ *
+ *  Stop an audio broadcast sink.
+ *  The broadcast sink will stop receiving BIGInfo, and audio data can no
+ *  longer be streamed.
+ *
+ *  @param sink      Pointer to the broadcast sink
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink);
+
 /** @brief Release a broadcast sink
  *
  *  Once a broadcast sink has been allocated after the pa_synced callback,
