@@ -32,5 +32,5 @@ SECTION_FUNC(vectors, __start)
 	la t0, __irq_wrapper
 	csrw mtvec, t0
 
-	/* Jump to __initialize */
-	tail __initialize
+	/* Jump to __reset */
+	tail __reset
