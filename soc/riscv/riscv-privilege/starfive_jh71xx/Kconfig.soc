@@ -8,5 +8,6 @@ choice
 config SOC_JH7100
 	bool "Starfive JH7100"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
 
 endchoice
