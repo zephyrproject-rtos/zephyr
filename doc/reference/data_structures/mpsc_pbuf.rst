@@ -107,6 +107,14 @@ callbacks. Following callbacks are used by the packet buffer:
   overwrite.
 * Get packet length - callback to determine packet length
 
+Buffer capacity
+^^^^^^^^^^^^^^^
+
+Maximum buffer capacity equals size of the provided memory reduced by a word
+which is used to distinguish between full and empty state. Because of skip
+packets which are added in certain cases (wrapping or allocating when packet
+is claimed) actual capacity may be occasionally reduced.
+
 Packet producing
 ^^^^^^^^^^^^^^^^
 
