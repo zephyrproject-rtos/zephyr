@@ -40,4 +40,21 @@ for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"
 done
 
+printf "\n\n======== Broadcaster sink disconnect test =========\n\n"
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source -rs=23
+
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
+  -testid=broadcast_sink_disconnect -rs=27
+
+Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
+  -D=2 -sim_length=20e6 $@
+
+for PROCESS_ID in $PROCESS_IDS; do
+  wait $PROCESS_ID || let "EXIT_CODE=$?"
+done
+
 exit $EXIT_CODE #the last exit code != 0
