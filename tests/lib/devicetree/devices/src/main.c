@@ -211,6 +211,17 @@ static void test_supports(void)
 	zassert_true(check_handle(DEV_HDL(TEST_DEVB), hdls, nhdls), NULL);
 }
 
+static void test_get_or_null(void)
+{
+	const struct device *dev;
+
+	dev = DEVICE_DT_GET_OR_NULL(TEST_DEVA);
+	zassert_not_equal(dev, NULL, NULL);
+
+	dev = DEVICE_DT_GET_OR_NULL(non_existing_node);
+	zassert_equal(dev, NULL, NULL);
+}
+
 void test_main(void)
 {
 	size_t ndevs;
@@ -221,7 +232,8 @@ void test_main(void)
 	ztest_test_suite(devicetree_driver,
 			 ztest_unit_test(test_init_order),
 			 ztest_unit_test(test_requires),
-			 ztest_unit_test(test_supports)
+			 ztest_unit_test(test_supports),
+			 ztest_unit_test(test_get_or_null)
 			 );
 	ztest_run_test_suite(devicetree_driver);
 }
