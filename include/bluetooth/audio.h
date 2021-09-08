@@ -428,10 +428,10 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return Allocated Audio Channel object or NULL in case of error.
 	 */
-	struct bt_audio_chan    *(*config)(struct bt_conn *conn,
-					   struct bt_audio_ep *ep,
-					   struct bt_audio_capability *cap,
-					   struct bt_codec *codec);
+	struct bt_audio_chan *(*config)(struct bt_conn *conn,
+					struct bt_audio_ep *ep,
+					struct bt_audio_capability *cap,
+					struct bt_codec *codec);
 
 	/** @brief Capability reconfig callback
 	 *
@@ -444,9 +444,9 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*reconfig)(struct bt_audio_chan *chan,
-					    struct bt_audio_capability *cap,
-					    struct bt_codec *codec);
+	int (*reconfig)(struct bt_audio_chan *chan,
+			struct bt_audio_capability *cap,
+			struct bt_codec *codec);
 
 	/** @brief Capability QoS callback
 	 *
@@ -458,8 +458,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*qos)(struct bt_audio_chan *chan,
-				       struct bt_codec_qos *qos);
+	int (*qos)(struct bt_audio_chan *chan, struct bt_codec_qos *qos);
 
 	/** @brief Capability Enable callback
 	 *
@@ -472,9 +471,8 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*enable)(struct bt_audio_chan *chan,
-					  uint8_t meta_count,
-					  struct bt_codec_data *meta);
+	int (*enable)(struct bt_audio_chan *chan, uint8_t meta_count,
+		      struct bt_codec_data *meta);
 
 	/** @brief Capability Start callback
 	 *
@@ -485,7 +483,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*start)(struct bt_audio_chan *chan);
+	int (*start)(struct bt_audio_chan *chan);
 
 	/** @brief Capability Metadata callback
 	 *
@@ -498,9 +496,8 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*metadata)(struct bt_audio_chan *chan,
-					    uint8_t meta_count,
-					    struct bt_codec_data *meta);
+	int (*metadata)(struct bt_audio_chan *chan, uint8_t meta_count,
+			struct bt_codec_data *meta);
 
 	/** @brief Capability Disable callback
 	 *
@@ -511,7 +508,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*disable)(struct bt_audio_chan *chan);
+	int (*disable)(struct bt_audio_chan *chan);
 
 	/** @brief Capability Stop callback
 	 *
@@ -522,7 +519,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*stop)(struct bt_audio_chan *chan);
+	int (*stop)(struct bt_audio_chan *chan);
 
 	/** @brief Capability release callback
 	 *
@@ -533,7 +530,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int                     (*release)(struct bt_audio_chan *chan);
+	int (*release)(struct bt_audio_chan *chan);
 
 	/** @brief Scan receive callback
 	 *
@@ -546,8 +543,8 @@ struct bt_audio_capability_ops {
 	 *  @return true to sync to the broadcaster, else false.
 	 *          Syncing to the broadcaster will stop the current scan.
 	 */
-	bool                    (*scan_recv)(const struct bt_le_scan_recv_info *info,
-					     uint32_t broadcast_id);
+	bool (*scan_recv)(const struct bt_le_scan_recv_info *info,
+			  uint32_t broadcast_id);
 
 	/** @brief Periodic advertising sync callback
 	 *
@@ -560,9 +557,9 @@ struct bt_audio_capability_ops {
 	 *  @param broadcast_id  24-bit broadcast ID previously reported by
 	 *                       scan_recv.
 	 */
-	void                    (*pa_synced)(struct bt_audio_broadcast_sink *sink,
-					     struct bt_le_per_adv_sync *sync,
-					     uint32_t broadcast_id);
+	void (*pa_synced)(struct bt_audio_broadcast_sink *sink,
+			  struct bt_le_per_adv_sync *sync,
+			  uint32_t broadcast_id);
 
 	/** @brief Broadcast Audio Source Endpoint (BASE) received
 	 *
@@ -572,8 +569,8 @@ struct bt_audio_capability_ops {
 	 *  @param sink          Pointer to the sink structure.
 	 *  @param base          Broadcast Audio Source Endpoint (BASE).
 	 */
-	void                    (*base_recv)(struct bt_audio_broadcast_sink *sink,
-					     const struct bt_audio_base *base);
+	void (*base_recv)(struct bt_audio_broadcast_sink *sink,
+			  const struct bt_audio_base *base);
 
 	/** @brief Broadcast sink is syncable
 	 *
@@ -587,8 +584,7 @@ struct bt_audio_capability_ops {
 	 *  @param sink          Pointer to the sink structure.
 	 *  @param encrypted     Whether or not the broadcast is encrypted
 	 */
-	void                    (*syncable)(struct bt_audio_broadcast_sink *sink,
-					    bool encrypted);
+	void (*syncable)(struct bt_audio_broadcast_sink *sink, bool encrypted);
 
 	/** @brief Scan terminated callback
 	 *
@@ -603,7 +599,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @param err 0 in case of success or negative value in case of error.
 	 */
-	void                     (*scan_term)(int err);
+	void (*scan_term)(int err);
 
 	/** @brief Periodic advertising synchronization lost callback
 	 *
@@ -614,7 +610,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @param sink          Pointer to the sink structure.
 	 */
-	void                    (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
+	void (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
 };
 
 /** @brief Channel operation. */
