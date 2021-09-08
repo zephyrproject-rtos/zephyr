@@ -525,7 +525,7 @@ static struct net_if *ppp_net_if(void)
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
 	static const struct ppp_api *api;
-	const struct device *ppp_dev = DEVICE_DT_GET(DT_INST(0, zephyr_gsm_ppp));
+	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
 	struct net_if *iface = gsm->iface;
 	int ret;
 
