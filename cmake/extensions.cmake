@@ -815,8 +815,11 @@ function(board_finalize_runner_args runner)
     # Default arguments from the common runner file come first.
     ${ARGN}
     # Arguments explicitly given with board_runner_args() come
-    # last, so they take precedence.
+    # next, so they take precedence over the common runner file.
     ${explicit}
+    # Arguments given via the CMake cache come last of all. Users
+    # can provide variables in this way from the CMake command line.
+    ${BOARD_RUNNER_ARGS_${runner_id}}
     )
 
   # Add the finalized runner to the global property list.
