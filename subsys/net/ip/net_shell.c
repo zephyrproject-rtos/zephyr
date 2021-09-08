@@ -3806,7 +3806,8 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	   net_sprint_ll_addr(
 		   net_nbr_get_lladdr(nbr->idx)->addr,
 		   net_nbr_get_lladdr(nbr->idx)->len),
-	   net_nbr_get_lladdr(nbr->idx)->len == 8U ? "" : padding,
+	   nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "" :
+		(net_nbr_get_lladdr(nbr->idx)->len == 8U ? "" : padding),
 	   net_sprint_ipv6_addr(&net_ipv6_nbr_data(nbr)->addr));
 }
 #endif
