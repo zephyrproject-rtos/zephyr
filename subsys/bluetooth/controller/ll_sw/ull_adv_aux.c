@@ -22,6 +22,7 @@
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
@@ -907,7 +908,9 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
 
 	/* FIXME: implementation defined */
 	aux_ptr->chan_idx = 0U;
-	aux_ptr->ca = 0U;
+
+	aux_ptr->ca = (lll_clock_ppm_local_get() <= SCA_50_PPM) ?
+		      SCA_VALUE_50_PPM : SCA_VALUE_500_PPM;
 
 	/* NOTE: Aux Offset will be set in advertiser LLL event
 	 */
