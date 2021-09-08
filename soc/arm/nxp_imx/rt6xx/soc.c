@@ -193,11 +193,21 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetXtalFreq(CONFIG_XTAL_SYS_CLK_HZ);
 
 #ifdef CONFIG_INIT_SYS_PLL
+	BUILD_ASSERT((CONFIG_SYS_PFD0_DIV >= 12) && (CONFIG_SYS_PFD0_DIV <= 35),
+    	"Must be in range [12, 35]");
+
 	/* Configure SysPLL0 clock source */
 	CLOCK_InitSysPll(&g_sysPllConfig);
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 19);
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, CONFIG_SYS_PFD0_DIV);
 	CLOCK_InitSysPfd(kCLOCK_Pfd2, 24);
-#endif
+
+#if CONFIG_SYS_MAIN_PLL_DIV
+	BUILD_ASSERT((CONFIG_SYS_MAIN_PLL_DIV > 0) && (CONFIG_SYS_MAIN_PLL_DIV <= 255),
+    	"Must be in range [0, 255]");
+
+	CLOCK_SetClkDiv(kCLOCK_DivMainPllClk, CONFIG_SYS_MAIN_PLL_DIV);
+#endif /* CONFIG_SYS_MAIN_PLL_DIV */
+#endif /* CONFIG_INIT_SYS_PLL */
 
 #ifdef CONFIG_INIT_AUDIO_PLL
 	/* Configure Audio PLL clock source */
@@ -206,8 +216,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAudioPllClk, 15U);
 #endif
 
-	/* Set SYSCPUAHBCLKDIV divider to value 2 */
-	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 2U);
+#if CONFIG_SYS_CPU_AHB_CLK_DIV
+	BUILD_ASSERT((CONFIG_SYS_CPU_AHB_CLK_DIV > 0) && (CONFIG_SYS_CPU_AHB_CLK_DIV <= 255),
+		"Must be in range [1, 255]");
+
+	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, CONFIG_SYS_CPU_AHB_CLK_DIV);
+#endif
 
 	/* Set up clock selectors - Attach clocks to the peripheries */
 	CLOCK_AttachClk(kMAIN_PLL_to_MAIN_CLK);

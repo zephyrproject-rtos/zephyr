@@ -62,6 +62,29 @@ config INIT_SYS_PLL
 config INIT_AUDIO_PLL
 	bool "Initialize Audio PLL"
 
+config SYS_PFD0_DIV
+	int "PFD0 clock divider"
+	default 19
+	help
+	  Set the PFD0 clock divider. Valid PFD values are decimal 12-35
+
+config SYS_MAIN_PLL_DIV
+	depends on INIT_SYS_PLL
+	default 0
+	int "Main PLL clock divider"
+	help
+	  Set the main pll clock divider. Valid divider values are decimal 0-255. Value of 0
+	  divides the AHB clock by 1, 255 by 256. Setting to 0 is equivalent to power on reset
+	  value.
+
+config SYS_CPU_AHB_CLK_DIV
+	default 2
+	int "CPU AHB clock divider"
+	help
+	  Set the cpu AHB clock divider. Valid divider values are decimal 0-255. Value of 0
+	  divides the AHB clock by 1, 255 by 256. Setting to 0 is equivalent to power on reset
+	  value.
+
 config USB_DEDICATED_MEMORY
 	bool "Dedicated memory for USB transfer buffer and controller operation buffers"
 
