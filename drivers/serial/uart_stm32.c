@@ -1429,6 +1429,7 @@ static int uart_stm32_pm_control(const struct device *dev,
 
 	/* setting a low power mode */
 	switch (action) {
+	case PM_DEVICE_ACTION_LOW_POWER:
 	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
@@ -1445,6 +1446,9 @@ static int uart_stm32_pm_control(const struct device *dev,
 		/* Clear OVERRUN flag */
 		LL_USART_ClearFlag_ORE(UartInstance);
 		/* Leave UartInstance unchanged */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Leave UartInstance ready to Tx/Rx */
 		break;
 	default:
 		return -ENOTSUP;
