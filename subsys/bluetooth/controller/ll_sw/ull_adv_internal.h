@@ -73,8 +73,8 @@ int ull_adv_aux_reset_finalize(void);
 uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
 
 /* Helper to read back random address */
-uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
-				       uint8_t *const addr);
+uint8_t const *ull_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
+					   uint8_t *const addr);
 
 /* helper function to initialize event timings */
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux);
