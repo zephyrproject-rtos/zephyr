@@ -57,6 +57,7 @@ static void test_main(void)
 			bt_audio_chan_link(&broadcast_source_chans[i],
 					   &broadcast_source_chans[j]);
 		}
+
 	}
 
 	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
@@ -77,6 +78,23 @@ static void test_main(void)
 	}
 
 	k_sleep(K_SECONDS(10));
+
+	err = bt_audio_broadcast_source_delete(source);
+	if (err != 0) {
+		FAIL("Unable to delete broadcast source: %d", err);
+		return;
+	}
+	source = NULL;
+
+	/* Recreate broadcast source to verify that it's possible */
+	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
+					       &preset_48_1_2.codec,
+					       &preset_48_1_2.qos,
+					       &source);
+	if (err != 0) {
+		FAIL("Unable to create broadcast source: %d", err);
+		return;
+	}
 
 	err = bt_audio_broadcast_source_delete(source);
 	if (err != 0) {
