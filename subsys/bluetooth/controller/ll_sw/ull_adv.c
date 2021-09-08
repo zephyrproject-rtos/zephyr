@@ -2709,7 +2709,7 @@ static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
-			own_id_addr = ll_adv_aux_random_addr_get(adv, NULL);
+			own_id_addr = ull_adv_aux_random_addr_get(adv, NULL);
 #endif
 		} else {
 			own_id_addr = ll_addr_get(pdu->tx_addr, NULL);
