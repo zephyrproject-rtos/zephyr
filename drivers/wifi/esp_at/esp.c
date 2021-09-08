@@ -253,6 +253,7 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 }
 
 /* +CWLAP:(sec,ssid,rssi,channel) */
+/* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
 MODEM_CMD_DEFINE(on_cmd_cwlap)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
@@ -276,7 +277,18 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	memcpy(res.ssid, argv[1], i);
 	res.ssid_length = i;
 	res.rssi = strtol(argv[2], NULL, 10);
-	res.channel = strtol(argv[3], NULL, 10);
+
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)) {
+		argv[3] = str_unquote(argv[3]);
+		res.mac_length = WIFI_MAC_ADDR_LEN;
+		if (net_bytes_from_str(res.mac, sizeof(res.mac), argv[3]) < 0) {
+			LOG_ERR("Invalid MAC address");
+			res.mac_length = 0;
+		}
+		res.channel = (argc > 4) ? strtol(argv[4], NULL, 10) : -1;
+	} else {
+		res.channel = strtol(argv[3], NULL, 10);
+	}
 
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
@@ -717,7 +729,11 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	struct esp_data *dev;
 	int ret;
 	static const struct modem_cmd cmds[] = {
+#if defined(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)
+		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 5U, ","),
+#else
 		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 4U, ","),
+#endif
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
@@ -726,9 +742,13 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	if (ret < 0) {
 		goto out;
 	}
-	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
+	ret = esp_cmd_send(dev,
+			   cmds, ARRAY_SIZE(cmds),
+			   ESP_CMD_CWLAP,
 			   ESP_SCAN_TIMEOUT);
 	esp_mode_flags_clear(dev, EDF_STA_LOCK);
+	LOG_DBG("ESP Wi-Fi scan: cmd = %s", ESP_CMD_CWLAP);
+
 	if (ret < 0) {
 		LOG_ERR("Failed to scan: ret %d", ret);
 	}
@@ -925,8 +945,11 @@ static void esp_init_work(struct k_work *work)
 #endif
 		/* enable multiple socket support */
 		SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
-		/* only need ecn,ssid,rssi,channel */
-		SETUP_CMD_NOHANDLE("AT+CWLAPOPT=0,23"),
+
+		SETUP_CMD_NOHANDLE(
+			ESP_CMD_CWLAPOPT(ESP_CMD_CWLAPOPT_ORDERED, ESP_CMD_CWLAPOPT_MASK)),
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWLAP),
+
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
