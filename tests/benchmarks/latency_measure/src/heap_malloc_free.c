@@ -47,8 +47,18 @@ void heap_malloc_free(void)
 		count++;
 	}
 
-	PRINT_STATS_AVG("Average time for heap malloc", sum_malloc, count);
-	PRINT_STATS_AVG("Average time for heap free", sum_free, count);
+	/* if count is 0, it means that there is not enough memory heap
+	 * to do k_malloc at least once, then it's meaningless to
+	 * calculate average time of memory allocation and free.
+	 */
+	if (count == 0) {
+		printk("Error: there isn't enough memory heap to do "
+				"k_malloc at least once, please "
+				"increase heap size\n");
+	} else {
+		PRINT_STATS_AVG("Average time for heap malloc", sum_malloc, count);
+		PRINT_STATS_AVG("Average time for heap free", sum_free, count);
+	}
 
 	timing_stop();
 }
