@@ -17,6 +17,8 @@ CREATE_FLAG(base_received);
 CREATE_FLAG(pa_synced);
 CREATE_FLAG(pa_sync_lost);
 
+static struct bt_audio_broadcast_sink *g_sink;
+
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 uint32_t broadcast_id)
 {
@@ -36,8 +38,15 @@ static void pa_synced_cb(struct bt_audio_broadcast_sink *sink,
 			 struct bt_le_per_adv_sync *sync,
 			 uint32_t broadcast_id)
 {
+	if (g_sink != NULL) {
+		FAIL("Unexpected PA sync");
+		return;
+	}
+
 	printk("PA synced for broadcast sink %p with broadcast ID 0x%06X\n",
 	       sink, broadcast_id);
+
+	g_sink = sink;
 
 	SET_FLAG(pa_synced);
 }
@@ -57,11 +66,18 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 
 static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 {
+	if (g_sink == NULL) {
+		FAIL("Unexpected PA sync lost");
+		return;
+	}
+
 	if (TEST_FLAG(pa_sync_lost)) {
 		return;
 	}
 
 	printk("Sink %p disconnected\n", sink);
+
+	g_sink = NULL;
 
 	SET_FLAG(pa_sync_lost);
 }
@@ -81,7 +97,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.pa_sync_lost = pa_sync_lost_cb
 };
 
-static void test_main(void)
+static int init(void)
 {
 	int err;
 	static struct bt_audio_capability caps = {
@@ -94,7 +110,7 @@ static void test_main(void)
 	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	printk("Bluetooth initialized\n");
@@ -102,12 +118,26 @@ static void test_main(void)
 	err = bt_audio_capability_register(&caps);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
-		return;
+		return err;
 	}
 
 	UNSET_FLAG(broadcaster_found);
 	UNSET_FLAG(base_received);
 	UNSET_FLAG(pa_synced);
+
+	return 0;
+}
+
+static void test_main(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
 	printk("Scanning for broadcast sources\n");
 	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
 	if (err != 0) {
@@ -127,12 +157,52 @@ static void test_main(void)
 	PASS("Broadcast sink passed\n");
 }
 
+static void test_sink_disconnect(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Scanning for broadcast sources\n");
+	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
+	if (err != 0) {
+		FAIL("Unable to start scan for broadcast sources: %d", err);
+		return;
+	}
+	WAIT_FOR_FLAG(broadcaster_found);
+	printk("Broadcast source found, waiting for PA sync\n");
+	WAIT_FOR_FLAG(pa_synced);
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(base_received);
+	printk("BASE received\n");
+
+	err = bt_audio_broadcast_sink_delete(g_sink);
+	if (err != 0) {
+		FAIL("Unable to delete sink: %d", err);
+		return;
+	}
+	/* No "sync lost" event is generated when we initialized the disconnect */
+	g_sink = NULL;
+
+	PASS("Broadcast sink passed\n");
+}
+
 static const struct bst_test_instance test_broadcast_sink[] = {
 	{
 		.test_id = "broadcast_sink",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
+	},
+	{
+		.test_id = "broadcast_sink_disconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_sink_disconnect
 	},
 	BSTEST_END_MARKER
 };
