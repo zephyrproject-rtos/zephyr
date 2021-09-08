@@ -262,7 +262,7 @@ class ImgtoolSigner(Signer):
         if not args.quiet:
             log.banner('signing binaries')
         if in_bin:
-            out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
+            out_bin = args.sbin or str(b / 'zephyr' / f'{kernel}.signed.bin')
             sign_bin = sign_base + [in_bin, out_bin]
             if not args.quiet:
                 log.inf(f'unsigned bin: {in_bin}')
@@ -270,7 +270,7 @@ class ImgtoolSigner(Signer):
                 log.dbg(quote_sh_list(sign_bin))
             subprocess.check_call(sign_bin)
         if in_hex:
-            out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
+            out_hex = args.shex or str(b / 'zephyr' / f'{kernel}.signed.hex')
             sign_hex = sign_base + [in_hex, out_hex]
             if not args.quiet:
                 log.inf(f'unsigned hex: {in_hex}')
