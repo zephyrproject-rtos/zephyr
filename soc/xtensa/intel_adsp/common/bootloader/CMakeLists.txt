@@ -60,7 +60,7 @@ add_custom_command(TARGET bootloader
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
  )
 
-set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS -DASSEMBLY)
+set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS "-DASSEMBLY -D_ASMLANGUAGE")
 if(CONFIG_RESET_VECTOR_IN_BOOTLOADER)
   set_source_files_properties(${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S PROPERTIES COMPILE_FLAGS -DBOOTLOADER)
 endif()
