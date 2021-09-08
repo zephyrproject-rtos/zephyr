@@ -334,7 +334,7 @@ static void isr_tx(void *param)
 	lll_sync = param;
 	lll = lll_sync->adv;
 
-	/* TODO: do not hardcode to single value */
+	/* FIXME: Use implementation defined channel index */
 	lll_chan_set(0);
 
 	pdu = lll_adv_pdu_linked_next_get(lll_sync->last_pdu);
@@ -393,6 +393,7 @@ static void isr_tx(void *param)
 static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu, uint32_t cte_len_us)
 {
 	while (pdu) {
+		/* FIXME: Use implementation defined channel index */
 		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, lll->adv->phy_flags, 0,
 				       ADV_SYNC_PDU_B2B_AFS, cte_len_us);
 		pdu = lll_adv_pdu_linked_next_get(pdu);
