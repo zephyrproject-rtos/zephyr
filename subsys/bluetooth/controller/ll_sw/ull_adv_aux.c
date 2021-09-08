@@ -81,16 +81,6 @@ uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 	return 0;
 }
 
-uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
-				       uint8_t *const addr)
-{
-	if (addr) {
-		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
-	}
-
-	return adv->rnd_addr;
-}
-
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
 			    uint8_t const *const data)
 {
@@ -446,6 +436,16 @@ int ull_adv_aux_reset_finalize(void)
 	}
 
 	return 0;
+}
+
+uint8_t const *ull_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
+					   uint8_t *const addr)
+{
+	if (addr) {
+		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
+	}
+
+	return adv->rnd_addr;
 }
 
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
