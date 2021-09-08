@@ -1,0 +1,69 @@
+# Synopsys DesignWare MAC configuration options
+
+# Copyright (c) 2021 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_SNPS_DESIGNWARE_ETHERNET := snps,designware-ethernet
+
+menuconfig ETH_DWMAC
+	bool "Synopsys DesignWare MAC driver"
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on (SOC_SERIES_STM32H7X && !ETH_STM32_HAL) || MMU
+	default y if $(dt_compat_enabled,$(DT_COMPAT_SNPS_DESIGNWARE_ETHERNET))
+	help
+	  This is a driver for the Synopsys DesignWare MAC, also referred to
+	  as "DesignWare Cores Ethernet Quality-of-Service". Hardware versions
+	  4.x and 5.x are supported.
+
+	  Platform specific glue support is also required. This driver is
+	  currently available on targets using the STM32H7X series as an
+	  alternative to the eth_stm32_hal driver. Support for a generic DT
+	  and MMU based platform is also provided.
+
+	  Not yet implemented:
+	  - MDIO (currently relying on default PHY config)
+	  - PTP support
+	  - VLAN support
+	  - various hardware offloads (when available)
+
+if ETH_DWMAC
+
+config ETH_DWMAC_STM32H7X
+	bool
+	depends on SOC_SERIES_STM32H7X
+	select NOCACHE_MEMORY
+	default y
+
+config ETH_DWMAC_MMU
+	bool
+	depends on MMU
+	default y
+
+config DWMAC_NB_TX_DESCS
+	int "Number of entries in the transmit descriptor ring"
+	default 16
+	range 4 128
+	help
+	  A higher number allows for more packets to be queued which may
+	  improve throughput, but that requires more transient memory.
+	  However there must be enough descriptors to hold all fragments
+	  of a full-size packet to be transmitted or the packet will be
+	  dropped.
+
+	  Fragment size is influenced by CONFIG_NET_BUF_DATA_SIZE.
+
+config DWMAC_NB_RX_DESCS
+	int "Number of entries in the receive descriptor ring"
+	default 16
+	range 4 128
+	help
+	  Received packets are spread across the required number of fragment
+	  buffers. Each RX fragment has a size of CONFIG_NET_BUF_DATA_SIZE.
+	  There is one descriptor entry per fragment.
+
+	  A higher number allows for more packets to be received without
+	  immediate intervention from the CPU but requires more transient
+	  memory. A smaller number increases the risk of an overflow and
+	  dropped packets.
+
+endif # ETH_DWMAC
