@@ -120,7 +120,7 @@ struct mpsc_pbuf_buffer_config {
 	/* Pointer to a memory used for storing packets. */
 	uint32_t *buf;
 
-	/* Buffer size in 32 bit words. */
+	/* Buffer size in 32 bit words. Maximum buffer capacity is reduced by a word. */
 	uint32_t size;
 
 	/* Callbacks. */
@@ -131,7 +131,7 @@ struct mpsc_pbuf_buffer_config {
 	uint32_t flags;
 };
 
-/** @brief Initnialize a packet buffer.
+/** @brief Initialize a packet buffer.
  *
  * @param buffer Buffer.
  *
