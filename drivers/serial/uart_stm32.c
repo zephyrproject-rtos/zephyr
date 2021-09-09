@@ -23,6 +23,7 @@
 #include <drivers/pinmux.h>
 #include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control.h>
+#include <pm/pm.h>
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <drivers/dma/dma_stm32.h>
@@ -455,6 +456,9 @@ static void uart_stm32_poll_out(const struct device *dev,
 	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
 	}
 
+	/* do not allow system to suspend until transmission has completed */
+	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+
 	LL_USART_ClearFlag_TC(UartInstance);
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
@@ -517,6 +521,11 @@ static int uart_stm32_fifo_fill(const struct device *dev,
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint8_t num_tx = 0U;
+
+	if ((size > 0) && LL_USART_IsActiveFlag_TXE(UartInstance)) {
+		/* do not allow system to suspend until transmission has completed */
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	}
 
 	while ((size - num_tx > 0) &&
 	       LL_USART_IsActiveFlag_TXE(UartInstance)) {
@@ -792,16 +801,22 @@ static void uart_stm32_dma_rx_flush(const struct device *dev)
 static void uart_stm32_isr(const struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
+		LL_USART_ClearFlag_TC(UartInstance);
+
+		/* allow system to suspend, UART has now finished */
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+	}
+
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
 	if (LL_USART_IsEnabledIT_IDLE(UartInstance) &&
 			LL_USART_IsActiveFlag_IDLE(UartInstance)) {
 
@@ -823,13 +838,27 @@ static void uart_stm32_isr(const struct device *dev)
 		LL_USART_ClearFlag_TC(UartInstance);
 		/* Generate TX_DONE event when transmission is done */
 		async_evt_tx_done(data);
+
+		/* allow system to suspend, UART has now finished */
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
 	}
 
 	/* Clear errors */
 	uart_stm32_err_check(dev);
 #endif /* CONFIG_UART_ASYNC_API */
 }
+#elif defined(CONFIG_PM)
+static void uart_stm32_isr(const struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
+	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
+		LL_USART_ClearFlag_TC(UartInstance);
+
+		/* allow system to suspend, UART has now finished */
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
 #endif /* (CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -1051,6 +1080,9 @@ static int uart_stm32_async_tx(const struct device *dev,
 
 	/* Start TX timer */
 	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
+
+	/* do not allow system to suspend until transmission has completed */
+	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 
 	/* Enable TX DMA requests */
 	uart_stm32_dma_tx_enable(dev);
@@ -1412,7 +1444,17 @@ static int uart_stm32_init(const struct device *dev)
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	config->uconf.irq_config_func(dev);
-#endif
+#elif defined(CONFIG_PM)
+	config->irq_config_func(dev);
+#endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
+	/* Clear TC flag */
+	LL_USART_ClearFlag_TC(UartInstance);
+
+	/* Enable TC interrupt so we can release suspend constraint when done */
+	LL_USART_EnableIT_TC(UartInstance);
+#endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM) */
 
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
@@ -1420,40 +1462,6 @@ static int uart_stm32_init(const struct device *dev)
 	return 0;
 #endif
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int uart_stm32_pm_control(const struct device *dev,
-				 enum pm_device_action action)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	/* setting a low power mode */
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-#ifdef USART_ISR_BUSY
-		/* Make sure that no USART transfer is on-going */
-		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
-		}
-#endif
-		while (LL_USART_IsActiveFlag_TC(UartInstance) == 0) {
-		}
-#ifdef USART_ISR_REACK
-		/* Make sure that USART is ready for reception */
-		while (LL_USART_IsActiveFlag_REACK(UartInstance) == 0) {
-		}
-#endif
-		/* Clear OVERRUN flag */
-		LL_USART_ClearFlag_ORE(UartInstance);
-		/* Leave UartInstance unchanged */
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	/* UartInstance returning to active mode has nothing special to do */
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_ASYNC_API
 
@@ -1485,11 +1493,10 @@ static int uart_stm32_pm_control(const struct device *dev,
 
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
+	defined(CONFIG_PM)
 #define STM32_UART_IRQ_HANDLER_DECL(index)				\
-	static void uart_stm32_irq_config_func_##index(const struct device *dev)
-#define STM32_UART_IRQ_HANDLER_FUNC(index)				\
-	.irq_config_func = uart_stm32_irq_config_func_##index,
+	static void uart_stm32_irq_config_func_##index(const struct device *dev);
 #define STM32_UART_IRQ_HANDLER(index)					\
 static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
@@ -1500,9 +1507,21 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 	irq_enable(DT_INST_IRQN(index));				\
 }
 #else
-#define STM32_UART_IRQ_HANDLER_DECL(index)
-#define STM32_UART_IRQ_HANDLER_FUNC(index)
-#define STM32_UART_IRQ_HANDLER(index)
+#define STM32_UART_IRQ_HANDLER_DECL(index) /* Not used */
+#define STM32_UART_IRQ_HANDLER(index) /* Not used */
+#endif
+
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+#define STM32_UART_IRQ_HANDLER_FUNC(index)				\
+	.irq_config_func = uart_stm32_irq_config_func_##index,
+#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index) /* Not used */
+#elif defined(CONFIG_PM)
+#define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
+#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
+	.irq_config_func = uart_stm32_irq_config_func_##index,
+#else
+#define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
+#define STM32_UART_POLL_IRQ_HANDLER_FUNC(index) /* Not used */
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -1518,7 +1537,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #endif
 
 #define STM32_UART_INIT(index)						\
-STM32_UART_IRQ_HANDLER_DECL(index);					\
+STM32_UART_IRQ_HANDLER_DECL(index)					\
 									\
 static const struct soc_gpio_pinctrl uart_pins_##index[] =		\
 				ST_STM32_DT_INST_PINCTRL(index, 0);	\
@@ -1533,6 +1552,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	},								\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
 	.parity = DT_ENUM_IDX_OR(DT_DRV_INST(index), parity, UART_CFG_PARITY_NONE),	\
+	STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
 };									\
@@ -1545,7 +1565,7 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
-		    &uart_stm32_pm_control,				\
+		    NULL,						\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &uart_stm32_driver_api);				\
