@@ -695,42 +695,6 @@ void ll_reset(void)
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_CONN)
-#if defined(CONFIG_BT_CENTRAL)
-	/* Reset initiator */
-	{
-		void *rx;
-
-		err = ll_connect_disable(&rx);
-		if (!err) {
-			struct ll_scan_set *scan;
-
-			scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-			    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-				struct ll_scan_set *scan_other;
-
-				scan_other = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
-				if (scan_other) {
-					if (scan) {
-						scan->is_enabled = 0U;
-						scan->lll.conn = NULL;
-					}
-
-					scan = scan_other;
-				}
-			}
-
-			LL_ASSERT(scan);
-
-			scan->is_enabled = 0U;
-			scan->lll.conn = NULL;
-		}
-
-		ARG_UNUSED(rx);
-	}
-#endif /* CONFIG_BT_CENTRAL */
-
 	/* Reset conn role */
 	err = ull_conn_reset();
 	LL_ASSERT(!err);

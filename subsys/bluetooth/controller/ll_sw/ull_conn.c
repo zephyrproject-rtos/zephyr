@@ -759,6 +759,11 @@ int ull_conn_reset(void)
 	uint16_t handle;
 	int err;
 
+#if defined(CONFIG_BT_CENTRAL)
+	/* Reset initiator */
+	(void)ull_master_reset();
+#endif /* CONFIG_BT_CENTRAL */
+
 	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
 		disable(handle);
 	}
