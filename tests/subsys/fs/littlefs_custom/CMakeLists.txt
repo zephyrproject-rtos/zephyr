@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(littlefs_automount)
+project(littlefs_custom)
 
 # LittleFS opens files for RW by default if no flags given and crashes,
 # instead of returning error when attempting to perform operation that
