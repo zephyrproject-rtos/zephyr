@@ -34,6 +34,7 @@ static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
 	struct bt_l2cap_le_chan le;
 	bool in_use;
+	struct net_buf *pending_credit;
 } channels[CHANNELS];
 
 /* TODO Extend to support multiple servers */
@@ -57,6 +58,14 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
+
+	if (!chan->pending_credit) {
+		/* no need for extra ref, as when returning EINPROGRESS user
+		 * becomes owner of the netbuf
+		 */
+		chan->pending_credit = buf;
+		return -EINPROGRESS;
+	}
 
 	return 0;
 }
@@ -96,6 +105,12 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	struct l2cap_disconnected_ev ev;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	struct bt_conn_info info;
+
+	/* release netbuf on premature disconnection */
+	if (chan->pending_credit) {
+		net_buf_unref(chan->pending_credit);
+		chan->pending_credit = NULL;
+	}
 
 	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
 
@@ -138,6 +153,8 @@ static struct channel *get_free_channel()
 		}
 
 		chan = &channels[i];
+
+		(void)memset(chan, 0, sizeof(*chan));
 		chan->chan_id = i;
 
 		channels[i].in_use = true;
@@ -404,6 +421,33 @@ fail:
 		   BTP_STATUS_FAILED);
 }
 
+static void credits(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_credits_cmd *cmd = (void *)data;
+	struct channel *chan = &channels[cmd->chan_id];
+
+	if (!chan->in_use) {
+		goto fail;
+	}
+
+	if (chan->pending_credit) {
+		if (bt_l2cap_chan_recv_complete(&chan->le.chan,
+						chan->pending_credit) < 0) {
+			goto fail;
+		}
+
+		chan->pending_credit = NULL;
+	}
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CREDITS, CONTROLLER_INDEX,
+		   BTP_STATUS_SUCCESS);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CREDITS, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[2];
@@ -416,6 +460,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_CREDITS);
 #if defined(CONFIG_BT_EATT)
 	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
 #endif
@@ -441,6 +486,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
+		return;
+	case L2CAP_CREDITS:
+		credits(data, len);
 		return;
 #if defined(CONFIG_BT_EATT)
 	case L2CAP_DISCONNECT_EATT_CHANS:
