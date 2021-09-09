@@ -242,6 +242,11 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 static bool spi_b91_is_config_supported(const struct spi_config *config,
 					struct spi_b91_cfg *b91_config)
 {
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return false;
+	}
+
 	/* check for loop back */
 	if (config->operation & SPI_MODE_LOOP) {
 		LOG_ERR("Loop back mode not supported");

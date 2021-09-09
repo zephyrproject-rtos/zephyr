@@ -181,6 +181,10 @@ static int qmspi_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		return -ENOTSUP;
+	}
+
 	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE
 				 | SPI_MODE_LOOP)) {
 		return -ENOTSUP;
