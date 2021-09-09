@@ -6,8 +6,6 @@
 config FILE_SYSTEM_LITTLEFS
 	bool "LittleFS support"
 	depends on FILE_SYSTEM
-	depends on FLASH_MAP
-	depends on FLASH_PAGE_LAYOUT
 	help
 	  Enables LittleFS file system support.
 
@@ -69,6 +67,18 @@ config FS_LITTLEFS_BLOCK_CYCLES
 	  disable leveling.
 
 endmenu
+
+config FS_LITTLEFS_FLASH_BACKEND
+	bool "Enables the flash backend for littlefs"
+	default y
+	depends on FLASH
+	depends on FLASH_MAP
+	help
+		Through setting the device operations like open, close,
+		read, ... etc. manually it also to use littlefs on
+		custom backend device.
+		If these functions are not overridden by default the flash
+		backend is used.
 
 config FS_LITTLEFS_FC_HEAP_SIZE
 	int "Enable flexible file cache sizes for littlefs"
