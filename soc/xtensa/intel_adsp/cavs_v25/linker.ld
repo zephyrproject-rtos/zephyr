@@ -18,6 +18,7 @@ OUTPUT_ARCH(xtensa)
 #include <soc/memory.h>
 #include <autoconf.h>
 #include <linker/sections.h>
+#include <cavs-vectors.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
