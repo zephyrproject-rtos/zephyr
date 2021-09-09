@@ -107,6 +107,12 @@ config BT_MESH_PROXY
 config BT_MESH_GATT
 	bool
 
+config BT_MESH_PROXY_MSG_LEN
+	int
+	depends on BT_MESH_GATT
+	default 66 if BT_MESH_PB_GATT
+	default 33 if BT_MESH_GATT_PROXY
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
