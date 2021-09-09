@@ -511,7 +511,12 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO: Add Periodic Advertising ADI Support feature */
+	if (enable > 1U) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
