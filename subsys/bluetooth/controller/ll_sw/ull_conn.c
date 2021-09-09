@@ -547,9 +547,25 @@ uint8_t ll_version_ind_send(uint16_t handle)
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time)
+uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
+			    uint16_t tx_time)
 {
 	struct ll_conn *conn;
+
+#if defined(CONFIG_BT_CTLR_PARAM_CHECK)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_CODED);
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	if ((tx_octets > CONFIG_BT_BUF_ACL_TX_SIZE) ||
+	    (tx_time > tx_time_max)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+#endif /* CONFIG_BT_CTLR_PARAM_CHECK */
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
