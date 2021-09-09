@@ -243,7 +243,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_set_family(pkt, AF_INET6);
 		family = AF_INET6;
 		break;
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 	case NET_ETH_PTYPE_PTP:
 		family = AF_UNSPEC;
 		break;
@@ -665,7 +665,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		} else {
 			goto send;
 		}
-	} else if (IS_ENABLED(CONFIG_NET_GPTP) && net_pkt_is_gptp(pkt)) {
+	} else if (IS_ENABLED(CONFIG_NET_L2_PTP) && net_pkt_is_ptp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_PTP);
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_LLDP);
@@ -1143,7 +1143,7 @@ const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 #endif /* CONFIG_PTP_CLOCK */
 
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_NET_L2_PTP)
 int net_eth_get_ptp_port(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -1157,7 +1157,7 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 
 	ctx->port = port;
 }
-#endif /* CONFIG_NET_GPTP */
+#endif /* CONFIG_NET_L2_PTP */
 
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {
