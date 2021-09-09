@@ -3202,6 +3202,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
+                        and "host" not in plat.supported_toolchains \
                         and tc.type != 'unit':
                     discards[instance] = discards.get(instance, "Not supported by the toolchain")
 
