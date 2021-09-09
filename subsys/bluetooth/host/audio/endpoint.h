@@ -34,7 +34,7 @@ struct bt_audio_ep_cb {
 #define BT_AUDIO_EP_REMOTE	0x01
 
 struct bt_audio_broadcast_source {
-	uint8_t bis_count;
+	uint8_t chan_count;
 	uint8_t subgroup_count;
 	uint32_t pd; /** QoS Presentation Delay */
 	uint32_t broadcast_id; /* 24 bit */
