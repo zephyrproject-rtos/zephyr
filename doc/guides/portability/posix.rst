@@ -255,7 +255,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     iscntrl(),
     isdigit(),+
     isgraph(),+
-    islower(),
+    islower(),+
     isprint(),+
     ispunct(),
     isspace(),+
