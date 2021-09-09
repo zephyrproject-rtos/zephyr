@@ -34,6 +34,8 @@ static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
 	struct bt_l2cap_le_chan le;
 	bool in_use;
+	bool stalled;
+	struct net_buf *nbuf;
 } channels[CHANNELS];
 
 /* TODO Extend to support multiple servers */
@@ -57,6 +59,16 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
+
+	if (chan->stalled) {
+		 /* TODO should be list but since currently only 1 credit is
+		  * supported we can keep it simpler for now
+		  */
+		if (!chan->nbuf) {
+			chan->nbuf = buf;
+			return -EINPROGRESS;
+		}
+	}
 
 	return 0;
 }
@@ -404,6 +416,41 @@ fail:
 		   BTP_STATUS_FAILED);
 }
 
+static void set_option(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_set_option_cmd *cmd = (void *) data;
+	struct channel *chan = &channels[cmd->chan_id];
+
+	if (!chan->in_use) {
+		goto fail;
+	}
+
+	switch (cmd->option) {
+	case L2CAP_OPTION_STALL:
+		chan->stalled = true;
+		break;
+	case L2CAP_OPTION_UNSTALL:
+		if (chan->nbuf &&
+		    bt_l2cap_chan_recv_complete(&chan->le.chan,
+						chan->nbuf) < 0) {
+			goto fail;
+		}
+		chan->stalled = false;
+		chan->nbuf = NULL;
+		break;
+	default:
+		goto fail;
+	}
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SET_OPTION, CONTROLLER_INDEX,
+		   BTP_STATUS_SUCCESS);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_SET_OPTION, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void supported_commands(uint8_t *data, uint16_t len)
 {
 	uint8_t cmds[2];
@@ -416,6 +463,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_SET_OPTION);
 #if defined(CONFIG_BT_EATT)
 	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
 #endif
@@ -441,6 +489,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
+		return;
+	case L2CAP_SET_OPTION:
+		set_option(data, len);
 		return;
 #if defined(CONFIG_BT_EATT)
 	case L2CAP_DISCONNECT_EATT_CHANS:

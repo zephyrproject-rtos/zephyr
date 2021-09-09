@@ -787,6 +787,15 @@ struct l2cap_accept_connection_cmd {
 	uint16_t result;
 } __packed;
 
+#define L2CAP_OPTION_STALL		0x00
+#define L2CAP_OPTION_UNSTALL		0x01
+
+#define L2CAP_SET_OPTION		0x08
+struct l2cap_set_option_cmd {
+	uint8_t chan_id;
+	uint8_t option;
+} __packed;
+
 #define L2CAP_DISCONNECT_EATT_CHANS		0x09
 struct l2cap_disconnect_eatt_chans_cmd {
 	uint8_t address_type;
