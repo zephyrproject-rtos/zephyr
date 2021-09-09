@@ -207,6 +207,11 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_SLAVE)) {
