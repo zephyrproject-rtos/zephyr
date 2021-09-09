@@ -304,8 +304,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
 	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
-	if (sizeof(sr_com_hdr->ext_hdr_adv_data) -
-	    sr_com_hdr->ext_hdr_len < len) {
+	if ((PDU_AC_EXT_HEADER_SIZE_MIN + ext_hdr_len + len) >
+	    PDU_AC_PAYLOAD_SIZE_MAX) {
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
@@ -749,6 +749,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	sec_len += ad_len;
 
 	/* Check AdvData overflow */
+	/* TODO: need aux_chain_ind support */
 	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* FIXME: release allocations */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
