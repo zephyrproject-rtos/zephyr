@@ -1195,7 +1195,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 	/* TODO: The following encoding should be done for each subgroup once
 	 * supported
 	 */
-	net_buf_simple_add_u8(buf, source->bis_count);
+	net_buf_simple_add_u8(buf, source->chan_count);
 	net_buf_simple_add_u8(buf, codec->id);
 	net_buf_simple_add_le16(buf, codec->cid);
 	net_buf_simple_add_le16(buf, codec->vid);
@@ -1235,7 +1235,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 
 	/* Create BIS index bitfield */
 	bis_index = 0;
-	for (int i = 0; i < source->bis_count; i++) {
+	for (int i = 0; i < source->chan_count; i++) {
 		bis_index++;
 		net_buf_simple_add_u8(buf, bis_index);
 		net_buf_simple_add_u8(buf, 0); /* unused length field */
@@ -1299,6 +1299,22 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 	}
 
 	return 0;
+}
+
+static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
+{
+	for (size_t i = 0; i < source->chan_count; i++) {
+		struct bt_audio_chan *chan = &source->chans[i];
+
+		chan->ep->chan = NULL;
+		chan->ep = NULL;
+		chan->codec = NULL;
+		chan->qos = NULL;
+		chan->iso = NULL;
+		chan->state = BT_AUDIO_CHAN_IDLE;
+	}
+
+	(void)memset(source, 0, sizeof(*source));
 }
 
 int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
@@ -1366,13 +1382,14 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	}
 
 	source->chans = chans;
-	source->bis_count = num_chan;
+	source->chan_count = num_chan;
 	for (size_t i = 0; i < num_chan; i++) {
 		struct bt_audio_chan *chan = &chans[i];
 
 		err = bt_audio_broadcast_source_setup_chan(index, chan, codec, qos);
 		if (err != 0) {
 			BT_DBG("Failed to setup chans[%zu]: %d", i, err);
+			broadcast_source_cleanup(source);
 			return err;
 		}
 
@@ -1384,7 +1401,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 				   &source->adv);
 	if (err != 0) {
 		BT_DBG("Failed to create advertising set (err %d)", err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
@@ -1393,7 +1410,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	if (err != 0) {
 		BT_DBG("Failed to set periodic advertising parameters (err %d)",
 		       err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
@@ -1416,7 +1433,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	err = bt_le_ext_adv_set_data(source->adv, &ad, 1, NULL, 0);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
@@ -1425,7 +1442,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	err = bt_audio_set_base(source, codec);
 	if (err != 0) {
 		BT_DBG("Failed to set base data (err %d)", err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
@@ -1433,7 +1450,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	err = bt_le_per_adv_start(source->adv);
 	if (err != 0) {
 		BT_DBG("Failed to enable periodic advertising (err %d)", err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
@@ -1442,11 +1459,11 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 				  BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		BT_DBG("Failed to start extended advertising (err %d)", err);
-		/* TODO: cleanup */
+		broadcast_source_cleanup(source);
 		return err;
 	}
 
-	for (size_t i = 0; i < source->bis_count; i++) {
+	for (size_t i = 0; i < source->chan_count; i++) {
 		struct bt_audio_chan *chan = &chans[i];
 
 		chan->ep->broadcast_source = source;
@@ -1482,7 +1499,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 		return -EBADMSG;
 	}
 
-	for (size_t i = 0; i < source->bis_count; i++) {
+	for (size_t i = 0; i < source->chan_count; i++) {
 		chan = &source->chans[i];
 
 		chan_attach(NULL, chan, chan->ep, NULL, codec);
@@ -1519,7 +1536,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 	}
 
 	/* Create BIG */
-	param.num_bis = source->bis_count;
+	param.num_bis = source->chan_count;
 	param.bis_channels = source->bis;
 	param.framing = source->qos->framing;
 	param.packing = 0; /*  TODO: Add to QoS struct */
@@ -1613,15 +1630,8 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 		return err;
 	}
 
-	for (size_t i = 0; i < source->bis_count; i++) {
-		chan = &source->chans[i];
-
-		chan->ep->broadcast_source = NULL;
-		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
-	}
-
 	/* Reset the broadcast source */
-	(void)memset(source, 0, sizeof(*source));
+	broadcast_source_cleanup(source);
 
 	return 0;
 }
