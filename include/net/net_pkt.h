@@ -148,10 +148,10 @@ struct net_pkt {
 				     * the driver yet.
 				     * Used only if defined(CONFIG_NET_TCP)
 				     */
-		uint8_t gptp_pkt: 1; /* For outgoing packet: is this packet
-				   * a GPTP packet.
-				   * Used only if defined (CONFIG_NET_GPTP)
-				   */
+		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
+				     * a L2 PTP packet.
+				     * Used only if defined (CONFIG_NET_L2_PTP)
+				     */
 	};
 
 	uint8_t forwarding : 1;	/* Are we forwarding this pkt
@@ -320,14 +320,14 @@ static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 	pkt->family = family;
 }
 
-static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
+static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
 {
-	return !!(pkt->gptp_pkt);
+	return !!(pkt->ptp_pkt);
 }
 
-static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
+static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
 {
-	pkt->gptp_pkt = is_gptp;
+	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_captured(struct net_pkt *pkt)
