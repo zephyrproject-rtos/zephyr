@@ -43,8 +43,8 @@ struct bt_audio_broadcast_source {
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
-	/* The "main" channel used to create the broadcast source */
-	struct bt_audio_chan *chan;
+	/* The channels used to create the broadcast source */
+	struct bt_audio_chan *chans;
 };
 
 struct bt_audio_broadcast_sink {

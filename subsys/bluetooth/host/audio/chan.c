@@ -1301,13 +1301,13 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 	return 0;
 }
 
-int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
+int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
+				     uint8_t num_chan,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **out_source)
 {
 	struct bt_audio_broadcast_source *source;
-	struct bt_audio_chan *tmp;
 	struct bt_data ad;
 	uint8_t index;
 	int err;
@@ -1336,13 +1336,19 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 	/* Set out_source to NULL until the source has actually been created */
 	*out_source = NULL;
 
-	CHECKIF(chan == NULL) {
-		BT_DBG("chan is NULL");
+	CHECKIF(chans == NULL) {
+		BT_DBG("chans is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(codec == NULL) {
 		BT_DBG("codec is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_chan > BROADCAST_STREAM_CNT) {
+		BT_DBG("Too many channels provided: %u/%u",
+		       num_chan, BROADCAST_STREAM_CNT);
 		return -EINVAL;
 	}
 
@@ -1359,25 +1365,18 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 		return -ENOMEM;
 	}
 
-	err = bt_audio_broadcast_source_setup_chan(index, chan, codec, qos);
-	if (err != 0) {
-		BT_DBG("Failed to setup chan %p: %d", chan, err);
-		return err;
-	}
+	source->chans = chans;
+	source->bis_count = num_chan;
+	for (size_t i = 0; i < num_chan; i++) {
+		struct bt_audio_chan *chan = &chans[i];
 
-	source->bis_count = 0;
-	source->bis[source->bis_count++] = &chan->ep->iso;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		err = bt_audio_broadcast_source_setup_chan(index, tmp, codec,
-							   qos);
+		err = bt_audio_broadcast_source_setup_chan(index, chan, codec, qos);
 		if (err != 0) {
-			BT_DBG("Failed to setup chan %p: %d", chan, err);
-			/* TODO: Cleanup already setup channels */
+			BT_DBG("Failed to setup chans[%zu]: %d", i, err);
 			return err;
 		}
 
-		source->bis[source->bis_count++] = &tmp->ep->iso;
+		source->bis[i] = &chan->ep->iso;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
@@ -1447,17 +1446,14 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	chan->ep->broadcast_source = source;
-	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
+	for (size_t i = 0; i < source->bis_count; i++) {
+		struct bt_audio_chan *chan = &chans[i];
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->broadcast_source = source;
-
-		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
+		chan->ep->broadcast_source = source;
+		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
 	}
 
 	source->qos = qos;
-	source->chan = chan;
 
 	BT_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
@@ -1467,11 +1463,10 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
 }
 
 int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
-					  struct bt_codec *codec,
-					  struct bt_codec_qos *qos)
+				       struct bt_codec *codec,
+				       struct bt_codec_qos *qos)
 {
 	struct bt_audio_chan *chan;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	CHECKIF(source == NULL) {
@@ -1479,7 +1474,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 		return -EINVAL;
 	}
 
-	chan = source->chan;
+	chan = &source->chans[0];
 
 	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
 		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
@@ -1487,10 +1482,10 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 		return -EBADMSG;
 	}
 
-	chan_attach(NULL, chan, chan->ep, NULL, codec);
+	for (size_t i = 0; i < source->bis_count; i++) {
+		chan = &source->chans[i];
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		chan_attach(NULL, tmp, tmp->ep, NULL, codec);
+		chan_attach(NULL, chan, chan->ep, NULL, codec);
 	}
 
 	err = bt_audio_set_base(source, codec);
@@ -1515,7 +1510,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = source->chan;
+	chan = &source->chans[0];
 
 	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
 		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
@@ -1550,7 +1545,7 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = source->chan;
+	chan = &source->chans[0];
 
 	if (chan->state != BT_AUDIO_CHAN_STREAMING) {
 		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_STREAMING state: %u",
@@ -1577,7 +1572,6 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 {
 	struct bt_audio_chan *chan;
-	struct bt_audio_chan *tmp;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -1586,7 +1580,7 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = source->chan;
+	chan = &source->chans[0];
 
 	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
 		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
@@ -1619,16 +1613,15 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 		return err;
 	}
 
+	for (size_t i = 0; i < source->bis_count; i++) {
+		chan = &source->chans[i];
+
+		chan->ep->broadcast_source = NULL;
+		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
+	}
+
 	/* Reset the broadcast source */
 	(void)memset(source, 0, sizeof(*source));
-
-	chan->ep->broadcast_source = NULL;
-	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->broadcast_source = NULL;
-		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
-	}
 
 	return 0;
 }

@@ -50,17 +50,11 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	/* Link all channels */
-	memset(broadcast_source_chans, 0, sizeof(broadcast_source_chans));
-	for (int i = 0; i < ARRAY_SIZE(broadcast_source_chans); i++) {
-		for (int j = i + 1; j < ARRAY_SIZE(broadcast_source_chans); j++) {
-			bt_audio_chan_link(&broadcast_source_chans[i],
-					   &broadcast_source_chans[j]);
-		}
+	(void)memset(broadcast_source_chans, 0, sizeof(broadcast_source_chans));
 
-	}
-
-	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
+	printk("Creating broadcast source\n");
+	err = bt_audio_broadcast_source_create(broadcast_source_chans,
+					       ARRAY_SIZE(broadcast_source_chans),
 					       &preset_48_1_2.codec,
 					       &preset_48_1_2.qos,
 					       &source);
@@ -69,9 +63,9 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_audio_broadcast_source_reconfig(source,
-						    &preset_48_2_2.codec,
-						    &preset_48_2_2.qos);
+	printk("Reconfiguring broadcast source\n");
+	err = bt_audio_broadcast_source_reconfig(source, &preset_48_2_2.codec,
+						 &preset_48_2_2.qos);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d", err);
 		return;
@@ -79,6 +73,7 @@ static void test_main(void)
 
 	k_sleep(K_SECONDS(10));
 
+	printk("Deleting broadcast source\n");
 	err = bt_audio_broadcast_source_delete(source);
 	if (err != 0) {
 		FAIL("Unable to delete broadcast source: %d", err);
@@ -87,7 +82,9 @@ static void test_main(void)
 	source = NULL;
 
 	/* Recreate broadcast source to verify that it's possible */
-	err = bt_audio_broadcast_source_create(&broadcast_source_chans[0],
+	printk("Recreating broadcast source\n");
+	err = bt_audio_broadcast_source_create(broadcast_source_chans,
+					       ARRAY_SIZE(broadcast_source_chans),
 					       &preset_48_1_2.codec,
 					       &preset_48_1_2.qos,
 					       &source);
@@ -96,6 +93,7 @@ static void test_main(void)
 		return;
 	}
 
+	printk("Deleting broadcast source\n");
 	err = bt_audio_broadcast_source_delete(source);
 	if (err != 0) {
 		FAIL("Unable to delete broadcast source: %d", err);
