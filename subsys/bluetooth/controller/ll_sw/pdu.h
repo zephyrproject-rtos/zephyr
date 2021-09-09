@@ -279,7 +279,7 @@ struct pdu_adv_com_ext_adv {
 #endif
 	union {
 		struct pdu_adv_ext_hdr ext_hdr;
-		uint8_t ext_hdr_adv_data[254];
+		uint8_t ext_hdr_adv_data[0];
 	};
 } __packed;
 
