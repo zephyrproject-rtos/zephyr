@@ -24,7 +24,8 @@ properties:
       Mount file system on boot if present.
 
       During initialization the file system driver will attempt to mount
-      this partition.
+      this partition. This will default for littlefs partitions to using
+      the flash API.
 
   read-only:
     type: boolean
