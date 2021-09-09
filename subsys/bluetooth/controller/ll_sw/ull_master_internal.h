@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+int ull_master_reset(void);
 void ull_master_cleanup(struct node_rx_hdr *rx_free);
 void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		      struct lll_conn *lll);
