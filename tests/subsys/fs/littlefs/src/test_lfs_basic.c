@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ * Copyright (c) 2021 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +42,7 @@ static int clear_partition(struct fs_mount_t *mp)
 {
 	TC_PRINT("clearing partition %s\n", mp->mnt_point);
 
-	zassert_equal(testfs_lfs_wipe_partition(mp),
+	zassert_equal(testfs_lfs_wipe_flash_partition(mp),
 		      TC_PASS,
 		      "failed to wipe partition");
 
@@ -485,6 +486,68 @@ static int check_large(void)
 	return TC_PASS;
 }
 
+static int check_ram_disk(void)
+{
+	struct fs_mount_t *mp = &testfs_ram_disk_mnt;
+	struct fs_statvfs stat;
+	struct fs_littlefs *littlefs_config = (struct fs_littlefs *)mp->fs_data;
+
+	zassert_equal(testfs_lfs_wipe_ram_disk(), TC_PASS,
+		      "clear partition failed");
+
+	TC_PRINT("program size: %zu, cache size: %zu\n",
+		(size_t)littlefs_config->cfg.prog_size, (size_t)littlefs_config->cfg.cache_size);
+
+	zassert_equal(fs_mount(mp), 0,
+		      "ram disk mount failed");
+
+	zassert_equal(fs_statvfs(mp->mnt_point, &stat), 0,
+		      "statvfs failed");
+
+	TC_PRINT("%s: bsize %lu ; frsize %lu ; blocks %lu ; bfree %lu\n",
+		 mp->mnt_point,
+		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
+	zassert_equal(stat.f_bsize, 16,
+		      "bsize fail");
+	zassert_equal(stat.f_frsize, 4096,
+		      "frsize fail");
+	zassert_equal(stat.f_blocks, 16,
+		      "blocks fail");
+	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
+		      "bfree fail");
+
+	zassert_equal(fs_unmount(mp), 0,
+		      "ram disk unmount failed");
+
+	return TC_PASS;
+}
+
+static int check_ram_disk_and_large(void)
+{
+	struct fs_mount_t *mp_ram_disk = &testfs_ram_disk_default_mnt;
+	struct fs_mount_t *mp_large = &testfs_large_mnt;
+
+	zassert_equal(testfs_lfs_wipe_ram_disk(), TC_PASS,
+		      "clear partition failed");
+
+	zassert_equal(clear_partition(mp_large), TC_PASS,
+		      "clear partition failed");
+
+	zassert_equal(fs_mount(mp_ram_disk), 0,
+		      "ram disk mount failed");
+
+	zassert_equal(fs_mount(mp_large), 0,
+		      "large mount failed");
+
+	zassert_equal(fs_unmount(mp_ram_disk), 0,
+		      "ram disk unmount failed");
+
+	zassert_equal(fs_unmount(mp_large), 0,
+		      "large unmount failed");
+
+	return TC_PASS;
+}
+
 static int num_files(struct fs_mount_t *mp)
 {
 	struct testfs_path path;
@@ -646,5 +709,11 @@ void test_lfs_basic(void)
 
 		zassert_equal(check_large(), TC_PASS,
 			      "check large failed");
+
+		zassert_equal(check_ram_disk(), TC_PASS,
+			      "check ram disk failed");
+
+		zassert_equal(check_ram_disk_and_large(), TC_PASS,
+			      "check ram disk and large failed");
 	}
 }

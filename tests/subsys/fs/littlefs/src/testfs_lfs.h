@@ -13,10 +13,13 @@
 #define TESTFS_MNT_POINT_SMALL "/sml"
 #define TESTFS_MNT_POINT_MEDIUM "/med"
 #define TESTFS_MNT_POINT_LARGE "/lrg"
+#define TESTFS_MNT_POINT_RAM_DISK "/ram"
 
 extern struct fs_mount_t testfs_small_mnt;
 extern struct fs_mount_t testfs_medium_mnt;
 extern struct fs_mount_t testfs_large_mnt;
+extern struct fs_mount_t testfs_ram_disk_mnt;
+extern struct fs_mount_t testfs_ram_disk_default_mnt;
 
 #define MEDIUM_IO_SIZE 64
 #define MEDIUM_CACHE_SIZE 256
@@ -36,6 +39,14 @@ extern struct fs_mount_t testfs_large_mnt;
  *
  * @return a standard test result code.
  */
-int testfs_lfs_wipe_partition(const struct fs_mount_t *mp);
+int testfs_lfs_wipe_flash_partition(const struct fs_mount_t *mp);
+
+/** Wipe all data from the ram disk device.
+ *
+ * This will cause it to be reformatted the next time it is mounted.
+ *
+ * @return a standard test result code.
+ */
+int testfs_lfs_wipe_ram_disk(void);
 
 #endif /* _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_LFS_H_ */

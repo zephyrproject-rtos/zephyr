@@ -39,7 +39,7 @@ static int write_read(const char *tag,
 	fs_file_t_init(&file);
 	TC_PRINT("clearing %s for %s write/read test\n",
 		 mp->mnt_point, tag);
-	if (testfs_lfs_wipe_partition(mp) != TC_PASS) {
+	if (testfs_lfs_wipe_flash_partition(mp) != TC_PASS) {
 		return TC_FAIL;
 	}
 

@@ -35,7 +35,7 @@ static int clean_mount(struct fs_mount_t *mp)
 {
 	TC_PRINT("checking clean mount\n");
 
-	zassert_equal(testfs_lfs_wipe_partition(mp),
+	zassert_equal(testfs_lfs_wipe_flash_partition(mp),
 		      TC_PASS,
 		      "failed to wipe partition");
 	zassert_equal(fs_mount(mp), 0,

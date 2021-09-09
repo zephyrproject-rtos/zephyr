@@ -13,7 +13,7 @@ static void cleanup(struct fs_mount_t *mp)
 {
 	TC_PRINT("Clean %s\n", mp->mnt_point);
 
-	zassert_equal(testfs_lfs_wipe_partition(mp), TC_PASS,
+	zassert_equal(testfs_lfs_wipe_flash_partition(mp), TC_PASS,
 		      "Failed to clean partition");
 }
 
