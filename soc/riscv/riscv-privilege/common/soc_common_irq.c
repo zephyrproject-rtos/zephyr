@@ -90,7 +90,7 @@ int arch_irq_is_enabled(unsigned int irq)
 }
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
-void soc_interrupt_init(void)
+__weak void soc_interrupt_init(void)
 {
 	/* ensure that all interrupts are disabled */
 	(void)irq_lock();

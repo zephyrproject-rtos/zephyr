@@ -63,11 +63,13 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
 		/* fallthrough */
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+#if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
 		__fallthrough;
 #endif /* defined(CONFIG_BT_CONN) */
+#endif /* CONFIG_BT_CONN ||  CONFIG_BT_ISO */
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 		return BT_HCI_EVT_FLAG_RECV_PRIO;

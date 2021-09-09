@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Profile APIs.
+ *  @brief Bluetooth mesh Profile APIs.
  */
 
 /*

@@ -22,16 +22,15 @@ GTEXT(__soc_handle_irq)
  * Exception number is given as parameter via register a0.
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
-	/* Clear exception number from CSR mip register */
-	li t1, 1
-	sll t0, t1, a0
-	csrrc t1, mip, t0
-	move t2,ra
-	call    get_irq
-	move ra,t2
-
-	/* Return */
-	jalr x0, ra
+	/* store ra */
+	addi sp, sp, -4
+	sw ra, 0(sp)
+	/* get interrupt number and clear interrupt status of soc */
+	call get_irq
+	/* restore ra */
+	lw ra, 0(sp)
+	addi sp, sp, 4
+	ret
 
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by

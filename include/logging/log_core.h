@@ -558,6 +558,12 @@ static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 			sizeof(struct log_source_dynamic_data);
 }
 
+/* Initialize runtime filters */
+void z_log_runtime_filters_init(void);
+
+/* Notify log_core that a backend was enabled. */
+void z_log_notify_backend_enabled(void);
+
 /** @brief Dummy function to trigger log messages arguments type checking. */
 static inline __printf_like(1, 2)
 void z_log_printf_arg_checker(const char *fmt, ...)
@@ -709,6 +715,11 @@ bool log_is_strdup(const void *buf);
  * @param buf Buffer.
  */
 void log_free(void *buf);
+
+/**
+ * @brief Get current number of allocated buffers for string duplicates.
+ */
+uint32_t log_get_strdup_pool_current_utilization(void);
 
 /**
  * @brief Get maximal number of simultaneously allocated buffers for string

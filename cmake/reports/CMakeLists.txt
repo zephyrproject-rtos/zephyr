@@ -2,6 +2,7 @@
 
 set(flag_for_ram_report ram)
 set(flag_for_rom_report rom)
+set(flag_for_footprint all -q)
 set(report_depth 99)
 
 if(DEFINED ZEPHYR_WORKSPACE)
@@ -10,7 +11,7 @@ elseif(DEFINED WEST_TOPDIR)
   set(workspace_arg "--workspace=${WEST_TOPDIR}")
 endif()
 
-foreach(report ram_report rom_report)
+foreach(report ram_report rom_report footprint)
   add_custom_target(
     ${report}
     ${PYTHON_EXECUTABLE}
@@ -19,12 +20,12 @@ foreach(report ram_report rom_report)
     -z ${ZEPHYR_BASE}
     -o ${CMAKE_BINARY_DIR}
     ${workspace_arg}
-    --json ${CMAKE_BINARY_DIR}/${flag_for_${report}}.json
     -d ${report_depth}
     ${flag_for_${report}}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
     USES_TERMINAL
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 endforeach()
 

@@ -36,9 +36,6 @@
 #include "ll.h"
 #include "hci.h"
 
-#define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
-
 /* Multiply bt 1.25 to get MS */
 #define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 
@@ -360,7 +357,7 @@ static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1",
+		"5.0", "5.1", "5.2", "5.3"
 	};
 
 	if (ver < ARRAY_SIZE(str)) {
@@ -418,7 +415,7 @@ void le_phy_updated(struct bt_conn *conn,
 }
 #endif
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 	.le_param_req = le_param_req,
@@ -576,8 +573,6 @@ static void bt_ready(int err)
 
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
-
-	bt_conn_cb_register(&conn_callbacks);
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
@@ -1003,6 +998,9 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "no-name")) {
 			param.options &= ~BT_LE_ADV_OPT_USE_NAME;
+		} else if (!strcmp(arg, "name-ad")) {
+			param.options |= BT_LE_ADV_OPT_USE_NAME;
+			param.options |= BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
 		} else if (!strcmp(arg, "one-time")) {
 			param.options |= BT_LE_ADV_OPT_ONE_TIME;
 		} else if (!strcmp(arg, "disable-37")) {
@@ -1128,6 +1126,9 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "name")) {
 			param->options |= BT_LE_ADV_OPT_USE_NAME;
+		} else if (!strcmp(arg, "name-ad")) {
+			param->options |= BT_LE_ADV_OPT_USE_NAME;
+			param->options |= BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
 		} else if (!strcmp(arg, "low")) {
 			param->options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		} else if (!strcmp(arg, "disable-37")) {
@@ -1243,6 +1244,9 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 		if (strcmp(arg, "scan-response") &&
 		    *data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
+			shell_print(shell, "Failed to set advertising data: "
+					   "Maximum entries limit reached");
+
 			return -ENOEXEC;
 		}
 
@@ -1260,6 +1264,8 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 			(*data_len)++;
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
+				shell_print(shell, "Failed to set advertising data: "
+						   "duplicate scan-response option");
 				return -ENOEXEC;
 			}
 
@@ -1272,11 +1278,13 @@ static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 				      sizeof(hex_data) - hex_data_len);
 
 			if (!len || (len - 1) != (hex_data[hex_data_len])) {
+				shell_print(shell, "Failed to set advertising data: "
+						   "malformed hex data");
 				return -ENOEXEC;
 			}
 
 			data[*data_len].type = hex_data[hex_data_len + 1];
-			data[*data_len].data_len = hex_data[hex_data_len];
+			data[*data_len].data_len = len - 2;
 			data[*data_len].data = &hex_data[hex_data_len + 2];
 			(*data_len)++;
 			hex_data_len += len;
@@ -3072,7 +3080,7 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name] "  \
-		      "[directed "HELP_ADDR_LE"] [mode: low]"                 \
+		      "[name-ad] [directed "HELP_ADDR_LE"] [mode: low]"       \
 		      "[disable-37] [disable-38] [disable-39]"
 #else
 #define EXT_ADV_SCAN_OPT ""
@@ -3103,7 +3111,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name] "
-		      "[one-time] [disable-37] [disable-38] [disable-39]",
+		      "[one-time] [name-ad]"
+		      "[disable-37] [disable-38] [disable-39]",
 		      cmd_advertise, 2, 8),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "

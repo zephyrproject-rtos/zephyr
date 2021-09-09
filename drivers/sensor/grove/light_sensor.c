@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT grove_light
+#define DT_DRV_COMPAT seeed_grove_light
 
 #include <drivers/adc.h>
 #include <device.h>

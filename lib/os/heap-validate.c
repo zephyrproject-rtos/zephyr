@@ -17,17 +17,12 @@
  * running one and corrupting it. YMMV.
  */
 
-static chunkid_t max_chunkid(struct z_heap *h)
-{
-	return h->end_chunk - min_chunk_size(h);
-}
-
 #define VALIDATE(cond) do { if (!(cond)) { return false; } } while (0)
 
 static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
 	VALIDATE(c >= right_chunk(h, 0));
-	VALIDATE(c <= max_chunkid(h));
+	VALIDATE(c < h->end_chunk);
 	VALIDATE(chunk_size(h, c) < h->end_chunk);
 	return true;
 }
@@ -80,7 +75,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	/*
 	 * Walk through the chunks linearly, verifying sizes and end pointer.
 	 */
-	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		if (!valid_chunk(h, c)) {
 			return false;
 		}
@@ -126,7 +121,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * USED.
 	 */
 	chunkid_t prev_chunk = 0;
-	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		if (!chunk_used(h, c) && !solo_free_header(h, c)) {
 			return false;
 		}
@@ -164,7 +159,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	/* Now we are valid, but have managed to invert all the in-use
 	 * fields.  One more linear pass to fix them up
 	 */
-	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		set_chunk_used(h, c, !chunk_used(h, c));
 	}
 	return true;

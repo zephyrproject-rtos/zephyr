@@ -11,9 +11,13 @@ menuconfig SHELL_BACKENDS
 
 if SHELL_BACKENDS
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
+
 config SHELL_BACKEND_SERIAL
 	bool "Enable serial backend"
-	default y
+	default "$(dt_chosen_enabled,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
+	default y if !HAS_DTS
 	select SERIAL
 	select RING_BUFFER
 	help
@@ -34,20 +38,6 @@ config SHELL_PROMPT_UART
 	default "uart:~$ "
 	help
 	  Displayed prompt name for UART backend.
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
-
-config UART_SHELL_ON_DEV_NAME
-	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used for the
-	  SHELL UART backend.
-	  In case when DTS is enabled (HAS_DTS), the default value is
-	  set from DTS chosen node 'zephyr,shell-uart' but can be overridden
-	  here.
 
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
@@ -80,6 +70,13 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	depends on !SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	help
 	  Determines how often UART is polled for RX byte.
+
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	bool "Check DTR signal before TX"
+	default y if USB_UART_CONSOLE
+	depends on UART_LINE_CTRL
+	help
+	  Check DTR signal before TX.
 
 module = SHELL_BACKEND_SERIAL
 default-timeout = 100

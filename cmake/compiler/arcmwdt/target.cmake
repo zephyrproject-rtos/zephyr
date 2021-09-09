@@ -26,6 +26,10 @@ set(NOSTDINC "")
 
 list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
+if(CONFIG_ARCMWDT_LIBC AND CONFIG_LIB_CPLUSPLUS)
+  list(APPEND NOSTDINC ${TOOLCHAIN_HOME}/arc/lib/src/c++/inc)
+endif()
+
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
 # link a dummy C file.
@@ -39,3 +43,11 @@ endforeach()
 # common compile options, no copyright msg, little-endian, no small data,
 # no MWDT stack checking
 list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata -Hoff=Stackcheck_alloca)
+
+# The MWDT compiler can replace some code with call to builtin functions.
+# We can't rely on these functions presence if we don't use MWDT libc.
+# NOTE: the option name '-fno-builtin' is misleading a bit - we still can
+# manually call __builtin_** functions even if we specify it.
+if(NOT CONFIG_ARCMWDT_LIBC)
+  list(APPEND TOOLCHAIN_C_FLAGS -fno-builtin)
+endif()

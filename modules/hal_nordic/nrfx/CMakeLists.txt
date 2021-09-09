@@ -15,6 +15,9 @@ zephyr_include_directories(.)
 
 # Define MDK defines globally
 zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X       NRF51)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAA       NRF51422_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAB       NRF51422_XXAB)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAC       NRF51422_XXAC)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52805            NRF52805_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52810            NRF52810_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52811            NRF52811_XXAA)
@@ -26,6 +29,15 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840            NRF52840_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
+
+zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
+                                 ENABLE_APPROTECT)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
+                                 ENABLE_APPROTECT_USER_HANDLING)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_LOCK
+                                 ENABLE_SECURE_APPROTECT)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
+                                 ENABLE_SECURE_APPROTECT_USER_HANDLING)
 
 # Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
 zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)

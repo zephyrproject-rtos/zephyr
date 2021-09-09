@@ -536,7 +536,7 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 	int rc = fs_mount(&littlefs_mnt);
 
 	if (rc != 0) {
-		shell_error(shell, "Error mounting %u as littlefs: %d", rc);
+		shell_error(shell, "Error mounting as littlefs: %d", rc);
 		return -ENOEXEC;
 	}
 

@@ -12,6 +12,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test_net_dns_sd, LOG_LEVEL_DBG);
 
+#include <net/net_context.h>
+#include <net/net_pkt.h>
+
 #include "dns_pack.h"
 #include "dns_sd.h"
 
@@ -50,6 +53,9 @@ extern int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 			  uint16_t *host_offset);
 extern size_t service_proto_size(const struct dns_sd_rec *ref);
 extern bool rec_is_valid(const struct dns_sd_rec *ref);
+extern int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
+			  struct sockaddr *dst, socklen_t *dst_len);
+
 
 /** Text for advertised service */
 static const uint8_t nasxxxxxx_text[] = "\x06" "path=/";
@@ -607,6 +613,76 @@ static void test_dns_sd_rec_match(void)
 	zassert_equal(true, dns_sd_rec_match(&record, &filter_ok), "");
 }
 
+/** Test @ref setup_dst_addr */
+static void test_setup_dst_addr(void)
+{
+	int ret;
+	struct net_if *iface;
+	struct sockaddr dst;
+	socklen_t dst_len;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	/* IPv4 case */
+	struct net_context *ctx_v4;
+	struct net_pkt *pkt_v4;
+	struct in_addr addr_v4_expect = { { { 224, 0, 0, 251 } } };
+
+	memset(&dst, 0, sizeof(struct sockaddr));
+
+	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx_v4);
+	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
+
+	pkt_v4 = net_pkt_alloc_with_buffer(iface, 0, AF_INET,
+					   IPPROTO_UDP, K_SECONDS(1));
+	zassert_not_null(pkt_v4, "Packet alloc failed");
+
+	zassert_equal(0, setup_dst_addr(ctx_v4, pkt_v4, &dst, &dst_len), "");
+	zassert_equal(255, ctx_v4->ipv4_ttl, "");
+	zassert_true(net_ipv4_addr_cmp(&addr_v4_expect,
+				       &net_sin(&dst)->sin_addr), "");
+	zassert_equal(8, dst_len, "");
+
+#if defined(CONFIG_NET_IPV6)
+	/* IPv6 case */
+	struct net_context *ctx_v6;
+	struct net_pkt *pkt_v6;
+	struct in6_addr addr_v6_expect = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0xfb } } };
+
+	memset(&dst, 0, sizeof(struct sockaddr));
+
+	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &ctx_v6);
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
+
+	pkt_v6 = net_pkt_alloc_with_buffer(iface, 0, AF_INET6,
+					   IPPROTO_UDP, K_SECONDS(1));
+	zassert_not_null(pkt_v6, "Packet alloc failed");
+
+	zassert_equal(0, setup_dst_addr(ctx_v6, pkt_v6, &dst, &dst_len), "");
+	zassert_equal(255, ctx_v6->ipv6_hop_limit, "");
+	zassert_true(net_ipv6_addr_cmp(&addr_v6_expect,
+				       &net_sin6(&dst)->sin6_addr), "");
+	zassert_equal(24, dst_len, "");
+#endif
+
+	/* Unknown family case */
+
+	struct net_context *ctx_xx;
+	struct net_pkt *pkt_xx;
+
+	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &ctx_xx);
+	zassert_equal(ret, 0, "Create IPV4 udp context failed");
+
+	pkt_xx = net_pkt_alloc_with_buffer(iface, 0, AF_PACKET,
+					   IPPROTO_UDP, K_SECONDS(1));
+	zassert_not_null(pkt_xx, "Packet alloc failed");
+
+	zassert_equal(-EPFNOSUPPORT,
+		      setup_dst_addr(ctx_xx, pkt_xx, &dst, &dst_len), "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(dns_sd_tests,
@@ -619,7 +695,8 @@ void test_main(void)
 			 ztest_unit_test(test_add_a_record),
 			 ztest_unit_test(test_add_aaaa_record),
 			 ztest_unit_test(test_dns_sd_handle_ptr_query),
-			 ztest_unit_test(test_dns_sd_rec_match));
+			 ztest_unit_test(test_dns_sd_rec_match),
+			 ztest_unit_test(test_setup_dst_addr));
 
 	ztest_run_test_suite(dns_sd_tests);
 }

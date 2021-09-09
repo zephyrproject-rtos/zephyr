@@ -2,11 +2,6 @@
 
 zephyr_library()
 
-if(CONFIG_COVERAGE)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
-endif()
-
 zephyr_library_sources(
   thread.c
   thread_entry_wrapper.S

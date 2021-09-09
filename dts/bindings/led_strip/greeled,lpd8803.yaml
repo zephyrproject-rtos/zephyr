@@ -1,0 +1,8 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: GreeLed LPD8803 SPI LED strip
+
+compatible: "greeled,lpd8803"
+
+include: spi-device.yaml

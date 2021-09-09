@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(usb_ecm);
 #include <net_private.h>
 
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 #include <usb/class/usb_cdc.h>
 #include <usb_descriptor.h>
 
@@ -53,10 +52,10 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	.iad = {
 		.bLength = sizeof(struct usb_association_descriptor),
-		.bDescriptorType = USB_ASSOCIATION_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,
 		.bFirstInterface = 0,
 		.bInterfaceCount = 0x02,
-		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
+		.bFunctionClass = USB_BCC_CDC_CONTROL,
 		.bFunctionSubClass = ECM_SUBCLASS,
 		.bFunctionProtocol = 0,
 		.iFunction = 0,
@@ -66,11 +65,11 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* CDC Communication interface */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 1,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceClass = USB_BCC_CDC_CONTROL,
 		.bInterfaceSubClass = ECM_SUBCLASS,
 		.bInterfaceProtocol = 0,
 		.iInterface = 0,
@@ -78,14 +77,14 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Header Functional Descriptor */
 	.if0_header = {
 		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = USB_CS_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_CS_INTERFACE,
 		.bDescriptorSubtype = HEADER_FUNC_DESC,
-		.bcdCDC = sys_cpu_to_le16(USB_1_1),
+		.bcdCDC = sys_cpu_to_le16(USB_SRN_1_1),
 	},
 	/* Union Functional Descriptor */
 	.if0_union = {
 		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = USB_CS_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_CS_INTERFACE,
 		.bDescriptorSubtype = UNION_FUNC_DESC,
 		.bControlInterface = 0,
 		.bSubordinateInterface0 = 1,
@@ -93,7 +92,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Ethernet Networking Functional descriptor */
 	.if0_netfun_ecm = {
 		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),
-		.bDescriptorType = USB_CS_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_CS_INTERFACE,
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,
 		.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */
@@ -104,7 +103,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Notification EP Descriptor */
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = CDC_ECM_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
@@ -117,11 +116,11 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* CDC Data Interface */
 	.if1_0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 1,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 0,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+		.bInterfaceClass = USB_BCC_CDC_DATA,
 		.bInterfaceSubClass = 0,
 		.bInterfaceProtocol = 0,
 		.iInterface = 0,
@@ -131,11 +130,11 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* CDC Data Interface */
 	.if1_1 = {
 		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 1,
 		.bAlternateSetting = 1,
 		.bNumEndpoints = 2,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+		.bInterfaceClass = USB_BCC_CDC_DATA,
 		.bInterfaceSubClass = ECM_SUBCLASS,
 		.bInterfaceProtocol = 0,
 		.iInterface = 0,
@@ -143,7 +142,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Data Endpoint IN */
 	.if1_1_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = CDC_ECM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
@@ -154,7 +153,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	/* Data Endpoint OUT */
 	.if1_1_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = CDC_ECM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
@@ -205,19 +204,20 @@ static int ecm_class_handler(struct usb_setup_packet *setup, int32_t *len,
 	}
 
 	if (setup->bmRequestType != USB_CDC_ECM_REQ_TYPE) {
-		LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
+		/*
+		 * Only host-to-device, type class, recipient interface
+		 * requests are accepted.
+		 */
+		return -EINVAL;
+	}
+
+	if (setup->bRequest == USB_CDC_SET_ETH_PKT_FILTER) {
+		LOG_INF("Set Interface %u Packet Filter 0x%04x not supported",
+			setup->wIndex, setup->wValue);
 		return 0;
 	}
 
-	switch (setup->bRequest) {
-	case USB_CDC_SET_ETH_PKT_FILTER:
-		LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
-		break;
-	default:
-		break;
-	}
-
-	return 0;
+	return -ENOTSUP;
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
@@ -402,7 +402,7 @@ struct usb_cdc_ecm_mac_descr {
 USBD_STRING_DESCR_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
 	.bLength = USB_STRING_DESCRIPTOR_LENGTH(
 			CONFIG_USB_DEVICE_NETWORK_ECM_MAC),
-	.bDescriptorType = USB_STRING_DESC,
+	.bDescriptorType = USB_DESC_STRING,
 	.bString = CONFIG_USB_DEVICE_NETWORK_ECM_MAC
 };
 

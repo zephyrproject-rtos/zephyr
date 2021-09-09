@@ -11,10 +11,10 @@ And a highly integrated embedded controller with system functions.
 It is suitable for mobile system applications.
 
 .. figure:: it81302_board.jpg
-     :width: 2016px
-     :height: 1512px
+     :width: 550px
+     :height: 452px
      :align: center
-     :alt: It81302 EVB
+     :alt: IT81302 EVB
 
 To find out more about ITE, visit our World Wide Web at:`ITE's website`_
 

@@ -1,8 +1,0 @@
-# Copyright (c) 2019, Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-description: Colorway LPD8803 SPI LED strip
-
-compatible: "colorway,lpd8803"
-
-include: spi-device.yaml

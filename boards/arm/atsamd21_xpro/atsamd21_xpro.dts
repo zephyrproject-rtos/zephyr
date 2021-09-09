@@ -68,6 +68,8 @@
 	current-speed = <9600>;
 	rxpo = <3>;
 	txpo = <2>;
+
+	pinctrl-0 = <&pa11c_sercom0_pad3 &pa10c_sercom0_pad2>;
 };
 
 &sercom1 {
@@ -76,6 +78,8 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pa19c_sercom1_pad3 &pa16c_sercom1_pad0>;
 };
 
 &sercom2 {
@@ -92,6 +96,8 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pa23c_sercom3_pad1 &pa22c_sercom3_pad0>;
 };
 
 &sercom5 {
@@ -103,6 +109,6 @@
 	#size-cells = <0>;
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };

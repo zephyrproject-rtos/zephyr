@@ -356,7 +356,7 @@ static void adc_sam_isr(const struct device *dev)
 		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
 		.cfg_func = adc##n##_sam_cfg_func,			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
-		.afec_trg_pin = ATMEL_SAM_DT_PIN(n, 0),			\
+		.afec_trg_pin = ATMEL_SAM_DT_INST_PIN(n, 0),		\
 	};								\
 									\
 	static struct adc_sam_data adc##n##_sam_data = {		\

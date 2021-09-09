@@ -148,7 +148,7 @@ and a ST morpho connector. Board is configured as follows:
 - USB DP : PA12
 - I2C : PB8, PB9
 - PWM : PE13
-- SPI : PA4, PA5, PA6, PA7
+- SPI : PD14, PA5, PA6, PA7
 
 Note. The Arduino Uno v3 specified SPI device conflicts with the on-board ETH
 device on pin PA7.

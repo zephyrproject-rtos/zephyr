@@ -104,6 +104,7 @@ struct bt_aics_server {
 
 /* Struct used as a common type for the api */
 struct bt_aics {
+	bool client_instance;
 	union {
 		struct bt_aics_server srv;
 		struct bt_aics_client cli;
@@ -116,17 +117,17 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn,
 				   const void *data, uint16_t length);
 int bt_aics_client_register(struct bt_aics *inst);
 int bt_aics_client_unregister(struct bt_aics *inst);
-int bt_aics_client_state_get(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_type_get(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_status_get(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_unmute(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_mute(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_automatic_gain_set(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t gain);
-int bt_aics_client_description_get(struct bt_conn *conn, struct bt_aics *inst);
-int bt_aics_client_description_set(struct bt_conn *conn, struct bt_aics *inst,
+int bt_aics_client_state_get(struct bt_aics *inst);
+int bt_aics_client_gain_setting_get(struct bt_aics *inst);
+int bt_aics_client_type_get(struct bt_aics *inst);
+int bt_aics_client_status_get(struct bt_aics *inst);
+int bt_aics_client_unmute(struct bt_aics *inst);
+int bt_aics_client_mute(struct bt_aics *inst);
+int bt_aics_client_manual_gain_set(struct bt_aics *inst);
+int bt_aics_client_automatic_gain_set(struct bt_aics *inst);
+int bt_aics_client_gain_set(struct bt_aics *inst, int8_t gain);
+int bt_aics_client_description_get(struct bt_aics *inst);
+int bt_aics_client_description_set(struct bt_aics *inst,
 				   const char *description);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AICS_INTERNAL_ */

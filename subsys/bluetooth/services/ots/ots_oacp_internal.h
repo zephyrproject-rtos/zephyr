@@ -60,6 +60,14 @@ enum bt_gatt_ots_oacp_res_code {
 	BT_GATT_OTS_OACP_RES_OPER_FAILED    = 0x0A
 };
 
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC 1
+
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_TRUNC(mode) \
+	((mode) & BIT(BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC))
+
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_RFU(mode) \
+	((mode) & ~BIT(BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC))
+
 /* Object Action Control Point procedure definition. */
 struct bt_gatt_ots_oacp_proc {
 	enum bt_gatt_ots_oacp_proc_type type;
@@ -83,6 +91,24 @@ struct bt_gatt_ots_oacp_proc {
 		} write_params;
 	};
 };
+
+/* Size of Object Action Control Point create procedure with 16-bit UUID object type */
+#define BT_GATT_OTS_OACP_CREATE_UUID16_PARAMS_SIZE 7
+
+/* Size of Object Action Control Point create procedure with 32-bit UUID object type */
+#define BT_GATT_OTS_OACP_CREATE_UUID32_PARAMS_SIZE 9
+
+/* Size of Object Action Control Point create procedure with 128-bit UUID object type */
+#define BT_GATT_OTS_OACP_CREATE_UUID128_PARAMS_SIZE 21
+
+/* Size of Object Action Control Point checksum calculation procedure */
+#define BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE 8
+
+/* Size of Object Action Control Point read procedure */
+#define BT_GATT_OTS_OACP_READ_PARAMS_SIZE 8
+
+/* Size of Object Action Control Point write procedure */
+#define BT_GATT_OTS_OACP_WRITE_PARAMS_SIZE 9
 
 ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,

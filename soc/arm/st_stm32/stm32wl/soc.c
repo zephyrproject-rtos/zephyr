@@ -13,6 +13,7 @@
 #include <init.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <stm32wlxx_ll_system.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -27,6 +28,10 @@ static int stm32wl_init(const struct device *arg)
 	uint32_t key;
 
 	ARG_UNUSED(arg);
+
+	/* Enable CPU data and instruction cache */
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnableDataCache();
 
 	key = irq_lock();
 

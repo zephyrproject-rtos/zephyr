@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Peripheral Periodic Advertising Synchronization Transfer (PAST)
+tests:
+  sample.bluetooth.peripheral_past:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86 nrf52_bsim
+    tags: bluetooth

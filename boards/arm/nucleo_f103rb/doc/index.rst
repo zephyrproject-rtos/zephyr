@@ -95,6 +95,8 @@ The Zephyr nucleo_f103rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -122,7 +124,7 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1 TX/RX : PA9/PA10
 - UART_2 TX/RX : PA2/PA3 (ST-Link Virtual COM Port)
-- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
+- SPI1 NSS/SCK/MISO/MOSI : PB6/PA5/PA6/PA7 (Arduino SPI)
 - SPI2 SCK/MISO/MOSI : PB12/PB13/PB14/PB15
 - I2C1 SDA/SCL: PB9/PB8 (Arduino I2C)
 - PWM1_CH1: PA8

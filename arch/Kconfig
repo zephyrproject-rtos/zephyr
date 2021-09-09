@@ -253,7 +253,7 @@ config USERSPACE
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
 	  with the kernel via system calls. See Zephyr documentation for more
-	  details	about this feature.
+	  details about this feature.
 
 	  If a user thread overflows its stack, this will be caught and the
 	  kernel itself will be shielded from harm. Enabling this option
@@ -701,6 +701,17 @@ config DEMAND_PAGING_ALLOW_IRQ
 	  runs with interrupts disabled for the entire operation. However,
 	  ISRs may also page fault.
 
+config DEMAND_PAGING_PAGE_FRAMES_RESERVE
+	int "Number of page frames reserved for paging"
+	default 32 if !LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	default 0
+	help
+	  This sets the number of page frames that will be reserved for
+	  paging that do not count towards free memory. This is to
+	  ensure that there are some page frames available for paging
+	  code and data. Otherwise, it would be possible to exhaust
+	  all page frames via anonymous memory mappings.
+
 config DEMAND_PAGING_STATS
 	bool "Gather Demand Paging Statistics"
 	help
@@ -923,7 +934,7 @@ config ICACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
-choice
+choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
 	default HAS_ARCH_CACHE

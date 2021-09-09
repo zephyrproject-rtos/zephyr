@@ -105,6 +105,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pe9
 			     &tim1_ch2_pe11
 			     &tim1_ch3_pe13>;
@@ -125,6 +126,7 @@
 
 	pwm15: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };
@@ -137,6 +139,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 

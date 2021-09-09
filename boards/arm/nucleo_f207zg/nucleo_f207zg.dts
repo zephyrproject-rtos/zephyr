@@ -76,8 +76,8 @@
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
-		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -99,7 +99,7 @@
 	status = "okay";
 };
 
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
@@ -112,8 +112,16 @@
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
+	status = "okay";
+};
+
+&dma2 {
 	status = "okay";
 };
 
@@ -128,6 +136,22 @@
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Last sector of size 128KB at the end of 1MB flash is set
+		 * for storage.
+		 */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
 };
 
 &dac1 {

@@ -66,8 +66,13 @@ struct modem_context {
 	char *data_imsi;
 	char *data_iccid;
 #endif
+#if defined(CONFIG_MODEM_CELL_INFO)
+	int   data_operator;
+	int   data_lac;
+	int   data_cellid;
+#endif
 	int   data_rssi;
-
+	bool  is_automatic_oper;
 	/* pin config */
 	struct modem_pin *pins;
 	size_t pins_len;

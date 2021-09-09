@@ -131,6 +131,18 @@
 	 (DT_PROP_BY_PHANDLE(node_id, prop, port) << 5))
 
 /**
+ * If the node has the property, expands to
+ * NRF_DT_GPIOS_TO_PSEL(node_id, prop). The default_value argument is
+ * not expanded in this case.
+ *
+ * Otherwise, expands to default_value.
+ */
+#define NRF_DT_GPIOS_TO_PSEL_OR(node_id, prop, default_value)	\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),		\
+		    (NRF_DT_GPIOS_TO_PSEL(node_id, prop)),	\
+		    (default_value))
+
+/**
  * Error out the build if 'prop' is set on node 'node_id' and
  * DT_GPIO_CTLR(node_id, prop) is not an SoC GPIO controller,
  * i.e. a node with compatible "nordic,nrf-gpio".

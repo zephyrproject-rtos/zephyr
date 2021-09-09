@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Health Client Model APIs.
+ *  @brief Health Client Model APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_HEALTH_CLI_H_
 
 /**
- * @brief Bluetooth Mesh
- * @defgroup bt_mesh_health_cli Bluetooth Mesh Health Client Model
+ * @brief Health Client Model
+ * @defgroup bt_mesh_health_cli Health Client Model
  * @ingroup bt_mesh
  * @{
  */
@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-/** Mesh Health Client Model Context */
+/** Health Client Model Context */
 struct bt_mesh_health_cli {
 	/** Composition data model entry pointer. */
 	struct bt_mesh_model *model;

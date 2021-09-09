@@ -192,6 +192,7 @@ static int terminal_size_get(const struct shell *shell)
 	return ret_val;
 }
 
+#ifdef CONFIG_SHELL_VT100_COMMANDS
 static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
@@ -201,6 +202,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
+#endif
 
 static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 					char **argv)
@@ -224,6 +226,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+#ifdef CONFIG_SHELL_VT100_COMMANDS
 static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -243,6 +246,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 
 	return 0;
 }
+#endif
 
 static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 {
@@ -391,11 +395,13 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
+#ifdef CONFIG_SHELL_VT100_COMMANDS
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_colors,
 	SHELL_CMD_ARG(off, NULL, SHELL_HELP_COLORS_OFF, cmd_colors_off, 1, 0),
 	SHELL_CMD_ARG(on, NULL, SHELL_HELP_COLORS_ON, cmd_colors_on, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_echo,
 	SHELL_CMD_ARG(off, NULL, SHELL_HELP_ECHO_OFF, cmd_echo_off, 1, 0),
@@ -422,7 +428,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_backspace_mode,
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_shell,
 	SHELL_CMD(backspace_mode, &m_sub_backspace_mode,
 			SHELL_HELP_BACKSPACE_MODE, NULL),
-	SHELL_CMD(colors, &m_sub_colors, SHELL_HELP_COLORS, NULL),
+	SHELL_COND_CMD(CONFIG_SHELL_VT100_COMMANDS, colors, &m_sub_colors,
+		       SHELL_HELP_COLORS, NULL),
 	SHELL_CMD_ARG(echo, &m_sub_echo, SHELL_HELP_ECHO, cmd_echo, 1, 1),
 	SHELL_COND_CMD(CONFIG_SHELL_STATS, stats, &m_sub_shell_stats,
 			SHELL_HELP_STATISTICS, NULL),
@@ -435,7 +442,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_resize,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(clear, NULL, SHELL_HELP_CLEAR, cmd_clear, 1, 0);
+SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_VT100_COMMANDS, clear, NULL,
+			    SHELL_HELP_CLEAR, cmd_clear, 1, 0);
 SHELL_CMD_REGISTER(shell, &m_sub_shell, SHELL_HELP_SHELL, NULL);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_HISTORY, history, NULL,
 			SHELL_HELP_HISTORY, cmd_history, 1, 0);

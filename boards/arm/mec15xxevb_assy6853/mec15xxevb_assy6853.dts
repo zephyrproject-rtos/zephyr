@@ -121,11 +121,11 @@
 &espi0 {
 	status = "okay";
 	io_girq = <19>;
-	vw_girq = <24>;
+	vw_girqs = <24 25>;
 	pc_girq = <15>;
 };
 
-&timer3 {
+&timer5 {
 	status = "okay";
 };
 

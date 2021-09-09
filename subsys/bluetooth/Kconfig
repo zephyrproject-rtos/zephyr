@@ -1,6 +1,7 @@
 # Bluetooth configuration options
 
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT
@@ -106,6 +107,16 @@ config BT_BROADCASTER
 
 endmenu
 
+config BT_LIM_ADV_TIMEOUT
+	int "Timeout for limited advertising in 1s units"
+	default 30
+	range 1 180
+	help
+	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
+	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
+	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
+	  than 180s.
+
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
 	help
@@ -172,7 +183,7 @@ config BT_OBSERVER
 
 endmenu
 
-source "subsys/bluetooth/services/Kconfig"
+rsource "services/Kconfig"
 
 config BT_CONN
 	bool
@@ -224,17 +235,34 @@ endif # BT_CONN
 
 
 config BT_ISO
-	bool "Bluetooth Isochronous Channel Support [EXPERIMENTAL]"
+	bool # hidden
+
+config BT_ISO_UNICAST
+	bool "Bluetooth Isochronous Channel Unicast Support [EXPERIMENTAL]"
 	depends on BT_CONN
+	select BT_ISO
 	help
-	  Select this to enable Isochronous Channel support.
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels.
+
+# TODO: Split between broadcaster and observer for optimization
+config BT_ISO_BROADCAST
+	bool "Bluetooth Isochronous Channel Broadcast Support [EXPERIMENTAL]"
+	select BT_ISO
+	select BT_EXT_ADV
+	select BT_PER_ADV
+	select BT_PER_ADV_SYNC
+	help
+	  This option enables support for Bluetooth Broadcast
+	  Isochronous channels.
 
 if BT_ISO
 
 config BT_ISO_MAX_CHAN
 	int "Maximum number of simultaneous ISO channels"
 	depends on BT_ISO
-	default BT_MAX_CONN
+	default BT_MAX_CONN if BT_CONN
+	default 1
 	range 1 64
 	help
 	  Maximum number of simultaneous Bluetooth isochronous channels
@@ -280,15 +308,16 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 
-# TODO: Split between broadcaster and observer for optimization
-config BT_ISO_BROADCAST
-	bool "Bluetooth ISO Broadcast Channels supported"
-	select BT_EXT_ADV
-	select BT_PER_ADV
-	select BT_PER_ADV_SYNC
+if BT_ISO_UNICAST
+
+config BT_ISO_MAX_CIG
+	int "Maximum number of Connected Isochronous Groups (CIGs) to support"
+	default 1
 	help
-	  This option enables support for Bluetooth Broadcast
-	  Isochronous channels.
+	  Maximum number of CIGs that are supported by the host. A CIG can be
+	  used for either transmitting or receiving.
+
+endif # BT_ISO_UNICAST
 
 if BT_ISO_BROADCAST
 
@@ -302,10 +331,10 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-source "subsys/bluetooth/common/Kconfig"
-source "subsys/bluetooth/host/Kconfig"
-source "subsys/bluetooth/controller/Kconfig"
-source "subsys/bluetooth/shell/Kconfig"
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "shell/Kconfig"
 
 endif # BT_HCI
 
@@ -322,7 +351,7 @@ config BT_COMPANY_ID
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
-source "subsys/bluetooth/mesh/Kconfig"
-source "subsys/bluetooth/audio/Kconfig"
+rsource "mesh/Kconfig"
+rsource "audio/Kconfig"
 
 endif # BT

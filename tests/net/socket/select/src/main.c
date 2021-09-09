@@ -23,8 +23,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-/* On QEMU, poll() which waits takes +20ms from the requested time. */
-#define FUZZ 20
+/* On QEMU, poll() which waits takes +30ms from the requested time. */
+#define FUZZ 30
+
+#define TIMEOUT_MS 60
 
 void test_fd_set(void)
 {
@@ -108,11 +110,11 @@ void test_select(void)
 	FD_SET(c_sock, &readfds);
 	FD_SET(s_sock, &readfds);
 	tval.tv_sec = 0;
-	tval.tv_usec = 30 * 1000;
+	tval.tv_usec = TIMEOUT_MS * 1000;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ, "");
+	zassert_true(tstamp >= TIMEOUT_MS && tstamp <= TIMEOUT_MS + FUZZ, "");
 	zassert_equal(res, 0, "");
 
 
@@ -123,7 +125,7 @@ void test_select(void)
 	FD_SET(c_sock, &readfds);
 	FD_SET(s_sock, &readfds);
 	tval.tv_sec = 0;
-	tval.tv_usec = 30 * 1000;
+	tval.tv_usec = TIMEOUT_MS * 1000;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;

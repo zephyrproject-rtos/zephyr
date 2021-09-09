@@ -6,6 +6,7 @@
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"
 	depends on HAS_MCUX_FLEXCAN && CLOCK_CONTROL
+	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable support for mcux flexcan driver.
 

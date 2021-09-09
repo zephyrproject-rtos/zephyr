@@ -41,6 +41,9 @@ struct ll_scan_aux_set {
 	struct ull_hdr      ull;
 	struct lll_scan_aux lll;
 
+	/* lll_scan or lll_sync */
+	void *parent;
+
 	struct node_rx_hdr *rx_head;
 	struct node_rx_hdr *rx_last;
 };

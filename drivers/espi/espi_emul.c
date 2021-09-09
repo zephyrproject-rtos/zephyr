@@ -87,6 +87,49 @@ static bool espi_emul_get_channel_status(const struct device *dev, enum espi_cha
 	return (data->cfg.channel_caps & ch);
 }
 
+static int espi_emul_read_lpc_request(const struct device *dev,
+				      enum lpc_peripheral_opcode op,
+				      uint32_t *data)
+{
+	const struct emul_espi_device_api *api;
+	struct espi_emul *emul;
+	struct espi_emul_data *emul_data = dev->data;
+
+	if (!(emul_data->cfg.channel_caps & ESPI_CHANNEL_VWIRE)) {
+		LOG_ERR("bad channel vwire");
+		return -EINVAL;
+	}
+
+	emul = espi_emul_find(dev, EMUL_ESPI_HOST_CHIPSEL);
+	if (!emul) {
+		LOG_ERR("espi_emul not found");
+		return -ENOTSUP;
+	}
+
+	__ASSERT_NO_MSG(emul->api);
+	api = emul->api;
+
+	switch (op) {
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	case EACPI_GET_SHARED_MEMORY:
+		__ASSERT_NO_MSG(api->get_acpi_shm);
+		*data = (uint32_t)api->get_acpi_shm(emul);
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int espi_emul_write_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+				       uint32_t *data)
+{
+	ARG_UNUSED(dev);
+
+	return -EINVAL;
+}
+
 static int espi_emul_send_vwire(const struct device *dev, enum espi_vwire_signal vw, uint8_t level)
 {
 	const struct emul_espi_device_api *api;
@@ -172,6 +215,8 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	.espi_api = {
 		.config = espi_emul_config,
 		.get_channel_status = espi_emul_get_channel_status,
+		.read_lpc_request = espi_emul_read_lpc_request,
+		.write_lpc_request = espi_emul_write_lpc_request,
 		.send_vwire = espi_emul_send_vwire,
 		.receive_vwire = espi_emul_receive_vwire,
 		.manage_callback = espi_emul_manage_callback

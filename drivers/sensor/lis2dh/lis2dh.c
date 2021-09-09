@@ -332,10 +332,12 @@ int lis2dh_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-	status = lis2dh_init_interrupt(dev);
-	if (status < 0) {
-		LOG_ERR("Failed to initialize interrupts.");
-		return status;
+	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
+		status = lis2dh_init_interrupt(dev);
+		if (status < 0) {
+			LOG_ERR("Failed to initialize interrupts.");
+			return status;
+		}
 	}
 #endif
 
@@ -417,28 +419,16 @@ int lis2dh_init(const struct device *dev)
 	})
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-#define LIS2DH_HAS_IRQ_IDX(inst, idx)					\
-		DT_INST_PROP_HAS_IDX(inst, irq_gpios, idx)
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)		\
+	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),		\
+		    (GPIO_DT_SPEC_INST_GET_BY_IDX(id, prop, idx)),	\
+		    ({.port = NULL, .pin = 0, .dt_flags = 0}))
 
 #define LIS2DH_CFG_INT(inst) \
-	.irq1_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),	\
-		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 0)),	\
-		(NULL)),						\
-	.irq1_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
-		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 0)),		\
-		(0)),						\
-	.irq1_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
-		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 0)),	\
-		(0)),						\
-	.irq2_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),	\
-		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 1)),	\
-		(NULL)),						\
-	.irq2_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
-		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 1)),		\
-		(0)),						\
-	.irq2_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
-		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 1)),	\
-		(0)),
+	.gpio_drdy =							\
+	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0),	\
+	.gpio_int =							\
+	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1),
 #else
 #define LIS2DH_CFG_INT(inst)
 #endif /* CONFIG_LIS2DH_TRIGGER */

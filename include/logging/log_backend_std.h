@@ -48,15 +48,7 @@ log_backend_std_put(const struct log_output *const output, uint32_t flags,
 {
 	log_msg_get(msg);
 
-	flags |= (LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP);
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
+	flags |= log_backend_std_get_flags();
 
 	log_output_msg_process(output, msg, flags);
 

@@ -29,7 +29,7 @@ config BT_L2CAP_TX_FRAG_COUNT
 config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
 	default 253 if BT_BREDR
-	default 69 if BT_MESH_PROXY
+	default 69 if BT_MESH_GATT
 	default 65 if BT_SMP
 	default 23
 	range 65 2000 if BT_SMP

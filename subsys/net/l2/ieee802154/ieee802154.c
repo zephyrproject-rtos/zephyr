@@ -119,6 +119,66 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 	addr->type = NET_LINK_IEEE802154;
 }
 
+/**
+ * Filters the destination address of the frame (used when IEEE802154_HW_FILTER
+ * is not available).
+ */
+static bool ieeee802154_check_dst_addr(struct net_if *iface,
+				      struct ieee802154_mhr *mhr)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
+
+	/*
+	 * Apply filtering requirements from chapter 6.7.2 of the IEEE
+	 * 802.15.4-2015 standard:
+	 */
+
+	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_NONE) {
+		/* TODO: apply d.4 and d.5 when PAN coordinator is implemented */
+		/* also, macImplicitBroadcast is not implemented */
+		return false;
+	}
+
+	/*
+	 * c. If a destination PAN ID is included in the frame, it shall match
+	 * macPanId or shall be the broadcastPAN ID
+	 */
+	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
+			dst_plain->pan_id == ctx->pan_id)) {
+		LOG_DBG("Frame PAN ID does not match!");
+		return false;
+	}
+
+	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
+		/*
+		 * d.1. A short destination address is included in the frame,
+		 * and it matches either macShortAddress orthe broadcast
+		 * address.
+		 */
+		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||
+				dst_plain->addr.short_addr == ctx->short_addr)) {
+			LOG_DBG("Frame dst address (short) does not match!");
+			return false;
+		}
+
+	} else if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_EXTENDED) {
+		/*
+		 * An extended destination address is included in the frame and
+		 * matches either macExtendedAddress or, if macGroupRxMode is
+		 * set to TRUE, an 64-bit extended unique identifier (EUI-64)
+		 * group address.
+		 */
+		if (memcmp(dst_plain->addr.ext_addr, ctx->ext_addr,
+					IEEE802154_EXT_ADDR_LENGTH) != 0) {
+			LOG_DBG("Frame dst address (ext) does not match!");
+			return false;
+		}
+	}
+
+	return true;
+}
+
 #ifdef CONFIG_NET_6LO
 static inline
 enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
@@ -126,8 +186,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 					       size_t hdr_len)
 {
 	enum net_verdict verdict = NET_CONTINUE;
-	uint32_t src;
-	uint32_t dst;
 
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
@@ -144,16 +202,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 			     net_pkt_lladdr_dst(pkt)->len);
 	}
 
-	/** Uncompress will drop the current fragment. Pkt ll src/dst address
-	 * will then be wrong and must be updated according to the new fragment.
-	 */
-	src = net_pkt_lladdr_src(pkt)->addr ?
-		net_pkt_lladdr_src(pkt)->addr -
-		(net_pkt_data(pkt) - hdr_len) : 0;
-	dst = net_pkt_lladdr_dst(pkt)->addr ?
-		net_pkt_lladdr_dst(pkt)->addr -
-		(net_pkt_data(pkt) - hdr_len) : 0;
-
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
 	if (verdict != NET_CONTINUE) {
@@ -166,10 +214,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_pkt_lladdr_src(pkt)->addr = src ?
-		(net_pkt_data(pkt) - hdr_len) + src : NULL;
-	net_pkt_lladdr_dst(pkt)->addr = dst ?
-		(net_pkt_data(pkt) - hdr_len) + dst : NULL;
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true);
 out:
@@ -182,11 +226,19 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_pkt *pkt)
 {
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->api;
 	struct ieee802154_mpdu mpdu;
 	size_t hdr_len;
 
 	if (!ieee802154_validate_frame(net_pkt_data(pkt),
 				       net_pkt_get_len(pkt), &mpdu)) {
+		return NET_DROP;
+	}
+
+	/* validate LL destination address (when IEEE802154_HW_FILTER not available) */
+	if (!(radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) &&
+			!ieeee802154_check_dst_addr(iface, &mpdu.mhr)) {
 		return NET_DROP;
 	}
 

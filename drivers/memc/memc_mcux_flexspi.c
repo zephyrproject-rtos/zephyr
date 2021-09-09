@@ -127,7 +127,10 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.ahbConfig.enableAHBCachable = config->ahb_cacheable;
 	flexspi_config.ahbConfig.enableAHBPrefetch = config->ahb_prefetch;
 	flexspi_config.ahbConfig.enableReadAddressOpt = config->ahb_read_addr_opt;
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) && \
+	FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
 	flexspi_config.enableCombination = config->combination_mode;
+#endif
 	flexspi_config.enableSckBDiffOpt = config->sck_differential_clock;
 	flexspi_config.rxSampleClock = config->rx_sample_clock;
 

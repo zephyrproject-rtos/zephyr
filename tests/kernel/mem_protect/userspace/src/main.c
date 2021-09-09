@@ -138,6 +138,7 @@ static void test_write_control(void)
 	zassert_unreachable("Write to control register did not fault");
 
 #elif defined(CONFIG_ARM)
+#if defined(CONFIG_CPU_CORTEX_M)
 	unsigned int msr_value;
 
 	clear_fault();
@@ -150,6 +151,17 @@ static void test_write_control(void)
 	msr_value = __get_CONTROL();
 	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
+#else
+	uint32_t val;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	val = __get_SCTLR();
+	val |= SCTLR_DZ_Msk;
+	__set_SCTLR(val);
+
+	zassert_unreachable("Write to control register did not fault");
+#endif
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
 
@@ -276,12 +288,24 @@ extern int _k_neg_eagain;
  */
 static void test_write_kernro(void)
 {
+	bool in_rodata;
+
 	/* Try to write to kernel RO. */
 	const char *const ptr = (const char *const)&_k_neg_eagain;
 
-	zassert_true(ptr < _image_rodata_end &&
-		     ptr >= _image_rodata_start,
+	in_rodata = ptr < __rodata_region_end &&
+		    ptr >= __rodata_region_start;
+
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+	if (!in_rodata) {
+		in_rodata = ptr < lnkr_pinned_rodata_end &&
+			    ptr >= lnkr_pinned_rodata_start;
+	}
+#endif
+
+	zassert_true(in_rodata,
 		     "_k_neg_eagain is not in rodata");
+
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	_k_neg_eagain = -EINVAL;

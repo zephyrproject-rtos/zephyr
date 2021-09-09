@@ -5,8 +5,8 @@
  */
 
 &spi1 {
-	dmas = <&dmamux1 2 17 0x20440 0
-		&dmamux1 1 16 0x20480 0>;
+	dmas = <&dmamux1 2 17 0x20440
+		&dmamux1 1 16 0x20480>;
 	dma-names = "tx", "rx";
 };
 

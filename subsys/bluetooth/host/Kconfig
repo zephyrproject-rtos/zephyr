@@ -421,11 +421,11 @@ config BT_OOB_DATA_FIXED
 	  Use of this feature in production is strongly discouraged.
 
 config BT_KEYS_OVERWRITE_OLDEST
-	bool "Overwrite oldest keys with new ones if key storage is full"
+	bool "Overwrite the oldest key if key storage is full"
 	help
-	  With this option enabled, if a pairing attempt occurs and the key storage
-	  is full, then the oldest keys in storage will be removed to free space
-	  for the new pairing keys.
+	  If a pairing attempt occurs and the key storage is full then the
+	  oldest key from the set of not currently in use keys will be selected
+	  and overwritten by the pairing device.
 
 config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	bool "Store aging counter every time a successful paring occurs"
@@ -446,8 +446,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 
 endif # BT_SMP
 
-source "subsys/bluetooth/host/Kconfig.l2cap"
-source "subsys/bluetooth/host/Kconfig.gatt"
+rsource "Kconfig.l2cap"
+rsource "Kconfig.gatt"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
@@ -539,7 +539,7 @@ config BT_DEVICE_APPEARANCE
 
 config BT_ID_MAX
 	int "Maximum number of local identities"
-	range 1 10
+	range 1 64
 	default 1
 	help
 	  Maximum number of supported local identity addresses. For most
@@ -558,6 +558,13 @@ config BT_DF_CONNECTIONLESS_CTE_RX
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
+
+config BT_DF_CONNECTION_CTE_RX
+	bool "Enable support for receive of CTE in connection mode"
+	depends on BT_DF
+	help
+	  Enable support for reception and sampling of Constant Tone Extension
+	  in connection mode.
 
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
@@ -613,7 +620,7 @@ config BT_DEBUG_HCI_CORE
 
 config BT_DEBUG_CONN
 	bool "Bluetooth connection debug"
-	depends on BT_CONN
+	depends on BT_CONN || BT_ISO
 	help
 	  This option enables debug support for Bluetooth
 	  connection handling.

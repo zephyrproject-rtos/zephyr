@@ -42,6 +42,16 @@ config STD_CPP2A
 	help
 	  Next revision of the C++ standard, which is expected to be published in 2020.
 
+config STD_CPP20
+	bool "C++ 20"
+	help
+	  2020 C++ standard, previously known as C++2A.
+
+config STD_CPP2B
+	bool "C++ 2b"
+	help
+	  Next revision of the C++ standard, which is expected to be published in 2023.
+
 endchoice
 
 config LIB_CPLUSPLUS
@@ -54,6 +64,7 @@ if LIB_CPLUSPLUS
 
 config EXCEPTIONS
 	bool "Enable C++ exceptions support"
+	depends on !NEWLIB_LIBC_NANO
 	help
 	  This option enables support of C++ exceptions.
 
@@ -63,5 +74,13 @@ config RTTI
 	  This option enables support of C++ RTTI.
 
 endif # LIB_CPLUSPLUS
+
+config CPP_STATIC_INIT_GNU
+	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
+	# initialization of CPP static objects, new toolchains can be added
+	# here if required.
+	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	help
+	  GNU-compatible initialization of CPP static objects
 
 endif # CPLUSPLUS

@@ -4,15 +4,15 @@ tests:
     filter: CONFIG_ARMV7_M_ARMV8_M_FP
     extra_configs:
       - CONFIG_DYNAMIC_INTERRUPTS=y
-    tags: kernel userspace
+    tags: fpu kernel userspace
   kernel.fpu_sharing.float_disable.riscv32:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv32
-    tags: kernel userspace
+    tags: fpu kernel userspace
   kernel.fpu_sharing.float_disable.riscv64:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64
-    tags: kernel userspace
+    tags: fpu kernel userspace
   kernel.fpu_sharing.float_disable.sparc:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: sparc
@@ -22,10 +22,10 @@ tests:
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
     platform_allow: qemu_x86 qemu_x86_lakemont
-    tags: kernel userspace
+    tags: fpu kernel userspace
   kernel.fpu_sharing.float_disable.x86.sse:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=y
     platform_allow: qemu_x86 qemu_x86_lakemont
-    tags: kernel userspace
+    tags: fpu kernel userspace

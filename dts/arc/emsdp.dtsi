@@ -64,7 +64,7 @@
 		gpio0: gpio@f0002000 {
 			compatible = "snps,designware-gpio";
 			reg = <0xf0002000 0xc>;
-			bits = <4>;
+			ngpios = <4>;
 			label = "GPIO_0";
 			interrupt-parent = <&intc>;
 			gpio-controller;
@@ -74,7 +74,7 @@
 		gpio1: gpio@f000200c {
 			compatible = "snps,designware-gpio";
 			reg = <0xf000200c 0xc>;
-			bits = <8>;
+			ngpios = <8>;
 			label = "GPIO_1";
 			interrupt-parent = <&intc>;
 			interrupts = <0 1>;

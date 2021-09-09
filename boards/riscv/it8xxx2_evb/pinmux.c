@@ -7,7 +7,7 @@
 
 #include <init.h>
 #include <drivers/pinmux.h>
-#include <soc.h>
+#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 static int it8xxx2_evb_pinmux_init(const struct device *dev)
 {

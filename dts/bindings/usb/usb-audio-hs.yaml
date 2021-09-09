@@ -23,9 +23,10 @@ properties:
     required: false
     default: "Synchronous"
     type: string
-    description: Type of endpoint synchronization for IN devices.
-                 Default value is Sychronous.
-                 Adaptive is not supported.
+    description: |
+      Type of endpoint synchronization for IN devices.
+      Default value is Sychronous.
+      Adaptive is not supported.
     enum:
      - "No Synchronization"
      - "Asynchronous"
@@ -101,38 +102,45 @@ properties:
   mic-feature-volume:
     type: boolean
     required: false
-    description: Enable Volume feature.
-                 Currently not supported.
+    description: |
+      Enable Volume feature.
+      Currently not supported.
   mic-feature-tone-control:
     type: boolean
     required: false
-    description: Enable Tone Control (Bass, Mid, Treble) feature.
-                 Currently not supported.
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
   mic-feature-graphic-equalizer:
     type: boolean
     required: false
-    description: Enable  Graphic Equalizer feature.
-                 Currently not supported.
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
   mic-feature-automatic-gain-control:
     type: boolean
     required: false
-    description: Enable Autoamtic Gain Control feature.
-                 Currently not supported.
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
   mic-feature-delay:
     type: boolean
     required: false
-    description: Enable Delay feature.
-                 Currently not supported.
+    description: |
+      Enable Delay feature.
+      Currently not supported.
   mic-feature-bass-boost:
     type: boolean
     required: false
-    description: Enable Bass Boost feature.
-                 Currently not supported.
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
   mic-feature-loudness:
     type: boolean
     required: false
-    description: Enable Loudness feature.
-                 Currently not supported.
+    description: |
+      Enable Loudness feature.
+      Currently not supported.
 # headphones channel configuration options
   hp-channel-l:
     type: boolean
@@ -194,35 +202,42 @@ properties:
   hp-feature-volume:
     type: boolean
     required: false
-    description: Enable Volume feature.
-                 Currently not supported.
+    description: |
+      Enable Volume feature.
+      Currently not supported.
   hp-feature-tone-control:
     type: boolean
     required: false
-    description: Enable Tone Control (Bass, Mid, Treble) feature.
-                 Currently not supported.
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
   hp-feature-graphic-equalizer:
     type: boolean
     required: false
-    description: Enable  Graphic Equalizer feature.
-                 Currently not supported.
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
   hp-feature-automatic-gain-control:
     type: boolean
     required: false
-    description: Enable Autoamtic Gain Control feature.
-                 Currently not supported.
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
   hp-feature-delay:
     type: boolean
     required: false
-    description: Enable Delay feature.
-                 Currently not supported.
+    description: |
+      Enable Delay feature.
+      Currently not supported.
   hp-feature-bass-boost:
     type: boolean
     required: false
-    description: Enable Bass Boost feature.
-                 Currently not supported.
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
   hp-feature-loudness:
     type: boolean
     required: false
-    description: Enable Loudness feature.
-                 Currently not supported.
+    description: |
+      Enable Loudness feature.
+      Currently not supported.

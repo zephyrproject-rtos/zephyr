@@ -1104,7 +1104,7 @@ static int esp_init(const struct device *dev)
 	data->iface_data.rx_rb_buf = &data->iface_rb_buf[0];
 	data->iface_data.rx_rb_buf_len = sizeof(data->iface_rb_buf);
 	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data,
-				    DT_INST_BUS_LABEL(0));
+				    DEVICE_DT_GET(DT_INST_BUS(0)));
 	if (ret < 0) {
 		goto error;
 	}

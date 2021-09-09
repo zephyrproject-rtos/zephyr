@@ -299,9 +299,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	cmd(buf)->sync = &sync_sem;
 
 	/* Make sure the buffer stays around until the command completes */
-	net_buf_ref(buf);
-
-	net_buf_put(&bt_dev.cmd_tx_queue, buf);
+	net_buf_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
@@ -364,54 +362,7 @@ uint8_t bt_get_phy(uint8_t hci_phy)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
-static void hci_acl(struct net_buf *buf)
-{
-	struct bt_hci_acl_hdr *hdr;
-	uint16_t handle, len;
-	struct bt_conn *conn;
-	uint8_t flags;
-
-	BT_DBG("buf %p", buf);
-
-	BT_ASSERT(buf->len >= sizeof(*hdr));
-
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	len = sys_le16_to_cpu(hdr->len);
-	handle = sys_le16_to_cpu(hdr->handle);
-	flags = bt_acl_flags(handle);
-
-	acl(buf)->handle = bt_acl_handle(handle);
-	acl(buf)->index = BT_CONN_INDEX_INVALID;
-
-	BT_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
-
-	if (buf->len != len) {
-		BT_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
-		net_buf_unref(buf);
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(acl(buf)->handle);
-	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u", acl(buf)->handle);
-		net_buf_unref(buf);
-		return;
-	}
-
-	acl(buf)->index = bt_conn_index(conn);
-
-	bt_conn_recv(conn, buf, flags);
-	bt_conn_unref(conn);
-}
-
-static void hci_data_buf_overflow(struct net_buf *buf)
-{
-	struct bt_hci_evt_data_buf_overflow *evt = (void *)buf->data;
-
-	BT_WARN("Data buffer overflow (link type 0x%02x)", evt->link_type);
-}
-
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 static void hci_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -470,6 +421,55 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		bt_conn_unref(conn);
 	}
+}
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
+
+#if defined(CONFIG_BT_CONN)
+static void hci_acl(struct net_buf *buf)
+{
+	struct bt_hci_acl_hdr *hdr;
+	uint16_t handle, len;
+	struct bt_conn *conn;
+	uint8_t flags;
+
+	BT_DBG("buf %p", buf);
+
+	BT_ASSERT(buf->len >= sizeof(*hdr));
+
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+	len = sys_le16_to_cpu(hdr->len);
+	handle = sys_le16_to_cpu(hdr->handle);
+	flags = bt_acl_flags(handle);
+
+	acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->index = BT_CONN_INDEX_INVALID;
+
+	BT_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
+
+	if (buf->len != len) {
+		BT_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
+		net_buf_unref(buf);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(acl(buf)->handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u", acl(buf)->handle);
+		net_buf_unref(buf);
+		return;
+	}
+
+	acl(buf)->index = bt_conn_index(conn);
+
+	bt_conn_recv(conn, buf, flags);
+	bt_conn_unref(conn);
+}
+
+static void hci_data_buf_overflow(struct net_buf *buf)
+{
+	struct bt_hci_evt_data_buf_overflow *evt = (void *)buf->data;
+
+	BT_WARN("Data buffer overflow (link type 0x%02x)", evt->link_type);
 }
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -741,7 +741,6 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn->err = evt->reason;
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-	conn->handle = 0U;
 
 	if (conn->type != BT_CONN_TYPE_LE) {
 #if defined(CONFIG_BT_BREDR)
@@ -1161,6 +1160,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		 * object to keep host in sync with controller state.
 		 */
 		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		(void)bt_le_lim_adv_cancel_timeout(adv);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -1383,10 +1383,6 @@ static void le_remote_feat_complete(struct net_buf *buf)
 static void le_data_len_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_data_len_change *evt = (void *)buf->data;
-	uint16_t max_tx_octets = sys_le16_to_cpu(evt->max_tx_octets);
-	uint16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
-	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
-	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
@@ -1396,13 +1392,18 @@ static void le_data_len_change(struct net_buf *buf)
 		return;
 	}
 
-	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets,
-	       max_tx_time, max_rx_octets, max_rx_time);
-
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	uint16_t max_tx_octets = sys_le16_to_cpu(evt->max_tx_octets);
+	uint16_t max_rx_octets = sys_le16_to_cpu(evt->max_rx_octets);
+	uint16_t max_tx_time = sys_le16_to_cpu(evt->max_tx_time);
+	uint16_t max_rx_time = sys_le16_to_cpu(evt->max_rx_time);
+
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE)) {
 		atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE);
 	}
+
+	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)",
+		max_tx_octets, max_tx_time, max_rx_octets, max_rx_time);
 
 	conn->le.data_len.tx_max_len = max_tx_octets;
 	conn->le.data_len.tx_max_time = max_tx_time;
@@ -2079,6 +2080,18 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle)
 	return 0;
 }
 
+#if defined(CONFIG_BT_EXT_ADV)
+int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle)
+{
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
+		return -EINVAL;
+	}
+
+	*adv_handle = adv->handle;
+	return 0;
+}
+#endif /* CONFIG_BT_EXT_ADV */
+
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 {
@@ -2177,11 +2190,12 @@ static const struct event_handler meta_events[] = {
 #endif /* CONFIG_BT_CONN */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_ISO_UNICAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_ESTABLISHED, hci_le_cis_estabilished,
 		      sizeof(struct bt_hci_evt_le_cis_established)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_REQ, hci_le_cis_req,
 		      sizeof(struct bt_hci_evt_le_cis_req)),
+#endif /* (CONFIG_BT_ISO_UNICAST) */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_COMPLETE,
 		      hci_le_big_complete,
@@ -2199,7 +2213,6 @@ static const struct event_handler meta_events[] = {
 		      bt_hci_le_biginfo_adv_report,
 		      sizeof(struct bt_hci_evt_le_biginfo_adv_report)),
 #endif /* (CONFIG_BT_ISO_BROADCAST) */
-#endif /* (CONFIG_BT_ISO) */
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
 		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
@@ -2355,7 +2368,8 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == BT_EVENT_CMD_TX) {
 				send_cmd();
-			} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+			} else if (IS_ENABLED(CONFIG_BT_CONN) ||
+				   IS_ENABLED(CONFIG_BT_ISO)) {
 				struct bt_conn *conn;
 
 				if (ev->tag == BT_EVENT_CONN_TX_QUEUE) {
@@ -2377,15 +2391,20 @@ static void process_events(struct k_poll_event *ev, int count)
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_ISO)
-/* command FIFO + conn_change signal + MAX_CONN + MAX_ISO_CONN */
+/* command FIFO + conn_change signal + MAX_CONN + ISO_MAX_CHAN */
 #define EV_COUNT (2 + CONFIG_BT_MAX_CONN + CONFIG_BT_ISO_MAX_CHAN)
 #else
 /* command FIFO + conn_change signal + MAX_CONN */
 #define EV_COUNT (2 + CONFIG_BT_MAX_CONN)
 #endif /* CONFIG_BT_ISO */
 #else
+#if defined(CONFIG_BT_ISO)
+/* command FIFO + conn_change signal + ISO_MAX_CHAN */
+#define EV_COUNT (2 + CONFIG_BT_ISO_MAX_CHAN)
+#else
 /* command FIFO */
 #define EV_COUNT 1
+#endif /* CONFIG_BT_ISO */
 #endif /* CONFIG_BT_CONN */
 
 static void hci_tx_thread(void *p1, void *p2, void *p3)
@@ -2405,7 +2424,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 		events[0].state = K_POLL_STATE_NOT_READY;
 		ev_count = 1;
 
-		if (IS_ENABLED(CONFIG_BT_CONN)) {
+		if (IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_ISO)) {
 			ev_count += bt_conn_prepare_events(&events[1]);
 		}
 
@@ -2468,6 +2487,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 	k_sem_init(&bt_dev.le.acl_pkts, pkts, pkts);
 }
 #endif /* !defined(CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_CONN */
 
 static void le_read_buffer_size_complete(struct net_buf *buf)
 {
@@ -2475,6 +2495,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("status 0x%02x", rp->status);
 
+#if defined(CONFIG_BT_CONN)
 	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->le_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
@@ -2484,16 +2505,17 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	       bt_dev.le.acl_mtu);
 
 	k_sem_init(&bt_dev.le.acl_pkts, rp->le_max_num, rp->le_max_num);
+#endif /* CONFIG_BT_CONN */
 }
 
 static void read_buffer_size_v2_complete(struct net_buf *buf)
 {
 #if defined(CONFIG_BT_ISO)
 	struct bt_hci_rp_le_read_buffer_size_v2 *rp = (void *)buf->data;
-	uint8_t max_num;
 
 	BT_DBG("status %u", rp->status);
 
+#if defined(CONFIG_BT_CONN)
 	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
@@ -2502,8 +2524,8 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num,
 		bt_dev.le.acl_mtu);
 
-	max_num = MIN(rp->acl_max_num, CONFIG_BT_CONN_TX_MAX);
-	k_sem_init(&bt_dev.le.acl_pkts, max_num, max_num);
+	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
+#endif /* CONFIG_BT_CONN */
 
 	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
 	if (!bt_dev.le.iso_mtu) {
@@ -2514,14 +2536,12 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num,
 		bt_dev.le.iso_mtu);
 
-	max_num = MIN(rp->iso_max_num, CONFIG_BT_ISO_TX_BUF_COUNT);
-	k_sem_init(&bt_dev.le.iso_pkts, max_num, max_num);
+	k_sem_init(&bt_dev.le.iso_pkts, rp->iso_max_num, rp->iso_max_num);
 #endif /* CONFIG_BT_ISO */
 }
 
 static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 {
-#if defined(CONFIG_BT_ISO)
 	struct bt_hci_cp_le_set_host_feature *cp;
 	struct net_buf *buf;
 
@@ -2535,12 +2555,7 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	cp->bit_value = bit_value;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_FEATURE, buf, NULL);
-#else
-	return -ENOTSUP;
-#endif /* CONFIG_BT_ISO */
 }
-
-#endif /* CONFIG_BT_CONN */
 
 static void read_supported_commands_complete(struct net_buf *buf)
 {
@@ -2760,8 +2775,53 @@ static int le_set_event_mask(void)
 		mask |= BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_DF_CONNECTION_CTE_RX)) {
+		mask |= BT_EVT_MASK_LE_CONNECTION_IQ_REPORT;
+		mask |= BT_EVT_MASK_LE_CTE_REQUEST_FAILED;
+	}
+
 	sys_put_le64(mask, cp_mask->events);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
+}
+
+static int le_init_iso(void)
+{
+	int err;
+	struct net_buf *rsp;
+
+	/* Set Isochronus Channels - Host support */
+	err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+	if (err) {
+		return err;
+	}
+
+	/* Octet 41, bit 5 is read buffer size V2 */
+	if (BT_CMD_TEST(bt_dev.supported_commands, 41, 5)) {
+		/* Read ISO Buffer Size V2 */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
+					   NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		read_buffer_size_v2_complete(rsp);
+
+		net_buf_unref(rsp);
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+		BT_WARN("Read Buffer Size V2 command is not supported."
+			"No ISO buffers will be available");
+
+		/* Read LE Buffer Size */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
+					   NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		le_read_buffer_size_complete(rsp);
+
+		net_buf_unref(rsp);
+	}
+
+	return 0;
 }
 
 static int le_init(void)
@@ -2786,23 +2846,13 @@ static int le_init(void)
 	read_le_features_complete(rsp);
 	net_buf_unref(rsp);
 
-#if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_ISO(bt_dev.le.features)) {
-		/* Set Isochronus Channels - Host support */
-		err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+		err = le_init_iso();
 		if (err) {
 			return err;
 		}
-		/* Read ISO Buffer Size V2 */
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
-					   NULL, &rsp);
-		if (err) {
-			return err;
-		}
-		read_buffer_size_v2_complete(rsp);
-		net_buf_unref(rsp);
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		/* Read LE Buffer Size */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
 					   NULL, &rsp);
@@ -2812,7 +2862,6 @@ static int le_init(void)
 		le_read_buffer_size_complete(rsp);
 		net_buf_unref(rsp);
 	}
-#endif /* CONFIG_BT_CONN */
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
@@ -3005,7 +3054,7 @@ static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2"
+		"5.0", "5.1", "5.2", "5.3"
 	};
 
 	if (ver < ARRAY_SIZE(str)) {
@@ -3272,13 +3321,14 @@ static const struct event_handler prio_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_DATA_BUF_OVERFLOW,
 		      hci_data_buf_overflow,
 		      sizeof(struct bt_hci_evt_data_buf_overflow)),
+	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete_prio,
+		      sizeof(struct bt_hci_evt_disconn_complete)),
+#endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	EVENT_HANDLER(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 		      hci_num_completed_packets,
 		      sizeof(struct bt_hci_evt_num_completed_packets)),
-	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete_prio,
-		      sizeof(struct bt_hci_evt_disconn_complete)),
-
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 };
 
 void hci_event_prio(struct net_buf *buf)
@@ -3499,7 +3549,10 @@ int bt_enable(bt_ready_cb_t cb)
 			return err;
 		}
 	} else {
-		bt_set_name(CONFIG_BT_DEVICE_NAME);
+		err = bt_set_name(CONFIG_BT_DEVICE_NAME);
+		if (err) {
+			BT_WARN("Failed to set device name (%d)", err);
+		}
 	}
 
 	ready_cb = cb;
@@ -3541,6 +3594,13 @@ int bt_enable(bt_ready_cb_t cb)
 	k_work_submit(&bt_dev.init);
 	return 0;
 }
+
+#define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+BUILD_ASSERT(DEVICE_NAME_LEN < CONFIG_BT_DEVICE_NAME_MAX);
+#else
+BUILD_ASSERT(DEVICE_NAME_LEN < 248);
+#endif
 
 int bt_set_name(const char *name)
 {
@@ -3695,4 +3755,35 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
 				    buf, NULL);
+}
+
+void bt_data_parse(struct net_buf_simple *ad,
+		   bool (*func)(struct bt_data *data, void *user_data),
+		   void *user_data)
+{
+	while (ad->len > 1) {
+		struct bt_data data;
+		uint8_t len;
+
+		len = net_buf_simple_pull_u8(ad);
+		if (len == 0U) {
+			/* Early termination */
+			return;
+		}
+
+		if (len > ad->len) {
+			BT_WARN("Malformed data");
+			return;
+		}
+
+		data.type = net_buf_simple_pull_u8(ad);
+		data.data_len = len - 1;
+		data.data = ad->data;
+
+		if (!func(&data, user_data)) {
+			return;
+		}
+
+		net_buf_simple_pull(ad, len - 1);
+	}
 }

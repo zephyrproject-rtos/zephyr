@@ -9,6 +9,9 @@
 #include <drivers/i2s.h>
 #include "i2s_api_test.h"
 
+K_MEM_SLAB_DEFINE(rx_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
+K_MEM_SLAB_DEFINE(tx_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
+
 /* The data_l represent a sine wave */
 ZTEST_DMEM int16_t data_l[SAMPLE_NO] = {
 	  6392,  12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,
@@ -35,7 +38,28 @@ static void fill_buf(int16_t *tx_block, int att)
 
 static int verify_buf(int16_t *rx_block, int att)
 {
-	for (int i = 0; i < SAMPLE_NO; i++) {
+	int sample_no = SAMPLE_NO;
+
+#if (CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET > 0)
+	static ZTEST_DMEM int offset = -1;
+
+	if (offset < 0) {
+		do {
+			++offset;
+			if (offset > CONFIG_I2S_TEST_ALLOWED_DATA_OFFSET) {
+				TC_PRINT("Allowed data offset exceeded\n");
+				return -TC_FAIL;
+			}
+		} while (rx_block[2 * offset] != data_l[0] >> att);
+
+		TC_PRINT("Using data offset: %d\n", offset);
+	}
+
+	rx_block += 2 * offset;
+	sample_no -= offset;
+#endif
+
+	for (int i = 0; i < sample_no; i++) {
 		if (rx_block[2 * i] != data_l[i] >> att) {
 			TC_PRINT("Error: att %d: data_l mismatch at position "
 				 "%d, expected %d, actual %d\n",
@@ -81,8 +105,8 @@ int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 	return TC_PASS;
 }
 
-int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
-			struct k_mem_slab *slab)
+static int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
+			       struct k_mem_slab *slab)
 {
 	char tx_block[BLOCK_SIZE];
 	int ret;
@@ -98,8 +122,13 @@ int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 	return TC_PASS;
 }
 
-int rx_block_read_slab(const struct device *dev_i2s, int att,
-		       struct k_mem_slab *slab)
+int tx_block_write(const struct device *dev_i2s, int att, int err)
+{
+	return tx_block_write_slab(dev_i2s, att, err, &tx_mem_slab);
+}
+
+static int rx_block_read_slab(const struct device *dev_i2s, int att,
+			      struct k_mem_slab *slab)
 {
 	char rx_block[BLOCK_SIZE];
 	size_t rx_size;
@@ -114,6 +143,63 @@ int rx_block_read_slab(const struct device *dev_i2s, int att,
 	if (ret < 0) {
 		TC_PRINT("Error: Verify failed\n");
 		return -TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+int rx_block_read(const struct device *dev_i2s, int att)
+{
+	return rx_block_read_slab(dev_i2s, att, &rx_mem_slab);
+}
+
+int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
+{
+	int ret;
+	struct i2s_config i2s_cfg;
+
+	i2s_cfg.word_size = 16U;
+	i2s_cfg.channels = 2U;
+	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
+	i2s_cfg.block_size = BLOCK_SIZE;
+	i2s_cfg.timeout = TIMEOUT;
+
+	if (dir == I2S_DIR_TX) {
+		/* Configure the Transmit port as Master */
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
+				| I2S_OPT_BIT_CLK_MASTER;
+	} else if (dir == I2S_DIR_RX) {
+		/* Configure the Receive port as Slave */
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE
+				| I2S_OPT_BIT_CLK_SLAVE;
+	} else { /* dir == I2S_DIR_BOTH */
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
+				| I2S_OPT_BIT_CLK_MASTER;
+	}
+
+	if (!IS_ENABLED(CONFIG_I2S_TEST_USE_GPIO_LOOPBACK)) {
+		i2s_cfg.options |= I2S_OPT_LOOPBACK;
+	}
+
+	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
+		i2s_cfg.mem_slab = &tx_mem_slab;
+		ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
+		if (ret < 0) {
+			TC_PRINT("Failed to configure I2S TX stream (%d)\n",
+				 ret);
+			return -TC_FAIL;
+		}
+	}
+
+	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
+		i2s_cfg.mem_slab = &rx_mem_slab;
+		ret = i2s_configure(dev_i2s, I2S_DIR_RX, &i2s_cfg);
+		if (ret < 0) {
+			TC_PRINT("Failed to configure I2S RX stream (%d)\n",
+				 ret);
+			return -TC_FAIL;
+		}
 	}
 
 	return TC_PASS;

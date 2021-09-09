@@ -31,6 +31,21 @@ config SERIAL_SUPPORT_INTERRUPT
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
+config UART_USE_RUNTIME_CONFIGURE
+	bool "Enable runtime configuration for UART controllers"
+	default y
+	help
+	  Enable runtime configuration of UART controllers.
+	  This allows applications to call uart_configure() to
+	  configure the UART controllers at runtime, and calling
+	  uart_config_get() to retrieve configuration. If this is
+	  disabled, UART controllers rely on UART driver's
+	  initialization function to properly configure
+	  the controller.
+
+	  Say y if unsure. Disable this to reduce footprint for
+	  applications that do not require runtime UART configuration.
+
 config UART_ASYNC_API
 	bool "Enable new asynchronous UART API [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_ASYNC
@@ -63,6 +78,8 @@ config UART_DRV_CMD
 	  Says no if not sure.
 
 comment "Serial Drivers"
+
+source "drivers/serial/Kconfig.b91"
 
 source "drivers/serial/Kconfig.ns16550"
 
@@ -104,13 +121,17 @@ source "drivers/serial/Kconfig.sifive"
 
 source "drivers/serial/Kconfig.esp32"
 
+source "drivers/serial/Kconfig.esp32c3_rom"
+
+source "drivers/serial/Kconfig.esp32s2_rom"
+
 source "drivers/serial/Kconfig.gecko"
 
 source "drivers/serial/Kconfig.leuart_gecko"
 
 source "drivers/serial/Kconfig.msp432p4xx"
 
-source "drivers/serial/Kconfig.nuvoton"
+source "drivers/serial/Kconfig.numicro"
 
 source "drivers/serial/Kconfig.sam0"
 
@@ -135,5 +156,9 @@ source "drivers/serial/Kconfig.npcx"
 source "drivers/serial/Kconfig.apbuart"
 
 source "drivers/serial/Kconfig.rcar"
+
+source "drivers/serial/Kconfig.xec"
+
+source "drivers/serial/Kconfig.test"
 
 endif # SERIAL

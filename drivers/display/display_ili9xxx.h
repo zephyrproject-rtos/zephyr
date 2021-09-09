@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
+ * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +10,11 @@
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
 #include <drivers/gpio.h>
+#include <drivers/spi.h>
 #include <sys/util.h>
 
 /* Commands/registers. */
+#define ILI9XXX_SWRESET 0x01
 #define ILI9XXX_SLPOUT 0x11
 #define ILI9XXX_DINVON 0x21
 #define ILI9XXX_GAMSET 0x26
@@ -52,18 +55,9 @@
 #define ILI9XXX_RESET_WAIT_TIME 5
 
 struct ili9xxx_config {
-	const char *spi_name;
-	uint16_t spi_addr;
-	uint32_t spi_max_freq;
-	const char *spi_cs_label;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_flags;
-	const char *cmd_data_label;
-	gpio_pin_t cmd_data_pin;
-	gpio_dt_flags_t cmd_data_flags;
-	const char *reset_label;
-	gpio_pin_t reset_pin;
-	gpio_dt_flags_t reset_flags;
+	struct spi_dt_spec spi;
+	struct gpio_dt_spec cmd_data;
+	struct gpio_dt_spec reset;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;

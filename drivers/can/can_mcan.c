@@ -127,9 +127,9 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				CAN_MCAN_DBTP_DBRP_POS;
 
 		if (timing_data->sjw == CAN_SJW_NO_CHANGE) {
-			can->nbtp |= dbtp_sjw;
+			can->dbtp |= dbtp_sjw;
 		} else {
-			can->nbtp |= (((uint32_t)timing_data->sjw - 1UL) & 0x0F) <<
+			can->dbtp |= (((uint32_t)timing_data->sjw - 1UL) & 0x0F) <<
 				     CAN_MCAN_DBTP_DSJW_POS;
 		}
 	}

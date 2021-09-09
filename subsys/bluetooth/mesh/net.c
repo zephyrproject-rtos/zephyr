@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -36,6 +34,7 @@
 #include "foundation.h"
 #include "beacon.h"
 #include "settings.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "cfg.h"
 
@@ -44,7 +43,7 @@
 #define LOOPBACK_BUF_SUB(buf) (*(struct bt_mesh_subnet **)net_buf_user_data(buf))
 
 /* Seq limit after IV Update is triggered */
-#define IV_UPDATE_SEQ_LIMIT 8000000
+#define IV_UPDATE_SEQ_LIMIT CONFIG_BT_MESH_IV_UPDATE_SEQ_LIMIT
 
 #define IVI(pdu)           ((pdu)[0] >> 7)
 #define NID(pdu)           ((pdu)[0] & 0x7f)
@@ -185,11 +184,13 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS,
 			  BT_MESH_IV_UPDATE(flags));
 
-	/* Set minimum required hours, since the 96-hour minimum requirement
-	 * doesn't apply straight after provisioning (since we can't know how
-	 * long has actually passed since the network changed its state).
+	/* If IV Update is already in progress, set minimum required hours,
+	 * since the 96-hour minimum requirement doesn't apply in this case straight
+	 * after provisioning.
 	 */
-	bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
+	if (BT_MESH_IV_UPDATE(flags)) {
+		bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
@@ -313,12 +314,12 @@ do_update:
 		bt_mesh_friend_sec_update(BT_MESH_KEY_ANY);
 	}
 
+	bt_mesh_subnet_foreach(bt_mesh_beacon_update);
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
 		bt_mesh_proxy_beacon_send(NULL);
 	}
-
-	bt_mesh_subnet_foreach(bt_mesh_beacon_update);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 		bt_mesh_cdb_iv_update(iv_index, iv_update);
@@ -501,7 +502,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-	    bt_mesh_elem_find(tx->ctx->addr)) {
+	    bt_mesh_has_addr(tx->ctx->addr)) {
 		err = loopback(tx, buf->data, buf->len);
 
 		/* Local unicast messages should not go out to network */
@@ -530,12 +531,13 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		goto done;
 	}
 
+	BT_MESH_ADV(buf)->cb = cb;
+	BT_MESH_ADV(buf)->cb_data = cb_data;
+
 	/* Deliver to GATT Proxy Clients if necessary. */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
+	    bt_mesh_proxy_relay(buf, tx->ctx->addr) &&
 	    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-		/* Notify completion if this only went through the Mesh Proxy */
-		send_cb_finalize(cb, cb_data);
 
 		err = 0;
 		goto done;
@@ -600,7 +602,7 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 		return false;
 	}
 
-	if (bt_mesh_elem_find(rx->ctx.addr)) {
+	if (bt_mesh_has_addr(rx->ctx.addr)) {
 		BT_DBG("Dropping locally originated packet");
 		return false;
 	}
@@ -702,7 +704,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    (rx->friend_cred ||
 	     bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
-		bt_mesh_proxy_relay(&buf->b, rx->ctx.recv_dst);
+		bt_mesh_proxy_relay(buf, rx->ctx.recv_dst);
 	}
 
 	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
@@ -805,7 +807,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	net_buf_simple_save(&buf, &state);
 
 	rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-			  bt_mesh_elem_find(rx.ctx.recv_dst));
+			  bt_mesh_has_addr(rx.ctx.recv_dst));
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
@@ -1064,13 +1066,22 @@ void bt_mesh_net_pending_seq_store(void)
 	struct seq_val seq;
 	int err;
 
-	sys_put_le24(bt_mesh.seq, seq.val);
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		sys_put_le24(bt_mesh.seq, seq.val);
 
-	err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
-	if (err) {
-		BT_ERR("Failed to stor Seq value");
+		err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
+		if (err) {
+			BT_ERR("Failed to stor Seq value");
+		} else {
+			BT_DBG("Stored Seq value");
+		}
 	} else {
-		BT_DBG("Stored Seq value");
+		err = settings_delete("bt/mesh/Seq");
+		if (err) {
+			BT_ERR("Failed to clear Seq value");
+		} else {
+			BT_DBG("Cleared Seq value");
+		}
 	}
 }
 
@@ -1079,6 +1090,7 @@ void bt_mesh_net_clear(void)
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_NET_PENDING);
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_IV_PENDING);
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_SEQ_PENDING);
 }
 
 void bt_mesh_net_settings_commit(void)

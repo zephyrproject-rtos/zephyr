@@ -393,16 +393,16 @@ code,
 .ui.tabular.menu .active.item,
 .ui.segment,
 .sphinx-tabs-panel {
-    background-color: var(--code-background-color);
+    background-color: var(--code-background-color) !important;
 }
 
 .sphinx-tabs-tab {
-    color: var(--link-color);
+    color: var(--link-color) !important;
 }
 
 .sphinx-tabs-tab[aria-selected="true"] {
-    background-color: var(--code-background-color);
-    border-bottom: 1px solid var(--code-background-color);
+    background-color: var(--code-background-color) !important;
+    border-bottom: 1px solid var(--code-background-color) !important;
 }
 
 /* Code literals */

@@ -709,7 +709,7 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
  * @param cfg UART configuration structure.
  *
  *
- * @retval -ENOTSUP If configuration is not supported by device.
+ * @retval -ENOSYS If configuration is not supported by device.
  *                  or driver does not support setting configuration in runtime.
  * @retval 0 If successful, negative errno code otherwise.
  */

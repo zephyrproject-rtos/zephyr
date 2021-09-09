@@ -2,6 +2,7 @@
  * Common functions and helpers for BSIM audio tests
  *
  * Copyright (c) 2019 Bose Corporation
+ * Copyright (c) 2020-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */

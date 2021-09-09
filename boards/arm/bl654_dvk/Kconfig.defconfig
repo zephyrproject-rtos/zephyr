@@ -8,16 +8,6 @@ if BOARD_BL654_DVK
 config BOARD
 	default "bl654_dvk"
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
-
-endif # USB
-
 config BT_CTLR
 	default BT
 

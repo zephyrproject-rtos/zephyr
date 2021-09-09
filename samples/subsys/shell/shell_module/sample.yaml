@@ -5,7 +5,7 @@ common:
     - native_posix
 tests:
   sample.shell.shell_module:
-    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     min_ram: 40
@@ -15,13 +15,14 @@ tests:
     harness: keyboard
     min_ram: 40
     extra_args: OVERLAY_CONFIG="overlay-usb.conf"
+                DTC_OVERLAY_FILE="usb.overlay"
   sample.shell.shell_module.minimal:
-    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
   sample.shell.shell_module.getopt:
-    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     min_ram: 40
@@ -32,7 +33,7 @@ tests:
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
   sample.shell.shell_module.login:
-    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     min_ram: 40

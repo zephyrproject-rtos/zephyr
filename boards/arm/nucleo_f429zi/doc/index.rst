@@ -109,6 +109,8 @@ The Zephyr nucleo_f429zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -156,7 +158,7 @@ and a ST morpho connector. Board is configured as follows
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - UART_6 TX/RX : PG14/PG9 (Arduino Serial)
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
-- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
+- SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PA7 (Arduino SPI)
 - PWM_2_CH1 : PE13
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USER_PB : PC13

@@ -13,23 +13,10 @@
 		label = "HT16K33";
                 /* Uncomment to use IRQ instead of polling: */
 		/* irq-gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; */
-		#address-cells = <1>;
-		#size-cells = <0>;
 
-		ks@0 {
+		keyscan {
 			compatible = "holtek,ht16k33-keyscan";
-			reg = <0x0>;
-			label = "KS0";
-		};
-		ks@1 {
-			compatible = "holtek,ht16k33-keyscan";
-			reg = <0x1>;
-			label = "KS1";
-		};
-		ks@2 {
-			compatible = "holtek,ht16k33-keyscan";
-			reg = <0x2>;
-			label = "KS2";
+			label = "KEYSCAN";
 		};
 	};
 };

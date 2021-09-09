@@ -40,7 +40,7 @@ config IPM_MSG_CH_1_RX
 
 endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
 
-if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPPNS
+if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
 config BOARD_ENABLE_DCDC_APP
 	bool "Enable Application MCU DCDC converter"
@@ -83,7 +83,7 @@ config BOARD_ENABLE_CPUNET
 
 config DOMAIN_CPUNET_BOARD
 	string
-	default "bl5340_dvk_cpunet" if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPPNS
+	default "bl5340_dvk_cpunet" if BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 	depends on BOARD_ENABLE_CPUNET
 	help
 	  The board which will be used for CPUNET domain when creating a multi
@@ -91,7 +91,7 @@ config DOMAIN_CPUNET_BOARD
 	  another board. For example hci_rpmsg on the bl5340_dvk_cpunet for
 	  Bluetooth applications.
 
-endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPPNS
+endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 
 if BOARD_BL5340_DVK_CPUNET
 

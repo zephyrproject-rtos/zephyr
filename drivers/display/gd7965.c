@@ -26,16 +26,9 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
  * also first gate/source should be 0.
  */
 
-#define GD7965_SPI_FREQ DT_INST_PROP(0, spi_max_frequency)
-#define GD7965_BUS_NAME DT_INST_BUS_LABEL(0)
 #define GD7965_DC_PIN DT_INST_GPIO_PIN(0, dc_gpios)
 #define GD7965_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
 #define GD7965_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
-#define GD7965_CS_PIN DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define GD7965_CS_FLAGS DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-#define GD7965_CS_CNTRL DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
-#endif
 #define GD7965_BUSY_PIN DT_INST_GPIO_PIN(0, busy_gpios)
 #define GD7965_BUSY_CNTRL DT_INST_GPIO_LABEL(0, busy_gpios)
 #define GD7965_BUSY_FLAGS DT_INST_GPIO_FLAGS(0, busy_gpios)
@@ -57,14 +50,14 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
 
 
 struct gd7965_data {
+	const struct gd7965_config *config;
 	const struct device *reset;
 	const struct device *dc;
 	const struct device *busy;
-	const struct device *spi_dev;
-	struct spi_config spi_config;
-#if defined(GD7965_CS_CNTRL)
-	struct spi_cs_control cs_ctrl;
-#endif
+};
+
+struct gd7965_config {
+	struct spi_dt_spec bus;
 };
 
 static uint8_t gd7965_softstart[] = DT_INST_PROP(0, softstart);
@@ -82,7 +75,7 @@ static inline int gd7965_write_cmd(struct gd7965_data *driver,
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
 	gpio_pin_set(driver->dc, GD7965_DC_PIN, 1);
-	if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
+	if (spi_write_dt(&driver->config->bus, &buf_set)) {
 		return -EIO;
 	}
 
@@ -90,7 +83,7 @@ static inline int gd7965_write_cmd(struct gd7965_data *driver,
 		buf.buf = data;
 		buf.len = len;
 		gpio_pin_set(driver->dc, GD7965_DC_PIN, 0);
-		if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
+		if (spi_write_dt(&driver->config->bus, &buf_set)) {
 			return -EIO;
 		}
 	}
@@ -392,20 +385,15 @@ static int gd7965_controller_init(const struct device *dev)
 
 static int gd7965_init(const struct device *dev)
 {
+	const struct gd7965_config *config = dev->config;
 	struct gd7965_data *driver = dev->data;
 
 	LOG_DBG("");
 
-	driver->spi_dev = device_get_binding(GD7965_BUS_NAME);
-	if (driver->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device for GD7965");
-		return -EIO;
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		return -ENODEV;
 	}
-
-	driver->spi_config.frequency = GD7965_SPI_FREQ;
-	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	driver->spi_config.slave = DT_INST_REG_ADDR(0);
-	driver->spi_config.cs = NULL;
 
 	driver->reset = device_get_binding(GD7965_RESET_CNTRL);
 	if (driver->reset == NULL) {
@@ -434,23 +422,17 @@ static int gd7965_init(const struct device *dev)
 	gpio_pin_configure(driver->busy, GD7965_BUSY_PIN,
 			   GPIO_INPUT | GD7965_BUSY_FLAGS);
 
-#if defined(GD7965_CS_CNTRL)
-	driver->cs_ctrl.gpio_dev = device_get_binding(GD7965_CS_CNTRL);
-	if (!driver->cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get SPI GPIO CS device");
-		return -EIO;
-	}
-
-	driver->cs_ctrl.gpio_pin = GD7965_CS_PIN;
-	driver->cs_ctrl.gpio_dt_flags = GD7965_CS_FLAGS;
-	driver->cs_ctrl.delay = 0U;
-	driver->spi_config.cs = &driver->cs_ctrl;
-#endif
-
 	return gd7965_controller_init(dev);
 }
 
-static struct gd7965_data gd7965_driver;
+static struct gd7965_data gd7965_driver = {
+	.config = &gd7965_config
+};
+
+static const struct gd7965_config gd7965_config {
+	.bus = SPI_DT_SPEC_INST_GET(
+		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
+};
 
 static struct display_driver_api gd7965_driver_api = {
 	.blanking_on = gd7965_blanking_on,
@@ -467,6 +449,6 @@ static struct display_driver_api gd7965_driver_api = {
 
 
 DEVICE_DT_INST_DEFINE(0, gd7965_init, NULL,
-		    &gd7965_driver, NULL,
-		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
-		    &gd7965_driver_api);
+		      &gd7965_driver, &gd7965_config,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
+		      &gd7965_driver_api);

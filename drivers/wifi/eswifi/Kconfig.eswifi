@@ -9,7 +9,7 @@ menuconfig WIFI_ESWIFI
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD
 	select NET_SOCKETS
-	select NET_SOCKETS_OFFLOAD
+	imply NET_SOCKETS_OFFLOAD
 	select GPIO
 
 if WIFI_ESWIFI

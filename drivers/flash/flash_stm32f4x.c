@@ -13,8 +13,6 @@
 
 #include "flash_stm32.h"
 
-#define STM32F4X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
@@ -35,9 +33,36 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
+
 static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+#if defined(FLASH_OPTCR_DB1M)
+	bool dcache_enabled = false;
+#endif /* FLASH_OPTCR_DB*/
 	uint32_t tmp;
 	int rc;
 
@@ -51,6 +76,17 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 		return rc;
 	}
 
+#if defined(FLASH_OPTCR_DB1M)
+	/*
+	 * Disable the data cache to avoid the silicon errata ES0206 Rev 16 2.2.12:
+	 * "Data cache might be corrupted during Flash memory read-while-write operation"
+	 */
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		dcache_enabled = true;
+		regs->ACR &= (~FLASH_ACR_DCEN);
+	}
+#endif /* FLASH_OPTCR_DB1M */
+
 	regs->CR &= CR_PSIZE_MASK;
 	regs->CR |= FLASH_PSIZE_BYTE;
 	regs->CR |= FLASH_CR_PG;
@@ -62,6 +98,15 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);
+
+#if defined(FLASH_OPTCR_DB1M)
+	/* Reset/enable the data cache if previously enabled */
+	if (dcache_enabled) {
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= (~FLASH_ACR_DCRST);
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+#endif /* FLASH_OPTCR_DB1M */
 
 	return rc;
 }
@@ -82,6 +127,13 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 		return rc;
 	}
 
+	/*
+	 * If an erase operation in Flash memory also concerns data
+	 * in the instruction cache, the user has to ensure that these data
+	 * are rewritten before they are accessed during code execution.
+	 */
+	flush_cache(regs);
+
 #if FLASH_SECTOR_TOTAL == 24
 	/*
 	 * RM0090, §3.9.8: STM32F42xxx, STM32F43xxx
@@ -93,7 +145,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	}
 #endif
 
-	regs->CR &= STM32F4X_SECTOR_MASK;
+	regs->CR &= ~FLASH_CR_SNB;
 	regs->CR |= FLASH_CR_SER | (sector << 3);
 	regs->CR |= FLASH_CR_STRT;
 

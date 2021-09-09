@@ -44,6 +44,8 @@ features:
 +-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
 +-----------+------------+------------------------------------------+
+| I2C       | on-chip    | Inter-Integrated Circuit                 |
++-----------+------------+------------------------------------------+
 | SYSTICK   | on-chip    | systick                                  |
 +-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
@@ -78,6 +80,12 @@ SPI Port
 The SAMD21 MCU has 6 SERCOM based SPIs.  On the XIAO, SERCOM0 can be put
 into SPI mode and used to connect to devices over pin 9 (MISO), pin 10
 (MOSI), and pin 8 (SCK).
+
+I2C Port
+========
+
+The SAMD21 MCU has 6 SERCOM based USARTs. On the XIAO, SERCOM2 is available on
+pin 4 (SDA) and pin 5 (SCL).
 
 Serial Port
 ===========

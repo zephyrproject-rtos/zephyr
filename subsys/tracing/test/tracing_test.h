@@ -78,6 +78,7 @@
 #define sys_port_trace_k_work_cancel_sync_blocking(work, sync)
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
 
+#define sys_port_trace_k_work_queue_init(queue)
 #define sys_port_trace_k_work_queue_start_enter(queue)
 #define sys_port_trace_k_work_queue_start_exit(queue)
 #define sys_port_trace_k_work_queue_drain_enter(queue)

@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "Seagate Legend 2.5 SSD board";
+	compatible = "legend25_ssd", "seagate,legend25_ssd";
+
+	aliases {
+		led-strip = &led_strip_spi;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>; /* 24MHz external clock */
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	prediv = <1>;
+	mul = <2>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&led_strip_spi {
+	chain-length = <4>;
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};

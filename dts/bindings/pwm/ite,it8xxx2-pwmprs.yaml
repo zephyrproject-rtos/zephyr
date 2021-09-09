@@ -1,0 +1,18 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it8xxx2 PWM prescaler node
+
+compatible: "ite,it8xxx2-pwmprs"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    interrupts:
+      required: false

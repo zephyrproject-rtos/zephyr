@@ -12,7 +12,7 @@
  */
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/gpio.h>
 
 /* GPIO buses definitions */
@@ -229,10 +229,6 @@ struct gpio_stm32_data {
 	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
-#ifdef CONFIG_PM_DEVICE
-	/* device power state */
-	uint32_t power_state;
-#endif
 };
 
 /**
@@ -243,7 +239,7 @@ struct gpio_stm32_data {
  * @param conf GPIO mode
  * @param altf Alternate function
  */
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
+void gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
 
 /**
  * @brief Enable / disable GPIO port clock.

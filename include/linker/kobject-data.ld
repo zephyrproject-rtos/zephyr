@@ -53,6 +53,7 @@
 #endif
 
 	*(".kobject_data.data*")
+	*(".kobject_data.sdata*")
 
 #ifdef KOBJECT_DATA_ALIGN
 	_kobject_data_area_end = .;

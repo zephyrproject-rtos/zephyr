@@ -12,6 +12,7 @@
 #include <device.h>
 #include <drivers/pinmux.h>
 #include <soc.h>
+#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 #define DT_DRV_COMPAT ite_it8xxx2_pinmux
 

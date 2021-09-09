@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -16,15 +14,16 @@ void bt_mesh_elem_register(struct bt_mesh_elem *elem, uint8_t count);
 
 uint8_t bt_mesh_elem_count(void);
 
-/* Find local element based on unicast or group address */
+/* Find local element based on unicast address */
 struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
 
-struct bt_mesh_model *bt_mesh_model_root(struct bt_mesh_model *mod);
-void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
-			     enum bt_mesh_walk (*cb)(struct bt_mesh_model *mod,
-						     uint32_t depth,
-						     void *user_data),
-			     void *user_data);
+bool bt_mesh_has_addr(uint16_t addr);
+bool bt_mesh_model_has_key(struct bt_mesh_model *mod, uint16_t key);
+
+void bt_mesh_model_extensions_walk(struct bt_mesh_model *root,
+				   enum bt_mesh_walk (*cb)(struct bt_mesh_model *mod,
+							   void *user_data),
+				   void *user_data);
 
 uint16_t *bt_mesh_model_find_group(struct bt_mesh_model **mod, uint16_t addr);
 
@@ -54,3 +53,26 @@ void bt_mesh_model_bind_store(struct bt_mesh_model *mod);
 void bt_mesh_model_sub_store(struct bt_mesh_model *mod);
 void bt_mesh_model_pub_store(struct bt_mesh_model *mod);
 void bt_mesh_model_settings_commit(void);
+
+/** @brief Register a callback function hook for mesh model messages.
+ *
+ * Register a callback function to act as a hook for recieving mesh model layer messages
+ * directly to the application without having instantiated the relevant models.
+ *
+ * @param cb A pointer to the callback function.
+ */
+void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf));
+
+/** @brief Send a mesh model message.
+ *
+ * Send a mesh model layer message out into the mesh network without having instantiated
+ * the relevant mesh models.
+ *
+ * @param ctx The Bluetooth mesh message context.
+ * @param buf The message payload.
+ *
+ * @return 0 on success or negative error code on failure.
+ */
+int bt_mesh_msg_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
+		     const struct bt_mesh_send_cb *cb, void *cb_data);

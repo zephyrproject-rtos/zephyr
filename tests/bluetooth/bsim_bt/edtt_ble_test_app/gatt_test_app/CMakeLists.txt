@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2019 Oticon A/S
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This test requires the BabbleSim simulator. Please set\

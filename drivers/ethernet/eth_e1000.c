@@ -95,7 +95,11 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 		ETHERNET_PTP |
 #endif
 		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-		ETHERNET_LINK_1000BASE_T;
+		ETHERNET_LINK_1000BASE_T |
+		/* The driver does not really support TXTIME atm but mark
+		 * it to support it so that we can test the txtime sample.
+		 */
+		ETHERNET_TXTIME;
 }
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
@@ -240,7 +244,7 @@ int e1000_probe(const struct device *ddev)
 		return -ENODEV;
 	}
 
-	pcie_get_mbar(bdf, 0, &mbar);
+	pcie_probe_mbar(bdf, 0, &mbar);
 	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
 		     PCIE_CONF_CMDSTAT_MASTER, true);
 

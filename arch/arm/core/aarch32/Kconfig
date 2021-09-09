@@ -29,7 +29,9 @@ config CPU_CORTEX_R
 	bool
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
@@ -132,8 +134,8 @@ config RUNTIME_NMI
 config PLATFORM_SPECIFIC_INIT
 	bool "Enable platform (SOC) specific startup hook"
 	help
-	  The platform specific initialization code (z_platform_init) is executed
-	  at the beginning of the startup code (__start).
+	  The platform specific initialization code (z_arm_platform_init) is
+	  executed at the beginning of the startup code (__start).
 
 config FAULT_DUMP
 	int "Fault dump level"
@@ -255,6 +257,37 @@ config FP_SOFTABI
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated but soft-float calling conventions.
+
+endchoice
+
+config FP16
+	bool "Half-precision floating point support"
+	default y
+	help
+	  This option enables the half-precision (16-bit) floating point support
+	  via the `__fp16` (both IEEE and ARM alternative formats) and the
+	  `_Float16` (IEEE format only) types.
+
+choice
+	prompt "FP16 format"
+	default FP16_IEEE
+	depends on FP16
+
+config FP16_IEEE
+	bool "FP16 IEEE format"
+	help
+	  This option selects the IEEE 754-2008 format for FP16.  This format can
+	  represent normalized values in the range of 2^(-14) to 65504.  There are
+	  11 bits of significand precision, approximately 3 decimal digits.
+
+config FP16_ALT
+	bool "FP16 ARM alternative format"
+	help
+	  This option selects the ARM alternative format for FP16.  This
+	  representation is similar to the IEEE 754-2008 format, but does not
+	  support infinites or NaNs. Instead, the range of exponents is extended,
+	  so that this format can represent normalized values in the range of
+	  2^(-14) to 131008.
 
 endchoice
 

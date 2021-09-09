@@ -83,6 +83,23 @@
 				<20 0 &gpio1 21 0>,	/* D14 */
 				<21 0 &gpio1 20 0>;	/* D15 */
 	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20000000 {
+			label = "secure-memory";
+			reg = <0x20000000 DT_SIZE_K(136)>;
+		};
+
+		non_secure_ram: partition@20022000 {
+			label = "non-secure-memory";
+			reg = <0x20022000 DT_SIZE_K(136)>;
+		};
+	};
 };
 
 &flexcomm0 {
@@ -130,25 +147,6 @@
 	};
 };
 
-&sram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* RAM split used by TFM */
-		secure_ram: partition@20000000 {
-			label = "secure-memory";
-			reg = <0x20000000 DT_SIZE_K(136)>;
-		};
-
-		non_secure_ram: partition@20022000 {
-			label = "non-secure-memory";
-			reg = <0x20022000 DT_SIZE_K(136)>;
-		};
-	};
-};
-
 arduino_i2c: &flexcomm4 {
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -161,6 +159,11 @@ arduino_i2c: &flexcomm4 {
 		label = "MMA8652FC";
 		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
 	};
+};
+
+arduino_serial: &flexcomm2 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
 };
 
 arduino_spi: &hs_lspi {

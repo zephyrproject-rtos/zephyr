@@ -21,6 +21,40 @@ properties:
       description: peripheral ID
       required: true
 
+    channel:
+      type: int
+      required: false
+      description: |
+        Timer / Counter channel to use, channel 0 is the default.
+        Valid range: 0 - 2
+
+    clk:
+      type: int
+      required: false
+      description: |
+        Clock source selection as defined by TCCLKS bit-field of TC_CMR
+        register. Consult the datasheet for the details.
+
+    nodivclk:
+      type: boolean
+      required: false
+      description: |
+        If set to true the `clk` property is ignored. Instead the TC module is
+        driven directly via MCLK. Only supported on sam4e, same70, same70b,
+        samv71, samv71b SoC series.
+
+    reg-cmr:
+      type: int
+      required: false
+      description: |
+        Alternate value of the CMR (Channel Mode Register) register.
+        If specified this value will be written to the register during driver
+        instance initialization instead of the default. It can be used to
+        configure the timer / counter in the custom mode. Together with other
+        properties like channel-num, pinctrl-0 this allows e.g. to configure
+        the driver to count events generated on the TIOA, TIOB signal connected
+        to the external pin.
+
     pinctrl-0:
       type: phandles
       required: false
@@ -29,8 +63,6 @@ properties:
         the phandles will reference pinctrl nodes.  These nodes will
         have a nodelabel that matches the Atmel SoC HAL defines and
         be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        In Quadrature Decoder mode TIOA0 & TIOB0 signals are expected
 
         For example the TC0 on SAME7x would be
            pinctrl-0 = <&pa0b_tc0_tioa0 &pa1b_tc0_tiob0>;

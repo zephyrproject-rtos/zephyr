@@ -10,8 +10,19 @@ set(COMPILER gcc)
 set(LINKER ld)
 set(BINTOOLS gnu)
 
-set(CROSS_COMPILE_TARGET xtensa-esp32-elf)
-set(SYSROOT_TARGET       xtensa-esp32-elf)
+file(GLOB toolchain_paths
+  LIST_DIRECTORIES true
+  ${TOOLCHAIN_HOME}
+  )
+
+if(toolchain_paths)
+  list(GET toolchain_paths 0 soc_toolchain_path)
+
+  get_filename_component(soc_toolchain "${soc_toolchain_path}" NAME)
+
+  set(CROSS_COMPILE_TARGET ${soc_toolchain})
+  set(SYSROOT_TARGET       ${soc_toolchain})
+endif()
 
 set(CROSS_COMPILE ${TOOLCHAIN_HOME}/bin/${CROSS_COMPILE_TARGET}-)
 set(SYSROOT_DIR   ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})

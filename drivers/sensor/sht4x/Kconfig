@@ -1,0 +1,10 @@
+# SHT4x temperature and humidity sensor configuration options
+
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+config SHT4X
+	bool "SHT4x Temperature and Humidity Sensor"
+	depends on I2C
+	help
+	  Enable driver for SHT4x temperature and humidity sensors.

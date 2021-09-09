@@ -17,6 +17,7 @@ config SOC_MKL25Z4
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
+	select HAS_MCUX_RCM
 
 endchoice
 

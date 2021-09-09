@@ -199,6 +199,7 @@ static int apbuart_err_check(const struct device *dev)
 	return err;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int get_baud(volatile struct apbuart_regs *const regs)
 {
 	unsigned int core_clk_hz;
@@ -302,6 +303,7 @@ static int apbuart_config_get(const struct device *dev, struct uart_config *cfg)
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void apbuart_isr(const struct device *dev);
@@ -499,8 +501,10 @@ static const struct uart_driver_api apbuart_driver_api = {
 	.poll_in                = apbuart_poll_in,
 	.poll_out               = apbuart_poll_out,
 	.err_check              = apbuart_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure              = apbuart_configure,
 	.config_get             = apbuart_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill              = apbuart_fifo_fill,
 	.fifo_read              = apbuart_fifo_read,

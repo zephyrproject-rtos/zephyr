@@ -232,8 +232,20 @@ static void test_json_decoding_array_array(void)
 			     &obj_array_array_ts);
 
 	zassert_equal(ret, 1, "Encoding array of object returned no errors");
+	zassert_equal(obj_array_array_ts.objects_array_len, 3, "Array has correct number of items");
+
+	zassert_true(!strcmp(obj_array_array_ts.objects_array[0].objects.name,
+			 "Simón Bolívar"), "String decoded correctly");
+	zassert_equal(obj_array_array_ts.objects_array[0].objects.height, 168,
+		      "Simón Bolívar height decoded correctly");
+
 	zassert_true(!strcmp(obj_array_array_ts.objects_array[1].objects.name,
 			 "Pelé"), "String decoded correctly");
+	zassert_equal(obj_array_array_ts.objects_array[1].objects.height, 173,
+		      "Pelé height decoded correctly");
+
+	zassert_true(!strcmp(obj_array_array_ts.objects_array[2].objects.name,
+			 "Usain Bolt"), "String decoded correctly");
 	zassert_equal(obj_array_array_ts.objects_array[2].objects.height, 195,
 		      "Usain Bolt height decoded correctly");
 }

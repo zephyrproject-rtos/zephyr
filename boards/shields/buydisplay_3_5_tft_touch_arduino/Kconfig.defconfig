@@ -23,9 +23,6 @@ config KSCAN_FT5336
 config KSCAN_FT5336_INTERRUPT
 	default n
 
-config KSCAN_INIT_PRIORITY
-	default 60
-
 endif # KSCAN
 
 if LVGL

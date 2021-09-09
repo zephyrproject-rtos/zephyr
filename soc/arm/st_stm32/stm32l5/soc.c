@@ -15,7 +15,7 @@
 #include <stm32_ll_pwr.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
-
+#include <stm32l5xx_ll_icache.h>
 #include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
@@ -34,6 +34,11 @@ static int stm32l5_init(const struct device *arg)
 	uint32_t key;
 
 	ARG_UNUSED(arg);
+
+	/* Enable ICACHE */
+	while (LL_ICACHE_IsActiveFlag_BUSY()) {
+	}
+	LL_ICACHE_Enable();
 
 	key = irq_lock();
 

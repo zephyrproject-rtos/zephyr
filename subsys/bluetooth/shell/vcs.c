@@ -16,9 +16,10 @@
 
 #include "bt.h"
 
-static struct bt_vcs vcs;
+static struct bt_vcs *vcs;
+static struct bt_vcs_included vcs_included;
 
-static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
+static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
 			 uint8_t mute)
 {
 	if (err) {
@@ -28,7 +29,7 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
 	}
 }
 
-static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCS flags get failed (%d)", err);
@@ -37,8 +38,8 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 	}
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -51,9 +52,8 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -66,8 +66,8 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -79,8 +79,7 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -92,8 +91,8 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 
 }
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -104,8 +103,7 @@ static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 			    inst, description);
 	}
 }
-static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
-			  int16_t offset)
+static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err) {
 		shell_error(ctx_shell, "VOCS state get failed (%d) for inst %p",
@@ -115,8 +113,7 @@ static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
 	}
 }
 
-static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			     int err, uint32_t location)
+static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -128,8 +125,8 @@ static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 }
 
-static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				int err, char *description)
+static void vocs_description_cb(struct bt_vocs *inst, int err,
+				char *description)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -196,15 +193,23 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 		vcs_param.aics_param[i].cb = &aics_cbs;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
+
 	vcs_param.cb = &vcs_cbs;
 
-	result = bt_vcs_register(&vcs_param);
+	result = bt_vcs_register(&vcs_param, &vcs);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 		return result;
 	}
 
-	bt_vcs_get(NULL, &vcs);
+	result = bt_vcs_included_get(vcs, &vcs_included);
+	if (result != 0) {
+		shell_error(sh, "Failed to get included services: %d", result);
+		return result;
+	}
 
 	return result;
 }
@@ -232,7 +237,7 @@ static int cmd_vcs_volume_step(const struct shell *sh, size_t argc,
 static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_vol_get(NULL);
+	int result = bt_vcs_vol_get(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -244,7 +249,7 @@ static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_flags_get(NULL);
+	int result = bt_vcs_flags_get(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -256,7 +261,7 @@ static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_volume_down(const struct shell *sh, size_t argc,
 			       char **argv)
 {
-	int result = bt_vcs_vol_down(NULL);
+	int result = bt_vcs_vol_down(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -269,7 +274,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 			     char **argv)
 
 {
-	int result = bt_vcs_vol_up(NULL);
+	int result = bt_vcs_vol_up(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -281,7 +286,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	int result = bt_vcs_unmute_vol_down(NULL);
+	int result = bt_vcs_unmute_vol_down(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -293,7 +298,7 @@ static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_up(const struct shell *sh, size_t argc,
 				    char **argv)
 {
-	int result = bt_vcs_unmute_vol_up(NULL);
+	int result = bt_vcs_unmute_vol_up(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -314,7 +319,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vol_set(NULL, volume);
+	result = bt_vcs_vol_set(vcs, volume);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -324,7 +329,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 
 static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_unmute(NULL);
+	int result = bt_vcs_unmute(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -335,7 +340,7 @@ static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_vcs_mute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_mute(NULL);
+	int result = bt_vcs_mute(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -358,7 +363,7 @@ static int cmd_vcs_vocs_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_state_get(NULL, vcs.vocs[index]);
+	result = bt_vcs_vocs_state_get(NULL, vcs_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -378,7 +383,7 @@ static int cmd_vcs_vocs_location_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_location_get(NULL, vcs.vocs[index]);
+	result = bt_vcs_vocs_location_get(NULL, vcs_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -405,7 +410,8 @@ static int cmd_vcs_vocs_location_set(const struct shell *sh, size_t argc,
 
 	}
 
-	result = bt_vcs_vocs_location_set(NULL, vcs.vocs[index], location);
+	result = bt_vcs_vocs_location_set(NULL, vcs_included.vocs[index],
+					  location);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -432,7 +438,7 @@ static int cmd_vcs_vocs_offset_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_state_set(NULL, vcs.vocs[index], offset);
+	result = bt_vcs_vocs_state_set(NULL, vcs_included.vocs[index], offset);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -452,7 +458,7 @@ static int cmd_vcs_vocs_output_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_description_get(NULL, vcs.vocs[index]);
+	result = bt_vcs_vocs_description_get(NULL, vcs_included.vocs[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -473,7 +479,7 @@ static int cmd_vcs_vocs_output_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vocs_description_set(NULL, vcs.vocs[index],
+	result = bt_vcs_vocs_description_set(NULL, vcs_included.vocs[index],
 					     description);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -488,13 +494,13 @@ static int cmd_vcs_aics_input_state_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_state_get(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_state_get(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -508,13 +514,13 @@ static int cmd_vcs_aics_gain_setting_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_gain_setting_get(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_gain_setting_get(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -528,13 +534,13 @@ static int cmd_vcs_aics_input_type_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_type_get(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_type_get(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -548,13 +554,13 @@ static int cmd_vcs_aics_input_status_get(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_status_get(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_status_get(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -568,13 +574,13 @@ static int cmd_vcs_aics_input_unmute(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_unmute(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_unmute(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -588,13 +594,13 @@ static int cmd_vcs_aics_input_mute(const struct shell *sh, size_t argc,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_mute(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_mute(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -608,13 +614,13 @@ static int cmd_vcs_aics_manual_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_manual_gain_set(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_manual_gain_set(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -628,13 +634,13 @@ static int cmd_vcs_aics_automatic_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_automatic_gain_set(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_automatic_gain_set(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -649,9 +655,9 @@ static int cmd_vcs_aics_gain_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int gain = strtol(argv[2], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -661,7 +667,7 @@ static int cmd_vcs_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_gain_set(NULL, vcs.aics[index], gain);
+	result = bt_vcs_aics_gain_set(NULL, vcs_included.aics[index], gain);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -675,13 +681,13 @@ static int cmd_vcs_aics_input_description_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_description_get(NULL, vcs.aics[index]);
+	result = bt_vcs_aics_description_get(NULL, vcs_included.aics[index]);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -696,13 +702,14 @@ static int cmd_vcs_aics_input_description_set(const struct shell *sh,
 	int index = strtol(argv[1], NULL, 0);
 	char *description = argv[2];
 
-	if (index >= vcs.aics_cnt) {
+	if (index >= vcs_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    vcs.aics_cnt, index);
+			    vcs_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_aics_description_set(NULL, vcs.aics[index], description);
+	result = bt_vcs_aics_description_set(NULL, vcs_included.aics[index],
+					     description);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}

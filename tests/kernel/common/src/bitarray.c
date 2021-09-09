@@ -11,7 +11,6 @@
 #include <tc_util.h>
 #include <sys/bitarray.h>
 #include <sys/util.h>
-#include <toolchain.h>
 
 #ifdef CONFIG_BIG_ENDIAN
 #define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))
@@ -338,13 +337,29 @@ void alloc_and_free_predefined(void)
 		     "sys_bitarray_free() failed bits comparison");
 }
 
+static inline size_t count_bits(uint32_t val)
+{
+	/* Implements Brian Kernighan’s Algorithm
+	 * to count bits.
+	 */
+
+	size_t cnt = 0;
+
+	while (val != 0) {
+		val = val & (val - 1);
+		cnt++;
+	}
+
+	return cnt;
+}
+
 size_t get_bitarray_popcnt(sys_bitarray_t *ba)
 {
 	size_t popcnt = 0;
 	unsigned int idx;
 
 	for (idx = 0; idx < ba->num_bundles; idx++) {
-		popcnt += popcount(ba->bundles[idx]);
+		popcnt += count_bits(ba->bundles[idx]);
 	}
 
 	return popcnt;
@@ -598,6 +613,57 @@ void test_bitarray_region_set_clear(void)
 	zassert_equal(ret, -EINVAL, "sys_bitarray_clear_region() should fail but not");
 	zassert_true(cmp_u32_arrays(ba.bundles, ba_expected, ba.num_bundles),
 		     "sys_bitarray_clear_region() failed bits comparison");
+}
+
+/**
+ * @brief Test find MSB and LSB operations
+ *
+ * @details Verify the functions that find out the most significiant
+ * bit and least significiant bit work as expected.
+ *
+ * @see find_msb_set(), find_lsb_set()
+ */
+void test_ffs(void)
+{
+	uint32_t value;
+	unsigned int bit;
+
+	/* boundary test, input is min */
+	value = 0x0;
+	zassert_equal(find_msb_set(value), 0, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 0, "LSB is not matched");
+
+	/* boundary test, input is min + 1 */
+	value = 0x00000001;
+	zassert_equal(find_msb_set(value), 1, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* average value test */
+	value = 0x80000000;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 32, "LSB is not matched");
+
+	/* mediate value test */
+	value = 0x000FF000;
+	zassert_equal(find_msb_set(value), 20, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 13, "LSB is not matched");
+
+	/* boundary test, input is max */
+	value = 0xffffffff;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* boundary test, input is max - 1 */
+	value = 0xfffffffe;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 2, "LSB is not matched");
+
+	/* equivalent class testing, each bit means a class */
+	for (bit = 0; bit < 32 ; bit++) {
+		value = 1UL << bit;
+		zassert_equal(find_msb_set(value), bit + 1, "MSB is not matched");
+		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
+	}
 }
 
 /**

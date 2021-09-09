@@ -119,6 +119,8 @@ The Zephyr nucleo_g431rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -146,7 +148,7 @@ Default Zephyr Peripheral Mapping:
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB9
 - SPI_1_NSS : PB6
-- SPI_1_SCK : PB3
+- SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
 - SPI_2_NSS : PB12

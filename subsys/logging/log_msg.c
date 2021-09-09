@@ -150,6 +150,10 @@ static void msg_free(struct log_msg *msg)
 			log_free((void *)(str));
 		}
 	} else {
+		/* Message does not contain any arguments that might be a transient
+		 * string. No action required.
+		 */
+		;
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {
@@ -478,4 +482,19 @@ void log_msg_hexdump_data_get(struct log_msg *msg,
 			      size_t offset)
 {
 	log_msg_hexdump_data_op(msg, data, length, offset, false);
+}
+
+uint32_t log_msg_mem_get_free(void)
+{
+	return k_mem_slab_num_free_get(&log_msg_pool);
+}
+
+uint32_t log_msg_mem_get_used(void)
+{
+	return k_mem_slab_num_used_get(&log_msg_pool);
+}
+
+uint32_t log_msg_mem_get_max_used(void)
+{
+	return k_mem_slab_max_used_get(&log_msg_pool);
 }

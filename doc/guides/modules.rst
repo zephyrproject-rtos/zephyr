@@ -530,6 +530,20 @@ variables. For example:
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
+It is possible to append values to a Zephyr CMake list variable from the module's first
+CMakeLists.txt file.
+To do so, append the value to the list and then set the list in the PARENT_SCOPE
+of the CMakeLists.txt file. For example, to append ``bar`` to the ``FOO_LIST`` variable in the
+Zephyr CMakeLists.txt scope:
+
+.. code-block:: cmake
+
+  list(APPEND FOO_LIST bar)
+  set(FOO_LIST ${FOO_LIST} PARENT_SCOPE)
+
+An example of a Zephyr list where this is useful is when adding additional
+directories to the ``SYSCALL_INCLUDE_DIRS`` list.
+
 Zephyr module dependencies
 ==========================
 
@@ -770,6 +784,8 @@ Each project in the ``west list`` output is tested like this:
 
 - If neither of those checks succeed, the project is not considered a module,
   and is not added to :makevar:`ZEPHYR_MODULES`.
+
+.. _modules_without_west:
 
 Without West
 ------------

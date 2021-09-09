@@ -5,7 +5,7 @@
 
 menuconfig MS5607
 	bool "MS5607 pressure and temperature sensor"
-	depends on SPI
+	depends on I2C || SPI
 	help
 	  Enable driver for MS5607 pressure and temperature sensor.
 

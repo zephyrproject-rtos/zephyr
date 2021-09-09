@@ -546,8 +546,11 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	answer_ptr = DNS_QUERY_POS;
 	items = 0;
 	server_idx = 0;
+	enum dns_rr_type answer_type = DNS_RR_TYPE_INVALID;
+
 	while (server_idx < dns_header_ancount(dns_msg->msg)) {
-		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl);
+		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl,
+					&answer_type);
 		if (ret < 0) {
 			ret = DNS_EAI_FAIL;
 			goto quit;
@@ -571,10 +574,10 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 				goto quit;
 			}
 
+query_known:
 			if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_A) {
-				if (net_sin(&info.ai_addr)->sin_family ==
-							AF_INET6) {
+				if (answer_type != DNS_RR_TYPE_A) {
 					ret = DNS_EAI_ADDRFAMILY;
 					goto quit;
 				}
@@ -588,8 +591,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 			} else if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_AAAA) {
-				if (net_sin6(&info.ai_addr)->sin6_family ==
-							AF_INET) {
+				if (answer_type != DNS_RR_TYPE_AAAA) {
 					ret = DNS_EAI_ADDRFAMILY;
 					goto quit;
 				}
@@ -631,7 +633,6 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			src = dns_msg->msg + dns_msg->response_position;
 			memcpy(addr, src, address_size);
 
-		query_known:
 			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
 					      &ctx->queries[*query_idx]);
 			items++;

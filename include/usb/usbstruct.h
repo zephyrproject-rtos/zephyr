@@ -28,6 +28,11 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * This header and macros below are deprecated in 2.7 release.
+ * Please replace with macros from Chapter 9 header, include/usb/usb_ch9.h
+ */
+
 /**
  * @file
  * @brief standard USB packet structures and defines
@@ -35,58 +40,52 @@
  * This file contains structures and defines of the standard USB packets
  */
 
+#include <usb/usb_ch9.h>
+
 #ifndef ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
 #define ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
 
-#define REQTYPE_GET_DIR(x)          (((x)>>7)&0x01)
-#define REQTYPE_GET_TYPE(x)         (((x)>>5)&0x03U)
-#define REQTYPE_GET_RECIP(x)        ((x)&0x1F)
+#warning "<usb/usbstruct.h> header is deprecated, use <usb/usb_ch9.h> instead"
 
-#define REQTYPE_DIR_TO_DEVICE       0
-#define REQTYPE_DIR_TO_HOST         1
+#define REQTYPE_GET_DIR(x)          __DEPRECATED_MACRO USB_REQTYPE_GET_DIR(x)
+#define REQTYPE_GET_TYPE(x)         __DEPRECATED_MACRO USB_REQTYPE_GET_TYPE(x)
+#define REQTYPE_GET_RECIP(x)        __DEPRECATED_MACRO USB_REQTYPE_GET_RECIPIENT(x)
 
-#define REQTYPE_TYPE_STANDARD       0
-#define REQTYPE_TYPE_CLASS          1
-#define REQTYPE_TYPE_VENDOR         2
-#define REQTYPE_TYPE_RESERVED       3
+#define REQTYPE_DIR_TO_DEVICE       __DEPRECATED_MACRO 0
+#define REQTYPE_DIR_TO_HOST         __DEPRECATED_MACRO 1
 
-#define REQTYPE_RECIP_DEVICE        0
-#define REQTYPE_RECIP_INTERFACE     1
-#define REQTYPE_RECIP_ENDPOINT      2
-#define REQTYPE_RECIP_OTHER         3
+#define REQTYPE_TYPE_STANDARD       __DEPRECATED_MACRO 0
+#define REQTYPE_TYPE_CLASS          __DEPRECATED_MACRO 1
+#define REQTYPE_TYPE_VENDOR         __DEPRECATED_MACRO 2
+#define REQTYPE_TYPE_RESERVED       __DEPRECATED_MACRO 3
+
+#define REQTYPE_RECIP_DEVICE        __DEPRECATED_MACRO 0
+#define REQTYPE_RECIP_INTERFACE     __DEPRECATED_MACRO 1
+#define REQTYPE_RECIP_ENDPOINT      __DEPRECATED_MACRO 2
+#define REQTYPE_RECIP_OTHER         __DEPRECATED_MACRO 3
 
 /* standard requests */
-#define REQ_GET_STATUS              0x00
-#define REQ_CLEAR_FEATURE           0x01
-#define REQ_SET_FEATURE             0x03
-#define REQ_SET_ADDRESS             0x05
-#define REQ_GET_DESCRIPTOR          0x06
-#define REQ_SET_DESCRIPTOR          0x07
-#define REQ_GET_CONFIGURATION       0x08
-#define REQ_SET_CONFIGURATION       0x09
-#define REQ_GET_INTERFACE           0x0A
-#define REQ_SET_INTERFACE           0x0B
-#define REQ_SYNCH_FRAME             0x0C
+#define REQ_GET_STATUS              __DEPRECATED_MACRO 0x00
+#define REQ_CLEAR_FEATURE           __DEPRECATED_MACRO 0x01
+#define REQ_SET_FEATURE             __DEPRECATED_MACRO 0x03
+#define REQ_SET_ADDRESS             __DEPRECATED_MACRO 0x05
+#define REQ_GET_DESCRIPTOR          __DEPRECATED_MACRO 0x06
+#define REQ_SET_DESCRIPTOR          __DEPRECATED_MACRO 0x07
+#define REQ_GET_CONFIGURATION       __DEPRECATED_MACRO 0x08
+#define REQ_SET_CONFIGURATION       __DEPRECATED_MACRO 0x09
+#define REQ_GET_INTERFACE           __DEPRECATED_MACRO 0x0A
+#define REQ_SET_INTERFACE           __DEPRECATED_MACRO 0x0B
+#define REQ_SYNCH_FRAME             __DEPRECATED_MACRO 0x0C
 
 /* feature selectors */
-#define FEA_ENDPOINT_HALT           0x00
-#define FEA_REMOTE_WAKEUP           0x01
-#define FEA_TEST_MODE               0x02
+#define FEA_ENDPOINT_HALT           __DEPRECATED_MACRO 0x00
+#define FEA_REMOTE_WAKEUP           __DEPRECATED_MACRO 0x01
+#define FEA_TEST_MODE               __DEPRECATED_MACRO 0x02
 
-#define DEVICE_STATUS_SELF_POWERED  0x01
-#define DEVICE_STATUS_REMOTE_WAKEUP 0x02
+#define DEVICE_STATUS_SELF_POWERED  __DEPRECATED_MACRO 0x01
+#define DEVICE_STATUS_REMOTE_WAKEUP __DEPRECATED_MACRO 0x02
 
-/*
- *  USB descriptors
- */
-
-/** USB descriptor header */
-struct usb_desc_header {
-	uint8_t bLength;               /**< descriptor length */
-	uint8_t bDescriptorType;       /**< descriptor type */
-};
-
-#define GET_DESC_TYPE(x)            (((x)>>8)&0xFFU)
-#define GET_DESC_INDEX(x)           ((x)&0xFFU)
+#define GET_DESC_TYPE(x)            __DEPRECATED_MACRO USB_GET_DESCRIPTOR_TYPE(x)
+#define GET_DESC_INDEX(x)           __DEPRECATED_MACRO USB_GET_DESCRIPTOR_INDEX(x)
 
 #endif /* ZEPHYR_INCLUDE_USB_USBSTRUCT_H_ */

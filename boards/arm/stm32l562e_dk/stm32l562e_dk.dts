@@ -38,3 +38,31 @@
 &lptim1 {
 	status = "okay";
 };
+
+&timers2 {
+	pwm {
+		st,prescaler = <10000>;
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 2KB at the end of 512KB flash is set for storage */
+		storage_partition: partition@7f800 {
+			   label = "storage";
+			   reg = <0x0007f800 0x00000800>;
+		   };
+	};
+};

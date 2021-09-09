@@ -1,0 +1,16 @@
+# ST Microelectronics STM32U5 MCU line
+
+# Copyright (c) 2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "STM32U5x MCU Selection"
+depends on SOC_SERIES_STM32U5X
+
+config SOC_STM32U575XX
+	bool "STM32U575XX"
+
+config SOC_STM32U585XX
+	bool "STM32U585XX"
+
+endchoice

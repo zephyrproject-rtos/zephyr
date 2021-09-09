@@ -629,7 +629,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_NUM_MBOX_ASYNC_MSGS`
+* :kconfig:`CONFIG_NUM_MBOX_ASYNC_MSGS`
 
 API Reference
 *************

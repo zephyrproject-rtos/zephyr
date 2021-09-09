@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Fabio Baltieri
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32WL SUBGHZ Radio
+
+compatible: "st,stm32wl-subghz-radio"
+
+include: semtech,sx126x-base.yaml
+
+properties:
+    interrupts:
+      required: true
+      description: |
+        Position of the "Radio IRQ, Busy" interrupt line.

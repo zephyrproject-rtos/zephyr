@@ -1,0 +1,268 @@
+# Configuration for the TF-M Module
+
+# Copyright (c) 2019, 2020 Linaro Limited
+# Copyright (c) 2020, 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
+	bool
+
+config TFM_BOARD
+	string
+	default "nordic_nrf/nrf9160dk_nrf9160" if BOARD_NRF9160DK_NRF9160_NS
+	default "nordic_nrf/nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
+	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
+	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
+	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
+	default "arm/musca_b1/sse_200" if BOARD_MUSCA_B1
+	default "arm/musca_s1" if BOARD_MUSCA_S1
+	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP_NS
+	help
+	  The board name used for building TFM. Building with TFM requires that
+	  TFM has been ported to the given board/SoC.
+
+menuconfig BUILD_WITH_TFM
+	bool "Build with TF-M as the Secure Execution Environment"
+	depends on TRUSTED_EXECUTION_NONSECURE
+	depends on TFM_BOARD != ""
+	depends on ARM_TRUSTZONE_M
+	select BUILD_OUTPUT_HEX
+	imply INIT_ARCH_HW_AT_BOOT
+	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	help
+	  When enabled, this option instructs the Zephyr build process to
+	  additionally generate a TF-M image for the Secure Execution
+	  environment, along with the Zephyr image. The Zephyr image
+	  itself is to be executed in the Non-Secure Processing Environment.
+	  The required dependency on TRUSTED_EXECUTION_NONSECURE
+	  ensures that the Zephyr image is built as a Non-Secure image. Both
+	  TF-M and Zephyr images, as well as the veneer object file that links
+	  them, are generated during the normal Zephyr build process.
+
+	  Notes:
+	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
+		ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
+
+	    By default we allow Zephyr preemptible threads be preempted
+	    while performing a secure function call.
+
+if BUILD_WITH_TFM
+
+config TFM_KEY_FILE_S
+	string "Path to private key used to sign secure firmware images."
+	depends on BUILD_WITH_TFM
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing secure
+	  firmware images.
+
+config TFM_KEY_FILE_NS
+	string "Path to private key used to sign non-secure firmware images."
+	depends on BUILD_WITH_TFM
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072_1.pem"
+	help
+	  The path and filename for the .pem file containing the private key
+	  that should be used by the BL2 bootloader when signing non-secure
+	  firmware images.
+
+config TFM_PROFILE
+	string
+	depends on BUILD_WITH_TFM
+	default "profile_small" if TFM_PROFILE_TYPE_SMALL
+	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
+	default "profile_large" if TFM_PROFILE_TYPE_LARGE
+	help
+	  Build profile used to build tfm_s image. The available values are
+	  profile_large, profile_medium and profile_small. The default profile
+	  does not need to have this configuration set.
+
+choice TFM_PROFILE_TYPE
+	prompt "TF-M build profile"
+	depends on BUILD_WITH_TFM
+	default TFM_PROFILE_TYPE_NOT_SET
+	help
+	  The TF-M build profile selection. Can be empty (not set),
+	  small, medium or large. Certain profile types enable other
+	  TF-M configuration options, namely, the IPC model and the
+	  isolation level.
+
+config TFM_PROFILE_TYPE_NOT_SET
+	bool "TF-M build profile is not set"
+
+config TFM_PROFILE_TYPE_SMALL
+	bool "TF-M build profile: small"
+
+config TFM_PROFILE_TYPE_MEDIUM
+	bool "TF-M build profile: medium"
+
+config TFM_PROFILE_TYPE_LARGE
+	bool "TF-M build profile: large"
+
+endchoice
+
+choice TFM_CMAKE_BUILD_TYPE
+	prompt "The build type for TFM"
+	default TFM_CMAKE_BUILD_TYPE_RELEASE if SPEED_OPTIMIZATIONS && BUILD_OUTPUT_STRIPPED
+	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_DEBUG if DEBUG_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
+
+config TFM_CMAKE_BUILD_TYPE_RELEASE
+	bool "Release build"
+
+config TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
+	bool "Release build with Debug info"
+
+config TFM_CMAKE_BUILD_TYPE_MINSIZEREL
+	bool "Release build, optimized for size"
+
+config TFM_CMAKE_BUILD_TYPE_DEBUG
+	bool "Debug build"
+
+endchoice
+
+config TFM_ISOLATION_LEVEL
+	int "Isolation level setting." if (TFM_PROFILE_TYPE_NOT_SET && TFM_IPC)
+	range 1 3
+	depends on BUILD_WITH_TFM
+	default 1 if TFM_PROFILE_TYPE_SMALL || !TFM_IPC
+	default 2 if TFM_PROFILE_TYPE_MEDIUM
+	default 3 if TFM_PROFILE_TYPE_LARGE
+	help
+	  Manually set the required TFM isolation level. Possible values are
+	  1,2 or 3; the default is set by build configuration. When TF-M
+	  Profile option is supplied, do not allow manual setting of the
+	  isolation level, as it is determined by the profile setting.
+	  As isolation levels 2 and 3 require PSA_API (TFM_IPC) support,
+	  force level 1 when TFM_IPC is not enabled.
+
+config TFM_BL2
+	bool "Add MCUboot to TFM"
+	default y
+	help
+	  TFM is designed to run with MCUboot in a certain configuration.
+	  This config adds MCUboot to the build - built via TFM's build system.
+
+if TFM_BL2
+
+config TFM_MCUBOOT_IMAGE_NUMBER
+	int "Granularity of FW updates of TFM and app"
+	range 1 2
+	default 2
+	help
+	  How many images the bootloader sees when it looks at TFM and the app.
+	  When this is 1, the S and NS are considered as 1 image and must be
+	  updated in one atomic operation. When this is 2, they are split and
+	  can be updated independently if dependency requirements are met.
+
+choice TFM_MCUBOOT_PATH
+	prompt "Path to MCUboot or DOWNLOAD to fetch automatically"
+	default TFM_MCUBOOT_PATH_LOCAL
+	help
+	   Path to MCUboot for TF-M builds. The default option
+	   is to use Zephyr's MCUboot module. As an alternative,
+	   users may switch to the 'download' version; in that
+	   case MCUboot will be fetched by the TF-M build during
+	   build time. The default option ensures that Zephyr builds
+	   with TF-M do not fetch external trees.
+
+config TFM_MCUBOOT_PATH_LOCAL
+	bool "TF-M to use Zephyr's MCUboot"
+	help
+	  TF-M builds with BL2 will use the Zephyr's MCUboot version,
+	  which is present in the MCUboot module.
+
+config TFM_MCUBOOT_PATH_DOWNLOAD
+	bool "TF-M to automatically download MCUboot during build"
+	help
+	  TF-M bulds with BL2 will let the TF-M build to automatically
+	  fetch and check-out the MCUboot version to use in the build.
+
+endchoice
+
+endif # TFM_BL2
+
+config TFM_IPC
+	bool "IPC" if TFM_PROFILE_TYPE_NOT_SET
+	default y if (TFM_PROFILE_TYPE_MEDIUM || TFM_PROFILE_TYPE_LARGE)
+	help
+	  When enabled, this option signifies that the TF-M build supports
+	  the PSA API (IPC mode) instead of the secure library mode. When
+	  TF-M Profile option is supplied, do not allow manual setting of
+	  the IPC mode, as it is determined by the profile setting.
+
+config TFM_REGRESSION_S
+	bool "TF-M Secure Regression tests"
+	help
+	  When enabled, this option signifies that the TF-M build includes
+	  the Secure domain regression tests.
+
+config TFM_REGRESSION_NS
+	bool "Use the TF-M Non-Secure Regression test application"
+	help
+	  When this is enabled, the Zephyr application as a whole will be
+	  replaced with the TF-M Non-Secure Regression test application.
+
+choice TFM_PSA_TEST
+	prompt "Enable a PSA test suite"
+	default TFM_PSA_TEST_NONE
+
+config TFM_PSA_TEST_CRYPTO
+	bool "Crypto tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Crypto test suite.
+
+config TFM_PSA_TEST_PROTECTED_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Protected Storage test suite.
+
+config TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE
+	bool "Internal Trusted Storage tests"
+	help
+	  Enable the PSA Internal Trusted Storage test suite.
+
+config TFM_PSA_TEST_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Storage test suite. This is a combination of the
+	  protected storage and internal trusted storage tests.
+
+config TFM_PSA_TEST_INITIAL_ATTESTATION
+	bool "Initial attestation tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Initial Attestation test suite.
+
+config TFM_PSA_TEST_NONE
+	bool "No PSA test suite"
+
+endchoice
+
+if TFM_BL2
+
+config ROM_START_OFFSET
+	hex "ROM Start Offset accounting for BL2 Header in the NS image"
+	default 0x400
+	help
+	  By default BL2 header size in TF-M is 0x400. ROM_START_OFFSET
+	  needs to be updated if TF-M switches to use a different header
+	  size for BL2.
+
+endif # !TFM_BL2
+
+# Option to instruct flashing a merged binary consisting of BL2 (optionally),
+# TF-M (Secure), and application (Non-Secure).
+config TFM_FLASH_MERGED_BINARY
+	bool
+	help
+		This option instructs west flash to program the
+		combined (merged) binary consisting of the TF-M
+		Secure firmware image, optionally, the BL2 image
+		(if building with TFM_BL2 is enabled), and the
+		Non-Secure application firmware.
+
+endif # BUILD_WITH_TFM

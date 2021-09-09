@@ -280,7 +280,7 @@ static inline void sys_notify_init_spinwait(struct sys_notify *notify)
  * reinitialized before it can be re-used.
  *
  * @note
- *   This capability is available only when @option{CONFIG_POLL} is
+ *   This capability is available only when @kconfig{CONFIG_POLL} is
  *   selected.
  *
  * @param notify pointer to the notification configuration object.

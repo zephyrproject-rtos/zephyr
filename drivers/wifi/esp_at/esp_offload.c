@@ -233,26 +233,17 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	k_sem_take(&dev->cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&dev->sem_tx_ready);
 
-	ret = modem_cmd_send_nolock(&dev->mctx.iface, &dev->mctx.cmd_handler,
-				    cmds, ARRAY_SIZE(cmds), cmd_buf,
-				    &dev->sem_response, ESP_CMD_TIMEOUT);
+	ret = modem_cmd_send_ext(&dev->mctx.iface, &dev->mctx.cmd_handler,
+				 cmds, ARRAY_SIZE(cmds), cmd_buf,
+				 &dev->sem_response, ESP_CMD_TIMEOUT,
+				 MODEM_NO_TX_LOCK | MODEM_NO_UNSET_CMDS);
 	if (ret < 0) {
 		LOG_DBG("Failed to send command");
 		goto out;
 	}
 
-	ret = modem_cmd_handler_update_cmds(&dev->cmd_handler_data,
-					    cmds, ARRAY_SIZE(cmds),
-					    true);
-	if (ret < 0) {
-		goto out;
-	}
-
-	/*
-	 * After modem handlers have been updated the receive buffer
-	 * needs to be processed again since there might now be a match.
-	 */
-	k_sem_give(&dev->iface_data.rx_sem);
+	/* Reset semaphore that will be released by 'SEND OK' or 'SEND FAIL' */
+	k_sem_reset(&dev->sem_response);
 
 	/* Wait for '>' */
 	ret = k_sem_take(&dev->sem_tx_ready, K_MSEC(5000));
@@ -270,7 +261,6 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	}
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
-	k_sem_reset(&dev->sem_response);
 	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("No send response");
@@ -290,32 +280,67 @@ out:
 	return ret;
 }
 
+static bool esp_socket_can_send(struct esp_socket *sock)
+{
+	atomic_val_t flags = esp_socket_flags(sock);
+
+	if ((flags & ESP_SOCK_CONNECTED) && !(flags & ESP_SOCK_CLOSE_PENDING)) {
+		return true;
+	}
+
+	return false;
+}
+
+static int esp_socket_send_one_pkt(struct esp_socket *sock)
+{
+	struct net_context *context = sock->context;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = k_fifo_get(&sock->tx_fifo, K_NO_WAIT);
+	if (!pkt) {
+		return -ENOMSG;
+	}
+
+	if (!esp_socket_can_send(sock)) {
+		goto pkt_unref;
+	}
+
+	ret = _sock_send(sock, pkt);
+	if (ret < 0) {
+		LOG_ERR("Failed to send data: link %d, ret %d",
+			sock->link_id, ret);
+
+		/*
+		 * If this is stream data, then we should stop pushing anything
+		 * more to this socket, as there will be a hole in the data
+		 * stream, which application layer is not expecting.
+		 */
+		if (esp_socket_type(sock) == SOCK_STREAM) {
+			if (!esp_socket_flags_test_and_set(sock,
+						ESP_SOCK_CLOSE_PENDING)) {
+				esp_socket_work_submit(sock, &sock->close_work);
+			}
+		}
+	} else if (context->send_cb) {
+		context->send_cb(context, ret, context->user_data);
+	}
+
+pkt_unref:
+	net_pkt_unref(pkt);
+
+	return 0;
+}
+
 void esp_send_work(struct k_work *work)
 {
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
 					       send_work);
-	struct net_context *context = sock->context;
-	struct net_pkt *pkt;
-	int ret = 0;
+	int err;
 
-	while (true) {
-		pkt = k_fifo_get(&sock->tx_fifo, K_NO_WAIT);
-		if (!pkt) {
-			break;
-		}
-
-		ret = _sock_send(sock, pkt);
-		if (ret < 0) {
-			LOG_ERR("Failed to send data: link %d, ret %d",
-				sock->link_id, ret);
-		}
-
-		if (context->send_cb) {
-			context->send_cb(context, ret, context->user_data);
-		}
-
-		net_pkt_unref(pkt);
-	}
+	do {
+		err = esp_socket_send_one_pkt(sock);
+	} while (err != -ENOMSG);
 }
 
 static int esp_sendto(struct net_pkt *pkt,
@@ -341,7 +366,10 @@ static int esp_sendto(struct net_pkt *pkt,
 	}
 
 	if (esp_socket_type(sock) == SOCK_STREAM) {
-		if (!esp_socket_connected(sock)) {
+		atomic_val_t flags = esp_socket_flags(sock);
+
+		if (!(flags & ESP_SOCK_CONNECTED) ||
+		     (flags & ESP_SOCK_CLOSE_PENDING)) {
 			return -ENOTCONN;
 		}
 	} else {

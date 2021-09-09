@@ -57,7 +57,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_I2C`
+* :kconfig:`CONFIG_I2C`
 
 API Reference
 *************

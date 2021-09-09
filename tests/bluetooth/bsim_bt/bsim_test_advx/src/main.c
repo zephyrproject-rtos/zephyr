@@ -26,7 +26,8 @@
 #define EVT_PROP_SCAN   BIT(1)
 #define EVT_PROP_ANON   BIT(5)
 #define EVT_PROP_TXP    BIT(6)
-#define ADV_INTERVAL    0x20
+#define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
+#define ADV_WAIT_MS     10     /* 10 ms wait loop */
 #define OWN_ADDR_TYPE   1
 #define PEER_ADDR_TYPE  0
 #define PEER_ADDR       NULL
@@ -62,7 +63,9 @@
 
 extern enum bst_result_t bst_result;
 
+static uint8_t const own_addr_reenable[] = {0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5};
 static uint8_t const own_addr[] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5};
+static uint8_t const peer_addr[] = {0xc6, 0xc7, 0xc8, 0xc9, 0xc1, 0xcb};
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
@@ -97,8 +100,12 @@ static uint8_t per_adv_data3[] = {
 		0xFF, 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF,
 	};
 
-static bool volatile is_connected, is_disconnected;
+static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
+
+static bool volatile is_scanned, is_connected, is_disconnected;
 static bool volatile connection_to_test;
+static uint8_t adv_data_expected_len;
+static uint8_t *adv_data_expected;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -121,7 +128,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	is_disconnected = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -176,10 +183,6 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	printk("Connection callbacks register...");
-	bt_conn_cb_register(&conn_callbacks);
-	printk("success.\n");
-
 	printk("Connectable advertising...");
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
@@ -192,11 +195,13 @@ static void test_advx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Stop advertising...");
 	err = bt_le_adv_stop();
@@ -205,12 +210,130 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	printk("AD Data set...");
+	handle = 0U;
+	err = ll_adv_data_set(handle, sizeof(adv_data), adv_data);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Directed advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Connectable advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, ADV_INTERVAL, BT_HCI_ADV_NONCONN_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	k_sleep(K_MSEC(100));
 
-	is_connected = false;
-	is_disconnected = false;
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Directed advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("AD Data set...");
+	handle = 0U;
+	err = ll_adv_data_set(handle, sizeof(adv_data1), adv_data1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Connectable advertising, parameter set...");
+	err = ll_adv_params_set(handle, 0, ADV_INTERVAL, BT_HCI_ADV_NONCONN_IND,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY,
+				0, 0, 0, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Create scannable extended advertising set...");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_SCAN_NAME, &adv_callbacks,
+				   &adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scannable advertising...");
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 0;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(500));
+
+	printk("Stopping scannable advertising...");
+	err = bt_le_ext_adv_stop(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Removing scannable adv set...");
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	printk("Create connectable extended advertising set...");
+	is_connected = false;
+	is_disconnected = false;
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
@@ -228,11 +351,13 @@ static void test_advx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Removing connectable adv aux set...");
 	err = bt_le_ext_adv_delete(adv);
@@ -300,6 +425,96 @@ static void test_advx_main(void)
 	ext_adv_param.timeout = 50;
 	ext_adv_param.num_events = 0;
 	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Re-enable advertising using extended commands (max_events)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 3;
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 3;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Setting advertising random address before re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_aux_random_addr_set(handle, own_addr_reenable);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Re-enable advertising using extended commands (duration)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 4;      /* 4 advertising events of (100 ms +
+				     * random_delay of upto 10 ms) transmit in
+				     * the range of 400 to 440 ms
+				     */
+	ext_adv_param.timeout = 50; /* Check there is atmost 4 advertising
+				     * events in a timeout of 500 ms
+				     */
+	ext_adv_param.num_events = 0;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	/* Delay 100 ms, and the test should verify that re-enabling still
+	 * results in correct num of events.
+	 */
+	k_sleep(K_MSEC(100));
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
 	if (err) {
 		goto exit;
 	}
@@ -512,6 +727,13 @@ static void test_advx_main(void)
 
 	printk("Disabling...");
 	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Periodic Advertising Channel Map Indication...");
+	err = ll_chm_update(chan_map);
 	if (err) {
 		goto exit;
 	}
@@ -793,14 +1015,25 @@ exit:
 	bs_trace_silent_exit(0);
 }
 
+
+static bool is_reenable_addr;
+
 static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		    struct net_buf_simple *buf)
 {
-	printk("%s: type = 0x%x.\n", __func__, adv_type);
+	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	struct bt_conn *conn;
+	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
+	printk("%s: type = 0x%x, addr = %s\n", __func__, adv_type, le_addr);
+
+	if (!is_reenable_addr &&
+	    !memcmp(own_addr_reenable, addr->a.val,
+		    sizeof(own_addr_reenable))) {
+		is_reenable_addr = true;
+	}
 
 	if (connection_to_test) {
+		struct bt_conn *conn;
 		int err;
 
 		connection_to_test = false;
@@ -818,6 +1051,18 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			printk("Create conn failed (err %d)\n", err);
 		} else {
 			bt_conn_unref(conn);
+		}
+	} else if (!is_scanned) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		printk("Device found: %s, type: %u, AD len: %u, RSSI %d\n",
+			addr_str, adv_type, buf->len, rssi);
+
+		if ((buf->len == adv_data_expected_len) &&
+		    !memcmp(buf->data, adv_data_expected,
+			    adv_data_expected_len)) {
+			is_scanned = true;
 		}
 	}
 }
@@ -849,6 +1094,8 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
+static bool is_scannable;
+static bool is_scan_rsp;
 static bool is_periodic;
 static uint8_t per_sid;
 static bt_addr_le_t per_addr;
@@ -876,6 +1123,19 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 	       info->interval, info->interval * 5 / 4, info->sid);
+
+	if (!is_scannable &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0)) {
+		is_scannable = true;
+	}
+
+	if (!is_scan_rsp &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0) &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0) &&
+	    (strlen(name) == strlen(CONFIG_BT_DEVICE_NAME)) &&
+	    (!strcmp(name, CONFIG_BT_DEVICE_NAME))) {
+		is_scan_rsp = true;
+	}
 
 	if (info->interval) {
 		if (!is_periodic) {
@@ -996,10 +1256,6 @@ static void test_scanx_main(void)
 	bt_le_scan_cb_register(&scan_callbacks);
 	printk("success.\n");
 
-	printk("Connection callbacks register...");
-	bt_conn_cb_register(&conn_callbacks);
-	printk("success.\n");
-
 	printk("Periodic Advertising callbacks register...");
 	bt_le_per_adv_sync_cb_register(&sync_cb);
 	printk("Success.\n");
@@ -1007,6 +1263,7 @@ static void test_scanx_main(void)
 	connection_to_test = true;
 
 	printk("Start scanning...");
+	is_reenable_addr = false;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
@@ -1017,32 +1274,88 @@ static void test_scanx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	is_connected = false;
 	is_disconnected = false;
-	connection_to_test = true;
+	connection_to_test = false;
 
 	printk("Start scanning...");
+	adv_data_expected = adv_data;
+	adv_data_expected_len = sizeof(adv_data);
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
+	printk("Waiting for advertising report, switch back from directed...");
+	while (!is_scanned) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for advertising report, data update while directed...");
+	adv_data_expected = adv_data1;
+	adv_data_expected_len = sizeof(adv_data1);
+	is_scanned = false;
+	while (!is_scanned) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scanning...");
+	is_scannable = false;
+	is_scan_rsp = false;
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for scannable advertising report...\n");
+	while (!is_scannable) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for scan response advertising report...\n");
+	while (!is_scan_rsp) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	/* This wait is to ensure we match with connectable advertising in the
+	 * advertiser's timeline.
+	 */
+	k_sleep(K_MSEC(500));
+
+	connection_to_test = true;
+
 	printk("Waiting for connection...");
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Start scanning for a duration...");
 	is_scan_timeout = false;
@@ -1083,8 +1396,9 @@ static void test_scanx_main(void)
 
 	scan_param.timeout = 0;
 
-	printk("Start scanning...");
+	printk("Start scanning for Periodic Advertisements...");
 	is_periodic = false;
+	is_reenable_addr = false;
 	per_adv_evt_cnt_actual = 0;
 	per_adv_evt_cnt_expected = 3;
 	err = bt_le_scan_start(&scan_param, scan_cb);
@@ -1093,10 +1407,16 @@ static void test_scanx_main(void)
 	}
 	printk("success.\n");
 
+	printk("Verify address update due to re-enable of advertising...");
+	while (!is_reenable_addr) {
+		k_sleep(K_MSEC(30));
+	}
+	printk("success.\n");
+
 	printk("Waiting...");
 	while (!is_periodic ||
 	       (per_adv_evt_cnt_actual != per_adv_evt_cnt_expected)) {
-		k_sleep(K_MSEC(30));
+		k_sleep(K_MSEC(ADV_WAIT_MS));
 	}
 	printk("done.\n");
 

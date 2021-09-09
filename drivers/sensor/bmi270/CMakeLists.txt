@@ -6,4 +6,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_BMI270 bmi270.c)
+zephyr_library_sources(bmi270.c)

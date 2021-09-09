@@ -1,14 +1,17 @@
 # Copyright (c) 2021 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton NPCX pads configuration map between Pin Mux controller and
-             Power Switch Logic (PSL) controller driver instances.
+description: |
+  Nuvoton NPCX pads configuration map between Pin Mux controller and
+  Power Switch Logic (PSL) controller driver instances.
 
 compatible: "nuvoton,npcx-pslctrl-conf"
 
 child-binding:
-   description: Child node to present the mapping between pin-mux controller
-                and its power switch logic (PSL) support
+   description: |
+     Child node to present the mapping between pin-mux controller
+     and its power switch logic (PSL) support
+
    properties:
       offset:
          type: int

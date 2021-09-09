@@ -92,7 +92,9 @@ enum {
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
 	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME,
+	BT_ADV_INCLUDE_NAME_AD,
+	/* Advertiser should include name in scan response data */
+	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -121,10 +123,6 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
-	/* The device name has been forced to appear in the advertising data
-	 * instead of in the scan response data
-	 */
-	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };
@@ -150,6 +148,8 @@ struct bt_le_ext_adv {
 	/* TX Power in use by the controller */
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+	struct k_work_delayable	lim_adv_timeout_work;
 };
 
 enum {
@@ -213,11 +213,11 @@ struct bt_dev_le {
 	struct k_sem		pkts;
 	uint16_t		acl_mtu;
 	struct k_sem		acl_pkts;
+#endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
 	uint16_t		iso_mtu;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
-#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
 	/* Size of the the controller resolving list */

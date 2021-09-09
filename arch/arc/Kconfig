@@ -252,6 +252,7 @@ config CODE_DENSITY
 
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
+	default y if CPU_HS3X
 	default y if FPU
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
@@ -329,7 +330,8 @@ config DCACHE_LINE_SIZE
 
 config ARC_EXCEPTION_STACK_SIZE
 	int "ARC exception handling stack size"
-	default 768
+	default 768 if !64BIT
+	default 2048 if 64BIT
 	help
 	  Size in bytes of exception handling stack which is at the top of
 	  interrupt stack to get smaller memory footprint because exception
@@ -352,11 +354,26 @@ endmenu
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
-config TEST_EXTRA_STACKSIZE
+config ISR_STACK_SIZE
+	default 4096 if 64BIT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if 64BIT
+
+config IDLE_STACK_SIZE
 	default 1024 if 64BIT
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if 64BIT
+
+config TEST_EXTRA_STACKSIZE
+	default 2048 if 64BIT
 
 config CMSIS_THREAD_MAX_STACK_SIZE
-	default 1024 if 64BIT
+	default 2048 if 64BIT
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
-	default 1024 if 64BIT
+	default 2048 if 64BIT
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 2048 if 64BIT

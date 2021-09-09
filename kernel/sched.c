@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <spinlock.h>
-#include <sched_priq.h>
+#include <kernel/sched_priq.h>
 #include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
@@ -48,7 +48,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 struct k_spinlock sched_spinlock;
 
-static void update_cache(int);
+static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)
@@ -169,6 +169,23 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 	return NULL;
 }
 #endif
+
+ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+{
+	struct k_thread *t;
+
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+
+	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
+		if (z_sched_prio_cmp(thread, t) > 0) {
+			sys_dlist_insert(&t->base.qnode_dlist,
+					 &thread->base.qnode_dlist);
+			return;
+		}
+	}
+
+	sys_dlist_append(pq, &thread->base.qnode_dlist);
+}
 
 /* _current is never in the run queue until context switch on
  * SMP configurations, see z_requeue_current()
@@ -927,23 +944,6 @@ void *z_get_next_switch_handle(void *interrupted)
 }
 #endif
 
-ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
-{
-	struct k_thread *t;
-
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
-		if (z_sched_prio_cmp(thread, t) > 0) {
-			sys_dlist_insert(&t->base.qnode_dlist,
-					 &thread->base.qnode_dlist);
-			return;
-		}
-	}
-
-	sys_dlist_append(pq, &thread->base.qnode_dlist);
-}
-
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
@@ -1365,7 +1365,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <syscalls/k_wakeup_mrsh.c>
 #endif
 
-k_tid_t z_impl_k_current_get(void)
+k_tid_t z_impl_z_current_get(void)
 {
 #ifdef CONFIG_SMP
 	/* In SMP, _current is a field read from _current_cpu, which
@@ -1384,11 +1384,11 @@ k_tid_t z_impl_k_current_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_tid_t z_vrfy_k_current_get(void)
+static inline k_tid_t z_vrfy_z_current_get(void)
 {
-	return z_impl_k_current_get();
+	return z_impl_z_current_get();
 }
-#include <syscalls/k_current_get_mrsh.c>
+#include <syscalls/z_current_get_mrsh.c>
 #endif
 
 int z_impl_k_is_preempt_thread(void)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019-2021, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
 #define INST_0_QER _CONCAT(JESD216_DW15_QER_, \
-			   DT_ENUM_TOKEN(DT_DRV_INST(0), \
+			   DT_STRING_TOKEN(DT_DRV_INST(0), \
 					 quad_enable_requirements))
 
 BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
@@ -661,6 +661,12 @@ static int qspi_nrfx_configure(const struct device *dev)
 	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 	int ret = qspi_get_zephyr_ret_code(res);
 
+#if DT_INST_NODE_HAS_PROP(0, rx_delay)
+	if (ret == 0 && !nrf53_errata_121()) {
+		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
+	}
+#endif
+
 	if ((ret == 0)
 	    && (INST_0_QER != JESD216_DW15_QER_NONE)) {
 		/* Set QE to match transfer mode.  If not using quad
@@ -1159,14 +1165,6 @@ static const struct flash_pages_layout dev_layout = {
 };
 #undef LAYOUT_PAGES_COUNT
 
-static const struct flash_parameters *
-qspi_flash_get_parameters(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return &qspi_flash_parameters;
-}
-
 static void qspi_nor_pages_layout(const struct device *dev,
 				  const struct flash_pages_layout **layout,
 				  size_t *layout_size)
@@ -1175,6 +1173,14 @@ static void qspi_nor_pages_layout(const struct device *dev,
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+static const struct flash_parameters *
+qspi_flash_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &qspi_flash_parameters;
+}
 
 static const struct flash_driver_api qspi_nor_api = {
 	.read = qspi_nor_read,

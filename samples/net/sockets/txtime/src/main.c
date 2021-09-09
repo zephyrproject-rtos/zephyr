@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <net/ethernet.h>
+#include <net/ethernet_mgmt.h>
 
 #define APP_BANNER "Run SO_TXTIME client"
 
@@ -381,6 +382,114 @@ static int get_peer_address(struct net_if **iface, char *addr_str,
 	return 0;
 }
 
+static void enable_txtime_for_queues(struct net_if *iface)
+{
+	struct ethernet_req_params params = { 0 };
+	int i;
+
+	params.txtime_param.type = ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES;
+	params.txtime_param.enable_txtime = true;
+
+	for (i = 0; i < NET_TC_TX_COUNT; i++) {
+		params.txtime_param.queue_id = i;
+
+		(void)net_mgmt(NET_REQUEST_ETHERNET_SET_TXTIME_PARAM,
+			       iface, &params, sizeof(params));
+	}
+}
+
+static void set_qbv_params(struct net_if *iface)
+{
+	struct ethernet_req_params params = { 0 };
+	int i, ret;
+	int ports_count = 1, row;
+
+	/* Assume only one port atm, the amount of ports could be
+	 * queried from controller by ETHERNET_CONFIG_TYPE_PORTS_NUM
+	 */
+
+	/* Set some defaults */
+	LOG_DBG("Setting Qbv parameters to %d port%s", ports_count,
+		ports_count > 1 ? "s" : "");
+
+	/* One Qbv setting example:
+	 *
+	 *    Start time: after 20s of current configuring base time
+	 *    Cycle time: 20ms
+	 *    Number GCL list: 2
+	 *    GCL list 0 cycle time: 10ms
+	 *    GCL list 0 'set' gate open: Txq1 (default queue),
+	 *                                Txq3 (highest priority queue)
+	 *    GCL list 1 cycle time: 10ms
+	 *    GCL list 1 'set' gate open: Txq0 (background queue)
+	 */
+
+	for (i = 0; i < ports_count; ++i) {
+		/* Turn on the gate control to first two gates (just for demo
+		 * purposes)
+		 */
+		for (row = 0; row < 2; row++) {
+			memset(&params, 0, sizeof(params));
+
+			params.qbv_param.port_id = i;
+			params.qbv_param.type =
+				ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST;
+			params.qbv_param.gate_control.operation = ETHERNET_SET_GATE_STATE;
+			params.qbv_param.gate_control.time_interval = 10000000UL;
+			params.qbv_param.gate_control.row = row;
+
+			if (row == 0) {
+				params.qbv_param.gate_control.
+					gate_status[net_tx_priority2tc(NET_PRIORITY_CA)] = true;
+				params.qbv_param.gate_control.
+					gate_status[net_tx_priority2tc(NET_PRIORITY_BE)] = true;
+			} else if (row == 1) {
+				params.qbv_param.gate_control.
+					gate_status[net_tx_priority2tc(NET_PRIORITY_BK)] = true;
+			}
+
+			ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+				       iface, &params,
+				       sizeof(struct ethernet_req_params));
+			if (ret) {
+				LOG_ERR("Could not set %s%s (%d) to port %d",
+					"gate control list", "", ret, i);
+			}
+		}
+
+		memset(&params, 0, sizeof(params));
+
+		params.qbv_param.port_id = i;
+		params.qbv_param.type =
+				ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN;
+		params.qbv_param.gate_control_list_len = MIN(NET_TC_TX_COUNT, 2);
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM, iface,
+			       &params, sizeof(struct ethernet_req_params));
+		if (ret) {
+			LOG_ERR("Could not set %s%s (%d) to port %d",
+				"gate control list", " len", ret, i);
+		}
+
+		memset(&params, 0, sizeof(params));
+
+		params.qbv_param.port_id = i;
+		params.qbv_param.type = ETHERNET_QBV_PARAM_TYPE_TIME;
+		params.qbv_param.base_time.second = 20ULL;
+		params.qbv_param.base_time.fract_nsecond = 0ULL;
+		params.qbv_param.cycle_time.second = 0ULL;
+		params.qbv_param.cycle_time.nanosecond = 20000000UL;
+		params.qbv_param.extension_time = 0UL;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM, iface,
+			       &params, sizeof(struct ethernet_req_params));
+		if (ret) {
+			LOG_ERR("Could not set %s%s (%d) to port %d",
+				"base time", "", ret, i);
+		}
+	}
+}
+
 static int cmd_sample_quit(const struct shell *shell,
 			  size_t argc, char *argv[])
 {
@@ -468,11 +577,26 @@ void main(void)
 		return;
 	}
 
+	if (!(caps & ETHERNET_TXTIME)) {
+		LOG_ERR("Interface %p does not support %s", iface, "TXTIME");
+		return;
+	}
+
 	data.clk = net_eth_get_ptp_clock_by_index(if_index);
 	if (!data.clk) {
 		LOG_ERR("Interface %p does not support %s", iface,
 			"PTP clock");
 		return;
+	}
+
+	/* Make sure the queues are enabled */
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_MGMT) && (NET_TC_TX_COUNT > 0)) {
+		enable_txtime_for_queues(iface);
+
+		/* Set Qbv options if they are available */
+		if (caps & ETHERNET_QBV) {
+			set_qbv_params(iface);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_SAMPLE_UDP_SOCKET)) {

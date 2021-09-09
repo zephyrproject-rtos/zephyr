@@ -128,6 +128,11 @@ int sys_clock_driver_init(const struct device *dev)
 		    lptim_irq_handler, 0, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(lptim1)));
 
+#ifdef CONFIG_SOC_SERIES_STM32WLX
+	/* Enable the LPTIM1 wakeup EXTI line */
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_29);
+#endif
+
 	/* configure the LPTIM1 counter */
 	LL_LPTIM_SetClockSource(LPTIM1, LL_LPTIM_CLK_SOURCE_INTERNAL);
 	/* configure the LPTIM1 prescaler with 1 */

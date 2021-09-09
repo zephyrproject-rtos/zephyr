@@ -77,6 +77,9 @@ size_t _kernel_thread_info_offsets[] = {
 #elif defined(CONFIG_SPARC)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.o6),
+#elif defined(CONFIG_ARCH_POSIX)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.thread_status),
 #else
 	/* Use a special value so that OpenOCD knows that obtaining the stack
 	 * pointer is not possible on this particular architecture.

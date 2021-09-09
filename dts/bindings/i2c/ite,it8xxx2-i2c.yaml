@@ -21,3 +21,15 @@ properties:
       type: int
       required: true
       description: Ordinal identifying the port
+
+    gpio-dev:
+        type: phandle
+        required: true
+        description: Get the handle of the GPIO device
+
+    pinctrl-0:
+      type: phandles
+      required: true
+      description: Configuration of I2C SCL and SDA pinmux controller.
+                   The SCL pin must be specified first and the SDA pin
+                   second in the pinctrl-0 array.

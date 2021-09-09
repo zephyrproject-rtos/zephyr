@@ -20,4 +20,8 @@
 		compatible = "mmio-sram";
 		reg = <0x200C0000 DT_SIZE_K(62)>;
 	};
+
+	soc-id {
+		device-id = <0x20>;
+	};
 };

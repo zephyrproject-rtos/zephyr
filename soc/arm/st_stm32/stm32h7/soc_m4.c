@@ -67,6 +67,11 @@ static int stm32h7_m4_init(const struct device *arg)
 {
 	uint32_t key;
 
+	/* Enable ART Flash cache accelerator */
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_ART);
+	LL_ART_SetBaseAddress(DT_REG_ADDR(DT_CHOSEN(zephyr_flash)));
+	LL_ART_Enable();
+
 	key = irq_lock();
 
 	/* Install default handler that simply resets the CPU

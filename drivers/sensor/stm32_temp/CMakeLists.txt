@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_STM32_TEMP stm32_temp.c)
+zephyr_library_sources(stm32_temp.c)

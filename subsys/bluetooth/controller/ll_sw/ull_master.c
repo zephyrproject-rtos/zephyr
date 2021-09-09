@@ -11,6 +11,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/mem.h"
 #include "util/mayfly.h"
 
 #include "hal/cpu.h"
@@ -30,6 +31,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_chan.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_master.h"
 #include "lll_filter.h"
@@ -80,6 +82,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	uint32_t ready_delay_us;
 	struct lll_scan *lll;
 	struct ll_conn *conn;
+	uint16_t max_tx_time;
+	uint16_t max_rx_time;
 	memq_link_t *link;
 	uint8_t hop;
 	int err;
@@ -88,6 +92,18 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	const uint8_t own_id_addr_type = (own_addr_type & 0x01);
+	const uint8_t *own_id_addr;
+
+	/* Do not connect twice to the same peer */
+	own_id_addr = ll_addr_get(own_id_addr_type, NULL);
+	if (ull_conn_peer_connected(own_id_addr_type, own_id_addr,
+				    peer_addr_type, peer_addr)) {
+		return BT_HCI_ERR_CONN_ALREADY_EXISTS;
+	}
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -137,6 +153,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	if (lll->conn) {
+		conn_lll = lll->conn;
+		conn = HDR_LLL2ULL(conn_lll);
+
 		goto conn_is_valid;
 	}
 
@@ -183,12 +202,18 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	/* Use the default 1M packet Tx time, extended connection initiation
+	 * in LLL will update this with the correct PHY.
+	 */
+	conn_lll->max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
+	/* Use the default 1M PHY, extended connection initiation in LLL will
+	 * update this with the correct PHY.
+	 */
 	conn_lll->phy_tx = PHY_1M;
 	conn_lll->phy_flags = 0;
 	conn_lll->phy_tx_time = PHY_1M;
@@ -303,23 +328,20 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 	conn->tx_data = conn->tx_data_last = 0;
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,
-						      conn_lll->phy_flags);
-#else
-	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
-#endif
-
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
 	conn->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       328 + EVENT_IFS_US + 328);
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	/* Remember peer and own identity address */
+	conn->peer_id_addr_type = peer_addr_type;
+	(void)memcpy(conn->peer_id_addr, peer_addr, sizeof(conn->peer_id_addr));
+	conn->own_id_addr_type = own_id_addr_type;
+	(void)memcpy(conn->own_id_addr, own_id_addr, sizeof(conn->own_id_addr));
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 	lll->conn = conn_lll;
 
@@ -327,6 +349,47 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	lll_hdr_init(&conn->lll, conn);
 
 conn_is_valid:
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,
+						      conn_lll->phy_flags);
+#else
+	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
+#endif
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy));
+	conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy));
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	max_tx_time = conn_lll->max_tx_time;
+	max_rx_time = conn_lll->max_rx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
+	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+	max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	max_tx_time = MAX(max_tx_time,
+			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+	max_rx_time = MAX(max_rx_time,
+			  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy));
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+	conn->ull.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       max_tx_time +
+				       EVENT_IFS_US +
+				       max_rx_time);
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);
 
@@ -501,43 +564,6 @@ uint8_t ll_connect_disable(void **rx)
 	}
 
 	return err;
-}
-
-/* FIXME: Refactor out this interface so that its usable by extended
- * advertising channel classification, and also master role connections can
- * perform channel map update control procedure.
- */
-uint8_t ll_chm_update(uint8_t const *const chm)
-{
-	uint16_t handle;
-	uint8_t ret;
-
-	ull_chan_map_set(chm);
-
-	handle = CONFIG_BT_MAX_CONN;
-	while (handle--) {
-		struct ll_conn *conn;
-
-		conn = ll_connected_get(handle);
-		if (!conn || conn->lll.role) {
-			continue;
-		}
-
-		ret = ull_conn_llcp_req(conn);
-		if (ret) {
-			return ret;
-		}
-
-		memcpy(conn->llcp.chan_map.chm, chm,
-		       sizeof(conn->llcp.chan_map.chm));
-		/* conn->llcp.chan_map.instant     = 0; */
-		conn->llcp.chan_map.initiate = 1U;
-
-		conn->llcp_type = LLCP_CHAN_MAP;
-		conn->llcp_req++;
-	}
-
-	return 0;
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -956,6 +982,36 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	ull_conn_tx_lll_enqueue(conn, UINT8_MAX);
 
 	DEBUG_RADIO_PREPARE_M(1);
+}
+
+uint8_t ull_master_chm_update(void)
+{
+	uint16_t handle;
+
+	handle = CONFIG_BT_MAX_CONN;
+	while (handle--) {
+		struct ll_conn *conn;
+		uint8_t ret;
+
+		conn = ll_connected_get(handle);
+		if (!conn || conn->lll.role) {
+			continue;
+		}
+
+		ret = ull_conn_llcp_req(conn);
+		if (ret) {
+			return ret;
+		}
+
+		/* Fill Channel Map here, fill instant when enqueued to LLL */
+		ull_chan_map_get(conn->llcp.chan_map.chm);
+		conn->llcp.chan_map.initiate = 1U;
+
+		conn->llcp_type = LLCP_CHAN_MAP;
+		conn->llcp_req++;
+	}
+
+	return 0;
 }
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param)

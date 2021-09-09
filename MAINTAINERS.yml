@@ -231,8 +231,23 @@ Build system:
     labels:
         - "area: Build System"
 
+"C++":
+    status: maintained
+    maintainers:
+        - stephanosio
+    collaborators:
+        - alexanderwachter
+    files:
+        - subsys/cpp/
+        - tests/subsys/cpp/
+        - samples/subsys/cpp/
+    labels:
+        - "area: C++"
+
 C library:
-    status: orphaned
+    status: maintained
+    maintainers:
+         - stephanosio
     collaborators:
          - nashif
          - enjiamai
@@ -240,6 +255,7 @@ C library:
     files:
          - lib/libc/
          - tests/lib/c_lib/
+         - tests/lib/newlib/
     labels:
          - "area: C Library"
 
@@ -254,6 +270,20 @@ CMSIS API layer:
          - tests/subsys/portability/cmsis_rtos_v*/
     labels:
         - "area: Portability"
+
+CMSIS-DSP integration:
+    status: maintained
+    maintainers:
+        - stephanosio
+    collaborators:
+        - galak
+        - ioannisg
+    files:
+        - modules/Kconfig.cmsis_dsp
+        - tests/benchmarks/cmsis_dsp/
+        - tests/lib/cmsis_dsp/
+    labels:
+        - "area: CMSIS-DSP"
 
 Common arch:
     status: orphaned
@@ -371,7 +401,6 @@ Documentation:
     collaborators:
         - nashif
         - utzig
-        - jocelyn-li
         - mbolivar-nordic
     files:
         - doc/*
@@ -511,6 +540,7 @@ Documentation:
         - drivers/eeprom/
         - dts/bindings/mtd/*eeprom*
         - include/drivers/eeprom.h
+        - samples/drivers/eeprom/
         - tests/drivers/eeprom/
     labels:
         - "area: EEPROM"
@@ -546,7 +576,6 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
         - pfalcon
     files:
         - drivers/ethernet/
@@ -620,7 +649,7 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
+        - rlubos
     files:
         - drivers/ieee802154/
     labels:
@@ -757,7 +786,7 @@ Documentation:
 "Drivers: PTP Clock":
     status: maintained
     maintainers:
-        - jukkar
+        - tbursztyka
     files:
         - drivers/ptp_clock/
         - include/drivers/ptp_clock.h
@@ -871,7 +900,7 @@ Documentation:
     maintainers:
         - tbursztyka
     collaborators:
-        - jukkar
+        - rlubos
         - kludentwo
     files:
         - drivers/wifi/
@@ -1043,7 +1072,7 @@ Native POSIX and POSIX arch:
 Networking:
     status: maintained
     maintainers:
-        - jukkar
+        - rlubos
     collaborators:
         - tbursztyka
         - pfalcon
@@ -1068,7 +1097,7 @@ Networking:
     maintainers:
         - pfalcon
     collaborators:
-        - jukkar
+        - rlubos
     files:
         - samples/net/sockets/
         - subsys/net/lib/sockets/
@@ -1081,7 +1110,7 @@ Networking:
     maintainers:
         - jhedberg
     collaborators:
-        - jukkar
+        - rlubos
         - tbursztyka
     files:
         - include/net/buf.h
@@ -1094,8 +1123,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
@@ -1107,8 +1134,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - samples/net/lwm2m_client/
         - subsys/net/lib/lwm2m/
@@ -1119,8 +1144,6 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
-    collaborators:
-        - jukkar
     files:
         - subsys/net/lib/mqtt/
         - tests/net/lib/mqtt_packet/
@@ -1195,7 +1218,6 @@ Twister:
         - nashif
     collaborators:
         - chen-png
-        - jocelyn-li
         - galak
         - PerMac
         - enjiamai
@@ -1269,22 +1291,42 @@ Synopsys Platforms:
     labels:
         - "platform: Synopsys"
 
-Nuvoton Platforms:
-    status: orphaned
-    collaborators:
+Nuvoton_NPCX Platforms:
+    status: maintained
+    maintainers:
         - MulinChao
-        - sjg20
-        - jackrosenthal
         - ChiHuaL
         - WealianLiao
+    collaborators:
+        - MulinChao
+        - ChiHuaL
+        - WealianLiao
+        - sjg20
+        - keith-zephyr
+        - jackrosenthal
+        - fabiobaltieri
+        - yperess
     files:
-        - soc/arm/nuvoton/
+        - soc/arm/nuvoton_npcx/
         - boards/arm/npcx*/
         - dts/arm/nuvoton/
-        - dts/bindings/*/nuvoton/*
+        - dts/bindings/*/*npcx*
         - drivers/*/*_npcx*
     labels:
-        - "platform: Nuvoton"
+        - "platform: Nuvoton_NPCX"
+
+Nuvoton_Numicro Platforms:
+    status: orphaned
+    collaborators:
+        - ssekar15
+    files:
+        - soc/arm/nuvoton_numicro/
+        - boards/arm/nuvoton_pfm*/
+        - dts/arm/nuvoton/
+        - dts/bindings/*/*numicro*
+        - drivers/*/*_numicro*
+    labels:
+        - "platform: Nuvoton_Numicro"
 
 SiLabs Platforms:
     status: orphaned
@@ -1403,12 +1445,18 @@ Espressif Platforms:
     status: maintained
     maintainers:
         - sylvioalves
+        - glaubermaroto
+        - ulipe
     files:
         - drivers/*/*esp32*
-        - boards/xtensa/esp32/
-        - soc/xtensa/esp32/
+        - boards/xtensa/esp32*/
+        - soc/xtensa/esp32*/
+        - boards/riscv/esp32*/
+        - soc/riscv/esp32*/
         - dts/xtensa/espressif/
+        - dts/riscv/espressif/
         - dts/bindings/*/*esp32*
+        - samples/boards/esp32*
     labels:
         - "platform: ESP32"
 
@@ -1429,9 +1477,9 @@ ITE Platforms:
         - sjg20
     files:
         - boards/riscv/it8xxx2_evb/
-        - drivers/*/*_ite*
+        - drivers/*/*it8xxx2*
         - dts/bindings/*/*ite*
-        - dts/riscv/it8xxx2.dtsi
+        - dts/riscv/*it8xxx2*
         - soc/riscv/riscv-ite/
     labels:
         - "platform: ITE"
@@ -1476,8 +1524,6 @@ USB:
     status: maintained
     maintainers:
         - jfischer-no
-    collaborators:
-        - mengxianglinx
     files:
         - drivers/usb/
         - dts/bindings/usb/

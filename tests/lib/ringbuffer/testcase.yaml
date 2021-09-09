@@ -1,5 +1,16 @@
-tests:
-  libraries.data_structures:
+common:
     tags: ring_buffer circular_buffer
+
+tests:
+  libraries.ring_buffer:
+    # FIXME: qemu_arc_hs6x excluded, see #37861
+    platform_exclude: qemu_arc_hs6x
     integration_platforms:
       - native_posix
+
+  libraries.ring_buffer_concurrent:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    integration_platforms:
+      - qemu_x86

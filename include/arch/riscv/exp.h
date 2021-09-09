@@ -51,7 +51,6 @@ struct soc_esf {
 
 struct __esf {
 	ulong_t ra;		/* return address */
-	ulong_t gp;		/* global pointer */
 	ulong_t tp;		/* thread pointer */
 
 	ulong_t t0;		/* Caller-saved temporary register */

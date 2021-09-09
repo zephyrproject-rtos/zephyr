@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/att.h>
 #include <sys/byteorder.h>
 
 #include <logging/log.h>
@@ -182,12 +183,12 @@ static void connect(uint8_t *data, uint16_t len)
 		allocated_channels[i] = &chan->le.chan;
 	}
 
-	if (cmd->num == 1) {
+	if (cmd->num == 1 && cmd->ecfc == 0) {
 		err = bt_l2cap_chan_connect(conn, &chan->le.chan, cmd->psm);
 		if (err < 0) {
 			goto fail;
 		}
-	} else if (cmd->num > 1) {
+	} else if (cmd->ecfc == 1) {
 #if defined(CONFIG_BT_L2CAP_ECRED)
 		err = bt_l2cap_ecred_chan_connect(conn, allocated_channels,
 							cmd->psm);
@@ -236,6 +237,39 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT, CONTROLLER_INDEX,
 		   status);
 }
+
+
+void disconnect_eatt_chans(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_disconnect_eatt_chans_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+	int err;
+	int status;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	for (int i = 0; i < cmd->count; i++) {
+		err = bt_eatt_disconnect_one(conn);
+		if (err) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	bt_conn_unref(conn);
+
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT_EATT_CHANS,
+		   CONTROLLER_INDEX, status);
+}
+
 
 static void send_data(uint8_t *data, uint16_t len)
 {
@@ -313,14 +347,9 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 	}
 
 	if (bt_conn_enc_key_size(conn) < req_keysize) {
-		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 0;
 		return -EPERM;
 	} else if (authorize_flag) {
-		/* TSPX_psm_authorization_required
-		 * we never authorize this connection, so return error
-		 * everytime this psm is used
-		 */
 		authorize_flag = false;
 		return -EACCES;
 	}
@@ -352,14 +381,12 @@ static void listen(uint8_t *data, uint16_t len)
 	server->accept = accept;
 	server->psm = cmd->psm;
 
-	if (server->psm == 0x00F4) {
+	if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY) {
 		/* TSPX_psm_encryption_key_size_required */
 		req_keysize = 16;
-	} else if (server->psm == 0x00F3) {
-		/* TSPX_psm_authentication_required */
+	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR) {
 		authorize_flag = true;
-	} else if (server->psm == 0x00F2) {
-		/* TSPX_psm_authentication_required */
+	} else if (cmd->response == L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN) {
 		server->sec_level = BT_SECURITY_L3;
 	}
 
@@ -379,7 +406,7 @@ fail:
 
 static void supported_commands(uint8_t *data, uint16_t len)
 {
-	uint8_t cmds[1];
+	uint8_t cmds[2];
 	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
 	(void)memset(cmds, 0, sizeof(cmds));
@@ -389,6 +416,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -406,6 +434,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_DISCONNECT:
 		disconnect(data, len);
+		return;
+	case L2CAP_DISCONNECT_EATT_CHANS:
+		disconnect_eatt_chans(data, len);
 		return;
 	case L2CAP_SEND_DATA:
 		send_data(data, len);

@@ -79,11 +79,6 @@
 	status = "okay";
 };
 
-&usart2 {
-	current-speed = <115200>;
-	status = "okay";
-};
-
 &uart4 {
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
 	current-speed = <115200>;
@@ -142,6 +137,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -177,7 +173,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -252,7 +247,7 @@
 	pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
 		     &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
 		     &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
-	dmas = <&dma1 5 5 0x0000 0x03>;
+	dmas = <&dma1 5 5 0x0000>;
 	dma-names = "tx_rx";
 
 	status = "okay";
@@ -273,12 +268,12 @@
 
 			slot1_partition: partition@0 {
 				label = "image-1";
-				reg = <0x00000000 0x000D8000>;
+				reg = <0x00000000 0x000d8000>;
 				};
 
-			storage_partition: partition@D8000 {
+			storage_partition: partition@d8000 {
 				label = "storage";
-				reg = <0x000D8000 DT_SIZE_M(7)>;
+				reg = <0x000d8000 DT_SIZE_M(7)>;
 			};
 		};
 	};

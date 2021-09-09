@@ -65,7 +65,10 @@
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, interrupt_parent),\
 		(CY_PSOC6_IRQ_CONFIG(n, isr)))
 #define CY_PSOC6_NVIC_MUX_IRQN(n) DT_IRQN(DT_INST_PHANDLE_BY_IDX(n,\
-						interrupt_parent, 0))
+					  interrupt_parent, 0))
+
+#define CY_PSOC6_NVIC_MUX_IRQ_PRIO(n) DT_IRQ(DT_INST_PHANDLE_BY_IDX(n,\
+					     interrupt_parent, 0), priority)
 /*
  * DT_INST_PROP_BY_IDX should be used get interrupt and configure, instead
  * DT_INST_IRQN. The DT_INST_IRQN return IRQ number with level translation,
@@ -86,13 +89,14 @@
  */
 #define CY_PSOC6_DT_INST_NVIC_INSTALL(n, isr) CY_PSOC6_IRQ_CONFIG(n, isr)
 #define CY_PSOC6_NVIC_MUX_IRQN(n) DT_INST_IRQN(n)
+#define CY_PSOC6_NVIC_MUX_IRQ_PRIO(n) DT_INST_IRQ(n, priority)
 #define CY_PSOC6_NVIC_MUX_MAP(n)
 #endif
 
 #define CY_PSOC6_IRQ_CONFIG(n, isr)			\
 	do {						\
 		IRQ_CONNECT(CY_PSOC6_NVIC_MUX_IRQN(n),	\
-			    DT_INST_IRQ(n, priority),	\
+			    CY_PSOC6_NVIC_MUX_IRQ_PRIO(n),\
 			    isr, DEVICE_DT_INST_GET(n), 0);\
 		CY_PSOC6_NVIC_MUX_MAP(n);		\
 		irq_enable(CY_PSOC6_NVIC_MUX_IRQN(n));	\
@@ -102,25 +106,21 @@
  * Devicetree related macros to construct pin control config data
  */
 
-/* Get a node id from a pinctrl-0 prop at index 'i' */
-#define NODE_ID_FROM_PINCTRL_0(inst, i) \
-	DT_INST_PHANDLE_BY_IDX(inst, pinctrl_0, i)
-
 /* Get GPIO register address associated with pinctrl-0 pin at index 'i' */
 #define CY_PSOC6_PIN_TO_GPIO_REG_ADDR(inst, i) \
-	DT_REG_ADDR(DT_PHANDLE(NODE_ID_FROM_PINCTRL_0(inst, i), cypress_pins))
+	DT_REG_ADDR(DT_PHANDLE(DT_INST_PINCTRL_0(inst, i), cypress_pins))
 
 /* Get PIN associated with pinctrl-0 pin at index 'i' */
 #define CY_PSOC6_PIN(inst, i) \
-	DT_PHA(NODE_ID_FROM_PINCTRL_0(inst, i), cypress_pins, pin)
+	DT_PHA(DT_INST_PINCTRL_0(inst, i), cypress_pins, pin)
 
 /* Get HSIOM value associated with pinctrl-0 pin at index 'i' */
 #define CY_PSOC6_PIN_HSIOM(inst, i) \
-	DT_PHA(NODE_ID_FROM_PINCTRL_0(inst, i), cypress_pins, hsiom)
+	DT_PHA(DT_INST_PINCTRL_0(inst, i), cypress_pins, hsiom)
 
 /* Helper function for CY_PSOC6_PIN_FLAGS */
 #define CY_PSOC6_PIN_FLAG(inst, i, flag) \
-	DT_PROP(NODE_ID_FROM_PINCTRL_0(inst, i), flag)
+	DT_PROP(DT_INST_PINCTRL_0(inst, i), flag)
 
 /* Convert DT flags to SoC flags */
 #define CY_PSOC6_PIN_FLAGS(inst, i) \
@@ -147,7 +147,7 @@
 	}
 
 /* Get the number of pins for pinctrl-0 */
-#define CY_PSOC6_DT_INST_NUM_PINS(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
+#define CY_PSOC6_DT_INST_NUM_PINS(inst) DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)
 
 /* internal macro to structure things for use with UTIL_LISTIFY */
 #define CY_PSOC6_PIN_ELEM(idx, inst) CY_PSOC6_DT_INST_PIN(inst, idx),

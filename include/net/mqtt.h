@@ -374,6 +374,10 @@ enum mqtt_transport_type {
 	MQTT_TRANSPORT_SECURE_WEBSOCKET,
 #endif
 #endif /* CONFIG_MQTT_LIB_WEBSOCKET */
+#if defined(CONFIG_MQTT_LIB_CUSTOM_TRANSPORT)
+	/** Use custom transport for MQTT connection. */
+	MQTT_TRANSPORT_CUSTOM,
+#endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
@@ -423,6 +427,11 @@ struct mqtt_transport {
 		int32_t timeout;
 	} websocket;
 #endif
+
+#if defined(CONFIG_MQTT_LIB_CUSTOM_TRANSPORT)
+	/** User defined data for custom transport for MQTT. */
+	void *custom_transport_data;
+#endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 
 #if defined(CONFIG_SOCKS)
 	struct {
@@ -571,7 +580,7 @@ int mqtt_client_set_proxy(struct mqtt_client *client,
  * @note Default protocol revision used for connection request is 3.1.1. Please
  *       set client.protocol_version = MQTT_VERSION_3_1_0 to use protocol 3.1.0.
  * @note
- *       Please modify @option{CONFIG_MQTT_KEEPALIVE} time to override default
+ *       Please modify @kconfig{CONFIG_MQTT_KEEPALIVE} time to override default
  *       of 1 minute.
  */
 int mqtt_connect(struct mqtt_client *client);

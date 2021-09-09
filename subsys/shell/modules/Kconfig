@@ -38,3 +38,9 @@ config DATE_SHELL
 	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to date and time based on Unix time.
+
+config DEVMEM_SHELL
+	bool "Enable devmem shell"
+	default y if !SHELL_MINIMAL
+	help
+	  This shell command provides read/write access to physical memory.

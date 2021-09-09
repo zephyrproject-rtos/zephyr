@@ -12,6 +12,7 @@ if (CONFIG_NRF_802154_RADIO_DRIVER)
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_clock_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_irq_zephyr.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
 
   if (CONFIG_SOC_SERIES_NRF53X AND NOT CONFIG_NRF_802154_SL_OPENSOURCE)
@@ -67,6 +68,16 @@ target_compile_definitions(zephyr-802154-interface
     # ACK timeout
     NRF_802154_ACK_TIMEOUT_ENABLED=1
 )
+
+if (CONFIG_NRF_802154_ENCRYPTION)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENCRYPTION_ENABLED=1)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=1)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_IE_WRITER_ENABLED=1)
+else ()
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENCRYPTION_ENABLED=0)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=0)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_IE_WRITER_ENABLED=0)
+endif()
 
 if (CONFIG_NRF_802154_CCA_MODE_ED)
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_CCA_MODE_DEFAULT=NRF_RADIO_CCA_MODE_ED)

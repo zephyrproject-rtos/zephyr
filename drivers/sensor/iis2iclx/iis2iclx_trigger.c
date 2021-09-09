@@ -141,9 +141,9 @@ static void iis2iclx_handle_interrupt(const struct device *dev)
 			return;
 		}
 
-		if ((status.xlda == 0)
+		if (status.xlda == 0
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
-					&& (status.tda == 0)
+					&& status.tda == 0
 #endif
 					) {
 			break;

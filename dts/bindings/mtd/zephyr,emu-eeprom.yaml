@@ -25,6 +25,7 @@ properties:
     partition-erase:
       type: boolean
       required: false
-      description: Delay erase until complete partition is used. This enables a
+      description: |
+        Delay erase until complete partition is used. This enables a
         ram buffer to allow data to be copied during the partition erase. If
         power is lost during the partition erase the data will be lost.

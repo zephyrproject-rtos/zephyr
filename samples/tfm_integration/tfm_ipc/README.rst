@@ -33,21 +33,21 @@ executed on MPS2+ AN521 and ST Nucleo L552ZE Q.
 On MPS2+ AN521:
 ===============
 
-#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_nonsecure``).
+#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``).
 
    .. code-block:: bash
 
       cd $ZEPHYR_ROOT/samples/tfm_integration/tfm_ipc/
       mkdir build
       cd build
-      cmake -DBOARD=mps2_an521_nonsecure ..
+      cmake -DBOARD=mps2_an521_ns ..
       make
 
 You can also use west as follows:
 
    .. code-block:: bash
 
-      $ west build -p -b mps2_an521_nonsecure zephyr/samples/tfm_integration/tfm_ipc
+      $ west build -p -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc
 
 
 #. Copy application binary files (mcuboot.bin and tfm_sign.bin) to ``<MPS2 device name>/SOFTWARE/``.
@@ -82,7 +82,7 @@ folder to update the ``-DGNUARM_PATH=/opt/toolchain/arm-none-eabi`` path.
 On QEMU:
 ========
 
-The MPS2+ AN521 target (``mps2_an521_nonsecure``), which is based on a
+The MPS2+ AN521 target (``mps2_an521_ns``), which is based on a
 dual core ARM Cortex-M33 setup, also allows you to run TF-M tests using QEMU if
 you don't have access to a supported ARMv8-M development board.
 
@@ -99,7 +99,7 @@ ninja or make, adding the ``run`` commands:
 
    .. code-block:: bash
 
-      $ west build -b mps2_an521_nonsecure zephyr/samples/tfm_integration/tfm_ipc -t run
+      $ west build -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc -t run
 
 Or, post build:
 
@@ -171,16 +171,16 @@ On nRF5340 and nRF9160:
 =======================
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuappns`` or ``-DBOARD=nrf9160dk_nrf9160ns``).
+(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160_ns``).
 
    Example, for nRF9160, using ``cmake`` and ``ninja``
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
+      cmake -GNinja -DBOARD=nrf9160dk_nrf9160_ns ..
 
 If building with BL2 (MCUboot bootloader) enabled, manually flash
 the MCUboot bootloader image binary (``bl2.hex``).
@@ -203,16 +203,16 @@ On BL5340:
 ==========
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=bl5340_dvk_cpuappns``).
+(``-DBOARD=bl5340_dvk_cpuapp_ns``).
 
    Example using ``cmake`` and ``ninja``
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=bl5340_dvk_cpuappns ..
+      cmake -GNinja -DBOARD=bl5340_dvk_cpuapp_ns ..
 
 Flash the concatenated TF-M + Zephyr binary.
 

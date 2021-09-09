@@ -1,0 +1,5 @@
+description: STM32 U5 flash controller
+
+compatible: "st,stm32u5-flash-controller"
+
+include: flash-controller.yaml

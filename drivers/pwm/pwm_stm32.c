@@ -18,7 +18,7 @@
 #include <init.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);

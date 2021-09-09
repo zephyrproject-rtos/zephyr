@@ -77,6 +77,8 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
+
 # Don't add non-existing include directories, it creates noise and
 # warnings in some tooling
 foreach(optional_include_dir
@@ -94,6 +96,11 @@ zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
 )
+
+# Ensure that include/toolchain.h includes toolchain/other.h for all off-tree toolchains
+if(TOOLCHAIN_USE_CUSTOM)
+  zephyr_compile_definitions(__TOOLCHAIN_CUSTOM__)
+endif()
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
 # @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
@@ -169,6 +176,10 @@ if(CONFIG_CPLUSPLUS)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp17>)
   elseif(CONFIG_STD_CPP2A)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2a>)
+  elseif(CONFIG_STD_CPP20)
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp20>)
+  elseif(CONFIG_STD_CPP2B)
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
   else()
     assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
@@ -346,6 +357,7 @@ endif()
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_USERSPACE)
+  add_custom_target(app_smem)
   set(APP_SMEM_ALIGNED_DEP app_smem_aligned_linker)
   set(APP_SMEM_UNALIGNED_DEP app_smem_unaligned_linker)
 endif()
@@ -582,22 +594,11 @@ add_custom_command(
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 
-# This only works for CMake version >=3.15, but as the property is ignored on
-# older CMake versions there is no reason to check for version.
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
              ADDITIONAL_CLEAN_FILES
              ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
 )
-
-# Only works with make.
-if(${CMAKE_VERSION} VERSION_LESS 3.15)
-  set_property(DIRECTORY
-               APPEND PROPERTY
-               ADDITIONAL_MAKE_CLEAN_FILES
-               ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
-  )
-endif()
 
 add_custom_target(${PARSE_SYSCALLS_TARGET}
   DEPENDS
@@ -711,9 +712,12 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
     if(NOT source_list
        AND NOT ${lib_imported}
     )
-      message(WARNING
-        "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
-      )
+      get_property(allow_empty TARGET ${zephyr_lib} PROPERTY ALLOW_EMPTY)
+      if(NOT "${allow_empty}")
+        message(WARNING
+          "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+        )
+      endif()
       target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
       set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
       list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
@@ -785,6 +789,7 @@ if(CONFIG_HAS_DTS)
     --output-source dev_handles.c
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
+    --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
@@ -925,6 +930,7 @@ if(CONFIG_USERSPACE)
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.data=.kobject_data.data
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.sdata=.kobject_data.sdata
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.text=.kobject_data.text
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.rodata=.kobject_data.rodata
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KOBJECT_HASH_OUTPUT_OBJ_PATH}
@@ -975,18 +981,42 @@ toolchain_ld_configure_files()
 if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
   set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+
+  if(CONFIG_LINKER_USE_PINNED_SECTION)
+    set(APP_SMEM_PINNED_ALIGNED_LD
+         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+    set(APP_SMEM_PINNED_UNALIGNED_LD
+         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+
+    if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+      # The libc partition may hold symbols that are required during boot process,
+      # for example, stack guard (if enabled). So the libc partition must be pinned
+      # if not sections are in physical memory at boot, as the paging mechanism is
+      # only initialized post-kernel.
+      set_property(TARGET app_smem APPEND PROPERTY pinned_partitions "z_libc_partition")
+    endif()
+
+    get_property(APP_SMEM_PINNED_PARTITION_LIST TARGET app_smem PROPERTY pinned_partitions)
+    if(APP_SMEM_PINNED_PARTITION_LIST)
+      list(JOIN APP_SMEM_PINNED_PARTITION_LIST "," APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL)
+      set(APP_SMEM_PINNED_PARTITION_LIST_ARG "--pinpartitions=${APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL}")
+    endif()
+  endif()
+
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   add_custom_target(
     ${APP_SMEM_ALIGNED_DEP}
     DEPENDS
     ${APP_SMEM_ALIGNED_LD}
+    ${APP_SMEM_PINNED_ALIGNED_LD}
     )
 
   add_custom_target(
     ${APP_SMEM_UNALIGNED_DEP}
     DEPENDS
     ${APP_SMEM_UNALIGNED_LD}
+    ${APP_SMEM_PINNED_UNALIGNED_LD}
     )
 
   if(CONFIG_NEWLIB_LIBC)
@@ -997,11 +1027,13 @@ if(CONFIG_USERSPACE)
   endif()
 
   add_custom_command(
-    OUTPUT ${APP_SMEM_UNALIGNED_LD}
+    OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_UNALIGNED_LD}
+    $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
+    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1019,6 +1051,7 @@ if(CONFIG_USERSPACE)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
+    ${APP_SMEM_PINNED_UNALIGNED_LD}
     zephyr_generated_headers
     )
 
@@ -1051,11 +1084,13 @@ if(CONFIG_USERSPACE)
   add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
 
   add_custom_command(
-    OUTPUT ${APP_SMEM_ALIGNED_LD}
+    OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
     -o ${APP_SMEM_ALIGNED_LD}
+    $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
+    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${NEWLIB_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1463,8 +1498,8 @@ if(CONFIG_OUTPUT_STAT)
     COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
             $<TARGET_PROPERTY:bintools,readelf_flag>
             $<TARGET_PROPERTY:bintools,readelf_flag_headers>
-            $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
-            $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_outfile>${KERNEL_STAT_NAME}
             $<TARGET_PROPERTY:bintools,readelf_flag_final>
     )
   list(APPEND

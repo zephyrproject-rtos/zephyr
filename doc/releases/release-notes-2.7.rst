@@ -1,0 +1,406 @@
+:orphan:
+
+.. _zephyr_2.7:
+
+Zephyr 2.7.0 (Working draft)
+############################
+
+We are pleased to announce the release of Zephyr RTOS version 2.7.0.
+
+
+
+The following sections provide detailed lists of changes by component.
+
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+
+Known issues
+************
+
+You can check all currently known issues by listing them using the GitHub
+interface and listing all issues with the `bug label
+<https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue+is%3Aopen+label%3Abug>`_.
+
+API Changes
+***********
+
+Deprecated in this release
+
+* :c:macro:`DT_ENUM_TOKEN` and :c:macro:`DT_ENUM_UPPER_TOKEN`,
+  were deprecated in favor of utilizing
+  :c:macro:`DT_STRING_TOKEN` and :c:macro:`DT_STRING_UPPER_TOKEN`
+
+Changes in this release
+
+==========================
+
+Removed APIs in this release
+
+* Removed support for the deprecated ``DEVICE_INIT`` and ``DEVICE_AND_API_INIT`` macros.
+* Removed support for the deprecated ``BUILD_ASSERT_MSG`` macro.
+* Removed support for the deprecated ``GET_ARG1``, ``GET_ARG2`` and ``GET_ARGS_LESS_1`` macros.
+* Removed support for the deprecated Kconfig ``PRINTK64`` option.
+* Removed support for the deprecated ``bt_set_id_addr`` function.
+* Removed support for the Kconfig ``USB`` option. Option ``USB_DEVICE_STACK``
+  is sufficient to enable USB device support.
+
+* Removed ``CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM`` and
+  ``CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME`` Kconfig options
+  in favor of chosen node ``zephyr,ot-uart``.
+* Removed ``CONFIG_BT_UART_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,bt-uart``.
+* Removed ``CONFIG_BT_MONITOR_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,bt-mon-uart``.
+* Removed ``CONFIG_UART_MCUMGR_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,uart-mcumgr``.
+* Removed ``CONFIG_UART_CONSOLE_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,console``.
+* Removed ``CONFIG_UART_SHELL_ON_DEV_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,shell-uart``.
+
+============================
+
+Stable API changes in this release
+==================================
+
+* Bluetooth
+
+  * Added :c:struct:`multiple` to the :c:struct:`bt_gatt_read_params` - this
+    structure contains two members: ``handles``, which was moved from
+    :c:struct:`bt_gatt_read_params`, and ``variable``.
+
+Kernel
+******
+
+
+Architectures
+*************
+
+* ARC
+
+
+* ARM
+
+  * AARCH32
+
+     * Updated CMSIS version to 5.8.0
+     * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
+       tests in CI with FPU and FPU_SHARING options enabled.
+
+
+  * AARCH64
+
+
+* x86
+
+
+Bluetooth
+*********
+
+* Audio
+
+* Host
+
+* Mesh
+
+  * Added return value for opcode callback
+
+* Bluetooth LE split software Controller
+
+* HCI Driver
+
+Boards & SoC Support
+********************
+
+* Added support for these SoC series:
+
+
+* Removed support for these SoC series:
+
+
+* Made these changes in other SoC series:
+
+
+* Changes for ARC boards:
+
+
+* Added support for these ARM boards:
+
+
+* Added support for these ARM64 boards:
+
+
+* Removed support for these ARM boards:
+
+
+* Removed support for these X86 boards:
+
+
+* Made these changes in other boards:
+
+
+* Added support for these following shields:
+
+
+Drivers and Sensors
+*******************
+
+* ADC
+
+
+* Bluetooth
+
+
+* CAN
+
+
+* Clock Control
+
+
+* Console
+
+
+* Counter
+
+
+* DAC
+
+   * Added support for Microchip MCP4725
+
+* Disk
+
+  * Added SDMMC support on STM32L4+
+
+* Display
+
+  * Added support for ST7735R
+
+* Disk
+
+
+* DMA
+
+  * Added support on STM32G0 and STM32H7
+
+* EEPROM
+
+  * Added support for EEPROM emulated in flash.
+
+* ESPI
+
+  * Added support for Microchip eSPI SAF
+
+* Ethernet
+
+
+* Flash
+
+
+* GPIO
+
+
+* Hardware Info
+
+
+* I2C
+
+
+* I2S
+
+
+* IEEE 802.15.4
+
+
+* Interrupt Controller
+
+
+* LED
+
+
+* LoRa
+
+  * lora_send now blocks until the transmission is complete. lora_send_async
+    can be used for the previous, non-blocking behaviour.
+
+* Modem
+
+
+* PWM
+
+
+* Sensor
+
+
+* Serial
+
+
+* SPI
+
+
+* Timer
+
+
+* USB
+
+
+* Watchdog
+
+
+* WiFi
+
+
+Networking
+**********
+
+* CoAP:
+
+
+* DHCPv4:
+
+
+* DNS:
+
+
+* HTTP:
+
+
+* IPv4:
+
+
+* LwM2M:
+
+
+* Misc:
+
+
+* OpenThread:
+
+
+* Socket:
+
+
+* TCP:
+
+
+* TLS:
+
+
+USB
+***
+
+
+Build and Infrastructure
+************************
+
+
+* Devicetree
+
+  * Various compatibles had incorrect vendor prefixes in their :ref:`compatible
+    <dt-important-props>` properties; the following changes were made to fix
+    these.
+
+    * ``nios,i2c`` is now ``altr,nios2-i2c``
+    * ``colorway,lpd8803`` is now ``greeled,lpd8803``
+    * ``colorway,lpd8806`` is now ``greeled,lpd8806``
+    * ``grove,light`` is now ``seeed,grove-light``
+    * ``grove,temperature`` is now ``seeed,grove-temperature``
+    * ``max,max30101`` is now ``maxim,max30101``
+    * ``ublox,sara-r4`` is now ``u-blox,sara-r4``
+    * ``xtensa,core-intc`` is now ``cdns,xtensa-core-intc``
+
+    Out of tree users of these compatibles will need to update their
+    devicetrees.
+
+    You can support multiple versions of Zephyr with one devicetree by
+    including both the old and new values in your nodes' compatible properties,
+    like this example for the LPD8803::
+
+        my-led-strip@0 {
+                compatible = "colorway,lpd8803", "greeled,lpd8803";
+                ...
+        };
+
+* West (extensions)
+
+
+Libraries / Subsystems
+**********************
+
+* Disk
+
+
+* Management
+
+
+* CMSIS subsystem
+
+
+* Power management
+
+  * The APIs to set/clear/check if devices are busy from a power management
+    perspective have been moved to the PM subsystem. Their naming and signature
+    has also been adjusted to follow common conventions. Below you can find the
+    equivalence list.
+
+    * ``device_busy_set`` -> ``pm_device_busy_set``
+    * ``device_busy_clear`` -> ``pm_device_busy_clear``
+    * ``device_busy_check`` -> ``pm_device_is_busy``
+    * ``device_any_busy_check`` -> ``pm_device_is_any_busy``
+
+* Logging
+
+
+* Random
+
+  * xoroshiro128+ PRNG deprecated in favor of xoshiro128++
+
+* Shell
+
+
+* Storage
+
+
+* Task Watchdog
+
+
+* Tracing
+
+
+* Debug
+
+* OS
+
+
+HALs
+****
+
+* HALs are now moved out of the main tree as external modules and reside in
+  their own standalone repositories.
+
+
+Trusted Firmware-m
+******************
+
+* Renamed psa_level_1 sample to psa_crypto. Extended the use of the PSA Cryptography
+  1.0 API in the sample code to demonstrate additional crypto functionality.
+* Added a new sample to showcase the PSA Protecter Storage service.
+
+Documentation
+*************
+
+* Kconfig options need to be referenced using the ``:kconfig:`` Sphinx role.
+  Previous to this change, ``:option:`` was used for this purpose.
+* Doxygen alias ``@config{}`` has been deprecated in favor of ``@kconfig{}``.
+
+Tests and Samples
+*****************
+
+
+Issue Related Items
+*******************
+
+These GitHub issues were addressed since the previous 2.6.0 tagged
+release:

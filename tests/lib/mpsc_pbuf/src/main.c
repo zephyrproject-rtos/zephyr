@@ -548,6 +548,39 @@ void test_item_alloc_commit(void)
 	item_alloc_commit(false);
 }
 
+void item_max_alloc(bool overwrite)
+{
+	struct mpsc_pbuf_buffer buffer;
+	struct test_data_var *packet;
+
+	init(&buffer, overwrite, true);
+
+	/* First try to allocate the biggest possible packet. */
+	for (int i = 0; i < 2; i++) {
+		packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
+								 buffer.size - 1,
+								 K_NO_WAIT);
+		zassert_true(packet != NULL, NULL);
+		packet->hdr.len = buffer.size - 1;
+		mpsc_pbuf_commit(&buffer, (union mpsc_pbuf_generic *)packet);
+
+		packet = (struct test_data_var *)mpsc_pbuf_claim(&buffer);
+		mpsc_pbuf_free(&buffer, (union mpsc_pbuf_generic *)packet);
+	}
+
+	/* Too big packet cannot be allocated. */
+	packet = (struct test_data_var *)mpsc_pbuf_alloc(&buffer,
+							 buffer.size,
+							 K_NO_WAIT);
+	zassert_true(packet == NULL, NULL);
+}
+
+void test_item_max_alloc(void)
+{
+	item_max_alloc(true);
+	item_max_alloc(false);
+}
+
 static uint32_t saturate_buffer_uneven(struct mpsc_pbuf_buffer *buffer,
 					uint32_t len)
 {
@@ -1041,6 +1074,7 @@ void test_main(void)
 		ztest_unit_test(test_benchmark_item_put_ext),
 		ztest_unit_test(test_benchmark_item_put_data),
 		ztest_unit_test(test_item_alloc_commit),
+		ztest_unit_test(test_item_max_alloc),
 		ztest_unit_test(test_item_alloc_commit_saturate),
 		ztest_unit_test(test_item_alloc_preemption),
 		ztest_unit_test(test_overwrite),

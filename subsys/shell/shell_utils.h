@@ -81,6 +81,8 @@ const struct shell_static_entry *z_shell_get_last_command(
 void z_shell_spaces_trim(char *str);
 void z_shell_cmd_trim(const struct shell *shell);
 
+const struct shell_static_entry *root_cmd_find(const char *syntax);
+
 static inline void z_transport_buffer_flush(const struct shell *shell)
 {
 	z_shell_fprintf_buffer_flush(shell->fprintf_ctx);

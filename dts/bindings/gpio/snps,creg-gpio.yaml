@@ -1,0 +1,34 @@
+# Copyright (c) 2021 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys CREG GPIO node
+
+compatible: "snps,creg-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    bit_per_gpio:
+      type: int
+      required: true
+
+    off_val:
+      type: int
+      required: true
+
+    on_val:
+      type: int
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

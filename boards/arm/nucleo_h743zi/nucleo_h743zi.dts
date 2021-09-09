@@ -91,7 +91,7 @@
 	status = "okay";
 };
 
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
@@ -111,6 +111,7 @@
 
 	pwm12: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim12_ch1_pb14>;
 	};
 };
@@ -148,6 +149,7 @@
 &spi1 {
 	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 };
 
 &backup_sram {

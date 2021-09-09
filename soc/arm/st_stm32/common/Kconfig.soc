@@ -15,3 +15,9 @@ config STM32_BACKUP_SRAM
 		   SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
 	help
 	  Enable support for STM32 backup SRAM.
+
+config USE_STM32_ASSERT
+	depends on ASSERT
+	bool "STM32Cube HAL and LL drivers asserts"
+	help
+	  Enable asserts in STM32Cube HAL and LL drivers.

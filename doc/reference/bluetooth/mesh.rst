@@ -3,11 +3,11 @@
 Bluetooth Mesh Profile
 ######################
 
-The Bluetooth Mesh Profile adds secure wireless multi-hop communication for
+The Bluetooth mesh profile adds secure wireless multi-hop communication for
 Bluetooth Low Energy. This module implements the
 `Bluetooth Mesh Profile Specification v1.0.1 <https://www.bluetooth.com/specifications/mesh-specifications/>`_.
 
-Read more about Bluetooth Mesh on the
+Read more about Bluetooth mesh on the
 `Bluetooth SIG Website <https://www.bluetooth.com/bluetooth-resources/?tags=mesh>`_.
 
 .. toctree::

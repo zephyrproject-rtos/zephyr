@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_cryp
-
 #include <init.h>
 #include <kernel.h>
 #include <device.h>
@@ -21,11 +19,33 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
+#define DT_DRV_COMPAT st_stm32_cryp
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+#define DT_DRV_COMPAT st_stm32_aes
+#else
+#error No STM32 HW Crypto Accelerator in device tree
+#endif
+
 #define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
 #define BLOCK_LEN_BYTES 16
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
+
+#if defined(CRYP_KEYSIZE_192B)
+#define STM32_CRYPTO_KEYSIZE_192B_SUPPORT
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
+#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_CRYP_FORCE_RESET
+#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_CRYP_RELEASE_RESET
+#define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_AES_FORCE_RESET
+#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_AES_RELEASE_RESET
+#define STM32_CRYPTO_TYPEDEF            AES_TypeDef
+#endif
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
@@ -299,7 +319,9 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	 * bits.
 	 */
 	if ((ctx->keylen != 16U) &&
+#if defined(STM32_CRYPTO_KEYSIZE_192B_SUPPORT)
 	    (ctx->keylen != 24U) &&
+#endif
 	    (ctx->keylen != 32U)) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
@@ -325,9 +347,11 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	case 16U:
 		session->config.KeySize = CRYP_KEYSIZE_128B;
 		break;
+#if defined(STM32_CRYPTO_KEYSIZE_192B_SUPPORT)
 	case 24U:
 		session->config.KeySize = CRYP_KEYSIZE_192B;
 		break;
+#endif
 	case 32U:
 		session->config.KeySize = CRYP_KEYSIZE_256B;
 		break;
@@ -408,8 +432,9 @@ static int crypto_stm32_session_free(const struct device *dev,
 		k_sem_give(&data->session_sem);
 		return -EIO;
 	}
-	__HAL_RCC_CRYP_FORCE_RESET();
-	__HAL_RCC_CRYP_RELEASE_RESET();
+
+	STM32_RCC_CRYPTO_FORCE_RESET();
+	STM32_RCC_CRYPTO_RELEASE_RESET();
 
 	k_sem_give(&data->session_sem);
 
@@ -427,7 +452,7 @@ static int crypto_stm32_init(const struct device *dev)
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 
-	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
@@ -452,7 +477,7 @@ static struct crypto_driver_api crypto_enc_funcs = {
 
 static struct crypto_stm32_data crypto_stm32_dev_data = {
 	.hcryp = {
-		.Instance = CRYP
+		.Instance = (STM32_CRYPTO_TYPEDEF *)DT_INST_REG_ADDR(0),
 	}
 };
 

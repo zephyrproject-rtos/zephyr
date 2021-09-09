@@ -6,7 +6,7 @@
 
 / {
 	power_states: power_states {
-		compatible = "test,power_states_api";
+		compatible = "test-power-states-api";
 		cpu-power-states = <&state0 &state1 &state2>;
 	};
 

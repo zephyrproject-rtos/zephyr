@@ -13,7 +13,8 @@ properties:
 
 child-binding:
     description: |
-        This binding gives a base representation of the STM32F1 pins configration
+        This binding gives a base representation of the STM32F1 pins
+        configration
 
     properties:
         pinmux:
@@ -57,33 +58,38 @@ child-binding:
         bias-disable:
           required: false
           type: boolean
-          description: Pin bias (push-pull) disabled. This is the default pin
+          description: |
+            Pin bias (push-pull) disabled. This is the default pin
             configuration and will be applied if no bias- property is
             specified. Only available in input mode ("floating" configuration).
 
         bias-pull-down:
           required: false
           type: boolean
-          description: Weak pull down resistor enabled. Not compatible with
+          description: |
+            Weak pull down resistor enabled. Not compatible with
             output configuration modes (atlernate or general purpose output).
 
         bias-pull-up:
           required: false
           type: boolean
-          description: Weak pull up resistor enabled. Not compatible with
+          description: |
+            Weak pull up resistor enabled. Not compatible with
             output configuration modes (atlernate or general purpose output).
 
         drive-push-pull:
           required: false
           type: boolean
-          description: Pin driven actively high and low. This is the default pin
+          description: |
+            Pin driven actively high and low. This is the default pin
             configueration and will be applied if no drive- property is
             specified. Only valid for output configuration modes.
 
         drive-open-drain:
           required: false
           type: boolean
-          description: Pin driven in open drain. Only valid for output
+          description: |
+            Pin driven in open drain. Only valid for output
             configuration modes.
 
         slew-rate:
@@ -94,5 +100,6 @@ child-binding:
           - "max-speed-10mhz"       # Default
           - "max-speed-2mhz"
           - "max-speed-50mhz"
-          description: Pin output mode, maximum achievable speed. Only applies
-            to output mode (alternate)..
+          description: |
+            Pin output mode, maximum achievable speed. Only applies to
+            output mode (alternate).

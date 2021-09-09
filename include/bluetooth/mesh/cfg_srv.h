@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Configuration Server Model APIs.
+ *  @brief Configuration Server Model APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CFG_SRV_H_
 
 /**
- * @brief Bluetooth Mesh
- * @defgroup bt_mesh_cfg_srv Bluetooth Mesh Configuration Server Model
+ * @brief Configuration Server Model
+ * @defgroup bt_mesh_cfg_srv Configuration Server Model
  * @ingroup bt_mesh
  * @{
  */

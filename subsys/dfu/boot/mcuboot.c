@@ -144,6 +144,11 @@ int boot_read_bank_header(uint8_t area_id,
 	return 0;
 }
 
+int mcuboot_swap_type_multi(int image_index)
+{
+	return boot_swap_type_multi(image_index);
+}
+
 int mcuboot_swap_type(void)
 {
 #ifdef FLASH_AREA_IMAGE_SECONDARY
@@ -164,6 +169,17 @@ int boot_request_upgrade(int permanent)
 		return -EFAULT;
 	}
 #endif /* FLASH_AREA_IMAGE_SECONDARY */
+	return 0;
+}
+
+int boot_request_upgrade_multi(int image_index, int permanent)
+{
+	int rc;
+
+	rc = boot_set_pending_multi(image_index, permanent);
+	if (rc) {
+		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -191,6 +207,18 @@ int boot_write_img_confirmed(void)
 	int rc;
 
 	rc = boot_set_confirmed();
+	if (rc) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int boot_write_img_confirmed_multi(int image_index)
+{
+	int rc;
+
+	rc = boot_set_confirmed_multi(image_index);
 	if (rc) {
 		return -EIO;
 	}

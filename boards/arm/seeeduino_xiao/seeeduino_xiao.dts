@@ -53,6 +53,8 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pb9d_sercom4_pad1 &pb8d_sercom4_pad0>;
 };
 
 &sercom0 {
@@ -64,7 +66,15 @@
 	#size-cells = <0>;
 };
 
-&usb0 {
+&sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 

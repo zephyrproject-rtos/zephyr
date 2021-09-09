@@ -26,6 +26,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/mem.h"
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"
@@ -789,6 +790,26 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Set Privacy Mode */
 	rp->commands[39] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_DF)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	/* LE Set Connectionless CTE Transmit Parameters,
+	 * LE Set Connectionless CTE Transmit Enable
+	 */
+	rp->commands[39] |= BIT(5) | BIT(6);
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	/* LE Set Connectionless IQ Sampling Enable */
+	rp->commands[39] |= BIT(7);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	/* LE Read Antenna Information */
+	rp->commands[40] |= BIT(4);
+#endif /* CONFIG_BT_CTLR_DF */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	/* LE Set Periodic Advertising Receive Enable */
+	rp->commands[40] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	bt_hci_ecc_supported_commands(rp->commands);
@@ -1562,6 +1583,11 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	status = ll_scan_enable(cmd->enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+	/* NOTE: As filter duplicates is implemented here in HCI source code,
+	 *       enabling of already enabled scanning shall succeed after
+	 *       updates to filter duplicates is handled in the above
+	 *       statements. Refer to BT Spec v5.0 Vol 2 Part E Section 7.8.11.
+	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
 	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
 		status = BT_HCI_ERR_SUCCESS;
@@ -2658,7 +2684,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	sep->rssi_ant_id = iq_report->rssi_ant_id;
 	sep->cte_type = iq_report->cte_info.type;
 
-	sep->chan_idx = lll->data_chan_id;
+	sep->chan_idx = iq_report->chan_idx;
 	sep->per_evt_counter = sys_cpu_to_le16(lll->event_counter);
 
 	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
@@ -2701,8 +2727,47 @@ static void le_df_set_conn_cte_tx_params(struct net_buf *buf,
 
 	status = ll_df_set_conn_cte_tx_params(handle, cmd->cte_types,
 					      cmd->switch_pattern_len,
-					      cmd->ant_id);
+					      cmd->ant_ids);
 
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = status;
+	rp->handle = handle_le16;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+static void le_df_set_conn_cte_rx_params(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_conn_cte_rx_params *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_conn_cte_rx_params *rp;
+	uint16_t handle, handle_le16;
+	uint8_t status;
+
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
+	status = ll_df_set_conn_cte_rx_params(handle, cmd->sampling_enable, cmd->slot_durations,
+					      cmd->switch_pattern_len, cmd->ant_ids);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = status;
+	rp->handle = handle_le16;
+}
+
+static void le_df_set_conn_cte_req_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_conn_cte_req_enable *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_conn_cte_req_enable *rp;
+	uint16_t handle, handle_le16;
+	uint8_t status;
+
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
+	status = ll_df_set_conn_cte_req_enable(handle, cmd->enable, cmd->cte_request_interval,
+					       cmd->requested_cte_length, cmd->requested_cte_type);
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
 	rp->status = status;
@@ -3107,13 +3172,6 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	/* TODO: add parameter checks */
-
-	own_addr_type = cmd->own_addr_type;
-	filter_policy = cmd->filter_policy;
-	phys = cmd->phys;
-	p = cmd->p;
-
 	/* Number of bits set indicate scan sets to be configured by calling
 	 * ll_scan_params_set function.
 	 */
@@ -3121,6 +3179,18 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 	}
+
+	phys = cmd->phys;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (phys > phys_bitmask)) {
+		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+
+		return;
+	}
+
+	own_addr_type = cmd->own_addr_type;
+	filter_policy = cmd->filter_policy;
+	p = cmd->p;
 
 	/* Irrespective of enabled PHYs to scan for, ll_scan_params_set needs
 	 * to be called to initialise the scan sets.
@@ -3187,6 +3257,11 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 
 	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
 
+	/* NOTE: As filter duplicates is implemented here in HCI source code,
+	 *       enabling of already enabled scanning shall succeed after
+	 *       updates to filter duplicates is handled in the above
+	 *       statements. Refer to BT Spec v5.0 Vol 2 Part E Section 7.8.11.
+	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
 	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
 		status = BT_HCI_ERR_SUCCESS;
@@ -3202,6 +3277,10 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 	uint16_t sync_timeout;
 	uint8_t status;
 	uint16_t skip;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
 
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
@@ -3219,6 +3298,10 @@ static void le_per_adv_create_sync_cancel(struct net_buf *buf,
 	struct bt_hci_evt_cc_status *ccst;
 	uint8_t status;
 
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
 	status = ll_sync_create_cancel(node_rx);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
@@ -3231,6 +3314,10 @@ static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint16_t handle;
 	uint8_t status;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
@@ -3275,15 +3362,6 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	/* TODO: add additional parameter checks */
-
-	filter_policy = cmd->filter_policy;
-	own_addr_type = cmd->own_addr_type;
-	peer_addr_type = cmd->peer_addr.type;
-	peer_addr = cmd->peer_addr.a.val;
-	phys = cmd->phys;
-	p = cmd->p;
-
 	/* Number of bits set indicate scan sets to be configured by calling
 	 * ll_create_connection function.
 	 */
@@ -3291,6 +3369,20 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 	}
+
+	phys = cmd->phys;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (phys > phys_bitmask)) {
+		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+
+		return;
+	}
+
+	filter_policy = cmd->filter_policy;
+	own_addr_type = cmd->own_addr_type;
+	peer_addr_type = cmd->peer_addr.type;
+	peer_addr = cmd->peer_addr.a.val;
+	p = cmd->p;
 
 	do {
 		uint16_t supervision_timeout;
@@ -3846,6 +3938,14 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_df_set_conn_cte_tx_params(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case BT_OCF(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS):
+		le_df_set_conn_cte_rx_params(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE):
+		le_df_set_conn_cte_req_enable(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
@@ -4869,22 +4969,86 @@ static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
 	}
 }
 
+static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
+			      uint8_t adv_addr_type, uint8_t *adv_addr,
+			      uint8_t direct_addr_type, uint8_t *direct_addr,
+			      uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
+			      uint16_t interval_le16, struct pdu_adv_adi *adi,
+			      uint8_t data_len, uint8_t *data,
+			      struct net_buf *buf)
+{
+	struct bt_hci_evt_le_ext_advertising_info *adv_info;
+	struct bt_hci_evt_le_ext_advertising_report *sep;
+	uint8_t info_len;
+
+	info_len = sizeof(struct bt_hci_evt_le_ext_advertising_info) +
+		   data_len;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
+		       sizeof(*sep) + info_len);
+
+	sep->num_reports = 1U;
+	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+
+	adv_info->evt_type = evt_type;
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	} else if (rl_idx < ll_rl_size_get()) {
+		/* Store identity address */
+		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
+				  adv_info->addr.a.val);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		adv_info->addr.type += 2U;
+#else /* !CONFIG_BT_CTLR_PRIVACY */
+		ARG_UNUSED(rl_idx);
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
+	} else if (adv_addr) {
+		adv_info->addr.type = adv_addr_type;
+		(void)memcpy(adv_info->addr.a.val, adv_addr, sizeof(bt_addr_t));
+	} else {
+		adv_info->addr.type = 0U;
+		(void)memset(adv_info->addr.a.val, 0, sizeof(bt_addr_t));
+	}
+
+	adv_info->prim_phy = find_lsb_set(phy);
+	adv_info->sec_phy = sec_phy;
+	adv_info->sid = (adi) ? adi->sid : BT_HCI_LE_EXT_ADV_SID_INVALID;
+	adv_info->tx_power = tx_pwr;
+	adv_info->rssi = rssi;
+	adv_info->interval = interval_le16;
+
+	if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_DIRECT) {
+		adv_info->direct_addr.type = direct_addr_type;
+		(void)memcpy(adv_info->direct_addr.a.val, direct_addr,
+			     sizeof(bt_addr_t));
+	} else {
+		adv_info->direct_addr.type = 0U;
+		(void)memset(adv_info->direct_addr.a.val, 0, sizeof(bt_addr_t));
+	}
+
+	adv_info->length = data_len;
+	(void)memcpy(adv_info->data, data, data_len);
+}
+
 static void le_ext_adv_report(struct pdu_data *pdu_data,
 			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, uint8_t phy)
 {
-	struct bt_hci_evt_le_ext_advertising_info *adv_info;
-	struct bt_hci_evt_le_ext_advertising_report *sep;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
+	uint8_t total_scan_data_len = 0U;
 	struct pdu_adv_adi *adi = NULL;
+	uint8_t scan_data_status = 0U;
 	uint8_t direct_addr_type = 0U;
+	struct net_buf *scan_evt_buf;
 	uint8_t *direct_addr = NULL;
 	uint8_t total_data_len = 0U;
 	uint16_t interval_le16 = 0U;
+	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
+	uint8_t *scan_data = NULL;
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	uint8_t data_len = 0U;
@@ -4892,27 +5056,32 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
 	uint8_t data_max_len;
-	uint8_t info_len;
+	uint8_t rl_idx = 0U;
 	int8_t rssi;
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	uint8_t rl_idx;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-
+	/* NOTE: This function uses a lot of initializers before the check and
+	 * return below, as an exception to initializing close to their locality
+	 * of reference. This is acceptable as the return is unlikely in typical
+	 * Controller use.
+	 */
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT)) {
 		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = ll_rl_size_get();
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	node_rx_curr = node_rx;
 	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 	do {
 		struct pdu_adv_adi *adi_curr = NULL;
 		uint8_t direct_addr_type_curr = 0U;
-		struct pdu_adv_com_ext_adv *p;
 		uint8_t *direct_addr_curr = NULL;
 		uint8_t adv_addr_type_curr = 0U;
+		struct pdu_adv_com_ext_adv *p;
 		uint8_t *adv_addr_curr = NULL;
 		uint8_t data_len_curr = 0U;
 		uint8_t *data_curr = NULL;
@@ -4927,7 +5096,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		rl_idx = node_rx_curr->hdr.rx_ftr.rl_idx;
+		uint8_t rl_idx_curr = node_rx_curr->hdr.rx_ftr.rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		BT_DBG("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u,"
@@ -4958,7 +5127,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			adv_addr_curr = ptr;
 
 			addr.type = adv->tx_addr;
-			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
+			(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
 			BT_DBG("    AdvA: %s", bt_addr_le_str(&addr));
@@ -4971,7 +5140,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			direct_addr_curr = ptr;
 
 			addr.type = adv->rx_addr;
-			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
+			(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
 			BT_DBG("    TgtA: %s", bt_addr_le_str(&addr));
@@ -4987,19 +5156,28 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		if (h->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux_ptr;
 			uint8_t aux_phy;
 
-			aux = (void *)ptr;
-			ptr += sizeof(*aux);
+			aux_ptr = (void *)ptr;
+			if (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED) {
+				struct node_rx_ftr *ftr;
 
-			sec_phy_curr = aux->phy + 1;
+				ftr = &node_rx->hdr.rx_ftr;
+				node_rx_extra_list_release(ftr->extra);
+				return;
+			}
 
-			aux_phy = BIT(aux->phy);
+			ptr += sizeof(*aux_ptr);
+
+			sec_phy_curr = aux_ptr->phy + 1;
+
+			aux_phy = BIT(aux_ptr->phy);
 
 			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-			       aux->ca, aux->offs_units, aux->offs, aux_phy);
+			       "= %u offs = 0x%x, phy = 0x%x",
+			       aux_ptr->chan_idx, aux_ptr->ca,
+			       aux_ptr->offs_units, aux_ptr->offs, aux_phy);
 		}
 
 		if (h->sync_info) {
@@ -5018,9 +5196,13 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			       sys_le16_to_cpu(si->offs),
 			       si->offs_units,
 			       sys_le16_to_cpu(si->interval),
-			       (si->sca_chm[4] >> 5),
+			       ((si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+				 PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
+				PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS),
 			       si->sca_chm[0], si->sca_chm[1], si->sca_chm[2],
-			       si->sca_chm[3], (si->sca_chm[4] & 0x3F),
+			       si->sca_chm[3],
+			       (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+				~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK),
 			       sys_le32_to_cpu(si->aa),
 			       si->crc_init[0], si->crc_init[1],
 			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
@@ -5073,11 +5255,19 @@ no_ext_hdr:
 			sec_phy = sec_phy_curr;
 			data_len = data_len_curr;
 			total_data_len = data_len;
+			total_scan_data_len = 0U;
 			data = data_curr;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+			rl_idx = rl_idx_curr;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		} else {
-			/* TODO: Validate current value with previous, also
-			 * detect the scan response in the list of node_rx.
-			 */
+			/* TODO: Validate current value with previous */
+
+			/* Detect the scan response in the list of node_rx */
+			if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
+				scan_data_len = data_len_curr;
+				scan_data = data_curr;
+			}
 
 			if (!adv_addr) {
 				adv_addr_type = adv_addr_type_curr;
@@ -5089,7 +5279,13 @@ no_ext_hdr:
 				direct_addr = direct_addr_curr;
 			}
 
-			if (!data) {
+			if (scan_data) {
+				total_scan_data_len += data_len_curr;
+
+				/* TODO: construct new HCI event for this
+				 * fragment.
+				 */
+			} else if (!data) {
 				data_len = data_len_curr;
 				total_data_len = data_len;
 				data = data_curr;
@@ -5100,12 +5296,22 @@ no_ext_hdr:
 				 * fragment.
 				 */
 			}
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+			if (rl_idx >= ll_rl_size_get()) {
+				rl_idx = rl_idx_curr;
+			}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		}
 
 		if (!node_rx_next) {
 			bool has_aux_ptr = !!sec_phy_curr;
 
-			if (has_aux_ptr) {
+			if (scan_data) {
+				if (has_aux_ptr) {
+					scan_data_status =
+				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+				}
+			} else if (has_aux_ptr) {
 				data_status =
 				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
@@ -5133,7 +5339,8 @@ no_ext_hdr:
 	 */
 	data_max_len = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
-		       sizeof(*sep) - sizeof(*adv_info);
+		       sizeof(struct bt_hci_evt_le_ext_advertising_report) -
+		       sizeof(struct bt_hci_evt_le_ext_advertising_info);
 
 	/* If data complete */
 	if (!data_status) {
@@ -5169,62 +5376,63 @@ no_ext_hdr:
 		}
 	}
 
-	/* Start constructing the event */
-	info_len = sizeof(struct bt_hci_evt_le_ext_advertising_info) +
-		   data_len;
-	sep = meta_evt(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
-		       sizeof(*sep) + info_len);
-
-	sep->num_reports = 1U;
-	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
-
 	/* Set directed advertising bit */
-	if ((evt_type == BT_HCI_LE_ADV_EVT_TYPE_CONN) && direct_addr) {
+	if (direct_addr) {
 		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
 	}
 
-	/* TODO: Set scan response bit */
-
-	/* set data status bits */
+	/* Set data status bits */
 	evt_type |= (data_status << 5);
 
-	adv_info->evt_type = evt_type;
+	/* Start constructing the adv event */
+	ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type, adv_addr,
+			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
+			  interval_le16, adi, data_len, data, buf);
 
-	if (0) {
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	} else if (rl_idx < ll_rl_size_get()) {
-		/* Store identity address */
-		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
-				  &adv_info->addr.a.val[0]);
-		/* Mark it as identity address from RPA (0x02, 0x03) */
-		adv_info->addr.type += 2U;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-	} else if (adv_addr) {
-		adv_info->addr.type = adv_addr_type;
-		memcpy(&adv_info->addr.a.val[0], adv_addr, sizeof(bt_addr_t));
-	} else {
-		adv_info->addr.type = 0U;
-		memset(&adv_info->addr.a.val[0], 0, sizeof(bt_addr_t));
+	/* If scan response event to be constructed */
+	if (!scan_data) {
+		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+
+		return;
 	}
 
-	adv_info->prim_phy = find_lsb_set(phy);
-	adv_info->sec_phy = sec_phy;
-	adv_info->sid = (adi) ? adi->sid : 0U;
-	adv_info->tx_power = tx_pwr;
-	adv_info->rssi = rssi;
-	adv_info->interval = interval_le16;
+	/* Allocate, append as buf fragement and construct the scan response
+	 * event.
+	 */
+	scan_evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	net_buf_frag_add(buf, scan_evt_buf);
 
-	if (evt_type & BT_HCI_LE_ADV_EVT_TYPE_DIRECT) {
-		adv_info->direct_addr.type = direct_addr_type;
-		memcpy(&adv_info->direct_addr.a.val[0], direct_addr,
-		       sizeof(bt_addr_t));
+	/* If scan data complete */
+	if (!scan_data_status) {
+		/* Only copy data that fit the event buffer size,
+		 * mark it as incomplete
+		 */
+		if (scan_data_len > data_max_len) {
+			scan_data_len = data_max_len;
+			scan_data_status =
+				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		}
+
+	/* else, data incomplete */
 	} else {
-		adv_info->direct_addr.type = 0U;
-		memset(&adv_info->direct_addr.a.val[0], 0, sizeof(bt_addr_t));
+		/* Only copy data that fit the event buffer size */
+		if (scan_data_len > data_max_len) {
+			scan_data_len = data_max_len;
+		}
 	}
 
-	adv_info->length = data_len;
-	memcpy(&adv_info->data[0], data, data_len);
+	/* Set scan response bit */
+	evt_type |= BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
+
+	/* set scan data status bits */
+	evt_type &= ~(BIT_MASK(2) << 5);
+	evt_type |= (scan_data_status << 5);
+
+	/* Start constructing the event */
+	ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type, adv_addr,
+			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
+			  interval_le16, adi, scan_data_len, scan_data,
+			  scan_evt_buf);
 
 	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
@@ -5315,213 +5523,193 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 				   struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_advertising_report *sep;
+	struct node_rx_ftr *ftr = &node_rx->hdr.rx_ftr;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
-	struct node_rx_pdu *node_rx_curr;
-	struct node_rx_pdu *node_rx_next;
-	uint8_t total_data_len = 0U;
+	struct pdu_adv_aux_ptr *aux_ptr = NULL;
+	uint8_t cte_type = BT_HCI_LE_NO_CTE;
+	struct pdu_adv_com_ext_adv *p;
+	struct pdu_adv_ext_hdr *h;
 	uint8_t data_status = 0U;
-	uint8_t cte_type = 0U;
+	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
 	uint8_t *data = NULL;
 	uint8_t data_max_len;
+	uint8_t hdr_buf_len;
+	uint8_t hdr_len;
+	uint8_t *ptr;
 	int8_t rssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
-		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
 
-	node_rx_curr = node_rx;
-	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
-	do {
-		struct pdu_adv_com_ext_adv *p;
-		uint8_t data_len_curr = 0U;
-		uint8_t *data_curr = NULL;
-		uint8_t sec_phy_curr = 0U;
-		struct pdu_adv_ext_hdr *h;
-		uint8_t hdr_buf_len;
-		uint8_t hdr_len;
-		uint8_t *ptr;
+	/* The Link Layer currently returns RSSI as an absolute value */
+	rssi = -(node_rx->hdr.rx_ftr.rssi);
 
-		/* The Link Layer currently returns RSSI as an absolute value */
-		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
+	BT_DBG("len = %u, rssi = %d", adv->len, rssi);
 
-		BT_DBG("len = %u, rssi = %d", adv->len, rssi);
+	p = (void *)&adv->adv_ext_ind;
+	h = (void *)p->ext_hdr_adv_data;
+	ptr = (void *)h;
 
-		p = (void *)&adv->adv_ext_ind;
-		h = (void *)p->ext_hdr_adv_data;
-		ptr = (void *)h;
+	BT_DBG("    Per. adv mode= 0x%x, hdr len= %u", p->adv_mode,
+	       p->ext_hdr_len);
 
-		BT_DBG("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
-		       p->ext_hdr_len);
+	if (!p->ext_hdr_len) {
+		hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
-		if (!p->ext_hdr_len) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
+		goto no_ext_hdr;
+	}
 
-			goto no_ext_hdr;
+	ptr = h->data;
+
+	if (h->adv_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->tgt_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->cte_info) {
+		struct pdu_cte_info *cte_info;
+
+		cte_info = (void *)ptr;
+		cte_type = cte_info->type;
+		ptr++;
+
+		BT_DBG("    CTE type= %d", cte_type);
+	}
+
+	if (h->adi) {
+		ptr += sizeof(struct pdu_adv_adi);
+	}
+
+	/* AuxPtr */
+	if (h->aux_ptr) {
+		uint8_t aux_phy;
+
+		aux_ptr = (void *)ptr;
+		if (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED) {
+			struct node_rx_ftr *ftr;
+
+			ftr = &node_rx->hdr.rx_ftr;
+			node_rx_extra_list_release(ftr->extra);
+			return;
 		}
 
-		ptr = h->data;
+		ptr += sizeof(*aux_ptr);
 
-		/* No AdvA */
-		/* No TargetA */
+		aux_phy = BIT(aux_ptr->phy);
 
-		if (h->cte_info) {
-			struct pdu_cte_info *cte_info;
+		BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
+		       "= %u offs = 0x%x, phy = 0x%x",
+		       aux_ptr->chan_idx, aux_ptr->ca,
+		       aux_ptr->offs_units, aux_ptr->offs, aux_phy);
+	}
 
-			cte_info = (void *)ptr;
-			cte_type = cte_info->type;
-			ptr++;
+	/* No SyncInfo */
+	if (h->sync_info) {
+		ptr += sizeof(struct pdu_adv_sync_info);
+	}
 
-			BT_DBG("    CTE type= %d", cte_type);
-		}
+	/* Tx Power */
+	if (h->tx_pwr) {
+		tx_pwr = *(int8_t *)ptr;
+		ptr++;
 
-		/* No ADI */
+		BT_DBG("    Tx pwr= %d dB", tx_pwr);
+	}
 
-		/* AuxPtr */
-		if (h->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux;
-			uint8_t aux_phy;
-
-			aux = (void *)ptr;
-			ptr += sizeof(*aux);
-
-			sec_phy_curr = aux->phy + 1;
-
-			aux_phy = BIT(aux->phy);
-
-			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-			       aux->ca, aux->offs_units, aux->offs, aux_phy);
-		}
-
-		/* No SyncInfo */
-
-		/* Tx Power */
-		if (h->tx_pwr) {
-			tx_pwr = *(int8_t *)ptr;
-			ptr++;
-
-			BT_DBG("    Tx pwr= %d dB", tx_pwr);
-		}
-
-		hdr_len = ptr - (uint8_t *)p;
+	hdr_len = ptr - (uint8_t *)p;
 		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
 				sizeof(struct pdu_adv_ext_hdr))) {
 			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 			ptr = (uint8_t *)h;
 		}
 
-		hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
-		if (hdr_len > hdr_buf_len) {
-			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
-				p->ext_hdr_len);
-		} else {
-			uint8_t acad_len = hdr_buf_len - hdr_len;
+	hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
+	if (hdr_len > hdr_buf_len) {
+		BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
+			p->ext_hdr_len);
+	} else {
+		uint8_t acad_len = hdr_buf_len - hdr_len;
 
-			if (acad_len) {
-				ptr += acad_len;
-				hdr_len += acad_len;
+		if (acad_len) {
+			ptr += acad_len;
+			hdr_len += acad_len;
 
-				BT_DBG("ACAD: <todo>");
-			}
+			BT_DBG("ACAD: <todo>");
 		}
+	}
 
 no_ext_hdr:
-		if (hdr_len < adv->len) {
-			data_len_curr = adv->len - hdr_len;
-			data_curr = ptr;
+	if (hdr_len < adv->len) {
+		data_len = adv->len - hdr_len;
+		data = ptr;
 
-			BT_DBG("    AD Data (%u): <todo>", data_len);
-		}
+		BT_DBG("    AD Data (%u): <todo>", data_len);
+	}
 
-		if (node_rx_curr == node_rx) {
-			data_len = data_len_curr;
-			total_data_len = data_len;
-			data = data_curr;
-		} else {
-			/* TODO: Validate current value with previous ??
-			 */
+	adv = (void *)node_rx->pdu;
 
-			if (!data) {
-				data_len = data_len_curr;
-				total_data_len = data_len;
-				data = data_curr;
-			} else {
-				total_data_len += data_len_curr;
-
-				/* TODO: construct new HCI event for this
-				 * fragment.
-				 */
-			}
-		}
-
-		if (!node_rx_next) {
-			bool has_aux_ptr = !!sec_phy_curr;
-
-			if (has_aux_ptr) {
-				data_status =
-				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
-			}
-
-			break;
-		}
-
-		node_rx_curr = node_rx_next;
-		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
-		adv = (void *)node_rx_curr->pdu;
-	} while (1);
-
-	/* FIXME: move most of below into above loop to dispatch fragments of
-	 * data in HCI event.
-	 */
 	data_max_len = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
 		       sizeof(*sep);
 
-	/* If data complete */
-	if (!data_status) {
-		/* Only copy data that fit the event buffer size,
-		 * mark it as incomplete
-		 */
-		if (data_len > data_max_len) {
-			data_len = data_max_len;
-			data_status =
-				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		}
+	evt_buf = buf;
 
-	/* else, data incomplete */
-	} else {
-		/* Data incomplete and no more to come */
-		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !data) {
-			/* No Tx Power value and no valid AD data parsed in this
-			 * chain of PDUs, skip HCI event generation.
+	do {
+		uint8_t data_len_frag;
+
+		data_len_frag = MIN(data_len, data_max_len);
+
+		/* Start constructing periodic advertising report */
+		sep = meta_evt(evt_buf,
+			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
+			       sizeof(*sep) + data_len_frag);
+
+		memcpy(&sep->data[0], data, data_len_frag);
+		data += data_len_frag;
+		data_len -= data_len_frag;
+
+		if (data_len > 0) {
+			/* Some data left in PDU, mark as partial data. */
+			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		} else if (!aux_ptr) {
+			/* No data left, no AuxPtr, mark as complete data. */
+			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+		} else if (ftr->aux_w4next) {
+			/* No data left, but have AuxPtr and scheduled aux scan,
+			 * mark as partial data.
 			 */
-			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
-			return;
+			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		} else {
+			/* No data left, have AuxPtr but not aux scan scheduled,
+			 * mark as incomplete data.
+			 */
+			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 		}
 
-		/* Only copy data that fit the event buffer size */
-		if (data_len > data_max_len) {
-			data_len = data_max_len;
+		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+		/* TODO: use actual TX power only on 1st report, subsequent
+		 *       reports can use 0x7F
+		 */
+		sep->tx_power = tx_pwr;
+		sep->rssi = rssi;
+		sep->cte_type = cte_type;
+		sep->data_status = data_status;
+		sep->length = data_len_frag;
+
+		if (data_len > 0) {
+			evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			net_buf_frag_add(buf, evt_buf);
+
+			tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 		}
-	}
-
-	/* Start constructing the event */
-	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
-		       sizeof(*sep) + data_len);
-
-	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
-	sep->tx_power = tx_pwr;
-	sep->rssi = rssi;
-	sep->cte_type = cte_type;
-	sep->data_status = data_status;
-	sep->length = data_len;
-	memcpy(&sep->data[0], data, data_len);
-
-	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+	} while (data_len > 0);
 }
 
 static void le_per_adv_sync_lost(struct pdu_data *pdu_data,

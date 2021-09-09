@@ -34,6 +34,12 @@ config MQTT_LIB_WEBSOCKET
 	help
 	  Enable Websocket support for socket MQTT Library.
 
+config MQTT_LIB_CUSTOM_TRANSPORT
+	bool "Custom transport support for socket MQTT Library"
+	help
+	  Enable custom transport support for socket MQTT Library.
+	  User must provide implementation for transport procedure.
+
 config MQTT_CLEAN_SESSION
 	bool "MQTT Clean Session Flag."
 	help

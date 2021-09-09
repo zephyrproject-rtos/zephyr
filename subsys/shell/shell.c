@@ -32,6 +32,15 @@
 #define SHELL_MSG_TOO_MANY_ARGS		"Too many arguments in the command.\n"
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
+#define SHELL_THREAD_PRIORITY \
+	COND_CODE_1(CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE, \
+			(CONFIG_SHELL_THREAD_PRIORITY), (K_LOWEST_APPLICATION_THREAD_PRIO))
+
+BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
+		  K_HIGHEST_APPLICATION_THREAD_PRIO
+		&& SHELL_THREAD_PRIORITY <= K_LOWEST_APPLICATION_THREAD_PRIO,
+		  "Invalid range for thread priority");
+
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
 {
@@ -88,7 +97,7 @@ static inline void state_set(const struct shell *shell, enum shell_state state)
 {
 	shell->ctx->state = state;
 
-	if (state == SHELL_STATE_ACTIVE) {
+	if (state == SHELL_STATE_ACTIVE && !shell->ctx->bypass) {
 		cmd_buffer_clear(shell);
 		if (z_flag_print_noinit_get(shell)) {
 			z_shell_fprintf(shell, SHELL_WARNING, "%s",
@@ -107,8 +116,9 @@ static inline enum shell_state state_get(const struct shell *shell)
 static inline const struct shell_static_entry *
 selected_cmd_get(const struct shell *shell)
 {
-	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)) {
-	       return shell->ctx->selected_cmd;
+	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)
+	    || (CONFIG_SHELL_CMD_ROOT[0] != 0)) {
+		return shell->ctx->selected_cmd;
 	}
 
 	return NULL;
@@ -267,7 +277,8 @@ static bool tab_prepare(const struct shell *shell,
 	/* terminate arguments with NULL */
 	(*argv)[*argc] = NULL;
 
-	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) && (*argc > 0) &&
+	if ((IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) || (CONFIG_SHELL_CMD_ROOT[0] != 0))
+	    && (*argc > 0) &&
 	    (strcmp("select", (*argv)[0]) == 0) &&
 	    !z_shell_in_select_mode(shell)) {
 		*argv = *argv + 1;
@@ -827,7 +838,11 @@ static void alt_metakeys_handle(const struct shell *shell, char data)
 			z_shell_cmd_line_erase(shell);
 			z_shell_fprintf(shell, SHELL_WARNING,
 					"Restored default root commands\n");
-			shell->ctx->selected_cmd = NULL;
+			if (CONFIG_SHELL_CMD_ROOT[0]) {
+				shell->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
+			} else {
+				shell->ctx->selected_cmd = NULL;
+			}
 			z_shell_print_prompt_and_cmd(shell);
 		}
 	}
@@ -934,6 +949,26 @@ static void state_collect(const struct shell *shell)
 	char data;
 
 	while (true) {
+		shell_bypass_cb_t bypass = shell->ctx->bypass;
+
+		if (bypass) {
+			uint8_t buf[16];
+
+			(void)shell->iface->api->read(shell->iface, buf,
+							sizeof(buf), &count);
+			if (count) {
+				bypass(shell, buf, count);
+				/* Check if bypass mode ended. */
+				if (!(volatile shell_bypass_cb_t *)shell->ctx->bypass) {
+					state_set(shell, SHELL_STATE_ACTIVE);
+				} else {
+					continue;
+				}
+			}
+
+			return;
+		}
+
 		(void)shell->iface->api->read(shell->iface, &data,
 					      sizeof(data), &count);
 		if (count == 0) {
@@ -1149,6 +1184,9 @@ static int instance_init(const struct shell *shell, const void *p_config,
 
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
 	shell->ctx->prompt = shell->default_prompt;
+	if (CONFIG_SHELL_CMD_ROOT[0]) {
+		shell->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
+	}
 
 	history_init(shell);
 
@@ -1176,7 +1214,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->vt100_ctx.cons.terminal_hei =
 					CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 	shell->ctx->vt100_ctx.cons.name_len = z_shell_strlen(shell->ctx->prompt);
-	z_flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
+	z_flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS) && use_colors);
 
 	int ret = shell->iface->api->init(shell->iface, p_config,
 					  transport_evt_handler,
@@ -1258,7 +1296,8 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && log_backend) {
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && log_backend
+	    && !IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
 		z_shell_log_backend_enable(shell->log_backend, (void *)shell,
 					   log_level);
 	}
@@ -1316,10 +1355,10 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	}
 
 	k_tid_t tid = k_thread_create(shell->thread,
-			      shell->stack, CONFIG_SHELL_STACK_SIZE,
-			      shell_thread, (void *)shell, (void *)log_backend,
-			      UINT_TO_POINTER(init_log_level),
-			      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+				  shell->stack, CONFIG_SHELL_STACK_SIZE,
+				  shell_thread, (void *)shell, (void *)log_backend,
+				  UINT_TO_POINTER(init_log_level),
+				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	shell->ctx->tid = tid;
 	k_thread_name_set(tid, shell->thread_name);
@@ -1437,11 +1476,11 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
-	if (!z_flag_cmd_ctx_get(shell)) {
+	if (!z_flag_cmd_ctx_get(shell) && !shell->ctx->bypass) {
 		z_shell_cmd_line_erase(shell);
 	}
 	z_shell_vfprintf(shell, color, fmt, args);
-	if (!z_flag_cmd_ctx_get(shell)) {
+	if (!z_flag_cmd_ctx_get(shell) && !shell->ctx->bypass) {
 		z_shell_print_prompt_and_cmd(shell);
 	}
 	z_transport_buffer_flush(shell);
@@ -1569,6 +1608,8 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	ret_val = execute(shell);
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 
+	cmd_buffer_clear(shell);
+
 	return ret_val;
 }
 
@@ -1615,6 +1656,11 @@ int shell_mode_delete_set(const struct shell *shell, bool val)
 	}
 
 	return (int)z_flag_mode_delete_set(shell, val);
+}
+
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+{
+	sh->ctx->bypass = bypass;
 }
 
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)

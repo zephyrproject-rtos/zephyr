@@ -3,7 +3,7 @@
 
 description: Cadence Tensilica Xtensa LX6 CPU
 
-compatible: "cadence,tensilica-xtensa-lx6"
+compatible: "cdns,tensilica-xtensa-lx6"
 
 include: cpu.yaml
 

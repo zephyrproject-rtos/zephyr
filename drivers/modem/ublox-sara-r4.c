@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ublox_sara_r4
+#define DT_DRV_COMPAT u_blox_sara_r4
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
@@ -73,8 +73,8 @@ static struct modem_pin modem_pins[] = {
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
-#define MDM_UART_NODE			DT_BUS(DT_DRV_INST(0))
+#define MDM_UART_NODE			DT_INST_BUS(0)
+#define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
 #define MDM_POWER_ENABLE		1
 #define MDM_POWER_DISABLE		0
@@ -686,6 +686,54 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 }
 #endif
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+static int unquoted_atoi(const char *s, int base)
+{
+	if (*s == '"') {
+		s++;
+	}
+
+	return strtol(s, NULL, base);
+}
+
+/*
+ * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
+{
+	if (argc >= 3) {
+		mctx.data_operator = unquoted_atoi(argv[2], 10);
+		LOG_INF("operator: %u",
+			mctx.data_operator);
+	}
+
+	return 0;
+}
+
+/*
+ * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
+{
+	if (argc >= 4) {
+		mctx.data_lac = unquoted_atoi(argv[2], 16);
+		mctx.data_cellid = unquoted_atoi(argv[3], 16);
+		LOG_INF("lac: %u, cellid: %u",
+			mctx.data_lac,
+			mctx.data_cellid);
+	}
+
+	return 0;
+}
+
+static const struct setup_cmd query_cellinfo_cmds[] = {
+	SETUP_CMD_NOHANDLE("AT+CEREG=2"),
+	SETUP_CMD("AT+CEREG?", "", on_cmd_atcmdinfo_cereg, 5U, ","),
+	SETUP_CMD_NOHANDLE("AT+COPS=3,2"),
+	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
+};
+#endif /* CONFIG_MODEM_CELL_INFO */
+
 /*
  * Modem Socket Command Handlers
  */
@@ -1008,6 +1056,19 @@ static void modem_rssi_query_work(struct k_work *work)
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
 	if (work) {
@@ -1037,6 +1098,19 @@ static void modem_rssi_query_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
+
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
@@ -2095,7 +2169,7 @@ static int modem_init(const struct device *dev)
 	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
 	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
 	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
-				    MDM_UART_DEV_NAME);
+				    MDM_UART_DEV);
 	if (ret < 0) {
 		goto error;
 	}

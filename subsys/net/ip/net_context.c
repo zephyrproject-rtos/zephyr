@@ -80,6 +80,10 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    local_addr->sa_family == AF_INET6) {
+			if (net_sin6_ptr(&contexts[i].local)->sin6_addr == NULL) {
+				continue;
+			}
+
 			if (net_ipv6_addr_cmp(
 				    net_sin6_ptr(&contexts[i].local)->
 							     sin6_addr,
@@ -89,6 +93,10 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   local_addr->sa_family == AF_INET) {
+			if (net_sin_ptr(&contexts[i].local)->sin_addr == NULL) {
+				continue;
+			}
+
 			if (net_ipv4_addr_cmp(
 				    net_sin_ptr(&contexts[i].local)->
 							      sin_addr,

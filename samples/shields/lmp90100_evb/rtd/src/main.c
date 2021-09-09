@@ -60,7 +60,7 @@ static double rtd_temperature(int nom, double resistance)
 
 void main(void)
 {
-	const struct device *lmp90100;
+	const struct device *lmp90100 = DEVICE_DT_GET_ONE(ti_lmp90100);
 	double resistance;
 	int32_t buffer;
 	int err;
@@ -83,9 +83,8 @@ void main(void)
 		.calibrate = 0
 	};
 
-	lmp90100 = device_get_binding(DT_LABEL(DT_INST(0, ti_lmp90100)));
-	if (!lmp90100) {
-		LOG_ERR("LMP90100 device not found");
+	if (!device_is_ready(lmp90100)) {
+		LOG_ERR("LMP90100 device not ready");
 		return;
 	}
 

@@ -328,6 +328,7 @@ osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig"\n')
         os.environ["ARCH"] = "*"
         os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
+        os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
@@ -522,6 +523,9 @@ def get_defined_syms(kconf):
 UNDEF_KCONFIG_WHITELIST = {
     "ALSO_MISSING",
     "APP_LINK_WITH_",
+    "ARMCLANG_STD_LIBC",  # The ARMCLANG_STD_LIBC is defined in the toolchain
+                          # Kconfig which is sourced based on Zephyr toolchain
+			  # variant and therefore not visible to compliance.
     "CDC_ACM_PORT_NAME_",
     "CLOCK_STM32_SYSCLK_SRC_",
     "CMU",
@@ -539,7 +543,6 @@ UNDEF_KCONFIG_WHITELIST = {
     "FOO_LOG_LEVEL",
     "FOO_SETTING_1",
     "FOO_SETTING_2",
-    "LIS2DW12_INT_PIN",
     "LSM6DSO_INT_PIN",
     "MISSING",
     "MODULES",
@@ -569,6 +572,10 @@ UNDEF_KCONFIG_WHITELIST = {
     "USB_CONSOLE",
     "USE_STDC_",
     "WHATEVER",
+    "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
 }
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):
@@ -888,15 +895,20 @@ class PyLint(ComplianceTest):
 
 def filter_py(root, fnames):
     # PyLint check helper. Returns all Python script filenames among the
-    # filenames in 'fnames', relative to directory 'root'. Uses the
-    # python-magic library, so that we can detect Python files that
-    # don't end in .py as well. python-magic is a frontend to libmagic,
-    # which is also used by 'file'.
+    # filenames in 'fnames', relative to directory 'root'.
+    #
+    # Uses the python-magic library, so that we can detect Python
+    # files that don't end in .py as well. python-magic is a frontend
+    # to libmagic, which is also used by 'file'.
+    #
+    # The extra os.path.isfile() is necessary because git includes
+    # submodule directories in its output.
 
     return [fname for fname in fnames
-            if fname.endswith(".py") or
-               magic.from_file(os.path.join(root, fname),
-                               mime=True) == "text/x-python"]
+            if os.path.isfile(os.path.join(root, fname)) and
+            (fname.endswith(".py") or
+             magic.from_file(os.path.join(root, fname),
+                             mime=True) == "text/x-python")]
 
 
 class Identity(ComplianceTest):

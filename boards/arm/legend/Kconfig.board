@@ -1,0 +1,8 @@
+# Legend board family configuration
+
+# Copyright (c) 2021 Seagate Technology
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LEGEND
+	bool "Legend board"
+	depends on SOC_STM32F070XB

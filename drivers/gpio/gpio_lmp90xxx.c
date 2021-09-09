@@ -25,19 +25,18 @@ LOG_MODULE_REGISTER(gpio_lmp90xxx);
 struct gpio_lmp90xxx_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	char *parent_dev_name;
+	const struct device *parent;
 };
 
 struct gpio_lmp90xxx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
-	const struct device *parent;
 };
 
 static int gpio_lmp90xxx_config(const struct device *dev,
 				gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 	int err = 0;
 
 	if (pin > LMP90XXX_GPIO_MAX) {
@@ -59,21 +58,21 @@ static int gpio_lmp90xxx_config(const struct device *dev,
 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
-		err = lmp90xxx_gpio_set_input(data->parent, pin);
+		err = lmp90xxx_gpio_set_input(config->parent, pin);
 		break;
 	case GPIO_OUTPUT:
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			err = lmp90xxx_gpio_set_pin_value(data->parent, pin,
+			err = lmp90xxx_gpio_set_pin_value(config->parent, pin,
 							  true);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			err = lmp90xxx_gpio_set_pin_value(data->parent, pin,
+			err = lmp90xxx_gpio_set_pin_value(config->parent, pin,
 							  false);
 		}
 
 		if (err) {
 			return err;
 		}
-		err = lmp90xxx_gpio_set_output(data->parent, pin);
+		err = lmp90xxx_gpio_set_output(config->parent, pin);
 		break;
 	default:
 		return -ENOTSUP;
@@ -85,42 +84,42 @@ static int gpio_lmp90xxx_config(const struct device *dev,
 static int gpio_lmp90xxx_port_get_raw(const struct device *dev,
 				      gpio_port_value_t *value)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 
-	return lmp90xxx_gpio_port_get_raw(data->parent, value);
+	return lmp90xxx_gpio_port_get_raw(config->parent, value);
 }
 
 static int gpio_lmp90xxx_port_set_masked_raw(const struct device *dev,
 					     gpio_port_pins_t mask,
 					     gpio_port_value_t value)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 
-	return lmp90xxx_gpio_port_set_masked_raw(data->parent, mask, value);
+	return lmp90xxx_gpio_port_set_masked_raw(config->parent, mask, value);
 }
 
 static int gpio_lmp90xxx_port_set_bits_raw(const struct device *dev,
 					   gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 
-	return lmp90xxx_gpio_port_set_bits_raw(data->parent, pins);
+	return lmp90xxx_gpio_port_set_bits_raw(config->parent, pins);
 }
 
 static int gpio_lmp90xxx_port_clear_bits_raw(const struct device *dev,
 					     gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 
-	return lmp90xxx_gpio_port_clear_bits_raw(data->parent, pins);
+	return lmp90xxx_gpio_port_clear_bits_raw(config->parent, pins);
 }
 
 static int gpio_lmp90xxx_port_toggle_bits(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
 
-	return lmp90xxx_gpio_port_toggle_bits(data->parent, pins);
+	return lmp90xxx_gpio_port_toggle_bits(config->parent, pins);
 }
 
 static int gpio_lmp90xxx_pin_interrupt_configure(const struct device *dev,
@@ -139,12 +138,10 @@ static int gpio_lmp90xxx_pin_interrupt_configure(const struct device *dev,
 static int gpio_lmp90xxx_init(const struct device *dev)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
-	struct gpio_lmp90xxx_data *data = dev->data;
 
-	data->parent = device_get_binding(config->parent_dev_name);
-	if (!data->parent) {
-		LOG_ERR("parent LMP90xxx device '%s' not found",
-			config->parent_dev_name);
+	if (!device_is_ready(config->parent)) {
+		LOG_ERR("parent LMP90xxx device '%s' not ready",
+			config->parent->name);
 		return -EINVAL;
 	}
 
@@ -172,7 +169,7 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 			.port_pin_mask =                                \
 				 GPIO_PORT_PIN_MASK_FROM_DT_INST(id)	\
 		},                                                      \
-		.parent_dev_name = DT_INST_BUS_LABEL(id),		\
+		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),		\
 	};								\
 									\
 	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;	\

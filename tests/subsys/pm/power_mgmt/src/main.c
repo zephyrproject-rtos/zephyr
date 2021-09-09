@@ -26,11 +26,8 @@ static bool idle_entered;
 
 static const struct device *dev;
 static struct dummy_driver_api *api;
-/*
- * Weak power hook functions. Used on systems that have not implemented
- * power management.
- */
-__weak void pm_power_state_set(struct pm_state_info info)
+
+void pm_power_state_set(struct pm_state_info info)
 {
 	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
@@ -39,7 +36,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		     "Notification to enter suspend was not sent to the App");
 
 	/* this function is called after devices enter low power state */
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 	/* at this point, devices have been deactivated */
 	pm_device_state_get(dev, &device_power_state);
 	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
@@ -51,7 +48,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		      "Entering low power state with a wrong parameter");
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
@@ -85,7 +82,7 @@ struct pm_state_info pm_policy_next_state(int ticks)
 /* implement in application, called by idle thread */
 static void notify_pm_state_entry(enum pm_state state)
 {
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 
 	/* enter suspend */
 	zassert_true(notify_app_entry == true,
@@ -103,7 +100,7 @@ static void notify_pm_state_entry(enum pm_state state)
 /* implement in application, called by idle thread */
 static void notify_pm_state_exit(enum pm_state state)
 {
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 
 	/* leave suspend */
 	zassert_true(notify_app_exit == true,
@@ -177,14 +174,14 @@ void test_power_state_trans(void)
  */
 void test_power_state_notification(void)
 {
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 
 	pm_device_state_get(dev, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 
 	api->close(dev);
 	pm_device_state_get(dev, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPEND, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
 	/* reopen device as it will be closed in teardown */
 	api->open(dev);
 }

@@ -22,6 +22,10 @@
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
+/*
+ * Tell armclang that stack alignment are ensured.
+ */
+.eabi_attribute Tag_ABI_align_preserved, 1
 
 GDATA(z_main_stack)
 
@@ -73,7 +77,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #if defined(CONFIG_MULTITHREADING)
     .word z_arm_pendsv
 #else
-    .word 0
+    .word z_arm_exc_spurious
 #endif
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK)
 #if defined(CONFIG_SYS_CLOCK_EXISTS)

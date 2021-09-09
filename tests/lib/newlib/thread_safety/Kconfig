@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config NEWLIB_THREAD_SAFETY_TEST_LOCKS
+	bool "Test: Locks"
+	default y
+
+config NEWLIB_THREAD_SAFETY_TEST_STRESS
+	bool "Test: Stress"
+
+source "Kconfig"

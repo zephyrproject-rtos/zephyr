@@ -238,6 +238,16 @@
 			pinctrl-0 = <&pd9c_afec1_adtrg>;
 		};
 
+		dacc: dacc@40040000 {
+			compatible = "atmel,sam-dac";
+			reg = <0x40040000 0x100>;
+			interrupts = <30 0>;
+			peripheral-id = <30>;
+			status = "disabled";
+			label = "DACC";
+			#io-channel-cells = <1>;
+		};
+
 		pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
@@ -338,9 +348,10 @@
 			label = "USBHS";
 		};
 
-		gmac: ethernet@40050088 {
+		gmac: ethernet@40050000 {
 			compatible = "atmel,sam-gmac";
-			reg = <0x40050088 0x4000>;
+			reg = <0x40050000 0x4000>;
+			peripheral-id = <39>;
 			interrupts = <39 0>, <66 0>, <67 0>;
 			interrupt-names = "gmac", "q1", "q2";
 			num-queues = <3>;
@@ -351,11 +362,17 @@
 			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
 				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
 				     &pd4a_gmac_grxdv &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd7a_gmac_grxer
-				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+				     &pd6a_gmac_grx1 &pd7a_gmac_grxer>;
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				label = "MDIO";
+				status = "disabled";
+				pinctrl-0 = <&pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+			};
 		};
 
-		tc0: tc@4000C000 {
+		tc0: tc@4000c000 {
 			compatible = "atmel,sam-tc";
 			reg = <0x4000c000 0x100>;
 			interrupts = <23 0
@@ -364,6 +381,7 @@
 			peripheral-id = <23 24 25>;
 			status = "disabled";
 			label = "TC0";
+			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40010000 {
@@ -375,6 +393,7 @@
 			peripheral-id = <26 27 28>;
 			status = "disabled";
 			label = "TC1";
+			pinctrl-0 = <>;
 		};
 
 		tc2: tc@40014000 {
@@ -386,6 +405,7 @@
 			peripheral-id = <47 48 49>;
 			status = "disabled";
 			label = "TC2";
+			pinctrl-0 = <>;
 		};
 
 		tc3: tc@40054000 {
@@ -397,6 +417,7 @@
 			peripheral-id = <50 51 52>;
 			status = "disabled";
 			label = "TC3";
+			pinctrl-0 = <>;
 		};
 
 		trng: random@40070000 {

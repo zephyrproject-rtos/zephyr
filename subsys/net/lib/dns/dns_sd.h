@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #define DNS_SD_FOREACH(it) \
-	Z_STRUCT_SECTION_FOREACH(dns_sd_rec, it)
+	STRUCT_SECTION_FOREACH(dns_sd_rec, it)
 
 /**
  * @brief Extract the Service, Protocol, and Domain from a DNS-SD PTR query

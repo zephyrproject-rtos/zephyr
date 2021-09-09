@@ -501,6 +501,16 @@ typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 
 typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
 
+/** @brief Bypass callback.
+ *
+ * @param shell Shell instance.
+ * @param data  Raw data from transport.
+ * @param len   Data length.
+ */
+typedef void (*shell_bypass_cb_t)(const struct shell *shell,
+				  uint8_t *data,
+				  size_t len);
+
 struct shell_transport;
 
 /**
@@ -663,6 +673,9 @@ struct shell_ctx {
 	 */
 	shell_uninit_cb_t uninit_cb;
 
+	/*!< When bypass is set, all incoming data is passed to the callback. */
+	shell_bypass_cb_t bypass;
+
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
 	struct getopt_state getopt_state;
@@ -758,7 +771,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 	Z_SHELL_STATS_DEFINE(_name);					      \
 	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
-	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
+	static const STRUCT_SECTION_ITERABLE(shell, _name) = {		      \
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \
@@ -1024,7 +1037,7 @@ struct getopt_state *shell_getopt_state_get(const struct shell *shell);
  *
  * @param[in] shell	Pointer to the shell instance.
  *			It can be NULL when the
- *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
+ *			@kconfig{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @return		Result of the execution
@@ -1043,6 +1056,16 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd);
  * @retval -EINVAL if invalid root command is provided.
  */
 int shell_set_root_cmd(const char *cmd);
+
+/** @brief Set bypass callback.
+ *
+ * Bypass callback is called whenever data is received. Shell is bypassed and
+ * data is passed directly to the callback. Use null to disable bypass functionality.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] bypass	Bypass callback or null to disable.
+ */
+void shell_set_bypass(const struct shell *shell, shell_bypass_cb_t bypass);
 
 /**
  * @brief Allow application to control text insert mode.

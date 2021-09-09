@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_TEMP_KINETIS temp_kinetis.c)
+zephyr_library_sources(temp_kinetis.c)

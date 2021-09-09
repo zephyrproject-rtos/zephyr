@@ -234,15 +234,16 @@
 #define KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN            BIT(1)
 #define KSZ8794_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_DIS BIT(1)
 
-#define KSZ8794_CTRL2_PORTn(n)                       (0x02 + ((n) * 0x10))
+#define KSZ8794_CTRL2_PORTn(n)                       (0x12 + ((n) * 0x10))
 #define KSZ8794_CTRL2_TRANSMIT_EN                    BIT(2)
 #define KSZ8794_CTRL2_RECEIVE_EN                     BIT(1)
 #define KSZ8794_CTRL2_LEARNING_DIS                   BIT(0)
 
-#define KSZ8794_STAT2_PORTn(n)                       (0x0E + ((n) * 0x10))
+#define KSZ8794_STAT2_PORTn(n)                       (0x1E + ((n) * 0x10))
 #define KSZ8794_STAT2_LINK_GOOD                      BIT(5)
 
 #define KSZ8794_CHIP_ID0_ID_DEFAULT                  0x87
+#define KSZ8794_CHIP_ID1_ID_DEFAULT                  0x61
 #define KSZ8794_PWR_MGNT_MODE_SOFT_DOWN              BIT(4)
 
 #define KSZ8794_GLOBAL_CTRL20_LOWSPEED_MASK          0x07
@@ -257,19 +258,12 @@
 
 enum {
 	/* LAN ports for the ksz8794 switch */
-	KSZ8794_PORT1 = 1,
+	KSZ8794_PORT1 = 0,
 	KSZ8794_PORT2,
 	KSZ8794_PORT3,
+	KSZ8794_PORT4,
 	/* SWITCH <-> CPU port */
-	KSZ8794_PORT4 = 4,
-};
-
-#include <drivers/spi.h>
-struct dsa_ksz8794_spi {
-	const struct device *spi;
-	struct spi_config spi_cfg;
-	struct spi_cs_control cs_ctrl;
-	bool is_init;
+	KSZ8794_PORT5,
 };
 
 #define KSZ8794_REG_IND_DATA_8                        0x70
@@ -286,6 +280,35 @@ struct dsa_ksz8794_spi {
 #define KSZ8794_REG_IND_CTRL_1                        0x6F
 
 #define KSZ8794_STATIC_MAC_TABLE_VALID                BIT(5)
-#define KSZ8794_STATIC_MAC_TABLE_OVERRIDE             BIT(6)
+#define KSZ8794_STATIC_MAC_TABLE_OVRD                 BIT(6)
 
+#define KSZ8XXX_CHIP_ID0                        KSZ8794_CHIP_ID0
+#define KSZ8XXX_CHIP_ID1                        KSZ8794_CHIP_ID1
+#define KSZ8XXX_CHIP_ID0_ID_DEFAULT             KSZ8794_CHIP_ID0_ID_DEFAULT
+#define KSZ8XXX_CHIP_ID1_ID_DEFAULT             KSZ8794_CHIP_ID1_ID_DEFAULT
+#define KSZ8XXX_FIRST_PORT                      KSZ8794_PORT1
+#define KSZ8XXX_LAST_PORT                       KSZ8794_PORT5
+#define KSZ8XXX_CPU_PORT                        KSZ8794_PORT5
+#define KSZ8XXX_REG_IND_CTRL_0                  KSZ8794_REG_IND_CTRL_0
+#define KSZ8XXX_REG_IND_CTRL_1                  KSZ8794_REG_IND_CTRL_1
+#define KSZ8XXX_REG_IND_DATA_8                  KSZ8794_REG_IND_DATA_8
+#define KSZ8XXX_REG_IND_DATA_7                  KSZ8794_REG_IND_DATA_7
+#define KSZ8XXX_REG_IND_DATA_6                  KSZ8794_REG_IND_DATA_6
+#define KSZ8XXX_REG_IND_DATA_5                  KSZ8794_REG_IND_DATA_5
+#define KSZ8XXX_REG_IND_DATA_4                  KSZ8794_REG_IND_DATA_4
+#define KSZ8XXX_REG_IND_DATA_3                  KSZ8794_REG_IND_DATA_3
+#define KSZ8XXX_REG_IND_DATA_2                  KSZ8794_REG_IND_DATA_2
+#define KSZ8XXX_REG_IND_DATA_1                  KSZ8794_REG_IND_DATA_1
+#define KSZ8XXX_REG_IND_DATA_0                  KSZ8794_REG_IND_DATA_0
+#define KSZ8XXX_STATIC_MAC_TABLE_VALID          KSZ8794_STATIC_MAC_TABLE_VALID
+#define KSZ8XXX_STATIC_MAC_TABLE_OVRD           KSZ8794_STATIC_MAC_TABLE_OVRD
+#define KSZ8XXX_STAT2_LINK_GOOD                 KSZ8794_STAT2_LINK_GOOD
+#define KSZ8XXX_RESET_REG                       KSZ8794_PD_MGMT_CTRL1
+#define KSZ8XXX_RESET_SET                       KSZ8794_PWR_MGNT_MODE_SOFT_DOWN
+#define KSZ8XXX_RESET_CLEAR                     0
+#define KSZ8XXX_STAT2_PORTn                     KSZ8794_STAT2_PORTn
+#define KSZ8XXX_SPI_CMD_RD                      KSZ8794_SPI_CMD_RD
+#define KSZ8XXX_SPI_CMD_WR                      KSZ8794_SPI_CMD_WR
+#define KSZ8XXX_SOFT_RESET_DURATION                     1000
+#define KSZ8XXX_HARD_RESET_WAIT                 10000
 #endif /* __DSA_KSZ8794_H__ */

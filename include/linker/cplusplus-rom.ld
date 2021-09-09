@@ -9,4 +9,18 @@
 	{
 	*(.gcc_except_table .gcc_except_table.*)
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif
+
+#if defined (CONFIG_EXCEPTIONS)
+	SECTION_PROLOGUE(.eh_frame_hdr,,)
+	{
+	*(.eh_frame_hdr)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_PROLOGUE(.eh_frame,,)
+	{
+	KEEP (*(SORT_NONE(EXCLUDE_FILE (*crtend.o) .eh_frame)))
+	KEEP (*(SORT_NONE(.eh_frame)))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_EXCEPTIONS */
+
+#endif /* CONFIG_CPLUSPLUS */

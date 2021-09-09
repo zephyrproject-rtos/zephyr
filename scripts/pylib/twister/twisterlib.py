@@ -400,6 +400,7 @@ class Handler:
         self.generator_cmd = None
 
         self.args = []
+        self.terminated = False
 
     def set_state(self, state, duration):
         self.state = state
@@ -418,6 +419,23 @@ class Handler:
                 for instance in harness.recording:
                     cw.writerow(instance)
 
+    def terminate(self, proc):
+        # encapsulate terminate functionality so we do it consistently where ever
+        # we might want to terminate the proc.  We need try_kill_process_by_pid
+        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
+        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
+        # so we need to use try_kill_process_by_pid.
+        for child in psutil.Process(proc.pid).children(recursive=True):
+            try:
+                os.kill(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        proc.terminate()
+        # sleep for a while before attempting to kill
+        time.sleep(0.5)
+        proc.kill()
+        self.terminated = True
+
 
 class BinaryHandler(Handler):
     def __init__(self, instance, type_str):
@@ -427,7 +445,6 @@ class BinaryHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.terminated = False
         self.call_west_flash = False
 
         # Tool options
@@ -446,23 +463,6 @@ class BinaryHandler(Handler):
                 os.kill(pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-
-    def terminate(self, proc):
-        # encapsulate terminate functionality so we do it consistently where ever
-        # we might want to terminate the proc.  We need try_kill_process_by_pid
-        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
-        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
-        # so we need to use try_kill_process_by_pid.
-        for child in psutil.Process(proc.pid).children(recursive=True):
-            try:
-                os.kill(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        proc.terminate()
-        # sleep for a while before attempting to kill
-        time.sleep(0.5)
-        proc.kill()
-        self.terminated = True
 
     def _output_reader(self, proc):
         self.line = proc.stdout.readline()
@@ -1123,31 +1123,22 @@ class QEMUHandler(Handler):
                 # twister to judge testing result by console output
 
                 is_timeout = True
-                if os.path.exists(self.pid_fn):
-                    qemu_pid = int(open(self.pid_fn).read())
-                    try:
-                        os.kill(qemu_pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    proc.wait()
-                    if harness.state == "passed":
-                        self.returncode = 0
-                    else:
-                        self.returncode = proc.returncode
+                self.terminate(proc)
+                if harness.state == "passed":
+                    self.returncode = 0
                 else:
-                    proc.terminate()
-                    proc.kill()
                     self.returncode = proc.returncode
             else:
                 if os.path.exists(self.pid_fn):
                     qemu_pid = int(open(self.pid_fn).read())
                 logger.debug(f"No timeout, return code from QEMU ({qemu_pid}): {proc.returncode}")
                 self.returncode = proc.returncode
-
             # Need to wait for harness to finish processing
             # output from QEMU. Otherwise it might miss some
             # error messages.
-            self.thread.join()
+            self.thread.join(0)
+            if self.thread.is_alive():
+                logger.debug("Timed out while monitoring QEMU output")
 
             if os.path.exists(self.pid_fn):
                 qemu_pid = int(open(self.pid_fn).read())
@@ -2017,7 +2008,7 @@ class CMake():
             ldflags = "-Wl,--fatal-warnings"
             cflags = "-Werror"
             aflags = "-Wa,--fatal-warnings"
-            gen_defines_args = "--err-on-deprecated-properties"
+            gen_defines_args = "--edtlib-Werror"
         else:
             ldflags = cflags = aflags = ""
             gen_defines_args = ""
@@ -2068,6 +2059,7 @@ class CMake():
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
+            self.instance.fill_results_by_status()
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
 
@@ -2101,6 +2093,13 @@ class CMake():
 
         p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
+
+        # It might happen that the environment adds ANSI escape codes like \x1b[0m,
+        # for instance if twister is executed from inside a makefile. In such a
+        # scenario it is then necessary to remove them, as otherwise the JSON decoding
+        # will fail.
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        out = ansi_escape.sub('', out.decode())
 
         if p.returncode == 0:
             msg = "Finished running  %s" % (args[0])
@@ -2288,8 +2287,7 @@ class ProjectBuilder(FilterBuilder):
         elif instance.platform.simulation == "mdb-nsim":
             if find_executable("mdb"):
                 instance.handler = BinaryHandler(instance, "nsim")
-                instance.handler.pid_fn = os.path.join(instance.build_dir, "mdb.pid")
-                instance.handler.call_west_flash = True
+                instance.handler.call_make_run = True
         elif instance.platform.simulation == "armfvp":
             instance.handler = BinaryHandler(instance, "armfvp")
             instance.handler.call_make_run = True
@@ -3279,8 +3277,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in self.discards:
             instance.reason = self.discards[instance]
             # If integration mode is on all skips on integration_platforms are treated as errors.
-            # TODO: add quarantine relief here when PR with quarantine feature gets merged
-            if self.integration and instance.platform.name in instance.testcase.integration_platforms:
+            if self.integration and instance.platform.name in instance.testcase.integration_platforms \
+                and "Quarantine" not in instance.reason:
                 instance.status = "error"
                 instance.reason += " but is one of the integration platforms"
                 instance.fill_results_by_status()
@@ -3318,16 +3316,16 @@ class TestSuite(DisablePyTestCollectionMixin):
             if build_only:
                 instance.run = False
 
-            if test_only and instance.run:
-                pipeline.put({"op": "run", "test": instance})
-            else:
-                if instance.status not in ['passed', 'skipped', 'error']:
-                    logger.debug(f"adding {instance.name}")
-                    instance.status = None
+            if instance.status not in ['passed', 'skipped', 'error']:
+                logger.debug(f"adding {instance.name}")
+                instance.status = None
+                if test_only and instance.run:
+                    pipeline.put({"op": "run", "test": instance})
+                else:
                     pipeline.put({"op": "cmake", "test": instance})
-                # If the instance got 'error' status before, proceed to the report stage
-                if instance.status == "error":
-                    pipeline.put({"op": "report", "test": instance})
+            # If the instance got 'error' status before, proceed to the report stage
+            if instance.status == "error":
+                pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
@@ -3744,12 +3742,12 @@ class CoverageTool:
         return t
 
     @staticmethod
-    def retrieve_gcov_data(intput_file):
-        logger.debug("Working on %s" % intput_file)
+    def retrieve_gcov_data(input_file):
+        logger.debug("Working on %s" % input_file)
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
-        with open(intput_file, 'r') as fp:
+        with open(input_file, 'r') as fp:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True

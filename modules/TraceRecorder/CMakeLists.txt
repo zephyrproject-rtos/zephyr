@@ -10,17 +10,28 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
   zephyr_library_sources_ifdef(
     CONFIG_PERCEPIO_TRACERECORDER
     ${TRACERECORDER_DIR}/kernelports/Zephyr/trcKernelPort.c
+    ${TRACERECORDER_DIR}/trcInternalBuffer.c
     ${TRACERECORDER_DIR}/trcStreamingRecorder.c
     ${TRACERECORDER_DIR}/extras/SDK/trcSDK.c
     )
 
   if(CONFIG_PERCEPIO_RECORDER_TRC_RECORDER_STREAM_PORT_RTT)
     zephyr_library_sources(
-      ${TRACERECORDER_DIR}/streamports/Jlink_RTT/trcStreamingPort.c
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Jlink_RTT/trcStreamingPort.c
     )
 
     zephyr_include_directories(
-      ${TRACERECORDER_DIR}/streamports/Jlink_RTT/include/
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/Jlink_RTT/include/
+    )
+  endif()
+
+  if(CONFIG_PERCEPIO_RECORDER_TRC_RECORDER_STREAM_PORT_ITM)
+    zephyr_library_sources(
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/ARM_ITM/trcStreamingPort.c
+    )
+
+    zephyr_include_directories(
+      ${TRACERECORDER_DIR}/kernelports/Zephyr/streamports/ARM_ITM/include/
     )
   endif()
 

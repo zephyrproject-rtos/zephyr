@@ -21,29 +21,28 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(const struct device *dev, uint32_t command,
-			       uint32_t *state, pm_device_cb cb, void *arg)
+static int fake_dev_pm_control(const struct device *dev,
+			       enum pm_device_action action)
 {
 	struct fake_dev_context *ctx = dev->data;
-	int ret = 0;
+	int ret;
 
-	if (command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_SUSPEND) {
-			ret = net_if_suspend(ctx->iface);
-			if (ret == -EBUSY) {
-				goto out;
-			}
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = net_if_resume(ctx->iface);
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = net_if_suspend(ctx->iface);
+		if (ret == -EBUSY) {
+			goto out;
 		}
-	} else {
-		return -EINVAL;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = net_if_resume(ctx->iface);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
 out:
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
 
 	return ret;
 }
@@ -149,13 +148,13 @@ void test_pm(void)
 	 */
 	k_yield();
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's try to suspend it again, it should fail relevantly */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 	zassert_true(ret == -EALREADY, "Could change state");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
@@ -165,12 +164,12 @@ void test_pm(void)
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is suspended");
 
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 	zassert_true(ret == -EALREADY, "Could change state");
 
 	/* Let's send some data, it should go through */

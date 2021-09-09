@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+bus: usb
+
 properties:
     maximum-speed:
       type: string

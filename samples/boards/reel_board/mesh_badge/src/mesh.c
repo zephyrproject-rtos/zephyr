@@ -99,9 +99,9 @@ static struct bt_mesh_health_srv health_srv = {
 };
 
 /* Generic OnOff Server message handlers */
-static void gen_onoff_get(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int gen_onoff_get(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
 	struct led_onoff_state *state = model->user_data;
@@ -114,11 +114,13 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		printk("Unable to send On Off Status response\n");
 	}
+
+	return 0;
 }
 
-static void gen_onoff_set_unack(struct bt_mesh_model *model,
-				struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static int gen_onoff_set_unack(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct led_onoff_state *state = model->user_data;
@@ -132,7 +134,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	if (onoff > STATE_ON) {
 		printk("Wrong state received\n");
 
-		return;
+		return 0;
 	}
 
 	now = k_uptime_get();
@@ -152,7 +154,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
 
-		return;
+		return 0;
 	}
 
 	/*
@@ -177,21 +179,26 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return 0;
 }
 
-static void gen_onoff_set(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int gen_onoff_set(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
-	gen_onoff_set_unack(model, ctx, buf);
-	gen_onoff_get(model, ctx, buf);
+	(void)gen_onoff_set_unack(model, ctx, buf);
+	(void)gen_onoff_get(model, ctx, buf);
+
+	return 0;
 }
 
-static void sensor_desc_get(struct bt_mesh_model *model,
-			    struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf)
+static int sensor_desc_get(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
 {
 	/* TODO */
+	return 0;
 }
 
 static void sens_temperature_celsius_fill(struct net_buf_simple *msg)
@@ -246,9 +253,8 @@ static void sensor_create_status(uint16_t id, struct net_buf_simple *msg)
 	}
 }
 
-static void sensor_get(struct bt_mesh_model *model,
-		       struct bt_mesh_msg_ctx *ctx,
-		       struct net_buf_simple *buf)
+static int sensor_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		      struct net_buf_simple *buf)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_STATUS_LEN + 4);
 	uint16_t sensor_id;
@@ -259,20 +265,24 @@ static void sensor_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		printk("Unable to send Sensor get status response\n");
 	}
+
+	return 0;
 }
 
-static void sensor_col_get(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
+static int sensor_col_get(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	/* TODO */
+	return 0;
 }
 
-static void sensor_series_get(struct bt_mesh_model *model,
-			      struct bt_mesh_msg_ctx *ctx,
-			      struct net_buf_simple *buf)
+static int sensor_series_get(struct bt_mesh_model *model,
+			     struct bt_mesh_msg_ctx *ctx,
+			     struct net_buf_simple *buf)
 {
 	/* TODO */
+	return 0;
 }
 
 /* Definitions of models publication context (Start) */
@@ -281,18 +291,18 @@ BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 3);
 
 /* Mapping of message handlers for Generic OnOff Server (0x1000) */
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
-	{ BT_MESH_MODEL_OP_GEN_ONOFF_GET, 0, gen_onoff_get },
-	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET, 2, gen_onoff_set },
-	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, gen_onoff_set_unack },
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_onoff_get },
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_onoff_set },
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_onoff_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Mapping of message handlers for Sensor Server (0x1100) */
 static const struct bt_mesh_model_op sensor_srv_op[] = {
-	{ BT_MESH_MODEL_OP_SENS_DESC_GET, 0, sensor_desc_get },
-	{ BT_MESH_MODEL_OP_SENS_GET, 0, sensor_get },
-	{ BT_MESH_MODEL_OP_SENS_COL_GET, 2, sensor_col_get },
-	{ BT_MESH_MODEL_OP_SENS_SERIES_GET, 2, sensor_series_get },
+	{ BT_MESH_MODEL_OP_SENS_DESC_GET,   BT_MESH_LEN_EXACT(0), sensor_desc_get },
+	{ BT_MESH_MODEL_OP_SENS_GET,        BT_MESH_LEN_EXACT(2), sensor_get },
+	{ BT_MESH_MODEL_OP_SENS_COL_GET,    BT_MESH_LEN_EXACT(2), sensor_col_get },
+	{ BT_MESH_MODEL_OP_SENS_SERIES_GET, BT_MESH_LEN_EXACT(2), sensor_series_get },
 };
 
 static struct bt_mesh_model root_models[] = {
@@ -306,9 +316,8 @@ static struct bt_mesh_model root_models[] = {
 		      sensor_srv_op, NULL, NULL),
 };
 
-static void vnd_hello(struct bt_mesh_model *model,
-		      struct bt_mesh_msg_ctx *ctx,
-		      struct net_buf_simple *buf)
+static int vnd_hello(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		     struct net_buf_simple *buf)
 {
 	char str[32];
 	size_t len;
@@ -317,7 +326,7 @@ static void vnd_hello(struct bt_mesh_model *model,
 
 	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
 		printk("Ignoring message from self\n");
-		return;
+		return 0;
 	}
 
 	len = MIN(buf->len, HELLO_MAX);
@@ -330,11 +339,12 @@ static void vnd_hello(struct bt_mesh_model *model,
 	board_show_text(str, false, K_SECONDS(3));
 
 	board_blink_leds();
+
+	return 0;
 }
 
-static void vnd_baduser(struct bt_mesh_model *model,
-			struct bt_mesh_msg_ctx *ctx,
-			struct net_buf_simple *buf)
+static int vnd_baduser(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
 {
 	char str[32];
 	size_t len;
@@ -343,7 +353,7 @@ static void vnd_baduser(struct bt_mesh_model *model,
 
 	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
 		printk("Ignoring message from self\n");
-		return;
+		return 0;
 	}
 
 	len = MIN(buf->len, HELLO_MAX);
@@ -354,17 +364,19 @@ static void vnd_baduser(struct bt_mesh_model *model,
 	board_show_text(str, false, K_SECONDS(3));
 
 	board_blink_leds();
+
+	return 0;
 }
 
-static void vnd_heartbeat(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int vnd_heartbeat(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
 	uint8_t init_ttl, hops;
 
 	/* Ignore messages from self */
 	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
-		return;
+		return 0;
 	}
 
 	init_ttl = net_buf_simple_pull_u8(buf);
@@ -374,12 +386,14 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 	       hops, hops == 1U ? "" : "s");
 
 	board_add_heartbeat(ctx->addr, hops);
+
+	return 0;
 }
 
 static const struct bt_mesh_model_op vnd_ops[] = {
-	{ OP_VND_HELLO, 1, vnd_hello },
-	{ OP_VND_HEARTBEAT, 1, vnd_heartbeat },
-	{ OP_VND_BADUSER, 1, vnd_baduser },
+	{ OP_VND_HELLO,     BT_MESH_LEN_MIN(1), vnd_hello },
+	{ OP_VND_HEARTBEAT, BT_MESH_LEN_MIN(1), vnd_heartbeat },
+	{ OP_VND_BADUSER,   BT_MESH_LEN_MIN(1), vnd_baduser },
 	BT_MESH_MODEL_OP_END,
 };
 

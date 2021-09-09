@@ -38,5 +38,6 @@ enum bt_mesh_settings_flag {
 
 void bt_mesh_settings_init(void);
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag);
+void bt_mesh_settings_store_cancel(enum bt_mesh_settings_flag flag);
 int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 			 void *out, size_t read_len);

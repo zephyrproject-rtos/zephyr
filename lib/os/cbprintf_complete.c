@@ -22,7 +22,7 @@
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
  */
-size_t strnlen(const char *, size_t);
+size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
  * capable of holding all convertable integral values.
@@ -555,6 +555,10 @@ int_conv:
 				unsupported = sizeof(ptrdiff_t) > 4;
 				break;
 			default:
+				/* Add an empty default with break, this is a defensive
+				 * programming. Static analysis tool won't raise a violation
+				 * if default is empty, but has that comment.
+				 */
 				break;
 			}
 		} else {
@@ -1303,6 +1307,10 @@ static inline void store_count(const struct conversion *conv,
 		*(ptrdiff_t *)dp = (ptrdiff_t)count;
 		break;
 	default:
+		/* Add an empty default with break, this is a defensive programming.
+		 * Static analysis tool won't raise a violation if default is empty,
+		 * but has that comment.
+		 */
 		break;
 	}
 }
@@ -1664,6 +1672,12 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				bps = encode_float(value->dbl, conv, precision,
 						   &sign, buf, &bpe);
 			}
+			break;
+		default:
+			/* Add an empty default with break, this is a defensive
+			 * programming. Static analysis tool won't raise a violation
+			 * if default is empty, but has that comment.
+			 */
 			break;
 		}
 

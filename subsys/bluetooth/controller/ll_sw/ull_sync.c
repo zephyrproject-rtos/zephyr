@@ -332,6 +332,17 @@ struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle)
 	return sync;
 }
 
+struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
+{
+	if (((uint8_t *)sync < (uint8_t *)ll_sync_pool) ||
+	    ((uint8_t *)sync > ((uint8_t *)ll_sync_pool +
+	     (sizeof(struct ll_sync_set) * (CONFIG_BT_PER_ADV_SYNC_MAX - 1))))) {
+		return NULL;
+	}
+
+	return sync;
+}
+
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
 {
 	return mem_index_get(sync, ll_sync_pool, sizeof(struct ll_sync_set));
@@ -358,15 +369,68 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	uint32_t sync_offset_us;
 	uint32_t ready_delay_us;
 	struct node_rx_pdu *rx;
+	uint8_t *data_chan_map;
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
+	uint8_t chm_last;
 	uint32_t ret;
 	uint8_t sca;
 
+	/* Populate the LLL context */
 	sync = scan->per_scan.sync;
+	lll = &sync->lll;
+
+	/* Copy channel map from sca_chm field in sync_info structure, and
+	 * clear the SCA bits.
+	 */
+	chm_last = lll->chm_first;
+	lll->chm_last = chm_last;
+	data_chan_map = lll->chm[chm_last].data_chan_map;
+	(void)memcpy(data_chan_map, si->sca_chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
+		~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK;
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
+		/* Ignore sync setup, invalid available channel count */
+		return;
+	}
+
+	memcpy(lll->access_addr, &si->aa, sizeof(lll->access_addr));
+	lll->data_chan_id = lll_chan_id(lll->access_addr);
+	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
+	lll->event_counter = si->evt_cntr;
+	lll->phy = aux->lll.phy;
+
+	/* Extract the SCA value from the sca_chm field of the sync_info
+	 * structure.
+	 */
+	sca = (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
+	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
+
+	interval = sys_le16_to_cpu(si->interval);
+	interval_us = interval * CONN_INT_UNIT_US;
+
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
+						 interval_us);
+
+	lll->window_widening_periodic_us =
+		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
+		  interval_us) + (1000000 - 1)) / 1000000U;
+	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
+	if (si->offs_units) {
+		lll->window_size_event_us = OFFS_UNIT_300_US;
+	} else {
+		lll->window_size_event_us = OFFS_UNIT_30_US;
+	}
+
+	/* Reset the sync context allocated to scan contexts */
 	scan->per_scan.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
@@ -382,40 +446,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		}
 	}
 
-	lll = &sync->lll;
-	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));
-	lll->data_chan_map[4] &= ~0xE0;
-	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
-						   sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
-		return;
-	}
-
-	memcpy(lll->access_addr, &si->aa, sizeof(lll->access_addr));
-	lll->data_chan_id = lll_chan_id(lll->access_addr);
-	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
-	lll->event_counter = si->evt_cntr;
-	lll->phy = aux->lll.phy;
-
-	sca = si->sca_chm[4] >> 5;
-	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * CONN_INT_UNIT_US;
-
-	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
-						 interval_us);
-
-	lll->window_widening_periodic_us =
-		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
-		  interval_us) + (1000000 - 1)) / 1000000U;
-	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
-	if (si->offs_units) {
-		lll->window_size_event_us = 300U;
-	} else {
-		lll->window_size_event_us = 30U;
-	}
-
 	sync_handle = ull_sync_handle_get(sync);
 
+	/* Prepare and dispatch sync notification */
 	rx = (void *)scan->per_scan.node_rx_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC;
 	rx->hdr.handle = sync_handle;
@@ -429,6 +462,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	ll_rx_put(rx->hdr.link, rx);
 	ll_rx_sched();
 
+	/* Calculate offset and schedule sync radio events */
 	ftr = &node_rx->rx_ftr;
 	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
@@ -438,7 +472,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_offset_us += (uint32_t)si->offs * lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (si->offs_adjust ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= PKT_AC_US(pdu->len, 0, lll->phy);
+	sync_offset_us -= PDU_AC_US(pdu->len, lll->phy, ftr->phy_flags);
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
@@ -451,12 +485,10 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 0, lll->phy) +
-				       EVENT_OVERHEAD_END_US);
+	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
+			EVENT_OVERHEAD_START_US + ready_delay_us +
+			PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->phy) +
+			EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
@@ -574,6 +606,72 @@ void ull_sync_done(struct node_rx_event_done *done)
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  ((void *)sync == ull_disable_mark_get()));
 	}
+}
+
+void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
+{
+	struct pdu_adv_sync_chm_upd_ind *chm_upd_ind;
+	struct ll_sync_set *sync;
+	struct lll_sync *lll;
+	uint8_t chm_last;
+	uint16_t ad_len;
+
+	/* Get reference to LLL context */
+	sync = ull_sync_set_get(sync_handle);
+	LL_ASSERT(sync);
+	lll = &sync->lll;
+
+	/* Ignore if already in progress */
+	if (lll->chm_last != lll->chm_first) {
+		return;
+	}
+
+	/* Find the Channel Map Update Indication */
+	do {
+		/* Pick the length and find the Channel Map Update Indication */
+		ad_len = acad[0];
+		if (ad_len && (acad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+			break;
+		}
+
+		/* Add length field size */
+		ad_len += 1U;
+		if (ad_len < acad_len) {
+			acad_len -= ad_len;
+		} else {
+			return;
+		}
+
+		/* Move to next AD data */
+		acad += ad_len;
+	} while (acad_len);
+
+	/* Validate the size of the Channel Map Update Indication */
+	if (ad_len != (sizeof(*chm_upd_ind) + 1U)) {
+		return;
+	}
+
+	/* Pick the parameters into the procedure context */
+	chm_last = lll->chm_last + 1U;
+	if (chm_last == DOUBLE_BUFFER_SIZE) {
+		chm_last = 0U;
+	}
+
+	chm_upd_ind = (void *)&acad[2];
+	(void)memcpy(lll->chm[chm_last].data_chan_map, chm_upd_ind->chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(lll->chm[chm_last].data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
+		/* Ignore channel map, invalid available channel count */
+		return;
+	}
+
+	lll->chm_instant = sys_le16_to_cpu(chm_upd_ind->instant);
+
+	/* Set Channel Map Update Procedure in progress */
+	lll->chm_last = chm_last;
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)

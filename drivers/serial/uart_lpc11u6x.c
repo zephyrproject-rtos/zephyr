@@ -100,6 +100,7 @@ static void lpc11u6x_uart0_config_baudrate(const struct device *clk_drv,
 	lpc11u6x_uart0_write_fdr(cfg->uart0, div, mul);
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int lpc11u6x_uart0_configure(const struct device *dev,
 				    const struct uart_config *cfg)
 {
@@ -199,6 +200,7 @@ static int lpc11u6x_uart0_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int lpc11u6x_uart0_fifo_fill(const struct device *dev,
@@ -416,8 +418,10 @@ static const struct uart_driver_api uart0_api = {
 	.poll_in = lpc11u6x_uart0_poll_in,
 	.poll_out = lpc11u6x_uart0_poll_out,
 	.err_check = lpc11u6x_uart0_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = lpc11u6x_uart0_configure,
 	.config_get = lpc11u6x_uart0_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = lpc11u6x_uart0_fifo_fill,
 	.fifo_read = lpc11u6x_uart0_fifo_read,
@@ -518,6 +522,7 @@ static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
 	cfg->base->brg = div & LPC11U6X_UARTX_BRG_MASK;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int lpc11u6x_uartx_configure(const struct device *dev,
 				    const struct uart_config *cfg)
 {
@@ -622,6 +627,7 @@ static int lpc11u6x_uartx_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int lpc11u6x_uartx_fifo_fill(const struct device *dev,
@@ -847,8 +853,10 @@ static const struct uart_driver_api uartx_api = {
 	.poll_in = lpc11u6x_uartx_poll_in,
 	.poll_out = lpc11u6x_uartx_poll_out,
 	.err_check = lpc11u6x_uartx_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = lpc11u6x_uartx_configure,
 	.config_get = lpc11u6x_uartx_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = lpc11u6x_uartx_fifo_fill,
 	.fifo_read = lpc11u6x_uartx_fifo_read,

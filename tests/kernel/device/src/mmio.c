@@ -103,19 +103,19 @@ void test_mmio_single(void)
 struct foo_mult_dev_data {
 	int baz;
 
-	DEVICE_MMIO_NAMED_RAM(courge);
+	DEVICE_MMIO_NAMED_RAM(corge);
 	DEVICE_MMIO_NAMED_RAM(grault);
 };
 
 struct foo_mult_dev_data foo12_data;
 
 struct foo_mult_config_info {
-	DEVICE_MMIO_NAMED_ROM(courge);
+	DEVICE_MMIO_NAMED_ROM(corge);
 	DEVICE_MMIO_NAMED_ROM(grault);
 };
 
 const struct foo_mult_config_info foo12_config = {
-	DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(1)),
+	DEVICE_MMIO_NAMED_ROM_INIT(corge, DT_DRV_INST(1)),
 	DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(2))
 };
 
@@ -124,7 +124,7 @@ const struct foo_mult_config_info foo12_config = {
 
 int foo_mult_init(const struct device *dev)
 {
-	DEVICE_MMIO_NAMED_MAP(dev, courge, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, corge, K_MEM_CACHE_NONE);
 	DEVICE_MMIO_NAMED_MAP(dev, grault, K_MEM_CACHE_NONE);
 
 	return 0;
@@ -143,7 +143,7 @@ DEVICE_DEFINE(foo12, "foo12", foo_mult_init, NULL,
  * stuff somewhere.
  *
  * We show that this works for a device instance that has two named regions,
- * 'courge' and 'grault' that respectively come from DTS instances 1 and 2.
+ * 'corge' and 'grault' that respectively come from DTS instances 1 and 2.
  *
  * We also perform some checks depending on configuration:
  * - If MMIO addresses are maintained in RAM, check that the ROM struct
@@ -159,32 +159,32 @@ void test_mmio_multiple(void)
 {
 	/* See comments for test_mmio_single */
 	const struct device *dev = device_get_binding("foo12");
-	mm_reg_t regs_courge, regs_grault;
-	const struct z_device_mmio_rom *rom_courge, *rom_grault;
+	mm_reg_t regs_corge, regs_grault;
+	const struct z_device_mmio_rom *rom_corge, *rom_grault;
 
 	zassert_not_null(dev, "null foo12");
 
-	regs_courge = DEVICE_MMIO_NAMED_GET(dev, courge);
+	regs_corge = DEVICE_MMIO_NAMED_GET(dev, corge);
 	regs_grault = DEVICE_MMIO_NAMED_GET(dev, grault);
-	rom_courge = DEVICE_MMIO_NAMED_ROM_PTR(dev, courge);
+	rom_corge = DEVICE_MMIO_NAMED_ROM_PTR(dev, corge);
 	rom_grault = DEVICE_MMIO_NAMED_ROM_PTR(dev, grault);
 
-	zassert_not_equal(regs_courge, 0, "bad regs_courge");
+	zassert_not_equal(regs_corge, 0, "bad regs_corge");
 	zassert_not_equal(regs_grault, 0, "bad regs_grault");
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
-	zassert_equal(rom_courge->phys_addr, DT_INST_REG_ADDR(1),
-		      "bad phys_addr (courge)");
-	zassert_equal(rom_courge->size, DT_INST_REG_SIZE(1),
-		      "bad size (courge)");
+	zassert_equal(rom_corge->phys_addr, DT_INST_REG_ADDR(1),
+		      "bad phys_addr (corge)");
+	zassert_equal(rom_corge->size, DT_INST_REG_SIZE(1),
+		      "bad size (corge)");
 	zassert_equal(rom_grault->phys_addr, DT_INST_REG_ADDR(2),
 		      "bad phys_addr (grault)");
 	zassert_equal(rom_grault->size, DT_INST_REG_SIZE(2),
 		      "bad size (grault)");
 #else
-	zassert_equal(rom_courge->addr, DT_INST_REG_ADDR(1),
-		      "bad addr (courge)");
-	zassert_equal(regs_courge, rom_courge->addr, "bad regs (courge)");
+	zassert_equal(rom_corge->addr, DT_INST_REG_ADDR(1),
+		      "bad addr (corge)");
+	zassert_equal(regs_corge, rom_corge->addr, "bad regs (corge)");
 	zassert_equal(rom_grault->addr, DT_INST_REG_ADDR(2),
 		      "bad addr (grault)");
 	zassert_equal(regs_grault, rom_grault->addr, "bad regs (grault)");
@@ -231,7 +231,7 @@ void test_mmio_toplevel(void)
 	rom_foo3 = DEVICE_MMIO_TOPLEVEL_ROM_PTR(foo3);
 	rom_foo4 = DEVICE_MMIO_TOPLEVEL_ROM_PTR(foo4);
 
-	zassert_not_equal(regs_foo3, 0, "bad regs_courge");
+	zassert_not_equal(regs_foo3, 0, "bad regs_corge");
 	zassert_not_equal(regs_foo4, 0, "bad regs_grault");
 
 #ifdef DEVICE_MMIO_IS_IN_RAM

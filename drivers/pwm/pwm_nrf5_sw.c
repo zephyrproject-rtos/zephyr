@@ -16,19 +16,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrf5_sw);
 
-BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, timer_instance) !=
-	     DT_INST_NODE_HAS_PROP(0, generator),
-	     "Please define either the timer-instance or generator property, but not both");
-
-#if DT_INST_NODE_HAS_PROP(0, timer_instance)
-
-#define USE_RTC		0
-#define GENERATOR_ADDR	_CONCAT(NRF_TIMER, DT_INST_PROP(0, timer_instance))
-#define GENERATOR_CC_NUM \
-	_CONCAT(_CONCAT(TIMER, DT_INST_PROP(0, timer_instance)), _CC_NUM)
-
-#else /* DT_INST_NODE_HAS_PROP(0, timer_instance) */
-
 #define GENERATOR_NODE	DT_PHANDLE(DT_DRV_INST(0), generator)
 #define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
 
@@ -41,8 +28,6 @@ BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 #define USE_RTC		0
 #define GENERATOR_ADDR	((NRF_TIMER_Type *) DT_REG_ADDR(GENERATOR_NODE))
 #endif
-
-#endif /* DT_INST_NODE_HAS_PROP(0, timer_instance) */
 
 /* One compare channel is needed to set the PWM period, hence +1. */
 #if ((DT_INST_PROP(0, channel_count) + 1) > GENERATOR_CC_NUM)

@@ -12,7 +12,8 @@ endif()
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
-if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang"
+  OR CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
   zephyr_compile_options(-Qunused-arguments)
 
   zephyr_cc_option(

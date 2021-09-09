@@ -23,7 +23,7 @@ properties:
     avgslope:
       type: int
       default: 25
-      description: >
+      description: |
         Average slope of T-V chart (in mV/C x10) according to
         datasheet "Electrical characteristics/Operating conditions"
         STM32F1 Table 5.3.19 (min 4 mV/C, max 4.6, default 4.3)
@@ -32,7 +32,7 @@ properties:
     v25:
       type: int
       default: 760
-      description: >
+      description: |
         Voltage of temperature sensor at 25C in mV according to
         datasheet "Electrical characteristics/Operating conditions"
         STM32F1 Table 5.3.19 (min 1340, max 1520, default 1430)
@@ -40,5 +40,4 @@ properties:
 
     ntc:
       type: boolean
-      description: >
-        Negative Temperature Coefficient. True if STM32F1
+      description: Negative Temperature Coefficient. True if STM32F1

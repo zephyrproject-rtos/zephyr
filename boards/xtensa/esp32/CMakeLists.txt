@@ -19,6 +19,10 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     -B ${espidf_build_dir}/bootloader -DSDKCONFIG=${espidf_build_dir}/sdkconfig
     -DIDF_PATH=${ESP_IDF_PATH} -DIDF_TARGET=${CONFIG_BOARD}
     -DPYTHON_DEPS_CHECKED=1
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
+    -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
     BUILD_COMMAND
     ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""      # This particular build system has no install command
@@ -50,5 +54,11 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
   board_finalize_runner_args(esp32 "--esp-flash-bootloader=${espidf_build_dir}/bootloader/bootloader.bin")
 
   board_finalize_runner_args(esp32 "--esp-flash-partition_table=${espidf_build_dir}/partitions_singleapp.bin")
+
+  board_finalize_runner_args(esp32 "--esp-boot-address=0x1000")
+
+  board_finalize_runner_args(esp32 "--esp-partition-table-address=0x8000")
+
+  board_finalize_runner_args(esp32 "--esp-app-address=0x10000")
 
 endif()

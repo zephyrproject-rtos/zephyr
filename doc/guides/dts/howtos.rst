@@ -219,6 +219,7 @@ Here are some ways to set it:
 #. create a ``boards/<BOARD>.overlay`` file in the application
    folder, for the current board
 #. create a ``<BOARD>.overlay`` file in the application folder
+#. create an ``app.overlay`` file in the application folder
 
 Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
 However you set the value, it is saved in the CMake cache between builds.
@@ -355,8 +356,8 @@ compatibles) supported by the driver.
 
 .. note::
 
-  Historically, Zephyr has used Kconfig options like :option:`CONFIG_I2C_0` and
-  :option:`CONFIG_I2C_1` to enable driver support for individual devices of
+  Historically, Zephyr has used Kconfig options like :kconfig:`CONFIG_I2C_0` and
+  :kconfig:`CONFIG_I2C_1` to enable driver support for individual devices of
   some type. For example, if ``CONFIG_I2C_1=y``, the SoC's I2C peripheral
   driver would create a ``struct device`` for "I2C bus controller number 1".
 

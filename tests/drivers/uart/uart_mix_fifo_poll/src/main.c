@@ -28,7 +28,7 @@
 #elif defined(CONFIG_BOARD_ATSAME54_XPRO)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
 #else
-#define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
+#define UART_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_console))
 #endif
 
 struct rx_source {

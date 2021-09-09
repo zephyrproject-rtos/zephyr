@@ -11,8 +11,10 @@
 #include <string.h>
 #include <pm/pm.h>
 #include <pm/state.h>
-#include "policy/pm_policy.h"
+#include <pm/policy.h>
 #include <tracing/tracing.h>
+
+#include "pm_priv.h"
 
 #define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL
@@ -66,27 +68,35 @@ void pm_dump_debug_info(void)
 static inline void pm_debug_start_timer(void) { }
 static inline void pm_debug_stop_timer(void) { }
 static void pm_log_debug_info(enum pm_state state) { }
-void pm_dump_debug_info(void) { }
 #endif
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+static inline void exit_pos_ops(struct pm_state_info info)
 {
-	/*
-	 * This function is supposed to be overridden to do SoC or
-	 * architecture specific post ops after sleep state exits.
-	 *
-	 * The kernel expects that irqs are unlocked after this.
-	 */
+	extern __weak void
+		pm_power_state_exit_post_ops(struct pm_state_info info);
 
-	irq_unlock(0);
+	if (pm_power_state_exit_post_ops != NULL) {
+		pm_power_state_exit_post_ops(info);
+	} else {
+		/*
+		 * This function is supposed to be overridden to do SoC or
+		 * architecture specific post ops after sleep state exits.
+		 *
+		 * The kernel expects that irqs are unlocked after this.
+		 */
+
+		irq_unlock(0);
+	}
 }
 
-__weak void pm_power_state_set(struct pm_state_info info)
+static inline void pm_state_set(struct pm_state_info info)
 {
-	/*
-	 * This function is supposed to be overridden to do SoC or
-	 * architecture specific post ops after sleep state exits.
-	 */
+	extern __weak void
+		pm_power_state_set(struct pm_state_info info);
+
+	if (pm_power_state_set != NULL) {
+		pm_power_state_set(info);
+	}
 }
 
 /*
@@ -133,7 +143,7 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		pm_power_state_exit_post_ops(z_power_state);
+		exit_pos_ops(z_power_state);
 		pm_state_notify(false);
 	}
 }
@@ -155,7 +165,7 @@ void pm_power_state_force(struct pm_state_info info)
 	k_sched_lock();
 	pm_debug_start_timer();
 	/* Enter power state */
-	pm_power_state_set(z_power_state);
+	pm_state_set(z_power_state);
 	pm_debug_stop_timer();
 
 	pm_system_resume();
@@ -221,6 +231,8 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
+		__fallthrough;
+	case PM_STATE_SOFT_OFF:
 		if (pm_suspend_devices()) {
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
 					ticks, _handle_device_abort(z_power_state));
@@ -245,7 +257,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	pm_debug_start_timer();
 	/* Enter power state */
 	pm_state_notify(true);
-	pm_power_state_set(z_power_state);
+	pm_state_set(z_power_state);
 	pm_debug_stop_timer();
 
 	/* Wake up sequence starts here */

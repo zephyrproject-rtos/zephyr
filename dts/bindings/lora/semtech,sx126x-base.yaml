@@ -7,7 +7,7 @@ include: spi-device.yaml
 properties:
     reset-gpios:
       type: phandle-array
-      required: true
+      required: false
       description: |
         GPIO connected to the modem's NRESET signal.
 
@@ -16,7 +16,7 @@ properties:
 
     busy-gpios:
       type: phandle-array
-      required: true
+      required: false
       description: |
         GPIO connected to the modem's BUSY signal.
 
@@ -42,7 +42,7 @@ properties:
 
     dio1-gpios:
       type: phandle-array
-      required: true
+      required: false
       description: |
         GPIO connected to DIO1. This GPIO will be used as a generic
         IRQ line from the chip.

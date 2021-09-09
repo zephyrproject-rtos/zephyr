@@ -16,8 +16,8 @@ X-NUCLEO-IDB05A1 interfaces with the host microcontroller via the SPI pin, and
 the user can change the default SPI clock, the SPI chip select and SPI IRQ by
 changing one resistor on the evaluation board.
 
-IMPORTANT NOTICE : This shield is not compatible out of the box with Arduino
-UNO R3 connectors. Adaptation is required on most boards for compatibility.
+Note : This shield is compatible out of the box with Arduino UNO R3 connectors,
+but CS and SCK signals are not the standard Arduino SPI_CS and SPI_SCK signals.
 Please refer to "Hardware configuration" section.
 
 .. image:: img/x-nucleo-idb05a1.jpg
@@ -32,10 +32,16 @@ More information about the board can be found at the
 Hardware configuration
 **********************
 
-Out of the box, X-NUCLEO-IDB05A1 shield expect SPI SCK to be available on pin
-D3 instead of usual Arduino UNO R3 SPI SCK D13.
-Adaptation should be done on shield or board configuration to restore
-compatibility. Shield configuration could be modified by moving resistors as
+Out of the box, X-NUCLEO-IDB05A1 shield expects SPI SCK to be available on
+Arduino pin D3 instead of usual Arduino UNO R3 SPI SCK D13.
+This is not a problem if SPI SCK from nucleo board is available on D3,
+otherwise shield configuration can be changed (see below).
+Also shield expects SPI CS to be available on Arduino pin A1 instead of usual
+Arduino UNO R3 SPI CS D10.
+This is not a problem as CS signal is software driven gpio on Arnunio A1
+see cs-gpios in x_nucleo_idb05a1.overlay
+
+Shield configuration could be modified by moving resistors as
 follows:
 
  - SPI SCK: to use D13 instead of D3, remove R4 and add R6
@@ -48,7 +54,9 @@ expansion board could be made:
 
 You could check Figure 3 in `X-NUCLEO-IDB05A1 databrief`_ for more details.
 
-The stm32mp157c_dk2 board is known to need this IRQ pin modification.
+The stm32mp157c_dk2 board is known to need those CS/IRQ pin modifications
+(see boards/stm32mp157c_dk2.overlay)
+whereas nucleo_l476rg doesn't need hardware modifications.
 
 Hardware
 ********

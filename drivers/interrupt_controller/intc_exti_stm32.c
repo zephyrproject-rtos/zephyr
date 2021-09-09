@@ -86,7 +86,8 @@ const IRQn_Type exti_irq_table[] = {
 	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn, LPTIM1_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
 	EXTI4_IRQn, EXTI5_IRQn, EXTI6_IRQn, EXTI7_IRQn,
@@ -158,7 +159,8 @@ static inline int stm32_exti_is_pending(int line)
 	if (line < 32) {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
 			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
@@ -182,7 +184,8 @@ static inline void stm32_exti_clear_pending(int line)
 	if (line < 32) {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 		LL_EXTI_ClearRisingFlag_0_31(1 << line);
 		LL_EXTI_ClearFallingFlag_0_31(1 << line);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
@@ -303,7 +306,8 @@ static inline void __stm32_exti_isr_4(const void *arg)
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 static inline void __stm32_exti_isr_5(const void *arg)
 {
 	__stm32_exti_isr(5, 6, arg);
@@ -481,6 +485,7 @@ static void __stm32_exti_connect_irqs(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
@@ -512,7 +517,8 @@ static void __stm32_exti_connect_irqs(const struct device *dev)
 		__stm32_exti_isr_4, DEVICE_DT_GET(EXTI_NODE),
 		0);
 #if !defined(CONFIG_SOC_SERIES_STM32MP1X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L5X)
+	!defined(CONFIG_SOC_SERIES_STM32L5X) && \
+	!defined(CONFIG_SOC_SERIES_STM32U5X)
 	IRQ_CONNECT(EXTI9_5_IRQn,
 		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
 		__stm32_exti_isr_9_5, DEVICE_DT_GET(EXTI_NODE),

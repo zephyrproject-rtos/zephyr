@@ -16,6 +16,7 @@
 
 #include <autoconf.h>
 #include <linker/sections.h>
+#include <linker/devicetree_regions.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
@@ -33,7 +34,12 @@
 
 #ifdef CONFIG_XIP
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
+#ifdef CONFIG_FLASH_LOAD_OFFSET
+#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_flash)) + \
+				CONFIG_FLASH_LOAD_OFFSET)
+#else /* !CONFIG_FLASH_LOAD_OFFSET */
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#endif /* CONFIG_FLASH_LOAD_OFFSET */
 #define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), jedec_spi_nor, okay)
 /* For jedec,spi-nor we expect the spi controller to memory map the flash
@@ -74,6 +80,11 @@ MEMORY
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
+
+    /* Data & Instruction Tightly Coupled Memory */
+    LINKER_DT_REGION_FROM_NODE(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    LINKER_DT_REGION_FROM_NODE(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -100,12 +111,21 @@ SECTIONS
 	}
 
     GROUP_START(ROMABLE_REGION)
-    _image_rom_start = ROM_BASE;
+    __rom_region_start = ROM_BASE;
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
 		. = ALIGN(4);
 		KEEP(*(.vectors.*))
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
+    SECTION_PROLOGUE(rom_start,,)
+    {
+		. = ALIGN(16);
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...).
+ */
+#include <snippets-rom-start.ld>
     } GROUP_LINK_IN(ROMABLE_REGION)
 
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
@@ -125,17 +145,25 @@ SECTIONS
 		KEEP(*(.openocd_debug))
 		KEEP(*(".openocd_debug.*"))
 
-		_image_text_start = .;
+		__text_region_start = .;
 
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 #include <linker/kobject-text.ld>
+#ifdef CONFIG_SOC_FLASH_RAMCODE_SECTION
+		. = ALIGN(0x1000);
+		_ram_code_start = .;
+		KEEP(*(.__ram_code))
+		__ram_code_size = . - _ram_code_start;
+		ASSERT((__ram_code_size <= 0x1000),
+			"__ram_code_size <= 4k bytes");
+#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-    _image_text_end = .;
+    __text_region_end = .;
 
-	_image_rodata_start = .;
+	__rodata_region_start = .;
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
 
@@ -158,10 +186,8 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
-	_image_rodata_end = .;
-	MPU_ALIGN(_image_rodata_end - _image_rom_start);
-	_image_rom_end = .;
-	_image_rom_size = _image_rom_end - _image_rom_start;
+	__rodata_region_end = .;
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -203,14 +229,32 @@ SECTIONS
 #include <linker/common-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
+    __data_region_start = .;
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(".data.*")
+
+#ifdef CONFIG_RISCV_GP
+		/*
+		 * RISC-V architecture has 12-bit signed immediate offsets in the
+		 * instructions. If we can put the most commonly accessed globals
+		 * in a special 4K span of memory addressed by the GP register, then
+		 * we can access those values in a single instruction, saving both
+		 * codespace and runtime.
+		 *
+		 * Since these immediate offsets are signed, place gp 0x800 past the
+		 * beginning of .sdata so that we can use both positive and negative
+		 * offsets.
+		 */
+		 . = ALIGN(8);
+		 PROVIDE (__global_pointer$ = . + 0x800);
+#endif
 
 		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 
@@ -218,10 +262,13 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+		 __data_end = .;
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
@@ -230,7 +277,13 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
-    __data_ram_end = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
+    __data_region_end = .;
 
     MPU_MIN_SIZE_ALIGN
 
@@ -239,6 +292,58 @@ SECTIONS
 
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+GROUP_START(ITCM)
+
+	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,SUBALIGN(8))
+	{
+		__itcm_start = .;
+		*(.itcm)
+		*(".itcm.*")
+		__itcm_end = .;
+	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+
+	__itcm_size = __itcm_end - __itcm_start;
+	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
+
+GROUP_END(ITCM)
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+GROUP_START(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(8))
+	{
+		__dtcm_start = .;
+		__dtcm_bss_start = .;
+		*(.dtcm_bss)
+		*(".dtcm_bss.*")
+		__dtcm_bss_end = .;
+	} GROUP_LINK_IN(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(8))
+	{
+		__dtcm_noinit_start = .;
+		*(.dtcm_noinit)
+		*(".dtcm_noinit.*")
+		__dtcm_noinit_end = .;
+	} GROUP_LINK_IN(DTCM)
+
+	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(8))
+	{
+		__dtcm_data_start = .;
+		*(.dtcm_data)
+		*(".dtcm_data.*")
+		__dtcm_data_end = .;
+	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+
+	__dtcm_end = .;
+
+	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
+
+GROUP_END(DTCM)
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -256,5 +361,15 @@ SECTIONS
 	KEEP(*(.riscv.attributes))
 	KEEP(*(.gnu.attributes))
 	}
+
+/* Must be last in romable region */
+SECTION_PROLOGUE(.last_section,(NOLOAD),)
+{
+} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* To provide the image size as a const expression,
+ * calculate this value here. */
+__rom_region_end = LOADADDR(.last_section);
+__rom_region_size = __rom_region_end - __rom_region_start;
 
 }

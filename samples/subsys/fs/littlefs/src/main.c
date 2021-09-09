@@ -14,6 +14,16 @@
 #include <fs/littlefs.h>
 #include <storage/flash_map.h>
 
+/*
+ * FIXME: The Zephyr always overrides uintptr_t as long int, which causes type size mismatch with
+ * 32bit tools that may define PRIuPTR as "u".
+ * See: include/toolchain/zephyr_stdint.h.
+ * The UINTPTR_T_CAST should be replaced with cast to uintptr_t when this thing gets fixed.
+ */
+#undef PRIuPTR
+#define PRIuPTR		"lu"
+#define UINTPTR_T_CAST(t)	((unsigned long)(t))
+
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
 
@@ -73,8 +83,8 @@ void main(void)
 	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
 	rc = fs_mount(mp);
 	if (rc < 0) {
-		printk("FAIL: mount id %u at %s: %d\n",
-		       (unsigned int)mp->storage_dev, mp->mnt_point,
+		printk("FAIL: mount id %" PRIuPTR " at %s: %d\n",
+		       UINTPTR_T_CAST(mp->storage_dev), mp->mnt_point,
 		       rc);
 		return;
 	}
@@ -100,7 +110,7 @@ void main(void)
 	rc = fs_stat(fname, &dirent);
 	printk("%s stat: %d\n", fname, rc);
 	if (rc >= 0) {
-		printk("\tfn '%s' siz %u\n", dirent.name, dirent.size);
+		printk("\tfn '%s' size %zu\n", dirent.name, dirent.size);
 	}
 
 	struct fs_file_t file;
@@ -149,7 +159,7 @@ void main(void)
 			printk("End of files\n");
 			break;
 		}
-		printk("  %c %u %s\n",
+		printk("  %c %zu %s\n",
 		       (ent.type == FS_DIR_ENTRY_FILE) ? 'F' : 'D',
 		       ent.size,
 		       ent.name);

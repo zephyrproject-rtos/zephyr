@@ -2,6 +2,7 @@
 
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # Copyright (c) 2020 Teslabs Engineering S.L.
+# Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config ILI9XXX
@@ -15,6 +16,13 @@ config ILI9340
 	select ILI9XXX
 	help
 	  Enable driver for ILI9340 display driver.
+
+config ILI9341
+	bool "ILI9341 display driver"
+	depends on SPI
+	select ILI9XXX
+	help
+	  Enable driver for ILI9341 display driver.
 
 config ILI9488
 	bool "ILI9488 display driver"

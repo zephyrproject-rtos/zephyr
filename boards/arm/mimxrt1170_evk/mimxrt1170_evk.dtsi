@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio9 3 GPIO_ACTIVE_LOW>;
+			label = "User LED D6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW7";
+			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&user_button {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};

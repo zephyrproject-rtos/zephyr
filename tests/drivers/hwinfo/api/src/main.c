@@ -26,7 +26,6 @@
 #define BUFFER_LENGTH 17
 #define BUFFER_CANARY 0xFF
 
-#ifdef CONFIG_HWINFO_HAS_DRIVER
 static void test_device_id_get(void)
 {
 	uint8_t buffer_1[BUFFER_LENGTH];
@@ -35,7 +34,11 @@ static void test_device_id_get(void)
 	int i;
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, 1);
-	zassert_not_equal(length_read_1, -ENOTSUP, "Not supported by hardware");
+	if (length_read_1 == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
 	zassert_false((length_read_1 < 0),
 		      "Unexpected negative return value: %d", length_read_1);
 	zassert_not_equal(length_read_1, 0, "Zero bytes read");
@@ -64,33 +67,140 @@ static void test_device_id_get(void)
 			      "Two consecutively readings don't match");
 	}
 }
-#else
-static void test_device_id_get(void) {}
-#endif /* CONFIG_HWINFO_HAS_DRIVER */
 
-#ifndef CONFIG_HWINFO_HAS_DRIVER
-static void test_device_id_enotsup(void)
+/*
+ * @addtogroup t_hwinfo_get_reset_cause_api
+ * @{
+ * @defgroup t_hwinfo_get_reset_cause test_hwinfo_get_reset_cause
+ * @brief TestPurpose: verify get reset cause works.
+ * @details
+ * - Test Steps
+ *   -# Set target buffer to a known value
+ *   -# Read the reset cause
+ *   -# Check if target buffer has been altered
+ * - Expected Results
+ *   -# Target buffer contents should be changed after the call.
+ * @}
+ */
+
+static void test_get_reset_cause(void)
 {
+	uint32_t cause;
 	ssize_t ret;
-	uint8_t buffer[1];
 
-	ret = hwinfo_get_device_id(buffer, 1);
-	/* There is no hwinfo driver for this platform, hence the return value
-	 * should be -ENOTSUP
-	 */
-	zassert_equal(ret, -ENOTSUP,
-		      "hwinfo_get_device_id returned % instead of %d",
-		      ret, -ENOTSUP);
+	/* Set `cause` to a known value prior to call. */
+	cause = 0xDEADBEEF;
+
+	ret = hwinfo_get_reset_cause(&cause);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0),
+		      "Unexpected negative return value: %d", ret);
+
+	/* Verify that `cause` has been changed. */
+	zassert_not_equal(cause, 0xDEADBEEF, "Reset cause not written.");
 }
-#else
-static void test_device_id_enotsup(void) {}
-#endif /* CONFIG_HWINFO_HAS_DRIVER not defined*/
+
+/*
+ * @addtogroup t_hwinfo_clear_reset_cause_api
+ * @{
+ * @defgroup t_hwinfo_clear_reset_cause test_hwinfo_clear_reset_cause
+ * @brief TestPurpose: verify clear reset cause works. This may
+ *        not work on some platforms, depending on how reset cause register
+ *        works on that SoC.
+ * @details
+ * - Test Steps
+ *   -# Read the reset cause and store the result
+ *   -# Call clear reset cause
+ *   -# Read the reset cause again
+ *   -# Check if the two readings match
+ * - Expected Results
+ *   -# Reset cause value should change after calling clear reset cause.
+ * @}
+ */
+static void test_clear_reset_cause(void)
+{
+	uint32_t cause_1, cause_2;
+	ssize_t ret;
+
+	ret = hwinfo_get_reset_cause(&cause_1);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0),
+		      "Unexpected negative return value: %d", ret);
+
+	ret = hwinfo_clear_reset_cause();
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0),
+		      "Unexpected negative return value: %d", ret);
+
+	ret = hwinfo_get_reset_cause(&cause_2);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0),
+		      "Unexpected negative return value: %d", ret);
+
+	/* Verify that `cause` has been changed. */
+	zassert_not_equal(cause_1, cause_2,
+		"Reset cause did not change after clearing");
+}
+
+/*
+ * @addtogroup t_hwinfo_get_reset_cause_api
+ * @{
+ * @defgroup t_hwinfo_get_reset_cause test_hwinfo_get_supported_reset_cause
+ * @brief TestPurpose: verify get supported reset cause works.
+ * @details
+ * - Test Steps
+ *   -# Set target buffer to a known value
+ *   -# Read the reset cause
+ *   -# Check if target buffer has been altered
+ * - Expected Results
+ *   -# Target buffer contents should be changed after the call.
+ * @}
+ */
+static void test_get_supported_reset_cause(void)
+{
+	uint32_t supported;
+	ssize_t ret;
+
+	/* Set `supported` to a known value prior to call. */
+	supported = 0xDEADBEEF;
+
+	ret = hwinfo_get_supported_reset_cause(&supported);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0),
+		      "Unexpected negative return value: %d", ret);
+
+	/* Verify that `supported` has been changed. */
+	zassert_not_equal(supported, 0xDEADBEEF,
+					"Supported reset cause not written.");
+}
 
 void test_main(void)
 {
 	ztest_test_suite(hwinfo_device_id_api,
 			 ztest_unit_test(test_device_id_get),
-			 ztest_unit_test(test_device_id_enotsup)
+			 ztest_unit_test(test_get_reset_cause),
+			 ztest_unit_test(test_clear_reset_cause),
+			 ztest_unit_test(test_get_supported_reset_cause)
 			);
 
 	ztest_run_test_suite(hwinfo_device_id_api);

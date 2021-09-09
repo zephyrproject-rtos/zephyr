@@ -41,9 +41,7 @@ struct instance_data {
 
 /* User data for the interface callback */
 struct ud {
-	struct net_if *lan1;
-	struct net_if *lan2;
-	struct net_if *lan3;
+	struct net_if *lan[3];
 	struct net_if *master;
 };
 
@@ -86,28 +84,31 @@ enum net_verdict dsa_ll_addr_switch_cb(struct net_if *iface,
 		uint16_t seq;                                                  \
 		struct eth_addr origin_addr;                                   \
 		struct instance_data data;                                     \
+		struct net_if *iface;                                          \
+									       \
+		iface = ifaces.lan[ID-1];                                      \
 									       \
 		data.if_name = "lan"#ID;                                       \
-		ret = start_slave_port_packet_socket(ifaces.lan##ID, &data);   \
+		ret = start_slave_port_packet_socket(iface, &data);            \
 		if (ret < 0) {                                                 \
 			LOG_ERR("start_slave_port_packet_socket failed %d",    \
 				ret);                                          \
 			return;                                                \
 		}                                                              \
-		dsa_register_recv_callback(ifaces.lan##ID,                     \
-					   dsa_ll_addr_switch_cb);             \
+		dsa_register_recv_callback(iface,                              \
+						dsa_ll_addr_switch_cb);        \
 									       \
 		LOG_INF("DSA -> eth/lan"#ID" idx: %d sock: %d",                \
-			net_if_get_by_iface(ifaces.lan##ID), data.sock);       \
+			net_if_get_by_iface(iface), data.sock);                \
 		do {                                                           \
-			ret = FN_RECV(ifaces.lan##ID, &data, &seq,             \
-				      &origin_port, &origin_addr);             \
+			ret = FN_RECV(iface, &data, &seq,                      \
+					&origin_port, &origin_addr);           \
 			if (ret) {                                             \
 				break;                                         \
 			}                                                      \
-			ret = FN_SEND(ifaces.lan##ID, &data,                   \
-				      seq, 0, origin_port, CMD_ACK,            \
-				      &origin_addr);                           \
+			ret = FN_SEND(iface, &data,                            \
+					seq, 0, origin_port, CMD_ACK,          \
+					&origin_addr);                         \
 			if (ret) {                                             \
 				break;                                         \
 			}                                                      \

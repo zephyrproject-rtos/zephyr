@@ -51,6 +51,8 @@ static const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
 };
 
+extern void z_arm64_mm_init(bool is_primary_core);
+
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
@@ -60,8 +62,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint64_t master_core_mpid;
 
 	/* Now it is on master core */
+	__ASSERT(arch_curr_cpu()->id == 0, "");
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
-	__ASSERT(arm64_cpu_boot_params.mpid == master_core_mpid, "");
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
 	__ASSERT(cpu_count == CONFIG_MP_NUM_CPUS,
@@ -99,11 +101,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
 		       cpu_num, cpu_mpid);
-		/*
-		 * If pm_cpu_on failed on core cpu_mpid, Primary core also
-		 * should prepare for up next core
-		 */
-		arm64_cpu_boot_params.mpid = master_core_mpid;
 		return;
 	}
 
@@ -111,8 +108,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
-	/* Prepare for up next core */
-	arm64_cpu_boot_params.mpid = master_core_mpid;
 	printk("Secondary CPU core %d (MPID:%#llx) is up\n", cpu_num, cpu_mpid);
 }
 
@@ -128,7 +123,7 @@ void z_arm64_secondary_start(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
 
-	z_arm64_mmu_init(false);
+	z_arm64_mm_init(false);
 
 #ifdef CONFIG_SMP
 	arm_gic_secondary_init();
@@ -242,6 +237,6 @@ static int arm64_smp_init(const struct device *dev)
 
 	return 0;
 }
-SYS_INIT(arm64_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm64_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif

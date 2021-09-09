@@ -161,6 +161,21 @@
 			label = "USART_3";
 		};
 
+		usbc: usbd@400a5000 {
+			compatible = "atmel,sam-usbc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400a5000 0x1000>;
+			interrupts = <18 5>;
+			interrupt-names = "usbc";
+			maximum-speed = "full-speed";
+			num-bidir-endpoints = <8>;
+			peripheral-id = <101>;
+			status = "disabled";
+			label = "USBC";
+			pinctrl-0 = <&pa25a_usbc_dm &pa26a_usbc_dp>;
+		};
+
 		pinctrl@400e1000 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
@@ -197,6 +212,30 @@
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
 			};
+		};
+
+		tc0: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <55 0
+				      56 0
+				      57 0>;
+			peripheral-id = <2>;
+			status = "disabled";
+			label = "TC0";
+			pinctrl-0 = <>;
+		};
+
+		tc1: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <58 0
+				      59 0
+				      60 0>;
+			peripheral-id = <3>;
+			status = "disabled";
+			label = "TC1";
+			pinctrl-0 = <>;
 		};
 
 		trng: random@40068000 {

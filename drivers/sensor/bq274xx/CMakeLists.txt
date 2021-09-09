@@ -4,4 +4,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_BQ274XX bq274xx.c)
+zephyr_library_sources(bq274xx.c)

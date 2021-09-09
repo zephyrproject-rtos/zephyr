@@ -937,21 +937,6 @@ done:
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
-
-int bt_set_id_addr(const bt_addr_le_t *addr)
-{
-	bt_addr_le_t non_const_addr;
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		BT_ERR("Setting identity not allowed after bt_enable()");
-		return -EBUSY;
-	}
-
-	bt_addr_le_copy(&non_const_addr, addr);
-
-	return bt_id_create(&non_const_addr, NULL);
-}
-
 void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 {
 	if (addrs) {

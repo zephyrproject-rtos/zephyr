@@ -1904,7 +1904,7 @@ static inline void net_buf_push_le16(struct net_buf *buf, uint16_t val)
 /**
  * @brief Push 16-bit value to the beginning of the buffer
  *
- * Adds 16-bit value in little endian format to the beginning of the
+ * Adds 16-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1932,7 +1932,7 @@ static inline void net_buf_push_le24(struct net_buf *buf, uint32_t val)
 /**
  * @brief Push 24-bit value to the beginning of the buffer
  *
- * Adds 24-bit value in little endian format to the beginning of the
+ * Adds 24-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1960,7 +1960,7 @@ static inline void net_buf_push_le32(struct net_buf *buf, uint32_t val)
 /**
  * @brief Push 32-bit value to the beginning of the buffer
  *
- * Adds 32-bit value in little endian format to the beginning of the
+ * Adds 32-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1988,7 +1988,7 @@ static inline void net_buf_push_le48(struct net_buf *buf, uint64_t val)
 /**
  * @brief Push 48-bit value to the beginning of the buffer
  *
- * Adds 48-bit value in little endian format to the beginning of the
+ * Adds 48-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -2016,7 +2016,7 @@ static inline void net_buf_push_le64(struct net_buf *buf, uint64_t val)
 /**
  * @brief Push 64-bit value to the beginning of the buffer
  *
- * Adds 64-bit value in little endian format to the beginning of the
+ * Adds 64-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.

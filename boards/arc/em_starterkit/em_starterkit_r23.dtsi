@@ -42,8 +42,29 @@
 			interrupts = <0 1>;
 		};
 
+		creg_gpio: creg_gpio@f0000014 {
+			compatible = "snps,creg-gpio";
+			reg = <0xf0000014 0x4>;
+			ngpios = <6>;
+			label = "CREG_GPIO";
+			bit_per_gpio = <1>;
+			off_val = <0>;
+			on_val = <1>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			status = "okay";
+		};
+
 		spi@f0006000 {
 			interrupts = <27 1>;
+			cs-gpios = <&creg_gpio 0 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 1 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 2 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 3 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 4 GPIO_ACTIVE_HIGH>,
+					   <&creg_gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		spi@f0007000 {

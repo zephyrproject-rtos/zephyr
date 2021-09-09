@@ -33,6 +33,46 @@ extern "C" {
  */
 #include <sys/util_internal.h>
 
+#ifndef BIT
+#if defined(_ASMLANGUAGE)
+#define BIT(n)  (1 << (n))
+#else
+/**
+ * @brief Unsigned integer with bit position @p n set (signed in
+ * assembly language).
+ */
+#define BIT(n)  (1UL << (n))
+#endif
+#endif
+
+/** @brief 64-bit unsigned integer with bit position @p _n set. */
+#define BIT64(_n) (1ULL << (_n))
+
+/**
+ * @brief Set or clear a bit depending on a boolean value
+ *
+ * The argument @p var is a variable whose value is written to as a
+ * side effect.
+ *
+ * @param var Variable to be altered
+ * @param bit Bit number
+ * @param set if 0, clears @p bit in @p var; any other value sets @p bit
+ */
+#define WRITE_BIT(var, bit, set) \
+	((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
+
+/**
+ * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
+ * or 0 if @p n is 0.
+ */
+#define BIT_MASK(n) (BIT(n) - 1UL)
+
+/**
+ * @brief 64-bit bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
+ * or 0 if @p n is 0.
+ */
+#define BIT64_MASK(n) (BIT64(n) - 1ULL)
+
 /**
  * @brief Check for macro definition in compiler-visible expressions
  *
@@ -276,24 +316,6 @@ extern "C" {
  * @return argument list without N first arguments.
  */
 #define GET_ARGS_LESS_N(N, ...) Z_GET_ARGS_LESS_##N(__VA_ARGS__)
-
-/** Expands to the first argument.
- *
- * @deprecated Use GET_ARG_N() instead.
- */
-#define GET_ARG1(...) GET_ARG_N(1, __VA_ARGS__)
-
-/** Expands to the second argument.
- *
- * @deprecated Use GET_ARG_N() instead.
- */
-#define GET_ARG2(...) __DEPRECATED GET_ARG_N(2, __VA_ARGS__)
-
-/** Expands to all arguments except the first one.
- *
- * @deprecated Use GET_ARGS_LESS_N() instead.
- */
-#define GET_ARGS_LESS_1(...) __DEPRECATED GET_ARGS_LESS_N(1, __VA_ARGS__)
 
 /**
  * @brief Like <tt>a || b</tt>, but does evaluation and

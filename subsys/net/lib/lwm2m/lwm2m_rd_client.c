@@ -98,6 +98,8 @@ enum sm_engine_state {
 };
 
 struct lwm2m_rd_client_info {
+	struct k_mutex mutex;
+
 	uint32_t lifetime;
 	struct lwm2m_ctx *ctx;
 	uint8_t engine_state;
@@ -588,12 +590,7 @@ static int sm_send_bootstrap_registration(void)
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		log_strdup(query_buffer));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	return 0;
 
@@ -779,11 +776,7 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 	}
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
@@ -929,11 +922,7 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	set_sm_state(ENGINE_DEREGISTER_SENT);
 	return 0;
@@ -962,6 +951,8 @@ static void sm_do_network_error(void)
 
 static void lwm2m_rd_client_service(struct k_work *work)
 {
+	k_mutex_lock(&client.mutex, K_FOREVER);
+
 	if (client.ctx) {
 		switch (get_sm_state()) {
 		case ENGINE_IDLE:
@@ -1031,15 +1022,21 @@ static void lwm2m_rd_client_service(struct k_work *work)
 
 		}
 	}
+
+	k_mutex_unlock(&client.mutex);
 }
 
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb)
 {
+	k_mutex_lock(&client.mutex, K_FOREVER);
+
 	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) &&
 	    (flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP)) {
 		LOG_ERR("Bootstrap support is disabled. Please enable "
 			"CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP.");
+
+		k_mutex_unlock(&client.mutex);
 		return;
 	}
 
@@ -1053,11 +1050,15 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
 	client.ep_name[CLIENT_EP_LEN - 1] = '\0';
 	LOG_INF("Start LWM2M Client: %s", log_strdup(client.ep_name));
+
+	k_mutex_unlock(&client.mutex);
 }
 
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			   lwm2m_ctx_event_cb_t event_cb)
 {
+	k_mutex_lock(&client.mutex, K_FOREVER);
+
 	client.ctx = client_ctx;
 	client.event_cb = event_cb;
 
@@ -1071,10 +1072,19 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	}
 
 	LOG_INF("Stop LWM2M Client: %s", log_strdup(client.ep_name));
+
+	k_mutex_unlock(&client.mutex);
+}
+
+void lwm2m_rd_client_update(void)
+{
+	engine_trigger_update(false);
 }
 
 static int lwm2m_rd_client_init(const struct device *dev)
 {
+	k_mutex_init(&client.mutex);
+
 	return lwm2m_engine_add_service(lwm2m_rd_client_service,
 					STATE_MACHINE_UPDATE_INTERVAL_MS);
 

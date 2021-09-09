@@ -12,13 +12,13 @@ _logger = logging.getLogger('runners')
 def _import_runner_module(runner_name):
     try:
         importlib.import_module(f'runners.{runner_name}')
-    except ImportError:
+    except ImportError as ie:
         # Runners are supposed to gracefully handle failures when they
         # import anything outside of stdlib, but they sometimes do
         # not. Catch ImportError to handle this.
         _logger.warning(f'The module for runner "{runner_name}" '
-                        'could not be imported. This most likely means '
-                        'it is not handling its dependencies properly. '
+                        f'could not be imported ({ie}). This most likely '
+                        'means it is not handling its dependencies properly. '
                         'Please report this to the zephyr developers.')
 
 # We import these here to ensure the ZephyrBinaryRunner subclasses are

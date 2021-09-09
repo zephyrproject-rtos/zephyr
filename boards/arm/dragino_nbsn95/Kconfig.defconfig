@@ -1,0 +1,11 @@
+# Dragino NBSN95 NB-IoT Sensor Node board configuration
+
+# Copyright (c) 2021 Next Big Thing AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DRAGINO_NBSN95
+
+config BOARD
+	default "dragino_nbsn95"
+
+endif # BOARD_DRAGINO_NBSN95

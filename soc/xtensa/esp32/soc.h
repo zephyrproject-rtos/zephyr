@@ -8,6 +8,7 @@
 #define __SOC_H__
 #include <soc/dport_reg.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/soc_caps.h>
 #include <esp32/rom/ets_sys.h>
 #include <esp32/rom/spi_flash.h>
 

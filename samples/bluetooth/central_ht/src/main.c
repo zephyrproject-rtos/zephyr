@@ -228,7 +228,7 @@ static int scan_start(void)
 	 */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
@@ -258,7 +258,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -274,8 +274,6 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = scan_start();
 

@@ -18,11 +18,12 @@ LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 /* Convert the range (8g, 4g, 2g) to the encoded FS register field value */
 #define RANGE2FS(x) (__builtin_ctz(x) - 1)
 
-int fxos8700_set_odr(const struct device *dev, const struct sensor_value *val)
+static int fxos8700_set_odr(const struct device *dev,
+		const struct sensor_value *val)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
-	int32_t dr = val->val1;
+	uint8_t dr;
 
 #ifdef CONFIG_FXOS8700_MODE_HYBRID
 	/* ODR is halved in hybrid mode */
@@ -67,11 +68,22 @@ int fxos8700_set_odr(const struct device *dev, const struct sensor_value *val)
 	}
 #endif
 
-	LOG_DBG("Set ODR to 0x%x", (uint8_t)dr);
+	LOG_DBG("Set ODR to 0x%x", dr);
 
+	/*
+	 * Modify FXOS8700_REG_CTRLREG1 can only occur when the device
+	 * is in standby mode.
+	 */
+	if (fxos8700_set_power(dev, FXOS8700_POWER_STANDBY)) {
+		LOG_ERR("Could not set standby");
+		return -EIO;
+	}
+
+	/* Change the attribute and activate the device. */
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
-				   FXOS8700_REG_CTRLREG1,
-				   FXOS8700_CTRLREG1_DR_MASK, (uint8_t)dr);
+		FXOS8700_REG_CTRLREG1,
+		FXOS8700_CTRLREG1_DR_MASK | FXOS8700_CTRLREG1_ACTIVE_MASK,
+		dr | FXOS8700_POWER_ACTIVE);
 }
 
 static int fxos8700_set_mt_ths(const struct device *dev,

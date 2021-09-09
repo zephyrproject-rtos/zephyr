@@ -17,11 +17,6 @@
 #include <drivers/sensor.h>
 #include "iis2dh_reg.h"
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
-
 /*
  * Return ODR reg value based on data rate set
  */

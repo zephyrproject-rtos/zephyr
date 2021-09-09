@@ -17,16 +17,14 @@
 
 #include "tmp116.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP116);
+LOG_MODULE_REGISTER(TMP116, CONFIG_SENSOR_LOG_LEVEL);
 
 static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 			   uint16_t *val)
 {
-	struct tmp116_data *drv_data = dev->data;
 	const struct tmp116_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr, reg, (uint8_t *)val, 2)
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2)
 	    < 0) {
 		return -EIO;
 	}
@@ -39,12 +37,10 @@ static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 			    uint16_t val)
 {
-	struct tmp116_data *drv_data = dev->data;
 	const struct tmp116_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
 
-	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			cfg->i2c_addr);
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 /**
@@ -78,6 +74,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	uint16_t value;
+	uint16_t cfg_reg = 0;
 	int rc;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
@@ -85,6 +82,19 @@ static int tmp116_sample_fetch(const struct device *dev,
 
 	/* clear sensor values */
 	drv_data->sample = 0U;
+
+	/* Make sure that a data is available */
+	rc = tmp116_reg_read(dev, TMP116_REG_CFGR, &cfg_reg);
+	if (rc < 0) {
+		LOG_ERR("%s, Failed to read from CFGR register",
+			dev->name);
+		return rc;
+	}
+
+	if ((cfg_reg & TMP116_CFGR_DATA_READY) == 0) {
+		LOG_DBG("%s: no data ready", dev->name);
+		return -EBUSY;
+	}
 
 	/* Get the most recent temperature measurement */
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
@@ -167,11 +177,8 @@ static int tmp116_init(const struct device *dev)
 	int rc;
 	uint16_t id;
 
-	/* Bind to the I2C bus that the sensor is connected */
-	drv_data->i2c = device_get_binding(cfg->i2c_bus_label);
-	if (!drv_data->i2c) {
-		LOG_ERR("Cannot bind to %s device!",
-			cfg->i2c_bus_label);
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
 		return -EINVAL;
 	}
 
@@ -189,11 +196,10 @@ static int tmp116_init(const struct device *dev)
 #define DEFINE_TMP116(_num) \
 	static struct tmp116_data tmp116_data_##_num; \
 	static const struct tmp116_dev_config tmp116_config_##_num = { \
-		.i2c_addr = DT_INST_REG_ADDR(_num), \
-		.i2c_bus_label = DT_INST_BUS_LABEL(_num) \
+		.bus = I2C_DT_SPEC_INST_GET(_num) \
 	}; \
 	DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL,			\
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api)
+		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116)

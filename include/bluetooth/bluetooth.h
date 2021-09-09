@@ -130,6 +130,11 @@ typedef void (*bt_ready_cb_t)(int err);
  * Enable Bluetooth. Must be the called before any calls that
  * require communication with the local Bluetooth hardware.
  *
+ * When @kconfig{CONFIG_BT_SETTINGS} has been enabled and the application is not
+ * managing identities of the stack itself then the application must call
+ * @ref settings_load() before the stack is fully enabled.
+ * See @ref bt_id_create() for more information.
+ *
  * @param cb Callback to notify completion or NULL to perform the
  * enabling synchronously.
  *
@@ -160,24 +165,6 @@ int bt_set_name(const char *name);
  * @return Bluetooth Device Name
  */
 const char *bt_get_name(void);
-
-/**
- * @brief Set the local Identity Address
- *
- * Allows setting the local Identity Address from the application.
- * This API must be called before calling bt_enable(). Calling it at any
- * other time will cause it to fail. In most cases the application doesn't
- * need to use this API, however there are a few valid cases where
- * it can be useful (such as for testing).
- *
- * At the moment, the given address must be a static random address. In the
- * future support for public addresses may be added.
- *
- * @deprecated in 2.5 release, replace with bt_id_create before bt_enable.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-__deprecated int bt_set_id_addr(const bt_addr_le_t *addr);
 
 /**
  * @brief Get the currently configured identities.
@@ -236,7 +223,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *             generate a random IRK for the identity and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
- *             @option{CONFIG_BT_PRIVACY} is not enabled this parameter must
+ *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
  * @return Identity identifier (>= 0) in case of success, or a negative
@@ -270,7 +257,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
  *             generate a random IRK for the identity and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
- *             @option{CONFIG_BT_PRIVACY} is not enabled this parameter must
+ *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
  * @return Identity identifier (>= 0) in case of success, or a negative
@@ -350,7 +337,7 @@ enum {
 	 * Advertise as connectable. If not connectable then the type of
 	 * advertising is determined by providing scan response data.
 	 * The advertiser address is determined by the type of advertising
-	 * and/or enabling privacy @option{CONFIG_BT_PRIVACY}.
+	 * and/or enabling privacy @kconfig{CONFIG_BT_PRIVACY}.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
@@ -399,7 +386,7 @@ enum {
 	 *  The application can set the device name itself by including the
 	 *  following in the advertising data.
 	 *  @code
-	 *  BT_DATA(BT_DATA_NAME_COMPLETE, name, strlen(name))
+	 *  BT_DATA(BT_DATA_NAME_COMPLETE, name, sizeof(name) - 1)
 	 *  @endcode
 	 */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
@@ -536,7 +523,7 @@ struct bt_le_adv_param {
 	/**
 	 * @brief Local identity.
 	 *
-	 * @note When extended advertising @option{CONFIG_BT_EXT_ADV} is not
+	 * @note When extended advertising @kconfig{CONFIG_BT_EXT_ADV} is not
 	 *       enabled or not supported by the controller it is not possible
 	 *       to scan and advertise simultaneously using two different
 	 *       random addresses.
@@ -717,6 +704,14 @@ struct bt_le_per_adv_param {
 						BT_GAP_ADV_FAST_INT_MAX_2, \
 						NULL)
 
+/** Scannable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME */
+#define BT_LE_EXT_ADV_SCAN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						BT_LE_ADV_OPT_SCANNABLE | \
+						BT_LE_ADV_OPT_USE_NAME, \
+						BT_GAP_ADV_FAST_INT_MIN_2, \
+						BT_GAP_ADV_FAST_INT_MAX_2, \
+						NULL)
+
 /** Non-connectable extended advertising with private address */
 #define BT_LE_EXT_ADV_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
@@ -812,8 +807,8 @@ struct bt_le_per_adv_param {
 		BT_LE_PER_ADV_PARAM_INIT(_int_min, _int_max, _options) \
 	})
 
-#define BT_LE_PER_ADV_DEFAULT BT_LE_PER_ADV_PARAM(BT_GAP_ADV_SLOW_INT_MIN, \
-						  BT_GAP_ADV_SLOW_INT_MAX, \
+#define BT_LE_PER_ADV_DEFAULT BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_SLOW_INT_MIN, \
+						  BT_GAP_PER_ADV_SLOW_INT_MAX, \
 						  BT_LE_PER_ADV_OPT_NONE)
 
 /**
@@ -900,8 +895,8 @@ struct bt_le_ext_adv_start_param {
 	 * this parameters must be set to a non-zero value less than or equal
 	 * to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
 	 *
-	 * If privacy @option{CONFIG_BT_PRIVACY} is enabled then the timeout
-	 * must be less than @option{CONFIG_BT_RPA_TIMEOUT}.
+	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the timeout
+	 * must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
 	 */
 	uint16_t timeout;
 	/**
@@ -985,6 +980,10 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
  * Update the advertising parameters. The function will return an error if the
  * advertiser set is currently advertising. Stop the advertising set before
  * calling this function.
+ *
+ * @note When changing the option @ref BT_LE_ADV_OPT_USE_NAME then
+ *       @ref bt_le_ext_adv_set_data needs to be called in order to update the
+ *       advertising data and scan response data.
  *
  * @param adv   Advertising set object.
  * @param param Advertising parameters.
@@ -1805,11 +1804,11 @@ struct bt_le_scan_cb {
  * the specified callback.
  *
  * @note The LE scanner by default does not use the Identity Address of the
- *       local device when @option{CONFIG_BT_PRIVACY} is disabled. This is to
+ *       local device when @kconfig{CONFIG_BT_PRIVACY} is disabled. This is to
  *       prevent the active scanner from disclosing the identity information
  *       when requesting additional information from advertisers.
  *       In order to enable directed advertiser reports then
- *       @option{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
+ *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
  *
  * @param param Scan parameters.
  * @param cb Callback to notify scan results. May be NULL if callback
@@ -1952,16 +1951,16 @@ struct bt_le_oob {
  * This function allows to get local information that are useful for
  * Out of Band pairing or connection creation.
  *
- * If privacy @option{CONFIG_BT_PRIVACY} is enabled this will result in
+ * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled this will result in
  * generating new Resolvable Private Address (RPA) that is valid for
- * @option{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used for
+ * @kconfig{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used for
  * advertising started by @ref bt_le_adv_start, active scanning and
  * connection creation.
  *
  * @note If privacy is enabled the RPA cannot be refreshed in the following
  *       cases:
  *       - Creating a connection in progress, wait for the connected callback.
- *      In addition when extended advertising @option{CONFIG_BT_EXT_ADV} is
+ *      In addition when extended advertising @kconfig{CONFIG_BT_EXT_ADV} is
  *      not enabled or not supported by the controller:
  *       - Advertiser is enabled using a Random Static Identity Address for a
  *         different local identity.
@@ -1982,9 +1981,9 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  * This function allows to get local information that are useful for
  * Out of Band pairing or connection creation.
  *
- * If privacy @option{CONFIG_BT_PRIVACY} is enabled this will result in
+ * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled this will result in
  * generating new Resolvable Private Address (RPA) that is valid for
- * @option{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used by the
+ * @kconfig{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used by the
  * advertising set.
  *
  * @note When generating OOB information for multiple advertising set all

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, NXP
+ * Copyright (c) 2018,2021 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,6 +144,21 @@ static int mimxrt1060_evk_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+#if IS_ENABLED(DT_PROP(DT_NODELABEL(lpuart3), hw_flow_control))
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_04_LPUART3_CTS_B, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_05_LPUART3_RTS_B, 0U);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_04_LPUART3_CTS_B,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_05_LPUART3_RTS_B,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C

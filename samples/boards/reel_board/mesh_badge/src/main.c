@@ -60,12 +60,10 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static struct bt_uuid_128 name_uuid = BT_UUID_INIT_128(
-	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef0));
 
 static struct bt_uuid_128 name_enc_uuid = BT_UUID_INIT_128(
-	0xf1, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
-	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
 #define CPF_FORMAT_UTF8 0x19
 
@@ -144,7 +142,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_cb = {
+BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -166,7 +164,6 @@ static void bt_ready(int err)
 
 	printk("Mesh initialized\n");
 
-	bt_conn_cb_register(&conn_cb);
 	bt_conn_auth_cb_register(&auth_cb);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {

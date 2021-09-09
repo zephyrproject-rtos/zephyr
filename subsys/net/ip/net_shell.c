@@ -266,6 +266,9 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_DUPLEX_SET,           "Half/full duplex"),
 	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
 	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
+	EC(ETHERNET_QBV,                  "IEEE 802.1Qbv (scheduled traffic)"),
+	EC(ETHERNET_QBU,                  "IEEE 802.1Qbu (frame preemption)"),
+	EC(ETHERNET_TXTIME,               "TXTIME"),
 	EC(ETHERNET_PROMISC_MODE,         "Promiscuous mode"),
 	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
@@ -5529,8 +5532,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
-					  NULL, NULL);
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 		if (ret != 0) {
 			PR_INFO("Iface could not be suspended: ");
 
@@ -5574,8 +5576,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
-					  NULL, NULL);
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 		if (ret != 0) {
 			PR_INFO("Iface could not be resumed\n");
 		}

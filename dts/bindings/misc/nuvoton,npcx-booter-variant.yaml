@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX booter variant options
+
+compatible: "nuvoton,npcx-booter-variant"
+
+properties:
+    hif-type-auto:
+        type: boolean
+        required: false
+        description: |
+            The host interface type (LPC/eSPI/SHI) is configured by booter
+            if true; otherwise, it should be configured by the firmware.

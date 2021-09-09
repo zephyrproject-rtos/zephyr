@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2021, Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SHT4x humidity and temperature sensor
+
+compatible: "sensirion,sht4x"
+
+include: i2c-device.yaml
+
+properties:
+    repeatability:
+      type: int
+      required: true
+      description: |
+        Repeatability of the T/RH Measurement
+        0 = low -> 1.7 ms
+        1 = med -> 4.5 ms
+        2 = high -> 8.2 ms
+      enum:
+        - 0
+        - 1
+        - 2

@@ -57,6 +57,10 @@
 	status = "okay";
 };
 
+&dacc {
+	status = "okay";
+};
+
 &twihs0 {
 	status = "okay";
 };
@@ -79,11 +83,22 @@
 	status = "okay";
 };
 
-&usbhs {
+zephyr_udc0: &usbhs {
 	status = "okay";
 };
 
 &gmac {
+	status = "okay";
+
+	phy: phy {
+		compatible = "ethernet-phy";
+		status = "okay";
+		address = <0>;
+		mdio = <&mdio>;
+	};
+};
+
+&mdio {
 	status = "okay";
 };
 

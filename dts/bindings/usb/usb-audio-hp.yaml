@@ -80,35 +80,42 @@ properties:
   feature-volume:
     type: boolean
     required: false
-    description: Enable Volume feature.
-                 Currently not supported.
+    description: |
+      Enable Volume feature.
+      Currently not supported.
   feature-tone-control:
     type: boolean
     required: false
-    description: Enable Tone Control (Bass, Mid, Treble) feature.
-                 Currently not supported.
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
   feature-graphic-equalizer:
     type: boolean
     required: false
-    description: Enable  Graphic Equalizer feature.
-                 Currently not supported.
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
   feature-automatic-gain-control:
     type: boolean
     required: false
-    description: Enable Autoamtic Gain Control feature.
-                 Currently not supported.
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
   feature-delay:
     type: boolean
     required: false
-    description: Enable Delay feature.
-                 Currently not supported.
+    description: |
+      Enable Delay feature.
+      Currently not supported.
   feature-bass-boost:
     type: boolean
     required: false
-    description: Enable Bass Boost feature.
-                 Currently not supported.
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
   feature-loudness:
     type: boolean
     required: false
-    description: Enable Loudness feature.
-                 Currently not supported.
+    description: |
+      Enable Loudness feature.
+      Currently not supported.

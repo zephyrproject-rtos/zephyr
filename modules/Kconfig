@@ -9,7 +9,6 @@ comment "Optional modules. Make sure they're installed, via the project manifest
 
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
-source "modules/Kconfig.canopennode"
 source "modules/Kconfig.civetweb"
 source "modules/Kconfig.cmsis"
 source "modules/Kconfig.cypress"
@@ -17,7 +16,6 @@ source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
-source "modules/Kconfig.loramac-node"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
@@ -28,6 +26,7 @@ source "modules/Kconfig.sof"
 source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
+source "modules/Kconfig.telink"
 source "modules/Kconfig.tinycbor"
 source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
@@ -58,6 +57,15 @@ comment "Trusted-firmware-m module not available."
 
 comment "Nanopb module not available."
 	depends on !ZEPHYR_NANOPB_MODULE
+
+comment "Lz4 module not available."
+	depends on !ZEPHYR_LZ4_MODULE
+
+comment "loramac-node module not available."
+	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "CANopenNode module not available."
+	depends on !ZEPHYR_CANOPENNODE_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

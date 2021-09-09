@@ -13,7 +13,6 @@
 
 #ifdef CONFIG_BOARD_TWR_KE18F
 #define ACMP_NODE  DT_NODELABEL(cmp2)
-#define ACMP_LABEL DT_LABEL(ACMP_NODE)
 #define ACMP_POSITIVE 5
 #define ACMP_NEGATIVE 5
 #define ACMP_DAC_VREF 0
@@ -76,14 +75,13 @@ static void acmp_trigger_handler(const struct device *dev,
 void main(void)
 {
 	struct sensor_trigger trigger;
-	const struct device *acmp;
+	const struct device *acmp = DEVICE_DT_GET(ACMP_NODE);
 	struct sensor_value val;
 	int err;
 	int i;
 
-	acmp = device_get_binding(ACMP_LABEL);
-	if (!acmp) {
-		printf("failed to get ACMP device instance");
+	if (!device_is_ready(acmp)) {
+		printf("ACMP device not ready");
 		return;
 	}
 

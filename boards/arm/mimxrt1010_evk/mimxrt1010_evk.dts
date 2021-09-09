@@ -15,7 +15,6 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		usbd0 = &usb1;
 	};
 
 	chosen {
@@ -66,6 +65,6 @@ arduino_serial: &lpuart1 {};
 	current-speed = <115200>;
 };
 
-&usb1 {
+zephyr_udc0: &usb1 {
 	status = "okay";
 };

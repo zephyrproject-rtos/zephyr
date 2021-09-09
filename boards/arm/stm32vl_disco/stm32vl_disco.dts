@@ -111,6 +111,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
 };

@@ -9,9 +9,12 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <sys/sys_io.h>
 #include <soc.h>
 
 #include "gpio_utils.h"
+
+#define XEC_GPIO_EDGE_DLY_COUNT		4
 
 #define GPIO_IN_BASE(config) \
 	((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
@@ -211,6 +214,10 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	 */
 	current_pcr1 = config->pcr1_base + pin;
 	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
+	/* delay for HW to synchronize after it ungates its clock */
+	for (int i = 0; i < XEC_GPIO_EDGE_DLY_COUNT; i++) {
+		(void)*current_pcr1;
+	}
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* We enable the interrupts in the EC aggregator so that the

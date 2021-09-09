@@ -85,8 +85,8 @@
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
-		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-0 = <&spi1_sck_master_pa5 &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -101,6 +101,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
 };
@@ -111,6 +112,10 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
+	status = "okay";
+};
+
+&dma1 {
 	status = "okay";
 };
 

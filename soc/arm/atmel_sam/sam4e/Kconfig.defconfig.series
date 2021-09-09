@@ -23,9 +23,6 @@ config SOC_PART_NUMBER
 config NUM_IRQS
 	default 47
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 120000000
-
 config GPIO_SAM
 	default y
 	depends on GPIO

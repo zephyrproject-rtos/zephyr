@@ -11,7 +11,7 @@ properties:
     alert-gpios:
       type: phandle-array
       required: false
-      description: >
+      description: |
         ALERT pin.
 
         This pin signals active high when produced by the sensor.  The

@@ -287,11 +287,11 @@ depends_on: <list of features>
     will enable the test only those platforms that provide this feature.
 
 min_ram: <integer>
-    minimum amount of RAM needed for this test to build and run. This is
+    minimum amount of RAM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 min_flash: <integer>
-    minimum amount of ROM needed for this test to build and run. This is
+    minimum amount of ROM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 timeout: <number of seconds>

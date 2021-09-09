@@ -99,6 +99,10 @@ struct bt_conn_sco {
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Reference to the struct bt_iso_chan */
+	struct bt_iso_chan      *chan;
+
 	union {
 		/* CIG ID */
 		uint8_t			cig_id;
@@ -107,10 +111,10 @@ struct bt_conn_iso {
 	};
 
 	union {
-		/* CIS ID */
+		/* CIS ID within the CIG */
 		uint8_t			cis_id;
 
-		/* BIS ID */
+		/* BIS ID within the BIG*/
 		uint8_t			bis_id;
 	};
 
@@ -179,7 +183,7 @@ struct bt_conn {
 	/* Queue for outgoing ACL data */
 	struct k_fifo		tx_queue;
 
-	/* Active L2CAP/ISO channels */
+	/* Active L2CAP channels */
 	sys_slist_t		channels;
 
 	/* Delayed work deferred tasks:
@@ -247,17 +251,11 @@ struct bt_iso_create_param {
 	struct bt_iso_chan	**chans;
 };
 
-/* Bind ISO connections parameters */
-int bt_conn_bind_iso(struct bt_iso_create_param *param);
-
-/* Connect ISO connections */
-int bt_conn_connect_iso(struct bt_conn **conns, uint8_t num_conns);
-
 /* Add a new ISO connection */
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 
 /* Cleanup ISO references */
-void bt_iso_cleanup(struct bt_conn *iso_conn);
+void bt_iso_cleanup_acl(struct bt_conn *iso_conn);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);

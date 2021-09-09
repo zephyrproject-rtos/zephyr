@@ -181,8 +181,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
  * @note For ARM architecture, disabling floating point preservation may only
  * be requested for the current thread and cannot be requested in ISRs.
  *
- * @retval 0       On success.
- * @retval -EINVAL If the floating point disabling could not be performed.
+ * @retval 0        On success.
+ * @retval -EINVAL  If the floating point disabling could not be performed.
+ * @retval -ENOTSUP If the operation is not supported
  */
 int arch_float_disable(struct k_thread *thread);
 
@@ -192,7 +193,7 @@ int arch_float_disable(struct k_thread *thread);
  * The function is used to enable the preservation of floating
  * point context information for a particular thread.
  * This API depends on each architecture implimentation. If the architecture
- * does not support enableing, this API will always be failed.
+ * does not support enabling, this API will always be failed.
  *
  * The @a options parameter indicates which floating point register sets will
  * be used by the specified thread. Currently it is used by x86 only.
@@ -200,8 +201,9 @@ int arch_float_disable(struct k_thread *thread);
  * @param thread  ID of thread.
  * @param options architecture dependent options
  *
- * @retval 0       On success.
- * @retval -EINVAL If the floating point enabling could not be performed.
+ * @retval 0        On success.
+ * @retval -EINVAL  If the floating point enabling could not be performed.
+ * @retval -ENOTSUP If the operation is not supported
  */
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */

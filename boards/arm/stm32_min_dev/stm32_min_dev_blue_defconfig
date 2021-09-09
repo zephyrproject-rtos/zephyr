@@ -3,12 +3,6 @@
 CONFIG_SOC_SERIES_STM32F1X=y
 CONFIG_SOC_STM32F103X8=y
 
-# Enable MPU
-CONFIG_ARM_MPU=y
-
-# Enable HW stack protection
-CONFIG_HW_STACK_PROTECTION=y
-
 # enable uart driver
 CONFIG_SERIAL=y
 

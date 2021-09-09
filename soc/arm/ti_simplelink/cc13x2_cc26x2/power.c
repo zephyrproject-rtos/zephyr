@@ -56,7 +56,7 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	uint32_t modeVIMS;
 	uint32_t constraints;
@@ -99,14 +99,8 @@ void pm_power_state_set(struct pm_state_info info)
 		break;
 
 	case PM_STATE_STANDBY:
-		/* schedule the wakeup event */
-		ClockP_start(ClockP_handle((ClockP_Struct *)
-			&PowerCC26X2_module.clockObj));
-
 		/* go to standby mode */
 		Power_sleep(PowerCC26XX_STANDBY);
-		ClockP_stop(ClockP_handle((ClockP_Struct *)
-			&PowerCC26X2_module.clockObj));
 		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
@@ -124,7 +118,7 @@ void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/*
 	 * System is now in active mode. Reenable interrupts which were disabled

@@ -26,3 +26,7 @@ properties:
     func4_en_mask:
         type: array
         required: true
+
+pinctrl-cells:
+  - pin
+  - alt_func

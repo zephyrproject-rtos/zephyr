@@ -58,6 +58,45 @@ extern "C" {
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			BIT(4)
 
+/**
+ * @brief Complete I2C DT information
+ *
+ * @param bus is the I2C bus
+ * @param addr is the slave address
+ */
+struct i2c_dt_spec {
+	const struct device *bus;
+	uint16_t addr;
+};
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i2c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I2C device whose
+ *                struct i2c_dt_spec to create an initializer for
+ */
+#define I2C_DT_SPEC_GET(node_id)		     \
+	{							     \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
+		.addr = DT_REG_ADDR(node_id) \
+	}
+
+/**
+ * @brief Structure initializer for i2c_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>I2C_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ */
+#define I2C_DT_SPEC_INST_GET(inst) \
+	I2C_DT_SPEC_GET(DT_DRV_INST(inst))
+
+
 /*
  * I2C_MSG_* are I2C Message flags.
  */
@@ -358,6 +397,25 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 }
 
 /**
+ * @brief Perform data transfer to another I2C device in master mode.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ *
+ * @return a value from i2c_transfer()
+ */
+static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
+				  struct i2c_msg *msgs, uint8_t num_msgs)
+{
+	return i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
+}
+
+/**
  * @brief Recover the I2C bus
  *
  * Attempt to recover the I2C bus.
@@ -526,6 +584,25 @@ static inline int i2c_write(const struct device *dev, const uint8_t *buf,
 }
 
 /**
+ * @brief Write a set amount of data to an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write(spec->bus, buf, num_bytes, spec->addr);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes to write.
+ *
+ * @return a value from i2c_write()
+ */
+static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
+			       const uint8_t *buf, uint32_t num_bytes)
+{
+	return i2c_write(spec->bus, buf, num_bytes, spec->addr);
+}
+
+/**
  * @brief Read a set amount of data from an I2C device.
  *
  * This routine reads a set amount of data synchronously.
@@ -549,6 +626,25 @@ static inline int i2c_read(const struct device *dev, uint8_t *buf,
 	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
 
 	return i2c_transfer(dev, &msg, 1, addr);
+}
+
+/**
+ * @brief Read a set amount of data from an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_read(spec->bus, buf, num_bytes, spec->addr);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_read()
+ */
+static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
+			      uint8_t *buf, uint32_t num_bytes)
+{
+	return i2c_read(spec->bus, buf, num_bytes, spec->addr);
 }
 
 /**
@@ -587,6 +683,32 @@ static inline int i2c_write_read(const struct device *dev, uint16_t addr,
 }
 
 /**
+ * @brief Write then read data from an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write_read(spec->bus, spec->addr,
+ *                    write_buf, num_write,
+ *                    read_buf, num_read);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ *
+ * @return a value from i2c_write_read()
+ */
+static inline int i2c_write_read_dt(const struct i2c_dt_spec *spec,
+				    const void *write_buf, size_t num_write,
+				    void *read_buf, size_t num_read)
+{
+	return i2c_write_read(spec->bus, spec->addr,
+			      write_buf, num_write,
+			      read_buf, num_read);
+}
+
+/**
  * @brief Read multiple bytes from an internal address of an I2C device.
  *
  * This routine reads multiple bytes from an internal address of an
@@ -613,6 +735,29 @@ static inline int i2c_burst_read(const struct device *dev,
 	return i2c_write_read(dev, dev_addr,
 			      &start_addr, sizeof(start_addr),
 			      buf, num_bytes);
+}
+
+/**
+ * @brief Read multiple bytes from an internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_read(spec->bus, spec->addr, start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_burst_read()
+ */
+static inline int i2c_burst_read_dt(const struct i2c_dt_spec *spec,
+				    uint8_t start_addr,
+				    uint8_t *buf,
+				    uint32_t num_bytes)
+{
+	return i2c_burst_read(spec->bus, spec->addr,
+			      start_addr, buf, num_bytes);
 }
 
 /**
@@ -656,6 +801,29 @@ static inline int i2c_burst_write(const struct device *dev,
 }
 
 /**
+ * @brief Write multiple bytes to an internal address of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_burst_write(spec->bus, spec->addr, start_addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @return a value from i2c_burst_write()
+ */
+static inline int i2c_burst_write_dt(const struct i2c_dt_spec *spec,
+				     uint8_t start_addr,
+				     const uint8_t *buf,
+				     uint32_t num_bytes)
+{
+	return i2c_burst_write(spec->bus, spec->addr,
+			       start_addr, buf, num_bytes);
+}
+
+/**
  * @brief Read internal register of an I2C device.
  *
  * This routine reads the value of an 8-bit internal register of an I2C
@@ -677,6 +845,25 @@ static inline int i2c_reg_read_byte(const struct device *dev,
 	return i2c_write_read(dev, dev_addr,
 			      &reg_addr, sizeof(reg_addr),
 			      value, sizeof(*value));
+}
+
+/**
+ * @brief Read internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_read_byte(spec->bus, spec->addr, reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being read.
+ * @param value Memory pool that stores the retrieved register value.
+ *
+ * @return a value from i2c_reg_read_byte()
+ */
+static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec *spec,
+				       uint8_t reg_addr, uint8_t *value)
+{
+	return i2c_reg_read_byte(spec->bus, spec->addr, reg_addr, value);
 }
 
 /**
@@ -704,6 +891,25 @@ static inline int i2c_reg_write_byte(const struct device *dev,
 	uint8_t tx_buf[2] = {reg_addr, value};
 
 	return i2c_write(dev, tx_buf, 2, dev_addr);
+}
+
+/**
+ * @brief Write internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being written.
+ * @param value Value to be written to internal register.
+ *
+ * @return a value from i2c_reg_write_byte()
+ */
+static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec *spec,
+					uint8_t reg_addr, uint8_t value)
+{
+	return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
 }
 
 /**
@@ -744,6 +950,28 @@ static inline int i2c_reg_update_byte(const struct device *dev,
 	}
 
 	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
+}
+
+/**
+ * @brief Update internal register of an I2C device.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_reg_update_byte(spec->bus, spec->addr, reg_addr, mask, value);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param reg_addr Address of the internal register being updated.
+ * @param mask Bitmask for updating internal register.
+ * @param value Value for updating internal register.
+ *
+ * @return a value from i2c_reg_update_byte()
+ */
+static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
+					 uint8_t reg_addr, uint8_t mask,
+					 uint8_t value)
+{
+	return i2c_reg_update_byte(spec->bus, spec->addr,
+				   reg_addr, mask, value);
 }
 
 /**

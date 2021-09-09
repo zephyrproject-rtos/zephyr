@@ -23,9 +23,9 @@ if KSCAN
 config KSCAN_FT5336
 	default y
 
-config KSCAN_INIT_PRIORITY
-	default 65
-
 endif # KSCAN
+
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
 
 endif # BOARD_STM32F746G_DISCO

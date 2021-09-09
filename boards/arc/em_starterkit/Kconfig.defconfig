@@ -59,6 +59,13 @@ config SPI_DW_FIFO_DEPTH
 config SPI_DW_ARC_AUX_REGS
 	default n
 
+if BOARD_EM_STARTERKIT_R23
+
+config GPIO_SNPS_CREG
+	default y
+
+endif # BOARD_EM_STARTERKIT_R23
+
 endif # SPI_DW
 
 endif # SPI

@@ -1,8 +1,10 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton NPCX7 Low-Voltage level detection configuration map
-    between Nuvoton NPCX GPIO and low-voltage controller (LV_GPIO_CTL) driver instances.
+description: |
+  Nuvoton NPCX7 Low-Voltage level detection configuration map
+  between Nuvoton NPCX GPIO and low-voltage controller (LV_GPIO_CTL)
+  driver instances.
 
 compatible: "nuvoton,npcx-lvolctrl-conf"
 

@@ -12,19 +12,15 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 
-struct apa102_data {
-	const struct device *spi;
-	struct spi_config cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+struct apa102_config {
+	struct spi_dt_spec bus;
 };
 
 static int apa102_update(const struct device *dev, void *buf, size_t size)
 {
-	struct apa102_data *data = dev->data;
-	static const uint8_t zeros[] = {0, 0, 0, 0};
-	static const uint8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
+	const struct apa102_config *config = dev->config;
+	static const uint8_t zeros[] = { 0, 0, 0, 0 };
+	static const uint8_t ones[] = { 0xFF, 0xFF, 0xFF, 0xFF };
 	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
@@ -50,7 +46,7 @@ static int apa102_update(const struct device *dev, void *buf, size_t size)
 		.count = ARRAY_SIZE(tx_bufs)
 	};
 
-	return spi_write(data->spi, &data->cfg, &tx);
+	return spi_write_dt(&config->bus, &tx);
 }
 
 static int apa102_update_rgb(const struct device *dev, struct led_rgb *pixels,
@@ -86,35 +82,19 @@ static int apa102_update_channels(const struct device *dev, uint8_t *channels,
 
 static int apa102_init(const struct device *dev)
 {
-	struct apa102_data *data = dev->data;
+	const struct apa102_config *config = dev->config;
 
-	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!data->spi) {
+	if (!spi_is_ready(&config->bus)) {
 		return -ENODEV;
 	}
-
-	data->cfg.slave = DT_INST_REG_ADDR(0);
-	data->cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	data->cfg.operation =
-		SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->cs_ctl.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!data->cs_ctl.gpio_dev) {
-		return -ENODEV;
-	}
-	data->cs_ctl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	data->cs_ctl.delay = 0;
-
-	data->cfg.cs = &data->cs_ctl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	return 0;
 }
 
-static struct apa102_data apa102_data_0;
+static const struct apa102_config apa102_config = {
+	.bus = SPI_DT_SPEC_INST_GET(
+		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)
+};
 
 static const struct led_strip_driver_api apa102_api = {
 	.update_rgb = apa102_update_rgb,
@@ -122,5 +102,5 @@ static const struct led_strip_driver_api apa102_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, apa102_init, NULL,
-		    &apa102_data_0, NULL, POST_KERNEL,
-		    CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);
+		      NULL, &apa102_config, POST_KERNEL,
+		      CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);

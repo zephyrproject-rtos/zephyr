@@ -14,7 +14,7 @@ properties:
     "#dma-cells":
       type: int
       required: true
-      description: Number of items to expect in a DMA specifier
+      description: Number of items to expect in a DMA specifier (see dma V2)
 
     dma-channels:
       type: int
@@ -29,4 +29,6 @@ properties:
     dma-requests:
       type: int
       required: true
-      description: Number of DMAMUX Peripheral Request Line inputs supported by the controller
+      description: |
+        Number of DMAMUX Peripheral Request Line inputs supported by the controller
+        This is not directly the value to program in the DMAREQ_ID of the DMAMUX_CxCR

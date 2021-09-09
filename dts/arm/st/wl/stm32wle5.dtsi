@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wl.dtsi>

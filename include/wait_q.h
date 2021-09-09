@@ -12,7 +12,7 @@
 #include <kernel_structs.h>
 #include <sys/dlist.h>
 #include <sys/rb.h>
-#include <sched_priq.h>
+#include <kernel/sched_priq.h>
 #include <timeout_q.h>
 
 #ifdef __cplusplus

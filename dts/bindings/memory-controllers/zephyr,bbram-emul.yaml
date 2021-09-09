@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Google Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr, Battery Backed RAM emulator node
+
+compatible: "zephyr,bbram-emul"
+
+include: base.yaml
+
+properties:
+    size:
+        type: int
+        required: true
+        description: Size of the BBRAM region in bytes.
+
+    label:
+        required: true

@@ -3,6 +3,7 @@
 
 config DNS_RESOLVER
 	bool "DNS resolver"
+	depends on NET_NATIVE
 	help
 	  This option enables the DNS client side support for Zephyr
 
@@ -42,6 +43,14 @@ config DNS_RESOLVER_ADDITIONAL_QUERIES
 	  generate when the RR ANSWER only contains CNAME(s).
 	  The maximum value of this variable is constrained to avoid
 	  'alias loops'.
+
+config DNS_RESOLVER_AI_MAX_ENTRIES
+	int "Maximum number of IP addresses for DNS name"
+	default 2
+	help
+	  Defines the max number of IP addresses per domain name
+	  resolution the DNS resolver can handle.
+
 
 config DNS_RESOLVER_MAX_SERVERS
 	int "Number of DNS server addresses"

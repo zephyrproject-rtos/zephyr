@@ -11,6 +11,10 @@ config REQUIRES_FULL_LIBC
 	  Helper symbol to indicate some feature requires a C library implementation
 	  with more functionality than what MINIMAL_LIBC provides
 
+config SUPPORT_MINIMAL_LIBC
+	bool
+	default y
+
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
@@ -21,6 +25,7 @@ config MINIMAL_LIBC
 	bool "Minimal C library"
 	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
+	depends on SUPPORT_MINIMAL_LIBC
 	help
 	  Build with minimal C library.
 
@@ -30,6 +35,13 @@ config NEWLIB_LIBC
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
+
+config ARCMWDT_LIBC
+	bool "ARC MWDT C library"
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	help
+	  C library provided by ARC MWDT toolchain.
 
 config EXTERNAL_LIBC
 	bool "External C library"
@@ -61,6 +73,16 @@ config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
 	  will be used for the newlib malloc() heap. The actual amount of
 	  memory used will be the minimum of this value and the amount of
 	  free physical memory at kernel boot.
+
+config NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE
+	int "Newlib minimum required heap size"
+	default 2048 if NEWLIB_LIBC_NANO
+	default 8192 if !NEWLIB_LIBC_NANO
+	help
+	  Specifies the amount of memory space that must be available for the
+	  newlib heap. An assertion failure message will be displayed during
+	  initialization if the memory space available for the newlib heap is
+	  smaller than this value.
 
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int "Newlib aligned heap size"
@@ -127,6 +149,26 @@ config MINIMAL_LIBC_LL_PRINTF
 	help
 	  Build with long long printf enabled. This will increase the size of
 	  the image.
+
+config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
+	bool "Use size optimized string functions"
+	default y if SIZE_OPTIMIZATIONS
+	help
+	  Enable smaller but potentially slower implementations of memcpy and
+	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
+
+config MINIMAL_LIBC_RAND
+	bool "Enables rand and srand functions"
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable rand() and srand() for the minimal libc. The
+	  functions implicitly access global/static data.  Such data
+	  must be put into a memory partition if CONFIG_USERSPACE=y,
+	  and disabling this option may save an entry for application
+	  defining many custom partitions.
+
+	  Say 'Y' here if you need rand() and srand(). This might require
+	  an additional memory partition.
 
 endif # MINIMAL_LIBC
 

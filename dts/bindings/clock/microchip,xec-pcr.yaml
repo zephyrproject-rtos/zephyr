@@ -1,0 +1,52 @@
+# Copyright (c) 2021, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC Power Clock Reset and VBAT register (PCR)
+
+compatible: "microchip,xec-pcr"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    core-clock-div:
+      type: int
+      required: true
+      description: Divide 96 MHz PLL clock to produce Cortex-M4 core clock
+
+    slow-clock-div:
+      type: int
+      required: false
+      description: |
+        PWM and TACH clock domain divided down from 48 MHz AHB clock. The
+        default value is 480 for 100 kHz.
+
+    pll-32k-src:
+      type: int
+      required: true
+      description: 32 KHz clock source for PLL
+
+    periph-32k-src:
+      type: int
+      required: true
+      description: 32 KHz clock source for peripherals
+
+    xtal-single-ended:
+      type: boolean
+      required: false
+      description: Use single ended crystal connection to XTAL2 pin.
+
+    "#clock-cells":
+      const: 2
+
+clock-cells:
+  - regidx
+  - bitpos

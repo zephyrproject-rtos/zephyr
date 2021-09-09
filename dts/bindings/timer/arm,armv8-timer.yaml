@@ -1,5 +1,4 @@
-description: >
-    per-core ARM architected timer
+description: per-core ARM architected timer
 
 compatible: "arm,armv8-timer"
 

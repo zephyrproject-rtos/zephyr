@@ -46,11 +46,6 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
-config PRINTK64
-	bool "Enable 64 bit printk conversions (DEPRECATED)"
-	help
-	  Replace with CBPRINTF_FULL_INTEGRAL.
-
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1

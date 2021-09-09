@@ -1,0 +1,17 @@
+# MIMXRT1170-EVK board
+
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4
+
+config BOARD
+	default "mimxrt1170_evk_cm7" if BOARD_MIMXRT1170_EVK_CM7
+	default "mimxrt1170_evk_cm4" if BOARD_MIMXRT1170_EVK_CM4
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI if BOARD_MIMXRT1170_EVK_CM7
+	default CODE_SRAM0 if BOARD_MIMXRT1170_EVK_CM4
+endchoice
+
+endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4

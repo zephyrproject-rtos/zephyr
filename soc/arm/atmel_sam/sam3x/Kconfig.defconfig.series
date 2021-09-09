@@ -24,7 +24,4 @@ config SOC_PART_NUMBER
 config NUM_IRQS
 	default 45
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 84000000
-
 endif # SOC_SERIES_SAM3X

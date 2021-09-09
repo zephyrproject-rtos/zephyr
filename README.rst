@@ -2,7 +2,7 @@
 
    <a href="https://www.zephyrproject.org">
      <p align="center">
-       <img src="doc/images/Zephyr-Project.png">
+       <img src="doc/_static/images/logo-readme.png">
      </p>
    </a>
 
@@ -10,7 +10,7 @@
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
    <a href="https://buildkite.com/zephyr/zephyr">
    <img
-   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=master"></a>
+   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=main"></a>
 
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
@@ -27,7 +27,6 @@ Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
 
 .. below included in doc/introduction/introduction.rst
 
-.. start_include_here
 
 Getting Started
 ***************
@@ -35,10 +34,12 @@ Getting Started
 Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
 
+.. start_include_here
+
 Community Support
 *****************
 
-Community support is provided via mailing lists and Slack; see the Resources
+Community support is provided via mailing lists and Discord; see the Resources
 below for details.
 
 .. _project-resources:
@@ -63,8 +64,8 @@ Here's a quick summary of resources to help you find your way around:
 * **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
   The builds@lists.zephyrproject.org mailing list archives the CI
   (buildkite) nightly build results.
-* **Chat**: Zephyr's Slack workspace is https://zephyrproject.slack.com.  Use
-  this `Slack Invite`_ to register.
+* **Chat**: Real-time chat happens in Zephyr's Discord Server. Use
+  this `Discord Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_
 * **Wiki**: `Zephyr GitHub wiki`_
 * **Issues**: https://github.com/zephyrproject-rtos/zephyr/issues
@@ -73,7 +74,7 @@ Here's a quick summary of resources to help you find your way around:
   tracked separately at https://zephyrprojectsec.atlassian.net.
 * **Zephyr Project Website**: https://zephyrproject.org
 
-.. _Slack Invite: https://tinyurl.com/y5glwylp
+.. _Discord Invite: https://chat.zephyrproject.org
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html
@@ -84,4 +85,4 @@ Here's a quick summary of resources to help you find your way around:
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/index.html
 .. _Security: http://docs.zephyrproject.org/latest/security/index.html
-.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/guides/getting-help.html
+.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/getting_started/index.html#asking-for-help

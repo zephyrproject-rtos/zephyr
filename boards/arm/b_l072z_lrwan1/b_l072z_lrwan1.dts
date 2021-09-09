@@ -57,6 +57,22 @@
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
 	};
+
+	power-states {
+		stop: stop {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <100>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop>;
+};
+
+&lptim1 {
+	status = "okay";
 };
 
 &clk_hsi {

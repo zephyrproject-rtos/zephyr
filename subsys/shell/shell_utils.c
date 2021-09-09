@@ -229,7 +229,7 @@ static inline uint32_t shell_root_cmd_count(void)
 }
 
 /* Function returning pointer to parent command matching requested syntax. */
-static const struct shell_static_entry *root_cmd_find(const char *syntax)
+const struct shell_static_entry *root_cmd_find(const char *syntax)
 {
 	const size_t cmd_count = shell_root_cmd_count();
 	const struct shell_cmd_entry *cmd;
@@ -290,7 +290,19 @@ const struct shell_static_entry *z_shell_find_cmd(
 					struct shell_static_entry *dloc)
 {
 	const struct shell_static_entry *entry;
+	struct shell_static_entry parent_cpy;
 	size_t idx = 0;
+
+	/* Dynamic command operates on shared memory. If we are processing two
+	 * dynamic commands at the same time (current and subcommand) they
+	 * will operate on the same memory region what can cause undefined
+	 * behaviour.
+	 * Hence we need a separate memory for each of them.
+	 */
+	if (parent) {
+		memcpy(&parent_cpy, parent, sizeof(struct shell_static_entry));
+		parent = &parent_cpy;
+	}
 
 	while ((entry = z_shell_cmd_get(parent, idx++, dloc)) != NULL) {
 		if (strcmp(cmd_str, entry->syntax) == 0) {
@@ -351,7 +363,7 @@ int shell_set_root_cmd(const char *cmd)
 		return -EINVAL;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(shell, sh) {
+	STRUCT_SECTION_FOREACH(shell, sh) {
 		sh->ctx->selected_cmd = entry;
 	}
 

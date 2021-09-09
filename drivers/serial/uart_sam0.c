@@ -51,6 +51,8 @@ struct uart_sam0_dev_cfg {
 	uint8_t rx_dma_request;
 	uint8_t rx_dma_channel;
 #endif
+	uint32_t num_pins;
+	struct soc_port_pin pins[];
 };
 
 /* Device run time data */
@@ -401,6 +403,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 
 #endif
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_sam0_configure(const struct device *dev,
 			       const struct uart_config *new_cfg)
 {
@@ -513,6 +516,7 @@ static int uart_sam0_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_sam0_init(const struct device *dev)
 {
@@ -554,6 +558,9 @@ static int uart_sam0_init(const struct device *dev)
 	    | SERCOM_USART_CTRLA_FORM(0) |
 	    SERCOM_USART_CTRLA_CPOL | SERCOM_USART_CTRLA_DORD;
 	wait_synchronization(usart);
+
+	/* Enable PINMUX based on PINCTRL */
+	soc_port_list_configure(cfg->pins, cfg->num_pins);
 
 	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 	dev_data->config_cache.parity = UART_CFG_PARITY_NONE;
@@ -733,7 +740,7 @@ static void uart_sam0_irq_tx_enable(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	regs->INTENSET.reg = SERCOM_USART_INTENCLR_DRE;
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE;
 }
 
 static void uart_sam0_irq_tx_disable(const struct device *dev)
@@ -747,7 +754,7 @@ static int uart_sam0_irq_tx_ready(const struct device *dev)
 {
 	SercomUsart * const regs = DEV_CFG(dev)->regs;
 
-	return regs->INTFLAG.bit.DRE != 0;
+	return (regs->INTFLAG.bit.DRE != 0) && (regs->INTENSET.bit.DRE != 0);
 }
 
 static void uart_sam0_irq_rx_enable(const struct device *dev)
@@ -1115,8 +1122,10 @@ static int uart_sam0_rx_disable(const struct device *dev)
 static const struct uart_driver_api uart_sam0_driver_api = {
 	.poll_in = uart_sam0_poll_in,
 	.poll_out = uart_sam0_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_sam0_configure,
 	.config_get = uart_sam0_config_get,
+#endif
 	.err_check = uart_sam0_err_check,
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_sam0_fifo_fill,
@@ -1211,6 +1220,8 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
 	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
@@ -1223,6 +1234,8 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
 	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
+	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
+	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }

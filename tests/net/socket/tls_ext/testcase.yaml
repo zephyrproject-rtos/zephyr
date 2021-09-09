@@ -3,3 +3,4 @@ common:
 tests:
   net.socket.tls:
     min_ram: 65536
+    platform_allow: qemu_cortex_m3 qemu_x86

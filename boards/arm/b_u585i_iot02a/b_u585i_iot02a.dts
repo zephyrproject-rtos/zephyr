@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "b_u585i_iot02a-common.dtsi"
+
+/ {
+	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
+	compatible = "st,b-u585i-iot02a";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &red_led_1;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	status = "okay";
+};

@@ -54,7 +54,7 @@ config I2S_STM32
 
 config USB_DC_STM32
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config COUNTER_RTC_STM32
 	default y

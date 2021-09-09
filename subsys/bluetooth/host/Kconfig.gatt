@@ -55,6 +55,24 @@ config BT_EATT_SEC_LEVEL
 
 endif # BT_EATT
 
+config BT_GATT_AUTO_SEC_REQ
+	bool "Automatic security re-establishment request as a peripheral"
+	default y
+	depends on BT_SMP
+	help
+	  This option requests security re-establishment automatically whenever
+	  a reconnection to a GATT client is established and
+	  there are notifiable or indicatable characteristics for which security
+	  is required. This configuration option only applies to the peripheral
+	  role, which sends a Security Request for this purpose.
+	  When disabled, it is the application's responsibility to call
+	  bt_conn_set_security() to re-establish security prior to sending any
+	  notifications or indications on the characteristics that require
+	  security (unless the central does that first).
+	  This option has been introduced to avoid interoperability issues with
+	  commercially available central devices that react negatively to
+	  receiving a Security Request immediately after reconnection.
+
 config BT_GATT_SERVICE_CHANGED
 	bool "GATT Service Changed support"
 	default y

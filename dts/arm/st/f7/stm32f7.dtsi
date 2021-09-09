@@ -83,10 +83,12 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <1>;
+				/* maximum erase time (ms) for a 256K sector */
+				max-erase-time = <4000>;
 			};
 		};
 
@@ -397,7 +399,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
@@ -433,7 +435,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
@@ -451,7 +453,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
@@ -487,7 +489,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_6";
 				#pwm-cells = <3>;
 			};
@@ -505,7 +507,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_7";
 				#pwm-cells = <3>;
 			};
@@ -523,7 +525,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
@@ -541,7 +543,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_9";
 				#pwm-cells = <3>;
 			};
@@ -559,7 +561,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_10";
 				#pwm-cells = <3>;
 			};
@@ -577,7 +579,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_11";
 				#pwm-cells = <3>;
 			};
@@ -595,7 +597,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_12";
 				#pwm-cells = <3>;
 			};
@@ -613,7 +615,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_13";
 				#pwm-cells = <3>;
 			};
@@ -631,7 +633,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_14";
 				#pwm-cells = <3>;
 			};

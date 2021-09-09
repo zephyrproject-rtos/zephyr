@@ -98,6 +98,8 @@ struct cdcg_reg {
 #define NPCX_HFCGCTRL_LOCK                    2
 #define NPCX_HFCGCTRL_CLK_CHNG                7
 
+#define NPCX_LFCGCTL2_XT_OSC_SL_EN            6
+
 /*
  * Power Management Controller (PMC) device registers
  */
@@ -122,10 +124,19 @@ struct pmc_reg {
 	volatile uint8_t PWDWN_CTL7[1];
 };
 
-/* PMC multi-registers */
-#define NPCX_PWDWN_CTL_OFFSET(n) (((n) < 6) ? (0x008 + n) : (0x024 + (n - 6)))
+/* PMC internal inline functions for multi-registers */
+static inline uint32_t npcx_pwdwn_ctl_offset(uint32_t ctl_no)
+{
+	if (ctl_no < 6) {
+		return 0x008 + ctl_no;
+	} else {
+		return 0x024 + ctl_no - 6;
+	}
+}
+
+/* Macro functions for PMC multi-registers */
 #define NPCX_PWDWN_CTL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_PWDWN_CTL_OFFSET(n)))
+						npcx_pwdwn_ctl_offset(n)))
 
 /* PMC register fields */
 #define NPCX_PMCSR_DI_INSTW                   0
@@ -168,15 +179,26 @@ struct scfg_reg {
 	volatile uint8_t LV_GPIO_CTL0[5];
 };
 
-/* SCFG multi-registers */
-#define NPCX_DEVALT_OFFSET(n) (0x010 + (n))
-#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_DEVALT_OFFSET(n)))
+/* SCFG internal inline functions for multi-registers */
+static inline uint32_t npcx_devalt_offset(uint32_t alt_no)
+{
+	return 0x010 + alt_no;
+}
 
-#define NPCX_LV_GPIO_CTL_OFFSET(n) (((n) < 5) ? (0x02A + (n)) \
-						: (0x026 + (n - 5)))
+static inline uint32_t npcx_lv_gpio_ctl_offset(uint32_t ctl_no)
+{
+	if (ctl_no < 5) {
+		return 0x02a + ctl_no;
+	} else {
+		return 0x026 + ctl_no - 5;
+	}
+}
+
+/* Macro functions for SCFG multi-registers */
+#define NPCX_DEVALT(base, n) (*(volatile uint8_t *)(base + \
+						npcx_devalt_offset(n)))
 #define NPCX_LV_GPIO_CTL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_LV_GPIO_CTL_OFFSET(n)))
+						npcx_lv_gpio_ctl_offset(n)))
 
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS                6
@@ -204,6 +226,12 @@ struct scfg_reg {
 #define NPCX_DEVPU0_I2C3_0_PUE                6
 #define NPCX_DEVPU1_F_SPI_PUD_EN              7
 
+/* Supported host interface type for HIF_TYP_SEL FILED in DEVCNT register. */
+enum npcx_hif_type {
+	NPCX_HIF_TYPE_NONE,
+	NPCX_HIF_TYPE_LPC,
+	NPCX_HIF_TYPE_ESPI_SHI,
+};
 
 /*
  * System Glue (GLUE) device registers
@@ -311,29 +339,91 @@ struct uart_reg {
  * Multi-Input Wake-Up Unit (MIWU) device registers
  */
 
-/* MIWU multi-registers */
-#define NPCX_WKEDG_OFFSET(n)    (0x000 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
-#define NPCX_WKAEDG_OFFSET(n)   (0x001 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
-#define NPCX_WKPND_OFFSET(n)    (0x00A + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
-#define NPCX_WKPCL_OFFSET(n)    (0x00C + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
-#define NPCX_WKEN_OFFSET(n)     (0x01E + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
-#define NPCX_WKINEN_OFFSET(n)   (0x01F + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
-#define NPCX_WKMOD_OFFSET(n)    (0x070 + (n))
+/* MIWU internal inline functions for multi-registers */
+static inline uint32_t npcx_wkedg_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x000 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
+	} else { /* NPCX9 and later series */
+		return 0x000 + group * 0x10UL;
+	}
+}
 
-#define NPCX_WKEDG(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKEDG_OFFSET(n)))
-#define NPCX_WKAEDG(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKAEDG_OFFSET(n)))
-#define NPCX_WKPND(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKPND_OFFSET(n)))
-#define NPCX_WKPCL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKPCL_OFFSET(n)))
-#define NPCX_WKEN(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKEN_OFFSET(n)))
-#define NPCX_WKINEN(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKINEN_OFFSET(n)))
-#define NPCX_WKMOD(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKMOD_OFFSET(n)))
+static inline uint32_t npcx_wkaedg_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x001 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
+	} else { /* NPCX9 and later series */
+		return 0x001 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkmod_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x070 + group;
+	} else { /* NPCX9 and later series */
+		return 0x002 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkpnd_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x00a + (group * 4ul) + (group < 5 ? 0 : 0x10);
+	} else { /* NPCX9 and later series */
+		return 0x003 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkpcl_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x00c + (group * 4ul) + (group < 5 ? 0 : 0x10);
+	} else { /* NPCX9 and later series */
+		return 0x004 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wken_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x01e + (group * 2ul) + (group < 5 ? 0 : 0x12);
+	} else { /* NPCX9 and later series */
+		return 0x005 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkst_offset(uint32_t group)
+{
+	/* NPCX9 and later series only */
+	return 0x006 + group * 0x10ul;
+}
+
+static inline uint32_t npcx_wkinen_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x01f + (group * 2ul) + (group < 5 ? 0 : 0x12);
+	} else { /* NPCX9 and later series */
+		return 0x007 + group * 0x10ul;
+	}
+}
+
+/* Macro functions for MIWU multi-registers */
+#define NPCX_WKEDG(base, group) \
+	(*(volatile uint8_t *)(base +  npcx_wkedg_offset(group)))
+#define NPCX_WKAEDG(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkaedg_offset(group)))
+#define NPCX_WKPND(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkpnd_offset(group)))
+#define NPCX_WKPCL(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkpcl_offset(group)))
+#define NPCX_WKEN(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wken_offset(group)))
+#define NPCX_WKINEN(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkinen_offset(group)))
+#define NPCX_WKMOD(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkmod_offset(group)))
 
 /*
  * General-Purpose I/O (GPIO) device registers
@@ -1263,5 +1353,61 @@ struct dbg_reg {
 };
 /* Debug Interface registers fields */
 #define NPCX_DBGFRZEN3_GLBL_FRZ_DIS      7
+
+/* PS/2 Interface registers */
+struct ps2_reg {
+	/* 0x000: PS/2 Data */
+	volatile uint8_t PSDAT;
+	volatile uint8_t reserved1;
+	/* 0x002: PS/2 Status */
+	volatile uint8_t PSTAT;
+	volatile uint8_t reserved2;
+	/* 0x004: PS/2 Control */
+	volatile uint8_t PSCON;
+	volatile uint8_t reserved3;
+	/* 0x006: PS/2 Output Signal */
+	volatile uint8_t PSOSIG;
+	volatile uint8_t reserved4;
+	/* 0x008: PS/2 Iutput Signal */
+	volatile uint8_t PSISIG;
+	volatile uint8_t reserved5;
+	/* 0x00A: PS/2 Interrupt Enable */
+	volatile uint8_t PSIEN;
+	volatile uint8_t reserved6;
+};
+
+/* PS/2 Interface registers fields */
+#define NPCX_PSTAT_SOT                   0
+#define NPCX_PSTAT_EOT                   1
+#define NPCX_PSTAT_PERR                  2
+#define NPCX_PSTAT_ACH                   FIELD(3, 3)
+#define NPCX_PSTAT_RFERR                 6
+
+#define NPCX_PSCON_EN                    0
+#define NPCX_PSCON_XMT                   1
+#define NPCX_PSCON_HDRV                  FIELD(2, 2)
+#define NPCX_PSCON_IDB                   FIELD(4, 3)
+#define NPCX_PSCON_WPUED                 7
+
+#define NPCX_PSOSIG_WDAT0                0
+#define NPCX_PSOSIG_WDAT1                1
+#define NPCX_PSOSIG_WDAT2                2
+#define NPCX_PSOSIG_CLK0                 3
+#define NPCX_PSOSIG_CLK1                 4
+#define NPCX_PSOSIG_CLK2                 5
+#define NPCX_PSOSIG_WDAT3                6
+#define NPCX_PSOSIG_CLK3                 7
+#define NPCX_PSOSIG_CLK(n)               (((n) < 3) ? ((n) + 3) : 7)
+#define NPCX_PSOSIG_WDAT(n)              (((n) < 3) ? ((n) + 0) : 6)
+#define NPCX_PSOSIG_CLK_MASK_ALL \
+					 (BIT(NPCX_PSOSIG_CLK0) | \
+					  BIT(NPCX_PSOSIG_CLK1) | \
+					  BIT(NPCX_PSOSIG_CLK2) | \
+					  BIT(NPCX_PSOSIG_CLK3))
+
+#define NPCX_PSIEN_SOTIE                 0
+#define NPCX_PSIEN_EOTIE                 1
+#define NPCX_PSIEN_PS2_WUE               4
+#define NPCX_PSIEN_PS2_CLK_SEL           7
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
