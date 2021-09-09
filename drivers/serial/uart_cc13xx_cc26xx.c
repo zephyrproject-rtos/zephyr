@@ -14,6 +14,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#include <driverlib/ioc.h>
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 #include <driverlib/uart.h>
 

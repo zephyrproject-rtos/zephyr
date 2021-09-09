@@ -17,6 +17,8 @@
 LOG_MODULE_REGISTER(i2c_cc13xx_cc26xx);
 
 #include <driverlib/i2c.h>
+#include <driverlib/ioc.h>
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 
 #include <ti/drivers/Power.h>

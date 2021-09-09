@@ -16,6 +16,7 @@
 #include <driverlib/gpio.h>
 #include <driverlib/interrupt.h>
 #include <driverlib/ioc.h>
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 
 #include <inc/hw_aon_event.h>

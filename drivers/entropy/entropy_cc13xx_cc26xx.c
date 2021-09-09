@@ -16,6 +16,7 @@
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/sys_io.h>
 
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 #include <driverlib/trng.h>
 
