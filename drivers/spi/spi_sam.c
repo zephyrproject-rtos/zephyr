@@ -61,6 +61,11 @@ static int spi_sam_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		/* Slave mode is not implemented. */
 		return -ENOTSUP;

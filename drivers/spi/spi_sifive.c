@@ -32,6 +32,10 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	uint32_t div;
 	uint32_t fmt_len;
 
+	if (operation & SPI_HALF_DUPLEX) {
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
 		return -ENOTSUP;
 	}
