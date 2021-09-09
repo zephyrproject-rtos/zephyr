@@ -28,9 +28,9 @@
 #define EVT_PROP_TXP    BIT(6)
 #define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
 #define ADV_WAIT_MS     10     /* 10 ms wait loop */
-#define OWN_ADDR_TYPE   1
-#define PEER_ADDR_TYPE  0
-#define PEER_ADDR       NULL
+#define OWN_ADDR_TYPE   BT_ADDR_LE_RANDOM_ID
+#define PEER_ADDR_TYPE  BT_ADDR_LE_RANDOM_ID
+#define PEER_ADDR       peer_addr
 #define ADV_CHAN_MAP    0x07
 #define FILTER_POLICY   0x00
 #define ADV_TX_PWR      NULL
@@ -220,7 +220,7 @@ static void test_advx_main(void)
 
 	printk("Directed advertising, parameter set...");
 	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
-				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY,
 				0, 0, 0, 0, 0, 0);
 	if (err) {
@@ -256,7 +256,7 @@ static void test_advx_main(void)
 
 	printk("Directed advertising, parameter set...");
 	err = ll_adv_params_set(handle, 0, 0, BT_HCI_ADV_DIRECT_IND,
-				OWN_ADDR_TYPE, PEER_ADDR_TYPE, peer_addr,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY,
 				0, 0, 0, 0, 0, 0);
 	if (err) {
@@ -640,6 +640,29 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	k_sleep(K_MSEC(1000));
+
+	printk("Add to resolving list...");
+	bt_addr_le_t peer_id_addr = {
+		.type = BT_ADDR_LE_RANDOM,
+		.a = {
+			.val = {0xc6, 0xc7, 0xc8, 0xc9, 0xc1, 0xcb}
+		}
+	};
+	uint8_t pirk[16] = {0x00, };
+	uint8_t lirk[16] = {0x01, };
+
+	err = ll_rl_add(&peer_id_addr, pirk, lirk);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enable resolving list...");
+	err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	printk("Enabling extended...");
 	err = ll_adv_enable(handle, 1, 0, 0);
@@ -1631,10 +1654,40 @@ static void test_scanx_main(void)
 	}
 	printk("done.\n");
 
+	printk("Add to resolving list...");
+	bt_addr_le_t peer_id_addr = {
+		.type = BT_ADDR_LE_RANDOM,
+		.a = {
+			.val = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5}
+		}
+	};
+	uint8_t pirk[16] = {0x01, };
+	uint8_t lirk[16] = {0x00, };
+
+	err = ll_rl_add(&peer_id_addr, pirk, lirk);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enable resolving list...");
+	err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Add device to periodic advertising list...");
+	err = bt_le_per_adv_list_add(&peer_id_addr, per_sid);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	printk("Creating Periodic Advertising Sync 4 after sync lost...");
 	is_sync = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
-	sync_create_param.options = 0;
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
