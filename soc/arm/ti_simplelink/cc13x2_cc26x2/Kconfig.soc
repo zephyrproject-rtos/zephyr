@@ -18,6 +18,11 @@ endchoice
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC13X2_CC26X2
 
+config CC13X2_CC26X2_BOOST_MODE
+	bool "Radio boost mode (VDDR_HH)"
+	help
+	  Enable the radio boost mode +14dBm (sets CCFG_FORCE_VDDR_HH to 1).
+
 config CC13X2_CC26X2_BOOTLOADER_ENABLE
 	bool "ROM bootloader"
 	help
