@@ -47,7 +47,9 @@ struct bt_vcs_client {
 	uint16_t control_handle;
 	uint16_t flag_handle;
 	struct bt_gatt_subscribe_params state_sub_params;
+	struct bt_gatt_discover_params state_sub_disc_params;
 	struct bt_gatt_subscribe_params flag_sub_params;
+	struct bt_gatt_discover_params flag_sub_disc_params;
 	bool cp_retried;
 
 	bool busy;
