@@ -981,14 +981,18 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
  *  called and no audio information (BIGInfo) will be visible to scanners
  *  (see bt_le_per_adv_sync_cb).
  *
- *  @param[in]  chan        Channel object being used for the broadcaster.
+ *  @param[in]  chans       Array of channel objects being used for the
+ *                          broadcaster. This array shall remain valid for the
+ *                          duration of the broadcast source.
+ *  @param[in]  num_chan    Number of channels in @p chans.
  *  @param[in]  codec       Codec configuration.
  *  @param[in]  qos         Quality of Service configuration
  *  @param[out] source      Pointer to the broadcast source created
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcast_source_create(struct bt_audio_chan *chan,
+int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
+				     uint8_t num_chan,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **source);
