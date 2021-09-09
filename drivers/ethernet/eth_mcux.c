@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <drivers/ptp_clock.h>
-#include <net/gptp.h>
 #endif
 
 #if IS_ENABLED(CONFIG_NET_DSA)
@@ -831,7 +830,7 @@ error:
 	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
 }
 
-#if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_L2_PTP)
 static inline void ts_register_tx_event(struct eth_context *context,
 					 enet_frame_info_t *frameinfo)
 {
@@ -863,7 +862,7 @@ static inline void ts_register_tx_event(struct eth_context *context,
 		ts_tx_rd = 0;
 	}
 }
-#endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_L2_PTP */
 
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 #if FSL_FEATURE_ENET_QUEUE > 1
@@ -878,10 +877,10 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		eth_rx(context);
 		break;
 	case kENET_TxEvent:
-#if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_MCUX) && defined(CONFIG_NET_L2_PTP)
 		/* Register event */
 		ts_register_tx_event(context, frameinfo);
-#endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_GPTP */
+#endif /* CONFIG_PTP_CLOCK_MCUX && CONFIG_NET_L2_PTP */
 
 		/* Free the TX buffer. */
 		k_sem_give(&context->tx_buf_sem);
@@ -910,7 +909,8 @@ static void eth_mcux_init(const struct device *dev)
 	enet_config_t enet_config;
 	uint32_t sys_clock;
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	uint8_t ptp_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
+	uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
+	uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
 #endif
 #if defined(CONFIG_MDNS_RESPONDER) || defined(CONFIG_MDNS_RESOLVER)
 	/* standard multicast MAC address */
@@ -960,6 +960,7 @@ static void eth_mcux_init(const struct device *dev)
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	ENET_AddMulticastGroup(context->base, ptp_multicast);
+	ENET_AddMulticastGroup(context->base, ptp_peer_multicast);
 
 	context->ptp_config.channel = kENET_PtpTimerChannel1;
 	context->ptp_config.ptp1588ClockSrc_Hz =
