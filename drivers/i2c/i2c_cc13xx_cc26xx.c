@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(i2c_cc13xx_cc26xx);
 
 #include <driverlib/i2c.h>
 #include <driverlib/ioc.h>
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 
 #include <ti/drivers/Power.h>
@@ -391,7 +392,7 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	}
 
 	/* I2C should not be accessed until power domain is on. */
-	while (PRCMPowerDomainStatus(PRCM_DOMAIN_SERIAL) !=
+	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_SERIAL) !=
 	       PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}

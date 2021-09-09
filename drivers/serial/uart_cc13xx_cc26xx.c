@@ -14,6 +14,7 @@
 #include <drivers/uart.h>
 
 #include <driverlib/ioc.h>
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 #include <driverlib/uart.h>
 
@@ -504,7 +505,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		}							\
 									     \
 		/* UART should not be accessed until power domain is on. */  \
-		while (PRCMPowerDomainStatus(domain) !=			     \
+		while (PRCMPowerDomainsAllOn(domain) !=			     \
 			PRCM_DOMAIN_POWER_ON) {				     \
 			continue;					     \
 		}							     \

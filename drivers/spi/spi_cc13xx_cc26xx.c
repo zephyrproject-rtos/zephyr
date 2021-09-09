@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 #include <pm/device.h>
 #include <pm/pm.h>
 
+#include <driverlib/rom.h>
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>
 #include <driverlib/ioc.h>
@@ -286,7 +287,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		}							  \
 									  \
 		/* SSI should not be accessed until power domain is on. */\
-		while (PRCMPowerDomainStatus(domain) !=			  \
+		while (PRCMPowerDomainsAllOn(domain) !=			  \
 			PRCM_DOMAIN_POWER_ON) {				  \
 			continue;					  \
 		}							  \
