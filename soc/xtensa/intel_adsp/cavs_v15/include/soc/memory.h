@@ -6,6 +6,8 @@
 #ifndef __INC_MEMORY_H
 #define __INC_MEMORY_H
 
+#include <cavs-vectors.h>
+
 /* L2 HP SRAM */
 #define HP_RAM_RESERVE_HEADER_SPACE	(HP_SRAM_WIN0_SIZE + \
 					 SRAM_INBOX_SIZE + \
@@ -19,58 +21,6 @@
 
 #define SRAM_BASE (L2_SRAM_BASE)
 #define SRAM_SIZE (L2_SRAM_SIZE)
-
-/* The reset vector address in SRAM and its size */
-#define XCHAL_RESET_VECTOR0_PADDR_SRAM		SRAM_BASE
-#define MEM_RESET_TEXT_SIZE			0x268
-#define MEM_RESET_LIT_SIZE			0x8
-
-/* This is the base address of all the vectors defined in SRAM */
-#define XCHAL_VECBASE_RESET_PADDR_SRAM \
-	(SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE)
-
-#define MEM_VECBASE_LIT_SIZE			0x178
-
-/* The addresses of the vectors in SRAM.
- * Only the memerror vector continues to point to its ROM address.
- */
-#define XCHAL_INTLEVEL2_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x180)
-
-#define XCHAL_INTLEVEL3_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x1C0)
-
-#define XCHAL_INTLEVEL4_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x200)
-
-#define XCHAL_INTLEVEL5_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x240)
-
-#define XCHAL_INTLEVEL6_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x280)
-
-#define XCHAL_INTLEVEL7_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x2C0)
-
-#define XCHAL_KERNEL_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x300)
-
-#define XCHAL_USER_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x340)
-
-#define XCHAL_DOUBLEEXC_VECTOR_PADDR_SRAM \
-	(XCHAL_VECBASE_RESET_PADDR_SRAM + 0x3C0)
-
-#define VECTOR_TBL_SIZE				0x0400
-
-/* Vector and literal sizes */
-#define MEM_VECT_LIT_SIZE			0x8
-#define MEM_VECT_TEXT_SIZE			0x38
-#define MEM_VECT_SIZE				(MEM_VECT_TEXT_SIZE +\
-						MEM_VECT_LIT_SIZE)
-
-#define MEM_ERROR_TEXT_SIZE			0x180
-#define MEM_ERROR_LIT_SIZE			0x8
 
 /* text and data share the same L2 HP SRAM.
  * So, they lie next to each other.
