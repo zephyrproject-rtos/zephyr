@@ -307,6 +307,18 @@
 			status = "disabled";
 			label= "I2C_2";
 		};
+
+		lptim1: timers@46004400 {
+			compatible = "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x46004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
+			interrupts = <67 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+			label = "LPTIM_1";
+		};
 	};
 };
 
