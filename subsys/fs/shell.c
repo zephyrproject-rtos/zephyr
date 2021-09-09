@@ -29,6 +29,7 @@ static struct fs_mount_t fatfs_mnt = {
 #endif
 /* LITTLEFS */
 #ifdef CONFIG_FILE_SYSTEM_LITTLEFS
+#ifdef CONFIG_FS_LITTLEFS_FLASH_BACKEND
 #include <fs/littlefs.h>
 #include <storage/flash_map.h>
 
@@ -38,6 +39,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.fs_data = &lfs_data,
 	.storage_dev = (void *)FLASH_AREA_ID(storage),
 };
+#endif
 #endif
 
 #define BUF_CNT 64
@@ -475,7 +477,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 }
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+	|| (defined(CONFIG_FILE_SYSTEM_LITTLEFS) && defined(CONFIG_FS_LITTLEFS_FLASH_BACKEND))
 static char *mntpt_prepare(char *mntpt)
 {
 	char *cpy_mntpt;
@@ -516,7 +518,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 }
 #endif
 
-#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS) && defined(CONFIG_FS_LITTLEFS_FLASH_BACKEND)
 
 static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **argv)
 {
@@ -545,7 +547,7 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 #endif
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+	|| (defined(CONFIG_FILE_SYSTEM_LITTLEFS) && defined(CONFIG_FS_LITTLEFS_FLASH_BACKEND))
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
@@ -568,7 +570,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+	|| (defined(CONFIG_FILE_SYSTEM_LITTLEFS) && defined(CONFIG_FS_LITTLEFS_FLASH_BACKEND))
 	SHELL_CMD(mount, &sub_fs_mount,
 		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif

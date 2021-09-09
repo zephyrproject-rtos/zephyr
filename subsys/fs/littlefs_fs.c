@@ -117,41 +117,6 @@ static int lfs_to_errno(int error)
 	}
 }
 
-static int errno_to_lfs(int error)
-{
-	if (error >= 0) {
-		return LFS_ERR_OK;
-	}
-
-	switch (error) {
-	default:
-	case -EIO:              /* Error during device operation */
-		return LFS_ERR_IO;
-	case -EFAULT:		/* Corrupted */
-		return LFS_ERR_CORRUPT;
-	case -ENOENT:           /* No directory entry */
-		return LFS_ERR_NOENT;
-	case -EEXIST:           /* Entry already exists */
-		return LFS_ERR_EXIST;
-	case -ENOTDIR:          /* Entry is not a dir */
-		return LFS_ERR_NOTDIR;
-	case -EISDIR:           /* Entry is a dir */
-		return LFS_ERR_ISDIR;
-	case -ENOTEMPTY:        /* Dir is not empty */
-		return LFS_ERR_NOTEMPTY;
-	case -EBADF:            /* Bad file number */
-		return LFS_ERR_BADF;
-	case -EFBIG:            /* File too large */
-		return LFS_ERR_FBIG;
-	case -EINVAL:           /* Invalid parameter */
-		return LFS_ERR_INVAL;
-	case -ENOSPC:           /* No space left on device */
-		return LFS_ERR_NOSPC;
-	case -ENOMEM:           /* No more memory available */
-		return LFS_ERR_NOMEM;
-	}
-}
-
 static void release_file_data(struct fs_file_t *fp)
 {
 	struct lfs_file_data *fdp = fp->filep;
@@ -518,6 +483,41 @@ int fs_littlefs_sync(const struct lfs_config *c)
 }
 
 #if defined(CONFIG_FS_LITTLEFS_FLASH_BACKEND)
+static int errno_to_lfs(int error)
+{
+	if (error >= 0) {
+		return LFS_ERR_OK;
+	}
+
+	switch (error) {
+	default:
+	case -EIO:              /* Error during device operation */
+		return LFS_ERR_IO;
+	case -EFAULT:		/* Corrupted */
+		return LFS_ERR_CORRUPT;
+	case -ENOENT:           /* No directory entry */
+		return LFS_ERR_NOENT;
+	case -EEXIST:           /* Entry already exists */
+		return LFS_ERR_EXIST;
+	case -ENOTDIR:          /* Entry is not a dir */
+		return LFS_ERR_NOTDIR;
+	case -EISDIR:           /* Entry is a dir */
+		return LFS_ERR_ISDIR;
+	case -ENOTEMPTY:        /* Dir is not empty */
+		return LFS_ERR_NOTEMPTY;
+	case -EBADF:            /* Bad file number */
+		return LFS_ERR_BADF;
+	case -EFBIG:            /* File too large */
+		return LFS_ERR_FBIG;
+	case -EINVAL:           /* Invalid parameter */
+		return LFS_ERR_INVAL;
+	case -ENOSPC:           /* No space left on device */
+		return LFS_ERR_NOSPC;
+	case -ENOMEM:           /* No more memory available */
+		return LFS_ERR_NOMEM;
+	}
+}
+
 int fs_littlefs_flash_read(const struct lfs_config *c, lfs_block_t block,
 			lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -633,7 +633,53 @@ size_t fs_littlefs_flash_get_size(void *context)
 
 	return flash_area->fa_size;
 }
-#endif /* CONFIG_FS_LITTLEFS_FLASH_BACKEND */
+#else /* CONFIG_FS_LITTLEFS_FLASH_BACKEND */
+int fs_littlefs_flash_read(const struct lfs_config *c, lfs_block_t block,
+			lfs_off_t off, void *buffer, lfs_size_t size)
+{
+	return -ENOSYS;
+}
+
+int fs_littlefs_flash_program(const struct lfs_config *c, lfs_block_t block,
+			lfs_off_t off, const void *buffer, lfs_size_t size)
+{
+	return -ENOSYS;
+}
+
+int fs_littlefs_flash_erase(const struct lfs_config *c, lfs_block_t block)
+{
+	return -ENOSYS;
+}
+
+int fs_littlefs_flash_sync(const struct lfs_config *c)
+{
+	return -ENOSYS;
+}
+
+int fs_littlefs_flash_open(void **context, uintptr_t area_id)
+{
+	return -ENOSYS;
+}
+
+void fs_littlefs_flash_close(void *context)
+{
+}
+
+/* Iterate over all page groups in the flash area and return the
+ * largest page size we see.  This works as long as the partition is
+ * aligned so that erasing with this size is supported throughout the
+ * partition.
+ */
+size_t fs_littlefs_flash_get_block_size(void *context)
+{
+	return 0;
+}
+
+size_t fs_littlefs_flash_get_size(void *context)
+{
+	return 0;
+}
+#endif /* !CONFIG_FS_LITTLEFS_FLASH_BACKEND */
 
 static int lfs_config_initialize_values(struct lfs_config *lcp,
 	lfs_device_get_size device_get_size, lfs_device_get_block_size device_get_block_size)
