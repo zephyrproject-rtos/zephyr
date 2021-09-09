@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2021 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_K(64)>;
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lfs";
+			partition = <&lfs_part>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(64)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lfs_part: partition@0 {
+			label = "littlefs";
+			reg = <0x00000000 0x00010000>;
+		};
+	};
+};

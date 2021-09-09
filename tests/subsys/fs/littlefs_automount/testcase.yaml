@@ -1,0 +1,7 @@
+common:
+    tags: filesystem
+    platform_allow: native_posix native_posix_64
+
+tests:
+  filesystem.littlefs_automount:
+    timeout: 60
