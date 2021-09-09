@@ -182,7 +182,7 @@ static bool is_rodata(const void *addr)
  */
 static void detect_missed_strdup(struct log_msg *msg)
 {
-#define ERR_MSG	"argument %d in source %s log message \"%s\" missing" \
+#define ERR_MSG	"argument %d in source %s log message \"%s\" missing " \
 		"log_strdup()."
 	uint32_t idx;
 	const char *str;
