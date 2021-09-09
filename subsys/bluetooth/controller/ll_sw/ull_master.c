@@ -641,6 +641,44 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+int ull_master_reset(void)
+{
+	int err;
+	void *rx;
+
+	err = ll_connect_disable(&rx);
+	if (!err) {
+		struct ll_scan_set *scan;
+
+		scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+		    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+			struct ll_scan_set *scan_other;
+
+			scan_other =
+				ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+			if (scan_other) {
+				if (scan) {
+					scan->is_enabled = 0U;
+					scan->lll.conn = NULL;
+				}
+
+				scan = scan_other;
+			}
+		}
+
+		LL_ASSERT(scan);
+
+		scan->is_enabled = 0U;
+		scan->lll.conn = NULL;
+	}
+
+	ARG_UNUSED(rx);
+
+	return err;
+}
+
 void ull_master_cleanup(struct node_rx_hdr *rx_free)
 {
 	struct lll_conn *conn_lll;
