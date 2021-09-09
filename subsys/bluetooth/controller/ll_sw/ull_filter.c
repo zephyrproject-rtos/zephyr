@@ -1014,8 +1014,12 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
+	/* NOTE: Allowed when passive scanning, otherwise deny if advertising,
+	 *       active scanning, initiating or periodic sync create is active.
+	 */
 	return ((IS_ENABLED(CONFIG_BT_BROADCASTER) && ull_adv_is_enabled(0)) ||
-		(IS_ENABLED(CONFIG_BT_OBSERVER) && ull_scan_is_enabled(0)))
+		(IS_ENABLED(CONFIG_BT_OBSERVER) &&
+		 (ull_scan_is_enabled(0) & ~BIT(0))))
 		? 0 : 1;
 }
 
