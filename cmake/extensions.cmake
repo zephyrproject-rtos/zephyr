@@ -426,6 +426,17 @@ endmacro()
 
 # Provides amend functionality to a Zephyr library for out-of-tree usage.
 #
+# Usage:
+#   zephyr_library_amend([<name>])
+#
+# When called with a library name, then the library must already have been
+# defined in the build system.
+# Afterwards, additional source may be amended to the existing library.
+#
+# Example:
+#   zephyr_library_amend(foo)
+#   zephyr_library_sources(bar.c)
+#
 # When called from a Zephyr module, the corresponding zephyr library defined
 # within Zephyr will be looked up.
 #
@@ -452,16 +463,20 @@ endmacro()
 # expressions.
 #
 macro(zephyr_library_amend)
-  # This is a macro because we need to ensure the ZEPHYR_CURRENT_LIBRARY and
-  # following zephyr_library_* calls are executed within the scope of the
-  # caller.
-  if(NOT ZEPHYR_CURRENT_MODULE_DIR)
-    message(FATAL_ERROR "Function only available for Zephyr modules.")
+  if(${ARGC} GREATER 0)
+    set(ZEPHYR_CURRENT_LIBRARY ${ARGV1})
+  else()
+    # This is a macro because we need to ensure the ZEPHYR_CURRENT_LIBRARY and
+    # following zephyr_library_* calls are executed within the scope of the
+    # caller.
+    if(NOT ZEPHYR_CURRENT_MODULE_DIR)
+      message(FATAL_ERROR "Function only available for Zephyr modules.")
+    endif()
+
+    zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
+
+    set(ZEPHYR_CURRENT_LIBRARY ${lib_name})
   endif()
-
-  zephyr_library_get_current_dir_lib_name(${ZEPHYR_CURRENT_MODULE_DIR} lib_name)
-
-  set(ZEPHYR_CURRENT_LIBRARY ${lib_name})
 endmacro()
 
 function(zephyr_link_interface interface)
