@@ -49,7 +49,7 @@ struct bt_audio_broadcast_source {
 
 struct bt_audio_broadcast_sink {
 	uint8_t index; /* index of broadcast_snks array */
-	uint8_t bis_count;
+	uint8_t chan_count;
 	uint8_t subgroup_count;
 	uint16_t pa_interval;
 	uint16_t iso_interval;
@@ -62,8 +62,8 @@ struct bt_audio_broadcast_sink {
 	struct bt_audio_capability *cap; /* Capability that accepted the PA sync */
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
-	/* The "main" channel used to create the broadcast sink */
-	struct bt_audio_chan *chan;
+	/* The channels used to create the broadcast sink */
+	struct bt_audio_chan *chans;
 };
 
 struct bt_audio_ep {
