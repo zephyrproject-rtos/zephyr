@@ -356,7 +356,7 @@ _restore_\@:
  * with a simple jump instruction.
  */
 .macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM
-#if defined(CONFIG_IMX) && (MEM_VECT_TEXT_SIZE <= 0x1C)
+#if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 .pushsection .iram.text, "ax"
 .global _Level\LVL\()VectorHelper
 _Level\LVL\()VectorHelper :
@@ -425,7 +425,7 @@ _after_imms\LVL:
 	jx a0
 .popsection
 
-#if defined(CONFIG_IMX) && (MEM_VECT_TEXT_SIZE <= 0x1C)
+#if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 .if \LVL == 1
 .pushsection .iram0.text, "ax"
 .elseif \LVL == XCHAL_DEBUGLEVEL

@@ -90,4 +90,12 @@ config XTENSA_WAITI_BUG
 	  platforms which prefixes a WAITI entry with 128 NOP
 	  instructions followed by an ISYNC and EXTW.
 
+config XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	bool "Enable workaround for small vector table entries"
+	help
+	  This option enables a small indirection to bypass the size
+	  constraint of the vector table entry and moved the default
+	  handlers to the end of vector table, renaming them to
+	  _Level\LVL\()VectorHelper.
+
 endmenu
