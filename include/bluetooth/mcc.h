@@ -155,6 +155,15 @@ typedef void (*bt_mcc_segments_obj_id_read_cb)(struct bt_conn *conn,
 typedef void (*bt_mcc_current_track_obj_id_read_cb)(struct bt_conn *conn,
 						      int err, uint64_t id);
 
+/** @brief Callback function for mcc_set_current_track_obj_id
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param id            The Object ID (UINT48) written (or attempted to write)
+ */
+typedef void (*bt_mcc_current_track_obj_id_set_cb)(struct bt_conn *conn, int err,
+						   uint64_t id);
+
 /** @brief Callback function for mcc_next_track_obj_id_obj_read
  *
  * @param conn          The connection that was used to initialise MCC
@@ -164,6 +173,15 @@ typedef void (*bt_mcc_current_track_obj_id_read_cb)(struct bt_conn *conn,
 typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn,
 						   int err, uint64_t id);
 
+/** @brief Callback function for mcc_set_next_track_obj_id
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param id            The Object ID (UINT48) written (or attempted to write)
+ */
+typedef void (*bt_mcc_next_track_obj_id_set_cb)(struct bt_conn *conn, int err,
+						uint64_t id);
+
 /** @brief Callback function for mcc_current_group_obj_id_read
  *
  * @param conn          The connection that was used to initialise MCC
@@ -172,6 +190,15 @@ typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn,
  */
 typedef void (*bt_mcc_current_group_obj_id_read_cb)(struct bt_conn *conn,
 						      int err, uint64_t id);
+
+/** @brief Callback function for mcc_set_current_group_obj_id
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param id            The Object ID (UINT48) written (or attempted to write)
+ */
+typedef void (*bt_mcc_current_group_obj_id_set_cb)(struct bt_conn *conn, int err,
+						   uint64_t obj_id);
 
 /** @brief Callback function for mcc_parent_group_obj_id_read
  *
@@ -398,8 +425,11 @@ struct bt_mcc_cb {
 #ifdef CONFIG_BT_OTC
 	bt_mcc_segments_obj_id_read_cb           segments_obj_id_read;
 	bt_mcc_current_track_obj_id_read_cb      current_track_obj_id_read;
+	bt_mcc_current_track_obj_id_set_cb       current_track_obj_id_set;
 	bt_mcc_next_track_obj_id_read_cb         next_track_obj_id_read;
+	bt_mcc_next_track_obj_id_set_cb          next_track_obj_id_set;
 	bt_mcc_current_group_obj_id_read_cb      current_group_obj_id_read;
+	bt_mcc_current_group_obj_id_set_cb       current_group_obj_id_set;
 	bt_mcc_parent_group_obj_id_read_cb       parent_group_obj_id_read;
 #endif /* CONFIG_BT_OTC */
 	bt_mcc_playing_order_read_cb	         playing_order_read;
@@ -500,11 +530,35 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn);
 /** @brief Read Current Track Object ID */
 int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
 
+/** @brief Set Current Track Object ID
+ *
+ * Set the Current Track to the the track given by the @p id parameter
+ *
+ * @param id   Object Transfer Service ID (UINT48) of the track to set as the current track
+ */
+int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t id);
+
 /** @brief Read Next Track Object ID */
 int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
 
+/** @brief Set Next Track Object ID
+ *
+ * Set the Next Track to the the track given by the @p id parameter
+ *
+ * @param id   Object Transfer Service ID (UINT48) of the track to set as the next track
+ */
+int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t id);
+
 /** @brief Read Current Group Object ID */
 int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
+
+/** @brief Set Current Group Object ID
+ *
+ * Set the Current Group to the the group given by the @p id parameter
+ *
+ * @param id   Object Transfer Service ID (UINT48) of the group to set as the current group
+ */
+int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t id);
 
 /** @brief Read Parent Group Object ID */
 int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn);
