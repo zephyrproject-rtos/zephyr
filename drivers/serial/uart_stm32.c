@@ -459,8 +459,6 @@ static void uart_stm32_poll_out(const struct device *dev,
 	/* do not allow system to suspend until transmission has completed */
 	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 
-	LL_USART_ClearFlag_TC(UartInstance);
-
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
 }
 
