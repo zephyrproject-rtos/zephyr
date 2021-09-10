@@ -1709,14 +1709,16 @@ static void dns_work_cb(struct k_work *work)
 	struct dns_resolve_context *dnsCtx;
 	static const char * const dns_servers_str[] = { ictx.dns_string, NULL };
 
-	/* set new DNS addr in DNS resolver */
-	LOG_DBG("Refresh DNS resolver");
-	dnsCtx = dns_resolve_get_default();
+	if (ictx.iface && net_if_is_up(ictx.iface)) {
+		/* set new DNS addr in DNS resolver */
+		LOG_DBG("Refresh DNS resolver");
+		dnsCtx = dns_resolve_get_default();
 
-	ret = dns_resolve_reconfigure(dnsCtx, dns_servers_str, NULL);
-	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
-		return;
+		ret = dns_resolve_reconfigure(dnsCtx, dns_servers_str, NULL);
+		if (ret < 0) {
+			LOG_ERR("dns_resolve_init fail (%d)", ret);
+			return;
+		}
 	}
 #endif
 }
