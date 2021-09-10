@@ -1255,7 +1255,6 @@ static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
 
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static bool chans_linked;
 	uint32_t bis_bitfield;
 	int err;
 
@@ -1274,24 +1273,8 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!chans_linked) {
-		/* We can just link all broadcast sink channels once, as it
-		 * doesn't matter if we provide too many channels to the API,
-		 * as long as we provide enough.
-		 */
-
-		/* Link all channels */
-		for (int i = 0; i < ARRAY_SIZE(broadcast_sink_chans); i++) {
-			for (int j = i + 1; j < ARRAY_SIZE(broadcast_sink_chans); j++) {
-				bt_audio_chan_link(&broadcast_sink_chans[i],
-						   &broadcast_sink_chans[j]);
-			}
-		}
-		chans_linked = true;
-	}
-
 	err = bt_audio_broadcast_sink_sync(default_sink, bis_bitfield,
-				      broadcast_sink_chans, NULL);
+					   broadcast_sink_chans, NULL);
 	if (err != 0) {
 		shell_error(sh, "Failed to sync to broadcast: %d", err);
 		return err;
