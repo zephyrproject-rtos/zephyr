@@ -116,7 +116,7 @@ struct bt_mesh_prov_link {
 	uint8_t dhkey[BT_DH_KEY_LEN];   /* Calculated DHKey */
 	uint8_t expect;                 /* Next expected PDU */
 
-	uint8_t conf[16];               /* Remote Confirmation */
+	uint8_t conf[16];               /* Local/Remote Confirmation */
 	uint8_t rand[16];               /* Local Random */
 
 	uint8_t conf_salt[16];          /* ConfirmationSalt */
