@@ -40,10 +40,10 @@ config NET_L2_BT_SEC_LEVEL
 	range 1 4
 	help
 	  Security level of Bluetooth Link:
-	  Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
-	  Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
-	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
-	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
+	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_L2) = Only encryption required
+	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_L4) = LE Secure Connection required
 
 module = NET_L2_BT
 module-dep = NET_LOG
