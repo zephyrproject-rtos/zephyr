@@ -211,6 +211,21 @@ static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err,
 }
 
 
+static void mcc_current_track_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	char str[BT_OTS_OBJ_ID_STR_LEN];
+
+	if (err) {
+		shell_error(ctx_shell, "Current Track Object ID set failed (%d)", err);
+		return;
+	}
+
+	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+	shell_print(ctx_shell, "Current Track Object ID written: %s", str);
+}
+
+
 static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 					  uint64_t id)
 {
@@ -233,6 +248,21 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 }
 
 
+static void mcc_next_track_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	char str[BT_OTS_OBJ_ID_STR_LEN];
+
+	if (err) {
+		shell_error(ctx_shell, "Next Track Object ID set failed (%d)", err);
+		return;
+	}
+
+	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+	shell_print(ctx_shell, "Next Track Object ID written: %s", str);
+}
+
+
 static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
@@ -249,6 +279,21 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 
 	obj_ids.current_group_obj_id = id;
 }
+
+static void mcc_current_group_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	char str[BT_OTS_OBJ_ID_STR_LEN];
+
+	if (err) {
+		shell_error(ctx_shell, "Current Group Object ID set failed (%d)", err);
+		return;
+	}
+
+	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+	shell_print(ctx_shell, "Current Group Object ID written: %s", str);
+}
+
 
 static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
@@ -539,8 +584,11 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 #ifdef CONFIG_BT_MCC_OTS
 	cb.segments_obj_id_read      = &mcc_segments_obj_id_read_cb;
 	cb.current_track_obj_id_read = &mcc_current_track_obj_id_read_cb;
+	cb.current_track_obj_id_set  = &mcc_current_track_obj_id_set_cb;
 	cb.next_track_obj_id_read    = &mcc_next_track_obj_id_read_cb;
+	cb.next_track_obj_id_set     = &mcc_next_track_obj_id_set_cb;
 	cb.current_group_obj_id_read = &mcc_current_group_obj_id_read_cb;
+	cb.current_group_obj_id_set  = &mcc_current_group_obj_id_set_cb;
 	cb.parent_group_obj_id_read  = &mcc_parent_group_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 	cb.playing_order_read	     = &mcc_playing_order_read_cb;
@@ -751,6 +799,21 @@ int cmd_mcc_read_current_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
+int cmd_mcc_set_current_track_obj_id(const struct shell *sh, size_t argc,
+				      char *argv[])
+{
+	int result;
+	uint64_t id = strtoul(argv[1], NULL, 0);
+
+	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+
+	result = bt_mcc_set_current_track_obj_id(default_conn, id);
+	if (result) {
+		shell_print(sh, "Fail: %d", result);
+	}
+	return result;
+}
+
 int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
@@ -763,6 +826,21 @@ int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 	return result;
 }
 
+int cmd_mcc_set_next_track_obj_id(const struct shell *sh, size_t argc,
+				  char *argv[])
+{
+	int result;
+	uint64_t id = strtoul(argv[1], NULL, 0);
+
+	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+
+	result = bt_mcc_set_next_track_obj_id(default_conn, id);
+	if (result) {
+		shell_print(sh, "Fail: %d", result);
+	}
+	return result;
+}
+
 int cmd_mcc_read_current_group_obj_id(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
@@ -771,6 +849,21 @@ int cmd_mcc_read_current_group_obj_id(const struct shell *sh, size_t argc,
 	result = bt_mcc_read_current_group_obj_id(default_conn);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
+	}
+	return result;
+}
+
+int cmd_mcc_set_current_group_obj_id(const struct shell *sh, size_t argc,
+				      char *argv[])
+{
+	int result;
+	uint64_t id = strtoul(argv[1], NULL, 0);
+
+	id = id & 0x0000FFFFFFFFFFFFUL; /* 48 bits only */
+
+	result = bt_mcc_set_current_group_obj_id(default_conn, id);
+	if (result) {
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
@@ -1348,12 +1441,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(read_current_track_obj_id, NULL,
 		      "Read Current Track Object ID",
 		      cmd_mcc_read_current_track_obj_id, 1, 0),
+	SHELL_CMD_ARG(set_current_track_obj_id, NULL,
+		      "Set Current Track Object ID <id: 48 bits or less>",
+		      cmd_mcc_set_current_track_obj_id, 2, 0),
 	SHELL_CMD_ARG(read_next_track_obj_id, NULL,
 		      "Read Next Track Object ID",
 		      cmd_mcc_read_next_track_obj_id, 1, 0),
+	SHELL_CMD_ARG(set_next_track_obj_id, NULL,
+		      "Set Next Track Object ID <id: 48 bits or less>",
+		      cmd_mcc_set_next_track_obj_id, 2, 0),
 	SHELL_CMD_ARG(read_current_group_obj_id, NULL,
 		      "Read Current Group Object ID",
 		      cmd_mcc_read_current_group_obj_id, 1, 0),
+	SHELL_CMD_ARG(set_current_group_obj_id, NULL,
+		      "Set Current Group Object ID <id: 48 bits or less>",
+		      cmd_mcc_set_current_group_obj_id, 2, 0),
 	SHELL_CMD_ARG(read_parent_group_obj_id, NULL,
 		      "Read Parent Group Object ID",
 		      cmd_mcc_read_parent_group_obj_id, 1, 0),
