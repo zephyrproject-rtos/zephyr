@@ -136,6 +136,10 @@ int task_wdt_init(const struct device *hw_wdt)
 
 		hw_wdt_dev = hw_wdt;
 		hw_wdt_channel = wdt_install_timeout(hw_wdt_dev, &wdt_config);
+		if (hw_wdt_channel < 0) {
+			LOG_ERR("hw_wdt install timeout failed: %d", hw_wdt_channel);
+			return hw_wdt_channel;
+		}
 #else
 		return -ENOTSUP;
 #endif
