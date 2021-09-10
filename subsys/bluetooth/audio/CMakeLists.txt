@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
-
 if (CONFIG_BT_VOCS OR CONFIG_BT_VOCS_CLIENT)
 	zephyr_library_sources(vocs.c)
 endif()
@@ -21,5 +19,3 @@ if (CONFIG_BT_MICS OR CONFIG_BT_MICS_CLIENT)
 	zephyr_library_sources(mics.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
-
-zephyr_library_link_libraries(subsys__bluetooth)
