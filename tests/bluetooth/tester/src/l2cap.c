@@ -152,7 +152,8 @@ static struct channel *get_free_channel()
 		chan = &channels[i];
 		chan->chan_id = i;
 
-		channels[i].in_use = true;
+		chan->in_use = true;
+		chan->stalled = true;
 
 		return chan;
 	}
