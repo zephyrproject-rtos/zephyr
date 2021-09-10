@@ -26,16 +26,12 @@ zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC	eth_sam_gmac.c)
 zephyr_library_sources_ifdef(CONFIG_DSA_KSZ8XXX		dsa_ksz8xxx.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
-	zephyr_library_named(drivers__ethernet__native_posix)
-	zephyr_library_compile_definitions(
-		NO_POSIX_CHEATS
-		_BSD_SOURCE
-		_DEFAULT_SOURCE
-		)
-	zephyr_library_sources(
-		eth_native_posix.c
-		eth_native_posix_adapt.c
-		)
+  set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
+  set_source_files_properties(${native_posix_source_files}
+    PROPERTIES COMPILE_DEFINITIONS
+    "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
+  )
+  zephyr_library_sources(${native_posix_source_files})
 endif()
 
 add_subdirectory(phy)
