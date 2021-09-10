@@ -2332,7 +2332,6 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 					      struct bt_codec *codec)
 {
 	static struct bt_iso_chan_io_qos sink_chan_io_qos;
-	static struct bt_iso_chan_qos sink_chan_qos;
 	static struct bt_codec_qos codec_qos;
 	struct bt_audio_ep *ep;
 	int err;
@@ -2348,12 +2347,13 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 		return -ENOMEM;
 	}
 
+	chan_attach(NULL, chan, ep, NULL, codec);
 	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
-	sink_chan_qos.rx = &sink_chan_io_qos;
-
-	chan_attach(NULL, chan, ep, NULL, codec);
+	chan->iso->qos->rx = &sink_chan_io_qos;
+	chan->iso->qos->tx = NULL;
+	codec_qos.dir = BT_CODEC_QOS_IN;
 	chan->qos = &codec_qos;
 	err = codec_qos_to_iso_qos(chan->iso->qos, &codec_qos);
 	if (err) {
