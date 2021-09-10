@@ -236,6 +236,10 @@ enum sensor_trigger_type {
 	/** Trigger fires when a free fall is detected. */
 	SENSOR_TRIG_FREEFALL,
 
+
+	/** Trigger fires when FIFO is (near) full. */
+	SENSOR_TRIG_FIFO,
+
 	/**
 	 * Number of all common sensor triggers.
 	 */

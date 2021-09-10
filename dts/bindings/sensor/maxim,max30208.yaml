@@ -1,0 +1,78 @@
+# Copyright (c) 2021, Silvano Cortesi
+# Copyright (c) 2021, ETH Zürich
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX30208 digital temperature sensor
+
+compatible: "maxim,max30208"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The INT signal defaults to active low open drain, so requires a
+        pull-up on the board or in the flags cell of this entry.
+    fifo-a-full:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Set the trigger for the FIFO_A_FULL interrupt (e.g. if set to 2,
+        then the flag is set when the 30th word is written to the FIFO).
+        Range: 0-31, Default: 0, same as after Power Reset
+    fifo-rollover-en:
+      type: boolean
+      required: false
+      description: |
+        Controls the behavior of the FIFO when the FIFO becomes completely
+        filled with data. If set, the FIFO address rolls over to zero and the
+        FIFO continues to fill with new data. If not set, then the FIFO is
+        not updated until FIFO_DATA is read or the WRITE/READ pointer
+        positions are changed.
+    fifo-a-full-type:
+      type: boolean
+      required: false
+      description: |
+        If false, then the A_FULL status bit is asserted on each sample for
+        which the condition persists. If true, then the bit is asserted only
+        once until the next A_FULL condition.
+    fifo-stat-clr:
+      type: boolean
+      required: false
+      description: |
+        If true, then A_FULL and TEMP_RDY bit are cleared by a FIFO_DATA register read.
+    gpio0-mode:
+      type: int
+      required: false
+      default: 2
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+      description: |
+        The mode for GPIO0.
+        0 = High impedance input
+        1 = Output (open-drain)
+        2 = Input with 1MOhm pulldown
+        3 = Interrupt output (active low)
+        Default: 2, same as after Power Reset
+    gpio1-mode:
+      type: int
+      required: false
+      default: 2
+      enum:
+       - 0
+       - 1
+       - 2
+       - 3
+      description: |
+        The mode for GPIO1.
+        0 = High impedance input
+        1 = Output (open-drain)
+        2 = Input with 1MOhm pulldown
+        3 = Convert Temperature input (active low)
+        Default: 2, same as after Power Reset
