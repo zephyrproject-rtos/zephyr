@@ -4767,7 +4767,7 @@ reboot:
 	SEND_AT_CMD_EXPECT_OK("AT+KHWIOCFG=3,1,6");
 
 	/* Turn on sleep mode */
-	SEND_AT_CMD_EXPECT_OK("AT+KSLEEP=0,2,10");
+	SEND_AT_CMD_EXPECT_OK("AT+KSLEEP=1,2,10");
 
 #if CONFIG_MODEM_HL7800_PSM
 	/* Turn off eDRX */
