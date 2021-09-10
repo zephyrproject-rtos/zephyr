@@ -589,10 +589,10 @@ config NET_SLIP_TAP
 	bool "TAP SLIP driver"
 	depends on NET_QEMU_SLIP
 	depends on NET_NATIVE
-	select SLIP
+	depends on SLIP
+	depends on SLIP_TAP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
-	select SLIP_TAP
 	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BT)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
