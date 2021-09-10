@@ -317,11 +317,13 @@ static void send_confirm(void)
 
 	if (bt_mesh_prov_conf(bt_mesh_prov_link.conf_key,
 			      bt_mesh_prov_link.rand, bt_mesh_prov_link.auth,
-			      net_buf_simple_add(&cfm, 16))) {
+			      bt_mesh_prov_link.conf)) {
 		BT_ERR("Unable to generate confirmation value");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
+
+	net_buf_simple_add_mem(&cfm, bt_mesh_prov_link.conf, 16);
 
 	if (bt_mesh_prov_send(&cfm, NULL)) {
 		BT_ERR("Failed to send Provisioning Confirm");
@@ -629,6 +631,12 @@ static void prov_random(const uint8_t *data)
 static void prov_confirm(const uint8_t *data)
 {
 	BT_DBG("Remote Confirm: %s", bt_hex(data, 16));
+
+	if (!memcmp(data, bt_mesh_prov_link.conf, 16)) {
+		BT_ERR("Confirm value is identical to ours, rejecting.");
+		prov_fail(PROV_ERR_CFM_FAILED);
+		return;
+	}
 
 	memcpy(bt_mesh_prov_link.conf, data, 16);
 
