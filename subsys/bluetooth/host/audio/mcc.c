@@ -498,6 +498,28 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 	return BT_GATT_ITER_STOP;
 }
 
+static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					      struct bt_gatt_write_params *params)
+{
+	int cb_err = err;
+	uint64_t obj_id = 0;
+
+	cur_mcs_inst->busy = false;
+	if (err) {
+		BT_DBG("err: 0x%02x", err);
+	} else if (!params->data || params->length != BT_OTS_OBJ_ID_SIZE) {
+		BT_DBG("length: %d, data: %p", params->length, params->data);
+		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else {
+		obj_id = sys_get_le48((const uint8_t *)params->data);
+		BT_DBG_OBJ_ID("Object ID: ", obj_id);
+	}
+
+	if (mcc_cb && mcc_cb->current_track_obj_id_set) {
+		mcc_cb->current_track_obj_id_set(conn, cb_err, obj_id);
+	}
+}
+
 static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					     struct bt_gatt_read_params *params,
 					     const void *data, uint16_t length)
@@ -527,6 +549,28 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
+static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					   struct bt_gatt_write_params *params)
+{
+	int cb_err = err;
+	uint64_t obj_id = 0;
+
+	cur_mcs_inst->busy = false;
+	if (err) {
+		BT_DBG("err: 0x%02x", err);
+	} else if (!params->data || params->length != BT_OTS_OBJ_ID_SIZE) {
+		BT_DBG("length: %d, data: %p", params->length, params->data);
+		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else {
+		obj_id = sys_get_le48((const uint8_t *)params->data);
+		BT_DBG_OBJ_ID("Object ID: ", obj_id);
+	}
+
+	if (mcc_cb && mcc_cb->next_track_obj_id_set) {
+		mcc_cb->next_track_obj_id_set(conn, cb_err, obj_id);
+	}
+}
+
 static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 						struct bt_gatt_read_params *params,
 						const void *data, uint16_t length)
@@ -552,6 +596,28 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 	}
 
 	return BT_GATT_ITER_STOP;
+}
+
+static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					      struct bt_gatt_write_params *params)
+{
+	int cb_err = err;
+	uint64_t obj_id = 0;
+
+	cur_mcs_inst->busy = false;
+	if (err) {
+		BT_DBG("err: 0x%02x", err);
+	} else if (!params->data || params->length != BT_OTS_OBJ_ID_SIZE) {
+		BT_DBG("length: %d, data: %p", params->length, params->data);
+		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else {
+		obj_id = sys_get_le48((const uint8_t *)params->data);
+		BT_DBG_OBJ_ID("Object ID: ", obj_id);
+	}
+
+	if (mcc_cb && mcc_cb->current_group_obj_id_set) {
+		mcc_cb->current_group_obj_id_set(conn, cb_err, obj_id);
+	}
 }
 
 static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
@@ -1758,6 +1824,42 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn)
 	return err;
 }
 
+int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
+{
+	int err;
+
+	if (!conn) {
+		return -ENOTCONN;
+	}
+
+	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+		BT_DBG("Object ID invalid");
+		return -EINVAL;
+	}
+
+	if (!cur_mcs_inst->current_track_obj_id_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (cur_mcs_inst->busy) {
+		return -EBUSY;
+	}
+
+	sys_put_le48(obj_id, cur_mcs_inst->write_buf);
+	cur_mcs_inst->write_params.offset = 0;
+	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
+	cur_mcs_inst->write_params.length = BT_OTS_OBJ_ID_SIZE;
+	cur_mcs_inst->write_params.handle = cur_mcs_inst->current_track_obj_id_handle;
+	cur_mcs_inst->write_params.func = mcs_write_current_track_obj_id_cb;
+
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, BT_OTS_OBJ_ID_SIZE, "Object Id");
+
+	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
+	if (!err) {
+		cur_mcs_inst->busy = true;
+	}
+	return err;
+}
+
 int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1785,6 +1887,42 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 	return err;
 }
 
+int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
+{
+	int err;
+
+	if (!conn) {
+		return -ENOTCONN;
+	}
+
+	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+		BT_DBG("Object ID invalid");
+		return -EINVAL;
+	}
+
+	if (!cur_mcs_inst->next_track_obj_id_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (cur_mcs_inst->busy) {
+		return -EBUSY;
+	}
+
+	sys_put_le48(obj_id, cur_mcs_inst->write_buf);
+	cur_mcs_inst->write_params.offset = 0;
+	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
+	cur_mcs_inst->write_params.length = BT_OTS_OBJ_ID_SIZE;
+	cur_mcs_inst->write_params.handle = cur_mcs_inst->next_track_obj_id_handle;
+	cur_mcs_inst->write_params.func = mcs_write_next_track_obj_id_cb;
+
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, BT_OTS_OBJ_ID_SIZE, "Object Id");
+
+	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
+	if (!err) {
+		cur_mcs_inst->busy = true;
+	}
+	return err;
+}
+
 int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1806,6 +1944,42 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 	read_params.single.offset = 0U;
 
 	err = bt_gatt_read(conn, &read_params);
+	if (!err) {
+		cur_mcs_inst->busy = true;
+	}
+	return err;
+}
+
+int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
+{
+	int err;
+
+	if (!conn) {
+		return -ENOTCONN;
+	}
+
+	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+		BT_DBG("Object ID invalid");
+		return -EINVAL;
+	}
+
+	if (!cur_mcs_inst->current_group_obj_id_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (cur_mcs_inst->busy) {
+		return -EBUSY;
+	}
+
+	sys_put_le48(obj_id, cur_mcs_inst->write_buf);
+	cur_mcs_inst->write_params.offset = 0;
+	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
+	cur_mcs_inst->write_params.length = BT_OTS_OBJ_ID_SIZE;
+	cur_mcs_inst->write_params.handle = cur_mcs_inst->current_group_obj_id_handle;
+	cur_mcs_inst->write_params.func = mcs_write_current_group_obj_id_cb;
+
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, BT_OTS_OBJ_ID_SIZE, "Object Id");
+
+	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
 	if (!err) {
 		cur_mcs_inst->busy = true;
 	}
