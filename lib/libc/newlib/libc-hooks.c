@@ -178,7 +178,7 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	_stdin_hook = hook;
 }
 
-int z_impl_z_zephyr_read_stdin(char *buf, int nbytes)
+int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 {
 	int i = 0;
 
@@ -193,15 +193,15 @@ int z_impl_z_zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_read_stdin(char *buf, int nbytes)
+static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
-	return z_impl_z_zephyr_read_stdin((char *)buf, nbytes);
+	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_read_stdin_mrsh.c>
+#include <syscalls/zephyr_read_stdin_mrsh.c>
 #endif
 
-int z_impl_z_zephyr_write_stdout(const void *buffer, int nbytes)
+int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 {
 	const char *buf = buffer;
 	int i;
@@ -216,12 +216,12 @@ int z_impl_z_zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_write_stdout(const void *buf, int nbytes)
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
-	return z_impl_z_zephyr_write_stdout((const void *)buf, nbytes);
+	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_write_stdout_mrsh.c>
+#include <syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API
@@ -229,7 +229,7 @@ int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_zephyr_read_stdin(buf, nbytes);
+	return zephyr_read_stdin(buf, nbytes);
 }
 __weak FUNC_ALIAS(_read, read, int);
 
@@ -237,7 +237,7 @@ int _write(int fd, const void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_zephyr_write_stdout(buf, nbytes);
+	return zephyr_write_stdout(buf, nbytes);
 }
 __weak FUNC_ALIAS(_write, write, int);
 
