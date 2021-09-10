@@ -1,6 +1,11 @@
 # Misc network drivers configuration options
 # SPDX-License-Identifier: Apache-2.0
 
+menuconfig NET_DRIVERS
+	bool "Network Drivers"
+
+if NET_DRIVERS
+
 #
 # PPP options
 #
@@ -149,3 +154,5 @@ module-help = Sets log level for network loopback driver.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif
+
+endif # NET_DRIVERS
