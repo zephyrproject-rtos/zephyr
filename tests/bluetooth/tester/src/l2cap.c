@@ -238,7 +238,7 @@ rsp:
 		   status);
 }
 
-
+#if defined(CONFIG_BT_EATT)
 void disconnect_eatt_chans(uint8_t *data, uint16_t len)
 {
 	const struct l2cap_disconnect_eatt_chans_cmd *cmd = (void *) data;
@@ -269,7 +269,7 @@ rsp:
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT_EATT_CHANS,
 		   CONTROLLER_INDEX, status);
 }
-
+#endif
 
 static void send_data(uint8_t *data, uint16_t len)
 {
@@ -416,8 +416,9 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+#if defined(CONFIG_BT_EATT)
 	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
-
+#endif
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
 }
@@ -435,15 +436,17 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 	case L2CAP_DISCONNECT:
 		disconnect(data, len);
 		return;
-	case L2CAP_DISCONNECT_EATT_CHANS:
-		disconnect_eatt_chans(data, len);
-		return;
 	case L2CAP_SEND_DATA:
 		send_data(data, len);
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
 		return;
+#if defined(CONFIG_BT_EATT)
+	case L2CAP_DISCONNECT_EATT_CHANS:
+		disconnect_eatt_chans(data, len);
+		return;
+#endif
 	default:
 		tester_rsp(BTP_SERVICE_ID_L2CAP, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);
