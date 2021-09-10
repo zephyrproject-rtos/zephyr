@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
+if(TARGET pinmux)
+  zephyr_library_amend(pinmux)
+else()
+  zephyr_library_named(pinmux)
+endif()
+
 
 # Board initialization
 zephyr_library_sources_ifdef(CONFIG_PINMUX_CC13XX_CC26XX   pinmux_cc13xx_cc26xx.c)
