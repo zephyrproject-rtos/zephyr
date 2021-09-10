@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_PINMUX_INTEL_S1000)
-  zephyr_library()
+  zephyr_library_named(pinmux)
   zephyr_library_sources(pinmux.c)
 endif()
 

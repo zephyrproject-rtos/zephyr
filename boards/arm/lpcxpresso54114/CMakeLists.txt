@@ -5,6 +5,6 @@
 #
 
 if(CONFIG_PINMUX_MCUX_LPC)
-  zephyr_library()
+  zephyr_library_named(pinmux)
   zephyr_library_sources(pinmux.c)
 endif()
