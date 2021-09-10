@@ -948,6 +948,8 @@ static int lc3_release(struct bt_audio_chan *chan)
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST)
 static uint32_t accepted_broadcast_id;
+static struct bt_audio_base received_base;
+static bool sink_syncable;
 
 static bool scan_recv(const struct bt_le_scan_recv_info *info,
 		     uint32_t broadcast_id)
@@ -986,6 +988,11 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 	/* "0xXX " requires 5 characters */
 	char bis_indexes_str[5 * ARRAY_SIZE(bis_indexes) + 1];
 	size_t index_count = 0;
+
+	if (memcmp(base, &received_base, sizeof(received_base)) == 0) {
+		/* Don't print duplicates */
+		return;
+	}
 
 	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
 
@@ -1034,12 +1041,19 @@ static void base_recv(struct bt_audio_broadcast_sink *sink,
 	}
 
 	shell_print(ctx_shell, "Possible indexes: %s", bis_indexes_str);
+
+	(void)memcpy(&received_base, base, sizeof(received_base));
 }
 
 static void syncable(struct bt_audio_broadcast_sink *sink, bool encrypted)
 {
+	if (sink_syncable) {
+		return;
+	}
+
 	shell_print(ctx_shell, "Sink %p is ready to sync %s encryption",
 		    sink, encrypted ? "with" : "without");
+	sink_syncable = true;
 }
 
 static void scan_term(int err)
@@ -1054,6 +1068,7 @@ static void pa_sync_lost(struct bt_audio_broadcast_sink *sink)
 
 	if (default_sink == sink) {
 		default_sink = NULL;
+		sink_syncable = false;
 	}
 }
 #endif /* CONFIG_BT_AUDIO_BROADCAST */
@@ -1300,6 +1315,7 @@ static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
 	}
 
 	default_sink = NULL;
+	sink_syncable = false;
 
 	return err;
 }
