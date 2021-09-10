@@ -15,6 +15,8 @@ config MODEM_QUECTEL_BG9X
 	  Choose this setting to enable quectel BG9x LTE-CatM1/NB-IoT modem
 	  driver.
 
+if MODEM_QUECTEL_BG9X
+
 config MODEM_QUECTEL_BG9X_RX_STACK_SIZE
 	int "Stack size for the quectel BG9X modem driver RX thread"
 	default 1028
@@ -61,3 +63,5 @@ config MODEM_QUECTEL_BG9X_INIT_PRIORITY
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
+
+endif
