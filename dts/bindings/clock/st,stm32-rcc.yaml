@@ -58,12 +58,18 @@ properties:
       required: false
       enum:
         - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 64
+        - 128
+        - 256
+        - 512
       description: |
           AHB prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
           lower than SYSCLK frequency (actual core frequency).
-          Zephyr doesn't make a difference today between these two clocks.
-          Changing this prescaler is not allowed until it is made possible to
-          use them independently in Zephyr clock subsystem.
+          The HCLK clocks CPU, AHB, memories and DMA.
 
     apb1-prescaler:
       type: int
