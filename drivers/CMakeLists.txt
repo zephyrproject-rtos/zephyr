@@ -49,7 +49,7 @@ add_subdirectory_ifdef(CONFIG_PM_CPU_OPS pm_cpu_ops)
 
 add_subdirectory_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED flash)
 add_subdirectory_ifdef(CONFIG_SERIAL_HAS_DRIVER serial)
-add_subdirectory_ifdef(CONFIG_BT               bluetooth)
+add_subdirectory_ifdef(CONFIG_BT_DRIVERS       bluetooth)
 add_subdirectory_ifdef(CONFIG_NETWORKING       net)
 add_subdirectory_ifdef(CONFIG_NET_L2_ETHERNET  ethernet)
 add_subdirectory_ifdef(CONFIG_ENTROPY_HAS_DRIVER entropy)
