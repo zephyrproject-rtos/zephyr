@@ -677,6 +677,15 @@ config BOOTLOADER_MCUBOOT
 	  the application. This removes the need by MCUboot to reset
 	  the core registers' state itself.
 
+if MCUBOOT || BOOTLOADER_MCUBOOT
+
+config MCUBOOT_BOOT_MAX_ALIGN
+    int "Number of Bytes to Align the Image to"
+	default 8
+	help
+		Should be a multiple of the minimum Flash Write size.
+endif # MCUBOOT || BOOTLOADER_MCUBOOT
+
 if BOOTLOADER_MCUBOOT
 
 config MCUBOOT_SIGNATURE_KEY_FILE
