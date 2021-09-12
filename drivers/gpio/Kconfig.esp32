@@ -5,7 +5,7 @@
 
 menuconfig GPIO_ESP32
 	bool "ESP32 GPIO"
-	depends on SOC_ESP32 || SOC_ESP32S2
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enables the ESP32 GPIO driver
 
@@ -19,7 +19,8 @@ config GPIO_ESP32_0
 
 config GPIO_ESP32_1
 	bool "ESP32 GPIO (pins 32-39)"
-	default y
+	default y if SOC_ESP32 || SOC_ESP32S2
+	default n if SOC_ESP32C3
 	help
 	  Include support for GPIO pins 32-39 on the ESP32.
 

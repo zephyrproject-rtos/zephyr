@@ -17,6 +17,18 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	aliases {
+		sw0 = &user_button1;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+	};
 };
 
 &uart0 {
@@ -25,5 +37,8 @@
 };
 
 &trng0 {
+	status = "okay";
+};
+&gpio0 {
 	status = "okay";
 };

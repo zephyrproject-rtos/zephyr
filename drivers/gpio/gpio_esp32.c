@@ -8,7 +8,9 @@
 #define DT_DRV_COMPAT espressif_esp32_gpio
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
+#ifndef CONFIG_SOC_ESP32C3
 #include <soc/dport_reg.h>
+#endif
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
@@ -18,7 +20,11 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#ifdef CONFIG_SOC_ESP32C3
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#else
 #include <drivers/interrupt_controller/intc_esp32.h>
+#endif
 #include <kernel.h>
 #include <sys/util.h>
 #include <drivers/pinmux.h>
@@ -29,6 +35,20 @@
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define DEV_CFG(_dev) ((struct gpio_esp32_config *const)(_dev)->config)
+
+#ifdef CONFIG_SOC_ESP32C3
+/* gpio structs in esp32c3 series are diferent from xtensa ones */
+#define out out.data
+#define in in.data
+#define out_w1ts out_w1ts.val
+#define out_w1tc out_w1tc.val
+/* arch_curr_cpu() is not available for riscv based chips */
+#define CPU_ID()  0
+#define ISR_HANDLER isr_handler_t
+#else 
+#define CPU_ID() arch_curr_cpu()->id
+#define ISR_HANDLER intr_handler_t
+#endif
 
 struct gpio_esp32_config {
 	/* gpio_driver_config needs to be first */
@@ -144,8 +164,10 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 
 	if (cfg->gpio_port0) {
 		*value = cfg->gpio_dev->in;
+#if defined(CONFIG_GPIO_ESP32_1)
 	} else {
 		*value = cfg->gpio_dev->in1.data;
+#endif
 	}
 
 	return 0;
@@ -160,8 +182,10 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 
 	if (cfg->gpio_port0) {
 		cfg->gpio_dev->out = (cfg->gpio_dev->out & ~mask) | (mask & value);
+#if defined(CONFIG_GPIO_ESP32_1)
 	} else {
 		cfg->gpio_dev->out1.data = (cfg->gpio_dev->out1.data & ~mask) | (mask & value);
+#endif
 	}
 
 	irq_unlock(key);
@@ -176,8 +200,10 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 
 	if (cfg->gpio_port0) {
 		cfg->gpio_dev->out_w1ts = pins;
+#if defined(CONFIG_GPIO_ESP32_1)
 	} else {
 		cfg->gpio_dev->out1_w1ts.data = pins;
+#endif
 	}
 
 	return 0;
@@ -190,8 +216,10 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 
 	if (cfg->gpio_port0) {
 		cfg->gpio_dev->out_w1tc = pins;
+#if defined(CONFIG_GPIO_ESP32_1)
 	} else {
 		cfg->gpio_dev->out1_w1tc.data = pins;
+#endif
 	}
 
 	return 0;
@@ -205,8 +233,10 @@ static int gpio_esp32_port_toggle_bits(const struct device *port,
 
 	if (cfg->gpio_port0) {
 		cfg->gpio_dev->out ^= pins;
+#if defined(CONFIG_GPIO_ESP32_1)
 	} else {
 		cfg->gpio_dev->out1.data ^= pins;
+#endif
 	}
 
 	irq_unlock(key);
@@ -281,7 +311,7 @@ static uint32_t gpio_esp32_get_pending_int(const struct device *dev)
 {
 	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
 	uint32_t irq_status;
-	uint32_t const core_id = arch_curr_cpu()->id;
+	uint32_t const core_id = CPU_ID();
 
 #if defined(CONFIG_GPIO_ESP32_1)
 	gpio_ll_get_intr_status_high(cfg->gpio_base, core_id, &irq_status);
@@ -296,7 +326,7 @@ static void IRAM_ATTR gpio_esp32_fire_callbacks(const struct device *dev)
 	struct gpio_esp32_config *const cfg = DEV_CFG(dev);
 	struct gpio_esp32_data *data = dev->data;
 	uint32_t irq_status;
-	uint32_t const core_id = arch_curr_cpu()->id;
+	uint32_t const core_id = CPU_ID();
 
 #if defined(CONFIG_GPIO_ESP32_1)
 	gpio_ll_get_intr_status_high(cfg->gpio_base, core_id, &irq_status);
@@ -327,7 +357,7 @@ static int gpio_esp32_init(const struct device *dev)
 	}
 
 	if (!isr_connected) {
-		esp_intr_alloc(DT_IRQN(DT_NODELABEL(gpio0)), 0, gpio_esp32_isr, (void *)dev, NULL);
+		esp_intr_alloc(DT_IRQN(DT_NODELABEL(gpio0)), 0, (ISR_HANDLER)gpio_esp32_isr, (void *)dev, NULL);
 		isr_connected = true;
 	}
 

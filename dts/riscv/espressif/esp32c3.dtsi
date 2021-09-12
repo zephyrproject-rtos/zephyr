@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 
 / {
@@ -35,6 +36,11 @@
 			reg = <0x3fc7c000 0x50000>;
 		};
 
+		pinmux: pinmux@60009000 {
+			compatible = "espressif,esp32-pinmux";
+			reg = <0x60009000 0x94>;
+		};
+
 		intc: interrupt-controller@600c2000 {
 			#interrupt-cells = <1>;
 			compatible = "espressif,esp32-intc";
@@ -51,6 +57,17 @@
 			interrupt-parent = <&intc>;
 			label = "SYSTIMER_0";
 			status = "okay";
+		};
+
+		gpio0: gpio@60004000 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x60004000 0x800>;
+			interrupts = <GPIO_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_0";
+			ngpios = <32>;   /* 0..31 */
 		};
 
 		uart0: uart@60000000 {
