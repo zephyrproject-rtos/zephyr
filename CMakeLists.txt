@@ -237,7 +237,12 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>
 
 # @Intent: Enforce standard integer type correspondance to match Zephyr usage.
 # (must be after compiler specific flags)
-zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+if(NOT CONFIG_ARCH_POSIX)
+  # `zephyr_stdint.h` is not included for the POSIX (native) arch because it
+  # compiles with the host toolchain/headers and there can be conflicts if we
+  # arbitrarily redefine our own type system (see #37718).
+  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+endif()
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(
