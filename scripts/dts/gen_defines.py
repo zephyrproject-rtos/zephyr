@@ -642,17 +642,25 @@ def write_dep_info(node):
         else:
             return "/* nothing */"
 
+    def fmt_padding(num):
+        if num > 0:
+            return "\\\n\t" + \
+                " \\\n\t".join("DEVICE_HANDLE_NULL," for _ in range(num))
+        else:
+            return "/* nothing */"
+
     out_comment("Node's dependency ordinal:")
     out_dt_define(f"{node.z_path_id}_ORD", node.dep_ordinal)
 
+    reqs = node.depends_on
+    reqs_padding = node.depends_on_fan_out - len(reqs)
     out_comment("Ordinals for what this node depends on directly:")
-    out_dt_define(f"{node.z_path_id}_REQUIRES_ORDS",
-                  fmt_dep_list(node.depends_on))
+    out_dt_define(f"{node.z_path_id}_REQUIRES_ORDS", fmt_dep_list(reqs))
+    out_dt_define(f"{node.z_path_id}_REQUIRES_ORDS_PADDING", fmt_padding(reqs_padding))
 
+    sups = node.required_by
     out_comment("Ordinals for what depends directly on this node:")
-    out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS",
-                  fmt_dep_list(node.required_by))
-
+    out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS", fmt_dep_list(sups))
 
 def prop2value(prop):
     # Gets the macro value for property 'prop', if there is
