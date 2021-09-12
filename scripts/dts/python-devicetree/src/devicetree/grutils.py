@@ -132,6 +132,52 @@ class Graph:
         return self.__scc_order
     __scc_order = None
 
+    @staticmethod
+    def _estimate_fanout(edge_map, root):
+        # Compute an estimate of the maximum fan-out of the edge_map from a given root.
+        #     The actual maximum fan-out is expected to be an NP-hard problem.
+        #
+        # This algorithm is performing a depth-first iteration, where further exploration
+        # is terminated when reaching a leaf node, or a node that has already been
+        # visited. The output is the number of times further exploration was halted.
+        #
+        # For a standard N-ary tree, this gives the number of leaf nodes, and hence the
+        # actual maximum fan-out. For an interconnected DAG, we make the following
+        # observations:
+        #
+        # Merging two nodes in an N-ary tree (preserving their edges) can only decrease
+        # the maximum fan-out of the tree. Therefore "cutting" edges by swapping an
+        # edge for a new leaf node can only increase the fan-out (assuming we don't
+        # isolate portions of the tree).
+        #
+        # As this algorithm only performs "cutting" operations and then counts the leaf
+        # nodes, the number of nodes is garaunteed to be an overestimation of the true
+        # maximum fan-out.
+        visited = set()
+        stack = [root]
+        count = 0
+
+        r = edge_map[root]
+        # Node has no edges
+        if len(r) == 0:
+            return 0
+
+        while len(stack) > 0:
+            node = stack.pop(0)
+            visited.add(node)
+            # Terminating node
+            if len(edge_map[node]) == 0:
+                count += 1
+                continue
+            for p in edge_map[node]:
+                # Treat as a terminating node if already visited
+                if p in visited:
+                    count += 1
+                else:
+                    stack.append(p)
+        # Fanout is bounded by the number of nodes in the map
+        return min(count, len(edge_map))
+
     def depends_on(self, node):
         """Get the nodes that 'node' directly depends on."""
         return sorted(self.__edge_map[node], key=node_key)
@@ -139,6 +185,14 @@ class Graph:
     def required_by(self, node):
         """Get the nodes that directly depend on 'node'."""
         return sorted(self.__reverse_map[node], key=node_key)
+
+    def depends_on_fan_out(self, node):
+        """Get an estimate of the maximum fan-out of a nodes dependencies"""
+        return self._estimate_fanout(self.__edge_map, node)
+
+    def required_by_fan_out(self, node):
+        """Get an estimate of the maximum fan-out of supported nodes"""
+        return self._estimate_fanout(self.__reverse_map, node)
 
 def node_key(node):
     # This sort key ensures that sibling nodes with the same name will
