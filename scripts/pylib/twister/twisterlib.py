@@ -2119,8 +2119,9 @@ class CMake():
             f'-G{self.generator}'
         ]
 
-        if self.cmake_only:
-            cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
+        # Always build json file for post-processing data and to use with
+        # static analysis tools.
+        cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
         cmake_args.extend(args)
