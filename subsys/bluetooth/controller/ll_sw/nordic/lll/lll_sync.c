@@ -112,6 +112,9 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 {
 	struct node_rx_pdu *node_rx;
 
+	/* Initialize Trx count */
+	trx_cnt = 0U;
+
 	/* Start setting up Radio h/w */
 	radio_reset();
 
@@ -200,6 +203,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Reset chain PDU being scheduled by lll_sync context */
+	lll->is_aux_sched = 0U;
 
 	/* Initialize Trx count */
 	trx_cnt = 0U;
@@ -453,7 +459,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 {
 	uint8_t rssi_ready;
 	uint8_t trx_done;
-	int err = 0;
+	int err;
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -469,13 +475,10 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 
 	/* No Rx */
 	if (!trx_done) {
-		/* TODO: Combine the early exit with above if-then-else block
-		 */
+		err = -EINVAL;
+
 		goto isr_rx_done;
 	}
-
-	/* Rx-ed */
-	trx_cnt++;
 
 	/* Check CRC and generate Periodic Advertising Report */
 	if (*crc_ok) {
@@ -507,29 +510,34 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t *crc_ok)
 								isr_aux_setup,
 								lll);
 			if (ftr->aux_lll_sched) {
+				lll->is_aux_sched = 1U;
 				err = -EBUSY;
+			} else {
+				err = 0;
 			}
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
-
+			(void)create_iq_report(lll, rssi_ready,
+					       BT_HCI_LE_CTE_CRC_OK);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 			ull_rx_sched();
+		} else {
+			err = 0;
 		}
-	}
+	} else {
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-	else {
 		err = create_iq_report(lll, rssi_ready,
 				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
 		if (!err) {
 			ull_rx_sched();
 		}
+#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
 		err = 0;
 	}
-#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
 isr_rx_done:
 	return err;
@@ -548,8 +556,12 @@ static void isr_rx_adv_sync(void *param)
 	/* Save radio ready and address capture timestamp for later use for
 	 * drift compensation.
 	 */
-	radio_tmr_aa_save(radio_tmr_aa_get());
-	radio_tmr_ready_save(radio_tmr_ready_get());
+	if (err != -EINVAL) {
+		trx_cnt = 1U;
+
+		radio_tmr_aa_save(radio_tmr_aa_get());
+		radio_tmr_ready_save(radio_tmr_ready_get());
+	}
 
 	if (err == -EBUSY) {
 		return;
@@ -560,14 +572,14 @@ static void isr_rx_adv_sync(void *param)
 
 static void isr_rx_aux_chain(void *param)
 {
-	struct lll_scan_aux *aux_lll;
+	struct lll_scan_aux *lll_aux;
 	struct lll_sync *lll;
 	uint8_t crc_ok;
 	int err;
 
 	lll = param;
-	aux_lll = lll->lll_aux;
-	if (!aux_lll) {
+	lll_aux = lll->lll_aux;
+	if (!lll_aux) {
 		/* auxiliary context not assigned (yet) in ULL execution
 		 * context, drop current reception and abort further chain PDU
 		 * receptions, if any.
@@ -583,7 +595,7 @@ static void isr_rx_aux_chain(void *param)
 		return;
 	}
 
-	if (!trx_cnt || !crc_ok) {
+	if (!crc_ok) {
 		struct node_rx_pdu *node_rx;
 
 		node_rx = ull_pdu_rx_alloc();
@@ -599,7 +611,13 @@ static void isr_rx_aux_chain(void *param)
 	}
 
 isr_rx_aux_chain_done:
-	isr_rx_done_cleanup(lll, 1U);
+	if (lll->is_aux_sched) {
+		lll->is_aux_sched = 0U;
+
+		isr_rx_done_cleanup(lll, 1U);
+	} else {
+		lll_isr_cleanup(lll);
+	}
 }
 
 static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok)
