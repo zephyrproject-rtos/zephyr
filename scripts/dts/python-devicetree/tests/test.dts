@@ -341,6 +341,10 @@
 			node2 {
 				compatible = "on-any-bus", "on-bus";
 			};
+			gpio-dependent-node {
+				compatible = "on-any-bus";
+				test-gpios = <&{/gpio-map/destination} 0>;
+			};
 		};
 		bar-bus {
 			compatible = "bar-bus";

@@ -3,3 +3,7 @@
 description: Device on any bus
 
 compatible: "on-any-bus"
+
+properties:
+    test-gpios:
+        type: phandle-array

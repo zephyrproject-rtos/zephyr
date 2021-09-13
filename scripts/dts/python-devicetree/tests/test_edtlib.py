@@ -441,6 +441,22 @@ def test_dependencies():
     assert edt.get_node("/") in edt.get_node("/in-dir-1").depends_on
     assert edt.get_node("/in-dir-1") in edt.get_node("/").required_by
 
+def test_graph_queries():
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    assert edt.get_node("/").depends_on_fan_out == 0
+    assert edt.get_node("/buses").depends_on_fan_out == 1
+    assert edt.get_node("/buses/foo-bus").depends_on_fan_out == 1
+    assert edt.get_node("/buses/foo-bus/node1").depends_on_fan_out == 1
+    assert edt.get_node("/buses/foo-bus/gpio-dependent-node").depends_on_fan_out == 2
+
+    assert edt.get_node("/buses").required_by_fan_out == 5
+    assert edt.get_node("/buses/foo-bus").required_by_fan_out == 3
+    assert edt.get_node("/buses/foo-bus/node1").required_by_fan_out == 1
+    assert edt.get_node("/buses/foo-bus/node1/nested").required_by_fan_out == 0
+    assert edt.get_node("/buses/foo-bus/node2").required_by_fan_out == 0
+
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''
 
