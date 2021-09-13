@@ -181,6 +181,8 @@ from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
 import queue
+from git import Git
+import json
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -1309,6 +1311,41 @@ def main():
                 row = [d.platform, d.id, d.counter]
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
+
+    # Generate build coverage statistics
+    source_files = []
+    g = Git(ZEPHYR_BASE)
+    for file in g.ls_files().split("\n"):
+        if file.endswith(".c") or file.endswith(".S"):
+            source_files.append(os.path.join(ZEPHYR_BASE, file))
+
+    built_files = {}
+    for instance_id, inst in runner.instances.items():
+        compile_commands = os.path.join(inst.build_dir, "compile_commands.json")
+        if os.path.exists(compile_commands):
+            with open(compile_commands) as f:
+                js = json.load(f)
+                for e in js:
+                    if instance_id in built_files:
+                        built_files[instance_id].append(e['file'])
+                    else:
+                        built_files[instance_id] = [e['file']]
+
+    with open('built_files.json', 'w') as outfile:
+        json.dump(built_files, outfile)
+
+    covered = 0
+    all_built = []
+    for f in built_files.values():
+        all_built.extend(f)
+    logger.info(f"All built files: {len(all_built)}")
+    for f in source_files:
+        if f in set(all_built):
+            covered += 1
+
+    coverage = (covered / len(source_files)) * 100
+    logger.info(f"Build Coverage is {coverage:.2f}%")
+
 
     runner.save_reports(options.report_name,
                        options.report_suffix,
