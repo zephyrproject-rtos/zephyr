@@ -10,6 +10,10 @@ struct lll_sync {
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
 
+	uint8_t phy:3;
+	uint8_t is_rx_enabled:1;
+	uint8_t is_aux_sched:1;
+
 	uint16_t skip_prepare;
 	uint16_t skip_event;
 	uint16_t event_counter;
@@ -31,9 +35,6 @@ struct lll_sync {
 
 	/* used to store lll_aux when chain is being scanned */
 	struct lll_scan_aux *lll_aux;
-
-	uint8_t phy:3;
-	uint8_t is_rx_enabled:1;
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync df_cfg;

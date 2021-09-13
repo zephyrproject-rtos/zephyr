@@ -522,8 +522,6 @@ ull_scan_aux_rx_flush:
 	if (aux) {
 		struct ull_hdr *hdr;
 
-		hdr = &aux->ull;
-
 		/* Enqueue last rx in aux context if possible, otherwise send
 		 * immediately since we are in sync context.
 		 */
@@ -544,6 +542,7 @@ ull_scan_aux_rx_flush:
 		 * callback. Flushing here would release aux context and thus
 		 * ull_hdr before done event was processed.
 		 */
+		hdr = &aux->ull;
 		LL_ASSERT(ull_ref_get(hdr) < 2);
 		if (ull_ref_get(hdr) == 0) {
 			flush(aux);
@@ -658,7 +657,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		 * data properly.
 		 */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
-		rx->handle = ull_sync_handle_get(HDR_LLL2ULL(lll));
+		rx->handle = ull_sync_handle_get(param_ull);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	} else {
 		LL_ASSERT(0);
@@ -673,6 +672,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		hdr = &aux->ull;
 
 		LL_ASSERT(ull_ref_get(hdr) < 2);
+
 		/* Flush from here of from done event, if one is pending */
 		if (ull_ref_get(hdr) == 0) {
 			flush(aux);
