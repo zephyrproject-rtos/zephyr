@@ -593,6 +593,12 @@ class Node:
     depends_on:
       A list with the nodes that the node directly depends on
 
+    required_by_fan_out:
+      An estimate of the maximum fan-out of nodes that depend on the node
+
+    depends_on_fan_out:
+      An estimate of the maximum fan-out of nodes that the node depends on
+
     status:
       The node's status property value, as a string, or "okay" if the node
       has no status property set. If the node's status property is "ok",
@@ -725,6 +731,16 @@ class Node:
     def depends_on(self):
         "See the class docstring"
         return self.edt._graph.depends_on(self)
+
+    @property
+    def required_by_fan_out(self):
+        "See the class docstring"
+        return self.edt._graph.required_by_fan_out(self)
+
+    @property
+    def depends_on_fan_out(self):
+        "See the class docstring"
+        return self.edt._graph.depends_on_fan_out(self)
 
     @property
     def status(self):
