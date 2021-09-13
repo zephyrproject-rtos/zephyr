@@ -300,6 +300,8 @@ i2s1: &flexcomm3 {
 
 &usdhc1 {
 	status = "okay";
+	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
+	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 };
 
