@@ -658,6 +658,11 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		 */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
 		rx->handle = ull_sync_handle_get(param_ull);
+
+		/* Dequeue will try releasing list of node rx, set the extra
+		 * pointer to NULL.
+		 */
+		rx->rx_ftr.extra = NULL;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	} else {
 		LL_ASSERT(0);
