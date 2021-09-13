@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2021 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include "nrf5340_cpuapp_common.dts"
+
+/ {
+	model = "u-blox EVK-NORA-B1 NRF5340 Application";
+	compatible = "u-blox,ubx_evknorab10_nrf5340_cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_ns;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

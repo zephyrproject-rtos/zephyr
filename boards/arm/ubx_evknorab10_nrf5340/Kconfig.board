@@ -1,0 +1,18 @@
+# u-blox EVK-NORA-B10 board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_UBX_EVKNORAB10_NRF5340_CPUAPP
+	bool "EVK-NORA-B10 nRF5340 Application MCU"
+
+config BOARD_UBX_EVKNORAB10_NRF5340_CPUAPPNS
+	bool "EVK-NORA-B10 nRF5340 Application MCU non-secure"
+
+endif # SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_UBX_EVKNORAB10_NRF5340_CPUNET
+	bool "EVK-NORA-B10 NRF5340 Network MCU"
+	depends on SOC_NRF5340_CPUNET_QKAA

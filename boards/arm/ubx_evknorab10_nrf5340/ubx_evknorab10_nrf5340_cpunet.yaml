@@ -1,0 +1,16 @@
+# u-blox EVK-NORA-B10 board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+identifier: ubx_evknorab10_nrf5340_cpunet
+name: UBX_EVKNORAB10_NRF5340-network-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - watchdog
