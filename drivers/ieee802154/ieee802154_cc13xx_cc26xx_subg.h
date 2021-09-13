@@ -87,7 +87,6 @@ struct ieee802154_cc13xx_cc26xx_subg_data {
 	volatile rfc_CMD_FS_t cmd_fs;
 
 	/* Sub-GHz Radio Commands */
-	volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t cmd_prop_radio_div_setup;
 	volatile rfc_CMD_PROP_RX_ADV_t cmd_prop_rx_adv;
 	volatile rfc_CMD_PROP_TX_ADV_t cmd_prop_tx_adv;
 	volatile rfc_propRxOutput_t cmd_prop_rx_adv_output;
