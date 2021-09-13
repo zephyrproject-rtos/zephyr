@@ -102,7 +102,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -370,7 +370,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -379,7 +379,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -389,7 +389,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -400,7 +400,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
-			if (ctx->pause || !llcp_tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				lp_comm_tx(conn, ctx);
@@ -413,7 +413,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_TERMINATE:
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -423,7 +423,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		if (!ull_cp_remote_dle_pending(conn)) {
-			if (ctx->pause || !llcp_tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				/* Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
@@ -446,7 +446,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
-		if (!llcp_tx_alloc_is_available() || ctx->pause) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
@@ -706,7 +706,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -830,7 +830,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		/* Always respond on remote ping */
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			rp_comm_tx(conn, ctx);
@@ -841,7 +841,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			rp_comm_tx(conn, ctx);
@@ -853,7 +853,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
-			if (ctx->pause || !llcp_tx_alloc_is_available()) {
+			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = RP_COMMON_STATE_WAIT_TX;
 			} else {
 				rp_comm_tx(conn, ctx);
@@ -902,7 +902,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (ctx->pause || !llcp_tx_alloc_is_available()) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			/* On RSP tx close the window for possible local req piggy-back */
@@ -915,7 +915,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
-		if (!llcp_tx_alloc_is_available() || ctx->pause) {
+		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
 			rp_comm_tx(conn, ctx);

@@ -89,7 +89,7 @@ static void lp_chmu_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -113,7 +113,7 @@ static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 						uint8_t evt, void *param)
 {
-	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
+	if (llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);

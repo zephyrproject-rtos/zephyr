@@ -47,7 +47,7 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-/*
+/*C
  * Locally triggered Data Length Update procedure
  *
  * +-----+                     +-------+                       +-----+
@@ -123,7 +123,8 @@ void test_data_length_update_mas_loc(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
+				  conn.lll.event_counter);
 }
 
 /*
@@ -179,7 +180,8 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn.lll.event_counter);
 }
 /*
  * Locally triggered Data Length Update procedure -
@@ -255,7 +257,8 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn.lll.event_counter);
 
 	/* Now lets generate another DLU, but one that should not result in
 	   change to effective numbers, thus not generate NTF */
@@ -277,7 +280,8 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
+				  conn.lll.event_counter);
 }
 
 void test_data_length_update_sla_loc(void)
@@ -318,7 +322,8 @@ void test_data_length_update_sla_loc(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn.lll.event_counter);
 }
 
 /*
@@ -478,6 +483,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 {
 	uint64_t err;
 	struct node_tx *tx;
+	struct proc_ctx *ctx = NULL;
 
 	struct pdu_data_llctrl_length_req remote_length_req = { 27, 328, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800 };
@@ -491,10 +497,17 @@ void test_data_length_update_sla_rem_and_loc(void)
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
-	/* Steal all tx buffers, so as to hold back length_rsp */
-	while (llcp_tx_alloc_is_available()) {
-		tx = llcp_tx_alloc();
+	/* Allocate dummy procedure used to steal all buffers */
+	ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
+
+	/* Steal all tx buffers */
+	while (llcp_tx_alloc_peek(&conn, ctx)) {
+		tx = llcp_tx_alloc(&conn, ctx);
+		zassert_not_null(tx, NULL);
 	}
+
+	/* Dummy remove, as above loop might queue up ctx */
+	llcp_tx_alloc_unpeek(ctx);
 
 	event_prepare(&conn);
 
@@ -514,7 +527,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 
 	event_done(&conn);
 
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	event_prepare(&conn);
 
@@ -555,7 +568,7 @@ void test_data_length_update_dle_max_time_get(void)
 	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Emulate complete feat exch without CODED
+	/* Emulate complete feat exch without CODED */
 	conn.llcp.fex.valid = 1;
 	conn.llcp.fex.features_used = 0;
 	ull_dle_local_tx_update(&conn, max_octets, max_time);
@@ -573,7 +586,7 @@ void test_data_length_update_dle_max_time_get(void)
 	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Check the case of CODED PHY support
+	/* Check the case of CODED PHY support */
 	conn.llcp.fex.features_used = LL_FEAT_BIT_PHY_CODED;
 	ull_dle_local_tx_update(&conn, max_octets, max_time);
 
@@ -590,7 +603,7 @@ void test_data_length_update_dle_max_time_get(void)
 	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Finally check that MAX on max_tx_time works
+	/* Finally check that MAX on max_tx_time works */
 	max_time = 20000;
 	ull_dle_local_tx_update(&conn, max_octets, max_time);
 
@@ -607,7 +620,7 @@ void test_data_length_update_dle_max_time_get(void)
 	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Check that MIN works
+	/* Check that MIN works */
 	max_time = 20;
 	max_octets = 2;
 	ull_dle_local_tx_update(&conn, max_octets, max_time);
@@ -645,7 +658,8 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem, setup,
 							unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc,
-							setup, unit_test_noop));
+							setup, unit_test_noop)
+						    );
 
 	ztest_test_suite(data_length_update_util,
 			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get,

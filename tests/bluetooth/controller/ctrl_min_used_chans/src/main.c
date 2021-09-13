@@ -31,6 +31,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -63,10 +64,10 @@ void test_min_used_chans_sla_loc(void)
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_min_used_chans_ind local_muc_ind = { .phys = 1,
-								    .min_used_chans = 2 };
+		.min_used_chans = 2 };
 
 	struct pdu_data_llctrl_min_used_chans_ind remote_muc_ind = { .phys = 1,
-								     .min_used_chans = 2 };
+		.min_used_chans = 2 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -82,11 +83,11 @@ void test_min_used_chans_sla_loc(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_MIN_USED_CHANS_IND, &conn, &tx, &local_muc_ind);
+	lt_rx(LL_MIN_USED_CHANS_IND, &conn,  &tx, &local_muc_ind);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_MIN_USED_CHANS_IND, &conn, &remote_muc_ind);
+	lt_tx(LL_MIN_USED_CHANS_IND, &conn,  &remote_muc_ind);
 
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
@@ -95,13 +96,13 @@ void test_min_used_chans_sla_loc(void)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_min_used_chans_mas_loc(void)
@@ -118,16 +119,16 @@ void test_min_used_chans_mas_loc(void)
 	err = ull_cp_min_used_chans(&conn, 1, 2);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_min_used_chans_mas_rem(void)
 {
 	struct pdu_data_llctrl_min_used_chans_ind remote_muc_ind = { .phys = 1,
-								     .min_used_chans = 2 };
+		.min_used_chans = 2 };
 	struct pdu_data_llctrl_chan_map_ind ch_map_ind = { .chm = { 0xff, 0xff, 0xff, 0xff, 0x1f },
-							   .instant = 7 };
+		.instant = 7 };
 
 	struct node_tx *tx;
 
@@ -141,7 +142,7 @@ void test_min_used_chans_mas_rem(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_MIN_USED_CHANS_IND, &conn, &remote_muc_ind);
+	lt_tx(LL_MIN_USED_CHANS_IND, &conn,  &remote_muc_ind);
 
 	/* Emulate a phy to trigger channel map update */
 	conn.lll.phy_tx = 0x7;
@@ -153,7 +154,7 @@ void test_min_used_chans_mas_rem(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CHAN_MAP_UPDATE_IND, &conn, &tx, &ch_map_ind);
+	lt_rx(LL_CHAN_MAP_UPDATE_IND, &conn,  &tx, &ch_map_ind);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -162,8 +163,8 @@ void test_min_used_chans_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM - 1, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

@@ -31,6 +31,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -86,7 +87,7 @@ void test_channel_map_update_mas_loc(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.chan_map_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* spin conn events */
 	while (!is_instant_reached(&conn, instant)) {
@@ -123,8 +124,8 @@ void test_channel_map_update_mas_loc(void)
 	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_channel_map_update_sla_rem(void)
@@ -191,8 +192,8 @@ void test_channel_map_update_sla_rem(void)
 	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_channel_map_update_sla_loc(void)
@@ -209,8 +210,8 @@ void test_channel_map_update_sla_loc(void)
 	err = ull_cp_chan_map_update(&conn, chm);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

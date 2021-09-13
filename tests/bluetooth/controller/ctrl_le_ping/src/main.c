@@ -29,6 +29,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -90,13 +91,13 @@ void test_ping_mas_loc(void)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -148,13 +149,13 @@ void test_ping_sla_loc(void)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -202,13 +203,13 @@ void test_ping_mas_rem(void)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -256,13 +257,13 @@ void test_ping_sla_rem(void)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
