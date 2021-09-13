@@ -84,6 +84,12 @@ struct mpl_mediaplayer_t {
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 	uint8_t              content_ctrl_id;
 	struct media_proxy_pl_calls calls;
+
+	bool                        next_track_set; /* If next track explicitly set */
+	struct {
+		struct mpl_track_t  *track; /* The track explicitly set as next track */
+		struct mpl_group_t  *group; /* The group of the set track */
+	} next;
 };
 
 
