@@ -30,6 +30,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -222,7 +223,7 @@ void test_conn_update_mas_loc_accept(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -240,7 +241,7 @@ void test_conn_update_mas_loc_accept(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -272,8 +273,8 @@ void test_conn_update_mas_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -334,7 +335,7 @@ void test_conn_update_mas_loc_reject(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
@@ -342,8 +343,8 @@ void test_conn_update_mas_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -412,7 +413,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -433,7 +434,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -465,8 +466,8 @@ void test_conn_update_mas_loc_remote_legacy(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -535,7 +536,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -556,7 +557,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -588,8 +589,8 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -648,14 +649,14 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -687,8 +688,8 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -773,7 +774,7 @@ void test_conn_update_mas_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/**/
 
@@ -788,7 +789,7 @@ void test_conn_update_mas_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/**/
 
@@ -820,7 +821,7 @@ void test_conn_update_mas_loc_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -852,8 +853,8 @@ void test_conn_update_mas_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -940,7 +941,7 @@ void test_conn_update_mas_rem_accept(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -972,8 +973,8 @@ void test_conn_update_mas_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1049,8 +1050,8 @@ void test_conn_update_mas_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* Slave-initiated Connection Parameters Request procedure.
@@ -1216,7 +1217,7 @@ void test_conn_update_mas_rem_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1245,7 +1246,7 @@ void test_conn_update_mas_rem_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* (A) There should be one host notification */
 	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
@@ -1279,7 +1280,7 @@ void test_conn_update_mas_rem_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1311,8 +1312,8 @@ void test_conn_update_mas_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1368,7 +1369,7 @@ void test_conn_update_sla_loc_accept(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1413,8 +1414,8 @@ void test_conn_update_sla_loc_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1472,7 +1473,7 @@ void test_conn_update_sla_loc_reject(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1492,8 +1493,8 @@ void test_conn_update_sla_loc_reject(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1551,7 +1552,7 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1571,8 +1572,8 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1619,8 +1620,8 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1715,7 +1716,7 @@ void test_conn_update_sla_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/*******************/
 
@@ -1765,7 +1766,7 @@ void test_conn_update_sla_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1797,8 +1798,8 @@ void test_conn_update_sla_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -1895,7 +1896,7 @@ void test_conn_update_sla_rem_accept(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1927,8 +1928,8 @@ void test_conn_update_sla_rem_accept(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -2007,8 +2008,8 @@ void test_conn_update_sla_rem_reject(void)
 	/* Done */
 	event_done(&conn);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -2181,7 +2182,7 @@ void test_conn_update_sla_rem_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -2257,8 +2258,8 @@ void test_conn_update_sla_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
@@ -2323,14 +2324,14 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		event_done(&conn);
 
 		/* Release Tx */
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 
 		/* Save Instant */
 		pdu = (struct pdu_data *)tx->pdu;
 		instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 
 		/* Release Tx */
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 
 		/* */
 		while (!is_instant_reached(&conn, instant)) {
@@ -2369,8 +2370,8 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -2426,8 +2427,8 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
 	/* There should NOT be a host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -2517,8 +2518,8 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 		}
 	} while (parameters_changed-- > 0U);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -2562,8 +2563,8 @@ void test_conn_update_sla_loc_disallowed_no_param_req(void)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
@@ -2625,12 +2626,12 @@ void test_main(void)
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	ztest_test_suite(mas_loc_no_param_req, ztest_unit_test_setup_teardown(
-						       test_conn_update_mas_loc_accept_no_param_req,
-						       setup, unit_test_noop));
+				 test_conn_update_mas_loc_accept_no_param_req,
+				 setup, unit_test_noop));
 
 	ztest_test_suite(mas_rem_no_param_req, ztest_unit_test_setup_teardown(
-						       test_conn_update_mas_rem_accept_no_param_req,
-						       setup, unit_test_noop));
+				 test_conn_update_mas_rem_accept_no_param_req,
+				 setup, unit_test_noop));
 
 	ztest_test_suite(
 		sla_loc_no_param_req,
@@ -2638,8 +2639,8 @@ void test_main(void)
 					       setup, unit_test_noop));
 
 	ztest_test_suite(sla_rem_no_param_req, ztest_unit_test_setup_teardown(
-						       test_conn_update_sla_rem_accept_no_param_req,
-						       setup, unit_test_noop));
+				 test_conn_update_sla_rem_accept_no_param_req,
+				 setup, unit_test_noop));
 
 	ztest_run_test_suite(mas_loc_no_param_req);
 	ztest_run_test_suite(mas_rem_no_param_req);

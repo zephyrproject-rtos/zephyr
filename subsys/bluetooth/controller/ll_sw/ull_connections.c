@@ -1826,14 +1826,14 @@ void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
 void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 {
 	struct pdu_data *pdu_tx;
+	struct ll_conn *conn = NULL;
 
 	pdu_tx = (void *)tx->pdu;
 	LL_ASSERT(pdu_tx->len);
 
 	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
 		if (handle != 0xFFFF) {
-			struct ll_conn *conn = ll_conn_get(handle);
-
+			conn = ll_conn_get(handle);
 			ull_cp_tx_ack(conn, tx);
 		}
 
@@ -1844,7 +1844,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		 */
 		if (link->next == (void *)tx) {
 			LL_ASSERT(link->next);
-			ull_cp_release_tx(tx);
+			ull_cp_release_tx(conn, tx);
 			return;
 		} else {
 			LL_ASSERT(!link->next);

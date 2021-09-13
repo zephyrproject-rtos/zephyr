@@ -150,7 +150,7 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -216,7 +216,7 @@ static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
+	if (llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_PARAM_REQ;
 	} else {
 		uint16_t event_counter = ull_conn_event_counter(conn);
@@ -260,7 +260,7 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		ctx->data.cu.win_size = 1U;
@@ -530,7 +530,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -625,7 +625,7 @@ static void rp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		ctx->data.cu.win_size = 1U;
@@ -642,7 +642,7 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND);
@@ -654,7 +654,7 @@ static void rp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx
 static void rp_cu_send_conn_param_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP);
@@ -678,7 +678,7 @@ static void rp_cu_send_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx 
 static void rp_cu_send_unknown_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_CU_STATE_WAIT_TX_UNKNOWN_RSP;
 	} else {
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP);

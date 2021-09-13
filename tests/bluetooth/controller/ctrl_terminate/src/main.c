@@ -33,6 +33,7 @@
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -69,8 +70,8 @@ static void test_terminate_rem(uint8_t role)
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_rem(void)
@@ -116,13 +117,13 @@ void test_terminate_loc(uint8_t role)
 	event_done(&conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_loc(void)
@@ -138,7 +139,8 @@ void test_terminate_sla_loc(void)
 void test_main(void)
 {
 	ztest_test_suite(
-		term, ztest_unit_test_setup_teardown(test_terminate_mas_rem, setup, unit_test_noop),
+		term,
+		ztest_unit_test_setup_teardown(test_terminate_mas_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_sla_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_mas_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_sla_loc, setup, unit_test_noop));

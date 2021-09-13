@@ -122,13 +122,13 @@ void test_feature_exchange_mas_loc(void)
 
 		ut_rx_q_is_empty();
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 		ull_cp_release_ntf(ntf);
 	}
 	zassert_equal(conn.lll.event_counter, feat_to_test, "Wrong event-count %d\n",
 		      conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_feature_exchange_mas_loc_2(void)
@@ -139,7 +139,7 @@ void test_feature_exchange_mas_loc_2(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	err = ull_cp_feature_exchange(&conn);
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 		err = ull_cp_feature_exchange(&conn);
 	}
@@ -204,12 +204,12 @@ void test_feature_exchange_mas_rem(void)
 
 		ut_rx_q_is_empty();
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 	}
 	zassert_equal(conn.lll.event_counter, MAS_REM_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 #define MAS_REM_2_NR_OF_EVENTS 3
@@ -275,7 +275,7 @@ void test_feature_exchange_mas_rem_2(void)
 		lt_tx(LL_FEATURE_RSP, &conn, &local_feature_rsp);
 		event_done(&conn);
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 
 		event_prepare(&conn);
 		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
@@ -289,14 +289,14 @@ void test_feature_exchange_mas_rem_2(void)
 		ut_rx_q_is_empty();
 		lt_rx_q_is_empty(&conn);
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(&conn, tx);
 		ull_cp_release_ntf(ntf);
 	}
 
 	zassert_equal(conn.lll.event_counter, MAS_REM_2_NR_OF_EVENTS * (feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_slave_feature_exchange_sla_loc(void)
@@ -351,9 +351,10 @@ void test_slave_feature_exchange_sla_loc(void)
 
 	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n",
+		      conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_feature_exchange_sla_loc_unknown_rsp(void)
@@ -412,9 +413,10 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 
 	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n",
+		      conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_hci_main(void);

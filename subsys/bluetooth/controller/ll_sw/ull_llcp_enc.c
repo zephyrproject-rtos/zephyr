@@ -146,7 +146,7 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -241,7 +241,7 @@ static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint
 {
 	struct node_tx *tx;
 
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
 	} else {
 		tx = llcp_lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
@@ -255,7 +255,7 @@ static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint
 static void lp_enc_send_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_PAUSE_ENC_REQ;
 	} else {
 		llcp_lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ);
@@ -268,7 +268,7 @@ static void lp_enc_send_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx
 static void lp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_PAUSE_ENC_RSP;
 	} else {
 		llcp_lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP);
@@ -313,7 +313,7 @@ static void lp_enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx)
 static void lp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
 		lp_enc_setup_lll(conn, ctx);
@@ -625,7 +625,7 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -751,7 +751,7 @@ static void rp_enc_send_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint
 {
 	struct node_tx *tx;
 
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
 	} else {
 		tx = llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
@@ -788,7 +788,7 @@ static void rp_enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx)
 static void rp_enc_send_start_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_REQ;
 	} else {
 		rp_enc_setup_lll(conn, ctx);
@@ -805,7 +805,7 @@ static void rp_enc_send_start_enc_req(struct ll_conn *conn, struct proc_ctx *ctx
 static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_REJECT_IND;
 	} else {
 		llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
@@ -822,7 +822,7 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
 		llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
@@ -842,7 +842,7 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 static void rp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_PAUSE_ENC_RSP;
 	} else {
 		llcp_rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP);
