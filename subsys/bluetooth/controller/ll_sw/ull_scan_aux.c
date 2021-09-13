@@ -137,7 +137,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 */
 			lll_aux = ftr->param;
 			aux = HDR_LLL2ULL(lll_aux);
-			/* FIXME: pick the aux somehow */
+
+			/* aux parent will be NULL for periodic sync */
 			lll = aux->parent;
 		} else if (ull_scan_is_valid_get(HDR_LLL2ULL(ftr->param))) {
 			/* Node that does not have valid aux context but has
@@ -157,6 +158,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 */
 			lll = NULL;
 			sync_lll = ftr->param;
+
 			lll_aux = sync_lll->lll_aux;
 			aux = HDR_LLL2ULL(lll_aux);
 		}
@@ -340,7 +342,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_chm_update(rx->handle, ptr, acad_len);
 	}
 
-	/* Do not ULL scheduling auxiliary PDU reception if not aux pointer
+	/* Do not ULL schedule auxiliary PDU reception if no aux pointer
 	 * or aux pointer is zero or scannable advertising has erroneous aux
 	 * pointer being present or PHY in the aux pointer is invalid.
 	 */
@@ -366,6 +368,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 		aux->rx_head = aux->rx_last = NULL;
 		lll_aux = &aux->lll;
+		lll_aux->is_chain_sched = 0U;
 
 		ull_hdr_init(&aux->ull);
 		lll_hdr_init(lll_aux, aux);
@@ -409,6 +412,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		} else {
 			lll->lll_aux = lll_aux;
 		}
+
+		/* Reset auxiliary channel PDU scan state which otherwise is
+		 * done in the prepare_cb when ULL scheduling is used.
+		 */
 		lll_aux->state = 0U;
 
 		return;
