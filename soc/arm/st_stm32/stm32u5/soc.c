@@ -59,8 +59,6 @@ static int stm32u5_init(const struct device *arg)
 	/* Disable USB Type-C dead battery pull-down behavior */
 	LL_PWR_DisableUCPDDeadBattery();
 
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-
 	return 0;
 }
 
