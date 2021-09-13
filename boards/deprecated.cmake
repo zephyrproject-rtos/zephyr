@@ -9,6 +9,7 @@
 # set(<old_board_name>_DEPRECATED <new_board_name>)
 
 set(bl5340_dvk_cpuappns_DEPRECATED bl5340_dvk_cpuapp_ns)
+set(circuitdojo_feather_nrf9160ns_DEPRECATED circuitdojo_feather_nrf9160_ns)
 set(mps2_an521_nonsecure_DEPRECATED mps2_an521_ns)
 set(musca_b1_nonsecure_DEPRECATED musca_b1_ns)
 set(musca_s1_nonsecure_DEPRECATED musca_s1_ns)
