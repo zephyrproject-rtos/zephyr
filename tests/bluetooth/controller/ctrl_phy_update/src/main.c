@@ -62,32 +62,34 @@ static void setup(void)
 	/* Emulate different remote numbers to trigger update of eff */
 	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
 	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
-	conn.lll.dle.remote.max_tx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
-	conn.lll.dle.remote.max_rx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
+	conn.lll.dle.remote.max_tx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_tx_octets,
+							 PHY_1M);
+	conn.lll.dle.remote.max_rx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_rx_octets,
+							 PHY_1M);
 	ull_dle_update_eff(&conn);
 }
 
-#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                                                      \
-	do {                                                                                       \
-		zassert_equal(_conn.phy_pref_rx, _rx,                                              \
-			      "Preferred RX PHY mismatch %d (actual) != %d (expected)",            \
-			      _conn.phy_pref_rx, _rx);                                             \
-		zassert_equal(_conn.phy_pref_tx, _tx,                                              \
-			      "Preferred TX PHY mismatch %d (actual) != %d (expected)",            \
-			      _conn.phy_pref_tx, _tx);                                             \
+#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                               \
+	do {                                                                    \
+		zassert_equal(_conn.phy_pref_rx, _rx,                              \
+			      "Preferred RX PHY mismatch %d (actual) != %d (expected)", \
+			      _conn.phy_pref_rx, _rx);                                 \
+		zassert_equal(_conn.phy_pref_tx, _tx,                              \
+			      "Preferred TX PHY mismatch %d (actual) != %d (expected)", \
+			      _conn.phy_pref_tx, _tx);                                 \
 	} while (0)
 
-#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                                           \
-	do {                                                                                       \
-		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
-			      "Current RX PHY mismatch %d (actual) != %d (expected)",              \
-			      _conn.lll.phy_rx, _rx);                                              \
-		zassert_equal(_conn.lll.phy_tx, _tx,                                               \
-			      "Current TX PHY mismatch %d (actual) != %d (expected)",              \
-			      _conn.lll.phy_tx, _tx);                                              \
-		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
-			      "Current Flags mismatch %d (actual) != %d (expected)",               \
-			      _conn.lll.phy_flags, _flags);                                        \
+#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                    \
+	do {                                                                    \
+		zassert_equal(_conn.lll.phy_rx, _rx,                               \
+			      "Current RX PHY mismatch %d (actual) != %d (expected)",   \
+			      _conn.lll.phy_rx, _rx);                                  \
+		zassert_equal(_conn.lll.phy_tx, _tx,                               \
+			      "Current TX PHY mismatch %d (actual) != %d (expected)",   \
+			      _conn.lll.phy_tx, _tx);                                  \
+		zassert_equal(_conn.lll.phy_rx, _rx,                               \
+			      "Current Flags mismatch %d (actual) != %d (expected)",    \
+			      _conn.lll.phy_flags, _flags);                            \
 	} while (0)
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -150,7 +152,7 @@ void test_phy_update_mas_loc(void)
 	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -173,7 +175,7 @@ void test_phy_update_mas_loc(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -212,8 +214,8 @@ void test_phy_update_mas_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_unsupp_feat(void)
@@ -254,7 +256,7 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -263,8 +265,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem(void)
@@ -326,7 +328,7 @@ void test_phy_update_mas_rem(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -362,8 +364,8 @@ void test_phy_update_mas_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc(void)
@@ -407,7 +409,7 @@ void test_phy_update_sla_loc(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -456,8 +458,8 @@ void test_phy_update_sla_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_rem(void)
@@ -523,7 +525,7 @@ void test_phy_update_sla_rem(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -560,8 +562,8 @@ void test_phy_update_sla_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_collision(void)
@@ -627,7 +629,7 @@ void test_phy_update_mas_loc_collision(void)
 	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/*** ***/
 
@@ -647,7 +649,7 @@ void test_phy_update_mas_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/*** ***/
 
@@ -695,7 +697,7 @@ void test_phy_update_mas_loc_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -731,8 +733,8 @@ void test_phy_update_mas_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem_collision(void)
@@ -806,7 +808,7 @@ void test_phy_update_mas_rem_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -842,7 +844,7 @@ void test_phy_update_mas_rem_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -870,7 +872,7 @@ void test_phy_update_mas_rem_collision(void)
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -904,8 +906,8 @@ void test_phy_update_mas_rem_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc_collision(void)
@@ -961,7 +963,7 @@ void test_phy_update_sla_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -998,7 +1000,7 @@ void test_phy_update_sla_loc_collision(void)
 	event_done(&conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(&conn, tx);
 
 	/* */
 	while (!is_instant_reached(&conn, instant)) {
@@ -1033,14 +1035,15 @@ void test_phy_update_sla_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
 {
 	ztest_test_suite(
-		phy, ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
+		phy,
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),

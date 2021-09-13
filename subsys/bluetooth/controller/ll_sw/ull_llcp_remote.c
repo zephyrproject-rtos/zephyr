@@ -28,6 +28,7 @@
 #include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -332,7 +333,7 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(conn, ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -356,12 +357,13 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 static void rr_act_reject(struct ll_conn *conn)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	struct proc_ctx *ctx = llcp_rr_peek(conn);
+
+	LL_ASSERT(ctx != NULL);
+
+	if (!llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
-		struct proc_ctx *ctx = llcp_rr_peek(conn);
-
-		LL_ASSERT(ctx != NULL);
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 
 		ctx->done = 1U;
