@@ -50,9 +50,17 @@ static void ieee802154_cc13xx_cc26xx_subg_setup_rx_buffers(
 #define CMD_PROP_RADIO_DIV_SETUP_PA CMD_PROP_RADIO_DIV_SETUP
 #endif
 
-/* Radio values for CC13x2R (note: CC26x2 does not support sub-GHz radio) */
+#if defined(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP)
+/* User-defined CMD_PROP_RADIO_DIV_SETUP structures */
 #if defined(CONFIG_SOC_CC1352R)
-/* R overrides from SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW) */
+extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup;
+#elif defined(CONFIG_SOC_CC1352P)
+extern volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup;
+#endif /* CONFIG_SOC_CC1352x, extern RADIO_DIV_SETUP */
+
+#elif defined(CONFIG_SOC_CC1352R)
+/* Radio values for CC13x2R (note: CC26x2 does not support sub-GHz radio) */
+/* From SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW) */
 static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x7 (DITHER_EN=0 and IPEAK=7). */
 	(uint32_t)0x00F788D3,
@@ -78,7 +86,7 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 };
 
 /* Radio setup command for CC1312R / CC1352R */
-static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_radio_div_setup = {
+static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
 	.condition.rule = COND_NEVER,
 	.modulation.modType = 1, /* FSK */
@@ -97,32 +105,6 @@ static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_radio_div_setup
 	.intFreq = 0x0999,
 	.loDivider = 5,
 	.pRegOverride = ieee802154_cc13xx_overrides_sub_ghz,
-};
-
-/* Sub GHz power table */
-static const RF_TxPowerTable_Entry txPowerTable_sub_ghz[] = {
-	{ -20, RF_TxPowerTable_DEFAULT_PA_ENTRY(0, 3, 0, 2) },
-	{ -15, RF_TxPowerTable_DEFAULT_PA_ENTRY(1, 3, 0, 3) },
-	{ -10, RF_TxPowerTable_DEFAULT_PA_ENTRY(2, 3, 0, 5) },
-	{ -5, RF_TxPowerTable_DEFAULT_PA_ENTRY(4, 3, 0, 5) },
-	{ 0, RF_TxPowerTable_DEFAULT_PA_ENTRY(8, 3, 0, 8) },
-	{ 1, RF_TxPowerTable_DEFAULT_PA_ENTRY(9, 3, 0, 9) },
-	{ 2, RF_TxPowerTable_DEFAULT_PA_ENTRY(10, 3, 0, 9) },
-	{ 3, RF_TxPowerTable_DEFAULT_PA_ENTRY(11, 3, 0, 10) },
-	{ 4, RF_TxPowerTable_DEFAULT_PA_ENTRY(13, 3, 0, 11) },
-	{ 5, RF_TxPowerTable_DEFAULT_PA_ENTRY(14, 3, 0, 14) },
-	{ 6, RF_TxPowerTable_DEFAULT_PA_ENTRY(17, 3, 0, 16) },
-	{ 7, RF_TxPowerTable_DEFAULT_PA_ENTRY(20, 3, 0, 19) },
-	{ 8, RF_TxPowerTable_DEFAULT_PA_ENTRY(24, 3, 0, 22) },
-	{ 9, RF_TxPowerTable_DEFAULT_PA_ENTRY(28, 3, 0, 31) },
-	{ 10, RF_TxPowerTable_DEFAULT_PA_ENTRY(18, 2, 0, 31) },
-	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
-	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
-	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
-#ifdef CC13X2_CC26X2_BOOST_MODE
-	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
-#endif
-	RF_TxPowerTable_TERMINATION_ENTRY
 };
 
 /* Radio values for CC13X2P */
@@ -175,8 +157,8 @@ static uint32_t rf_prop_overrides_tx_20[] = {
 	(uint32_t)0xFFFFFFFF
 };
 
-/* Radio setup command for CC1312R / CC1352R */
-static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_radio_div_setup = {
+/* Radio setup command for CC1312P / CC1352P */
+static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP_PA,
 	.condition.rule = COND_NEVER,
 	.modulation.modType = 1, /* FSK */
@@ -198,9 +180,40 @@ static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_radio_div_se
 	.pRegOverrideTxStd = rf_prop_overrides_tx_std,
 	.pRegOverrideTx20 = rf_prop_overrides_tx_20,
 };
+#endif /* CONFIG_SOC_CC1352x, default CMD_PROP_RADIO_DIV_SETUP structures */
 
+/* Sub GHz power tables */
+#if defined(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_POWER_TABLE)
+extern RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[];
+
+#elif defined(CONFIG_SOC_CC1352R)
+static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
+	{ -20, RF_TxPowerTable_DEFAULT_PA_ENTRY(0, 3, 0, 2) },
+	{ -15, RF_TxPowerTable_DEFAULT_PA_ENTRY(1, 3, 0, 3) },
+	{ -10, RF_TxPowerTable_DEFAULT_PA_ENTRY(2, 3, 0, 5) },
+	{ -5, RF_TxPowerTable_DEFAULT_PA_ENTRY(4, 3, 0, 5) },
+	{ 0, RF_TxPowerTable_DEFAULT_PA_ENTRY(8, 3, 0, 8) },
+	{ 1, RF_TxPowerTable_DEFAULT_PA_ENTRY(9, 3, 0, 9) },
+	{ 2, RF_TxPowerTable_DEFAULT_PA_ENTRY(10, 3, 0, 9) },
+	{ 3, RF_TxPowerTable_DEFAULT_PA_ENTRY(11, 3, 0, 10) },
+	{ 4, RF_TxPowerTable_DEFAULT_PA_ENTRY(13, 3, 0, 11) },
+	{ 5, RF_TxPowerTable_DEFAULT_PA_ENTRY(14, 3, 0, 14) },
+	{ 6, RF_TxPowerTable_DEFAULT_PA_ENTRY(17, 3, 0, 16) },
+	{ 7, RF_TxPowerTable_DEFAULT_PA_ENTRY(20, 3, 0, 19) },
+	{ 8, RF_TxPowerTable_DEFAULT_PA_ENTRY(24, 3, 0, 22) },
+	{ 9, RF_TxPowerTable_DEFAULT_PA_ENTRY(28, 3, 0, 31) },
+	{ 10, RF_TxPowerTable_DEFAULT_PA_ENTRY(18, 2, 0, 31) },
+	{ 11, RF_TxPowerTable_DEFAULT_PA_ENTRY(26, 2, 0, 51) },
+	{ 12, RF_TxPowerTable_DEFAULT_PA_ENTRY(16, 0, 0, 82) },
+	{ 13, RF_TxPowerTable_DEFAULT_PA_ENTRY(36, 0, 0, 89) },
+#ifdef CC13X2_CC26X2_BOOST_MODE
+	{ 14, RF_TxPowerTable_DEFAULT_PA_ENTRY(63, 0, 1, 0) },
+#endif
+	RF_TxPowerTable_TERMINATION_ENTRY
+};
+#elif defined(CONFIG_SOC_CC1352P)
 /* Sub GHz power table */
-static const RF_TxPowerTable_Entry txPowerTable_sub_ghz[] = {
+static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ -20, RF_TxPowerTable_DEFAULT_PA_ENTRY(0, 3, 0, 2) },
 	{ -15, RF_TxPowerTable_DEFAULT_PA_ENTRY(1, 3, 0, 3) },
 	{ -10, RF_TxPowerTable_DEFAULT_PA_ENTRY(2, 3, 0, 5) },
@@ -230,8 +243,7 @@ static const RF_TxPowerTable_Entry txPowerTable_sub_ghz[] = {
 	{ 20, RF_TxPowerTable_HIGH_PA_ENTRY(18, 3, 0, 71, 27) },
 	RF_TxPowerTable_TERMINATION_ENTRY
 };
-
-#endif /* CONFIG_SOC_CC1352* */
+#endif /* CONFIG_SOC_CC1352x power table */
 
 /** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
 static RF_Mode rf_mode = {
@@ -442,7 +454,7 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 	RF_Stat status;
 
 	RF_TxPowerTable_Value power_table_value = RF_TxPowerTable_findValue(
-		(RF_TxPowerTable_Entry *)txPowerTable_sub_ghz, dbm);
+		(RF_TxPowerTable_Entry *)ieee802154_cc13xx_subg_power_table, dbm);
 
 	if (power_table_value.rawValue == RF_TxPowerTable_INVALID_VALUE) {
 		LOG_DBG("RF_TxPowerTable_findValue() failed");
@@ -780,7 +792,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 	rf_params.pClientEventCb = client_event_callback;
 
 	drv_data->rf_handle = RF_open(&drv_data->rf_object,
-		&rf_mode, (RF_RadioSetup *)&ieee802154_cc13xx_radio_div_setup,
+		&rf_mode, (RF_RadioSetup *)&ieee802154_cc13xx_subg_radio_div_setup,
 		&rf_params);
 	if (drv_data->rf_handle == NULL) {
 		LOG_ERR("RF_open() failed");
