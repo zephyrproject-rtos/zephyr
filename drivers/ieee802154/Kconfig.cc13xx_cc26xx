@@ -92,4 +92,19 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES
 	  Number of transmission attempts radio driver should do, before
 	  replying it could not send the packet.
 
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_RADIO_SETUP
+	bool "Use custom radio setup structures (advanced)"
+	default n
+	help
+	  Imports the radio setup structure from an external module instead of using
+	  the default one.
+	  Allows overriding the RF modulation / protocol settings.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CUSTOM_POWER_TABLE
+	bool "Use custom power table structure (advanced)"
+	default n
+	help
+	  Imports the radio power table from an external module.
+	  Allows overriding the RF modulation settings.
+
 endif # IEEE802154_CC13XX_CC26XX_SUB_GHZ
