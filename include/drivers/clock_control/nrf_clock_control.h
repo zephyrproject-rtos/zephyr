@@ -12,6 +12,10 @@
 #include <sys/onoff.h>
 #include <drivers/clock_control.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief Clocks handled by the CLOCK peripheral.
  *
  * Enum shall be used as a sys argument in clock_control API.
@@ -146,5 +150,9 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  * See z_nrf_clock_bt_ctlr_hf_request for details.
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_ */
