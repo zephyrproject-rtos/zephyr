@@ -25,6 +25,14 @@
 	};
 };
 
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&lptim1 {
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
