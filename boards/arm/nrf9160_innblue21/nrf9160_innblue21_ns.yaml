@@ -1,4 +1,4 @@
-identifier: nrf9160_innblue21ns
+identifier: nrf9160_innblue21_ns
 name: nRF9160-INNBLUE21-Non-Secure
 type: mcu
 arch: arm
