@@ -453,6 +453,47 @@ config BT_CTLR_LLCP_CONN
 	  more than this number of connections simultaneously may cause
 	  instabilities.
 
+if !BT_LL_SW_SPLIT_LLCP_LEGACY
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default 1
+	range 0 4
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default BT_MAX_CONN
+	range 1 255
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue
+
+config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	int "Number of control procedure contexts to be available across all connections"
+	default BT_MAX_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handlign control procedures. This pool is shared across all
+	  connections (local vs remote initiate), with allocation through a queue
+
+config BT_CTLR_LLCP_TX_BUFFER_QUEUE_SIZE
+	int "Number of entries in control procedure contexts tx buffer request queue"
+	default BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	range 0 BT_CTLR_LLCP_PROC_CTX_BUF_NUM
+	help
+	  Set the size of the tx buffer request queue.
+
+endif #!BT_LL_SW_SPLIT_LLCP_LEGACY
+
+
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
