@@ -324,6 +324,10 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 				     STM32_PLL_N_MULTIPLIER,
 				     STM32_PLL_R_DIVISOR);
 
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 55) {
 		/*
 		 * Set EPOD prescaler based on PLL1 input freq (MSI/PLLM)
