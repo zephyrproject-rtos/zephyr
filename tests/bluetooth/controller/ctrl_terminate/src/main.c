@@ -33,12 +33,13 @@
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+struct ll_conn *conn;
 
 static void setup(void)
 {
@@ -52,25 +53,25 @@ static void test_terminate_rem(uint8_t role)
 	};
 
 	/* Role */
-	test_set_role(&conn, role);
+	test_set_role(conn, role);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Rx */
-	lt_tx(LL_TERMINATE_IND, &conn, &remote_terminate_ind);
+	lt_tx(LL_TERMINATE_IND, conn, &remote_terminate_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_rem(void)
@@ -93,36 +94,36 @@ void test_terminate_loc(uint8_t role)
 	};
 
 	/* Role */
-	test_set_role(&conn, role);
+	test_set_role(conn, role);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an LE Ping Procedure */
-	err = ull_cp_terminate(&conn, 0x06);
+	err = ull_cp_terminate(conn, 0x06);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_TERMINATE_IND, &conn, &tx, &local_terminate_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_TERMINATE_IND, conn, &tx, &local_terminate_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* RX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_loc(void)
@@ -138,7 +139,8 @@ void test_terminate_sla_loc(void)
 void test_main(void)
 {
 	ztest_test_suite(
-		term, ztest_unit_test_setup_teardown(test_terminate_mas_rem, setup, unit_test_noop),
+		term,
+		ztest_unit_test_setup_teardown(test_terminate_mas_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_sla_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_mas_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_terminate_sla_loc, setup, unit_test_noop));

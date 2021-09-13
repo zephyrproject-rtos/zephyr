@@ -1841,7 +1841,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		 * free'ed (see tx_ull_dequeue) */
 		if (link->next == (void *)tx) {
 			LL_ASSERT(link->next);
-			ull_cp_release_tx(tx);
+			ull_cp_release_tx(handle, tx);
 			return;
 		} else {
 			LL_ASSERT(!link->next);

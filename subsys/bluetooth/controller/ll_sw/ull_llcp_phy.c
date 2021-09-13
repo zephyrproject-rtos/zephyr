@@ -330,7 +330,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -435,7 +435,7 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 
 static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
+	if (!llcp_tx_alloc_peek(ctx) || llcp_rr_get_collision(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
@@ -449,7 +449,7 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(ctx)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
@@ -771,7 +771,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = llcp_tx_alloc();
+	tx = llcp_tx_alloc(ctx);
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -831,7 +831,7 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(ctx)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
@@ -845,7 +845,7 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 #if defined(CONFIG_BT_PERIPHERAL)
 static void rp_pu_send_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_peek(ctx)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_RSP;
 	} else {
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_RSP);

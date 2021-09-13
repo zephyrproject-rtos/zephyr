@@ -31,12 +31,13 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-static struct ll_conn conn;
+static struct ll_conn *conn;
 
 static void setup(void)
 {
@@ -63,68 +64,68 @@ void test_channel_map_update_mas_loc(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
-	err = ull_cp_chan_map_update(&conn, chm);
+	err = ull_cp_chan_map_update(conn, chm);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CHAN_MAP_UPDATE_IND, &conn, &tx, &chmu_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_CHAN_MAP_UPDATE_IND, conn, &tx, &chmu_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.chan_map_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* spin conn events */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 
 		/* check if using old channel map */
-		zassert_mem_equal(conn.lll.data_chan_map, defchm, sizeof(conn.lll.data_chan_map),
+		zassert_mem_equal(conn->lll.data_chan_map, defchm, sizeof(conn->lll.data_chan_map),
 				  "Channel map invalid");
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
 	/* at this point new channel map shall be in use */
-	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
+	zassert_mem_equal(conn->lll.data_chan_map, chm, sizeof(conn->lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_channel_map_update_sla_rem(void)
@@ -139,60 +140,60 @@ void test_channel_map_update_sla_rem(void)
 	uint16_t instant = 6;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* RX */
-	lt_tx(LL_CHAN_MAP_UPDATE_IND, &conn, &chmu_ind);
+	lt_tx(LL_CHAN_MAP_UPDATE_IND, conn, &chmu_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* spin conn events */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 
 		/* check if using old channel map */
-		zassert_mem_equal(conn.lll.data_chan_map, defchm, sizeof(conn.lll.data_chan_map),
+		zassert_mem_equal(conn->lll.data_chan_map, defchm, sizeof(conn->lll.data_chan_map),
 				  "Channel map invalid");
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
 
 	/* at this point new channel map shall be in use */
-	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
+	zassert_mem_equal(conn->lll.data_chan_map, chm, sizeof(conn->lll.data_chan_map),
 			  "Channel map invalid");
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_channel_map_update_sla_loc(void)
@@ -201,16 +202,16 @@ void test_channel_map_update_sla_loc(void)
 	uint8_t chm[5] = { 0x00, 0x06, 0x06, 0x06, 0x00 };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
-	err = ull_cp_chan_map_update(&conn, chm);
+	err = ull_cp_chan_map_update(conn, chm);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

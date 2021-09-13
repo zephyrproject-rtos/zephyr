@@ -29,12 +29,13 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+struct ll_conn *conn;
 
 static void setup(void)
 {
@@ -67,36 +68,36 @@ void test_ping_mas_loc(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an LE Ping Procedure */
-	err = ull_cp_le_ping(&conn);
+	err = ull_cp_le_ping(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LE_PING_REQ, &conn, &tx, &local_ping_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LE_PING_REQ, conn, &tx, &local_ping_req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_LE_PING_RSP, &conn, &remote_ping_rsp);
+	lt_tx(LL_LE_PING_RSP, conn, &remote_ping_rsp);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -125,36 +126,36 @@ void test_ping_sla_loc(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an LE Ping Procedure */
-	err = ull_cp_le_ping(&conn);
+	err = ull_cp_le_ping(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LE_PING_REQ, &conn, &tx, &local_ping_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LE_PING_REQ, conn, &tx, &local_ping_req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_LE_PING_RSP, &conn, &remote_ping_rsp);
+	lt_tx(LL_LE_PING_RSP, conn, &remote_ping_rsp);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -177,38 +178,38 @@ void test_ping_mas_rem(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx */
-	lt_tx(LL_LE_PING_REQ, &conn, &local_ping_req);
+	lt_tx(LL_LE_PING_REQ, conn, &local_ping_req);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LE_PING_RSP, &conn, &tx, &remote_ping_rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LE_PING_RSP, conn, &tx, &remote_ping_rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -231,38 +232,38 @@ void test_ping_sla_rem(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx */
-	lt_tx(LL_LE_PING_REQ, &conn, &local_ping_req);
+	lt_tx(LL_LE_PING_REQ, conn, &local_ping_req);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LE_PING_RSP, &conn, &tx, &remote_ping_rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LE_PING_RSP, conn, &tx, &remote_ping_rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release tx node */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

@@ -50,7 +50,7 @@ static void setup(void)
 	conn_from_pool = ll_conn_acquire();
 	zassert_not_null(conn_from_pool, "Could not allocate connection memory", NULL);
 
-	test_setup(conn_from_pool);
+	test_setup(&conn_from_pool);
 }
 
 /*
@@ -127,13 +127,13 @@ void test_hci_feature_exchange_mas_loc(void)
 		zassert_equal(conn_from_pool->lll.event_counter, feat_counter + 1,
 			      "Wrong event count %d\n", conn_from_pool->lll.event_counter);
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(ll_conn_handle_get(conn_from_pool), tx);
 		ull_cp_release_ntf(ntf);
 
 		ll_conn_release(conn_from_pool);
 	}
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_hci_feature_exchange_wrong_handle(void)
@@ -151,10 +151,11 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 	ctx_counter = 0;
 	do {
-		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
+		ctx = llcp_create_local_procedure(conn_handle, PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, PROC_CTX_BUF_NUM + 1, "Error in setup of test\n");
+	zassert_equal(ctx_counter, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM + 1,
+				   "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");

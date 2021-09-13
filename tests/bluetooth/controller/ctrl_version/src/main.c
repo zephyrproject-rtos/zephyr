@@ -37,7 +37,7 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ll_conn conn;
+struct ll_conn *conn;
 
 static void setup(void)
 {
@@ -82,34 +82,34 @@ void test_version_exchange_mas_loc(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Version Exchange Procedure */
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_VERSION_IND, conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+	lt_tx(LL_VERSION_IND, conn, &remote_version_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_version_exchange_mas_loc_2(void)
@@ -117,14 +117,14 @@ void test_version_exchange_mas_loc_2(void)
 	uint8_t err;
 
 	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_tx_q_init(&conn->tx_q);
+	ll_conn_init(conn);
 
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(conn);
 
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-		err = ull_cp_version_exchange(&conn);
+		err = ull_cp_version_exchange(conn);
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -160,35 +160,35 @@ void test_version_exchange_mas_rem(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Rx */
-	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+	lt_tx(LL_VERSION_IND, conn, &remote_version_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_VERSION_IND, conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -229,34 +229,34 @@ void test_version_exchange_mas_rem_2(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Rx */
-	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+	lt_tx(LL_VERSION_IND, conn, &remote_version_ind);
 
 	/* Initiate a Version Exchange Procedure */
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_VERSION_IND, conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -304,52 +304,52 @@ void test_version_exchange_mas_loc_twice(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Version Exchange Procedure */
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Initiate a Version Exchange Procedure */
-	err = ull_cp_version_exchange(&conn);
+	err = ull_cp_version_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_VERSION_IND, conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+	lt_tx(LL_VERSION_IND, conn, &remote_version_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Cached values should be used, no over the air comm */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
 	/* Note that one context buffer is not freed for this test */
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM - 1, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

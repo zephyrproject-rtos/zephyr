@@ -40,14 +40,14 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ll_conn conn;
+struct ll_conn *conn;
 
 static void setup(void)
 {
 	test_setup(&conn);
 }
 
-/*
+/*C
  * Locally triggered Data Length Update procedure
  *
  * +-----+                     +-------+                       +-----+
@@ -80,13 +80,13 @@ void test_data_length_update_mas_loc(void)
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 201, 1720, 251, 2120 };
 	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 201, 1720 };
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
 	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
 	while (ll_pdu_rx_alloc_peek(1)) {
@@ -96,34 +96,35 @@ void test_data_length_update_mas_loc(void)
 	}
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_REQ, &conn, &tx, &local_length_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_REQ, conn, &tx, &local_length_req);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Rx */
-	lt_tx(LL_LENGTH_RSP, &conn, &remote_length_rsp);
+	lt_tx(LL_LENGTH_RSP, conn, &remote_length_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	ut_rx_q_is_empty();
 
 	/* Release Ntf, so next cycle will generate NTF and complete procedure */
 	ull_cp_release_ntf(ntf);
 
-	event_prepare(&conn);
-	event_done(&conn);
+	event_prepare(conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn->lll.event_counter, 2, "Wrong event-count %d\n",
+				  conn->lll.event_counter);
 }
 
 /*
@@ -152,34 +153,35 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 27, 328, 27, 328 };
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_REQ, &conn, &tx, &local_length_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_REQ, conn, &tx, &local_length_req);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Rx */
-	lt_tx(LL_LENGTH_RSP, &conn, &remote_length_rsp);
+	lt_tx(LL_LENGTH_RSP, conn, &remote_length_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn->lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn->lll.event_counter);
 }
 /*
  * Locally triggered Data Length Update procedure -
@@ -227,57 +229,59 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	struct pdu_data_llctrl_length_req local_length_req2 = { 251, 2120, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = { 101, 920, 251, 2120 };
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_REQ, &conn, &tx, &local_length_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_REQ, conn, &tx, &local_length_req);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Rx */
-	lt_tx(LL_LENGTH_RSP, &conn, &remote_length_rsp);
+	lt_tx(LL_LENGTH_RSP, conn, &remote_length_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn->lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn->lll.event_counter);
 
 	/* Now lets generate another DLU, but one that should not result in
 	   change to effective numbers, thus not generate NTF */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_REQ, &conn, &tx, &local_length_req2);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_REQ, conn, &tx, &local_length_req2);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Rx */
-	lt_tx(LL_LENGTH_RSP, &conn, &remote_length_rsp2);
+	lt_tx(LL_LENGTH_RSP, conn, &remote_length_rsp2);
 
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn->lll.event_counter, 2, "Wrong event-count %d\n",
+				  conn->lll.event_counter);
 }
 
 void test_data_length_update_sla_loc(void)
@@ -290,35 +294,36 @@ void test_data_length_update_sla_loc(void)
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 1800, 251, 2120 };
 	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 211, 1800 };
 
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_REQ, &conn, &tx, &local_length_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_REQ, conn, &tx, &local_length_req);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Rx */
-	lt_tx(LL_LENGTH_RSP, &conn, &remote_length_rsp);
+	lt_tx(LL_LENGTH_RSP, conn, &remote_length_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 1, "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(conn->lll.event_counter, 1, "Wrong event-count %d\n",
+				  conn->lll.event_counter);
 }
 
 /*
@@ -350,30 +355,30 @@ void test_data_length_update_mas_rem(void)
 
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
-	event_prepare(&conn);
-
-	/* Tx Queue should have one LL Control PDU */
-	lt_tx(LL_LENGTH_REQ, &conn, &remote_length_req);
-
-	event_done(&conn);
-
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_RSP, &conn, &tx, &local_length_rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_tx(LL_LENGTH_REQ, conn, &remote_length_req);
+
+	event_done(conn);
+
+	event_prepare(conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_LENGTH_RSP, conn, &tx, &local_length_rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
-	event_done(&conn);
+	event_done(conn);
 
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
@@ -408,12 +413,12 @@ void test_data_length_update_sla_rem(void)
 	struct pdu_data_llctrl_length_rsp length_ntf = { 201, 1720, 27, 328 };
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
 	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
 	while (ll_pdu_rx_alloc_peek(1)) {
@@ -422,30 +427,30 @@ void test_data_length_update_sla_rem(void)
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	}
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_tx(LL_LENGTH_REQ, &conn, &remote_length_req);
+	lt_tx(LL_LENGTH_REQ, conn, &remote_length_req);
 
-	event_done(&conn);
+	event_done(conn);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_RSP, &conn, &tx, &local_length_rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_RSP, conn, &tx, &local_length_rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
-	event_done(&conn);
+	event_done(conn);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf, so next cycle will generate NTF and complete procedure */
 	ull_cp_release_ntf(ntf);
 
-	event_prepare(&conn);
-	event_done(&conn);
+	event_prepare(conn);
+	event_done(conn);
 
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
@@ -478,54 +483,63 @@ void test_data_length_update_sla_rem_and_loc(void)
 {
 	uint64_t err;
 	struct node_tx *tx;
+	struct proc_ctx *ctx = NULL;
 
 	struct pdu_data_llctrl_length_req remote_length_req = { 27, 328, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp length_ntf = { 211, 1800, 27, 328 };
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 
-	/* Steal all tx buffers, so as to hold back length_rsp */
-	while (llcp_tx_alloc_is_available()) {
-		tx = llcp_tx_alloc();
+	/* Allocate dummy procedure used to steal all buffers */
+	ctx = llcp_create_local_procedure(ll_conn_handle_get(conn), PROC_VERSION_EXCHANGE);
+
+	/* Steal all tx buffers */
+	while (llcp_tx_alloc_peek(ctx)) {
+		tx = llcp_tx_alloc(ctx);
+		zassert_not_null(tx, NULL);
 	}
+#if (CONFIG_BT_CTLR_LLCP_TX_BUFFER_QUEUE_SIZE > 0)
+	/* Dummy remove, as above loop will queue up ctx */
+	llcp_tx_alloc_unpeek(ctx);
+#endif /* (CONFIG_BT_CTLR_LLCP_TX_BUFFER_QUEUE_SIZE > 0) */
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_tx(LL_LENGTH_REQ, &conn, &remote_length_req);
+	lt_tx(LL_LENGTH_REQ, conn, &remote_length_req);
 
-	event_done(&conn);
+	event_done(conn);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have no LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 1800);
+	err = ull_cp_data_length_update(conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_done(&conn);
+	event_done(conn);
 
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_LENGTH_RSP, &conn, &tx, &local_length_rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_LENGTH_RSP, conn, &tx, &local_length_rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
-	event_done(&conn);
+	event_done(conn);
 
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf, &length_ntf);
 	ut_rx_q_is_empty();
@@ -538,91 +552,91 @@ void test_data_length_update_dle_max_time_get(void)
 	max_time = 2120;
 #endif
 	uint16_t max_octets = 211;
-	conn.llcp.fex.valid = 0;
+	conn->llcp.fex.valid = 0;
 
-	ull_dle_local_tx_update(&conn, max_octets, max_time);
-
-#ifdef CONFIG_BT_CTLR_PHY
-#ifdef CONFIG_BT_CTLR_PHY_CODED
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
-#else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
-#endif
-#else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
-#endif
-
-	// Emulate complete feat exch without CODED
-	conn.llcp.fex.valid = 1;
-	conn.llcp.fex.features_used = 0;
-	ull_dle_local_tx_update(&conn, max_octets, max_time);
+	ull_dle_local_tx_update(conn, max_octets, max_time);
 
 #ifdef CONFIG_BT_CTLR_PHY
 #ifdef CONFIG_BT_CTLR_PHY_CODED
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
 #endif
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Check the case of CODED PHY support
-	conn.llcp.fex.features_used = LL_FEAT_BIT_PHY_CODED;
-	ull_dle_local_tx_update(&conn, max_octets, max_time);
+	/* Emulate complete feat exch without CODED */
+	conn->llcp.fex.valid = 1;
+	conn->llcp.fex.features_used = 0;
+	ull_dle_local_tx_update(conn, max_octets, max_time);
 
 #ifdef CONFIG_BT_CTLR_PHY
 #ifdef CONFIG_BT_CTLR_PHY_CODED
-	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
 #endif
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Finally check that MAX on max_tx_time works
+	/* Check the case of CODED PHY support */
+	conn->llcp.fex.features_used = LL_FEAT_BIT_PHY_CODED;
+	ull_dle_local_tx_update(conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn->lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+#endif
+
+	/* Finally check that MAX on max_tx_time works */
 	max_time = 20000;
-	ull_dle_local_tx_update(&conn, max_octets, max_time);
+	ull_dle_local_tx_update(conn, max_octets, max_time);
 
 #ifdef CONFIG_BT_CTLR_PHY
 #ifdef CONFIG_BT_CTLR_PHY_CODED
-	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 17040, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 17040, "max_tx_time mismatch.\n");
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
 #endif
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
 #endif
 
-	// Check that MIN works
+	/* Check that MIN works */
 	max_time = 20;
 	max_octets = 2;
-	ull_dle_local_tx_update(&conn, max_octets, max_time);
+	ull_dle_local_tx_update(conn, max_octets, max_time);
 
 #ifdef CONFIG_BT_CTLR_PHY
 #ifdef CONFIG_BT_CTLR_PHY_CODED
-	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
 #endif
 #else
-	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
-	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn->lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
 #endif
 }
 
@@ -645,7 +659,8 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem, setup,
 							unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc,
-							setup, unit_test_noop));
+							setup, unit_test_noop)
+						    );
 
 	ztest_test_suite(data_length_update_util,
 			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get,

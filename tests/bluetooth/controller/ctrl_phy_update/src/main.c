@@ -41,53 +41,55 @@
 #define PREFER_S8_CODING 1
 #define PREFER_S2_CODING 0
 
-static struct ll_conn conn;
+static struct ll_conn *conn;
 
 static void setup(void)
 {
 	test_setup(&conn);
 
 	/* Emulate initial conn state */
-	conn.phy_pref_rx = PHY_1M | PHY_2M | PHY_CODED;
-	conn.phy_pref_tx = PHY_1M | PHY_2M | PHY_CODED;
-	conn.lll.phy_flags = PREFER_S2_CODING;
-	conn.lll.phy_tx_time = PHY_1M;
-	conn.lll.phy_rx = PHY_1M;
-	conn.lll.phy_tx = PHY_1M;
+	conn->phy_pref_rx = PHY_1M | PHY_2M | PHY_CODED;
+	conn->phy_pref_tx = PHY_1M | PHY_2M | PHY_CODED;
+	conn->lll.phy_flags = PREFER_S2_CODING;
+	conn->lll.phy_tx_time = PHY_1M;
+	conn->lll.phy_rx = PHY_1M;
+	conn->lll.phy_tx = PHY_1M;
 
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
-	ull_dle_init(&conn, PHY_1M);
+	ull_dle_init(conn, PHY_1M);
 	/* Emulate different remote numbers to trigger update of eff */
-	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
-	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
-	conn.lll.dle.remote.max_tx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
-	conn.lll.dle.remote.max_rx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
-	ull_dle_update_eff(&conn);
+	conn->lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
+	conn->lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
+	conn->lll.dle.remote.max_tx_time = PDU_DC_MAX_US(conn->lll.dle.remote.max_tx_octets,
+							 PHY_1M);
+	conn->lll.dle.remote.max_rx_time = PDU_DC_MAX_US(conn->lll.dle.remote.max_rx_octets,
+							 PHY_1M);
+	ull_dle_update_eff(conn);
 }
 
-#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                                                      \
-	do {                                                                                       \
-		zassert_equal(_conn.phy_pref_rx, _rx,                                              \
-			      "Preferred RX PHY mismatch %d (actual) != %d (expected)",            \
-			      _conn.phy_pref_rx, _rx);                                             \
-		zassert_equal(_conn.phy_pref_tx, _tx,                                              \
-			      "Preferred TX PHY mismatch %d (actual) != %d (expected)",            \
-			      _conn.phy_pref_tx, _tx);                                             \
+#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)                               \
+	do {                                                                    \
+		zassert_equal(_conn->phy_pref_rx, _rx,                              \
+			      "Preferred RX PHY mismatch %d (actual) != %d (expected)", \
+			      _conn->phy_pref_rx, _rx);                                 \
+		zassert_equal(_conn->phy_pref_tx, _tx,                              \
+			      "Preferred TX PHY mismatch %d (actual) != %d (expected)", \
+			      _conn->phy_pref_tx, _tx);                                 \
 	} while (0)
 
-#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                                           \
-	do {                                                                                       \
-		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
-			      "Current RX PHY mismatch %d (actual) != %d (expected)",              \
-			      _conn.lll.phy_rx, _rx);                                              \
-		zassert_equal(_conn.lll.phy_tx, _tx,                                               \
-			      "Current TX PHY mismatch %d (actual) != %d (expected)",              \
-			      _conn.lll.phy_tx, _tx);                                              \
-		zassert_equal(_conn.lll.phy_rx, _rx,                                               \
-			      "Current Flags mismatch %d (actual) != %d (expected)",               \
-			      _conn.lll.phy_flags, _flags);                                        \
+#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)                    \
+	do {                                                                    \
+		zassert_equal(_conn->lll.phy_rx, _rx,                               \
+			      "Current RX PHY mismatch %d (actual) != %d (expected)",   \
+			      _conn->lll.phy_rx, _rx);                                  \
+		zassert_equal(_conn->lll.phy_tx, _tx,                               \
+			      "Current TX PHY mismatch %d (actual) != %d (expected)",   \
+			      _conn->lll.phy_tx, _tx);                                  \
+		zassert_equal(_conn->lll.phy_rx, _rx,                               \
+			      "Current Flags mismatch %d (actual) != %d (expected)",    \
+			      _conn->lll.phy_flags, _flags);                            \
 	} while (0)
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -121,70 +123,70 @@ void test_phy_update_mas_loc(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_RSP, &conn, &rsp);
+	lt_tx(LL_PHY_RSP, conn, &rsp);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx was paused */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_UPDATE_IND, conn, &tx, &ind);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Check that data tx is no lonnger paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
 
@@ -193,13 +195,13 @@ void test_phy_update_mas_loc(void)
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -212,8 +214,8 @@ void test_phy_update_mas_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_unsupp_feat(void)
@@ -228,33 +230,33 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+	lt_tx(LL_UNKNOWN_RSP, conn, &unknown_rsp);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -263,8 +265,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem(void)
@@ -285,72 +287,72 @@ void test_phy_update_mas_rem(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, &req);
+	lt_tx(LL_PHY_REQ, conn, &req);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx was paused */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_UPDATE_IND, conn, &tx, &ind);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx is no longer paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -362,8 +364,8 @@ void test_phy_update_mas_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc(void)
@@ -384,67 +386,67 @@ void test_phy_update_sla_loc(void)
 							      .s_to_m_phy = PHY_2M };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	phy_update_ind.instant = instant = event_counter(&conn) + 6;
-	lt_tx(LL_PHY_UPDATE_IND, &conn, &phy_update_ind);
+	phy_update_ind.instant = instant = event_counter(conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, conn, &phy_update_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -456,8 +458,8 @@ void test_phy_update_sla_loc(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
 	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_rem(void)
@@ -479,75 +481,75 @@ void test_phy_update_sla_rem(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, &req);
+	lt_tx(LL_PHY_REQ, conn, &req);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* We received a REQ, so data tx should be paused */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_RSP, conn, &tx, &rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	ind.instant = instant = event_counter(&conn) + 6;
-	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+	ind.instant = instant = event_counter(conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, conn, &ind);
 
 	/* We are sending RSP, so data tx should be paused until after tx ack */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Check that data tx is no longer paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -560,8 +562,8 @@ void test_phy_update_sla_rem(void)
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_collision(void)
@@ -590,123 +592,123 @@ void test_phy_update_mas_loc_collision(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx - emulate colliding PHY_REQ from peer */
-	lt_tx(LL_PHY_REQ, &conn, &req);
+	lt_tx(LL_PHY_REQ, conn, &req);
 
 	/* Check that data tx is paused */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
-	test_print_conn(&conn);
+	event_prepare(conn);
+	test_print_conn(conn);
 	/* Tx Queue should have one LL Control PDU */
 	printf("Tx REJECT\n");
-	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_REJECT_EXT_IND, conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
 	printf("Done again\n");
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
 	printf("Empty\n");
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
 	printf("Tx again\n");
-	lt_tx(LL_PHY_RSP, &conn, &rsp);
+	lt_tx(LL_PHY_RSP, conn, &rsp);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx is paused */
-	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+	zassert_equal(conn->tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	printf("And again\n");
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_UPDATE_IND, conn, &tx, &ind);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn->tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
@@ -715,13 +717,13 @@ void test_phy_update_mas_loc_collision(void)
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -731,8 +733,8 @@ void test_phy_update_mas_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem_collision(void)
@@ -764,60 +766,60 @@ void test_phy_update_mas_rem_collision(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, &req_slave);
+	lt_tx(LL_PHY_REQ, conn, &req_slave);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind_1);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_UPDATE_IND, conn, &tx, &ind_1);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
@@ -826,23 +828,23 @@ void test_phy_update_mas_rem_collision(void)
 	/*** ***/
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req_master);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req_master);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_RSP, &conn, &rsp);
+	lt_tx(LL_PHY_RSP, conn, &rsp);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -853,48 +855,48 @@ void test_phy_update_mas_rem_collision(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind_2);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_UPDATE_IND, conn, &tx, &ind_2);
+	lt_rx_q_is_empty(conn);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
 	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
@@ -904,8 +906,8 @@ void test_phy_update_mas_rem_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc_collision(void)
@@ -933,48 +935,48 @@ void test_phy_update_sla_loc_collision(void)
 	struct node_rx_pu pu = { 0 };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	err = ull_cp_phy_update(conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, &req_slave);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_REQ, conn, &tx, &req_slave);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, &req_master);
+	lt_tx(LL_PHY_REQ, conn, &req_master);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_PHY_RSP, conn, &tx, &rsp);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+	lt_tx(LL_REJECT_EXT_IND, conn, &reject_ext_ind);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_LL_PROC_COLLISION;
@@ -985,44 +987,44 @@ void test_phy_update_sla_loc_collision(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Rx */
-	ind.instant = instant = event_counter(&conn) + 6;
-	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+	ind.instant = instant = event_counter(conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, conn, &ind);
 
 	/* TX Ack */
-	event_tx_ack(&conn, tx);
+	event_tx_ack(conn, tx);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* Release Tx */
-	ull_cp_release_tx(tx);
+	ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
 	/* */
-	while (!is_instant_reached(&conn, instant)) {
+	while (!is_instant_reached(conn, instant)) {
 		/* Prepare */
-		event_prepare(&conn);
+		event_prepare(conn);
 
 		/* Tx Queue should NOT have a LL Control PDU */
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
 		/* Done */
-		event_done(&conn);
+		event_done(conn);
 
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
 
 	/* Prepare */
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should NOT have a LL Control PDU */
-	lt_rx_q_is_empty(&conn);
+	lt_rx_q_is_empty(conn);
 
 	/* Done */
-	event_done(&conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_SUCCESS;
@@ -1033,14 +1035,15 @@ void test_phy_update_sla_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
 {
 	ztest_test_suite(
-		phy, ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
+		phy,
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),

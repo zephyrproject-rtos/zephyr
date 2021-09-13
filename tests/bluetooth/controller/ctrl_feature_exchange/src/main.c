@@ -44,7 +44,7 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ll_conn conn;
+struct ll_conn *conn;
 
 static void setup(void)
 {
@@ -99,49 +99,49 @@ void test_feature_exchange_mas_loc(void)
 
 		sys_put_le64(exp_rsp_featureset[feat_counter], exp_remote_feature_rsp.features);
 
-		test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+		test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 		/* Connect */
-		ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+		ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 		/* Initiate a Feature Exchange Procedure */
-		err = ull_cp_feature_exchange(&conn);
+		err = ull_cp_feature_exchange(conn);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-		event_prepare(&conn);
+		event_prepare(conn);
 		/* Tx Queue should have one LL Control PDU */
-		lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
-		lt_rx_q_is_empty(&conn);
+		lt_rx(LL_FEATURE_REQ, conn, &tx, &local_feature_req);
+		lt_rx_q_is_empty(conn);
 
 		/* Rx */
-		lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
+		lt_tx(LL_FEATURE_RSP, conn, &remote_feature_rsp);
 
-		event_done(&conn);
+		event_done(conn);
 		/* There should be one host notification */
 
 		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &exp_remote_feature_rsp);
 
 		ut_rx_q_is_empty();
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 		ull_cp_release_ntf(ntf);
 	}
-	zassert_equal(conn.lll.event_counter, feat_to_test, "Wrong event-count %d\n",
-		      conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn->lll.event_counter, feat_to_test, "Wrong event-count %d\n",
+		      conn->lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_feature_exchange_mas_loc_2(void)
 {
 	uint8_t err;
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
-	err = ull_cp_feature_exchange(&conn);
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+	err = ull_cp_feature_exchange(conn);
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-		err = ull_cp_feature_exchange(&conn);
+		err = ull_cp_feature_exchange(conn);
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -181,35 +181,35 @@ void test_feature_exchange_mas_rem(void)
 	struct pdu_data_llctrl_feature_req remote_feature_req;
 	struct pdu_data_llctrl_feature_rsp local_feature_rsp;
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
 		sys_put_le64(set_featureset[feat_count], remote_feature_req.features);
 		sys_put_le64(exp_featureset[feat_count], local_feature_rsp.features);
 
-		event_prepare(&conn);
+		event_prepare(conn);
 
-		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		lt_tx(LL_SLAVE_FEATURE_REQ, conn, &remote_feature_req);
 
-		event_done(&conn);
+		event_done(conn);
 
-		event_prepare(&conn);
+		event_prepare(conn);
 
-		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
-		lt_rx_q_is_empty(&conn);
+		lt_rx(LL_FEATURE_RSP, conn, &tx, &local_feature_rsp);
+		lt_rx_q_is_empty(conn);
 
-		event_done(&conn);
+		event_done(conn);
 
 		ut_rx_q_is_empty();
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 	}
-	zassert_equal(conn.lll.event_counter, MAS_REM_NR_OF_EVENTS * (feat_to_test),
-		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn->lll.event_counter, MAS_REM_NR_OF_EVENTS * (feat_to_test),
+		      "Wrong event-count %d\n", conn->lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 #define MAS_REM_2_NR_OF_EVENTS 3
@@ -254,8 +254,8 @@ void test_feature_exchange_mas_rem_2(void)
 	struct pdu_data_llctrl_feature_req ut_feature_req;
 	struct pdu_data_llctrl_feature_req ut_feature_rsp;
 
-	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	test_set_role(conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
 		sys_put_le64(set_featureset[feat_count], remote_feature_req.features);
@@ -263,23 +263,23 @@ void test_feature_exchange_mas_rem_2(void)
 		sys_put_le64(ut_featureset[feat_count], ut_feature_req.features);
 		sys_put_le64(ut_exp_featureset[feat_count], ut_feature_rsp.features);
 
-		err = ull_cp_feature_exchange(&conn);
+		err = ull_cp_feature_exchange(conn);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-		event_prepare(&conn);
-		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
-		event_done(&conn);
+		event_prepare(conn);
+		lt_tx(LL_SLAVE_FEATURE_REQ, conn, &remote_feature_req);
+		event_done(conn);
 
-		event_prepare(&conn);
-		lt_rx(LL_FEATURE_REQ, &conn, &tx, &ut_feature_req);
-		lt_tx(LL_FEATURE_RSP, &conn, &local_feature_rsp);
-		event_done(&conn);
+		event_prepare(conn);
+		lt_rx(LL_FEATURE_REQ, conn, &tx, &ut_feature_req);
+		lt_tx(LL_FEATURE_RSP, conn, &local_feature_rsp);
+		event_done(conn);
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 
-		event_prepare(&conn);
-		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
-		event_done(&conn);
+		event_prepare(conn);
+		lt_rx(LL_FEATURE_RSP, conn, &tx, &local_feature_rsp);
+		event_done(conn);
 
 		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &ut_feature_rsp);
 
@@ -287,16 +287,16 @@ void test_feature_exchange_mas_rem_2(void)
 		 * at the end of a loop all queues should be empty
 		 */
 		ut_rx_q_is_empty();
-		lt_rx_q_is_empty(&conn);
+		lt_rx_q_is_empty(conn);
 
-		ull_cp_release_tx(tx);
+		ull_cp_release_tx(ll_conn_handle_get(conn), tx);
 		ull_cp_release_ntf(ntf);
 	}
 
-	zassert_equal(conn.lll.event_counter, MAS_REM_2_NR_OF_EVENTS * (feat_to_test),
-		      "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn->lll.event_counter, MAS_REM_2_NR_OF_EVENTS * (feat_to_test),
+		      "Wrong event-count %d\n", conn->lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_slave_feature_exchange_sla_loc(void)
@@ -314,9 +314,9 @@ void test_slave_feature_exchange_sla_loc(void)
 	featureset &= LL_FEAT_BIT_MASK_VALID;
 	sys_put_le64(featureset, remote_feature_rsp.features);
 
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
 	while (ll_pdu_rx_alloc_peek(1)) {
@@ -326,34 +326,35 @@ void test_slave_feature_exchange_sla_loc(void)
 	}
 
 	/* Initiate a Feature Exchange Procedure */
-	err = ull_cp_feature_exchange(&conn);
+	err = ull_cp_feature_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_SLAVE_FEATURE_REQ, &conn, &tx, &local_feature_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_SLAVE_FEATURE_REQ, conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx */
-	lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
+	lt_tx(LL_FEATURE_RSP, conn, &remote_feature_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	ut_rx_q_is_empty();
 
 	/* Release Ntf, so next cycle will generate NTF and complete procedure */
 	ull_cp_release_ntf(ntf);
 
-	event_prepare(&conn);
-	event_done(&conn);
+	event_prepare(conn);
+	event_done(conn);
 
 	/* There should be one host notification */
 
 	ut_rx_pdu(LL_FEATURE_RSP, &ntf, &remote_feature_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2, "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn->lll.event_counter, 2, "Wrong event-count %d\n",
+		      conn->lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_feature_exchange_sla_loc_unknown_rsp(void)
@@ -372,9 +373,9 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 	featureset = DEFAULT_FEATURE;
 	sys_put_le64(featureset, local_feature_req.features);
 
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	test_set_role(conn, BT_HCI_ROLE_PERIPHERAL);
 
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
 
 	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
 	while (ll_pdu_rx_alloc_peek(1)) {
@@ -385,36 +386,37 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 
 	/* Initiate a Feature Exchange Procedure */
 
-	event_prepare(&conn);
-	err = ull_cp_feature_exchange(&conn);
+	event_prepare(conn);
+	err = ull_cp_feature_exchange(conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	event_done(&conn);
+	event_done(conn);
 
-	event_prepare(&conn);
+	event_prepare(conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_SLAVE_FEATURE_REQ, &conn, &tx, &local_feature_req);
-	lt_rx_q_is_empty(&conn);
+	lt_rx(LL_SLAVE_FEATURE_REQ, conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(conn);
 
 	/* Rx Commented out for know, handling of UNKNOWN response will come in an update */
 
-	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+	lt_tx(LL_UNKNOWN_RSP, conn, &unknown_rsp);
 
-	event_done(&conn);
+	event_done(conn);
 
 	ut_rx_q_is_empty();
 
 	/* Release Ntf, so next cycle will generate NTF and complete procedure */
 	ull_cp_release_ntf(ntf);
 
-	event_prepare(&conn);
-	event_done(&conn);
+	event_prepare(conn);
+	event_done(conn);
 
 	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
 	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 3, "Wrong event-count %d\n", conn.lll.event_counter);
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
-		      ctx_buffers_free());
+	zassert_equal(conn->lll.event_counter, 3, "Wrong event-count %d\n",
+		      conn->lll.event_counter);
+	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_hci_main(void);
