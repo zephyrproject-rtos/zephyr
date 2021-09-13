@@ -106,26 +106,6 @@ static struct mpl_track_t track_1_5 = {
 	.next	     = NULL,
 };
 
-/* Temporary comment away when no OTS */
-/* The track_dummy and track_timmy will be removed */
-#ifdef CONFIG_BT_OTS
-static struct mpl_track_t track_dummy = {
-	.title	     = "My dummy track",
-	.duration    = 18700,
-	.segment     = NULL,
-	.prev	     = NULL,
-	.next	     = NULL,
-};
-
-static struct mpl_track_t track_timmy = {
-	.title	     = "My Timmy track",
-	.duration    = 18700,
-	.segment     = NULL,
-	.prev	     = NULL,
-	.next	     = NULL,
-};
-#endif /* CONFIG_BT_OTS */
-
 static struct mpl_track_t track_2_2;
 static struct mpl_track_t track_2_3;
 
@@ -258,8 +238,9 @@ static struct mpl_mediaplayer_t pl = {
 	.opcodes_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_OTS
 	.search_results_id	  = 0,
-	.calls = { 0 }
+	.calls = { 0 },
 #endif /* CONFIG_BT_OTS */
+	.next_track_set           = false
 };
 
 #ifdef CONFIG_BT_OTS
@@ -704,7 +685,12 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	} else if (id == pl.group->track->id) {
 		BT_DBG("Current Track Object ID");
 		(void)setup_track_object(pl.group->track);
+	} else if (pl.next_track_set && id == pl.next.track->id) {
+		/* Next track, if the next track has been explicitly set */
+		BT_DBG("Next Track Object ID");
+		(void)setup_track_object(pl.next.track);
 	} else if (id == pl.group->track->next->id) {
+		/* Next track, if next track has not been explicitly set */
 		BT_DBG("Next Track Object ID");
 		(void)setup_track_object(pl.group->track->next);
 	} else if (id == pl.group->id) {
@@ -961,7 +947,8 @@ static bool do_prev_track(struct mpl_mediaplayer_t *pl)
 	return track_changed;
 }
 
-static bool do_next_track(struct mpl_mediaplayer_t *pl)
+/* Change to next track according to the current track's next track */
+static bool do_next_track_normal_order(struct mpl_mediaplayer_t *pl)
 {
 	bool track_changed = false;
 
@@ -979,6 +966,31 @@ static bool do_next_track(struct mpl_mediaplayer_t *pl)
 #endif /* CONFIG_BT_OTS */
 
 	return track_changed;
+}
+
+/* Change to next track when the next track has been explicitly set
+ *
+ * ALWAYS changes the track, changes the group if required
+ * Resets the next_track_set and the "next" pointers
+ *
+ * Returns true if the _group_ has been changed, otherwise false
+ */
+static bool do_next_track_next_track_set(struct mpl_mediaplayer_t *pl)
+{
+	bool group_changed = false;
+
+	if (pl->next.group != pl->group) {
+		pl->group = pl->next.group;
+		group_changed = true;
+	}
+
+	pl->group->track = pl->next.track;
+
+	pl->next.track = NULL;
+	pl->next.group = NULL;
+	pl->next_track_set = false;
+
+	return group_changed;
 }
 
 static bool do_first_track(struct mpl_mediaplayer_t *pl)
@@ -1391,7 +1403,18 @@ void inactive_state_command_handler(struct mpl_cmd command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case BT_MCS_OPC_NEXT_TRACK:
-		if (do_next_track(&pl)) {
+		/* TODO:
+		 * The case where the next track has been set explicitly breaks somewhat
+		 * with the "next" order hardcoded into the group and track structure
+		 */
+		if (pl.next_track_set) {
+			BT_DBG("Next track set");
+			if (do_next_track_next_track_set(&pl)) {
+				do_group_change_notifications(&pl);
+			}
+			pl.track_pos = 0;
+			do_track_change_notifications(&pl);
+		} else if (do_next_track_normal_order(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
@@ -1628,7 +1651,14 @@ void playing_state_command_handler(struct mpl_cmd command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case BT_MCS_OPC_NEXT_TRACK:
-		if (do_next_track(&pl)) {
+		if (pl.next_track_set) {
+			BT_DBG("Next track set");
+			if (do_next_track_next_track_set(&pl)) {
+				do_group_change_notifications(&pl);
+			}
+			pl.track_pos = 0;
+			do_track_change_notifications(&pl);
+		} else if (do_next_track_normal_order(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
@@ -1847,7 +1877,14 @@ void paused_state_command_handler(struct mpl_cmd command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case BT_MCS_OPC_NEXT_TRACK:
-		if (do_next_track(&pl)) {
+		if (pl.next_track_set) {
+			BT_DBG("Next track set");
+			if (do_next_track_next_track_set(&pl)) {
+				do_group_change_notifications(&pl);
+			}
+			pl.track_pos = 0;
+			do_track_change_notifications(&pl);
+		} else if (do_next_track_normal_order(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
@@ -2084,7 +2121,14 @@ void seeking_state_command_handler(struct mpl_cmd command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case BT_MCS_OPC_NEXT_TRACK:
-		if (do_next_track(&pl)) {
+		if (pl.next_track_set) {
+			BT_DBG("Next track set");
+			if (do_next_track_next_track_set(&pl)) {
+				do_group_change_notifications(&pl);
+			}
+			pl.track_pos = 0;
+			do_track_change_notifications(&pl);
+		} else if (do_next_track_normal_order(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
@@ -2204,6 +2248,82 @@ void (*command_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_cmd command,
 	seeking_state_command_handler
 };
 
+#ifdef CONFIG_BT_OTS
+/* Find a track by ID
+ *
+ * If found, return pointers to the group of the track and the track,
+ * otherwise, the pointers returned are NULL
+ *
+ * Returns true if found, false otherwise
+ */
+static bool find_track_by_id(const struct mpl_mediaplayer_t *pl, uint64_t id,
+			     struct mpl_group_t **group, struct mpl_track_t **track)
+{
+	struct mpl_group_t *tmp_group = pl->group;
+	struct mpl_track_t *tmp_track;
+
+	while (tmp_group->prev != NULL) {
+		tmp_group = tmp_group->prev;
+	}
+
+	while (tmp_group != NULL) {
+		tmp_track = tmp_group->track;
+
+		while (tmp_track->prev != NULL) {
+			tmp_track = tmp_track->prev;
+		}
+
+		while (tmp_track != 0) {
+			if (tmp_track->id == id) {
+				/* Found the track */
+				*group = tmp_group;
+				*track = tmp_track;
+				return true;
+			}
+
+			tmp_track = tmp_track->next;
+		}
+
+		tmp_group = tmp_group->next;
+	}
+
+	/* Track not found */
+	*group = NULL;
+	*track = NULL;
+	return false;
+}
+
+/* Find a group by ID
+ *
+ * If found, return pointer to the group, otherwise, the pointer returned is NULL
+ *
+ * Returns true if found, false otherwise
+ */
+static bool find_group_by_id(const struct mpl_mediaplayer_t *pl, uint64_t id,
+			     struct mpl_group_t **group)
+{
+	struct mpl_group_t *tmp_group = pl->group;
+
+	while (tmp_group->prev != NULL) {
+		tmp_group = tmp_group->prev;
+	}
+
+	while (tmp_group != NULL) {
+		if (tmp_group->id == id) {
+			/* Found the group */
+			*group = tmp_group;
+			return true;
+		}
+
+		tmp_group = tmp_group->next;
+	}
+
+	/* Group not found */
+	*group = NULL;
+	return false;
+}
+#endif /* CONFIG_BT_OTS */
+
 const char *player_name_get(void)
 {
 	return pl.name;
@@ -2301,31 +2421,43 @@ uint64_t current_track_id_get(void)
 
 void current_track_id_set(uint64_t id)
 {
-	/* This requires that we have the track with the given ID */
-	/* and can find it and switch to it. */
-	/* There is also a matter of what to do with the group, */
-	/* does the track have a corresponding group, or do we create one? */
+	struct mpl_group_t *group;
+	struct mpl_track_t *track;
 
 	BT_DBG_OBJ_ID("Track ID to set: ", id);
 
-	/* What we really want to do: Check that we have a track with this ID */
-	/* Set the track to the track with this ID */
-	/* Temporarily, we construct a track with this id, and use that */
-	/* We chain it into the current group */
-	track_dummy.id = id;
-	track_dummy.prev = pl.group->track;
-	track_dummy.next = pl.group->track->next;
-	pl.group->track->next->prev = &track_dummy;
-	pl.group->track->next = &track_dummy;
-	pl.group->track = &track_dummy;
-	pl.track_pos = 0;
-	media_proxy_pl_current_track_id_cb(id);
-	media_proxy_pl_track_changed_cb(); /* Todo: Spec says not to notify the client */
-				/* who set the track */
+	if (find_track_by_id(&pl, id, &group, &track)) {
+
+		if (pl.group != group) {
+			pl.group = group;
+			do_group_change_notifications(&pl);
+
+			/* Group change implies track change (even if same track in other group) */
+			pl.group->track = track;
+			do_track_change_notifications(&pl);
+
+		} else if (pl.group->track != track) {
+			pl.group->track = track;
+			do_track_change_notifications(&pl);
+		}
+		return;
+	}
+
+	BT_DBG("Track not found");
+
+	/* TODO: Should an error be returned here?
+	 * That would require a rewrite of the MPL api to add return values to the functions.
+	 */
 }
 
 uint64_t next_track_id_get(void)
 {
+	/* If the next track has been set explicitly */
+	if (pl.next_track_set) {
+		return pl.next.track->id;
+	}
+
+	/* Normal playing order */
 	if (pl.group->track->next) {
 		return pl.group->track->next->id;
 	}
@@ -2336,17 +2468,21 @@ uint64_t next_track_id_get(void)
 
 void next_track_id_set(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Track ID to set: ", id);
+	struct mpl_group_t *group;
+	struct mpl_track_t *track;
 
-	/* What we really want to do: Set the track to the track with this ID */
-	/* Temporarily, we construct a track with this id, and use that */
-	track_timmy.id = id;
-	track_timmy.prev = pl.group->track;
-	track_timmy.next = pl.group->track->next;
-	pl.group->track->next->prev = &track_dummy;
-	pl.group->track->next = &track_dummy;
-	media_proxy_pl_next_track_id_cb(id); /* Todo: Spec says not to notify the client */
-				  /* who set the track */
+	BT_DBG_OBJ_ID("Next Track ID to set: ", id);
+
+	if (find_track_by_id(&pl, id, &group, &track)) {
+
+		pl.next_track_set = true;
+		pl.next.group = group;
+		pl.next.track = track;
+		media_proxy_pl_next_track_id_cb(id);
+		return;
+	}
+
+	BT_DBG("Track not found");
 }
 
 uint64_t current_group_id_get(void)
@@ -2356,10 +2492,28 @@ uint64_t current_group_id_get(void)
 
 void current_group_id_set(uint64_t id)
 {
-	/* TODO: Actually change the group to the given group */
+	struct mpl_group_t *group;
+	bool track_change;
+
 	BT_DBG_OBJ_ID("Group ID to set: ", id);
-	pl.group->id = id;
-	media_proxy_pl_current_group_id_cb(pl.group->id);
+
+	if (find_group_by_id(&pl, id, &group)) {
+
+		if (pl.group != group) {
+			/* Change to found group */
+			pl.group = group;
+			do_group_change_notifications(&pl);
+
+			/* And change to first track in group */
+			track_change = do_first_track(&pl);
+			if (track_change) {
+				do_track_change_notifications(&pl);
+			}
+		}
+		return;
+	}
+
+	BT_DBG("Group not found");
 }
 
 uint64_t parent_group_id_get(void)
@@ -2623,7 +2777,10 @@ void mpl_debug_dump_state(void)
 	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
 	BT_DBG("Current track: %s", log_strdup(t));
 
-	if (pl.group->track->next) {
+	if (pl.next_track_set) {
+		(void)bt_ots_obj_id_to_str(pl.next.track->id, t, sizeof(t));
+		BT_DBG("Next track: %s", log_strdup(t));
+	} else if (pl.group->track->next) {
 		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
 					   sizeof(t));
 		BT_DBG("Next track: %s", log_strdup(t));
