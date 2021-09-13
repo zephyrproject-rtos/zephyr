@@ -35,7 +35,7 @@ static const struct args_index args_indx = {
 	.value = 3,
 };
 
-static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
+static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t index = 0U;
 	int type = GPIO_OUTPUT;
@@ -52,7 +52,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 			return 0;
 		}
 	} else {
-		shell_error(shell, "Wrong parameters for conf");
+		shell_error(sh, "Wrong parameters for conf");
 		return -ENOTSUP;
 	}
 
@@ -60,7 +60,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
-		shell_print(shell, "Configuring %s pin %d",
+		shell_print(sh, "Configuring %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_configure(dev, index, type);
 	}
@@ -68,7 +68,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_gpio_get(const struct shell *shell,
+static int cmd_gpio_get(const struct shell *sh,
 			size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -78,7 +78,7 @@ static int cmd_gpio_get(const struct shell *shell,
 	if (isdigit((unsigned char)argv[args_indx.index][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
-		shell_error(shell, "Wrong parameters for get");
+		shell_error(sh, "Wrong parameters for get");
 		return -EINVAL;
 	}
 
@@ -86,13 +86,13 @@ static int cmd_gpio_get(const struct shell *shell,
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
-		shell_print(shell, "Reading %s pin %d",
+		shell_print(sh, "Reading %s pin %d",
 			    argv[args_indx.port], index);
 		rc = gpio_pin_get(dev, index);
 		if (rc >= 0) {
-			shell_print(shell, "Value %d", rc);
+			shell_print(sh, "Value %d", rc);
 		} else {
-			shell_error(shell, "Error %d reading value", rc);
+			shell_error(sh, "Error %d reading value", rc);
 			return -EIO;
 		}
 	}
@@ -100,7 +100,7 @@ static int cmd_gpio_get(const struct shell *shell,
 	return 0;
 }
 
-static int cmd_gpio_set(const struct shell *shell,
+static int cmd_gpio_set(const struct shell *sh,
 			size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -112,14 +112,14 @@ static int cmd_gpio_set(const struct shell *shell,
 		index = (uint8_t)atoi(argv[args_indx.index]);
 		value = (uint8_t)atoi(argv[args_indx.value]);
 	} else {
-		shell_print(shell, "Wrong parameters for set");
+		shell_print(sh, "Wrong parameters for set");
 		return -EINVAL;
 	}
 	dev = device_get_binding(argv[args_indx.port]);
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
-		shell_print(shell, "Writing to %s pin %d",
+		shell_print(sh, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_set(dev, index, value);
 	}
@@ -131,7 +131,7 @@ static int cmd_gpio_set(const struct shell *shell,
 /* 500 msec = 1/2 sec */
 #define SLEEP_TIME_MS   500
 
-static int cmd_gpio_blink(const struct shell *shell,
+static int cmd_gpio_blink(const struct shell *sh,
 			  size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -143,18 +143,18 @@ static int cmd_gpio_blink(const struct shell *shell,
 	if (isdigit((unsigned char)argv[args_indx.index][0])) {
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
-		shell_error(shell, "Wrong parameters for blink");
+		shell_error(sh, "Wrong parameters for blink");
 		return -EINVAL;
 	}
 	dev = device_get_binding(argv[args_indx.port]);
 
 	if (dev != NULL) {
 		index = (uint8_t)atoi(argv[2]);
-		shell_fprintf(shell, SHELL_NORMAL, "Blinking port %s index %d.", argv[1], index);
-		shell_fprintf(shell, SHELL_NORMAL, " Hit any key to exit");
+		shell_fprintf(sh, SHELL_NORMAL, "Blinking port %s index %d.", argv[1], index);
+		shell_fprintf(sh, SHELL_NORMAL, " Hit any key to exit");
 
 		while (true) {
-			(void)shell->iface->api->read(shell->iface, &data, sizeof(data), &count);
+			(void)sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
 			if (count != 0) {
 				break;
 			}
@@ -163,7 +163,7 @@ static int cmd_gpio_blink(const struct shell *shell,
 			k_msleep(SLEEP_TIME_MS);
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 	}
 
 	return 0;
