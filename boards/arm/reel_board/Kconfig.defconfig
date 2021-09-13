@@ -9,9 +9,6 @@ config BOARD
 	default "reel_board" if BOARD_REEL_BOARD
 	default "reel_board_v2" if BOARD_REEL_BOARD_V2
 
-config I2C
-	default y
-
 config BT_CTLR
 	default y
 	depends on BT

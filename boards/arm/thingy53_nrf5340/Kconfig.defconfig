@@ -71,12 +71,6 @@ config BT_HAS_HCI_VS
 config USB_NRFX_ATTACHED_EVENT_DELAY
 	default 700 if USB_DEVICE_DRIVER
 
-config I2C
-	default y
-
-config SPI
-	default y
-
 config REGULATOR
 	default y
 

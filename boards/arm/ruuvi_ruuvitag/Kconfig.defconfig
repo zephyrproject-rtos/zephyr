@@ -8,9 +8,6 @@ if BOARD_RUUVI_RUUVITAG
 config BOARD
 	default "ruuvi_ruuvitag"
 
-config SPI
-	default y
-
 config BT_CTLR
 	default BT
 

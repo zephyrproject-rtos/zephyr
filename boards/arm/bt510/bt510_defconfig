@@ -16,17 +16,6 @@ CONFIG_GPIO=y
 # Enable uart driver
 CONFIG_SERIAL=y
 
-# Enable accelerometer & temperature sensor
-CONFIG_I2C=y
-CONFIG_SENSOR=y
-CONFIG_LIS2DH=y
-CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD=y
-CONFIG_LIS2DH_OPER_MODE_LOW_POWER=y
-CONFIG_SI7055=y
-
-# Enable magnetoresistive driver
-CONFIG_SM351LT=y
-
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
