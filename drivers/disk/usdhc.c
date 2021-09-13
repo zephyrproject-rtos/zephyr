@@ -16,6 +16,11 @@
 #include "sdmmc_sdhc.h"
 
 #include <logging/log.h>
+
+#ifdef CONFIG_BOARD_MIMXRT685_EVK
+#include <fsl_power.h>
+#endif
+
 LOG_MODULE_REGISTER(usdhc, CONFIG_SDMMC_LOG_LEVEL);
 
 enum usdhc_cmd_type {
@@ -1469,10 +1474,11 @@ static int usdhc_xfer(struct usdhc_priv *priv)
 
 static inline void usdhc_select_1_8_vol(USDHC_Type *base, bool en_1_8_v)
 {
-	if (en_1_8_v)
+	if (en_1_8_v) {
 		base->VEND_SPEC |= USDHC_VEND_SPEC_VSELECT_MASK;
-	else
+	} else {
 		base->VEND_SPEC &= ~USDHC_VEND_SPEC_VSELECT_MASK;
+	}
 }
 
 static inline void usdhc_force_clk_on(USDHC_Type *base, bool on)
@@ -1600,44 +1606,76 @@ static int usdhc_execute_tuning(struct usdhc_priv *priv)
 	return 0;
 }
 
+static int usdhc_pwr_ctrl(struct usdhc_priv *priv, bool enable)
+{
+	int ret = 0;
+	const struct usdhc_config *config = priv->config;
+
+	if (priv->pwr_gpio) {
+		if (enable) {
+			/** Power the SD card */
+			ret = gpio_pin_configure(priv->pwr_gpio,
+				config->pwr_pin,
+				GPIO_OUTPUT_ACTIVE |
+				config->pwr_flags);
+		} else {
+			/** Power the SD card off */
+			ret = gpio_pin_configure(priv->pwr_gpio,
+				config->pwr_pin,
+				~GPIO_OUTPUT_ACTIVE &
+				config->pwr_flags);
+		}
+		/** Let the card respond to power change */
+		usdhc_millsec_delay(100U);
+	}
+	return ret;
+}
+
 static int usdhc_vol_switch(struct usdhc_priv *priv)
 {
 	USDHC_Type *base = priv->config->base;
-	int retry = 0xffff;
+	int ret = 0;
 
-	while (base->PRES_STATE &
+	/** Check data and cmd line states */
+	if (base->PRES_STATE &
 		(CARD_DATA1_STATUS_MASK | CARD_DATA2_STATUS_MASK |
 		CARD_DATA3_STATUS_MASK | CARD_DATA0_NOT_BUSY)) {
-		retry--;
-		if (retry <= 0) {
-			return -EACCES;
-		}
+		ret = -EACCES;
+		return ret;
 	}
 
 	/* host switch to 1.8V */
 	usdhc_select_1_8_vol(base, true);
 
-	usdhc_millsec_delay(20000U);
+	usdhc_millsec_delay(100U);
 
 	/*enable force clock on*/
 	usdhc_force_clk_on(base, true);
-	/* dealy 1ms,not exactly correct when use while */
-	usdhc_millsec_delay(20000U);
+	/* delay 100ms,not exactly correct when use while */
+	usdhc_millsec_delay(100U);
 	/*disable force clock on*/
 	usdhc_force_clk_on(base, false);
+	usdhc_millsec_delay(100U);
 
 	/* check data line and cmd line status */
-	retry = 0xffff;
-	while (!(base->PRES_STATE &
+	if ((base->PRES_STATE &
 		(CARD_DATA1_STATUS_MASK | CARD_DATA2_STATUS_MASK |
-		CARD_DATA3_STATUS_MASK | CARD_DATA0_NOT_BUSY))) {
-		retry--;
-		if (retry <= 0) {
-			return -EBUSY;
+		CARD_DATA3_STATUS_MASK | CARD_DATA0_NOT_BUSY)) == 0) {
+		ret = -EACCES;
+		/* power reset the card (will boot at 3.3V */
+		usdhc_pwr_ctrl(priv, false);
+		usdhc_pwr_ctrl(priv, true);
+		if ((base->PRES_STATE &
+		(CARD_DATA1_STATUS_MASK | CARD_DATA2_STATUS_MASK |
+		CARD_DATA3_STATUS_MASK | CARD_DATA0_NOT_BUSY)) != 0) {
+			LOG_WRN("SD Card supports 1.8V, but board does not, so switch to 3.3V");
+			usdhc_select_1_8_vol(base, false);
+			ret = -EIO;
+			return ret;
 		}
+		LOG_ERR("SD card did not respond after host switched to 1.8V");
 	}
-
-	return 0;
+	return ret;
 }
 
 static inline void usdhc_op_ctx_init(struct usdhc_priv *priv,
@@ -2126,6 +2164,13 @@ static bool usdhc_set_sd_active(USDHC_Type *base)
 	return ((!timeout) ? false : true);
 }
 
+static inline int usdhc_sd_go_idle(struct usdhc_priv *priv)
+{
+	/* card go idle */
+	usdhc_op_ctx_init(priv, 1, SDHC_GO_IDLE_STATE, 0, SDHC_RSP_TYPE_NONE);
+	return usdhc_xfer(priv);
+}
+
 static void usdhc_get_host_capability(USDHC_Type *base,
 	struct usdhc_capability *capability)
 {
@@ -2321,29 +2366,47 @@ static int usdhc_sd_init(struct usdhc_priv *priv)
 	/* Get host capability. */
 	usdhc_get_host_capability(base, &priv->host_capability);
 
-	/* card go idle */
-	usdhc_op_ctx_init(priv, 1, SDHC_GO_IDLE_STATE, 0, SDHC_RSP_TYPE_NONE);
-
-	ret = usdhc_xfer(priv);
+USDHC_CONFIG_START:
+	ret = usdhc_sd_go_idle(priv);
 	if (ret) {
 		return ret;
 	}
 
-	if (USDHC_SUPPORT_V330_FLAG != SDMMCHOST_NOT_SUPPORT) {
+	if ((priv->host_capability.host_flags & USDHC_SUPPORT_V330_FLAG)
+		!= SDMMCHOST_NOT_SUPPORT) {
 		app_cmd_41_arg |= (SD_OCR_VDD32_33FLAG | SD_OCR_VDD33_34FLAG);
 		priv->card_info.voltage = SD_VOL_3_3_V;
-	} else if (USDHC_SUPPORT_V300_FLAG != SDMMCHOST_NOT_SUPPORT) {
+	} else if ((priv->host_capability.host_flags & USDHC_SUPPORT_V300_FLAG)
+		!= SDMMCHOST_NOT_SUPPORT) {
 		app_cmd_41_arg |= SD_OCR_VDD29_30FLAG;
-		priv->card_info.voltage = SD_VOL_3_3_V;
+		priv->card_info.voltage = SD_VOL_3_0_V;
 	}
 
 	/* allow user select the work voltage, if not select,
 	 * sdmmc will handle it automatically
 	 */
 	if (priv->config->no_1_8_v == false) {
-		if (USDHC_SUPPORT_V180_FLAG != SDMMCHOST_NOT_SUPPORT) {
+		if ((priv->host_capability.host_flags & USDHC_SUPPORT_V180_FLAG)
+			!= SDMMCHOST_NOT_SUPPORT) {
 			app_cmd_41_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
+			/* reset to 3v3 signal voltage */
+			usdhc_select_1_8_vol(base, false);
+			/* Toggle power to the card */
+			usdhc_pwr_ctrl(priv, false);
+			usdhc_pwr_ctrl(priv, true);
 		}
+	}
+
+	/* Send card active */
+	ret = usdhc_set_sd_active(base);
+	if (ret == false) {
+		return -EIO;
+	}
+
+	/* Idle card */
+	ret = usdhc_sd_go_idle(priv);
+	if (ret) {
+		return ret;
 	}
 
 	/* Check card's supported interface condition. */
@@ -2389,12 +2452,14 @@ APP_SEND_OP_COND_AGAIN:
 		/* high capacity check */
 		if (cmd->response[0U] & SD_OCR_CARD_CAP_FLAG) {
 			priv->card_info.card_flags |= SDHC_HIGH_CAPACITY_FLAG;
+			LOG_DBG("SD card reports as SDHC");
 		}
 
 		if (priv->config->no_1_8_v == false) {
 			/* 1.8V support */
 			if (cmd->response[0U] & SD_OCR_SWITCH_18_ACCEPT_FLAG) {
 				priv->card_info.card_flags |= SDHC_1800MV_FLAG;
+				LOG_DBG("SD card reports 1.8v (LVS) support");
 			}
 		}
 		priv->card_info.raw_ocr = cmd->response[0U];
@@ -2403,7 +2468,8 @@ APP_SEND_OP_COND_AGAIN:
 	}
 
 	/* check if card support 1.8V */
-	if ((priv->card_info.card_flags & USDHC_VOL_1_8V_FLAG)) {
+	if ((priv->card_info.card_flags & USDHC_VOL_1_8V_FLAG) &&
+		(priv->host_capability.host_flags & USDHC_SUPPORT_V180_FLAG)) {
 		usdhc_op_ctx_init(priv, 1, SDHC_VOL_SWITCH,
 			0, SDHC_RSP_TYPE_R1);
 
@@ -2412,10 +2478,22 @@ APP_SEND_OP_COND_AGAIN:
 			ret = usdhc_vol_switch(priv);
 		}
 		if (ret) {
-			LOG_ERR("Voltage switch failed: %d", ret);
-			return ret;
+			if (ret == -EIO) {
+				/*
+				 * Board does not support 1.8V but card does.
+				 * Switch to 3.3V
+				 */
+				priv->host_capability.host_flags &=
+					~(USDHC_SUPPORT_V180_FLAG);
+				LOG_DBG("Restart negotiation at 3.3v");
+				goto USDHC_CONFIG_START;
+			} else {
+				LOG_ERR("Voltage switch failed: %d", ret);
+				return ret;
+			}
+		} else {
+			priv->card_info.voltage = SD_VOL_1_8_V;
 		}
-		priv->card_info.voltage = SD_VOL_1_8_V;
 	}
 
 	/* Initialize card if the card is SD card. */
