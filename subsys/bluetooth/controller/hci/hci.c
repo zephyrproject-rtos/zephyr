@@ -5182,8 +5182,8 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t scan_data_status = 0U;
 	uint8_t direct_addr_type = 0U;
 	struct net_buf *scan_evt_buf;
+	uint16_t data_len_total = 0U;
 	uint8_t *direct_addr = NULL;
-	uint8_t total_data_len = 0U;
 	uint16_t interval_le16 = 0U;
 	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
@@ -5387,7 +5387,7 @@ no_ext_hdr:
 			adi = adi_curr;
 			sec_phy = sec_phy_curr;
 			data_len = data_len_curr;
-			total_data_len = data_len;
+			data_len_total = data_len;
 			total_scan_data_len = 0U;
 			data = data_curr;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -5420,10 +5420,10 @@ no_ext_hdr:
 				 */
 			} else if (!data) {
 				data_len = data_len_curr;
-				total_data_len = data_len;
+				data_len_total = data_len;
 				data = data_curr;
 			} else {
-				total_data_len += data_len_curr;
+				data_len_total += data_len_curr;
 
 				/* TODO: construct new HCI event for this
 				 * fragment.
@@ -5477,13 +5477,20 @@ no_ext_hdr:
 
 	/* If data complete */
 	if (!data_status) {
-		/* Only copy data that fit the event buffer size,
-		 * mark it as incomplete
-		 */
 		if (data_len > data_max_len) {
+			/* Only copy data that fit the event buffer size,
+			 * mark it as partial
+			 */
 			data_len = data_max_len;
 			data_status =
 				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		} else if (data_len < data_len_total) {
+			/* HCI Extended Advertising Report for received
+			 * AUX_CHAIN_IND is not implemented, hence set data
+			 * status to incomplete.
+			 */
+			data_status =
+				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 		}
 
 	/* else, data incomplete */
