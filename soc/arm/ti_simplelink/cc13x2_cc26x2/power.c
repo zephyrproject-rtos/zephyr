@@ -48,6 +48,7 @@ const PowerCC26X2_Config PowerCC26X2_config = {
 
 extern PowerCC26X2_ModuleState PowerCC26X2_module;
 
+#ifdef CONFIG_PM
 /*
  * Power state mapping:
  * PM_STATE_SUSPEND_TO_IDLE: Idle
@@ -126,6 +127,7 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	 */
 	CPUcpsie();
 }
+#endif /* CONFIG_PM */
 
 /* Initialize TI Power module */
 static int power_initialize(const struct device *dev)
@@ -182,6 +184,7 @@ void PowerCC26XX_schedulerRestore(void)
 	 */
 }
 
+#ifdef CONFIG_PM
 /* Constraint API hooks */
 
 void pm_constraint_set(enum pm_state state)
@@ -231,6 +234,7 @@ bool pm_constraint_get(enum pm_state state)
 
 	return ret;
 }
+#endif /* CONFIG_PM */
 
 SYS_INIT(power_initialize, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 SYS_INIT(unlatch_pins, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
