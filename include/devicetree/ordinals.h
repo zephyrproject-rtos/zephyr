@@ -44,6 +44,19 @@
 #define DT_REQUIRES_DEP_ORDS(node_id) DT_CAT(node_id, _REQUIRES_ORDS)
 
 /**
+ * @brief Get the list of padding indicies for the dependencies array
+ *
+ * Based on the presence or absence of parent devices in the final binary,
+ * padding may need to be inserted into the ordinal array to ensure array sizes
+ * don't increase in the post processing steps.
+ *
+ * @param node_id Node identifier
+ * @return a list of padding indicies to insert
+ */
+#define DT_REQUIRES_DEP_ORDS_PADDING(node_id) \
+	DT_CAT(node_id, _REQUIRES_ORDS_PADDING)
+
+/**
  * @brief Get a list of dependency ordinals of what depends directly on a node
  *
  * There is a comma after each ordinal in the expansion, **including**
