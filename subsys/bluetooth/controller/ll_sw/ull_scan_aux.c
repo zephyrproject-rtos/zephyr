@@ -340,7 +340,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_chm_update(rx->handle, ptr, acad_len);
 	}
 
-	if (!aux_ptr || !aux_ptr->offs ||
+	/* Do not ULL scheduling auxiliary PDU reception if not aux pointer
+	 * or aux pointer is zero or scannable advertising has erroneous aux
+	 * pointer being present or PHY in the aux pointer is invalid.
+	 */
+	if (!aux_ptr || !aux_ptr->offs || is_scan_req ||
 	    (aux_ptr->phy > EXT_ADV_AUX_PHY_LE_CODED)) {
 		if (is_scan_req) {
 			LL_ASSERT(aux && aux->rx_last);
