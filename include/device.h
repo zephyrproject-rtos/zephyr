@@ -813,6 +813,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
 			DT_REQUIRES_DEP_ORDS(node_id)			\
+			DT_REQUIRES_DEP_ORDS_PADDING(node_id)		\
 		), (							\
 			DEVICE_HANDLE_NULL,				\
 		))							\
