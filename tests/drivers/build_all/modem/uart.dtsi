@@ -13,7 +13,6 @@ test_hl7800: hl7800 {
 	mdm-wake-gpios = <&test_gpio 0 0>;
 	mdm-pwr-on-gpios = <&test_gpio 0 0>;
 	mdm-fast-shutd-gpios = <&test_gpio 0 0>;
-	mdm-uart-dtr-gpios = <&test_gpio 0 0>;
 	mdm-uart-dsr-gpios = <&test_gpio 0 0>;
 	mdm-uart-cts-gpios = <&test_gpio 0 0>;
 	mdm-gpio6-gpios = <&test_gpio 0 0>;
