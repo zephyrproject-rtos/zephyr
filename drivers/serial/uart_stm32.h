@@ -72,6 +72,10 @@ struct uart_stm32_data {
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
+#ifdef CONFIG_PM
+	bool tx_poll_stream_on;
+	bool pm_constraint_on;
+#endif
 };
 
 #endif	/* ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_ */
