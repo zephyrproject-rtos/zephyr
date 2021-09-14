@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_core.h>
+#include <logging/log_internal.h>
 #include <logging/log_ctrl.h>
 #include <syscall_handler.h>
 
@@ -11,6 +11,16 @@
  * - getting/setting source details like name, filtering
  * - controlling backends filtering
  */
+
+/** @brief Get compiled level of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Level.
+ */
+static inline uint8_t log_compiled_level_get(uint32_t source_id)
+{
+	return __log_const_start[source_id].level;
+}
 
 void z_log_runtime_filters_init(void)
 {
@@ -36,6 +46,16 @@ void z_log_runtime_filters_init(void)
 uint32_t log_src_cnt_get(uint32_t domain_id)
 {
 	return log_sources_count();
+}
+
+/** @brief Get name of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Name.
+ */
+static inline const char *log_name_get(uint32_t source_id)
+{
+	return __log_const_start[source_id].name;
 }
 
 const char *log_source_name_get(uint32_t domain_id, uint32_t src_id)
