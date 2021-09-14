@@ -347,7 +347,7 @@ enum {
 	 * Don't try to resume connectable advertising after a connection.
 	 * This option is only meaningful when used together with
 	 * BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
-	 * when bt_le_adv_stop() is called or when an incoming (slave)
+	 * when bt_le_adv_stop() is called or when an incoming (peripheral)
 	 * connection happens. If this option is not set the stack will
 	 * take care of keeping advertising enabled even as connections
 	 * occur.
@@ -413,11 +413,12 @@ enum {
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
-	/** Use whitelist to filter devices that can request scan response data.
+	/** Use filter accept list to filter devices that can request scan
+	 *  response data.
 	 */
 	BT_LE_ADV_OPT_FILTER_SCAN_REQ = BIT(6),
 
-	/** Use whitelist to filter devices that can connect. */
+	/** Use filter accept list to filter devices that can connect. */
 	BT_LE_ADV_OPT_FILTER_CONN = BIT(7),
 
 	/** Notify the application when a scan response data has been sent to an
@@ -1596,6 +1597,7 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid);
  */
 int bt_le_per_adv_list_clear(void);
 
+
 enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_SCAN_OPT_NONE = 0,
@@ -1603,8 +1605,8 @@ enum {
 	/** Filter duplicates. */
 	BT_LE_SCAN_OPT_FILTER_DUPLICATE = BIT(0),
 
-	/** Filter using whitelist. */
-	BT_LE_SCAN_OPT_FILTER_WHITELIST = BIT(1),
+	/** Filter using filter accept list. */
+	BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST = BIT(1),
 
 	/** Enable scan on coded PHY (Long Range).*/
 	BT_LE_SCAN_OPT_CODED = BIT(2),
@@ -1616,6 +1618,8 @@ enum {
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
 };
+
+#define BT_LE_SCAN_OPT_FILTER_WHITELIST __DEPRECATED_MACRO BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
 
 enum {
 	/** Scan without requesting additional information from advertisers. */
@@ -1852,50 +1856,65 @@ void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
 
 /**
- * @brief Add device (LE) to whitelist.
+ * @brief Add device (LE) to filter accept list.
  *
- * Add peer device LE address to the whitelist.
+ * Add peer device LE address to the filter accept list.
  *
- * @note The whitelist cannot be modified when an LE role is using
- * the whitelist, i.e advertiser or scanner using a whitelist or automatic
- * connecting to devices using whitelist.
- *
- * @param addr Bluetooth LE identity address.
- *
- * @return Zero on success or error code otherwise, positive in case of
- *         protocol error or negative (POSIX) in case of stack internal error.
- */
-int bt_le_whitelist_add(const bt_addr_le_t *addr);
-
-/**
- * @brief Remove device (LE) from whitelist.
- *
- * Remove peer device LE address from the whitelist.
- *
- * @note The whitelist cannot be modified when an LE role is using
- * the whitelist, i.e advertiser or scanner using a whitelist or automatic
- * connecting to devices using whitelist.
+ * @note The filter accept list cannot be modified when an LE role is using
+ * the filter accept list, i.e advertiser or scanner using a filter accept list
+ * or automatic connecting to devices using filter accept list.
  *
  * @param addr Bluetooth LE identity address.
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
-int bt_le_whitelist_rem(const bt_addr_le_t *addr);
+int bt_le_filter_accept_list_add(const bt_addr_le_t *addr);
+__deprecated
+static inline int bt_le_whitelist_add(const bt_addr_le_t *addr)
+{
+	return bt_le_filter_accept_list_add(addr);
+}
 
 /**
- * @brief Clear whitelist.
+ * @brief Remove device (LE) from filter accept list.
  *
- * Clear all devices from the whitelist.
+ * Remove peer device LE address from the filter accept list.
  *
- * @note The whitelist cannot be modified when an LE role is using
- * the whitelist, i.e advertiser or scanner using a whitelist or automatic
- * connecting to devices using whitelist.
+ * @note The filter accept list cannot be modified when an LE role is using
+ * the filter accept list, i.e advertiser or scanner using a filter accept list
+ * or automatic connecting to devices using filter accept list.
+ *
+ * @param addr Bluetooth LE identity address.
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
-int bt_le_whitelist_clear(void);
+int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr);
+__deprecated
+static inline int bt_le_whitelist_rem(const bt_addr_le_t *addr)
+{
+	return bt_le_filter_accept_list_remove(addr);
+}
+
+/**
+ * @brief Clear filter accept list.
+ *
+ * Clear all devices from the filter accept list.
+ *
+ * @note The filter accept list cannot be modified when an LE role is using
+ * the filter accept list, i.e advertiser or scanner using a filter accept
+ * list or automatic connecting to devices using filter accept list.
+ *
+ * @return Zero on success or error code otherwise, positive in case of
+ *         protocol error or negative (POSIX) in case of stack internal error.
+ */
+int bt_le_filter_accept_list_clear(void);
+__deprecated
+static inline int bt_le_whitelist_clear(void)
+{
+	return bt_le_filter_accept_list_clear();
+}
 
 /**
  * @brief Set (LE) channel map.

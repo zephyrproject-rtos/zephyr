@@ -697,9 +697,9 @@ void bt_hci_role_change(struct net_buf *buf)
 	}
 
 	if (evt->role) {
-		conn->role = BT_CONN_ROLE_SLAVE;
+		conn->role = BT_CONN_ROLE_PERIPHERAL;
 	} else {
-		conn->role = BT_CONN_ROLE_MASTER;
+		conn->role = BT_CONN_ROLE_CENTRAL;
 	}
 
 	bt_conn_unref(conn);

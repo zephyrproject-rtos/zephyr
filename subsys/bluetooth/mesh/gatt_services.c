@@ -872,7 +872,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_SLAVE) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL) {
 		return;
 	}
 
@@ -903,7 +903,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_SLAVE) {
+	if (info.role != BT_CONN_ROLE_PERIPHERAL) {
 		return;
 	}
 

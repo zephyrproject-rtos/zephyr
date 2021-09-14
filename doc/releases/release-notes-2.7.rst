@@ -33,8 +33,24 @@ Deprecated in this release
   were deprecated in favor of utilizing
   :c:macro:`DT_STRING_TOKEN` and :c:macro:`DT_STRING_UPPER_TOKEN`
 
-Changes in this release
+* :c:macro:`BT_CONN_ROLE_MASTER` and :c:macro:`BT_CONN_ROLE_SLAVE`
+  have been deprecated in favor of
+  :c:macro:`BT_CONN_ROLE_CENTRAL` and :c:macro:`BT_CONN_ROLE_PERIPHAL`
 
+* :c:macro:`BT_LE_SCAN_OPT_FILTER_WHITELIST`
+  has been deprecated in favor of
+  :c:macro:`BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST`
+
+* The following whitelist functions have been deprecated:
+  :c:func:`bt_le_whitelist_add`
+  :c:func:`bt_le_whitelist_rem`
+  :c:func:`bt_le_whitelist_clear`
+  in favor of
+  :c:func:`bt_le_filter_accept_list_add`
+  :c:func:`bt_le_filter_accept_list_remove`
+  :c:func:`bt_le_filter_accept_list_clear`
+
+Changes in this release
 ==========================
 
 Removed APIs in this release
