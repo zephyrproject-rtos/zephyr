@@ -601,7 +601,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 				    "AT", &gsm->sem_response,
 				    GSM_CMD_AT_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("modem setup returned %d, %s",
+		LOG_ERR("AT returned %d, %s",
 			ret, "retrying...");
 		(void)k_work_reschedule(&gsm->gsm_configure_work,
 					K_SECONDS(1));
@@ -622,7 +622,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	ret = gsm_setup_mccmno(gsm);
 
 	if (ret < 0) {
-		LOG_ERR("modem setup returned %d, %s",
+		LOG_ERR("gsm_setup_mccmno returned %d, %s",
 				ret, "retrying...");
 
 		(void)k_work_reschedule(&gsm->gsm_configure_work,
@@ -637,7 +637,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
+		LOG_DBG("setup_cmds returned %d, %s",
 			ret, "retrying...");
 		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
@@ -699,7 +699,7 @@ attaching:
 #endif
 #endif /* !IS_ENABLED(CONFIG_GSM_MUX) */
 
-	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
+	LOG_DBG("modem RSSI: %d, %s", gsm->context.data_rssi, "enable PPP");
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
@@ -708,7 +708,7 @@ attaching:
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
+		LOG_DBG("connect_cmds returned %d, %s",
 			ret, "retrying...");
 		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
