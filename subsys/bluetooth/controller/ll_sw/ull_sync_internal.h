@@ -9,6 +9,9 @@ int ull_sync_reset(void);
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync);
 struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle);
 void ull_sync_release(struct ll_sync_set *sync);
+void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
+			       uint8_t *addr, uint8_t rl_idx);
+bool ull_sync_setup_sid_match(struct ll_scan_set *scan, uint8_t sid);
 void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		    struct node_rx_hdr *node_rx, struct pdu_adv_sync_info *si);
 void ull_sync_done(struct node_rx_event_done *done);

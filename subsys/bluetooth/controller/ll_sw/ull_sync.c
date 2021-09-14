@@ -32,6 +32,7 @@
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
+#include "ull_filter.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
 
@@ -383,6 +384,56 @@ uint16_t ull_sync_lll_handle_get(struct lll_sync *lll)
 void ull_sync_release(struct ll_sync_set *sync)
 {
 	mem_release(sync, &sync_free);
+}
+
+void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
+			       uint8_t *addr, uint8_t rl_idx)
+{
+	/* Check if Periodic Advertiser list to be used */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
+	    scan->per_scan.filter_policy) {
+		/* Check in Periodic Advertiser List */
+		if (ull_filter_ull_pal_addr_match(addr_type, addr)) {
+			/* Remember the address, to check with
+			 * SID in Sync Info
+			 */
+			scan->per_scan.adv_addr_type = addr_type;
+			(void)memcpy(scan->per_scan.adv_addr, addr,
+				     BDADDR_SIZE);
+
+			/* Address matched */
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+
+		/* Check in Resolving List */
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
+			   ull_filter_ull_pal_listed(rl_idx, &addr_type,
+						     scan->per_scan.adv_addr)) {
+			/* Remember the address, to check with the
+			 * SID in Sync Info
+			 */
+			scan->per_scan.adv_addr_type = addr_type;
+
+			/* Address matched */
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		}
+
+	/* Check with explicitly supplied address */
+	} else if ((addr_type == scan->per_scan.adv_addr_type) &&
+		   !memcmp(addr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+		/* Address matched */
+		scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+	}
+}
+
+bool ull_sync_setup_sid_match(struct ll_scan_set *scan, uint8_t sid)
+{
+	return (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH) &&
+		((IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
+		  scan->per_scan.filter_policy &&
+		  ull_filter_ull_pal_match(scan->per_scan.adv_addr_type,
+					   scan->per_scan.adv_addr, sid)) ||
+		 (!scan->per_scan.filter_policy &&
+		  (sid == scan->per_scan.sid)));
 }
 
 void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
