@@ -88,8 +88,7 @@ static struct gsm_modem {
 
 	struct net_if *iface;
 
-	int rssi_retries;
-	int attach_retries;
+	int op_retries;
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
@@ -655,15 +654,15 @@ attaching:
 				    GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
 		/*
-		 * attach_retries not set        -> trigger N attach retries
-		 * attach_retries set            -> decrement and retry
-		 * attach_retries set, becomes 0 -> trigger full retry
+		 * op_retries not set        -> trigger N attach retries
+		 * op_retries set            -> decrement and retry
+		 * op_retries set, becomes 0 -> trigger full retry
 		 */
-		if (!gsm->attach_retries) {
-			gsm->attach_retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT *
+		if (!gsm->op_retries) {
+			gsm->op_retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT *
 				MSEC_PER_SEC / GSM_ATTACH_RETRY_DELAY_MSEC;
 		} else {
-			gsm->attach_retries--;
+			gsm->op_retries--;
 		}
 
 		LOG_DBG("Not attached, %s", "retrying...");
@@ -673,12 +672,11 @@ attaching:
 		return;
 	}
 
-	/* Attached, clear retry counter */
+	/* Attached */
 	gsm->state = GSM_PPP_STATE_ATTACHED;
-	gsm->attach_retries = 0;
 
 	LOG_DBG("modem attach returned %d, %s", ret, "read RSSI");
-	gsm->rssi_retries = GSM_RSSI_RETRIES;
+	gsm->op_retries = GSM_RSSI_RETRIES;
 
  attached:
 
@@ -690,7 +688,7 @@ attaching:
 		gsm->context.data_rssi < GSM_RSSI_MAXVAL)) {
 
 		LOG_DBG("Not valid RSSI, %s", "retrying...");
-		if (gsm->rssi_retries-- > 0) {
+		if (gsm->op_retries-- > 0) {
 			(void)k_work_reschedule(&gsm->gsm_configure_work,
 						K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
 			return;
