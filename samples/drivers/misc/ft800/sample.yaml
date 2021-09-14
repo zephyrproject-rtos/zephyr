@@ -6,3 +6,6 @@ tests:
     depends_on: spi
     platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=ftdi_vm800c
+    harness: display
+    harness_config:
+      fixture: spi_display_ft800
