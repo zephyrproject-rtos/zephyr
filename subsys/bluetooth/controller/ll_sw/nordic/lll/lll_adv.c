@@ -315,7 +315,8 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
-struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *const pdu,
+				  uint8_t *const idx)
 {
 	uint8_t first, last;
 	void *p;

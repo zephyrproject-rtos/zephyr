@@ -469,7 +469,7 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-uint8_t ll_connect_disable(void **rx)
+uint8_t ll_connect_disable(void **const rx)
 {
 	struct ll_scan_set *scan_coded;
 	struct lll_scan *scan_lll;

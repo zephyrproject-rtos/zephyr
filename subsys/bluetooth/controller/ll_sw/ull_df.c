@@ -200,7 +200,8 @@ static int init_reset(void)
  */
 uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 				   uint8_t cte_type, uint8_t cte_count,
-				   uint8_t num_ant_ids, uint8_t *ant_ids)
+				   uint8_t num_ant_ids,
+				   const uint8_t *const ant_ids)
 {
 	struct lll_df_adv_cfg *cfg;
 	struct ll_adv_set *adv;
@@ -380,7 +381,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 					uint8_t slot_durations,
 					uint8_t max_cte_count,
 					uint8_t switch_pattern_len,
-					uint8_t *ant_ids)
+					const uint8_t *const ant_ids)
 {
 	struct lll_df_sync_cfg *cfg, *cfg_prev;
 	uint32_t slot_minus_us = 0;

@@ -74,7 +74,7 @@ static struct k_sem sem_ticker_cb;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
-			    uint8_t *adv_addr, uint16_t skip,
+			    const uint8_t *const adv_addr, uint16_t skip,
 			    uint16_t sync_timeout, uint8_t sync_cte_type)
 {
 	struct ll_scan_set *scan_coded;
@@ -207,7 +207,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	return 0;
 }
 
-uint8_t ll_sync_create_cancel(void **rx)
+uint8_t ll_sync_create_cancel(void **const rx)
 {
 	struct ll_scan_set *scan_coded;
 	memq_link_t *link_sync_estab;

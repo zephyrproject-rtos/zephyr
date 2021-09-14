@@ -54,8 +54,8 @@ static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static void *sync_iso_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
-			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
-			   uint16_t sync_timeout, uint8_t num_bis,
+			   uint8_t encryption, const uint8_t *const bcode,
+			   uint8_t mse, uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis)
 {
 	struct ll_sync_iso *sync_iso;
@@ -116,7 +116,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
+uint8_t ll_big_sync_terminate(uint8_t big_handle, void **const rx)
 {
 	struct ll_sync_iso *sync_iso;
 	struct node_rx_pdu *node_rx;

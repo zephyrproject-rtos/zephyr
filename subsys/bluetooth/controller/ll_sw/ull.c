@@ -461,7 +461,7 @@ static void disabled_cb(void *param);
 static void ull_done(void *param);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-int ll_init(struct k_sem *sem_rx)
+int ll_init(struct k_sem *const sem_rx)
 {
 	int err;
 
@@ -786,7 +786,7 @@ void ll_reset(void)
  * @param handle[out]    Connection handle
  * @return TX completed
  */
-uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
+uint8_t ll_rx_get(void **const node_rx, uint16_t *handle)
 {
 	struct node_rx_hdr *rx;
 	memq_link_t *link;
@@ -1196,7 +1196,7 @@ void ll_rx_dequeue(void)
 	}
 }
 
-void ll_rx_mem_release(void **node_rx)
+void ll_rx_mem_release(void **const node_rx)
 {
 	struct node_rx_hdr *rx;
 

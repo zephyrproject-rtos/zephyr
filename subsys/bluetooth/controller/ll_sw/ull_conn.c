@@ -260,12 +260,12 @@ void *ll_tx_mem_acquire(void)
 	return mem_acquire(&mem_conn_tx.free);
 }
 
-void ll_tx_mem_release(void *tx)
+void ll_tx_mem_release(void *const tx)
 {
 	mem_release(tx, &mem_conn_tx.free);
 }
 
-int ll_tx_mem_enqueue(uint16_t handle, void *tx)
+int ll_tx_mem_enqueue(uint16_t handle, void *const tx)
 {
 #if defined(CONFIG_BT_CTLR_THROUGHPUT)
 #define BT_CTLR_THROUGHPUT_PERIOD 1000000000UL

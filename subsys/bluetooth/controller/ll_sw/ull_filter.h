@@ -11,7 +11,6 @@ bool ull_filter_ull_pal_match(const uint8_t addr_type,
 			      const uint8_t *const addr, const uint8_t sid);
 bool ull_filter_ull_pal_listed(const uint8_t rl_idx, uint8_t *const addr_type,
 			       uint8_t *const addr);
-
 void ull_filter_adv_scan_state_cb(uint8_t bm);
 void ull_filter_adv_update(uint8_t adv_fp);
 void ull_filter_scan_update(uint8_t scan_fp);

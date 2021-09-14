@@ -75,24 +75,26 @@ struct lll_resolve_list {
 
 extern bool ull_filter_lll_lrpa_used(uint8_t rl_idx);
 extern bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx);
-extern uint8_t *ull_filter_lll_irks_get(uint8_t *count);
-extern uint8_t ull_filter_lll_rl_idx(bool fal, uint8_t devmatch_id);
+extern uint8_t *ull_filter_lll_irks_get(uint8_t *const count);
+extern uint8_t ull_filter_lll_rl_idx(bool filter, uint8_t devmatch_id);
 extern uint8_t ull_filter_lll_rl_irk_idx(uint8_t irkmatch_id);
 extern bool ull_filter_lll_irk_in_fal(uint8_t rl_idx);
 extern struct lll_filter *ull_filter_lll_get(bool fal);
 extern struct lll_fal *ull_filter_lll_fal_get(void);
 extern struct lll_resolve_list *ull_filter_lll_resolve_list_get(void);
 extern bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx);
-extern bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
-					   uint8_t *rl_idx);
-extern bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type, uint8_t *id_addr,
+extern bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type,
+					   const uint8_t *const id_addr,
+					   uint8_t *const rl_idx);
+extern bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
+					   const uint8_t *const id_addr,
 					   uint8_t rl_idx);
 extern bool ull_filter_lll_rl_enabled(void);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 typedef void (*resolve_callback_t)(void *param);
-extern uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa,
+extern uint8_t ull_filter_deferred_resolve(const bt_addr_t *const rpa,
 					resolve_callback_t cb);
-extern uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa,
+extern uint8_t ull_filter_deferred_targeta_resolve(const bt_addr_t *const rpa,
 						uint8_t rl_idx,
 						resolve_callback_t cb);
 #endif
