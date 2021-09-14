@@ -31,6 +31,9 @@ extern "C" {
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
 
+/** @brief Mask for OTS object IDs, preserving the 48 bits */
+#define BT_OTS_OBJ_ID_MASK BIT64_MASK(48)
+
 /** @brief Length of OTS object ID string (in bytes). */
 #define BT_OTS_OBJ_ID_STR_LEN 15
 
