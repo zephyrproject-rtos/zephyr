@@ -55,7 +55,7 @@ uint8_t ll_cis_accept(uint16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (acl_conn->lll.role == BT_CONN_ROLE_MASTER) {
+	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
 		BT_ERR("Not allowed for central");
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
