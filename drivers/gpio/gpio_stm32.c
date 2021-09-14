@@ -464,15 +464,10 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
 	/* Enable device clock before configuration (requires bank writes) */
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		err = pm_device_get(dev);
-		if (err < 0) {
-			return err;
-		}
+	err = pm_device_get(dev);
+	if (err < 0) {
+		return err;
 	}
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
