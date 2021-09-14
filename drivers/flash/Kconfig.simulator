@@ -26,6 +26,15 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only pull bits to zero, regardless.
 
+config FLASH_SIMULATOR_NOALLOC
+	bool "Reads, writes and erase are simulated within buffer of write_block_size size"
+	depends on !ARCH_POSIX
+	help
+	  Enabling this option will cause driver to allocate only write_block_size of buffer for
+	  flash simulation.  The driver will still respect size and offset, as set in a DTS,
+	  returning errors when flash operations would cross these.  The write will still
+	  respect write_block_size, and erase will expect page alignment.
+
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Enable hardware timing simulation"
 

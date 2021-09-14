@@ -51,7 +51,11 @@
 #error "Erase unit must be a multiple of program unit"
 #endif
 
+#ifndef CONFIG_FLASH_SIMULATOR_NOALLOC
 #define MOCK_FLASH(addr) (mock_flash + (addr) - FLASH_SIMULATOR_BASE_OFFSET)
+#else
+#define MOCK_FLASH(addr) (mock_flash + ((addr) & 0))
+#endif
 
 /* maximum number of pages that can be tracked by the stats module */
 #define STATS_PAGE_COUNT_THRESHOLD 256
@@ -149,7 +153,11 @@ static int flash_fd = -1;
 static const char *flash_file_path;
 static const char default_flash_file_path[] = "flash.bin";
 #else
+#ifndef CONFIG_FLASH_SIMULATOR_NOALLOC
 static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
+#else
+static uint8_t mock_flash[FLASH_SIMULATOR_PROG_UNIT];
+#endif
 #endif /* CONFIG_ARCH_POSIX */
 
 static const struct flash_driver_api flash_sim_api;
@@ -191,7 +199,11 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 
 	FLASH_SIM_STATS_INC(flash_sim_stats, flash_read_calls);
 
+#ifndef CONFIG_FLASH_SIMULATOR_NOALLOC
 	memcpy(data, MOCK_FLASH(offset), len);
+#else
+	memset(data, flash_sim_parameters.erase_value, len);
+#endif
 	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_read, len);
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
@@ -258,11 +270,13 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		}
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
+#ifndef CONFIG_FLASH_SIMULATOR_NOALLOC
 		/* only pull bits to zero */
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
 		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
+#endif
 #endif
 	}
 
@@ -280,12 +294,14 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 static void unit_erase(const uint32_t unit)
 {
+#ifndef CONFIG_FLASH_SIMULATOR_NOALLOC
 	const off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
 				(unit * FLASH_SIMULATOR_ERASE_UNIT);
 
 	/* erase the memory unit by setting it to erase value */
 	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
 	       FLASH_SIMULATOR_ERASE_UNIT);
+#endif
 }
 
 static int flash_sim_erase(const struct device *dev, const off_t offset,
