@@ -87,7 +87,7 @@
 		uart0: serial@10010000 {
 			compatible = "sifive,uart0";
 			interrupt-parent = <&plic>;
-			interrupts = <4 1>;
+			interrupts = <39 1>;
 			reg = <0x10010000 0x1000>;
 			reg-names = "control";
 			label = "uart_0";
@@ -97,7 +97,7 @@
 		uart1: serial@10011000 {
 			compatible = "sifive,uart0";
 			interrupt-parent = <&plic>;
-			interrupts = <5 1>;
+			interrupts = <40 1>;
 			reg = <0x10011000 0x1000>;
 			reg-names = "control";
 			label = "uart_1";
@@ -107,7 +107,7 @@
 		spi0: spi@10040000 {
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
-			interrupts = <51 1>;
+			interrupts = <41 1>;
 			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
 			reg-names = "control", "mem";
 			label = "spi_0";
@@ -119,7 +119,7 @@
 		spi1: spi@10041000 {
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
-			interrupts = <52 1>;
+			interrupts = <42 1>;
 			reg = <0x10041000 0x1000>;
 			reg-names = "control";
 			label = "spi_1";
@@ -131,7 +131,7 @@
 		spi2: spi@10050000 {
 			compatible = "sifive,spi0";
 			interrupt-parent = <&plic>;
-			interrupts = <6 1>;
+			interrupts = <43 1>;
 			reg = <0x10050000 0x1000>;
 			reg-names = "control";
 			label = "spi_2";
