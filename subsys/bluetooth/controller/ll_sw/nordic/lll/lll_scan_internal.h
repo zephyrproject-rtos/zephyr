@@ -5,7 +5,7 @@
  */
 
 void lll_scan_isr_resume(void *param);
-bool lll_scan_isr_rx_check(struct lll_scan *lll, uint8_t irkmatch_ok,
+bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
 			   uint8_t devmatch_ok, uint8_t rl_idx);
 bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 			 uint8_t rl_idx);

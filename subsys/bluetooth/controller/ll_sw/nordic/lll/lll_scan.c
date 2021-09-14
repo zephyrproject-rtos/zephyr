@@ -139,7 +139,7 @@ void lll_scan_isr_resume(void *param)
 	resume_prepare_cb(&p);
 }
 
-bool lll_scan_isr_rx_check(struct lll_scan *lll, uint8_t irkmatch_ok,
+bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
 			   uint8_t devmatch_ok, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
