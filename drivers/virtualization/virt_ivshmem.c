@@ -70,7 +70,7 @@ static bool ivshmem_configure_interrupts(const struct device *dev)
 
 	LOG_DBG("%u MSI-X Vectors connected", n_vectors);
 
-	if (!pcie_msi_enable(data->bdf, data->vectors, n_vectors)) {
+	if (!pcie_msi_enable(data->bdf, data->vectors, n_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		goto out;
 	}
