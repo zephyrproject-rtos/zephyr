@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Media Control Client interface
+ *  @brief Bluetooth Media Control Client (MCC) interface
  *
  *  Updated to the Media Control Profile specification version d09r01
  */
@@ -26,282 +26,282 @@ extern "C" {
 
 /**** Callback functions ******************************************************/
 
-/** @brief Callback function for mcc_discover_mcs
+/** @brief Callback function for bt_mcc_discover_mcs()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  */
 typedef void (*bt_mcc_discover_mcs_cb)(struct bt_conn *conn, int err);
 
-/** @brief Callback function for mcc_read_player_name
+/** @brief Callback function for bt_mcc_read_player_name()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param name          Player name, max length is PLAYER_NAME_MAX (mpl.h)
  */
 typedef void (*bt_mcc_player_name_read_cb)(struct bt_conn *conn, int err,
-					     const char *name);
+					   const char *name);
 
 #ifdef CONFIG_BT_OTC
-/** @brief Callback function for mcc_read_icon_obj_id
+/** @brief Callback function for bt_mcc_read_icon_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param icon_id       The ID of the Icon Object. This is a UINT48 in a uint64_t
  */
 typedef void (*bt_mcc_icon_obj_id_read_cb)(struct bt_conn *conn, int err,
-					     uint64_t id);
+					   uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
-/** @brief Callback function for mcc_read_icon_url
+/** @brief Callback function for bt_mcc_read_icon_url()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param icon_url      The URL of the Icon
  */
 typedef void (*bt_mcc_icon_url_read_cb)(struct bt_conn *conn, int err,
-					  const char *icon_url);
+					const char *icon_url);
 
-/** @brief Callback function for track_changed
+/** @brief Callback function for track changed notifications
  *
  * The track changed characteristic is a special case.  It can not be
  * read or written, it can only be notified.
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  */
 typedef void (*bt_mcc_track_changed_ntf_cb)(struct bt_conn *conn, int err);
 
 
-/** @brief Callback function for mcc_read_track_title
+/** @brief Callback function for bt_mcc_read_track_title()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param title         The title of the track
  */
 typedef void (*bt_mcc_track_title_read_cb)(struct bt_conn *conn, int err,
-					     const char *title);
+					   const char *title);
 
-/** @brief Callback function for mcc_read_track_dur
+/** @brief Callback function for bt_mcc_read_track_dur()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param dur           The duration of the track
  */
 typedef void (*bt_mcc_track_dur_read_cb)(struct bt_conn *conn, int err,
-					   int32_t dur);
+					 int32_t dur);
 
-/** @brief Callback function for mcc_read_track_position
+/** @brief Callback function for bt_mcc_read_track_position()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param pos           The Track Position
  */
 typedef void (*bt_mcc_track_position_read_cb)(struct bt_conn *conn, int err,
-						int32_t pos);
+					      int32_t pos);
 
-/** @brief Callback function for mcc_set_track_position
+/** @brief Callback function for bt_mcc_set_track_position()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param pos           The Track Position written (or attempted to write)
  */
 typedef void (*bt_mcc_track_position_set_cb)(struct bt_conn *conn, int err,
-					       int32_t pos);
+					     int32_t pos);
 
-/** @brief Callback function for mcc_read_playback_speed
+/** @brief Callback function for bt_mcc_read_playback_speed()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Playback Speed
  */
 typedef void (*bt_mcc_playback_speed_read_cb)(struct bt_conn *conn, int err,
-						int8_t speed);
+					      int8_t speed);
 
-/** @brief Callback function for mcc_set_playback_speed
+/** @brief Callback function for bt_mcc_set_playback_speed()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Playback Speed written (or attempted to write)
  */
 typedef void (*bt_mcc_playback_speed_set_cb)(struct bt_conn *conn, int err,
-					       int8_t speed);
+					     int8_t speed);
 
-/** @brief Callback function for mcc_read_seeking_speed
+/** @brief Callback function for bt_mcc_read_seeking_speed()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Seeking Speed
  */
 typedef void (*bt_mcc_seeking_speed_read_cb)(struct bt_conn *conn, int err,
-					       int8_t speed);
+					     int8_t speed);
 
 #ifdef CONFIG_BT_OTC
-/** @brief Callback function for mcc_segments_obj_read
+/** @brief Callback function for bt_mcc_read_segments_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Track Segments Object ID (UINT48)
  */
 typedef void (*bt_mcc_segments_obj_id_read_cb)(struct bt_conn *conn,
-						 int err, uint64_t id);
+					       int err, uint64_t id);
 
-/** @brief Callback function for mcc_current_track_obj_id_read
+/** @brief Callback function for bt_mcc_read_current_track_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Current Track Object ID (UINT48)
  */
 typedef void (*bt_mcc_current_track_obj_id_read_cb)(struct bt_conn *conn,
-						      int err, uint64_t id);
+						    int err, uint64_t id);
 
-/** @brief Callback function for mcc_set_current_track_obj_id
+/** @brief Callback function for bt_mcc_set_current_track_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) written (or attempted to write)
  */
 typedef void (*bt_mcc_current_track_obj_id_set_cb)(struct bt_conn *conn, int err,
 						   uint64_t id);
 
-/** @brief Callback function for mcc_next_track_obj_id_obj_read
+/** @brief Callback function for bt_mcc_read_next_track_obj_id_obj()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Next Track Object ID (UINT48)
  */
 typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn,
-						   int err, uint64_t id);
+						 int err, uint64_t id);
 
-/** @brief Callback function for mcc_set_next_track_obj_id
+/** @brief Callback function for bt_mcc_set_next_track_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) written (or attempted to write)
  */
 typedef void (*bt_mcc_next_track_obj_id_set_cb)(struct bt_conn *conn, int err,
 						uint64_t id);
 
-/** @brief Callback function for mcc_current_group_obj_id_read
+/** @brief Callback function for bt_mcc_read_current_group_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Current Group Object ID (UINT48)
  */
 typedef void (*bt_mcc_current_group_obj_id_read_cb)(struct bt_conn *conn,
-						      int err, uint64_t id);
+						    int err, uint64_t id);
 
-/** @brief Callback function for mcc_set_current_group_obj_id
+/** @brief Callback function for bt_mcc_set_current_group_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) written (or attempted to write)
  */
 typedef void (*bt_mcc_current_group_obj_id_set_cb)(struct bt_conn *conn, int err,
 						   uint64_t obj_id);
 
-/** @brief Callback function for mcc_parent_group_obj_id_read
+/** @brief Callback function for bt_mcc_read_parent_group_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Parent Group Object ID (UINT48)
  */
 typedef void (*bt_mcc_parent_group_obj_id_read_cb)(struct bt_conn *conn,
-						     int err, uint64_t id);
+						   int err, uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
-/** @brief Callback function for playing_order_read
+/** @brief Callback function for bt_mcc_read_playing_order()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param order         The playback order
  */
 typedef void (*bt_mcc_playing_order_read_cb)(struct bt_conn *conn, int err,
-					       uint8_t order);
+					     uint8_t order);
 
-/** @brief Callback function for mcc_set_playing_order
+/** @brief Callback function for bt_mcc_set_playing_order()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param order         The Playing Order written (or attempted to write)
  */
 typedef void (*bt_mcc_playing_order_set_cb)(struct bt_conn *conn, int err,
-					      uint8_t order);
+					    uint8_t order);
 
-/** @brief Callback function for playing_orders_supported_read
+/** @brief Callback function for bt_mcc_read_playing_orders_supported()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param orders        The playback orders supported (bitmap)
  */
 typedef void (*bt_mcc_playing_orders_supported_read_cb)(struct bt_conn *conn,
-						     int err, uint16_t orders);
+							int err, uint16_t orders);
 
-/** @brief Callback function for media_state_read
+/** @brief Callback function for bt_mcc_read_media_state()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param state         The Media State
  */
 typedef void (*bt_mcc_media_state_read_cb)(struct bt_conn *conn, int err,
-					     uint8_t state);
+					   uint8_t state);
 
-/** @brief Callback function for mcc_send_cmd
+/** @brief Callback function for bt_mcc_send_cmd()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param cmd           The command sent
  */
 typedef void (*bt_mcc_cmd_send_cb)(struct bt_conn *conn, int err,
-				     struct mpl_cmd cmd);
+				   struct mpl_cmd cmd);
 
 /** @brief Callback function for command notifications
  *
  * Notifications for commands use a different parameter structure
  * than what is used for sending commands
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param ntf           The command notification
  */
 typedef void (*bt_mcc_cmd_ntf_cb)(struct bt_conn *conn, int err,
-				    struct mpl_cmd_ntf ntf);
+				  struct mpl_cmd_ntf ntf);
 
-/** @brief Callback function for mcc_read_opcodes_supported
+/** @brief Callback function for bt_mcc_read_opcodes_supported()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param opcodes       The supported opcodes
  */
 typedef void (*bt_mcc_opcodes_supported_read_cb)(struct bt_conn *conn,
-						   int err, uint32_t opcodes);
+						 int err, uint32_t opcodes);
 
 #ifdef CONFIG_BT_OTC
-/** @brief Callback function for mcc_send_search
+/** @brief Callback function for bt_mcc_send_search()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param search        The search written (or attempted to write)
  */
 typedef void (*bt_mcc_search_send_cb)(struct bt_conn *conn, int err,
-					struct mpl_search search);
+				      struct mpl_search search);
 
 /** @brief Callback function for search notifications
  *
  * Notifications for the search control points have a different parameter
  * structure than callbacks for search sends
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param ntf           The search notification
  */
 typedef void (*bt_mcc_search_ntf_cb)(struct bt_conn *conn, int err,
-				       uint8_t result_code);
+				     uint8_t result_code);
 
-/** @brief Callback function for mcc_search_results_obj_id_read
+/** @brief Callback function for bt_mcc_read_search_results_obj_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Search Results Object ID (UINT48)
  *
  * Note that the Search Results Object ID value may be zero, in case the
@@ -309,13 +309,13 @@ typedef void (*bt_mcc_search_ntf_cb)(struct bt_conn *conn, int err,
  * there has not been a successful search.)
  */
 typedef void (*bt_mcc_search_results_obj_id_read_cb)(struct bt_conn *conn,
-						       int err, uint64_t id);
+						     int err, uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
-/** @brief Callback function for mcc_read_content_control_id
+/** @brief Callback function for bt_mcc_read_content_control_id()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param ccid          The Content Control ID
  */
 typedef void (*bt_mcc_content_control_id_read_cb)(struct bt_conn *conn,
@@ -325,83 +325,83 @@ typedef void (*bt_mcc_content_control_id_read_cb)(struct bt_conn *conn,
 
 /** @brief Callback function for object selected
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  */
 typedef void (*bt_mcc_otc_obj_selected_cb)(struct bt_conn *conn, int err);
 
 /** @brief Callback function for object metadata
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, errno on fail
  */
 typedef void (*bt_mcc_otc_obj_metadata_cb)(struct bt_conn *conn, int err);
 
-/** @brief Callback function for bt_mcc_otc_read_icon_object
+/** @brief Callback function for bt_mcc_otc_read_icon_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_icon_object_cb)(struct bt_conn *conn, int err,
-						 struct net_buf_simple *buf);
+					       struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_track_segments_object
+/** @brief Callback function for bt_mcc_otc_read_track_segments_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_track_segments_object_cb)(struct bt_conn *conn, int err,
-							   struct net_buf_simple *buf);
+							 struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_current_track_object
+/** @brief Callback function for bt_mcc_otc_read_current_track_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_current_track_object_cb)(struct bt_conn *conn, int err,
-							  struct net_buf_simple *buf);
+							struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_next_track_object
+/** @brief Callback function for bt_mcc_otc_read_next_track_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_next_track_object_cb)(struct bt_conn *conn, int err,
-						       struct net_buf_simple *buf);
+						     struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_current_group_object
+/** @brief Callback function for bt_mcc_otc_read_current_group_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, int err,
-							  struct net_buf_simple *buf);
+							struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_parent_group_object
+/** @brief Callback function for bt_mcc_otc_read_parent_group_object()
  *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param buf           Buffer containing the object contents
  *
  * If err is EMSGSIZE, the object contents have been truncated.
  */
 typedef void (*bt_mcc_otc_read_parent_group_object_cb)(struct bt_conn *conn, int err,
-							  struct net_buf_simple *buf);
+						       struct net_buf_simple *buf);
 
 #endif /* CONFIG_BT_OTC */
 
@@ -471,8 +471,8 @@ int bt_mcc_init(struct bt_mcc_cb *cb);
  * Discover Media Control Service on the server given by the connection
  * Optionally subscribe to notifications.
  *
- * Shall be called once after initialization and before using other MCC
- * functionality.
+ * Shall be called once after initialization and before using other
+ * media control client functionality.
  *
  * @param conn        The connection on which to do MCS discovery
  * @param subscribe   Whether to subscribe to notifications
