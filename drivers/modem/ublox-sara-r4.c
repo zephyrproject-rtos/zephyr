@@ -1238,7 +1238,7 @@ restart:
 	/* autodetect APN from IMSI */
 	char cmd[sizeof("AT+CGDCONT=1,\"IP\",\"\"")+MDM_APN_LENGTH];
 
-	snprintf(cmd, sizeof(cmd), "AT+CGDCONT=1,\"IP\",\"%s\"", mdata.mdm_apn);
+	snprintk(cmd, sizeof(cmd), "AT+CGDCONT=1,\"IP\",\"%s\"", mdata.mdm_apn);
 
 	/* setup PDP context definition */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
@@ -1337,7 +1337,7 @@ restart:
 		/* setup PDP context definition */
 		char cmd[sizeof("AT+UPSD=0,1,\"%s\"")+MDM_APN_LENGTH];
 
-		snprintf(cmd, sizeof(cmd), "AT+UPSD=0,1,\"%s\"", mdata.mdm_apn);
+		snprintk(cmd, sizeof(cmd), "AT+UPSD=0,1,\"%s\"", mdata.mdm_apn);
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			NULL, 0,
 			(const char *)cmd,
