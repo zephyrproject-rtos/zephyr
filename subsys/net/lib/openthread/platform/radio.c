@@ -1005,13 +1005,13 @@ uint64_t otPlatRadioGetNow(otInstance *aInstance)
 #endif
 
 #if defined(CONFIG_IEEE802154_2015)
-void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
-			  uint8_t aKeyId, const otMacKey *aPrevKey,
-			  const otMacKey *aCurrKey, const otMacKey *aNextKey)
+void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId,
+			  const otMacKeyMaterial *aPrevKey, const otMacKeyMaterial *aCurrKey,
+			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
-	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL &&
-			aNextKey != NULL);
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
 
@@ -1019,19 +1019,19 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId == 1 ? 0x80 : aKeyId - 1,
-			.key_value = (uint8_t *)aPrevKey->m8,
+			.key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId,
-			.key_value = (uint8_t *)aCurrKey->m8,
+			.key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
 			.key_index = aKeyId == 0x80 ? 1 : aKeyId + 1,
-			.key_value = (uint8_t *)aNextKey->m8,
+			.key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
