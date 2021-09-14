@@ -456,7 +456,7 @@ static void uart_stm32_poll_out(const struct device *dev,
 	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
 	}
 
-	/* do not allow system to suspend until transmission has completed */
+	/* Do not allow system to suspend until transmission has completed */
 	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
@@ -519,6 +519,8 @@ static int uart_stm32_fifo_fill(const struct device *dev,
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint8_t num_tx = 0U;
+
+	LL_USART_ClearFlag_TC(UartInstance);
 
 	if ((size > 0) && LL_USART_IsActiveFlag_TXE(UartInstance)) {
 		/* do not allow system to suspend until transmission has completed */
@@ -803,8 +805,6 @@ static void uart_stm32_isr(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
-		LL_USART_ClearFlag_TC(UartInstance);
-
 		/* allow system to suspend, UART has now finished */
 		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
 	}
@@ -1453,7 +1453,6 @@ static int uart_stm32_init(const struct device *dev)
 	/* Enable TC interrupt so we can release suspend constraint when done */
 	LL_USART_EnableIT_TC(UartInstance);
 #endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM) */
-
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
 #else
