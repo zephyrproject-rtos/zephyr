@@ -53,6 +53,28 @@ LOG_MODULE_REGISTER(uart_stm32);
 
 #define TIMEOUT 1000
 
+#ifdef CONFIG_PM
+static void uart_stm32_pm_constraint_set(const struct device *dev)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (!data->pm_constraint_on) {
+		data->pm_constraint_on = true;
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+
+static void uart_stm32_pm_constraint_release(const struct device *dev)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (data->pm_constraint_on) {
+		data->pm_constraint_on = false;
+		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+	}
+}
+#endif /* CONFIG_PM */
+
 static inline void uart_stm32_set_baudrate(const struct device *dev,
 					   uint32_t baud_rate)
 {
@@ -456,8 +478,23 @@ static void uart_stm32_poll_out(const struct device *dev,
 	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
 	}
 
-	/* do not allow system to suspend until transmission has completed */
-	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+#ifdef CONFIG_PM
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (!data->tx_poll_stream_on) {
+		data->tx_poll_stream_on = true;
+
+		/* Don't allow system to suspend until stream
+		 * transmission has completed
+		 */
+		uart_stm32_pm_constraint_set(dev);
+
+		/* Enable TC interrupt so we can release suspend
+		 * constraint when done
+		 */
+		LL_USART_EnableIT_TC(UartInstance);
+	}
+#endif /* CONFIG_PM */
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
 }
@@ -520,11 +557,6 @@ static int uart_stm32_fifo_fill(const struct device *dev,
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint8_t num_tx = 0U;
 
-	if ((size > 0) && LL_USART_IsActiveFlag_TXE(UartInstance)) {
-		/* do not allow system to suspend until transmission has completed */
-		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
-	}
-
 	while ((size - num_tx > 0) &&
 	       LL_USART_IsActiveFlag_TXE(UartInstance)) {
 		/* TXE flag will be cleared with byte write to DR|RDR register */
@@ -563,6 +595,10 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_EnableIT_TC(UartInstance);
+
+#ifdef CONFIG_PM
+	uart_stm32_pm_constraint_set(dev);
+#endif
 }
 
 static void uart_stm32_irq_tx_disable(const struct device *dev)
@@ -570,6 +606,10 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	LL_USART_DisableIT_TC(UartInstance);
+
+#ifdef CONFIG_PM
+	uart_stm32_pm_constraint_release(dev);
+#endif
 }
 
 static int uart_stm32_irq_tx_ready(const struct device *dev)
@@ -799,16 +839,30 @@ static void uart_stm32_dma_rx_flush(const struct device *dev)
 static void uart_stm32_isr(const struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
+#if defined(CONFIG_PM) || defined(CONFIG_UART_ASYNC_API)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+#endif
+
+#ifdef CONFIG_PM
+	if (LL_USART_IsEnabledIT_TC(UartInstance) &&
+		LL_USART_IsActiveFlag_TC(UartInstance)) {
+
+		if (data->tx_poll_stream_on) {
+			/* A poll stream transmition just completed,
+			 * allow system to suspend
+			 */
+			LL_USART_DisableIT_TC(UartInstance);
+			data->tx_poll_stream_on = false;
+			uart_stm32_pm_constraint_release(dev);
+		}
+		/* Stream transmition was either async or IRQ based,
+		 * constraint will be released at the same time TC IT
+		 * is disabled
+		 */
+	}
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
-		LL_USART_ClearFlag_TC(UartInstance);
-
-		/* allow system to suspend, UART has now finished */
-		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
-	}
-
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
@@ -837,8 +891,9 @@ static void uart_stm32_isr(const struct device *dev)
 		/* Generate TX_DONE event when transmission is done */
 		async_evt_tx_done(data);
 
-		/* allow system to suspend, UART has now finished */
-		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+#ifdef CONFIG_PM
+		uart_stm32_pm_constraint_release(dev);
+#endif
 	}
 
 	/* Clear errors */
@@ -849,12 +904,18 @@ static void uart_stm32_isr(const struct device *dev)
 static void uart_stm32_isr(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
 		LL_USART_ClearFlag_TC(UartInstance);
+		LL_USART_DisableIT_TC(UartInstance);
+
+		__ASSERT_NO_MSG(data->tx_poll_stream_on);
+
+		data->tx_poll_stream_on = false;
 
 		/* allow system to suspend, UART has now finished */
-		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+		uart_stm32_pm_constraint_release(dev);
 	}
 }
 #endif /* (CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
@@ -1079,8 +1140,10 @@ static int uart_stm32_async_tx(const struct device *dev,
 	/* Start TX timer */
 	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
+#ifdef CONFIG_PM
 	/* do not allow system to suspend until transmission has completed */
-	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	uart_stm32_pm_constraint_set(dev);
+#endif
 
 	/* Enable TX DMA requests */
 	uart_stm32_dma_tx_enable(dev);
@@ -1445,14 +1508,6 @@ static int uart_stm32_init(const struct device *dev)
 #elif defined(CONFIG_PM)
 	config->irq_config_func(dev);
 #endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
-	/* Clear TC flag */
-	LL_USART_ClearFlag_TC(UartInstance);
-
-	/* Enable TC interrupt so we can release suspend constraint when done */
-	LL_USART_EnableIT_TC(UartInstance);
-#endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM) */
 
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
