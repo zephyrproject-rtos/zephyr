@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
-#include <logging/log_core2.h>
+#include <logging/log_msg2.h>
 #include <logging/log_instance.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,6 +15,9 @@
 #include <syscall.h>
 #include <sys/util.h>
 
+/* This header file keeps all macros and functions needed for creating logging
+ * messages (macros like @ref LOG_ERR).
+ */
 #define LOG_LEVEL_NONE 0U
 #define LOG_LEVEL_ERR  1U
 #define LOG_LEVEL_WRN  2U
@@ -481,27 +484,6 @@ enum log_strdup_action {
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 
-
-/** @brief Get name of the log source.
- *
- * @param source_id Source ID.
- * @return Name.
- */
-static inline const char *log_name_get(uint32_t source_id)
-{
-	return __log_const_start[source_id].name;
-}
-
-/** @brief Get compiled level of the log source.
- *
- * @param source_id Source ID.
- * @return Level.
- */
-static inline uint8_t log_compiled_level_get(uint32_t source_id)
-{
-	return __log_const_start[source_id].level;
-}
-
 /** @brief Get index of the log source based on the address of the constant data
  *         associated with the source.
  *
@@ -516,12 +498,6 @@ static inline uint32_t log_const_source_id(
 			sizeof(struct log_source_const_data);
 }
 
-/** @brief Get number of registered sources. */
-static inline uint32_t log_sources_count(void)
-{
-	return log_const_source_id(__log_const_end);
-}
-
 extern struct log_source_dynamic_data __log_dynamic_start[];
 extern struct log_source_dynamic_data __log_dynamic_end[];
 
@@ -533,17 +509,6 @@ extern struct log_source_dynamic_data __log_dynamic_end[];
 
 #define LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst) \
 	LOG_ITEM_DYNAMIC_DATA(LOG_INSTANCE_FULL_NAME(_module_name, _inst))
-
-/** @brief Get pointer to the filter set of the log source.
- *
- * @param source_id Source ID.
- *
- * @return Pointer to the filter set.
- */
-static inline uint32_t *log_dynamic_filters_get(uint32_t source_id)
-{
-	return &__log_dynamic_start[source_id].filters;
-}
 
 /** @brief Get index of the log source based on the address of the dynamic data
  *         associated with the source.
@@ -557,12 +522,6 @@ static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 	return ((uint8_t *)data - (uint8_t *)__log_dynamic_start)/
 			sizeof(struct log_source_dynamic_data);
 }
-
-/* Initialize runtime filters */
-void z_log_runtime_filters_init(void);
-
-/* Notify log_core that a backend was enabled. */
-void z_log_notify_backend_enabled(void);
 
 /** @brief Dummy function to trigger log messages arguments type checking. */
 static inline __printf_like(1, 2)
@@ -709,49 +668,6 @@ void log_generic_from_user(struct log_msg_ids src_level,
  * @return True if address within the pool, false otherwise.
  */
 bool log_is_strdup(const void *buf);
-
-/** @brief Free allocated buffer.
- *
- * @param buf Buffer.
- */
-void log_free(void *buf);
-
-/**
- * @brief Get current number of allocated buffers for string duplicates.
- */
-uint32_t log_get_strdup_pool_current_utilization(void);
-
-/**
- * @brief Get maximal number of simultaneously allocated buffers for string
- *	  duplicates.
- *
- * Value can be used to determine pool size.
- */
-uint32_t log_get_strdup_pool_utilization(void);
-
-/**
- * @brief Get length of the longest string duplicated.
- *
- * Value can be used to determine buffer size in the string duplicates pool.
- */
-uint32_t log_get_strdup_longest_string(void);
-
-/** @brief Indicate to the log core that one log message has been dropped.
- */
-void z_log_dropped(void);
-
-/** @brief Read and clear current drop indications counter.
- *
- * @return Dropped count.
- */
-uint32_t z_log_dropped_read_and_clear(void);
-
-/** @brief Check if there are any pending drop notifications.
- *
- * @retval true Pending unreported drop indications.
- * @retval false No pending unreported drop indications.
- */
-bool z_log_dropped_pending(void);
 
 /** @brief Log a message from user mode context.
  *

@@ -434,6 +434,14 @@ do { \
 		} \
 	}
 
+/** @brief Allocate log message.
+ *
+ * @param wlen Length in 32 bit words.
+ *
+ * @return allocated space or null if cannot be allocated.
+ */
+struct log_msg2 *z_log_msg2_alloc(uint32_t wlen);
+
 /** @brief Finalize message.
  *
  * Finalization includes setting source, copying data and timestamp in the
