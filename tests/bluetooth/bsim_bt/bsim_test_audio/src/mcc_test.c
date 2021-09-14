@@ -61,8 +61,11 @@ CREATE_FLAG(playback_speed_set);
 CREATE_FLAG(seeking_speed_read);
 CREATE_FLAG(track_segments_object_id_read);
 CREATE_FLAG(current_track_object_id_read);
+CREATE_FLAG(current_track_object_id_set);
 CREATE_FLAG(next_track_object_id_read);
+CREATE_FLAG(next_track_object_id_set);
 CREATE_FLAG(current_group_object_id_read);
+CREATE_FLAG(current_group_object_id_set);
 CREATE_FLAG(parent_group_object_id_read);
 CREATE_FLAG(search_results_object_id_read);
 CREATE_FLAG(playing_order_read);
@@ -230,6 +233,18 @@ static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(current_track_object_id_read);
 }
 
+static void mcc_current_track_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	if (err) {
+		FAIL("Current Track Object ID set failed (%d)\n", err);
+		return;
+	}
+
+	g_current_track_object_id = id;
+	SET_FLAG(current_track_object_id_set);
+}
+
 static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
@@ -242,6 +257,18 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(next_track_object_id_read);
 }
 
+static void mcc_next_track_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	if (err) {
+		FAIL("Next Track Object ID set failed (%d)\n", err);
+		return;
+	}
+
+	g_next_track_object_id = id;
+	SET_FLAG(next_track_object_id_set);
+}
+
 static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
@@ -252,6 +279,18 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 
 	g_current_group_object_id = id;
 	SET_FLAG(current_group_object_id_read);
+}
+
+static void mcc_current_group_obj_id_set_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	if (err) {
+		FAIL("Current Group Object ID set failed (%d)\n", err);
+		return;
+	}
+
+	g_current_group_object_id = id;
+	SET_FLAG(current_group_object_id_set);
 }
 
 static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
@@ -480,9 +519,12 @@ int do_mcc_init(void)
 	mcc_cb.playback_speed_set  = &mcc_playback_speed_set_cb;
 	mcc_cb.seeking_speed_read  = &mcc_seeking_speed_read_cb;
 	mcc_cb.current_track_obj_id_read = &mcc_current_track_obj_id_read_cb;
+	mcc_cb.current_track_obj_id_set  = &mcc_current_track_obj_id_set_cb;
 	mcc_cb.next_track_obj_id_read    = &mcc_next_track_obj_id_read_cb;
+	mcc_cb.next_track_obj_id_set     = &mcc_next_track_obj_id_set_cb;
 	mcc_cb.segments_obj_id_read      = &mcc_segments_obj_id_read_cb;
 	mcc_cb.current_group_obj_id_read = &mcc_current_group_obj_id_read_cb;
+	mcc_cb.current_group_obj_id_set  = &mcc_current_group_obj_id_set_cb;
 	mcc_cb.parent_group_obj_id_read  = &mcc_parent_group_obj_id_read_cb;
 	mcc_cb.playing_order_read        = &mcc_playing_order_read_cb;
 	mcc_cb.playing_order_set         = &mcc_playing_order_set_cb;
@@ -1295,6 +1337,8 @@ static void test_search(void)
 void test_main(void)
 {
 	int err;
+	uint64_t tmp_object_id;
+
 	static struct bt_conn_cb conn_callbacks = {
 		.connected = connected,
 		.disconnected = disconnected,
@@ -1509,7 +1553,25 @@ void test_main(void)
 	WAIT_FOR_FLAG(object_read);
 	printk("Reading Track Segments Object succeeded\n");
 
-	/* Read current track object ******************************************/
+	/* Current track object ***************************************/
+	UNSET_FLAG(current_track_object_id_set);
+
+	tmp_object_id = 0x103;
+
+	err = bt_mcc_set_current_track_obj_id(default_conn, tmp_object_id);
+	if (err) {
+		FAIL("Failed to set current track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_track_object_id_set);
+	if (g_current_track_object_id != tmp_object_id) {
+		FAIL("Current track object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Track Object ID set succeeded\n");
+
 	UNSET_FLAG(current_track_object_id_read);
 	err = bt_mcc_read_current_track_obj_id(default_conn);
 	if (err) {
@@ -1518,6 +1580,11 @@ void test_main(void)
 	}
 
 	WAIT_FOR_FLAG(current_track_object_id_read);
+	if (g_current_track_object_id != tmp_object_id) {
+		FAIL("Current track object ID not the one that was set");
+		return;
+	}
+
 	printk("Current Track Object ID read succeeded\n");
 
 	UNSET_FLAG(object_read);
@@ -1532,7 +1599,25 @@ void test_main(void)
 	WAIT_FOR_FLAG(object_read);
 	printk("Current Track Object read succeeded\n");
 
-	/* Read next track object ******************************************/
+	/* Next track object ***************************************************/
+	UNSET_FLAG(next_track_object_id_set);
+
+	tmp_object_id = 0x102;
+
+	err = bt_mcc_set_next_track_obj_id(default_conn, tmp_object_id);
+	if (err) {
+		FAIL("Failed to set next track object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(next_track_object_id_set);
+	if (g_next_track_object_id != tmp_object_id) {
+		FAIL("Next track object ID not the one that was set");
+		return;
+	}
+
+	printk("Next Track Object ID set succeeded\n");
+
 	UNSET_FLAG(next_track_object_id_read);
 	err = bt_mcc_read_next_track_obj_id(default_conn);
 	if (err) {
@@ -1541,6 +1626,11 @@ void test_main(void)
 	}
 
 	WAIT_FOR_FLAG(next_track_object_id_read);
+	if (g_next_track_object_id != tmp_object_id) {
+		FAIL("Next track object ID not the one that was set");
+		return;
+	}
+
 	printk("Next Track Object ID read succeeded\n");
 
 	select_read_meta(g_next_track_object_id);
@@ -1555,7 +1645,26 @@ void test_main(void)
 	WAIT_FOR_FLAG(object_read);
 	printk("Next Track Object read succeeded\n");
 
-	/* Read current group object ******************************************/
+
+	/* Current group object ******************************************/
+	UNSET_FLAG(current_group_object_id_set);
+
+	tmp_object_id = 0x10e;  /* ID of third group */
+
+	err = bt_mcc_set_current_group_obj_id(default_conn, tmp_object_id);
+	if (err) {
+		FAIL("Failed to set current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_set);
+	if (g_current_group_object_id != tmp_object_id) {
+		FAIL("Current group object ID not the one that was set");
+		return;
+	}
+
+	printk("Current Group Object ID set succeeded\n");
+
 	UNSET_FLAG(current_group_object_id_read);
 	err = bt_mcc_read_current_group_obj_id(default_conn);
 	if (err) {
@@ -1564,6 +1673,11 @@ void test_main(void)
 	}
 
 	WAIT_FOR_FLAG(current_group_object_id_read);
+	if (g_current_group_object_id != tmp_object_id) {
+		FAIL("Current group object ID not the one that was set");
+		return;
+	}
+
 	printk("Current Group Object ID read succeeded\n");
 
 	select_read_meta(g_current_group_object_id);
@@ -1577,6 +1691,25 @@ void test_main(void)
 
 	WAIT_FOR_FLAG(object_read);
 	printk("Current Group Object read succeeded\n");
+
+	/* Set current group back to first group, so that later tests (segments) will work.
+	 * (Only the tracks of the first group has segments in the MPL.)
+	 */
+	UNSET_FLAG(current_group_object_id_set);
+
+	tmp_object_id = 0x106; /* ID of first group */
+
+	err = bt_mcc_set_current_group_obj_id(default_conn, tmp_object_id);
+	if (err) {
+		FAIL("Failed to set current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_set);
+	if (g_current_group_object_id != tmp_object_id) {
+		FAIL("Current group object ID not the one that was set");
+		return;
+	}
 
 	/* Read parent group object ******************************************/
 	UNSET_FLAG(parent_group_object_id_read);
