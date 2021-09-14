@@ -269,28 +269,6 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 		req->internal.response.body_start = (uint8_t *)at;
 	}
 
-	if (req->internal.response.cb) {
-		if (http_should_keep_alive(parser)) {
-			NET_DBG("Calling callback for partitioned %zd len data",
-				req->internal.response.data_len);
-
-			req->internal.response.cb(&req->internal.response,
-						  HTTP_DATA_MORE,
-						  req->internal.user_data);
-		} else {
-			NET_DBG("Calling callback for %zd len data",
-				req->internal.response.data_len);
-
-			req->internal.response.cb(&req->internal.response,
-						  HTTP_DATA_FINAL,
-						  req->internal.user_data);
-		}
-
-		/* Re-use the result buffer and start to fill it again */
-		req->internal.response.data_len = 0;
-		req->internal.response.body_start = NULL;
-	}
-
 	return 0;
 }
 
@@ -354,12 +332,6 @@ static int on_message_complete(struct http_parser *parser)
 
 	req->internal.response.message_complete = 1;
 
-	if (req->internal.response.cb) {
-		req->internal.response.cb(&req->internal.response,
-					  HTTP_DATA_FINAL,
-					  req->internal.user_data);
-	}
-
 	return 0;
 }
 
@@ -416,12 +388,21 @@ static int http_wait_data(int sock, struct http_request *req)
 
 	do {
 		received = zsock_recv(sock, req->internal.response.recv_buf + offset,
-				req->internal.response.recv_buf_len - offset,
-				0);
+				      req->internal.response.recv_buf_len - offset,
+				      0);
 		if (received == 0) {
 			/* Connection closed */
 			LOG_DBG("Connection closed");
 			ret = total_received;
+
+			if (req->internal.response.cb) {
+				NET_DBG("Calling callback for closed connection");
+
+				req->internal.response.cb(&req->internal.response,
+							  HTTP_DATA_FINAL,
+							  req->internal.user_data);
+			}
+
 			break;
 		} else if (received < 0) {
 			/* Socket error */
@@ -443,6 +424,35 @@ static int http_wait_data(int sock, struct http_request *req)
 
 		if (offset >= req->internal.response.recv_buf_len) {
 			offset = 0;
+		}
+
+		if (req->internal.response.cb) {
+			bool notify = false;
+			enum http_final_call event;
+
+			if (req->internal.response.message_complete) {
+				NET_DBG("Calling callback for %zd len data",
+					req->internal.response.data_len);
+
+				notify = true;
+				event = HTTP_DATA_FINAL;
+			} else if (offset == 0) {
+				NET_DBG("Calling callback for partitioned %zd len data",
+					req->internal.response.data_len);
+
+				notify = true;
+				event = HTTP_DATA_MORE;
+			}
+
+			if (notify) {
+				req->internal.response.cb(&req->internal.response,
+							  event,
+							  req->internal.user_data);
+
+				/* Re-use the result buffer and start to fill it again */
+				req->internal.response.data_len = 0;
+				req->internal.response.body_start = NULL;
+			}
 		}
 
 		if (req->internal.response.message_complete) {
