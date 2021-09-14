@@ -358,10 +358,18 @@ static ssize_t send_socket_data(void *obj,
 	mdata.sock_written = 0;
 
 	if (sock->ip_proto == IPPROTO_UDP) {
+		char ip_str[NET_IPV6_ADDR_LEN];
+
+		ret = modem_context_sprint_ip_addr(dst_addr, ip_str, sizeof(ip_str));
+		if (ret != 0) {
+			LOG_ERR("Error formatting IP string %d", ret);
+			goto exit;
+		}
+
 		ret = modem_context_get_addr_port(dst_addr, &dst_port);
 		snprintk(send_buf, sizeof(send_buf),
 			 "AT+USOST=%d,\"%s\",%u,%zu", sock->id,
-			 modem_context_sprint_ip_addr(dst_addr),
+			 ip_str,
 			 dst_port, buf_len);
 	} else {
 		snprintk(send_buf, sizeof(send_buf), "AT+USOWR=%d,%zu",
@@ -1538,6 +1546,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	int ret;
 	char buf[sizeof("AT+USOCO=#,!###.###.###.###!,#####,#\r")];
 	uint16_t dst_port = 0U;
+	char ip_str[NET_IPV6_ADDR_LEN];
 
 	if (!addr) {
 		errno = EINVAL;
@@ -1574,8 +1583,15 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		return 0;
 	}
 
+	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
+	if (ret != 0) {
+		errno = -ret;
+		LOG_ERR("Error formatting IP string %d", ret);
+		return -1;
+	}
+
 	snprintk(buf, sizeof(buf), "AT+USOCO=%d,\"%s\",%d", sock->id,
-		 modem_context_sprint_ip_addr(addr), dst_port);
+		ip_str, dst_port);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
