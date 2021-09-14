@@ -77,7 +77,7 @@ if you link against the :code:`arduino_nano_33_ble_pins` CMake library.
 
 For your convience, two Kconfig options are added:
 
-#. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`: 
+#. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`:
     This configuration option enables the internal I2C sensors.
 #. :code:`BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE`:
     This configuration option enables the USB CDC subsystem and
@@ -98,6 +98,7 @@ You can get this variant of bossac with one of two ways:
    #. Install the board support package within the IDE
    #. Change your IDE preferences to provide verbose logging
    #. Build and flash a sample application, and read the logs to figure out where Arduino stored bossac.
+   #. In most Linux based systems the path is ``$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac``.
 
 Once you have a path to bossac, you can pass it as an argument to west:
 
@@ -105,13 +106,19 @@ Once you have a path to bossac, you can pass it as an argument to west:
 
    west flash --bossac="<path to the arduino version of bossac>"
 
+For example
+
+.. code-block:: bash
+
+    west flash --bossac=$HOME/.arduino15/packages/arduino/tools/bossac/1.9.1-arduino2/bossac
+
 Flashing
 ========
 
 Attach the board to your computer using the USB cable, and then
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/blinky
+      :zephyr-app: samples/basic/blinky
       :board: arduino_nano_33_ble
       :goals: build
       :compact:
