@@ -9,9 +9,11 @@
 #include "ascs_internal.h"
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST)
-#define CONNECTED_AUDIO_GROUP_COUNT CONFIG_BT_BAP_CONNECTED_AUDIO_GROUP_COUNT
+#define UNICAST_GROUP_CNT CONFIG_BT_BAP_UNICAST_GROUP_COUNT
+#define UNICAST_GROUP_STREAM_CNT CONFIG_BT_BAP_UNICAST_GROUP_STREAM_COUNT
 #else /* !(CONFIG_BT_BAP && CONFIG_BT_AUDIO_UNICAST) */
-#define CONNECTED_AUDIO_GROUP_COUNT 0
+#define UNICAST_GROUP_CNT 0
+#define UNICAST_GROUP_STREAM_CNT 0
 #endif /* CONFIG_BT_BAP && CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_BROADCAST)
@@ -32,6 +34,14 @@ struct bt_audio_ep_cb {
 
 #define BT_AUDIO_EP_LOCAL	0x00
 #define BT_AUDIO_EP_REMOTE	0x01
+
+struct bt_audio_unicast_group {
+	struct bt_iso_cig *cig;
+	struct bt_codec_qos *qos;
+	struct bt_codec *codec;
+	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
+	sys_slist_t chans;
+};
 
 struct bt_audio_broadcast_source {
 	uint8_t chan_count;
