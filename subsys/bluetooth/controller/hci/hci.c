@@ -4658,7 +4658,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void store_adi(int i, struct pdu_adv_adi *adi)
+static void store_adi(int i, const struct pdu_adv_adi *adi)
 {
 	if (adi) {
 		memcpy(&dup_filter[i].adi, adi, sizeof(*adi));
@@ -4669,7 +4669,7 @@ static void store_adi(int i, struct pdu_adv_adi *adi)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static inline bool is_dup_or_update(int i, uint8_t adv_type, uint8_t adv_mode,
-				    struct pdu_adv_adi *adi,
+				    const struct pdu_adv_adi *adi,
 				    uint8_t data_status)
 {
 	if (!(dup_filter[i].mask & BIT(adv_type))) {
@@ -4709,8 +4709,8 @@ static inline bool is_dup_or_update(int i, uint8_t adv_type, uint8_t adv_mode,
 	return true;
 }
 
-static bool dup_found(uint8_t adv_type, uint8_t addr_type, uint8_t *addr,
-		      uint8_t adv_mode, struct pdu_adv_adi *adi,
+static bool dup_found(uint8_t adv_type, uint8_t addr_type, const uint8_t *addr,
+		      uint8_t adv_mode, const struct pdu_adv_adi *adi,
 		      uint8_t data_status)
 {
 	/* check for duplicate filtering */
@@ -5141,14 +5141,15 @@ static uint8_t ext_adv_direct_addr_type(struct lll_scan *lll,
 }
 
 static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
-				uint8_t *const sec_phy, uint8_t **const data)
+				uint8_t *const sec_phy,
+				const uint8_t **const data)
 {
-	struct pdu_adv *adv = (void *)node_rx_data->pdu;
-	struct pdu_adv_com_ext_adv *p;
-	struct pdu_adv_ext_hdr *h;
+	const struct pdu_adv *adv = (void *)node_rx_data->pdu;
+	const struct pdu_adv_com_ext_adv *p;
+	const struct pdu_adv_ext_hdr *h;
 	uint8_t hdr_buf_len;
+	const uint8_t *ptr;
 	uint8_t hdr_len;
-	uint8_t *ptr;
 
 	p = (void *)&adv->adv_ext_ind;
 	h = (void *)p->ext_hdr_adv_data;
@@ -5225,12 +5226,13 @@ static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
 }
 
 static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
-			      uint8_t adv_addr_type, uint8_t *adv_addr,
-			      uint8_t direct_addr_type, uint8_t *direct_addr,
-			      uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
-			      uint16_t interval_le16, struct pdu_adv_adi *adi,
-			      uint8_t data_len, uint8_t *data,
-			      struct net_buf *buf)
+			      uint8_t adv_addr_type, const uint8_t *adv_addr,
+			      uint8_t direct_addr_type,
+			      const uint8_t *direct_addr, uint8_t rl_idx,
+			      int8_t tx_pwr, int8_t rssi,
+			      uint16_t interval_le16,
+			      const struct pdu_adv_adi *adi, uint8_t data_len,
+			      const uint8_t *data, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ext_advertising_info *adv_info;
 	struct bt_hci_evt_le_ext_advertising_report *sep;
@@ -5286,13 +5288,16 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 }
 
 static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
-			     uint8_t adv_addr_type, uint8_t *adv_addr,
-			     uint8_t direct_addr_type, uint8_t *direct_addr,
-			     uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
-			     uint16_t interval_le16, struct pdu_adv_adi *adi,
-			     uint8_t data_len_max, uint8_t *data_len_total,
-			     uint8_t *data_len, uint8_t **data,
-			     struct net_buf *buf, struct net_buf **evt_buf)
+			     uint8_t adv_addr_type, const uint8_t *adv_addr,
+			     uint8_t direct_addr_type,
+			     const uint8_t *direct_addr, uint8_t rl_idx,
+			     int8_t tx_pwr, int8_t rssi, uint16_t interval_le16,
+			     const struct pdu_adv_adi *adi,
+			     uint8_t data_len_max,
+			     uint8_t *const data_len_total,
+			     uint8_t *const data_len,
+			     const uint8_t **const data, struct net_buf *buf,
+			     struct net_buf **const evt_buf)
 {
 	uint8_t data_len_frag;
 
@@ -5312,15 +5317,18 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	} while (*data_len > data_len_max);
 }
 
-static void ext_adv_data_frag(struct node_rx_pdu *node_rx_data,
-			      uint8_t evt_type, uint8_t phy, uint8_t *sec_phy,
-			      uint8_t adv_addr_type, uint8_t *adv_addr,
-			      uint8_t direct_addr_type, uint8_t *direct_addr,
-			      uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
-			      uint16_t interval_le16, struct pdu_adv_adi *adi,
+static void ext_adv_data_frag(const struct node_rx_pdu *node_rx_data,
+			      uint8_t evt_type, uint8_t phy,
+			      uint8_t *const sec_phy, uint8_t adv_addr_type,
+			      const uint8_t *adv_addr, uint8_t direct_addr_type,
+			      const uint8_t *direct_addr, uint8_t rl_idx,
+			      int8_t tx_pwr, int8_t rssi,
+			      uint16_t interval_le16,
+			      const struct pdu_adv_adi *adi,
 			      uint8_t data_len_max, uint8_t data_len_total,
-			      uint8_t *data_len, uint8_t **data,
-			      struct net_buf *buf, struct net_buf **evt_buf)
+			      uint8_t *const data_len,
+			      const uint8_t **const data, struct net_buf *buf,
+			      struct net_buf **const evt_buf)
 {
 	evt_type |= (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL << 5);
 
@@ -5346,26 +5354,26 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct node_rx_pdu *node_rx_scan_data = NULL;
 	struct node_rx_pdu *node_rx_data = NULL;
+	const struct pdu_adv_adi *adi = NULL;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
 	uint8_t scan_data_len_total = 0U;
-	struct pdu_adv_adi *adi = NULL;
+	const uint8_t *scan_data = NULL;
 	uint8_t scan_data_status = 0U;
 	uint8_t direct_addr_type = 0U;
 	uint16_t data_len_total = 0U;
 	uint8_t *direct_addr = NULL;
 	uint16_t interval_le16 = 0U;
+	const uint8_t *data = NULL;
 	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
 	bool direct_report = false;
 	uint8_t sec_phy_scan = 0U;
-	uint8_t *scan_data = NULL;
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
-	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
 	uint8_t data_len_max;
 	uint8_t rl_idx = 0U;
