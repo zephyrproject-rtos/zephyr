@@ -839,7 +839,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		sys_slist_init(&conn->channels);
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    conn->role == BT_CONN_ROLE_SLAVE) {
+		    conn->role == BT_CONN_ROLE_PERIPHERAL) {
 			k_work_schedule(&conn->deferred_work,
 					CONN_UPDATE_TIMEOUT);
 		}
@@ -1206,12 +1206,12 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	 * and we could send LE Create Connection as soon as the remote
 	 * starts advertising.
 	 */
-#if !defined(CONFIG_BT_WHITELIST)
+#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->type == BT_CONN_TYPE_LE) {
 		bt_le_set_auto_conn(&conn->le.dst, NULL);
 	}
-#endif /* !defined(CONFIG_BT_WHITELIST) */
+#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
@@ -1547,7 +1547,7 @@ static void deferred_work(struct k_work *work)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_CONN_ROLE_MASTER) {
+	    conn->role == BT_CONN_ROLE_CENTRAL) {
 		/* we don't call bt_conn_disconnect as it would also clear
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
@@ -1642,7 +1642,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
-	conn->role = BT_CONN_ROLE_MASTER;
+	conn->role = BT_CONN_ROLE_CENTRAL;
 
 	return conn;
 }
@@ -2326,7 +2326,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_CONN_ROLE_MASTER) {
+	    conn->role == BT_CONN_ROLE_CENTRAL) {
 		return send_conn_le_param_update(conn, param);
 	}
 
@@ -2445,7 +2445,7 @@ static void create_param_setup(const struct bt_conn_le_create_param *param)
 		bt_dev.create_param.window;
 }
 
-#if defined(CONFIG_BT_WHITELIST)
+#if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *param)
 {
@@ -2539,7 +2539,7 @@ int bt_conn_create_auto_stop(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_BT_WHITELIST) */
+#endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_conn_le_create_param *create_param,
@@ -2628,7 +2628,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	return 0;
 }
 
-#if !defined(CONFIG_BT_WHITELIST)
+#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param)
 {
@@ -2684,7 +2684,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 
 	return 0;
 }
-#endif /* !defined(CONFIG_BT_WHITELIST) */
+#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
@@ -2872,14 +2872,14 @@ int bt_conn_init(void)
 				continue;
 			}
 
-#if !defined(CONFIG_BT_WHITELIST)
+#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 			if (atomic_test_bit(conn->flags,
 					    BT_CONN_AUTO_CONNECT)) {
 				/* Only the default identity is supported */
 				conn->id = BT_ID_DEFAULT;
 				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 			}
-#endif /* !defined(CONFIG_BT_WHITELIST) */
+#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 			bt_conn_unref(conn);
 		}

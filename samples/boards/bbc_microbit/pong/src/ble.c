@@ -244,7 +244,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	bt_conn_get_info(conn, &info);
-	initiator = (info.role == BT_CONN_ROLE_MASTER);
+	initiator = (info.role == BT_CONN_ROLE_CENTRAL);
 	remote_ready = false;
 	remote_handle = 0U;
 

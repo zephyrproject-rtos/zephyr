@@ -694,7 +694,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 
 static uint8_t get_filter_policy(uint32_t options)
 {
-	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
+	if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 		return BT_LE_ADV_FP_NO_WHITELIST;
 	} else if ((options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) &&
 		   (options & BT_LE_ADV_OPT_FILTER_CONN)) {

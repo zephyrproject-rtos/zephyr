@@ -160,7 +160,7 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 	set_param->own_addr_type = own_addr_type;
 	set_param->phys = 0;
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
 		set_param->filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
 	} else {
@@ -209,7 +209,7 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 	set_param.interval = sys_cpu_to_le16(interval);
 	set_param.window = sys_cpu_to_le16(window);
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
 		set_param.filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
 	} else {
@@ -935,7 +935,7 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 	}
 
 	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE |
-			       BT_LE_SCAN_OPT_FILTER_WHITELIST |
+			       BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
 			       BT_LE_SCAN_OPT_CODED |
 			       BT_LE_SCAN_OPT_NO_1M)) {
 		return false;
@@ -989,10 +989,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP,
 			  param->options & BT_LE_SCAN_OPT_FILTER_DUPLICATE);
 
-#if defined(CONFIG_BT_WHITELIST)
+#if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_WL,
-			  param->options & BT_LE_SCAN_OPT_FILTER_WHITELIST);
-#endif /* defined(CONFIG_BT_WHITELIST) */
+			  param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
+#endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
