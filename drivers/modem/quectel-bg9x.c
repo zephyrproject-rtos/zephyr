@@ -705,6 +705,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
 	char		    buf[sizeof("AT+QIOPEN=#,##,###,####.####.####.####,######")] = {0};
 	int		    ret;
+	char		    ip_str[NET_IPV6_ADDR_LEN];
 
 	if (sock->id < mdata.socket_config.base_socket_num - 1) {
 		LOG_ERR("Invalid socket_id(%d) from fd:%d",
@@ -735,9 +736,18 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 
 	k_sem_reset(&mdata.sem_sock_conn);
 
+	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
+	if (ret != 0) {
+		LOG_ERR("Error formatting IP string %d", ret);
+		LOG_ERR("Closing the socket!!!");
+		socket_close(sock);
+		errno = -ret;
+		return -1;
+	}
+
 	/* Formulate the complete string. */
 	snprintk(buf, sizeof(buf), "AT+QIOPEN=%d,%d,\"%s\",\"%s\",%d,0,0", 1, sock->sock_fd, protocol,
-		 modem_context_sprint_ip_addr(addr), dst_port);
+		ip_str, dst_port);
 
 	/* Send out the command. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
