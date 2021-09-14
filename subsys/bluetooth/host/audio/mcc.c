@@ -1463,7 +1463,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 {
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	} else if (cur_mcs_inst) {
 		return -EBUSY;
 	}
@@ -1489,7 +1489,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->player_name_handle) {
@@ -1518,7 +1518,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->icon_obj_id_handle) {
@@ -1546,7 +1546,7 @@ int bt_mcc_read_icon_url(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->icon_url_handle) {
@@ -1573,7 +1573,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->track_title_handle) {
@@ -1600,7 +1600,7 @@ int bt_mcc_read_track_dur(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->track_dur_handle) {
@@ -1627,7 +1627,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->track_pos_handle) {
@@ -1654,7 +1654,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->track_pos_handle) {
@@ -1687,7 +1687,7 @@ int bt_mcc_read_playback_speed(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->playback_speed_handle) {
@@ -1714,7 +1714,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->playback_speed_handle) {
@@ -1747,7 +1747,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->seeking_speed_handle) {
@@ -1775,7 +1775,7 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->segments_obj_id_handle) {
@@ -1802,7 +1802,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->current_track_obj_id_handle) {
@@ -1829,7 +1829,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
@@ -1865,7 +1865,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->next_track_obj_id_handle) {
@@ -1892,7 +1892,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
@@ -1928,7 +1928,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->current_group_obj_id_handle) {
@@ -1955,7 +1955,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
@@ -1991,7 +1991,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->parent_group_obj_id_handle) {
@@ -2019,7 +2019,7 @@ int bt_mcc_read_playing_order(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->playing_order_handle) {
@@ -2046,7 +2046,7 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->playing_order_handle) {
@@ -2079,7 +2079,7 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->playing_orders_supported_handle) {
@@ -2106,7 +2106,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->media_state_handle) {
@@ -2134,7 +2134,7 @@ int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd)
 	int length = sizeof(cmd.opcode);
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->cp_handle) {
@@ -2172,7 +2172,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->opcodes_supported_handle) {
@@ -2200,7 +2200,7 @@ int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->scp_handle) {
@@ -2233,7 +2233,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->search_results_obj_id_handle) {
@@ -2261,7 +2261,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 	int err;
 
 	if (!conn) {
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	if (!cur_mcs_inst->content_control_id_handle) {
