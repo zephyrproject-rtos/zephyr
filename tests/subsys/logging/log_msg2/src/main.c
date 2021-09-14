@@ -10,9 +10,8 @@
  */
 
 #include <logging/log_msg2.h>
-#include <logging/log_core.h>
+#include <logging/log_internal.h>
 #include <logging/log_ctrl.h>
-#include <logging/log_instance.h>
 
 #include <tc_util.h>
 #include <stdbool.h>

@@ -9,8 +9,7 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
-#include <logging/log_msg2.h>
-#include <logging/log_core2.h>
+#include <logging/log_internal.h>
 #include <sys/mpsc_pbuf.h>
 #include <sys/printk.h>
 #include <sys_clock.h>

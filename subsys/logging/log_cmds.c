@@ -7,6 +7,7 @@
 #include <shell/shell.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
+#include <logging/log_internal.h>
 #include <string.h>
 
 typedef int (*log_backend_cmd_t)(const struct shell *shell,

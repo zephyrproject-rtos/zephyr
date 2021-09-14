@@ -5,8 +5,7 @@
  */
 #include <zephyr.h>
 #include <syscall_handler.h>
-#include <logging/log_msg2.h>
-#include <logging/log_core.h>
+#include <logging/log_internal.h>
 #include <logging/log_ctrl.h>
 
 void z_log_msg2_finalize(struct log_msg2 *msg, const void *source,
