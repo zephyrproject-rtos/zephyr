@@ -8,8 +8,8 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Laird BL654 USB adapter";
-	compatible = "laird,bl654_usb";
+	model = "Laird Connectivity BL654 USB adapter";
+	compatible = "lairdconnect,bl654_usb";
 
 	chosen {
 		zephyr,sram = &sram0;
