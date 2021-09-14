@@ -7,7 +7,7 @@
 #include <logging/log.h>
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
-#include <logging/log_core.h>
+#include <logging/log_internal.h>
 #include <sys/__assert.h>
 #include <string.h>
 
