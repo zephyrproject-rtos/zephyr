@@ -13,14 +13,24 @@ config BT_BAP
 	  This option enables support for Basic Audio Profile (BAP).
 
 if BT_BAP
-config BT_BAP_CONNECTED_AUDIO_GROUP_COUNT
-	int "Unicast client connected audio group count"
+config BT_BAP_UNICAST_GROUP_COUNT
+	int "Basic Audio Unicast Group count"
 	depends on BT_AUDIO_UNICAST
 	default BT_ISO_MAX_CIG
 	range 0 BT_ISO_MAX_CIG
 	help
 	  This option sets the number of connected audio groups to support as
 	  the unicast client.
+
+config BT_BAP_UNICAST_GROUP_STREAM_COUNT
+	int "Basic Audio Unicast Group Stream count"
+	depends on BT_BAP_UNICAST_GROUP_COUNT > 0
+	default 1
+	range 0 BT_ISO_MAX_CHAN if BT_ISO_MAX_CHAN < 31
+	range 0 31
+	help
+	  This option sets the maximum number of streams per unicast group
+	  to support.
 
 config BT_BAP_BROADCAST_SRC_COUNT
 	int "Basic Audio Broadcaster source count"

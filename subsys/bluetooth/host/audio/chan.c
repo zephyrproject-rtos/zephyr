@@ -81,7 +81,7 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
 #endif /* CONFIG_BT_AUDIO_BROADCAST */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
-static struct bt_iso_cig *cigs[CONNECTED_AUDIO_GROUP_COUNT];
+static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
@@ -984,9 +984,9 @@ struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
 		int err;
 
 		free_cig = NULL;
-		for (int i = 0; i < ARRAY_SIZE(cigs); i++) {
-			if (cigs[i] == NULL) {
-				free_cig = &cigs[i];
+		for (int i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
+			if (unicast_groups[i].cig == NULL) {
+				free_cig = &unicast_groups[i].cig;
 				break;
 			}
 		}
@@ -1023,14 +1023,20 @@ int bt_audio_cig_terminate(struct bt_audio_chan *chan)
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(cigs); i++) {
+	for (int i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
+		int err;
 		struct bt_iso_cig *cig;
 
-		cig = cigs[i];
+		cig = unicast_groups[i].cig;
 		if (cig != NULL &&
 		    cig->cis != NULL &&
 		    cig->cis[0] == chan->iso) {
-			return bt_iso_cig_terminate(cig);
+			err = bt_iso_cig_terminate(cig);
+			if (err == 0) {
+				unicast_groups[i].cig = NULL;
+			}
+
+			return err;
 		}
 	}
 
