@@ -197,9 +197,14 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 FUNC_ALIAS(soc_sched_ipi, arch_sched_ipi, void);
 void soc_sched_ipi(void)
 {
+	struct ipm_msg msg;
+
+	msg.data = IPM_CAVS_IDC_MSG_SCHED_IPI_DATA;
+	msg.size = 0;
+	msg.id = IPM_CAVS_IDC_MSG_SCHED_IPI_ID;
+
 	if (likely(idc != NULL)) {
-		ipm_send(idc, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-			 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
+		ipm_send(idc, 0, &msg);
 	}
 }
 #endif

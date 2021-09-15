@@ -44,8 +44,7 @@ static void ipm_dummy_isr(const void *data)
 
 /* IPM API functions for the dummy driver */
 
-static int ipm_dummy_send(const struct device *d, int wait, uint32_t id,
-			  const void *data, int size)
+static int ipm_dummy_send(const struct device *d, int wait, struct ipm_msg *msg)
 {
 	struct ipm_dummy_driver_data *driver_data;
 	volatile uint8_t *datareg;
@@ -53,7 +52,7 @@ static int ipm_dummy_send(const struct device *d, int wait, uint32_t id,
 	int i;
 
 	driver_data = d->data;
-	if (size > ipm_max_data_size_get(d)) {
+	if (msg->size > ipm_max_data_size_get(d)) {
 		return -EMSGSIZE;
 	}
 
@@ -61,13 +60,13 @@ static int ipm_dummy_send(const struct device *d, int wait, uint32_t id,
 		return -EBUSY;
 	}
 
-	data8 = (const uint8_t *)data;
+	data8 = (const uint8_t *)msg->data;
 	datareg = (volatile uint8_t *)driver_data->regs.data;
 
-	for (i = 0; i < size; ++i) {
+	for (i = 0; i < msg->size; ++i) {
 		datareg[i] = data8[i];
 	}
-	driver_data->regs.id = id;
+	driver_data->regs.id = msg->id;
 	driver_data->regs.busy = 1U;
 
 	irq_offload(ipm_dummy_isr, (const void *)d);

@@ -44,18 +44,17 @@ static void nrfx_ipc_handler(uint32_t event_mask, void *p_context)
 	}
 }
 
-static int ipm_nrf_send(const struct device *dev, int wait, uint32_t id,
-			const void *data, int size)
+static int ipm_nrf_send(const struct device *dev, int wait, struct ipm_msg *msg)
 {
-	if (id > NRFX_IPC_ID_MAX_VALUE) {
+	if (msg->id > NRFX_IPC_ID_MAX_VALUE) {
 		return -EINVAL;
 	}
 
-	if (size > 0) {
+	if (msg->size > 0) {
 		LOG_WRN("nRF driver does not support sending data over IPM");
 	}
 
-	gipm_send(id);
+	gipm_send(msg->id);
 	return 0;
 }
 
@@ -164,23 +163,23 @@ static int vipm_nrf_init(const struct device *dev)
 
 #define VIPM_DEVICE_1(_idx)						\
 static int vipm_nrf_##_idx##_send(const struct device *dev, int wait,	\
-				  uint32_t id, const void *data, int size)	\
+				  struct ipm_msg *msg)			\
 {									\
 	if (!IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_TX)) {		\
 		LOG_ERR("IPM_" #_idx " is RX message channel");		\
 		return -EINVAL;						\
 	}								\
 									\
-	if (id > NRFX_IPC_ID_MAX_VALUE) {				\
+	if (msg->id > NRFX_IPC_ID_MAX_VALUE) {				\
 		return -EINVAL;						\
 	}								\
 									\
-	if (id != 0) {							\
+	if (msg->id != 0) {							\
 		LOG_WRN("Passing message ID to IPM with"		\
 			"predefined message ID");			\
 	}								\
 									\
-	if (size > 0) {							\
+	if (msg->size > 0) {							\
 		LOG_WRN("nRF driver does not support"			\
 			"sending data over IPM");			\
 	}								\

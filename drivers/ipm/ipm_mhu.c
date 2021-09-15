@@ -57,26 +57,25 @@ static uint32_t ipm_mhu_get_status(const struct device *d,
 	return IPM_MHU_ERR_NONE;
 }
 
-static int ipm_mhu_send(const struct device *d, int wait, uint32_t cpu_id,
-			  const void *data, int size)
+static int ipm_mhu_send(const struct device *d, int wait, struct ipm_msg *msg)
 {
 	ARG_UNUSED(wait);
-	ARG_UNUSED(data);
+
 	const uint32_t set_val = 0x01;
 
 	struct ipm_mhu_reg_map_t *p_mhu_dev;
 
-	if (cpu_id >= IPM_MHU_CPU_MAX) {
+	if (msg->id >= IPM_MHU_CPU_MAX) {
 		return -EINVAL;
 	}
 
-	if (size > IPM_MHU_MAX_DATA_SIZE) {
+	if (msg->size > IPM_MHU_MAX_DATA_SIZE) {
 		return -EMSGSIZE;
 	}
 
 	p_mhu_dev = (struct ipm_mhu_reg_map_t *)IPM_MHU_REGS(d);
 
-	switch (cpu_id) {
+	switch (msg->id) {
 	case IPM_MHU_CPU1:
 		p_mhu_dev->cpu1intr_set = set_val;
 		break;

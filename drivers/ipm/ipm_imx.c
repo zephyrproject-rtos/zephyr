@@ -86,8 +86,7 @@ static void imx_mu_isr(const struct device *dev)
 #endif
 }
 
-static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
-			   const void *data, int size)
+static int imx_mu_ipm_send(const struct device *dev, int wait, struct ipm_msg *msg)
 {
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
@@ -95,19 +94,19 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	mu_status_t status;
 	int i;
 
-	if (id > CONFIG_IPM_IMX_MAX_ID_VAL) {
+	if (msg->id > CONFIG_IPM_IMX_MAX_ID_VAL) {
 		return -EINVAL;
 	}
 
-	if (size > CONFIG_IPM_IMX_MAX_DATA_SIZE) {
+	if (msg->size > CONFIG_IPM_IMX_MAX_DATA_SIZE) {
 		return -EMSGSIZE;
 	}
 
 	/* Actual message is passing using 32 bits registers */
-	memcpy(data32, data, size);
+	memcpy(data32, msg->data, msg->size);
 
 	for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
-		status = MU_TrySendMsg(base, id * IMX_IPM_DATA_REGS + i,
+		status = MU_TrySendMsg(base, msg->id * IMX_IPM_DATA_REGS + i,
 				       data32[i]);
 		if (status == kStatus_MU_TxNotEmpty) {
 			return -EBUSY;
@@ -116,7 +115,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 
 	if (wait) {
 		while (!MU_IsTxEmpty(base,
-			(id * IMX_IPM_DATA_REGS) + IMX_IPM_DATA_REGS - 1)) {
+			(msg->id * IMX_IPM_DATA_REGS) + IMX_IPM_DATA_REGS - 1)) {
 		}
 	}
 

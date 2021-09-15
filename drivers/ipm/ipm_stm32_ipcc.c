@@ -152,36 +152,34 @@ static void stm32_ipcc_mailbox_tx_isr(const struct device *dev)
 }
 
 static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
-				       uint32_t id,
-				       const void *buff, int size)
+				       struct ipm_msg *msg)
 {
 	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 
 	ARG_UNUSED(wait);
-	ARG_UNUSED(buff);
 
 	/* No data transmition, only doorbell */
-	if (size) {
+	if (msg->size) {
 		return -EMSGSIZE;
 	}
 
-	if (id >= data->num_ch) {
-		LOG_ERR("invalid id (%d)\r\n", id);
+	if (msg->id >= data->num_ch) {
+		LOG_ERR("invalid id (%d)\r\n", msg->id);
 		return  -EINVAL;
 	}
 
-	LOG_DBG("Send msg on channel %d\r\n", id);
+	LOG_DBG("Send msg on channel %d\r\n", msg->id);
 
 	/* Check that the channel is free (otherwise wait) */
-	if (IPCC_IsActiveFlag_CHx(cfg->ipcc, id)) {
+	if (IPCC_IsActiveFlag_CHx(cfg->ipcc, msg->id)) {
 		LOG_DBG("Waiting for channel to be freed\r\n");
-		while (IPCC_IsActiveFlag_CHx(cfg->ipcc, id)) {
+		while (IPCC_IsActiveFlag_CHx(cfg->ipcc, msg->id)) {
 			;
 		}
 	}
-	IPCC_EnableTransmitChannel(cfg->ipcc, id);
-	IPCC_SetFlag_CHx(cfg->ipcc, id);
+	IPCC_EnableTransmitChannel(cfg->ipcc, msg->id);
+	IPCC_SetFlag_CHx(cfg->ipcc, msg->id);
 
 	return 0;
 }

@@ -37,6 +37,7 @@ void new_message_callback(const struct device *dev, void *user_data,
 void main(void)
 {
 	const struct device *ipm;
+	struct ipm_msg msg;
 
 	printk("STM32 h7_dual_core application\n");
 
@@ -60,8 +61,12 @@ void main(void)
 
 	ipm_set_enabled(ipm, 1);
 
+	msg.data = NULL;
+	msg.size = 0;
+	msg.id = 0;
+
 	while (1) {
-		ipm_send(ipm, 0, 0, NULL, 0);
+		ipm_send(ipm, 0, &msg);
 		k_msleep(SLEEP_TIME_MS);
 	}
 }

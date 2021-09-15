@@ -14,14 +14,20 @@ int gcounter;
 void ping_ipm_callback(const struct device *dev, void *context,
 		       uint32_t id, volatile void *data)
 {
+	struct ipm_msg msg;
+
 	gcounter = *(int *)data;
 	/* Show current ping-pong counter value */
 	printk("Received: %d\n", gcounter);
 	/* Increment on our side */
 	gcounter++;
 	if (gcounter < 100) {
+		msg.data = &gcounter;
+		msg.size = 4;
+		msg.id = 0;
+
 		/* Send back to the other core */
-		ipm_send(dev, 1, 0, &gcounter, 4);
+		ipm_send(dev, 1, &msg);
 	}
 }
 
@@ -31,6 +37,7 @@ void main(void)
 				* zero value can't be sent via mailbox register
 				*/
 	const struct device *ipm;
+	struct ipm_msg msg;
 
 	printk("Hello World from MASTER! %s\n", CONFIG_ARCH);
 
@@ -47,8 +54,12 @@ void main(void)
 	/* Enable the IPM device */
 	ipm_set_enabled(ipm, 1);
 
+	msg.data = &first_message;
+	msg.size = 4;
+	msg.id = 0;
+
 	/* Send initial message with 4 bytes length*/
-	ipm_send(ipm, 1, 0, &first_message, 4);
+	ipm_send(ipm, 1, &msg);
 	while (1) {
 	}
 }

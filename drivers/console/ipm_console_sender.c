@@ -17,15 +17,21 @@ static const struct device *ipm_console_device;
 
 static int consoleOut(int character)
 {
+	struct ipm_msg msg;
+
 	if (character == '\r') {
 		return character;
 	}
+
+	msg.data = NULL;
+	msg.size = 0;
+	msg.id = character;
 
 	/*
 	 * We just stash the character into the id field and don't supply
 	 * any extra data
 	 */
-	ipm_send(ipm_console_device, 1, character, NULL, 0);
+	ipm_send(ipm_console_device, 1, &msg);
 
 	return character;
 }

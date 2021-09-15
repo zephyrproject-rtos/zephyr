@@ -105,10 +105,16 @@ static void new_service_cb(struct rpmsg_device *rdev, const char *name,
 
 int mailbox_notify(void *priv, uint32_t id)
 {
+	struct ipm_msg msg;
+
 	ARG_UNUSED(priv);
 
+	msg.data = NULL;
+	msg.size = 0;
+	msg.id = 0;
+
 	LOG_DBG("%s: msg received\n", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	ipm_send(ipm_handle, 0, &msg);
 
 	return 0;
 }

@@ -28,6 +28,24 @@ extern "C" {
 #endif
 
 /**
+ * @brief Message struct (to hold id, data and its size).
+ */
+struct ipm_msg {
+	 /**
+	  * Message identifier. Values are constrained by @a
+	  * ipm_max_data_size_get since many boards only allow for a subset of
+	  * bits in a 32-bit register to store the ID.
+	  */
+	uint32_t id;
+
+	/* Pointer to the data sent in the message. */
+	const void *data;
+
+	/* Size of the data. */
+	size_t size;
+};
+
+/**
  * @typedef ipm_callback_t
  * @brief Callback API for incoming IPM messages
  *
@@ -51,8 +69,8 @@ typedef void (*ipm_callback_t)(const struct device *ipmdev, void *user_data,
  *
  * See @a ipm_send() for argument definitions.
  */
-typedef int (*ipm_send_t)(const struct device *ipmdev, int wait, uint32_t id,
-			  const void *data, int size);
+typedef int (*ipm_send_t)(const struct device *ipmdev, int wait, struct ipm_msg *msg);
+
 /**
  * @typedef ipm_max_data_size_get_t
  * @brief Callback API to get maximum data size
@@ -118,11 +136,7 @@ __subsystem struct ipm_driver_api {
  *	       finishes. If there is deferred processing on the remote side,
  *	       or you would like to queue outgoing messages and wait on an
  *	       event/semaphore, you can implement that in a high-level driver
- * @param id Message identifier. Values are constrained by
- *        @a ipm_max_data_size_get since many boards only allow for a
- *        subset of bits in a 32-bit register to store the ID.
- * @param data Pointer to the data sent in the message.
- * @param size Size of the data.
+ * @param msg Message struct
  *
  * @retval -EBUSY    If the remote hasn't yet read the last data sent.
  * @retval -EMSGSIZE If the supplied data size is unsupported by the driver.
@@ -130,17 +144,14 @@ __subsystem struct ipm_driver_api {
  *                   or the device isn't an outbound IPM channel.
  * @retval 0         On success.
  */
-__syscall int ipm_send(const struct device *ipmdev, int wait, uint32_t id,
-		       const void *data, int size);
+__syscall int ipm_send(const struct device *ipmdev, int wait, struct ipm_msg *msg);
 
-static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
-				  uint32_t id,
-				  const void *data, int size)
+static inline int z_impl_ipm_send(const struct device *ipmdev, int wait, struct ipm_msg *msg)
 {
 	const struct ipm_driver_api *api =
 		(const struct ipm_driver_api *)ipmdev->api;
 
-	return api->send(ipmdev, wait, id, data, size);
+	return api->send(ipmdev, wait, msg);
 }
 
 /**

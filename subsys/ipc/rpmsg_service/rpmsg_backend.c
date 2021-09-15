@@ -121,20 +121,33 @@ static void virtio_set_features(struct virtio_device *vdev,
 static void virtio_notify(struct virtqueue *vq)
 {
 	int status;
+	struct ipm_msg msg;
 
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
-	status = ipm_send(ipm_tx_handle, 0, 0, NULL, 0);
+	msg.data = NULL;
+	msg.size = 0;
+	msg.id = 0;
+
+	status = ipm_send(ipm_tx_handle, 0, &msg);
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
 
 #if defined(CONFIG_SOC_MPS2_AN521) || \
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
-	status = ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+	msg.data = (const void *) 0;
+	msg.size = 1;
+	msg.id = current_core ? 0 : 1;
+
+	status = ipm_send(ipm_handle, 0, &msg);
 #else
 	uint32_t dummy_data = 0x55005500; /* Some data must be provided */
 
-	status = ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
+	msg.data = &dummy_data;
+	msg.size = sizeof(dummy_data);
+	msg.id = 0;
+
+	status = ipm_send(ipm_handle, 0, &msg);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 
 #endif

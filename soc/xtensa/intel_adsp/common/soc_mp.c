@@ -398,9 +398,13 @@ void arch_sched_ipi(void)
 	 */
 	const struct device *idcdev =
 		device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
+	struct ipm_msg msg;
 
-	ipm_send(idcdev, 0, IPM_CAVS_IDC_MSG_SCHED_IPI_ID,
-		 IPM_CAVS_IDC_MSG_SCHED_IPI_DATA, 0);
+	msg.data = IPM_CAVS_IDC_MSG_SCHED_IPI_DATA;
+	msg.size = 0;
+	msg.id = IPM_CAVS_IDC_MSG_SCHED_IPI_ID;
+
+	ipm_send(idcdev, 0, &msg);
 #endif
 }
 

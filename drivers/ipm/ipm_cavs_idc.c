@@ -86,16 +86,15 @@ static void cavs_idc_isr(const struct device *dev)
 #endif
 }
 
-static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
-			 const void *data, int size)
+static int cavs_idc_send(const struct device *dev, int wait, struct ipm_msg *msg)
 {
 	uint32_t curr_cpu_id = arch_curr_cpu()->id;
-	uint32_t ext = POINTER_TO_UINT(data);
+	uint32_t ext = POINTER_TO_UINT(msg->data);
 	uint32_t reg;
 	bool busy;
 	int i;
 
-	if ((wait != 0) || (size != 0)) {
+	if ((wait != 0) || (msg->size != 0)) {
 		return -ENOTSUP;
 	}
 
@@ -119,7 +118,7 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 		return -EBUSY;
 	}
 
-	id &= IPC_IDCITC_MSG_MASK;
+	msg->id &= IPC_IDCITC_MSG_MASK;
 	ext &= IPC_IDCIETC_MSG_MASK;
 	ext |= IPC_IDCIETC_DONE; /* always clear DONE bit */
 
@@ -130,7 +129,7 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 		}
 
 		idc_write(IPC_IDCIETC(i), curr_cpu_id, ext);
-		idc_write(IPC_IDCITC(i), curr_cpu_id, id | IPC_IDCITC_BUSY);
+		idc_write(IPC_IDCITC(i), curr_cpu_id, msg->id | IPC_IDCITC_BUSY);
 	}
 
 	return 0;

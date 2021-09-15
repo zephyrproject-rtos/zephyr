@@ -78,6 +78,7 @@ void main(void)
 {
 	int rv, i;
 	const struct device *ipm;
+	struct ipm_msg msg;
 
 	TC_SUITE_START("test_ipm");
 	TC_START(__func__);
@@ -86,8 +87,13 @@ void main(void)
 	/* Try sending a raw string to the IPM device to show that the
 	 * receiver works
 	 */
+	msg.data = NULL;
+	msg.size = 0;
+
 	for (i = 0; i < strlen(thestr); i++) {
-		ipm_send(ipm, 1, thestr[i], NULL, 0);
+		msg.id = thestr[i];
+
+		ipm_send(ipm, 1, &msg);
 	}
 
 	/* Now do this through printf() to exercise the sender */

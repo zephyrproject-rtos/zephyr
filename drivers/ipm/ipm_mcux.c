@@ -73,9 +73,7 @@ static void mcux_mailbox_isr(const struct device *dev)
 }
 
 
-static int mcux_mailbox_ipm_send(const struct device *d, int wait,
-				 uint32_t id,
-				 const void *data, int size)
+static int mcux_mailbox_ipm_send(const struct device *d, int wait, struct ipm_msg *msg)
 {
 	const struct mcux_mailbox_config *config = d->config;
 	MAILBOX_Type *base = config->base;
@@ -87,18 +85,18 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait,
 
 	ARG_UNUSED(wait);
 
-	if (id > MCUX_IPM_MAX_ID_VAL) {
+	if (msg->id > MCUX_IPM_MAX_ID_VAL) {
 		return -EINVAL;
 	}
 
-	if (size > MCUX_IPM_DATA_REGS * sizeof(uint32_t)) {
+	if (msg->size > MCUX_IPM_DATA_REGS * sizeof(uint32_t)) {
 		return -EMSGSIZE;
 	}
 
 	flags = irq_lock();
 
 	/* Actual message is passing using 32 bits registers */
-	memcpy(data32, data, size);
+	memcpy(data32, msg->data, msg->size);
 
 	for (i = 0; i < ARRAY_SIZE(data32); ++i) {
 		MAILBOX_SetValueBits(base, MAILBOX_ID_OTHER_CPU, data32[i]);

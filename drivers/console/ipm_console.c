@@ -16,6 +16,7 @@ const struct device *ipm_dev;
 
 static int console_out(int c)
 {
+	struct ipm_msg msg;
 	static char buf[CONFIG_IPM_CONSOLE_LINE_BUF_LEN];
 	static size_t len;
 	int ret;
@@ -25,7 +26,11 @@ static int console_out(int c)
 		return c;
 	}
 
-	ret = ipm_send(ipm_dev, 1, len, buf, len);
+	msg.data = buf;
+	msg.size = len;
+	msg.id = len;
+
+	ret = ipm_send(ipm_dev, 1, &msg);
 	if (ret) {
 		LOG_ERR("Error sending character %c over IPM, ret %d", c, ret);
 	}

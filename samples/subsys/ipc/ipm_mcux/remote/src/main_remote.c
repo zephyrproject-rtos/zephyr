@@ -12,7 +12,13 @@
 void ping_ipm_callback(const struct device *dev, void *context,
 		       uint32_t id, volatile void *data)
 {
-	ipm_send(dev, 1, 0, (const void *)data, 4);
+	struct ipm_msg msg;
+
+	msg.data = data;
+	msg.size = 4;
+	msg.id = 0;
+
+	ipm_send(dev, 1, &msg);
 }
 
 

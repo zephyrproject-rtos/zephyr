@@ -14,6 +14,7 @@ static void ipm_callback(const struct device *dev, void *context,
 {
 	int i;
 	int status;
+	struct ipm_msg msg;
 	uint32_t *data32 = (uint32_t *)data;
 
 	printk("%s: id = %u, data = 0x", __func__, id);
@@ -22,8 +23,11 @@ static void ipm_callback(const struct device *dev, void *context,
 	}
 	printk("\n");
 
-	status = ipm_send(dev, 1, id, (const void *)data,
-			  CONFIG_IPM_IMX_MAX_DATA_SIZE);
+	msg.data = (const void *) data;
+	msg.size = CONFIG_IPM_IMX_MAX_DATA_SIZE;
+	msg.id = id;
+
+	status = ipm_send(dev, 1, &msg);
 	if (status) {
 		printk("ipm_send() failed: %d\n", status);
 	}

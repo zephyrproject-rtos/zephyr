@@ -73,15 +73,25 @@ static uint32_t virtio_get_features(struct virtio_device *vdev)
 
 static void virtio_notify(struct virtqueue *vq)
 {
+	struct ipm_msg msg;
+
 #if defined(CONFIG_SOC_MPS2_AN521) || \
 	defined(CONFIG_SOC_V2M_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 
-	ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+	msg.data = (const void *) 0;
+	msg.size = 1;
+	msg.id = current_core ? 0 : 1;
+
+	ipm_send(ipm_handle, 0, &msg);
 #else
 	uint32_t dummy_data = 0x00110011; /* Some data must be provided */
 
-	ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
+	msg.data = &dummy_data;
+	msg.size = sizeof(dummy_data);
+	msg.id = 0;
+
+	ipm_send(ipm_handle, 0, &msg);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 }
 

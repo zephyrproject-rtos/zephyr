@@ -107,17 +107,16 @@ static void ipm_adsp_isr(const struct device *dev)
 	}
 }
 
-static int ipm_adsp_send(const struct device *dev, int wait, uint32_t id,
-			 const void *data, int size)
+static int ipm_adsp_send(const struct device *dev, int wait, struct ipm_msg *msg)
 {
-	LOG_DBG("Send: id %d data %p size %d", id, data, size);
-	LOG_HEXDUMP_DBG(data, size, "send");
+	LOG_DBG("Send: id %d data %p size %d", msg->id, msg->data, msg->size);
+	LOG_HEXDUMP_DBG(msg->data, msg->size, "send");
 
-	if (id > IPM_INTEL_ADSP_MAX_ID_VAL) {
+	if (msg->id > IPM_INTEL_ADSP_MAX_ID_VAL) {
 		return -EINVAL;
 	}
 
-	if (size > IPM_INTEL_ADSP_MAX_DATA_SIZE) {
+	if (msg->size > IPM_INTEL_ADSP_MAX_DATA_SIZE) {
 		return -EMSGSIZE;
 	}
 
@@ -131,11 +130,11 @@ static int ipm_adsp_send(const struct device *dev, int wait, uint32_t id,
 		}
 	}
 
-	memcpy((void *)IPM_INTEL_ADSP_MAILBOX_OUT, data, size);
-	SOC_DCACHE_FLUSH((void *)IPM_INTEL_ADSP_MAILBOX_OUT, size);
+	memcpy((void *)IPM_INTEL_ADSP_MAILBOX_OUT, msg->data, msg->size);
+	SOC_DCACHE_FLUSH((void *)IPM_INTEL_ADSP_MAILBOX_OUT, msg->size);
 
 	ipc_write(IPC_DIPCIE, 0);
-	ipc_write(IPC_DIPCI, IPC_DIPCI_BUSY | id);
+	ipc_write(IPC_DIPCI, IPC_DIPCI_BUSY | msg->id);
 
 	return 0;
 }
