@@ -26,6 +26,13 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only pull bits to zero, regardless.
 
+config FLASH_SIMULATOR_STUB
+	bool "Flash simulator that only reads erase_value and does nothing on write/erase"
+	help
+	  No memory is allocated for flash simulator this is tap/sink device that respects flash
+	  simulator configuration from DTS, regarding size, offset, write alignment, etc.
+
+if !FLASH_SIMULATOR_STUB
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Enable hardware timing simulation"
 
@@ -72,3 +79,4 @@ config FLASH_SIMULATOR_STAT_PAGE_COUNT
 	  preprocessor using DT properties.
 
 endif # FLASH_SIMULATOR
+endif # FLASH_SIMULATOR_STUB
