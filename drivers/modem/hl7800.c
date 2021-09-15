@@ -516,6 +516,7 @@ struct hl7800_iface_ctx {
 	bool mdm_startup_reporting_on;
 	int device_services_ind;
 	bool new_rat_cmd_support;
+	uint8_t operator_index;
 
 	/* modem state */
 	bool allow_sleep;
@@ -1053,6 +1054,24 @@ int32_t mdm_hl7800_get_local_time(struct tm *tm, int32_t *offset)
 }
 #endif
 
+int32_t mdm_hl7800_get_operator_index(void)
+{
+	int ret;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ictx.last_socket_id = 0;
+	ret = send_at_cmd(NULL, "AT+KCARRIERCFG?", MDM_CMD_SEND_TIMEOUT, 0,
+			  false);
+	allow_sleep(true);
+	hl7800_unlock();
+	if (ret < 0) {
+		return ret;
+	} else {
+		return ictx.operator_index;
+	}
+}
+
 void mdm_hl7800_generate_status_events(void)
 {
 	hl7800_lock();
@@ -1531,7 +1550,7 @@ static void dns_work_cb(struct k_work *work)
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
-	const char *dns_servers_str[] = { ictx.dns_string };
+	const char *dns_servers_str[] = { ictx.dns_string, NULL };
 
 	/* set new DNS addr in DNS resolver */
 	LOG_DBG("Refresh DNS resolver");
@@ -2398,6 +2417,32 @@ static bool on_cmd_network_report_query(struct net_buf **buf, uint16_t len)
 					    IFACE_WORK_DELAY);
 	}
 
+	return true;
+}
+
+static bool on_cmd_operator_index_query(struct net_buf **buf, uint16_t len)
+{
+	struct net_buf *frag = NULL;
+	char carrier[MDM_HL7800_OPERATOR_INDEX_SIZE];
+	size_t out_len;
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
+					MDM_HL7800_OPERATOR_INDEX_SIZE);
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find end of operator index response");
+		goto done;
+	}
+
+	out_len = net_buf_linearize(carrier, MDM_HL7800_OPERATOR_INDEX_STRLEN,
+				    *buf, 0, len);
+	carrier[out_len] = 0;
+	ictx.operator_index = (uint8_t)strtol(carrier, NULL, 10);
+
+	LOG_INF("Operator Index: %u", ictx.operator_index);
+done:
 	return true;
 }
 
@@ -3366,6 +3411,7 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+WPPP: 1,1,", atcmdinfo_pdp_authentication_cfg),
 		CMD_HANDLER("+CGDCONT: 1", atcmdinfo_pdp_context),
 		CMD_HANDLER("AT+CEREG?", network_report_query),
+		CMD_HANDLER("+KCARRIERCFG: ", operator_index_query),
 #ifdef CONFIG_NEWLIB_LIBC
 		CMD_HANDLER("+CCLK: ", rtc_query),
 #endif
