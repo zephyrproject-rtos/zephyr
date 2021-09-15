@@ -456,8 +456,9 @@ void ull_slave_latency_cancel(struct ll_conn *conn, uint16_t handle)
 	}
 }
 
-void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			 uint16_t lazy, uint8_t force, void *param)
+void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			 uint32_t remainder, uint16_t lazy, uint8_t force,
+			 void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_slave_prepare};

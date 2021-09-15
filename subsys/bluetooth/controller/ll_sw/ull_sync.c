@@ -50,8 +50,9 @@
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
@@ -759,8 +760,9 @@ static void timeout_cleanup(struct ll_sync_set *sync)
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};

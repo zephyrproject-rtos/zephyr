@@ -51,8 +51,9 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
 static void mfy_aux_offset_get(void *param);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
@@ -1269,8 +1270,9 @@ static void mfy_aux_offset_get(void *param)
 	ull_adv_aux_lll_offset_fill(ticks_to_expire, 0, pdu);
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
