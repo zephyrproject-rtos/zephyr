@@ -519,6 +519,7 @@ struct hl7800_iface_ctx {
 	bool new_rat_cmd_support;
 	uint8_t operator_index;
 	struct mdm_hl7800_site_survey site_survey;
+	enum mdm_hl7800_functionality functionality;
 
 	/* modem state */
 	bool allow_sleep;
@@ -1096,6 +1097,41 @@ int32_t mdm_hl7800_perform_site_survey(struct mdm_hl7800_site_survey *survey)
 	} else {
 		return ictx.operator_index;
 	}
+}
+
+int32_t mdm_hl7800_get_functionality(void)
+{
+	int ret;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ictx.last_socket_id = 0;
+	ret = send_at_cmd(NULL, "AT+CFUN?", MDM_CMD_SEND_TIMEOUT, 0, false);
+	allow_sleep(true);
+	hl7800_unlock();
+
+	if (ret < 0) {
+		return ret;
+	} else {
+		return ictx.functionality;
+	}
+}
+
+int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode)
+{
+	int ret;
+	char buf[sizeof("AT+CFUN=0,0")] = { 0 };
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ictx.last_socket_id = 0;
+	snprintk(buf, sizeof(buf), "AT+CFUN=%u,0", mode);
+	ret = send_at_cmd(NULL, buf, MDM_CMD_SEND_TIMEOUT,
+			  MDM_DEFAULT_AT_CMD_RETRIES, false);
+	allow_sleep(true);
+	hl7800_unlock();
+
+	return ret;
 }
 
 void mdm_hl7800_generate_status_events(void)
@@ -2523,6 +2559,32 @@ done:
 	return true;
 }
 
+static bool on_cmd_modem_functionality(struct net_buf **buf, uint16_t len)
+{
+	struct net_buf *frag = NULL;
+	char rsp[MDM_HL7800_MODEM_FUNCTIONALITY_SIZE];
+	size_t out_len;
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
+					MDM_HL7800_MODEM_FUNCTIONALITY_SIZE);
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find end of response");
+		goto done;
+	}
+
+	out_len = net_buf_linearize(rsp, MDM_HL7800_MODEM_FUNCTIONALITY_STRLEN,
+				    *buf, 0, len);
+	rsp[out_len] = 0;
+	ictx.functionality = strtol(rsp, NULL, 10);
+
+	LOG_INF("Modem Functionality: %u", ictx.functionality);
+done:
+	return true;
+}
+
 /* %MEAS: EARFCN=5826, CellID=420, RSRP=-99, RSRQ=-15 */
 static bool on_cmd_survey_status(struct net_buf **buf, uint16_t len)
 {
@@ -3554,6 +3616,7 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+KCARRIERCFG: ", operator_index_query),
 		CMD_HANDLER("%MEAS: ", survey_status),
 		CMD_HANDLER("AT+CIMI", atcmdinfo_imsi),
+		CMD_HANDLER("+CFUN: ", modem_functionality),
 #ifdef CONFIG_NEWLIB_LIBC
 		CMD_HANDLER("+CCLK: ", rtc_query),
 #endif
@@ -3945,12 +4008,6 @@ static int modem_boot_handler(char *reason)
 
 	__ASSERT(!ictx.mdm_echo_is_on, "Echo should be off");
 
-	/* The Laird bootloader puts the modem into airplane mode ("AT+CFUN=4,0").
-	 * The radio is enabled here because airplane mode
-	 * survives reset and power removal.
-	 */
-	SEND_AT_CMD_EXPECT_OK("AT+CFUN=1,0");
-
 	return 0;
 
 error:
@@ -4097,6 +4154,13 @@ reboot:
 		}
 #endif
 	}
+#endif
+
+	/* If this isn't defined, then keep the current state.
+	 * If the bands are being reconfigured, this is overridden.
+	 */
+#ifdef CONFIG_MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
+	SEND_AT_CMD_EXPECT_OK("AT+CFUN=4,0");
 #endif
 
 	SEND_AT_CMD_EXPECT_OK("AT+KBNDCFG?");
@@ -4297,7 +4361,7 @@ reboot:
 	/* trigger APN update event */
 	event_handler(HL7800_EVENT_APN_UPDATE, &ictx.mdm_apn);
 
-#ifdef CONFIG_MODEM_HL7800_DELAY_START
+#ifdef CONFIG_MODEM_HL7800_BOOT_DELAY
 	if (!ictx.initialized) {
 		if (ictx.iface != NULL) {
 			hl7800_build_mac();
@@ -5185,7 +5249,7 @@ static int hl7800_init(const struct device *dev)
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT),
 		"hl7800 rx");
 
-#ifdef CONFIG_MODEM_HL7800_DELAY_START
+#ifdef CONFIG_MODEM_HL7800_BOOT_DELAY
 	modem_reset();
 #else
 	ret = modem_reset_and_configure();
@@ -5202,7 +5266,7 @@ static void offload_iface_init(struct net_if *iface)
 	iface->if_dev->offload = &offload_funcs;
 	ctx->iface = iface;
 
-#ifndef CONFIG_MODEM_HL7800_DELAY_START
+#ifndef CONFIG_MODEM_HL7800_BOOT_DELAY
 	hl7800_build_mac();
 	net_if_set_link_addr(iface, ictx.mac_addr, sizeof(ictx.mac_addr),
 			     NET_LINK_ETHERNET);
