@@ -1148,9 +1148,12 @@ int32_t mdm_hl7800_set_gps_rate(uint32_t rate)
 	wakeup_hl7800();
 	ictx.gps_query_location_rate_seconds = rate;
 
+	/* Stopping first allows changing the rate between two non-zero values.
+	 * Ignore error if GNSS isn't running.
+	 */
+	SEND_AT_CMD_IGNORE_ERROR("AT+GNSSSTOP");
+
 	if (rate == 0) {
-		/* Ignore error if GNSS isn't running. */
-		SEND_AT_CMD_IGNORE_ERROR("AT+GNSSSTOP");
 		SEND_AT_CMD_EXPECT_OK("AT+CFUN=1,0");
 	} else {
 		/* Navigation doesn't work when LTE is on. */
@@ -3430,7 +3433,7 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 
-	LOG_ERR("Error code: %s", log_strdup(value));
+	LOG_ERR("Sock Error code: %s", log_strdup(value));
 
 	ictx.last_error = -EIO;
 	sock = socket_from_id(ictx.last_socket_id);
