@@ -134,7 +134,7 @@ static void msg_free(struct log_msg *msg)
 					}
 				}
 				if (smask & BIT(i)) {
-					log_free(buf);
+					z_log_free(buf);
 				}
 			}
 		}
@@ -147,7 +147,7 @@ static void msg_free(struct log_msg *msg)
 		const char *str = log_msg_str_get(msg);
 
 		if (log_is_strdup(str)) {
-			log_free((void *)(str));
+			z_log_free((void *)(str));
 		}
 	} else {
 		/* Message does not contain any arguments that might be a transient

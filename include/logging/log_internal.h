@@ -40,7 +40,7 @@ bool z_log_dropped_pending(void);
  *
  * @param buf Buffer.
  */
-void log_free(void *buf);
+void z_log_free(void *buf);
 
 /* Initialize runtime filters */
 void z_log_runtime_filters_init(void);
@@ -54,13 +54,13 @@ void z_log_notify_backend_enabled(void);
  *
  * @return Pointer to the filter set.
  */
-static inline uint32_t *log_dynamic_filters_get(uint32_t source_id)
+static inline uint32_t *z_log_dynamic_filters_get(uint32_t source_id)
 {
 	return &__log_dynamic_start[source_id].filters;
 }
 
 /** @brief Get number of registered sources. */
-static inline uint32_t log_sources_count(void)
+static inline uint32_t z_log_sources_count(void)
 {
 	return log_const_source_id(__log_const_end);
 }

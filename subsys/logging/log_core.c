@@ -931,7 +931,7 @@ bool log_is_strdup(const void *buf)
 
 }
 
-void log_free(void *str)
+void z_log_free(void *str)
 {
 	struct log_strdup_buf *dup = CONTAINER_OF(str, struct log_strdup_buf,
 						  buf);
@@ -976,12 +976,12 @@ void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 		"Invalid log level"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < z_log_sources_count(),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (level != LOG_LEVEL_INTERNAL_RAW_STRING) &&
-	    (level > LOG_FILTER_SLOT_GET(log_dynamic_filters_get(source_id),
+	    (level > LOG_FILTER_SLOT_GET(z_log_dynamic_filters_get(source_id),
 					LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;
@@ -1074,12 +1074,12 @@ void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 		src_level_union.structure.domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
-		src_level_union.structure.source_id < log_sources_count(),
+		src_level_union.structure.source_id < z_log_sources_count(),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (src_level_union.structure.level > LOG_FILTER_SLOT_GET(
-	     log_dynamic_filters_get(src_level_union.structure.source_id),
+	     z_log_dynamic_filters_get(src_level_union.structure.source_id),
 	     LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;
