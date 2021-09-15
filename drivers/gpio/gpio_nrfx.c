@@ -596,7 +596,7 @@ static int gpio_nrfx_init(const struct device *port)
 			 NULL,						\
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\
-			 POST_KERNEL,					\
+			 PRE_KERNEL_1,					\
 			 CONFIG_GPIO_INIT_PRIORITY,			\
 			 &gpio_nrfx_drv_api_funcs);
 
