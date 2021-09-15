@@ -93,7 +93,7 @@ static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	uint32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = z_log_sources_count();
 	uint32_t dynamic_lvl;
 	uint32_t compiled_lvl;
 
@@ -141,7 +141,7 @@ static int cmd_log_backend_status(const struct shell *shell,
 
 static int module_id_get(const char *name)
 {
-	uint32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = z_log_sources_count();
 	const char *tmp_name;
 	uint32_t i;
 
@@ -162,7 +162,7 @@ static void filters_set(const struct shell *shell,
 	int i;
 	int id;
 	bool all = argc ? false : true;
-	int cnt = all ? log_sources_count() : argc;
+	int cnt = all ? z_log_sources_count() : argc;
 
 	if (!backend->cb->active) {
 		shell_warn(shell, "Backend not active.");
