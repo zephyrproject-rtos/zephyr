@@ -47,8 +47,9 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
 static void flush(struct ll_scan_aux_set *aux);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_op_aux_failure(void *param);
 
@@ -772,8 +773,9 @@ static void flush(struct ll_scan_aux_set *aux)
 	aux_release(aux);
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_scan_aux_prepare};

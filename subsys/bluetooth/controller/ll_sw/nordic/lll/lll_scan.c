@@ -54,8 +54,9 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume);
 static int is_abort_cb(void *next, void *curr,
 		       lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   uint8_t force, void *param);
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param);
 static void ticker_op_start_cb(uint32_t status, void *param);
 static void isr_rx(void *param);
 static void isr_tx(void *param);
@@ -593,8 +594,8 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(param);
 }
 
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   uint8_t force, void *param)
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force, void *param)
 {
 	radio_isr_set(isr_done_cleanup, param);
 	radio_disable();
