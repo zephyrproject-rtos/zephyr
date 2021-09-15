@@ -12,14 +12,14 @@
 #include <sys/byteorder.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
+#if CONFIG_SDMMC_USDHC_PMIC_1_8_VOL
+#include <fsl_pca9420.h>
+#include <fsl_power.h>
+#endif
 
 #include "sdmmc_sdhc.h"
 
 #include <logging/log.h>
-
-#ifdef CONFIG_BOARD_MIMXRT685_EVK
-#include <fsl_power.h>
-#endif
 
 LOG_MODULE_REGISTER(usdhc, CONFIG_SDMMC_LOG_LEVEL);
 
@@ -1475,8 +1475,14 @@ static int usdhc_xfer(struct usdhc_priv *priv)
 static inline void usdhc_select_1_8_vol(USDHC_Type *base, bool en_1_8_v)
 {
 	if (en_1_8_v) {
+#if CONFIG_SDMMC_USDHC_PMIC_1_8_VOL
+		POWER_SetPmicMode(kPCA9420_Mode1, kCfg_Run);
+#endif
 		base->VEND_SPEC |= USDHC_VEND_SPEC_VSELECT_MASK;
 	} else {
+#if CONFIG_SDMMC_USDHC_PMIC_1_8_VOL
+		POWER_SetPmicMode(kPCA9420_Mode0, kCfg_Run);
+#endif
 		base->VEND_SPEC &= ~USDHC_VEND_SPEC_VSELECT_MASK;
 	}
 }

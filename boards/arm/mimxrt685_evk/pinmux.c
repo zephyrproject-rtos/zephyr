@@ -6,6 +6,10 @@
 #include <init.h>
 #include <fsl_iopctl.h>
 #include <soc.h>
+#if CONFIG_USE_PMIC_PCA9420
+#include <fsl_pca9420.h>
+#include <drivers/i2c.h>
+#endif
 
 static int mimxrt685_evk_pinmux_init(const struct device *dev)
 {
@@ -963,46 +967,46 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)  && CONFIG_I2C
 	const uint32_t fc15_i2c_scl_config = (/* Pin is configured as I2C_SCL */
-                                          IOPCTL_PIO_FUNC0 |
-                                          /* Enable pull-up / pull-down function */
-                                          IOPCTL_PIO_PUPD_EN |
-                                          /* Enable pull-up function */
-                                          IOPCTL_PIO_PULLUP_EN |
-                                          /* Enables input buffer function */
-                                          IOPCTL_PIO_INBUF_EN |
-                                          /* Normal mode */
-                                          IOPCTL_PIO_SLEW_RATE_NORMAL |
-                                          /* Normal drive */
-                                          IOPCTL_PIO_FULLDRIVE_DI |
-                                          /* Analog mux is disabled */
-                                          IOPCTL_PIO_ANAMUX_DI |
-                                          /* Pseudo Output Drain is enabled */
-                                          IOPCTL_PIO_PSEDRAIN_EN |
-                                          /* Input function is not inverted */
-                                          IOPCTL_PIO_INV_DI);
-    /* FC15_SCL PIN (coords: E16) is configured as I2C SCL */
-    IOPCTL->FC15_I2C_SCL = fc15_i2c_scl_config;
+		IOPCTL_PIO_FUNC0 |
+		/* Enable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_EN |
+		/* Enable pull-up function */
+		IOPCTL_PIO_PULLUP_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Normal drive */
+		IOPCTL_PIO_FULLDRIVE_DI |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is enabled */
+		IOPCTL_PIO_PSEDRAIN_EN |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* FC15_SCL PIN (coords: E16) is configured as I2C SCL */
+	IOPCTL->FC15_I2C_SCL = fc15_i2c_scl_config;
 
-    const uint32_t fc15_i2c_sda_config = (/* Pin is configured as I2C_SDA */
-                                          IOPCTL_PIO_FUNC0 |
-                                          /* Enable pull-up / pull-down function */
-                                          IOPCTL_PIO_PUPD_EN |
-                                          /* Enable pull-up function */
-                                          IOPCTL_PIO_PULLUP_EN |
-                                          /* Enables input buffer function */
-                                          IOPCTL_PIO_INBUF_EN |
-                                          /* Normal mode */
-                                          IOPCTL_PIO_SLEW_RATE_NORMAL |
-                                          /* Normal drive */
-                                          IOPCTL_PIO_FULLDRIVE_DI |
-                                          /* Analog mux is disabled */
-                                          IOPCTL_PIO_ANAMUX_DI |
-                                          /* Pseudo Output Drain is enabled */
-                                          IOPCTL_PIO_PSEDRAIN_EN |
-                                          /* Input function is not inverted */
-                                          IOPCTL_PIO_INV_DI);
-    /* FC15_SDA PIN (coords: F16) is configured as I2C SDA */
-    IOPCTL->FC15_I2C_SDA = fc15_i2c_sda_config;
+	const uint32_t fc15_i2c_sda_config = (/* Pin is configured as I2C_SDA */
+		IOPCTL_PIO_FUNC0 |
+		/* Enable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_EN |
+		/* Enable pull-up function */
+		IOPCTL_PIO_PULLUP_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Normal drive */
+		IOPCTL_PIO_FULLDRIVE_DI |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is enabled */
+		IOPCTL_PIO_PSEDRAIN_EN |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* FC15_SDA PIN (coords: F16) is configured as I2C SDA */
+	IOPCTL->FC15_I2C_SDA = fc15_i2c_sda_config;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay) && CONFIG_ADC
@@ -1094,6 +1098,85 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 
 	return 0;
 }
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pca9420), okay) && \
+	CONFIG_USE_PMIC_PCA9420
+
+static const struct device *dev;
+/*
+ * Wrapper function around zephyr i2c write call, for use with pca9240
+ * component driver
+ */
+status_t i2c_send_wrapper(uint8_t device_addr, uint32_t sub_addr,
+	uint8_t sub_addr_size, const uint8_t *txbuf, uint8_t txbuf_size)
+{
+	int ret;
+	struct i2c_msg msg[2];
+
+	/* Create register message */
+	msg[0].buf = (uint8_t *)&sub_addr;
+	msg[0].len = sub_addr_size;
+	msg[0].flags = I2C_MSG_WRITE;
+	/* Create data message */
+	msg[1].buf = (uint8_t *)txbuf;
+	msg[1].len = txbuf_size;
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+	ret = i2c_transfer(dev, msg, 2, device_addr);
+	if (ret) {
+		return kStatus_Fail;
+	}
+	return kStatus_Success;
+}
+
+/**
+ * Wrapper function around zephyr i2c read call, for use with pca9240 component
+ * driver
+ */
+status_t i2c_recv_wrapper(uint8_t device_addr, uint32_t sub_addr,
+	uint8_t sub_addr_size, uint8_t *rxbuf, uint8_t rxbuf_size)
+{
+	int ret;
+
+	ret = i2c_write_read(dev, device_addr, (uint8_t *)&sub_addr, sub_addr_size,
+						(uint8_t *)rxbuf, rxbuf_size);
+	if (ret) {
+		return kStatus_Fail;
+	}
+	return kStatus_Success;
+}
+
+static int mimxrt685_evk_pmic_init(const struct device *unused)
+{
+	ARG_UNUSED(unused);
+	uint32_t i;
+	pca9420_handle_t pca9420_handle;
+	pca9420_config_t pca9420_config;
+	pca9420_modecfg_t pca9420_mode_cfg[2];
+
+	/* Init PCA9420 PMIC voltage levels */
+	dev = device_get_binding(DT_LABEL(DT_NODELABEL(pmic_i2c)));
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	PCA9420_GetDefaultConfig(&pca9420_config);
+	pca9420_config.I2C_SendFunc = i2c_send_wrapper;
+	pca9420_config.I2C_ReceiveFunc = i2c_recv_wrapper;
+	PCA9420_Init(&pca9420_handle, &pca9420_config);
+	for (i = 0; i < ARRAY_SIZE(pca9420_mode_cfg); i++) {
+		PCA9420_GetDefaultModeConfig(&pca9420_mode_cfg[i]);
+	}
+	pca9420_mode_cfg[0].ldo2OutVolt = kPCA9420_Ldo2OutVolt3V300;
+	pca9420_mode_cfg[1].ldo2OutVolt = kPCA9420_Ldo2OutVolt1V800;
+	PCA9420_WriteModeConfigs(&pca9420_handle, kPCA9420_Mode0, pca9420_mode_cfg,
+							ARRAY_SIZE(pca9420_mode_cfg));
+	return 0;
+}
+/*
+ * priority must be greater than CONFIG_KERNEL_INIT_PRIORITY_DEVICE, and
+ * less than CONFIG_SDMMC_INIT_PRIORITY
+ */
+SYS_INIT(mimxrt685_evk_pmic_init, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY);
+#endif
 
 /* priority set to CONFIG_PINMUX_INIT_PRIORITY value */
 SYS_INIT(mimxrt685_evk_pinmux_init, PRE_KERNEL_1, 45);

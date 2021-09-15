@@ -40,5 +40,14 @@ endif # DMA_MCUX_LPC
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
+if SDMMC_USDHC
+config SDMMC_USDHC_PMIC_1_8_VOL
+	bool "NXP PMIC Utilized for 1.8V SD Card"
+	select USE_PMIC_PCA9420
+	default y if SDMMC_USDHC
+	help
+	  Board requires PMIC interaction to reduce SD card voltage
+	  to 1.8v.
+endif #SDMMC_USDHC
 
 endif # BOARD_MIMXRT685_EVK

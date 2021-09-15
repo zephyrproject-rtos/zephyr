@@ -203,6 +203,20 @@ i2s1: &flexcomm3 {
 	dma-names = "tx";
 };
 
+&pmic_i2c {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pca9420: pca9420@61 {
+		status = "okay";
+		reg=<0x61>;
+		label="PCA9420";
+	};
+};
+
 &flexspi {
 	reg = <0x50134000 0x4000>, <0x18000000 DT_SIZE_M(64)>;
 	mx25um51345g: mx25um51345g@2 {
@@ -300,8 +314,6 @@ i2s1: &flexcomm3 {
 
 &usdhc1 {
 	status = "okay";
-	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
-	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 };
 

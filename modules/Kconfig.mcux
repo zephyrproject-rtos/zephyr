@@ -293,4 +293,15 @@ config HAS_MCUX_CTIMER
 	help
 	  Set if the CTIMER module is present in the SoC.
 
+config HAS_PMIC_PCA9420
+	bool
+	help
+	  Set if the SOC has an external PCA9240 PMIC for power control.
+
+config USE_PMIC_PCA9420
+	bool "PCA9420 PMIC enabled"
+	select I2C
+	help
+	  Set if the SOC utilizes the external PCA9420 PMIC for power control.
+
 endif # HAS_MCUX
