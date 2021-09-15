@@ -290,6 +290,7 @@
 /drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/pinctrl/                         @gmarull
 /drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
