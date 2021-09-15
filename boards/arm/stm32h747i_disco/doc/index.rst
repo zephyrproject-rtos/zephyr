@@ -186,8 +186,8 @@ See :ref:`build_an_application` for more information about application builds.
    official release does not support H7 dualcore yet.
    Also, with OpenOCD, sometimes, flashing is not working. It is necessary to
    erase the flash (with STM32CubeProgrammer for example) to make it work again.
-   Debugging with OpenOCD is currently working for this board only with Cortex M7,
-   not Cortex M4.
+   Debugging with OpenOCD is currently working for this board on both Cortex M7,
+   and Cortex M4.
 
 
 Flashing
