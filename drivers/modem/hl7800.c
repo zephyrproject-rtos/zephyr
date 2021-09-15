@@ -130,6 +130,12 @@ enum socket_state {
 	SOCK_CONNECTED,
 };
 
+enum hl7800_lpm {
+	HL7800_LPM_NONE,
+	HL7800_LPM_EDRX,
+	HL7800_LPM_PSM,
+};
+
 struct mdm_control_pinconfig {
 	char *dev_name;
 	gpio_pin_t pin;
@@ -515,6 +521,7 @@ struct hl7800_iface_ctx {
 	bool allow_sleep;
 	bool uart_on;
 	enum mdm_hl7800_sleep_state sleep_state;
+	enum hl7800_lpm low_power_mode;
 	enum mdm_hl7800_network_state network_state;
 	enum net_operator_status operator_status;
 	void (*event_callback)(enum mdm_hl7800_event event, void *event_data);
@@ -2901,14 +2908,17 @@ static void iface_status_work_cb(struct k_work *work)
 		break;
 	case HL7800_OUT_OF_COVERAGE:
 	default:
-		if (ictx.iface && net_if_is_up(ictx.iface)) {
+		if (ictx.iface && net_if_is_up(ictx.iface) &&
+		    (ictx.low_power_mode != HL7800_LPM_PSM)) {
 			LOG_DBG("HL7800 iface DOWN");
 			net_if_down(ictx.iface);
 		}
 		break;
 	}
 
-	if (ictx.iface && !net_if_is_up(ictx.iface)) {
+	if ((ictx.iface && !net_if_is_up(ictx.iface)) ||
+	    (ictx.low_power_mode == HL7800_LPM_PSM &&
+	     ictx.network_state == HL7800_OUT_OF_COVERAGE)) {
 		hl7800_stop_rssi_work();
 		notify_all_tcp_sockets_closed();
 	} else if (ictx.iface && net_if_is_up(ictx.iface)) {
@@ -3516,7 +3526,8 @@ static void sockreadrecv_cb_work(struct k_work *work)
 
 	sock = CONTAINER_OF(work, struct hl7800_socket, recv_cb_work);
 
-	LOG_DBG("Sock %d RX CB", sock->socket_id);
+	LOG_DBG("Sock %d RX CB (size: %zd)", sock->socket_id,
+		(sock->recv_pkt != NULL) ? net_pkt_get_len(sock->recv_pkt) : 0);
 	/* return data */
 	pkt = sock->recv_pkt;
 	sock->recv_pkt = NULL;
@@ -4311,8 +4322,8 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 		if (ictx.sleep_state != HL7800_SLEEP_STATE_ASLEEP) {
 			set_sleep_state(HL7800_SLEEP_STATE_ASLEEP);
 		}
-		if (ictx.iface && ictx.initialized &&
-		    net_if_is_up(ictx.iface)) {
+		if (ictx.iface && ictx.initialized && net_if_is_up(ictx.iface) &&
+		    ictx.low_power_mode != HL7800_LPM_PSM) {
 			net_if_down(ictx.iface);
 		}
 	}
@@ -4736,8 +4747,8 @@ reboot:
 	}
 #endif
 
+	ictx.low_power_mode = HL7800_LPM_NONE;
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
-
 	/* enable GPIO6 low power monitoring */
 	SEND_AT_CMD_EXPECT_OK("AT+KHWIOCFG=3,1,6");
 
@@ -4745,11 +4756,13 @@ reboot:
 	SEND_AT_CMD_EXPECT_OK("AT+KSLEEP=1,2,10");
 
 #if CONFIG_MODEM_HL7800_PSM
+	ictx.low_power_mode = HL7800_LPM_PSM;
 	/* Turn off eDRX */
 	SEND_AT_CMD_EXPECT_OK("AT+CEDRXS=0");
 
 	SEND_AT_CMD_EXPECT_OK(TURN_ON_PSM);
 #elif CONFIG_MODEM_HL7800_EDRX
+	ictx.low_power_mode = HL7800_LPM_EDRX;
 	/* Turn off PSM */
 	SEND_AT_CMD_EXPECT_OK("AT+CPSMS=0");
 
