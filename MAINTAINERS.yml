@@ -940,8 +940,11 @@ JSON Web Token:
     status: orphaned
     collaborators:
         - mrfuchs
+        - sir-branch
     files:
         - subsys/jwt/
+        - include/data/
+        - lib/os/json.c
     labels:
         - "area: JSON"
 
