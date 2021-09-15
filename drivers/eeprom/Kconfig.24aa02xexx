@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Benjamin S. Scarlet
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_24AA02XEXX
+	bool "Microchip 24AA02XEXX I2C EEPROM with EUI node identity driver"
+	default n
+	help
+	  Enable support for the Microchip 24AA02XEXX family of EEPROMs with EUI node identity.
+
+config EEPROM_24AA02XEXX_INIT_PRIORITY
+	int "Microchip 24AA02XEXX I2C EEPROM init priority"
+	default 75
+	depends on EEPROM_24AA02XEXX
+
+config EEPROM_24AA02XEXX_MAX_WRITE_RETRIES
+	int "Maximum number of times to check for completion when writing to a 24AA02XEXX"
+	default 3
+	help
+	  At present, the Zephyr I2C API does not distinguish between NACK, which the
+	  24AA02XEXX uses to communicate a write is not yet completed, from other I2C
+	  error conditions. When waiting for write completion, this driver will retry
+	  on any error up to this many times. Usually, the first or second check will
+	  pass. In case of some other real, persistent error, this limit keeps the
+	  driver from retrying forever.

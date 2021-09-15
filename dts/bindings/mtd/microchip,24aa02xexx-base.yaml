@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Benjamin S. Scarlet
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip 24AA02XEXX I2C EEPROMs with EUI node identity
+
+compatible: "microchip,24aa02xexx"
+
+include: eeprom-base.yaml
+
+properties:
+    size:
+      required: true
+    pagesize:
+      type: int
+      required: true
+      description: EEPROM page size in bytes
