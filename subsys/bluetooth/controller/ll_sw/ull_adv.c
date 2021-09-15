@@ -2157,15 +2157,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			uint32_t ticks_interval =
 				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
 						       ADV_INT_UNIT_US);
-			uint32_t ticks_elapsed = ticks_interval * (lazy + 1);
+			uint32_t ticks_elapsed = ticks_interval * (lazy + 1) +
+						 ticks_drift;
 
 			if (adv->ticks_remain_duration > ticks_elapsed) {
 				adv->ticks_remain_duration -= ticks_elapsed;
-
-				if (adv->ticks_remain_duration > random_delay) {
-					adv->ticks_remain_duration -=
-						random_delay;
-				}
 			} else {
 				adv->ticks_remain_duration = ticks_interval;
 			}
