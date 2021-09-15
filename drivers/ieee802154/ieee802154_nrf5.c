@@ -69,7 +69,12 @@ static struct nrf5_802154_data nrf5_data;
 
 #define DRX_SLOT_PH 0 /* Placeholder delayed reception window ID */
 #define DRX_SLOT_RX 1 /* Actual delayed reception window ID */
-#define PH_DURATION 10 /* Duration of the placeholder window, in microseconds  */
+#define PH_DURATION 10 /* Duration of the placeholder window, in microseconds */
+/* When scheduling the actual delayed reception window an adjustment of
+ * 800 us is required to match the CSL tranmission timing for unknown
+ * reasons. This is a temporary workaround until the root cause is found.
+ */
+#define DRX_ADJUST 800
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
@@ -795,7 +800,7 @@ static void nrf5_config_csl_period(uint16_t period)
 
 static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
 {
-	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
+	nrf5_receive_at(start - DRX_ADJUST, duration, channel, DRX_SLOT_RX);
 
 	/* The placeholder reception window is rescheduled for the next period */
 	nrf_802154_receive_at_cancel(DRX_SLOT_PH);
@@ -928,8 +933,7 @@ static int nrf5_configure(const struct device *dev,
 
 /* nRF5 radio driver callbacks */
 
-void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
-				       uint32_t time)
+void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi, uint32_t time)
 {
 	for (uint32_t i = 0; i < ARRAY_SIZE(nrf5_data.rx_frames); i++) {
 		if (nrf5_data.rx_frames[i].psdu != NULL) {
@@ -937,13 +941,15 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		}
 
 		nrf5_data.rx_frames[i].psdu = data;
-		nrf5_data.rx_frames[i].time = time;
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 
+#if !defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_NET_PKT_TIMESTAMP)
+		nrf5_data.rx_frames[i].time = nrf_802154_first_symbol_timestamp_get(time, data[0]);
+#endif
+
 		if (data[ACK_REQUEST_BYTE] & ACK_REQUEST_BIT) {
-			nrf5_data.rx_frames[i].ack_fpb =
-						nrf5_data.last_frame_ack_fpb;
+			nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;
 		} else {
 			nrf5_data.rx_frames[i].ack_fpb = false;
 		}
