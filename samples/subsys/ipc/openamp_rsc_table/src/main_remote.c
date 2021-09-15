@@ -114,7 +114,7 @@ int mailbox_notify(void *priv, uint32_t id)
 	msg.id = 0;
 
 	LOG_DBG("%s: msg received\n", __func__);
-	ipm_send(ipm_handle, 0, &msg);
+	ipm_send(ipm_handle, 0, 0, &msg);
 
 	return 0;
 }
@@ -175,7 +175,7 @@ int platform_init(void)
 		return -1;
 	}
 
-	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
+	ipm_register_callback(ipm_handle, platform_ipm_callback, 0, NULL);
 
 	status = ipm_set_enabled(ipm_handle, 1);
 	if (status) {

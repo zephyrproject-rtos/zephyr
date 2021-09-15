@@ -30,7 +30,7 @@ static int console_out(int c)
 	msg.size = len;
 	msg.id = len;
 
-	ret = ipm_send(ipm_dev, 1, &msg);
+	ret = ipm_send(ipm_dev, 1, 0, &msg);
 	if (ret) {
 		LOG_ERR("Error sending character %c over IPM, ret %d", c, ret);
 	}

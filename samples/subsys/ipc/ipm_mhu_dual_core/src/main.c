@@ -31,7 +31,7 @@ static void main_cpu_1(void)
 	msg.size = 1;
 	msg.id = MHU_CPU0;
 
-	ipm_send(mhu0, 0, &msg);
+	ipm_send(mhu0, 0, 0, &msg);
 
 	while (1) {
 	}
@@ -49,7 +49,7 @@ static void mhu_isr_callback(const struct device *dev, void *context,
 		msg.size = 1;
 		msg.id = MHU_CPU1;
 
-		ipm_send(dev, 0, &msg);
+		ipm_send(dev, 0, 0, &msg);
 	} else if (cpu_id == MHU_CPU1) {
 		printk("MHU Test Done.\n");
 	}
@@ -68,7 +68,7 @@ void main(void)
 	} else {
 		printk("CPU %d, get MHU0 success!\n",
 				sse_200_platform_get_cpu_id());
-		ipm_register_callback(mhu0, mhu_isr_callback, NULL);
+		ipm_register_callback(mhu0, mhu_isr_callback, 0, NULL);
 	}
 
 	if (sse_200_platform_get_cpu_id() == MHU_CPU0) {

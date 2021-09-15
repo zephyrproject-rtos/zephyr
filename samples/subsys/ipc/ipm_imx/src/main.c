@@ -27,7 +27,7 @@ static void ipm_callback(const struct device *dev, void *context,
 	msg.size = CONFIG_IPM_IMX_MAX_DATA_SIZE;
 	msg.id = id;
 
-	status = ipm_send(dev, 1, &msg);
+	status = ipm_send(dev, 1, 0, &msg);
 	if (status) {
 		printk("ipm_send() failed: %d\n", status);
 	}
@@ -42,7 +42,7 @@ void main(void)
 		while (1) {
 		}
 	}
-	ipm_register_callback(ipm, ipm_callback, NULL);
+	ipm_register_callback(ipm, ipm_callback, 0, NULL);
 	ipm_set_enabled(ipm, 1);
 	printk("IPM initialized, data size = %d\n",
 		CONFIG_IPM_IMX_MAX_DATA_SIZE);

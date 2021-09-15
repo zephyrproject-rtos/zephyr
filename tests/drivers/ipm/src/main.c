@@ -74,6 +74,13 @@ DEVICE_DEFINE(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
 
 static const char thestr[] = "everything is awesome\n";
 
+static void ipm_callback_channel1(const struct device *ipmdev, void *user_data,
+				  uint32_t id, volatile void *data)
+{
+	/* poor's man toupper() */
+	printk("%c", id - 32);
+}
+
 void main(void)
 {
 	int rv, i;
@@ -93,7 +100,7 @@ void main(void)
 	for (i = 0; i < strlen(thestr); i++) {
 		msg.id = thestr[i];
 
-		ipm_send(ipm, 1, &msg);
+		ipm_send(ipm, 1, 0, &msg);
 	}
 
 	/* Now do this through printf() to exercise the sender */
@@ -109,6 +116,16 @@ void main(void)
 	/* XXX how to tell if something was actually printed out for
 	 * automation purposes?
 	 */
+
+	ipm_register_callback(ipm, ipm_callback_channel1, 1, NULL);
+
+	for (i = 0; i < strlen(thestr) - 1; i++) {
+		msg.id = thestr[i];
+
+		/* EVERYTHING IS AWESOME */
+		ipm_send(ipm, 1, 1, &msg);
+	}
+	printk("\n");
 
 	rv = TC_PASS;
 	TC_END_RESULT(rv);

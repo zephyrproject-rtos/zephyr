@@ -74,11 +74,13 @@ static void stm32_hsem_mailbox_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, struct ipm_msg *msg)
+int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, uint32_t channel,
+				struct ipm_msg *msg)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
 
 	ARG_UNUSED(wait);
+	ARG_UNUSED(channel);
 
 	if (msg->size) {
 		LOG_WRN("stm32 HSEM not support data transfer");
@@ -104,9 +106,12 @@ int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, struct ipm_m
 
 void stm32_hsem_mailbox_ipm_register_callback(const struct device *dev,
 					ipm_callback_t cb,
+					uint32_t channel,
 					void *user_data)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
+
+	ARG_UNUSED(channel);
 
 	data->callback = cb;
 	data->user_data = user_data;

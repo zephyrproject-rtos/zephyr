@@ -57,9 +57,11 @@ static uint32_t ipm_mhu_get_status(const struct device *d,
 	return IPM_MHU_ERR_NONE;
 }
 
-static int ipm_mhu_send(const struct device *d, int wait, struct ipm_msg *msg)
+static int ipm_mhu_send(const struct device *d, int wait, uint32_t channel,
+			struct ipm_msg *msg)
 {
 	ARG_UNUSED(wait);
+	ARG_UNUSED(channel);
 
 	const uint32_t set_val = 0x01;
 
@@ -156,9 +158,12 @@ static int ipm_mhu_max_data_size_get(const struct device *d)
 
 static void ipm_mhu_register_cb(const struct device *d,
 				ipm_callback_t cb,
+				uint32_t channel,
 				void *user_data)
 {
 	struct ipm_mhu_data *driver_data = DEV_DATA(d);
+
+	ARG_UNUSED(channel);
 
 	driver_data->callback = cb;
 	driver_data->user_data = user_data;

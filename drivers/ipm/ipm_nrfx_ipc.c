@@ -44,8 +44,11 @@ static void nrfx_ipc_handler(uint32_t event_mask, void *p_context)
 	}
 }
 
-static int ipm_nrf_send(const struct device *dev, int wait, struct ipm_msg *msg)
+static int ipm_nrf_send(const struct device *dev, int wait, uint32_t channel,
+			struct ipm_msg *msg)
 {
+	ARG_UNUSED(channel);
+
 	if (msg->id > NRFX_IPC_ID_MAX_VALUE) {
 		return -EINVAL;
 	}
@@ -74,8 +77,11 @@ static uint32_t ipm_nrf_max_id_val_get(const struct device *dev)
 
 static void ipm_nrf_register_callback(const struct device *dev,
 				      ipm_callback_t cb,
+				      uint32_t channel,
 				      void *user_data)
 {
+	ARG_UNUSED(channel);
+
 	nrfx_ipm_data.callback = cb;
 	nrfx_ipm_data.user_data = user_data;
 }
@@ -163,8 +169,11 @@ static int vipm_nrf_init(const struct device *dev)
 
 #define VIPM_DEVICE_1(_idx)						\
 static int vipm_nrf_##_idx##_send(const struct device *dev, int wait,	\
+				  uint32_t channel,			\
 				  struct ipm_msg *msg)			\
 {									\
+	ARG_UNUSED(channel);						\
+									\
 	if (!IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_TX)) {		\
 		LOG_ERR("IPM_" #_idx " is RX message channel");		\
 		return -EINVAL;						\
@@ -190,8 +199,11 @@ static int vipm_nrf_##_idx##_send(const struct device *dev, int wait,	\
 									\
 static void vipm_nrf_##_idx##_register_callback(const struct device *dev, \
 						ipm_callback_t cb,	\
+						uint32_t channel,	\
 						void *user_data)	\
 {									\
+	ARG_UNUSED(channel);						\
+									\
 	if (IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_RX)) {		\
 		nrfx_vipm_data.callback[_idx] = cb;			\
 		nrfx_vipm_data.user_data[_idx] = user_data;		\

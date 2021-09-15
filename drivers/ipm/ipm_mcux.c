@@ -73,7 +73,8 @@ static void mcux_mailbox_isr(const struct device *dev)
 }
 
 
-static int mcux_mailbox_ipm_send(const struct device *d, int wait, struct ipm_msg *msg)
+static int mcux_mailbox_ipm_send(const struct device *d, int wait, uint32_t channel,
+				 struct ipm_msg *msg)
 {
 	const struct mcux_mailbox_config *config = d->config;
 	MAILBOX_Type *base = config->base;
@@ -84,6 +85,7 @@ static int mcux_mailbox_ipm_send(const struct device *d, int wait, struct ipm_ms
 	int i;
 
 	ARG_UNUSED(wait);
+	ARG_UNUSED(channel);
 
 	if (msg->id > MCUX_IPM_MAX_ID_VAL) {
 		return -EINVAL;
@@ -125,9 +127,12 @@ static uint32_t mcux_mailbox_ipm_max_id_val_get(const struct device *d)
 
 static void mcux_mailbox_ipm_register_callback(const struct device *d,
 					       ipm_callback_t cb,
+					       uint32_t channel,
 					       void *context)
 {
 	struct mcux_mailbox_data *driver_data = d->data;
+
+	ARG_UNUSED(channel);
 
 	driver_data->callback = cb;
 	driver_data->callback_ctx = context;

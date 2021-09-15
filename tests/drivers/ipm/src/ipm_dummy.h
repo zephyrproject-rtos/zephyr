@@ -12,6 +12,8 @@
 #include <device.h>
 #include <drivers/ipm.h>
 
+#define NUM_CHANNELS 2
+
 /* Arbitrary */
 #define DUMMY_IPM_DATA_WORDS    4
 
@@ -23,9 +25,10 @@ struct ipm_dummy_regs {
 };
 
 struct ipm_dummy_driver_data {
-	ipm_callback_t cb;
+	ipm_callback_t cb[NUM_CHANNELS];
 	void *cb_context;
 	volatile struct ipm_dummy_regs regs;
+	uint32_t channel;
 };
 
 int ipm_dummy_init(const struct device *d);

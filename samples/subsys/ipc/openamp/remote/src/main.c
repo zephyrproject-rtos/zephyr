@@ -83,7 +83,7 @@ static void virtio_notify(struct virtqueue *vq)
 	msg.size = 1;
 	msg.id = current_core ? 0 : 1;
 
-	ipm_send(ipm_handle, 0, &msg);
+	ipm_send(ipm_handle, 0, 0, &msg);
 #else
 	uint32_t dummy_data = 0x00110011; /* Some data must be provided */
 
@@ -91,7 +91,7 @@ static void virtio_notify(struct virtqueue *vq)
 	msg.size = sizeof(dummy_data);
 	msg.id = 0;
 
-	ipm_send(ipm_handle, 0, &msg);
+	ipm_send(ipm_handle, 0, 0, &msg);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 }
 
@@ -192,7 +192,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		return;
 	}
 
-	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
+	ipm_register_callback(ipm_handle, platform_ipm_callback, 0, NULL);
 
 	status = ipm_set_enabled(ipm_handle, 1);
 	if (status != 0) {

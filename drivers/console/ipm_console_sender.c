@@ -31,7 +31,7 @@ static int consoleOut(int character)
 	 * We just stash the character into the id field and don't supply
 	 * any extra data
 	 */
-	ipm_send(ipm_console_device, 1, &msg);
+	ipm_send(ipm_console_device, 1, 0, &msg);
 
 	return character;
 }

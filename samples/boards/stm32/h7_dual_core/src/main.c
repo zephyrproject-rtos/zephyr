@@ -57,7 +57,7 @@ void main(void)
 	data.led = &led0;
 	data.led_is_on = false;
 
-	ipm_register_callback(ipm, new_message_callback, &data);
+	ipm_register_callback(ipm, new_message_callback, 0, &data);
 
 	ipm_set_enabled(ipm, 1);
 
@@ -66,7 +66,7 @@ void main(void)
 	msg.id = 0;
 
 	while (1) {
-		ipm_send(ipm, 0, &msg);
+		ipm_send(ipm, 0, 0, &msg);
 		k_msleep(SLEEP_TIME_MS);
 	}
 }

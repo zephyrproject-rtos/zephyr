@@ -86,13 +86,16 @@ static void imx_mu_isr(const struct device *dev)
 #endif
 }
 
-static int imx_mu_ipm_send(const struct device *dev, int wait, struct ipm_msg *msg)
+static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t channel,
+			   struct ipm_msg *msg)
 {
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 	uint32_t data32[IMX_IPM_DATA_REGS];
 	mu_status_t status;
 	int i;
+
+	ARG_UNUSED(channel);
 
 	if (msg->id > CONFIG_IPM_IMX_MAX_ID_VAL) {
 		return -EINVAL;
@@ -138,9 +141,12 @@ static uint32_t imx_mu_ipm_max_id_val_get(const struct device *dev)
 
 static void imx_mu_ipm_register_callback(const struct device *dev,
 					 ipm_callback_t cb,
+					 uint32_t channel,
 					 void *user_data)
 {
 	struct imx_mu_data *driver_data = dev->data;
+
+	ARG_UNUSED(channel);
 
 	driver_data->callback = cb;
 	driver_data->user_data = user_data;

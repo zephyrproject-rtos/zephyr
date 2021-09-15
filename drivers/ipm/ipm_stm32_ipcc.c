@@ -152,12 +152,14 @@ static void stm32_ipcc_mailbox_tx_isr(const struct device *dev)
 }
 
 static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
+				       uint32_t channel,
 				       struct ipm_msg *msg)
 {
 	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 
 	ARG_UNUSED(wait);
+	ARG_UNUSED(channel);
 
 	/* No data transmition, only doorbell */
 	if (msg->size) {
@@ -201,9 +203,12 @@ static uint32_t stm32_ipcc_mailbox_ipm_max_id_val_get(const struct device *d)
 
 static void stm32_ipcc_mailbox_ipm_register_callback(const struct device *d,
 						     ipm_callback_t cb,
+						     uint32_t channel,
 						     void *user_data)
 {
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(d);
+
+	ARG_UNUSED(channel);
 
 	data->callback = cb;
 	data->user_data = user_data;

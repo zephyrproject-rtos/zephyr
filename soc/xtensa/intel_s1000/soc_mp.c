@@ -204,7 +204,7 @@ void soc_sched_ipi(void)
 	msg.id = IPM_CAVS_IDC_MSG_SCHED_IPI_ID;
 
 	if (likely(idc != NULL)) {
-		ipm_send(idc, 0, &msg);
+		ipm_send(idc, 0, 0, &msg);
 	}
 }
 #endif

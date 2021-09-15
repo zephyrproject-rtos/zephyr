@@ -37,6 +37,7 @@
 #include <devicetree.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <drivers/ipm.h>
 
 #define TEST_CHILDREN	DT_PATH(test, test_children)
 #define TEST_DEADBEEF	DT_PATH(test, gpio_deadbeef)
@@ -2078,6 +2079,39 @@ static void test_pinctrl(void)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
+static void test_ipm(void)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+
+	const struct ipm_dt_spec spec_tx = IPM_DT_SPEC_GET(TEST_TEMP, tx);
+	const struct ipm_dt_spec spec_rx = IPM_DT_SPEC_GET(TEST_TEMP, rx);
+
+	zassert_equal(spec_tx.channel, 1, "");
+	zassert_equal(spec_rx.channel, 2, "");
+
+	zassert_equal(IPM_DT_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(IPM_DT_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
+
+	zassert_true(DT_SAME_NODE(IPM_DT_CTLR_BY_NAME(TEST_TEMP, tx),
+				  DT_NODELABEL(test_ipm)), "");
+	zassert_true(DT_SAME_NODE(IPM_DT_CTLR_BY_NAME(TEST_TEMP, rx),
+				  DT_NODELABEL(test_ipm)), "");
+
+	zassert_equal(IPM_DT_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(IPM_DT_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
+
+	const struct ipm_dt_spec spec_zero_cell = IPM_DT_SPEC_GET(TEST_TEMP, x);
+
+	zassert_equal(spec_zero_cell.channel, 0, "");
+
+	zassert_equal(IPM_DT_CHANNEL_BY_NAME(TEST_TEMP, x), 0, "");
+
+	zassert_true(DT_SAME_NODE(IPM_DT_CTLR_BY_NAME(TEST_TEMP, x),
+				  DT_NODELABEL(test_ipm_zero_cell)), "");
+
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2120,7 +2154,8 @@ void test_main(void)
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
 			 ztest_unit_test(test_same_node),
-			 ztest_unit_test(test_pinctrl)
+			 ztest_unit_test(test_pinctrl),
+			 ztest_unit_test(test_ipm)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

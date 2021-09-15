@@ -217,6 +217,20 @@
 			};
 		};
 
+		test_ipm: ipm {
+			label = "TEST_IPM";
+			compatible = "vnd,ipm";
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		test_ipm_zero_cell: ipm_zero_cell {
+			label = "TEST_IPM_ZERO_CELL";
+			compatible = "vnd,ipm-zero-cell";
+			#mbox-cells = <0>;
+			status = "okay";
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
@@ -320,6 +334,8 @@
 			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
 			pinctrl-2 = <&test_pincfg_d>;
 			pinctrl-names = "default", "sleep", "f.o.o2";
+			mboxes = <&test_ipm 1>, <&test_ipm 2>, <&test_ipm_zero_cell>;
+			mbox-names = "tx", "rx", "x";
 		};
 
 		/* there should only be one of these */

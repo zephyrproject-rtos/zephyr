@@ -27,7 +27,7 @@ void ping_ipm_callback(const struct device *dev, void *context,
 		msg.id = 0;
 
 		/* Send back to the other core */
-		ipm_send(dev, 1, &msg);
+		ipm_send(dev, 1, 0, &msg);
 	}
 }
 
@@ -50,7 +50,7 @@ void main(void)
 	}
 
 	/* Register application callback with no context */
-	ipm_register_callback(ipm, ping_ipm_callback, NULL);
+	ipm_register_callback(ipm, ping_ipm_callback, 0, NULL);
 	/* Enable the IPM device */
 	ipm_set_enabled(ipm, 1);
 
@@ -59,7 +59,7 @@ void main(void)
 	msg.id = 0;
 
 	/* Send initial message with 4 bytes length*/
-	ipm_send(ipm, 1, &msg);
+	ipm_send(ipm, 1, 0, &msg);
 	while (1) {
 	}
 }

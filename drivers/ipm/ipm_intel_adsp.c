@@ -107,10 +107,13 @@ static void ipm_adsp_isr(const struct device *dev)
 	}
 }
 
-static int ipm_adsp_send(const struct device *dev, int wait, struct ipm_msg *msg)
+static int ipm_adsp_send(const struct device *dev, int wait, uint32_t channel,
+			 struct ipm_msg *msg)
 {
 	LOG_DBG("Send: id %d data %p size %d", msg->id, msg->data, msg->size);
 	LOG_HEXDUMP_DBG(msg->data, msg->size, "send");
+
+	ARG_UNUSED(channel);
 
 	if (msg->id > IPM_INTEL_ADSP_MAX_ID_VAL) {
 		return -EINVAL;
@@ -141,9 +144,12 @@ static int ipm_adsp_send(const struct device *dev, int wait, struct ipm_msg *msg
 
 static void ipm_adsp_register_callback(const struct device *dev,
 				       ipm_callback_t cb,
+				       uint32_t channel,
 				       void *user_data)
 {
 	struct ipm_adsp_data *data = dev->data;
+
+	ARG_UNUSED(channel);
 
 	data->callback = cb;
 	data->user_data = user_data;

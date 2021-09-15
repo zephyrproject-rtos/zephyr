@@ -404,7 +404,7 @@ void arch_sched_ipi(void)
 	msg.size = 0;
 	msg.id = IPM_CAVS_IDC_MSG_SCHED_IPI_ID;
 
-	ipm_send(idcdev, 0, &msg);
+	ipm_send(idcdev, 0, 0, &msg);
 #endif
 }
 

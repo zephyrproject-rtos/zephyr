@@ -86,13 +86,16 @@ static void cavs_idc_isr(const struct device *dev)
 #endif
 }
 
-static int cavs_idc_send(const struct device *dev, int wait, struct ipm_msg *msg)
+static int cavs_idc_send(const struct device *dev, int wait, uint32_t channel,
+			 struct ipm_msg *msg)
 {
 	uint32_t curr_cpu_id = arch_curr_cpu()->id;
 	uint32_t ext = POINTER_TO_UINT(msg->data);
 	uint32_t reg;
 	bool busy;
 	int i;
+
+	ARG_UNUSED(channel);
 
 	if ((wait != 0) || (msg->size != 0)) {
 		return -ENOTSUP;
@@ -159,9 +162,12 @@ static uint32_t cavs_idc_max_id_val_get(const struct device *dev)
 
 static void cavs_idc_register_callback(const struct device *dev,
 				       ipm_callback_t cb,
+				       uint32_t channel,
 				       void *user_data)
 {
 	struct cavs_idc_data *drv_data = dev->data;
+
+	ARG_UNUSED(channel);
 
 	drv_data->cb = cb;
 	drv_data->user_data = user_data;

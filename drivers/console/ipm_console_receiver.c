@@ -138,7 +138,7 @@ int ipm_console_receiver_init(const struct device *d)
 	ring_buf_init(&driver_data->rb, config_info->rb_size32,
 		      config_info->ring_buf_data);
 
-	ipm_register_callback(ipm, ipm_console_receive_callback, driver_data);
+	ipm_register_callback(ipm, ipm_console_receive_callback, 0, driver_data);
 
 	k_thread_create(&driver_data->rx_thread, config_info->thread_stack,
 			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread,

@@ -18,7 +18,7 @@ void ping_ipm_callback(const struct device *dev, void *context,
 	msg.size = 4;
 	msg.id = 0;
 
-	ipm_send(dev, 1, &msg);
+	ipm_send(dev, 1, 0, &msg);
 }
 
 
@@ -32,7 +32,7 @@ void main(void)
 		while (1) {
 		}
 	}
-	ipm_register_callback(ipm, ping_ipm_callback, NULL);
+	ipm_register_callback(ipm, ping_ipm_callback, 0, NULL);
 	ipm_set_enabled(ipm, 1);
 	while (1) {
 	}

@@ -25,6 +25,7 @@ static void ipm_dummy_isr(const void *data)
 {
 	const struct device *d = (const struct device *)data;
 	struct ipm_dummy_driver_data *driver_data = d->data;
+	ipm_callback_t cb = driver_data->cb[driver_data->channel];
 
 	/* In a real driver the interrupt simply wouldn't fire, we fake
 	 * that here
@@ -33,10 +34,9 @@ static void ipm_dummy_isr(const void *data)
 		return;
 	}
 
-	if (driver_data->cb) {
-		driver_data->cb(d,
-				driver_data->cb_context, driver_data->regs.id,
-				(volatile void *)&driver_data->regs.data);
+	if (cb) {
+		cb(d, driver_data->cb_context, driver_data->regs.id,
+		   (volatile void *)&driver_data->regs.data);
 	}
 	driver_data->regs.busy = 0U;
 }
@@ -44,7 +44,8 @@ static void ipm_dummy_isr(const void *data)
 
 /* IPM API functions for the dummy driver */
 
-static int ipm_dummy_send(const struct device *d, int wait, struct ipm_msg *msg)
+static int ipm_dummy_send(const struct device *d, int wait, uint32_t channel,
+			  struct ipm_msg *msg)
 {
 	struct ipm_dummy_driver_data *driver_data;
 	volatile uint8_t *datareg;
@@ -69,6 +70,8 @@ static int ipm_dummy_send(const struct device *d, int wait, struct ipm_msg *msg)
 	driver_data->regs.id = msg->id;
 	driver_data->regs.busy = 1U;
 
+	driver_data->channel = channel;
+
 	irq_offload(ipm_dummy_isr, (const void *)d);
 
 	if (wait) {
@@ -81,12 +84,13 @@ static int ipm_dummy_send(const struct device *d, int wait, struct ipm_msg *msg)
 
 static void ipm_dummy_register_callback(const struct device *d,
 					ipm_callback_t cb,
+					uint32_t channel,
 					void *cb_context)
 {
 	struct ipm_dummy_driver_data *driver_data;
 
 	driver_data = d->data;
-	driver_data->cb = cb;
+	driver_data->cb[channel] = cb;
 	driver_data->cb_context = cb_context;
 }
 

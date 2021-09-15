@@ -128,7 +128,7 @@ static void virtio_notify(struct virtqueue *vq)
 	msg.size = 0;
 	msg.id = 0;
 
-	status = ipm_send(ipm_tx_handle, 0, &msg);
+	status = ipm_send(ipm_tx_handle, 0, 0, &msg);
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
 
 #if defined(CONFIG_SOC_MPS2_AN521) || \
@@ -139,7 +139,7 @@ static void virtio_notify(struct virtqueue *vq)
 	msg.size = 1;
 	msg.id = current_core ? 0 : 1;
 
-	status = ipm_send(ipm_handle, 0, &msg);
+	status = ipm_send(ipm_handle, 0, 0, &msg);
 #else
 	uint32_t dummy_data = 0x55005500; /* Some data must be provided */
 
@@ -147,7 +147,7 @@ static void virtio_notify(struct virtqueue *vq)
 	msg.size = sizeof(dummy_data);
 	msg.id = 0;
 
-	status = ipm_send(ipm_handle, 0, &msg);
+	status = ipm_send(ipm_handle, 0, 0, &msg);
 #endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 
 #endif
@@ -241,7 +241,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 		return -ENODEV;
 	}
 
-	ipm_register_callback(ipm_rx_handle, ipm_callback, NULL);
+	ipm_register_callback(ipm_rx_handle, ipm_callback, 0, NULL);
 
 	err = ipm_set_enabled(ipm_rx_handle, 1);
 	if (err != 0) {
@@ -257,7 +257,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 		return -ENODEV;
 	}
 
-	ipm_register_callback(ipm_handle, ipm_callback, NULL);
+	ipm_register_callback(ipm_handle, ipm_callback, 0, NULL);
 
 	err = ipm_set_enabled(ipm_handle, 1);
 	if (err != 0) {
