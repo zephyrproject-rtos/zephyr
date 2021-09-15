@@ -30,10 +30,6 @@ properties:
         type: phandle-array
         required: true
 
-    mdm-uart-dtr-gpios:
-        type: phandle-array
-        required: true
-
     mdm-vgpio-gpios:
         type: phandle-array
         required: true
