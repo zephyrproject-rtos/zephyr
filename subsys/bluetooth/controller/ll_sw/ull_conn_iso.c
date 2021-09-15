@@ -311,8 +311,9 @@ static void ticker_resume_op_cb(uint32_t status, void *param)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			     uint16_t lazy, uint8_t force, void *param)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
