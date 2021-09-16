@@ -1541,6 +1541,6 @@ static int ptp_mcux_init(const struct device *port)
 
 DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
 		NULL, &ptp_mcux_0_context, NULL, POST_KERNEL,
-		CONFIG_APPLICATION_INIT_PRIORITY, &api);
+		CONFIG_ETH_MCUX_PTP_CLOCK_INIT_PRIO, &api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */
