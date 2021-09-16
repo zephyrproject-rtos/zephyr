@@ -58,6 +58,9 @@ extern "C" {
  */
 #define MPSC_PBUF_MODE_OVERWRITE BIT(1)
 
+/** @brief Flag indicated that buffer is currently full. */
+#define MPSC_PBUF_FULL BIT(2)
+
 /**@} */
 
 /* Forward declaration */

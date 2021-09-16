@@ -306,7 +306,7 @@ static size_t get_long_hexdump(void)
 	if (IS_ENABLED(CONFIG_LOG2)) {
 		return CONFIG_LOG_BUFFER_SIZE -
 			/* First message */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d"),
+			ROUND_UP(LOG2_SIMPLE_MSG_LEN + sizeof(int) + STR_SIZE("test %d"),
 				 sizeof(long long)) -
 			/* Hexdump message excluding data */
 			ROUND_UP(LOG2_SIMPLE_MSG_LEN + STR_SIZE("hexdump"),
@@ -531,10 +531,9 @@ static void test_log_from_declared_module(void)
 static size_t get_short_msg_capacity(bool *remainder)
 {
 	if (IS_ENABLED(CONFIG_LOG2)) {
-		*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG2_SIMPLE_MSG_LEN) ?
-				true : false;
+		*remainder = false;
 
-		return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG2_SIMPLE_MSG_LEN;
+		return CONFIG_LOG_BUFFER_SIZE / LOG2_SIMPLE_MSG_LEN;
 	}
 
 	*remainder = (CONFIG_LOG_BUFFER_SIZE % sizeof(struct log_msg)) ?
