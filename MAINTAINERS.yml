@@ -966,6 +966,7 @@ Kernel:
         - nashif
         - ceolin
         - dcpleung
+        - peter-mitsis
     files:
         - doc/reference/kernel/
         - include/kernel*.h
@@ -1343,7 +1344,7 @@ SiLabs Platforms:
 Intel Platforms (X86):
     status: maintained
     maintainers:
-        - jenmwms
+        - enjiamai
     collaborators:
         - jhedberg
         - aasthagr
@@ -1610,7 +1611,7 @@ x86 arch:
         - nashif
         - dcpleung
         - ceolin
-        - jenmwms
+        - enjiamai
         - aasthagr
     files:
         - arch/x86/
