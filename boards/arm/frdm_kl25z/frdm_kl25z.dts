@@ -93,11 +93,13 @@
 &adc0 {
 	status = "okay";
 	pinctrl-0 = <&ADC0_SE12_PTB2>;
+	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&I2C0_SCL_PTE24 &I2C0_SDA_PTE25>;
+	pinctrl-names = "default";
 
 	mma8451q@1d {
 		compatible = "nxp,fxos8700","nxp,mma8451q";
@@ -120,6 +122,7 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART0_RX_PTA1 &UART0_TX_PTA2>;
+	pinctrl-names = "default";
 };
 
 &gpioa {

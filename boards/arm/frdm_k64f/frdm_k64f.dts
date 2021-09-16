@@ -96,6 +96,7 @@ arduino_serial: &uart3 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART3_RX_PTC16 &UART3_TX_PTC17>;
+	pinctrl-names = "default";
 };
 
 &cpu0 {
@@ -122,6 +123,7 @@ arduino_serial: &uart3 {
 arduino_i2c: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&I2C0_SCL_PTE24 &I2C0_SDA_PTE25>;
+	pinctrl-names = "default";
 
 	fxos8700@1d {
 		compatible = "nxp,fxos8700";
@@ -135,6 +137,7 @@ arduino_i2c: &i2c0 {
 arduino_spi: &spi0 {
 	status = "okay";
 	pinctrl-0 = <&SPI0_PCS0_PTD0 &SPI0_SCK_PTD1 &SPI0_SOUT_PTD2 &SPI0_SIN_PTD3>;
+	pinctrl-names = "default";
 };
 
 &ftm0 {
@@ -142,6 +145,7 @@ arduino_spi: &spi0 {
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&FTM0_CH0_PTC1>;
+	pinctrl-names = "default";
 };
 
 &ftm3 {
@@ -149,16 +153,19 @@ arduino_spi: &spi0 {
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9>;
+	pinctrl-names = "default";
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&UART0_RX_PTB16 &UART0_TX_PTB17>;
+	pinctrl-names = "default";
 };
 
 &uart2 {
 	pinctrl-0 = <&UART2_RTS_b_PTD0 &UART2_CTS_b_PTD1 &UART2_RX_PTD2 &UART2_TX_PTD3>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usbotg {
@@ -232,10 +239,12 @@ zephyr_udc0: &usbotg {
 		     &RMII0_TXEN_PTA15 &RMII0_TXD0_PTA16
 		     &RMII0_TXD1_PTA17 &RMII0_MDIO_PTB0
 		     &RMII0_MDC_PTB1>;
+	pinctrl-names = "default";
 	ptp {
 		status = "okay";
 		pinctrl-0 = <&ENET0_1588_TMR0_PTC16 &ENET0_1588_TMR1_PTC17
 			     &ENET0_1588_TMR2_PTC18>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -247,6 +256,7 @@ zephyr_udc0: &usbotg {
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&CAN0_TX_PTB18 &CAN0_RX_PTB19>;
+	pinctrl-names = "default";
 	bus-speed = <125000>;
 };
 
