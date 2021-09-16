@@ -620,10 +620,8 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					    "AT", &gsm->sem_response,
 					    GSM_CMD_AT_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("modem setup returned %d, %s",
-				ret, "retrying...");
-			(void)gsm_work_reschedule(&gsm->gsm_configure_work,
-						K_SECONDS(1));
+			LOG_ERR("%s returned %d, %s", "AT", ret, "retrying...");
+			(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 			return;
 		}
 	}
@@ -639,10 +637,8 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 	ret = gsm_setup_mccmno(gsm);
-
 	if (ret < 0) {
-		LOG_ERR("modem setup returned %d, %s",
-				ret, "retrying...");
+		LOG_ERR("%s returned %d, %s", "gsm_setup_mccmno", ret, "retrying...");
 
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work,
 							K_SECONDS(1));
@@ -656,8 +652,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
-			ret, "retrying...");
+		LOG_DBG("%s returned %d, %s", "setup_cmds", ret, "retrying...");
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
@@ -725,7 +720,7 @@ attaching:
 #endif
 	}
 
-	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
+	LOG_DBG("modem RSSI: %d, %s", *gsm->context.data_rssi, "enable PPP");
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
@@ -734,8 +729,7 @@ attaching:
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
-		LOG_DBG("modem setup returned %d, %s",
-			ret, "retrying...");
+		LOG_DBG("%s returned %d, %s", "connect_cmds", ret, "retrying...");
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
@@ -758,8 +752,7 @@ attaching:
 				"AT", &gsm->sem_response,
 				GSM_CMD_AT_TIMEOUT);
 			if (ret < 0) {
-				LOG_WRN("modem setup returned %d, %s",
-					ret, "AT cmds failed");
+				LOG_WRN("%s returned %d, %s", "AT", ret, "iface failed");
 			} else {
 				LOG_INF("AT channel %d connected to %s",
 					DLCI_AT, gsm->at_dev->name);
