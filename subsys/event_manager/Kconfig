@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig EVENT_MANAGER
+	bool
+	prompt "Event Manager"
+	depends on LINKER_ORPHAN_SECTION_PLACE
+	help
+	  Enable Event Manager.
+	  Note that Event Manager uses orphan sections to handle its
+	  data structures.
+
+if EVENT_MANAGER
+
+config EVENT_MANAGER_SHOW_EVENTS
+	bool "Show events"
+	depends on LOG
+	default y
+	help
+	  This option controls if events are printed to console.
+
+config EVENT_MANAGER_SHOW_EVENT_HANDLERS
+	bool "Show event handlers"
+	depends on EVENT_MANAGER_SHOW_EVENTS
+	help
+	  This option controls if event handlers are printed to console.
+
+module = EVENT_MANAGER
+module-str = Event Manager
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+config EVENT_MANAGER_EVENT_LOG_BUF_LEN
+	int "Length of buffer for processing event message"
+	default 128
+	range 2 1024
+
+config EVENT_MANAGER_LOG_EVENT_TYPE
+	bool "Include event type in the event log output"
+	default y
+
+config EVENT_MANAGER_MAX_EVENT_CNT
+	int "Maximum number of event types"
+	default 32
+	help
+	  Maximum number of declared event types in Event Manager.
+
+config EVENT_MANAGER_PROFILER_TRACER
+	bool "Create void pointer for each event type, which can be used for profiling"
+	default n
+
+endif # EVENT_MANAGER

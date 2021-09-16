@@ -1,0 +1,4 @@
+SECTION_DATA_PROLOGUE(event_manager,,)
+{
+	KEEP(*("event_manager"));
+} GROUP_DATA_LINK_IN(ROMABLE_REGION, ROMABLE_REGION)

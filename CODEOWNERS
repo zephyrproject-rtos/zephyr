@@ -705,6 +705,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
 /subsys/demand_paging/                    @dcpleung @nashif
 /subsys/emul/                             @sjg20
+/subsys/event_manager/                    @nordic-krch
 /subsys/fb/                               @jfischer-no
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu

@@ -81,6 +81,7 @@ The following example projects are supported:
 - samples/hello_world
 - samples/synchronization
 - samples/philosophers
+- samples/event_manager
 - samples/basic/threads
 - samples/basic/blinky
 - samples/basic/blinky_pwm
