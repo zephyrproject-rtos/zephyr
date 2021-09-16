@@ -156,17 +156,22 @@ enum {
 	/** Periodic Advertising Sync has been created in the host. */
 	BT_PER_ADV_SYNC_CREATED,
 
-	/** Periodic advertising is in sync and can be terminated */
+	/** Periodic Advertising Sync is established and can be terminated */
 	BT_PER_ADV_SYNC_SYNCED,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync */
 	BT_PER_ADV_SYNC_SYNCING,
 
-	/** Periodic advertising is attempting sync sync */
+	/** Periodic Advertising Sync is attempting to create sync using
+	 *  Advertiser List
+	 */
+	BT_PER_ADV_SYNC_SYNCING_USE_LIST,
+
+	/** Periodic Advertising Sync established with reporting disabled */
 	BT_PER_ADV_SYNC_RECV_DISABLED,
 
 	/** Constant Tone Extension for Periodic Advertising has been enabled
-	 * in the controller.
+	 * in the Controller.
 	 */
 	BT_PER_ADV_SYNC_CTE_ENABLED,
 
