@@ -24,8 +24,6 @@
 
 #include "bt.h"
 
-#define DATA_MTU CONFIG_BT_ISO_TX_MTU
-
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -75,7 +73,8 @@ struct bt_iso_chan iso_chan = {
 
 static struct bt_iso_cig *cig;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  NULL);
 
 static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
 {
@@ -275,7 +274,9 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
+		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
+	};
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -293,7 +294,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, DATA_MTU - BT_ISO_CHAN_SEND_RESERVE);
+	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
 	while (count--) {
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -345,11 +346,14 @@ static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 
 static struct bt_iso_big *big;
 
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
 static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
+		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
+	};
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -367,7 +371,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, DATA_MTU - BT_ISO_CHAN_SEND_RESERVE);
+	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
 	while (count--) {
 		for (int i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
