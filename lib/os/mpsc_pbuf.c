@@ -5,6 +5,7 @@
  */
 #include <sys/mpsc_pbuf.h>
 
+/* Cannot use logging as mpsc_pbuf is part of it. */
 #define MPSC_PBUF_DEBUG 0
 
 #define MPSC_PBUF_DBG(buffer, ...) do { \
@@ -19,7 +20,7 @@
 static inline void mpsc_state_print(struct mpsc_pbuf_buffer *buffer)
 {
 	if (MPSC_PBUF_DEBUG) {
-		printk("wr:%d/%d, rd:%d/%d\n",
+		printk(", wr:%d/%d, rd:%d/%d\n",
 			buffer->wr_idx, buffer->tmp_wr_idx,
 			buffer->rd_idx, buffer->tmp_rd_idx);
 	}
@@ -217,7 +218,7 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 	uint32_t free_wlen;
 	bool valid_drop;
 
-	MPSC_PBUF_DBG(buffer, "alloc %d words, ", (int)wlen);
+	MPSC_PBUF_DBG(buffer, "alloc %d words", (int)wlen);
 
 	if (wlen > (buffer->size - 1)) {
 		MPSC_PBUF_DBG(buffer, "Failed to alloc, ");
@@ -269,7 +270,7 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 		}
 	} while (cont);
 
-	MPSC_PBUF_DBG(buffer, "allocated %p ", item);
+	MPSC_PBUF_DBG(buffer, "allocated %p", item);
 
 	if (IS_ENABLED(CONFIG_MPSC_CLEAR_ALLOCATED) && item) {
 		/* During test fill with 0's to simplify message comparison */
@@ -289,7 +290,7 @@ void mpsc_pbuf_commit(struct mpsc_pbuf_buffer *buffer,
 	item->hdr.valid = 1;
 	buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
 	k_spin_unlock(&buffer->lock, key);
-	MPSC_PBUF_DBG(buffer, "committed %p ", item);
+	MPSC_PBUF_DBG(buffer, "committed %p", item);
 }
 
 void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
@@ -423,7 +424,7 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 		}
 
 		if (!cont) {
-			MPSC_PBUF_DBG(buffer, "claimed: %p ", item);
+			MPSC_PBUF_DBG(buffer, "claimed: %p", item);
 		}
 		k_spin_unlock(&buffer->lock, key);
 	} while (cont);
@@ -445,7 +446,7 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
 	} else {
 		item->skip.len = wlen;
 	}
-	MPSC_PBUF_DBG(buffer, "freed: %p ", item);
+	MPSC_PBUF_DBG(buffer, "freed: %p", item);
 
 	k_spin_unlock(&buffer->lock, key);
 	k_sem_give(&buffer->sem);
