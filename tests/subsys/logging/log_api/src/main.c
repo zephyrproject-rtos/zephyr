@@ -566,16 +566,14 @@ ZTEST(test_log_api, test_log_from_declared_module)
  * adding new message will lead to one message drop, otherwise 2 message will
  * be dropped.
  */
-static size_t get_short_msg_capacity(bool *remainder)
+static size_t get_short_msg_capacity(void)
 {
-	*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG_SIMPLE_MSG_LEN) ?
-			true : false;
-
-	return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG_SIMPLE_MSG_LEN;
+	return CONFIG_LOG_BUFFER_SIZE / LOG_SIMPLE_MSG_LEN;
 }
 
 static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 {
+	printk("ex dropped:%d\n", exp_dropped);
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
 	log_setup(false);
@@ -626,14 +624,13 @@ ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
 		ztest_test_skip();
 	}
 
-	bool remainder;
-	uint32_t capacity = get_short_msg_capacity(&remainder);
+	uint32_t capacity = get_short_msg_capacity();
 
 	log_n_messages(capacity, 0);
 
 	/* Expect messages dropped when logger more than buffer capacity. */
-	log_n_messages(capacity + 1, 1 + (remainder ? 1 : 0));
-	log_n_messages(capacity + 2, 2 + (remainder ? 1 : 0));
+	log_n_messages(capacity + 1, 1);
+	log_n_messages(capacity + 2, 2);
 }
 
 /* Test checks if panic is correctly executed. On panic logger should flush all
