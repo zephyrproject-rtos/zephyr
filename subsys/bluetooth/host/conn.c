@@ -1443,7 +1443,7 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
 	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
 	     !atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) ||
-	     (conn->role == BT_HCI_ROLE_MASTER)) {
+	     (conn->role == BT_HCI_ROLE_CENTRAL)) {
 		int rc;
 
 		rc = bt_conn_le_conn_update(conn, param);
@@ -1840,7 +1840,7 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	const bt_addr_le_t *rpa;
 	struct bt_conn_cb *cb;
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
+	if (conn->role == BT_HCI_ROLE_CENTRAL) {
 		rpa = &conn->le.resp_addr;
 	} else {
 		rpa = &conn->le.init_addr;
@@ -2099,7 +2099,7 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 	}
 
 	/* Check against initial connection address */
-	if (conn->role == BT_HCI_ROLE_MASTER) {
+	if (conn->role == BT_HCI_ROLE_CENTRAL) {
 		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
 	}
 
@@ -2181,7 +2181,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	case BT_CONN_TYPE_LE:
 		info->le.dst = &conn->le.dst;
 		info->le.src = &bt_dev.id_addr[conn->id];
-		if (conn->role == BT_HCI_ROLE_MASTER) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
 			info->le.local = &conn->le.init_addr;
 			info->le.remote = &conn->le.resp_addr;
 		} else {
