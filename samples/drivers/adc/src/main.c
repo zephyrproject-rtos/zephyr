@@ -59,6 +59,7 @@ struct adc_sequence sequence = {
 	/* buffer size in bytes, not number of samples */
 	.buffer_size = sizeof(sample_buffer),
 	.resolution  = ADC_RESOLUTION,
+	.calibrate = false,
 };
 
 void main(void)
