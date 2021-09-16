@@ -3,6 +3,22 @@ name: Compliance
 on: pull_request
 
 jobs:
+  maintainer_check:
+    runs-on: ubuntu-latest
+    name: Check MAINTAINERS file
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Run Maintainers Script
+      id: maintainer
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        python3 ./scripts/get_maintainer.py path CMakeLists.txt
+
   compliance_job:
     runs-on: ubuntu-latest
     name: Run compliance checks on patch series (PR)
