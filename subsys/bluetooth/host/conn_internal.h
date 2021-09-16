@@ -251,6 +251,8 @@ struct bt_iso_create_param {
 	struct bt_iso_chan	**chans;
 };
 
+int bt_conn_iso_init(void);
+
 /* Add a new ISO connection */
 struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 
