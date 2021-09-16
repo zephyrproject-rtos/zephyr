@@ -88,6 +88,15 @@ static int mimxrt1024_evk_init(const struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 4, 0);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay) && CONFIG_CAN
+	/* FlexCAN1 TX, RX */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_00_FLEXCAN1_TX, 1);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_01_FLEXCAN1_RX, 1);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_00_FLEXCAN1_TX, 0x10B0u);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_01_FLEXCAN1_RX, 0x10B0u);
+#endif
+
 	return 0;
 }
 

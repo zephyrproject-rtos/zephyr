@@ -83,6 +83,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``
@@ -128,6 +130,10 @@ The MIMXRT1024 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_EMC_41   | ENET_MDC        | Ethernet                  |
 +---------------+-----------------+---------------------------+
 | GPIO_EMC_40   | ENET_MDIO       | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_00 | FLEXCAN1_TX     | CAN TX                    |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_01 | FLEXCAN1_RX     | CAN RX                    |
 +---------------+-----------------+---------------------------+
 
 System Clock
