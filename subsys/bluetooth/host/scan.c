@@ -694,8 +694,10 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	}
 
 	if (!pending_per_adv_sync ||
-	    pending_per_adv_sync->sid != evt->sid ||
-	    bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)) {
+	    (!atomic_test_bit(pending_per_adv_sync->flags,
+			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
+	     ((pending_per_adv_sync->sid != evt->sid) ||
+	      bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
 		struct bt_le_per_adv_sync_term_info term_info;
 
 		BT_ERR("Unexpected per adv sync established event");
@@ -1161,6 +1163,9 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	bt_addr_le_copy(&cp->addr, &param->addr);
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
+		atomic_set_bit(per_adv_sync->flags,
+			       BT_PER_ADV_SYNC_SYNCING_USE_LIST);
+
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	}
 
