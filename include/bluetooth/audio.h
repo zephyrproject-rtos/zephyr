@@ -47,6 +47,9 @@ struct bt_audio_cap;
 /** @brief Abstract Audio endpoint structure. */
 struct bt_audio_endpoint;
 
+/** @brief Abstract Audio Unicast Group structure. */
+struct bt_audio_unicast_group;
+
 /** @brief Abstract Audio Broadcast Sink structure. */
 struct bt_audio_broadcast_sink;
 
@@ -996,6 +999,23 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
+
+/** @brief Create audio unicast group.
+ *
+ *  Create a new audio unicast group with one or more audio channels as a
+ *  central. Channels in a unicast group shall share the same interval, framing
+ *  and latency (see @ref bt_codec_qos).
+ *
+ *  @param[in]  chans          Array of channel objects being used for the
+ *                             group.
+ *  @param[in]  num_chan       Number of channels in @p chans.
+ *  @param[out] unicast_group  Pointer to the unicast group created
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
+				  uint8_t num_chan,
+				  struct bt_audio_unicast_group **unicast_group);
 
 /** @brief Create audio broadcast source.
  *

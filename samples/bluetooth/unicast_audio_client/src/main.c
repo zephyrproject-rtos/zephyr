@@ -20,6 +20,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_chan audio_channel;
+static struct bt_audio_unicast_group *unicast_group;
 static struct bt_audio_capability *remote_capabilities[CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE, NULL);
@@ -580,6 +581,19 @@ static int configure_chan(struct bt_audio_chan **chan)
 	return 0;
 }
 
+static int create_group(struct bt_audio_chan *chan)
+{
+	int err;
+
+	err = bt_audio_unicast_group_create(chan, 1, &unicast_group);
+	if (err != 0) {
+		printk("Could not create unicast group (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int set_chan_qos(struct bt_audio_chan *chan)
 {
 	int err;
@@ -658,6 +672,13 @@ void main(void)
 		return;
 	}
 	printk("Channel configured\n");
+
+	printk("Creating unicast group\n");
+	err = create_group(chan);
+	if (err != 0) {
+		return;
+	}
+	printk("Unicast group created\n");
 
 	printk("Setting channel QoS\n");
 	err = set_chan_qos(chan);
