@@ -87,6 +87,20 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_BREDR */
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_ISO)
+/* Callback TX buffers for ISO */
+static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
+
+int bt_conn_iso_init(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(iso_tx); i++) {
+		k_fifo_put(&free_tx, &iso_tx[i]);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_ISO */
+
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_BREDR)
