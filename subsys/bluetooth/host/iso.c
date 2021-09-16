@@ -25,7 +25,7 @@
 #include "common/log.h"
 
 NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  CONFIG_BT_ISO_TX_MTU, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
 			  CONFIG_BT_ISO_RX_MTU, NULL);
 
@@ -35,7 +35,7 @@ static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
-			  CONFIG_BT_ISO_TX_MTU, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 #endif /* CONFIG_BT_ISO_TX_FRAG_COUNT > 0 */
 
 struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
@@ -688,8 +688,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			      bool is_tx)
 {
-	const size_t max_mtu = (is_tx ? CONFIG_BT_ISO_TX_MTU : CONFIG_BT_ISO_RX_MTU) -
-					BT_ISO_CHAN_SEND_RESERVE;
+	const size_t max_mtu = (is_tx ? CONFIG_BT_ISO_TX_MTU : CONFIG_BT_ISO_RX_MTU);
 	const size_t max_sdu = MIN(max_mtu, BT_ISO_MAX_SDU);
 
 	if (io_qos->sdu > max_sdu) {

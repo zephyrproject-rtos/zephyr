@@ -24,13 +24,13 @@ LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 #define DEFAULT_BIS_COUNT       CONFIG_BT_ISO_MAX_CHAN
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  DEFAULT_BIS_SDU, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
 static K_SEM_DEFINE(sem_big_complete, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
 static struct k_work_delayable iso_send_work;
 static uint32_t iso_send_count;
-static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU - BT_ISO_CHAN_SEND_RESERVE];
+static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
 static uint8_t connected_bis;
 
 static struct bt_iso_chan bis_iso_chans[CONFIG_BT_ISO_MAX_CHAN];

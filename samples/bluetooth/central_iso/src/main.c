@@ -18,14 +18,13 @@
 #include <bluetooth/iso.h>
 #include <sys/byteorder.h>
 
-#define MAX_ISO_APP_DATA (CONFIG_BT_ISO_TX_MTU - BT_ISO_CHAN_SEND_RESERVE)
-
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  NULL);
 
 /**
  * @brief Send ISO data on timeout
@@ -43,7 +42,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
 static void iso_timer_timeout(struct k_work *work)
 {
 	int ret;
-	static uint8_t buf_data[MAX_ISO_APP_DATA];
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
 	struct net_buf *buf;
 	static size_t len_to_send = 1;
