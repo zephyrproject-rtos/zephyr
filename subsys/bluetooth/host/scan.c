@@ -162,9 +162,9 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
-		set_param->filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
+		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
-		set_param->filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
 	}
 
 	if (phy_1m) {
@@ -211,9 +211,9 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
 	}
 
 	active_scan = scan_type == BT_HCI_LE_SCAN_ACTIVE;

@@ -407,7 +407,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) && !chan->iso->iso.is_bis) {
 		bt_iso_cleanup_acl(chan->iso);
 
-		if (chan->iso->role == BT_HCI_ROLE_SLAVE) {
+		if (chan->iso->role == BT_HCI_ROLE_PERIPHERAL) {
 			bt_conn_unref(chan->iso);
 			chan->iso = NULL;
 		} else {
@@ -856,7 +856,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	}
 
 	iso->handle = cis_handle;
-	iso->role = BT_HCI_ROLE_SLAVE;
+	iso->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_conn_set_state(iso, BT_CONN_CONNECT);
 
 	err = hci_le_accept_cis(cis_handle);
@@ -921,10 +921,10 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = cig->id;
-	req->m_latency = sys_cpu_to_le16(param->latency);
-	req->s_latency = sys_cpu_to_le16(param->latency);
-	sys_put_le24(param->interval, req->m_interval);
-	sys_put_le24(param->interval, req->s_interval);
+	req->c_latency = sys_cpu_to_le16(param->latency);
+	req->p_latency = sys_cpu_to_le16(param->latency);
+	sys_put_le24(param->interval, req->c_interval);
+	sys_put_le24(param->interval, req->p_interval);
 
 	req->sca = param->sca;
 	req->packing = param->packing;
@@ -952,22 +952,22 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 			/* Use RX PHY if TX is not set (disabled)
 			 * to avoid setting invalid values
 			 */
-			cis_param->m_phy = qos->rx->phy;
+			cis_param->c_phy = qos->rx->phy;
 		} else {
-			cis_param->m_sdu = sys_cpu_to_le16(qos->tx->sdu);
-			cis_param->m_phy = qos->tx->phy;
-			cis_param->m_rtn = qos->tx->rtn;
+			cis_param->c_sdu = sys_cpu_to_le16(qos->tx->sdu);
+			cis_param->c_phy = qos->tx->phy;
+			cis_param->c_rtn = qos->tx->rtn;
 		}
 
 		if (!qos->rx) {
 			/* Use TX PHY if RX is not set (disabled)
 			 * to avoid setting invalid values
 			 */
-			cis_param->s_phy = qos->tx->phy;
+			cis_param->p_phy = qos->tx->phy;
 		} else {
-			cis_param->s_sdu = sys_cpu_to_le16(qos->rx->sdu);
-			cis_param->s_phy = qos->rx->phy;
-			cis_param->s_rtn = qos->rx->rtn;
+			cis_param->p_sdu = sys_cpu_to_le16(qos->rx->sdu);
+			cis_param->p_phy = qos->rx->phy;
+			cis_param->p_rtn = qos->rx->rtn;
 		}
 	}
 
@@ -1062,7 +1062,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 	*out_cig = NULL;
 
 	/* Check if controller is ISO capable as a central */
-	if (!BT_FEAT_LE_CIS_MASTER(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CIS_CENTRAL(bt_dev.le.features)) {
 		return -ENOTSUP;
 	}
 
@@ -1346,7 +1346,7 @@ int bt_iso_server_register(struct bt_iso_server *server)
 	}
 
 	/* Check if controller is ISO capable */
-	if (!BT_FEAT_LE_CIS_SLAVE(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CIS_PERIPHERAL(bt_dev.le.features)) {
 		return -ENOTSUP;
 	}
 

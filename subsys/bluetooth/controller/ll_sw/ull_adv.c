@@ -2772,7 +2772,7 @@ static void init_set(struct ll_adv_set *adv)
 	adv->own_addr_type = BT_ADDR_LE_PUBLIC;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
-	adv->lll.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
+	adv->lll.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	adv->delay_remain = ULL_ADV_RANDOM_DELAY;
 #endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */

@@ -1232,12 +1232,12 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_FILTER)
 static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_rp_le_read_wl_size *rp;
+	struct bt_hci_rp_le_read_fal_size *rp;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	rp->wl_size = ll_wl_size_get();
+	rp->fal_size = ll_wl_size_get();
 }
 
 static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
@@ -1251,7 +1251,7 @@ static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
 
 static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_add_dev_to_wl *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_add_dev_to_fal *cmd = (void *)buf->data;
 	uint8_t status;
 
 	status = ll_wl_add(&cmd->addr);
@@ -1261,7 +1261,7 @@ static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
 
 static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
 {
-	struct bt_hci_cp_le_rem_dev_from_wl *cmd = (void *)buf->data;
+	struct bt_hci_cp_le_rem_dev_from_fal *cmd = (void *)buf->data;
 	uint8_t status;
 
 	status = ll_wl_remove(&cmd->addr);
@@ -1769,22 +1769,22 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_cig_params *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_set_cig_params *rp;
-	uint32_t m_interval;
-	uint32_t s_interval;
-	uint16_t m_latency;
-	uint16_t s_latency;
+	uint32_t c_interval;
+	uint32_t p_interval;
+	uint16_t c_latency;
+	uint16_t p_latency;
 	uint8_t status;
 	uint8_t i;
 
-	m_interval = sys_get_le24(cmd->m_interval);
-	s_interval = sys_get_le24(cmd->s_interval);
-	m_latency = sys_le16_to_cpu(cmd->m_latency);
-	s_latency = sys_le16_to_cpu(cmd->s_latency);
+	c_interval = sys_get_le24(cmd->c_interval);
+	p_interval = sys_get_le24(cmd->p_interval);
+	c_latency = sys_le16_to_cpu(cmd->c_latency);
+	p_latency = sys_le16_to_cpu(cmd->p_latency);
 
 	/* Create CIG or start modifying existing CIG */
-	status = ll_cig_parameters_open(cmd->cig_id, m_interval, s_interval,
+	status = ll_cig_parameters_open(cmd->cig_id, c_interval, p_interval,
 					cmd->sca, cmd->packing, cmd->framing,
-					m_latency, s_latency, cmd->num_cis);
+					c_latency, p_latency, cmd->num_cis);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) +
 				   cmd->num_cis * sizeof(uint16_t));
@@ -1795,15 +1795,15 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 	for (i = 0; !status && i < cmd->num_cis; i++) {
 		struct bt_hci_cis_params *params = cmd->cis;
 		uint16_t handle;
-		uint16_t m_sdu;
-		uint16_t s_sdu;
+		uint16_t c_sdu;
+		uint16_t p_sdu;
 
-		m_sdu = sys_le16_to_cpu(params->m_sdu);
-		s_sdu = sys_le16_to_cpu(params->s_sdu);
+		c_sdu = sys_le16_to_cpu(params->c_sdu);
+		p_sdu = sys_le16_to_cpu(params->p_sdu);
 
-		status = ll_cis_parameters_set(params->cis_id, m_sdu, s_sdu,
-					       params->m_phy, params->s_phy,
-					       params->m_rtn, params->s_rtn,
+		status = ll_cis_parameters_set(params->cis_id, c_sdu, p_sdu,
+					       params->c_phy, params->p_phy,
+					       params->c_rtn, params->p_rtn,
 					       &handle);
 		rp->handle[i] = sys_cpu_to_le16(handle);
 	}
@@ -1821,20 +1821,20 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_set_cig_params_test *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_set_cig_params_test *rp;
 
-	uint32_t m_interval;
-	uint32_t s_interval;
+	uint32_t c_interval;
+	uint32_t p_interval;
 	uint16_t iso_interval;
 	uint8_t status;
 	uint8_t i;
 
-	m_interval = sys_get_le24(cmd->m_interval);
-	s_interval = sys_get_le24(cmd->s_interval);
+	c_interval = sys_get_le24(cmd->c_interval);
+	p_interval = sys_get_le24(cmd->p_interval);
 	iso_interval = sys_le16_to_cpu(cmd->iso_interval);
 
 	/* Create CIG or start modifying existing CIG */
-	status = ll_cig_parameters_test_open(cmd->cig_id, m_interval,
-					     s_interval, cmd->m_ft,
-					     cmd->s_ft, iso_interval,
+	status = ll_cig_parameters_test_open(cmd->cig_id, c_interval,
+					     p_interval, cmd->c_ft,
+					     cmd->p_ft, iso_interval,
 					     cmd->sca, cmd->packing,
 					     cmd->framing,
 					     cmd->num_cis);
@@ -1848,23 +1848,23 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 	for (i = 0; !status && i < cmd->num_cis; i++) {
 		struct bt_hci_cis_params_test *params = cmd->cis;
 		uint16_t handle;
-		uint16_t m_sdu;
-		uint16_t s_sdu;
-		uint16_t m_pdu;
-		uint16_t s_pdu;
+		uint16_t c_sdu;
+		uint16_t p_sdu;
+		uint16_t c_pdu;
+		uint16_t p_pdu;
 
-		m_sdu = sys_le16_to_cpu(params->m_sdu);
-		s_sdu = sys_le16_to_cpu(params->s_sdu);
-		m_pdu = sys_le16_to_cpu(params->m_pdu);
-		s_pdu = sys_le16_to_cpu(params->s_pdu);
+		c_sdu = sys_le16_to_cpu(params->c_sdu);
+		p_sdu = sys_le16_to_cpu(params->p_sdu);
+		c_pdu = sys_le16_to_cpu(params->c_pdu);
+		p_pdu = sys_le16_to_cpu(params->p_pdu);
 
 		status = ll_cis_parameters_test_set(params->cis_id,
-						    m_sdu, s_sdu,
-						    m_pdu, s_pdu,
-						    params->m_phy,
-						    params->s_phy,
-						    params->m_bn,
-						    params->s_bn,
+						    c_sdu, p_sdu,
+						    c_pdu, p_pdu,
+						    params->c_phy,
+						    params->p_phy,
+						    params->c_bn,
+						    params->p_bn,
 						    &handle);
 		rp->handle[i] = sys_cpu_to_le16(handle);
 	}
@@ -3507,17 +3507,17 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	sep->conn_handle = sys_cpu_to_le16(est->cis_handle);
 	sys_put_le24(cig->sync_delay, sep->cig_sync_delay);
 	sys_put_le24(cis->sync_delay, sep->cis_sync_delay);
-	sys_put_le24(cig->c_latency, sep->m_latency);
-	sys_put_le24(cig->p_latency, sep->s_latency);
-	sep->m_phy = lll_cis_c->phy;
-	sep->s_phy = lll_cis_p->phy;
+	sys_put_le24(cig->c_latency, sep->c_latency);
+	sys_put_le24(cig->p_latency, sep->p_latency);
+	sep->c_phy = lll_cis_c->phy;
+	sep->p_phy = lll_cis_p->phy;
 	sep->nse = lll_cis->num_subevents;
-	sep->m_bn = lll_cis_c->burst_number;
-	sep->s_bn = lll_cis_p->burst_number;
-	sep->m_ft = lll_cis_c->flush_timeout;
-	sep->s_ft = lll_cis_p->flush_timeout;
-	sep->m_max_pdu = sys_cpu_to_le16(lll_cis_c->max_octets);
-	sep->s_max_pdu = sys_cpu_to_le16(lll_cis_p->max_octets);
+	sep->c_bn = lll_cis_c->burst_number;
+	sep->p_bn = lll_cis_p->burst_number;
+	sep->c_ft = lll_cis_c->flush_timeout;
+	sep->p_ft = lll_cis_p->flush_timeout;
+	sep->c_max_pdu = sys_cpu_to_le16(lll_cis_c->max_octets);
+	sep->p_max_pdu = sys_cpu_to_le16(lll_cis_p->max_octets);
 	sep->interval = sys_cpu_to_le16(cig->iso_interval);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -3555,19 +3555,19 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 #if defined(CONFIG_BT_CTLR_FILTER)
-	case BT_OCF(BT_HCI_OP_LE_READ_WL_SIZE):
+	case BT_OCF(BT_HCI_OP_LE_READ_FAL_SIZE):
 		le_read_wl_size(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_CLEAR_WL):
+	case BT_OCF(BT_HCI_OP_LE_CLEAR_FAL):
 		le_clear_wl(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_WL):
+	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_FAL):
 		le_add_dev_to_wl(cmd, evt);
 		break;
 
-	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_WL):
+	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_FAL):
 		le_rem_dev_from_wl(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_FILTER */
