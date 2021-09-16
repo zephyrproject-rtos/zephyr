@@ -1,0 +1,11 @@
+sample:
+  description: Sample showing Event Manager usage
+  name: Event Manager sample
+tests:
+  samples.event_manager:
+    build_only: true
+    arch_exclude: xtensa
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - qemu_x86
+    tags: ci_build
