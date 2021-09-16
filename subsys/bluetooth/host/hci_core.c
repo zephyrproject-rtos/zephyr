@@ -3472,6 +3472,13 @@ static int bt_init(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		err = bt_conn_iso_init();
+		if (err) {
+			return err;
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		if (!bt_dev.id_count) {
 			BT_INFO("No ID address. App must call settings_load()");
