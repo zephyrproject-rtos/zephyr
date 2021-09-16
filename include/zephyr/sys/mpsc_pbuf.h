@@ -61,6 +61,9 @@ extern "C" {
 /** @brief Flag indicating that maximum buffer usage is tracked. */
 #define MPSC_PBUF_MAX_UTILIZATION BIT(2)
 
+/** @brief Flag indicated that buffer is currently full. */
+#define MPSC_PBUF_FULL BIT(3)
+
 /**@} */
 
 /* Forward declaration */
