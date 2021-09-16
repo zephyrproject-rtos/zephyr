@@ -35,7 +35,7 @@ Deprecated in this release
 
 * :c:macro:`BT_CONN_ROLE_MASTER` and :c:macro:`BT_CONN_ROLE_SLAVE`
   have been deprecated in favor of
-  :c:macro:`BT_CONN_ROLE_CENTRAL` and :c:macro:`BT_CONN_ROLE_PERIPHAL`
+  :c:macro:`BT_CONN_ROLE_CENTRAL` and :c:macro:`BT_CONN_ROLE_PERIPHERAL`
 
 * :c:macro:`BT_LE_SCAN_OPT_FILTER_WHITELIST`
   has been deprecated in favor of
