@@ -28,11 +28,20 @@ extern "C" {
 #include <bluetooth/hci.h>
 
 /** @def BT_ISO_CHAN_SEND_RESERVE
- *  @brief Headroom needed for outgoing buffers
+ *  @brief Headroom needed for outgoing ISO SDUs
  */
-#define BT_ISO_CHAN_SEND_RESERVE (CONFIG_BT_HCI_RESERVE + \
-				  BT_HCI_ISO_HDR_SIZE + \
-				  BT_HCI_ISO_DATA_HDR_SIZE)
+#define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
+
+/** @def BT_ISO_SDU_BUF_SIZE
+ *
+ *  @brief Helper to calculate needed buffer size for ISO SDUs.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Required ISO SDU size
+ *
+ *  @return Needed buffer size to match the requested ISO SDU MTU.
+ */
+#define BT_ISO_SDU_BUF_SIZE(mtu) BT_BUF_ISO_SIZE(mtu)
 
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
