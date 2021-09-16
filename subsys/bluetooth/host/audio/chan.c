@@ -1150,6 +1150,75 @@ void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
+int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
+				  uint8_t num_chan,
+				  struct bt_audio_unicast_group **out_unicast_group)
+{
+
+	struct bt_audio_unicast_group *unicast_group;
+	uint8_t index;
+
+	CHECKIF(out_unicast_group == NULL) {
+		BT_DBG("out_unicast_group is NULL");
+		return -EINVAL;
+	}
+	/* Set out_unicast_group to NULL until the source has actually been created */
+	*out_unicast_group = NULL;
+
+	CHECKIF(chans == NULL) {
+		BT_DBG("chans is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_chan > UNICAST_GROUP_STREAM_CNT) {
+		BT_DBG("Too many channels provided: %u/%u",
+		       num_chan, UNICAST_GROUP_STREAM_CNT);
+		return -EINVAL;
+	}
+
+	unicast_group = NULL;
+	for (index = 0; index < ARRAY_SIZE(unicast_groups); index++) {
+		/* Find free entry */
+		if (sys_slist_is_empty(&unicast_groups[index].chans)) {
+			unicast_group = &unicast_groups[index];
+			break;
+		}
+	}
+
+	if (unicast_group == NULL) {
+		BT_DBG("Could not allocate any more unicast groups");
+		return -ENOMEM;
+	}
+
+	for (uint8_t i = 0; i < num_chan; i++) {
+		sys_slist_t *group_chans = &unicast_group->chans;
+		struct bt_audio_chan *chan;
+
+		chan = &chans[i];
+
+		if (chan->state != BT_AUDIO_CHAN_IDLE &&
+		    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+			BT_DBG("Incorrect channel[%u] %p state: %u",
+			       i, chan, chan->state);
+
+			/* Cleanup */
+			for (uint8_t j = 0; j < i; j++) {
+				chan = &chans[j];
+
+				(void)sys_slist_find_and_remove(group_chans,
+								&chan->node);
+			}
+			return -EALREADY;
+		}
+
+		sys_slist_append(group_chans, &chan->node);
+	}
+
+	*out_unicast_group = unicast_group;
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_AUDIO_BROADCAST)
 static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 						struct bt_audio_chan *chan,

@@ -35,10 +35,44 @@ struct bt_audio_ep_cb {
 #define BT_AUDIO_EP_LOCAL	0x00
 #define BT_AUDIO_EP_REMOTE	0x01
 
+/* Temp struct declarations to handle circular dependencies */
+struct bt_audio_unicast_group;
+struct bt_audio_broadcast_source;
+struct bt_audio_broadcast_sink;
+
+struct bt_audio_ep {
+	uint8_t  type;
+	uint16_t handle;
+	uint16_t cp_handle;
+	uint8_t  cig_id;
+	uint8_t  cis_id;
+	struct bt_ascs_ase_status status;
+	struct bt_audio_capability *cap;
+	struct bt_audio_chan *chan;
+	struct bt_codec codec;
+	struct bt_codec_qos qos;
+	/* TODO: Remove iso from this struct. The reason is that a ASE
+	 * (endpoint) may only be unidirectional, but a single bidirectional CIS
+	 * may used for a sink ASE and a source ASE, so there is not a 1:1
+	 * relationship between ISO and ASEs.
+	 */
+	struct bt_iso_chan iso;
+	struct bt_iso_chan_qos iso_qos;
+	struct bt_iso_chan_io_qos iso_tx;
+	struct bt_iso_chan_io_qos iso_rx;
+	sys_slist_t cbs;
+	struct bt_gatt_subscribe_params subscribe;
+	struct bt_gatt_discover_params discover;
+
+	/* TODO: Create a union to reduce memory usage */
+	struct bt_audio_unicast_group *unicast_group;
+	struct bt_audio_broadcast_source *broadcast_source;
+	struct bt_audio_broadcast_sink *broadcast_sink;
+};
+
 struct bt_audio_unicast_group {
 	struct bt_iso_cig *cig;
-	struct bt_codec_qos *qos;
-	struct bt_codec *codec;
+	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
 	sys_slist_t chans;
 };
@@ -74,31 +108,6 @@ struct bt_audio_broadcast_sink {
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
 	/* The channels used to create the broadcast sink */
 	struct bt_audio_chan *chans;
-};
-
-struct bt_audio_ep {
-	uint8_t  type;
-	uint16_t handle;
-	uint16_t cp_handle;
-	uint8_t  cig_id;
-	uint8_t  cis_id;
-	struct bt_ascs_ase_status status;
-	struct bt_audio_capability *cap;
-	struct bt_audio_chan *chan;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
-	struct bt_iso_chan iso;
-	struct bt_iso_chan_qos iso_qos;
-	struct bt_iso_chan_io_qos iso_tx;
-	struct bt_iso_chan_io_qos iso_rx;
-	sys_slist_t cbs;
-	struct bt_gatt_subscribe_params subscribe;
-	struct bt_gatt_discover_params discover;
-
-	/* Broadcast fields */
-	/* TODO: Create a union to reduce memory usage */
-	struct bt_audio_broadcast_source *broadcast_source;
-	struct bt_audio_broadcast_sink *broadcast_sink;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
