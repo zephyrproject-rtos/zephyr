@@ -43,8 +43,10 @@ config GPIO
 	depends on SPI
 
 # Switch the default mechanism for null-pointer dereference detection from
-# DWT-based to MPU-based.
+# DWT-based to MPU-based, except for the network core on nRF5340 where the
+# MPU-based mechanism cannot be used.
 choice NULL_POINTER_EXCEPTION_DETECTION
+	default NULL_POINTER_EXCEPTION_DETECTION_DWT if SOC_NRF5340_CPUNET
 	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE
 endchoice
 
