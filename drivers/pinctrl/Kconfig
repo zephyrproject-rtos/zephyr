@@ -29,4 +29,11 @@ config PINCTRL_DYNAMIC
 	  runtime. This can be useful, for example, to change the pins assigned to a
 	  peripheral at early boot stages depending on a certain input.
 
+config PINCTRL_NXP_MCUX
+	bool "Pin controller driver for NXP Kinetis MCUs"
+	depends on SOC_FAMILY_KINETIS
+	default y
+	help
+	  Enable pin controller driver for NXP Kinetis MCUs
+
 endif # PINCTRL

@@ -5,6 +5,11 @@ compatible: "nxp,kinetis-pinmux"
 include:
   - name: base.yaml
   - name: pincfg-node.yaml
+    child-binding:
+      property-allowlist:
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
 
 properties:
     reg:
