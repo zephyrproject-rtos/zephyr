@@ -6,11 +6,9 @@
 
 import argparse
 from functools import partial
-import logging
 import os
 from pathlib import Path
 import shlex
-import subprocess
 import sys
 import tempfile
 
@@ -311,7 +309,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                    self.tool_opt)
 
             self.logger.info('Flashing file: {}'.format(flash_file))
-            kwargs = {}
-            if not self.logger.isEnabledFor(logging.DEBUG):
-                kwargs['stdout'] = subprocess.DEVNULL
-            self.check_call(cmd, **kwargs)
+            # JLink.exe does not currently (v7.54b) return an error code when flashing fails.
+            # Manually check the output string for failures if the call appears to work.
+            output = self.check_output(cmd, encoding='utf-8')
+            if "Writing failed." in output:
+                raise RuntimeError(output)
