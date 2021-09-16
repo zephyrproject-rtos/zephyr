@@ -1030,14 +1030,18 @@ static int eth_init(const struct device *dev)
 
 #if defined(CONFIG_NET_IPV6)
 static void net_if_mcast_cb(struct net_if *iface,
-			    const struct in6_addr *addr,
+			    const struct net_addr *addr,
 			    bool is_joined)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
 	struct net_eth_addr mac_addr;
 
-	net_eth_ipv6_mcast_to_mac_addr(addr, &mac_addr);
+	if (addr->family != AF_INET6) {
+		return;
+	}
+
+	net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 
 	if (is_joined) {
 		ENET_AddMulticastGroup(context->base, mac_addr.addr);

@@ -170,7 +170,7 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 	return filter_id;
 }
 
-static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
+static void mcast_cb(struct net_if *iface, const struct net_addr *addr,
 		     bool is_joined)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -178,22 +178,26 @@ static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
 	struct mcast_filter_mapping *filter_mapping;
 	int filter_id;
 
+	if (addr->family != AF_INET6) {
+		return;
+	}
+
 	if (is_joined) {
 		filter_mapping = can_get_mcast_filter(ctx, NULL);
 		if (!filter_mapping) {
 			NET_ERR("Can't get a free filter_mapping");
 		}
 
-		filter_id = attach_mcast_filter(ctx, addr);
+		filter_id = attach_mcast_filter(ctx, addr->in6_addr);
 		if (filter_id < 0) {
 			NET_ERR("Can't attach mcast filter");
 			return;
 		}
 
-		filter_mapping->addr = addr;
+		filter_mapping->addr = addr->in6_addr;
 		filter_mapping->filter_id = filter_id;
 	} else {
-		filter_mapping = can_get_mcast_filter(ctx, addr);
+		filter_mapping = can_get_mcast_filter(ctx, addr->in6_addr);
 		if (!filter_mapping) {
 			NET_ERR("No filter mapping found");
 			return;
