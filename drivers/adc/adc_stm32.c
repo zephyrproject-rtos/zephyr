@@ -527,6 +527,15 @@ static int start_read(const struct device *dev,
 	case 8:
 		adc_stm32_oversampling(adc, 8, LL_ADC_OVS_SHIFT_RIGHT_8);
 		break;
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* stm32 H7 ADC1 & 2 have oversampling ratio from 1..1024 */
+	case 9:
+		adc_stm32_oversampling(adc, 9, LL_ADC_OVS_SHIFT_RIGHT_9);
+		break;
+	case 10:
+		adc_stm32_oversampling(adc, 10, LL_ADC_OVS_SHIFT_RIGHT_10);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	default:
 		LOG_ERR("Invalid oversampling");
 		LL_ADC_Enable(adc);
