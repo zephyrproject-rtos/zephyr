@@ -54,29 +54,22 @@ struct mem_pool {
 #define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
 
 /* LLCP Allocations */
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+sys_slist_t tx_buffer_wait_list;
+static uint8_t common_tx_buffer_alloc;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-/* TODO(thoh): Placeholder until Kconfig setting is made */
-#if !defined(TX_CTRL_BUF_NUM)
-#define TX_CTRL_BUF_NUM 1
-#endif
-
-/* TODO(thoh): Placeholder until Kconfig setting is made */
-#if !defined(PROC_CTX_BUF_NUM)
-#define PROC_CTX_BUF_NUM 1
-#endif
-
-/* TODO: Determine correct number of tx nodes */
-static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * TX_CTRL_BUF_NUM];
+/* TODO: Determine 'correct' number of tx nodes */
+static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-/* TODO: Determine correct number of ctx */
-static uint8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * PROC_CTX_BUF_NUM];
+/* TODO: Determine 'correct' number of ctx */
+static uint8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM];
 static struct mem_pool mem_ctx = { .pool = buffer_mem_ctx };
 
 /*
  * LLCP Resource Management
  */
-
 static struct proc_ctx *proc_ctx_acquire(void)
 {
 	struct proc_ctx *ctx;
@@ -90,18 +83,117 @@ void llcp_proc_ctx_release(struct proc_ctx *ctx)
 	mem_release(ctx, &mem_ctx.free);
 }
 
-bool llcp_tx_alloc_is_available(void)
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+/*
+ * @brief Check for per conn pre-allocated tx buffer allowance
+ * @return true if buffer is available
+ */
+static inline bool static_tx_buffer_available(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
+	/* Check if per connection pre-aloted tx buffer is available */
+	if (conn->llcp.tx_buffer_alloc < CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
+		/* This connection has not yet used up all the pre-aloted tx buffers */
+		return true;
+	}
+#endif /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
+	return false;
+}
+
+/*
+ * @brief pre-alloc/peek of a tx buffer, leave requester on the wait list (@head if first up)
+ *
+ * @return true if alloc is allowed, false if not
+ *
+ */
+bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (!static_tx_buffer_available(conn, ctx)) {
+		/* The conn already has spent its pre-aloted tx buffer(s),
+		 * so we should consider the common tx buffer pool
+		 */
+		if (ctx->wait_reason == WAITING_FOR_NOTHING) {
+			/* The current procedure is not in line for a tx buffer
+			 * so sign up on the wait list
+			 */
+			sys_slist_append(&tx_buffer_wait_list, &ctx->wait_node);
+			ctx->wait_reason = WAITING_FOR_TX_BUFFER;
+		}
+
+		/* Now check to see if this procedure context is @ head of the wait list */
+		if (ctx->wait_reason == WAITING_FOR_TX_BUFFER &&
+		    sys_slist_peek_head(&tx_buffer_wait_list) == &ctx->wait_node) {
+			return (common_tx_buffer_alloc <
+				CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM);
+		}
+
+		return false;
+	}
+	return true;
+}
+
+/*
+ * @brief un-peek of a tx buffer, in case ongoing alloc is aborted
+ *
+ */
+void llcp_tx_alloc_unpeek(struct proc_ctx *ctx)
+{
+	sys_slist_find_and_remove(&tx_buffer_wait_list, &ctx->wait_node);
+	ctx->wait_reason = WAITING_FOR_NOTHING;
+}
+
+/*
+ * @brief complete alloc of a tx buffer, must preceded by successful call to
+ * llcp_tx_alloc_peek()
+ *
+ * @return node_tx* that was peek'ed by llcp_tx_alloc_peek()
+ *
+ */
+struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
+	conn->llcp.tx_buffer_alloc++;
+	if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
+		common_tx_buffer_alloc++;
+		/* global buffer allocated, so we're at the head and should just pop head */
+		sys_slist_get(&tx_buffer_wait_list);
+	} else {
+		/* we're allocating conn_tx_buffer, so remove from wait list if waiting */
+		if (ctx->wait_reason == WAITING_FOR_TX_BUFFER) {
+			sys_slist_find_and_remove(&tx_buffer_wait_list, &ctx->wait_node);
+		}
+	}
+#else /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
+	/* global buffer allocated, so remove head of wait list */
+	common_tx_buffer_alloc++;
+	sys_slist_get(&tx_buffer_wait_list);
+#endif /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
+	ctx->wait_reason = WAITING_FOR_NOTHING;
+
+	return (struct node_tx *)mem_acquire(&mem_tx.free);
+}
+#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	ARG_UNUSED(conn);
 	return mem_tx.free != NULL;
 }
 
-struct node_tx *llcp_tx_alloc(void)
+void llcp_tx_alloc_unpeek(struct proc_ctx *ctx)
+{
+	/* Empty on purpose, as unpeek is not needed when no buffer queueing is used */
+	ARG_UNUSED(ctx);
+}
+
+struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_tx *tx;
 
+	ARG_UNUSED(conn);
 	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
 	return tx;
 }
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 static void tx_release(struct node_tx *tx)
 {
@@ -318,8 +410,15 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 
 void ull_cp_init(void)
 {
-	mem_init(mem_ctx.pool, PROC_CTX_BUF_SIZE, PROC_CTX_BUF_NUM, &mem_ctx.free);
-	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, TX_CTRL_BUF_NUM, &mem_tx.free);
+	mem_init(mem_ctx.pool, PROC_CTX_BUF_SIZE, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+		 &mem_ctx.free);
+	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, LLCP_TX_CTRL_BUF_COUNT, &mem_tx.free);
+
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	/* Reset buffer alloc management */
+	sys_slist_init(&tx_buffer_wait_list);
+	common_tx_buffer_alloc = 0;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 }
 
 void ll_conn_init(struct ll_conn *conn)
@@ -352,13 +451,33 @@ void ll_conn_init(struct ll_conn *conn)
 	conn->lll.enc_rx = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
+	conn->llcp.tx_buffer_alloc = 0;
+#endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+
 	conn->lll.event_counter = 0;
+
 	llcp_lr_init(conn);
 	llcp_rr_init(conn);
 }
 
-void ull_cp_release_tx(struct node_tx *tx)
+void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
 {
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+#if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0)
+	if (conn->llcp.tx_buffer_alloc > CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) {
+		common_tx_buffer_alloc--;
+	}
+	conn->llcp.tx_buffer_alloc--;
+#else /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
+	ARG_UNUSED(conn);
+	common_tx_buffer_alloc--;
+#endif /* CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0 */
+#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+	ARG_UNUSED(conn);
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 	tx_release(tx);
 }
 
@@ -829,7 +948,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 	if (!pdu_is_terminate(pdu)) {
 		/*
-		 *Process non LL_TERMINATE_IND PDU's as responses to active
+		 * Process non LL_TERMINATE_IND PDU's as responses to active
 		 * procedures
 		 */
 
@@ -874,9 +993,9 @@ void test_int_mem_proc_ctx(void)
 	ull_cp_init();
 
 	nr_of_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_of_free_ctx, PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_of_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
 
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
 		ctx1 = proc_ctx_acquire();
 
 		/* The previous acquire should be valid */
@@ -904,74 +1023,73 @@ void test_int_mem_proc_ctx(void)
 void test_int_mem_tx(void)
 {
 	bool peek;
-	struct node_tx *tx;
-	struct node_tx *txl[TX_CTRL_BUF_NUM];
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
+					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
+#else /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+	#define TX_BUFFER_POOL_SIZE (CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  + \
+					CONFIG_BT_CTLR_LLCP_CONN * \
+					CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+	struct ll_conn conn;
+	struct node_tx *txl[TX_BUFFER_POOL_SIZE];
+	struct proc_ctx *ctx;
 
 	ull_cp_init();
+	ll_conn_init(&conn);
 
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = llcp_tx_alloc_is_available();
+	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
+
+	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
+		peek = llcp_tx_alloc_peek(&conn, ctx);
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = llcp_tx_alloc();
+		txl[i] = llcp_tx_alloc(&conn, ctx);
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = llcp_tx_alloc_is_available();
+	peek = llcp_tx_alloc_peek(&conn, ctx);
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
-	tx = llcp_tx_alloc();
-
-	/* The last tx alloc should fail */
-	zassert_is_null(tx, NULL);
-
 	/* Release all */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx_release(txl[i]);
+	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
+		ull_cp_release_tx(&conn, txl[i]);
 	}
 
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = llcp_tx_alloc_is_available();
+	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
+		peek = llcp_tx_alloc_peek(&conn, ctx);
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = llcp_tx_alloc();
+		txl[i] = llcp_tx_alloc(&conn, ctx);
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = llcp_tx_alloc_is_available();
+	peek = llcp_tx_alloc_peek(&conn, ctx);
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
-	tx = llcp_tx_alloc();
-
-	/* The last tx alloc should fail */
-	zassert_is_null(tx, NULL);
-
 	/* Release all */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx_release(txl[i]);
+	for (int i = 0U; i < TX_BUFFER_POOL_SIZE; i++) {
+		ull_cp_release_tx(&conn, txl[i]);
 	}
 }
 
 void test_int_create_proc(void)
 {
-	struct ll_conn conn;
 	struct proc_ctx *ctx;
 
 	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
 
 	ctx = create_procedure(PROC_VERSION_EXCHANGE);
 	zassert_not_null(ctx, NULL);
@@ -980,7 +1098,7 @@ void test_int_create_proc(void)
 	zassert_equal(ctx->collision, 0, NULL);
 	zassert_equal(ctx->pause, 0, NULL);
 
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
 		ctx = create_procedure(PROC_VERSION_EXCHANGE);
 	}
