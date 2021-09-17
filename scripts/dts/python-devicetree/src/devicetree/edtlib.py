@@ -1239,6 +1239,9 @@ class Node:
             # e.g. foo-gpios still maps to #gpio-cells rather than
             # #foo-gpio-cells
             basename = "gpio"
+        elif prop.name == "mboxes":
+            # "mboxes" property will be associated to "#mbox-cells" and "mbox-names"
+            basename = "mbox"
         else:
             # Strip -s. We've already checked that the property names end in -s
             # in _check_prop_type_and_default().
