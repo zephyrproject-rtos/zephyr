@@ -456,8 +456,15 @@ static void uart_stm32_poll_out(const struct device *dev,
 	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
 	}
 
-	/* Do not allow system to suspend until transmission has completed */
-	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+#ifdef CONFIG_PM
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (!data->tx_stream_on) {
+		data->tx_stream_on = true;
+		/* do not allow system to suspend until transmission has completed */
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
+	}
+#endif
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
 }
@@ -849,12 +856,16 @@ static void uart_stm32_isr(const struct device *dev)
 static void uart_stm32_isr(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
 		LL_USART_ClearFlag_TC(UartInstance);
 
-		/* allow system to suspend, UART has now finished */
-		pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+		if (data->tx_stream_on) {
+			data->tx_stream_on = false;
+			/* allow system to suspend, UART has now finished */
+			pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
+		}
 	}
 }
 #endif /* (CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
