@@ -664,9 +664,9 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[25] |= BIT(0) | BIT(1) | BIT(2) | BIT(4);
 
 #if defined(CONFIG_BT_CTLR_FILTER)
-	/* LE Read WL Size, LE Clear WL */
+	/* LE Read FAL Size, LE Clear FAL */
 	rp->commands[26] |= BIT(6) | BIT(7);
-	/* LE Add Dev to WL, LE Remove Dev from WL */
+	/* LE Add Dev to FAL, LE Remove Dev from FAL */
 	rp->commands[27] |= BIT(0) | BIT(1);
 #endif /* CONFIG_BT_CTLR_FILTER */
 
@@ -1230,7 +1230,7 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 }
 
 #if defined(CONFIG_BT_CTLR_FILTER)
-static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
+static void le_read_fal_size(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_fal_size *rp;
 
@@ -1240,7 +1240,7 @@ static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
 	rp->fal_size = ll_wl_size_get();
 }
 
-static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
+static void le_clear_fal(struct net_buf *buf, struct net_buf **evt)
 {
 	uint8_t status;
 
@@ -1249,7 +1249,7 @@ static void le_clear_wl(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
-static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
+static void le_add_dev_to_fal(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_add_dev_to_fal *cmd = (void *)buf->data;
 	uint8_t status;
@@ -1259,7 +1259,7 @@ static void le_add_dev_to_wl(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
-static void le_rem_dev_from_wl(struct net_buf *buf, struct net_buf **evt)
+static void le_rem_dev_from_fal(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_rem_dev_from_fal *cmd = (void *)buf->data;
 	uint8_t status;
@@ -1312,13 +1312,13 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(26) | \
 		BIT64(27) | BIT64(30) | BIT64(31))
 
-#define ST_SLA (BIT64(2)  | BIT64(3)  | BIT64(7)  | BIT64(10) | BIT64(11) | \
+#define ST_PER (BIT64(2)  | BIT64(3)  | BIT64(7)  | BIT64(10) | BIT64(11) | \
 		BIT64(14) | BIT64(15) | BIT64(20) | BIT64(21) | BIT64(26) | \
 		BIT64(27) | BIT64(29) | BIT64(30) | BIT64(31) | BIT64(32) | \
 		BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | BIT64(37) | \
 		BIT64(38) | BIT64(39) | BIT64(40) | BIT64(41))
 
-#define ST_MAS (BIT64(6)  | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
+#define ST_CEN (BIT64(6)  | BIT64(16) | BIT64(17) | BIT64(18) | BIT64(19) | \
 		BIT64(22) | BIT64(23) | BIT64(24) | BIT64(25) | BIT64(28) | \
 		BIT64(32) | BIT64(33) | BIT64(34) | BIT64(35) | BIT64(36) | \
 		BIT64(37) | BIT64(41))
@@ -1334,14 +1334,14 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
 	states &= ~ST_SCA;
 #endif
 #if defined(CONFIG_BT_PERIPHERAL)
-	states |= ST_SLA;
+	states |= ST_PER;
 #else
-	states &= ~ST_SLA;
+	states &= ~ST_PER;
 #endif
 #if defined(CONFIG_BT_CENTRAL)
-	states |= ST_MAS;
+	states |= ST_CEN;
 #else
-	states &= ~ST_MAS;
+	states &= ~ST_CEN;
 #endif
 	/* All states and combinations supported except:
 	 * Initiating State + Passive Scanning
@@ -3556,19 +3556,19 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 #if defined(CONFIG_BT_CTLR_FILTER)
 	case BT_OCF(BT_HCI_OP_LE_READ_FAL_SIZE):
-		le_read_wl_size(cmd, evt);
+		le_read_fal_size(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CLEAR_FAL):
-		le_clear_wl(cmd, evt);
+		le_clear_fal(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_ADD_DEV_TO_FAL):
-		le_add_dev_to_wl(cmd, evt);
+		le_add_dev_to_fal(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_FAL):
-		le_rem_dev_from_wl(cmd, evt);
+		le_rem_dev_from_fal(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_FILTER */
 
