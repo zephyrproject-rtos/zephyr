@@ -35,16 +35,22 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_init=None, no_load=False):
         super().__init__(cfg)
 
+        support = path.join(cfg.board_dir, 'support')
+
         if not config:
-            default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
+            default = path.join(support, 'openocd.cfg')
             if path.exists(default):
                 config = [default]
         self.openocd_config = config
 
         search_args = []
+        if path.exists(support):
+            search_args.append('-s')
+            search_args.append(support)
+
         if self.openocd_config is not None:
             for i in self.openocd_config:
-                if path.exists(i):
+                if path.exists(i) and not path.samefile(path.dirname(i), support):
                     search_args.append('-s')
                     search_args.append(path.dirname(i))
 
