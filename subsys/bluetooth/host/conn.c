@@ -1328,14 +1328,14 @@ void notify_le_param_updated(struct bt_conn *conn)
 	struct bt_conn_cb *cb;
 
 	/* If new connection parameters meet requirement of pending
-	 * parameters don't send slave conn param request anymore on timeout
+	 * parameters don't send peripheral conn param request anymore on timeout
 	 */
-	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET) &&
+	if (atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET) &&
 	    conn->le.interval >= conn->le.interval_min &&
 	    conn->le.interval <= conn->le.interval_max &&
 	    conn->le.latency == conn->le.pending_latency &&
 	    conn->le.timeout == conn->le.pending_timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
@@ -1452,11 +1452,11 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	/* Use LE connection parameter request if both local and remote support
-	 * it; or if local role is master then use LE connection update.
+	 * it; or if local role is central then use LE connection update.
 	 */
 	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
 	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
-	     !atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) ||
+	     !atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_L2CAP)) ||
 	     (conn->role == BT_HCI_ROLE_CENTRAL)) {
 		int rc;
 
@@ -1471,7 +1471,7 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 		return rc;
 	}
 
-	/* If remote master does not support LL Connection Parameters Request
+	/* If remote central does not support LL Connection Parameters Request
 	 * Procedure
 	 */
 	return bt_l2cap_update_conn_param(conn, param);
@@ -1572,7 +1572,7 @@ static void deferred_work(struct k_work *work)
 
 	/* if application set own params use those, otherwise use defaults. */
 	if (atomic_test_and_clear_bit(conn->flags,
-				      BT_CONN_SLAVE_PARAM_SET)) {
+				      BT_CONN_PERIPHERAL_PARAM_SET)) {
 		param = BT_LE_CONN_PARAM(conn->le.interval_min,
 					 conn->le.interval_max,
 					 conn->le.pending_latency,
@@ -1583,13 +1583,13 @@ static void deferred_work(struct k_work *work)
 		param = BT_LE_CONN_PARAM(
 				CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
 				CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
-				CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
+				CONFIG_BT_PERIPHERAL_PREF_LATENCY,
 				CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
 		send_conn_le_param_update(conn, param);
 #endif
 	}
 
-	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
+	atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE);
 }
 
 static struct bt_conn *acl_conn_new(void)
@@ -2335,7 +2335,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	    conn->le.interval <= param->interval_max &&
 	    conn->le.latency == param->latency &&
 	    conn->le.timeout == param->timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 		return -EALREADY;
 	}
 
@@ -2345,8 +2345,8 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		/* if slave conn param update timer expired just send request */
-		if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE)) {
+		/* if peripheral conn param update timer expired just send request */
+		if (atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE)) {
 			return send_conn_le_param_update(conn, param);
 		}
 
@@ -2355,7 +2355,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 		conn->le.interval_max = param->interval_max;
 		conn->le.pending_latency = param->latency;
 		conn->le.pending_timeout = param->timeout;
-		atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+		atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
 	return 0;
@@ -2509,7 +2509,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 
 	err = bt_le_create_conn(conn);
 	if (err) {
-		BT_ERR("Failed to start whitelist scan");
+		BT_ERR("Failed to start filtered scan");
 		conn->err = 0;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);

@@ -412,7 +412,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			chan->iso = NULL;
 		} else {
 			/* ISO data paths are automatically removed when the
-			 * peripheral/slave disconnects, so we only need to
+			 * peripheral disconnects, so we only need to
 			 * move it for the central
 			 */
 			bt_iso_remove_data_path(chan->iso);

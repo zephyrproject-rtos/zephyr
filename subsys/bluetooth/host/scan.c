@@ -161,7 +161,7 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 	set_param->phys = 0;
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_FILTERED)) {
 		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
 		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
@@ -210,7 +210,7 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 	set_param.window = sys_cpu_to_le16(window);
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_FILTERED)) {
 		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
 		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
@@ -992,7 +992,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 			  param->options & BT_LE_SCAN_OPT_FILTER_DUPLICATE);
 
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_WL,
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTERED,
 			  param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 

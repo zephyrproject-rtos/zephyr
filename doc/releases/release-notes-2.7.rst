@@ -79,6 +79,9 @@ Modified in this release
   * ``m_*`` structure members are now ``c_*``
   * ``s_*`` structure members are now ``p_*``
 
+* The ``CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY`` Kconfig option is now
+  :kconfig:`CONFIG_BT_PERIPHERAL_PREF_LATENCY`
+
 Changes in this release
 ==========================
 
