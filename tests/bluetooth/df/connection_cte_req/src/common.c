@@ -57,12 +57,12 @@ void common_set_peer_features(uint16_t conn_handle, uint64_t features)
 	conn->llcp_feature.features_peer = features;
 }
 
-void common_set_slave_latency(uint16_t conn_handle, uint16_t slave_latency)
+void common_set_periph_latency(uint16_t conn_handle, uint16_t periph_latency)
 {
 	struct ll_conn *conn;
 
 	conn = ll_conn_get(conn_handle);
 	zassert_not_equal(conn, NULL, "Failed ll_conn instance for given handle");
 
-	conn->lll.latency = slave_latency;
+	conn->lll.latency = periph_latency;
 }
