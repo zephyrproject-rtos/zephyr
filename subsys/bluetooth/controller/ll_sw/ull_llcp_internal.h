@@ -21,6 +21,25 @@ enum llcp_proc {
 	PROC_DATA_LENGTH_UPDATE,
 	PROC_CTE_REQ,
 };
+#if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
+			(CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
+			CONFIG_BT_CTLR_LLCP_CONN)) &&\
+			(CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM <\
+			CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX))
+#define LLCP_TX_CTRL_BUF_QUEUE_ENABLE
+#define LLCP_TX_CTRL_BUF_COUNT ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM  +\
+			(CONFIG_BT_CTLR_LLCP_CONN * CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM)))
+#else
+#define LLCP_TX_CTRL_BUF_COUNT (CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
+				CONFIG_BT_CTLR_LLCP_CONN)
+#endif
+
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+enum llcp_wait_reason {
+	WAITING_FOR_NOTHING,
+	WAITING_FOR_TX_BUFFER,
+};
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 struct llcp_enc {
@@ -112,6 +131,14 @@ struct proc_ctx {
 
 	/* Procedure pause */
 	int pause;
+
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	/* Wait list next pointer */
+	sys_snode_t wait_node;
+
+	/* Procedure wait reason */
+	enum llcp_wait_reason wait_reason;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 	/* TX node awaiting ack */
 	struct node_tx *tx_ack;
@@ -284,13 +311,14 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 /*
  * LLCP Resource Management
  */
-bool llcp_tx_alloc_is_available(void);
-struct node_tx *llcp_tx_alloc(void);
 bool llcp_ntf_alloc_is_available(void);
 bool llcp_ntf_alloc_num_available(uint8_t count);
 struct node_rx_pdu *llcp_ntf_alloc(void);
 struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc);
 struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
+bool llcp_tx_alloc_peek(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
+struct node_tx *llcp_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
