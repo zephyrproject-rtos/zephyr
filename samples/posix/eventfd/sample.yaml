@@ -9,6 +9,7 @@ common:
     - mps2_an385
 tests:
   sample.posix.eventfd:
+    min_ram: 32
     tags: posix
     harness: console
     harness_config:
