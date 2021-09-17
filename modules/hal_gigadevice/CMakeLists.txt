@@ -5,6 +5,11 @@ if(CONFIG_HAS_GD32_HAL)
 
 zephyr_library_named(hal_gigadevice)
 
+if(CONFIG_SOC_SERIES_GD32F403)
+  set(gd32_soc_uc GD32F403)
+  set(gd32_soc_lc gd32f403)
+endif()
+
 zephyr_library_compile_definitions(${gd32_soc_uc})
 
 set(gd32_soc_dir     ${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/${gd32_soc_uc})
