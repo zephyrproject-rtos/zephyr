@@ -38,7 +38,7 @@
 
 		pinmux: pinmux@60009000 {
 			compatible = "espressif,esp32-pinmux";
-			reg = <0x60009000 0x94>;
+			reg = <0x60009000 0x800>;
 		};
 
 		intc: interrupt-controller@600c2000 {
