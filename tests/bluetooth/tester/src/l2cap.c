@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
+#define DATA_MTU_INITIAL 128
 #define DATA_MTU 256
 #define DATA_BUF_SIZE BT_L2CAP_SDU_BUF_SIZE(DATA_MTU)
 #define CHANNELS 2
@@ -135,11 +136,29 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
+static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct l2cap_reconfigured_ev ev;
+	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
+
+	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
+
+	ev.chan_id = chan->chan_id;
+	ev.mtu_remote = sys_cpu_to_le16(chan->le.tx.mtu);
+	ev.mps_remote = sys_cpu_to_le16(chan->le.tx.mps);
+	ev.mtu_local = sys_cpu_to_le16(chan->le.rx.mtu);
+	ev.mps_local = sys_cpu_to_le16(chan->le.rx.mps);
+
+	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_RECONFIGURED,
+		    CONTROLLER_INDEX, (uint8_t *)&ev, sizeof(ev));
+}
+
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= alloc_buf_cb,
 	.recv		= recv_cb,
 	.connected	= connected_cb,
 	.disconnected	= disconnected_cb,
+	.reconfigured	= reconfigured_cb,
 };
 
 static struct channel *get_free_channel()
@@ -178,7 +197,7 @@ static void connect(uint8_t *data, uint16_t len)
 	uint8_t i = 0;
 	int err;
 
-	if (cmd->num > CHANNELS || mtu > DATA_MTU) {
+	if (cmd->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
 		goto fail;
 	}
 
@@ -252,6 +271,56 @@ static void disconnect(uint8_t *data, uint16_t len)
 
 rsp:
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_DISCONNECT, CONTROLLER_INDEX,
+		   status);
+}
+
+static void reconfigure(uint8_t *data, uint16_t len)
+{
+	const struct l2cap_reconfigure_cmd *cmd = (void *)data;
+	uint16_t mtu = sys_le16_to_cpu(cmd->mtu);
+	struct bt_conn *conn;
+	uint8_t status;
+	int err;
+
+	struct bt_l2cap_chan *reconf_channels[CHANNELS + 1] = {};
+
+	/* address is first in data */
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)cmd);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (cmd->num > CHANNELS) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (mtu > DATA_MTU) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	for (int i = 0; i < cmd->num; i++) {
+		if (cmd->chan_id[i] > CHANNELS) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+
+		reconf_channels[i] = &channels[cmd->chan_id[i]].le.chan;
+	}
+
+	err = bt_l2cap_ecred_chan_reconfigure(reconf_channels, mtu);
+	if (err) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_RECONFIGURE, CONTROLLER_INDEX,
 		   status);
 }
 
@@ -372,7 +441,7 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 	}
 
 	chan->le.chan.ops = &l2cap_ops;
-	chan->le.rx.mtu = DATA_MTU;
+	chan->le.rx.mtu = DATA_MTU_INITIAL;
 
 	*l2cap_chan = &chan->le.chan;
 
@@ -460,6 +529,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, L2CAP_DISCONNECT);
 	tester_set_bit(cmds, L2CAP_LISTEN);
 	tester_set_bit(cmds, L2CAP_SEND_DATA);
+	tester_set_bit(cmds, L2CAP_RECONFIGURE);
 	tester_set_bit(cmds, L2CAP_CREDITS);
 #if defined(CONFIG_BT_EATT)
 	tester_set_bit(cmds, L2CAP_DISCONNECT_EATT_CHANS);
@@ -486,6 +556,9 @@ void tester_handle_l2cap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case L2CAP_LISTEN:
 		listen(data, len);
+		return;
+	case L2CAP_RECONFIGURE:
+		reconfigure(data, len);
 		return;
 	case L2CAP_CREDITS:
 		credits(data, len);
