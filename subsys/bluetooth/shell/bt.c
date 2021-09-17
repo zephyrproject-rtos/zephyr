@@ -903,7 +903,7 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
 		} else if (!strcmp(arg, "nodups")) {
 			options &= ~BT_LE_SCAN_OPT_FILTER_DUPLICATE;
-		} else if (!strcmp(arg, "wl")) {
+		} else if (!strcmp(arg, "fal")) {
 			options |= BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
 		} else if (!strcmp(arg, "coded")) {
 			options |= BT_LE_SCAN_OPT_CODED;
@@ -987,12 +987,12 @@ static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
 		} else if (!strcmp(arg, "non_discov")) {
 			ad = NULL;
 			ad_len = 0;
-		} else if (!strcmp(arg, "wl")) {
+		} else if (!strcmp(arg, "fal")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
-		} else if (!strcmp(arg, "wl-scan")) {
+		} else if (!strcmp(arg, "fal-scan")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
-		} else if (!strcmp(arg, "wl-conn")) {
+		} else if (!strcmp(arg, "fal-conn")) {
 			param.options |= BT_LE_ADV_OPT_FILTER_CONN;
 		} else if (!strcmp(arg, "identity")) {
 			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
@@ -1115,12 +1115,12 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_USE_TX_POWER;
 		} else if (!strcmp(arg, "scan-reports")) {
 			param->options |= BT_LE_ADV_OPT_NOTIFY_SCAN_REQ;
-		} else if (!strcmp(arg, "wl")) {
+		} else if (!strcmp(arg, "fal")) {
 			param->options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
-		} else if (!strcmp(arg, "wl-scan")) {
+		} else if (!strcmp(arg, "fal-scan")) {
 			param->options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
-		} else if (!strcmp(arg, "wl-conn")) {
+		} else if (!strcmp(arg, "fal-conn")) {
 			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
 		} else if (!strcmp(arg, "identity")) {
 			param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
@@ -2892,7 +2892,7 @@ static int cmd_auth_pairing_confirm(const struct shell *sh,
 }
 
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-static int cmd_wl_add(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_fal_add(const struct shell *sh, size_t argc, char *argv[])
 {
 	bt_addr_le_t addr;
 	int err;
@@ -2912,7 +2912,7 @@ static int cmd_wl_add(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wl_rem(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_fal_rem(const struct shell *sh, size_t argc, char *argv[])
 {
 	bt_addr_le_t addr;
 	int err;
@@ -2932,7 +2932,7 @@ static int cmd_wl_rem(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wl_clear(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_fal_clear(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
@@ -2946,7 +2946,7 @@ static int cmd_wl_clear(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static int cmd_wl_connect(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_fal_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	const char *action = argv[1];
@@ -3079,7 +3079,7 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
-		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name] "  \
+		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [name] "  \
 		      "[name-ad] [directed "HELP_ADDR_LE"] [mode: low]"       \
 		      "[disable-37] [disable-38] [disable-39]"
 #else
@@ -3103,14 +3103,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
-		      "<value: on, passive, off> [filter: dups, nodups] [wl]"
+		      "<value: on, passive, off> [filter: dups, nodups] [fal]"
 		      EXT_ADV_SCAN_OPT,
 		      cmd_scan, 2, 4),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
-		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name] "
+		      "[filter-accept-list: fal, fal-scan, fal-conn] [identity] [no-name] "
 		      "[one-time] [name-ad]"
 		      "[disable-37] [disable-38] [disable-39]",
 		      cmd_advertise, 2, 8),
@@ -3214,13 +3214,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_oob_remote, 3, 2),
 	SHELL_CMD_ARG(oob-clear, NULL, HELP_NONE, cmd_oob_clear, 1, 0),
 #if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-	SHELL_CMD_ARG(wl-add, NULL, HELP_ADDR_LE, cmd_wl_add, 3, 0),
-	SHELL_CMD_ARG(wl-rem, NULL, HELP_ADDR_LE, cmd_wl_rem, 3, 0),
-	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 1, 0),
+	SHELL_CMD_ARG(fal-add, NULL, HELP_ADDR_LE, cmd_fal_add, 3, 0),
+	SHELL_CMD_ARG(fal-rem, NULL, HELP_ADDR_LE, cmd_fal_rem, 3, 0),
+	SHELL_CMD_ARG(fal-clear, NULL, HELP_NONE, cmd_fal_clear, 1, 0),
 
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>" EXT_ADV_SCAN_OPT,
-		      cmd_wl_connect, 2, 3),
+	SHELL_CMD_ARG(fal-connect, NULL, "<on, off>" EXT_ADV_SCAN_OPT,
+		      cmd_fal_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 #if defined(CONFIG_BT_FIXED_PASSKEY)
