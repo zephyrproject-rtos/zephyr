@@ -787,6 +787,15 @@ struct l2cap_accept_connection_cmd {
 	uint16_t result;
 } __packed;
 
+#define L2CAP_RECONFIGURE		0x07
+struct l2cap_reconfigure_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t mtu;
+	uint8_t num;
+	uint8_t chan_id[];
+} __packed;
+
 #define L2CAP_CREDITS		0x08
 struct l2cap_credits_cmd {
 	uint8_t chan_id;
@@ -834,6 +843,15 @@ struct l2cap_data_received_ev {
 	uint8_t chan_id;
 	uint16_t data_length;
 	uint8_t data[];
+} __packed;
+
+#define L2CAP_EV_RECONFIGURED		0x84
+struct l2cap_reconfigured_ev {
+	uint8_t chan_id;
+	uint16_t mtu_remote;
+	uint16_t mps_remote;
+	uint16_t mtu_local;
+	uint16_t mps_local;
 } __packed;
 
 /* MESH Service */
