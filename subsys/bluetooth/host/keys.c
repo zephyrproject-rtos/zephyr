@@ -490,8 +490,8 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
 	}
 
-	if (keys->keys & BT_KEYS_SLAVE_LTK) {
-		sys_memcpy_swap(ltk, keys->slave_ltk.val, keys->enc_size);
+	if (keys->keys & BT_KEYS_PERIPH_LTK) {
+		sys_memcpy_swap(ltk, keys->periph_ltk.val, keys->enc_size);
 		BT_INFO("Legacy LTK: 0x%s (peripheral)",
 			bt_hex(ltk, keys->enc_size));
 	}

@@ -995,11 +995,11 @@ static void le_conn_complete_cancel(void)
 	/* Handle create connection cancel.
 	 *
 	 * There is no need to check ID address as only one
-	 * connection in master role can be in pending state.
+	 * connection in central role can be in pending state.
 	 */
 	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL);
 	if (!conn) {
-		BT_ERR("No pending master connection");
+		BT_ERR("No pending central connection");
 		return;
 	}
 
@@ -1019,7 +1019,7 @@ static void le_conn_complete_cancel(void)
 		}
 	} else {
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			/* Restart whitelist initiator after RPA timeout. */
+			/* Restart FAL initiator after RPA timeout. */
 			bt_le_create_conn(conn);
 		} else {
 			/* Create connection canceled by timeout */
@@ -1052,11 +1052,11 @@ static void le_conn_complete_adv_timeout(void)
 		}
 
 		/* There is no need to check ID address as only one
-		 * connection in slave role can be in pending state.
+		 * connection in peripheral role can be in pending state.
 		 */
 		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL);
 		if (!conn) {
-			BT_ERR("No pending slave connection");
+			BT_ERR("No pending peripheral connection");
 			return;
 		}
 
@@ -1200,7 +1200,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 #endif
 	/*
 	 * Use connection address (instead of identity address) as initiator
-	 * or responder address. Only slave needs to be updated. For master all
+	 * or responder address. Only peripheral needs to be updated. For central all
 	 * was set during outgoing connection creation.
 	 */
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
@@ -1234,9 +1234,9 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 
 		/* if the controller supports, lets advertise for another
-		 * slave connection.
+		 * peripheral connection.
 		 * check for connectable advertising state is sufficient as
-		 * this is how this le connection complete for slave occurred.
+		 * this is how this le connection complete for peripheral occurred.
 		 */
 		if (BT_LE_STATES_PER_CONN_ADV(bt_dev.le.states)) {
 			bt_le_adv_resume();
@@ -1568,7 +1568,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 	} else if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
 		   conn->role == BT_HCI_ROLE_PERIPHERAL &&
 		   !atomic_test_and_set_bit(conn->flags,
-					    BT_CONN_SLAVE_PARAM_L2CAP)) {
+					    BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
 		/* CPR not supported, let's try L2CAP CPUP instead */
 		struct bt_le_conn_param param;
 
@@ -1787,7 +1787,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 		if (IS_ENABLED(CONFIG_BT_SMP)) {
 			/*
 			 * Start SMP over BR/EDR if we are pairing and are
-			 * master on the link
+			 * central on the link
 			 */
 			if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING) &&
 			    conn->role == BT_CONN_ROLE_CENTRAL) {
@@ -3688,7 +3688,7 @@ int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_FAL, buf, NULL);
 	if (err) {
-		BT_ERR("Failed to add device to whitelist");
+		BT_ERR("Failed to add device to filter accept list");
 
 		return err;
 	}
@@ -3716,7 +3716,7 @@ int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_FAL, buf, NULL);
 	if (err) {
-		BT_ERR("Failed to remove device from whitelist");
+		BT_ERR("Failed to remove device from filter accept list");
 		return err;
 	}
 
@@ -3733,7 +3733,7 @@ int bt_le_filter_accept_list_clear(void)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_FAL, NULL, NULL);
 	if (err) {
-		BT_ERR("Failed to clear whitelist");
+		BT_ERR("Failed to clear filter accept list");
 		return err;
 	}
 
