@@ -645,6 +645,8 @@
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar-nordic
+/scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
+/scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west-commands.yml                @mbolivar-nordic
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/uf2conv.py                       @petejohanson
