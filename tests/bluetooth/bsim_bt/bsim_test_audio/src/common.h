@@ -47,10 +47,10 @@
 		bs_trace_error_time_line(__VA_ARGS__); \
 	} while (0)
 
-#define PASS(...) \
+#define PASS(__str) \
 	do { \
 		bst_result = Passed; \
-		bs_trace_info_time(1, __VA_ARGS__); \
+		bs_trace_info_time(1, "PASSED: %s", __str); \
 	} while (0)
 
 #define SET_STEP(s)							\
