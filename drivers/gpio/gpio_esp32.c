@@ -8,15 +8,13 @@
 #define DT_DRV_COMPAT espressif_esp32_gpio
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#ifndef CONFIG_SOC_ESP32C3
-#include <soc/dport_reg.h>
-#endif
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <hal/gpio_ll.h>
 #include <esp_attr.h>
 
+#include <soc.h>
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
@@ -37,7 +35,7 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 #define DEV_CFG(_dev) ((struct gpio_esp32_config *const)(_dev)->config)
 
 #ifdef CONFIG_SOC_ESP32C3
-/* gpio structs in esp32c3 series are diferent from xtensa ones */
+/* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
 #define in in.data
 #define out_w1ts out_w1ts.val
@@ -45,7 +43,7 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* arch_curr_cpu() is not available for riscv based chips */
 #define CPU_ID()  0
 #define ISR_HANDLER isr_handler_t
-#else 
+#else
 #define CPU_ID() arch_curr_cpu()->id
 #define ISR_HANDLER intr_handler_t
 #endif
@@ -293,6 +291,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 
 	key = irq_lock();
 	gpio_ll_set_intr_type(cfg->gpio_base, io_pin, intr_trig_mode);
+	gpio_ll_intr_enable_on_core(cfg->gpio_base, CPU_ID(), io_pin);
 	irq_unlock(key);
 
 	return 0;
@@ -357,7 +356,12 @@ static int gpio_esp32_init(const struct device *dev)
 	}
 
 	if (!isr_connected) {
-		esp_intr_alloc(DT_IRQN(DT_NODELABEL(gpio0)), 0, (ISR_HANDLER)gpio_esp32_isr, (void *)dev, NULL);
+		esp_intr_alloc(DT_IRQN(DT_NODELABEL(gpio0)),
+			0,
+			(ISR_HANDLER)gpio_esp32_isr,
+			(void *)dev,
+			NULL);
+
 		isr_connected = true;
 	}
 
