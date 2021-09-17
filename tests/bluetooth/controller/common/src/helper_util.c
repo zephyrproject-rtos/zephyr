@@ -191,13 +191,13 @@ void test_print_conn(struct ll_conn *conn)
 	printf("     Reject: %d\n", conn->llcp.remote.reject_opcode);
 	printf("--------------------->\n");
 }
-void test_setup(struct ll_conn **conn)
+
+void test_setup(struct ll_conn *conn)
 {
 	ull_conn_init();
 
-	*conn = ll_conn_acquire();
 	/**/
-	memset(*conn, 0x00, sizeof(**conn));
+	memset(conn, 0x00, sizeof(*conn));
 
 	/* Initialize the upper test rx queue */
 	sys_slist_init(&ut_rx_q);
@@ -209,16 +209,17 @@ void test_setup(struct ll_conn **conn)
 	ull_cp_init();
 
 	/* Initialize the ULL TX Q */
-	ull_tx_q_init(&(*conn)->tx_q);
+	ull_tx_q_init(&conn->tx_q);
 
 	/* Initialize the connection object */
-	ll_conn_init(*conn);
+	ll_conn_init(conn);
 
 	ll_reset();
-	(*conn)->lll.event_counter = 0;
+	conn->lll.event_counter = 0;
 	event_active = 0;
 	lazy = 0;
 }
+
 
 void test_set_role(struct ll_conn *conn, uint8_t role)
 {
