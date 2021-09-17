@@ -165,6 +165,8 @@ source "drivers/serial/Kconfig.rcar"
 
 source "drivers/serial/Kconfig.xec"
 
+source "drivers/serial/Kconfig.gd32"
+
 source "drivers/serial/Kconfig.test"
 
 source "drivers/serial/Kconfig.neorv32"

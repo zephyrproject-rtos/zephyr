@@ -45,6 +45,14 @@
 				label = "FLASH_0";
 			};
 		};
+
+		usart0: usart@40013800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40013800 0x400>;
+			rcu-periph-clock = <0x60e>;
+			status = "disabled";
+			label = "usart_0";
+		};
 	};
 };
 
