@@ -1,0 +1,8 @@
+common:
+    tags: test_framework bluetooth bt_tx_buffer_alloc bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_tx_buffer_alloc.test:
+     type: unit
+  bluetooth.controller.ctrl_tx_buffer_alloc.test_no_conn_alloc:
+     type: unit
+     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"

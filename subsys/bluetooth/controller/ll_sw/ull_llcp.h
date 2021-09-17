@@ -28,7 +28,7 @@ void ull_cp_state_set(struct ll_conn *conn, uint8_t state);
 /**
 *
 */
-void ull_cp_release_tx(struct node_tx *tx);
+void ull_cp_release_tx(uint16_t handle, struct node_tx *tx);
 
 /**
 *

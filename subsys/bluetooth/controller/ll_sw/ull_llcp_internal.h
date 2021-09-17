@@ -113,6 +113,9 @@ struct proc_ctx {
 	/* Procedure pause */
 	int pause;
 
+	/* Handle of related connection */
+	uint16_t conn_handle;
+
 	/* TX node awaiting ack */
 	struct node_tx *tx_ack;
 
@@ -221,6 +224,12 @@ enum proc_incompat {
 /* Invalid LL Control PDU Opcode */
 #define ULL_LLCP_INVALID_OPCODE (0xFFU)
 
+#if (CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM > 256)
+typedef uint16_t ctx_handle_t;
+#else /* (CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM > 256)  */
+typedef uint8_t ctx_handle_t;
+#endif /* (CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM > 256)  */
+
 static inline bool is_instant_passed(uint16_t instant, uint16_t event_count)
 {
 	/*
@@ -284,13 +293,15 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 /*
  * LLCP Resource Management
  */
-bool llcp_tx_alloc_is_available(void);
-struct node_tx *llcp_tx_alloc(void);
 bool llcp_ntf_alloc_is_available(void);
 bool llcp_ntf_alloc_num_available(uint8_t count);
 struct node_rx_pdu *llcp_ntf_alloc(void);
-struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc);
-struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
+struct proc_ctx *llcp_create_local_procedure(uint16_t conn_handle, enum llcp_proc proc);
+struct proc_ctx *llcp_create_remote_procedure(uint16_t conn_handle, enum llcp_proc proc);
+bool llcp_tx_alloc_peek(struct proc_ctx *ctx);
+void llcp_tx_alloc_unpeek(struct proc_ctx *ctx);
+ctx_handle_t llcp_proc_ctx_handle_get(struct proc_ctx *ctx);
+struct node_tx *llcp_tx_alloc(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface
