@@ -441,5 +441,30 @@
 				};
 			};
 		};
+
+		test-ranges {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			test_ranges_pcie: pcie@0 {
+				compatible = "vnd,pcie";
+				reg = <0 0 1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+					 <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+					 <0x3000000 0x80 0 0x80 0 0x80 0>;
+			};
+
+			test_ranges_other: other@1 {
+				reg = <0 1 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+				         <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+			};
+		};
 	};
 };
