@@ -202,7 +202,7 @@ static void test_main(void)
 	}
 
 	WAIT_FOR(read_complete);
-	PASS("CCP Passed");
+	PASS("CCP Passed\n");
 }
 
 static const struct bst_test_instance test_ccp[] = {
