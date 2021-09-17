@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources(
+  util/ufifo.c
   util/mem.c
   util/memq.c
   util/mayfly.c

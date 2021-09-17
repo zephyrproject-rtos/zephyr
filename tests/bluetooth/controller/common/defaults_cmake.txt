@@ -17,6 +17,7 @@ include_directories(
 )
 
 FILE(GLOB ll_sw_sources
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/ufifo.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/mem.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/memq.c
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_chan.c
