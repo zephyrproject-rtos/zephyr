@@ -1,0 +1,84 @@
+description: KS0108 128x64 display controller
+
+compatible: "samsung,ks0108"
+
+properties:
+    db0-gpios:
+      type: phandle-array
+      required: true
+      description: DB0 pin.
+
+    db1-gpios:
+      type: phandle-array
+      required: true
+      description: DB1 pin.
+
+    db2-gpios:
+      type: phandle-array
+      required: true
+      description: DB2 pin.
+
+    db3-gpios:
+      type: phandle-array
+      required: true
+      description: DB3 pin.
+
+    db4-gpios:
+      type: phandle-array
+      required: true
+      description: DB4 pin.
+
+    db5-gpios:
+      type: phandle-array
+      required: true
+      description: DB5 pin.
+
+    db6-gpios:
+      type: phandle-array
+      required: true
+      description: DB6 pin.
+
+    db7-gpios:
+      type: phandle-array
+      required: true
+      description: DB7 pin.
+
+    cs1-gpios:
+      type: phandle-array
+      required: true
+      description: CS1 pin.
+
+    cs2-gpios:
+      type: phandle-array
+      required: true
+      description: CS2 pin .
+
+    rw-gpios:
+      type: phandle-array
+      required: true
+      description: RW pin.
+
+    rs-gpios:
+      type: phandle-array
+      required: true
+      description: RS pin.
+
+    rst-gpios:
+      type: phandle-array
+      required: true
+      description: RST pin.
+
+    en-gpios:
+      type: phandle-array
+      required: true
+      description: EN pin.
+
+    height:
+      type: int
+      required: true
+      description: Height in pixels of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixels of the panel driven by the controller
