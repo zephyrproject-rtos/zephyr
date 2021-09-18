@@ -639,3 +639,45 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 
 	conn->slave.latency_cancel = 0U;
 }
+
+static int ull_slave_enc_rsp_send(struct ll_conn *conn)
+{
+	struct pdu_data *pdu_ctrl_tx;
+	struct node_tx *tx;
+
+	/* acquire tx mem */
+	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	if (!tx) {
+		return -ENOBUFS;
+	}
+
+	pdu_ctrl_tx = (void *)tx->pdu;
+	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp) +
+			   sizeof(struct pdu_data_llctrl_enc_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+
+	/*
+	 * Take advantage of the fact that ivs and skds fields, which both have
+	 * to be filled with random data, are adjacent and use single call to
+	 * the entropy driver.
+	 */
+	BUILD_ASSERT(offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), ivs) ==
+		     (offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), skds) +
+		     sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds)));
+
+	/* NOTE: if not sufficient random numbers, ignore waiting */
+	lll_csrand_isr_get(pdu_ctrl_tx->llctrl.enc_rsp.skds,
+			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
+			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
+
+	/* things from slave stored for session key calculation */
+	memcpy(&conn->llcp.encryption.skd[8],
+	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
+	memcpy(&conn->lll.ccm_rx.iv[4],
+	       &pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
+
+	ctrl_tx_enqueue(conn, tx);
+
+	return 0;
+}

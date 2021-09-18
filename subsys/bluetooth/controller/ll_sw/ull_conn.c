@@ -104,9 +104,7 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 static inline void ctrl_tx_check_and_resume(struct ll_conn *conn);
 static bool is_enc_req_pause_tx(struct ll_conn *conn);
 static inline void event_enc_prep(struct ll_conn *conn);
-#if defined(CONFIG_BT_PERIPHERAL)
-static int enc_rsp_send(struct ll_conn *conn);
-#endif /* CONFIG_BT_PERIPHERAL */
+
 static int start_enc_rsp_send(struct ll_conn *conn,
 			      struct pdu_data *pdu_ctrl_tx);
 static inline bool ctrl_is_unexpected(struct ll_conn *conn, uint8_t opcode);
@@ -3046,7 +3044,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			 * of additional data channel PDUs queued in the
 			 * controller.
 			 */
-			err = enc_rsp_send(conn);
+			err = ull_slave_enc_rsp_send(conn);
 			if (err) {
 				return;
 			}
@@ -4450,50 +4448,6 @@ static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 	*tx = NULL;
 }
 #endif /* CONFIG_BT_CENTRAL */
-
-#if defined(CONFIG_BT_PERIPHERAL)
-static int enc_rsp_send(struct ll_conn *conn)
-{
-	struct pdu_data *pdu_ctrl_tx;
-	struct node_tx *tx;
-
-	/* acquire tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
-	if (!tx) {
-		return -ENOBUFS;
-	}
-
-	pdu_ctrl_tx = (void *)tx->pdu;
-	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp) +
-			   sizeof(struct pdu_data_llctrl_enc_rsp);
-	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
-
-	/*
-	 * Take advantage of the fact that ivs and skds fields, which both have
-	 * to be filled with random data, are adjacent and use single call to
-	 * the entropy driver.
-	 */
-	BUILD_ASSERT(offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), ivs) ==
-		     (offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), skds) +
-		     sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds)));
-
-	/* NOTE: if not sufficient random numbers, ignore waiting */
-	lll_csrand_isr_get(pdu_ctrl_tx->llctrl.enc_rsp.skds,
-			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
-			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
-
-	/* things from slave stored for session key calculation */
-	memcpy(&conn->llcp.encryption.skd[8],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
-	memcpy(&conn->lll.ccm_rx.iv[4],
-	       &pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
-
-	ctrl_tx_enqueue(conn, tx);
-
-	return 0;
-}
-#endif /* CONFIG_BT_PERIPHERAL */
 
 static int start_enc_rsp_send(struct ll_conn *conn,
 			      struct pdu_data *pdu_ctrl_tx)
@@ -6105,7 +6059,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		/* TODO: BT Spec. text: may finalize the sending of additional
 		 * data channel PDUs queued in the controller.
 		 */
-		nack = enc_rsp_send(conn);
+		nack = ull_slave_enc_rsp_send(conn);
 		if (nack) {
 			break;
 		}
