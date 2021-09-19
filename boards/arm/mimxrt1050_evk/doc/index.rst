@@ -300,6 +300,10 @@ the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
 J32 and J33 are **on** (they are on by default when boards ship from the
 factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
 
+Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
+in order to support your EVK if you have modified it to boot from QSPI NOR
+flash as specified by NXP AN12108.
+
 Option 2: :ref:`jlink-external-debug-probe`
 -------------------------------------------
 
@@ -432,3 +436,6 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _NXP i.MXRT1050 A0 to A1 Migration Guide:
    https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf
+
+.. _Enable QSPI flash support in SEGGER JLink:
+   https://wiki.segger.com/i.MXRT1050#QSPI_flash
