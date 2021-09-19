@@ -82,7 +82,7 @@ int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
 		if (tsp->base.ref == 0) {
 			tsp->base = *inst;
 			tsp->latest = (struct timeutil_sync_instant){};
-			tsp->skew = 1.0;
+			tsp->skew = 1.0f;
 			rv = 0;
 		} else {
 			tsp->latest = *inst;
@@ -137,7 +137,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
 		/* (x * 1.0) != x for large values of x.
 		 * Therefore only apply the multiplication if the skew is not one.
 		 */
-		if (tsp->skew != 1.0) {
+		if (tsp->skew != 1.0f) {
 			local_delta *= (double)tsp->skew;
 		}
 		int64_t ref_delta = local_delta * cfg->ref_Hz / cfg->local_Hz;
@@ -147,7 +147,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
 			rv = -ERANGE;
 		} else {
 			*refp = ref_abs;
-			rv = (int)(tsp->skew != 1.0);
+			rv = (int)(tsp->skew != 1.0f);
 		}
 	}
 
@@ -167,14 +167,14 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 		 */
 		int64_t local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz;
 
-		if (tsp->skew != 1.0) {
+		if (tsp->skew != 1.0f) {
 			local_delta /= (double)tsp->skew;
 		}
 		int64_t local_abs = (int64_t)tsp->base.local
 				    + (int64_t)local_delta;
 
 		*localp = local_abs;
-		rv = (int)(tsp->skew != 1.0);
+		rv = (int)(tsp->skew != 1.0f);
 	}
 
 	return rv;
@@ -182,7 +182,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 
 int32_t timeutil_sync_skew_to_ppb(float skew)
 {
-	int64_t ppb64 = (int64_t)((1.0 - skew) * 1E9);
+	int64_t ppb64 = (int64_t)((1.0 - (double)skew) * 1E9);
 	int32_t ppb32 = (int32_t)ppb64;
 
 	return (ppb64 == ppb32) ? ppb32 : INT32_MIN;
