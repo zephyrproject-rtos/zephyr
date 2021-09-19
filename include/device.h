@@ -86,14 +86,14 @@ typedef int16_t device_handle_t;
  * @brief Run an initialization function at boot at specified priority,
  * and define device PM control function.
  *
- * @details Invokes DEVICE_DEFINE() with no power management support
- * (@p pm_control_fn), no API (@p api_ptr), and a device name derived from
- * the @p init_fn name (@p dev_name).
+ * @details Invokes DEVICE_DEFINE() with no API (@p api_ptr), and a device name
+ * derived from the @p init_fn name (@p dev_name).
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
-	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn,		\
-		      pm_control_fn,					\
-		      NULL, NULL, level, prio, NULL)
+	Z_DEVICE_DEFINE(DT_INVALID_NODE, Z_SYS_NAME(init_fn),		\
+		drv_name, init_fn, pm_control_fn,			\
+		NULL, NULL, level, prio, NULL, 				\
+		Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def DEVICE_DEFINE
@@ -136,9 +136,10 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
-			pm_control_fn,					\
-			data_ptr, cfg_ptr, level, prio, api_ptr)
+	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name,			\
+		drv_name, init_fn, pm_control_fn,			\
+		data_ptr, cfg_ptr, level, prio, api_ptr, 		\
+		Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def DEVICE_DT_NAME
@@ -196,10 +197,10 @@ typedef int16_t device_handle_t;
 			 data_ptr, cfg_ptr, level, prio,		\
 			 api_ptr, ...)					\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
-			DEVICE_DT_NAME(node_id), init_fn,		\
-			pm_control_fn,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr, __VA_ARGS__)
+		DEVICE_DT_NAME(node_id), init_fn, pm_control_fn,	\
+		data_ptr, cfg_ptr, level, prio, api_ptr, 		\
+		Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn),		\
+		__VA_ARGS__)
 
 /**
  * @def DEVICE_DT_INST_DEFINE
@@ -211,8 +212,14 @@ typedef int16_t device_handle_t;
  *
  * @param ... other parameters as expected by DEVICE_DT_DEFINE.
  */
-#define DEVICE_DT_INST_DEFINE(inst, ...) \
-	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+#define DEVICE_DT_INST_DEFINE(inst, init_fn, pm_control_fn, data_ptr,	\
+			      cfg_ptr, level, prio, api_ptr, ...)	\
+	Z_DEVICE_DEFINE(DT_DRV_INST(inst),				\
+		Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(inst)),		\
+		DEVICE_DT_NAME(DT_DRV_INST(inst)), init_fn,		\
+		pm_control_fn, data_ptr, cfg_ptr, level, prio, api_ptr, \
+		Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn),		\
+		__VA_ARGS__)
 
 /**
  * @def DEVICE_DT_NAME_GET
@@ -367,11 +374,6 @@ struct device_state {
 	 * invoked.
 	 */
 	bool initialized : 1;
-
-#ifdef CONFIG_PM_DEVICE
-	/* Power management data */
-	struct pm_device pm;
-#endif /* CONFIG_PM_DEVICE */
 };
 
 /**
@@ -629,6 +631,24 @@ static inline bool device_is_ready(const struct device *dev)
  * @}
  */
 
+/* This is used to detect a NULL passed as the pm_control_fn parameter to
+ * the various DEVICE_DEFINE macros. Use this macro to create the "use_pm"
+ * parameter passed to the Z_DEVICE_DEFINE().  You must manually concatenate
+ * "Z_CONST_" with the pm_control_fn to prevent expansion of the NULL
+ * definition.
+ *   For example:
+ *     Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn)
+ *
+ *     This expands to 0, if (pm_control_fn == NULL), otherwise it expands
+ *     to 1.
+ */
+#define Z_DEVICE_USE_PM(cond) \
+	COND_CODE_1(cond, (Z_CONST_DISABLE_PM), (Z_CONST_ENABLE_PM))
+
+#define Z_CONST_NULL		1
+#define Z_CONST_DISABLE_PM	0
+#define Z_CONST_ENABLE_PM	1
+
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.
  *
@@ -644,6 +664,8 @@ static inline bool device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
 
+#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_control_, dev_name)
+
 /** Synthesize the name of the object that holds device ordinal and
  * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
@@ -657,13 +679,6 @@ static inline bool device_is_ready(const struct device *dev)
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
-#ifdef CONFIG_PM_DEVICE
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)			\
-	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm, node_id),
-#else
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)
-#endif
-
 /**
  * @brief Utility macro to define and initialize the device state.
 
@@ -672,9 +687,7 @@ static inline bool device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate"))) = {			\
-		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
-	};
+	__attribute__((__section__(".z_devstate")));
 
 /* If device power management is enabled, this macro defines a pointer to a
  * device in the z_pm_device_slots region. When invoked for each device, this
@@ -783,23 +796,31 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		};
 
 #ifdef CONFIG_PM_DEVICE
+#define Z_DEVICE_DEFINE_PM_STRUCT(dev_name) \
+	static struct pm_device Z_PM_DEVICE_NAME(dev_name);
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
-	.pm_control = (pm_control_fn),					\
-	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
+	.pm_control = (pm_control_fn),				\
+	.pm = &Z_PM_DEVICE_NAME(dev_name),
 #else
+#define Z_DEVICE_DEFINE_PM_STRUCT(dev_name)
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
 #endif
 
-#define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
+#define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn, use_pm)	\
 		.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),	\
-		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+		COND_CODE_1(use_pm, 					\
+			(Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)), \
+			())
 
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
- * dependency handles that come from outside devicetree.
+ * dependency handles that come from outside devicetree. The use_pm
+ * parameter indicates whether the power management support is enabled
+ * or disabled for this device.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
-			data_ptr, cfg_ptr, level, prio, api_ptr, ...)	\
+			data_ptr, cfg_ptr, level, prio, api_ptr, use_pm, ...) 	\
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
+	COND_CODE_1(use_pm, (Z_DEVICE_DEFINE_PM_STRUCT(dev_name)), () )	\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
@@ -809,7 +830,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.api = (api_ptr),					\
 		.state = &Z_DEVICE_STATE_NAME(dev_name),		\
 		.data = (data_ptr),					\
-		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)	\
+		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn, use_pm)	\
 	};								\
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \

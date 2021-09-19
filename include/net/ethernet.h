@@ -827,21 +827,21 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 
 #if defined(CONFIG_NET_VLAN)
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_fn, data, cfg, prio, api, mtu)	\
+			      pm_control_fn, data, cfg, prio, api, mtu, use_pm)	\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
 			pm_control_fn, data, cfg, POST_KERNEL,		\
-			prio, api);					\
+			prio, api, use_pm);					\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_fn, data, cfg, prio, api, mtu)	\
+			      pm_control_fn, data, cfg, prio, api, mtu, use_pm)	\
 	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
 			  pm_control_fn, data, cfg, prio, api,		\
 			  ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),\
-			  mtu)
+			  mtu, use_pm)
 #endif /* CONFIG_NET_VLAN */
 
 /**
@@ -867,7 +867,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			    data, cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
 			      init_fn, pm_control_fn, data, cfg, prio,	\
-			      api, mtu)
+			      api, mtu,					\
+			      Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def ETH_NET_DEVICE_DT_DEFINE
@@ -892,7 +893,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
 			      DT_PROP_OR(node_id, label, ""),		\
 			      init_fn, pm_control_fn, data, cfg, prio,	\
-			      api, mtu)
+			      api, mtu,					\
+			      Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def ETH_NET_DEVICE_DT_INST_DEFINE
@@ -905,8 +907,14 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param ... other parameters as expected by ETH_NET_DEVICE_DT_DEFINE.
  */
-#define ETH_NET_DEVICE_DT_INST_DEFINE(inst, ...) \
-	ETH_NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+#define ETH_NET_DEVICE_DT_INST_DEFINE(inst, init_fn, pm_control_fn,	\
+				      data, cfg, prio, api, mtu) 	\
+	Z_ETH_NET_DEVICE_INIT(DT_DRV_INST(inst),			\
+			      Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(inst)),	\
+			      DT_PROP_OR(DT_DRV_INST(inst), label, ""),	\
+			      init_fn, pm_control_fn, data, cfg, prio,	\
+			      api, mtu,					\
+			      Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.

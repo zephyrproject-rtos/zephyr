@@ -2249,10 +2249,10 @@ struct net_if_api {
 
 #define Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
 			pm_control_fn, data, cfg, prio, api, l2,	\
-			l2_ctx_type, mtu)				\
+			l2_ctx_type, mtu, use_pm)			\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
 			pm_control_fn, data,				\
-			cfg, POST_KERNEL, prio, api);			\
+			cfg, POST_KERNEL, prio, api, use_pm);		\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);			\
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -2282,7 +2282,8 @@ struct net_if_api {
 			l2_ctx_type, mtu)				\
 	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
 			pm_control_fn, data, cfg, prio, api, l2,	\
-			l2_ctx_type, mtu)
+			l2_ctx_type, mtu,				\
+			Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_DEFINE
@@ -2309,7 +2310,8 @@ struct net_if_api {
 	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
 			  DT_PROP_OR(node_id, label, ""), init_fn,	\
 			  pm_control_fn, data, cfg, prio, api, l2,	\
-			  l2_ctx_type, mtu)
+			  l2_ctx_type, mtu,				\
+			  Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_INST_DEFINE
@@ -2321,16 +2323,22 @@ struct net_if_api {
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE.
  */
-#define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
-	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+#define NET_DEVICE_DT_INST_DEFINE(inst, init_fn, pm_control_fn, data,	\
+				  cfg, prio, api, l2, l2_ctx_type, mtu)	\
+	Z_NET_DEVICE_INIT(DT_DRV_INST(inst),				\
+			  Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(inst)),	\
+			  DT_PROP_OR(DT_DRV_INST(inst), label, ""),	\
+			  init_fn, pm_control_fn, data, cfg, prio, api,	\
+			  l2, l2_ctx_type, mtu,				\
+			  Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_name, drv_name,		\
 				   instance, init_fn, pm_control_fn,	\
 				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)			\
+				   l2_ctx_type, mtu, use_pm)		\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
 			pm_control_fn, data, cfg, POST_KERNEL,		\
-			prio, api);					\
+			prio, api, use_pm);				\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -2365,7 +2373,8 @@ struct net_if_api {
 	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_name, drv_name,	\
 				   instance, init_fn, pm_control_fn,	\
 				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)
+				   l2_ctx_type, mtu,			\
+				   Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_DEFINE_INSTANCE
@@ -2392,13 +2401,14 @@ struct net_if_api {
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
 #define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn,	\
-				    pm_control_fn, data, cfg, prio,	\
-				    api, l2, l2_ctx_type, mtu)		\
+				      pm_control_fn, data, cfg, prio,	\
+				      api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
 				   DT_LABEL(node_id), instance, init_fn,\
 				   pm_control_fn, data, cfg, prio, api,	\
-				   l2, l2_ctx_type, mtu)
+				   l2, l2_ctx_type, mtu,		\
+				   Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_INST_DEFINE_INSTANCE
@@ -2411,14 +2421,24 @@ struct net_if_api {
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE_INSTANCE.
  */
-#define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, ...) \
-	NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
+#define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, instance, init_fn,	\
+					   pm_control_fn, data, cfg,	\
+					   prio, api, l2, l2_ctx_type,	\
+					   mtu)				\
+	Z_NET_DEVICE_INIT_INSTANCE(DT_DRV_INST(inst),			\
+				   Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(inst)),\
+				   DT_LABEL(DT_DRV_INST(inst)),		\
+				   instance, init_fn, pm_control_fn,	\
+				   data, cfg, prio, api, l2,		\
+				   l2_ctx_type, mtu,			\
+				   Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 #define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_name, drv_name, init_fn,	\
 				  pm_control_fn, data, cfg, prio,	\
-				  api, mtu)				\
+				  api, mtu, use_pm)			\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_control_fn, data, cfg, POST_KERNEL, prio, api);\
+			pm_control_fn, data, cfg, POST_KERNEL, prio,	\
+			api, use_pm);	\
 	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
 
 /**
@@ -2446,7 +2466,8 @@ struct net_if_api {
 				pm_control_fn, data, cfg, prio, api, mtu)\
 	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
 				init_fn, pm_control_fn, data, cfg, prio,\
-				api, mtu)
+				api, mtu,				\
+				Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_OFFLOAD_DEFINE
@@ -2473,7 +2494,8 @@ struct net_if_api {
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
 				  DT_PROP_OR(node_id, label, NULL),	\
 				  init_fn, pm_control_fn, data, cfg,	\
-				  prio, api, mtu)
+				  prio, api, mtu,			\
+				  Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @def NET_DEVICE_DT_INST_OFFLOAD_DEFINE
@@ -2486,8 +2508,14 @@ struct net_if_api {
  *
  * @param ... other parameters as expected by NET_DEVICE_DT_OFFLOAD_DEFINE.
  */
-#define NET_DEVICE_DT_INST_OFFLOAD_DEFINE(inst, ...) \
-	NET_DEVICE_DT_OFFLOAD_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+#define NET_DEVICE_DT_INST_OFFLOAD_DEFINE(inst, init_fn, pm_control_fn,	\
+				   data, cfg, prio, api, mtu)		\
+	Z_NET_DEVICE_OFFLOAD_INIT(DT_DRV_INST(inst),			\
+				  Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(inst)),	\
+				  DT_PROP_OR(DT_DRV_INST(inst), label, NULL),	\
+				  init_fn, pm_control_fn, data, cfg,	\
+				  prio, api, mtu,			\
+				  Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 #ifdef __cplusplus
 }

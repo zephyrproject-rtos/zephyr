@@ -275,11 +275,11 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 
 #define Z_NET_VIRTUAL_INTERFACE_INIT(node_id, dev_name, drv_name,	\
 				     init_fn, pm_control_fn, data, cfg, \
-				     prio, api, mtu)			\
+				     prio, api, mtu, use_pm)		\
 	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
 			  pm_control_fn, data, cfg, prio, api,		\
 			  VIRTUAL_L2, NET_L2_GET_CTX_TYPE(VIRTUAL_L2),	\
-			  mtu)
+			  mtu, use_pm)
 /** @endcond */
 
 /**
@@ -310,7 +310,8 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 				   data, cfg, prio, api, mtu)		\
 	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_name,		\
 				     drv_name, init_fn, pm_control_fn,	\
-				     data, cfg, prio, api, mtu)
+				     data, cfg, prio, api, mtu,		\
+				     Z_DEVICE_USE_PM(Z_CONST_ ## pm_control_fn))
 
 /**
  * @}
