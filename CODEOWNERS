@@ -38,6 +38,7 @@
 /soc/arm/atmel_sam/samv71/                @nandojve
 /soc/arm/cypress/                         @nandojve
 /soc/arm/bcm*/                            @sbranden
+/soc/arm/gigadevice/                      @nandojve
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @ioannisg
@@ -99,6 +100,7 @@
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @mmahadevan108 @dleach02
 /boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
+/boards/arm/gd32*/                        @nandojve
 /boards/arm/google_*/                     @jackrosenthal
 /boards/arm/hexiwear*/                    @mmahadevan108 @dleach02
 /boards/arm/hexiwear*/doc/                @dleach02 @MeganHansen
@@ -185,6 +187,7 @@
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
+/drivers/*/*gd32*                         @nandojve
 /drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
 /drivers/*/*mcux*                         @mmahadevan108 @dleach02
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
@@ -396,6 +399,7 @@
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @nandojve
+/dts/arm/gigadevice/                      @nandojve
 /dts/arm/infineon/                        @parthitce
 /dts/arm64/                               @carlocaione
 /dts/arm64/armv8-r.dtsi                   @povergoing
@@ -444,6 +448,7 @@
 /dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
+/dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
@@ -567,6 +572,7 @@
 /modules/                                 @nashif
 /modules/canopennode/                     @henrikbrixandersen
 /modules/mbedtls/                         @ceolin @d3zd3z
+/modules/hal_gigadevice/                  @nandojve
 /modules/trusted-firmware-m/              @ioannisg @microbuilder
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
