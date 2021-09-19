@@ -124,6 +124,7 @@ endif # DNS_RESOLVER
 
 config MDNS_RESPONDER
 	bool "mDNS responder"
+	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
 	depends on NET_HOSTNAME_ENABLE
 	help
@@ -175,6 +176,7 @@ endif # MDNS_RESPONDER
 
 config LLMNR_RESPONDER
 	bool "LLMNR responder"
+	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
 	depends on NET_HOSTNAME_ENABLE
 	help
