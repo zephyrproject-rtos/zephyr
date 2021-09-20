@@ -735,6 +735,8 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	struct node_rx_ftr *ftr;
 	struct pdu_adv *pdu;
 
+	bool dir_report = false;
+
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
 		return -ENOBUFS;
@@ -751,7 +753,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	} else if (lll->conn && !lll->conn->central.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
-					   rl_idx)) {
+					   rl_idx, NULL)) {
 		struct lll_scan_aux *lll_aux_to_use;
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
@@ -943,13 +945,15 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   ((lll_aux && !lll_aux->state) ||
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
-		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
+		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
+					   &dir_report)) {
 #else /* !CONFIG_BT_CENTRAL */
 	} else if (lll && lll->type &&
 		   ((lll_aux && !lll_aux->state) ||
 		    (lll->lll_aux && !lll->lll_aux->state)) &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) &&
-		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
+		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
+					   &dir_report)) {
 #endif /* !CONFIG_BT_CENTRAL */
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -1050,6 +1054,10 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+		ftr->direct = dir_report;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 		ftr->aux_lll_sched = 0U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -1062,11 +1070,13 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	} else if (!lll->conn &&
 		   ((lll_aux && lll_aux->is_chain_sched) ||
 		    (lll->lll_aux && lll->lll_aux->is_chain_sched) ||
-		    lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx))) {
+		    lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
+					    &dir_report))) {
 #else /* !CONFIG_BT_CENTRAL */
 	} else if ((lll_aux && lll_aux->is_chain_sched) ||
 		   (lll->lll_aux && lll->lll_aux->is_chain_sched) ||
-		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx)) {
+		   lll_scan_ext_tgta_check(lll, false, false, pdu, rl_idx,
+					   &dir_report)) {
 #endif /* !CONFIG_BT_CENTRAL */
 
 		ftr = &(node_rx->hdr.rx_ftr);
@@ -1116,6 +1126,10 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+		ftr->direct = dir_report;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 		ftr->aux_lll_sched = lll_scan_aux_setup(pdu, phy_aux,
 							phy_aux_flags_rx,
