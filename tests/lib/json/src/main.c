@@ -253,7 +253,7 @@ static void test_json_limits(void)
 			     ARRAY_SIZE(obj_limits_descr), &limits_decoded);
 
 	zassert_true(!strcmp(encoded, buffer), "Limits not encoded correctly");
-	zassert_true(!memcmp(limits, limits_decoded, sizeof(limits)),
+	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
 		     "Limits not decoded correctly");
 }
 
