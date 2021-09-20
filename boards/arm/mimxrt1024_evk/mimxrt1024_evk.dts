@@ -15,6 +15,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
@@ -96,6 +97,10 @@
 &flexcan1 {
 	status = "okay";
 	bus-speed = <125000>;
+};
+
+&wdog0 {
+	status = "okay";
 };
 
 &lpi2c4 {
