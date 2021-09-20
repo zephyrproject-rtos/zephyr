@@ -613,7 +613,8 @@ void test_main(void)
 			 ztest_unit_test(test_json_escape_empty),
 			 ztest_unit_test(test_json_escape_no_op),
 			 ztest_unit_test(test_json_escape_bounds_check),
-			 ztest_unit_test(test_json_encode_bounds_check)
+			 ztest_unit_test(test_json_encode_bounds_check),
+			 ztest_unit_test(test_json_limits)
 			 );
 
 	ztest_run_test_suite(lib_json_test);
