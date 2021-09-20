@@ -40,11 +40,10 @@ struct obj_array {
 	size_t num_elements;
 };
 
-struct test_limits{
+struct test_limits {
 	int int_max;
 	int int_min;
 	unsigned int uint_max;
-
 };
 
 static const struct json_obj_descr nested_descr[] = {
@@ -86,7 +85,7 @@ static const struct json_obj_descr obj_array_descr[] = {
 static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
-	// JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER),
+	/* JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER), */
 };
 
 
@@ -243,7 +242,7 @@ static void test_json_limits(void){
 		.int_max = INT_MAX,
 		.int_min = INT_MIN,
 		.uint_max = 0U
-		// .uint_max = UINT_MAX
+		/* .uint_max = UINT_MAX */
 	};
 
 
@@ -253,7 +252,7 @@ static void test_json_limits(void){
 			     ARRAY_SIZE(obj_limits_descr), &limits_decoded);
 
 	zassert_true(!strcmp(encoded, buffer), "Limits not encoded correctly");
-	zassert_true( limits == limits_decoded, "Limits not decoded correctly");
+	zassert_true(limits == limits_decoded, "Limits not decoded correctly");
 }
 
 static void test_json_decoding_array_array(void)
