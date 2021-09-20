@@ -28,7 +28,7 @@
 #include "ull_adv_types.h"
 
 #include "ull_adv_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 
 /* Initial channel map indicating Used and Unused data channels.
  * The HCI LE Set Host Channel Classification command allows the Host to
@@ -45,7 +45,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	chan_map_set(chm);
 
 #if defined(CONFIG_BT_CENTRAL)
-	(void)ull_master_chm_update();
+	(void)ull_central_chm_update();
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)

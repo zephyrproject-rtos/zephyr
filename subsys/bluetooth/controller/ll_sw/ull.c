@@ -57,7 +57,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 #include "ull_conn_internal.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
@@ -242,7 +242,7 @@
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 /* NOTE: When ticker job is disabled inside radio events then all advertising,
- *       scanning, and slave latency cancel ticker operations will be deferred,
+ *       scanning, and peripheral latency cancel ticker operations will be deferred,
  *       requiring increased ticker thread context operation queue count.
  */
 #define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
@@ -1243,7 +1243,7 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_CENTRAL)
 			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-				ull_master_cleanup(rx_free);
+				ull_central_cleanup(rx_free);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)

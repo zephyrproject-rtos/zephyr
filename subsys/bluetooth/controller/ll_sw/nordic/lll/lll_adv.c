@@ -856,7 +856,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * transmitting connectable advertising event if cancelled flag is set.
 	 */
 	if (unlikely(lll->conn &&
-		(lll->conn->slave.initiated || lll->conn->slave.cancelled))) {
+		(lll->conn->periph.initiated || lll->conn->periph.cancelled))) {
 		radio_isr_set(lll_isr_early_abort, lll);
 		radio_disable();
 
@@ -1091,7 +1091,7 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
-	 * slave event.
+	 * peripheral event.
 	 */
 	radio_tmr_end_capture();
 
@@ -1205,7 +1205,7 @@ static void isr_done(void *param)
 	 */
 	if (lll->chan_map_curr &&
 #if defined(CONFIG_BT_PERIPHERAL)
-	    (!lll->conn || !lll->conn->slave.cancelled) &&
+	    (!lll->conn || !lll->conn->periph.cancelled) &&
 #endif /* CONFIG_BT_PERIPHERAL */
 	    1) {
 		struct pdu_adv *pdu;
@@ -1447,7 +1447,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	 */
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
-		   lll->conn && !lll->conn->slave.cancelled &&
+		   lll->conn && !lll->conn->periph.cancelled &&
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
 					     devmatch_ok, &rl_idx)) {
@@ -1481,7 +1481,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Stop further LLL radio events */
-		lll->conn->slave.initiated = 1;
+		lll->conn->periph.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 

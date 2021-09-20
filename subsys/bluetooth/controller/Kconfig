@@ -17,7 +17,7 @@ config BT_CTLR_CONN_PARAM_REQ_SUPPORT
 config BT_CTLR_EXT_REJ_IND_SUPPORT
 	bool
 
-config BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+config BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	bool
 
 config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
@@ -308,12 +308,12 @@ config BT_CTLR_EXT_REJ_IND
 	  Enable support for Bluetooth v4.1 Extended Reject Indication feature
 	  in the Controller.
 
-config BT_CTLR_SLAVE_FEAT_REQ
-	bool "Slave-initiated Features Exchange"
-	depends on BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+config BT_CTLR_PER_INIT_FEAT_XCHG
+	bool "Peripheral-initiated Features Exchange"
+	depends on BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	default y
 	help
-	  Enable support for Bluetooth v4.1 Slave-initiated Features Exchange
+	  Enable support for Bluetooth v4.1 Peripheral-initiated Features Exchange
 	  feature in the Controller.
 
 config BT_CTLR_LE_PING

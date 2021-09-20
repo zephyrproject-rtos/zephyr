@@ -329,7 +329,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->master.initiated)) {
+	if (unlikely(lll->conn && lll->conn->central.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -557,7 +557,7 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
-	 * slave event.
+	 * peripheral event.
 	 */
 	radio_tmr_end_capture();
 
@@ -925,7 +925,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 		/* Stop further LLL radio events */
-		lll->conn->master.initiated = 1;
+		lll->conn->central.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 

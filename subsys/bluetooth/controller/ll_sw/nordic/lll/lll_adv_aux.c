@@ -333,7 +333,7 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
-	 * slave event.
+	 * peripheral event.
 	 */
 	radio_tmr_end_capture();
 
@@ -664,7 +664,7 @@ static void isr_tx_connect_rsp(void *param)
 
 	if (is_done) {
 		/* Stop further LLL radio events */
-		lll->conn->slave.initiated = 1;
+		lll->conn->periph.initiated = 1;
 	}
 
 	/* Clear radio status and events */

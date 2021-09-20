@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int lll_slave_init(void);
-int lll_slave_reset(void);
-void lll_slave_prepare(void *param);
+int lll_periph_init(void);
+int lll_periph_reset(void);
+void lll_periph_prepare(void *param);

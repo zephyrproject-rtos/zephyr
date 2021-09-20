@@ -6345,7 +6345,7 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 {
 
 	switch (pdu_data->llctrl.unknown_rsp.type) {
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 		le_remote_feat_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 					    NULL, handle, buf);
 		break;

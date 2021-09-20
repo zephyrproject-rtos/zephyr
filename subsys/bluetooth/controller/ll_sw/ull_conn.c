@@ -38,8 +38,8 @@
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_slave_internal.h"
-#include "ull_master_internal.h"
+#include "ull_periph_internal.h"
+#include "ull_central_internal.h"
 
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
@@ -320,7 +320,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 #if defined(CONFIG_BT_CTLR_THROUGHPUT)
@@ -423,7 +423,7 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 
 			if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 			    conn->lll.role) {
-				ull_slave_latency_cancel(conn, handle);
+				ull_periph_latency_cancel(conn, handle);
 			}
 		}
 
@@ -494,7 +494,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 	conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -516,9 +516,9 @@ uint8_t ll_feature_req_send(uint16_t handle)
 	conn->llcp_feature.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) &&
 	    conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -540,7 +540,7 @@ uint8_t ll_version_ind_send(uint16_t handle)
 	conn->llcp_version.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -593,7 +593,7 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 	conn->llcp_length.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -687,7 +687,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 	conn->llcp_phy.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -761,7 +761,7 @@ int ull_conn_reset(void)
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Reset initiator */
-	(void)ull_master_reset();
+	(void)ull_central_reset();
 #endif /* CONFIG_BT_CENTRAL */
 
 	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
@@ -937,7 +937,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	if ((conn->llcp_ack == conn->llcp_req) &&
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #if defined(CONFIG_BT_PERIPHERAL)
-	    (!conn->lll.role || (conn->slave.llcp_type == LLCP_NONE)) &&
+	    (!conn->lll.role || (conn->periph.llcp_type == LLCP_NONE)) &&
 #endif /* CONFIG_BT_PERIPHERAL */
 	    !conn->llcp_enc.pause_rx) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
@@ -1096,8 +1096,8 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	/* Run any pending local peripheral role initiated procedure stored when
 	 * peer central initiated a encryption procedure
 	 */
-	if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
-		switch (conn->slave.llcp_type) {
+	if (conn->lll.role && (conn->periph.llcp_type != LLCP_NONE)) {
+		switch (conn->periph.llcp_type) {
 		case LLCP_CONN_UPD:
 		{
 			if (event_conn_upd_prep(conn, lazy,
@@ -1265,7 +1265,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    (((conn->llcp_terminate.req -
 			       conn->llcp_terminate.ack) & 0xFF) ==
 			     TERM_ACKED) ||
-			    conn->master.terminate_ack ||
+			    conn->central.terminate_ack ||
 			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
 			    1
@@ -1287,8 +1287,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif
 	elapsed_event = latency_event + 1;
 
-	/* Slave drift compensation calc and new latency or
-	 * master terminate acked
+	/* Peripheral drift compensation calc and new latency or
+	 * central terminate acked
 	 */
 	ticks_drift_plus = 0U;
 	ticks_drift_minus = 0U;
@@ -1307,14 +1307,14 @@ void ull_conn_done(struct node_rx_event_done *done)
 						       lll->memq_tx.tail,
 						       NULL)) {
 				lll->latency_event = 0;
-			} else if (lll->slave.latency_enabled) {
+			} else if (lll->periph.latency_enabled) {
 				lll->latency_event = lll->latency;
 			}
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (reason_final) {
-			conn->master.terminate_ack = 1;
+			conn->central.terminate_ack = 1;
 #endif /* CONFIG_BT_CENTRAL */
 
 		}
@@ -1358,26 +1358,26 @@ void ull_conn_done(struct node_rx_event_done *done)
 			/* break latency */
 			lll->latency_event = 0U;
 
-			/* Force both master and slave when close to
+			/* Force both central and peripheral when close to
 			 * supervision timeout.
 			 */
 			if (conn->supervision_expire <= 6U) {
 				force = 1U;
 			}
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
-			/* use randomness to force slave role when anchor
+			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
 			 */
 			else if (lll->role) {
 				if (latency_event) {
 					force = 1U;
 				} else {
-					force = conn->slave.force & 0x01;
+					force = conn->periph.force & 0x01;
 
 					/* rotate force bits */
-					conn->slave.force >>= 1U;
+					conn->periph.force >>= 1U;
 					if (force) {
-						conn->slave.force |= BIT(31);
+						conn->periph.force |= BIT(31);
 					}
 				}
 			}
@@ -1487,9 +1487,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 		uint32_t ticker_status;
 
 		/* Call to ticker_update can fail under the race
-		 * condition where in the Slave role is being stopped but
-		 * at the same time it is preempted by Slave event that
-		 * gets into close state. Accept failure when Slave role
+		 * condition where in the peripheral role is being stopped but
+		 * at the same time it is preempted by peripheral event that
+		 * gets into close state. Accept failure when peripheral role
 		 * is being stopped.
 		 */
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1862,7 +1862,7 @@ static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param)
 {
-	/* Slave drift compensation succeeds, or it fails in a race condition
+	/* Peripheral drift compensation succeeds, or it fails in a race condition
 	 * when disconnecting or connection update (race between ticker_update
 	 * and ticker_stop calls).
 	 */
@@ -1907,13 +1907,13 @@ static void conn_setup_adv_scan_disabled_cb(void *param)
 	switch (lll->role) {
 #if defined(CONFIG_BT_CENTRAL)
 	case 0:
-		ull_master_setup(rx, ftr, lll);
+		ull_central_setup(rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	case 1:
-		ull_slave_setup(rx, ftr, lll);
+		ull_periph_setup(rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -1979,7 +1979,7 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 	/* flush demux-ed Tx buffer still in ULL context */
 	tx_ull_flush(conn);
 
-	/* Stop Master or Slave role ticker */
+	/* Stop Central or Peripheral role ticker */
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_CONN_BASE + lll->handle,
@@ -2525,7 +2525,7 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 		uint32_t retval;
 
 		/* calculate window offset that places the connection in the
-		 * next available slot after existing masters.
+		 * next available slot after existing centrals.
 		 */
 		conn->llcp.conn_upd.ticks_anchor = ticks_at_expire;
 
@@ -2688,12 +2688,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		uint16_t latency;
 
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
-		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+		if (conn->lll.role && (conn->periph.llcp_type != LLCP_NONE)) {
 			/* Local peripheral initiated connection update
 			 * completed while a remote central had initiated
 			 * encryption procedure
 			 */
-			conn->slave.llcp_type = LLCP_NONE;
+			conn->periph.llcp_type = LLCP_NONE;
 		} else
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
@@ -2797,39 +2797,39 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role) {
-			lll->slave.window_widening_prepare_us -=
-				lll->slave.window_widening_periodic_us *
+			lll->periph.window_widening_prepare_us -=
+				lll->periph.window_widening_periodic_us *
 				instant_latency;
 
-			lll->slave.window_widening_periodic_us =
+			lll->periph.window_widening_periodic_us =
 				(((lll_clock_ppm_local_get() +
-				   lll_clock_ppm_get(conn->slave.sca)) *
+				   lll_clock_ppm_get(conn->periph.sca)) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000U;
-			lll->slave.window_widening_max_us =
+			lll->periph.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
-			lll->slave.window_size_prepare_us =
+			lll->periph.window_size_prepare_us =
 				conn->llcp_cu.win_size * CONN_INT_UNIT_US;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-			conn->slave.ticks_to_offset = 0U;
+			conn->periph.ticks_to_offset = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-			lll->slave.window_widening_prepare_us +=
-				lll->slave.window_widening_periodic_us *
+			lll->periph.window_widening_prepare_us +=
+				lll->periph.window_widening_periodic_us *
 				latency;
-			if (lll->slave.window_widening_prepare_us >
-			    lll->slave.window_widening_max_us) {
-				lll->slave.window_widening_prepare_us =
-					lll->slave.window_widening_max_us;
+			if (lll->periph.window_widening_prepare_us >
+			    lll->periph.window_widening_max_us) {
+				lll->periph.window_widening_prepare_us =
+					lll->periph.window_widening_max_us;
 			}
 
 			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
-				lll->slave.window_widening_periodic_us *
+				lll->periph.window_widening_periodic_us *
 				latency);
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
 				(conn->llcp_cu.win_offset_us /
 				CONN_INT_UNIT_US) * CONN_INT_UNIT_US);
-			periodic_us -= lll->slave.window_widening_periodic_us;
+			periodic_us -= lll->periph.window_widening_periodic_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -2885,7 +2885,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			      0);
 #endif
 
-		/* start slave/master with new timings */
+		/* start peripheral/central with new timings */
 		ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 		ticker_status =	ticker_stop(TICKER_INSTANCE_ID_CTLR,
 					    TICKER_USER_ID_ULL_HIGH,
@@ -2909,12 +2909,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				     (ticks_slot_overhead +
 				      conn->ull.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
-				     lll->role ? ull_slave_ticker_cb :
-						 ull_master_ticker_cb,
+				     lll->role ? ull_periph_ticker_cb :
+						 ull_central_ticker_cb,
 #elif defined(CONFIG_BT_PERIPHERAL)
-				     ull_slave_ticker_cb,
+				     ull_periph_ticker_cb,
 #else
-				     ull_master_ticker_cb,
+				     ull_central_ticker_cb,
 #endif
 				     conn, ticker_start_conn_op_cb,
 				     (void *)conn);
@@ -2974,12 +2974,12 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 		struct lll_conn *lll = &conn->lll;
 
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
-		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+		if (conn->lll.role && (conn->periph.llcp_type != LLCP_NONE)) {
 			/* Local peripheral initiated channel map update
 			 * completed while a remote central had initiated
 			 * encryption procedure
 			 */
-			conn->slave.llcp_type = LLCP_NONE;
+			conn->periph.llcp_type = LLCP_NONE;
 		} else
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
@@ -3095,7 +3095,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 
 	pdu_ctrl_tx = (void *)tx->pdu;
 
-	/* master sends encrypted enc start rsp in control priority */
+	/* central sends encrypted enc start rsp in control priority */
 	if (!lll->role) {
 		/* calc the Session Key */
 		ecb_encrypt(&conn->llcp_enc.ltk[0],
@@ -3114,8 +3114,8 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		lll->ccm_rx.counter = 0;
 		lll->ccm_tx.counter = 0;
 
-		/* set direction: slave to master = 0,
-		 * master to slave = 1
+		/* set direction: peripheral to central = 0,
+		 * central to peripheral = 1
 		 */
 		lll->ccm_rx.direction = 0;
 		lll->ccm_tx.direction = 1;
@@ -3129,7 +3129,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		ctrl_tx_enqueue(conn, tx);
 	}
 
-	/* slave send reject ind or start enc req at control priority */
+	/* peripheral send reject ind or start enc req at control priority */
 
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 	else {
@@ -3168,14 +3168,14 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			lll->ccm_rx.counter = 0U;
 			lll->ccm_tx.counter = 0U;
 
-			/* set direction: slave to master = 0,
-			 * master to slave = 1
+			/* set direction: peripheral to central = 0,
+			 * central to peripheral = 1
 			 */
 			lll->ccm_rx.direction = 1U;
 			lll->ccm_tx.direction = 0U;
 
 			/* enable receive encryption (transmit turned
-			 * on when start enc resp from master is
+			 * on when start enc resp from central is
 			 * received)
 			 */
 			lll->enc_rx = 1U;
@@ -3260,7 +3260,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 			   sizeof(struct pdu_data_llctrl_feature_req);
 		pdu->llctrl.opcode = !conn->lll.role ?
 				     PDU_DATA_LLCTRL_TYPE_FEATURE_REQ :
-				     PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+				     PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG;
 		(void)memset(&pdu->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
@@ -3459,7 +3459,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 			return;
 		}
 
-		/* master/slave response with reject ext ind */
+		/* central/peripheral response with reject ext ind */
 		pdu = (void *)tx->pdu;
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -3481,7 +3481,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		return;
 	}
 
-	/* master respond with connection update */
+	/* central respond with connection update */
 	if (!conn->lll.role) {
 		uint16_t interval_max;
 		uint8_t preferred_periodicity;
@@ -3520,7 +3520,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		return;
 	}
 
-	/* slave response with connection parameter response */
+	/* peripheral response with connection parameter response */
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (!tx) {
 		return;
@@ -4170,11 +4170,11 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		}
 
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
-		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+		if (conn->lll.role && (conn->periph.llcp_type != LLCP_NONE)) {
 			/* Local peripheral initiated PHY update completed while
 			 * a remote central had initiated encryption procedure
 			 */
-			conn->slave.llcp_type = LLCP_NONE;
+			conn->periph.llcp_type = LLCP_NONE;
 		} else
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
@@ -4334,8 +4334,8 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	}
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	/* Set CPR mutex, if only not already set. As a master the mutex shall
-	 * be set, but a slave we accept it as new 'set' of mutex.
+	/* Set CPR mutex, if only not already set. As a central the mutex shall
+	 * be set, but a peripheral we accept it as new 'set' of mutex.
 	 */
 	cpr_active_check_and_set(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -4488,7 +4488,7 @@ static int enc_rsp_send(struct ll_conn *conn)
 			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
 			   sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
 
-	/* things from slave stored for session key calculation */
+	/* things from peripheral stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],
 	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
 	memcpy(&conn->lll.ccm_rx.iv[4],
@@ -4619,7 +4619,7 @@ static inline uint64_t feat_land_octet0(uint64_t feat_to_keep,
 }
 
 #if defined(CONFIG_BT_PERIPHERAL) || \
-	(defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ))
+	(defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG))
 static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 			    struct pdu_data *pdu_rx)
 {
@@ -4672,9 +4672,9 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	return 0;
 }
-#endif /* PERIPHERAL || (CENTRAL && SLAVE_FEAT_REQ) */
+#endif /* PERIPHERAL || (CENTRAL && PER_INIT_FEAT_XCHG) */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_feature_rsp *rsp;
@@ -4698,7 +4698,7 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	conn->llcp_feature.ack = conn->llcp_feature.req;
 	conn->procedure_expire = 0U;
 }
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static int pause_enc_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
@@ -4874,7 +4874,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* update to next ticks offset */
 		if (lll->role) {
-			conn->slave.ticks_to_offset =
+			conn->periph.ticks_to_offset =
 			    conn->llcp_conn_param.ticks_to_offset_next;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -5460,7 +5460,7 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		return err;
 	}
 
-	/* Wait for peer master to complete the procedure */
+	/* Wait for peer central to complete the procedure */
 	conn->llcp_phy.state = LLCP_PHY_STATE_RSP_WAIT;
 	if (conn->llcp_phy.ack ==
 	    conn->llcp_phy.req) {
@@ -5795,7 +5795,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		/* things from master stored for session key calculation */
+		/* things from central stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
 		       &pdu_tx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[0],
@@ -6101,8 +6101,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp_ack += 2U;
 
 			/* Store the local peripheral initiated procedure */
-			LL_ASSERT(conn->slave.llcp_type == LLCP_NONE);
-			conn->slave.llcp_type = conn->llcp_type;
+			LL_ASSERT(conn->periph.llcp_type == LLCP_NONE);
+			conn->periph.llcp_type = conn->llcp_type;
 		}
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -6125,7 +6125,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_enc.ediv[0] = pdu_rx->llctrl.enc_req.ediv[0];
 		conn->llcp_enc.ediv[1] = pdu_rx->llctrl.enc_req.ediv[1];
 
-		/* Enc rsp to be scheduled in master prepare */
+		/* Enc rsp to be scheduled in central prepare */
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 		/* Mark for buffer for release */
@@ -6136,7 +6136,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_type = LLCP_ENCRYPTION;
 		conn->llcp_ack -= 2U;
 
-		/* things from master stored for session key calculation */
+		/* things from central stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
 		       &pdu_rx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[0],
@@ -6160,7 +6160,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
-		/* things sent by slave stored for session key calculation */
+		/* things sent by peripheral stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[8],
 		       &pdu_rx->llctrl.enc_rsp.skds[0], 8);
 		memcpy(&conn->lll.ccm_rx.iv[4],
@@ -6181,7 +6181,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
-		/* start enc rsp to be scheduled in master prepare */
+		/* start enc rsp to be scheduled in central prepare */
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 		/* Mark for buffer for release */
@@ -6199,7 +6199,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		if (conn->lll.role) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			/* start enc rsp to be scheduled in slave prepare */
+			/* start enc rsp to be scheduled in peripheral prepare */
 			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 #else /* CONFIG_BT_CTLR_FAST_ENC */
@@ -6242,20 +6242,20 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
+	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 		if (conn->lll.role ||
-		    PDU_DATA_LLCTRL_LEN(slave_feature_req) != pdu_rx->len) {
+		    PDU_DATA_LLCTRL_LEN(per_init_feat_xchg) != pdu_rx->len) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
-		if ((!IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
+		if ((!IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) &&
 		     conn->lll.role) ||
 		    PDU_DATA_LLCTRL_LEN(feature_rsp) != pdu_rx->len) {
 			goto ull_conn_rx_unknown_rsp_send;
@@ -6263,7 +6263,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		feature_rsp_recv(conn, pdu_rx);
 		break;
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #if defined(CONFIG_BT_PERIPHERAL)

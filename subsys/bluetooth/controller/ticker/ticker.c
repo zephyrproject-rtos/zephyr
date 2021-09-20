@@ -55,7 +55,7 @@ struct ticker_node {
 					     * skipping
 					     */
 	uint16_t lazy_current;		    /* Current number of timeouts
-					     * skipped = slave latency
+					     * skipped = peripheral latency
 					     */
 	union {
 		uint32_t remainder_periodic;/* Sub-microsecond tick remainder
@@ -151,7 +151,7 @@ struct ticker_user_op_update {
 					 * slot reservation (air-time)
 					 */
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-	uint16_t lazy;			/* Slave latency:
+	uint16_t lazy;			/* Peripheral latency:
 					 *  0: Do nothing
 					 *  1: latency = 0
 					 * >1: latency = lazy - 1

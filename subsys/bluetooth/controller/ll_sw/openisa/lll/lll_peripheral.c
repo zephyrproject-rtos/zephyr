@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
+#include <stdbool.h>
 
 #include <toolchain.h>
-
+#include <zephyr/types.h>
 #include <sys/util.h>
 
 #include "hal/ccm.h"
@@ -20,16 +20,14 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
-#include "lll_clock.h"
 #include "lll_conn.h"
-#include "lll_slave.h"
+#include "lll_peripheral.h"
 #include "lll_chan.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_slave
+#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_periph
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -37,7 +35,7 @@
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 
-int lll_slave_init(void)
+int lll_periph_init(void)
 {
 	int err;
 
@@ -49,7 +47,7 @@ int lll_slave_init(void)
 	return 0;
 }
 
-int lll_slave_reset(void)
+int lll_periph_reset(void)
 {
 	int err;
 
@@ -61,26 +59,26 @@ int lll_slave_reset(void)
 	return 0;
 }
 
-void lll_slave_prepare(void *param)
+void lll_periph_prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_conn *lll;
 	int err;
 
-	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	err = lll_clk_on();
+	LL_ASSERT(!err || err == -EINPROGRESS);
 
 	p = param;
 
 	lll = p->param;
 
 	/* Accumulate window widening */
-	lll->slave.window_widening_prepare_us +=
-	    lll->slave.window_widening_periodic_us * (p->lazy + 1);
-	if (lll->slave.window_widening_prepare_us >
-	    lll->slave.window_widening_max_us) {
-		lll->slave.window_widening_prepare_us =
-			lll->slave.window_widening_max_us;
+	lll->periph.window_widening_prepare_us +=
+	    lll->periph.window_widening_periodic_us * (p->lazy + 1);
+	if (lll->periph.window_widening_prepare_us >
+	    lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_prepare_us =
+			lll->periph.window_widening_max_us;
 	}
 
 	/* Invoke common pipeline handling of prepare */
@@ -108,15 +106,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_S(1);
 
 	lll = p->param;
-
-	/* Check if stopped (on disconnection between prepare and pre-empt)
-	 */
-	if (unlikely(lll->handle == 0xFFFF)) {
-		radio_isr_set(lll_isr_early_abort, lll);
-		radio_disable();
-
-		return 0;
-	}
 
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
@@ -151,45 +140,24 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* current window widening */
-	lll->slave.window_widening_event_us +=
-		lll->slave.window_widening_prepare_us;
-	lll->slave.window_widening_prepare_us = 0;
-	if (lll->slave.window_widening_event_us >
-	    lll->slave.window_widening_max_us) {
-		lll->slave.window_widening_event_us =
-			lll->slave.window_widening_max_us;
+	lll->periph.window_widening_event_us +=
+		lll->periph.window_widening_prepare_us;
+	lll->periph.window_widening_prepare_us = 0;
+	if (lll->periph.window_widening_event_us >
+	    lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_event_us =
+			lll->periph.window_widening_max_us;
 	}
 
 	/* current window size */
-	lll->slave.window_size_event_us +=
-		lll->slave.window_size_prepare_us;
-	lll->slave.window_size_prepare_us = 0;
-
-	/* Ensure that empty flag reflects the state of the Tx queue, as a
-	 * peripheral if this is the first connection event and as no prior PDU
-	 * is transmitted, an incorrect acknowledgment by peer should not
-	 * dequeue a PDU that has not been transmitted on air.
-	 */
-	if (!lll->empty) {
-		memq_link_t *link;
-
-		/* Check for any Tx PDU at the head of the queue */
-		link = memq_peek(lll->memq_tx.head, lll->memq_tx.tail, NULL);
-		if (!link) {
-			/* Update empty flag to reflect that no valid non-empty
-			 * PDU was transmitted prior to this connection event.
-			 */
-			lll->empty = 1U;
-		}
-	}
+	lll->periph.window_size_event_us +=
+		lll->periph.window_size_prepare_us;
+	lll->periph.window_size_prepare_us = 0;
 
 	/* Start setting up Radio h/w */
 	radio_reset();
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
-#else
+	/* TODO: other Tx Power settings */
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	lll_conn_rx_pkt_set(lll);
 
@@ -225,10 +193,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tmr_aa_capture();
 	radio_tmr_aa_save(0);
 
-	hcto = remainder_us +
-	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
-		 lll->slave.window_widening_event_us) << 1) +
-	       lll->slave.window_size_event_us;
+	hcto = remainder_us + EVENT_JITTER_US + (EVENT_JITTER_US << 2) +
+	       (lll->periph.window_widening_event_us << 1) +
+	       lll->periph.window_size_event_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy_rx, 1);
@@ -270,7 +237,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* check if preempt to start has changed */
 	if (lll_preempt_calc(ull, (TICKER_ID_CONN_BASE + lll->handle),
 			     ticks_at_event)) {
-		radio_isr_set(lll_isr_abort, lll);
+		radio_isr_set(lll_conn_isr_abort, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */

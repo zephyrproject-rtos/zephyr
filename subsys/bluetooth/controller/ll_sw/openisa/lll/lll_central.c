@@ -21,13 +21,13 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_conn.h"
-#include "lll_master.h"
+#include "lll_central.h"
 #include "lll_chan.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_master
+#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_central
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -35,7 +35,7 @@
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 
-int lll_master_init(void)
+int lll_central_init(void)
 {
 	int err;
 
@@ -47,7 +47,7 @@ int lll_master_init(void)
 	return 0;
 }
 
-int lll_master_reset(void)
+int lll_central_reset(void)
 {
 	int err;
 
@@ -59,7 +59,7 @@ int lll_master_reset(void)
 	return 0;
 }
 
-void lll_master_prepare(void *param)
+void lll_central_prepare(void *param)
 {
 	int err;
 
