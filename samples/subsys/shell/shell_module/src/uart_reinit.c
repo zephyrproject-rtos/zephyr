@@ -16,7 +16,9 @@ void shell_init_from_work(struct k_work *work)
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
 
-	shell_init(shell_backend_uart_get_ptr(), dev, true, log_backend, level);
+	shell_init(shell_backend_uart_get_ptr(), dev,
+		   shell_backend_uart_get_ptr()->ctx->cfg.flags,
+		   log_backend, level);
 }
 
 static void shell_reinit_trigger(void)
