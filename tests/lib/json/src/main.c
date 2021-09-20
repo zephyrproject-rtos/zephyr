@@ -232,7 +232,7 @@ static void test_json_decoding(void)
 static void test_json_limits(void) 
 {
 	int ret = 0;
-	char encoded[] = "{	\"int_max\": 2147483647,"
+	char encoded[] = "{\"int_max\": 2147483647,"
 			 "\"int_min\": -2147483648"
 			 /* "	\"uint_min\": 4294967295" */
 			 "}";
