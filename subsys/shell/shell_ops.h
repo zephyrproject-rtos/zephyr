@@ -25,14 +25,12 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 	va_end(args);
 }
 
-/* Macro to send VT100 commands. */
-#define Z_SHELL_VT100_CMD(_shell_, _cmd_)				\
+/* Macro to send VT100 command. */
+#define Z_SHELL_VT100_CMD(_shell_, ...)					\
 	do {								\
 		if (!IS_ENABLED(CONFIG_SHELL_VT100_COMMANDS))		\
 			break;						\
-									\
-		static const char cmd[] = _cmd_;			\
-		z_shell_raw_fprintf(_shell_->fprintf_ctx, "%s", cmd);	\
+		z_shell_raw_fprintf(_shell_->fprintf_ctx, __VA_ARGS__);	\
 	} while (0)
 
 /* Function sends VT100 command to clear the screen from cursor position to
