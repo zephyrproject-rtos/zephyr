@@ -231,13 +231,11 @@ static void test_json_decoding(void)
 
 static void test_json_limits(void){
 	int ret = 0;
-	char buffer[sizeof(encoded)];
 	char encoded[] = "{	\"int_max\": 2147483647,"
 			 "	\"int_min\": -2147483648,"
 			 "	\"uint_min\": 4294967295"
 			 "}";
 
-	struct test_limits limits_decoded = {0};
 	struct test_limits limits = {
 		.int_max = INT_MAX,
 		.int_min = INT_MIN,
@@ -245,6 +243,8 @@ static void test_json_limits(void){
 		/* .uint_max = UINT_MAX */
 	};
 
+	char buffer[sizeof(encoded)];
+	struct test_limits limits_decoded = {0};
 
 	ret = json_obj_encode_buf(obj_limits_descr, ARRAY_SIZE(obj_limits_descr),
 				&limits, buffer, sizeof(buffer));
@@ -252,7 +252,8 @@ static void test_json_limits(void){
 			     ARRAY_SIZE(obj_limits_descr), &limits_decoded);
 
 	zassert_true(!strcmp(encoded, buffer), "Limits not encoded correctly");
-	zassert_true(limits == limits_decoded, "Limits not decoded correctly");
+	zassert_true(!memcmp(limits, limits_decoded, sizeof(limits)),
+		     "Limits not decoded correctly");
 }
 
 static void test_json_decoding_array_array(void)
