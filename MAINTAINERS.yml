@@ -1371,7 +1371,7 @@ Intel Platforms (Xtensa):
 NXP Platforms:
   status: maintained
   maintainers:
-    - dleach2
+    - dleach02
   collaborators:
     - mmahadevan108
   files:
