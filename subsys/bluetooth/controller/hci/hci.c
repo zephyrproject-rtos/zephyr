@@ -5196,6 +5196,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t sec_phy = 0U;
 	uint8_t data_max_len;
 	uint8_t rl_idx = 0U;
+	bool direct = false;
 	int8_t rssi;
 
 	/* NOTE: This function uses a lot of initializers before the check and
@@ -5231,12 +5232,16 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		uint8_t hdr_len;
 		uint8_t *ptr;
 
-		/* The Link Layer currently returns RSSI as an absolute value */
-		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+		bool direct_curr = node_rx_curr->hdr.rx_ftr.direct;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		uint8_t rl_idx_curr = node_rx_curr->hdr.rx_ftr.rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		/* The Link Layer currently returns RSSI as an absolute value */
+		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
 
 		BT_DBG("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u,"
 		       " rssi=%d dB", phy, adv->type, adv->len, adv->tx_addr,
@@ -5393,6 +5398,9 @@ no_ext_hdr:
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+			direct = direct_curr;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 		} else {
 			/* TODO: Validate current value with previous */
 
@@ -5429,11 +5437,18 @@ no_ext_hdr:
 				 * fragment.
 				 */
 			}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			if (rl_idx >= ll_rl_size_get()) {
 				rl_idx = rl_idx_curr;
 			}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+			if (!direct) {
+				direct = direct_curr;
+			}
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 		}
 
 		if (!node_rx_next) {

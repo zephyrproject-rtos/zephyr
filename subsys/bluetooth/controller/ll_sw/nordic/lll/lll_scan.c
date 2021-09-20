@@ -171,7 +171,8 @@ bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
-			     struct pdu_adv *pdu, uint8_t rl_idx)
+			     struct pdu_adv *pdu, uint8_t rl_idx,
+			     bool *dir_report)
 {
 	uint8_t is_directed;
 	uint8_t tx_addr;
@@ -206,7 +207,7 @@ bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
 		((!is_directed) ||
 		 (is_directed &&
 		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
-				      NULL))));
+				      dir_report))));
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1364,7 +1365,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
 		   lll->phy && lll_scan_ext_tgta_check(lll, true, false,
-						       pdu_adv_rx, rl_idx)) ||
+						       pdu_adv_rx, rl_idx,
+						       &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_scan_rsp)) &&
