@@ -614,8 +614,8 @@ struct pdu_data_llctrl_phy_rsp {
 } __packed;
 
 struct pdu_data_llctrl_phy_upd_ind {
-	uint8_t  m_to_s_phy;
-	uint8_t  s_to_m_phy;
+	uint8_t  c_to_p_phy;
+	uint8_t  p_to_c_phy;
 	uint16_t instant;
 } __packed;
 

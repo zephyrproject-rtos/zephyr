@@ -4143,8 +4143,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		pdu_ctrl_tx->llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 		ind = &pdu_ctrl_tx->llctrl.phy_upd_ind;
-		ind->m_to_s_phy = conn->llcp.phy_upd_ind.tx;
-		ind->s_to_m_phy = conn->llcp.phy_upd_ind.rx;
+		ind->c_to_p_phy = conn->llcp.phy_upd_ind.tx;
+		ind->p_to_c_phy = conn->llcp.phy_upd_ind.rx;
 		ind->instant = sys_cpu_to_le16(conn->llcp.phy_upd_ind.instant);
 
 		ctrl_tx_enqueue(conn, tx);
@@ -5510,7 +5510,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	uint8_t phy;
 
 	/* Both tx and rx PHY unchanged */
-	if (!((ind->m_to_s_phy | ind->s_to_m_phy) & 0x07)) {
+	if (!((ind->c_to_p_phy | ind->p_to_c_phy) & 0x07)) {
 		struct node_rx_pu *p;
 
 		/* Not in PHY Update Procedure or PDU in wrong state */
@@ -5550,14 +5550,14 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	}
 
 	/* Fail on multiple PHY specified */
-	phy = ind->m_to_s_phy;
+	phy = ind->c_to_p_phy;
 	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_INVALID_LL_PARAM;
 	}
-	phy = ind->s_to_m_phy;
+	phy = ind->p_to_c_phy;
 	if (util_ones_count_get(&phy, sizeof(phy)) > 1U) {
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -5592,8 +5592,8 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
 	}
 
-	conn->llcp.phy_upd_ind.tx = ind->s_to_m_phy;
-	conn->llcp.phy_upd_ind.rx = ind->m_to_s_phy;
+	conn->llcp.phy_upd_ind.tx = ind->p_to_c_phy;
+	conn->llcp.phy_upd_ind.rx = ind->c_to_p_phy;
 	conn->llcp.phy_upd_ind.instant = instant;
 	conn->llcp.phy_upd_ind.initiate = 0U;
 
