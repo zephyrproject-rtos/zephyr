@@ -229,7 +229,8 @@ static void test_json_decoding(void)
 		     "Named nested string decoded correctly");
 }
 
-static void test_json_limits(void){
+static void test_json_limits(void) 
+{
 	int ret = 0;
 	char encoded[] = "{	\"int_max\": 2147483647,"
 			 "	\"int_min\": -2147483648,"
