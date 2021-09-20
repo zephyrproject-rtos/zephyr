@@ -65,17 +65,17 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			break;
 		}
 
-		/* Merge this fragment with the next if we have a buffer, this
-		 * isn't the last fragment, it doesn't end a bus transaction,
-		 * the next one doesn't start a bus transaction, and the
-		 * direction of the next fragment is the same as this one.
+		/* This fragment needs to be merged with the next one if:
+		 * - it is not the last fragment
+		 * - it does not end a bus transaction
+		 * - the next fragment does not start a bus transaction
+		 * - the direction of the next fragment is the same as this one
 		 */
-		bool concat_next = (concat_buf_size > 0)
-			&& ((i + 1) < num_msgs)
-			&& !(msgs[i].flags & I2C_MSG_STOP)
-			&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
-			&& ((msgs[i].flags & I2C_MSG_READ)
-			    == (msgs[i + 1].flags & I2C_MSG_READ));
+		bool concat_next = ((i + 1) < num_msgs)
+				&& !(msgs[i].flags & I2C_MSG_STOP)
+				&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
+				&& ((msgs[i].flags & I2C_MSG_READ)
+				    == (msgs[i + 1].flags & I2C_MSG_READ));
 
 		/* If we need to concatenate the next message, or we've
 		 * already committed to concatenate this message, add it to
@@ -83,8 +83,13 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 */
 		if (concat_next || (concat_len != 0)) {
 			if ((concat_len + msgs[i].len) > concat_buf_size) {
-				LOG_ERR("concat-buf overflow: %u + %u > %u",
-					concat_len, msgs[i].len, concat_buf_size);
+				LOG_ERR("Need to use concatenation buffer and "
+					"provided size is insufficient "
+					"(%u + %u > %u). "
+					"Adjust the zephyr,concat-buf-size "
+					"property in the \"%s\" node.",
+					concat_len, msgs[i].len,
+					concat_buf_size, dev->name);
 				ret = -ENOSPC;
 				break;
 			}
