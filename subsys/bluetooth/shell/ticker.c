@@ -34,7 +34,7 @@ static void ticker_op_done(uint32_t err, void *context)
 	*((uint32_t volatile *)context) = err;
 }
 
-int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
+int cmd_ticker_info(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct {
 		uint8_t id;
@@ -71,7 +71,7 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 
 		if ((err_cb != TICKER_STATUS_SUCCESS) ||
 		    (ticker_id == TICKER_NULL)) {
-			shell_print(shell, "Query done (0x%02x, err= %u).",
+			shell_print(sh, "Query done (0x%02x, err= %u).",
 				    ticker_id, err);
 
 			break;
@@ -80,7 +80,7 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 		if (ticks_current != ticks_previous) {
 			retry--;
 			if (!retry) {
-				shell_print(shell, "Retry again, tickers too "
+				shell_print(sh, "Retry again, tickers too "
 					    "busy now.");
 
 				return -EAGAIN;
@@ -89,7 +89,7 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 			if (tickers_count) {
 				tickers_count = 0U;
 
-				shell_print(shell, "Query reset, %u retries "
+				shell_print(sh, "Query reset, %u retries "
 					    "remaining.", retry);
 			}
 		}
@@ -100,24 +100,24 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 
 	} while (tickers_count < TICKERS_MAX);
 
-	shell_print(shell, "Tickers: %u.", tickers_count);
-	shell_print(shell, "Tick: %u (%uus).", ticks_current,
+	shell_print(sh, "Tickers: %u.", tickers_count);
+	shell_print(sh, "Tick: %u (%uus).", ticks_current,
 	       HAL_TICKER_TICKS_TO_US(ticks_current));
 
 	if (!tickers_count) {
 		return 0;
 	}
 
-	shell_print(shell, "---------------------");
-	shell_print(shell, " id   offset   offset");
-	shell_print(shell, "      (tick)     (us)");
-	shell_print(shell, "---------------------");
+	shell_print(sh, "---------------------");
+	shell_print(sh, " id   offset   offset");
+	shell_print(sh, "      (tick)     (us)");
+	shell_print(sh, "---------------------");
 	for (i = 0U; i < tickers_count; i++) {
-		shell_print(shell, "%03u %08u %08u", tickers[i].id,
+		shell_print(sh, "%03u %08u %08u", tickers[i].id,
 		       tickers[i].ticks_to_expire,
 		       HAL_TICKER_TICKS_TO_US(tickers[i].ticks_to_expire));
 	}
-	shell_print(shell, "---------------------");
+	shell_print(sh, "---------------------");
 
 	return 0;
 }
@@ -129,15 +129,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ticker_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_ticker(const struct shell *shell, size_t argc, char **argv)
+static int cmd_ticker(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help(shell);
+		shell_help(sh);
 		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
-	shell_error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	shell_error(sh, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
 	return -ENOEXEC;
 }
 
