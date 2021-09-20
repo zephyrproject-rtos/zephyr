@@ -21,8 +21,12 @@ uint32_t sysview_get_timestamp(void)
 uint32_t sysview_get_interrupt(void)
 {
 #ifdef CONFIG_CPU_CORTEX_M
+	/* As per Cortex-M3 Devices Generic User Guide, we need to subtract 16 from
+	   the VECTACTIVE field of the ICSR regiester in order to obtain the CMSIS
+	   IRQ number.
+	*/
 	interrupt = ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) >>
-		     SCB_ICSR_VECTACTIVE_Pos);
+		     SCB_ICSR_VECTACTIVE_Pos) - 16;
 #endif
 	return interrupt;
 }
