@@ -106,7 +106,8 @@ kobjects = OrderedDict([
     ("net_if", (None, False, False)),
     ("sys_mutex", (None, True, False)),
     ("k_futex", (None, True, False)),
-    ("k_condvar", (None, False, True))
+    ("k_condvar", (None, False, True)),
+    ("k_event", ("CONFIG_EVENTS", False, True))
 ])
 
 def kobject_to_enum(kobj):

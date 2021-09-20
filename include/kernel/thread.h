@@ -215,6 +215,13 @@ struct k_thread {
 	struct z_poller poller;
 #endif
 
+#if defined(CONFIG_EVENTS)
+	struct k_thread *next_event_link;
+
+	uint32_t   events;
+	uint32_t   event_options;
+#endif
+
 #if defined(CONFIG_THREAD_MONITOR)
 	/** thread entry and parameters description */
 	struct __thread_entry entry;
