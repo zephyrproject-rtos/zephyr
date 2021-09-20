@@ -1924,6 +1924,65 @@
  * @}
  */ /* end of timer_tracing_apis */
 
+/**
+ * @brief Event Tracing APIs
+ * @defgroup event_tracing_apis Event Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialisation of an Event
+ * @param event Event object
+ */
+#define sys_port_trace_k_event_init(event)
+
+/**
+ * @brief Trace posting of an Event call entry
+ * @param event Event object
+ * @param events Set of posted events
+ * @param accumulate True if events accumulate, false otherwise
+ */
+#define sys_port_trace_k_event_post_enter(event, events, accumulate)
+
+/**
+ * @brief Trace posting of an Event call exit
+ * @param event Event object
+ * @param events Set of posted events
+ * @param accumulate True if events accumulate, false otherwise
+ */
+#define sys_port_trace_k_event_post_exit(event, events, accumulate)
+
+/**
+ * @brief Trace waiting of an Event call entry
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param options Event wait options
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)
+
+/**
+ * @brief Trace waiting of an Event call exit
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param options Event wait options
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout)
+
+/**
+ * @brief Trace waiting of an Event call exit
+ * @param event Event object
+ * @param events Set of events for which to wait
+ * @param ret Set of received events
+ */
+#define sys_port_trace_k_event_wait_exit(event, events, ret)
+
+/**
+ * @}
+ */ /* end of event_tracing_apis */
+
 #define sys_port_trace_pm_system_suspend_enter(ticks)
 
 #define sys_port_trace_pm_system_suspend_exit(ticks, ret)
