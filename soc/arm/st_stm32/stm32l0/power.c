@@ -85,6 +85,8 @@ static int stm32_power_init(const struct device *dev)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
 #ifdef CONFIG_DEBUG
+#error "Enabling DBGMCU Sleep/Stop/Standby on STM32L0 causes Hardfault.\
+		See #37119"
 	/* Enable the Debug Module during STOP mode */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 	LL_DBGMCU_EnableDBGStopMode();

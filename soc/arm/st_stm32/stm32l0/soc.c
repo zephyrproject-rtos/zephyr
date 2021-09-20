@@ -52,6 +52,15 @@ static int stm32l0_init(const struct device *arg)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 
+	/* Enabling DBGMCU bits Sleep/Stop/Standby on STM32L0 causes Hardfault.
+	 * See #37119
+	 * As a workaround, force those bits to 0
+	 */
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+	MODIFY_REG(DBGMCU->CR, DBGMCU_CR_DBG_SLEEP |
+						   DBGMCU_CR_DBG_STOP |
+						   DBGMCU_CR_DBG_STANDBY, 0U);
+
 	return 0;
 }
 
