@@ -39,6 +39,13 @@ struct obj_array {
 	size_t num_elements;
 };
 
+struct test_limits{
+	int int_max;
+	int int_min;
+	unsigned int uint_max;
+
+};
+
 static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
@@ -73,6 +80,12 @@ static const struct json_obj_descr elt_descr[] = {
 static const struct json_obj_descr obj_array_descr[] = {
 	JSON_OBJ_DESCR_OBJ_ARRAY(struct obj_array, elements, 10, num_elements,
 				 elt_descr, ARRAY_SIZE(elt_descr)),
+};
+
+static const struct json_obj_descr obj_limits_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
+	// JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER),
 };
 
 
@@ -214,6 +227,32 @@ static void test_json_decoding(void)
 	zassert_true(!strcmp(ts.xnother_nexx.nested_string,
 			     "no escape necessary"),
 		     "Named nested string decoded correctly");
+}
+
+static void test_json_limits(void){
+	int ret = 0;
+	char buffer[sizeof(encoded)];
+	char encoded[] = "{	\"int_max\": 2147483647,"
+			 "	\"int_min\": -2147483648,"
+			 "	\"uint_min\": 4294967295"
+			 "}";
+
+	struct test_limits limits_decoded = {0};
+	struct test_limits limits = {
+		.int_max = INT_MAX,
+		.int_min = INT_MIN,
+		.uint_max = 0U
+		// .uint_max = UINT_MAX
+	};
+
+
+	ret = json_obj_encode_buf(obj_limits_descr, ARRAY_SIZE(obj_limits_descr),
+				&limits, buffer, sizeof(buffer));
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, obj_limits_descr,
+			     ARRAY_SIZE(obj_limits_descr), &limits_decoded)
+
+	zassert_true(!strcmp(encoded, buffer), "Limits not encoded correctly");
+	zassert_true( limits == limits_decoded, "Limits not decoded correctly");
 }
 
 static void test_json_decoding_array_array(void)
