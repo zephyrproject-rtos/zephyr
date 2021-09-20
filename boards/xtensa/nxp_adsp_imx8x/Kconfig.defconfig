@@ -1,0 +1,18 @@
+# Copyright (c) 2021 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NXP_ADSP_IMX8X
+
+config BOARD
+	default "nxp_adsp_imx8x"
+
+config DUMMY_DMA
+	default y
+	depends on DMA
+
+config IMX_EDMA
+	default y
+	depends on DMA
+
+endif # BOARD_NXP_ADSP_IMX8X
