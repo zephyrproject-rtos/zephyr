@@ -79,6 +79,7 @@ struct k_poll_signal;
 struct k_mem_domain;
 struct k_mem_partition;
 struct k_futex;
+struct k_event;
 
 enum execution_context_types {
 	K_ISR = 0,
@@ -2012,6 +2013,142 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
 
 /** @} */
 #endif
+
+/**
+ * @defgroup event_apis Event APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * Event Structure
+ * @ingroup event_apis
+ */
+
+struct k_event {
+	_wait_q_t         wait_q;
+	uint32_t          events;
+	struct k_spinlock lock;
+};
+
+#define Z_EVENT_INITIALIZER(obj) \
+	{ \
+	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.events = 0 \
+	}
+/**
+ * @brief Initialize an event object
+ *
+ * This routine initializes an event object, prior to its first use.
+ *
+ * @param event Address of the event object.
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_init(struct k_event *event);
+
+/**
+ * @brief Post one or more events to an event object
+ *
+ * This routine posts one or more events to an event object. All tasks waiting
+ * on the event object @a event whose waiting conditions become met by this
+ * posting immediately unpend.
+ *
+ * Posting differs from setting in that posted events are merged together with
+ * the current set of events tracked by the event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to post to @a event
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_post(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Set the events in an event object
+ *
+ * This routine sets the events stored in event object to the specified value.
+ * All tasks waiting on the event object @a event whose waiting conditions
+ * become met by this immediately unpend.
+ *
+ * Setting differs from posting in that set events replace the current set of
+ * events tracked by the event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to post to @a event
+ *
+ * @return N/A
+ */
+
+__syscall void k_event_set(struct k_event *event, uint32_t events);
+
+/**
+ * @brief Wait for any of the specified events
+ *
+ * This routine waits on event object @a event until any of the specified
+ * events have been delivered to the event object, or the maximum wait time
+ * @a timeout has expired. A thread may wait on up to 32 distinctly numbered
+ * events that are expressed as bits in a single 32-bit word.
+ *
+ * @note The caller must be careful when resetting if there are multiple threads
+ * waiting for the event object @a event.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if matching events were not received within the specified time
+ */
+
+__syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
+				bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for any of the specified events
+ *
+ * This routine waits on event object @a event until all of the specified
+ * events have been delivered to the event object, or the maximum wait time
+ * @a timeout has expired. A thread may wait on up to 32 distinctly numbered
+ * events that are expressed as bits in a single 32-bit word.
+ *
+ * @note The caller must be careful when resetting if there are multiple threads
+ * waiting for the event object @a event.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if matching events were not received within the specified time
+ */
+
+__syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
+				    bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Statically define and initialize an event object
+ *
+ * The event can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_event <name>; @endcode
+ *
+ * @param name Name of the event object.
+ */
+
+#define K_EVENT_DEFINE(name)                                   \
+	STRUCT_SECTION_ITERABLE(k_event, name) =               \
+		Z_EVENT_INITIALIZER(name);
+
+/** @} */
 
 struct k_fifo {
 	struct k_queue _queue;
