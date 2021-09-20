@@ -307,6 +307,12 @@ config TRACING_TIMER
 	help
 	  Enable tracing Timers.
 
+config TRACING_EVENT
+	bool "Enable tracing Events"
+	default y
+	help
+	  Enable tracing Events.
+
 endmenu  # Tracing Configuration
 
 endif
