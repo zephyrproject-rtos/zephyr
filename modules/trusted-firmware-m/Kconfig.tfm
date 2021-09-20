@@ -49,6 +49,13 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
+config TFM_SECURE_UART1
+	bool "Use UART1 for TF-M logging"
+	default y
+	help
+	  Reserve the UART1 port for TF-M logging. This makes the UART1
+	  peripheral unavailable to the non-secure application.
+
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
 	depends on BUILD_WITH_TFM

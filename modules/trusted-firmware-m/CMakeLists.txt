@@ -30,6 +30,11 @@ set(TFM_CRYPTO_MODULES
 
 
 if (CONFIG_BUILD_WITH_TFM)
+  if (CONFIG_TFM_SECURE_UART1)
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=ON)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=OFF)
+  endif()
   if (CONFIG_TFM_IPC)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PSA_API=ON)
     # PSA API awareness for the Non-Secure application
