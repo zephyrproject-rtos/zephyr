@@ -328,8 +328,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	 */
 	if (unlikely(lll->is_stop ||
 		     (lll->conn &&
-		      (lll->conn->master.initiated ||
-		       lll->conn->master.cancelled)))) {
+		      (lll->conn->central.initiated ||
+		       lll->conn->central.cancelled)))) {
 		radio_isr_set(lll_isr_early_abort, lll);
 		radio_disable();
 
@@ -426,7 +426,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event or extended scan to schedule auxiliary channel
+	 * central event or extended scan to schedule auxiliary channel
 	 * reception.
 	 */
 	radio_tmr_end_capture();
@@ -573,7 +573,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
-			   lll->conn && lll->conn->master.initiated) {
+			   lll->conn && lll->conn->central.initiated) {
 			while (!radio_has_disabled()) {
 				cpu_sleep();
 			}
@@ -826,7 +826,7 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 }
@@ -873,7 +873,7 @@ static void isr_window(void *param)
 #endif /* !CONFIG_BT_CENTRAL */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -1027,7 +1027,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	/* Note: connectable ADV_EXT_IND is handled as any other ADV_EXT_IND
 	 *       because we need to receive AUX_ADV_IND anyway.
 	 */
-	} else if (lll->conn && !lll->conn->master.cancelled &&
+	} else if (lll->conn && !lll->conn->central.cancelled &&
 		   (pdu_adv_rx->type != PDU_ADV_TYPE_EXT_IND) &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
@@ -1137,7 +1137,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		/* FIXME: for extended connection initiation, handle reset on
 		 *        event aborted before connect_rsp is received.
 		 */
-		lll->conn->master.initiated = 1U;
+		lll->conn->central.initiated = 1U;
 
 		/* Stop further initiating events */
 		lll->is_stop = 1U;

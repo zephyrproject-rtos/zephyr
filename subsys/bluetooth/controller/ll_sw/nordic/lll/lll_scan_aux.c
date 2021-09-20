@@ -278,8 +278,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 */
 	if (unlikely(scan_lll->is_stop ||
 		     (scan_lll->conn &&
-		      (scan_lll->conn->master.initiated ||
-		       scan_lll->conn->master.cancelled)))) {
+		      (scan_lll->conn->central.initiated ||
+		       scan_lll->conn->central.cancelled)))) {
 		radio_isr_set(isr_early_abort, lll);
 		radio_disable();
 
@@ -739,7 +739,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn && !lll->conn->master.cancelled &&
+	} else if (lll->conn && !lll->conn->central.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx)) {
@@ -879,7 +879,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		 */
 
 		/* Stop further connection initiation */
-		lll->conn->master.initiated = 1U;
+		lll->conn->central.initiated = 1U;
 
 		/* Stop further initiating events */
 		lll->is_stop = 1U;
@@ -1287,7 +1287,7 @@ static void isr_rx_connect_rsp(void *param)
 		struct node_rx_ftr *ftr;
 
 		/* Try again with connection initiation */
-		lll->conn->master.initiated = 0U;
+		lll->conn->central.initiated = 0U;
 
 		/* Dont stop initiating events on primary channels */
 		lll->is_stop = 0U;

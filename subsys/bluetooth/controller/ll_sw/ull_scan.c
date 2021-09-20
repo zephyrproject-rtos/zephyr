@@ -416,7 +416,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 					      &ticks_ref, &offset_us);
 
 		/* Use the ticks_ref as scanner's anchor if a free time space
-		 * after any master role is available (indicated by a non-zero
+		 * after any central role is available (indicated by a non-zero
 		 * offset_us value).
 		 */
 		if (offset_us) {

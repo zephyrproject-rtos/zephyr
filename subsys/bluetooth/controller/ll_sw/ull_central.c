@@ -33,7 +33,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
-#include "lll_master.h"
+#include "lll_central.h"
 #include "lll_filter.h"
 
 #include "ull_adv_types.h"
@@ -45,14 +45,14 @@
 #include "ull_chan_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_master
+#define LOG_MODULE_NAME bt_ctlr_ull_central
 #include "common/log.h"
 #include "hal/debug.h"
 
@@ -243,8 +243,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
-	conn_lll->master.initiated = 0;
-	conn_lll->master.cancelled = 0;
+	conn_lll->central.initiated = 0;
+	conn_lll->central.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -276,7 +276,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn->common.fex_valid = 0U;
 	conn->common.txn_lock = 0U;
-	conn->master.terminate_ack = 0U;
+	conn->central.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
@@ -501,13 +501,13 @@ uint8_t ll_connect_disable(void **rx)
 	if (!conn_lll) {
 		/* Scanning not associated with initiation of a connection or
 		 * connection setup already complete (was set to NULL in
-		 * ull_master_setup), but HCI event not processed by host.
+		 * ull_central_setup), but HCI event not processed by host.
 		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* Indicate to LLL that a cancellation is requested */
-	conn_lll->master.cancelled = 1U;
+	conn_lll->central.cancelled = 1U;
 	cpu_dmb();
 
 	/* Check if connection was established under race condition, i.e.
@@ -641,7 +641,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-int ull_master_reset(void)
+int ull_central_reset(void)
 {
 	int err;
 	void *rx;
@@ -679,7 +679,7 @@ int ull_master_reset(void)
 	return err;
 }
 
-void ull_master_cleanup(struct node_rx_hdr *rx_free)
+void ull_central_cleanup(struct node_rx_hdr *rx_free)
 {
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
@@ -729,7 +729,7 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 }
 
-void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		      struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
@@ -915,7 +915,7 @@ void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
-	/* Start master */
+	/* Start central */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -927,7 +927,7 @@ void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 				     TICKER_NULL_LAZY,
 				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
-				     ull_master_ticker_cb, conn, ticker_op_cb,
+				     ull_central_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
@@ -940,12 +940,12 @@ void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 #endif
 }
 
-void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			  uint32_t remainder, uint16_t lazy, uint8_t force,
 			  void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_central_prepare};
 	static struct lll_prepare_param p;
 	struct ll_conn *conn;
 	uint32_t err;
@@ -1023,7 +1023,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_M(1);
 }
 
-uint8_t ull_master_chm_update(void)
+uint8_t ull_central_chm_update(void)
 {
 	uint16_t handle;
 
