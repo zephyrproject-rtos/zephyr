@@ -726,7 +726,9 @@ Documentation:
         - "area: LoRa"
 
 "Drivers: Modem":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - rerickson1
     files:
         - drivers/modem/
     labels:
