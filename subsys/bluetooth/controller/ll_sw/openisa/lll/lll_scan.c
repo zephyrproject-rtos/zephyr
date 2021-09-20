@@ -134,7 +134,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->master.initiated)) {
+	if (unlikely(lll->conn && lll->conn->central.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -211,7 +211,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -534,7 +534,7 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 }
@@ -550,7 +550,7 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -828,7 +828,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		 */
 
 		/* Stop further LLL radio events */
-		lll->conn->master.initiated = 1;
+		lll->conn->central.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 

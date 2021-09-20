@@ -89,7 +89,7 @@ struct ll_conn {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint32_t ticks_to_offset;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-		} slave;
+		} periph;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -100,7 +100,7 @@ struct ll_conn {
 			uint8_t is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t terminate_ack:1;
-		} master;
+		} central;
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
