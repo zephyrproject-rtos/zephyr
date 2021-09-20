@@ -663,12 +663,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	 */
 	rp->commands[25] |= BIT(0) | BIT(1) | BIT(2) | BIT(4);
 
-#if defined(CONFIG_BT_CTLR_FILTER)
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	/* LE Read FAL Size, LE Clear FAL */
 	rp->commands[26] |= BIT(6) | BIT(7);
 	/* LE Add Dev to FAL, LE Remove Dev from FAL */
 	rp->commands[27] |= BIT(0) | BIT(1);
-#endif /* CONFIG_BT_CTLR_FILTER */
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 	/* LE Encrypt, LE Rand */
 	rp->commands[27] |= BIT(6) | BIT(7);
@@ -1229,7 +1229,7 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
-#if defined(CONFIG_BT_CTLR_FILTER)
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 static void le_read_fal_size(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_fal_size *rp;
@@ -1237,14 +1237,14 @@ static void le_read_fal_size(struct net_buf *buf, struct net_buf **evt)
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	rp->fal_size = ll_wl_size_get();
+	rp->fal_size = ll_fal_size_get();
 }
 
 static void le_clear_fal(struct net_buf *buf, struct net_buf **evt)
 {
 	uint8_t status;
 
-	status = ll_wl_clear();
+	status = ll_fal_clear();
 
 	*evt = cmd_complete_status(status);
 }
@@ -1254,7 +1254,7 @@ static void le_add_dev_to_fal(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_add_dev_to_fal *cmd = (void *)buf->data;
 	uint8_t status;
 
-	status = ll_wl_add(&cmd->addr);
+	status = ll_fal_add(&cmd->addr);
 
 	*evt = cmd_complete_status(status);
 }
@@ -1264,11 +1264,11 @@ static void le_rem_dev_from_fal(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_le_rem_dev_from_fal *cmd = (void *)buf->data;
 	uint8_t status;
 
-	status = ll_wl_remove(&cmd->addr);
+	status = ll_fal_remove(&cmd->addr);
 
 	*evt = cmd_complete_status(status);
 }
-#endif /* CONFIG_BT_CTLR_FILTER */
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 static void le_encrypt(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3554,7 +3554,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_random_address(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CTLR_FILTER)
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	case BT_OCF(BT_HCI_OP_LE_READ_FAL_SIZE):
 		le_read_fal_size(cmd, evt);
 		break;
@@ -3570,7 +3570,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_REM_DEV_FROM_FAL):
 		le_rem_dev_from_fal(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_FILTER */
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 	case BT_OCF(BT_HCI_OP_LE_ENCRYPT):
 		le_encrypt(cmd, evt);
