@@ -1063,10 +1063,10 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return (((lll->filter_policy & 0x01) == 0) &&
-		 (!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
-								rl_idx))) ||
-		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
+		(!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
+							       rl_idx))) ||
+	       (((lll->filter_policy & 0x01) != 0) &&
+		(devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
 #else
 	return ((lll->filter_policy & 0x01) == 0U) ||
 		devmatch_ok;
