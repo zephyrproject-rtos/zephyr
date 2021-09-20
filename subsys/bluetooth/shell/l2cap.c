@@ -236,12 +236,12 @@ static struct bt_l2cap_server server = {
 	.accept		= l2cap_accept,
 };
 
-static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_register(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *policy;
 
 	if (server.psm) {
-		shell_error(shell, "Already registered");
+		shell_error(sh, "Already registered");
 		return -ENOEXEC;
 	}
 
@@ -264,29 +264,29 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (bt_l2cap_server_register(&server) < 0) {
-		shell_error(shell, "Unable to register psm");
+		shell_error(sh, "Unable to register psm");
 		server.psm = 0U;
 		return -ENOEXEC;
 	} else {
-		shell_print(shell, "L2CAP psm %u sec_level %u registered",
+		shell_print(sh, "L2CAP psm %u sec_level %u registered",
 			    server.psm, server.sec_level);
 	}
 
 	return 0;
 }
 
-static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t psm;
 	int err;
 
 	if (!default_conn) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	if (l2ch_chan.ch.chan.conn) {
-		shell_error(shell, "Channel already in use");
+		shell_error(sh, "Channel already in use");
 		return -ENOEXEC;
 	}
 
@@ -302,28 +302,28 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
-		shell_error(shell, "Unable to connect to psm %u (err %d)", psm,
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
 			    err);
 	} else {
-		shell_print(shell, "L2CAP connection pending");
+		shell_print(sh, "L2CAP connection pending");
 	}
 
 	return err;
 }
 
-static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
 	if (err) {
-		shell_print(shell, "Unable to disconnect: %u", -err);
+		shell_print(sh, "Unable to disconnect: %u", -err);
 	}
 
 	return err;
 }
 
-static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len = DATA_MTU, count = 1;
@@ -336,7 +336,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		len = strtoul(argv[2], NULL, 10);
 		if (len > DATA_MTU) {
-			shell_print(shell,
+			shell_print(sh,
 				    "Length exceeds TX MTU for the channel");
 			return -ENOEXEC;
 		}
@@ -351,7 +351,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
 		if (ret < 0) {
-			shell_print(shell, "Unable to send: %d", -ret);
+			shell_print(sh, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -360,24 +360,24 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_recv(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_recv(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argc > 1) {
 		l2cap_recv_delay_ms = strtoul(argv[1], NULL, 10);
 	} else {
-		shell_print(shell, "l2cap receive delay: %u ms",
+		shell_print(sh, "l2cap receive delay: %u ms",
 			    l2cap_recv_delay_ms);
 	}
 
 	return 0;
 }
 
-static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_metrics(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *action;
 
 	if (argc < 2) {
-		shell_print(shell, "l2cap rate: %u bps.", l2cap_rate);
+		shell_print(sh, "l2cap rate: %u bps.", l2cap_rate);
 
 		return 0;
 	}
@@ -389,20 +389,20 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	} else if (!strcmp(action, "off")) {
 		metrics = false;
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 		return 0;
 	}
 
-	shell_print(shell, "l2cap metrics %s.", action);
+	shell_print(sh, "l2cap metrics %s.", action);
 	return 0;
 }
 
-static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_whitelist_add(const struct shell *sh, size_t argc, char *argv[])
 {
 	int i;
 
 	if (!default_conn) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return 0;
 	}
 
@@ -416,10 +416,10 @@ static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[
 	return -ENOMEM;
 }
 
-static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_whitelist_remove(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (!default_conn) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return 0;
 	}
 
@@ -449,15 +449,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
+static int cmd_l2cap(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help(shell);
+		shell_help(sh);
 		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
