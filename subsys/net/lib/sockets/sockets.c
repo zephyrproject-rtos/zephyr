@@ -2217,6 +2217,6 @@ static bool inet_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(af_inet46, AF_UNSPEC, inet_is_supported,
-		    zsock_socket_internal);
+NET_SOCKET_REGISTER(af_inet46, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    inet_is_supported, zsock_socket_internal);
 #endif /* CONFIG_NET_NATIVE */
