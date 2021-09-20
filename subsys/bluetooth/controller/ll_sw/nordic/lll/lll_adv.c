@@ -658,7 +658,7 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 						sr->scan_req.scan_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 		isr_rx_sr_adva_check(tx_addr, addr, sr);
 #else
 	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
@@ -720,7 +720,7 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 						ci->connect_ind.init_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x02) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 	       isr_rx_ci_adva_check(tx_addr, addr, ci);
 #else
 	return (((lll->filter_policy & 0x02) == 0) ||
@@ -906,14 +906,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 		/* Setup Radio Filter */
-		struct lll_filter *wl = ull_filter_lll_get(true);
+		struct lll_filter *fal = ull_filter_lll_get(true);
 
 
-		radio_filter_configure(wl->enable_bitmask,
-				       wl->addr_type_bitmask,
-				       (uint8_t *)wl->bdaddr);
+		radio_filter_configure(fal->enable_bitmask,
+				       fal->addr_type_bitmask,
+				       (uint8_t *)fal->bdaddr);
 	}
 
 	ticks_at_event = p->ticks_at_expire;

@@ -836,7 +836,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	lll->rl_idx = FILTER_IDX_NONE;
 
-	/* Prepare whitelist and optionally resolving list */
+	/* Prepare filter accept list and optionally resolving list */
 	ull_filter_adv_update(lll->filter_policy);
 
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||

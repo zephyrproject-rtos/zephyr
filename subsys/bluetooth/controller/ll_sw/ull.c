@@ -619,8 +619,8 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-	/* reset whitelist, resolving list and initialise RPA timeout*/
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list, resolving list and initialise RPA timeout*/
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(true);
 	}
 
@@ -702,8 +702,8 @@ void ll_reset(void)
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
 
-	/* reset whitelist and resolving list */
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list and resolving list */
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(false);
 	}
 
