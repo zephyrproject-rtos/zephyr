@@ -402,6 +402,8 @@ class RimageSigner(Signer):
             return 'tgl'
         if 'nxp_adsp_imx8' in board:
             return 'imx8'
+        if 'nxp_adsp_imx8x' in board:
+            return 'imx8'
 
         log.die('Signing not supported for board ' + board)
 
