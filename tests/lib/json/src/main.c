@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <ztest.h>
 #include <data/json.h>
+#include <limits.h>
 
 struct test_nested {
 	int nested_int;
@@ -249,7 +250,7 @@ static void test_json_limits(void){
 	ret = json_obj_encode_buf(obj_limits_descr, ARRAY_SIZE(obj_limits_descr),
 				&limits, buffer, sizeof(buffer));
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, obj_limits_descr,
-			     ARRAY_SIZE(obj_limits_descr), &limits_decoded)
+			     ARRAY_SIZE(obj_limits_descr), &limits_decoded);
 
 	zassert_true(!strcmp(encoded, buffer), "Limits not encoded correctly");
 	zassert_true( limits == limits_decoded, "Limits not decoded correctly");
