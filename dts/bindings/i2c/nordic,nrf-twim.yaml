@@ -29,12 +29,14 @@ properties:
     zephyr,concat-buf-size:
         type: int
         required: false
-        description:
-            If concatenation buffer size is set, then multiple messages in the
-            same direction will be concatenated into single transfers as long
-            as there is space in buffer and no restart or stop flag is set.
+        default: 16
+        description: |
+            Size of a concatenation buffer that the driver is to use for merging
+            multiple same direction I2C messages that have no RESTART or STOP
+            flag between them (see e.g. the i2c_burst_write() function) into one
+            transfer on the bus.
 
             This property must be provided when interacting with devices like
             the SSD1306 display that cannot tolerate a repeated start and
-            address appearing on the bus between message fragments.  For many
+            address appearing on the bus between message fragments. For many
             devices a concatenation buffer is not necessary.
