@@ -1456,7 +1456,8 @@ static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 
 	ARG_UNUSED(dev);
 
-	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
+			(increment >= (int32_t)NSEC_PER_SEC)) {
 		ret = -EINVAL;
 	} else {
 		key = irq_lock();
