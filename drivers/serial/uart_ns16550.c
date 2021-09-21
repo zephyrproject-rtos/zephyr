@@ -87,6 +87,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IIR_LS    0x06 /* receiver line status interrupt */
 #define IIR_MASK  0x07 /* interrupt id bits mask  */
 #define IIR_ID    0x06 /* interrupt ID mask without NIP */
+#define IIR_FE    0xC0 /* FIFO mode enabled */
 
 /* equates for FIFO control register */
 
@@ -262,6 +263,7 @@ struct uart_ns16550_dev_data {
 #endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
+	uint8_t fifo_size;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
@@ -464,6 +466,16 @@ static int uart_ns16550_configure(const struct device *dev,
 #endif
 		);
 
+	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
+#ifdef CONFIG_UART_NS16750
+		dev_data->fifo_size = 64;
+#else
+		dev_data->fifo_size = 16;
+#endif
+	} else {
+		dev_data->fifo_size = 1;
+	}
+
 	/* clear the port */
 	INBYTE(RDR(dev));
 
@@ -601,7 +613,7 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	for (i = 0; (i < size) && (INBYTE(LSR(dev)) & LSR_THRE) != 0; i++) {
+	for (i = 0; (i < size) && (i < DEV_DATA(dev)->fifo_size); i++) {
 		OUTBYTE(THR(dev), tx_data[i]);
 	}
 
