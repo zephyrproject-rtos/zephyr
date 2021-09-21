@@ -834,7 +834,9 @@ static void uart_stm32_dma_rx_flush(const struct device *dev)
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
+	defined(CONFIG_UART_ASYNC_API) || \
+	defined(CONFIG_PM)
 
 static void uart_stm32_isr(const struct device *dev)
 {
@@ -900,25 +902,7 @@ static void uart_stm32_isr(const struct device *dev)
 	uart_stm32_err_check(dev);
 #endif /* CONFIG_UART_ASYNC_API */
 }
-#elif defined(CONFIG_PM)
-static void uart_stm32_isr(const struct device *dev)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-	struct uart_stm32_data *data = DEV_DATA(dev);
-
-	if (LL_USART_IsActiveFlag_TC(UartInstance)) {
-		LL_USART_ClearFlag_TC(UartInstance);
-		LL_USART_DisableIT_TC(UartInstance);
-
-		__ASSERT_NO_MSG(data->tx_poll_stream_on);
-
-		data->tx_poll_stream_on = false;
-
-		/* allow system to suspend, UART has now finished */
-		uart_stm32_pm_constraint_release(dev);
-	}
-}
-#endif /* (CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
 
@@ -1141,7 +1125,8 @@ static int uart_stm32_async_tx(const struct device *dev,
 	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
 
 #ifdef CONFIG_PM
-	/* do not allow system to suspend until transmission has completed */
+
+	/* Do not allow system to suspend until transmission has completed */
 	uart_stm32_pm_constraint_set(dev);
 #endif
 
