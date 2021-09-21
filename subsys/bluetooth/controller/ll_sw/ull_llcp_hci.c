@@ -211,8 +211,8 @@ void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time, uint16_t 
 
 	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-	*max_tx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
-	*max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
+	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy);
+	*max_rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy);
 }
 
 void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
@@ -737,6 +737,7 @@ uint8_t ll_connect_disable(void **rx)
 	return err;
 }
 
+/* EGON TODO: see the implementation in ull_chan.c; this function needs updating */
 /* FIXME: Refactor out this interface so that its usable by extended
  * advertising channel classification, and also master role connections can
  * perform channel map update control procedure.
@@ -767,7 +768,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 		struct ll_conn *conn;
 
 		conn = ll_connected_get(handle);
-		if (!conn || (conn->lll.role == BT_HCI_ROLE_SLAVE)) {
+		if (!conn || (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
 			continue;
 		}
 
@@ -976,7 +977,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
 	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) * 1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) + PKT_DC_US(0U, 0U, phy) +
+	time_outgoing = PDU_MAX_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) + PDU_MAX_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
 
 	force_md_cnt = 0U;
@@ -985,7 +986,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 		uint32_t time_keep_alive;
 
 		delta = (time_incoming << 1) - time_outgoing;
-		time_keep_alive = (PKT_DC_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
+		time_keep_alive = (PDU_MAX_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
 		force_md_cnt = (delta + (time_keep_alive - 1)) / time_keep_alive;
 		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
 		       "keepalive= %u, force_md_cnt = %u.",

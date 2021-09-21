@@ -69,7 +69,7 @@ void test_min_used_chans_sla_loc(void)
 								     .min_used_chans = 2 };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -109,7 +109,7 @@ void test_min_used_chans_mas_loc(void)
 	uint8_t err;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -132,7 +132,7 @@ void test_min_used_chans_mas_rem(void)
 	struct node_tx *tx;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

@@ -104,7 +104,7 @@ void test_int_disconnect_loc(void)
 	};
 
 	test_setup(&conn);
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
@@ -159,7 +159,7 @@ void test_int_disconnect_rem(void)
 	test_setup(&conn);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
