@@ -307,11 +307,32 @@ static void send_sd_response(struct net_context *ctx,
 	struct dns_sd_rec filter;
 	struct sockaddr dst;
 	socklen_t dst_len;
+	bool service_type_enum = false;
 	const struct in6_addr *addr6 = NULL;
 	const struct in_addr *addr4 = NULL;
+	char instance_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
 	char service_buf[DNS_SD_SERVICE_MAX_SIZE + 1];
 	char proto_buf[DNS_SD_PROTO_SIZE + 1];
 	char domain_buf[DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[4];
+	size_t size[] = {
+		ARRAY_SIZE(instance_buf),
+		ARRAY_SIZE(service_buf),
+		ARRAY_SIZE(proto_buf),
+		ARRAY_SIZE(domain_buf),
+	};
+	size_t n = ARRAY_SIZE(label);
+
+	BUILD_ASSERT(ARRAY_SIZE(label) == ARRAY_SIZE(size), "");
+
+	/*
+	 * work around for bug in compliance scripts which say that the array
+	 * should be static const (incorrect)
+	 */
+	label[0] = instance_buf;
+	label[1] = service_buf;
+	label[2] = proto_buf;
+	label[3] = domain_buf;
 
 	/* This actually is used but the compiler doesn't see that */
 	ARG_UNUSED(record);
@@ -334,12 +355,26 @@ static void send_sd_response(struct net_context *ctx,
 					   &ip_hdr->ipv6->src);
 	}
 
-	ret = dns_sd_extract_service_proto_domain(dns_msg->msg,
-		dns_msg->msg_size, &filter, service_buf, sizeof(service_buf),
-		proto_buf, sizeof(proto_buf), domain_buf, sizeof(domain_buf));
+	ret = dns_sd_query_extract(dns_msg->msg,
+		dns_msg->msg_size, &filter, label, size, &n);
 	if (ret < 0) {
-		NET_DBG("unable to extract service.proto.domain (%d)", ret);
+		NET_DBG("unable to extract query (%d)", ret);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION)
+		&& dns_sd_is_service_type_enumeration(&filter)) {
+
+		/*
+		 * RFC 6763, Section 9
+		 *
+		 * A DNS query for PTR records with the name
+		 * "_services._dns-sd._udp.<Domain>" yields a set of PTR records,
+		 * where the rdata of each PTR record is the two-label <Service> name,
+		 * plus the same domain, e.g., "_http._tcp.<Domain>".
+		 */
+		dns_sd_create_wildcard_filter(&filter);
+		service_type_enum = true;
 	}
 
 	DNS_SD_FOREACH(record) {
@@ -351,13 +386,21 @@ static void send_sd_response(struct net_context *ctx,
 				ntohs(*(record->port)));
 
 			/* Construct the response */
-			ret = dns_sd_handle_ptr_query(record,
-				addr4, addr6,
-				result->data, result->size);
-			if (ret < 0) {
-				NET_DBG("dns_sd_handle_ptr_query() failed (%d)",
-					ret);
-				continue;
+			if (service_type_enum) {
+				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
+					result->data, result->size);
+				if (ret < 0) {
+					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
+						ret);
+					continue;
+				}
+			} else {
+				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
+					result->data, result->size);
+				if (ret < 0) {
+					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
+					continue;
+				}
 			}
 
 			result->len = ret;
