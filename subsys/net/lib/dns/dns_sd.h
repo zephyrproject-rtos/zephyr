@@ -33,6 +33,35 @@ extern "C" {
 	STRUCT_SECTION_FOREACH(dns_sd_rec, it)
 
 /**
+ * @brief Extract labels from a DNS-SD PTR query
+ *
+ * ```
+ *            <sn>._tcp.<domain>.
+ * <instance>.<sn>._tcp.<domain>.
+ * ```
+ *
+ * Currently sub-types and service domains are unsupported and only the
+ * "local" domain is supported. Specifically, that excludes the following:
+ * ```
+ * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
+ * ```
+ *
+ * @param query a pointer to the start of the query
+ * @param query_size the number of bytes contained in the query
+ * @param[out] record the DNS-SD record to initialize and populate
+ * @param label array of pointers to suitably sized buffers
+ * @param size array of sizes for each buffer in @p label
+ * @param[inout] n number of elements in @p label and @p size
+ *
+ * @return on success, number of bytes read from @p query
+ * @return on failure, a negative errno value
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
+ */
+int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_rec *record,
+			 char **label, size_t *size, size_t *n);
+
+/**
  * @brief Extract the Service, Protocol, and Domain from a DNS-SD PTR query
  *
  * This function zero-initializes @p record and populates the appropriate
@@ -57,6 +86,7 @@ extern "C" {
  * @return on success, a positive number representing length of the query
  * @return on failure, a negative errno value
  */
+__deprecated
 int dns_sd_extract_service_proto_domain(const uint8_t *query,
 	size_t query_size, struct dns_sd_rec *record, char *service,
 	size_t service_size, char *proto, size_t proto_size,
@@ -121,7 +151,7 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * If there is no IPv6 address to advertise, then @p addr6 should be
  * NULL.
  *
- * @param inst the DNS-SD record for to advertise
+ * @param inst the DNS-SD record to advertise
  * @param addr4 pointer to the IPv4 address
  * @param addr6 pointer to the IPv6 address
  * @param buf output buffer
@@ -131,6 +161,24 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @return on failure, a negative errno value
  */
 int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
+	const struct in_addr *addr4, const struct in6_addr *addr6,
+	uint8_t *buf, uint16_t buf_size);
+
+/**
+ * @brief Handle a Service Type Enumeration with DNS Service Discovery
+ *
+ * This function should be called once for each type of advertised service.
+ *
+ * @param service the DNS-SD service to advertise
+ * @param addr4 pointer to the IPv4 address
+ * @param addr6 pointer to the IPv6 address
+ * @param buf output buffer
+ * @param buf_size size of the output buffer
+ *
+ * @return on success, number of bytes written to @p buf
+ * @return on failure, a negative errno value
+ */
+int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
 	const struct in_addr *addr4, const struct in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
 
