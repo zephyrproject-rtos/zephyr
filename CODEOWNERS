@@ -242,6 +242,7 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
+/drivers/flash/*esp32*                    @glaubermaroto
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn

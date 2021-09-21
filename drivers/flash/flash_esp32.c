@@ -24,13 +24,18 @@
 #include <soc/spi_struct.h>
 #include <spi_flash_defs.h>
 
-#if CONFIG_SOC_ESP32
+#if defined(CONFIG_SOC_ESP32)
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/spiram.h"
-#include "soc/mmu.h"
+#elif defined(CONFIG_SOC_ESP32S2)
+#include "soc/spi_mem_reg.h"
+#include "esp32s2/rom/cache.h"
+#include "esp32s2/rom/spi_flash.h"
 #endif
+
+#include "soc/mmu.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
@@ -57,6 +62,17 @@ static const struct flash_parameters flash_esp32_parameters = {
 #define MAX_WRITE_CHUNK 8192
 #define ADDRESS_MASK_24BIT 0xFFFFFF
 #define SPI_TIMEOUT_MSEC 500
+
+#if defined(CONFIG_SOC_ESP32)
+#define HOST_FLASH_CONTROLLER SPI0
+#define HOST_FLASH_RDSR SPI_FLASH_RDSR
+#define HOST_FLASH_FASTRD SPI_FASTRD_MODE
+#elif defined(CONFIG_SOC_ESP32S2)
+#define HOST_FLASH_CONTROLLER SPIMEM0
+#define HOST_FLASH_RDSR SPI_MEM_FLASH_RDSR
+#define HOST_FLASH_FASTRD SPI_MEM_FASTRD_MODE
+#endif
+
 
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
@@ -108,9 +124,11 @@ int configure_read_mode(spi_dev_t *hw,
 	return 0;
 }
 
-static bool IRAM_ATTR flash_esp32_mapped_in_cache(uint32_t phys_page)
+static bool IRAM_ATTR flash_esp32_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
 {
 	int start[2], end[2];
+
+	*out_ptr = NULL;
 
 	/* SPI_FLASH_MMAP_DATA */
 	start[0] = SOC_MMU_DROM0_PAGES_START;
@@ -126,6 +144,15 @@ static bool IRAM_ATTR flash_esp32_mapped_in_cache(uint32_t phys_page)
 			if (DPORT_SEQUENCE_REG_READ(
 				     (uint32_t)&SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE[i]) ==
 				     SOC_MMU_PAGE_IN_FLASH(phys_page)) {
+#if !defined(CONFIG_SOC_ESP32)
+				if (j == 0) { /* SPI_FLASH_MMAP_DATA */
+					*out_ptr = (const void *)(SOC_MMU_VADDR0_START_ADDR +
+							SPI_FLASH_MMU_PAGE_SIZE * (i - start[0]));
+				} else {
+					*out_ptr = (const void *)(SOC_MMU_VADDR1_FIRST_USABLE_ADDR +
+							SPI_FLASH_MMU_PAGE_SIZE * (i - start[1]));
+				}
+#endif
 				DPORT_INTERRUPT_RESTORE();
 				return true;
 			}
@@ -154,8 +181,10 @@ static void IRAM_ATTR flash_esp32_flush_cache(size_t start_addr, size_t length)
 			return;
 		}
 
-		if (flash_esp32_mapped_in_cache(page)) {
+		const void *vaddr = NULL;
 
+		if (flash_esp32_mapped_in_cache(page, &vaddr)) {
+#if defined(CONFIG_SOC_ESP32)
 #if CONFIG_ESP_SPIRAM
 			esp_spiram_writeback_cache();
 #endif
@@ -164,8 +193,15 @@ static void IRAM_ATTR flash_esp32_flush_cache(size_t start_addr, size_t length)
 			esp_rom_Cache_Flush(1);
 #endif
 			return;
+#else /* CONFIG_SOC_ESP32 */
+			if (vaddr != NULL) {
+				esp_rom_Cache_Invalidate_Addr((uint32_t)vaddr,
+								SPI_FLASH_MMU_PAGE_SIZE);
+			}
+#endif /* CONFIG_SOC_ESP32 */
 		}
 	}
+	return;
 }
 
 static int set_read_options(const struct device *dev)
@@ -177,13 +213,13 @@ static int set_read_options(const struct device *dev)
 	bool byte_cmd = true;
 	uint32_t read_mode = READ_PERI_REG(PERIPHS_SPI_FLASH_CTRL);
 
-	if ((read_mode & SPI_FREAD_QIO) && (read_mode & SPI_FASTRD_MODE)) {
+	if ((read_mode & SPI_FREAD_QIO) && (read_mode & HOST_FLASH_FASTRD)) {
 		spi_ll_enable_mosi(hw, 0);
 		spi_ll_enable_miso(hw, 1);
 		dummy_len = 1 + SPI1_R_QIO_DUMMY_CYCLELEN + SPI1_EXTRA_DUMMIES;
 		addr_len = SPI1_R_QIO_ADDR_BITSLEN + 1;
 		read_cmd = CMD_FASTRD_QIO;
-	} else if (read_mode & SPI_FASTRD_MODE) {
+	} else if (read_mode & HOST_FLASH_FASTRD) {
 		spi_ll_enable_mosi(hw, 0);
 		spi_ll_enable_miso(hw, 1);
 		if (read_mode & SPI_FREAD_DIO) {
@@ -270,6 +306,10 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
 	const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
 	uint32_t chip_size = cfg->chip->chip_size;
+
+#if defined(CONFIG_SOC_ESP32S2)
+	WRITE_PERI_REG(PERIPHS_SPI_FLASH_CTRL, 0);
+#endif
 
 	if (length == 0) {
 		return 0;
@@ -359,7 +399,7 @@ static int read_status(const struct device *dev, uint32_t *status)
 		while (ESP_ROM_SPIFLASH_BUSY_FLAG ==
 		       (status_value & ESP_ROM_SPIFLASH_BUSY_FLAG)) {
 			WRITE_PERI_REG(PERIPHS_SPI_FLASH_STATUS, 0);
-			WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_RDSR);
+			WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, HOST_FLASH_RDSR);
 
 			int rc = flash_esp32_wait_cmd_done(cfg->controller);
 
@@ -382,9 +422,15 @@ static int read_status(const struct device *dev, uint32_t *status)
 
 static inline bool host_idle(spi_dev_t *hw)
 {
+#if defined(CONFIG_SOC_ESP32)
 	bool idle = spi_flash_ll_host_idle(hw);
 
-	idle &= spi_flash_ll_host_idle(&SPI0);
+	idle &= spi_flash_ll_host_idle(&HOST_FLASH_CONTROLLER);
+#elif defined(CONFIG_SOC_ESP32S2)
+	bool idle = spimem_flash_ll_host_idle((spi_mem_dev_t *)hw);
+
+	idle &= spimem_flash_ll_host_idle(&HOST_FLASH_CONTROLLER);
+#endif
 
 	return idle;
 }
