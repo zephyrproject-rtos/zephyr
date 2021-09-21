@@ -1239,6 +1239,7 @@ static int hci_le_create_cis(const struct bt_iso_connect_param *param,
 
 int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 {
+	struct bt_iso_accept_info accept_info;
 	struct bt_iso_chan *chan;
 	int err;
 
@@ -1254,7 +1255,11 @@ int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 		return -ENOMEM;
 	}
 
-	err = iso_server->accept(acl, &chan);
+	accept_info.acl = acl;
+	accept_info.cig_id = iso->iso.cig_id;
+	accept_info.cis_id = iso->iso.cis_id;
+
+	err = iso_server->accept(&accept_info, &chan);
 	if (err < 0) {
 		BT_ERR("Server failed to accept: %d", err);
 		return err;
