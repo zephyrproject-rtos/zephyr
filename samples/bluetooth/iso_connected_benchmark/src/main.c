@@ -273,9 +273,10 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	LOG_INF("Incoming ISO request from %p", (void *)acl);
+	LOG_INF("Incoming ISO request from %p", (void *)info->acl);
 
 	for (int i = 0; i < ARRAY_SIZE(iso_chans); i++) {
 		if (iso_chans[i].state == BT_ISO_DISCONNECTED) {
