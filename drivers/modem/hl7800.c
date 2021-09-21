@@ -311,7 +311,18 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define PROFILE_LINE_2                                                         \
 	"S00:255 S01:255 S03:255 S04:255 S05:255 S07:255 S08:255 S10:255\r\n"
 
-#define SETUP_GPRS_CONNECTION_CMD "AT+KCNXCFG=1,\"GPRS\",\"\",,,\"IPV4V6\""
+#define ADDRESS_FAMILY_IPV4 "IPV4"
+#if defined(CONFIG_MODEM_HL7800_ADDRESS_FAMILY_IPV4V6)
+#define MODEM_HL7800_ADDRESS_FAMILY "IPV4V6"
+#elif defined(CONFIG_MODEM_HL7800_ADDRESS_FAMILY_IPV4)
+#define MODEM_HL7800_ADDRESS_FAMILY ADDRESS_FAMILY_IPV4
+#else
+#define MODEM_HL7800_ADDRESS_FAMILY "IPV6"
+#endif
+
+#define SETUP_GPRS_CONNECTION_CMD                                                                  \
+	"AT+KCNXCFG=1,\"GPRS\",\"\",,,"                                                            \
+	"\"" MODEM_HL7800_ADDRESS_FAMILY "\""
 #define SET_RAT_M1_CMD_LEGACY "AT+KSRAT=0"
 #define SET_RAT_NB1_CMD_LEGACY "AT+KSRAT=1"
 #define SET_RAT_M1_CMD "AT+KSRAT=0,1"
@@ -4963,8 +4974,12 @@ static int write_apn(char *access_point_name)
 
 	/* PDP Context */
 	memset(cmd_string, 0, MDM_HL7800_APN_CMD_MAX_SIZE);
-	strncat(cmd_string, "AT+CGDCONT=1,\"IPV4V6\",\"",
-		MDM_HL7800_APN_CMD_MAX_STRLEN);
+	if (strcmp(MODEM_HL7800_ADDRESS_FAMILY, ADDRESS_FAMILY_IPV4)) {
+		strncat(cmd_string, "AT+CGDCONT=1,\"" MODEM_HL7800_ADDRESS_FAMILY "\",\"",
+			MDM_HL7800_APN_CMD_MAX_STRLEN);
+	} else {
+		strncat(cmd_string, "AT+CGDCONT=1,\"IP\",\"", MDM_HL7800_APN_CMD_MAX_STRLEN);
+	}
 	strncat(cmd_string, access_point_name, MDM_HL7800_APN_CMD_MAX_STRLEN);
 	strncat(cmd_string, "\"", MDM_HL7800_APN_CMD_MAX_STRLEN);
 	return send_at_cmd(NULL, cmd_string, MDM_CMD_SEND_TIMEOUT, 0, false);
