@@ -682,6 +682,15 @@ const struct net_eth_addr *net_eth_broadcast_addr(void);
 /** @endcond */
 
 /**
+ * @brief Convert IPv4 multicast address to Ethernet address.
+ *
+ * @param ipv4_addr IPv4 multicast address
+ * @param mac_addr Output buffer for Ethernet address
+ */
+void net_eth_ipv4_mcast_to_mac_addr(const struct in_addr *ipv4_addr,
+				    struct net_eth_addr *mac_addr);
+
+/**
  * @brief Convert IPv6 multicast address to Ethernet address.
  *
  * @param ipv6_addr IPv6 multicast address
