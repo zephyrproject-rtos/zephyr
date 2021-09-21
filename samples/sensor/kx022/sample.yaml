@@ -1,0 +1,7 @@
+sample:
+  name: KX022 Accelerometer Monitor
+tests:
+  sample.sensor.kx022:
+    harness: sensor
+    tags: samples sensor
+    depends_on: i2c kx022
