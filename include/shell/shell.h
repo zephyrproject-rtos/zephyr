@@ -629,6 +629,7 @@ struct shell_flags {
 	uint32_t last_nl     :8; /*!< Last received new line character */
 	uint32_t cmd_ctx     :1; /*!< Shell is executing command */
 	uint32_t print_noinit:1; /*!< Print request from not initialized shell*/
+	uint32_t panic_mode  :1; /*!< Shell in panic mode */
 };
 
 BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),

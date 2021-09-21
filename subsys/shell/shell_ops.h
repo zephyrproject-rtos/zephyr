@@ -219,6 +219,19 @@ static inline bool z_flag_print_noinit_set(const struct shell *shell, bool val)
 	return ret;
 }
 
+static inline bool z_flag_panic_mode_get(const struct shell *sh)
+{
+	return sh->ctx->internal.flags.panic_mode == 1;
+}
+
+static inline bool z_flag_panic_mode_set(const struct shell *sh, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(sh, panic_mode, val, ret);
+	return ret;
+}
+
 void z_shell_op_cursor_vert_move(const struct shell *shell, int32_t delta);
 void z_shell_op_cursor_horiz_move(const struct shell *shell, int32_t delta);
 
