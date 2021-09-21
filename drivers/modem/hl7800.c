@@ -337,6 +337,8 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define HL7800_IPV6_ADDR_LEN                                                                       \
 	sizeof("a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16")
 
+#define MDM_ADDR_FAM_MAX_LEN sizeof("IPV4V6")
+
 #ifdef CONFIG_NEWLIB_LIBC
 /* The ? can be a + or - */
 static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
@@ -535,6 +537,7 @@ struct hl7800_iface_ctx {
 	bool new_rat_cmd_support;
 	uint8_t operator_index;
 	enum mdm_hl7800_functionality functionality;
+	char mdm_pdp_addr_fam[MDM_ADDR_FAM_MAX_LEN];
 
 	/* modem state */
 	bool allow_sleep;
@@ -2463,29 +2466,42 @@ static bool on_cmd_atcmdinfo_pdp_context(struct net_buf **buf, uint16_t len)
 						  *buf, 0, line_length);
 		LOG_DBG("length: %u: %s", line_length, log_strdup(line));
 		if (output_length > 0) {
-			memset(ictx.mdm_apn.value, 0,
-			       sizeof(ictx.mdm_apn.value));
+			memset(ictx.mdm_apn.value, 0, sizeof(ictx.mdm_apn.value));
+			memset(ictx.mdm_pdp_addr_fam, 0, MDM_ADDR_FAM_MAX_LEN);
 
-			/* The name is after the 3rd " */
-			p = strchr(line, '"');
+			/* Address family after first , */
+			p = strchr(line, ',');
 			if (p == NULL) {
 				LOG_WRN("Issue parsing APN response");
 				goto done;
 			}
-			p = strchr(p + 1, '"');
+			p += 2;
+			i = 0;
+			while ((p != NULL) && (*p != '"') && (i < MDM_ADDR_FAM_MAX_LEN)) {
+				ictx.mdm_pdp_addr_fam[i++] = *p++;
+			}
+			LOG_DBG("PDP address family: %s", log_strdup(ictx.mdm_pdp_addr_fam));
+
+			/* APN after second , " */
+			p = strchr(p, ',');
 			if (p == NULL) {
 				LOG_WRN("Issue parsing APN response");
 				goto done;
 			}
-			p = strchr(p + 1, '"');
-			if (p != NULL) {
-				p += 1;
+			p++;
+			if (*p == ',') {
+				/* APN is blank */
+				goto done;
+			}
+			if (*p == '"') {
+				p++;
 				i = 0;
 				while ((p != NULL) && (*p != '"') &&
 				       (i < MDM_HL7800_APN_MAX_STRLEN)) {
 					ictx.mdm_apn.value[i++] = *p++;
 				}
 			}
+
 			LOG_INF("APN: %s", log_strdup(ictx.mdm_apn.value));
 		}
 	}
@@ -4900,13 +4916,20 @@ reboot:
 	(void)send_at_cmd(NULL, "AT+CIMI", MDM_CMD_SEND_TIMEOUT,
 			  MDM_DEFAULT_AT_CMD_RETRIES, true);
 
+	/* Query PDP context to get APN */
+	SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
+	if (strcmp(ictx.mdm_pdp_addr_fam, MODEM_HL7800_ADDRESS_FAMILY)) {
+		/* set PDP context address family along with current APN */
+		ret = write_apn(ictx.mdm_apn.value);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
 	/* An empty string is used here so that it doesn't conflict
 	 * with the APN used in the +CGDCONT command.
 	 */
 	SEND_AT_CMD_EXPECT_OK(SETUP_GPRS_CONNECTION_CMD);
-
-	/* Query PDP context to get APN */
-	SEND_AT_CMD_EXPECT_OK("AT+CGDCONT?");
 
 	/* Query PDP authentication context to get APN username/password.
 	 * Temporary Workaroud - Ignore error
