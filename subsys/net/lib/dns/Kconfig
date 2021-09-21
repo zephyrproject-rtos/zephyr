@@ -160,6 +160,17 @@ config MDNS_RESPONDER_DNS_SD
 	  By doing so, Zephyr network services are discoverable
 	  using e.g. 'avahi-browse -t -r _greybus._tcp'.
 
+if MDNS_RESPONDER_DNS_SD
+config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
+	bool "Enable DNS SD Service Type Enumeration"
+	default y
+	help
+	  Selecting this option ensures that the MDNS Responder
+	  performs DNS-SD Service Type Enumeration according to RFC 6763,
+	  Chapter 9. By doing so, Zephyr network services are discoverable
+	  using e.g. 'avahi-browse -t -r _services._dns-sd._udp.local'.
+endif # MDNS_RESPONDER_DNS_SD
+
 module = MDNS_RESPONDER
 module-dep = NET_LOG
 module-str = Log level for mDNS responder
