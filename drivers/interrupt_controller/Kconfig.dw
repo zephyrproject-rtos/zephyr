@@ -17,12 +17,6 @@ config DW_ICTL_NAME
 	help
 	  Give a name for the instance of Designware Interrupt Controller
 
-config DW_ICTL_OFFSET
-	int "Parent interrupt number to which DW_ICTL maps"
-	default 0
-	help
-	  Parent interrupt number to which DW_ICTL maps
-
 config DW_ISR_TBL_OFFSET
 	int "Offset in the SW ISR Table"
 	default 0
