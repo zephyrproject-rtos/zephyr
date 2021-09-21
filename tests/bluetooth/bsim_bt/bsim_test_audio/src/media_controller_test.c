@@ -31,8 +31,8 @@ static uint64_t g_icon_object_id;
 static uint64_t g_track_segments_object_id;
 static uint64_t g_current_track_object_id;
 static uint64_t g_next_track_object_id;
-static uint64_t g_current_group_object_id;
 static uint64_t g_parent_group_object_id;
+static uint64_t g_current_group_object_id;
 static uint64_t g_search_results_object_id;
 
 static int32_t  g_pos;
@@ -58,8 +58,8 @@ CREATE_FLAG(seeking_speed_read);
 CREATE_FLAG(track_segments_object_id_read);
 CREATE_FLAG(current_track_object_id_read);
 CREATE_FLAG(next_track_object_id_read);
-CREATE_FLAG(current_group_object_id_read);
 CREATE_FLAG(parent_group_object_id_read);
+CREATE_FLAG(current_group_object_id_read);
 CREATE_FLAG(search_results_object_id_read);
 CREATE_FLAG(playing_order_flag);
 CREATE_FLAG(playing_orders_supported_read);
@@ -303,22 +303,6 @@ static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 	SET_FLAG(next_track_object_id_read);
 }
 
-static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
-{
-	if (err) {
-		FAIL("Current Group Object ID read failed (%d)\n", err);
-		return;
-	}
-
-	if (plr != current_player) {
-		FAIL("Wrong player\n");
-		return;
-	}
-
-	g_current_group_object_id = id;
-	SET_FLAG(current_group_object_id_read);
-}
-
 static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 {
 	if (err) {
@@ -333,6 +317,22 @@ static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 
 	g_parent_group_object_id = id;
 	SET_FLAG(parent_group_object_id_read);
+}
+
+static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
+{
+	if (err) {
+		FAIL("Current Group Object ID read failed (%d)\n", err);
+		return;
+	}
+
+	if (plr != current_player) {
+		FAIL("Wrong player\n");
+		return;
+	}
+
+	g_current_group_object_id = id;
+	SET_FLAG(current_group_object_id_read);
 }
 
 static void playing_order_recv_cb(struct media_player *plr, int err, uint8_t order)
@@ -535,8 +535,8 @@ void initialize_media(void)
 	cbs.track_segments_id_recv        = track_segments_id_cb;
 	cbs.current_track_id_recv         = current_track_id_cb;
 	cbs.next_track_id_recv            = next_track_id_cb;
-	cbs.current_group_id_recv         = current_group_id_cb;
 	cbs.parent_group_id_recv          = parent_group_id_cb;
+	cbs.current_group_id_recv         = current_group_id_cb;
 #endif /* CONFIG_BT_OTS */
 	cbs.playing_order_recv            = playing_order_recv_cb;
 	cbs.playing_order_write           = playing_order_write_cb;
@@ -1461,17 +1461,6 @@ void test_media_controller_player(struct media_player *player)
 	WAIT_FOR_FLAG(next_track_object_id_read);
 	printk("Next Track Object ID read succeeded\n");
 
-	/* Read current group object ******************************************/
-	UNSET_FLAG(current_group_object_id_read);
-	err = media_proxy_ctrl_current_group_id_get(current_player);
-	if (err) {
-		FAIL("Failed to read current group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(current_group_object_id_read);
-	printk("Current Group Object ID read succeeded\n");
-
 	/* Read parent group object ******************************************/
 	UNSET_FLAG(parent_group_object_id_read);
 	err = media_proxy_ctrl_parent_group_id_get(current_player);
@@ -1482,6 +1471,17 @@ void test_media_controller_player(struct media_player *player)
 
 	WAIT_FOR_FLAG(parent_group_object_id_read);
 	printk("Parent Group Object ID read succeeded\n");
+
+	/* Read current group object ******************************************/
+	UNSET_FLAG(current_group_object_id_read);
+	err = media_proxy_ctrl_current_group_id_get(current_player);
+	if (err) {
+		FAIL("Failed to read current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_read);
+	printk("Current Group Object ID read succeeded\n");
 
 	/* Read and set playing order *************************************/
 	UNSET_FLAG(playing_order_flag);
