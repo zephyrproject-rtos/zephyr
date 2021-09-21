@@ -559,7 +559,7 @@ static void test_client_ipv4(void)
 	/* Peer will release the semaphone after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
-	net_tcp_put(ctx);
+	net_context_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
@@ -621,7 +621,7 @@ static void test_client_ipv6(void)
 	/* Peer will release the semaphone after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
-	net_tcp_put(ctx);
+	net_context_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
