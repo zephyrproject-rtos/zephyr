@@ -77,7 +77,7 @@ void test_cte_req_central_local(void)
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -147,7 +147,7 @@ void test_cte_req_peripheral_local(void)
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -210,7 +210,7 @@ void test_cte_req_central_remote(void)
 	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -276,7 +276,7 @@ void test_cte_req_peripheral_remote(void)
 	struct pdu_data_llctrl_cte_rsp remote_cte_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -355,7 +355,7 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -429,7 +429,7 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -495,7 +495,7 @@ void test_cte_req_reject_inv_ll_param_central_remote(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -564,7 +564,7 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

@@ -99,7 +99,7 @@ void test_hci_feature_exchange_mas_loc(void)
 		sys_put_le64(set_featureset[feat_counter], local_feature_req.features);
 		sys_put_le64(rsp_featureset[feat_counter], remote_feature_rsp.features);
 
-		test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+		test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 		/* Connect */
 		ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 

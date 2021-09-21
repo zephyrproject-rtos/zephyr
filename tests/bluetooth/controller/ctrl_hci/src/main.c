@@ -90,7 +90,7 @@ void test_hci_feature_exchange(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -161,7 +161,7 @@ void test_hci_version_ind(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -216,7 +216,7 @@ void test_hci_apto(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -247,7 +247,7 @@ void test_hci_phy(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -296,7 +296,7 @@ void test_hci_dle(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -341,7 +341,7 @@ void test_hci_terminate(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -371,7 +371,7 @@ void test_hci_conn_update(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -425,7 +425,7 @@ void test_hci_chmap(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_PERIPHERAL);
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
 	err = ll_chm_get(conn_handle + 1, chmap);
@@ -436,7 +436,7 @@ void test_hci_chmap(void)
 	/* TODO test should initialize conn with default map */
 	zassert_mem_equal(chmap, chmap_zero, sizeof(chmap), "Channel map invalid");
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 
 	err = ll_chm_get(conn_handle, chmap);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
@@ -460,7 +460,7 @@ void test_hci_rssi(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -487,7 +487,7 @@ void test_hci_enc(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
@@ -498,7 +498,7 @@ void test_hci_enc(void)
 	err = ll_enc_req_send(conn_handle, &rand, &ediv, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
+	test_set_role(conn_from_pool, BT_HCI_ROLE_PERIPHERAL);
 	err = ll_start_enc_req_send(conn_handle + 1, error_code, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_start_enc_req_send(conn_handle, error_code, &ltk[0]);
