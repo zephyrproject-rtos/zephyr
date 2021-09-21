@@ -73,6 +73,10 @@ struct lll_resolve_list {
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 };
 
+extern uint32_t ull_filter_lll_fal_match(struct lll_filter const *const filter,
+					 uint8_t addr_type,
+					 uint8_t const *const addr,
+					 uint8_t *devmatch_id);
 extern bool ull_filter_lll_lrpa_used(uint8_t rl_idx);
 extern bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx);
 extern uint8_t *ull_filter_lll_irks_get(uint8_t *count);
