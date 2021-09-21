@@ -867,19 +867,20 @@ static void fal_clear(void)
 	}
 }
 
-static uint8_t fal_find(uint8_t addr_type, uint8_t *addr, uint8_t *free)
+static uint8_t fal_find(uint8_t addr_type, uint8_t *addr, uint8_t *free_idx)
 {
 	int i;
 
-	if (free) {
-		*free = FILTER_IDX_NONE;
+	if (free_idx) {
+		*free_idx = FILTER_IDX_NONE;
 	}
 
 	for (i = 0; i < FAL_SIZE; i++) {
 		if (LIST_MATCH(fal, i, addr_type, addr)) {
 			return i;
-		} else if (free && !fal[i].taken && (*free == FILTER_IDX_NONE)) {
-			*free = i;
+		} else if (free_idx && !fal[i].taken &&
+			   (*free_idx == FILTER_IDX_NONE)) {
+			*free_idx = i;
 		}
 	}
 
