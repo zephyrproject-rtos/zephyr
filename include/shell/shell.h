@@ -618,11 +618,11 @@ struct shell_stats {
  * @internal @brief Flags for shell backend configuration.
  */
 struct shell_backend_config_flags {
-	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
-	uint32_t echo        :1; /*!< Controls shell echo.*/
+	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction */
+	uint32_t echo        :1; /*!< Controls shell echo */
 	uint32_t obscure     :1; /*!< If echo on, print asterisk instead */
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
-	uint32_t use_colors  :1; /*!< Controls colored syntax.*/
+	uint32_t use_colors  :1; /*!< Controls colored syntax */
 	uint32_t use_vt100   :1; /*!< Controls VT100 commands usage in shell */
 };
 
@@ -643,12 +643,13 @@ BUILD_ASSERT((sizeof(struct shell_backend_config_flags) == sizeof(uint32_t)),
 };
 
 struct shell_backend_ctx_flags {
-	uint32_t processing   :1; /*!< Shell is executing process function.*/
+	uint32_t processing   :1; /*!< Shell is executing process function */
 	uint32_t tx_rdy       :1;
 	uint32_t history_exit :1; /*!< Request to exit history mode */
 	uint32_t last_nl      :8; /*!< Last received new line character */
 	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
-	uint32_t print_noinit :1; /*!< Print request from not initialized shell*/
+	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
+	uint32_t panic_mode   :1; /*!< Shell in panic mode */
 };
 
 BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
