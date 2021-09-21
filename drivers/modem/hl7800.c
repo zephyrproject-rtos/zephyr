@@ -5622,8 +5622,13 @@ static int hl7800_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure(ictx.gpio_port_dev[i],
-					 pinconfig[i].pin, pinconfig[i].config);
+		if ((pinconfig[i].config & GPIO_INT_ENABLE) == 0) {
+			ret = gpio_pin_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
+						 pinconfig[i].config);
+		} else {
+			ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
+							   pinconfig[i].config);
+		}
 		if (ret) {
 			LOG_ERR("Error configuring io %s %d err: %d!",
 				pinconfig[i].dev_name, pinconfig[i].pin, ret);
