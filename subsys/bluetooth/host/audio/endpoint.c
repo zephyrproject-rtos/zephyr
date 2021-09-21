@@ -391,8 +391,8 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
 
-	ep->cig = qos->cig_id;
-	ep->cis = qos->cis_id;
+	ep->cig_id = qos->cig_id;
+	ep->cis_id = qos->cis_id;
 	memcpy(&ep->chan->qos->interval, sys_le24_to_cpu(qos->interval),
 	       sizeof(qos->interval));
 	ep->chan->qos->framing = qos->framing;
@@ -404,7 +404,7 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-	       ep->chan->cap->type, ep->cis, ep->cis, ep->chan->codec->id,
+	       ep->chan->cap->type, ep->cig_id, ep->cis_id, ep->chan->codec->id,
 	       ep->chan->qos->interval, ep->chan->qos->framing,
 	       ep->chan->qos->phy, ep->chan->qos->rtn, ep->chan->qos->latency,
 	       ep->chan->qos->pd);
@@ -439,7 +439,7 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
-	       ep->cig, ep->cis);
+	       ep->cig_id, ep->cis_id);
 
 	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
@@ -469,7 +469,7 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
-	       ep->cig, ep->cis);
+	       ep->cig_id, ep->cis_id);
 
 	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
 
@@ -496,7 +496,7 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
-	       ep->cig, ep->cis);
+	       ep->cig_id, ep->cis_id);
 
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->disable) {
@@ -696,8 +696,8 @@ static void ep_get_status_qos(struct bt_audio_ep *ep,
 	struct bt_ascs_ase_status_qos *qos;
 
 	qos = net_buf_simple_add(buf, sizeof(*qos));
-	qos->cig_id = ep->cig;
-	qos->cis_id = ep->cis;
+	qos->cig_id = ep->cig_id;
+	qos->cis_id = ep->cis_id;
 	sys_put_le24(ep->chan->qos->interval, qos->interval);
 	qos->framing = ep->chan->qos->framing;
 	qos->phy = ep->chan->qos->phy;
@@ -719,15 +719,15 @@ static void ep_get_status_enable(struct bt_audio_ep *ep,
 	struct bt_ascs_ase_status_enable *enable;
 
 	enable = net_buf_simple_add(buf, sizeof(*enable));
-	enable->cig_id = ep->cig;
-	enable->cis_id = ep->cis;
+	enable->cig_id = ep->cig_id;
+	enable->cis_id = ep->cis_id;
 
 	enable->metadata_len = buf->len;
 	codec_data_add(buf, "meta", ep->codec.meta_count, ep->codec.meta);
 	enable->metadata_len = buf->len - enable->metadata_len;
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
-	       ep->cig, ep->cis);
+	       ep->cig_id, ep->cis_id);
 }
 
 int bt_audio_ep_get_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)

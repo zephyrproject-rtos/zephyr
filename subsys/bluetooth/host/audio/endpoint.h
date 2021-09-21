@@ -70,8 +70,8 @@ struct bt_audio_ep {
 	uint8_t  type;
 	uint16_t handle;
 	uint16_t cp_handle;
-	uint8_t  cig;
-	uint8_t  cis;
+	uint8_t  cig_id;
+	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
 	struct bt_audio_capability *cap;
 	struct bt_audio_chan *chan;
