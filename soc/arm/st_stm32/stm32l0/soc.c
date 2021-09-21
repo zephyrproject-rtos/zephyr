@@ -60,7 +60,7 @@ static int stm32l0_init(const struct device *arg)
 	 * (similarly than it fixes
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/#34324 )
 	 */
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
 
 	return 0;
 }
