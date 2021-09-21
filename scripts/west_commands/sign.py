@@ -461,13 +461,18 @@ class RimageSigner(Signer):
         else:
             no_manifest = False
 
+        if no_manifest:
+            extra_ri_args = ['-i', '3']
+        else:
+            extra_ri_args = ['-i', '3', '-e']
+
         if 'imx8' in target:
             sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
                          [kernel])
         else:
             sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
                          [bootloader, kernel])
 
         if not args.quiet:
