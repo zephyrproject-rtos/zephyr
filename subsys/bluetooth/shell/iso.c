@@ -76,9 +76,11 @@ static struct bt_iso_cig *cig;
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  NULL);
 
-static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	shell_print(ctx_shell, "Incoming request from %p", acl);
+	shell_print(ctx_shell, "Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
+		    info->acl, info->cig_id, info->cis_id);
 
 	if (iso_chan.iso) {
 		shell_print(ctx_shell, "No channels available");
