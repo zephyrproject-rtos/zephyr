@@ -233,18 +233,18 @@ static bool bt_audio_chan_enabling(struct bt_audio_chan *chan)
 	return false;
 }
 
-static int bt_audio_chan_iso_accept(struct bt_conn *conn,
+static int bt_audio_chan_iso_accept(const struct bt_iso_accept_info *info,
 				    struct bt_iso_chan **chan)
 {
 	int i;
 
-	BT_DBG("conn %p", conn);
+	BT_DBG("acl %p", info->acl);
 
 	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
 		struct bt_audio_chan *c = enabling[i];
 
-		if (c && c->ep->cig == conn->iso.cig_id &&
-		    c->ep->cis == conn->iso.cis_id) {
+		if (c && c->ep->cig_id == info->cig_id &&
+		    c->ep->cis_id == info->cis_id) {
 			*chan = enabling[i]->iso;
 			enabling[i] = NULL;
 			return 0;
@@ -290,8 +290,8 @@ static bool bt_audio_chan_iso_linked(struct bt_audio_chan *chan1,
 		return false;
 	}
 
-	return (chan1->ep->cig == chan2->ep->cig) &&
-	       (chan1->ep->cis == chan2->ep->cis);
+	return (chan1->ep->cig_id == chan2->ep->cig_id) &&
+	       (chan1->ep->cis_id == chan2->ep->cis_id);
 }
 
 static int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
