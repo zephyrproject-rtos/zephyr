@@ -303,4 +303,21 @@ config MODEM_HL7800_USE_GLONASS
 config MODEM_HL7800_POLTE
 	bool "Enable PoLTE commands and handlers"
 
+choice
+	prompt "IP Address family"
+	default MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
+	help
+	  The address family for IP connections.
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV4
+	bool "IPv4"
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV6
+	bool "IPv6"
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
+	bool "IPv4v6"
+
+endchoice
+
 endif # MODEM_HL7800
