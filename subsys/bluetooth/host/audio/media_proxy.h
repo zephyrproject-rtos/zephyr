@@ -481,6 +481,19 @@ struct media_proxy_ctrl_cbs {
 	void (*next_track_id_write)(struct media_player *player, int err, uint64_t id);
 
 	/**
+	 * @brief Parent Group Object ID receive callback
+	 *
+	 * Called when the Parent Group Object ID is read or changed
+	 * See also media_proxy_ctrl_parent_group_id_get()
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 * @param id       The ID of the parent group object in Object Transfer Service (48 bits)
+	 */
+	void (*parent_group_id_recv)(struct media_player *player, int err, uint64_t id);
+
+	/**
 	 * @brief Current Group Object ID receive callback
 	 *
 	 * Called when the Current Group Object ID is read or changed
@@ -506,19 +519,6 @@ struct media_proxy_ctrl_cbs {
 	 * @param id       The ID (48 bits) attempted to write
 	 */
 	void (*current_group_id_write)(struct media_player *player, int err, uint64_t id);
-
-	/**
-	 * @brief Parent Group Object ID receive callback
-	 *
-	 * Called when the Parent Group Object ID is read or changed
-	 * See also media_proxy_ctrl_parent_group_id_get()
-	 *
-	 * @param player   Media player instance pointer
-	 * @param err      Error value. 0 on success, GATT error on positive value
-	 *                 or errno on negative value.
-	 * @param id       The ID of the parent group object in Object Transfer Service (48 bits)
-	 */
-	void (*parent_group_id_recv)(struct media_player *player, int err, uint64_t id);
 
 	/**
 	 * @brief Playing Order receive callback
@@ -921,6 +921,25 @@ int media_proxy_ctrl_next_track_id_get(struct media_player *player);
 int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id);
 
 /**
+ * @brief Read Parent Group Object ID
+ *
+ * Get an ID (48 bit) that can be used to retrieve the Parent
+ * Track Object from an Object Transfer Service
+ *
+ * The parent group is the parent of the current group.
+ *
+ * See the Media Control Service spec v1.0 sections 3.14 and
+ * 4.4 for a description of the Current Track Object.
+ *
+ * Requires Object Transfer Service
+ *
+ * @param player   Media player instance pointer
+ *
+ * @return 0 if success, errno on failure.
+ */
+int media_proxy_ctrl_parent_group_id_get(struct media_player *player);
+
+/**
  * @brief Read Current Group Object ID
  *
  * Get an ID (48 bit) that can be used to retrieve the Current
@@ -951,25 +970,6 @@ int media_proxy_ctrl_current_group_id_get(struct media_player *player);
  * @return 0 if success, errno on failure.
  */
 int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t id);
-
-/**
- * @brief Read Parent Group Object ID
- *
- * Get an ID (48 bit) that can be used to retrieve the Parent
- * Track Object from an Object Transfer Service
- *
- * The parent group is the parent of the current group.
- *
- * See the Media Control Service spec v1.0 sections 3.14 and
- * 4.4 for a description of the Current Track Object.
- *
- * Requires Object Transfer Service
- *
- * @param player   Media player instance pointer
- *
- * @return 0 if success, errno on failure.
- */
-int media_proxy_ctrl_parent_group_id_get(struct media_player *player);
 
 /**
  * @brief Read Playing Order
@@ -1280,6 +1280,21 @@ struct media_proxy_pl_calls {
 	void (*next_track_id_set)(uint64_t id);
 
 	/**
+	 * @brief Read Parent Group Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Parent
+	 * Track Object from an Object Transfer Service
+	 *
+	 * The parent group is the parent of the current group.
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.14 and
+	 * 4.4 for a description of the Current Track Object.
+	 *
+	 * @return The Current Group Object ID
+	 */
+	uint64_t (*parent_group_id_get)(void);
+
+	/**
 	 * @brief Read Current Group Object ID
 	 *
 	 * Get an ID (48 bit) that can be used to retrieve the Current
@@ -1301,21 +1316,6 @@ struct media_proxy_pl_calls {
 	 * @param id    The ID of a group object
 	 */
 	void (*current_group_id_set)(uint64_t id);
-
-	/**
-	 * @brief Read Parent Group Object ID
-	 *
-	 * Get an ID (48 bit) that can be used to retrieve the Parent
-	 * Track Object from an Object Transfer Service
-	 *
-	 * The parent group is the parent of the current group.
-	 *
-	 * See the Media Control Service spec v1.0 sections 3.14 and
-	 * 4.4 for a description of the Current Track Object.
-	 *
-	 * @return The Current Group Object ID
-	 */
-	uint64_t (*parent_group_id_get)(void);
 
 	/**
 	 * @brief Read Playing Order
@@ -1526,15 +1526,6 @@ void media_proxy_pl_current_track_id_cb(uint64_t id);
 void media_proxy_pl_next_track_id_cb(uint64_t id);
 
 /**
- * @brief Current group object ID callback
- *
- * To be called when the ID of the current group is changed
- *
- * @param speed	The ID of the current group object in the OTS
- */
-void media_proxy_pl_current_group_id_cb(uint64_t id);
-
-/**
  * @brief Parent group object ID callback
  *
  * To be called when the ID of the parent group is changed
@@ -1542,6 +1533,15 @@ void media_proxy_pl_current_group_id_cb(uint64_t id);
  * @param speed	The ID of the parent group object in the OTS
  */
 void media_proxy_pl_parent_group_id_cb(uint64_t id);
+
+/**
+ * @brief Current group object ID callback
+ *
+ * To be called when the ID of the current group is changed
+ *
+ * @param speed	The ID of the current group object in the OTS
+ */
+void media_proxy_pl_current_group_id_cb(uint64_t id);
 
 /**
  * @brief Playing order callback

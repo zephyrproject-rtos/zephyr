@@ -182,6 +182,15 @@ typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn,
 typedef void (*bt_mcc_next_track_obj_id_set_cb)(struct bt_conn *conn, int err,
 						uint64_t id);
 
+/** @brief Callback function for bt_mcc_read_parent_group_obj_id()
+ *
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
+ * @param id            The Parent Group Object ID (UINT48)
+ */
+typedef void (*bt_mcc_parent_group_obj_id_read_cb)(struct bt_conn *conn,
+						   int err, uint64_t id);
+
 /** @brief Callback function for bt_mcc_read_current_group_obj_id()
  *
  * @param conn          The connection that was used to initialise the media control client
@@ -200,14 +209,6 @@ typedef void (*bt_mcc_current_group_obj_id_read_cb)(struct bt_conn *conn,
 typedef void (*bt_mcc_current_group_obj_id_set_cb)(struct bt_conn *conn, int err,
 						   uint64_t obj_id);
 
-/** @brief Callback function for bt_mcc_read_parent_group_obj_id()
- *
- * @param conn          The connection that was used to initialise the media control client
- * @param err           Error value. 0 on success, GATT error or errno on fail
- * @param id            The Parent Group Object ID (UINT48)
- */
-typedef void (*bt_mcc_parent_group_obj_id_read_cb)(struct bt_conn *conn,
-						   int err, uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
 /** @brief Callback function for bt_mcc_read_playing_order()
@@ -381,17 +382,6 @@ typedef void (*bt_mcc_otc_read_current_track_object_cb)(struct bt_conn *conn, in
 typedef void (*bt_mcc_otc_read_next_track_object_cb)(struct bt_conn *conn, int err,
 						     struct net_buf_simple *buf);
 
-/** @brief Callback function for bt_mcc_otc_read_current_group_object()
- *
- * @param conn          The connection that was used to initialise the media control client
- * @param err           Error value. 0 on success, GATT error or errno on fail
- * @param buf           Buffer containing the object contents
- *
- * If err is EMSGSIZE, the object contents have been truncated.
- */
-typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, int err,
-							struct net_buf_simple *buf);
-
 /** @brief Callback function for bt_mcc_otc_read_parent_group_object()
  *
  * @param conn          The connection that was used to initialise the media control client
@@ -402,6 +392,17 @@ typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, in
  */
 typedef void (*bt_mcc_otc_read_parent_group_object_cb)(struct bt_conn *conn, int err,
 						       struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_current_group_object()
+ *
+ * @param conn          The connection that was used to initialise the media control client
+ * @param err           Error value. 0 on success, GATT error or errno on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, int err,
+							struct net_buf_simple *buf);
 
 #endif /* CONFIG_BT_OTC */
 

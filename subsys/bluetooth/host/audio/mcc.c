@@ -83,10 +83,10 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params current_track_sub_disc_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
 	struct bt_gatt_discover_params next_track_obj_sub_disc_params;
-	struct bt_gatt_subscribe_params current_group_obj_sub_params;
-	struct bt_gatt_discover_params current_group_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
 	struct bt_gatt_discover_params parent_group_obj_sub_disc_params;
+	struct bt_gatt_subscribe_params current_group_obj_sub_params;
+	struct bt_gatt_discover_params current_group_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 	struct bt_gatt_subscribe_params playing_order_sub_params;
 	struct bt_gatt_discover_params playing_order_sub_disc_params;
@@ -571,6 +571,33 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
+static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
+					       struct bt_gatt_read_params *params,
+					       const void *data, uint16_t length)
+{
+	int cb_err = err;
+	uint8_t *pid = (uint8_t *)data;
+	uint64_t id = 0;
+
+	cur_mcs_inst->busy = false;
+	if (err) {
+		BT_DBG("err: 0x%02x", err);
+	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
+		BT_DBG("length: %d, data: %p", length, data);
+		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	} else {
+		BT_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
+		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Parent Group Object ID: ", id);
+	}
+
+	if (mcc_cb && mcc_cb->parent_group_obj_id_read) {
+		mcc_cb->parent_group_obj_id_read(conn, cb_err, id);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
 static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 						struct bt_gatt_read_params *params,
 						const void *data, uint16_t length)
@@ -618,33 +645,6 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	if (mcc_cb && mcc_cb->current_group_obj_id_set) {
 		mcc_cb->current_group_obj_id_set(conn, cb_err, obj_id);
 	}
-}
-
-static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
-					       struct bt_gatt_read_params *params,
-					       const void *data, uint16_t length)
-{
-	int cb_err = err;
-	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
-
-	cur_mcs_inst->busy = false;
-	if (err) {
-		BT_DBG("err: 0x%02x", err);
-	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
-		BT_DBG("length: %d, data: %p", length, data);
-		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else {
-		BT_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
-		id = sys_get_le48(pid);
-		BT_DBG_OBJ_ID("Parent Group Object ID: ", id);
-	}
-
-	if (mcc_cb && mcc_cb->parent_group_obj_id_read) {
-		mcc_cb->parent_group_obj_id_read(conn, cb_err, id);
-	}
-
-	return BT_GATT_ITER_STOP;
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -954,14 +954,14 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			mcc_read_next_track_obj_id_cb(conn, 0, NULL, data,
 						      length);
 
-		} else if (handle == cur_mcs_inst->current_group_obj_id_handle) {
-			BT_DBG("Current Group notification");
-			mcc_read_current_group_obj_id_cb(conn, 0, NULL, data,
-							 length);
-
 		} else if (handle == cur_mcs_inst->parent_group_obj_id_handle) {
 			BT_DBG("Parent Group notification");
 			mcc_read_parent_group_obj_id_cb(conn, 0, NULL, data,
+							 length);
+
+		} else if (handle == cur_mcs_inst->current_group_obj_id_handle) {
+			BT_DBG("Current Group notification");
+			mcc_read_current_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -1265,16 +1265,16 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->next_track_obj_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->next_track_obj_sub_disc_params;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
-			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
-			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->current_group_obj_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PARENT_GROUP_OBJ_ID)) {
 			BT_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->parent_group_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->parent_group_obj_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->parent_group_obj_sub_disc_params;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
+			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
+			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
+			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->current_group_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1923,6 +1923,33 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	return err;
 }
 
+int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
+{
+	int err;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	if (!cur_mcs_inst->parent_group_obj_id_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (cur_mcs_inst->busy) {
+		return -EBUSY;
+	}
+
+	read_params.func = mcc_read_parent_group_obj_id_cb;
+	read_params.handle_count = 1;
+	read_params.single.handle = cur_mcs_inst->parent_group_obj_id_handle;
+	read_params.single.offset = 0U;
+
+	err = bt_gatt_read(conn, &read_params);
+	if (!err) {
+		cur_mcs_inst->busy = true;
+	}
+	return err;
+}
+
 int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1980,33 +2007,6 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, BT_OTS_OBJ_ID_SIZE, "Object Id");
 
 	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
-	if (!err) {
-		cur_mcs_inst->busy = true;
-	}
-	return err;
-}
-
-int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
-{
-	int err;
-
-	if (!conn) {
-		return -EINVAL;
-	}
-
-	if (!cur_mcs_inst->parent_group_obj_id_handle) {
-		BT_DBG("Handle not set");
-		return -EINVAL;
-	} else if (cur_mcs_inst->busy) {
-		return -EBUSY;
-	}
-
-	read_params.func = mcc_read_parent_group_obj_id_cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = cur_mcs_inst->parent_group_obj_id_handle;
-	read_params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params);
 	if (!err) {
 		cur_mcs_inst->busy = true;
 	}
@@ -2524,52 +2524,6 @@ static void decode_group(struct net_buf_simple *buff,
 }
 #endif /* CONFIG_BT_DEBUG_MCC */
 
-int on_current_group_content(struct bt_conn *conn, uint32_t offset,
-			     uint32_t len, uint8_t *data_p, bool is_complete,
-			     struct bt_otc_instance_t *otc_inst)
-{
-	int cb_err = 0;
-
-	BT_DBG("Received Current Group content, %i bytes at offset %i",
-		len, offset);
-
-	BT_HEXDUMP_DBG(data_p, len, "Group content");
-
-	if (len > net_buf_simple_tailroom(&otc_obj_buf)) {
-		BT_WARN("Can not fit whole object");
-		cb_err = -EMSGSIZE;
-	}
-
-	net_buf_simple_add_mem(&otc_obj_buf, data_p,
-			       MIN(net_buf_simple_tailroom(&otc_obj_buf), len));
-
-	if (is_complete) {
-		BT_DBG("Current Group object received");
-
-#if CONFIG_BT_DEBUG_MCC
-		struct id_list_t group = {0};
-
-		decode_group(&otc_obj_buf, &group);
-		for (int i = 0; i < group.cnt; i++) {
-			char t[BT_OTS_OBJ_ID_STR_LEN];
-
-			(void)bt_ots_obj_id_to_str(group.ids[i].id, t,
-						   BT_OTS_OBJ_ID_STR_LEN);
-			BT_DBG("Object type: %d, object  ID: %s",
-			       group.ids[i].type, log_strdup(t));
-		}
-#endif /* CONFIG_BT_DEBUG_MCC */
-
-		if (mcc_cb && mcc_cb->otc_current_group_object) {
-			mcc_cb->otc_current_group_object(conn, cb_err, &otc_obj_buf);
-		}
-
-		net_buf_simple_reset(&otc_obj_buf);
-	}
-
-	return BT_OTC_CONTINUE;
-}
-
 int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 			    uint32_t len, uint8_t *data_p, bool is_complete,
 			    struct bt_otc_instance_t *otc_inst)
@@ -2608,6 +2562,52 @@ int on_parent_group_content(struct bt_conn *conn, uint32_t offset,
 
 		if (mcc_cb && mcc_cb->otc_parent_group_object) {
 			mcc_cb->otc_parent_group_object(conn, cb_err, &otc_obj_buf);
+		}
+
+		net_buf_simple_reset(&otc_obj_buf);
+	}
+
+	return BT_OTC_CONTINUE;
+}
+
+int on_current_group_content(struct bt_conn *conn, uint32_t offset,
+			     uint32_t len, uint8_t *data_p, bool is_complete,
+			     struct bt_otc_instance_t *otc_inst)
+{
+	int cb_err = 0;
+
+	BT_DBG("Received Current Group content, %i bytes at offset %i",
+		len, offset);
+
+	BT_HEXDUMP_DBG(data_p, len, "Group content");
+
+	if (len > net_buf_simple_tailroom(&otc_obj_buf)) {
+		BT_WARN("Can not fit whole object");
+		cb_err = -EMSGSIZE;
+	}
+
+	net_buf_simple_add_mem(&otc_obj_buf, data_p,
+			       MIN(net_buf_simple_tailroom(&otc_obj_buf), len));
+
+	if (is_complete) {
+		BT_DBG("Current Group object received");
+
+#if CONFIG_BT_DEBUG_MCC
+		struct id_list_t group = {0};
+
+		decode_group(&otc_obj_buf, &group);
+		for (int i = 0; i < group.cnt; i++) {
+			char t[BT_OTS_OBJ_ID_STR_LEN];
+
+			(void)bt_ots_obj_id_to_str(group.ids[i].id, t,
+						   BT_OTS_OBJ_ID_STR_LEN);
+			BT_DBG("Object type: %d, object  ID: %s",
+			       group.ids[i].type, log_strdup(t));
+		}
+#endif /* CONFIG_BT_DEBUG_MCC */
+
+		if (mcc_cb && mcc_cb->otc_current_group_object) {
+			mcc_cb->otc_current_group_object(conn, cb_err, &otc_obj_buf);
 		}
 
 		net_buf_simple_reset(&otc_obj_buf);
@@ -2714,23 +2714,6 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 	return err;
 }
 
-int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
-{
-	int err;
-
-	/* TODO: Add handling for busy - either MCS or OTS */
-
-	/* TODO: Assumes object is already selected */
-	cur_mcs_inst->otc.cb->content_cb = on_current_group_content;
-
-	err = bt_otc_read(conn, &cur_mcs_inst->otc);
-	if (err) {
-		BT_DBG("Error reading the object: %d", err);
-	}
-
-	return err;
-}
-
 int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 {
 	int err;
@@ -2741,6 +2724,23 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 
 	/* Reuse callback for current group */
 	cur_mcs_inst->otc.cb->content_cb = on_parent_group_content;
+
+	err = bt_otc_read(conn, &cur_mcs_inst->otc);
+	if (err) {
+		BT_DBG("Error reading the object: %d", err);
+	}
+
+	return err;
+}
+
+int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
+{
+	int err;
+
+	/* TODO: Add handling for busy - either MCS or OTS */
+
+	/* TODO: Assumes object is already selected */
+	cur_mcs_inst->otc.cb->content_cb = on_current_group_content;
 
 	err = bt_otc_read(conn, &cur_mcs_inst->otc);
 	if (err) {

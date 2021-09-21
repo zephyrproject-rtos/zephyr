@@ -251,8 +251,8 @@ enum mpl_objects {
 	MPL_OBJ_ICON,
 	MPL_OBJ_TRACK_SEGMENTS,
 	MPL_OBJ_TRACK,
-	MPL_OBJ_GROUP,
 	MPL_OBJ_PARENT_GROUP,
+	MPL_OBJ_GROUP,
 	MPL_OBJ_SEARCH_RESULTS,
 };
 
@@ -365,39 +365,6 @@ static uint32_t setup_track_object(struct mpl_track_t *track)
 	return obj.content->len;
 }
 
-/* Set up contents for a group object */
-/* The group object contains a concatenated list of records, where each */
-/* record consists of a type byte and a UUID */
-static uint32_t setup_group_object(struct mpl_group_t *group)
-{
-	struct mpl_track_t *track = group->track;
-	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
-	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
-	int next_size = record_size;
-
-	net_buf_simple_reset(obj.content);
-
-	if (track) {
-		while (track->prev) {
-			track = track->prev;
-		}
-		/* While there is a track, and the record fits in the object */
-		while (track && (next_size <= obj.content->size)) {
-			net_buf_simple_add_u8(obj.content, type);
-			net_buf_simple_add_le48(obj.content, track->id);
-			track = track->next;
-			next_size += record_size;
-		}
-		if (next_size > obj.content->size) {
-			BT_WARN("Not room for full group in object");
-		}
-		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
-			       "Group Object");
-		BT_DBG("Group object length: %d", obj.content->len);
-	}
-	return obj.content->len;
-}
-
 /* Set up content buffer for the parent group object */
 static uint32_t setup_parent_group_object(struct mpl_group_t *group)
 {
@@ -431,6 +398,39 @@ static uint32_t setup_parent_group_object(struct mpl_group_t *group)
 		}
 		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
 			       "Parent Group Object");
+		BT_DBG("Group object length: %d", obj.content->len);
+	}
+	return obj.content->len;
+}
+
+/* Set up contents for a group object */
+/* The group object contains a concatenated list of records, where each */
+/* record consists of a type byte and a UUID */
+static uint32_t setup_group_object(struct mpl_group_t *group)
+{
+	struct mpl_track_t *track = group->track;
+	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
+	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
+	int next_size = record_size;
+
+	net_buf_simple_reset(obj.content);
+
+	if (track) {
+		while (track->prev) {
+			track = track->prev;
+		}
+		/* While there is a track, and the record fits in the object */
+		while (track && (next_size <= obj.content->size)) {
+			net_buf_simple_add_u8(obj.content, type);
+			net_buf_simple_add_le48(obj.content, track->id);
+			track = track->next;
+			next_size += record_size;
+		}
+		if (next_size > obj.content->size) {
+			BT_WARN("Not room for full group in object");
+		}
+		BT_HEXDUMP_DBG(obj.content->data, obj.content->len,
+			       "Group Object");
 		BT_DBG("Group object length: %d", obj.content->len);
 	}
 	return obj.content->len;
@@ -532,6 +532,34 @@ static int add_track_object(struct mpl_track_t *track)
 	return ret;
 }
 
+/* Add the parent group to the OTS */
+static int add_parent_group_object(struct mpl_mediaplayer_t *pl)
+{
+	int ret;
+	struct bt_ots_obj_metadata group_meta = {0};
+	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
+
+	if (obj.busy) {
+		BT_ERR("Object busy");
+		return 0;
+	}
+	obj.busy = true;
+	obj.add_type = MPL_OBJ_PARENT_GROUP;
+
+	group_meta.size.alloc = group_meta.size.cur = setup_parent_group_object(pl->group);
+	group_meta.name = pl->group->parent->title;
+	group_meta.type.uuid.type = BT_UUID_TYPE_16;
+	group_meta.type.uuid_16.val = BT_UUID_16(group_type)->val;
+	BT_OTS_OBJ_SET_PROP_READ(group_meta.props);
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &group_meta);
+	if (ret) {
+		BT_WARN("Unable to add parent group object");
+		obj.busy = false;
+	}
+	return ret;
+}
+
 /* Add a single group to the OTS */
 static int add_group_object(struct mpl_group_t *group)
 {
@@ -567,34 +595,6 @@ static int add_group_object(struct mpl_group_t *group)
 		obj.busy = false;
 	}
 
-	return ret;
-}
-
-/* Add the parent group to the OTS */
-static int add_parent_group_object(struct mpl_mediaplayer_t *pl)
-{
-	int ret;
-	struct bt_ots_obj_metadata group_meta = {0};
-	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
-
-	if (obj.busy) {
-		BT_ERR("Object busy");
-		return 0;
-	}
-	obj.busy = true;
-	obj.add_type = MPL_OBJ_PARENT_GROUP;
-
-	group_meta.size.alloc = group_meta.size.cur = setup_parent_group_object(pl->group);
-	group_meta.name = pl->group->parent->title;
-	group_meta.type.uuid.type = BT_UUID_TYPE_16;
-	group_meta.type.uuid_16.val = BT_UUID_16(group_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(group_meta.props);
-
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &group_meta);
-	if (ret) {
-		BT_WARN("Unable to add parent group object");
-		obj.busy = false;
-	}
 	return ret;
 }
 
@@ -693,12 +693,12 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		/* Next track, if next track has not been explicitly set */
 		BT_DBG("Next Track Object ID");
 		(void)setup_track_object(pl.group->track->next);
-	} else if (id == pl.group->id) {
-		BT_DBG("Current Group Object ID");
-		(void)setup_group_object(pl.group);
 	} else if (id == pl.group->parent->id) {
 		BT_DBG("Parent Group Object ID");
 		(void)setup_parent_group_object(pl.group);
+	} else if (id == pl.group->id) {
+		BT_DBG("Current Group Object ID");
+		(void)setup_group_object(pl.group);
 	} else {
 		BT_ERR("Unknown Object ID");
 		obj.busy = false;
@@ -2485,6 +2485,11 @@ void next_track_id_set(uint64_t id)
 	BT_DBG("Track not found");
 }
 
+uint64_t parent_group_id_get(void)
+{
+	return pl.group->parent->id;
+}
+
 uint64_t current_group_id_get(void)
 {
 	return pl.group->id;
@@ -2514,11 +2519,6 @@ void current_group_id_set(uint64_t id)
 	}
 
 	BT_DBG("Group not found");
-}
-
-uint64_t parent_group_id_get(void)
-{
-	return pl.group->parent->id;
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -2715,9 +2715,9 @@ int media_proxy_pl_init(void)
 	pl.calls.current_track_id_set         = current_track_id_set;
 	pl.calls.next_track_id_get            = next_track_id_get;
 	pl.calls.next_track_id_set            = next_track_id_set;
+	pl.calls.parent_group_id_get          = parent_group_id_get;
 	pl.calls.current_group_id_get         = current_group_id_get;
 	pl.calls.current_group_id_set         = current_group_id_set;
-	pl.calls.parent_group_id_get          = parent_group_id_get;
 #endif /* CONFIG_BT_OTS */
 	pl.calls.playing_order_get            = playing_order_get;
 	pl.calls.playing_order_set            = playing_order_set;
@@ -2768,11 +2768,11 @@ void mpl_debug_dump_state(void)
 	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
 
 #if CONFIG_BT_OTS
-	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
-	BT_DBG("Current group: %s", log_strdup(t));
-
 	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
 	BT_DBG("Current group's parent: %s", log_strdup(t));
+
+	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
+	BT_DBG("Current group: %s", log_strdup(t));
 
 	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
 	BT_DBG("Current track: %s", log_strdup(t));
@@ -2887,14 +2887,14 @@ void mpl_test_next_track_id_changed_cb(void)
 	media_proxy_pl_next_track_id_cb(pl.group->track->next->id);
 }
 
-void mpl_test_current_group_id_changed_cb(void)
-{
-	media_proxy_pl_current_group_id_cb(pl.group->id);
-}
-
 void mpl_test_parent_group_id_changed_cb(void)
 {
 	media_proxy_pl_parent_group_id_cb(pl.group->id);
+}
+
+void mpl_test_current_group_id_changed_cb(void)
+{
+	media_proxy_pl_current_group_id_cb(pl.group->id);
 }
 #endif /* CONFIG_BT_OTS */
 

@@ -335,6 +335,23 @@ static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
+static ssize_t parent_group_id_read(struct bt_conn *conn,
+				    const struct bt_gatt_attr *attr, void *buf,
+				    uint16_t len, uint16_t offset)
+{
+	uint64_t group_id = media_proxy_sctrl_parent_group_id_get();
+
+	BT_DBG_OBJ_ID("Parent group read: ", group_id);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
+				 BT_OTS_OBJ_ID_SIZE);
+}
+
+static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
+					uint16_t value)
+{
+	BT_DBG("value 0x%04x", value);
+}
+
 static ssize_t current_group_id_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
@@ -378,23 +395,6 @@ static ssize_t current_group_id_write(struct bt_conn *conn,
 }
 
 static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	BT_DBG("value 0x%04x", value);
-}
-
-static ssize_t parent_group_id_read(struct bt_conn *conn,
-				    const struct bt_gatt_attr *attr, void *buf,
-				    uint16_t len, uint16_t offset)
-{
-	uint64_t group_id = media_proxy_sctrl_parent_group_id_get();
-
-	BT_DBG_OBJ_ID("Parent group read: ", group_id);
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
-				 BT_OTS_OBJ_ID_SIZE);
-}
-
-static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
-					uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
@@ -636,6 +636,12 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       next_track_id_read, next_track_id_write, NULL), \
 	BT_GATT_CCC(next_track_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT, \
+			       parent_group_id_read, NULL, NULL), \
+	BT_GATT_CCC(parent_group_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
@@ -644,12 +650,6 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
 			       current_group_id_read, current_group_id_write, NULL), \
 	BT_GATT_CCC(current_group_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       parent_group_id_read, NULL, NULL), \
-	BT_GATT_CCC(parent_group_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 #define	SEARCH_CHARACTERISTICS_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_CONTROL_POINT, \
@@ -854,17 +854,16 @@ void media_proxy_sctrl_next_track_id_cb(uint64_t id)
 	}
 }
 
-void media_proxy_sctrl_current_group_id_cb(uint64_t id)
-{
-	BT_DBG_OBJ_ID("Notifying current group ID: ", id);
-	notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
-}
-
-
 void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Notifying parent group ID: ", id);
 	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
+}
+
+void media_proxy_sctrl_current_group_id_cb(uint64_t id)
+{
+	BT_DBG_OBJ_ID("Notifying current group ID: ", id);
+	notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void media_proxy_sctrl_playing_order_cb(uint8_t order)
@@ -971,8 +970,8 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 #ifdef CONFIG_BT_OTS
 	cbs.current_track_id     = media_proxy_sctrl_current_track_id_cb;
 	cbs.next_track_id        = media_proxy_sctrl_next_track_id_cb;
-	cbs.current_group_id     = media_proxy_sctrl_current_group_id_cb;
 	cbs.parent_group_id      = media_proxy_sctrl_parent_group_id_cb;
+	cbs.current_group_id     = media_proxy_sctrl_current_group_id_cb;
 #endif /* CONFIG_BT_OTS */
 	cbs.playing_order        = media_proxy_sctrl_playing_order_cb;
 	cbs.media_state          = media_proxy_sctrl_media_state_cb;

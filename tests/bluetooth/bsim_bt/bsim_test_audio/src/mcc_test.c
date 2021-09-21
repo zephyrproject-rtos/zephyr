@@ -34,8 +34,8 @@ static uint64_t g_icon_object_id;
 static uint64_t g_track_segments_object_id;
 static uint64_t g_current_track_object_id;
 static uint64_t g_next_track_object_id;
-static uint64_t g_current_group_object_id;
 static uint64_t g_parent_group_object_id;
+static uint64_t g_current_group_object_id;
 static uint64_t g_search_results_object_id;
 
 static int32_t g_pos;
@@ -64,9 +64,9 @@ CREATE_FLAG(current_track_object_id_read);
 CREATE_FLAG(current_track_object_id_set);
 CREATE_FLAG(next_track_object_id_read);
 CREATE_FLAG(next_track_object_id_set);
+CREATE_FLAG(parent_group_object_id_read);
 CREATE_FLAG(current_group_object_id_read);
 CREATE_FLAG(current_group_object_id_set);
-CREATE_FLAG(parent_group_object_id_read);
 CREATE_FLAG(search_results_object_id_read);
 CREATE_FLAG(playing_order_read);
 CREATE_FLAG(playing_order_set);
@@ -269,6 +269,18 @@ static void mcc_next_track_obj_id_set_cb(struct bt_conn *conn, int err,
 	SET_FLAG(next_track_object_id_set);
 }
 
+static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
+					    uint64_t id)
+{
+	if (err) {
+		FAIL("Parent Group Object ID read failed (%d)\n", err);
+		return;
+	}
+
+	g_parent_group_object_id = id;
+	SET_FLAG(parent_group_object_id_read);
+}
+
 static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
@@ -291,18 +303,6 @@ static void mcc_current_group_obj_id_set_cb(struct bt_conn *conn, int err,
 
 	g_current_group_object_id = id;
 	SET_FLAG(current_group_object_id_set);
-}
-
-static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
-					    uint64_t id)
-{
-	if (err) {
-		FAIL("Parent Group Object ID read failed (%d)\n", err);
-		return;
-	}
-
-	g_parent_group_object_id = id;
-	SET_FLAG(parent_group_object_id_read);
 }
 
 static void mcc_playing_order_read_cb(struct bt_conn *conn, int err, uint8_t order)
@@ -481,22 +481,22 @@ static void mcc_otc_read_next_track_object_cb(struct bt_conn *conn, int err,
 	SET_FLAG(object_read);
 }
 
-static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
-						 struct net_buf_simple *buf)
+static void mcc_otc_read_parent_group_object_cb(struct bt_conn *conn, int err,
+						struct net_buf_simple *buf)
 {
 	if (err) {
-		FAIL("Current Group Object read failed (%d)", err);
+		FAIL("Parent Group Object read failed (%d)", err);
 		return;
 	}
 
 	SET_FLAG(object_read);
 }
 
-static void mcc_otc_read_parent_group_object_cb(struct bt_conn *conn, int err,
-						struct net_buf_simple *buf)
+static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
+						 struct net_buf_simple *buf)
 {
 	if (err) {
-		FAIL("Parent Group Object read failed (%d)", err);
+		FAIL("Current Group Object read failed (%d)", err);
 		return;
 	}
 
@@ -523,9 +523,9 @@ int do_mcc_init(void)
 	mcc_cb.next_track_obj_id_read    = &mcc_next_track_obj_id_read_cb;
 	mcc_cb.next_track_obj_id_set     = &mcc_next_track_obj_id_set_cb;
 	mcc_cb.segments_obj_id_read      = &mcc_segments_obj_id_read_cb;
+	mcc_cb.parent_group_obj_id_read  = &mcc_parent_group_obj_id_read_cb;
 	mcc_cb.current_group_obj_id_read = &mcc_current_group_obj_id_read_cb;
 	mcc_cb.current_group_obj_id_set  = &mcc_current_group_obj_id_set_cb;
-	mcc_cb.parent_group_obj_id_read  = &mcc_parent_group_obj_id_read_cb;
 	mcc_cb.playing_order_read        = &mcc_playing_order_read_cb;
 	mcc_cb.playing_order_set         = &mcc_playing_order_set_cb;
 	mcc_cb.playing_orders_supported_read = &mcc_playing_orders_supported_read_cb;
@@ -542,8 +542,8 @@ int do_mcc_init(void)
 	mcc_cb.otc_track_segments_object = &mcc_track_segments_object_read_cb;
 	mcc_cb.otc_current_track_object  = &mcc_otc_read_current_track_object_cb;
 	mcc_cb.otc_next_track_object     = &mcc_otc_read_next_track_object_cb;
-	mcc_cb.otc_current_group_object  = &mcc_otc_read_current_group_object_cb;
 	mcc_cb.otc_parent_group_object   = &mcc_otc_read_parent_group_object_cb;
+	mcc_cb.otc_current_group_object  = &mcc_otc_read_current_group_object_cb;
 
 	/* Initialize the module */
 	return bt_mcc_init(&mcc_cb);
@@ -1646,6 +1646,29 @@ void test_main(void)
 	printk("Next Track Object read succeeded\n");
 
 
+	/* Read parent group object ******************************************/
+	UNSET_FLAG(parent_group_object_id_read);
+	err = bt_mcc_read_parent_group_obj_id(default_conn);
+	if (err) {
+		FAIL("Failed to read parent group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(parent_group_object_id_read);
+	printk("Parent Group Object ID read succeeded\n");
+
+	select_read_meta(g_parent_group_object_id);
+	UNSET_FLAG(object_read);
+	err = bt_mcc_otc_read_parent_group_object(default_conn);
+
+	if (err) {
+		FAIL("Failed to read parent group object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_read);
+	printk("Parent Group Object read succeeded\n");
+
 	/* Current group object ******************************************/
 	UNSET_FLAG(current_group_object_id_set);
 
@@ -1710,29 +1733,6 @@ void test_main(void)
 		FAIL("Current group object ID not the one that was set");
 		return;
 	}
-
-	/* Read parent group object ******************************************/
-	UNSET_FLAG(parent_group_object_id_read);
-	err = bt_mcc_read_parent_group_obj_id(default_conn);
-	if (err) {
-		FAIL("Failed to read parent group object ID: %d", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(parent_group_object_id_read);
-	printk("Parent Group Object ID read succeeded\n");
-
-	select_read_meta(g_parent_group_object_id);
-	UNSET_FLAG(object_read);
-	err = bt_mcc_otc_read_parent_group_object(default_conn);
-
-	if (err) {
-		FAIL("Failed to read parent group object\n");
-		return;
-	}
-
-	WAIT_FOR_FLAG(object_read);
-	printk("Parent Group Object read succeeded\n");
 
 	/* Read and set playing order *************************************/
 	UNSET_FLAG(playing_order_read);
