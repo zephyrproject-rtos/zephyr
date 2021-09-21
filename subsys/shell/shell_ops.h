@@ -203,6 +203,19 @@ static inline bool z_flag_print_noinit_set(const struct shell *sh, bool val)
 	return ret;
 }
 
+static inline bool z_flag_panic_mode_get(const struct shell *sh)
+{
+	return sh->ctx->ctx.flags.panic_mode == 1;
+}
+
+static inline bool z_flag_panic_mode_set(const struct shell *sh, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, panic_mode, val, ret);
+	return ret;
+}
+
 /* Function sends VT100 command to clear the screen from cursor position to
  * end of the screen.
  */

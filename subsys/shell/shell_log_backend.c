@@ -289,6 +289,7 @@ static void panic(const struct log_backend *const backend)
 	if (err == 0) {
 		shell->log_backend->control_block->state =
 						SHELL_LOG_BACKEND_PANIC;
+		z_flag_panic_mode_set(shell, true);
 
 		/* Move to the start of next line. */
 		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
