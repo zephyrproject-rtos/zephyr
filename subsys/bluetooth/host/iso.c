@@ -1284,6 +1284,40 @@ static int hci_le_create_cis(const struct bt_iso_connect_param *param,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CIS, buf, NULL);
 }
 
+int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso)
+{
+	struct bt_iso_accept_info accept_info;
+	struct bt_iso_chan *chan;
+	int err;
+
+	CHECKIF(!iso || iso->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: iso %p iso->type %u", iso,
+		       iso ? iso->type : 0);
+		return -EINVAL;
+	}
+
+	BT_DBG("%p", iso);
+
+	if (!iso_server) {
+		return -ENOMEM;
+	}
+
+	accept_info.acl = acl;
+	accept_info.cig_id = iso->iso.cig_id;
+	accept_info.cis_id = iso->iso.cis_id;
+
+	err = iso_server->accept(&accept_info, &chan);
+	if (err < 0) {
+		BT_ERR("Server failed to accept: %d", err);
+		return err;
+	}
+
+	bt_iso_chan_add(iso, chan);
+	bt_iso_chan_set_state(chan, BT_ISO_CONNECT);
+
+	return 0;
+}
+
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 {
 	int err;
