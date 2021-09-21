@@ -502,19 +502,20 @@ void z_shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 }
 
-void z_shell_fprintf(const struct shell *shell,
-			    enum shell_vt100_color color,
-			    const char *fmt, ...)
+void z_shell_fprintf(const struct shell *sh,
+		     enum shell_vt100_color color,
+		     const char *fmt, ...)
 {
-	__ASSERT_NO_MSG(shell);
-	__ASSERT(!k_is_in_isr(), "Thread context required.");
-	__ASSERT_NO_MSG(shell->ctx);
-	__ASSERT_NO_MSG(shell->fprintf_ctx);
+	__ASSERT_NO_MSG(sh);
+	__ASSERT_NO_MSG(sh->ctx);
+	__ASSERT_NO_MSG(sh->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
+	__ASSERT(z_flag_panic_mode_get(sh) || !k_is_in_isr(),
+		 "Thread context required.");
 
 	va_list args;
 
 	va_start(args, fmt);
-	z_shell_vfprintf(shell, color, fmt, args);
+	z_shell_vfprintf(sh, color, fmt, args);
 	va_end(args);
 }
