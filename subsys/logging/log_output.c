@@ -16,6 +16,7 @@
 
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
+#define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
 #define HEXDUMP_BYTES_IN_LINE 16
@@ -38,7 +39,7 @@ static const char *const colors[] = {
 	NULL,
 	LOG_COLOR_CODE_RED,     /* err */
 	LOG_COLOR_CODE_YELLOW,  /* warn */
-	NULL,                   /* info */
+	IS_ENABLED(CONFIG_LOG_INFO_COLOR_GREEN) ? LOG_COLOR_CODE_GREEN : NULL,   /* info */
 	NULL                    /* dbg */
 };
 
