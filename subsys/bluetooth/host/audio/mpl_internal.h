@@ -29,66 +29,66 @@ extern "C" {
 
 
 /* Track segments */
-struct mpl_tseg_t {
+struct mpl_tseg {
 	uint8_t            name_len;
 	char		   name[CONFIG_BT_MCS_SEGMENT_NAME_MAX];
 	int32_t            pos;
-	struct mpl_tseg_t *prev;
-	struct mpl_tseg_t *next;
+	struct mpl_tseg   *prev;
+	struct mpl_tseg   *next;
 };
 
 /* Tracks */
-struct mpl_track_t {
+struct mpl_track {
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 	char                 title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
 	int32_t              duration;
-	struct mpl_tseg_t   *segment;
+	struct mpl_tseg     *segment;
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             segments_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	struct mpl_track_t  *prev;
-	struct mpl_track_t  *next;
+	struct mpl_track    *prev;
+	struct mpl_track    *next;
 };
 
 /* Groups */
-struct mpl_group_t {
+struct mpl_group {
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t             id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 	char                 title[CONFIG_BT_MCS_GROUP_TITLE_MAX];
-	struct mpl_track_t  *track;
-	struct mpl_group_t  *parent;
-	struct mpl_group_t  *prev;
-	struct mpl_group_t  *next;
+	struct mpl_track    *track;
+	struct mpl_group    *parent;
+	struct mpl_group    *prev;
+	struct mpl_group    *next;
 };
 
 /** @brief Media Player */
-struct mpl_mediaplayer_t {
+struct mpl_mediaplayer   {
 	char                name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t            icon_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
-	struct mpl_group_t  *group;
-	int32_t              track_pos;
-	uint8_t              state;
-	int8_t               playback_speed_param;
-	int8_t               seeking_speed_factor;
-	uint8_t              playing_order;
-	uint16_t             playing_orders_supported;
-	uint32_t             opcodes_supported;
+	struct mpl_group   *group;
+	int32_t             track_pos;
+	uint8_t             state;
+	int8_t              playback_speed_param;
+	int8_t              seeking_speed_factor;
+	uint8_t             playing_order;
+	uint16_t            playing_orders_supported;
+	uint32_t            opcodes_supported;
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
-	uint64_t             search_results_id;
+	uint64_t            search_results_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	uint8_t              content_ctrl_id;
+	uint8_t             content_ctrl_id;
 	struct media_proxy_pl_calls calls;
 
 	bool                        next_track_set; /* If next track explicitly set */
 	struct {
-		struct mpl_track_t  *track; /* The track explicitly set as next track */
-		struct mpl_group_t  *group; /* The group of the set track */
+		struct mpl_track    *track; /* The track explicitly set as next track */
+		struct mpl_group    *group; /* The group of the set track */
 	} next;
 };
 

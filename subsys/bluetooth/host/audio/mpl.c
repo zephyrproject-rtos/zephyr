@@ -32,10 +32,10 @@
 /* The first track of the first group has track segments, other tracks not. */
 
 /* Track segments */
-static struct mpl_tseg_t seg_2;
-static struct mpl_tseg_t seg_3;
+static struct mpl_tseg seg_2;
+static struct mpl_tseg seg_3;
 
-static struct mpl_tseg_t seg_1 = {
+static struct mpl_tseg seg_1 = {
 	.name_len = 5,
 	.name	  = "Start",
 	.pos	  = 0,
@@ -43,7 +43,7 @@ static struct mpl_tseg_t seg_1 = {
 	.next	  = &seg_2,
 };
 
-static struct mpl_tseg_t seg_2 = {
+static struct mpl_tseg seg_2 = {
 	.name_len = 6,
 	.name	  = "Middle",
 	.pos	  = 2000,
@@ -51,7 +51,7 @@ static struct mpl_tseg_t seg_2 = {
 	.next	  = &seg_3,
 };
 
-static struct mpl_tseg_t seg_3 = {
+static struct mpl_tseg seg_3 = {
 	.name_len = 3,
 	.name	  = "End",
 	.pos	  = 5000,
@@ -59,13 +59,13 @@ static struct mpl_tseg_t seg_3 = {
 	.next	  = NULL,
 };
 
-static struct mpl_track_t track_1_2;
-static struct mpl_track_t track_1_3;
-static struct mpl_track_t track_1_4;
-static struct mpl_track_t track_1_5;
+static struct mpl_track track_1_2;
+static struct mpl_track track_1_3;
+static struct mpl_track track_1_4;
+static struct mpl_track track_1_5;
 
 /* Tracks */
-static struct mpl_track_t track_1_1 = {
+static struct mpl_track track_1_1 = {
 	.title	     = "Interlude #1 (Song for Alison)",
 	.duration    = 6300,
 	.segment     = &seg_1,
@@ -74,7 +74,7 @@ static struct mpl_track_t track_1_1 = {
 };
 
 
-static struct mpl_track_t track_1_2 = {
+static struct mpl_track track_1_2 = {
 	.title	     = "Interlude #2 (For Bobbye)",
 	.duration    = 7500,
 	.segment     = NULL,
@@ -82,7 +82,7 @@ static struct mpl_track_t track_1_2 = {
 	.next	     = &track_1_3,
 };
 
-static struct mpl_track_t track_1_3 = {
+static struct mpl_track track_1_3 = {
 	.title	     = "Interlude #3 (Levanto Seventy)",
 	.duration    = 7800,
 	.segment     = NULL,
@@ -90,7 +90,7 @@ static struct mpl_track_t track_1_3 = {
 	.next	     = &track_1_4,
 };
 
-static struct mpl_track_t track_1_4 = {
+static struct mpl_track track_1_4 = {
 	.title	     = "Interlude #4 (Vesper Dreams)",
 	.duration    = 13500,
 	.segment     = NULL,
@@ -98,7 +98,7 @@ static struct mpl_track_t track_1_4 = {
 	.next	     = &track_1_5,
 };
 
-static struct mpl_track_t track_1_5 = {
+static struct mpl_track track_1_5 = {
 	.title	     = "Interlude #5 (Shasti)",
 	.duration    = 7500,
 	.segment     = NULL,
@@ -106,10 +106,10 @@ static struct mpl_track_t track_1_5 = {
 	.next	     = NULL,
 };
 
-static struct mpl_track_t track_2_2;
-static struct mpl_track_t track_2_3;
+static struct mpl_track track_2_2;
+static struct mpl_track track_2_3;
 
-static struct mpl_track_t track_2_1 = {
+static struct mpl_track track_2_1 = {
 	.title	     = "Track 2.1",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -117,7 +117,7 @@ static struct mpl_track_t track_2_1 = {
 	.next	     = &track_2_2,
 };
 
-static struct mpl_track_t track_2_2 = {
+static struct mpl_track track_2_2 = {
 	.title	     = "Track 2.2",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -125,7 +125,7 @@ static struct mpl_track_t track_2_2 = {
 	.next	     = &track_2_3,
 };
 
-static struct mpl_track_t track_2_3 = {
+static struct mpl_track track_2_3 = {
 	.title	     = "Track 2.3",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -133,10 +133,10 @@ static struct mpl_track_t track_2_3 = {
 	.next	     = NULL,
 };
 
-static struct mpl_track_t track_3_2;
-static struct mpl_track_t track_3_3;
+static struct mpl_track track_3_2;
+static struct mpl_track track_3_3;
 
-static struct mpl_track_t track_3_1 = {
+static struct mpl_track track_3_1 = {
 	.title	     = "Track 3.1",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -144,7 +144,7 @@ static struct mpl_track_t track_3_1 = {
 	.next	     = &track_3_2,
 };
 
-static struct mpl_track_t track_3_2 = {
+static struct mpl_track track_3_2 = {
 	.title	     = "Track 3.2",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -152,7 +152,7 @@ static struct mpl_track_t track_3_2 = {
 	.next	     = &track_3_3,
 };
 
-static struct mpl_track_t track_3_3 = {
+static struct mpl_track track_3_3 = {
 	.title	     = "Track 3.3",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -160,9 +160,9 @@ static struct mpl_track_t track_3_3 = {
 	.next	     = NULL,
 };
 
-static struct mpl_track_t track_4_2;
+static struct mpl_track track_4_2;
 
-static struct mpl_track_t track_4_1 = {
+static struct mpl_track track_4_1 = {
 	.title	     = "Track 4.1",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -170,7 +170,7 @@ static struct mpl_track_t track_4_1 = {
 	.next	     = &track_4_2,
 };
 
-static struct mpl_track_t track_4_2 = {
+static struct mpl_track track_4_2 = {
 	.title	     = "Track 4.2",
 	.duration    = 30000,
 	.segment     = NULL,
@@ -179,12 +179,12 @@ static struct mpl_track_t track_4_2 = {
 };
 
 /* Groups */
-static struct mpl_group_t group_2;
-static struct mpl_group_t group_3;
-static struct mpl_group_t group_4;
-static struct mpl_group_t group_p;
+static struct mpl_group group_2;
+static struct mpl_group group_3;
+static struct mpl_group group_4;
+static struct mpl_group group_p;
 
-static struct mpl_group_t group_1 = {
+static struct mpl_group group_1 = {
 	.title  = "Joe Pass - Guitar Interludes",
 	.track	= &track_1_1,
 	.parent = &group_p,
@@ -192,7 +192,7 @@ static struct mpl_group_t group_1 = {
 	.next	= &group_2,
 };
 
-static struct mpl_group_t group_2 = {
+static struct mpl_group group_2 = {
 	.title  = "Group 2",
 	.track	= &track_2_2,
 	.parent = &group_p,
@@ -200,7 +200,7 @@ static struct mpl_group_t group_2 = {
 	.next	= &group_3,
 };
 
-static struct mpl_group_t group_3 = {
+static struct mpl_group group_3 = {
 	.title  = "Group 3",
 	.track	= &track_3_3,
 	.parent = &group_p,
@@ -208,7 +208,7 @@ static struct mpl_group_t group_3 = {
 	.next	= &group_4,
 };
 
-static struct mpl_group_t group_4 = {
+static struct mpl_group group_4 = {
 	.title  = "Group 4",
 	.track	= &track_4_2,
 	.parent = &group_p,
@@ -216,7 +216,7 @@ static struct mpl_group_t group_4 = {
 	.next	= NULL,
 };
 
-static struct mpl_group_t group_p = {
+static struct mpl_group group_p = {
 	.title  = "Parent group",
 	.track	= &track_4_1,
 	.parent = &group_p,
@@ -224,7 +224,7 @@ static struct mpl_group_t group_p = {
 	.next	= NULL,
 };
 
-static struct mpl_mediaplayer_t pl = {
+static struct mpl_mediaplayer pl = {
 	.name			  = CONFIG_BT_MCS_MEDIA_PLAYER_NAME,
 	.icon_url		  = CONFIG_BT_MCS_ICON_URL,
 	.group			  = &group_1,
@@ -265,8 +265,8 @@ struct obj_t {
 	bool     busy;
 	uint8_t  add_type;     /* Type of object being added, e.g. MPL_OBJ_ICON */
 	union {
-		struct mpl_track_t *add_track; /* Pointer to track being added */
-		struct mpl_group_t *add_group; /* Pointer to group being added */
+		struct mpl_track *add_track; /* Pointer to track being added */
+		struct mpl_group *add_group; /* Pointer to group being added */
 	};
 	struct   net_buf_simple *content;
 };
@@ -303,9 +303,9 @@ static int setup_icon_object(void)
 }
 
 /* Set up content buffer for a track segments object */
-static uint32_t setup_segments_object(struct mpl_track_t *track)
+static uint32_t setup_segments_object(struct mpl_track *track)
 {
-	struct mpl_tseg_t *seg = track->segment;
+	struct mpl_tseg *seg = track->segment;
 
 	net_buf_simple_reset(obj.content);
 
@@ -344,7 +344,7 @@ static uint32_t setup_segments_object(struct mpl_track_t *track)
 }
 
 /* Set up content buffer for a track object */
-static uint32_t setup_track_object(struct mpl_track_t *track)
+static uint32_t setup_track_object(struct mpl_track *track)
 {
 	uint16_t index;
 	uint8_t k;
@@ -366,7 +366,7 @@ static uint32_t setup_track_object(struct mpl_track_t *track)
 }
 
 /* Set up content buffer for the parent group object */
-static uint32_t setup_parent_group_object(struct mpl_group_t *group)
+static uint32_t setup_parent_group_object(struct mpl_group *group)
 {
 	/* This function actually does not use the parent. */
 	/* It just follows the list of groups. */
@@ -406,9 +406,9 @@ static uint32_t setup_parent_group_object(struct mpl_group_t *group)
 /* Set up contents for a group object */
 /* The group object contains a concatenated list of records, where each */
 /* record consists of a type byte and a UUID */
-static uint32_t setup_group_object(struct mpl_group_t *group)
+static uint32_t setup_group_object(struct mpl_group *group)
 {
-	struct mpl_track_t *track = group->track;
+	struct mpl_track *track = group->track;
 	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
@@ -437,7 +437,7 @@ static uint32_t setup_group_object(struct mpl_group_t *group)
 }
 
 /* Add the icon object to the OTS */
-static int add_icon_object(struct mpl_mediaplayer_t *pl)
+static int add_icon_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
 	struct bt_ots_obj_metadata icon = {0};
@@ -469,7 +469,7 @@ static int add_icon_object(struct mpl_mediaplayer_t *pl)
 }
 
 /* Add a track segments object to the OTS */
-static int add_current_track_segments_object(struct mpl_mediaplayer_t *pl)
+static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
 	struct bt_ots_obj_metadata segs = {0};
@@ -497,7 +497,7 @@ static int add_current_track_segments_object(struct mpl_mediaplayer_t *pl)
 }
 
 /* Add a single track to the OTS */
-static int add_track_object(struct mpl_track_t *track)
+static int add_track_object(struct mpl_track *track)
 {
 	struct bt_ots_obj_metadata track_meta = {0};
 	struct bt_uuid *track_type = BT_UUID_OTS_TYPE_TRACK;
@@ -533,7 +533,7 @@ static int add_track_object(struct mpl_track_t *track)
 }
 
 /* Add the parent group to the OTS */
-static int add_parent_group_object(struct mpl_mediaplayer_t *pl)
+static int add_parent_group_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
 	struct bt_ots_obj_metadata group_meta = {0};
@@ -561,7 +561,7 @@ static int add_parent_group_object(struct mpl_mediaplayer_t *pl)
 }
 
 /* Add a single group to the OTS */
-static int add_group_object(struct mpl_group_t *group)
+static int add_group_object(struct mpl_group *group)
 {
 	struct bt_ots_obj_metadata group_meta = {0};
 	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
@@ -599,10 +599,10 @@ static int add_group_object(struct mpl_group_t *group)
 }
 
 /* Add all tracks of a group to the OTS */
-static int add_group_tracks(struct mpl_group_t *group)
+static int add_group_tracks(struct mpl_group *group)
 {
 	int ret_overall = 0;
-	struct mpl_track_t *track = group->track;
+	struct mpl_track *track = group->track;
 
 	if (track) {
 		while (track->prev) {
@@ -622,11 +622,11 @@ static int add_group_tracks(struct mpl_group_t *group)
 }
 
 /* Add all groups (except the parent group) and their tracks to the OTS */
-static int add_group_and_track_objects(struct mpl_mediaplayer_t *pl)
+static int add_group_and_track_objects(struct mpl_mediaplayer *pl)
 {
 	int ret_overall = 0;
 	int ret;
-	struct mpl_group_t *group = pl->group;
+	struct mpl_group *group = pl->group;
 
 	if (group) {
 		while (group->prev) {
@@ -834,7 +834,7 @@ static struct bt_ots_cb ots_cbs = {
 /* and do_prev_group() with a generic do_prev() command that can be used at */
 /* all levels.	Similarly for do_next, do_prev, and so on. */
 
-void do_prev_segment(struct mpl_mediaplayer_t *pl)
+void do_prev_segment(struct mpl_mediaplayer *pl)
 {
 	BT_DBG("Segment name before: %s",
 	       log_strdup(pl->group->track->segment->name));
@@ -847,7 +847,7 @@ void do_prev_segment(struct mpl_mediaplayer_t *pl)
 	       log_strdup(pl->group->track->segment->name));
 }
 
-void do_next_segment(struct mpl_mediaplayer_t *pl)
+void do_next_segment(struct mpl_mediaplayer *pl)
 {
 	BT_DBG("Segment name before: %s",
 	       log_strdup(pl->group->track->segment->name));
@@ -860,7 +860,7 @@ void do_next_segment(struct mpl_mediaplayer_t *pl)
 	       log_strdup(pl->group->track->segment->name));
 }
 
-void do_first_segment(struct mpl_mediaplayer_t *pl)
+void do_first_segment(struct mpl_mediaplayer *pl)
 {
 	BT_DBG("Segment name before: %s",
 	       log_strdup(pl->group->track->segment->name));
@@ -873,7 +873,7 @@ void do_first_segment(struct mpl_mediaplayer_t *pl)
 	       log_strdup(pl->group->track->segment->name));
 }
 
-void do_last_segment(struct mpl_mediaplayer_t *pl)
+void do_last_segment(struct mpl_mediaplayer *pl)
 {
 	BT_DBG("Segment name before: %s",
 	       log_strdup(pl->group->track->segment->name));
@@ -886,7 +886,7 @@ void do_last_segment(struct mpl_mediaplayer_t *pl)
 	       log_strdup(pl->group->track->segment->name));
 }
 
-void do_goto_segment(struct mpl_mediaplayer_t *pl, int32_t segnum)
+void do_goto_segment(struct mpl_mediaplayer *pl, int32_t segnum)
 {
 	int32_t k;
 
@@ -927,7 +927,7 @@ void do_goto_segment(struct mpl_mediaplayer_t *pl, int32_t segnum)
 	       log_strdup(pl->group->track->segment->name));
 }
 
-static bool do_prev_track(struct mpl_mediaplayer_t *pl)
+static bool do_prev_track(struct mpl_mediaplayer *pl)
 {
 	bool track_changed = false;
 
@@ -948,7 +948,7 @@ static bool do_prev_track(struct mpl_mediaplayer_t *pl)
 }
 
 /* Change to next track according to the current track's next track */
-static bool do_next_track_normal_order(struct mpl_mediaplayer_t *pl)
+static bool do_next_track_normal_order(struct mpl_mediaplayer *pl)
 {
 	bool track_changed = false;
 
@@ -975,7 +975,7 @@ static bool do_next_track_normal_order(struct mpl_mediaplayer_t *pl)
  *
  * Returns true if the _group_ has been changed, otherwise false
  */
-static bool do_next_track_next_track_set(struct mpl_mediaplayer_t *pl)
+static bool do_next_track_next_track_set(struct mpl_mediaplayer *pl)
 {
 	bool group_changed = false;
 
@@ -993,7 +993,7 @@ static bool do_next_track_next_track_set(struct mpl_mediaplayer_t *pl)
 	return group_changed;
 }
 
-static bool do_first_track(struct mpl_mediaplayer_t *pl)
+static bool do_first_track(struct mpl_mediaplayer *pl)
 {
 	bool track_changed = false;
 
@@ -1016,7 +1016,7 @@ static bool do_first_track(struct mpl_mediaplayer_t *pl)
 	return track_changed;
 }
 
-static bool do_last_track(struct mpl_mediaplayer_t *pl)
+static bool do_last_track(struct mpl_mediaplayer *pl)
 {
 	bool track_changed = false;
 
@@ -1039,7 +1039,7 @@ static bool do_last_track(struct mpl_mediaplayer_t *pl)
 	return track_changed;
 }
 
-static bool do_goto_track(struct mpl_mediaplayer_t *pl, int32_t tracknum)
+static bool do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 {
 	int32_t count = 0;
 	int32_t k;
@@ -1088,7 +1088,7 @@ static bool do_goto_track(struct mpl_mediaplayer_t *pl, int32_t tracknum)
 }
 
 
-static bool do_prev_group(struct mpl_mediaplayer_t *pl)
+static bool do_prev_group(struct mpl_mediaplayer *pl)
 {
 	bool group_changed = false;
 
@@ -1108,7 +1108,7 @@ static bool do_prev_group(struct mpl_mediaplayer_t *pl)
 	return group_changed;
 }
 
-static bool do_next_group(struct mpl_mediaplayer_t *pl)
+static bool do_next_group(struct mpl_mediaplayer *pl)
 {
 	bool group_changed = false;
 
@@ -1128,7 +1128,7 @@ static bool do_next_group(struct mpl_mediaplayer_t *pl)
 	return group_changed;
 }
 
-static bool do_first_group(struct mpl_mediaplayer_t *pl)
+static bool do_first_group(struct mpl_mediaplayer *pl)
 {
 	bool group_changed = false;
 
@@ -1151,7 +1151,7 @@ static bool do_first_group(struct mpl_mediaplayer_t *pl)
 	return group_changed;
 }
 
-static bool do_last_group(struct mpl_mediaplayer_t *pl)
+static bool do_last_group(struct mpl_mediaplayer *pl)
 {
 	bool group_changed = false;
 
@@ -1174,7 +1174,7 @@ static bool do_last_group(struct mpl_mediaplayer_t *pl)
 	return group_changed;
 }
 
-static bool  do_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
+static bool  do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 {
 	int32_t count = 0;
 	int32_t k;
@@ -1222,7 +1222,7 @@ static bool  do_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
 	return (count != 0);
 }
 
-void do_track_change_notifications(struct mpl_mediaplayer_t *pl)
+void do_track_change_notifications(struct mpl_mediaplayer *pl)
 {
 	media_proxy_pl_track_changed_cb();
 	media_proxy_pl_track_title_cb(pl->group->track->title);
@@ -1239,14 +1239,14 @@ void do_track_change_notifications(struct mpl_mediaplayer_t *pl)
 #endif /* CONFIG_BT_OTS */
 }
 
-void do_group_change_notifications(struct mpl_mediaplayer_t *pl)
+void do_group_change_notifications(struct mpl_mediaplayer *pl)
 {
 #ifdef CONFIG_BT_OTS
 	media_proxy_pl_current_group_id_cb(pl->group->id);
 #endif /* CONFIG_BT_OTS */
 }
 
-void do_full_prev_group(struct mpl_mediaplayer_t *pl)
+void do_full_prev_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on first group) */
 	if (do_prev_group(pl)) {
@@ -1269,7 +1269,7 @@ void do_full_prev_group(struct mpl_mediaplayer_t *pl)
 	}
 }
 
-void do_full_next_group(struct mpl_mediaplayer_t *pl)
+void do_full_next_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on last group) */
 	if (do_next_group(pl)) {
@@ -1292,7 +1292,7 @@ void do_full_next_group(struct mpl_mediaplayer_t *pl)
 	}
 }
 
-void do_full_first_group(struct mpl_mediaplayer_t *pl)
+void do_full_first_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on first group) */
 	if (do_first_group(pl)) {
@@ -1315,7 +1315,7 @@ void do_full_first_group(struct mpl_mediaplayer_t *pl)
 	}
 }
 
-void do_full_last_group(struct mpl_mediaplayer_t *pl)
+void do_full_last_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on last group) */
 	if (do_last_group(pl)) {
@@ -1338,7 +1338,7 @@ void do_full_last_group(struct mpl_mediaplayer_t *pl)
 	}
 }
 
-void do_full_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
+void do_full_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 {
 	/* Change the group (if not already on given group) */
 	if (do_goto_group(pl, groupnum)) {
@@ -2256,11 +2256,11 @@ void (*command_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_cmd command,
  *
  * Returns true if found, false otherwise
  */
-static bool find_track_by_id(const struct mpl_mediaplayer_t *pl, uint64_t id,
-			     struct mpl_group_t **group, struct mpl_track_t **track)
+static bool find_track_by_id(const struct mpl_mediaplayer *pl, uint64_t id,
+			     struct mpl_group **group, struct mpl_track **track)
 {
-	struct mpl_group_t *tmp_group = pl->group;
-	struct mpl_track_t *tmp_track;
+	struct mpl_group *tmp_group = pl->group;
+	struct mpl_track *tmp_track;
 
 	while (tmp_group->prev != NULL) {
 		tmp_group = tmp_group->prev;
@@ -2299,10 +2299,10 @@ static bool find_track_by_id(const struct mpl_mediaplayer_t *pl, uint64_t id,
  *
  * Returns true if found, false otherwise
  */
-static bool find_group_by_id(const struct mpl_mediaplayer_t *pl, uint64_t id,
-			     struct mpl_group_t **group)
+static bool find_group_by_id(const struct mpl_mediaplayer *pl, uint64_t id,
+			     struct mpl_group **group)
 {
-	struct mpl_group_t *tmp_group = pl->group;
+	struct mpl_group *tmp_group = pl->group;
 
 	while (tmp_group->prev != NULL) {
 		tmp_group = tmp_group->prev;
@@ -2421,8 +2421,8 @@ uint64_t current_track_id_get(void)
 
 void current_track_id_set(uint64_t id)
 {
-	struct mpl_group_t *group;
-	struct mpl_track_t *track;
+	struct mpl_group *group;
+	struct mpl_track *track;
 
 	BT_DBG_OBJ_ID("Track ID to set: ", id);
 
@@ -2468,8 +2468,8 @@ uint64_t next_track_id_get(void)
 
 void next_track_id_set(uint64_t id)
 {
-	struct mpl_group_t *group;
-	struct mpl_track_t *track;
+	struct mpl_group *group;
+	struct mpl_track *track;
 
 	BT_DBG_OBJ_ID("Next Track ID to set: ", id);
 
@@ -2497,7 +2497,7 @@ uint64_t current_group_id_get(void)
 
 void current_group_id_set(uint64_t id)
 {
-	struct mpl_group_t *group;
+	struct mpl_group *group;
 	bool track_change;
 
 	BT_DBG_OBJ_ID("Group ID to set: ", id);
@@ -2746,8 +2746,8 @@ void mpl_debug_dump_state(void)
 {
 #if CONFIG_BT_OTS
 	char t[BT_OTS_OBJ_ID_STR_LEN];
-	struct mpl_group_t *group;
-	struct mpl_track_t *track;
+	struct mpl_group *group;
+	struct mpl_track *track;
 #endif /* CONFIG_BT_OTS */
 
 	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
