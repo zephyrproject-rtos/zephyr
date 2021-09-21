@@ -792,8 +792,8 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 		return;
 	}
 
-	ase->ep.cig = qos->cig;
-	ase->ep.cis = qos->cis;
+	ase->ep.cig_id = qos->cig;
+	ase->ep.cis_id = qos->cis;
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_QOS_OP);
 }
