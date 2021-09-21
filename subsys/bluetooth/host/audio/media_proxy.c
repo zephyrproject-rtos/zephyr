@@ -147,6 +147,11 @@ void media_proxy_sctrl_next_track_id_set(uint64_t id)
 	mprx.local_player.calls->next_track_id_set(id);
 }
 
+uint64_t media_proxy_sctrl_parent_group_id_get(void)
+{
+	return mprx.local_player.calls->parent_group_id_get();
+}
+
 uint64_t media_proxy_sctrl_current_group_id_get(void)
 {
 	return mprx.local_player.calls->current_group_id_get();
@@ -155,11 +160,6 @@ uint64_t media_proxy_sctrl_current_group_id_get(void)
 void media_proxy_sctrl_current_group_id_set(uint64_t id)
 {
 	mprx.local_player.calls->current_group_id_set(id);
-}
-
-uint64_t media_proxy_sctrl_parent_group_id_get(void)
-{
-	return mprx.local_player.calls->parent_group_id_get();
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -425,6 +425,19 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_
 
 /* TODO: next track set callback - must be added to MCC first */
 
+static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+{
+	if (err) {
+		BT_ERR("Parent Group Object ID read failed (%d)", err);
+	}
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
+		mprx.ctrlr.cbs->parent_group_id_recv(&mprx.remote_player, err, id);
+	} else {
+		BT_DBG("No callback");
+	}
+}
+
 static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
@@ -439,19 +452,6 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint
 }
 
 /* TODO: current group set callback - must be added to MCC first */
-
-static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
-{
-	if (err) {
-		BT_ERR("Parent Group Object ID read failed (%d)", err);
-	}
-
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
-		mprx.ctrlr.cbs->parent_group_id_recv(&mprx.remote_player, err, id);
-	} else {
-		BT_DBG("No callback");
-	}
-}
 
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -647,8 +647,8 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.segments_obj_id_read          = mcc_segments_obj_id_read_cb;
 	mcc_cbs.current_track_obj_id_read     = mcc_current_track_obj_id_read_cb;
 	mcc_cbs.next_track_obj_id_read        = mcc_next_track_obj_id_read_cb;
-	mcc_cbs.current_group_obj_id_read     = mcc_current_group_obj_id_read_cb;
 	mcc_cbs.parent_group_obj_id_read      = mcc_parent_group_obj_id_read_cb;
+	mcc_cbs.current_group_obj_id_read     = mcc_current_group_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 	mcc_cbs.playing_order_read	      = mcc_playing_order_read_cb;
 	mcc_cbs.playing_order_set             = mcc_playing_order_set_cb;
@@ -1167,6 +1167,38 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 	return -EOPNOTSUPP;
 }
 
+int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
+{
+	CHECKIF(player == NULL) {
+		BT_DBG("player is NULL");
+		return -EINVAL;
+	}
+
+	if (mprx.local_player.registered && player == &mprx.local_player) {
+		if (mprx.local_player.calls->parent_group_id_get) {
+			uint64_t id = mprx.local_player.calls->parent_group_id_get();
+
+			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
+				mprx.ctrlr.cbs->parent_group_id_recv(player, 0, id);
+			} else {
+				BT_DBG("No callback");
+			}
+
+			return 0;
+		}
+
+		BT_DBG("No call");
+		return -EOPNOTSUPP;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
+	    mprx.remote_player.registered && player == &mprx.remote_player) {
+		return bt_mcc_read_parent_group_obj_id(mprx.remote_player.conn);
+	}
+
+	return -EOPNOTSUPP;
+}
+
 int media_proxy_ctrl_current_group_id_get(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
@@ -1227,38 +1259,6 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
 		/* TODO: Uncomment when function is implemented */
 		/* return bt_mcc_set_current_group_obj_id(mprx.remote_player.conn, position); */
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
-{
-	CHECKIF(player == NULL) {
-		BT_DBG("player is NULL");
-		return -EINVAL;
-	}
-
-	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->parent_group_id_get) {
-			uint64_t id = mprx.local_player.calls->parent_group_id_get();
-
-			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
-				mprx.ctrlr.cbs->parent_group_id_recv(player, 0, id);
-			} else {
-				BT_DBG("No callback");
-			}
-
-			return 0;
-		}
-
-		BT_DBG("No call");
-		return -EOPNOTSUPP;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MCC_OTS) &&
-	    mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_read_parent_group_obj_id(mprx.remote_player.conn);
 	}
 
 	return -EOPNOTSUPP;
@@ -1670,17 +1670,6 @@ void media_proxy_pl_next_track_id_cb(uint64_t id)
 	}
 }
 
-void media_proxy_pl_current_group_id_cb(uint64_t id)
-{
-	mprx.sctrlr.cbs->current_group_id(id);
-
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_recv) {
-		mprx.ctrlr.cbs->current_group_id_recv(&mprx.local_player, 0, id);
-	} else {
-		BT_DBG("No ctrlr current group id callback");
-	}
-}
-
 void media_proxy_pl_parent_group_id_cb(uint64_t id)
 {
 	mprx.sctrlr.cbs->parent_group_id(id);
@@ -1689,6 +1678,17 @@ void media_proxy_pl_parent_group_id_cb(uint64_t id)
 		mprx.ctrlr.cbs->parent_group_id_recv(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr parent group id callback");
+	}
+}
+
+void media_proxy_pl_current_group_id_cb(uint64_t id)
+{
+	mprx.sctrlr.cbs->current_group_id(id);
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_recv) {
+		mprx.ctrlr.cbs->current_group_id_recv(&mprx.local_player, 0, id);
+	} else {
+		BT_DBG("No ctrlr current group id callback");
 	}
 }
 #endif /* CONFIG_BT_OTS */
