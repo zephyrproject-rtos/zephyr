@@ -320,9 +320,6 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MODEM_HL7800_ADDRESS_FAMILY "IPV6"
 #endif
 
-#define SETUP_GPRS_CONNECTION_CMD                                                                  \
-	"AT+KCNXCFG=1,\"GPRS\",\"\",,,"                                                            \
-	"\"" MODEM_HL7800_ADDRESS_FAMILY "\""
 #define SET_RAT_M1_CMD_LEGACY "AT+KSRAT=0"
 #define SET_RAT_NB1_CMD_LEGACY "AT+KSRAT=1"
 #define SET_RAT_M1_CMD "AT+KSRAT=0,1"
@@ -4659,6 +4656,21 @@ static int compare_versions(char *v1, const char *v2)
 	return result;
 }
 
+static int setup_gprs_connection(char *access_point_name)
+{
+	char cmd_string[sizeof("AT+KCNXCFG=1,\"GPRS\",\"\",,,"
+			       "\"IPV4V6\"") +
+			MDM_HL7800_APN_MAX_SIZE];
+	int cmd_max_len = sizeof(cmd_string) - 1;
+
+	memset(cmd_string, 0, cmd_max_len);
+	strncat(cmd_string, "AT+KCNXCFG=1,\"GPRS\",\"", cmd_max_len);
+	strncat(cmd_string, access_point_name, cmd_max_len);
+	strncat(cmd_string, "\",,,\"", cmd_max_len);
+	strncat(cmd_string, MODEM_HL7800_ADDRESS_FAMILY "\"", cmd_max_len);
+	return send_at_cmd(NULL, cmd_string, MDM_CMD_SEND_TIMEOUT, 0, false);
+}
+
 static int modem_reset_and_configure(void)
 {
 	int ret = 0;
@@ -4926,10 +4938,10 @@ reboot:
 		}
 	}
 
-	/* An empty string is used here so that it doesn't conflict
-	 * with the APN used in the +CGDCONT command.
-	 */
-	SEND_AT_CMD_EXPECT_OK(SETUP_GPRS_CONNECTION_CMD);
+	ret = setup_gprs_connection(ictx.mdm_apn.value);
+	if (ret < 0) {
+		goto error;
+	}
 
 	/* Query PDP authentication context to get APN username/password.
 	 * Temporary Workaroud - Ignore error
@@ -5219,8 +5231,7 @@ static int reconfigure_IP_connection(void)
 		ictx.reconfig_IP_connection = false;
 
 		/* reconfigure GPRS connection so sockets can be used */
-		ret = send_at_cmd(NULL, SETUP_GPRS_CONNECTION_CMD,
-				  MDM_CMD_SEND_TIMEOUT, 0, false);
+		ret = setup_gprs_connection(ictx.mdm_apn.value);
 		if (ret < 0) {
 			LOG_ERR("AT+KCNXCFG= ret:%d", ret);
 			goto done;
