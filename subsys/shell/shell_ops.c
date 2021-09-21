@@ -369,7 +369,13 @@ static void shell_pend_on_txdone(const struct shell *shell)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
 	    (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
-		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		struct k_poll_event event;
+
+		k_poll_event_init(&event,
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+		k_poll(&event, 1, K_FOREVER);
 		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
 	} else {
 		/* Blocking wait in case of bare metal. */

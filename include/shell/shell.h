@@ -698,6 +698,10 @@ struct shell_ctx {
 	volatile union shell_internal internal; /*!< Internal shell data.*/
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
+
+	/*!< Events that should be used only internally by shell thread.
+	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
+	 */
 	struct k_poll_event events[SHELL_SIGNALS];
 
 	struct k_mutex wr_mtx;
