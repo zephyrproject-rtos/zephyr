@@ -199,7 +199,7 @@ void test_conn_update_mas_loc_accept(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -311,7 +311,7 @@ void test_conn_update_mas_loc_reject(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_UNACCEPT_CONN_PARAM };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -389,7 +389,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -512,7 +512,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -627,7 +627,7 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 	test_unmask_feature_conn_param_req(&conn);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -750,7 +750,7 @@ void test_conn_update_mas_loc_collision(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -895,7 +895,7 @@ void test_conn_update_mas_rem_accept(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1010,7 +1010,7 @@ void test_conn_update_mas_rem_reject(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1152,7 +1152,7 @@ void test_conn_update_mas_rem_collision(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1348,7 +1348,7 @@ void test_conn_update_sla_loc_accept(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1452,7 +1452,7 @@ void test_conn_update_sla_loc_reject(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1531,7 +1531,7 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1598,7 +1598,7 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
 	test_unmask_feature_conn_param_req(&conn);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1692,7 +1692,7 @@ void test_conn_update_sla_loc_collision(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1842,7 +1842,7 @@ void test_conn_update_sla_rem_accept(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1965,7 +1965,7 @@ void test_conn_update_sla_rem_reject(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -2110,7 +2110,7 @@ void test_conn_update_sla_rem_collision(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -2301,7 +2301,7 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -2399,7 +2399,7 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -2464,7 +2464,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -2541,7 +2541,7 @@ void test_conn_update_sla_loc_disallowed_no_param_req(void)
 	uint8_t err;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

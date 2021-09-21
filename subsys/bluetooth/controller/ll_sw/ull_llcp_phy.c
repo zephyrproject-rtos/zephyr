@@ -215,7 +215,7 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
-	} else if (lll->role == BT_HCI_ROLE_SLAVE) {
+	} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
 		if (ctx->data.pu.s_to_m_phy) {
 			lll->phy_tx = ctx->data.pu.s_to_m_phy;
 		}
@@ -224,7 +224,7 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
-	} else if (lll->role == BT_HCI_ROLE_MASTER) {
+	} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
 		if (ctx->data.pu.s_to_m_phy) {
 			lll->phy_rx = ctx->data.pu.s_to_m_phy;
 		}
@@ -242,13 +242,13 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t pu_calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
 {
-	uint16_t time = PKT_US(max_octets, phy);
+	uint16_t time = PDU_DC_MAX_US(max_octets, phy);
 	uint16_t eff_time;
 
 	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, time);
 	eff_time = MIN(eff_time, default_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	eff_time = MAX(eff_time, PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
+	eff_time = MAX(eff_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
 #endif
 
 	return eff_time;
@@ -260,13 +260,13 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	uint16_t eff_tx_time = lll->dle.eff.max_tx_time;
 	uint16_t eff_rx_time = lll->dle.eff.max_rx_time;
 
-	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_SLAVE)) ||
-	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_MASTER))) {
+	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL)) ||
+	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_CENTRAL))) {
 		eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets, lll->phy_tx,
 					       lll->dle.local.max_tx_time);
 	}
-	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_MASTER)) ||
-	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_SLAVE))) {
+	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_CENTRAL)) ||
+	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL))) {
 		eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx,
 					       lll->dle.local.max_rx_time);
 	}
@@ -311,7 +311,7 @@ static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, u
 		the PHY specified by the slave for both directions or shall leave both directions
 		unchanged.
 	*/
-	if (conn->lll.role == BT_HCI_ROLE_MASTER && (!ctx->data.pu.rx || !ctx->data.pu.tx)) {
+	if (conn->lll.role == BT_HCI_ROLE_CENTRAL && (!ctx->data.pu.rx || !ctx->data.pu.tx)) {
 		ctx->data.pu.tx = 0;
 		ctx->data.pu.rx = 0;
 	}
@@ -522,13 +522,13 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 	case LP_PU_EVT_ACK:
 		switch (conn->lll.role) {
 #if defined(CONFIG_BT_CENTRAL)
-		case BT_HCI_ROLE_MASTER:
+		case BT_HCI_ROLE_CENTRAL:
 			ctx->state = LP_PU_STATE_WAIT_RX_PHY_RSP;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
 			break;
 #endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-		case BT_HCI_ROLE_SLAVE:
+		case BT_HCI_ROLE_PERIPHERAL:
 			/* If we act as peripheral apply timing restriction */
 			pu_set_timing_restrict(
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
@@ -567,7 +567,7 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 {
 	switch (evt) {
 	case LP_PU_EVT_ACK:
-		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_MASTER);
+		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 		if (ctx->data.pu.s_to_m_phy || ctx->data.pu.m_to_s_phy) {
 			/* Either phys should change */
 			if (ctx->data.pu.m_to_s_phy) {
@@ -601,7 +601,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
-		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_SLAVE);
+		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure) {
@@ -874,12 +874,12 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	case RP_PU_EVT_PHY_REQ:
 		switch (conn->lll.role) {
 #if defined(CONFIG_BT_CENTRAL)
-		case BT_HCI_ROLE_MASTER:
+		case BT_HCI_ROLE_CENTRAL:
 			rp_pu_send_phy_update_ind(conn, ctx, evt, param);
 			break;
 #endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-		case BT_HCI_ROLE_SLAVE:
+		case BT_HCI_ROLE_PERIPHERAL:
 			rp_pu_send_phy_rsp(conn, ctx, evt, param);
 			break;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -917,7 +917,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_RSP) {
-			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_SLAVE);
+			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 			/* When we act as peripheral apply timing restriction */
 			pu_set_timing_restrict(
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
@@ -926,7 +926,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND) {
-			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_MASTER);
+			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 			if (ctx->data.pu.m_to_s_phy || ctx->data.pu.s_to_m_phy) {
 				/* UPDATE_IND acked, so lets await instant */
 				if (ctx->data.pu.m_to_s_phy) {

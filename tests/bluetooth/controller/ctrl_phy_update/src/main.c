@@ -62,8 +62,8 @@ static void setup(void)
 	/* Emulate different remote numbers to trigger update of eff */
 	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
 	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
-	conn.lll.dle.remote.max_tx_time = PKT_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
-	conn.lll.dle.remote.max_rx_time = PKT_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
+	conn.lll.dle.remote.max_tx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
+	conn.lll.dle.remote.max_rx_time = PDU_DC_MAX_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
 	ull_dle_update_eff(&conn);
 }
 
@@ -113,15 +113,15 @@ void test_phy_update_mas_loc(void)
 						   .m_to_s_phy = PHY_2M,
 						   .s_to_m_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
 	};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -228,7 +228,7 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -277,15 +277,15 @@ void test_phy_update_mas_rem(void)
 						   .m_to_s_phy = 0,
 						   .s_to_m_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
 	};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -373,8 +373,8 @@ void test_phy_update_sla_loc(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
 	};
 	uint16_t instant;
 
@@ -384,7 +384,7 @@ void test_phy_update_sla_loc(void)
 							      .s_to_m_phy = PHY_2M };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -471,15 +471,15 @@ void test_phy_update_sla_rem(void)
 						   .m_to_s_phy = 0,
 						   .s_to_m_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
 	};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -577,8 +577,8 @@ void test_phy_update_mas_loc_collision(void)
 						   .m_to_s_phy = PHY_2M,
 						   .s_to_m_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
 	};
 	uint16_t instant;
 
@@ -590,7 +590,7 @@ void test_phy_update_mas_loc_collision(void)
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -752,19 +752,19 @@ void test_phy_update_mas_rem_collision(void)
 						     .m_to_s_phy = PHY_2M,
 						     .s_to_m_phy = 0 };
 	struct pdu_data_llctrl_length_rsp length_ntf_1 = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
 	};
 	struct pdu_data_llctrl_length_rsp length_ntf_2 = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
 	};
 	uint16_t instant;
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -920,8 +920,8 @@ void test_phy_update_sla_loc_collision(void)
 						   .m_to_s_phy = PHY_2M,
 						   .s_to_m_phy = PHY_1M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
-		3 * PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
+		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
 	};
 	uint16_t instant;
 
@@ -933,7 +933,7 @@ void test_phy_update_sla_loc_collision(void)
 	struct node_rx_pu pu = { 0 };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

@@ -236,13 +236,13 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 
 		switch (conn->lll.role) {
 #if defined(CONFIG_BT_CENTRAL)
-		case BT_HCI_ROLE_MASTER:
+		case BT_HCI_ROLE_CENTRAL:
 			ctx->state = LP_CU_STATE_WAIT_RX_CONN_PARAM_RSP;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
 			break;
 #endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-		case BT_HCI_ROLE_SLAVE:
+		case BT_HCI_ROLE_PERIPHERAL:
 			ctx->state = LP_CU_STATE_WAIT_RX_CONN_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 			break;
@@ -774,9 +774,9 @@ static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn,
 {
 	switch (evt) {
 	case RP_CU_EVT_RUN:
-		if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+		if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
 			rp_cu_send_conn_update_ind(conn, ctx, evt, param);
-		} else if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
+		} else if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 			rp_cu_send_conn_param_rsp(conn, ctx, evt, param);
 		} else {
 			/* Unknown role */
@@ -835,11 +835,11 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	switch (evt) {
 	case RP_CU_EVT_CONN_UPDATE_IND:
 		switch (conn->lll.role) {
-		case BT_HCI_ROLE_MASTER:
+		case BT_HCI_ROLE_CENTRAL:
 			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 			rp_cu_send_unknown_rsp(conn, ctx, evt, param);
 			break;
-		case BT_HCI_ROLE_SLAVE:
+		case BT_HCI_ROLE_PERIPHERAL:
 			llcp_pdu_decode_conn_update_ind(ctx, param);
 			/* TODO(tosk): skip/terminate if instant passed? */
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)

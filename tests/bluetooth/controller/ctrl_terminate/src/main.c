@@ -75,12 +75,12 @@ static void test_terminate_rem(uint8_t role)
 
 void test_terminate_mas_rem(void)
 {
-	test_terminate_rem(BT_HCI_ROLE_MASTER);
+	test_terminate_rem(BT_HCI_ROLE_CENTRAL);
 }
 
 void test_terminate_sla_rem(void)
 {
-	test_terminate_rem(BT_HCI_ROLE_SLAVE);
+	test_terminate_rem(BT_HCI_ROLE_PERIPHERAL);
 }
 
 void test_terminate_loc(uint8_t role)
@@ -127,12 +127,12 @@ void test_terminate_loc(uint8_t role)
 
 void test_terminate_mas_loc(void)
 {
-	test_terminate_loc(BT_HCI_ROLE_MASTER);
+	test_terminate_loc(BT_HCI_ROLE_CENTRAL);
 }
 
 void test_terminate_sla_loc(void)
 {
-	test_terminate_loc(BT_HCI_ROLE_SLAVE);
+	test_terminate_loc(BT_HCI_ROLE_PERIPHERAL);
 }
 
 void test_main(void)

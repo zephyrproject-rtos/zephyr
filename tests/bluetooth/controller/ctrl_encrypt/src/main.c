@@ -205,7 +205,7 @@ void test_encryption_start_mas_loc(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -367,7 +367,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -577,7 +577,7 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -688,7 +688,7 @@ void test_encryption_start_mas_loc_no_ltk_2(void)
 								 BT_HCI_ERR_PIN_OR_KEY_MISSING };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -816,7 +816,7 @@ void test_encryption_start_sla_rem(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1037,7 +1037,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1306,7 +1306,7 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1437,7 +1437,7 @@ void test_encryption_pause_mas_loc(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1587,7 +1587,7 @@ void test_encryption_pause_sla_rem(void)
 	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

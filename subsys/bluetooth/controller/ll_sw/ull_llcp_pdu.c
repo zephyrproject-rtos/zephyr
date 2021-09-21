@@ -127,7 +127,7 @@ void llcp_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
 
 #if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_PERIPHERAL)
-	if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
+	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
 	}
 #endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_PERIPHERAL */

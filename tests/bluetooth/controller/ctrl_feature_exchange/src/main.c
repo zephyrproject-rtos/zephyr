@@ -99,7 +99,7 @@ void test_feature_exchange_mas_loc(void)
 
 		sys_put_le64(exp_rsp_featureset[feat_counter], exp_remote_feature_rsp.features);
 
-		test_set_role(&conn, BT_HCI_ROLE_MASTER);
+		test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 		/* Connect */
 		ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -135,7 +135,7 @@ void test_feature_exchange_mas_loc_2(void)
 {
 	uint8_t err;
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	err = ull_cp_feature_exchange(&conn);
@@ -181,7 +181,7 @@ void test_feature_exchange_mas_rem(void)
 	struct pdu_data_llctrl_feature_req remote_feature_req;
 	struct pdu_data_llctrl_feature_rsp local_feature_rsp;
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -254,7 +254,7 @@ void test_feature_exchange_mas_rem_2(void)
 	struct pdu_data_llctrl_feature_req ut_feature_req;
 	struct pdu_data_llctrl_feature_req ut_feature_rsp;
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
@@ -314,7 +314,7 @@ void test_slave_feature_exchange_sla_loc(void)
 	featureset &= LL_FEAT_BIT_MASK_VALID;
 	sys_put_le64(featureset, remote_feature_rsp.features);
 
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -372,7 +372,7 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 	featureset = DEFAULT_FEATURE;
 	sys_put_le64(featureset, local_feature_req.features);
 
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
