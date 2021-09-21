@@ -52,11 +52,11 @@ static void dw_ictl_isr(const struct device *dev)
 	volatile struct dw_ictl_registers * const regs =
 			(struct dw_ictl_registers *)config->base_addr;
 
-	dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_l,
+	dw_ictl_dispatch_child_isrs(regs->irq_finalstatus_l,
 				    config->isr_table_offset);
 
 	if (config->numirqs > 32) {
-		dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_h,
+		dw_ictl_dispatch_child_isrs(regs->irq_finalstatus_h,
 					    config->isr_table_offset + 32);
 	}
 }
