@@ -878,7 +878,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		   In effect, for this procedure, this is equivalent to RX of PDU
 		*/
 		/* So we inititate a chmap update procedure, but only if acting as central, just in case ... */
-		if (conn->lll.role == BT_HCI_ROLE_MASTER &&
+		if (conn->lll.role == BT_HCI_ROLE_CENTRAL &&
 		    ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
 			uint8_t chmap[5];
 			ull_chan_map_get((uint8_t *const)chmap);

@@ -67,7 +67,7 @@ void test_ping_mas_loc(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -125,7 +125,7 @@ void test_ping_sla_loc(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -177,7 +177,7 @@ void test_ping_mas_rem(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -231,7 +231,7 @@ void test_ping_sla_rem(void)
 	struct pdu_data_llctrl_ping_rsp remote_ping_rsp = {};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

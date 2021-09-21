@@ -422,8 +422,8 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 		ctx = llcp_rr_peek(conn);
 		if (ctx) {
 			const enum proc_incompat incompat = rr_get_incompat(conn);
-			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_SLAVE);
-			const bool master = !!(conn->lll.role == BT_HCI_ROLE_MASTER);
+			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+			const bool master = !!(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 			const bool with_instant = proc_with_instant(ctx);
 
 			if (ctx->proc == PROC_TERMINATE) {

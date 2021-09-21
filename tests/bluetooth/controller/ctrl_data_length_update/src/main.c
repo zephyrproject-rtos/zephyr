@@ -80,7 +80,7 @@ void test_data_length_update_mas_loc(void)
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 201, 1720, 251, 2120 };
 	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 201, 1720 };
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
@@ -152,7 +152,7 @@ void test_data_length_update_mas_loc_no_eff_change(void)
 	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 27, 328, 27, 328 };
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
@@ -227,7 +227,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	struct pdu_data_llctrl_length_req local_length_req2 = { 251, 2120, 211, 1800 };
 	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = { 101, 920, 251, 2120 };
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
@@ -290,7 +290,7 @@ void test_data_length_update_sla_loc(void)
 	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 1800, 251, 2120 };
 	struct pdu_data_llctrl_length_rsp length_ntf = { 251, 2120, 211, 1800 };
 
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
@@ -350,7 +350,7 @@ void test_data_length_update_mas_rem(void)
 
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);
@@ -408,7 +408,7 @@ void test_data_length_update_sla_rem(void)
 	struct pdu_data_llctrl_length_rsp length_ntf = { 201, 1720, 27, 328 };
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);
@@ -484,7 +484,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 	struct pdu_data_llctrl_length_rsp length_ntf = { 211, 1800, 27, 328 };
 	struct node_rx_pdu *ntf;
 
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
 	ull_conn_default_tx_octets_set(211);

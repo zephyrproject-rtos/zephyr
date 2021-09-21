@@ -23,6 +23,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
 #include "ull_adv_types.h"
@@ -38,8 +39,11 @@
 static uint8_t map[5] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
 static uint8_t count = 37U;
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 static void chan_map_set(uint8_t const *const chan_map);
+#endif
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	chan_map_set(chm);
@@ -61,6 +65,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	 */
 	return 0;
 }
+#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
 
 int ull_chan_reset(void)
 {
@@ -82,7 +87,11 @@ uint8_t ull_chan_map_get(uint8_t *const chan_map)
 	return count;
 }
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 static void chan_map_set(uint8_t const *const chan_map)
+#else
+void ull_chan_map_set(uint8_t const *const chan_map)
+#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
 {
 	(void)memcpy(map, chan_map, sizeof(map));
 	count = util_ones_count_get(map, sizeof(map));

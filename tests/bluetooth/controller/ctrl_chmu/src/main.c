@@ -63,7 +63,7 @@ void test_channel_map_update_mas_loc(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -139,7 +139,7 @@ void test_channel_map_update_sla_rem(void)
 	uint16_t instant = 6;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -201,7 +201,7 @@ void test_channel_map_update_sla_loc(void)
 	uint8_t chm[5] = { 0x00, 0x06, 0x06, 0x06, 0x00 };
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);

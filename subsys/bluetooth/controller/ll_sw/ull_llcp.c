@@ -395,7 +395,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 {
 	struct proc_ctx *ctx;
 
-	if (conn->lll.role != BT_HCI_ROLE_SLAVE) {
+	if (conn->lll.role != BT_HCI_ROLE_PERIPHERAL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -579,7 +579,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
 	struct proc_ctx *ctx;
 
-	if (conn->lll.role != BT_HCI_ROLE_MASTER) {
+	if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -600,7 +600,7 @@ const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+	if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
 		ctx = llcp_lr_peek(conn);
 	} else {
 		ctx = llcp_rr_peek(conn);
@@ -667,13 +667,13 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if (feature_conn_param_req(conn)) {
 		ctx = llcp_create_local_procedure(PROC_CONN_PARAM_REQ);
-	} else if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+	} else if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
 		ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
 	} else {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
+	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
@@ -695,7 +695,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (conn->lll.role == BT_HCI_ROLE_SLAVE)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
 			uint16_t handle = ll_conn_handle_get(conn);
 
 			ull_slave_latency_cancel(conn, handle);
