@@ -10,6 +10,7 @@
 #include <sys/byteorder.h>
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 #include "hal/ticker.h"
 
 #include "util/util.h"
