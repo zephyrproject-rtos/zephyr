@@ -43,6 +43,7 @@ enum json_tokens {
 	JSON_TOK_COLON = ':',
 	JSON_TOK_COMMA = ',',
 	JSON_TOK_NUMBER = '0',
+	JSON_TOK_NUMBER_UNSIGNED = 'u',
 	JSON_TOK_TRUE = 't',
 	JSON_TOK_FALSE = 'f',
 	JSON_TOK_NULL = 'n',

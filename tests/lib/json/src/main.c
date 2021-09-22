@@ -85,7 +85,7 @@ static const struct json_obj_descr obj_array_descr[] = {
 static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_min, JSON_TOK_NUMBER),
-	/* JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER), */
+	JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER_UNSIGNED), 
 };
 
 
@@ -232,15 +232,15 @@ static void test_json_decoding(void)
 static void test_json_limits(void) 
 {
 	int ret = 0;
-	char encoded[] = "{\"int_max\": 2147483647,"
-			 "\"int_min\": -2147483648"
-			 /* "	\"uint_min\": 4294967295" */
+	char encoded[] = "{\"int_max\":2147483647,"
+			 "\"int_min\":-2147483648,"
+			 "\"uint_min\":4294967295"
 			 "}";
 
 	struct test_limits limits = {
 		.int_max = INT_MAX,
 		.int_min = INT_MIN,
-		/* .uint_max = UINT_MAX */
+		.uint_max = UINT_MAX
 	};
 
 	char buffer[sizeof(encoded)];

@@ -798,6 +798,23 @@ static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int num_unsigned_encode(const uint32_t *num, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	char buf[3 * sizeof(uint32_t)];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%u", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
 static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 		       void *data)
 {
@@ -828,6 +845,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
+	case JSON_TOK_NUMBER_UNSIGNED:
+		return num_unsigned_encode(ptr, append_bytes, data);
 	default:
 		return -EINVAL;
 	}
