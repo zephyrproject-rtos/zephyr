@@ -30,7 +30,7 @@
 static struct bt_mics_cb *mics_client_cb;
 
 static struct bt_mics mics_insts[CONFIG_BT_MAX_CONN];
-static struct bt_uuid *mics_uuid = BT_UUID_MICS;
+static const struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
 bool bt_mics_client_valid_aics_inst(struct bt_mics *mics, struct bt_aics *aics)
 {

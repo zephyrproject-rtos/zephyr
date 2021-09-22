@@ -35,12 +35,12 @@ static struct bap_pac {
 	struct bt_codec            codec;
 } cache[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_PAC_COUNT];
 
-static struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
-static struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
-static struct bt_uuid *pacs_context_uuid = BT_UUID_PACS_SUPPORTED_CONTEXT;
-static struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
-static struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
-static struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
+static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
+static const struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
+static const struct bt_uuid *pacs_context_uuid = BT_UUID_PACS_SUPPORTED_CONTEXT;
+static const struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
+static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
+static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_audio_chan *bap_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,

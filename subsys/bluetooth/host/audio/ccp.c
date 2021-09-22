@@ -102,8 +102,8 @@ struct tbs_server_inst {
 static struct bt_ccp_cb_t *ccp_cbs;
 
 static struct tbs_server_inst srv_insts[CONFIG_BT_MAX_CONN];
-static struct bt_uuid *tbs_uuid = BT_UUID_TBS;
-static struct bt_uuid *gtbs_uuid = BT_UUID_GTBS;
+static const struct bt_uuid *tbs_uuid = BT_UUID_TBS;
+static const struct bt_uuid *gtbs_uuid = BT_UUID_GTBS;
 
 static void discover_next_instance(struct bt_conn *conn, uint8_t index);
 
