@@ -1,4 +1,4 @@
-/*  Bluetooth BASS - Call Control Profile - Client */
+/*  Bluetooth BASS - Broadcast Audio Scan Service - Client */
 
 /*
  * Copyright (c) 2019 Bose Corporation
