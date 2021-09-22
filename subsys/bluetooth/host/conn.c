@@ -1464,6 +1464,8 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 
 		/* store those in case of fallback to L2CAP */
 		if (rc == 0) {
+			conn->le.interval_min = param->interval_min;
+			conn->le.interval_max = param->interval_max;
 			conn->le.pending_latency = param->latency;
 			conn->le.pending_timeout = param->timeout;
 		}
