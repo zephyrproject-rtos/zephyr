@@ -251,8 +251,6 @@ static void test_json_limits(void)
 	ret = json_obj_parse(encoded, sizeof(encoded) - 1, obj_limits_descr,
 			     ARRAY_SIZE(obj_limits_descr), &limits_decoded);
 
-	printk("Test limits: %s", log_strdup(buffer));
-
 	zassert_true(!strcmp(encoded, buffer), "Integer limits not encoded correctly");
 	zassert_true(!memcmp(&limits, &limits_decoded, sizeof(limits)),
 		     "Integer limits not decoded correctly");
