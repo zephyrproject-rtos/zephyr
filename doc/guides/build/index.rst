@@ -365,6 +365,7 @@ tips and best practices for writing :file:`Kconfig` files.
 .. toctree::
    :maxdepth: 1
 
+   kconfig/official_doc.rst
    kconfig/menuconfig.rst
    kconfig/setting.rst
    kconfig/tips.rst

@@ -6,13 +6,6 @@ Kconfig - Tips and Best Practices
 This page covers some Kconfig best practices and explains some Kconfig
 behaviors and features that might be cryptic or that are easily overlooked.
 
-.. note::
-
-   The official Kconfig documentation is `kconfig-language.rst
-   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-language.html>`__
-   and `kconfig-macro-language.rst
-   <https://www.kernel.org/doc/html/latest/kbuild/kconfig-macro-language.html>`__.
-
 .. contents::
    :local:
    :depth: 2
