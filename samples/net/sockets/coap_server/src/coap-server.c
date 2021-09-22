@@ -38,6 +38,10 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 	{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 #endif
 
+#define ADDRLEN(sock) \
+	(((struct sockaddr *)sock)->sa_family == AF_INET ? \
+		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6))
+
 #define NUM_OBSERVERS 3
 
 #define NUM_PENDINGS 3
@@ -951,9 +955,30 @@ static int send_notification_packet(const struct sockaddr *addr,
 				    const uint8_t *token, uint8_t tkl,
 				    bool is_response);
 
+static void schedule_next_retransmission(void)
+{
+	struct coap_pending *pending;
+	int32_t remaining;
+	uint32_t now = k_uptime_get_32();
+
+	/* Get the first pending retansmission to expire after cycling. */
+	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	if (!pending) {
+		return;
+	}
+
+	remaining = pending->t0 + pending->timeout - now;
+	if (remaining < 0) {
+		remaining = 0;
+	}
+
+	k_work_reschedule(&retransmit_work, K_MSEC(remaining));
+}
+
 static void retransmit_request(struct k_work *work)
 {
 	struct coap_pending *pending;
+	int r;
 
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
@@ -963,10 +988,17 @@ static void retransmit_request(struct k_work *work)
 	if (!coap_pending_cycle(pending)) {
 		k_free(pending->data);
 		coap_pending_clear(pending);
-		return;
+	} else {
+		net_hexdump("Retransmit", pending->data, pending->len);
+
+		r = sendto(sock, pending->data, pending->len, 0,
+			   &pending->addr, ADDRLEN(&pending->addr));
+		if (r < 0) {
+			LOG_ERR("Failed to send %d", errno);
+		}
 	}
 
-	k_work_reschedule(&retransmit_work, K_MSEC(pending->timeout));
+	schedule_next_retransmission();
 }
 
 static void update_counter(struct k_work *work)
@@ -999,12 +1031,7 @@ static int create_pending_request(struct coap_packet *response,
 
 	coap_pending_cycle(pending);
 
-	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
-	if (!pending) {
-		return 0;
-	}
-
-	k_work_reschedule(&retransmit_work, K_MSEC(pending->timeout));
+	schedule_next_retransmission();
 
 	return 0;
 }
