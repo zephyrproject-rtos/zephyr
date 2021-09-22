@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 #include "ipv6.h"
 #endif
 
+#define MAX_RETRANSMIT_COUNT 2
+
 #define MAX_COAP_MSG_LEN 256
 
 #define MY_COAP_PORT 5683
@@ -44,7 +46,7 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #define NUM_OBSERVERS 3
 
-#define NUM_PENDINGS 3
+#define NUM_PENDINGS 10
 
 /* CoAP socket fd */
 static int sock;
@@ -1020,8 +1022,7 @@ static int create_pending_request(struct coap_packet *response,
 		return -ENOMEM;
 	}
 
-	r = coap_pending_init(pending, response, addr,
-			      COAP_DEFAULT_MAX_RETRANSMIT);
+	r = coap_pending_init(pending, response, addr, MAX_RETRANSMIT_COUNT);
 	if (r < 0) {
 		return -EINVAL;
 	}
