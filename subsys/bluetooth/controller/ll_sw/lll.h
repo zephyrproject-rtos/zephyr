@@ -280,7 +280,21 @@ struct node_rx_ftr {
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t  rl_idx;
+	uint8_t  lrpa_used:1;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	uint8_t  direct:1;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t  direct_resolved:1;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	uint8_t  aux_lll_sched:1;
 	uint8_t  aux_w4next:1;
 	uint8_t  aux_failed:1;
@@ -292,13 +306,7 @@ struct node_rx_ftr {
 	uint8_t  scan_req:1;
 	uint8_t  scan_rsp:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	uint8_t  direct:1;
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	uint8_t  lrpa_used:1;
-	uint8_t  rl_idx;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	uint8_t  chan_idx;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
