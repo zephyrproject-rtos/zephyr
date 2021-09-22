@@ -16,7 +16,7 @@
 # FORMAT=json: Print the output as a json formatted string, useful for Python
 
 # This is the minimum required Zephyr-SDK version which supports CMake package
-set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13)
+set(TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION 0.13.1)
 
 # Set internal variables if set in environment.
 if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
