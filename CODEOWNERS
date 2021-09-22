@@ -315,6 +315,7 @@
 /drivers/pwm/pwm_shell.c                  @henrikbrixandersen
 /drivers/pwm/*gecko*                      @sun681
 /drivers/pwm/*it8xxx2*                    @RuibinChang
+/drivers/regulator/*pmic*                 @danieldegrasse
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
