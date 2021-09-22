@@ -1,5 +1,5 @@
-identifier: bt6x0
-name: BT6X0
+identifier: bt610
+name: BT610
 type: mcu
 arch: arm
 ram: 256
