@@ -85,7 +85,7 @@ static const struct json_obj_descr obj_array_descr[] = {
 static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_max, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_limits, int_min, JSON_TOK_NUMBER),
-	JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER_UNSIGNED), 
+	JSON_OBJ_DESCR_PRIM(struct test_limits, uint_max, JSON_TOK_NUMBER_UNSIGNED),
 };
 
 
@@ -229,7 +229,7 @@ static void test_json_decoding(void)
 		     "Named nested string decoded correctly");
 }
 
-static void test_json_limits(void) 
+static void test_json_limits(void)
 {
 	int ret = 0;
 	char encoded[] = "{\"int_max\":2147483647,"
