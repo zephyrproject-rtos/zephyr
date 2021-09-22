@@ -7,6 +7,8 @@
  */
 
 #define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
+/* Custom PTP device name to avoid conflicts with PTP devices on SOC */
+#define PTP_VIRT_CLOCK_NAME "PTP_CLOCK_VIRT"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
@@ -243,7 +245,7 @@ static int ptp_test_1_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
+DEVICE_DEFINE(ptp_clock_1, PTP_VIRT_CLOCK_NAME, ptp_test_1_init,
 		NULL, &ptp_test_1_context, NULL,
 		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
@@ -259,7 +261,7 @@ static int ptp_test_2_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
+DEVICE_DEFINE(ptp_clock_2, PTP_VIRT_CLOCK_NAME, ptp_test_2_init,
 		NULL, &ptp_test_2_context, NULL,
 		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
@@ -564,7 +566,7 @@ void test_main(void)
 {
 	const struct device *clk;
 
-	clk = device_get_binding(PTP_CLOCK_NAME);
+	clk = device_get_binding(PTP_VIRT_CLOCK_NAME);
 	if (clk != NULL) {
 		k_object_access_grant(clk, k_current_get());
 	}
