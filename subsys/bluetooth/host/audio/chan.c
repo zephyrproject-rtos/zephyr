@@ -27,7 +27,7 @@
 #include "common/log.h"
 
 #if defined(CONFIG_BT_BAP)
-
+#if defined(CONFIG_BT_AUDIO_BROADCAST)
 #define PA_SYNC_SKIP              5
 #define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 #define BASE_MIN_SIZE             17
@@ -71,9 +71,6 @@ struct bt_audio_base_ad {
 	struct bt_audio_base_ad_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
 } __packed;
 
-static struct bt_iso_cig *cigs[CONNECTED_AUDIO_GROUP_COUNT];
-static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
-#if defined(CONFIG_BT_AUDIO_BROADCAST)
 static struct bt_audio_broadcast_source broadcast_sources[BROADCAST_SRC_CNT];
 static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
@@ -82,6 +79,10 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec);
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
 #endif /* CONFIG_BT_AUDIO_BROADCAST */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST)
+static struct bt_iso_cig *cigs[CONNECTED_AUDIO_GROUP_COUNT];
+static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
@@ -1141,6 +1142,7 @@ void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_
 {
 	chan->ops = ops;
 }
+#endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST)
 static int bt_audio_broadcast_source_setup_chan(uint8_t index,
