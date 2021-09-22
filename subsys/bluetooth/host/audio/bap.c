@@ -71,7 +71,7 @@ static struct bt_audio_chan *bap_config(struct bt_conn *conn,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(lst, lcap, node) {
-		if (lcap->codec->id != cap->codec->id) {
+		if (memcmp(&lcap->codec, &cap->codec, sizeof(cap->codec))) {
 			continue;
 		}
 
