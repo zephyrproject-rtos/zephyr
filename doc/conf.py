@@ -108,6 +108,8 @@ pygments_style = "sphinx"
 
 todo_include_todos = False
 
+numfig = True
+
 rst_epilog = """
 .. include:: /substitutions.txt
 """
