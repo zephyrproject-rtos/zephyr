@@ -949,12 +949,6 @@ end:
 	return r;
 }
 
-static int send_notification_packet(const struct sockaddr *addr,
-				    socklen_t addr_len,
-				    uint16_t age, uint16_t id,
-				    const uint8_t *token, uint8_t tkl,
-				    bool is_response);
-
 static void schedule_next_retransmission(void)
 {
 	struct coap_pending *pending;
@@ -975,6 +969,8 @@ static void schedule_next_retransmission(void)
 	k_work_reschedule(&retransmit_work, K_MSEC(remaining));
 }
 
+static void remove_observer(struct sockaddr *addr);
+
 static void retransmit_request(struct k_work *work)
 {
 	struct coap_pending *pending;
@@ -986,6 +982,7 @@ static void retransmit_request(struct k_work *work)
 	}
 
 	if (!coap_pending_cycle(pending)) {
+		remove_observer(&pending->addr);
 		k_free(pending->data);
 		coap_pending_clear(pending);
 	} else {
@@ -1142,6 +1139,7 @@ static int obs_get(struct coap_resource *resource,
 
 	observer = coap_observer_next_unused(observers, NUM_OBSERVERS);
 	if (!observer) {
+		LOG_ERR("Not enough observer slots.");
 		return -ENOMEM;
 	}
 
@@ -1318,7 +1316,7 @@ static struct coap_resource resources[] = {
 	{ },
 };
 
-static struct coap_resource *find_resouce_by_observer(
+static struct coap_resource *find_resource_by_observer(
 		struct coap_resource *resources, struct coap_observer *o)
 {
 	struct coap_resource *r;
@@ -1334,6 +1332,28 @@ static struct coap_resource *find_resouce_by_observer(
 	}
 
 	return NULL;
+}
+
+static void remove_observer(struct sockaddr *addr)
+{
+	struct coap_resource *r;
+	struct coap_observer *o;
+
+	o = coap_find_observer_by_addr(observers, NUM_OBSERVERS, addr);
+	if (!o) {
+		return;
+	}
+
+	r = find_resource_by_observer(resources, o);
+	if (!r) {
+		LOG_ERR("Observer found but Resource not found\n");
+		return;
+	}
+
+	LOG_INF("Removing observer %p", o);
+
+	coap_remove_observer(r, o);
+	memset(o, 0, sizeof(struct coap_observer));
 }
 
 static void process_coap_request(uint8_t *data, uint16_t data_len,
@@ -1371,28 +1391,10 @@ static void process_coap_request(uint8_t *data, uint16_t data_len,
 not_found:
 
 	if (type == COAP_TYPE_RESET) {
-		struct coap_resource *r;
-		struct coap_observer *o;
-
-		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
-					       client_addr);
-		if (!o) {
-			LOG_ERR("Observer not found\n");
-			goto end;
-		}
-
-		r = find_resouce_by_observer(resources, o);
-		if (!r) {
-			LOG_ERR("Observer found but Resource not found\n");
-			goto end;
-		}
-
-		coap_remove_observer(r, o);
-
+		remove_observer(client_addr);
 		return;
 	}
 
-end:
 	r = coap_handle_request(&request, resources, options, opt_num,
 				client_addr, client_addr_len);
 	if (r < 0) {
