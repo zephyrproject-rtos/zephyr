@@ -30,7 +30,7 @@
 #include "capabilities.h"
 #include "pacs_internal.h"
 
-#if defined(CONFIG_BT_BAP)
+#if defined(BT_AUDIO_UNICAST_SERVER)
 
 #define ASE_ID(_ase) ase->ep.status.id
 #define ASE_DIR(_id) \
@@ -1353,4 +1353,4 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
 
-#endif /* CONFIG_BT_BAP */
+#endif /* BT_AUDIO_UNICAST_SERVER */
