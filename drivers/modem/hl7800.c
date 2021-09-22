@@ -322,6 +322,10 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MAX_PROFILE_LINE_LENGTH                                                \
 	MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
 
+#define IPV6_ADDR_FORMAT "####:####:####:####:####:####:####:####"
+#define HL7800_IPV6_ADDR_LEN                                                                       \
+	sizeof("a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16")
+
 #ifdef CONFIG_NEWLIB_LIBC
 /* The ? can be a + or - */
 static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
@@ -439,13 +443,17 @@ struct hl7800_socket {
 struct hl7800_iface_ctx {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
-	struct in_addr ipv4Addr, subnet, gateway, dns;
+	struct in_addr ipv4Addr, subnet, gateway, dns_v4;
+#ifdef CONFIG_NET_IPV6
+	struct in6_addr ipv6Addr, dns_v6;
+	char dns_v6_string[HL7800_IPV6_ADDR_LEN];
+#endif
 	bool restarting;
 	bool initialized;
 	bool wait_for_KSUP;
 	uint32_t wait_for_KSUP_tries;
 	bool reconfig_IP_connection;
-	char dns_string[NET_IPV4_ADDR_LEN];
+	char dns_v4_string[NET_IPV4_ADDR_LEN];
 	char no_id_resp_cmd[NO_ID_RESP_CMD_MAX_LENGTH];
 	bool search_no_id_resp;
 
@@ -1242,9 +1250,9 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 {
 	int ret;
 	struct net_buf *frag;
-	char dst_addr[sizeof("###.###.###.###")];
+	char dst_addr[NET_IPV6_ADDR_LEN];
+	char buf[sizeof("AT+KUDPSND=##,\"" IPV6_ADDR_FORMAT "\",#####,####")];
 	size_t send_len, actual_send_len;
-	char buf[sizeof("AT+KUDPSND=##,\"###.###.###.###\",#####,####")];
 
 	send_len = 0, actual_send_len = 0;
 
@@ -1707,14 +1715,18 @@ static void dns_work_cb(struct k_work *work)
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
-	static const char * const dns_servers_str[] = { ictx.dns_string, NULL };
+	static const char *const dns_servers_str[] = { ictx.dns_v4_string,
+#ifdef CONFIG_NET_IPV6
+						       ictx.dns_v6_string,
+#endif
+						       NULL };
 
 	if (ictx.iface && net_if_is_up(ictx.iface)) {
 		/* set new DNS addr in DNS resolver */
 		LOG_DBG("Refresh DNS resolver");
 		dnsCtx = dns_resolve_get_default();
 
-		ret = dns_resolve_reconfigure(dnsCtx, dns_servers_str, NULL);
+		ret = dns_resolve_reconfigure(dnsCtx, (const char **)dns_servers_str, NULL);
 		if (ret < 0) {
 			LOG_ERR("dns_resolve_init fail (%d)", ret);
 			return;
@@ -1748,6 +1760,50 @@ char *mdm_hl7800_get_imsi(void)
 	return ictx.mdm_imsi;
 }
 
+/* Convert HL7800 IPv6 address string in format
+ * a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16 to
+ * an IPv6 address.
+ */
+static int hl7800_net_addr6_pton(const char *src, struct in6_addr *dst)
+{
+	int num_sections = 8;
+	int i, len;
+	uint16_t ipv6_section;
+
+	len = strlen(src);
+	for (i = 0; i < len; i++) {
+		if (!(src[i] >= '0' && src[i] <= '9') && src[i] != '.') {
+			return -EINVAL;
+		}
+	}
+
+	for (i = 0; i < num_sections; i++) {
+		if (!src || *src == '\0') {
+			return -EINVAL;
+		}
+
+		ipv6_section = (uint16_t)strtol(src, NULL, 10);
+		src = strchr(src, '.');
+		src++;
+		if (!src || *src == '\0') {
+			return -EINVAL;
+		}
+		ipv6_section = (ipv6_section << 8) | (uint16_t)strtol(src, NULL, 10);
+		UNALIGNED_PUT(htons(ipv6_section), &dst->s6_addr16[i]);
+
+		src = strchr(src, '.');
+		if (src) {
+			src++;
+		} else {
+			if (i < num_sections - 1) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	return 0;
+}
+
 /* Handler: +CGCONTRDP: <cid>,<bearer_id>,<apn>,<local_addr and subnet_mask>,
  *			<gw_addr>,<DNS_prim_addr>,<DNS_sec_addr>
  */
@@ -1758,16 +1814,12 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	char *delims[CGCONTRDP_RESPONSE_NUM_DELIMS];
 	size_t out_len;
 	char value[MDM_IP_INFO_RESP_SIZE];
-	char *search_start, *addr_start, *sm_start, *gw_start, *dns_start;
+	char *search_start, *addr_start, *sm_start;
 	struct in_addr new_ipv4_addr;
+	struct in6_addr new_ipv6_addr;
 	bool is_ipv4;
-	int ipv4_len;
-	char ipv4_addr_str[NET_IPV4_ADDR_LEN];
-	int sn_len;
-	char sm_str[NET_IPV4_ADDR_LEN];
-	int gw_len;
-	char gw_str[NET_IPV4_ADDR_LEN];
-	int dns_len;
+	int addr_len;
+	char temp_addr_str[HL7800_IPV6_ADDR_LEN];
 	k_timeout_t delay;
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
@@ -1791,19 +1843,19 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	 * gateway string.
 	 */
 	is_ipv4 = false;
-	ipv4_len = delims[3] - delims[2];
-	LOG_DBG("IP string len: %d", ipv4_len);
-	if (ipv4_len <= (NET_IPV4_ADDR_LEN * 2)) {
+	addr_len = delims[3] - delims[2];
+	LOG_DBG("IP string len: %d", addr_len);
+	if (addr_len <= (NET_IPV4_ADDR_LEN * 2)) {
 		is_ipv4 = true;
-	}
-
-	if (!is_ipv4) {
-		goto done;
 	}
 
 	/* Find start of subnet mask */
 	addr_start = delims[2] + 1;
-	num_delims = 4;
+	if (is_ipv4) {
+		num_delims = 4;
+	} else {
+		num_delims = 16;
+	}
 	search_start = addr_start;
 	for (int i = 0; i < num_delims; i++) {
 		sm_start = strchr(search_start, '.');
@@ -1815,67 +1867,97 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		search_start = sm_start + 1;
 	}
 
-	/* get new IPv4 addr */
-	ipv4_len = sm_start - addr_start;
-	strncpy(ipv4_addr_str, addr_start, ipv4_len);
-	ipv4_addr_str[ipv4_len] = 0;
-	ret = net_addr_pton(AF_INET, ipv4_addr_str, &new_ipv4_addr);
+	/* get new IP addr */
+	addr_len = sm_start - addr_start;
+	strncpy(temp_addr_str, addr_start, addr_len);
+	temp_addr_str[addr_len] = 0;
+	LOG_DBG("IP addr: %s", log_strdup(temp_addr_str));
+	if (is_ipv4) {
+		ret = net_addr_pton(AF_INET, temp_addr_str, &new_ipv4_addr);
+	} else {
+		ret = hl7800_net_addr6_pton(temp_addr_str, &new_ipv6_addr);
+	}
 	if (ret < 0) {
-		LOG_ERR("Invalid IPv4 addr");
+		LOG_ERR("Invalid IP addr");
 		return true;
 	}
 
-	/* move past the '.' */
-	sm_start += 1;
-	/* store new subnet mask */
-	sn_len = delims[3] - sm_start;
-	strncpy(sm_str, sm_start, sn_len);
-	sm_str[sn_len] = 0;
-	ret = net_addr_pton(AF_INET, sm_str, &ictx.subnet);
-	if (ret < 0) {
-		LOG_ERR("Invalid subnet");
-		return true;
-	}
+	if (is_ipv4) {
+		/* move past the '.' */
+		sm_start += 1;
+		/* store new subnet mask */
+		addr_len = delims[3] - sm_start;
+		strncpy(temp_addr_str, sm_start, addr_len);
+		temp_addr_str[addr_len] = 0;
+		ret = net_addr_pton(AF_INET, temp_addr_str, &ictx.subnet);
+		if (ret < 0) {
+			LOG_ERR("Invalid subnet");
+			return true;
+		}
 
-	/* store new gateway */
-	gw_start = delims[3] + 1;
-	gw_len = delims[4] - gw_start;
-	strncpy(gw_str, gw_start, gw_len);
-	gw_str[gw_len] = 0;
-	ret = net_addr_pton(AF_INET, gw_str, &ictx.gateway);
-	if (ret < 0) {
-		LOG_ERR("Invalid gateway");
-		return true;
+		/* store new gateway */
+		addr_start = delims[3] + 1;
+		addr_len = delims[4] - addr_start;
+		strncpy(temp_addr_str, addr_start, addr_len);
+		temp_addr_str[addr_len] = 0;
+		ret = net_addr_pton(AF_INET, temp_addr_str, &ictx.gateway);
+		if (ret < 0) {
+			LOG_ERR("Invalid gateway");
+			return true;
+		}
 	}
 
 	/* store new dns */
-	dns_start = delims[4] + 1;
-	dns_len = delims[5] - dns_start;
-	strncpy(ictx.dns_string, dns_start, dns_len);
-	ictx.dns_string[dns_len] = 0;
-	ret = net_addr_pton(AF_INET, ictx.dns_string, &ictx.dns);
+	addr_start = delims[4] + 1;
+	addr_len = delims[5] - addr_start;
+	if (is_ipv4) {
+		strncpy(ictx.dns_v4_string, addr_start, addr_len);
+		ictx.dns_v4_string[addr_len] = 0;
+		ret = net_addr_pton(AF_INET, ictx.dns_v4_string, &ictx.dns_v4);
+		LOG_DBG("IPv4 DNS addr: %s", log_strdup(ictx.dns_v4_string));
+	}
+#ifdef CONFIG_NET_IPV6
+	else {
+		/* store HL7800 formatted IPv6 DNS string temporarily */
+		strncpy(ictx.dns_v6_string, addr_start, addr_len);
+
+		ret = hl7800_net_addr6_pton(ictx.dns_v6_string, &ictx.dns_v6);
+		net_addr_ntop(AF_INET6, &ictx.dns_v6, ictx.dns_v6_string,
+			      sizeof(ictx.dns_v6_string));
+		LOG_DBG("IPv6 DNS addr: %s", log_strdup(ictx.dns_v6_string));
+	}
+#endif
 	if (ret < 0) {
 		LOG_ERR("Invalid dns");
 		return true;
 	}
 
 	if (ictx.iface) {
-		/* remove the current IPv4 addr before adding a new one.
-		 * We dont care if it is successful or not.
-		 */
-		net_if_ipv4_addr_rm(ictx.iface, &ictx.ipv4Addr);
+		if (is_ipv4) {
+#ifdef CONFIG_NET_IPV4
+			/* remove the current IPv4 addr before adding a new one.
+			 * We dont care if it is successful or not.
+			 */
+			net_if_ipv4_addr_rm(ictx.iface, &ictx.ipv4Addr);
 
-		if (!net_if_ipv4_addr_add(ictx.iface, &new_ipv4_addr,
-					  NET_ADDR_DHCP, 0)) {
-			LOG_ERR("Cannot set iface IPv4 addr");
-			return true;
+			if (!net_if_ipv4_addr_add(ictx.iface, &new_ipv4_addr, NET_ADDR_DHCP, 0)) {
+				LOG_ERR("Cannot set iface IPv4 addr");
+			}
+
+			net_if_ipv4_set_netmask(ictx.iface, &ictx.subnet);
+			net_if_ipv4_set_gw(ictx.iface, &ictx.gateway);
+#endif
+			/* store the new IP addr */
+			net_ipaddr_copy(&ictx.ipv4Addr, &new_ipv4_addr);
+		} else {
+#if CONFIG_NET_IPV6
+			net_if_ipv6_addr_rm(ictx.iface, &ictx.ipv6Addr);
+			if (!net_if_ipv6_addr_add(ictx.iface, &new_ipv6_addr, NET_ADDR_AUTOCONF,
+						  0)) {
+				LOG_ERR("Cannot set iface IPv6 addr");
+			}
+#endif
 		}
-
-		net_if_ipv4_set_netmask(ictx.iface, &ictx.subnet);
-		net_if_ipv4_set_gw(ictx.iface, &ictx.gateway);
-
-		/* store the new IP addr */
-		net_ipaddr_copy(&ictx.ipv4Addr, &new_ipv4_addr);
 
 		/* start DNS update work */
 		delay = K_NO_WAIT;
@@ -1891,8 +1973,6 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		LOG_ERR("iface NULL");
 	}
 
-	/* TODO: IPv6 addr present, configure iface with it */
-done:
 	return true;
 }
 
@@ -4990,7 +5070,7 @@ done:
 static int configure_TCP_socket(struct hl7800_socket *sock)
 {
 	int ret;
-	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"###.###.###.###\",#####")];
+	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"" IPV6_ADDR_FORMAT "\",#####")];
 	int dst_port = -1;
 
 #if defined(CONFIG_NET_IPV6)
