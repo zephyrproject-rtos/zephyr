@@ -28,7 +28,7 @@
 #define LOG_MODULE_NAME bt_bap
 #include "common/log.h"
 
-#if defined(CONFIG_BT_BAP)
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
 static struct bap_pac {
 	struct bt_audio_capability cap;
@@ -922,4 +922,4 @@ int bt_audio_discover(struct bt_conn *conn,
 	return bt_gatt_read(conn, &params->read);
 }
 
-#endif /* CONFIG_BT_BAP */
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */

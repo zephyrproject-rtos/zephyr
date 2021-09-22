@@ -17,30 +17,41 @@ menuconfig BT_AUDIO
 
 if BT_AUDIO
 
-if BT_CONN
-
 config BT_AUDIO_UNICAST
-	bool "Bluetooth Unicast Audio Support"
+	bool # Hidden
+	select BT_CONN
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_ISO_UNICAST
-	select BT_GATT_DYNAMIC_DB
-	select BT_GATT_CACHING
 	select BT_L2CAP_ECRED
 	select BT_EATT
-	help
-	  This option enables support for Bluetooth Unicast Audio using
-	  Isochronous channels.
+	select BT_BAP
 
-# TODO: Make BT_AUDIO_BROADCAST not depend on BT_CONN
+config BT_AUDIO_UNICAST_SERVER
+	bool "Bluetooth Unicast Audio Server Support"
+	select BT_AUDIO_UNICAST
+	select BT_GATT_DYNAMIC_DB
+	select BT_GATT_CACHING
+	help
+	  This option enables support for Bluetooth Unicast Audio Server
+	  using Isochronous channels.
+
+config BT_AUDIO_UNICAST_CLIENT
+	bool "Bluetooth Unicast Audio Client Support"
+	select BT_AUDIO_UNICAST
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	help
+	  This option enables support for Bluetooth Unicast Audio Client
+	  using Isochronous channels.
+
 config BT_AUDIO_BROADCAST
 	bool "Bluetooth Broadcast Audio Support"
 	select BT_ISO_BROADCAST
+	select BT_BAP
 	help
 	  This option enables support for Bluetooth Broadcast Audio using
 	  Isochronous channels.
-
-endif # BT_CONN
 
 config BT_AUDIO_DEBUG
 	bool "Enable debug logs"
