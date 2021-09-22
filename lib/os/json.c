@@ -309,6 +309,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_LIST_START:
 	case JSON_TOK_STRING:
 	case JSON_TOK_NUMBER:
+	case JSON_TOK_NUMBER_UNSIGNED:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return 0;
@@ -415,6 +416,33 @@ static int decode_num(const struct token *token, int32_t *num)
 	return 0;
 }
 
+static int decode_num_unsigned(const struct token *token, uint32_t *num)
+{
+	/* FIXME: strtod() is not available in newlib/minimal libc,
+	 * so using strtol() here.
+	 */
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtoul(token->start, &endptr, 10);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
@@ -461,6 +489,10 @@ static int decode_value(struct json_obj *obj,
 
 		return decode_num(value, num);
 	}
+	case JSON_TOK_NUMBER_UNSIGNED: {
+		uint32_t *num = field;
+		return decode_num_unsigned(value, num);
+	}
 	case JSON_TOK_STRING: {
 		char **str = field;
 
@@ -479,6 +511,8 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(int32_t);
+	case JSON_TOK_NUMBER_UNSIGNED:
+		return sizeof(uint32_t);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
