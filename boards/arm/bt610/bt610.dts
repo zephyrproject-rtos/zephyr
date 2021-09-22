@@ -8,8 +8,8 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Laird BT6x0 Sensor";
-	compatible = "lairdconnect,bt6x0";
+	model = "Laird BT610 Sensor";
+	compatible = "lairdconnect,bt610";
 
 	chosen {
 		zephyr,console = &uart0;
