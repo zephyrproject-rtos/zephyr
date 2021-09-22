@@ -127,7 +127,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 	}
 
 	/* Check that codec and frequency are supported */
-	if (cap->codec->id != codec->id) {
+	if (memcmp(&codec, &cap->codec, sizeof(cap->codec))) {
 		BT_ERR("Invalid codec id");
 		return NULL;
 	}
@@ -197,7 +197,7 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 	}
 
 	/* Check that codec is supported */
-	if (cap->codec->id != codec->id) {
+	if (memcmp(&codec, &cap->codec, sizeof(cap->codec))) {
 		return -ENOTSUP;
 	}
 
