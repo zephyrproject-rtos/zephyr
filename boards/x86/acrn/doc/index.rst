@@ -5,6 +5,28 @@ Zephyr's is capable of running as a guest under the x86 ACRN
 hypervisor (see https://projectacrn.org/).  The process for getting
 this to work is somewhat involved, however.
 
+ACRN hypervisor supports a hybrid scenario where Zephyr runs in a so-
+called "pre-launched" mode. This means Zephyr will access the ACRN
+hypervisor directly without involving the SOS VM. This is the most
+practical user scenario in the real world because Zephyr's real-time
+and safety capability can be assured without influence from other
+VMs. The following figure from ACRN's official documentation shows
+how a hybrid scenario works:
+
+.. figure:: ACRN-Hybrid.png
+    :align: center
+    :alt: ACRN Hybrid User Scenario
+    :figclass: align-center
+    :width: 80%
+
+    ACRN Hybrid User Scenario
+
+In this tutorial, we will show you how to build a minimal running instance of Zephyr
+and ACRN hypervisor to demonstrate that it works successfully. To learn more about
+other features of ACRN, such as building and using the SOS VM or other guest VMs,
+please refer to the Getting Started Guide for ACRN:
+https://projectacrn.github.io/latest/tutorials/using_hybrid_mode_on_nuc.html
+
 Build your Zephyr App
 *********************
 
@@ -14,6 +36,10 @@ normally would, selecting an appropriate board:
     .. code-block:: console
 
         west build -b acrn_ehl_crb samples/hello_world
+
+In this tutorial, we will use the Intel Elkhart Lake Reference Board
+(`EHL`_ CRB) since it is one of the suggested platform for this
+type of scenario. Use ``acrn_ehl_crb`` as the target board parameter.
 
 Note the kconfig output in ``build/zephyr/.config``, you will need to
 reference that to configure ACRN later.
@@ -30,6 +56,9 @@ First you need the source code, clone from:
     .. code-block:: console
 
         git clone https://github.com/projectacrn/acrn-hypervisor
+
+We suggest that you use versions v2.5.1 or later of the ACRN hypervisor
+as they have better support for SMP in Zephyr.
 
 Like Zephyr, ACRN favors build-time configuration management instead
 of runtime probing or control.  Unlike Zephyr, ACRN has single large
@@ -102,10 +131,51 @@ many CPUs in the ``<cpu_affinity>`` tag.  For example:
 
     .. code-block:: xml
 
-        <cpu_affinity>
-            <pcpu_id>0</pcpu_id>
-            <pcpu_id>1</pcpu_id>
-        </cpu_affinity>
+        <vm id="0">
+            <vm_type>SAFETY_VM</vm_type>
+            <name>ACRN PRE-LAUNCHED VM0</name>
+            <guest_flags>
+                <guest_flag>0</guest_flag>
+            </guest_flags>
+            <cpu_affinity>
+                <pcpu_id>0</pcpu_id>
+                <pcpu_id>1</pcpu_id>
+            </cpu_affinity>
+            ...
+            <clos>
+                <vcpu_clos>0</vcpu_clos>
+                <vcpu_clos>0</vcpu_clos>
+            </clos>
+            ...
+        </vm>
+
+To use SMP, we have to change the pcpu_id of VM0 to 0 and 1.
+This configures ACRN to run Zephyr on CPU0 and CPU1. The ACRN hypervisor
+and Zephyr application will not boot successfully without this change.
+If you plan to run Zephyr with one CPU only, you can skip it.
+
+Since Zephyr is using CPU0 and CPU1, we also have to change
+VM1's configuration so it runs on CPU2 and CPU3. If your ACRN set up has
+additional VMs, you should change their configurations as well.
+
+    .. code-block:: xml
+
+        <vm id="1">
+            <vm_type>SOS_VM</vm_type>
+            <name>ACRN SOS VM</name>
+            <guest_flags>
+                <guest_flag>0</guest_flag>
+            </guest_flags>
+            <cpu_affinity>
+                <pcpu_id>2</pcpu_id>
+                <pcpu_id>3</pcpu_id>
+            </cpu_affinity>
+            <clos>
+                <vcpu_clos>0</vcpu_clos>
+                <vcpu_clos>0</vcpu_clos>
+            </clos>
+            ...
+        </vm>
 
 Note that these indexes are physical CPUs on the host.  When
 configuring multiple guests, you probably don't want to overlap these
@@ -228,3 +298,6 @@ command:
         ----- Entering VM 0 Shell -----
         *** Booting Zephyr OS build v2.6.0-rc1-324-g1a03783861ad  ***
         Hello World! acrn
+
+
+.. _EHL: https://www.intel.com/content/www/us/en/products/docs/processors/embedded/enhanced-for-iot-platform-brief.html
