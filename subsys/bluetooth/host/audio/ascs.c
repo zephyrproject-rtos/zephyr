@@ -620,7 +620,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		struct bt_codec codec;
 
 		/* Skip if capabilities don't match */
-		if (cfg->codec.id != cap->codec->id) {
+		if (memcmp(&cfg->codec, &cap->codec, sizeof(cap->codec))) {
 			continue;
 		}
 
