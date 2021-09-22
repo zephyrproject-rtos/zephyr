@@ -436,6 +436,16 @@ class Handler:
         proc.kill()
         self.terminated = True
 
+    def add_missing_testscases(self, harness):
+        """
+        If testsuite was broken by some error (e.g. timeout) it is necessary to
+        add information about next testcases, which were not be
+        performed due to this error.
+        """
+        for c in self.instance.testcase.cases:
+            if c not in harness.tests:
+                harness.tests[c] = "BLOCK"
+
 
 class BinaryHandler(Handler):
     def __init__(self, instance, type_str):
@@ -590,6 +600,7 @@ class BinaryHandler(Handler):
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Timeout"
+            self.add_missing_testscases(harness)
 
         self.record(harness)
 
@@ -859,9 +870,7 @@ class DeviceHandler(Handler):
         handler_time = time.time() - start_time
 
         if out_state in ["timeout", "flash_error"]:
-            for c in self.instance.testcase.cases:
-                if c not in harness.tests:
-                    harness.tests[c] = "BLOCK"
+            self.add_missing_testscases(harness)
 
             if out_state == "timeout":
                 self.instance.reason = "Timeout"
@@ -1152,6 +1161,7 @@ class QEMUHandler(Handler):
                 self.instance.reason = "Timeout"
             else:
                 self.instance.reason = "Exited with {}".format(self.returncode)
+            self.add_missing_testscases(harness)
 
     def get_fifo(self):
         return self.fifo_fn
