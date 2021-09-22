@@ -189,9 +189,9 @@ zephyr_udc0: &usb {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Set all partitions with first 812K of flash */
-		/* last 212K are reseved for M0 usage */
-		/* Configure partitions to make use of the whole 812K */
+		/* Set all partitions with first 808K of flash */
+		/* last 216K are reseved for M0 usage */
+		/* Configure partitions to make use of the whole 808K */
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
@@ -211,7 +211,7 @@ zephyr_udc0: &usb {
 		};
 		storage_partition: partition@c8000 {
 			label = "storage";
-			reg = <0x000c8000 0x3000>;
+			reg = <0x000c8000 0x2000>;
 		};
 
 	};
