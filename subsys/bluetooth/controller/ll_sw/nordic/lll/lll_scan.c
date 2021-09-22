@@ -87,8 +87,8 @@ static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   bool *dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t rl_idx,
-			      bool dir_report);
+			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
+			      uint8_t rl_idx, bool dir_report);
 
 int lll_scan_init(void)
 {
@@ -1244,8 +1244,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the adv packet */
 		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok ? rl_idx : FILTER_IDX_NONE,
-					 false);
+					 irkmatch_ok, rl_idx, false);
 		if (err) {
 			return err;
 		}
@@ -1349,9 +1348,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the scan response packet */
 		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok ? rl_idx :
-						       FILTER_IDX_NONE,
-					 dir_report);
+					 irkmatch_ok, rl_idx, dir_report);
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1439,8 +1436,8 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 }
 
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t rl_idx,
-			      bool dir_report)
+			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
+			      uint8_t rl_idx, bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1521,12 +1518,18 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 						  BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* save the resolving list index. */
-	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
+	node_rx->hdr.rx_ftr.rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	node_rx->hdr.rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
 	node_rx->hdr.rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
 		/* save channel and anchor point ticks. */

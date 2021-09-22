@@ -29,6 +29,12 @@ extern "C" {
 #define BT_ADDR_LE_RANDOM       0x01
 #define BT_ADDR_LE_PUBLIC_ID    0x02
 #define BT_ADDR_LE_RANDOM_ID    0x03
+#define BT_ADDR_LE_UNRESOLVED   0xFE /* Resolvable Private Address
+				      * (Controller unable to resolve)
+				      */
+#define BT_ADDR_LE_ANONYMOUS    0xFF /* No address provided
+				      * (anonymous advertisement)
+				      */
 
 /** Length in bytes of a standard Bluetooth address */
 #define BT_ADDR_SIZE 6
