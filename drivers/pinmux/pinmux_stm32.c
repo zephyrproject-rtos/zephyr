@@ -148,6 +148,37 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+/* Z_AFIO_REMAP is keeping the value of AFIO_MAPR_SWJ_CFG_x */
+#if defined(CONFIG_GPIO_STM32_SWJ_ENABLE)
+/* reset state */
+#define Z_AFIO_REMAP AFIO_MAPR_SWJ_CFG_RESET
+#elif defined(CONFIG_GPIO_STM32_SWJ_NONJTRST)
+/* released PB4 */
+#define Z_AFIO_REMAP AFIO_MAPR_SWJ_CFG_NOJNTRST
+#elif defined(CONFIG_GPIO_STM32_SWJ_NOJTAG)
+/* released PB4 PB3 PA15 */
+#define Z_AFIO_REMAP AFIO_MAPR_SWJ_CFG_JTAGDISABLE
+#elif defined(CONFIG_GPIO_STM32_SWJ_DISABLE)
+/* released PB4 PB3 PA13 PA14 PA15 */
+#define Z_AFIO_REMAP AFIO_MAPR_SWJ_CFG_DISABLE
+#endif
+
+/* enable remap : modify MAPR and keep the AFIO_MAPR_SWJ_CFG_x */
+#define enable_remap(REMAP_PIN) MODIFY_REG(AFIO->MAPR,\
+					   (REMAP_PIN | AFIO_MAPR_SWJ_CFG), \
+					   (REMAP_PIN | Z_AFIO_REMAP))
+
+/* enable partial remap : modify MAPR and keep the AFIO_MAPR_SWJ_CFG_x */
+#define enable_partial_remap(REMAP_PIN, PARTIAL_REMAP) \
+				MODIFY_REG(AFIO->MAPR, \
+					   (REMAP_PIN | AFIO_MAPR_SWJ_CFG), \
+					   (PARTIAL_REMAP | Z_AFIO_REMAP))
+
+/* disable remap : modify MAPR and keep the AFIO_MAPR_SWJ_CFG_x */
+#define disable_remap(REMAP_PIN) MODIFY_REG(AFIO->MAPR,\
+					    (REMAP_PIN | AFIO_MAPR_SWJ_CFG), \
+					    Z_AFIO_REMAP)
+
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  *        configuration
@@ -182,14 +213,17 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(can1)):
 		if (remap == REMAP_1) {
-			/* PB8/PB9 */
-			LL_GPIO_AF_RemapPartial2_CAN1();
+			/* PB8/PB9 (CAN_REMAP = 0b10) */
+			enable_partial_remap(AFIO_MAPR_CAN_REMAP,
+				AFIO_MAPR_CAN_REMAP_REMAP2);
 		} else if (remap == REMAP_2) {
-			/* PD0/PD1 */
-			LL_GPIO_AF_RemapPartial3_CAN1();
+			/* PD0/PD1  (CAN_REMAP = 0b11) */
+			enable_partial_remap(AFIO_MAPR_CAN_REMAP,
+				AFIO_MAPR_CAN_REMAP_REMAP3);
 		} else {
-			/* NO_REMAP: PA11/PA12 */
-			LL_GPIO_AF_RemapPartial1_CAN1();
+			/* NO_REMAP: PA11/PA12 (CAN_REMAP = 0b00) */
+			enable_partial_remap(AFIO_MAPR_CAN_REMAP,
+				AFIO_MAPR_CAN_REMAP_REMAP1);
 		}
 		break;
 #endif
@@ -197,63 +231,73 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	case DT_REG_ADDR(DT_NODELABEL(can2)):
 		if (remap == REMAP_1) {
 			/* PB5/PB6 */
-			LL_GPIO_AF_EnableRemap_CAN2();
+			enable_remap(AFIO_MAPR_CAN2_REMAP);
 		} else {
 			/* PB12/PB13 */
-			LL_GPIO_AF_DisableRemap_CAN2();
+			disable_remap(AFIO_MAPR_CAN2_REMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(i2c1)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_I2C1();
+			enable_remap(AFIO_MAPR_I2C1_REMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_I2C1();
+			disable_remap(AFIO_MAPR_I2C1_REMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers1)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_TIM1();
+			enable_partial_remap(AFIO_MAPR_TIM1_REMAP,
+				AFIO_MAPR_TIM1_REMAP_PARTIALREMAP);
 		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_TIM1();
+			enable_partial_remap(AFIO_MAPR_TIM1_REMAP,
+				AFIO_MAPR_TIM1_REMAP_FULLREMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_TIM1();
+			enable_partial_remap(AFIO_MAPR_TIM1_REMAP,
+				AFIO_MAPR_TIM1_REMAP_NOREMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers2), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers2)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial1_TIM2();
+			enable_partial_remap(AFIO_MAPR_TIM2_REMAP,
+				AFIO_MAPR_TIM2_REMAP_PARTIALREMAP1);
 		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_RemapPartial2_TIM2();
+			enable_partial_remap(AFIO_MAPR_TIM2_REMAP,
+				AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2);
 		} else if (remap == REMAP_FULL) {
-			LL_GPIO_AF_EnableRemap_TIM2();
+			enable_partial_remap(AFIO_MAPR_TIM2_REMAP,
+				AFIO_MAPR_TIM2_REMAP_FULLREMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_TIM2();
+			enable_partial_remap(AFIO_MAPR_TIM2_REMAP,
+				AFIO_MAPR_TIM2_REMAP_NOREMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers3), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers3)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_TIM3();
+			enable_partial_remap(AFIO_MAPR_TIM3_REMAP,
+				AFIO_MAPR_TIM3_REMAP_PARTIALREMAP);
 		} else if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_TIM3();
+			enable_partial_remap(AFIO_MAPR_TIM3_REMAP,
+				AFIO_MAPR_TIM3_REMAP_FULLREMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_TIM3();
+			enable_partial_remap(AFIO_MAPR_TIM3_REMAP,
+				AFIO_MAPR_TIM3_REMAP_NOREMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers4), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers4)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_TIM4();
+			enable_remap(AFIO_MAPR_TIM4_REMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_TIM4();
+			disable_remap(AFIO_MAPR_TIM4_REMAP);
 		}
 		break;
 #endif
@@ -341,38 +385,41 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(usart1)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_USART1();
+			enable_remap(AFIO_MAPR_USART1_REMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_USART1();
+			disable_remap(AFIO_MAPR_USART1_REMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay)
 	case DT_REG_ADDR(DT_NODELABEL(usart2)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_USART2();
+			enable_remap(AFIO_MAPR_USART2_REMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_USART2();
+			disable_remap(AFIO_MAPR_USART2_REMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay)
 	case DT_REG_ADDR(DT_NODELABEL(usart3)):
 		if (remap == REMAP_2) {
-			LL_GPIO_AF_EnableRemap_USART3();
+			enable_partial_remap(AFIO_MAPR_USART3_REMAP,
+				AFIO_MAPR_USART3_REMAP_FULLREMAP);
 		} else if (remap == REMAP_1) {
-			LL_GPIO_AF_RemapPartial_USART3();
+			enable_partial_remap(AFIO_MAPR_USART3_REMAP,
+				AFIO_MAPR_USART3_REMAP_PARTIALREMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_USART3();
+			enable_partial_remap(AFIO_MAPR_USART3_REMAP,
+				AFIO_MAPR_USART3_REMAP_NOREMAP);
 		}
 		break;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(spi1)):
 		if (remap == REMAP_1) {
-			LL_GPIO_AF_EnableRemap_SPI1();
+			enable_remap(AFIO_MAPR_SPI1_REMAP);
 		} else {
-			LL_GPIO_AF_DisableRemap_SPI1();
+			disable_remap(AFIO_MAPR_SPI1_REMAP);
 		}
 		break;
 #endif
