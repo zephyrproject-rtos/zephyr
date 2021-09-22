@@ -5095,6 +5095,41 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
 }
 
+static uint8_t ext_adv_direct_addr_type(struct lll_scan *lll,
+					bool resolved, bool direct,
+					uint8_t rx_addr_type,
+					const uint8_t *const rx_addr)
+{
+	if (0) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	} else if (resolved) {
+		if (!direct) {
+			struct ll_scan_set *scan;
+
+			scan = HDR_LLL2ULL(lll);
+			if ((rx_addr_type == lll->init_addr_type) &&
+			    !memcmp(lll->init_addr, rx_addr, BDADDR_SIZE)) {
+				return scan->own_addr_type;
+			} else {
+				return scan->own_addr_type | BIT(1);
+			}
+		} else {
+			return BT_ADDR_LE_UNRESOLVED;
+		}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	} else {
+		if (!direct) {
+			struct ll_scan_set *scan;
+
+			scan = HDR_LLL2ULL(lll);
+
+			return scan->own_addr_type;
+		} else {
+			return BT_ADDR_LE_UNRESOLVED;
+		}
+	}
+}
+
 static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
 {
 	while (node_rx_extra) {
@@ -5219,6 +5254,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	do {
 		struct pdu_adv_adi *adi_curr = NULL;
 		uint8_t direct_addr_type_curr = 0U;
+		bool direct_resolved_curr = false;
 		uint8_t *direct_addr_curr = NULL;
 		uint8_t adv_addr_type_curr = 0U;
 		struct pdu_adv_com_ext_adv *p;
@@ -5238,6 +5274,8 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		uint8_t rl_idx_curr = node_rx_curr->hdr.rx_ftr.rl_idx;
+
+		direct_resolved_curr = node_rx_curr->hdr.rx_ftr.direct_resolved;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		/* The Link Layer currently returns RSSI as an absolute value */
@@ -5278,14 +5316,21 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		if (h->tgt_addr) {
+			struct lll_scan *lll;
 			bt_addr_le_t addr;
 
-			direct_addr_type_curr = adv->rx_addr;
+			lll = node_rx->hdr.rx_ftr.param;
+			direct_addr_type_curr =
+				ext_adv_direct_addr_type(lll,
+							 direct_resolved_curr,
+							 direct_curr,
+							 adv->rx_addr, ptr);
 			direct_addr_curr = ptr;
+			ptr += BDADDR_SIZE;
 
 			addr.type = adv->rx_addr;
-			(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
-			ptr += BDADDR_SIZE;
+			(void)memcpy(addr.a.val, direct_addr_curr,
+				     sizeof(bt_addr_t));
 
 			BT_DBG("    TgtA: %s", bt_addr_le_str(&addr));
 		}
