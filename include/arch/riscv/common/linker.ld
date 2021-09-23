@@ -229,12 +229,11 @@ SECTIONS
 #include <linker/common-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
-    __data_region_start = .;
-
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
+		 __data_region_start = .;
 		 __data_start = .;
 
 		 *(.data)
