@@ -73,7 +73,7 @@ The code can be found in :zephyr_file:`samples/boards/nrf/battery`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/battery
-   :board: nrf52_pca20020
+   :board: thingy52_nrf52832
    :goals: build flash
    :compact:
 
