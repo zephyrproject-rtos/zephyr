@@ -301,6 +301,53 @@ static struct setup_cmd check_registration_cmds[] = {
 		  on_cmd_atcmdinfo_eps_network_registration, 2U, ","),
 };
 
+MODEM_CMD_DEFINE(on_cmd_cclk)
+{
+	int error = 0;
+	int day, mon, year;
+	int hour, min, sec, tz;
+
+	/* The first argument will be empty, and the second one
+	 * will contain the time string in the format:
+	 *
+	 *  yy/MM/dd,hh:mm:ss±zz
+	 */
+	if (argc == 2) {
+		year = atoi(argv[1]);
+		mon = atoi(argv[1] + 3);
+		day = atoi(argv[1] + 6);
+		hour = atoi(argv[1] + 9);
+		min = atoi(argv[1] + 12);
+		sec = atoi(argv[1] + 15);
+		tz = atoi(argv[1] + 17);
+		gsm_ppp_clock_set(year, mon, day,
+				  hour, min, sec, tz);
+	} else {
+		error = -EINVAL;
+	}
+
+	modem_cmd_handler_set_error(data, error);
+	k_sem_give(&gsm.sem_response);
+
+	return 0;
+}
+
+static struct modem_cmd cclk_cmd = MODEM_CMD("+CCLK:", on_cmd_cclk, 2U, "\"");
+
+
+void __weak gsm_ppp_clock_set(int year, int mon, int day,
+			      int hour, int min, int sec,
+			      int tz)
+{
+	ARG_UNUSED(year);
+	ARG_UNUSED(mon);
+	ARG_UNUSED(day);
+	ARG_UNUSED(hour);
+	ARG_UNUSED(min);
+	ARG_UNUSED(sec);
+	ARG_UNUSED(tz);
+}
+
 static struct setup_cmd connect_cmds[] = {
 	/* connect to network */
 	SETUP_CMD_NOHANDLE("ATD*99#"),
@@ -486,6 +533,10 @@ registering:
 			&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0,
 			"AT+CGACT=1,1", &gsm->sem_response, K_SECONDS(2));
 	}
+	(void)modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler,
+		&cclk_cmd, 1, "AT+CCLK?", &gsm->sem_response,
+		K_SECONDS(2));
 #endif
 
 	LOG_DBG("modem setup complete, %s", "enable PPP");
