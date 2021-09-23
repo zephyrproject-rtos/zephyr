@@ -654,27 +654,23 @@ static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
 }
 
 static void bass_pa_sync(struct bt_conn *conn, struct bass_recv_state_internal_t *state,
-			 uint8_t sync_pa)
+			 bool pa_past)
 {
 	struct bt_bass_recv_state *recv_state = &state->state;
 
-	BT_DBG("sync_pa %u, pa_interval 0x%04x", sync_pa, state->pa_interval);
+	BT_DBG("pa_past %u, pa_interval 0x%04x", pa_past, state->pa_interval);
 
-	if (sync_pa) {
-		if (recv_state->pa_sync_state == BASS_PA_STATE_SYNCED ||
-		    recv_state->pa_sync_state == BASS_PA_STATE_INFO_REQ) {
-			return;
-		}
+	if (recv_state->pa_sync_state == BASS_PA_STATE_SYNCED ||
+	    recv_state->pa_sync_state == BASS_PA_STATE_INFO_REQ) {
+		return;
+	}
 
-		if (conn && sync_pa == BASS_PA_REQ_SYNC_PAST &&
-		    BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-			bass_pa_sync_past(conn, state);
-		} else {
-			bass_pa_sync_no_past(state);
-		}
+	if (conn && pa_past &&
+	    BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+	    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		bass_pa_sync_past(conn, state);
 	} else {
-		bass_pa_sync_cancel(state);
+		bass_pa_sync_no_past(state);
 	}
 }
 
@@ -799,9 +795,13 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	internal_state->active = true;
+	state->req_pa_sync_value = pa_sync;
 	internal_state->pa_interval = pa_interval;
 
-	bass_pa_sync(conn, internal_state, pa_sync);
+	if (pa_sync != BASS_PA_REQ_NO_SYNC) {
+		bass_pa_sync(conn, internal_state,
+			     (pa_sync == BASS_PA_REQ_SYNC_PAST));
+	}
 
 	BT_DBG("Index %u: New source added: ID 0x%02x",
 	       internal_state->index, state->src_id);
@@ -820,6 +820,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	uint8_t src_id;
 	uint8_t old_pa_sync_state;
 	bool state_changed = false;
+	bool need_synced = false;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
 	struct bt_bass_subgroup subgroups[CONFIG_BT_BASS_MAX_SUBGROUPS] = { 0 };
@@ -917,10 +918,17 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	if (state->num_subgroups != num_subgroups) {
 		state->num_subgroups = num_subgroups;
 		state_changed = true;
+		need_synced = true;
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
-		state->subgroups[i].requested_bis_sync = subgroups[i].requested_bis_sync;
+		if (state->subgroups[i].requested_bis_sync !=
+		    subgroups[i].requested_bis_sync) {
+			state->subgroups[i].requested_bis_sync =
+				subgroups[i].requested_bis_sync;
+			need_synced = true;
+			state_changed = true;
+		}
 
 		/* If the metadata len is 0, we shall not overwrite the existing metadata */
 		if (subgroups[i].metadata_len == 0) {
@@ -941,16 +949,28 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		}
 	}
 
+	if (state->req_pa_sync_value != pa_sync) {
+		state->req_pa_sync_value = pa_sync;
+		need_synced = true;
+		state_changed = true;
+	}
+
 	internal_state->pa_interval = pa_interval;
 
-	/* If no change to the state don't sync PA */
-	if (!state_changed) {
-		bass_pa_sync(conn, internal_state, pa_sync);
-
+	if (need_synced) {
+		/* Terminated BIG first if existed */
 		err = bis_sync_cancel(internal_state);
 		if (err) {
 			BT_WARN("Could not terminate existing BIG %d", err);
 			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		}
+
+		/* Terminated PA let's re-sync later */
+		bass_pa_sync_cancel(internal_state);
+
+		if (pa_sync != BASS_PA_REQ_NO_SYNC) {
+			bass_pa_sync(conn, internal_state,
+				     (pa_sync == BASS_PA_REQ_SYNC_PAST));
 		}
 	}
 
@@ -1017,6 +1037,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 
 static int bass_rem_src(struct net_buf_simple *buf)
 {
+	int err;
 	struct bass_recv_state_internal_t *internal_state;
 	uint8_t src_id;
 
@@ -1034,11 +1055,8 @@ static int bass_rem_src(struct net_buf_simple *buf)
 		return BT_GATT_ERR(BASS_ERR_OPCODE_INVALID_SRC_ID);
 	}
 
-
 	/* Terminate PA sync */
-	bass_pa_sync(NULL /* unused */, internal_state, false); /* delete syncs */
-
-	int err;
+	bass_pa_sync_cancel(internal_state);
 
 	/* Check if successful */
 	if (internal_state->pa_sync) {
