@@ -76,7 +76,7 @@ uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	memcpy(adv->rnd_addr, addr, BDADDR_SIZE);
+	(void)memcpy(adv->rnd_addr, addr, BDADDR_SIZE);
 
 	return 0;
 }
@@ -114,7 +114,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	val_ptr = value;
 	*val_ptr++ = len;
-	memcpy(val_ptr, &data, sizeof(data));
+	(void)memcpy(val_ptr, &data, sizeof(data));
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 					0, value, NULL, &pri_idx);
 	if (err) {
@@ -279,8 +279,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
-	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
-	       BDADDR_SIZE);
+	(void)memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+		     BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
 #if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
@@ -300,7 +300,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	}
 
 	/* Copy data */
-	memcpy(sr_dptr, data, len);
+	(void)memcpy(sr_dptr, data, len);
 	sr_dptr += len;
 
 	/* Finish Common ExtAdv Payload header */
@@ -442,7 +442,7 @@ uint8_t const *ull_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 					   uint8_t *const addr)
 {
 	if (addr) {
-		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
+		(void)memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
 	}
 
 	return adv->rnd_addr;
@@ -668,7 +668,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		/* return the pointer to sync info struct inside the PDU
 		 * buffer
 		 */
-		memcpy(value, &sec_dptr, sizeof(sec_dptr));
+		(void)memcpy(value, &sec_dptr, sizeof(sec_dptr));
 		value = (uint8_t *)value + sizeof(sec_dptr);
 
 		sec_dptr += sizeof(*sync_info);
@@ -857,7 +857,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		sec_dptr -= BDADDR_SIZE;
 
-		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+		(void)memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
 	/* No AdvA in primary channel due to AuxPtr being added */
@@ -878,7 +878,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		sec_dptr -= BDADDR_SIZE;
 
-		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+		(void)memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
 	/* Update auxiliary channel event time reservation */
