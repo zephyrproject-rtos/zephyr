@@ -1673,6 +1673,10 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 			struct iovec *vec = msg->msg_iov + i;
 			size_t sent = 0;
 
+			if (vec->iov_len == 0) {
+				continue;
+			}
+
 			while (sent < vec->iov_len) {
 				uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
 
