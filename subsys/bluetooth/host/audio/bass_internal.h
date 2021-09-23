@@ -30,8 +30,8 @@
 #define BASS_SCAN_STATE_SYNCED         0x03
 
 #define BASS_PA_REQ_NO_SYNC            0x00
-#define BASS_PA_REQ_SYNC               0x01
-#define BASS_PA_REQ_SYNC_PAST          0x02
+#define BASS_PA_REQ_SYNC_PAST          0x01
+#define BASS_PA_REQ_SYNC               0x02
 
 #define BASS_VALID_OPCODE(opcode) \
 	((opcode) >= BASS_OP_SCAN_STOP && (opcode) <= BASS_OP_REM_SRC)
