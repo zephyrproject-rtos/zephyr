@@ -259,6 +259,10 @@ Bluetooth
   * Added the ability to send HCI monitor traces over RTT.
   * Refactored the Bluetooth buffer configuration for simplicity. See the
     commit message of 6483e12a8ac4f495b28279a6b84014f633b0d374 for more info.
+    Note however that the aformentioned commit message has two typos;
+
+    * ``BT_CTLR_TX_BUFFER`` should be ``BT_CTLR_TX_BUFFERS``
+    * ``BT_CTLR_TX_BUFFERS_SIZE`` should be ``BT_CTLR_TX_BUFFER_SIZE``
   * Added support for concurrent advertising with multiple identities.
   * Changed the logic to disable scanning before setting the random address.
   * Fixed a crash where an ATT timeout occurred on a disconnected ATT channel.
