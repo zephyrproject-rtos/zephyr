@@ -53,6 +53,7 @@ struct bt_bass_recv_state {
 	uint8_t src_id;
 	bt_addr_le_t addr;
 	uint8_t adv_sid;
+	uint8_t req_pa_sync_value;
 	uint8_t pa_sync_state;
 	uint8_t encrypt_state;
 	uint32_t broadcast_id; /* 24 bits */
