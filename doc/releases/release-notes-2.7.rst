@@ -126,6 +126,12 @@ Stable API changes in this release
     structure contains two members: ``handles``, which was moved from
     :c:struct:`bt_gatt_read_params`, and ``variable``.
 
+* Networking
+
+  * Added IPv4 address support to the multicast group join/leave monitor. The
+    address parameter passed to the callback function was therefore changed from
+    ``in6_addr`` to ``net_addr`` type.
+
 Kernel
 ******
 
