@@ -42,8 +42,8 @@ struct mcs_instance_t {
 	uint16_t icon_url_handle;
 	uint16_t track_changed_handle;
 	uint16_t track_title_handle;
-	uint16_t track_dur_handle;
-	uint16_t track_pos_handle;
+	uint16_t track_duration_handle;
+	uint16_t track_position_handle;
 	uint16_t playback_speed_handle;
 	uint16_t seeking_speed_handle;
 #ifdef CONFIG_BT_MCC_OTS
@@ -70,10 +70,10 @@ struct mcs_instance_t {
 	struct bt_gatt_discover_params track_changed_sub_disc_params;
 	struct bt_gatt_subscribe_params track_title_sub_params;
 	struct bt_gatt_discover_params track_title_sub_disc_params;
-	struct bt_gatt_subscribe_params track_dur_sub_params;
-	struct bt_gatt_discover_params track_dur_sub_disc_params;
-	struct bt_gatt_subscribe_params track_pos_sub_params;
-	struct bt_gatt_discover_params track_pos_sub_disc_params;
+	struct bt_gatt_subscribe_params track_duration_sub_params;
+	struct bt_gatt_discover_params track_duration_sub_disc_params;
+	struct bt_gatt_subscribe_params track_position_sub_params;
+	struct bt_gatt_discover_params track_position_sub_disc_params;
 	struct bt_gatt_subscribe_params playback_speed_sub_params;
 	struct bt_gatt_discover_params playback_speed_sub_disc_params;
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
@@ -289,9 +289,9 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t mcc_read_track_dur_cb(struct bt_conn *conn, uint8_t err,
-				     struct bt_gatt_read_params *params,
-				     const void *data, uint16_t length)
+static uint8_t mcc_read_track_duration_cb(struct bt_conn *conn, uint8_t err,
+					  struct bt_gatt_read_params *params,
+					  const void *data, uint16_t length)
 {
 	int cb_err = err;
 	int32_t dur = 0;
@@ -308,8 +308,8 @@ static uint8_t mcc_read_track_dur_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(int32_t), "Track duration");
 	}
 
-	if (mcc_cb && mcc_cb->track_dur_read) {
-		mcc_cb->track_dur_read(conn, cb_err, dur);
+	if (mcc_cb && mcc_cb->track_duration_read) {
+		mcc_cb->track_duration_read(conn, cb_err, dur);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -927,11 +927,11 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Track Title notification");
 			mcc_read_track_title_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->track_dur_handle) {
+		} else if (handle == cur_mcs_inst->track_duration_handle) {
 			BT_DBG("Track Duration notification");
-			mcc_read_track_dur_cb(conn, 0, NULL, data, length);
+			mcc_read_track_duration_cb(conn, 0, NULL, data, length);
 
-		} else if (handle == cur_mcs_inst->track_pos_handle) {
+		} else if (handle == cur_mcs_inst->track_position_handle) {
 			BT_DBG("Track Position notification");
 			mcc_read_track_position_cb(conn, 0, NULL, data, length);
 
@@ -1233,14 +1233,14 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			sub_params->disc_params = &cur_mcs_inst->track_title_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_DURATION)) {
 			BT_DBG("Track Duration, UUID: %s", bt_uuid_str(chrc->uuid));
-			cur_mcs_inst->track_dur_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_dur_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_dur_sub_disc_params;
+			cur_mcs_inst->track_duration_handle = chrc->value_handle;
+			sub_params = &cur_mcs_inst->track_duration_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_duration_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_POSITION)) {
 			BT_DBG("Track Position, UUID: %s", bt_uuid_str(chrc->uuid));
-			cur_mcs_inst->track_pos_handle = chrc->value_handle;
-			sub_params = &cur_mcs_inst->track_pos_sub_params;
-			sub_params->disc_params = &cur_mcs_inst->track_pos_sub_disc_params;
+			cur_mcs_inst->track_position_handle = chrc->value_handle;
+			sub_params = &cur_mcs_inst->track_position_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_position_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYBACK_SPEED)) {
 			BT_DBG("Playback Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playback_speed_handle = chrc->value_handle;
@@ -1595,7 +1595,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn)
 	return err;
 }
 
-int bt_mcc_read_track_dur(struct bt_conn *conn)
+int bt_mcc_read_track_duration(struct bt_conn *conn)
 {
 	int err;
 
@@ -1603,16 +1603,16 @@ int bt_mcc_read_track_dur(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!cur_mcs_inst->track_dur_handle) {
+	if (!cur_mcs_inst->track_duration_handle) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cur_mcs_inst->busy) {
 		return -EBUSY;
 	}
 
-	read_params.func = mcc_read_track_dur_cb;
+	read_params.func = mcc_read_track_duration_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = cur_mcs_inst->track_dur_handle;
+	read_params.single.handle = cur_mcs_inst->track_duration_handle;
 	read_params.single.offset = 0U;
 
 	err = bt_gatt_read(conn, &read_params);
@@ -1630,7 +1630,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!cur_mcs_inst->track_pos_handle) {
+	if (!cur_mcs_inst->track_position_handle) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cur_mcs_inst->busy) {
@@ -1639,7 +1639,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 
 	read_params.func = mcc_read_track_position_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = cur_mcs_inst->track_pos_handle;
+	read_params.single.handle = cur_mcs_inst->track_position_handle;
 	read_params.single.offset = 0U;
 
 	err = bt_gatt_read(conn, &read_params);
@@ -1657,7 +1657,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 		return -EINVAL;
 	}
 
-	if (!cur_mcs_inst->track_pos_handle) {
+	if (!cur_mcs_inst->track_position_handle) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cur_mcs_inst->busy) {
@@ -1669,7 +1669,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
 	cur_mcs_inst->write_params.length = sizeof(pos);
-	cur_mcs_inst->write_params.handle = cur_mcs_inst->track_pos_handle;
+	cur_mcs_inst->write_params.handle = cur_mcs_inst->track_position_handle;
 	cur_mcs_inst->write_params.func = mcs_write_track_position_cb;
 
 	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, sizeof(pos),
