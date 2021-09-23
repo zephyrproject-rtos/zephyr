@@ -438,10 +438,10 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 	offset_us = offset_us / OFFS_UNIT_30_US;
 	if ((offset_us >> 13) != 0) {
 		aux_ptr->offs = offset_us / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
-		aux_ptr->offs_units = 1U;
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		aux_ptr->offs = offset_us;
-		aux_ptr->offs_units = 0U;
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
 	aux_ptr->chan_idx = chan_idx;
 	aux_ptr->ca = (lll_clock_ppm_local_get() <= SCA_50_PPM) ?

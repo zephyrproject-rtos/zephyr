@@ -954,7 +954,7 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
 	aux_ptr->ca = (lll_clock_ppm_local_get() <= SCA_50_PPM) ?
 		      SCA_VALUE_50_PPM : SCA_VALUE_500_PPM;
 
-	aux_ptr->offs_units = 0U;
+	aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	aux_ptr->offs = 0U;
 
 	aux_ptr->phy = find_lsb_set(phy_s) - 1;
@@ -1143,10 +1143,10 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> 13)) {
 		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
-		aux_ptr->offs_units = 1U;
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		aux_ptr->offs = offs;
-		aux_ptr->offs_units = 0U;
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
 
 	return aux_ptr;
