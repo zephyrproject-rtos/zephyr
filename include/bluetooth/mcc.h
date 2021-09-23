@@ -105,7 +105,7 @@ typedef void (*bt_mcc_track_changed_ntf_cb)(struct bt_conn *conn, int err);
 typedef void (*bt_mcc_track_title_read_cb)(struct bt_conn *conn, int err, const char *title);
 
 /**
- * @brief Callback function for bt_mcc_read_track_dur()
+ * @brief Callback function for bt_mcc_read_track_duration()
  *
  * Called when the track duration is read or notified
  *
@@ -113,7 +113,7 @@ typedef void (*bt_mcc_track_title_read_cb)(struct bt_conn *conn, int err, const 
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param dur           The duration of the track
  */
-typedef void (*bt_mcc_track_dur_read_cb)(struct bt_conn *conn, int err, int32_t dur);
+typedef void (*bt_mcc_track_duration_read_cb)(struct bt_conn *conn, int err, int32_t dur);
 
 /**
  * @brief Callback function for bt_mcc_read_track_position()
@@ -523,7 +523,7 @@ struct bt_mcc_cb {
 	bt_mcc_icon_url_read_cb                  icon_url_read;
 	bt_mcc_track_changed_ntf_cb              track_changed_ntf;
 	bt_mcc_track_title_read_cb               track_title_read;
-	bt_mcc_track_dur_read_cb                 track_dur_read;
+	bt_mcc_track_duration_read_cb            track_duration_read;
 	bt_mcc_track_position_read_cb            track_position_read;
 	bt_mcc_track_position_set_cb             track_position_set;
 	bt_mcc_playback_speed_read_cb            playback_speed_read;
@@ -637,7 +637,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mcc_read_track_dur(struct bt_conn *conn);
+int bt_mcc_read_track_duration(struct bt_conn *conn);
 
 /**
  * @brief Read Track Position

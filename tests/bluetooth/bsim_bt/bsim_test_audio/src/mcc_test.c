@@ -143,7 +143,7 @@ static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *t
 	SET_FLAG(track_title_read);
 }
 
-static void mcc_track_dur_read_cb(struct bt_conn *conn, int err, int32_t dur)
+static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
 		FAIL("Track duration read failed (%d)", err);
@@ -512,7 +512,7 @@ int do_mcc_init(void)
 	mcc_cb.icon_url_read    = &mcc_icon_url_read_cb;
 	mcc_cb.track_changed_ntf = &mcc_track_changed_ntf_cb;
 	mcc_cb.track_title_read = &mcc_track_title_read_cb;
-	mcc_cb.track_dur_read   = &mcc_track_dur_read_cb;
+	mcc_cb.track_duration_read = &mcc_track_duration_read_cb;
 	mcc_cb.track_position_read = &mcc_track_position_read_cb;
 	mcc_cb.track_position_set  = &mcc_track_position_set_cb;
 	mcc_cb.playback_speed_read = &mcc_playback_speed_read_cb;
@@ -1456,7 +1456,7 @@ void test_main(void)
 
 	/* Read track_duration ******************************************/
 	UNSET_FLAG(track_duration_read);
-	err = bt_mcc_read_track_dur(default_conn);
+	err = bt_mcc_read_track_duration(default_conn);
 	if (err) {
 		FAIL("Failed to read track_duration: %d", err);
 		return;

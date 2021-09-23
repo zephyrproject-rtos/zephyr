@@ -303,7 +303,7 @@ static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *t
 	}
 }
 
-static void mcc_track_dur_read_cb(struct bt_conn *conn, int err, int32_t dur)
+static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
 		BT_ERR("Track duration read failed (%d)", err);
@@ -637,7 +637,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 	mcc_cbs.icon_url_read                 = mcc_icon_url_read_cb;
 	mcc_cbs.track_changed_ntf             = mcc_track_changed_ntf_cb;
 	mcc_cbs.track_title_read              = mcc_track_title_read_cb;
-	mcc_cbs.track_dur_read                = mcc_track_dur_read_cb;
+	mcc_cbs.track_duration_read           = mcc_track_duration_read_cb;
 	mcc_cbs.track_position_read           = mcc_track_position_read_cb;
 	mcc_cbs.track_position_set            = mcc_track_position_set_cb;
 	mcc_cbs.playback_speed_read           = mcc_playback_speed_read_cb;
@@ -839,7 +839,7 @@ int media_proxy_ctrl_track_duration_get(struct media_player *player)
 	}
 	if (IS_ENABLED(CONFIG_BT_MCC) &&
 	    mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_read_track_dur(mprx.remote_player.conn);
+		return bt_mcc_read_track_duration(mprx.remote_player.conn);
 	}
 
 	return -EOPNOTSUPP;
