@@ -704,7 +704,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		/* return the pointer to aux pointer struct inside the PDU
 		 * buffer
 		 */
-		memcpy(value, &sec_dptr, sizeof(sec_dptr));
+		(void)memcpy(value, &sec_dptr, sizeof(sec_dptr));
 		value = (uint8_t *)value + sizeof(sec_dptr);
 	} else if (!(sec_hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) &&
 		   sec_hdr_prev.aux_ptr) {
@@ -834,7 +834,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* No AdvData in primary channel PDU */
 	/* Fill AdvData in secondary PDU */
-	memmove(sec_dptr, ad_data, ad_len);
+	(void)memmove(sec_dptr, ad_data, ad_len);
 
 	/* Early exit if no flags set */
 	if (!sec_com_hdr->ext_hdr_len) {
@@ -863,7 +863,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	if (sync_info) {
-		memmove(sec_dptr, sync_info, sizeof(*sync_info));
+		(void)memmove(sec_dptr, sync_info, sizeof(*sync_info));
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
@@ -882,7 +882,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	if (aux_ptr) {
-		memmove(sec_dptr, aux_ptr, sizeof(*aux_ptr));
+		(void)memmove(sec_dptr, aux_ptr, sizeof(*aux_ptr));
 	}
 
 	/* ADI */

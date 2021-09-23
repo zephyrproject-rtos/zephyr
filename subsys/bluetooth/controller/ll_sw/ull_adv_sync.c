@@ -1197,7 +1197,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	 */
 
 	/* Fill AdvData in tertiary PDU */
-	memmove(ter_dptr, ad_data, ad_len);
+	(void)memmove(ter_dptr, ad_data, ad_len);
 
 	/* Early exit if no flags set */
 	if (!ter_com_hdr->ext_hdr_len) {
@@ -1208,7 +1208,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	ter_dptr_prev -= acad_len_prev;
 	if (acad_len) {
 		ter_dptr -= acad_len;
-		memmove(ter_dptr, ter_dptr_prev, acad_len_prev);
+		(void)memmove(ter_dptr, ter_dptr_prev, acad_len_prev);
 	}
 
 	/* Tx Power */
@@ -1224,8 +1224,8 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		if (ter_hdr_prev.aux_ptr) {
 			ter_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
 			ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
-			memmove(ter_dptr, ter_dptr_prev,
-				sizeof(struct pdu_adv_aux_ptr));
+			(void)memmove(ter_dptr, ter_dptr_prev,
+				      sizeof(struct pdu_adv_aux_ptr));
 		} else {
 			ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
 			ull_adv_aux_ptr_fill((void *)ter_dptr, 0U,
@@ -1286,8 +1286,8 @@ void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
 		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
 		   extra_data_prev) {
-		memmove(extra_data_new, extra_data_prev,
-			sizeof(struct lll_df_adv_cfg));
+		(void)memmove(extra_data_new, extra_data_prev,
+			      sizeof(struct lll_df_adv_cfg));
 	}
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
