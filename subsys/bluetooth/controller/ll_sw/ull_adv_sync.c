@@ -903,7 +903,7 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 	 * If sync_info is part of ADV PDU the offs_adjust field
 	 * is always set to 0.
 	 */
-	si->offs_units = 0U;
+	si->offs_units = OFFS_UNIT_VALUE_30_US;
 	si->offs_adjust = 0U;
 	si->offs = 0U;
 
@@ -1610,10 +1610,10 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> 13)) {
 		si->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
-		si->offs_units = 1U;
+		si->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		si->offs = offs;
-		si->offs_units = 0U;
+		si->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
 }
 
