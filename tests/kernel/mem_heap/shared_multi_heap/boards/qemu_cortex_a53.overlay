@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		compatible = "reserved-memory";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		res0: reserved@42000000 {
+			compatible = "shared-multi-heap";
+			reg = <0x42000000 0x1000>;
+			capability = "cacheable";
+			label = "res0";
+		};
+
+		res1: reserved@43000000 {
+			compatible = "shared-multi-heap";
+			reg = <0x43000000 0x2000>;
+			capability = "non-cacheable";
+			label = "res1";
+		};
+
+		res2: reserved2@44000000 {
+			compatible = "shared-multi-heap";
+			reg = <0x44000000 0x3000>;
+			capability = "cacheable";
+			label = "res2";
+		};
+	};
+};
