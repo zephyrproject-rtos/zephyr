@@ -728,7 +728,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	state->broadcast_id = net_buf_simple_pull_le24(buf);
 
 	pa_sync = net_buf_simple_pull_u8(buf);
-	if (pa_sync > BASS_PA_REQ_SYNC_PAST) {
+	if (pa_sync > BASS_PA_REQ_SYNC) {
 		BT_DBG("Invalid PA sync value %u", pa_sync);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
@@ -842,7 +842,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	pa_sync = net_buf_simple_pull_u8(buf);
-	if (pa_sync > BASS_PA_REQ_SYNC_PAST) {
+	if (pa_sync > BASS_PA_REQ_SYNC) {
 		BT_DBG("Invalid PA sync value %u", pa_sync);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
