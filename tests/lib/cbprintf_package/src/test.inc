@@ -148,11 +148,15 @@ void test_cbprintf_rw_str_indexes(void)
 		ztest_test_skip();
 	}
 
+	zassert_true(len0 > 0, NULL);
 	len1 = cbprintf_package(NULL, 0, CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
+	zassert_true(len1 > 0, NULL);
+
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, len2, 0,
 				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
 				test_str, 100, test_str1);
+	zassert_true(len2 > 0, NULL);
 
 	/* package with string indexes will contain two more bytes holding indexes
 	 * of string parameter locations.
