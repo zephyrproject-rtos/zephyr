@@ -4716,7 +4716,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	return lwm2m_socket_add(client_ctx);
 }
 
-int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
+int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool is_firmware_uri)
 {
 	struct http_parser_url parser;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
@@ -4754,8 +4754,16 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 	}
 
 	if (!(parser.field_set & (1 << UF_PORT))) {
-		/* Set to default port of CoAP */
-		parser.port = CONFIG_LWM2M_PEER_PORT;
+		if (is_firmware_uri && *use_dtls) {
+			/* Set to default coaps firmware update port */
+			parser.port = CONFIG_LWM2M_FIRMWARE_PORT_SECURE;
+		} else if (is_firmware_uri) {
+			/* Set to default coap firmware update port */
+			parser.port = CONFIG_LWM2M_FIRMWARE_PORT_NONSECURE;
+		} else {
+			/* Set to default LwM2M server port */
+			parser.port = CONFIG_LWM2M_PEER_PORT;
+		}
 	}
 
 	off = parser.field_data[UF_HOST].off;
@@ -4840,7 +4848,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 	url[url_len] = '\0';
 	ret = lwm2m_parse_peerinfo(url, &client_ctx->remote_addr,
-				   &client_ctx->use_dtls);
+				   &client_ctx->use_dtls, false);
 	if (ret < 0) {
 		return ret;
 	}
