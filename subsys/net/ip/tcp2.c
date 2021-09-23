@@ -2828,10 +2828,9 @@ void net_tcp_init(void)
 #endif
 
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
-/* Lowest priority cooperative thread */
-#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#define THREAD_PRIORITY K_PRIO_COOP(0)
 #else
-#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#define THREAD_PRIORITY K_PRIO_PREEMPT(0)
 #endif
 
 	/* Use private workqueue in order not to block the system work queue.
