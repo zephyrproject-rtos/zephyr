@@ -140,11 +140,12 @@ struct mdm_control_pinconfig {
 	char *dev_name;
 	gpio_pin_t pin;
 	gpio_flags_t config;
+	gpio_flags_t irq_config;
 };
 
-#define PINCONFIG(name_, pin_, config_)                                        \
-	{                                                                      \
-		.dev_name = name_, .pin = pin_, .config = config_              \
+#define PINCONFIG(name_, pin_, config_, irq_config_)                                               \
+	{                                                                                          \
+		.dev_name = name_, .pin = pin_, .config = config_, .irq_config = irq_config_       \
 	}
 
 /* pin settings */
@@ -193,44 +194,37 @@ struct xmodem_packet {
 
 static const struct mdm_control_pinconfig pinconfig[] = {
 	/* MDM_RESET */
-	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
-		  (GPIO_OUTPUT | GPIO_OPEN_DRAIN)),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_reset_gpios), DT_INST_GPIO_PIN(0, mdm_reset_gpios),
+		  (GPIO_OUTPUT | GPIO_OPEN_DRAIN), 0),
 
 	/* MDM_WAKE */
-	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_wake_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_wake_gpios),
-		  (GPIO_OUTPUT | GPIO_OPEN_SOURCE)),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_wake_gpios), DT_INST_GPIO_PIN(0, mdm_wake_gpios),
+		  (GPIO_OUTPUT | GPIO_OPEN_SOURCE), 0),
 
 	/* MDM_PWR_ON */
-	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_pwr_on_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_pwr_on_gpios),
-		  (GPIO_OUTPUT | GPIO_OPEN_DRAIN)),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_pwr_on_gpios), DT_INST_GPIO_PIN(0, mdm_pwr_on_gpios),
+		  (GPIO_OUTPUT | GPIO_OPEN_DRAIN), 0),
 
 	/* MDM_FAST_SHUTD */
 	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_fast_shutd_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_fast_shutd_gpios),
-		  (GPIO_OUTPUT | GPIO_OPEN_DRAIN)),
+		  DT_INST_GPIO_PIN(0, mdm_fast_shutd_gpios), (GPIO_OUTPUT | GPIO_OPEN_DRAIN),
+		  0),
 
 	/* MDM_VGPIO */
-	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_vgpio_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_vgpio_gpios),
-		  (GPIO_INPUT | GPIO_INT_EDGE_BOTH)),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_vgpio_gpios), DT_INST_GPIO_PIN(0, mdm_vgpio_gpios),
+		  GPIO_INPUT, GPIO_INT_EDGE_BOTH),
 
 	/* MDM_UART_DSR */
 	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_uart_dsr_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_uart_dsr_gpios),
-		  (GPIO_INPUT | GPIO_INT_EDGE_BOTH)),
+		  DT_INST_GPIO_PIN(0, mdm_uart_dsr_gpios), GPIO_INPUT, GPIO_INT_EDGE_BOTH),
 
 	/* MDM_UART_CTS */
 	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_uart_cts_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_uart_cts_gpios),
-		  (GPIO_INPUT | GPIO_INT_EDGE_BOTH)),
+		  DT_INST_GPIO_PIN(0, mdm_uart_cts_gpios), GPIO_INPUT, GPIO_INT_EDGE_BOTH),
 
 	/* MDM_GPIO6 */
-	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_gpio6_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_gpio6_gpios),
-		  (GPIO_INPUT | GPIO_INT_EDGE_BOTH)),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_gpio6_gpios), DT_INST_GPIO_PIN(0, mdm_gpio6_gpios),
+		  GPIO_INPUT, GPIO_INT_EDGE_BOTH),
 };
 
 #define MDM_UART_DEV	DEVICE_DT_GET(DT_INST_BUS(0))
@@ -5753,16 +5747,11 @@ static int hl7800_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if ((pinconfig[i].config & GPIO_INT_ENABLE) == 0) {
-			ret = gpio_pin_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
-						 pinconfig[i].config);
-		} else {
-			ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
-							   pinconfig[i].config);
-		}
+		ret = gpio_pin_configure(ictx.gpio_port_dev[i], pinconfig[i].pin,
+					 pinconfig[i].config);
 		if (ret) {
-			LOG_ERR("Error configuring io %s %d err: %d!",
-				pinconfig[i].dev_name, pinconfig[i].pin, ret);
+			LOG_ERR("Error configuring IO %s %d err: %d!", pinconfig[i].dev_name,
+				pinconfig[i].pin, ret);
 			return ret;
 		}
 	}
@@ -5792,7 +5781,7 @@ static int hl7800_init(const struct device *dev)
 	}
 	ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[MDM_VGPIO],
 					   pinconfig[MDM_VGPIO].pin,
-					   pinconfig[MDM_VGPIO].config);
+					   pinconfig[MDM_VGPIO].irq_config);
 	if (ret) {
 		LOG_ERR("Error config vgpio interrupt! (%d)", ret);
 		return ret;
@@ -5809,7 +5798,7 @@ static int hl7800_init(const struct device *dev)
 	}
 	ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[MDM_UART_DSR],
 					   pinconfig[MDM_UART_DSR].pin,
-					   pinconfig[MDM_UART_DSR].config);
+					   pinconfig[MDM_UART_DSR].irq_config);
 	if (ret) {
 		LOG_ERR("Error config uart dsr interrupt! (%d)", ret);
 		return ret;
@@ -5826,7 +5815,7 @@ static int hl7800_init(const struct device *dev)
 	}
 	ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[MDM_GPIO6],
 					   pinconfig[MDM_GPIO6].pin,
-					   pinconfig[MDM_GPIO6].config);
+					   pinconfig[MDM_GPIO6].irq_config);
 	if (ret) {
 		LOG_ERR("Error config gpio6 interrupt! (%d)", ret);
 		return ret;
@@ -5843,7 +5832,7 @@ static int hl7800_init(const struct device *dev)
 	}
 	ret = gpio_pin_interrupt_configure(ictx.gpio_port_dev[MDM_UART_CTS],
 					   pinconfig[MDM_UART_CTS].pin,
-					   pinconfig[MDM_UART_CTS].config);
+					   pinconfig[MDM_UART_CTS].irq_config);
 	if (ret) {
 		LOG_ERR("Error config uart cts interrupt! (%d)", ret);
 		return ret;
