@@ -63,6 +63,14 @@ config MPSC_PBUF
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
 
+config SHARED_MULTI_HEAP
+	bool "Shared multi-heap manager"
+	help
+	  Enable support for a shared multi-heap manager that uses the
+	  multi-heap allocator to manage a set of reserved memory regions with
+	  different capabilities / attributes (cacheable, non-cacheable,
+	  etc...) defined in the DT.
+
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED
 	bool "Clear allocated packet"
