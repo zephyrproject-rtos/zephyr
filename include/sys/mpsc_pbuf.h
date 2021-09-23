@@ -69,7 +69,7 @@ struct mpsc_pbuf_buffer;
  *
  * @return Size of the packet in 32 bit words.
  */
-typedef uint32_t (*mpsc_pbuf_get_wlen)(union mpsc_pbuf_generic *packet);
+typedef uint32_t (*mpsc_pbuf_get_wlen)(const union mpsc_pbuf_generic *packet);
 
 /** @brief Callback called when packet is dropped.
  *
@@ -77,8 +77,8 @@ typedef uint32_t (*mpsc_pbuf_get_wlen)(union mpsc_pbuf_generic *packet);
  *
  * @param packet Packet that is being dropped.
  */
-typedef void (*mpsc_pbuf_notify_drop)(struct mpsc_pbuf_buffer *buffer,
-					union mpsc_pbuf_generic *packet);
+typedef void (*mpsc_pbuf_notify_drop)(const struct mpsc_pbuf_buffer *buffer,
+				      const union mpsc_pbuf_generic *packet);
 
 /** @brief MPSC packet buffer structure. */
 struct mpsc_pbuf_buffer {
@@ -179,7 +179,7 @@ void mpsc_pbuf_commit(struct mpsc_pbuf_buffer *buffer,
  * and data on remaining bits.
  */
 void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic word);
+			const union mpsc_pbuf_generic word);
 
 /** @brief Put a packet consisting of a word and a pointer.
  *  *
@@ -194,7 +194,8 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
  * @param data User data.
  */
 void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic word, void *data);
+			    const union mpsc_pbuf_generic word,
+			    const void *data);
 
 /** @brief Put a packet into a buffer.
  *
@@ -203,18 +204,20 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
  *
  * @param buffer Buffer.
  *
- * @param data First word of data must contain MPSC_PBUF_HDR with valid set.
+ * @param data First word of data must contain MPSC_PBUF_HDR with valid bit set.
  *
  * @param wlen Packet size in words.
  */
 void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer,
-			uint32_t *data, size_t wlen);
+			const uint32_t *data, size_t wlen);
 
 /** @brief Claim the first pending packet.
  *
  * @param buffer Buffer.
+ *
+ * @return Pointer to the claimed packet or null if none available.
  */
-union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer);
+const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer);
 
 /** @brief Free a packet.
  *

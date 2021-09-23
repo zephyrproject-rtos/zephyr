@@ -542,7 +542,7 @@ static inline uint32_t log_msg2_get_total_wlen(const struct log_msg2_desc desc)
  *
  * @return Length in 32 bit words.
  */
-static inline uint32_t log_msg2_generic_get_wlen(union mpsc_pbuf_generic *item)
+static inline uint32_t log_msg2_generic_get_wlen(const union mpsc_pbuf_generic *item)
 {
 	union log_msg2_generic *generic_msg = (union log_msg2_generic *)item;
 

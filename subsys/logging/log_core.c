@@ -98,8 +98,8 @@ struct mpsc_pbuf_buffer log_buffer;
 static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT)
 	buf32[CONFIG_LOG_BUFFER_SIZE / sizeof(int)];
 
-static void notify_drop(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic *item);
+static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *item);
 
 static const struct mpsc_pbuf_buffer_config mpsc_config = {
 	.buf = (uint32_t *)buf32,
@@ -859,9 +859,12 @@ bool z_log_dropped_pending(void)
 	return dropped_cnt > 0;
 }
 
-static void notify_drop(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic *item)
+static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *item)
 {
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(item);
+
 	z_log_dropped();
 }
 
