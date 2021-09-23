@@ -463,6 +463,17 @@ Libraries / Subsystems
     * ``device_busy_check`` -> ``pm_device_is_busy``
     * ``device_any_busy_check`` -> ``pm_device_is_any_busy``
 
+  * The device power management callback (``pm_device_control_callback_t``) has
+    been largely simplified to work based on *actions*, resulting in simpler and
+    more natural implementations. This principle is also used by other OSes like
+    the Linux Kernel. As a result, the callback argument list has been reduced
+    to the device instance and an action (e.g. ``PM_DEVICE_ACTION_RESUME``).
+    Other improvements include specification of error codes, removal of some
+    unused/unclear states, or guarantees such as avoid calling a device for
+    suspend/resume if it is already at the right state. All these changes
+    together have allowed simplifying multiple device power management callback
+    implementations.
+
 * Logging
 
 
