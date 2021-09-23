@@ -465,9 +465,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (i2s_cfg->channels == 2 ||
-	    (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK)
-		== I2S_FMT_DATA_FORMAT_I2S) {
+	if (i2s_cfg->channels == 2) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_STEREO;
 	} else if (i2s_cfg->channels == 1) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_LEFT;
