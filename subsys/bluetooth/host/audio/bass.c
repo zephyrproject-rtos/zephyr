@@ -736,6 +736,12 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	pa_interval = net_buf_simple_pull_le16(buf);
 
 	state->num_subgroups = net_buf_simple_pull_u8(buf);
+	if (state->num_subgroups > CONFIG_BT_BASS_MAX_SUBGROUPS) {
+		BT_WARN("Too many subgroups %u/%u",
+			state->num_subgroups, CONFIG_BT_BASS_MAX_SUBGROUPS);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
 	for (int i = 0; i < state->num_subgroups; i++) {
 		struct bt_bass_subgroup *subgroup = &state->subgroups[i];
 		uint8_t *metadata;
@@ -844,6 +850,12 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	pa_interval = net_buf_simple_pull_le16(buf);
 
 	num_subgroups = net_buf_simple_pull_u8(buf);
+	if (num_subgroups > CONFIG_BT_BASS_MAX_SUBGROUPS) {
+		BT_WARN("Too many subgroups %u/%u",
+			num_subgroups, CONFIG_BT_BASS_MAX_SUBGROUPS);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
 	for (int i = 0; i < num_subgroups; i++) {
 		struct bt_bass_subgroup *subgroup = &subgroups[i];
 		uint8_t *metadata;
