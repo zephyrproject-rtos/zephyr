@@ -169,7 +169,19 @@ config LWM2M_PEER_PORT
 	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 5683
 	help
-	  This is the default server port to connect to for LWM2M communication
+	  This is the default server port to connect to for LWM2M communication.
+
+config LWM2M_FIRMWARE_PORT_NONSECURE
+	int "LWM2M firmware server port non-secure"
+	default 5683
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coap.
+
+config LWM2M_FIRMWARE_PORT_SECURE
+	int "LWM2M firmware server port secure"
+	default 5684
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coaps.
 
 config LWM2M_SECURITY_INSTANCE_COUNT
 	int "Maximum # of LWM2M Security object instances"
