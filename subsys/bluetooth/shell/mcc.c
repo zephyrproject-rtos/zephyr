@@ -111,7 +111,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 	shell_print(ctx_shell, "Track changed");
 }
 
-static void mcc_track_dur_read_cb(struct bt_conn *conn, int err, int32_t dur)
+static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
 		shell_error(ctx_shell, "Track duration read failed (%d)", err);
@@ -575,7 +575,7 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	cb.icon_url_read     = &mcc_icon_url_read_cb;
 	cb.track_changed_ntf = &mcc_track_changed_ntf_cb;
 	cb.track_title_read  = &mcc_track_title_read_cb;
-	cb.track_dur_read    = &mcc_track_dur_read_cb;
+	cb.track_duration_read = &mcc_track_duration_read_cb;
 	cb.track_position_read = &mcc_track_position_read_cb;
 	cb.track_position_set  = &mcc_track_position_set_cb;
 	cb.playback_speed_read = &mcc_playback_speed_read_cb;
@@ -699,7 +699,7 @@ int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	result = bt_mcc_read_track_dur(default_conn);
+	result = bt_mcc_read_track_duration(default_conn);
 	if (result) {
 		shell_error(sh, "Fail: %d", result);
 	}
