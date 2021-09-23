@@ -162,7 +162,7 @@ enum lcp_option_type {
 
 	/** Address-and-Control-Field-Compression */
 	LCP_OPTION_ADDR_CTRL_COMPRESS = 8
-} __packed;
+};
 
 /**
  * IPCP option types from RFC 1332
@@ -192,7 +192,7 @@ enum ipcp_option_type {
 
 	/** Secondary NBNS Server Address */
 	IPCP_OPTION_NBNS2 = 132,
-} __packed;
+};
 
 /**
  * IPV6CP option types from RFC 5072
@@ -202,7 +202,7 @@ enum ipv6cp_option_type {
 
 	/** Interface identifier */
 	IPV6CP_OPTION_INTERFACE_IDENTIFIER = 1,
-} __packed;
+};
 
 /**
  * @typedef net_ppp_lcp_echo_reply_cb_t

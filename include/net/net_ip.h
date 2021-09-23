@@ -414,7 +414,7 @@ enum net_priority {
 	NET_PRIORITY_VO = 5, /**< Voice, < 10 ms latency and jitter  */
 	NET_PRIORITY_IC = 6, /**< Internetwork control               */
 	NET_PRIORITY_NC = 7  /**< Network control                    */
-} __packed;
+};
 
 #define NET_MAX_PRIORITIES 8 /* How many priority values there are */
 
@@ -433,7 +433,7 @@ enum net_addr_state {
 	NET_ADDR_TENTATIVE = 0,  /**< Tentative address              */
 	NET_ADDR_PREFERRED,      /**< Preferred address              */
 	NET_ADDR_DEPRECATED,     /**< Deprecated address             */
-} __packed;
+};
 
 /** How the network address is assigned to network interface */
 enum net_addr_type {
@@ -447,7 +447,7 @@ enum net_addr_type {
 	NET_ADDR_MANUAL,
 	/** Manually set address which is overridable by DHCP */
 	NET_ADDR_OVERRIDABLE,
-} __packed;
+};
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -460,14 +460,14 @@ struct net_ipv6_hdr {
 	uint8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
-} __packed;
+};
 
 struct net_ipv6_frag_hdr {
 	uint8_t nexthdr;
 	uint8_t reserved;
 	uint16_t offset;
 	uint32_t id;
-} __packed;
+};
 
 struct net_ipv4_hdr {
 	uint8_t vhl;
@@ -480,20 +480,20 @@ struct net_ipv4_hdr {
 	uint16_t chksum;
 	struct in_addr src;
 	struct in_addr dst;
-} __packed;
+};
 
 struct net_icmp_hdr {
 	uint8_t type;
 	uint8_t code;
 	uint16_t chksum;
-} __packed;
+};
 
 struct net_udp_hdr {
 	uint16_t src_port;
 	uint16_t dst_port;
 	uint16_t len;
 	uint16_t chksum;
-} __packed;
+};
 
 struct net_tcp_hdr {
 	uint16_t src_port;
@@ -506,7 +506,7 @@ struct net_tcp_hdr {
 	uint16_t chksum;
 	uint8_t urg[2];
 	uint8_t optdata[0];
-} __packed;
+};
 
 static inline const char *net_addr_type2str(enum net_addr_type type)
 {

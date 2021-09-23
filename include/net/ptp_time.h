@@ -109,7 +109,7 @@ struct net_ptp_extended_time {
 		} _fns;
 		uint64_t fract_nsecond;
 	};
-} __packed;
+};
 
 /**
  * @}

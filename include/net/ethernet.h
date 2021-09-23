@@ -294,7 +294,7 @@ enum ethernet_qbu_param_type {
 enum ethernet_qbu_preempt_status {
 	ETHERNET_QBU_STATUS_EXPRESS,
 	ETHERNET_QBU_STATUS_PREEMPTABLE
-} __packed;
+};
 
 /** @endcond */
 
@@ -455,7 +455,7 @@ struct net_eth_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
 	uint16_t type;
-} __packed;
+};
 
 struct ethernet_vlan {
 	/** Network interface that has VLAN enabled */
@@ -610,7 +610,7 @@ struct net_eth_vlan_hdr {
 		uint16_t tci;  /* tag control info */
 	} vlan;
 	uint16_t type;
-} __packed;
+};
 
 
 static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)

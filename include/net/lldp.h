@@ -140,7 +140,7 @@ struct net_lldp_chassis_tlv {
 	uint8_t subtype;
 	/** Chassis ID value */
 	uint8_t value[NET_LLDP_CHASSIS_ID_VALUE_LEN];
-} __packed;
+};
 
 /** Port ID TLV, see chapter 8.5.3 in IEEE 802.1AB */
 struct net_lldp_port_tlv {
@@ -150,7 +150,7 @@ struct net_lldp_port_tlv {
 	uint8_t subtype;
 	/** Port ID value */
 	uint8_t value[NET_LLDP_PORT_ID_VALUE_LEN];
-} __packed;
+};
 
 /** Time To Live TLV, see chapter 8.5.4 in IEEE 802.1AB */
 struct net_lldp_time_to_live_tlv {
@@ -158,7 +158,7 @@ struct net_lldp_time_to_live_tlv {
 	uint16_t type_length;
 	/** Time To Live (TTL) value */
 	uint16_t ttl;
-} __packed;
+};
 
 /**
  * LLDP Data Unit (LLDPDU) shall contain the following ordered TLVs
@@ -168,7 +168,7 @@ struct net_lldpdu {
 	struct net_lldp_chassis_tlv chassis_id;	/**< Mandatory Chassis TLV */
 	struct net_lldp_port_tlv port_id;	/**< Mandatory Port TLV */
 	struct net_lldp_time_to_live_tlv ttl;	/**< Mandatory TTL TLV */
-} __packed;
+};
 
 /**
  * @brief Set the LLDP data unit for a network interface.

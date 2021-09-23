@@ -44,7 +44,7 @@ enum net_l2_flags {
 	 * IP address etc to network interface.
 	 */
 	NET_L2_POINT_TO_POINT			= BIT(3),
-} __packed;
+};
 
 /**
  * @brief Network L2 structure

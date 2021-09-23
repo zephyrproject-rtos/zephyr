@@ -52,7 +52,7 @@ struct gptp_scaled_ns {
 
 	/** Low half. */
 	int64_t low;
-} __packed;
+};
 
 /**
  * @brief UScaled Nanoseconds.
@@ -63,7 +63,7 @@ struct gptp_uscaled_ns {
 
 	/** Low half. */
 	uint64_t low;
-} __packed;
+};
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -128,7 +128,7 @@ struct gptp_port_identity {
 
 	/** Number of the port. */
 	uint16_t port_number;
-} __packed;
+};
 
 struct gptp_flags {
 	union {
@@ -138,7 +138,7 @@ struct gptp_flags {
 		/** Whole field access. */
 		uint16_t all;
 	};
-} __packed;
+};
 
 struct gptp_hdr {
 	/** Type of the message. */
@@ -182,7 +182,7 @@ struct gptp_hdr {
 
 	/** Message Interval in Log2 for Sync and Announce messages. */
 	int8_t log_msg_interval;
-} __packed;
+};
 
 /** @cond INTERNAL_HIDDEN */
 
