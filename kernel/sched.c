@@ -195,12 +195,11 @@ static inline bool should_queue_thread(struct k_thread *th)
 	return !IS_ENABLED(CONFIG_SMP) || th != _current;
 }
 
-static ALWAYS_INLINE void queue_thread(void *pq,
-				       struct k_thread *thread)
+static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
-		_priq_run_add(pq, thread);
+		_priq_run_add(&_kernel.ready_q.runq, thread);
 	}
 #ifdef CONFIG_SMP
 	if (thread == _current) {
@@ -210,12 +209,11 @@ static ALWAYS_INLINE void queue_thread(void *pq,
 #endif
 }
 
-static ALWAYS_INLINE void dequeue_thread(void *pq,
-					 struct k_thread *thread)
+static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
-		_priq_run_remove(pq, thread);
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
 	}
 }
 
@@ -309,12 +307,12 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	/* Put _current back into the queue */
 	if (thread != _current && active &&
 		!z_is_idle_thread_object(_current) && !queued) {
-		queue_thread(&_kernel.ready_q.runq, _current);
+		queue_thread(_current);
 	}
 
 	/* Take the new _current out of the queue */
 	if (z_is_thread_queued(thread)) {
-		dequeue_thread(&_kernel.ready_q.runq, thread);
+		dequeue_thread(thread);
 	}
 
 	_current_cpu->swap_ok = false;
@@ -325,9 +323,9 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 static void move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
-		dequeue_thread(&_kernel.ready_q.runq, thread);
+		dequeue_thread(thread);
 	}
-	queue_thread(&_kernel.ready_q.runq, thread);
+	queue_thread(thread);
 	update_cache(thread == _current);
 }
 
@@ -493,7 +491,7 @@ static void ready_thread(struct k_thread *thread)
 	if (!z_is_thread_queued(thread) && z_is_thread_ready(thread)) {
 		SYS_PORT_TRACING_OBJ_FUNC(k_thread, sched_ready, thread);
 
-		queue_thread(&_kernel.ready_q.runq, thread);
+		queue_thread(thread);
 		update_cache(0);
 #if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
 		arch_sched_ipi();
@@ -539,7 +537,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 
 	LOCKED(&sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
-			dequeue_thread(&_kernel.ready_q.runq, thread);
+			dequeue_thread(thread);
 		}
 		z_mark_thread_as_suspended(thread);
 		update_cache(thread == _current);
@@ -600,7 +598,7 @@ static _wait_q_t *pended_on_thread(struct k_thread *thread)
 static void unready_thread(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
-		dequeue_thread(&_kernel.ready_q.runq, thread);
+		dequeue_thread(thread);
 	}
 	update_cache(thread == _current);
 }
@@ -763,9 +761,9 @@ bool z_set_prio(struct k_thread *thread, int prio)
 		if (need_sched) {
 			/* Don't requeue on SMP if it's the running thread */
 			if (!IS_ENABLED(CONFIG_SMP) || z_is_thread_queued(thread)) {
-				dequeue_thread(&_kernel.ready_q.runq, thread);
+				dequeue_thread(thread);
 				thread->base.prio = prio;
-				queue_thread(&_kernel.ready_q.runq, thread);
+				queue_thread(thread);
 			} else {
 				thread->base.prio = prio;
 			}
@@ -1158,8 +1156,8 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 	LOCKED(&sched_spinlock) {
 		thread->base.prio_deadline = k_cycle_get_32() + deadline;
 		if (z_is_thread_queued(thread)) {
-			dequeue_thread(&_kernel.ready_q.runq, thread);
-			queue_thread(&_kernel.ready_q.runq, thread);
+			dequeue_thread(thread);
+			queue_thread(thread);
 		}
 	}
 }
@@ -1190,10 +1188,9 @@ void z_impl_k_yield(void)
 
 	if (!IS_ENABLED(CONFIG_SMP) ||
 	    z_is_thread_queued(_current)) {
-		dequeue_thread(&_kernel.ready_q.runq,
-			       _current);
+		dequeue_thread(_current);
 	}
-	queue_thread(&_kernel.ready_q.runq, _current);
+	queue_thread(_current);
 	update_cache(1);
 	z_swap(&sched_spinlock, key);
 }
@@ -1473,7 +1470,7 @@ static void end_thread(struct k_thread *thread)
 		thread->base.thread_state |= _THREAD_DEAD;
 		thread->base.thread_state &= ~_THREAD_ABORTING;
 		if (z_is_thread_queued(thread)) {
-			dequeue_thread(&_kernel.ready_q.runq, thread);
+			dequeue_thread(thread);
 		}
 		if (thread->base.pended_on != NULL) {
 			unpend_thread_no_timeout(thread);
