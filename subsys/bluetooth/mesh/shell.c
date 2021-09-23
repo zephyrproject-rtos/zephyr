@@ -1632,7 +1632,7 @@ static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id
 static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id,
 		       uint16_t cid, char *argv[])
 {
-	struct bt_mesh_cfg_mod_pub pub;
+	struct bt_mesh_cfg_mod_pub pub = {0};
 	uint8_t status, count;
 	uint16_t interval;
 	int err;
