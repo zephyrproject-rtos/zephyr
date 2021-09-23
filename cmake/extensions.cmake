@@ -577,7 +577,6 @@ endfunction()
 function(zephyr_library_property)
   set(single_args "ALLOW_EMPTY")
   cmake_parse_arguments(LIB_PROP "" "${single_args}" "" ${ARGN})
-  target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 
   if(LIB_PROP_UNPARSED_ARGUMENTS)
       message(FATAL_ERROR "zephyr_library_property(${ARGV0} ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
