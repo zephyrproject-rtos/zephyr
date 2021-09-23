@@ -1050,7 +1050,7 @@ void z_thread_mark_switched_out(void)
 	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
 #else
 	now = k_cycle_get_32();
-	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
+	diff = (uint64_t)(now - thread->rt_stats.last_switched_in);
 	thread->rt_stats.last_switched_in = 0;
 #endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
 
