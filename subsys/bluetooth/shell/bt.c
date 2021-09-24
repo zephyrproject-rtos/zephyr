@@ -2841,6 +2841,10 @@ static int cmd_auth(const struct shell *sh, size_t argc, char *argv[])
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
+	if (err) {
+		shell_error(sh, "Failed to set auth handlers (%d)", err);
+	}
+
 	return err;
 }
 
