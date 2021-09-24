@@ -300,11 +300,10 @@ def main():
                         dep_paths.append(dn.path)
                     else:
                         dep_paths.append('(%s)' % dn.path)
-            # Force separator to signal start of injected dependencies
-            hdls.append(DEVICE_HANDLE_SEP)
             if len(hs.ext_deps) > 0:
                 # TODO: map these to something smaller?
                 ext_paths.extend(map(str, hs.ext_deps))
+                hdls.append(DEVICE_HANDLE_SEP)
                 hdls.extend(hs.ext_deps)
 
             # When CONFIG_USERSPACE is enabled the pre-built elf is
