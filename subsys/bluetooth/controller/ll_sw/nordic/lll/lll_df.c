@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
