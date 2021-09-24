@@ -783,7 +783,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	 * The client reads the Database Hash characteristic and then the server
 	 * receives another ATT request from the client.
 	 */
-	bt_gatt_change_aware(conn, true);
+	(void)bt_gatt_change_aware(conn, true);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash.hash,
 				 sizeof(db_hash.hash));
