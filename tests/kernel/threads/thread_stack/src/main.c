@@ -160,8 +160,8 @@ void stack_buffer_scenarios(void)
 	 *
 	 * First test does direct read & write starting at the estimated
 	 * stack pointer up to the highest addresses in the buffer
+	 * Starting from &val which is close enough to stack pointer
 	 */
-	val = *stack_start;
 	stack_ptr = &val;
 	for (pos = stack_ptr; pos < stack_end; pos++) {
 		/* pos is volatile so this doesn't get optimized out */
