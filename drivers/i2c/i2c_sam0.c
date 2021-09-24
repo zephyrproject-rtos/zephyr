@@ -170,6 +170,11 @@ static void i2c_sam0_isr(const struct device *dev)
 			k_sem_give(&data->sem);
 			return;
 		}
+		else
+		{
+			/* Trigger the next read */
+			i2c->CTRLB.bit.CMD = 2;
+		}
 		return;
 	}
 }
@@ -648,6 +653,9 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 		i2c->CTRLA.bit.ENABLE = 1;
 		wait_synchronization(i2c);
 
+		i2c->STATUS.bit.BUSSTATE = 1;
+		wait_synchronization(i2c);
+
 		if (retval != 0) {
 			return retval;
 		}
@@ -686,10 +694,6 @@ static int i2c_sam0_initialize(const struct device *dev)
 			 SERCOM_I2CM_CTRLA_LOWTOUTEN |
 #endif
 			 SERCOM_I2CM_CTRLA_INACTOUT(0x3);
-	wait_synchronization(i2c);
-
-	/* Enable smart mode (auto ACK) */
-	i2c->CTRLB.reg = SERCOM_I2CM_CTRLB_SMEN;
 	wait_synchronization(i2c);
 
 	retval = i2c_sam0_set_apply_bitrate(dev,
