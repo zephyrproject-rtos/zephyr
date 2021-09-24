@@ -98,12 +98,18 @@ function(group_to_string)
     set(${STRING_STRING} "${${STRING_STRING}}\n  . = ${address};\n\n")
   else()
     get_property(name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
+    get_property(symbol GLOBAL PROPERTY ${STRING_OBJECT}_SYMBOL)
     string(TOLOWER ${name} name)
-    set(${STRING_STRING} "${${STRING_STRING}}\n  __${name}_start = .;\n")
 
     get_objects(LIST sections OBJECT ${STRING_OBJECT} TYPE SECTION)
     list(GET sections 0 section)
     get_property(first_section_name GLOBAL PROPERTY ${section}_NAME)
+
+    if(DEFINED first_section_name AND "${symbol}" STREQUAL "SECTION")
+      set_property(GLOBAL APPEND PROPERTY ${section}_START_SYMBOLS __${name}_start)
+    else()
+      set(${STRING_STRING} "${${STRING_STRING}}\n  __${name}_start = .;\n")
+    endif()
 
     set(${STRING_STRING} "${${STRING_STRING}}\n  __${name}_size = __${name}_end - __${name}_start;\n")
     set(${STRING_STRING} "${${STRING_STRING}}\n  __${name}_load_start = LOADADDR(${first_section_name});\n")
@@ -178,6 +184,7 @@ function(section_to_string)
   get_property(noinit     GLOBAL PROPERTY ${STRING_SECTION}_NOINIT)
   get_property(nosymbols  GLOBAL PROPERTY ${STRING_SECTION}_NOSYMBOLS)
   get_property(parent     GLOBAL PROPERTY ${STRING_SECTION}_PARENT)
+  get_property(start_syms GLOBAL PROPERTY ${STRING_SECTION}_START_SYMBOLS)
 
   string(REGEX REPLACE "^[\.]" "" name_clean "${name}")
   string(REPLACE "." "_" name_clean "${name_clean}")
@@ -204,6 +211,11 @@ function(section_to_string)
   endif()
 
   set(TEMP "${name} ${address}${type} :${secalign}\n{")
+
+  foreach(start_symbol ${start_syms})
+    set(TEMP "${TEMP}\n  ${start_symbol} = .;")
+  endforeach()
+
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n  __${name_clean}_start = .;")
   endif()
@@ -271,6 +283,10 @@ function(section_to_string)
 
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n  __${name_clean}_end = .;")
+  endif()
+
+  if(DEFINED extra_symbol_end)
+    set(TEMP "${TEMP}\n  ${extra_symbol_end} = .;")
   endif()
 
   set(TEMP "${TEMP}\n}")
