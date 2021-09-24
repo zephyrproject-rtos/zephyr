@@ -58,6 +58,7 @@ enum setup_state {
 };
 
 static struct gsm_modem {
+	const struct device *dev;
 	struct modem_context context;
 
 	struct modem_cmd_handler_data cmd_handler_data;
@@ -84,6 +85,11 @@ static struct gsm_modem {
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
 	bool attached : 1;
+
+	void *user_data;
+
+	gsm_modem_power_cb modem_on_cb;
+	gsm_modem_power_cb modem_off_cb;
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
@@ -944,6 +950,10 @@ static void gsm_configure(struct k_work *work)
 
 	LOG_DBG("Starting modem %p configuration", gsm);
 
+	if (gsm->modem_on_cb) {
+		gsm->modem_on_cb(gsm->dev, gsm->user_data);
+	}
+
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
 				    &gsm->context.cmd_handler,
 				    &response_cmds[0],
@@ -1030,6 +1040,23 @@ void gsm_ppp_stop(const struct device *dev)
 				      K_SECONDS(10))) {
 		LOG_WRN("Failed locking modem cmds!");
 	}
+
+	if (gsm->modem_off_cb) {
+		gsm->modem_off_cb(gsm->dev, gsm->user_data);
+	}
+}
+
+void gsm_ppp_register_modem_power_callback(const struct device *dev,
+					   gsm_modem_power_cb modem_on,
+					   gsm_modem_power_cb modem_off,
+					   void *user_data)
+{
+	struct gsm_modem *gsm = dev->data;
+
+	gsm->modem_on_cb = modem_on;
+	gsm->modem_off_cb = modem_off;
+
+	gsm->user_data = user_data;
 }
 
 static int gsm_init(const struct device *dev)
@@ -1038,6 +1065,8 @@ static int gsm_init(const struct device *dev)
 	int r;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);
+
+	gsm->dev = dev;
 
 	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
 	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
