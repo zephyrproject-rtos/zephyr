@@ -917,13 +917,11 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * using the net_buf_alloc() API.
  */
 struct net_buf {
-	union {
-		/** Allow placing the buffer into sys_slist_t */
-		sys_snode_t node;
+	/** Allow placing the buffer into sys_slist_t */
+	sys_snode_t node;
 
-		/** Fragments associated with this buffer. */
-		struct net_buf *frags;
-	};
+	/** Fragments associated with this buffer. */
+	struct net_buf *frags;
 
 	/** Reference count. */
 	uint8_t ref;

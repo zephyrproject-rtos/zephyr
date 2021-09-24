@@ -265,6 +265,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 		irq_unlock(key);
 
 		buf = pool_get_uninit(pool, uninit_count);
+		memset(&buf->node, 0, sizeof(buf->node));
 		goto success;
 	}
 
