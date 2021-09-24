@@ -109,6 +109,10 @@ struct _cpu {
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
 
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	struct _ready_q ready_q;
+#endif
+
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
 	/* Coop thread preempted by current metairq, or NULL */
 	struct k_thread *metairq_preempted;
@@ -143,7 +147,9 @@ struct z_kernel {
 	 * ready queue: can be big, keep after small fields, since some
 	 * assembly (e.g. ARC) are limited in the encoding of the offset
 	 */
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
 	struct _ready_q ready_q;
+#endif
 
 #ifdef CONFIG_FPU_SHARING
 	/*

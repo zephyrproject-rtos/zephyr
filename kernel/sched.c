@@ -16,6 +16,7 @@
 #include <kernel_internal.h>
 #include <logging/log.h>
 #include <sys/atomic.h>
+#include <sys/math_extras.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_SCHED_DUMB)
@@ -187,19 +188,47 @@ ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 	sys_dlist_append(pq, &thread->base.qnode_dlist);
 }
 
-ALWAYS_INLINE void runq_add(struct k_thread *thread)
+static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
-	_priq_run_add(&_kernel.ready_q.runq, thread);
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	int cpu, m = thread->base.cpu_mask;
+
+	/* Edge case: it's legal per the API to "make runnable" a
+	 * thread with all CPUs masked off (i.e. one that isn't
+	 * actually runnable!).  Sort of a wart in the API and maybe
+	 * we should address this in docs/assertions instead to avoid
+	 * the extra test.
+	 */
+	cpu = m == 0 ? 0 : u32_count_trailing_zeros(m);
+
+	return &_kernel.cpus[cpu].ready_q.runq;
+#else
+	return &_kernel.ready_q.runq;
+#endif
 }
 
-ALWAYS_INLINE void runq_remove(struct k_thread *thread)
+static ALWAYS_INLINE void *curr_cpu_runq(void)
 {
-	_priq_run_remove(&_kernel.ready_q.runq, thread);
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	return &arch_curr_cpu()->ready_q.runq;
+#else
+	return &_kernel.ready_q.runq;
+#endif
 }
 
-ALWAYS_INLINE struct k_thread *runq_best(void)
+static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 {
-	return _priq_run_best(&_kernel.ready_q.runq);
+	_priq_run_add(thread_runq(thread), thread);
+}
+
+static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
+{
+	_priq_run_remove(thread_runq(thread), thread);
+}
+
+static ALWAYS_INLINE struct k_thread *runq_best(void)
+{
+	return _priq_run_best(curr_cpu_runq());
 }
 
 /* _current is never in the run queue until context switch on
@@ -1110,7 +1139,13 @@ void init_ready_q(struct _ready_q *rq)
 
 void z_sched_init(void)
 {
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		init_ready_q(&_kernel.cpus[i].ready_q);
+	}
+#else
 	init_ready_q(&_kernel.ready_q);
+#endif
 
 #ifdef CONFIG_TIMESLICING
 	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
@@ -1433,6 +1468,14 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 			ret = -EINVAL;
 		}
 	}
+
+#if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+		int m = thread->base.cpu_mask;
+
+		__ASSERT((m == 0) || ((m & (m - 1)) == 0),
+			 "Only one CPU allowed in mask when PIN_ONLY");
+#endif
+
 	return ret;
 }
 
