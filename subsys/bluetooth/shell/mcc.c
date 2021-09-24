@@ -567,52 +567,52 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	/* Set up the callbacks */
-	cb.discover_mcs      = &mcc_discover_mcs_cb;
-	cb.player_name_read  = &mcc_player_name_read_cb;
+	cb.discover_mcs                  = mcc_discover_mcs_cb;
+	cb.player_name_read              = mcc_player_name_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	cb.icon_obj_id_read  = &mcc_icon_obj_id_read_cb;
+	cb.icon_obj_id_read              = mcc_icon_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	cb.icon_url_read     = &mcc_icon_url_read_cb;
-	cb.track_changed_ntf = &mcc_track_changed_ntf_cb;
-	cb.track_title_read  = &mcc_track_title_read_cb;
-	cb.track_duration_read = &mcc_track_duration_read_cb;
-	cb.track_position_read = &mcc_track_position_read_cb;
-	cb.track_position_set  = &mcc_track_position_set_cb;
-	cb.playback_speed_read = &mcc_playback_speed_read_cb;
-	cb.playback_speed_set  = &mcc_playback_speed_set_cb;
-	cb.seeking_speed_read  = &mcc_seeking_speed_read_cb;
+	cb.icon_url_read                 = mcc_icon_url_read_cb;
+	cb.track_changed_ntf             = mcc_track_changed_ntf_cb;
+	cb.track_title_read              = mcc_track_title_read_cb;
+	cb.track_duration_read           = mcc_track_duration_read_cb;
+	cb.track_position_read           = mcc_track_position_read_cb;
+	cb.track_position_set            = mcc_track_position_set_cb;
+	cb.playback_speed_read           = mcc_playback_speed_read_cb;
+	cb.playback_speed_set            = mcc_playback_speed_set_cb;
+	cb.seeking_speed_read            = mcc_seeking_speed_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	cb.segments_obj_id_read      = &mcc_segments_obj_id_read_cb;
-	cb.current_track_obj_id_read = &mcc_current_track_obj_id_read_cb;
-	cb.current_track_obj_id_set  = &mcc_current_track_obj_id_set_cb;
-	cb.next_track_obj_id_read    = &mcc_next_track_obj_id_read_cb;
-	cb.next_track_obj_id_set     = &mcc_next_track_obj_id_set_cb;
-	cb.parent_group_obj_id_read  = &mcc_parent_group_obj_id_read_cb;
-	cb.current_group_obj_id_read = &mcc_current_group_obj_id_read_cb;
-	cb.current_group_obj_id_set  = &mcc_current_group_obj_id_set_cb;
+	cb.segments_obj_id_read          = mcc_segments_obj_id_read_cb;
+	cb.current_track_obj_id_read     = mcc_current_track_obj_id_read_cb;
+	cb.current_track_obj_id_set      = mcc_current_track_obj_id_set_cb;
+	cb.next_track_obj_id_read        = mcc_next_track_obj_id_read_cb;
+	cb.next_track_obj_id_set         = mcc_next_track_obj_id_set_cb;
+	cb.parent_group_obj_id_read      = mcc_parent_group_obj_id_read_cb;
+	cb.current_group_obj_id_read     = mcc_current_group_obj_id_read_cb;
+	cb.current_group_obj_id_set      = mcc_current_group_obj_id_set_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	cb.playing_order_read	     = &mcc_playing_order_read_cb;
-	cb.playing_order_set         = &mcc_playing_order_set_cb;
-	cb.playing_orders_supported_read = &mcc_playing_orders_supported_read_cb;
-	cb.media_state_read = &mcc_media_state_read_cb;
-	cb.cmd_send         = &mcc_cmd_send_cb;
-	cb.cmd_ntf          = &mcc_cmd_ntf_cb;
-	cb.opcodes_supported_read = &mcc_opcodes_supported_read_cb;
+	cb.playing_order_read            = mcc_playing_order_read_cb;
+	cb.playing_order_set             = mcc_playing_order_set_cb;
+	cb.playing_orders_supported_read = mcc_playing_orders_supported_read_cb;
+	cb.media_state_read              = mcc_media_state_read_cb;
+	cb.cmd_send                      = mcc_cmd_send_cb;
+	cb.cmd_ntf                       = mcc_cmd_ntf_cb;
+	cb.opcodes_supported_read        = mcc_opcodes_supported_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	cb.search_send        = &mcc_search_send_cb;
-	cb.search_ntf         = &mcc_search_ntf_cb;
-	cb.search_results_obj_id_read = &mcc_search_results_obj_id_read_cb;
+	cb.search_send                   = mcc_search_send_cb;
+	cb.search_ntf                    = mcc_search_ntf_cb;
+	cb.search_results_obj_id_read    = mcc_search_results_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	cb.content_control_id_read = &mcc_content_control_id_read_cb;
+	cb.content_control_id_read       = mcc_content_control_id_read_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	cb.otc_obj_selected = &mcc_otc_obj_selected_cb;
-	cb.otc_obj_metadata = &mcc_otc_obj_metadata_cb;
-	cb.otc_icon_object  = &mcc_icon_object_read_cb;
-	cb.otc_track_segments_object = &mcc_track_segments_object_read_cb;
-	cb.otc_current_track_object  = &mcc_otc_read_current_track_object_cb;
-	cb.otc_next_track_object     = &mcc_otc_read_next_track_object_cb;
-	cb.otc_parent_group_object   = &mcc_otc_read_parent_group_object_cb;
-	cb.otc_current_group_object  = &mcc_otc_read_current_group_object_cb;
+	cb.otc_obj_selected              = mcc_otc_obj_selected_cb;
+	cb.otc_obj_metadata              = mcc_otc_obj_metadata_cb;
+	cb.otc_icon_object               = mcc_icon_object_read_cb;
+	cb.otc_track_segments_object     = mcc_track_segments_object_read_cb;
+	cb.otc_current_track_object      = mcc_otc_read_current_track_object_cb;
+	cb.otc_next_track_object         = mcc_otc_read_next_track_object_cb;
+	cb.otc_parent_group_object       = mcc_otc_read_parent_group_object_cb;
+	cb.otc_current_group_object      = mcc_otc_read_current_group_object_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 
 	/* Initialize the module */
