@@ -136,6 +136,21 @@ config SCHED_CPU_MASK
 	  CPU.  With one CPU, it's just a higher overhead version of
 	  k_thread_start/stop().
 
+config SCHED_CPU_MASK_PIN_ONLY
+	bool "CPU mask variant with single-CPU pinning only"
+	depends on SMP && SCHED_CPU_MASK
+	help
+	  When true, enables a variant of SCHED_CPU_MASK where only
+	  one CPU may be specified for every thread.  Effectively, all
+	  threads have a single "assigned" CPU and they will never be
+	  scheduled symmetrically.  In general this is not helpful,
+	  but some applications have a carefully designed threading
+	  architecture and want to make their own decisions about how
+	  to assign work to CPUs.  In that circumstance, some moderate
+	  optimizations can be made (e.g. having a separate run queue
+	  per CPU, keeping the list length shorter).  Most
+	  applications don't want this.
+
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
