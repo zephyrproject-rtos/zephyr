@@ -37,7 +37,7 @@ manifest:
       groups:
         - hal
     - name: edtt
-      revision: 31badfbbd04f2948e3df6ebf329f930317550961
+      revision: c94f63865a803b18a2ab9eca70d2a9ab881130f6
       path: tools/edtt
       groups:
         - tools
