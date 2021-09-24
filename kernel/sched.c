@@ -187,6 +187,21 @@ ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 	sys_dlist_append(pq, &thread->base.qnode_dlist);
 }
 
+ALWAYS_INLINE void runq_add(struct k_thread *thread)
+{
+	_priq_run_add(&_kernel.ready_q.runq, thread);
+}
+
+ALWAYS_INLINE void runq_remove(struct k_thread *thread)
+{
+	_priq_run_remove(&_kernel.ready_q.runq, thread);
+}
+
+ALWAYS_INLINE struct k_thread *runq_best(void)
+{
+	return _priq_run_best(&_kernel.ready_q.runq);
+}
+
 /* _current is never in the run queue until context switch on
  * SMP configurations, see z_requeue_current()
  */
@@ -199,7 +214,7 @@ static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
-		_priq_run_add(&_kernel.ready_q.runq, thread);
+		runq_add(thread);
 	}
 #ifdef CONFIG_SMP
 	if (thread == _current) {
@@ -213,7 +228,7 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
-		_priq_run_remove(&_kernel.ready_q.runq, thread);
+		runq_remove(thread);
 	}
 }
 
@@ -227,7 +242,7 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 void z_requeue_current(struct k_thread *curr)
 {
 	if (z_is_thread_queued(curr)) {
-		_priq_run_add(&_kernel.ready_q.runq, curr);
+		runq_add(curr);
 	}
 }
 #endif
@@ -239,9 +254,7 @@ static inline bool is_aborting(struct k_thread *thread)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
-	struct k_thread *thread;
-
-	thread = _priq_run_best(&_kernel.ready_q.runq);
+	struct k_thread *thread = runq_best();
 
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
 	/* MetaIRQs must always attempt to return back to a
@@ -922,8 +935,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * will not return into it.
 			 */
 			if (z_is_thread_queued(old_thread)) {
-				_priq_run_add(&_kernel.ready_q.runq,
-					      old_thread);
+				runq_add(old_thread);
 			}
 		}
 		old_thread->switch_handle = interrupted;
