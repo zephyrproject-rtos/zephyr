@@ -1636,6 +1636,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+		    CONFIG_BT_ID_MAX > 1 &&
 		    id != BT_ID_DEFAULT &&
 		    (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
 		     atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
