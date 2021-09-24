@@ -869,20 +869,50 @@ static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
 static int cmd_register_test_svc(const struct shell *sh,
 				  size_t argc, char *argv[])
 {
-	bt_gatt_service_register(&vnd_svc);
-	bt_gatt_service_register(&vnd1_svc);
+	char str[BT_UUID_STR_LEN];
+	int err;
 
-	shell_print(sh, "Registering test vendor services");
+	bt_uuid_to_str(&vnd_uuid.uuid, str, sizeof(str));
+	err = bt_gatt_service_register(&vnd_svc);
+	if (!err) {
+		shell_print(sh, "Registered test vendor service %s", str);
+	} else {
+		shell_error(sh, "Failed to register test vendor service %s (%d)", str, err);
+	}
+
+	bt_uuid_to_str(&vnd1_uuid.uuid, str, sizeof(str));
+	err = bt_gatt_service_register(&vnd1_svc);
+	if (!err) {
+		shell_print(sh, "Registered test vendor service %s", str);
+	} else {
+		shell_error(sh, "Failed to register test vendor service %s (%d)", str, err);
+	}
+
 	return 0;
 }
 
 static int cmd_unregister_test_svc(const struct shell *sh,
 				    size_t argc, char *argv[])
 {
-	bt_gatt_service_unregister(&vnd_svc);
-	bt_gatt_service_unregister(&vnd1_svc);
+	char str[BT_UUID_STR_LEN];
+	int err;
 
-	shell_print(sh, "Unregistering test vendor services");
+	bt_uuid_to_str(&vnd_uuid.uuid, str, sizeof(str));
+	err = bt_gatt_service_unregister(&vnd_svc);
+	if (!err) {
+		shell_print(sh, "Unregistered test vendor service %s", str);
+	} else {
+		shell_error(sh, "Failed to unregister test vendor service %s (%d)", str, err);
+	}
+
+	bt_uuid_to_str(&vnd1_uuid.uuid, str, sizeof(str));
+	err = bt_gatt_service_unregister(&vnd1_svc);
+	if (!err) {
+		shell_print(sh, "Unregistered test vendor service %s", str);
+	} else {
+		shell_error(sh, "Failed to unregister test vendor service %s (%d)", str, err);
+	}
+
 	return 0;
 }
 
