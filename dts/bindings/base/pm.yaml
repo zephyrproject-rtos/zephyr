@@ -16,3 +16,15 @@ properties:
 
         Wake up capable devices are disabled (interruptions will not wake up
         the system) by default but they can be enabled at runtime if necessary.
+
+    wakeup-state:
+      required: false
+      type: string
+      default: "active"
+      enum:
+      - "active"
+      - "low-power"
+      - "suspended"
+      - "off"
+      description: |
+        Property to statically set the initial power state of a device.

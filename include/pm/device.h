@@ -119,7 +119,10 @@ struct pm_device {
 		.usage = 0U,						\
 		.lock = Z_MUTEX_INITIALIZER(obj.lock),			\
 		.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),		\
-		.state = PM_DEVICE_STATE_ACTIVE,			\
+		.state = ATOMIC_INIT(COND_CODE_1(			\
+				DT_NODE_EXISTS(node_id),		\
+				(DT_ENUM_IDX(node_id, wakeup_state)),	\
+				(0))),					\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
