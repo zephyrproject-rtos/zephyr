@@ -410,6 +410,43 @@
 			status = "disabled";
 			label = "RNG";
 		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-requests = <7>;
+			dma-offset = <0>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020400 0x400>;
+			interrupts = <54 0 55 0 56 0 57 0 58 0 59 0 60 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			dma-requests = <7>;
+			dma-offset = <7>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <3>;
+			reg = <0x40020800 0x400>;
+			interrupts = <61 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
+			dma-channels = <14>;
+			dma-generators = <4>;
+			dma-requests= <38>;
+			status = "disabled";
+			label = "DMAMUX_1";
+		};
 	};
 };
 
