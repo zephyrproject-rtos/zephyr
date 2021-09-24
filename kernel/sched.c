@@ -1091,25 +1091,26 @@ int z_unpend_all(_wait_q_t *wait_q)
 	return need_sched;
 }
 
-void z_sched_init(void)
+void init_ready_q(struct _ready_q *rq)
 {
-#ifdef CONFIG_SCHED_DUMB
-	sys_dlist_init(&_kernel.ready_q.runq);
-#endif
-
-#ifdef CONFIG_SCHED_SCALABLE
-	_kernel.ready_q.runq = (struct _priq_rb) {
+#if defined(CONFIG_SCHED_SCALABLE)
+	rq->runq = (struct _priq_rb) {
 		.tree = {
 			.lessthan_fn = z_priq_rb_lessthan,
 		}
 	};
-#endif
-
-#ifdef CONFIG_SCHED_MULTIQ
+#elif defined(CONFIG_SCHED_MULTIQ)
 	for (int i = 0; i < ARRAY_SIZE(_kernel.ready_q.runq.queues); i++) {
-		sys_dlist_init(&_kernel.ready_q.runq.queues[i]);
+		sys_dlist_init(&rq->runq.queues[i]);
 	}
+#else
+	sys_dlist_init(&rq->runq);
 #endif
+}
+
+void z_sched_init(void)
+{
+	init_ready_q(&_kernel.ready_q);
 
 #ifdef CONFIG_TIMESLICING
 	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
