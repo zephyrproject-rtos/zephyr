@@ -407,7 +407,7 @@ static int st7789v_pm_control(const struct device *dev,
 		st7789v_exit_sleep(data);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		ret = st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
+		st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
 		ret = -ENOTSUP;
