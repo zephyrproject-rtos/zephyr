@@ -303,6 +303,22 @@ config WAITQ_DUMB
 
 endchoice # WAITQ_ALGORITHM
 
+config DEVICE_HANDLE_PADDING
+	int "Number of additional device handles to use for padding"
+	default 0
+	range 0 10
+	help
+	  This is a "fudge factor" which works around build system
+	  limitations. It is safe to ignore unless you get a specific
+	  build system error about it.
+
+	  The option's value is the number of superfluous device handle
+	  values which are introduced into the array pointed to by each
+	  device's 'handles' member during the first linker pass.
+
+	  Each handle uses 2 bytes, so a value of 3 would use an extra
+	  6 bytes of ROM for every device.
+
 menu "Kernel Debugging and Metrics"
 
 config INIT_STACKS
