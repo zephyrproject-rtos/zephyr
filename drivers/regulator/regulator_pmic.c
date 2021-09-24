@@ -66,6 +66,8 @@ static int regulator_modify_register(const struct regulator_config *conf,
 	}
 	reg_current &= ~reg_mask;
 	reg_current |= reg_val;
+	LOG_DBG("Writing 0x%02X to reg 0x%02X at I2C addr 0x%02X",
+			reg_current, reg, conf->i2c_address);
 	return i2c_reg_write_byte(conf->i2c_dev, conf->i2c_address, reg,
 			reg_current);
 }
@@ -94,6 +96,10 @@ int regulator_list_voltages(const struct device *dev, unsigned int selector)
 	return config->voltages[selector].uV;
 }
 
+/**
+ * Part of the extended regulator consumer API
+ * Returns true if the regulator supports a voltage in the given range.
+ */
 int regulator_is_supported_voltage(const struct device *dev,
 		int min_uV, int max_uV)
 {
@@ -101,6 +107,70 @@ int regulator_is_supported_voltage(const struct device *dev,
 
 	return !((config->max_uV < min_uV) || (config->min_uV > max_uV));
 }
+
+/**
+ * Part of the extended regulator consumer API
+ * Sets the output voltage to the closest supported voltage value
+ */
+int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
+{
+	const struct regulator_config *config = dev->config;
+	int i = 0;
+
+	if (!regulator_is_supported_voltage(dev, min_uV, max_uV) ||
+		min_uV > max_uV) {
+		return -EINVAL;
+	}
+	/* Find closest supported voltage */
+	while (min_uV > config->voltages[i].uV && i < config->num_voltages) {
+		i++;
+	}
+	if (config->voltages[i].uV > max_uV) {
+		LOG_DBG("Regulator could not satisfy voltage range, too narrow");
+		return -EINVAL;
+	}
+	if (i == config->num_voltages) {
+		LOG_WRN("Regulator could not locate supported voltage,"
+				"but voltage is in range.");
+		return -EINVAL;
+	}
+	LOG_DBG("Setting regulator %s to %duV", dev->name,
+			config->voltages[i].uV);
+	return regulator_modify_register(config, config->vsel_reg,
+			config->vsel_mask, config->voltages[i].reg_val);
+}
+
+/**
+ * Part of the extended regulator consumer API
+ * Gets the current output voltage in uV
+ */
+int regulator_get_voltage(const struct device *dev)
+{
+	const struct regulator_config *config = dev->config;
+	int rc, i = 0;
+	uint8_t raw_reg;
+
+	rc = i2c_reg_read_byte(config->i2c_dev, config->i2c_address,
+			config->vsel_reg, &raw_reg);
+	if (rc) {
+		return rc;
+	}
+	raw_reg &= config->vsel_mask;
+	/* Locate the voltage value in the voltage table */
+	while (raw_reg != config->voltages[i].reg_val &&
+			i < config->num_voltages){
+		i++;
+	}
+	if (i == config->num_voltages) {
+		LOG_WRN("Regulator vsel reg has unknown value");
+		return -EIO;
+	}
+	return config->voltages[i].uV;
+}
+
+
+
+
 
 
 
@@ -120,7 +190,7 @@ static int enable_regulator(const struct device *dev, struct onoff_client *cli)
 	}
 	en_val = config->enable_inverted ? 0 : config->enable_val;
 	rc = regulator_modify_register(config, config->enable_reg,
-			config->enable_reg, en_val);
+			config->enable_mask, en_val);
 	if (rc) {
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, false);
 	}
@@ -143,7 +213,7 @@ static int disable_regulator(const struct device *dev)
 	}
 	dis_val = config->enable_inverted ? config->enable_val : 0;
 	rc = regulator_modify_register(config, config->enable_reg,
-			config->enable_reg, dis_val);
+			config->enable_mask, dis_val);
 	if (rc) {
 		/* Error writing configs */
 		return onoff_sync_finalize(&data->srv, key, NULL, rc, true);
@@ -155,7 +225,6 @@ static int pmic_reg_init(const struct device *dev)
 {
 	struct regulator_config *config = (struct regulator_config *)dev->config;
 
-	LOG_INF("PMIC regulator initializing");
 	/* Cast the voltage array set at compile time to the voltage range
 	 * struct
 	 */

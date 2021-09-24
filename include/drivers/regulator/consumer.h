@@ -81,7 +81,7 @@ int regulator_get_voltage(const struct device *dev);
  * @param max_uA: maximum microamps
  * @return 0 on success, or errno on error
  */
-int regulator_set_current_limit(const struct device *dev);
+int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA);
 
 /**
  * @brief Get regulator output current.
