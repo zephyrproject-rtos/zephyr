@@ -1524,8 +1524,11 @@ static void deferred_work(struct k_work *work)
 		struct bt_conn *iso;
 
 		if (conn->type == BT_CONN_TYPE_ISO) {
+			/* bt_iso_disconnected is responsible for unref'ing the
+			 * connection pointer, as it is conditional on whether
+			 * the connection is a central or peripheral.
+			 */
 			bt_iso_disconnected(conn);
-			bt_conn_unref(conn);
 			return;
 		}
 
