@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <errno.h>
+#include <soc.h>
 #include <devicetree.h>
 #include <sys/util_macro.h>
 #include <hal/nrf_radio.h>
