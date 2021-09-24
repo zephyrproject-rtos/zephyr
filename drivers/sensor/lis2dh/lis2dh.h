@@ -163,6 +163,14 @@
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
 
+#define LIS2DH_TEMP_EN_BIT      BIT(6)
+#define LIS2DH_ADC_EN_BIT       BIT(7)
+#define LIS2DH_CTRL4_BDU_BIT    BIT(7)
+#define LIS2DH_TEMP_CFG_EN_BITS (LIS2DH_TEMP_EN_BIT | LIS2DH_ADC_EN_BIT)
+#define LIS2DH_REG_ADC3_L       0x0C
+#define LIS2DH_REG_ADC3_H       0x0D
+#define LIS2DH_REG_TEMP_CFG_REG 0x1F
+
 union lis2dh_sample {
 	uint8_t raw[LIS2DH_BUF_SZ];
 	struct {
@@ -220,6 +228,10 @@ struct lis2dh_data {
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	uint32_t scale;
+
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	int8_t temperature;
+#endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;

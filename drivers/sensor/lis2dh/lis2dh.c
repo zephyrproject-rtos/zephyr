@@ -45,6 +45,52 @@ static void lis2dh_convert(int16_t raw_val, uint32_t scale,
 	val->val2 = converted_val % 1000000;
 }
 
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+static int lis2dh_channel_get_temp(const struct device *dev,
+				   struct sensor_value *val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+
+	val->val1 = lis2dh->temperature;
+	val->val2 = 0;
+
+	return 0;
+}
+#endif
+
+static int lis2dh_sample_fetch_temp(const struct device *dev)
+{
+	int ret = -ENOTSUP;
+
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	struct lis2dh_data *lis2dh = dev->data;
+	int8_t raw[sizeof(uint16_t)];
+	/*
+	 * The LIS2DH/LIS3DH requires a 2 byte read for the temperature value
+	 * even though only the _H register has valid data. The _L and _H
+	 * registers are consecutive, so a burst read will work here.
+	 */
+	ret = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_ADC3_L, raw,
+				       sizeof(raw));
+
+	if (ret < 0) {
+		LOG_WRN("Failed to fetch raw temperature sample");
+		ret = -EIO;
+	} else {
+		/*
+		 * LIS2DH_REG_ADC3_H contains a delta value for the
+		 * temperature that must be added to the reference temperature set
+		 * for your board to return an absolute temperature in celsius.
+		 */
+		lis2dh->temperature = raw[1];
+	}
+#else
+	LOG_WRN("Temperature measurement disabled");
+#endif
+
+	return ret;
+}
+
 static int lis2dh_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -68,9 +114,14 @@ static int lis2dh_channel_get(const struct device *dev,
 		ofs_start = 0;
 		ofs_end = 2;
 		break;
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	case SENSOR_CHAN_AMBIENT_TEMP:
+		return lis2dh_channel_get_temp(dev, val);
+#endif
 	default:
 		return -ENOTSUP;
 	}
+
 	for (i = ofs_start; i <= ofs_end; i++, val++) {
 		lis2dh_convert(lis2dh->sample.xyz[i], lis2dh->scale, val);
 	}
@@ -78,16 +129,12 @@ static int lis2dh_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int lis2dh_sample_fetch(const struct device *dev,
+static int lis2dh_fetch_xyz(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->data;
+	int status = -ENODATA;
 	size_t i;
-	int status;
-
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_ACCEL_XYZ);
-
 	/*
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
@@ -108,10 +155,31 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	}
 
 	if (lis2dh->sample.status & LIS2DH_STATUS_DRDY_MASK) {
-		return 0;
+		status = 0;
 	}
 
-	return -ENODATA;
+	return status;
+}
+
+static int lis2dh_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
+{
+	int status = -ENODATA;
+
+	if (chan == SENSOR_CHAN_ALL) {
+		status = lis2dh_fetch_xyz(dev, chan);
+	} else if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+		status = lis2dh_fetch_xyz(dev, chan);
+		if (status == 0) {
+			status = lis2dh_sample_fetch_temp(dev);
+		}
+	} else if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+		status = lis2dh_sample_fetch_temp(dev);
+	} else {
+		__ASSERT(false, "Invalid sensor channel in fetch");
+	}
+
+	return status;
 }
 
 #ifdef CONFIG_LIS2DH_ODR_RUNTIME
@@ -324,12 +392,31 @@ int lis2dh_init(const struct device *dev)
 
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
+#ifdef CONFIG_LIS2DH_BLOCK_DATA_UPDATE
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
-					  LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+					  LIS2DH_FS_BITS | LIS2DH_HR_BIT | LIS2DH_CTRL4_BDU_BIT);
+#else
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+#endif
+
 	if (status < 0) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
+
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+	/*
+	 * On the LIS2DH/LIS3DH, ADC3 is used for reading the temperature values.
+	 * Both ADC and Temperature measurements must be enabled.
+	 */
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_TEMP_CFG_REG,
+					  LIS2DH_TEMP_CFG_EN_BITS);
+
+	if (status < 0) {
+		LOG_ERR("Failed to enable temperature measurement");
+		return status;
+	}
+#endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
