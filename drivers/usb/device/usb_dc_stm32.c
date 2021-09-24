@@ -202,7 +202,8 @@ static int usb_dc_stm32_clock_enable(void)
 	 */
 #if defined(RCC_HSI48_SUPPORT) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X)
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X)
 
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
