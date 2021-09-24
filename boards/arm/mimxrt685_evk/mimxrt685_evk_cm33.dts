@@ -221,7 +221,11 @@ i2s1: &flexcomm3 {
 			label = "SW1_BUCK_REG";
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
 			num-voltages = <42>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
 			vsel-reg = <PCA9420_MODECFG_0_0>;
 			vsel-mask = <PCA9420_MODECFG_0_SW1_OUT_MASK>;
 			enable-reg = <PCA9420_MODECFG_0_2>;
@@ -236,6 +240,10 @@ i2s1: &flexcomm3 {
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
 			vsel-reg = <PCA9420_MODECFG_0_1>;
 			vsel-mask = <PCA9420_MODECFG_1_SW2_OUT_MASK>;
 			enable-reg = <PCA9420_MODECFG_0_2>;
@@ -250,6 +258,10 @@ i2s1: &flexcomm3 {
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
 			num-voltages = <9>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
 			vsel-reg = <PCA9420_MODECFG_0_2>;
 			vsel-mask = <PCA9420_MODECFG_2_LDO1_OUT_MASK>;
 			enable-reg = <PCA9420_MODECFG_0_2>;
@@ -264,6 +276,10 @@ i2s1: &flexcomm3 {
 			compatible = "regulator-pmic";
 			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
 			num-voltages = <50>;
+			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
+			ilim-reg = <PCA9420_TOP_CNTL0>;
+			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
+			num-current-levels = <7>;
 			vsel-reg = <PCA9420_MODECFG_0_3>;
 			vsel-mask = <PCA9420_MODECFG_3_LDO2_OUT_MASK>;
 			enable-reg = <PCA9420_MODECFG_0_2>;
