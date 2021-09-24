@@ -63,3 +63,30 @@ properties:
         description: |
           If the enable bit should be zero to turn the regulator on, add this
           property.
+    current-levels:
+        type: array
+        required: false
+        description: |
+          Array of current limit values in uA, followed by the register value
+          that must be written to enable the current limit. For example,
+          [800000, 0x3] denotes a value of 0x3 must be written to the register
+          to set a current limit of 800mA
+    num-current-levels:
+        type: int
+        required: false
+        default: 0
+        description: |
+          Number of current limit levels this regulator supports. If left as
+          default, regulator current support will be disabled.
+    ilim-reg:
+        type: int
+        required: false
+        description: |
+          Register to write the register value given in current-levels into
+          to set the current limit
+    ilim-mask:
+        type: int
+        required: false
+        description: |
+          Mask to apply to the current-levels value before writing it to the
+          ilim-reg value to set the current limit

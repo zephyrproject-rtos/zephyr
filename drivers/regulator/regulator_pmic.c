@@ -33,9 +33,16 @@ struct __packed voltage_range {
 	int reg_val; /* Register value for voltage */
 };
 
+struct __packed current_range {
+	int uA; /* Current limit in uA */
+	int reg_val; /* Register value for current limit */
+};
+
 struct regulator_config {
 	struct voltage_range *voltages;
 	int num_voltages;
+	struct current_range *current_levels;
+	int num_current_levels;
 	uint8_t vsel_reg;
 	uint8_t vsel_mask;
 	uint32_t max_uV;
@@ -44,9 +51,12 @@ struct regulator_config {
 	uint8_t enable_mask;
 	uint8_t enable_val;
 	bool enable_inverted;
+	uint8_t ilim_reg;
+	uint8_t ilim_mask;
 	uint8_t i2c_address;
 	const struct device *i2c_dev;
-	uint32_t voltage_array[];
+	uint32_t *voltage_array;
+	uint32_t *current_array;
 };
 
 /**
@@ -122,7 +132,7 @@ int regulator_set_voltage(const struct device *dev, int min_uV, int max_uV)
 		return -EINVAL;
 	}
 	/* Find closest supported voltage */
-	while (min_uV > config->voltages[i].uV && i < config->num_voltages) {
+	while (i < config->num_voltages && min_uV > config->voltages[i].uV) {
 		i++;
 	}
 	if (config->voltages[i].uV > max_uV) {
@@ -157,8 +167,8 @@ int regulator_get_voltage(const struct device *dev)
 	}
 	raw_reg &= config->vsel_mask;
 	/* Locate the voltage value in the voltage table */
-	while (raw_reg != config->voltages[i].reg_val &&
-			i < config->num_voltages){
+	while (i < config->num_voltages &&
+		raw_reg != config->voltages[i].reg_val){
 		i++;
 	}
 	if (i == config->num_voltages) {
@@ -168,10 +178,61 @@ int regulator_get_voltage(const struct device *dev)
 	return config->voltages[i].uV;
 }
 
+/**
+ * Part of the extended regulator consumer API
+ * Set the current limit for this device
+ */
+int regulator_set_current_limit(const struct device *dev, int min_uA, int max_uA)
+{
+	const struct regulator_config *config = dev->config;
+	int i = 0;
 
+	if (config->num_current_levels == 0) {
+		/* Regulator cannot limit current */
+		return -ENOTSUP;
+	}
+	/* Locate the desired current limit */
+	while (i < config->num_current_levels &&
+		min_uA > config->current_levels[i].uA) {
+		i++;
+	}
+	if (i == config->num_current_levels ||
+		config->current_levels[i].uA > max_uA) {
+		return -EINVAL;
+	}
+	/* Set the current limit */
+	return regulator_modify_register(config, config->ilim_reg,
+		config->ilim_mask, config->current_levels[i].reg_val);
+}
 
+/**
+ * Part of the extended regulator consumer API
+ * Gets the set current limit for the regulator
+ */
+int regulator_get_current_limit(const struct device *dev)
+{
+	const struct regulator_config *config = dev->config;
+	int rc, i = 0;
+	uint8_t raw_reg;
 
-
+	if (config->num_current_levels == 0) {
+		return -ENOTSUP;
+	}
+	rc = i2c_reg_read_byte(config->i2c_dev, config->i2c_address,
+		config->ilim_reg, &raw_reg);
+	if (rc) {
+		return rc;
+	}
+	raw_reg &= config->ilim_mask;
+	while (i < config->num_current_levels &&
+		config->current_levels[i].reg_val != raw_reg) {
+		i++;
+	}
+	if (i == config->num_current_levels) {
+		return -EIO;
+	}
+	return config->current_levels[i].uA;
+}
 
 
 static int enable_regulator(const struct device *dev, struct onoff_client *cli)
@@ -229,6 +290,8 @@ static int pmic_reg_init(const struct device *dev)
 	 * struct
 	 */
 	config->voltages = (struct voltage_range *)config->voltage_array;
+	/* Do the same cast for current limit ranges */
+	config->current_levels = (struct current_range *)config->current_array;
 	/* Check to verify we have a valid I2C device */
 	if (config->i2c_dev == NULL || !device_is_ready(config->i2c_dev)) {
 		return -ENODEV;
@@ -243,20 +306,28 @@ static const struct regulator_driver_api api = {
 };
 
 #define CONFIGURE_REGULATOR(id)									\
+	static uint32_t pmic_reg_##id##_cur_limits[] =						\
+		DT_INST_PROP_OR(id, current_levels, {});					\
+	static uint32_t pmic_reg_##id##_vol_range[] =						\
+		DT_INST_PROP(id, voltage_range);						\
 	static struct regulator_data pmic_reg_##id##_data;					\
 	static struct regulator_config pmic_reg_##id##_cfg = {					\
 		.vsel_mask = DT_INST_PROP(id, vsel_mask),					\
 		.vsel_reg = DT_INST_PROP(id, vsel_reg),						\
 		.num_voltages = DT_INST_PROP(id, num_voltages),					\
+		.num_current_levels = DT_INST_PROP(id, num_current_levels),			\
 		.enable_reg = DT_INST_PROP(id, enable_reg),					\
 		.enable_mask = DT_INST_PROP(id, enable_mask),					\
 		.enable_val = DT_INST_PROP(id, enable_val),					\
 		.min_uV = DT_INST_PROP(id, min_uv),						\
 		.max_uV = DT_INST_PROP(id, max_uv),						\
+		.ilim_reg = DT_INST_PROP_OR(id, ilim_reg, 0),			\
+		.ilim_mask = DT_INST_PROP_OR(id, ilim_mask, 0),			\
 		.enable_inverted = DT_INST_PROP(id, enable_inverted),				\
 		.i2c_address = DT_REG_ADDR(DT_PARENT(DT_DRV_INST(id))),				\
 		.i2c_dev = DEVICE_DT_GET(DT_BUS(DT_PARENT(DT_DRV_INST(id)))),			\
-		.voltage_array = DT_INST_PROP(id, voltage_range),				\
+		.voltage_array = pmic_reg_##id##_vol_range,					\
+		.current_array = pmic_reg_##id##_cur_limits,					\
 	};											\
 	DEVICE_DT_INST_DEFINE(id, pmic_reg_init, NULL,						\
 			      &pmic_reg_##id##_data, &pmic_reg_##id##_cfg,			\
