@@ -396,24 +396,21 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		do {
+		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* Load shorter structure for compatibility with old
 			 * records format with no counter.
 			 */
-			if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
-			    len == BT_KEYS_STORAGE_LEN_COMPAT) {
-				BT_WARN("Keys for %s have no aging counter",
-					bt_addr_le_str(&addr));
-				memcpy(keys->storage_start, val, len);
-				continue;
-			}
-
+			BT_WARN("Keys for %s have no aging counter",
+				bt_addr_le_str(&addr));
+			memcpy(keys->storage_start, val, len);
+		} else {
 			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
 			return -EINVAL;
-		} while (0);
+		}
 	} else {
 		memcpy(keys->storage_start, val, len);
 	}
