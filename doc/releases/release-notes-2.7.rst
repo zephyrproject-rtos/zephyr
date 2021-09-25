@@ -175,6 +175,14 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Added Atmel SAM0 pinctrl support
+  * Added Atmel SAM4L USBC device controller
+  * Added Atmel GMAC support for MDIO driver
+  * Added Atmel GMAC support to use generic PHY driver
+  * Added Atmel SAM counter (TC) Driver
+  * Added Atmel SAM DAC (DACC) driver
+  * Enabled Atmel SAM ``clock-frequency`` support from devicetree
+  * Free Atmel SAM TRACESWO pin when unused
   * Enabled Cypress PSoC-6 Cortex-M4 support
 
 
@@ -195,6 +203,19 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * arduino_due: Added support for TC driver
+  * atsame54_xpro: Added support for PHY driver
+  * sam4l_ek: Added support for TC driver
+  * sam4e_xpro: Added support for PHY driver
+  * sam4e_xpro: Added support for TC driver
+  * sam4s_xplained: Added support for TC driver
+  * sam_e70_xplained: Added support for DACC driver
+  * sam_e70_xplained: Added support for PHY driver
+  * sam_e70_xplained: Added support for TC driver
+  * sam_v71_xult: Added support for DACC driver
+  * sam_v71_xult: Added support for PHY driver
+  * sam_v71_xult: Added support for TC driver
+  * sam_v71_xult: Enable pwm on LED0
   * cy8ckit_062_ble: Added arduino's nexus map
 
 
@@ -221,10 +242,14 @@ Drivers and Sensors
 
 * Counter
 
+  * Add Atmel SAM counter (TC) Driver
+
 
 * DAC
 
-   * Added support for Microchip MCP4725
+  * Added Atmel SAM DAC (DACC) driver
+  * Added support for Microchip MCP4725
+
 
 * Disk
 
@@ -239,7 +264,9 @@ Drivers and Sensors
 
 * DMA
 
+  * Added Atmel SAM XDMAC reload support
   * Added support on STM32G0 and STM32H7
+
 
 * EEPROM
 
@@ -250,6 +277,11 @@ Drivers and Sensors
   * Added support for Microchip eSPI SAF
 
 * Ethernet
+
+  * Added Atmel SAM/SAM0 GMAC devicetree support
+  * Added Atmel SAM/SAM0 MDIO driver
+  * Added MDIO driver
+  * Added generic PHY driver
 
 
 * Flash
@@ -265,6 +297,8 @@ Drivers and Sensors
 
 
 * I2S
+
+  * Added Atmel SAM I2S driver support to XDMAC reload
 
 
 * IEEE 802.15.4
@@ -284,6 +318,11 @@ Drivers and Sensors
 * Modem
 
 
+* Pinmux
+
+  * Added Atmel SAM0 pinctrl support
+
+
 * PWM
 
 
@@ -300,6 +339,8 @@ Drivers and Sensors
 
 
 * USB
+
+  * Add Atmel SAM4L USBC device controller
 
 
 * Watchdog
