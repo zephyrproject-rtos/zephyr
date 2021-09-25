@@ -106,6 +106,8 @@ Removed APIs in this release
   in favor of direct use of chosen node ``zephyr,bt-uart``.
 * Removed ``CONFIG_BT_MONITOR_ON_DEV_NAME`` Kconfig option
   in favor of direct use of chosen node ``zephyr,bt-mon-uart``.
+* Removed ``CONFIG_MODEM_GSM_UART_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,gsm-ppp``.
 * Removed ``CONFIG_UART_MCUMGR_ON_DEV_NAME`` Kconfig option
   in favor of direct use of chosen node ``zephyr,uart-mcumgr``.
 * Removed ``CONFIG_UART_CONSOLE_ON_DEV_NAME`` Kconfig option
@@ -316,6 +318,8 @@ Drivers and Sensors
     can be used for the previous, non-blocking behaviour.
 
 * Modem
+
+  * Added gsm_ppp devicetree support
 
 
 * Pinmux
