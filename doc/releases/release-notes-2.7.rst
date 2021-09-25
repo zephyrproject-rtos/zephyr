@@ -148,6 +148,12 @@ Architectures
   * AARCH64
 
 
+* RISC-V
+
+  * Added support to RISC-V CPU devicetree compatible bindings
+  * Added support to link with ITCM & DTCM sections
+
+
 * x86
 
 
