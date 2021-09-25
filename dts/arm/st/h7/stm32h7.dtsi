@@ -235,7 +235,7 @@
 
 		wwdg1: watchdog@50003000 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x50003000 0x400>;
+			reg = <0x50003000 0x1000>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
 			interrupts = <0 7>;
 			status = "disabled";
