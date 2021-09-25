@@ -30,7 +30,7 @@
 #include "capabilities.h"
 #include "pacs_internal.h"
 
-#if defined(BT_AUDIO_UNICAST_SERVER)
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
 #define ASE_ID(_ase) ase->ep.status.id
 #define ASE_DIR(_id) \
