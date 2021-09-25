@@ -175,6 +175,8 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Enabled Cypress PSoC-6 Cortex-M4 support
+
 
 * Changes for ARC boards:
 
@@ -192,6 +194,8 @@ Boards & SoC Support
 
 
 * Made these changes in other boards:
+
+  * cy8ckit_062_ble: Added arduino's nexus map
 
 
 * Added support for these following shields:
