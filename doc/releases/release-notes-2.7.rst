@@ -422,6 +422,12 @@ Build and Infrastructure
 
 * West (extensions)
 
+    * openocd runner: Zephyr thread awareness is now available in GDB by default
+      for application builds with :kconfig:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
+      in :ref:`kconfig`. This applies to ``west debug``, ``west debugserver``,
+      and ``west attach``. OpenOCD version later than 0.11.0 must be installed
+      on the host system.
+
 
 Libraries / Subsystems
 **********************
