@@ -9,8 +9,8 @@ from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
+import os
 import sys
-
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
@@ -53,8 +53,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='partition table load address')
         parser.add_argument('--esp-app-address', default='0x10000',
                             help='application load address')
-        parser.add_argument('--esp-device', default='/dev/ttyUSB0',
-                            help='serial port to flash, default /dev/ttyUSB0')
+        parser.add_argument('--esp-device', default=os.environ.get('ESPTOOL_PORT', None),
+                            help='serial port to flash')
         parser.add_argument('--esp-baud-rate', default='921600',
                             help='serial baud rate, default 921600')
         parser.add_argument('--esp-flash-size', default='detect',
@@ -92,22 +92,26 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
-        cmd_flash = [self.espidf, '--chip', 'auto', '--port', self.device,
-                     '--baud', self.baud, '--before', 'default_reset',
-                     '--after', 'hard_reset', 'write_flash', '-u',
-                     '--flash_mode', self.flash_mode,
-                     '--flash_freq', self.flash_freq,
-                     '--flash_size', self.flash_size]
+
+        cmd_flash = [self.espidf, '--chip', 'auto']
+        if self.device is not None:
+            cmd_flash.extend(['--port', self.device])
+        cmd_flash.extend(['--baud', self.baud])
+        cmd_flash.extend(['--before', 'default_reset'])
+        cmd_flash.extend(['--after', 'hard_reset', 'write_flash', '-u'])
+        cmd_flash.extend(['--flash_mode', self.flash_mode])
+        cmd_flash.extend(['--flash_freq', self.flash_freq])
+        cmd_flash.extend(['--flash_size', self.flash_size])
 
         # Execute Python interpreter if calling a Python script
         if self.espidf.lower().endswith(".py") and sys.executable:
             cmd_flash.insert(0, sys.executable)
 
-        if self.bootloader_bin :
+        if self.bootloader_bin:
             cmd_flash.extend([self.boot_address, self.bootloader_bin])
             cmd_flash.extend([self.part_table_address, self.partition_table_bin])
             cmd_flash.extend([self.app_address, bin_name])
-        else :
+        else:
             cmd_flash.extend([self.boot_address, bin_name])
 
         self.logger.info("Flashing esp32 chip on {} ({}bps)".

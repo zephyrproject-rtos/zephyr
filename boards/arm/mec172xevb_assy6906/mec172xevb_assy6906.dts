@@ -17,10 +17,36 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
 	};
+
+	aliases {
+		led0 = &led4;
+		led1 = &led3;
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		i2c7 = &i2c_smb_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led4: led_0 {
+			/* GPIO241/CMP_VOUT0/PWM0_ALT on schematic,
+			 * LED4 on silkscreen.
+			 */
+			gpios = <&gpio_240_276 1 GPIO_ACTIVE_HIGH>;
+			label = "LED 4";
+		};
+		led3: led_1 {
+			/* GPIO175/CMP_VOUT1/PWM8_ALT on schematic,
+			 * LED5 on silkscreen.
+			 */
+			gpios = <&gpio_140_176 29 GPIO_ACTIVE_HIGH>;
+			label = "LED 5";
+		};
+	};
 };
 
 &cpu0 {
-	clock-frequency = <96000000>;
+	status = "okay";
 };
 
 /* Initialize ECIA. Does not initialize child devices */
@@ -28,7 +54,7 @@
 	status = "okay";
 };
 
-&systick {
+&rtimer {
 	status = "okay";
 };
 
@@ -39,4 +65,43 @@
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&i2c_smb_0 {
+	status = "okay";
+	label = "I2C0";
+	port_sel = <0>;
+
+	pca9555@26 {
+		compatible = "nxp,pca95xx";
+		label = "GPIO_P0";
+
+		/* Depends on JP53 for device address.
+		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
+		 * Address is: 0100<A2><A1><A0>b.
+		 *
+		 * Default has pin 1-2 on JP53 connected,
+		 * resulting in device address 0x26.
+		 */
+		reg = <0x26>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&i2c_smb_1 {
+	status = "okay";
+	label = "I2C1";
+	port_sel = <1>;
+};
+
+&i2c_smb_2 {
+	status = "okay";
+	label = "I2C7";
+	port_sel = <7>;
 };

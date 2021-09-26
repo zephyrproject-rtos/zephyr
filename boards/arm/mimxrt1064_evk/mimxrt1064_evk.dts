@@ -17,7 +17,7 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
-		usbd0 = &usb1;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
@@ -209,7 +209,7 @@ arduino_serial: &lpuart3 {
 	};
 };
 
-&usb1 {
+zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
@@ -234,7 +234,15 @@ arduino_serial: &lpuart3 {
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &flexcan2 {
 	status = "okay";
 	bus-speed = <125000>;
+};
+
+&wdog0 {
+	status = "okay";
 };

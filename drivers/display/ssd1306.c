@@ -47,40 +47,61 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
 #endif
 
-struct ssd1306_data {
-	const struct device *reset;
-	const struct device *bus;
-#if DT_INST_ON_BUS(0, spi)
-	struct spi_cs_control cs_ctrl;
-	struct spi_config spi_config;
-	const struct device *data_cmd;
+struct ssd1306_config {
+#if DT_INST_ON_BUS(0, i2c)
+	struct i2c_dt_spec bus;
+#elif DT_INST_ON_BUS(0, spi)
+	struct spi_dt_spec bus;
+	struct gpio_dt_spec data_cmd;
 #endif
+	struct gpio_dt_spec reset;
+};
+
+struct ssd1306_data {
 	uint8_t contrast;
 	uint8_t scan_mode;
 };
 
 #if DT_INST_ON_BUS(0, i2c)
+
+static inline bool ssd1306_bus_ready(const struct device *dev)
+{
+	const struct ssd1306_config *config = dev->config;
+
+	return device_is_ready(config->bus.bus);
+}
+
 static inline int ssd1306_write_bus(const struct device *dev,
 				    uint8_t *buf, size_t len, bool command)
 {
-	struct ssd1306_data *driver = dev->data;
+	const struct ssd1306_config *config = dev->config;
 
-	return i2c_burst_write(driver->bus, DT_INST_REG_ADDR(0),
-			       command ? SSD1306_CONTROL_ALL_BYTES_CMD :
-					 SSD1306_CONTROL_ALL_BYTES_DATA,
-			       buf, len);
+	return i2c_burst_write_dt(&config->bus,
+				  command ? SSD1306_CONTROL_ALL_BYTES_CMD :
+				  SSD1306_CONTROL_ALL_BYTES_DATA,
+				  buf, len);
 }
 
 #elif DT_INST_ON_BUS(0, spi)
 
+static inline bool ssd1306_bus_ready(const struct device *dev)
+{
+	const struct ssd1306_config *config = dev->config;
+
+	if (gpio_pin_configure_dt(&config->data_cmd, GPIO_OUTPUT_INACTIVE) < 0) {
+		return false;
+	}
+
+	return spi_is_ready(&config->bus);
+}
+
 static inline int ssd1306_write_bus(const struct device *dev,
 				    uint8_t *buf, size_t len, bool command)
 {
-	struct ssd1306_data *driver = dev->data;
+	const struct ssd1306_config *config = dev->config;
 	int errno;
 
-	gpio_pin_set(driver->data_cmd, DT_INST_GPIO_PIN(0, data_cmd_gpios),
-		     command ? 0 : 1);
+	gpio_pin_set_dt(&config->data_cmd, command ? 0 : 1);
 	struct spi_buf tx_buf = {
 		.buf = buf,
 		.len = len
@@ -91,7 +112,7 @@ static inline int ssd1306_write_bus(const struct device *dev,
 		.count = 1
 	};
 
-	errno = spi_write(driver->bus, &driver->spi_config, &tx_bufs);
+	errno = spi_write_dt(&config->bus, &tx_bufs);
 
 	return errno;
 }
@@ -322,6 +343,8 @@ static int ssd1306_set_pixel_format(const struct device *dev,
 
 static int ssd1306_init_device(const struct device *dev)
 {
+	const struct ssd1306_config *config = dev->config;
+
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_ENTIRE_DISPLAY_OFF,
 #ifdef CONFIG_SSD1306_REVERSE_MODE
@@ -331,16 +354,13 @@ static int ssd1306_init_device(const struct device *dev)
 #endif
 	};
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct ssd1306_data *driver = dev->data;
-
-	k_sleep(K_MSEC(SSD1306_RESET_DELAY));
-	gpio_pin_set(driver->reset,
-		     DT_INST_GPIO_PIN(0, reset_gpios), 1);
-	k_sleep(K_MSEC(SSD1306_RESET_DELAY));
-	gpio_pin_set(driver->reset,
-		     DT_INST_GPIO_PIN(0, reset_gpios), 0);
-#endif
+	/* Reset if pin connected */
+	if (config->reset.port) {
+		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
+		gpio_pin_set_dt(&config->reset, 1);
+		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
+		gpio_pin_set_dt(&config->reset, 0);
+	}
 
 	/* Turn display off */
 	if (ssd1306_suspend(dev)) {
@@ -378,59 +398,24 @@ static int ssd1306_init_device(const struct device *dev)
 
 static int ssd1306_init(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
+	const struct ssd1306_config *config = dev->config;
 
 	LOG_DBG("");
 
-	driver->bus = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (driver->bus == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_BUS_LABEL(0));
+	if (!ssd1306_bus_ready(dev)) {
+		LOG_ERR("Bus device %s not ready!", config->bus.bus->name);
 		return -EINVAL;
 	}
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	driver->reset = device_get_binding(
-			DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (driver->reset == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_GPIO_LABEL(0, reset_gpios));
-		return -EINVAL;
+	if (config->reset.port) {
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->reset,
+					    GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
 	}
-
-	gpio_pin_configure(driver->reset,
-			   DT_INST_GPIO_PIN(0, reset_gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_INST_GPIO_FLAGS(0, reset_gpios));
-#endif
-
-#if DT_INST_ON_BUS(0, spi)
-	driver->spi_config.frequency = DT_INST_PROP(0, spi_max_frequency);
-	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
-				       SPI_WORD_SET(8) | SPI_LINES_SINGLE;
-	driver->spi_config.slave = DT_INST_REG_ADDR(0);
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	driver->cs_ctrl.gpio_dev = device_get_binding(
-				   DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	driver->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	driver->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	driver->cs_ctrl.delay = 0U;
-	driver->spi_config.cs = &driver->cs_ctrl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
-
-	driver->data_cmd = device_get_binding(
-			   DT_INST_GPIO_LABEL(0, data_cmd_gpios));
-	if (driver->data_cmd == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-				DT_INST_GPIO_LABEL(0, data_cmd_gpios));
-		return -EINVAL;
-	}
-
-	gpio_pin_configure(driver->data_cmd,
-			   DT_INST_GPIO_PIN(0, data_cmd_gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_INST_GPIO_FLAGS(0, data_cmd_gpios));
-#endif /* DT_INST_ON_BUS(0, spi) */
 
 	if (ssd1306_init_device(dev)) {
 		LOG_ERR("Failed to initialize device!");
@@ -439,6 +424,18 @@ static int ssd1306_init(const struct device *dev)
 
 	return 0;
 }
+
+static const struct ssd1306_config ssd1306_config = {
+#if DT_INST_ON_BUS(0, i2c)
+	.bus = I2C_DT_SPEC_INST_GET(0),
+#elif DT_INST_ON_BUS(0, spi)
+	.bus = SPI_DT_SPEC_INST_GET(
+		0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
+		SPI_WORD_SET(8) | SPI_LINES_SINGLE, 0),
+	.data_cmd = GPIO_DT_SPEC_INST_GET(0, data_cmd_gpios),
+#endif
+	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 })
+};
 
 static struct ssd1306_data ssd1306_driver;
 
@@ -456,6 +453,6 @@ static struct display_driver_api ssd1306_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, ssd1306_init, NULL,
-		    &ssd1306_driver, NULL,
-		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
-		    &ssd1306_driver_api);
+		      &ssd1306_driver, &ssd1306_config,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
+		      &ssd1306_driver_api);

@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
@@ -13,6 +14,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -50,8 +52,9 @@
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
@@ -216,15 +219,20 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
+	 *
+	 * Setting `scan->per_scan.sync` to NULL represents cancellation
+	 * requested in the thread context. Checking `sync->timeout_reload`
+	 * confirms if synchronization was established before
+	 * `scan->per_scan.sync` was set to NULL.
 	 */
 	sync = scan->per_scan.sync;
-	if (!sync || sync->timeout_reload) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
 	scan->per_scan.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.sync = NULL;
+	}
+	cpu_dmb();
+	if (!sync || sync->timeout_reload) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	node_rx = (void *)scan->per_scan.node_rx_estab;
@@ -301,7 +309,15 @@ int ull_sync_init(void)
 
 int ull_sync_reset(void)
 {
+	uint16_t handle;
+	void *rx;
 	int err;
+
+	(void)ll_sync_create_cancel(&rx);
+
+	for (handle = 0U; handle < CONFIG_BT_PER_ADV_SYNC_MAX; handle++) {
+		(void)ll_sync_terminate(handle);
+	}
 
 	err = init_reset();
 	if (err) {
@@ -326,6 +342,17 @@ struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle)
 
 	sync = ull_sync_set_get(handle);
 	if (!sync || !sync->timeout_reload) {
+		return NULL;
+	}
+
+	return sync;
+}
+
+struct ll_sync_set *ull_sync_is_valid_get(struct ll_sync_set *sync)
+{
+	if (((uint8_t *)sync < (uint8_t *)ll_sync_pool) ||
+	    ((uint8_t *)sync > ((uint8_t *)ll_sync_pool +
+	     (sizeof(struct ll_sync_set) * (CONFIG_BT_PER_ADV_SYNC_MAX - 1))))) {
 		return NULL;
 	}
 
@@ -358,11 +385,13 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	uint32_t sync_offset_us;
 	uint32_t ready_delay_us;
 	struct node_rx_pdu *rx;
+	uint8_t *data_chan_map;
 	struct lll_sync *lll;
 	uint16_t sync_handle;
 	uint32_t interval_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
+	uint8_t chm_last;
 	uint32_t ret;
 	uint8_t sca;
 
@@ -373,12 +402,17 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* Copy channel map from sca_chm field in sync_info structure, and
 	 * clear the SCA bits.
 	 */
-	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));
-	lll->data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
+	chm_last = lll->chm_first;
+	lll->chm_last = chm_last;
+	data_chan_map = lll->chm[chm_last].data_chan_map;
+	(void)memcpy(data_chan_map, si->sca_chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
 		~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK;
-	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
-						   sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
 		/* Ignore sync setup, invalid available channel count */
 		return;
 	}
@@ -454,7 +488,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync_offset_us += (uint32_t)si->offs * lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (si->offs_adjust ? OFFS_ADJUST_US : 0U);
-	sync_offset_us -= PKT_AC_US(pdu->len, lll->phy);
+	sync_offset_us -= PDU_AC_US(pdu->len, lll->phy, ftr->phy_flags);
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
@@ -467,12 +501,10 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 lll->phy) +
-				       EVENT_OVERHEAD_END_US);
+	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
+			EVENT_OVERHEAD_START_US + ready_delay_us +
+			PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->phy) +
+			EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
@@ -592,6 +624,72 @@ void ull_sync_done(struct node_rx_event_done *done)
 	}
 }
 
+void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
+{
+	struct pdu_adv_sync_chm_upd_ind *chm_upd_ind;
+	struct ll_sync_set *sync;
+	struct lll_sync *lll;
+	uint8_t chm_last;
+	uint16_t ad_len;
+
+	/* Get reference to LLL context */
+	sync = ull_sync_set_get(sync_handle);
+	LL_ASSERT(sync);
+	lll = &sync->lll;
+
+	/* Ignore if already in progress */
+	if (lll->chm_last != lll->chm_first) {
+		return;
+	}
+
+	/* Find the Channel Map Update Indication */
+	do {
+		/* Pick the length and find the Channel Map Update Indication */
+		ad_len = acad[0];
+		if (ad_len && (acad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+			break;
+		}
+
+		/* Add length field size */
+		ad_len += 1U;
+		if (ad_len < acad_len) {
+			acad_len -= ad_len;
+		} else {
+			return;
+		}
+
+		/* Move to next AD data */
+		acad += ad_len;
+	} while (acad_len);
+
+	/* Validate the size of the Channel Map Update Indication */
+	if (ad_len != (sizeof(*chm_upd_ind) + 1U)) {
+		return;
+	}
+
+	/* Pick the parameters into the procedure context */
+	chm_last = lll->chm_last + 1U;
+	if (chm_last == DOUBLE_BUFFER_SIZE) {
+		chm_last = 0U;
+	}
+
+	chm_upd_ind = (void *)&acad[2];
+	(void)memcpy(lll->chm[chm_last].data_chan_map, chm_upd_ind->chm,
+		     sizeof(lll->chm[chm_last].data_chan_map));
+	lll->chm[chm_last].data_chan_count =
+		util_ones_count_get(lll->chm[chm_last].data_chan_map,
+				    sizeof(lll->chm[chm_last].data_chan_map));
+	if (lll->chm[chm_last].data_chan_count < 2) {
+		/* Ignore channel map, invalid available channel count */
+		return;
+	}
+
+	lll->chm_instant = sys_le16_to_cpu(chm_upd_ind->instant);
+
+	/* Set Channel Map Update Procedure in progress */
+	lll->chm_last = chm_last;
+}
+
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 /* @brief Function updates periodic sync slot duration.
  *
@@ -677,8 +775,9 @@ static void timeout_cleanup(struct ll_sync_set *sync)
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};

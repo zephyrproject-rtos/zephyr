@@ -20,6 +20,7 @@
 #include "adv.h"
 #include "mesh.h"
 #include "net.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "crypto.h"
 #include "beacon.h"
@@ -422,7 +423,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 	}
 }
 
-BT_MESH_SUBNET_CB_DEFINE(subnet_evt);
+BT_MESH_SUBNET_CB_DEFINE(beacon) = {
+	.evt_handler = subnet_evt,
+};
 
 void bt_mesh_beacon_init(void)
 {

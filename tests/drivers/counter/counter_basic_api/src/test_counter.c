@@ -11,7 +11,9 @@
 LOG_MODULE_REGISTER(test);
 
 static struct k_sem top_cnt_sem;
+static volatile uint32_t top_cnt;
 static struct k_sem alarm_cnt_sem;
+static volatile uint32_t alarm_cnt;
 
 static void top_handler(const struct device *dev, void *user_data);
 
@@ -70,6 +72,9 @@ static const char * const devices[] = {
 	LABELS_FOR_DT_COMPAT(microchip_xec_timer)
 	LABELS_FOR_DT_COMPAT(nxp_imx_epit)
 	LABELS_FOR_DT_COMPAT(nxp_imx_gpt)
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+	LABELS_FOR_DT_COMPAT(nxp_lpc_ctimer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif
@@ -94,6 +99,9 @@ typedef bool (*counter_capability_func_t)(const char *dev_name);
 static void counter_setup_instance(const char *dev_name)
 {
 	k_sem_reset(&alarm_cnt_sem);
+	if (!k_is_user_context()) {
+		alarm_cnt = 0;
+	}
 }
 
 static void counter_tear_down_instance(const char *dev_name)
@@ -168,6 +176,12 @@ static void top_handler(const struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data,
 			"%s: Unexpected callback", dev->name);
+	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+		top_cnt++;
+
+		return;
+	}
+
 	k_sem_give(&top_cnt_sem);
 }
 
@@ -176,8 +190,9 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	const struct device *dev;
 	int err;
 	uint32_t cnt;
+	uint32_t top_value;
 	uint32_t counter_period_us;
-	uint32_t top_cnt;
+	uint32_t top_handler_cnt;
 	struct counter_top_cfg top_cfg = {
 		.callback = top_handler,
 		.user_data = exp_user_data,
@@ -185,6 +200,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	};
 
 	k_sem_reset(&top_cnt_sem);
+	top_cnt = 0;
 
 	dev = device_get_binding(dev_name);
 	if (strcmp(dev_name, "RTC_0") == 0) {
@@ -206,8 +222,8 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
 	} else {
-		top_cnt = counter_get_top_value(dev);
-		err = (cnt < top_cnt) ? 0 : 1;
+		top_value = counter_get_top_value(dev);
+		err = (cnt < top_value) ? 0 : 1;
 	}
 	zassert_true(err == 0, "%s: Counter should progress", dev_name);
 
@@ -217,10 +233,11 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 	k_busy_wait(5.2*counter_period_us);
 
-	top_cnt = k_sem_count_get(&top_cnt_sem);
-	zassert_true(top_cnt == 5U,
+	top_handler_cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		top_cnt : k_sem_count_get(&top_cnt_sem);
+	zassert_true(top_handler_cnt == 5U,
 			"%s: Unexpected number of turnarounds (%d).",
-			dev_name, top_cnt);
+			dev_name, top_handler_cnt);
 }
 
 void test_set_top_value_with_alarm(void)
@@ -234,7 +251,7 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 	const struct device *dev;
 	int err;
 	uint32_t cnt;
-	uint32_t top_cnt;
+	uint32_t top_value;
 	uint32_t counter_period_us;
 	struct counter_top_cfg top_cfg = {
 		.callback = NULL,
@@ -262,8 +279,8 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
 	} else {
-		top_cnt = counter_get_top_value(dev);
-		err = (cnt < top_cnt) ? 0 : 1;
+		top_value = counter_get_top_value(dev);
+		err = (cnt < top_value) ? 0 : 1;
 	}
 	zassert_true(err == 0, "%s: Counter should progress", dev_name);
 
@@ -319,6 +336,10 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			"%s: Unexpected callback", dev->name);
 	}
 
+	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+		alarm_cnt++;
+		return;
+	}
 	zassert_true(k_is_in_isr(), "%s: Expected interrupt context",
 			dev->name);
 	k_sem_give(&alarm_cnt_sem);
@@ -329,7 +350,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	const struct device *dev;
 	int err;
 	uint32_t ticks;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	uint32_t counter_period_us;
 	struct counter_top_cfg top_cfg = {
 		.callback = top_handler,
@@ -353,6 +374,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	alarm_cfg.user_data = &alarm_cfg;
 
 	k_sem_reset(&alarm_cnt_sem);
+	alarm_cnt = 0;
 
 	if (counter_get_num_of_channels(dev) < 1U) {
 		/* Counter does not support any alarm */
@@ -383,14 +405,14 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 
 	k_busy_wait(2*(uint32_t)counter_ticks_to_us(dev, ticks));
 
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
-			"%s: Expecting alarm callback", dev_name);
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(1, cnt, "%s: Expecting alarm callback", dev_name);
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
-			"%s: Expecting alarm callback", dev_name);
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(1, cnt, "%s: Expecting alarm callback", dev_name);
 
 	err = counter_cancel_channel_alarm(dev, 0);
 	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
@@ -453,6 +475,13 @@ static void alarm_handler2(const struct device *dev, uint8_t chan_id,
 			   uint32_t counter,
 			   void *user_data)
 {
+	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+		clbk_data[alarm_cnt] = user_data;
+		alarm_cnt++;
+
+		return;
+	}
+
 	clbk_data[k_sem_count_get(&alarm_cnt_sem)] = user_data;
 	k_sem_give(&alarm_cnt_sem);
 }
@@ -468,7 +497,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	const struct device *dev;
 	int err;
 	uint32_t ticks;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	uint32_t counter_period_us;
 	struct counter_top_cfg top_cfg = {
 		.callback = top_handler,
@@ -498,6 +527,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	alarm_cfg2.user_data = &alarm_cfg2;
 
 	k_sem_reset(&alarm_cnt_sem);
+	alarm_cnt = 0;
 
 	if (counter_get_num_of_channels(dev) < 2U) {
 		/* Counter does not support two alarms */
@@ -507,9 +537,10 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
 
-	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err,
-			"%s: Counter failed to set top value", dev_name);
+	if (set_top_value_capable(dev_name)) {
+		err = counter_set_top_value(dev, &top_cfg);
+		zassert_equal(0, err, "%s: Counter failed to set top value", dev_name);
+	}
 
 	k_busy_wait(3*(uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
 
@@ -519,11 +550,17 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
 	zassert_equal(0, err, "%s: Counter set alarm failed", dev_name);
 
-	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks * 2U));
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(2, alarm_cnt,
+#ifdef CONFIG_COUNTER_MCUX_CTIMER
+	k_busy_wait((uint32_t)counter_ticks_to_us(dev, 0xFFFFFFFF));
+#else
+	k_busy_wait(1.2 * counter_ticks_to_us(dev, ticks * 2U));
+#endif
+
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(2, cnt,
 			"%s: Invalid number of callbacks %d (expected: %d)",
-			dev_name, alarm_cnt, 2);
+			dev_name, cnt, 2);
 
 	zassert_equal(&alarm_cfg2, clbk_data[0],
 			"%s: Expected different order or callbacks",
@@ -562,7 +599,7 @@ void test_all_channels_instance(const char *dev_name)
 	bool limit_reached = false;
 	struct counter_alarm_cfg alarm_cfgs;
 	uint32_t ticks;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	uint32_t counter_period_us;
 
 	if (strcmp(dev_name, "RTC_0") == 0) {
@@ -594,8 +631,9 @@ void test_all_channels_instance(const char *dev_name)
 	}
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(nchan, alarm_cnt,
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(nchan, cnt,
 			"%s: Expecting alarm callback", dev_name);
 
 	for (int i = 0; i < nchan; i++) {
@@ -624,7 +662,7 @@ void test_all_channels(void)
 void test_late_alarm_instance(const char *dev_name)
 {
 	int err;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	const struct device *dev = device_get_binding(dev_name);
 	uint32_t tick_us = (uint32_t)counter_ticks_to_us(dev, 1);
 	uint32_t guard = counter_us_to_ticks(dev, 200);
@@ -651,10 +689,11 @@ void test_late_alarm_instance(const char *dev_name)
 	/* wait couple of ticks */
 	k_busy_wait(5*tick_us);
 
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(1, cnt,
 			"%s: Expected %d callbacks, got %d\n",
-			dev_name, 1, alarm_cnt);
+			dev_name, 1, cnt);
 
 	err = counter_get_value(dev, &(alarm_cfg.ticks));
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
@@ -667,10 +706,11 @@ void test_late_alarm_instance(const char *dev_name)
 	/* wait to ensure that tick+1 timeout will expire. */
 	k_busy_wait(3*tick_us);
 
-	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(2, alarm_cnt,
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+		alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	zassert_equal(2, cnt,
 			"%s: Expected %d callbacks, got %d\n",
-			dev_name, 2, alarm_cnt);
+			dev_name, 2, cnt);
 }
 
 void test_late_alarm_error_instance(const char *dev_name)
@@ -739,7 +779,7 @@ void test_late_alarm_error(void)
 static void test_short_relative_alarm_instance(const char *dev_name)
 {
 	int err;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	const struct device *dev = device_get_binding(dev_name);
 	uint32_t tick_us = (uint32_t)counter_ticks_to_us(dev, 1);
 	struct counter_alarm_cfg alarm_cfg = {
@@ -762,10 +802,11 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 		/* wait to ensure that tick+1 timeout will expire. */
 		k_busy_wait(3*tick_us);
 
-		alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-		zassert_equal(i + 1, alarm_cnt,
+		cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+			alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+		zassert_equal(i + 1, cnt,
 				"%s: Expected %d callbacks, got %d\n",
-				dev_name, i + 1, alarm_cnt);
+				dev_name, i + 1, cnt);
 	}
 }
 
@@ -783,6 +824,7 @@ static bool short_relative_capable(const char *dev_name)
 		.ticks = 1
 	};
 	int err;
+	uint32_t cnt;
 	bool ret;
 
 	if (single_channel_alarm_capable(dev_name) == false) {
@@ -796,6 +838,7 @@ static bool short_relative_capable(const char *dev_name)
 	}
 
 	k_sem_reset(&alarm_cnt_sem);
+	alarm_cnt = 0;
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	if (err != 0) {
 		ret = false;
@@ -803,7 +846,9 @@ static bool short_relative_capable(const char *dev_name)
 	}
 
 	k_busy_wait(counter_ticks_to_us(dev, 10));
-	if (k_sem_count_get(&alarm_cnt_sem) == 1) {
+	cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+			alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+	if (cnt == 1) {
 		ret = true;
 	} else {
 		ret = false;
@@ -812,6 +857,7 @@ static bool short_relative_capable(const char *dev_name)
 
 end:
 	k_sem_reset(&alarm_cnt_sem);
+	alarm_cnt = 0;
 	counter_stop(dev);
 	k_busy_wait(1000);
 
@@ -830,7 +876,7 @@ static void test_short_relative_alarm(void)
 static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 {
 	int err;
-	uint32_t alarm_cnt;
+	uint32_t cnt;
 	const struct device *dev = device_get_binding(dev_name);
 	uint32_t us = 1000;
 	uint32_t ticks = counter_us_to_ticks(dev, us);
@@ -878,10 +924,11 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 		zassert_equal(0, err, "%s: Failed to cancel an alarm (err: %d)",
 					dev_name, err);
 
-		alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-		zassert_equal(0, alarm_cnt,
+		cnt = IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+			alarm_cnt : k_sem_count_get(&alarm_cnt_sem);
+		zassert_equal(0, cnt,
 				"%s: Expected %d callbacks, got %d (i:%d)\n",
-				dev_name, 0, alarm_cnt, i);
+				dev_name, 0, cnt, i);
 	}
 }
 

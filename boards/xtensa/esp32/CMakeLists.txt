@@ -19,6 +19,10 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     -B ${espidf_build_dir}/bootloader -DSDKCONFIG=${espidf_build_dir}/sdkconfig
     -DIDF_PATH=${ESP_IDF_PATH} -DIDF_TARGET=${CONFIG_BOARD}
     -DPYTHON_DEPS_CHECKED=1
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
+    -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
     BUILD_COMMAND
     ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""      # This particular build system has no install command

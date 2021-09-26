@@ -20,6 +20,7 @@
 
 #include "test.h"
 #include "adv.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "provisioner.h"
 #include "net.h"
@@ -162,6 +163,7 @@ void bt_mesh_reset(void)
 	}
 
 	bt_mesh.iv_index = 0U;
+	bt_mesh.ivu_duration = 0;
 	bt_mesh.seq = 0U;
 
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));

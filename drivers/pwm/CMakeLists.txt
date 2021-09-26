@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_PWM_TELINK_B91	pwm_b91.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_STM32		pwm_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SIFIVE		pwm_sifive.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_NRF5_SW		pwm_nrf5_sw.c)
@@ -12,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_ITE_IT8XXX2	pwm_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_LED_ESP32	pwm_led_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SAM		pwm_sam.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_MCUX		pwm_mcux.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_MCUX_SCTIMER	pwm_mcux_sctimer.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XEC		pwm_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_LITEX		pwm_litex.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_RV32M1_TPM	pwm_rv32m1_tpm.c)

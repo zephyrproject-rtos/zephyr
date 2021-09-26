@@ -14,3 +14,5 @@ add_subdirectory_ifdef(CONFIG_BT_AUDIO audio)
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   add_subdirectory(controller)
 endif()
+
+zephyr_include_directories(${ZEPHYR_BASE}/subsys/bluetooth)

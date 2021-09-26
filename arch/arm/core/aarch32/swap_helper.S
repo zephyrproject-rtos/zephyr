@@ -20,13 +20,17 @@
 #include <arch/cpu.h>
 #include <syscall.h>
 
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <arch/arm/aarch32/cortex_m/cpu.h>
+#endif
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_svc)
 GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
+#if defined(CONFIG_USERSPACE)
 GTEXT(z_arm_do_syscall)
-GDATA(_k_neg_eagain)
+#endif
 
 GDATA(_kernel)
 
@@ -100,7 +104,7 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-out thread had been using the FP registers. */
-    tst lr, #0x10    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    tst lr, #_EXC_RETURN_FTYPE_Msk
     bne out_fp_endif
 
     /* FP context active: set FP state and store callee-saved registers.
@@ -130,7 +134,7 @@ out_fp_endif:
     cpsid i
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
-    msr BASEPRI, r0
+    msr BASEPRI_MAX, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
 #elif defined(CONFIG_ARMV7_R)
     /*
@@ -207,8 +211,7 @@ out_fp_endif:
     /* Restore previous interrupt disable state (irq_lock key)
      * (We clear the arch.basepri field after restoring state)
      */
-#if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0) || \
-	defined(CONFIG_CPU_CORTEX_M1)) && _thread_offset_to_basepri > 124
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && (_thread_offset_to_basepri > 124)
     /* Doing it this way since the offset to thread->arch.basepri can in
      * some configurations be larger than the maximum of 124 for ldr/str
      * immediate offsets.
@@ -287,7 +290,7 @@ _thread_irq_disabled:
 
 #ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-in thread had been using the FP registers. */
-    tst lr, #0x10 /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    tst lr, #_EXC_RETURN_FTYPE_Msk
     beq in_fp_active
     /* FP context inactive for swapped-in thread:
      * - reset FPSCR to 0
@@ -309,7 +312,7 @@ in_fp_active:
 in_fp_endif:
     /* Clear CONTROL.FPCA that may have been set by FP instructions */
     mrs r3, CONTROL
-    bic r3, #0x4 /* CONTROL.FPCA Msk */
+    bic r3, #_CONTROL_FPCA_Msk
     msr CONTROL, r3
     isb
 #endif
@@ -355,6 +358,15 @@ _thread_irq_disabled:
     cps #MODE_SYS
     ldm r0, {r4-r11, sp}
     cps #MODE_SVC
+
+#if defined (CONFIG_ARM_MPU)
+    /* r2 contains k_thread */
+    mov r0, r2
+    /* Re-program dynamic memory map */
+    push {r2, lr}
+    bl z_arm_configure_dynamic_mpu_regions
+    pop {r2, lr}
+#endif
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -408,7 +420,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
    * MSP or PSP
    */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-  movs r0, #0x4
+  movs r0, #_EXC_RETURN_SPSEL_Msk
   mov r1, lr
   tst r1, r0
   beq _stack_frame_msp
@@ -418,7 +430,7 @@ _stack_frame_msp:
   mrs r0, MSP
 _stack_frame_endif:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    tst lr, #0x4    /* did we come from thread mode ? */
+    tst lr, #_EXC_RETURN_SPSEL_Msk /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */
@@ -605,6 +617,29 @@ valid_syscall_id:
  * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
+#if defined(CONFIG_USERSPACE)
+    /* Determine if incoming thread was in user context */
+    push {r0}
+    mrs r0, spsr
+    and r0, #MODE_MASK
+    cmp r0, #MODE_USR
+    bne svc_system_thread
+
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+
+    /* Save away user stack pointer */
+    cps #MODE_SYS
+    str sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+
+    /* Switch to privileged stack */
+    ldr sp, [r0, #_thread_offset_to_priv_stack_end] /* priv stack end */
+    cps #MODE_SVC
+
+svc_system_thread:
+    pop {r0}
+#endif
+
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
      * Save r12 and the lr as we could be swapping in another process and
@@ -641,17 +676,22 @@ SECTION_FUNC(TEXT, z_arm_svc)
     beq demux
 
     ldr r1, [lr, #-2]
-    bic r1, #0xff00
+    and r1, #0xff
 
    /*
     * grab service call number:
     * 0: context switch
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
-    * Planned implementation of system calls for memory protection will
-    * expand this case.
+    * 3: system calls for memory protection
     */
 demux:
+
+#if defined(CONFIG_USERSPACE)
+    cmp r1, #_SVC_CALL_SYSTEM_CALL
+    beq _do_syscall
+#endif
+
     cmp r1, #_SVC_CALL_CONTEXT_SWITCH
     beq _context_switch
 
@@ -672,11 +712,123 @@ _context_switch:
     b z_arm_int_exit
 
 _oops:
-    push {r0, lr}
-    blx z_do_kernel_oops
-    pop {r0, lr}
-    cpsie i
-    movs pc, lr
+    /*
+     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
+     * exception reason.
+     */
+    cps #MODE_SYS
+    mov r0, sp
+    cps #MODE_SVC
+    bl z_do_kernel_oops
+    b z_arm_int_exit
+
+#if defined(CONFIG_USERSPACE)
+    /*
+     * System call will setup a jump to the _do_arm_syscall function
+     * when the SVC returns via the bx lr.
+     *
+     * There is some trickery involved here because we have to preserve
+     * the original PC value so that we can return back to the caller of
+     * the SVC.
+     *
+     * On SVC exception, the USER/SYSTEM stack looks like the following:
+     *
+     * sp+0:   r0
+     * sp+4:   r1
+     * sp+8:   r2
+     * sp+12:  r3
+     * sp+16:  r12
+     * sp+20:  LR_svc (address of opcode just following SVC opcode )
+     *
+     * Registers look like:
+     * r0 - arg1
+     * r1 - arg2
+     * r2 - arg3
+     * r3 - arg4
+     * r4 - arg5
+     * r5 - arg6
+     * r6 - call_id
+     * r8 - saved link register
+     */
+_do_syscall:
+    /* validate syscall limit, only set priv mode if valid */
+    ldr ip, =K_SYSCALL_LIMIT
+    cmp r6, ip
+    blo valid_syscall_id
+
+    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    cps #MODE_SYS
+    str r6, [sp]
+    cps #MODE_SVC
+    ldr r6, =K_SYSCALL_BAD
+
+valid_syscall_id:
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    bic r1, #1
+    /* Store (privileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
+    /*
+     * restore r0-r3 from supervisor stack before changing to system mode.
+     * r0,r1 saved just after valid_syscall_id
+     * r2,r3 saved just after z_arm_svc
+     */
+    pop {r0-r3}
+
+    add sp,sp,r3 /* un-do stack pointer alignment to double-word boundary */
+
+    /* Switch to system mode */
+    cps #MODE_SYS
+
+    /*
+     * Restore the nested level.  The thread that is doing the system call may
+     * be put to sleep, as in the case of waiting in k_msgq_get() with
+     * K_FOREVER, so we don't want the nesting level to be elevated during
+     * that complete time.
+     */
+    ldr r2, =_kernel
+    ldr r1, [r2, #_kernel_offset_to_nested]
+    sub r1, r1, #1
+    str r1, [r2, #_kernel_offset_to_nested]
+
+    /*
+     * restore r0-r3 from stack since we've used them above during demux
+     */
+    ldr r0, [sp, #0]
+    ldr r1, [sp, #4]
+    ldr r2, [sp, #8]
+    ldr r3, [sp, #12]
+
+    /*
+     * grab return address from USER/SYSTEM stack frame
+     * (just past the SVC opcode)
+     */
+    ldr r8, [sp, #20]
+
+    /*
+     * User stack left with:
+     *
+     * sp:    r0
+     * sp+4:  r1
+     * sp+8:  r2
+     * sp+12: r3
+     * sp+16: r12
+     * sp+20: LR_svc (address of opcode just following SVC opcode )
+     */
+
+    /* branch to _arm_do_syscall.  We will not return here. */
+    b z_arm_do_syscall
+#endif
 
 GTEXT(z_arm_cortex_r_svc)
 SECTION_FUNC(TEXT, z_arm_cortex_r_svc)

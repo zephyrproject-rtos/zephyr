@@ -353,7 +353,7 @@ static int bmm150_channel_get(const struct device *dev,
 		bmm150_convert(val, drv_data->sample_y);
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		bmm150_convert(val, drv_data->sample_x);
+		bmm150_convert(val, drv_data->sample_z);
 		break;
 	case SENSOR_CHAN_MAGN_XYZ:
 		bmm150_convert(val, drv_data->sample_x);

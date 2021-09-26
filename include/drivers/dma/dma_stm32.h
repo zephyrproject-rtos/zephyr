@@ -19,12 +19,19 @@
 #define STM32_DMA_SLOT(id, dir, slot) DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
 #endif
 
-#define STM32_DMA_CHANNEL_CONFIG(id, dir)					\
-		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
+#define STM32_DMA_FEATURES(id, dir) 0
+#else
 #define STM32_DMA_FEATURES(id, dir)						\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, features)
+#endif
+
 #define STM32_DMA_CTLR(id, dir)						\
 		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
+#define STM32_DMA_CHANNEL_CONFIG(id, dir)					\
+		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 
 /* macros for channel-config */
 /* direction defined on bits 6-7 */

@@ -10,7 +10,7 @@
 # $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
 
 if(NOT DEFINED EMU_PLATFORM)
-  set(EMU_PLATFORM armfvp)
+  set(EMU_PLATFORM qemu)
 endif()
 
 if (EMU_PLATFORM STREQUAL "qemu")

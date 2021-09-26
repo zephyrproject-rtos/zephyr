@@ -51,10 +51,8 @@ struct pwm_it8xxx2_cfg {
 #define DRV_REG(dev)		(struct pwm_it8xxx2_regs *)(DRV_CONFIG(dev)->base)
 #define DEV_PINMUX(inst)	\
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DT_NODELABEL(pinctrl_pwm##inst), pinctrls, 0))
-#define DEV_PIN(inst)		\
-	DT_PHA(DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), pinctrl_0, 0), pinctrls, pin)
-#define DEV_ALT_FUN(inst)	\
-	DT_PHA(DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), pinctrl_0, 0), pinctrls, alt_func)
+#define DEV_PIN(inst)		DT_PHA(DT_INST_PINCTRL_0(inst, 0), pinctrls, pin)
+#define DEV_ALT_FUN(inst)	DT_PHA(DT_INST_PINCTRL_0(inst, 0), pinctrls, alt_func)
 
 static void pwm_enable(const struct device *dev, int enabled)
 {

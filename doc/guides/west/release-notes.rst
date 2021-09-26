@@ -3,6 +3,59 @@
 West Release Notes
 ##################
 
+v0.11.1
+*******
+
+New features:
+
+- ``west status`` now only prints output for projects which have a nonempty
+  status.
+
+Bug fixes:
+
+- The manifest file parser was incorrectly allowing project names which contain
+  the path separator characters ``/`` and ``\``. These invalid characters are
+  now rejected.
+
+  Note: if you need to place a project within a subdirectory of the workspace
+  topdir, use the ``path:`` key. If you need to customize a project's fetch URL
+  relative to its remote ``url-base:``, use ``repo-path:``. See
+  :ref:`west-manifests-projects` for examples.
+
+- The changes made in west v0.10.1 to the ``west init --manifest-rev`` option
+  which selected the default branch name were leaving the manifest repository
+  in a detached HEAD state. This has been fixed by using ``git clone`` internally
+  instead of ``git init`` and ``git fetch``. See `issue #522`_ for details.
+
+- The :envvar:`WEST_CONFIG_LOCAL` environment variable now correctly
+  overrides the default location, :file:`<workspace topdir>/.west/config`.
+
+- ``west update --fetch=smart`` (``smart`` is the default) now correctly skips
+  fetches for project revisions which are `lightweight tags`_ (it already
+  worked correctly for annotated tags; only lightweight tags were unnecessarily
+  fetched).
+
+Other changes:
+
+- The fix for issue #522 mentioned above introduces a new restriction. The
+  ``west init --manifest-rev`` option value, if given, must now be either a
+  branch or a tag. In particular, "pseudo-branches" like GitHub's
+  ``pull/1234/head`` references which could previously be used to fetch a pull
+  request can no longer be passed to ``--manifest-rev``. Users must now fetch
+  and check out such revisions manually after running ``west init``.
+
+:ref:`API <west-apis>` changes:
+
+- ``west.manifest.Manifest.get_projects()`` avoids incorrect results in
+  some edge cases described in `issue #523`_.
+
+- ``west.manifest.Project.sha()`` now works correctly for tag revisions.
+  (This applies to both lightweight and annotated tags.)
+
+.. _lightweight tags: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+.. _issue #522: https://github.com/zephyrproject-rtos/west/issues/522
+.. _issue #523: https://github.com/zephyrproject-rtos/west/issues/523
+
 v0.11.0
 *******
 

@@ -58,6 +58,8 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+source "drivers/flash/Kconfig.b91"
+
 source "drivers/flash/Kconfig.at45"
 
 source "drivers/flash/Kconfig.esp32"

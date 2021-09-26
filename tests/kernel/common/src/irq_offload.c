@@ -148,7 +148,9 @@ __no_optimization void test_nop(void)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-#elif defined(CONFIG_ARMV8_A)
+
+#elif defined(CONFIG_ARMV8_A) || defined(CONFIG_BOARD_EHL_CRB)	\
+	|| (CONFIG_BOARD_UP_SQUARED) || (CONFIG_SOC_FAMILY_INTEL_ADSP)
 	/* the ARMv8-A ARM states the following:
 	 * No Operation does nothing, other than advance the value of
 	 * the program counter by 4. This instruction can be used for
@@ -158,7 +160,10 @@ __no_optimization void test_nop(void)
 	 * ,leave it unchanged, or even reduce it. Therefore, NOP
 	 * instructions are not suitable for timing loops.
 	 *
-	 * So we skip the this test, it will get a negative cycles.
+	 * So we skip this test, it will get a negative cycles.
+	 *
+	 * And on physical EHL_CRB, up squared and INTEL ADSP boards,
+	 * we also got a similar situation, we skip the check as well.
 	 */
 	ztest_test_skip();
 #endif

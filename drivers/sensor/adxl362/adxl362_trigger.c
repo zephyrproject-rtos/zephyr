@@ -116,35 +116,34 @@ int adxl362_trigger_set(const struct device *dev,
 
 int adxl362_init_interrupt(const struct device *dev)
 {
-	struct adxl362_data *drv_data = dev->data;
 	const struct adxl362_config *cfg = dev->config;
+	struct adxl362_data *drv_data = dev->data;
 	int ret;
 
 	k_mutex_init(&drv_data->trigger_mutex);
 
-	drv_data->gpio = device_get_binding(cfg->gpio_port);
-	if (drv_data->gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			cfg->gpio_port);
-		return -EINVAL;
+	if (!device_is_ready(cfg->interrupt.port)) {
+		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
+		return -ENODEV;
 	}
 
 	ret = adxl362_set_interrupt_mode(dev, CONFIG_ADXL362_INTERRUPT_MODE);
-
-	if (ret) {
-		return -EFAULT;
+	if (ret < 0) {
+		return ret;
 	}
 
-	gpio_pin_configure(drv_data->gpio, cfg->int_gpio,
-			   GPIO_INPUT | cfg->int_flags);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl362_gpio_callback,
-			   BIT(cfg->int_gpio));
+			   BIT(cfg->interrupt.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		LOG_ERR("Failed to set gpio callback!");
-		return -EIO;
+	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
+	if (ret < 0) {
+		return ret;
 	}
 
 	drv_data->dev = dev;
@@ -161,8 +160,11 @@ int adxl362_init_interrupt(const struct device *dev)
 	drv_data->work.handler = adxl362_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

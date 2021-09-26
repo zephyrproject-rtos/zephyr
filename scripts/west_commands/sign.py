@@ -400,6 +400,8 @@ class RimageSigner(Signer):
             return 'icl'
         if 'intel_adsp_cavs25' in board:
             return 'tgl'
+        if 'nxp_adsp_imx8' in board:
+            return 'imx8'
 
         log.die('Signing not supported for board ' + board)
 
@@ -429,11 +431,17 @@ class RimageSigner(Signer):
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
 
-        bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
-        kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
-        out_bin = str(b / 'zephyr' / 'zephyr.ri')
-        out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
-        out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        if 'imx8' in target:
+            kernel = str(b / 'zephyr' / 'zephyr.elf')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        else:
+            bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
+            kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
+            out_bin = str(b / 'zephyr' / 'zephyr.ri')
+            out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+            out_tmp = str(b / 'zephyr' / 'zephyr.rix')
         conf_path_cmd = []
         if cache.get('RIMAGE_CONFIG_PATH') and not args.tool_data:
             rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
@@ -451,9 +459,14 @@ class RimageSigner(Signer):
         else:
             no_manifest = False
 
-        sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
-                     [bootloader, kernel])
+        if 'imx8' in target:
+            sign_base = ([tool_path] + args.tool_args +
+                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         [kernel])
+        else:
+            sign_base = ([tool_path] + args.tool_args +
+                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         [bootloader, kernel])
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))

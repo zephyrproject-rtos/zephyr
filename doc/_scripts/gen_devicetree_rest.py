@@ -22,10 +22,6 @@ from devicetree import edtlib
 
 import gen_helpers
 
-# A line of '-' characters in vendor-prefixes.txt that separates
-# the data from comments about it.
-VENDOR_PREFIXES_SEPARATOR = '-' * 50
-
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 GENERIC_OR_VENDOR_INDEPENDENT = 'Generic or vendor-independent'
@@ -77,19 +73,7 @@ class VndLookup:
         vnd2vendor = {
             None: GENERIC_OR_VENDOR_INDEPENDENT,
         }
-        found_separator = False     # have we found the '-----' separator?
-        with open(vendor_prefixes, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and found_separator:
-                    # Every line after the separator should be in this form:
-                    #
-                    # <vnd><TAB><vendor>
-                    vnd_vendor = line.split('\t', 1)
-                    assert len(vnd_vendor) == 2, line
-                    vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
-                elif line.startswith(VENDOR_PREFIXES_SEPARATOR):
-                    found_separator = True
+        vnd2vendor.update(edtlib.load_vendor_prefixes_txt(vendor_prefixes))
 
         logger.info('found %d vendor prefixes in %s', len(vnd2vendor) - 1,
                     vendor_prefixes)
@@ -242,9 +226,11 @@ def load_base_binding():
     # nodes from node-specific properties.
 
     base_yaml = ZEPHYR_BASE / 'dts' / 'bindings' / 'base' / 'base.yaml'
+    base_includes = {"pm.yaml": os.fspath(ZEPHYR_BASE / 'dts' / 'bindings' / 'base'/ 'pm.yaml')}
+
     if not base_yaml.is_file():
         sys.exit(f'Expected to find base.yaml at {base_yaml}')
-    return edtlib.Binding(os.fspath(base_yaml), {}, require_compatible=False,
+    return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
 
 def dump_content(bindings, base_binding, vnd_lookup, out_dir):

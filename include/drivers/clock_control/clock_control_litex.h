@@ -23,7 +23,6 @@
 #include <zephyr/types.h>
 
 #define MMCM			DT_NODELABEL(clock0)
-#define MMCM_NAME		DT_PROP(DT_NODELABEL(clock0), label)
 #define NCLKOUT			DT_PROP_LEN(MMCM, clock_output_names)
 
 /**

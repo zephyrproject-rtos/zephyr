@@ -113,10 +113,10 @@ struct bt_mesh_prov_link {
 	uint8_t oob_size;               /* Authen size */
 	uint8_t auth[16];               /* Authen value */
 
-	uint8_t dhkey[32];              /* Calculated DHKey */
+	uint8_t dhkey[BT_DH_KEY_LEN];   /* Calculated DHKey */
 	uint8_t expect;                 /* Next expected PDU */
 
-	uint8_t conf[16];               /* Remote Confirmation */
+	uint8_t conf[16];               /* Local/Remote Confirmation */
 	uint8_t rand[16];               /* Local Random */
 
 	uint8_t conf_salt[16];          /* ConfirmationSalt */
@@ -147,7 +147,7 @@ static inline void bt_mesh_prov_buf_init(struct net_buf_simple *buf, uint8_t typ
 	net_buf_simple_add_u8(buf, type);
 }
 
-int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]));
+int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[BT_PUB_KEY_LEN]));
 
 bool bt_mesh_prov_active(void);
 

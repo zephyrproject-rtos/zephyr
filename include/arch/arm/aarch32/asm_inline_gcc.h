@@ -56,7 +56,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	__asm__ volatile(
 		"mov %1, %2;"
 		"mrs %0, BASEPRI;"
-		"msr BASEPRI, %1;"
+		"msr BASEPRI_MAX, %1;"
 		"isb;"
 		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)

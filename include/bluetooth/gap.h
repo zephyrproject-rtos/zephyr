@@ -50,6 +50,7 @@ extern "C" {
 #define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /* LE SC Confirmation Value */
 #define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /* LE SC Random Value */
 #define BT_DATA_URI                     0x24 /* URI */
+#define BT_DATA_CHANNEL_MAP_UPDATE_IND  0x28 /* Channel Map Update Indication */
 #define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
 #define BT_DATA_MESH_MESSAGE            0x2a /* Mesh Networking PDU */
 #define BT_DATA_MESH_BEACON             0x2b /* Mesh Beacon */
@@ -75,6 +76,12 @@ extern "C" {
 #define BT_GAP_ADV_FAST_INT_MAX_2               0x00f0  /* 150 ms   */
 #define BT_GAP_ADV_SLOW_INT_MIN                 0x0640  /* 1 s      */
 #define BT_GAP_ADV_SLOW_INT_MAX                 0x0780  /* 1.2 s    */
+#define BT_GAP_PER_ADV_FAST_INT_MIN_1           0x0018  /* 30 ms    */
+#define BT_GAP_PER_ADV_FAST_INT_MAX_1           0x0030  /* 60 ms    */
+#define BT_GAP_PER_ADV_FAST_INT_MIN_2           0x0050  /* 100 ms   */
+#define BT_GAP_PER_ADV_FAST_INT_MAX_2           0x0078  /* 150 ms   */
+#define BT_GAP_PER_ADV_SLOW_INT_MIN             0x0320  /* 1 s      */
+#define BT_GAP_PER_ADV_SLOW_INT_MAX             0x03C0  /* 1.2 s    */
 #define BT_GAP_INIT_CONN_INT_MIN                0x0018  /* 30 ms    */
 #define BT_GAP_INIT_CONN_INT_MAX                0x0028  /* 50 ms    */
 

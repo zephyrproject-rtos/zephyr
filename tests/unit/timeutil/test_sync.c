@@ -357,6 +357,47 @@ static void test_local_from_ref(void)
 	tlocal_from_ref("ext", &cfg2);
 }
 
+static void test_large_linearity(void)
+{
+	uint64_t inputs[] = {
+		1000ULL,
+		3999999999ULL,
+		4000000000ULL,
+		4000000001ULL,
+		UINT64_MAX / 10000000
+	};
+	uint64_t ref_out;
+	int64_t loc_out;
+	int rv;
+
+	const struct timeutil_sync_config unity = {
+		.ref_Hz = 1000,
+		.local_Hz = 1000,
+	};
+	struct timeutil_sync_instant inst = {
+		.ref = 200,
+		.local = 100
+	};
+	struct timeutil_sync_state ss = {
+		.cfg = &unity,
+	};
+	uint64_t offset = inst.ref - inst.local;
+
+	timeutil_sync_state_set_skew(&ss, 1.0f, &inst);
+
+	for (int i = 0; i < ARRAY_SIZE(inputs); i++) {
+		rv = timeutil_sync_ref_from_local(&ss, inputs[i], &ref_out);
+		zassert_equal(rv, 0, "Unexpected conversion fail");
+		zassert_equal(ref_out, inputs[i] + offset,
+			      "Large unity local->ref conversion fail");
+
+		rv = timeutil_sync_local_from_ref(&ss, inputs[i], &loc_out);
+		zassert_equal(rv, 0, "Unexpected conversion fail");
+		zassert_equal(loc_out, inputs[i] - offset,
+			      "Large unity ref->local conversion fail");
+	}
+}
+
 static void test_skew_to_ppb(void)
 {
 	float skew = 1.0;
@@ -392,5 +433,6 @@ void test_sync(void)
 	test_estimate_skew();
 	test_ref_from_local();
 	test_local_from_ref();
+	test_large_linearity();
 	test_skew_to_ppb();
 }

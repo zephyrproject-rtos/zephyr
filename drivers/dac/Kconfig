@@ -28,6 +28,8 @@ source "drivers/dac/Kconfig.mcux"
 
 source "drivers/dac/Kconfig.stm32"
 
+source "drivers/dac/Kconfig.sam"
+
 source "drivers/dac/Kconfig.sam0"
 
 source "drivers/dac/Kconfig.dacx0508"

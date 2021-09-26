@@ -698,6 +698,10 @@ struct shell_ctx {
 	volatile union shell_internal internal; /*!< Internal shell data.*/
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
+
+	/*!< Events that should be used only internally by shell thread.
+	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
+	 */
 	struct k_poll_event events[SHELL_SIGNALS];
 
 	struct k_mutex wr_mtx;
@@ -771,7 +775,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 	Z_SHELL_STATS_DEFINE(_name);					      \
 	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
-	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
+	static const STRUCT_SECTION_ITERABLE(shell, _name) = {		      \
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \

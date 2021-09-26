@@ -43,8 +43,9 @@ static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   uint8_t force, void *param);
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param);
 static void ticker_op_start_cb(uint32_t status, void *param);
 static void isr_rx(void *param);
 static void isr_tx(void *param);
@@ -133,7 +134,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->master.initiated)) {
+	if (unlikely(lll->conn && lll->conn->central.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -189,14 +190,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 			/* Setup Radio Filter */
 
-			struct lll_filter *wl = ull_filter_lll_get(true);
+			struct lll_filter *fal = ull_filter_lll_get(true);
 
-			radio_filter_configure(wl->enable_bitmask,
-					       wl->addr_type_bitmask,
-					       (uint8_t *)wl->bdaddr);
+			radio_filter_configure(fal->enable_bitmask,
+					       fal->addr_type_bitmask,
+					       (uint8_t *)fal->bdaddr);
 		}
 
 	ticks_at_event = prepare_param->ticks_at_expire;
@@ -210,7 +211,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -329,8 +330,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(param);
 }
 
-static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			   uint8_t force, void *param)
+static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			   uint32_t remainder, uint16_t lazy, uint8_t force,
+			   void *param)
 {
 	radio_isr_set(isr_cleanup, param);
 	radio_disable();
@@ -532,7 +534,7 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 }
@@ -548,7 +550,7 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * master event.
+	 * central event.
 	 */
 	radio_tmr_end_capture();
 
@@ -650,7 +652,7 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 		 (!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
 								rl_idx))) ||
 		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(rl_idx)));
+		 (devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
 #else
 	return ((lll->filter_policy & 0x01) == 0U) ||
 		devmatch_ok;
@@ -826,7 +828,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		 */
 
 		/* Stop further LLL radio events */
-		lll->conn->master.initiated = 1;
+		lll->conn->central.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
@@ -1013,7 +1015,7 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 					    struct pdu_adv *pdu, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	/* Only applies to initiator with no whitelist */
+	/* Only applies to initiator with no filter accept list */
 	if (rl_idx != FILTER_IDX_NONE) {
 		return (rl_idx == lll->rl_idx);
 	} else if (!ull_filter_lll_rl_addr_allowed(pdu->tx_addr,

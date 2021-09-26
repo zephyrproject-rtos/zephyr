@@ -32,13 +32,22 @@
 
 #define LAST_VALID_CIS_HANDLE (CONFIG_BT_CTLR_CONN_ISO_STREAMS + LL_CIS_HANDLE_BASE - 1)
 
+static int init_reset(void);
+static void ticker_update_cig_op_cb(uint32_t status, void *param);
+static void ticker_resume_op_cb(uint32_t status, void *param);
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param);
+static void cis_disabled_cb(void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
+static void cig_disable(void *param);
+static void cig_disabled_cb(void *param);
+
 static struct ll_conn_iso_stream cis_pool[CONFIG_BT_CTLR_CONN_ISO_STREAMS];
 static void *cis_free;
 
 static struct ll_conn_iso_group cig_pool[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
 static void *cig_free;
-
-static int init_reset(void);
 
 struct ll_conn_iso_group *ll_conn_iso_group_acquire(void)
 {
@@ -182,54 +191,6 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 	return NULL;
 }
 
-int ull_conn_iso_init(void)
-{
-	return init_reset();
-}
-
-int ull_conn_iso_reset(void)
-{
-	return init_reset();
-}
-
-static int init_reset(void)
-{
-	int err;
-
-	/* Initialize CIS pool */
-	mem_init(cis_pool, sizeof(struct ll_conn_iso_stream),
-		 sizeof(cis_pool) / sizeof(struct ll_conn_iso_stream),
-		 &cis_free);
-
-	/* Initialize CIG pool */
-	mem_init(cig_pool, sizeof(struct ll_conn_iso_group),
-		 sizeof(cig_pool) / sizeof(struct ll_conn_iso_group),
-		 &cig_free);
-
-	for (int h = 0; h < CONFIG_BT_CTLR_CONN_ISO_GROUPS; h++) {
-		ll_conn_iso_group_get(h)->cig_id = 0xFF;
-	}
-
-	/* Initialize LLL */
-	err = lll_conn_iso_init();
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-static void ticker_update_cig_op_cb(uint32_t status, void *param)
-{
-	/* CIG drift compensation succeeds, or it fails in a race condition
-	 * when disconnecting (race between ticker_update and ticker_stop
-	 * calls). TODO: Are the race-checks needed?
-	 */
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
-		  param == ull_update_mark_get() ||
-		  param == ull_disable_mark_get());
-}
-
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 {
 	struct node_rx_conn_iso_estab *est;
@@ -304,37 +265,65 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 	}
 }
 
-static void ticker_resume_op_cb(uint32_t status, void *param)
+/**
+ * @brief Stop and tear down a connected ISO stream
+ * This function may be called to tear down a CIS. When the CIS teardown
+ * has completed and the stream is released and callback is provided, the
+ * cis_released_cb callback is invoked.
+ *
+ * @param cis		 Pointer to connected ISO stream to stop
+ * @param cis_relased_cb Callback to invoke when the CIS has been released.
+ *                       NULL to ignore.
+ */
+void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
+			   ll_iso_stream_released_cb_t cis_released_cb)
 {
-	ARG_UNUSED(param);
+	struct ll_conn_iso_group *cig;
+	struct ull_hdr *hdr;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-}
+	if (cis->teardown) {
+		/* Teardown already started */
+		return;
+	}
+	cis->teardown = 1;
+	cis->released_cb = cis_released_cb;
 
-static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			     uint16_t lazy, uint8_t force, void *param)
-{
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
-	struct lll_event *resume_event;
-	uint32_t ret;
+	/* Check ref count to determine if any pending LLL events in pipeline */
+	cig = cis->group;
+	hdr = &cig->ull;
+	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
 
-	LL_ASSERT(lazy == 0);
+		mfy.param = &cig->lll;
 
-	resume_event = param;
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
+		/* Event is active (prepare/done ongoing) - wait for done and
+		 * continue CIS teardown from there. The disabled_cb cannot be
+		 * reserved for other use.
+		 */
+		LL_ASSERT(!hdr->disabled_cb ||
+			  (hdr->disabled_cb == cis_disabled_cb));
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = cis_disabled_cb;
 
-	/* Append timing parameters */
-	resume_event->prepare_param.ticks_at_expire = ticks_at_expire;
-	resume_event->prepare_param.remainder = remainder;
-	resume_event->prepare_param.lazy = 0;
-	resume_event->prepare_param.force = force;
-	mfy.param = resume_event;
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		/* No pending LLL events */
 
-	/* Kick LLL resume */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-
-	LL_ASSERT(!ret);
+		/* Tear down CIS now in ULL_HIGH context. Ignore enqueue
+		 * error (already enqueued) as all CISes marked for teardown
+		 * will be handled in cis_disabled_cb. Use mayfly chaining to
+		 * prevent recursive stop calls.
+		 */
+		cis_disabled_cb(&cig->lll);
+	}
 }
 
 void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
@@ -395,64 +384,100 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void disabled_cig_cb(void *param)
+int ull_conn_iso_init(void)
 {
-	struct ll_conn_iso_group *cig;
-
-	cig = param;
-
-	ll_conn_iso_group_release(cig);
-
-	/* TODO: Flush pending TX in LLL */
+	return init_reset();
 }
 
-static void ticker_stop_op_cb(uint32_t status, void *param)
+int ull_conn_iso_reset(void)
+{
+	return init_reset();
+}
+
+static int init_reset(void)
+{
+	int err;
+
+	/* Initialize CIS pool */
+	mem_init(cis_pool, sizeof(struct ll_conn_iso_stream),
+		 sizeof(cis_pool) / sizeof(struct ll_conn_iso_stream),
+		 &cis_free);
+
+	/* Initialize CIG pool */
+	mem_init(cig_pool, sizeof(struct ll_conn_iso_group),
+		 sizeof(cig_pool) / sizeof(struct ll_conn_iso_group),
+		 &cig_free);
+
+	for (int h = 0; h < CONFIG_BT_CTLR_CONN_ISO_GROUPS; h++) {
+		ll_conn_iso_group_get(h)->cig_id = 0xFF;
+	}
+
+	/* Initialize LLL */
+	err = lll_conn_iso_init();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+static void ticker_update_cig_op_cb(uint32_t status, void *param)
+{
+	/* CIG drift compensation succeeds, or it fails in a race condition
+	 * when disconnecting (race between ticker_update and ticker_stop
+	 * calls). TODO: Are the race-checks needed?
+	 */
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_update_mark_get() ||
+		  param == ull_disable_mark_get());
+}
+
+static void ticker_resume_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_conn_iso_group *cig;
-	struct ull_hdr *hdr;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	struct lll_event *resume_event;
 	uint32_t ret;
 
-	/* Assert if race between thread and ULL */
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	ARG_UNUSED(ticks_drift);
+	LL_ASSERT(lazy == 0);
 
-	cig = param;
-	hdr = &cig->ull;
-	mfy.param = cig;
+	resume_event = param;
 
-	if (ull_ref_get(hdr)) {
-		/* Event active (prepare/done ongoing) - wait for done and
-		 * disable there. Abort the ongoing event in LLL.
-		 */
-		LL_ASSERT(!hdr->disabled_cb);
-		hdr->disabled_param = mfy.param;
-		hdr->disabled_cb = disabled_cig_cb;
+	/* Append timing parameters */
+	resume_event->prepare_param.ticks_at_expire = ticks_at_expire;
+	resume_event->prepare_param.remainder = remainder;
+	resume_event->prepare_param.lazy = 0;
+	resume_event->prepare_param.force = force;
+	mfy.param = resume_event;
 
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_LLL, 0, &mfy);
-		LL_ASSERT(!ret);
-	} else {
-		/* Disable now */
-		mfy.fp = disabled_cig_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
-	}
+	/* Kick LLL resume */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+
+	LL_ASSERT(!ret);
 }
 
-static void disabled_cis_cb(void *param)
+static void cis_disabled_cb(void *param)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
 	uint32_t ticker_status;
 	uint16_t handle_iter;
+	uint8_t is_last_cis;
 	uint8_t cis_idx;
-	uint8_t num_cis;
 
-	cig = param;
-	num_cis = cig->lll.num_cis;
+	cig = HDR_LLL2ULL(param);
+	is_last_cis = cig->lll.num_cis == 1;
 	handle_iter = UINT16_MAX;
 
 	/* Remove all CISes marked for teardown */
@@ -480,7 +505,7 @@ static void disabled_cis_cb(void *param)
 		}
 	}
 
-	if (num_cis && cig->lll.num_cis == 0) {
+	if (is_last_cis && cig->lll.num_cis == 0) {
 		/* This was the last CIS of the CIG. Initiate CIG teardown by
 		 * stopping ticker.
 		 */
@@ -496,53 +521,61 @@ static void disabled_cis_cb(void *param)
 	}
 }
 
-/**
- * @brief Stop and tear down a connected ISO stream
- * This function may be called to tear down a CIS. When the CIS teardown
- * has completed and the stream is released and callback is provided, the
- * cis_released_cb callback is invoked.
- *
- * @param cis		 Pointer to connected ISO stream to stop
- * @param cis_relased_cb Callback to invoke when the CIS has been released.
- *                       NULL to ignore.
- */
-void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
-			   ll_iso_stream_released_cb_t cis_relased_cb)
+static void ticker_stop_op_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, cig_disable};
+	uint32_t ret;
+
+	/* Assert if race between thread and ULL */
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void cig_disable(void *param)
 {
 	struct ll_conn_iso_group *cig;
 	struct ull_hdr *hdr;
 
-	cig = cis->group;
+	/* Check ref count to determine if any pending LLL events in pipeline */
+	cig = param;
 	hdr = &cig->ull;
-
-	if (cis->teardown) {
-		/* Teardown already started */
-		return;
-	}
-	cis->teardown = 1;
-	cis->released_cb = cis_relased_cb;
-
 	if (ull_ref_get(hdr)) {
-		/* Event is active (prepare/done ongoing) - wait for done and
-		 * continue CIS teardown from there. The disabled_cb cannot be
-		 * reserved for other use.
-		 */
-		LL_ASSERT(!hdr->disabled_cb || hdr->disabled_cb == disabled_cis_cb);
-
-		hdr->disabled_param = cig;
-		hdr->disabled_cb = disabled_cis_cb;
-	} else {
 		static memq_link_t link;
-		static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
 
-		/* Tear down CIS now in ULL_HIGH context. Ignore enqueue
-		 * error (already enqueued) as all CISes marked for teardown
-		 * will be handled in disabled_cis_cb. Use mayfly chaining to
-		 * prevent recursive stop calls.
+		mfy.param = &cig->lll;
+
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
 		 */
-		mfy.fp = disabled_cis_cb;
-		mfy.param = cig;
-		mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-			       TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = cig_disabled_cb;
+
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		/* No pending LLL events */
+		cig_disabled_cb(&cig->lll);
 	}
+}
+
+static void cig_disabled_cb(void *param)
+{
+	struct ll_conn_iso_group *cig;
+
+	cig = HDR_LLL2ULL(param);
+
+	ll_conn_iso_group_release(cig);
+
+	/* TODO: Flush pending TX in LLL */
 }

@@ -32,6 +32,18 @@
 	};
 
 	soc {
+		ficr: ficr@ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xff0000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -48,19 +60,12 @@
 		};
 
 		/* Additional Secure peripherals */
-		cryptocell: crypto@50844000 {
-			compatible = "nordic,nrf-cc312";
-			reg = <0x50844000 0x1000>;
-			label = "CRYPTOCELL";
+
+		spu: spu@50003000 {
+			compatible = "nordic,nrf-spu";
+			reg = <0x50003000 0x1000>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			cryptocell312: crypto@50845000 {
-				compatible = "arm,cryptocell-312";
-				reg = <0x50845000 0x1000>;
-				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
-				label = "CRYPTOCELL312";
-			};
 		};
 
 		/*
@@ -76,23 +81,19 @@
 			label = "GPIOTE_0";
 		};
 
-		spu: spu@50003000 {
-			compatible = "nordic,nrf-spu";
-			reg = <0x50003000 0x1000>;
-			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+		cryptocell: crypto@50844000 {
+			compatible = "nordic,nrf-cc312";
+			reg = <0x50844000 0x1000>;
+			label = "CRYPTOCELL";
 			status = "okay";
-		};
-
-		ficr: ficr@ff0000 {
-			compatible = "nordic,nrf-ficr";
-			reg = <0xff0000 0x1000>;
-			status = "okay";
-		};
-
-		uicr: uicr@ff8000 {
-			compatible = "nordic,nrf-uicr";
-			reg = <0xff8000 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cryptocell312: crypto@50845000 {
+				compatible = "arm,cryptocell-312";
+				reg = <0x50845000 0x1000>;
+				interrupts = <68 NRF_DEFAULT_IRQ_PRIORITY>;
+				label = "CRYPTOCELL312";
+			};
 		};
 	};
 };

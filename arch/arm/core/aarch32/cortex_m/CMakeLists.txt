@@ -3,17 +3,18 @@
 zephyr_library()
 
 zephyr_library_sources(
-  vector_table.S
-  reset.S
-  fault_s.S
-  fault.c
   exc_exit.S
+  fault.c
+  fault_s.S
   fpu.c
-  scb.c
   irq_init.c
+  reset.S
+  scb.c
   thread_abort.c
+  vector_table.S
   )
 
+zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 

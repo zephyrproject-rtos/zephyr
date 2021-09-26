@@ -152,7 +152,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -164,7 +164,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 			notify = true;
 		}
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		volume_change = true;
@@ -181,14 +181,14 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	case BT_VCS_OPCODE_UNMUTE:
 		BT_DBG("Unmute (0x%x)", opcode);
 		if (vcs_inst.srv.state.mute) {
-			vcs_inst.srv.state.mute = 0;
+			vcs_inst.srv.state.mute = BT_VCS_STATE_UNMUTED;
 			notify = true;
 		}
 		break;
 	case BT_VCS_OPCODE_MUTE:
 		BT_DBG("Mute (0x%x)", opcode);
-		if (vcs_inst.srv.state.mute == 0) {
-			vcs_inst.srv.state.mute = 1;
+		if (vcs_inst.srv.state.mute == BT_VCS_STATE_UNMUTED) {
+			vcs_inst.srv.state.mute = BT_VCS_STATE_MUTED;
 			notify = true;
 		}
 		break;
@@ -284,7 +284,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.vocs_insts[j] = bt_vocs_free_instance_get();
 
 			if (vcs_inst.srv.vocs_insts[j] == NULL) {
-				BT_ERR("Could not get free VOCS instances[%u]",
+				BT_ERR("Could not get free VOCS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -292,7 +292,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 			err = bt_vocs_register(vcs_inst.srv.vocs_insts[j],
 					       &param->vocs_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register VOCS instance[%u]: %d",
+				BT_DBG("Could not register VOCS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
@@ -326,7 +326,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			vcs_inst.srv.aics_insts[j] = bt_aics_free_instance_get();
 
 			if (vcs_inst.srv.aics_insts[j] == NULL) {
-				BT_ERR("Could not get free AICS instances[%u]",
+				BT_ERR("Could not get free AICS instances[%d]",
 				       j);
 				return -ENOMEM;
 			}
@@ -334,7 +334,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 			err = bt_aics_register(vcs_inst.srv.aics_insts[j],
 					       &param->aics_param[j]);
 			if (err != 0) {
-				BT_DBG("Could not register AICS instance[%u]: %d",
+				BT_DBG("Could not register AICS instance[%d]: %d",
 				       j, err);
 				return err;
 			}
@@ -362,6 +362,21 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	static bool registered;
 	int err;
 
+	CHECKIF(param == NULL) {
+		BT_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->mute > BT_VCS_STATE_MUTED) {
+		BT_DBG("Invalid mute value: %u", param->mute);
+		return -EINVAL;
+	}
+
+	CHECKIF(param->step == 0) {
+		BT_DBG("Invalid step value: %u", param->step);
+		return -EINVAL;
+	}
+
 	if (registered) {
 		*vcs = &vcs_inst;
 		return -EALREADY;
@@ -386,8 +401,9 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	}
 
 
-	vcs_inst.srv.state.volume = 100; /* Default value */
-	vcs_inst.srv.volume_step = 1; /* Default value */
+	vcs_inst.srv.state.volume = param->volume;
+	vcs_inst.srv.state.mute = param->mute;
+	vcs_inst.srv.volume_step = param->step;
 	vcs_inst.srv.service_p = &vcs_svc;
 
 	err = bt_gatt_service_register(&vcs_svc);

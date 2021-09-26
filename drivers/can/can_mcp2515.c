@@ -46,7 +46,7 @@ static int mcp2515_cmd_soft_reset(const struct device *dev)
 		.buffers = &tx_buf, .count = 1U
 	};
 
-	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+	return spi_write_dt(&DEV_CFG(dev)->bus, &tx);
 }
 
 static int mcp2515_cmd_bit_modify(const struct device *dev, uint8_t reg_addr,
@@ -62,7 +62,7 @@ static int mcp2515_cmd_bit_modify(const struct device *dev, uint8_t reg_addr,
 		.buffers = &tx_buf, .count = 1U
 	};
 
-	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+	return spi_write_dt(&DEV_CFG(dev)->bus, &tx);
 }
 
 static int mcp2515_cmd_write_reg(const struct device *dev, uint8_t reg_addr,
@@ -78,7 +78,7 @@ static int mcp2515_cmd_write_reg(const struct device *dev, uint8_t reg_addr,
 		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
 	};
 
-	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+	return spi_write_dt(&DEV_CFG(dev)->bus, &tx);
 }
 
 /*
@@ -110,7 +110,7 @@ static int mcp2515_cmd_load_tx_buffer(const struct device *dev, uint8_t abc,
 		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
 	};
 
-	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+	return spi_write_dt(&DEV_CFG(dev)->bus, &tx);
 }
 
 /*
@@ -133,7 +133,7 @@ static int mcp2515_cmd_rts(const struct device *dev, uint8_t nnn)
 		.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)
 	};
 
-	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
+	return spi_write_dt(&DEV_CFG(dev)->bus, &tx);
 }
 
 static int mcp2515_cmd_read_reg(const struct device *dev, uint8_t reg_addr,
@@ -156,8 +156,7 @@ static int mcp2515_cmd_read_reg(const struct device *dev, uint8_t reg_addr,
 		.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)
 	};
 
-	return spi_transceive(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg,
-			      &tx, &rx);
+	return spi_transceive_dt(&DEV_CFG(dev)->bus, &tx, &rx);
 }
 
 /*
@@ -193,8 +192,7 @@ static int mcp2515_cmd_read_rx_buffer(const struct device *dev, uint8_t nm,
 		.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)
 	};
 
-	return spi_transceive(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg,
-			      &tx, &rx);
+	return spi_transceive_dt(&DEV_CFG(dev)->bus, &tx, &rx);
 }
 
 static uint8_t mcp2515_convert_canmode_to_mcp2515mode(enum can_mode mode)
@@ -818,33 +816,10 @@ static int mcp2515_init(const struct device *dev)
 	k_sem_init(&dev_data->tx_cb[1].sem, 0, 1);
 	k_sem_init(&dev_data->tx_cb[2].sem, 0, 1);
 
-	/* SPI config */
-	dev_data->spi_cfg.operation = SPI_WORD_SET(8);
-	dev_data->spi_cfg.frequency = dev_cfg->spi_freq;
-	dev_data->spi_cfg.slave = dev_cfg->spi_slave;
-
-	dev_data->spi = device_get_binding(dev_cfg->spi_port);
-	if (!dev_data->spi) {
-		LOG_ERR("SPI master port %s not found", dev_cfg->spi_port);
-		return -EINVAL;
-	}
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	dev_data->spi_cs_ctrl.gpio_dev =
-		device_get_binding(dev_cfg->spi_cs_port);
-	if (!dev_data->spi_cs_ctrl.gpio_dev) {
-		LOG_ERR("Unable to get GPIO SPI CS device");
+	if (!spi_is_ready(&dev_cfg->bus)) {
+		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
 		return -ENODEV;
 	}
-
-	dev_data->spi_cs_ctrl.gpio_pin = dev_cfg->spi_cs_pin;
-	dev_data->spi_cs_ctrl.gpio_dt_flags = dev_cfg->spi_cs_flags;
-	dev_data->spi_cs_ctrl.delay = 0U;
-
-	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
-#else
-	dev_data->spi_cfg.cs = NULL;
-#endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
@@ -934,18 +909,11 @@ static struct mcp2515_data mcp2515_data_1 = {
 };
 
 static const struct mcp2515_config mcp2515_config_1 = {
-	.spi_port = DT_INST_BUS_LABEL(0),
-	.spi_freq = DT_INST_PROP(0, spi_max_frequency),
-	.spi_slave = DT_INST_REG_ADDR(0),
+	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
 	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
 	.int_port = DT_INST_GPIO_LABEL(0, int_gpios),
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-#endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 	.tq_sjw = DT_INST_PROP(0, sjw),
 	.tq_prop = DT_INST_PROP_OR(0, prop_seg, 0),
 	.tq_bs1 = DT_INST_PROP_OR(0, phase_seg1, 0),

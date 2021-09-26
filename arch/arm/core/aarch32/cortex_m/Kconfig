@@ -257,6 +257,22 @@ config ARMV8_M_DSP
 	  This option signifies the use of an ARMv8-M processor
 	  implementation supporting the DSP Extension.
 
+config ARMV8_1_M_MVEI
+	bool
+	depends on ARMV8_1_M_MAINLINE
+	depends on ARMV8_M_DSP
+	help
+	  This option signifies the use of an ARMv8.1-M processor implementation
+	  supporting the M-Profile Vector Extension (MVE) integer instruction set.
+
+config ARMV8_1_M_MVEF
+	bool
+	depends on ARMV8_1_M_MVEI
+	help
+	  This option signifies the use of an ARMv8.1-M processor implementation
+	  supporting the M-Profile Vector Extension (MVE) floating-point
+	  instruction set.
+
 menu "ARM Cortex-M0/M0+/M1/M3/M4/M7/M23/M33 options"
     depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
 

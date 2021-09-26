@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This test requires the BabbleSim simulator. Please set\
@@ -13,13 +13,25 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_mesh)
 
 target_sources(app PRIVATE
-	src/main.c
-	src/mesh_test.c
-	src/test_transport.c
-	src/test_friendship.c
-	src/test_provision.c
-	src/test_beacon.c
+ src/main.c
+ src/mesh_test.c
 )
+
+if(CONFIG_SETTINGS)
+ target_sources(app PRIVATE
+  src/settings_test_backend.c
+  src/test_persistence.c
+  src/test_replay_cache.c
+ )
+else()
+ target_sources(app PRIVATE
+  src/test_transport.c
+  src/test_friendship.c
+  src/test_provision.c
+  src/test_beacon.c
+	src/test_scanner.c
+ )
+endif()
 
 zephyr_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/

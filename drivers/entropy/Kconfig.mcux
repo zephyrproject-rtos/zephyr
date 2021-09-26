@@ -26,3 +26,19 @@ config ENTROPY_MCUX_RNG
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX RNG driver on LPC Family.
+
+#
+# Don't use use the MCUX TRNG as a random source as it is not designed
+# to supply a continuous random stream. Instead, it is used to provide
+# a seed to RNG generator.
+#
+# Use the software implemented xoroshiro RNG.
+# Use CSPRNG for cryptographically secure RNG source.
+#
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_MCUX_TRNG
+endchoice
+
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR if ENTROPY_MCUX_TRNG
+endchoice

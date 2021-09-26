@@ -38,8 +38,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  *
  * When mapped to the Zephyr Device Power Management states:
  * * PM_DEVICE_STATE_ACTIVE covers both active and standby modes;
- * * PM_DEVICE_STATE_LOW_POWER, PM_DEVICE_STATE_SUSPEND, and
- *   PM_DEVICE_STATE_OFF all correspond to deep-power-down mode.
+ * * PM_DEVICE_STATE_SUSPENDED, and PM_DEVICE_STATE_OFF all correspond to
+ *   deep-power-down mode.
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
@@ -607,7 +607,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 		}
 	}
 
-	int ret2 = spi_nor_write_protection_set(dev, false);
+	int ret2 = spi_nor_write_protection_set(dev, true);
 
 	if (!ret) {
 		ret = ret2;
@@ -674,6 +674,17 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				ret = -EINVAL;
 			}
 		}
+
+#ifdef __XCC__
+		/*
+		 * FIXME: remove this hack once XCC is fixed.
+		 *
+		 * Without this volatile return value, XCC would segfault
+		 * compiling this file complaining about failure in CGPREP
+		 * phase.
+		 */
+		volatile int xcc_ret =
+#endif
 		spi_nor_wait_until_ready(dev);
 	}
 

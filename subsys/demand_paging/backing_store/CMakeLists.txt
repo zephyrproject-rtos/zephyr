@@ -11,4 +11,9 @@ include_directories(
 if(NOT DEFINED CONFIG_BACKING_STORE_CUSTOM)
   zephyr_library()
   zephyr_library_sources_ifdef(CONFIG_BACKING_STORE_RAM   ram.c)
+
+  zephyr_library_sources_ifdef(
+    CONFIG_BACKING_STORE_QEMU_X86_TINY_FLASH
+    backing_store_qemu_x86_tiny.c
+    )
 endif()

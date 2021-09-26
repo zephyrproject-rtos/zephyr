@@ -53,6 +53,8 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pb9d_sercom4_pad1 &pb8d_sercom4_pad0>;
 };
 
 &sercom0 {
@@ -72,7 +74,7 @@
 	#size-cells = <0>;
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 

@@ -78,9 +78,9 @@ void main(void)
 	uint32_t baudrate, dtr = 0U;
 	int ret;
 
-	dev = device_get_binding("CDC_ACM_0");
-	if (!dev) {
-		LOG_ERR("CDC ACM device not found");
+	dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
+	if (!device_is_ready(dev)) {
+		LOG_ERR("CDC ACM device not ready");
 		return;
 	}
 

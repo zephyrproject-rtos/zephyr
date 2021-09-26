@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
@@ -33,33 +34,34 @@ endif()
 
 if(CONFIG_SOC_FLASH_STM32)
   if(CONFIG_SOC_SERIES_STM32H7X)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32H7X flash_stm32h7x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32H7X flash_stm32h7x.c)
   else()
-    zephyr_sources(flash_stm32.c)
+    zephyr_library_sources(flash_stm32.c)
 
-    zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32_V1 flash_stm32_v1.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F2X flash_stm32f2x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F4X flash_stm32f4x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F7X flash_stm32f7x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32L4X flash_stm32l4x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32WLX flash_stm32l4x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32WBX flash_stm32wbx.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32G0X flash_stm32g0x.c)
-    zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32_V1 flash_stm32_v1.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F2X flash_stm32f2x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F4X flash_stm32f4x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F7X flash_stm32f7x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32L4X flash_stm32l4x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32L5X flash_stm32l5x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32WLX flash_stm32l4x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32WBX flash_stm32wbx.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G0X flash_stm32g0x.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
   endif()
 endif()
 
-zephyr_include_directories_ifdef(
+zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
   ${ZEPHYR_BASE}/drivers/memc
 )
 
-zephyr_include_directories_ifdef(
+zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G
   ${ZEPHYR_BASE}/drivers/memc
 )
 
-zephyr_include_directories_ifdef(
+zephyr_library_include_directories_ifdef(
 	CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
 	${ZEPHYR_BASE}/subsys/bluetooth
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic

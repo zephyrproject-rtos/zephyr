@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 
 #define DEFAULT_BIS_RTN         2
 #define DEFAULT_BIS_INTERVAL_US 7500
-#define DEFAULT_BIS_LATENCY_MS  0
+#define DEFAULT_BIS_LATENCY_MS  10
 #define DEFAULT_BIS_PHY         BT_GAP_LE_PHY_2M
 #define DEFAULT_BIS_SDU         CONFIG_BT_ISO_TX_MTU
 #define DEFAULT_BIS_PACKING     0
@@ -38,6 +38,10 @@ static struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_big_create_param big_create_param = {
 	.num_bis = DEFAULT_BIS_COUNT,
 	.bis_channels = bis,
+	.packing = DEFAULT_BIS_PACKING, /* 0 - sequential, 1 - interleaved */
+	.framing = DEFAULT_BIS_FRAMING, /* 0 - unframed, 1 - framed */
+	.interval = DEFAULT_BIS_INTERVAL_US, /* in microseconds */
+	.latency = DEFAULT_BIS_LATENCY_MS, /* milliseconds */
 };
 
 static void iso_connected(struct bt_iso_chan *chan)
@@ -67,8 +71,6 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.interval = DEFAULT_BIS_INTERVAL_US, /* in microseconds */
-	.latency = DEFAULT_BIS_LATENCY_MS, /* milliseconds */
 	.sdu = DEFAULT_BIS_SDU, /* bytes */
 	.rtn = DEFAULT_BIS_RTN,
 	.phy = DEFAULT_BIS_PHY,
@@ -76,8 +78,6 @@ static struct bt_iso_chan_io_qos iso_tx_qos = {
 
 static struct bt_iso_chan_qos bis_iso_qos = {
 	.tx = &iso_tx_qos,
-	.packing = DEFAULT_BIS_PACKING, /* 0 - sequential, 1 - interleaved */
-	.framing = DEFAULT_BIS_FRAMING, /* 0 - unframed, 1 - framed */
 };
 
 static size_t get_chars(char *buffer, size_t max_size)
@@ -114,8 +114,7 @@ static int parse_rtn_arg(void)
 	}
 
 	rtn = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (rtn > 16) {
+	if (rtn > BT_ISO_BROADCAST_RTN_MAX) {
 		printk("Invalid RTN %llu", rtn);
 		return -EINVAL;
 	}
@@ -130,7 +129,7 @@ static int parse_interval_arg(void)
 	uint64_t interval;
 
 	printk("Set interval (us) (current %u, default %u)\n",
-	       iso_tx_qos.interval, DEFAULT_BIS_INTERVAL_US);
+	       big_create_param.interval, DEFAULT_BIS_INTERVAL_US);
 
 	char_count = get_chars(buffer, sizeof(buffer) - 1);
 	if (char_count == 0) {
@@ -138,8 +137,7 @@ static int parse_interval_arg(void)
 	}
 
 	interval = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (interval < 0x100 || interval > 0xFFFFF) {
+	if (interval < BT_ISO_INTERVAL_MIN || interval > BT_ISO_INTERVAL_MAX) {
 		printk("Invalid interval %llu", interval);
 		return -EINVAL;
 	}
@@ -154,7 +152,7 @@ static int parse_latency_arg(void)
 	uint64_t latency;
 
 	printk("Set latency (ms) (current %u, default %u)\n",
-	       iso_tx_qos.latency, DEFAULT_BIS_LATENCY_MS);
+	       big_create_param.latency, DEFAULT_BIS_LATENCY_MS);
 
 	char_count = get_chars(buffer, sizeof(buffer) - 1);
 	if (char_count == 0) {
@@ -162,8 +160,7 @@ static int parse_latency_arg(void)
 	}
 
 	latency = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (latency > 0xFA0) {
+	if (latency < BT_ISO_LATENCY_MIN || latency > BT_ISO_LATENCY_MAX) {
 		printk("Invalid latency %llu", latency);
 		return -EINVAL;
 	}
@@ -212,8 +209,7 @@ static int parse_sdu_arg(void)
 	}
 
 	sdu = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (sdu > 0xFFF) {
+	if (sdu > MIN(BT_ISO_MAX_SDU, sizeof(iso_data))) {
 		printk("Invalid SDU %llu", sdu);
 		return -EINVAL;
 	}
@@ -228,7 +224,7 @@ static int parse_packing_arg(void)
 	uint64_t packing;
 
 	printk("Set packing (current %u, default %u)\n",
-	       bis_iso_qos.packing, DEFAULT_BIS_PACKING);
+	       big_create_param.packing, DEFAULT_BIS_PACKING);
 
 	char_count = get_chars(buffer, sizeof(buffer) - 1);
 	if (char_count == 0) {
@@ -236,8 +232,8 @@ static int parse_packing_arg(void)
 	}
 
 	packing = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (packing > 1) {
+	if (packing != BT_ISO_PACKING_SEQUENTIAL &&
+	    packing != BT_ISO_PACKING_INTERLEAVED) {
 		printk("Invalid packing %llu", packing);
 		return -EINVAL;
 	}
@@ -252,7 +248,7 @@ static int parse_framing_arg(void)
 	uint64_t framing;
 
 	printk("Set framing (current %u, default %u)\n",
-	       bis_iso_qos.framing, DEFAULT_BIS_FRAMING);
+	       big_create_param.framing, DEFAULT_BIS_FRAMING);
 
 	char_count = get_chars(buffer, sizeof(buffer) - 1);
 	if (char_count == 0) {
@@ -260,8 +256,8 @@ static int parse_framing_arg(void)
 	}
 
 	framing = strtoul(buffer, NULL, 0);
-	/* TODO: Replace literal int with a #define once it has been created */
-	if (framing > 1) {
+	if (framing != BT_ISO_FRAMING_UNFRAMED &&
+	    framing != BT_ISO_FRAMING_FRAMED) {
 		printk("Invalid framing %llu", framing);
 		return -EINVAL;
 	}
@@ -284,7 +280,7 @@ static int parse_bis_count_arg(void)
 	}
 
 	bis_count = strtoul(buffer, NULL, 0);
-	if (bis_count > CONFIG_BT_ISO_MAX_CHAN) {
+	if (bis_count > MAX(BT_ISO_MAX_GROUP_ISO_COUNT, CONFIG_BT_ISO_MAX_CHAN)) {
 		printk("Invalid BIS count %llu", bis_count);
 		return -EINVAL;
 	}
@@ -346,12 +342,12 @@ static int parse_args(void)
 	}
 
 	iso_tx_qos.rtn = rtn;
-	iso_tx_qos.interval = interval;
-	iso_tx_qos.latency = latency;
 	iso_tx_qos.phy = phy;
 	iso_tx_qos.sdu = sdu;
-	bis_iso_qos.packing = packing;
-	bis_iso_qos.framing = framing;
+	big_create_param.interval = interval;
+	big_create_param.latency = latency;
+	big_create_param.packing = packing;
+	big_create_param.framing = framing;
 	big_create_param.num_bis = bis_count;
 
 	return 0;
@@ -368,7 +364,7 @@ static void iso_timer_timeout(struct k_work *work)
 	 * calls `bt_iso_chan_send` but the controller only sending a single
 	 * ISO packet.
 	 */
-	k_work_reschedule(&iso_send_work, K_USEC(iso_tx_qos.interval - 100));
+	k_work_reschedule(&iso_send_work, K_USEC(big_create_param.interval - 100));
 
 	for (int i = 0; i < big_create_param.num_bis; i++) {
 		buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
@@ -508,9 +504,9 @@ int test_run_broadcaster(void)
 
 	printk("Change settings (y/N)? (Current settings: rtn=%u, interval=%u, "
 	       "latency=%u, phy=%u, sdu=%u, packing=%u, framing=%u, "
-	       "bis_count=%u)\n", iso_tx_qos.rtn, iso_tx_qos.interval,
-	       iso_tx_qos.latency, iso_tx_qos.phy, iso_tx_qos.sdu,
-	       bis_iso_qos.packing, bis_iso_qos.framing,
+	       "bis_count=%u)\n", iso_tx_qos.rtn, big_create_param.interval,
+	       big_create_param.latency, iso_tx_qos.phy, iso_tx_qos.sdu,
+	       big_create_param.packing, big_create_param.framing,
 	       big_create_param.num_bis);
 
 	c = tolower(console_getchar());
@@ -523,9 +519,10 @@ int test_run_broadcaster(void)
 
 		printk("New settings: rtn=%u, interval=%u, latency=%u, "
 		       "phy=%u, sdu=%u, packing=%u, framing=%u, bis_count=%u\n",
-		       iso_tx_qos.rtn, iso_tx_qos.interval, iso_tx_qos.latency,
-		       iso_tx_qos.phy, iso_tx_qos.sdu, bis_iso_qos.packing,
-		       bis_iso_qos.framing, big_create_param.num_bis);
+		       iso_tx_qos.rtn, big_create_param.interval,
+		       big_create_param.latency, iso_tx_qos.phy, iso_tx_qos.sdu,
+		       big_create_param.packing, big_create_param.framing,
+		       big_create_param.num_bis);
 	}
 
 	err = create_big(&adv, &big);

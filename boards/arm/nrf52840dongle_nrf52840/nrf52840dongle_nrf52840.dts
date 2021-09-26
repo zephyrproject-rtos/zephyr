@@ -81,7 +81,6 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
-		usbd0 = &usbd;
 	};
 };
 
@@ -107,8 +106,10 @@
 	current-speed = <115200>;
 	tx-pin = <20>;
 	rx-pin = <24>;
+	rx-pull-up;
 	rts-pin = <17>;
 	cts-pin = <22>;
+	cts-pull-up;
 };
 
 &i2c0 {
@@ -164,7 +165,7 @@
  */
 #include "fstab-stock.dts"
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

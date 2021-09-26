@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/rpmsg_multi_instance_remote-prefix/src/rpmsg_multi_instance_remote-build/zephyr)
 
 if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp")
   set(BOARD_REMOTE "nrf5340dk_nrf5340_cpunet")
+elseif("${BOARD}" STREQUAL "bl5340_dvk_cpuapp")
+  set(BOARD_REMOTE "bl5340_dvk_cpunet")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()

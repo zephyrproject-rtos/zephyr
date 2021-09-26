@@ -27,7 +27,19 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT	(2 * DT_PROP(DT_INST(0, soc_nv_flash), max_erase_time))
+#define STM32_FLASH_TIMEOUT	\
+	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+
+#if defined(FLASH_NSSR_NSBSY)		/* For STM32L5x in non-secure mode */
+#define FLASH_SECURITY_NS
+#elif defined(FLASH_SECSR_SECBSY)	/* For STM32L5x in secured mode */
+#error Flash is not supported in secure mode
+#define FLASH_SECURITY_SEC
+#else
+#define FLASH_SECURITY_NA		/* For series which does not have
+					 *  secured or non-secured mode
+					 */
+#endif
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -93,13 +105,21 @@ static int flash_stm32_check_status(const struct device *dev)
 #if defined(FLASH_FLAG_OPERR)
 		FLASH_FLAG_OPERR |
 #endif
+#if defined(FLASH_FLAG_PROGERR)
+		FLASH_FLAG_PROGERR |
+#endif
 #if defined(FLASH_FLAG_PGERR)
 		FLASH_FLAG_PGERR |
 #endif
 		FLASH_FLAG_WRPERR;
 
+#if defined(FLASH_SECURITY_NS)
+	if (FLASH_STM32_REGS(dev)->NSSR & error) {
+		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->NSSR & error);
+#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
 	if (FLASH_STM32_REGS(dev)->SR & error) {
 		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
+#endif /* FLASH_SECURITY_NS */
 		return -EIO;
 	}
 
@@ -116,11 +136,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	if (rc < 0) {
 		return -EIO;
 	}
-#if defined(CONFIG_SOC_SERIES_STM32G0X)
+#if defined(FLASH_SECURITY_NS)
+	while ((FLASH_STM32_REGS(dev)->NSSR & FLASH_FLAG_BSY)) {
+#else /* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
+#if defined(FLASH_SR_BSY1)
+	/* Applicable for STM32G0 series */
 	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY1)) {
 #else
 	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY)) {
 #endif
+#endif /* FLASH_SECURITY_NS */
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
 			return -EIO;
@@ -134,7 +159,7 @@ static void flash_stm32_flush_caches(const struct device *dev,
 				     off_t offset, size_t len)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X)
+	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -266,6 +291,16 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 		}
 	}
 
+#if defined(FLASH_SECURITY_NS)
+	if (enable) {
+		regs->NSCR |= FLASH_NSCR_NSLOCK;
+	} else {
+		if (regs->NSCR & FLASH_NSCR_NSLOCK) {
+			regs->NSKEYR = FLASH_KEY1;
+			regs->NSKEYR = FLASH_KEY2;
+		}
+	}
+#else	/* FLASH_SECURITY_SEC | FLASH_SECURITY_NA */
 #if defined(FLASH_CR_LOCK)
 	if (enable) {
 		regs->CR |= FLASH_CR_LOCK;
@@ -293,6 +328,7 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 		}
 	}
 #endif
+#endif /* FLASH_SECURITY_NS */
 
 	if (enable) {
 		LOG_DBG("Enable write protection");
@@ -337,7 +373,7 @@ static const struct flash_driver_api flash_stm32_api = {
 static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
-	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4 & WB55 series.
+	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4, L5 & WB55 series.
 	 * For F2, F4, F7 & H7 series, this is not applicable.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)

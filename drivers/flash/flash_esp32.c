@@ -445,7 +445,7 @@ static int program_page(const struct device *dev, uint32_t spi_addr,
 	}
 
 	/* check if write in one page */
-	if (page_size < (spi_addr % (page_size + byte_length))) {
+	if (page_size < ((spi_addr % page_size) + byte_length)) {
 		return -EINVAL;
 	}
 

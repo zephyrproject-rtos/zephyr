@@ -50,8 +50,8 @@ struct bt_mesh_proxy_cb {
  *  @param _name Name of callback structure.
  */
 #define BT_MESH_PROXY_CB_DEFINE(_name)                                         \
-	static const Z_STRUCT_SECTION_ITERABLE(                                \
-		bt_mesh_proxy_cb, _CONCAT(bt_mesh_proxy_cb, _name))
+	static const STRUCT_SECTION_ITERABLE(                                  \
+		bt_mesh_proxy_cb, _CONCAT(bt_mesh_proxy_cb_, _name))
 
 /** @brief Enable advertising with Node Identity.
  *

@@ -24,22 +24,13 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
+if USB_DEVICE_STACK
 
 # Enable UART driver, needed for CDC ACM
 config SERIAL
-	default USB_CDC_ACM
+	default y
 
-config UART_INTERRUPT_DRIVEN
-	default USB_CDC_ACM
-
-endif # USB
+endif # USB_DEVICE_STACK
 
 config BT_CTLR
 	default BT

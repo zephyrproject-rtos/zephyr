@@ -291,6 +291,7 @@ void irq_target_state_set_all_non_secure(void)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
+#ifdef CONFIG_GEN_ISR_TABLES
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
@@ -299,6 +300,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	z_arm_irq_priority_set(irq, priority, flags);
 	return irq;
 }
+#endif /* CONFIG_GEN_ISR_TABLES */
 
 #ifdef CONFIG_DYNAMIC_DIRECT_INTERRUPTS
 static inline void z_arm_irq_dynamic_direct_isr_dispatch(void)

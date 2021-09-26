@@ -244,7 +244,8 @@ endif # MODEM_HL7800_LOW_POWER_MODE
 
 config MODEM_HL7800_RX_STACK_SIZE
 	int "Size of the stack for the HL7800 modem driver RX thread"
-	default 1024
+	default 1536 if MODEM_HL7800_POLTE
+	default 1280
 	help
 	  This stack is used by the HL7800 RX thread.
 
@@ -264,5 +265,59 @@ config MODEM_HL7800_INIT_PRIORITY
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
+
+config MODEM_HL7800_GET_IP_ADDR_INFO_ATTEMPTS
+	int "Number of attempts to get IP address info during init"
+	default 4
+
+choice
+	prompt "Modem Boot Type"
+	default MODEM_HL7800_BOOT_NORMAL
+
+config MODEM_HL7800_BOOT_NORMAL
+	bool "No Delay"
+
+config MODEM_HL7800_BOOT_DELAY
+	bool "Delay secondary initialization of driver and network attach"
+	help
+	  When true the application must call mdm_hl7800_reset.
+	  This mode delays the validity of modem info.
+
+config MODEM_HL7800_BOOT_IN_AIRPLANE_MODE
+	bool "Enter airplane mode during init"
+	help
+	  mdm_hl7800_set_functionality must be used by app to exit
+	  airplane mode.
+	  If bands are reconfigured, then this setting is overridden
+	  because modem is rebooted into full functionality mode.
+
+endchoice
+
+config MODEM_HL7800_GPS
+	bool "Enable GPS command and handlers"
+
+config MODEM_HL7800_USE_GLONASS
+	bool "Use GLONASS in addition to GPS"
+	depends on MODEM_HL7800_GPS
+
+config MODEM_HL7800_POLTE
+	bool "Enable PoLTE commands and handlers"
+
+choice
+	prompt "IP Address family"
+	default MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
+	help
+	  The address family for IP connections.
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV4
+	bool "IPv4"
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV6
+	bool "IPv6"
+
+config MODEM_HL7800_ADDRESS_FAMILY_IPV4V6
+	bool "IPv4v6"
+
+endchoice
 
 endif # MODEM_HL7800

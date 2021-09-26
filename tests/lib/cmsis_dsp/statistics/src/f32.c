@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,48 @@ static void test_arm_min_f32(
 DEFINE_TEST_VARIANT3(arm_min_f32, 3, in_com1, 0, 3);
 DEFINE_TEST_VARIANT3(arm_min_f32, 8, in_com1, 1, 8);
 DEFINE_TEST_VARIANT3(arm_min_f32, 11, in_com1, 2, 11);
+
+static void test_arm_absmax_f32(
+	const uint32_t *input1, int ref_index, size_t length)
+{
+	float32_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmax_f32((float32_t *)input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ((float32_t *)ref_absmax_val)[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmax_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmax_f32, 3, in_absminmax, 0, 3);
+DEFINE_TEST_VARIANT3(arm_absmax_f32, 8, in_absminmax, 1, 8);
+DEFINE_TEST_VARIANT3(arm_absmax_f32, 11, in_absminmax, 2, 11);
+
+static void test_arm_absmin_f32(
+	const uint32_t *input1, int ref_index, size_t length)
+{
+	float32_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmin_f32((float32_t *)input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ((float32_t *)ref_absmin_val)[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmin_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmin_f32, 3, in_absminmax, 0, 3);
+DEFINE_TEST_VARIANT3(arm_absmin_f32, 8, in_absminmax, 1, 8);
+DEFINE_TEST_VARIANT3(arm_absmin_f32, 11, in_absminmax, 2, 11);
 
 static void test_arm_mean_f32(
 	const uint32_t *input1, int ref_index, size_t length)
@@ -403,6 +445,12 @@ void test_statistics_f32(void)
 		ztest_unit_test(test_arm_min_f32_3),
 		ztest_unit_test(test_arm_min_f32_8),
 		ztest_unit_test(test_arm_min_f32_11),
+		ztest_unit_test(test_arm_absmax_f32_3),
+		ztest_unit_test(test_arm_absmax_f32_8),
+		ztest_unit_test(test_arm_absmax_f32_11),
+		ztest_unit_test(test_arm_absmin_f32_3),
+		ztest_unit_test(test_arm_absmin_f32_8),
+		ztest_unit_test(test_arm_absmin_f32_11),
 		ztest_unit_test(test_arm_mean_f32_3),
 		ztest_unit_test(test_arm_mean_f32_8),
 		ztest_unit_test(test_arm_mean_f32_11),

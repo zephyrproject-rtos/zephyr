@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dmic_dev: &pdm0 {
+	status = "okay";
+	clk-pin = <30>;
+	din-pin = <31>;
+	clock-source = "PCLK32M_HFXO";
+};

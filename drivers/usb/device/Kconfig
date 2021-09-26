@@ -3,14 +3,15 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if USB
+menuconfig USB_DEVICE_DRIVER
+	bool "Enable USB device controller drivers"
+	help
+	  Enable USB device controller drivers.
 
-config USB_DEVICE_DRIVER
-	bool
+if USB_DEVICE_DRIVER
 
 config USB_DW
 	bool "Designware USB Device Controller Driver"
-	select USB_DEVICE_DRIVER
 	help
 	  Designware USB Device Controller Driver.
 
@@ -23,7 +24,6 @@ config USB_DW_USB_2_0
 config USB_DC_STM32
 	bool "USB device controller driver for STM32 devices"
 	depends on SOC_FAMILY_STM32
-	select USB_DEVICE_DRIVER
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
@@ -31,27 +31,40 @@ config USB_DC_STM32
 	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
 	  processors.
 
+config USB_DC_STM32_DISCONN_ENABLE
+	bool
+	depends on USB_DC_STM32
+	help
+	  Say Y if your board uses USB DISCONNECT pin to enable the
+	  pull-up resistor on USB DP.
+
 config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
 	depends on SOC_FAMILY_SAM0
-	select USB_DEVICE_DRIVER
 	help
 	  SAM0 family USB device controller Driver.
+
+DT_COMPAT_SAM_USBC := atmel,sam-usbc
+
+config USB_DC_SAM_USBC
+	bool "SAM4L USBC Device Controller driver"
+	depends on SOC_SERIES_SAM4L
+	default $(dt_compat_enabled,$(DT_COMPAT_SAM_USBC))
+	help
+	  SAM4L family USBC device controller Driver.
 
 config USB_DC_SAM_USBHS
 	bool "SAM series USB HS Device Controller driver"
 	depends on SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
-	select USB_DEVICE_DRIVER
 	help
 	  SAM family USB HS device controller Driver.
 
-menuconfig USB_NRFX
+config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
 	depends on HAS_HW_NRF_USBD
-	select USB_DEVICE_DRIVER
 	select NRFX_USBD
 	select NRFX_POWER
 	help
@@ -86,33 +99,43 @@ config USB_NRFX_ATTACHED_EVENT_DELAY
 
 config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
-	select USB_DEVICE_DRIVER
 	help
 	  Kinetis USB Device Controller Driver.
 
+config USB_MCUX
+	bool "NXP MCUX USB Device Controller Driver"
+	help
+	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
+
+if USB_MCUX
+
+choice USB_MCUX_CONTROLLER_TYPE
+	prompt "USB Controller type"
+	help
+	  Select the type of controller available in the SoC.
+
 config USB_DC_NXP_EHCI
-	bool "Kinetis and RT EHCI USB Device Controller Driver"
-	depends on HAS_MCUX_USB_EHCI
-	select USB_DEVICE_DRIVER
+	bool "MXRT EHCI USB Device Controller"
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
+
+config USB_DC_NXP_LPCIP3511
+	bool "LPC USB Device Controller"
+	help
+	  LPC USB Device Controller Driver.
+
+endchoice
+
+endif # USB_MCUX
+
+config USB_NATIVE_POSIX
+	bool "Native Posix USB Device Controller Driver"
+	help
+	  Native Posix USB Device Controller Driver.
 
 module = USB_DRIVER
 module-str = usb driver
 source "subsys/logging/Kconfig.template.log_config"
 
-config USB_DC_STM32_DISCONN_ENABLE
-	bool
-	depends on USB_DC_STM32
-	help
-	  Say Y if your board uses USB DISCONNECT pin to enable the
-	  pull-up resistor on USB DP.
-
-config USB_NATIVE_POSIX
-	bool "Native Posix USB Device Controller Driver"
-	select USB_DEVICE_DRIVER
-	help
-	  Native Posix USB Device Controller Driver.
-
-endif # USB
+endif # USB_DEVICE_DRIVER

@@ -279,6 +279,26 @@ static void test_get_erase_value(void)
 		      FLASH_SIMULATOR_ERASE_VALUE);
 }
 
+#include <drivers/flash/flash_simulator.h>
+
+static void test_get_mock(void)
+{
+#ifdef CONFIG_ARCH_POSIX
+	ztest_test_skip();
+#else
+	size_t mock_size;
+	void *mock_ptr;
+
+	mock_ptr = flash_simulator_get_memory(flash_dev, &mock_size);
+
+	zassert_true(mock_ptr != NULL,
+		     "Expected mock_flash address, got NULL.");
+	zassert_equal(mock_size, FLASH_SIMULATOR_FLASH_SIZE,
+		     "Expected mock_flash size %d, got %d",
+		      FLASH_SIMULATOR_FLASH_SIZE, mock_size);
+#endif
+}
+
 void test_main(void)
 {
 	ztest_test_suite(flash_sim_api,
@@ -289,7 +309,8 @@ void test_main(void)
 			 ztest_unit_test(test_out_of_bounds),
 			 ztest_unit_test(test_align),
 			 ztest_unit_test(test_get_erase_value),
-			 ztest_unit_test(test_double_write));
+			 ztest_unit_test(test_double_write),
+			 ztest_unit_test(test_get_mock));
 
 	ztest_run_test_suite(flash_sim_api);
 }

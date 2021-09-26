@@ -14,6 +14,7 @@
 #include "hal/soc_ll.h"
 #include "esp_spi_flash.h"
 #include <riscv/interrupt.h>
+#include <soc/interrupt_reg.h>
 
 #include <kernel_structs.h>
 #include <string.h>
@@ -35,6 +36,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
 
+#ifdef CONFIG_RISCV_GP
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be
 	 * relaxed by the linker to access something relative to __global_pointer$)
@@ -43,6 +45,7 @@ void __attribute__((section(".iram1"))) __start(void)
 						".option norelax\n"
 						"la gp, __global_pointer$\n"
 						".option pop");
+#endif /* CONFIG_RISCV_GP */
 
 	__asm__ __volatile__("la t0, _esp32c3_vector_table\n"
 						"csrw mtvec, t0\n");
@@ -93,6 +96,12 @@ void __attribute__((section(".iram1"))) __start(void)
 
 	/* set global esp32c3's INTC masking level */
 	esprv_intc_int_set_threshold(1);
+
+	/* Enable wireless phy subsystem clock,
+	 * This needs to be done before the kernel starts
+	 */
+	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
+	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
 
 	/* Start Zephyr */
 	_PrepC();
@@ -177,11 +186,5 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	return (esprv_intc_get_interrupt_unmask() & (1 << irq));
-}
-
-ulong_t __soc_get_gp_initial_value(void)
-{
-	extern uint32_t __global_pointer$;
-	return (ulong_t)&__global_pointer$;
+	return (REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG) & (1 << irq));
 }

@@ -201,7 +201,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	g_is_connected = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -474,6 +474,9 @@ static void test_standalone(void)
 		vcs_param.aics_param[i].cb = &aics_cb;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
 	vcs_param.cb = &vcs_cb;
 
 	err = bt_vcs_register(&vcs_param, &vcs);
@@ -667,6 +670,9 @@ static void test_main(void)
 		vcs_param.aics_param[i].cb = &aics_cb;
 	}
 
+	vcs_param.step = 1;
+	vcs_param.mute = BT_VCS_STATE_UNMUTED;
+	vcs_param.volume = 100;
 	vcs_param.cb = &vcs_cb;
 
 	err = bt_vcs_register(&vcs_param, &vcs);
@@ -674,8 +680,6 @@ static void test_main(void)
 		FAIL("VCS register failed (err %d)\n", err);
 		return;
 	}
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_vcs_included_get(vcs, &vcs_included);
 	if (err) {

@@ -12,7 +12,6 @@
 #define ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_
 
 #include <zephyr/types.h>
-#include <stddef.h>
 #include <drivers/clock_control.h>
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 #include <dt-bindings/pinctrl/stm32f1-pinctrl.h>
@@ -70,27 +69,8 @@ struct soc_gpio_pinctrl {
  * value
  */
 #define STM32_DT_PINMUX_REMAP(__pin) \
-	((__pin) & 0x1f)
+	((__pin) & 0x1fU)
 #endif
-
-/* pretend that array will cover pin functions */
-typedef int stm32_pin_func_t;
-
-/**
- * @brief pinmux config wrapper
- *
- * GPIO function is assumed to be always available, as such it's not listed
- * in @funcs array
- */
-struct stm32_pinmux_conf {
-	uint32_t pin;                      /* pin ID */
-	const stm32_pin_func_t *funcs;  /* functions array, indexed with
-					 * (stm32_pin_alt_func - 1)
-					 */
-	const size_t nfuncs;            /* number of alternate functions, not
-					 * counting GPIO
-					 */
-};
 
 /**
  * @brief helper to extract IO port number from STM32PIN() encoded
@@ -105,20 +85,6 @@ struct stm32_pinmux_conf {
  */
 #define STM32_PIN(__pin) \
 	((__pin) & 0xf)
-
-
-/**
- * @brief helper for mapping IO port to its clock subsystem
- *
- * @param port  IO port
- *
- * Map given IO @port to corresponding clock subsystem. The returned
- * clock subsystem ID must suitable for passing as parameter to
- * clock_control_on(). Implement this function at the SoC level.
- *
- * @return clock subsystem ID
- */
-clock_control_subsys_t stm32_get_port_clock(int port);
 
 /**
  * @brief helper for configuration of IO pin

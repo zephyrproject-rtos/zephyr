@@ -25,6 +25,7 @@
 #include "net.h"
 #include "foundation.h"
 #include "beacon.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "proxy.h"
 
@@ -96,6 +97,8 @@ static inline void adv_send(struct net_buf *buf)
 	param.interval_max = param.interval_min;
 
 	uint64_t time = k_uptime_get();
+
+	ARG_UNUSED(time);
 
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
 
@@ -178,7 +181,8 @@ void bt_mesh_adv_init(void)
 {
 	k_thread_create(&adv_thread_data, adv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(adv_thread_stack), adv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_FOREVER);
+			NULL, NULL, NULL, K_PRIO_COOP(CONFIG_BT_MESH_ADV_PRIO),
+			0, K_FOREVER);
 	k_thread_name_set(&adv_thread_data, "BT Mesh adv");
 }
 

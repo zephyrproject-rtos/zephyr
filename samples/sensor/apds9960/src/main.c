@@ -79,7 +79,7 @@ void main(void)
 #ifdef CONFIG_PM_DEVICE
 		enum pm_device_state p_state;
 
-		p_state = PM_DEVICE_STATE_LOW_POWER;
+		p_state = PM_DEVICE_STATE_SUSPENDED;
 		pm_device_state_set(dev, p_state);
 		printk("set low power state for 2s\n");
 		k_sleep(K_MSEC(2000));

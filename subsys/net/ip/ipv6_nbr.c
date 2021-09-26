@@ -2489,11 +2489,11 @@ void net_ipv6_nbr_init(void)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
 	k_work_init_delayable(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
+	k_sem_init(&nbr_lock, 1, K_SEM_MAX_LIMIT);
 #endif
 #if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
 	k_work_init_delayable(&ipv6_nd_reachable_timer,
 			      ipv6_nd_reachable_timeout);
-	k_sem_init(&nbr_lock, 1, K_SEM_MAX_LIMIT);
 #endif
 }

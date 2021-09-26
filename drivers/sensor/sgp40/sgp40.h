@@ -38,8 +38,7 @@
 #define SGP40_COMP_DEFAULT_RH	50
 
 struct sgp40_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec bus;
 	bool selftest;
 };
 
@@ -47,10 +46,6 @@ struct sgp40_data {
 	uint16_t raw_sample;
 	int8_t rh_param[3];
 	int8_t t_param[3];
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_SGP40_SGP40_H_ */

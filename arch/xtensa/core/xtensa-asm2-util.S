@@ -248,14 +248,17 @@ xtensa_switch:
 
 #ifdef CONFIG_KERNEL_COHERENCE
 	/* Flush the stack.  The top of stack was stored for us in
-	 * EXCSAVE3 (FIXME: shouldn't be hardcoded!) by arch_cohere_stacks().
+	 * EXCSAVE3 (FIXME: shouldn't be hardcoded!) by
+	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */
 	rsr.EXCSAVE3 a0
+	beqz a0, noflush
 	mov a3, a1
 flushloop:
 	dhwb a3, 0
 	addi a3, a3, XCHAL_DCACHE_LINESIZE
 	blt a3, a0, flushloop
+noflush:
 #endif
 
 	/* Restore the A3 argument we spilled earlier (via the base

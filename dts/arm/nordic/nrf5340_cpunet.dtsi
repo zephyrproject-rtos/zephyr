@@ -31,24 +31,19 @@
 		};
 	};
 
-	flash_controller: flash-controller@41080000 {
-		compatible = "nordic,nrf53-flash-controller";
-		reg = <0x41080000 0x1000>;
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		label="NRF_FLASH_DRV_NAME";
-
-		flash1: flash@1000000 {
-			compatible = "soc-nv-flash";
-			label = "NRF_FLASH";
-			erase-block-size = <2048>;
-			write-block-size = <4>;
-		};
-	};
-
 	soc {
+		ficr: ficr@1ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0x01ff0000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@1ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0x01ff8000 0x1000>;
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -65,11 +60,53 @@
 			label = "CLOCK";
 		};
 
-		dppic: dppic@4100f000 {
-			compatible = "nordic,nrf-dppic";
-			reg = <0x4100f000 0x1000>;
+		power: power@41005000 {
+			compatible = "nordic,nrf-power";
+			reg = <0x41005000 0x1000>;
+			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
-			label = "DPPIC";
+		};
+
+		radio: radio@41008000 {
+			compatible = "nordic,nrf-radio";
+			reg = <0x41008000 0x1000>;
+			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			dfe-supported;
+		};
+
+		rng: random@41009000 {
+			compatible = "nordic,nrf-rng";
+			reg = <0x41009000 0x1000>;
+			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "RNG";
+		};
+
+		gpiote: gpiote@4100a000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4100a000 0x1000>;
+			interrupts = <10 5>;
+			status = "disabled";
+			label = "GPIOTE_0";
+		};
+
+		wdt: wdt0: watchdog@4100b000 {
+			compatible = "nordic,nrf-watchdog";
+			reg = <0x4100b000 0x1000>;
+			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "WDT";
+		};
+
+		timer0: timer@4100c000 {
+			compatible = "nordic,nrf-timer";
+			status = "disabled";
+			reg = <0x4100c000 0x1000>;
+			cc-num = <8>;
+			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
+			prescaler = <0>;
+			label = "TIMER0";
 		};
 
 		ecb: ecb@4100d000 {
@@ -80,47 +117,36 @@
 			label = "ECB";
 		};
 
-		egu0: egu@41014000 {
-			compatible = "nordic,nrf-egu";
-			reg = <0x41014000 0x1000>;
-			interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+		dppic: dppic@4100f000 {
+			compatible = "nordic,nrf-dppic";
+			reg = <0x4100f000 0x1000>;
 			status = "okay";
-			label = "EGU_0";
+			label = "DPPIC";
 		};
 
-		ficr: ficr@1ff0000 {
-			compatible = "nordic,nrf-ficr";
-			reg = <0x01ff0000 0x1000>;
+		temp: temp@41010000 {
+			compatible = "nordic,nrf-temp";
+			reg = <0x41010000 0x1000>;
+			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			label = "TEMP_0";
 		};
 
-		gpio0: gpio@418c0500 {
-			compatible = "nordic,nrf-gpio";
-			gpio-controller;
-			reg = <0x418c0500 0x300>;
-			#gpio-cells = <2>;
-			label = "GPIO_0";
-			status = "disabled";
-			port = <0>;
+		rtc0: rtc@41011000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x41011000 0x1000>;
+			cc-num = <4>;
+			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "RTC_0";
 		};
 
-		gpio1: gpio@418c0800 {
-			compatible = "nordic,nrf-gpio";
-			gpio-controller;
-			reg = <0x418c0800 0x300>;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			label = "GPIO_1";
-			status = "disabled";
-			port = <1>;
-		};
-
-		gpiote: gpiote@4100a000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x4100a000 0x1000>;
-			interrupts = <10 5>;
-			status = "disabled";
-			label = "GPIOTE_0";
+		ipc: ipc@41012000 {
+			compatible = "nordic,nrf-ipc";
+			reg = <0x41012000 0x1000>;
+			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "IPC";
 		};
 
 		i2c0: i2c@41013000 {
@@ -139,56 +165,6 @@
 			label = "I2C_0";
 		};
 
-		ipc: ipc@41012000 {
-			compatible = "nordic,nrf-ipc";
-			reg = <0x41012000 0x1000>;
-			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "IPC";
-		};
-
-		power: power@41005000 {
-			compatible = "nordic,nrf-power";
-			reg = <0x41005000 0x1000>;
-			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-		};
-
-		radio: radio@41008000 {
-			compatible = "nordic,nrf-radio";
-			reg = <0x41008000 0x1000>;
-			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			dfe-antenna-num = <0>;
-			dfe-pdu-antenna = <0xFF>;
-		};
-
-		rng: random@41009000 {
-			compatible = "nordic,nrf-rng";
-			reg = <0x41009000 0x1000>;
-			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "RNG";
-		};
-
-		rtc0: rtc@41011000 {
-			compatible = "nordic,nrf-rtc";
-			reg = <0x41011000 0x1000>;
-			cc-num = <4>;
-			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "RTC_0";
-		};
-
-		rtc1: rtc@41016000 {
-			compatible = "nordic,nrf-rtc";
-			reg = <0x41016000 0x1000>;
-			cc-num = <4>;
-			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "RTC_1";
-		};
-
 		spi0: spi@41013000 {
 			/*
 			 * This spi node can be SPIM or SPIS,
@@ -204,22 +180,29 @@
 			label = "SPI_0";
 		};
 
-		temp: temp@41010000 {
-			compatible = "nordic,nrf-temp";
-			reg = <0x41010000 0x1000>;
-			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "TEMP_0";
+		uart0: uart@41013000 {
+			compatible = "nordic,nrf-uarte";
+			reg = <0x41013000 0x1000>;
+			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "UART_0";
 		};
 
-		timer0: timer@4100c000 {
-			compatible = "nordic,nrf-timer";
-			status = "disabled";
-			reg = <0x4100c000 0x1000>;
-			cc-num = <8>;
-			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
-			prescaler = <0>;
-			label = "TIMER0";
+		egu0: egu@41014000 {
+			compatible = "nordic,nrf-egu";
+			reg = <0x41014000 0x1000>;
+			interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "EGU_0";
+		};
+
+		rtc1: rtc@41016000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x41016000 0x1000>;
+			cc-num = <4>;
+			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "RTC_1";
 		};
 
 		timer1: timer@41018000 {
@@ -242,18 +225,21 @@
 			label = "TIMER2";
 		};
 
-		uart0: uart@41013000 {
-			compatible = "nordic,nrf-uarte";
-			reg = <0x41013000 0x1000>;
-			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
-			label = "UART_0";
-		};
+		flash_controller: flash-controller@41080000 {
+			compatible = "nordic,nrf53-flash-controller";
+			reg = <0x41080000 0x1000>;
 
-		uicr: uicr@1ff8000 {
-			compatible = "nordic,nrf-uicr";
-			reg = <0x01ff8000 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label="NRF_FLASH_DRV_NAME";
+
+			flash1: flash@1000000 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				erase-block-size = <2048>;
+				write-block-size = <4>;
+			};
 		};
 
 		vmc: vmc@41081000 {
@@ -262,12 +248,25 @@
 			status = "okay";
 		};
 
-		wdt: wdt0: watchdog@4100b000 {
-			compatible = "nordic,nrf-watchdog";
-			reg = <0x4100b000 0x1000>;
-			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-			label = "WDT";
+		gpio0: gpio@418c0500 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = <0x418c0500 0x300>;
+			#gpio-cells = <2>;
+			label = "GPIO_0";
+			status = "disabled";
+			port = <0>;
+		};
+
+		gpio1: gpio@418c0800 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = <0x418c0800 0x300>;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			label = "GPIO_1";
+			status = "disabled";
+			port = <1>;
 		};
 	};
 };

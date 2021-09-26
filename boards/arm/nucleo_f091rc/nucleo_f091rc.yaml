@@ -20,6 +20,7 @@ supported:
   - watchdog
   - adc
   - dac
+  - dma
 testing:
   ignore_tags:
     - net

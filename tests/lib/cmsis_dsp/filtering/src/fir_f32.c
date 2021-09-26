@@ -30,7 +30,7 @@ static void test_arm_fir_f32(void)
 	arm_fir_instance_f32 inst;
 
 	/* Allocate buffers */
-	state = malloc(64 * sizeof(float32_t));
+	state = malloc(2 * 47 * sizeof(float32_t));
 	zassert_not_null(state, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output_buf = malloc(length * sizeof(float32_t));

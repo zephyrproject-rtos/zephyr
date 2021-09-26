@@ -5,6 +5,9 @@
 
 if BT_LL_SW_SPLIT
 
+DT_PATH_NORDIC_RADIO := $(dt_nodelabel_path,radio)
+DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_has_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
+
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on SOC_COMPATIBLE_NRF
@@ -15,7 +18,7 @@ config BT_LLL_VENDOR_NORDIC
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
@@ -31,7 +34,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
-	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -238,6 +241,13 @@ config BT_CTLR_SCAN_SYNC_ISO_SET
 	help
 	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
 
+config BT_CTLR_ADV_ENABLE_STRICT
+	bool "Enforce Strict Advertising Enable/Disable"
+	depends on BT_BROADCASTER
+	help
+	  Enforce returning HCI Error Command Disallowed on enabling/disabling
+	  already enabled/disabled advertising.
+
 config BT_CTLR_SCAN_ENABLE_STRICT
 	bool "Enforce Strict Scan Enable/Disable"
 	depends on BT_OBSERVER
@@ -297,15 +307,15 @@ config BT_CTLR_SCHED_ADVANCED
 	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
 	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
 	help
-	  Enable non-overlapping placement of observer, initiator and master
+	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
-	  connection parameter request in slave role to negotiate
-	  non-overlapping placement with active master roles to avoid slave
-	  roles drifting into active master roles in the local controller.
+	  connection parameter request in peripheral role to negotiate
+	  non-overlapping placement with active central roles to avoid peripheral
+	  roles drifting into active central roles in the local controller.
 
 	  This feature maximizes the average data transmission amongst active
-	  concurrent master and slave connections while other observer,
-	  initiator, master or slave roles are active in the local controller.
+	  concurrent central and peripheral connections while other observer,
+	  initiator, central or peripheral roles are active in the local controller.
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.

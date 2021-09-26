@@ -65,7 +65,8 @@ static int powerup_adv7513(const struct device *i2c_dev)
 
 static int test_i2c_adv7513(void)
 {
-	const struct device *i2c_dev = device_get_binding(DT_LABEL(DT_INST(0, nios2_i2c)));
+	const struct device *i2c_dev =
+		device_get_binding(DT_LABEL(DT_INST(0, altr_nios2_i2c)));
 	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 	uint8_t data;
 

@@ -6,6 +6,7 @@ zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB         timer_tmr_cmsdk_
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB        timer_dtmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_GECKO_RTCC          counter_gecko_rtcc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_IMX_EPIT            counter_imx_epit.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_CTIMER         counter_mcux_ctimer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_RTC            counter_mcux_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPC_RTC        counter_mcux_lpc_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NRF_TIMER           counter_nrfx_timer.c)
@@ -23,3 +24,4 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE                   counter_handlers
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_PIT            counter_mcux_pit.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER      counter_xlnx_axi_timer.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_ESP32               counter_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MICROCHIP_MCP7940N  rtc_mcp7940n.c)

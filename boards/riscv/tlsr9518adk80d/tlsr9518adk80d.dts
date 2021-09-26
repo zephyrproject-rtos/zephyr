@@ -16,6 +16,8 @@
 		led0 = &led_blue;
 		led1 = &led_green;
 		sw0 = &key_1;
+		pwm-led0 = &pwm_led_blue;
+		pwm-0 = &pwm0;
 	};
 
 	leds {
@@ -42,6 +44,15 @@
 		};
 	};
 
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led_blue: pwm_led_0 {
+			pwms = <&pwm0 0 0>;
+			label = "PWM LED Blue";
+		};
+	};
+
 	keys {
 		compatible = "gpio-keys";
 		key_1: button_1 {
@@ -56,6 +67,7 @@
 		zephyr,sram = &ram_dlm;
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
+		zephyr,entropy = &trng0;
 	};
 };
 
@@ -95,6 +107,38 @@
 	pinctrl-0 = <&uart0_tx_pb2 &uart0_rx_pb3>;
 };
 
+&trng0 {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	clock-frequency = <93750>;
+	pinctrl-0 = <&pwm_ch0_pb4>;
+};
+
+&pspi {
+	status = "okay";
+	cs0-pin = "PSPI_CSN_PC4";
+	pinctrl-0 = <&pspi_clk_pc5 &pspi_miso_io1_pc6 &pspi_mosi_io0_pc7>;
+};
+
+&hspi {
+	status = "okay";
+	cs0-pin = "HSPI_CSN_PA1";
+	pinctrl-0 = <&hspi_clk_pa2 &hspi_miso_io1_pa3 &hspi_mosi_io0_pa4>;
+};
+
+&i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c_scl_pe1 &i2c_sda_pe3>;
+};
+
 &flash_mspi {
 	partitions {
 		compatible = "fixed-partitions";
@@ -119,7 +163,10 @@
 		};
 		storage_partition: partition@f0000 {
 			label = "storage";
-			reg = <0x000f0000 0x00010000>;
+			reg = <0x000f0000 0x00008000>;
+			/* region 0x000f8000 .. 0x000FFFFF
+			 * is reserved for factory calibration
+			 */
 		};
 	};
 };

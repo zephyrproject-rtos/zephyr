@@ -87,7 +87,7 @@ struct rpmsg_mi_ept_cfg {
 	void *priv;
 };
 
-/** @brief Struct describing the context of the RPMsg instanece. */
+/** @brief Struct describing the context of the RPMsg instance. */
 struct rpmsg_mi_ctx {
 	const char *name;
 	struct k_work_q ipm_work_q;
@@ -96,7 +96,9 @@ struct rpmsg_mi_ctx {
 	const struct device *ipm_tx_handle;
 	const struct device *ipm_rx_handle;
 
-	uint32_t shm_status_reg_addr;
+	unsigned int ipm_tx_id;
+
+	uintptr_t shm_status_reg_addr;
 	struct metal_io_region *shm_io;
 	struct metal_device shm_device;
 	metal_phys_addr_t shm_physmap[1];
@@ -109,14 +111,25 @@ struct rpmsg_mi_ctx {
 	struct virtio_vring_info rvrings[2];
 	struct virtio_device vdev;
 
-	uint32_t vring_tx_addr;
-	uint32_t vring_rx_addr;
+	uintptr_t vring_tx_addr;
+	uintptr_t vring_rx_addr;
 
 	sys_slist_t endpoints;
 };
 
+struct rpmsg_mi_ctx_shm_cfg {
+	/** Physical address shared memory region. */
+	uintptr_t addr;
+
+	/** Size shared memory region. */
+	size_t size;
+
+	/** Internal counter. */
+	unsigned int instance;
+};
+
 /** @brief Configuration of the RPMsg instance. */
-struct rpsmg_mi_ctx_cfg {
+struct rpmsg_mi_ctx_cfg {
 
 	/** Name of instance. */
 	const char *name;
@@ -138,6 +151,12 @@ struct rpsmg_mi_ctx_cfg {
 
 	/** Name of the RX IPM channel. */
 	const char *ipm_rx_name;
+
+	/** IPM message identifier. */
+	unsigned int ipm_tx_id;
+
+	/** SHM struct. */
+	struct rpmsg_mi_ctx_shm_cfg *shm;
 };
 
 /** @brief Initialization of RPMsg instance.
@@ -153,7 +172,7 @@ struct rpsmg_mi_ctx_cfg {
  *         -ENOMEM when there is not enough memory to register virqueue.
  *         < 0 on other negative errno code, reported by rpmsg.
  */
-int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpsmg_mi_ctx_cfg *cfg);
+int rpmsg_mi_ctx_init(struct rpmsg_mi_ctx *ctx, const struct rpmsg_mi_ctx_cfg *cfg);
 
 /** @brief Register IPC endpoint.
  *

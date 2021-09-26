@@ -17,6 +17,7 @@ set(TFM_VALID_PARTITIONS
 # List of all crypto modules that can be enabled/disabled
 # Corresponds to the *_MODULE_DISABLED configs in 'trusted-firmware-m/config/config_default.cmake'
 set(TFM_CRYPTO_MODULES
+  CRYPTO_RNG_MODULE
   CRYPTO_KEY_MODULE
   CRYPTO_AEAD_MODULE
   CRYPTO_MAC_MODULE
@@ -168,6 +169,17 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
+    # Supply path to NXP HAL sources used for TF-M build
+    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/platform/ext/target/nxp/)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
+  endif()
+
+  if(CONFIG_TFM_BL2 AND CONFIG_TFM_MCUBOOT_PATH_LOCAL)
+    # Supply path to MCUboot for TF-M build
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../../bootloader/mcuboot)
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -184,8 +196,7 @@ if (CONFIG_BUILD_WITH_TFM)
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
-      -DMBEDCRYPTO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../crypto/mbedtls/mbedtls
-      -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
+      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../crypto/mbedtls/mbedtls>
       -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
     WORKING_DIRECTORY ${TFM_BINARY_DIR}

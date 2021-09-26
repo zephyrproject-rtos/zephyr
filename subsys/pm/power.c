@@ -68,7 +68,6 @@ void pm_dump_debug_info(void)
 static inline void pm_debug_start_timer(void) { }
 static inline void pm_debug_stop_timer(void) { }
 static void pm_log_debug_info(enum pm_state state) { }
-void pm_dump_debug_info(void) { }
 #endif
 
 static inline void exit_pos_ops(struct pm_state_info info)
@@ -232,6 +231,8 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
+		__fallthrough;
+	case PM_STATE_SOFT_OFF:
 		if (pm_suspend_devices()) {
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
 					ticks, _handle_device_abort(z_power_state));

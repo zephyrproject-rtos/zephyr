@@ -32,7 +32,7 @@ enum {
 	BT_MESH_MOD_BIND_PENDING = BIT(0),
 	BT_MESH_MOD_SUB_PENDING = BIT(1),
 	BT_MESH_MOD_PUB_PENDING = BIT(2),
-	BT_MESH_MOD_NEXT_IS_PARENT = BIT(3),
+	BT_MESH_MOD_EXTENDED = BIT(3),
 };
 
 /* Model publication information for persistent storage. */
@@ -422,8 +422,7 @@ struct find_group_visitor_ctx {
 	uint16_t addr;
 };
 
-static enum bt_mesh_walk find_group_mod_visitor(struct bt_mesh_model *mod,
-						uint32_t depth, void *user_data)
+static enum bt_mesh_walk find_group_mod_visitor(struct bt_mesh_model *mod, void *user_data)
 {
 	struct find_group_visitor_ctx *ctx = user_data;
 
@@ -448,8 +447,7 @@ uint16_t *bt_mesh_model_find_group(struct bt_mesh_model **mod, uint16_t addr)
 		.addr = addr,
 	};
 
-	bt_mesh_model_tree_walk(bt_mesh_model_root(*mod),
-				find_group_mod_visitor, &ctx);
+	bt_mesh_model_extensions_walk(*mod, find_group_mod_visitor, &ctx);
 
 	*mod = ctx.mod;
 	return ctx.entry;
@@ -555,7 +553,7 @@ uint8_t bt_mesh_elem_count(void)
 	return dev_comp->elem_count;
 }
 
-static bool model_has_key(struct bt_mesh_model *mod, uint16_t key)
+bool bt_mesh_model_has_key(struct bt_mesh_model *mod, uint16_t key)
 {
 	int i;
 
@@ -696,7 +694,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 			continue;
 		}
 
-		if (!model_has_key(model, rx->ctx.app_idx)) {
+		if (!bt_mesh_model_has_key(model, rx->ctx.app_idx)) {
 			continue;
 		}
 
@@ -731,7 +729,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	if (!model_has_key(model, ctx->app_idx)) {
+	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
 		BT_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
@@ -812,79 +810,73 @@ const struct bt_mesh_comp *bt_mesh_comp_get(void)
 	return dev_comp;
 }
 
-struct bt_mesh_model *bt_mesh_model_root(struct bt_mesh_model *mod)
+void bt_mesh_model_extensions_walk(struct bt_mesh_model *model,
+				   enum bt_mesh_walk (*cb)(struct bt_mesh_model *mod,
+							   void *user_data),
+				   void *user_data)
 {
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-	while (mod->next) {
-		mod = mod->next;
+#ifndef CONFIG_BT_MESH_MODEL_EXTENSIONS
+	(void)cb(model, user_data);
+	return;
+#else
+	struct bt_mesh_model *it;
+
+	if (model->next == NULL) {
+		(void)cb(model, user_data);
+		return;
 	}
-#endif
-	return mod;
-}
 
-void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
-			     enum bt_mesh_walk (*cb)(struct bt_mesh_model *mod,
-						     uint32_t depth,
-						     void *user_data),
-			     void *user_data)
-{
-	struct bt_mesh_model *m = root;
-	int depth = 0;
-	/* 'skip' is set to true when we ascend from child to parent node.
-	 * In that case, we want to skip calling the callback on the parent
-	 * node and we don't want to descend onto a child node as those
-	 * nodes have already been visited.
-	 */
-	bool skip = false;
-
-	do {
-		if (!skip &&
-		    cb(m, (uint32_t)depth, user_data) == BT_MESH_WALK_STOP) {
+	for (it = model; (it != NULL) && (it->next != model); it = it->next) {
+		if (cb(it, user_data) == BT_MESH_WALK_STOP) {
 			return;
 		}
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-		if (!skip && m->extends) {
-			m = m->extends;
-			depth++;
-		} else if (m->flags & BT_MESH_MOD_NEXT_IS_PARENT) {
-			m = m->next;
-			depth--;
-			skip = true;
-		} else {
-			m = m->next;
-			skip = false;
-		}
+	}
 #endif
-	} while (m && depth > 0);
 }
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-int bt_mesh_model_extend(struct bt_mesh_model *mod,
-			 struct bt_mesh_model *base_mod)
+int bt_mesh_model_extend(struct bt_mesh_model *extending_mod, struct bt_mesh_model *base_mod)
 {
-	/* Form a cyclical LCRS tree:
-	 * The extends-pointer points to the first child, and the next-pointer
-	 * points to the next sibling. The last sibling is marked by the
-	 * BT_MESH_MOD_NEXT_IS_PARENT flag, and its next-pointer points back to
-	 * the parent. This way, the whole tree is accessible from any node.
-	 *
-	 * We add children (extend them) by inserting them as the first child.
-	 */
-	if (base_mod->next) {
-		return -EALREADY;
+	struct bt_mesh_model *a = extending_mod;
+	struct bt_mesh_model *b = base_mod;
+	struct bt_mesh_model *a_next = a->next;
+	struct bt_mesh_model *b_next = b->next;
+	struct bt_mesh_model *it;
+
+	base_mod->flags |= BT_MESH_MOD_EXTENDED;
+
+	if (a == b) {
+		return 0;
 	}
 
-	if (mod->extends) {
-		base_mod->next = mod->extends;
+	/* Check if a's list contains b */
+	for (it = a; (it != NULL) && (it->next != a); it = it->next) {
+		if (it == b) {
+			return 0;
+		}
+	}
+
+	/* Merge lists */
+	if (a_next) {
+		b->next = a_next;
 	} else {
-		base_mod->next = mod;
-		base_mod->flags |= BT_MESH_MOD_NEXT_IS_PARENT;
+		b->next = a;
 	}
 
-	mod->extends = base_mod;
+	if (b_next) {
+		a->next = b_next;
+	} else {
+		a->next = b;
+	}
+
 	return 0;
 }
 #endif
+
+bool bt_mesh_model_is_extended(struct bt_mesh_model *model)
+{
+	return model->flags & BT_MESH_MOD_EXTENDED;
+}
 
 static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 			settings_read_cb read_cb, void *cb_arg)
@@ -1230,7 +1222,7 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	encode_mod_path(mod, vnd, "data", path, sizeof(path));
 	if (name) {
 		strcat(path, "/");
-		strncat(path, name, 8);
+		strncat(path, name, SETTINGS_MAX_DIR_DEPTH);
 	}
 
 	if (data_len) {

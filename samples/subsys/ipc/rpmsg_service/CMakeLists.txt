@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 # Copyright (c) 2019 Linaro Limited
 # Copyright (c) 2018-2021 Nordic Semiconductor ASA
 #
@@ -9,6 +9,8 @@ set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/rpmsg_service_remote-prefix/sr
 
 if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp")
   set(BOARD_REMOTE "nrf5340dk_nrf5340_cpunet")
+elseif("${BOARD}" STREQUAL "bl5340_dvk_cpuapp")
+  set(BOARD_REMOTE "bl5340_dvk_cpunet")
 elseif("${BOARD}" STREQUAL "lpcxpresso54114_m4")
   set(BOARD_REMOTE "lpcxpresso54114_m0")
 elseif("${BOARD}" STREQUAL "mps2_an521")

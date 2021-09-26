@@ -32,6 +32,7 @@
 /** Communications Class Protocol Codes */
 #define AT_CMD_V250_PROTOCOL		0x01
 #define EEM_PROTOCOL			0x07
+#define ACM_VENDOR_PROTOCOL		0xFF
 
 /**
  * @brief Data Class Interface Codes

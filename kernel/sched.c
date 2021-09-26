@@ -170,6 +170,23 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
+ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+{
+	struct k_thread *t;
+
+	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+
+	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
+		if (z_sched_prio_cmp(thread, t) > 0) {
+			sys_dlist_insert(&t->base.qnode_dlist,
+					 &thread->base.qnode_dlist);
+			return;
+		}
+	}
+
+	sys_dlist_append(pq, &thread->base.qnode_dlist);
+}
+
 /* _current is never in the run queue until context switch on
  * SMP configurations, see z_requeue_current()
  */
@@ -927,23 +944,6 @@ void *z_get_next_switch_handle(void *interrupted)
 }
 #endif
 
-ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
-{
-	struct k_thread *t;
-
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
-		if (z_sched_prio_cmp(thread, t) > 0) {
-			sys_dlist_insert(&t->base.qnode_dlist,
-					 &thread->base.qnode_dlist);
-			return;
-		}
-	}
-
-	sys_dlist_append(pq, &thread->base.qnode_dlist);
-}
-
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
@@ -1365,7 +1365,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <syscalls/k_wakeup_mrsh.c>
 #endif
 
-k_tid_t z_impl_k_current_get(void)
+k_tid_t z_impl_z_current_get(void)
 {
 #ifdef CONFIG_SMP
 	/* In SMP, _current is a field read from _current_cpu, which
@@ -1384,11 +1384,11 @@ k_tid_t z_impl_k_current_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_tid_t z_vrfy_k_current_get(void)
+static inline k_tid_t z_vrfy_z_current_get(void)
 {
-	return z_impl_k_current_get();
+	return z_impl_z_current_get();
 }
-#include <syscalls/k_current_get_mrsh.c>
+#include <syscalls/z_current_get_mrsh.c>
 #endif
 
 int z_impl_k_is_preempt_thread(void)
@@ -1460,6 +1460,10 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	}
 }
 
+#ifdef CONFIG_CMSIS_RTOS_V1
+extern void z_thread_cmsis_status_mask_clear(struct k_thread *thread);
+#endif
+
 static void end_thread(struct k_thread *thread)
 {
 	/* We hold the lock, and the thread is known not to be running
@@ -1481,6 +1485,10 @@ static void end_thread(struct k_thread *thread)
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
 		z_thread_monitor_exit(thread);
+
+#ifdef CONFIG_CMSIS_RTOS_V1
+		z_thread_cmsis_status_mask_clear(thread);
+#endif
 
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);

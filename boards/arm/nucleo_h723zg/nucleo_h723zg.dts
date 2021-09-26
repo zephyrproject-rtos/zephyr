@@ -95,6 +95,12 @@
 	status = "okay";
 };
 
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &rtc {
 	status = "okay";
 };
@@ -103,6 +109,10 @@
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&backup_sram {
+	status = "okay";
 };
 
 &timers12 {

@@ -28,3 +28,5 @@ void lll_prof_latency_capture(void);
 void lll_prof_radio_end_backup(void);
 void lll_prof_cputime_capture(void);
 void lll_prof_send(void);
+struct node_rx_pdu *lll_prof_reserve(void);
+void lll_prof_reserve_send(struct node_rx_pdu *rx);

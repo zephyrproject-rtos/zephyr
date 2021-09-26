@@ -87,15 +87,11 @@ config FLASH_LOAD_SIZE
 
 endif # BOARD_BL5340_DVK_CPUAPP_NS
 
-if (BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS) && USB
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_TI_TCA9538 := ti,tca9538
 
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
-
-endif # (BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS) && USB
+config I2C
+default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
 
 endif # BOARD_BL5340_DVK_CPUAPP || BOARD_BL5340_DVK_CPUAPP_NS
 

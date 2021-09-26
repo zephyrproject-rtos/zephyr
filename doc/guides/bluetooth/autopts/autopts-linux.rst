@@ -244,6 +244,11 @@ Remember to install drivers from installation directory
    :width: 850
    :align: center
 
+.. note::
+
+    Starting with PTS 8.0.1 the Bluetooth Protocol Viewer is no longer included.
+    So to capture Bluetooth events, you have to download it separately.
+
 Connect PTS dongle
 --------------------
 
@@ -380,6 +385,17 @@ Testing Zephyr Host Stack on native posix:
 
 
 Testing Zephyr combined (controller + host) build on nRF52:
+
+.. note::
+
+    If the error "ImportError: No module named pywintypes" appeared after the fresh setup,
+    uninstall and install the pywin32 module:
+
+    .. code-block::
+
+      pip install --upgrade --force-reinstall pywin32
+
+Run client:
 
 .. code-block::
 

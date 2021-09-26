@@ -75,4 +75,21 @@
 /*!<@brief Slow mode */
 #define IOPCTL_PIO_SLEW_RATE_SLOW 0x80u
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if CONFIG_DISK_DRIVER_SDMMC &&					\
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) ||	\
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay))
+
+void imxrt_usdhc_pinmux(uint16_t nusdhc,
+	bool init, uint32_t speed, uint32_t strength);
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _SOC__H_ */

@@ -32,7 +32,7 @@ manifest:
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: c3bd2094f92d574377f7af2aec147ae181aa5f8e
+      revision: b0612c97c1401feeb4160add6462c3627fe90fc7
       path: modules/hal/cmsis
       groups:
         - hal
@@ -42,7 +42,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
+      revision: 94fcd6bfb3801ac0a5e12ea2f52187e0a688b90e
       path: modules/fs/fatfs
       groups:
         - fs
@@ -62,13 +62,9 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f525ee6f468c2c68119731e1453ad72d189a1277
+      revision: 3400257534944d3a6a4194d1dbf8f0cd1670d64e
       path: modules/hal/espressif
-      groups:
-        - hal
       west-commands: west/west-commands.yml
-      revision: c21d252a2188fcb60d52dceb6b018a9f4a371817
-      path: modules/hal/espressif
       groups:
         - hal
     - name: hal_infineon
@@ -77,12 +73,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: b280eec5d3b1296b231117c1999bcd0269b6ecc4
+      revision: 870d05e6a64ea9548da6b907058b03c8c9420826
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 00fd2aa97a22ea1052d9dabe1b18ab396daab93a
+      revision: a6e5299041f152da5ae0ab17b2e44e088bb96d6d
       path: modules/hal/nordic
       groups:
         - hal
@@ -92,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 4b493d4346e841e786a8daa2eb2ee03cbe5cfd37
+      revision: 78efc4ba7c1057c1cf2bf06e3e27ed7cc33e1da7
       path: modules/hal/nxp
       groups:
         - hal
@@ -118,7 +114,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 7e5f46d25a292f4a140af6da7afc0efc67d56e45
+      revision: 5c8275071ec1cf160bfe8c18bbd9330a7d714dc8
       path: modules/hal/stm32
       groups:
         - hal
@@ -128,12 +124,12 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 3da6fae25fc44ec830fac4a92787b585ff55435e
+      revision: 1992a4c536554c4f409c36896eda6abdc414d277
       path: modules/hal/ti
       groups:
         - hal
     - name: hal_xtensa
-      revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
+      revision: 6e1cf3c483e87df4888e87c5396b4534570f01af
       path: modules/hal/xtensa
       groups:
         - hal
@@ -151,7 +147,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
+      revision: 783c1f78c8e39751fe89d0883c8bce7336f55e94
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -162,10 +158,10 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7a5196820ba48a6ad7e7d573c9048c021960677c
+      revision: 70bfbd21cdf5f6d1402bc8d0031e197222ed2ec0
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
+      revision: 31a2aa9cea58d3ceecbf0d5b91361bff7c94aeca
       path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -187,7 +183,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: eae63bb47a31ed61d008f49a024873026626ebcc
+      revision: 5d706547ebcb0a85e11412bcd88e80e2af98c74d
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -195,18 +191,12 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
+      revision: 76feb11d1b8f425021b5691668af2250fee444ac
       path: modules/audio/sof
-    - name: tensorflow
-      revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
-      path: modules/lib/tensorflow
-      repo-path: tensorflow
-    - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
-      revision: v1.7.2
-      path: modules/tee/tfm-mcuboot
-      groups:
-        - tee
-      repo-path: mcuboot
+    - name: tflite-micro
+      revision: 9156d050927012da87079064db59d07f03b8baf6
+      path: modules/lib/tflite-micro
+      repo-path: tflite-micro
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
@@ -216,13 +206,13 @@ manifest:
       groups:
         - crypto
     - name: TraceRecorderSource
-      revision: 5b5f8d7adbf0e93a09087e8f5708f0eebb8b25bf
+      revision: 36c577727642457b0db7274298a4b96558374832
       path: modules/debug/TraceRecorder
       groups:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: e18b7a9b040b5b5324520388047c9e7d678447e6
+      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
       groups:
         - tee
 

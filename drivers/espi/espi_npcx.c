@@ -856,6 +856,11 @@ static int espi_npcx_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int i, ret;
 
+	/* If booter doesn't set the host interface type */
+	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
+		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
+	}
+
 	/* Turn on eSPI device clock first */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
 							&config->clk_cfg);

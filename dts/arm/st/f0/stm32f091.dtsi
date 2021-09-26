@@ -69,11 +69,10 @@
 		};
 
 		dma2: dma@40020400 {
-			compatible = "st,stm32-dma-v2";
-			#dma-cells = <3>;
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0
-				      11 0 10 0 10 0 11 0 11 0 11 0>;
+			interrupts = <10 0 10 0 11 0 11 0 11 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			status = "disabled";
 			label = "DMA_2";

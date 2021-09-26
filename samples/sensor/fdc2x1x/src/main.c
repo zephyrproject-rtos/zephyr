@@ -43,8 +43,8 @@ static void pm_info(enum pm_device_state state, int status)
 	case PM_DEVICE_STATE_ACTIVE:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		printk("Enter LOW_POWER_STATE ");
+	case PM_DEVICE_STATE_SUSPENDED:
+		printk("Enter SUSPEND_STATE ");
 		break;
 	case PM_DEVICE_STATE_OFF:
 		printk("Enter OFF_STATE ");
@@ -95,7 +95,7 @@ void main(void)
 	enum pm_device_state p_state;
 	int ret;
 
-	p_state = PM_DEVICE_STATE_LOW_POWER;
+	p_state = PM_DEVICE_STATE_SUSPENDED;
 	ret = pm_device_state_set(dev, p_state);
 	pm_info(p_state, ret);
 

@@ -9,6 +9,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <devicetree.h>
+
+#define ECIA_BASE_ADDR			DT_REG_ADDR(DT_NODELABEL(ecia))
 
 #define MCHP_FIRST_GIRQ_NOS		8u
 #define MCHP_LAST_GIRQ_NOS		26u
@@ -1155,5 +1158,80 @@ struct ecia_regs {
 	volatile uint32_t BLK_EN_CLR;
 	volatile uint32_t BLK_ACTIVE;
 };
+
+/* Until XEC ECIA driver is available we define these locally */
+static inline void mchp_soc_ecia_girq_aggr_en(uint8_t girq, uint8_t en)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS)) {
+		return;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	if (en) {
+		ecia->BLK_EN_SET = BIT(girq);
+	} else {
+		ecia->BLK_EN_CLR = BIT(girq);
+	}
+}
+
+static inline void mchp_soc_ecia_girq_src_clr(uint8_t girq, uint8_t pin)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS) ||
+	    (pin > 31)) {
+		return;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	ecia->GIRQ[girq - 8u].SRC = BIT(pin);
+}
+
+static inline void mchp_soc_ecia_girq_src_clr_bitmap(uint8_t girq,
+						     uint32_t bitmap)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS)) {
+		return;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	ecia->GIRQ[girq - 8u].SRC = bitmap;
+}
+
+static inline void mchp_soc_ecia_girq_src_dis(uint8_t girq, uint8_t pin)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS) ||
+	    (pin > 31)) {
+		return;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	ecia->GIRQ[girq - 8u].EN_CLR = BIT(pin);
+}
+
+static inline void mchp_soc_ecia_girq_src_en(uint8_t girq, uint8_t pin)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS) ||
+	    (pin > 31)) {
+		return;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	ecia->GIRQ[girq - 8u].EN_SET = BIT(pin);
+}
+
+static inline uint32_t mchp_soc_ecia_girq_result(uint8_t girq)
+{
+	if ((girq < MCHP_FIRST_GIRQ_NOS) || (girq > MCHP_LAST_GIRQ_NOS)) {
+		return 0u;
+	}
+
+	struct ecia_regs *ecia = (struct ecia_regs *)(ECIA_BASE_ADDR);
+
+	return ecia->GIRQ[girq - 8u].RESULT;
+}
 
 #endif /* #ifndef _MEC172X_ECIA_H */

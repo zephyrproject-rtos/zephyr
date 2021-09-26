@@ -31,7 +31,6 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			     bool write, void *buf, size_t length)
 {
 	const struct bmi160_cfg *cfg = to_config(dev);
-	struct bmi160_data *data = to_data(dev);
 	const struct spi_buf tx_buf[2] = {
 		{
 			.buf = &reg,
@@ -53,57 +52,63 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			.count = 2
 		};
 
-		return spi_transceive(data->bus, cfg->bus_cfg.spi_cfg, &tx,
-				      &rx);
+		return spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
 	}
 
-	return spi_write(data->bus, cfg->bus_cfg.spi_cfg, &tx);
+	return spi_write_dt(&cfg->bus.spi, &tx);
+}
+
+bool bmi160_bus_ready_spi(const struct device *dev)
+{
+	return spi_is_ready(&to_config(dev)->bus.spi);
 }
 
 int bmi160_read_spi(const struct device *dev,
-		    const struct bmi160_bus_cfg *bus_config, uint8_t reg_addr,
-		    void *buf, uint8_t len)
+		    uint8_t reg_addr, void *buf, uint8_t len)
 {
 	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false,
 				 buf, len);
 }
 
 int bmi160_write_spi(const struct device *dev,
-		     const struct bmi160_bus_cfg *bus_config,
 		     uint8_t reg_addr, void *buf, uint8_t len)
 {
 	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true,
 				 buf, len);
 }
 
-static const struct bmi160_reg_io bmi160_reg_io_spi = {
+static const struct bmi160_bus_io bmi160_bus_io_spi = {
+	.ready = bmi160_bus_ready_spi,
 	.read = bmi160_read_spi,
 	.write = bmi160_write_spi,
 };
 #endif /* BMI160_BUS_SPI */
 
 #if BMI160_BUS_I2C
-int bmi160_read_i2c(const struct device *dev,
-		    const struct bmi160_bus_cfg *bus_config, uint8_t reg_addr,
-		    void *buf, uint8_t len)
-{
-	struct bmi160_data *data = to_data(dev);
 
-	return i2c_burst_read(data->bus, bus_config->i2c_addr, reg_addr, buf,
-			      len);
+bool bmi160_bus_ready_i2c(const struct device *dev)
+{
+	return device_is_ready(to_config(dev)->bus.i2c.bus);
+}
+
+int bmi160_read_i2c(const struct device *dev,
+		    uint8_t reg_addr, void *buf, uint8_t len)
+{
+	const struct bmi160_cfg *cfg = to_config(dev);
+
+	return i2c_burst_read_dt(&cfg->bus.i2c, reg_addr, buf, len);
 }
 
 int bmi160_write_i2c(const struct device *dev,
-		     const struct bmi160_bus_cfg *bus_config,
 		     uint8_t reg_addr, void *buf, uint8_t len)
 {
-	struct bmi160_data *data = to_data(dev);
+	const struct bmi160_cfg *cfg = to_config(dev);
 
-	return i2c_burst_write(data->bus, bus_config->i2c_addr, reg_addr, buf,
-			       len);
+	return i2c_burst_write_dt(&cfg->bus.i2c, reg_addr, buf, len);
 }
 
-static const struct bmi160_reg_io bmi160_reg_io_i2c = {
+static const struct bmi160_bus_io bmi160_bus_io_i2c = {
+	.ready = bmi160_bus_ready_i2c,
 	.read = bmi160_read_i2c,
 	.write = bmi160_write_i2c,
 };
@@ -114,7 +119,7 @@ int bmi160_read(const struct device *dev, uint8_t reg_addr, void *buf,
 {
 	const struct bmi160_cfg *cfg = to_config(dev);
 
-	return cfg->reg_io->read(dev, &cfg->bus_cfg, reg_addr, buf, len);
+	return cfg->bus_io->read(dev, reg_addr, buf, len);
 }
 
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
@@ -142,7 +147,7 @@ int bmi160_write(const struct device *dev, uint8_t reg_addr, void *buf,
 {
 	const struct bmi160_cfg *cfg = to_config(dev);
 
-	return cfg->reg_io->write(dev, &cfg->bus_cfg, reg_addr, buf, len);
+	return cfg->bus_io->write(dev, reg_addr, buf, len);
 }
 
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
@@ -874,9 +879,8 @@ int bmi160_init(const struct device *dev)
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
 
-	data->bus = device_get_binding(cfg->bus_label);
-	if (!data->bus) {
-		LOG_DBG("SPI master controller not found: %s.", cfg->bus_label);
+	if (!cfg->bus_io->ready(dev)) {
+		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
@@ -972,50 +976,38 @@ int bmi160_init(const struct device *dev)
 }
 
 #if defined(CONFIG_BMI160_TRIGGER)
-#define BMI160_TRIGGER_CFG(inst)					\
-	.gpio_port = DT_INST_GPIO_LABEL(inst, int_gpios),		\
-	.int_pin = DT_INST_GPIO_PIN(inst, int_gpios),			\
-	.int_flags = DT_INST_GPIO_FLAGS(inst, int_gpios),
+#define BMI160_TRIGGER_CFG(inst) \
+	.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
 #else
 #define BMI160_TRIGGER_CFG(inst)
 #endif
 
 #define BMI160_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst, bmi160_init, NULL,			\
-		&bmi160_data_##inst, &bmi160_cfg_##inst,		\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-		&bmi160_api);
+			      &bmi160_data_##inst, &bmi160_cfg_##inst,	\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
+			      &bmi160_api);
 
 /* Instantiation macros used when a device is on a SPI bus */
-#define BMI160_DEFINE_SPI(inst)						\
-	static struct bmi160_data bmi160_data_##inst;			\
-	static const struct bmi160_cfg bmi160_cfg_##inst = {		\
-		BMI160_TRIGGER_CFG(inst)				\
-		.reg_io = &bmi160_reg_io_spi,				\
-		.bus_label = DT_INST_BUS_LABEL(inst),			\
-		.bus_cfg = {						\
-			.spi_cfg = (&(struct spi_config) {		\
-				.operation = SPI_WORD_SET(8),		\
-				.frequency = DT_INST_PROP(inst,		\
-					spi_max_frequency),		\
-				.slave = DT_INST_REG_ADDR(inst),	\
-			}),						\
-		},							\
-	};								\
+#define BMI160_DEFINE_SPI(inst)						   \
+	static struct bmi160_data bmi160_data_##inst;			   \
+	static const struct bmi160_cfg bmi160_cfg_##inst = {		   \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+		.bus_io = &bmi160_bus_io_spi,				   \
+		BMI160_TRIGGER_CFG(inst)				   \
+	};								   \
 	BMI160_DEVICE_INIT(inst)
 
 /* Instantiation macros used when a device is on an I2C bus */
-#define BMI160_CONFIG_I2C(inst)						\
-	{								\
-		.bus_label = DT_INST_BUS_LABEL(inst),			\
-		.reg_io = &bmi160_reg_io_i2c,				\
-		.bus_cfg =  { .i2c_addr = DT_INST_REG_ADDR(inst), }	\
+#define BMI160_CONFIG_I2C(inst)			       \
+	{					       \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &bmi160_bus_io_i2c,	       \
 	}
 
-#define BMI160_DEFINE_I2C(inst)						\
-	static struct bmi160_data bmi160_data_##inst;			\
-	static const struct bmi160_cfg bmi160_cfg_##inst =	\
-		BMI160_CONFIG_I2C(inst);				\
+#define BMI160_DEFINE_I2C(inst)							    \
+	static struct bmi160_data bmi160_data_##inst;				    \
+	static const struct bmi160_cfg bmi160_cfg_##inst = BMI160_CONFIG_I2C(inst); \
 	BMI160_DEVICE_INIT(inst)
 
 /*

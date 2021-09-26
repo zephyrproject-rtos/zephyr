@@ -509,11 +509,10 @@ struct bt_mesh_model {
 	const struct bt_mesh_model_cb * const cb;
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-	/* Pointer to the next model in a model extension tree. */
+	/* Pointer to the next model in a model extension list. */
 	struct bt_mesh_model *next;
-	/* Pointer to the first model this model extends. */
-	struct bt_mesh_model *extends;
 #endif
+
 	/** Model-specific user data */
 	void *user_data;
 };
@@ -619,39 +618,46 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
  *
  *  @param mod      Mesh model.
  *  @param vnd      This is a vendor model.
- *  @param name     Name/key of the settings item.
+ *  @param name     Name/key of the settings item. Only
+ *                  @ref SETTINGS_MAX_DIR_DEPTH bytes will be used at most.
  *  @param data     Model data to store, or NULL to delete any model data.
  *  @param data_len Length of the model data.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
-			 const char *name, const void *data,
-			 size_t data_len);
+			     const char *name, const void *data,
+			     size_t data_len);
 
 /** @brief Let a model extend another.
  *
  *  Mesh models may be extended to reuse their functionality, forming a more
  *  complex model. A Mesh model may extend any number of models, in any element.
  *  The extensions may also be nested, ie a model that extends another may
- *  itself be extended. Extensions may not be cyclical, and a model can only be
- *  extended by one other model.
+ *  itself be extended.
  *
- *  A set of models that extend each other form a model extension tree.
+ *  A set of models that extend each other form a model extension list.
  *
- *  All models in an extension tree share one subscription list per element. The
+ *  All models in an extension list share one subscription list per element. The
  *  access layer will utilize the combined subscription list of all models in an
- *  extension tree and element, giving the models extended subscription list
+ *  extension list and element, giving the models extended subscription list
  *  capacity.
  *
- *  @param mod      Mesh model.
- *  @param base_mod The model being extended.
+ *  @param extending_mod      Mesh model that is extending the base model.
+ *  @param base_mod           The model being extended.
  *
  *  @retval 0 Successfully extended the base_mod model.
- *  @retval -EALREADY The base_mod model is already extended.
  */
-int bt_mesh_model_extend(struct bt_mesh_model *mod,
+int bt_mesh_model_extend(struct bt_mesh_model *extending_mod,
 			 struct bt_mesh_model *base_mod);
+
+/** @brief Check if model is extended by another model.
+ *
+ *  @param model The model to check.
+ *
+ *  @retval true If model is extended by another model, otherwise false
+ */
+bool bt_mesh_model_is_extended(struct bt_mesh_model *model);
 
 /** Node Composition */
 struct bt_mesh_comp {

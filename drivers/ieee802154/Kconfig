@@ -57,6 +57,8 @@ config IEEE802154_VENDOR_OUI
 
 endif # IEEE802154_VENDOR_OUI_ENABLE
 
+source "drivers/ieee802154/Kconfig.b91"
+
 source "drivers/ieee802154/Kconfig.cc2520"
 
 source "drivers/ieee802154/Kconfig.kw41z"

@@ -5,9 +5,9 @@
 
 menuconfig COUNTER_ESP32
 	bool "ESP32 Counter Driver"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2
 	help
-	  Enable Counter driver for ESP32.
+	  Enable Counter driver for ESP32 series devices.
 
 if COUNTER_ESP32
 

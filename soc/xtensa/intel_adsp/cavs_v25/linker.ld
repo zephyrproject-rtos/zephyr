@@ -35,16 +35,24 @@ PROVIDE(_MemErrorHandler = 0x00000000);
  * data (e.g. stacks) or shared data that is managed with explicit
  * cache flush/invalidate operations.
  *
- * The UNCACHED_RAM_OFFSET will be used before to move the address
- * pointer forward or backward so code and data land in correct
- * region. Remember to align the memory, and be sure to also emit the
+ * These macros will set up a segment start address correctly,
+ * including alignment to a cache line.  Be sure to also emit the
  * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
  * appropriate. (Forgetting the correct PHDR will actually work, as
  * the output tooling ignores it, but it will cause the linker to emit
  * 512MB of unused data into the output file!)
  *
+ * (Note clumsy syntax because XCC doesn't understand the "~" operator)
  */
-#define UNCACHED_RAM_OFFSET	0x20000000
+#ifdef CONFIG_KERNEL_COHERENCE
+#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
+#else
+#define SEGSTART_CACHED   /**/
+#define SEGSTART_UNCACHED /**/
+#define ucram ram
+#define ucram_phdr ram_phdr
+#endif
 
 MEMORY
 {
@@ -114,9 +122,11 @@ MEMORY
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
+#ifdef CONFIG_KERNEL_COHERENCE
   ucram :
-	org = RAM_BASE - UNCACHED_RAM_OFFSET,
+	org = RAM_BASE - 0x20000000,
 	len = RAM_SIZE
+#endif
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
 	org = IDT_BASE,
@@ -174,7 +184,9 @@ PHDRS
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   ram_phdr PT_LOAD;
+#ifdef CONFIG_KERNEL_COHERENCE
   ucram_phdr PT_LOAD;
+#endif
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
   metadata_entries_phdr PT_NOTE;
@@ -465,20 +477,13 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  /*
-   * Address pointer here is at cached ram.
-   * So need to go into uncached memory region, hence
-   * the subtraction.
-   */
-  segstart_uncached_noinit = ALIGN(64) - UNCACHED_RAM_OFFSET;
-
-  .noinit segstart_uncached_noinit : ALIGN(64)
+  .noinit SEGSTART_UNCACHED : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
   } >ucram :ucram_phdr
 
-  .data : ALIGN(64)
+  .data SEGSTART_UNCACHED : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
     *(.data)
@@ -499,10 +504,7 @@ SECTIONS
     . = ALIGN(4096);
   } >ucram :ucram_phdr
 
-  /* Going back into cached memory region. */
-  segstart_cached_lit4 = ALIGN(64) + UNCACHED_RAM_OFFSET;
-
-  .lit4 segstart_cached_lit4 : ALIGN(64)
+  .lit4 SEGSTART_CACHED : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -511,10 +513,13 @@ SECTIONS
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
+#ifdef CONFIG_KERNEL_COHERENCE
 /* These values need to change in our scheme, where the common-ram
  * sections need to be linked in safe/uncached memory but common-rom
  * wants to use the cache
  */
+  . = SEGSTART_UNCACHED;
+#endif
 
 #undef RAMABLE_REGION
 #undef ROMABLE_REGION
@@ -523,9 +528,7 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
-  segstart_cached_altboot = ALIGN(64) + UNCACHED_RAM_OFFSET;
-
-  .AltBootManifest segstart_cached_altboot : ALIGN(64)
+  .AltBootManifest SEGSTART_CACHED : ALIGN(8)
   {
     /* Single entry of strorage manifest
      * consist of 3 items. Entries array
@@ -557,17 +560,16 @@ SECTIONS
   /* This section is cached.  By default it contains only declared
   * thread stacks, but applications can put symbols here too.
   */
-  .cached : ALIGN(64)
+  .cached SEGSTART_CACHED :
   {
     *(.cached .cached.*)
   } >ram :ram_phdr
 
-  /* ...into uncached memory region. */
-  segstart_uncached_bss = ALIGN(4096) - UNCACHED_RAM_OFFSET;
+  . = ALIGN(4096);
 
-  .bss segstart_uncached_bss (NOLOAD) : ALIGN(64)
+  .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
   {
-    _bss_start = ABSOLUTE(.);
+    _bss_start = .;
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -582,19 +584,24 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     . = ALIGN(8);
-    _bss_end = ABSOLUTE(.);
+    _bss_end = .;
   } >ucram :ucram_phdr
 
-  _end = ALIGN(64);
+#ifdef CONFIG_KERNEL_COHERENCE
+  . = SEGSTART_UNCACHED;
+#endif
+  _end = ALIGN(8);
   PROVIDE(end = ALIGN(8));
 
   /* Re-adjust to the upper mapping for the final symbols below */
-  segstart_cached_stack = _end + UNCACHED_RAM_OFFSET;
-  . = segstart_cached_stack;
+#ifdef CONFIG_KERNEL_COHERENCE
+  . = SEGSTART_CACHED;
+#endif
   __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
 
-  segstart_uncached_lpbuf = ALIGN(4) - UNCACHED_RAM_OFFSET;
-  . = segstart_uncached_lpbuf;
+#ifdef CONFIG_KERNEL_COHERENCE
+  . = SEGSTART_UNCACHED;
+#endif
 
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
@@ -605,7 +612,10 @@ SECTIONS
   } >LP_SRAM_REGION
 
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
-  _heap_sentry = . - UNCACHED_RAM_OFFSET;
+#ifdef CONFIG_KERNEL_COHERENCE
+  . = SEGSTART_UNCACHED;
+#endif
+  _heap_sentry = .;
 
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }

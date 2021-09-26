@@ -29,7 +29,24 @@ function RunTest(){
   cd ${BSIM_OUT_PATH}/bin
 
   idx=0
-  for testid in ${@:2} ; do
+
+  s_id=$1
+  shift 1
+
+  testids=()
+  for testid in $@ ; do
+    if [ "$testid" == "--" ]; then
+      shift 1
+      break
+    fi
+
+    testids+=( $testid )
+    shift 1
+  done
+
+  test_options=$@
+
+  for testid in ${testids[@]} ; do
     if Skip $testid; then
       echo "Skipping $testid (device #$idx)"
       let idx=idx+1
@@ -40,21 +57,24 @@ function RunTest(){
     conf=${conf:-prj_conf}
     Execute \
       ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_mesh_${conf} \
-      -v=${verbosity_level} -s=$1 -d=$idx -RealEncryption=1 \
-      -testid=$testid
+      -v=${verbosity_level} -s=$s_id -d=$idx -RealEncryption=1 \
+      -testid=$testid ${test_options}
     let idx=idx+1
   done
 
-  count=$(expr $# - 1 + $extra_devs)
+  count=$(expr $idx + $extra_devs)
 
   echo "Starting phy with $count devices"
 
-  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$1 -D=$count
+  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=$s_id -D=$count
 
   for process_id in $process_ids; do
     wait $process_id || let "exit_code=$?"
   done
-  exit $exit_code #the last exit code != 0
+
+  if [ "$exit_code" != "0" ] ; then
+    exit $exit_code #the last exit code != 0
+  fi
 }
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"

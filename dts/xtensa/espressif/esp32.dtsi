@@ -22,14 +22,14 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
 			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 			clock-source = <ESP32_CLK_SRC_PLL>;
 		};

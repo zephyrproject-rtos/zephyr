@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt6xx.dtsi>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP MIMXRT685-EVK board";
@@ -19,6 +20,13 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
+		/* For pwm test suites */
+		pwm-0 = &sc_timer;
+		pwm-led0 = &green_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -55,6 +63,25 @@
 		red_led: led_3 {
 			gpios = <&gpio0 31 0>;
 			label = "User LED_RED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&sc_timer 0 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+			status = "okay";
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Blue PWM LED";
+			status = "okay";
+		};
+		red_pwm_led: red_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+			status = "disabled";
 		};
 	};
 
@@ -226,6 +253,10 @@ i2s1: &flexcomm3 {
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &dma0 {
 	/*
 	 * The total number of dma channels available is defined by
@@ -236,6 +267,10 @@ i2s1: &flexcomm3 {
 	 * memory.
 	 */
 	dma-channels = <20>;
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
 
@@ -256,5 +291,44 @@ i2s1: &flexcomm3 {
 };
 
 &red_led {
+	status = "okay";
+};
+
+&sc_timer {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
+	no-1-8-v;
+	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
 	status = "okay";
 };

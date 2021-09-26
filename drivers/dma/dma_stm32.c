@@ -610,6 +610,10 @@ static int dma_stm32_init(const struct device *dev)
 #endif /* CONFIG_DMAMUX_STM32 */
 	}
 
+	((struct dma_stm32_data *)dev->data)->dma_ctx.magic = 0;
+	((struct dma_stm32_data *)dev->data)->dma_ctx.dma_channels = 0;
+	((struct dma_stm32_data *)dev->data)->dma_ctx.atomic = 0;
+
 	return 0;
 }
 

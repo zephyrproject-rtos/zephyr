@@ -49,11 +49,11 @@ struct ls0xx_data {
 #if DT_INST_NODE_HAS_PROP(0, extcomin_gpios)
 	const struct device *extcomin_dev;
 #endif
-	const struct device *spi_dev;
-	struct spi_cs_control cs_ctrl;
-	struct spi_config spi_config;
 };
 
+struct ls0xx_config {
+	struct spi_dt_spec bus;
+};
 
 #if DT_INST_NODE_HAS_PROP(0, extcomin_gpios)
 /* Driver will handle VCOM toggling */
@@ -103,21 +103,21 @@ static int ls0xx_blanking_on(const struct device *dev)
 
 static int ls0xx_cmd(const struct device *dev, uint8_t *buf, uint8_t len)
 {
-	struct ls0xx_data *driver = dev->data;
+	const struct ls0xx_config *config = dev->config;
 	struct spi_buf cmd_buf = { .buf = buf, .len = len };
 	struct spi_buf_set buf_set = { .buffers = &cmd_buf, .count = 1 };
 
-	return spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	return spi_write_dt(&config->bus, &buf_set);
 }
 
 static int ls0xx_clear(const struct device *dev)
 {
-	struct ls0xx_data *driver = dev->data;
+	const struct ls0xx_config *config = dev->config;
 	uint8_t clear_cmd[2] = { LS0XX_BIT_CLEAR, 0 };
 	int err;
 
 	err = ls0xx_cmd(dev, clear_cmd, sizeof(clear_cmd));
-	spi_release(driver->spi_dev, &driver->spi_config);
+	spi_release_dt(&config->bus);
 
 	return err;
 }
@@ -127,7 +127,7 @@ static int ls0xx_update_display(const struct device *dev,
 				uint16_t num_lines,
 				const uint8_t *data)
 {
-	struct ls0xx_data *driver = dev->data;
+	const struct ls0xx_config *config = dev->config;
 	uint8_t write_cmd[1] = { LS0XX_BIT_WRITECMD };
 	uint8_t ln = start_line;
 	uint8_t dummy = 27;
@@ -158,8 +158,7 @@ static int ls0xx_update_display(const struct device *dev,
 	 */
 	for (; ln <= start_line + num_lines - 1; ln++) {
 		line_buf[1].buf = (uint8_t *)data;
-		err |= spi_write(driver->spi_dev, &driver->spi_config,
-				 &line_set);
+		err |= spi_write_dt(&config->bus, &line_set);
 		data += LS0XX_PANEL_WIDTH / LS0XX_PIXELS_PER_BYTE;
 	}
 
@@ -169,7 +168,7 @@ static int ls0xx_update_display(const struct device *dev,
 	 */
 	err |= ls0xx_cmd(dev, write_cmd, sizeof(write_cmd));
 
-	spi_release(driver->spi_dev, &driver->spi_config);
+	spi_release_dt(&config->bus);
 
 	return err;
 }
@@ -270,35 +269,13 @@ static int ls0xx_set_pixel_format(const struct device *dev,
 
 static int ls0xx_init(const struct device *dev)
 {
+	const struct ls0xx_config *config = dev->config;
 	struct ls0xx_data *driver = dev->data;
 
-	driver->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (driver->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device for LS0XX");
-		return -EIO;
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		return -ENODEV;
 	}
-
-	driver->spi_config.frequency = DT_INST_PROP(0, spi_max_frequency);
-	driver->spi_config.operation = SPI_OP_MODE_MASTER |
-				       SPI_WORD_SET(8) |
-				       SPI_TRANSFER_LSB |
-				       SPI_CS_ACTIVE_HIGH |
-				       SPI_HOLD_ON_CS |
-				       SPI_LOCK_ON;
-	driver->spi_config.slave = 0;
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	driver->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (driver->cs_ctrl.gpio_dev == NULL) {
-		LOG_ERR("Could not get SPI device for LS0XX");
-		return -EIO;
-	}
-	driver->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	driver->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	driver->cs_ctrl.delay = 0U;
-	driver->spi_config.cs = &driver->cs_ctrl;
-#endif
 
 #if DT_INST_NODE_HAS_PROP(0, disp_en_gpios)
 	driver->disp_dev = device_get_binding(
@@ -341,6 +318,13 @@ static int ls0xx_init(const struct device *dev)
 
 static struct ls0xx_data ls0xx_driver;
 
+static const struct ls0xx_config ls0xx_config = {
+	.bus = SPI_DT_SPEC_INST_GET(
+		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
+		SPI_TRANSFER_LSB | SPI_CS_ACTIVE_HIGH |
+		SPI_HOLD_ON_CS | SPI_LOCK_ON, 0)
+};
+
 static struct display_driver_api ls0xx_driver_api = {
 	.blanking_on = ls0xx_blanking_on,
 	.blanking_off = ls0xx_blanking_off,
@@ -355,6 +339,6 @@ static struct display_driver_api ls0xx_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, ls0xx_init, NULL,
-		      &ls0xx_driver, NULL,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		      &ls0xx_driver, &ls0xx_config,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		      &ls0xx_driver_api);

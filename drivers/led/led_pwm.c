@@ -21,7 +21,6 @@
 LOG_MODULE_REGISTER(led_pwm, CONFIG_LED_LOG_LEVEL);
 
 #define DEV_CFG(dev)	((const struct led_pwm_config *) ((dev)->config))
-#define DEV_DATA(dev)	((struct led_pwm_data *) ((dev)->data))
 
 struct led_pwm {
 	const struct device *dev;
@@ -33,12 +32,6 @@ struct led_pwm {
 struct led_pwm_config {
 	int num_leds;
 	const struct led_pwm *led;
-};
-
-struct led_pwm_data {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 static int led_pwm_blink(const struct device *dev, uint32_t led,
@@ -117,88 +110,43 @@ static int led_pwm_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	struct led_pwm_data *data = DEV_DATA(dev);
-
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
-
-static int led_pwm_pm_get_state(const struct device *dev,
-				enum pm_device_state *state)
-{
-	struct led_pwm_data *data = DEV_DATA(dev);
-
-	unsigned int key = irq_lock();
-	*state = data->pm_state;
-	irq_unlock(key);
-
-	return 0;
-}
-
-static int led_pwm_pm_set_state(const struct device *dev,
-				enum pm_device_state new_state)
+static int led_pwm_pm_control(const struct device *dev,
+			      enum pm_device_action action)
 {
 	const struct led_pwm_config *config = DEV_CFG(dev);
-	struct led_pwm_data *data = DEV_DATA(dev);
-	enum pm_device_state old_state;
-	unsigned int key;
-
-	key = irq_lock();
-	old_state = data->pm_state;
-	irq_unlock(key);
-
-	if (old_state == new_state) {
-		/* leave unchanged */
-		return 0;
-	}
 
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
+		int err;
+		enum pm_device_state state;
 		const struct led_pwm *led_pwm = &config->led[i];
 
-		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, new_state);
-		int err = pm_device_state_set(led_pwm->dev, new_state);
+		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, state);
 
+		/* NOTE: temporary solution, deserves proper fix */
+		switch (action) {
+		case PM_DEVICE_ACTION_RESUME:
+			state = PM_DEVICE_STATE_ACTIVE;
+			break;
+		case PM_DEVICE_ACTION_SUSPEND:
+			state = PM_DEVICE_STATE_SUSPENDED;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		err = pm_device_state_set(led_pwm->dev, state);
 		if (err) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
 		}
 	}
 
-	/* record the new state */
-	key = irq_lock();
-	data->pm_state = new_state;
-	irq_unlock(key);
-
 	return 0;
 }
-
-static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      enum pm_device_state *state)
-{
-	int err;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_GET:
-		err = led_pwm_pm_get_state(dev, state);
-		break;
-
-	case PM_DEVICE_STATE_SET:
-		err = led_pwm_pm_set_state(dev, *state);
-		break;
-
-	default:
-		err = -ENOTSUP;
-		break;
-	}
-
-	return err;
-}
-
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct led_driver_api led_pwm_api = {
@@ -228,11 +176,8 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 	.led		= led_pwm_##id,				\
 };								\
 								\
-static struct led_pwm_data led_pwm_data_##id;			\
-								\
 DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
-		      &led_pwm_data_##id, &led_pwm_config_##id,	\
-		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
-		      &led_pwm_api);
+		      NULL, &led_pwm_config_##id, POST_KERNEL,	\
+		      CONFIG_LED_INIT_PRIORITY, &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)

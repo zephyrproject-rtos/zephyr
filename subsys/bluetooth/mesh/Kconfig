@@ -293,6 +293,18 @@ config BT_MESH_ADV_STACK_SIZE
 	default 1024 if BT_HOST_CRYPTO
 	default 768
 	help
+	  Size of bt mesh adv thread stack.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_MESH_ADV_PRIO
+	int "Mesh advertiser thread priority"
+	depends on BT_MESH_ADV_LEGACY
+	default 7
+	help
+	  Priority of bt mesh adv thread.
+
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
 

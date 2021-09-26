@@ -36,7 +36,7 @@
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "st,stm32-hse-clock";
+			compatible = "st,stm32wl-hse-clock";
 			/* Expected clock-frequency on the whole series 32MHz */
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
@@ -88,7 +88,7 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <8>;
@@ -161,7 +161,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <39 0>;
+			interrupts = <39 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";

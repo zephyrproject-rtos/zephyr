@@ -45,7 +45,7 @@
 		};
 
 		i2c0: i2c@100200 {
-			compatible = "nios2,i2c";
+			compatible = "altr,nios2-i2c";
 			clock-frequency = <I2C_BITRATE_ULTRA>;
 			#address-cells = <1>;
 			#size-cells = <0>;

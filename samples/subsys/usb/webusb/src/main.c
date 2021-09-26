@@ -18,7 +18,6 @@
 LOG_MODULE_REGISTER(main);
 
 #include <sys/byteorder.h>
-#include <usb/usb_common.h>
 #include <usb/usb_device.h>
 #include <usb/bos.h>
 
@@ -60,7 +59,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb_desc {
 	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_webusb),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		/* WebUSB Platform Capability UUID
@@ -95,7 +94,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
 	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_msos),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		.PlatformCapabilityUUID = {
@@ -122,7 +121,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
 
 USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_capability_lpm bos_cap_lpm = {
 	.bLength = sizeof(struct usb_bos_capability_lpm),
-	.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
 	/**
 	 * BIT(1) - LPM support
@@ -171,7 +170,7 @@ static struct string_desc {
 
 } __packed msos1_string_descriptor = {
 	.bLength = MSOS_STRING_LENGTH,
-	.bDescriptorType = USB_STRING_DESC,
+	.bDescriptorType = USB_DESC_STRING,
 	/* Signature MSFT100 */
 	.bString = {
 		'M', 0x00, 'S', 0x00, 'F', 0x00, 'T', 0x00,
@@ -213,8 +212,12 @@ static const uint8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      int32_t *len, uint8_t **data)
 {
-	if (GET_DESC_TYPE(pSetup->wValue) == USB_STRING_DESC &&
-	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
+	if (usb_reqtype_is_to_device(pSetup)) {
+		return -ENOTSUP;
+	}
+
+	if (USB_GET_DESCRIPTOR_TYPE(pSetup->wValue) == USB_DESC_STRING &&
+	    USB_GET_DESCRIPTOR_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (uint8_t *)(&msos1_string_descriptor);
 		*len = sizeof(msos1_string_descriptor);
 
@@ -239,6 +242,10 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 int vendor_handle_req(struct usb_setup_packet *pSetup,
 		      int32_t *len, uint8_t **data)
 {
+	if (usb_reqtype_is_to_device(pSetup)) {
+		return -ENOTSUP;
+	}
+
 	/* Get Allowed origins request */
 	if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
 		*data = (uint8_t *)(&webusb_allowed_origins);
@@ -249,7 +256,7 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		return 0;
 	} else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
 		/* Get URL request */
-		uint8_t index = GET_DESC_INDEX(pSetup->wValue);
+		uint8_t index = USB_GET_DESCRIPTOR_INDEX(pSetup->wValue);
 
 		if (index == 0U || index > NUMBER_OF_ALLOWED_ORIGINS) {
 			return -ENOTSUP;

@@ -473,8 +473,8 @@ static int can_stm32_init(const struct device *dev)
 
 	/* Set TX priority to chronological order */
 	can->MCR |= CAN_MCR_TXFP;
-	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_TTCM & ~CAN_MCR_ABOM &
-		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM;
+	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
+		    ~CAN_MCR_NART & ~CAN_MCR_RFLM;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	can->MCR |= CAN_MCR_TTCM;
 #endif
@@ -511,9 +511,6 @@ static int can_stm32_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-
-	/* Leave sleep mode after reset*/
-	can->MCR &= ~CAN_MCR_SLEEP;
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
@@ -666,7 +663,7 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 	mb->callback_arg = callback_arg;
 	k_sem_reset(&mb->tx_int_sem);
 
-	/* mailbix identifier register setup */
+	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
 	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {

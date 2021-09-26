@@ -105,10 +105,6 @@ static __pinned_bss uint32_t ioapic_rtes;
 
 __pinned_bss
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
-
-__pinned_data
-static uint32_t ioapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
-
 #endif
 
 static uint32_t __IoApicGet(int32_t offset);
@@ -314,40 +310,23 @@ int ioapic_resume_from_suspend(const struct device *port)
 */
 __pinned_func
 static int ioapic_device_ctrl(const struct device *dev,
-			      uint32_t ctrl_command,
-			      enum pm_device_state *state)
+			      enum pm_device_action action)
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		switch (*state) {
-		case PM_DEVICE_STATE_LOW_POWER:
-			break;
-		case PM_DEVICE_STATE_ACTIVE:
-			if (ioapic_device_power_state !=
-					PM_DEVICE_STATE_LOW_POWER) {
-				ret = ioapic_resume_from_suspend(dev);
-			}
-			break;
-		case PM_DEVICE_STATE_SUSPEND:
-		case PM_DEVICE_STATE_FORCE_SUSPEND:
-		case PM_DEVICE_STATE_OFF:
-			ret = ioapic_suspend(dev);
-			break;
-		default:
-			ret = -ENOTSUP;
-		}
-
-		if (ret == 0) {
-			ioapic_device_power_state = *state;
-		}
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*state = ioapic_device_power_state;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = ioapic_resume_from_suspend(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = ioapic_suspend(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
 	}
 
 	return ret;
 }
-
 
 #endif  /*CONFIG_PM_DEVICE*/
 

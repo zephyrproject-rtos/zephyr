@@ -557,7 +557,8 @@ static int spi_stm32_configure(const struct device *dev,
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
-#ifndef CONFIG_SOC_SERIES_STM32F1X
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
+	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
 	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
 #endif
 
@@ -612,7 +613,7 @@ static int transceive(const struct device *dev,
 
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
-		return ret;
+		goto end;
 	}
 
 	/* Set buffers info */
@@ -655,6 +656,7 @@ static int transceive(const struct device *dev,
 
 #endif
 
+end:
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
@@ -709,8 +711,8 @@ static int transceive_dma(const struct device *dev,
 	k_sem_reset(&data->status_sem);
 
 	ret = spi_stm32_configure(dev, config);
-	if (ret != 0) {
-		return ret;
+	if (ret) {
+		goto end;
 	}
 
 	/* Set buffers info */
@@ -776,6 +778,7 @@ static int transceive_dma(const struct device *dev,
 
 	spi_stm32_complete(dev, ret);
 
+end:
 	spi_context_release(&data->ctx, ret);
 
 	return ret;

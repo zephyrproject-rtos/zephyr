@@ -21,11 +21,17 @@ config SOC_MIMXRT685S_CM33
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_LPADC
 	select HAS_MCUX_OS_TIMER
 	select HAS_MCUX_LPC_RTC
 	select HAS_MCUX_TRNG
+	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
 	select INIT_SYS_PLL
-
+	select HAS_MCUX_USB_LPCIP3511
+	select USB_DEDICATED_MEMORY if USB_DEVICE_DRIVER
+	select HAS_MCUX_CTIMER
 endchoice
 
 if SOC_SERIES_IMX_RT6XX
@@ -55,6 +61,9 @@ config INIT_SYS_PLL
 
 config INIT_AUDIO_PLL
 	bool "Initialize Audio PLL"
+
+config USB_DEDICATED_MEMORY
+	bool "Dedicated memory for USB transfer buffer and controller operation buffers"
 
 config XTAL_SYS_CLK_HZ
 	int "External oscillator frequency"

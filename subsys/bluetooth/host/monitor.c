@@ -233,10 +233,6 @@ extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 #endif /* !CONFIG_UART_CONSOLE */
 
-#if defined(CONFIG_HAS_DTS) && !defined(CONFIG_BT_MONITOR_ON_DEV_NAME)
-#define CONFIG_BT_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
-#endif
-
 #ifndef CONFIG_LOG_MINIMAL
 struct monitor_log_ctx {
 	size_t total_len;
@@ -347,9 +343,9 @@ static int bt_monitor_init(const struct device *d)
 {
 	ARG_UNUSED(d);
 
-	monitor_dev = device_get_binding(CONFIG_BT_MONITOR_ON_DEV_NAME);
+	monitor_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
 
-	__ASSERT_NO_MSG(monitor_dev);
+	__ASSERT_NO_MSG(device_is_ready(monitor_dev));
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_rx_disable(monitor_dev);

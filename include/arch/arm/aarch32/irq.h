@@ -92,6 +92,14 @@ extern void z_arm_interrupt_init(void);
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
+#ifdef CONFIG_CPU_CORTEX_M
+#define _CHECK_PRIO(priority_p, flags_p) \
+	BUILD_ASSERT((flags_p & IRQ_ZERO_LATENCY) || \
+		     priority_p <= IRQ_PRIO_LOWEST, \
+		     "Invalid interrupt priority. Values must not exceed IRQ_PRIO_LOWEST");
+#else
+#define _CHECK_PRIO(priority_p, flags_p)
+#endif
 
 /* All arguments must be computable by the compiler at build time.
  *
@@ -107,6 +115,7 @@ extern void z_arm_interrupt_init(void);
 { \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
 			"ZLI interrupt registered but feature is disabled"); \
+	_CHECK_PRIO(priority_p, flags_p) \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
@@ -115,6 +124,7 @@ extern void z_arm_interrupt_init(void);
 { \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
 			"ZLI interrupt registered but feature is disabled"); \
+	_CHECK_PRIO(priority_p, flags_p) \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
@@ -132,21 +142,21 @@ extern void _arch_isr_direct_pm(void);
 /* arch/arm/core/aarch32/exc_exit.S */
 extern void z_arm_int_exit(void);
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
 static inline void arch_isr_direct_header(void)
 {
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	sys_trace_isr_enter();
 #endif
 }
 
 static inline void arch_isr_direct_footer(int maybe_swap)
 {
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	sys_trace_isr_exit();
 #endif
 	if (maybe_swap != 0) {

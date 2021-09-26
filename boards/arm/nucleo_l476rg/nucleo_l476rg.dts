@@ -140,7 +140,17 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-0 = <&tim2_ch3_pb10>;
+	};
+};
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		st,prescaler = <10000>;
+		pinctrl-0 = <&tim3_ch1_pb4>;
 	};
 };
 

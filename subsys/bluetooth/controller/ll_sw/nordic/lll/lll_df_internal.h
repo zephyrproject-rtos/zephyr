@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Forward declaration to avoid unnecessary includes. */
+struct lll_adv_sync;
+
 /* Enables CTE transmission according to provided configuration */
-void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
-			       uint8_t ant_num, uint8_t *ant_ids);
+void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *pdu,
+			  uint32_t *cte_len_us);
 /* Disables CTE transmission */
 void lll_df_conf_cte_tx_disable(void);
 

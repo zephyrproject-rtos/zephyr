@@ -31,8 +31,7 @@ int __weak sys_clock_driver_init(const struct device *dev)
 }
 
 int __weak sys_clock_device_ctrl(const struct device *dev,
-				 uint32_t ctrl_command,
-				 enum pm_device_state *state)
+				 enum pm_device_action action)
 {
 	return -ENOSYS;
 }

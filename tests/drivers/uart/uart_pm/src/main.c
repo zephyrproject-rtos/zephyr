@@ -148,13 +148,13 @@ static void test_uart_pm_in_idle(void)
 	state_verify(dev, PM_DEVICE_STATE_ACTIVE);
 	communication_verify(dev, true);
 
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
 	communication_verify(dev, false);
 
 	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
 	communication_verify(dev, true);
 
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
 	communication_verify(dev, false);
 
 	state_set(dev, PM_DEVICE_STATE_ACTIVE, 0);
@@ -171,7 +171,7 @@ static void test_uart_pm_poll_tx(void)
 	communication_verify(dev, true);
 
 	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
 
 	communication_verify(dev, false);
 
@@ -181,7 +181,7 @@ static void test_uart_pm_poll_tx(void)
 
 	/* Now same thing but with callback */
 	uart_poll_out(dev, 'a');
-	state_set(dev, PM_DEVICE_STATE_LOW_POWER, 0);
+	state_set(dev, PM_DEVICE_STATE_SUSPENDED, 0);
 
 	communication_verify(dev, false);
 
@@ -194,7 +194,7 @@ static void timeout(struct k_timer *timer)
 {
 	const struct device *uart = k_timer_user_data_get(timer);
 
-	state_set(uart, PM_DEVICE_STATE_LOW_POWER, 0);
+	state_set(uart, PM_DEVICE_STATE_SUSPENDED, 0);
 }
 
 static K_TIMER_DEFINE(pm_timer, timeout, NULL);

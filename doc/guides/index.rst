@@ -25,6 +25,7 @@ User and Developer Guides
    portability/index.rst
    porting/index
    test/index
+   tfm/index
    west/index
    optimizations/index
    zephyr_cmake_package.rst

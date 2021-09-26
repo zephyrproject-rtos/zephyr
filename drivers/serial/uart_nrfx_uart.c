@@ -833,7 +833,7 @@ static void uart_nrfx_irq_tx_enable(const struct device *dev)
 	/* Indicate that this device started a transaction that should not be
 	 * interrupted by putting the SoC into the deep sleep mode.
 	 */
-	device_busy_set(dev);
+	pm_device_busy_set(dev);
 
 	/* Activate the transmitter. */
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
@@ -956,7 +956,7 @@ static void uart_nrfx_isr(const struct device *dev)
 		/* The transaction is over. It is okay to enter the deep sleep
 		 * mode if needed.
 		 */
-		device_busy_clear(dev);
+		pm_device_busy_clear(dev);
 
 		disable_tx_irq = false;
 
@@ -996,7 +996,9 @@ static int uart_nrfx_init(const struct device *dev)
 	nrf_gpio_cfg_output(TX_PIN);
 
 	if (RX_PIN_USED) {
-		nrf_gpio_cfg_input(RX_PIN, NRF_GPIO_PIN_PULLUP);
+		nrf_gpio_cfg_input(RX_PIN,
+			PROP(rx_pull_up) ? NRF_GPIO_PIN_PULLUP
+					 : NRF_GPIO_PIN_NOPULL);
 	}
 
 	nrf_uart_txrx_pins_set(uart0_addr, TX_PIN, RX_PIN);
@@ -1010,7 +1012,9 @@ static int uart_nrfx_init(const struct device *dev)
 	}
 
 	if (HAS_PROP(cts_pin)) {
-		nrf_gpio_cfg_input(CTS_PIN, NRF_GPIO_PIN_PULLUP);
+		nrf_gpio_cfg_input(CTS_PIN,
+			PROP(cts_pull_up) ? NRF_GPIO_PIN_PULLUP
+					  : NRF_GPIO_PIN_NOPULL);
 	}
 
 	nrf_uart_hwfc_pins_set(uart0_addr, RTS_PIN, CTS_PIN);
@@ -1104,76 +1108,58 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 		return;
 	}
 
-	uint32_t tx_pin = nrf_uart_tx_pin_get(uart0_addr);
-	uint32_t rx_pin = nrf_uart_rx_pin_get(uart0_addr);
-	uint32_t cts_pin = nrf_uart_cts_pin_get(uart0_addr);
-	uint32_t rts_pin = nrf_uart_rts_pin_get(uart0_addr);
-
 	if (enable) {
-		nrf_gpio_pin_write(tx_pin, 1);
-		nrf_gpio_cfg_output(tx_pin);
+		nrf_gpio_pin_write(TX_PIN, 1);
+		nrf_gpio_cfg_output(TX_PIN);
 		if (RX_PIN_USED) {
-			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_PULLUP);
+			nrf_gpio_cfg_input(RX_PIN,
+				PROP(rx_pull_up) ? NRF_GPIO_PIN_PULLUP
+						 : NRF_GPIO_PIN_NOPULL);
 		}
 
 		if (HAS_PROP(rts_pin)) {
-			nrf_gpio_pin_write(rts_pin, 1);
-			nrf_gpio_cfg_output(rts_pin);
+			nrf_gpio_pin_write(RTS_PIN, 1);
+			nrf_gpio_cfg_output(RTS_PIN);
 		}
 		if (HAS_PROP(cts_pin)) {
-			nrf_gpio_cfg_input(cts_pin, NRF_GPIO_PIN_PULLUP);
+			nrf_gpio_cfg_input(CTS_PIN,
+				PROP(cts_pull_up) ? NRF_GPIO_PIN_PULLUP
+						  : NRF_GPIO_PIN_NOPULL);
 		}
 	} else {
-		nrf_gpio_cfg_default(tx_pin);
+		nrf_gpio_cfg_default(TX_PIN);
 		if (RX_PIN_USED) {
-			nrf_gpio_cfg_default(rx_pin);
+			nrf_gpio_cfg_default(RX_PIN);
 		}
 
 		if (HAS_PROP(rts_pin)) {
-			nrf_gpio_cfg_default(rts_pin);
+			nrf_gpio_cfg_default(RTS_PIN);
 		}
 
 		if (HAS_PROP(cts_pin)) {
-			nrf_gpio_cfg_default(cts_pin);
+			nrf_gpio_cfg_default(CTS_PIN);
 		}
 	}
 }
 
-static void uart_nrfx_set_power_state(const struct device *dev,
-				      enum pm_device_state new_state)
+static int uart_nrfx_pm_control(const struct device *dev,
+				enum pm_device_action action)
 {
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
 		if (RX_PIN_USED) {
 			nrf_uart_task_trigger(uart0_addr,
 					      NRF_UART_TASK_STARTRX);
 		}
-	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
 		nrf_uart_disable(uart0_addr);
 		uart_nrfx_pins_enable(dev, false);
-	}
-}
-
-static int uart_nrfx_pm_control(const struct device *dev,
-				uint32_t ctrl_command,
-				enum pm_device_state *state)
-{
-	static enum pm_device_state current_state = PM_DEVICE_STATE_ACTIVE;
-
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
-
-		if (new_state != current_state) {
-			uart_nrfx_set_power_state(dev, new_state);
-			current_state = new_state;
-		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = current_state;
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;

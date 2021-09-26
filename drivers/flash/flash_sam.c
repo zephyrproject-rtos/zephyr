@@ -144,8 +144,9 @@ static int flash_sam_write_page(const struct device *dev, off_t offset,
 	/* We need to copy the data using 32-bit accesses */
 	for (; len > 0; len -= sizeof(*src)) {
 		*dst++ = *src++;
+		/* Assure data are written to the latch buffer consecutively */
+		__DSB();
 	}
-	__DSB();
 
 	/* Trigger the flash write */
 	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |

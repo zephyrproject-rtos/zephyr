@@ -71,22 +71,40 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
+uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
-	uintptr_t phys_addr;
-	uint32_t reg;
-	size_t size;
+	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
+	uint32_t data;
 
-	for (reg = PCIE_CONF_BAR0;
-	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
-		uintptr_t addr = pcie_conf_read(bdf, reg);
+	while (reg) {
+		data = pcie_conf_read(bdf, reg);
+		if (!data || data == 0xffffffff) {
+			return 0;
+		}
 
-		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
-			reg++;
+		if (PCIE_CONF_EXT_CAP_ID(data) == cap_id) {
+			break;
+		}
+
+		reg = PCIE_CONF_EXT_CAP_NEXT(data) >> 2;
+
+		if (reg < PCIE_CONF_EXT_CAPPTR) {
+			return 0;
 		}
 	}
 
-	if (index != 0 || reg > PCIE_CONF_BAR5) {
+	return reg;
+}
+
+bool pcie_get_mbar(pcie_bdf_t bdf,
+		   unsigned int bar_index,
+		   struct pcie_mbar *mbar)
+{
+	uint32_t reg = bar_index + PCIE_CONF_BAR0;
+	uintptr_t phys_addr;
+	size_t size;
+
+	if (reg > PCIE_CONF_BAR5) {
 		return false;
 	}
 
@@ -134,6 +152,28 @@ bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 	mbar->size = size & ~(size-1);
 
 	return true;
+}
+
+bool pcie_probe_mbar(pcie_bdf_t bdf,
+		     unsigned int index,
+		     struct pcie_mbar *mbar)
+{
+	uint32_t reg;
+
+	for (reg = PCIE_CONF_BAR0;
+	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
+		uintptr_t addr = pcie_conf_read(bdf, reg);
+
+		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
+			reg++;
+		}
+	}
+
+	if (index != 0) {
+		return false;
+	}
+
+	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
 }
 
 /* The first bit is used to indicate whether the list of reserved interrupts
@@ -223,7 +263,7 @@ unsigned int pcie_get_irq(pcie_bdf_t bdf)
 void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 {
 #if CONFIG_PCIE_MSI
-	if (pcie_msi_enable(bdf, NULL, 1)) {
+	if (pcie_msi_enable(bdf, NULL, 1, irq)) {
 		return;
 	}
 #endif

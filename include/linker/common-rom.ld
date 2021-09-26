@@ -52,7 +52,7 @@
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
-#ifdef CONFIG_CPLUSPLUS
+#ifdef CONFIG_CPP_STATIC_INIT_GNU
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
 		/*
@@ -91,7 +91,7 @@
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()
 	 */
-	Z_ITERABLE_SECTION_ROM(z_object_assignment, 4)
+	ITERABLE_SECTION_ROM(z_object_assignment, 4)
 #endif
 
 	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
@@ -102,49 +102,53 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_NET_SOCKETS)
-	Z_ITERABLE_SECTION_ROM(net_socket_register, 4)
+	ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-	Z_ITERABLE_SECTION_ROM(ppp_protocol_handler, 4)
+	ITERABLE_SECTION_ROM(ppp_protocol_handler, 4)
 #endif
 
-	Z_ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
+	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
 #if defined(CONFIG_BT_BREDR)
-	Z_ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
+	ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
 #endif
 
-	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
+#if defined(CONFIG_BT_CONN)
+	ITERABLE_SECTION_ROM(bt_conn_cb, 4)
+#endif
+
+	ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
 #if defined(CONFIG_BT_MESH)
-	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
-	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
 
-	Z_ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
 #endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)
-	Z_ITERABLE_SECTION_ROM(bt_mesh_friend_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_friend_cb, 4)
 #endif
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
 #endif
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-	Z_ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
+	ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
 #endif
 
 #if defined(CONFIG_EC_HOST_CMD)
-	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
+	ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif
 
 #if defined(CONFIG_SETTINGS)
-	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
+	ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
-	Z_ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
+	ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
 
 #if defined(CONFIG_EMUL)
 	SECTION_DATA_PROLOGUE(emulators_section,,)
@@ -156,7 +160,7 @@
 #endif /* CONFIG_EMUL */
 
 #if defined(CONFIG_DNS_SD)
-	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+	ITERABLE_SECTION_ROM(dns_sd_rec, 4)
 #endif
 
 #if defined(CONFIG_PCIE)
@@ -189,7 +193,7 @@
 		__log_backends_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	Z_ITERABLE_SECTION_ROM(shell, 4)
+	ITERABLE_SECTION_ROM(shell, 4)
 
 	SECTION_DATA_PROLOGUE(shell_root_cmds_sections,,)
 	{
@@ -205,7 +209,7 @@
 		__font_entry_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	Z_ITERABLE_SECTION_ROM(tracing_backend, 4)
+	ITERABLE_SECTION_ROM(tracing_backend, 4)
 
 	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)
 	{

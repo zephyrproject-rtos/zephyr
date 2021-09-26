@@ -97,4 +97,10 @@ source "drivers/gpio/Kconfig.creg_gpio"
 
 source "drivers/gpio/Kconfig.stmpe1600"
 
+source "drivers/gpio/Kconfig.pca953x"
+
+source "drivers/gpio/Kconfig.fxl6408"
+
+source "drivers/gpio/Kconfig.andes_atcgpio100"
+
 endif # GPIO

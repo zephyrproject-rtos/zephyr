@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@3ffb0000 {
+			compatible = "mmio-sram";
+			reg = <0x3ffb0000 0x50000>;
+		};
+
+		intc: interrupt-controller@3f4c2000 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x3f4c2000 0x114>;
+			label = "INTC_0";
+			status = "okay";
+		};
+
+		uart0: uart@3f400000 {
+			compatible = "espressif,esp32s2-uart";
+			reg = <0x3f400000 0x400>;
+			label = "UART_0";
+			status = "disabled";
+		};
+
+		pinmux: pinmux@3f409000 {
+			compatible = "espressif,esp32-pinmux";
+			reg = <0x3f409000 0x94>;
+		};
+
+		gpio0: gpio@3f404000 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x3f404000 0x800>;
+			interrupts = <GPIO_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_0";
+			ngpios = <32>;   /* 0..31 */
+		};
+
+		gpio1: gpio@3f404800 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x3f404800 0x800>;
+			interrupts = <GPIO_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_1";
+			ngpios = <22>;   /* 32..53 */
+		};
+
+		timer0: counter@3f41f000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f41f000 DT_SIZE_K(4)>;
+			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG0_T0";
+			status = "disabled";
+		};
+
+		timer1: counter@3f41f024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f41f024 DT_SIZE_K(4)>;
+			interrupts = <TG0_T1_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG0_T1";
+			status = "disabled";
+		};
+
+		timer2: counter@3f420000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f420000 DT_SIZE_K(4)>;
+			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG1_T0";
+			status = "disabled";
+		};
+
+		timer3: counter@3f420024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3f420024 DT_SIZE_K(4)>;
+			interrupts = <TG1_T1_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG1_T1";
+			status = "disabled";
+		};
+	};
+
+};

@@ -208,7 +208,7 @@ int zsock_socket_internal(int family, int type, int proto)
 
 int z_impl_zsock_socket(int family, int type, int proto)
 {
-	Z_STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
+	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
 		if (sock_family->family != family &&
 		    sock_family->family != AF_UNSPEC) {
 			continue;
@@ -1457,8 +1457,7 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			poll_timeout = SYS_FOREVER_MS;
 		} else {
-			poll_timeout = k_ticks_to_ms_floor32(
-				sys_clock_timeout_end_calc(timeout));
+			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
 		}
 
 		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,

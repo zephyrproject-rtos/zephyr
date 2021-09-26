@@ -142,8 +142,9 @@ subdirectories of the following places:
 - any :ref:`module <modules>` that defines a ``dts_root`` in its
   :ref:`modules_build_settings`
 
-The build system will consider any YAML file in any of these, including
-in any subdirectories, when matching nodes to bindings.
+The build system will consider any YAML file in any of these, including in any
+subdirectories, when matching nodes to bindings. A file is considered YAML if
+its name ends with ``.yaml`` or ``.yml``.
 
 .. warning::
 

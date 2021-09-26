@@ -40,20 +40,15 @@ static struct bt_le_df_ant_info df_ant_info;
 const static uint8_t df_dummy_switch_pattern[BT_HCI_LE_SWITCH_PATTERN_LEN_MIN] = { 0, 0 };
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
-#define DF_SUPP_TEST(feat, n)                   ((feat) & BIT((n)))
+#define DF_AOD_TX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOD_TX)
+#define DF_AOD_RX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOD_RX)
+#define DF_AOA_RX_1US_SUPPORT(supp)             (supp & BT_HCI_LE_1US_AOA_RX)
 
-#define DF_AOD_TX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOD_TX))
-#define DF_AOD_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOD_RX))
-#define DF_AOA_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
-						BT_HCI_LE_1US_AOA_RX))
 #define DF_SAMPLING_ANTENNA_NUMBER_MIN 0x2
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 static int validate_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *params);
-static void prepare_cte_rx_enable_cmd_params(struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp,
-					     struct net_buf *buf, struct bt_le_per_adv_sync *sync,
+static void prepare_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sync *sync,
 					     const struct bt_df_per_adv_sync_cte_rx_param *params,
 					     bool enable);
 static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
@@ -234,11 +229,11 @@ static int validate_cte_rx_params(const struct bt_df_per_adv_sync_cte_rx_param *
 	return 0;
 }
 
-static void prepare_cte_rx_enable_cmd_params(struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp,
-					     struct net_buf *buf, struct bt_le_per_adv_sync *sync,
+static void prepare_cte_rx_enable_cmd_params(struct net_buf *buf, struct bt_le_per_adv_sync *sync,
 					     const struct bt_df_per_adv_sync_cte_rx_param *params,
 					     bool enable)
 {
+	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
 	const uint8_t *ant_ids;
 
 	cp = net_buf_add(buf, sizeof(*cp));
@@ -275,7 +270,6 @@ static void prepare_cte_rx_enable_cmd_params(struct bt_hci_cp_le_set_cl_cte_samp
 static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
 				       const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
-	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
 	struct bt_hci_rp_le_set_cl_cte_sampling_enable *rp;
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf, *rsp;
@@ -292,12 +286,13 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 	 * antenna ids, so command size if extended by num_and_ids.
 	 */
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE,
-				sizeof(*cp) + (enable ? params->num_ant_ids : 0));
+				(sizeof(struct bt_hci_cp_le_set_cl_cte_sampling_enable) +
+				 (enable ? params->num_ant_ids : 0)));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	prepare_cte_rx_enable_cmd_params(cp, buf, sync, params, enable);
+	prepare_cte_rx_enable_cmd_params(buf, sync, params, enable);
 
 	bt_hci_cmd_state_set_init(buf, &state, sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED, enable);
 

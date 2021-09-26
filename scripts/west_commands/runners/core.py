@@ -260,7 +260,7 @@ class RunnerConfig(NamedTuple):
     bin_file: Optional[str]     # zephyr.bin path, or None
     gdb: Optional[str] = None   # path to a usable gdb
     openocd: Optional[str] = None  # path to a usable openocd
-    openocd_search: Optional[str] = None  # add this to openocd search path
+    openocd_search: List[str] = []  # add these paths to the openocd search path
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']

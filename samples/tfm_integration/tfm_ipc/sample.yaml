@@ -16,3 +16,16 @@ tests:
             - "The minor version is"
             - "Connect success!"
             - "TF-M IPC on .*"
+    sample.tfm_ipc.no_bl2:
+        tags: introduction tfm
+        platform_allow: mps2_an521_ns
+        extra_configs:
+            - CONFIG_TFM_BL2=n
+        harness: console
+        harness_config:
+          type: multi_line
+          regex:
+            - "The version of the PSA Framework API is"
+            - "The minor version is"
+            - "Connect success!"
+            - "TF-M IPC on .*"

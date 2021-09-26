@@ -187,7 +187,7 @@ endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
-	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
+	depends on !LOG_BACKEND_UART
 	depends on NET_L2_OPENTHREAD
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
@@ -298,10 +298,13 @@ config LOG_BACKEND_ADSP
 	  family of audio processors
 
 config LOG_BACKEND_FS
-	bool "Enable LittleFS backend"
+	bool "Enable file system backend"
 	depends on FILE_SYSTEM
 	help
-	  When enabled backend is using LittleFS to output logs.
+	  When enabled, backend is using the configured file system to output logs.
+	  As the file system must be mounted for the logging to work, it must be
+	  either configured for auto-mount or manually mounted by the application.
+	  Log messages are discarded as long as the file system is not mounted.
 
 if LOG_BACKEND_FS
 

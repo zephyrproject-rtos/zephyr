@@ -25,17 +25,6 @@ extern const struct device __device_end[];
 
 extern uint32_t __device_init_status_start[];
 
-static inline void device_pm_state_init(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	*dev->pm = (struct pm_device){
-		.usage = ATOMIC_INIT(0),
-		.lock = Z_MUTEX_INITIALIZER(dev->pm->lock),
-		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
-	};
-#endif /* CONFIG_PM_DEVICE */
-}
-
 /**
  * @brief Initialize state for all static devices.
  *
@@ -47,7 +36,6 @@ void z_device_state_init(void)
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
-		device_pm_state_init(dev);
 		z_object_init(dev);
 		++dev;
 	}
@@ -174,14 +162,11 @@ bool z_device_ready(const struct device *dev)
 	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
-int device_required_foreach(const struct device *dev,
-			  device_visitor_callback_t visitor_cb,
-			  void *context)
+static int device_visitor(const device_handle_t *handles,
+			   size_t handle_count,
+			   device_visitor_callback_t visitor_cb,
+			   void *context)
 {
-	size_t handle_count = 0;
-	const device_handle_t *handles =
-		device_required_handles_get(dev, &handle_count);
-
 	/* Iterate over fixed devices */
 	for (size_t i = 0; i < handle_count; ++i) {
 		device_handle_t dh = handles[i];
@@ -196,49 +181,24 @@ int device_required_foreach(const struct device *dev,
 	return handle_count;
 }
 
-#ifdef CONFIG_PM_DEVICE
-int device_any_busy_check(void)
+int device_required_foreach(const struct device *dev,
+			    device_visitor_callback_t visitor_cb,
+			    void *context)
 {
-	const struct device *dev = __device_start;
+	size_t handle_count = 0;
+	const device_handle_t *handles =
+		device_required_handles_get(dev, &handle_count);
 
-	while (dev < __device_end) {
-		if (atomic_test_bit(&dev->pm->atomic_flags,
-				    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
-			return -EBUSY;
-		}
-		++dev;
-	}
-
-	return 0;
+	return device_visitor(handles, handle_count, visitor_cb, context);
 }
 
-int device_busy_check(const struct device *dev)
+int device_supported_foreach(const struct device *dev,
+			     device_visitor_callback_t visitor_cb,
+			     void *context)
 {
-	if (atomic_test_bit(&dev->pm->atomic_flags,
-			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
-		return -EBUSY;
-	}
-	return 0;
-}
+	size_t handle_count = 0;
+	const device_handle_t *handles =
+		device_supported_handles_get(dev, &handle_count);
 
-#endif
-
-void device_busy_set(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	atomic_set_bit(&dev->pm->atomic_flags,
-		       PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
-#else
-	ARG_UNUSED(dev);
-#endif
-}
-
-void device_busy_clear(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	atomic_clear_bit(&dev->pm->atomic_flags,
-			 PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
-#else
-	ARG_UNUSED(dev);
-#endif
+	return device_visitor(handles, handle_count, visitor_cb, context);
 }

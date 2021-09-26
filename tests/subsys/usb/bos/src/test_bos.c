@@ -9,7 +9,6 @@
 
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 
 #include <usb/bos.h>
 
@@ -33,7 +32,7 @@ static struct webusb_bos_desc {
 } __packed webusb_bos_descriptor = {
 	.bos = {
 		.bLength = sizeof(struct usb_bos_descriptor),
-		.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
+		.bDescriptorType = USB_DESC_BOS,
 		.wTotalLength = sizeof(struct webusb_bos_desc),
 		.bNumDeviceCaps = 2,
 	},
@@ -43,7 +42,7 @@ static struct webusb_bos_desc {
 	.platform_webusb = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_webusb),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		/* WebUSB Platform Capability UUID
@@ -72,7 +71,7 @@ static struct webusb_bos_desc {
 	.platform_msos = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_msos),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		.PlatformCapabilityUUID = {
@@ -113,7 +112,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb {
 	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor) +
 			sizeof(struct usb_bos_capability_webusb),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		/* WebUSB Platform Capability UUID
@@ -141,7 +140,7 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2 {
 	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_msos),
-		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
 		.bReserved = 0,
 		.PlatformCapabilityUUID = {
@@ -203,7 +202,7 @@ static void test_usb_bos(void)
 
 	/* Already registered due to previous test */
 
-	setup.wValue = (DESCRIPTOR_TYPE_BOS & 0xFF) << 8;
+	setup.wValue = (USB_DESC_BOS & 0xFF) << 8;
 
 	ret = usb_handle_bos(&setup, &len, &data);
 

@@ -49,9 +49,21 @@ config BT_OTS_OACP_READ_SUPPORT
 	bool "Support OACP Read Operation"
 	default y
 
+config BT_OTS_OACP_WRITE_SUPPORT
+	bool "Support OACP Write Operation"
+
+config BT_OTS_OACP_PATCH_SUPPORT
+	bool "Support patching of objects"
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+
 config BT_OTS_OLCP_GO_TO_SUPPORT
 	bool "Support OLCP Go To Operation"
 	default y
+
+config BT_OTS_L2CAP_CHAN_TX_MTU
+	int "Size of TX MTU for Object Transfer Channel"
+	default 256
+	range 21 65533
 
 config BT_OTS_L2CAP_CHAN_RX_MTU
 	int "Size of RX MTU for Object Transfer Channel"

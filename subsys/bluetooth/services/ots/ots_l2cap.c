@@ -26,10 +26,15 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
  */
 #define BT_GATT_OTS_L2CAP_PSM	0x0025
 
-/* Maximum size of outgoing data. */
-#define OT_TX_MTU 256
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(OT_TX_MTU),
+
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1,
+			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU),
 			  NULL);
+
+#if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_rx_pool, 1, CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU,
+			  NULL);
+#endif
 
 /* List of Object Transfer Channels. */
 static sys_slist_t channels;
@@ -41,7 +46,7 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	uint32_t len;
 
 	/* Calculate maximum length of data chunk. */
-	len = MIN(l2cap_ctx->ot_chan.tx.mtu, OT_TX_MTU);
+	len = MIN(l2cap_ctx->ot_chan.tx.mtu, CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU);
 	len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
 	/* Prepare buffer for sending. */
@@ -64,6 +69,16 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
 	return 0;
 }
+
+#if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	LOG_DBG("Channel %p allocating buffer", chan);
+
+	return net_buf_alloc(&ot_chan_rx_pool, K_FOREVER);
+}
+#endif
+
 
 static void l2cap_sent(struct bt_l2cap_chan *chan)
 {
@@ -90,6 +105,21 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 	}
 }
 
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_gatt_ots_l2cap *l2cap_ctx;
+
+	LOG_DBG("Incoming data channel %p received", chan);
+
+	l2cap_ctx = CONTAINER_OF(chan, struct bt_gatt_ots_l2cap, ot_chan);
+
+	if (!l2cap_ctx->rx_done) {
+		return -ENODEV;
+	}
+
+	return l2cap_ctx->rx_done(l2cap_ctx, chan->conn, buf);
+}
+
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
 	LOG_DBG("Channel %p status %u", chan, *status);
@@ -102,11 +132,23 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
+	struct bt_gatt_ots_l2cap *l2cap_ctx;
+
 	LOG_DBG("Channel %p disconnected", chan);
+
+	l2cap_ctx = CONTAINER_OF(chan, struct bt_gatt_ots_l2cap, ot_chan);
+
+	if (l2cap_ctx->closed) {
+		l2cap_ctx->closed(l2cap_ctx, chan->conn);
+	}
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
+#if (CONFIG_BT_OTS_L2CAP_CHAN_RX_MTU > BT_L2CAP_SDU_RX_MTU)
+	.alloc_buf	= l2cap_alloc_buf,
+#endif
 	.sent		= l2cap_sent,
+	.recv		= l2cap_recv,
 	.status		= l2cap_status,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,
@@ -208,6 +250,11 @@ int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	sys_slist_find_and_remove(&channels, &l2cap_ctx->node);
 
 	return 0;
+}
+
+int bt_gatt_ots_l2cap_disconnect(struct bt_gatt_ots_l2cap *l2cap_ctx)
+{
+	return bt_l2cap_chan_disconnect(&l2cap_ctx->ot_chan.chan);
 }
 
 SYS_INIT(bt_gatt_ots_l2cap_init, APPLICATION,

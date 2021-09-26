@@ -80,6 +80,8 @@ syscall_template = """
 #include <syscall_list.h>
 #include <syscall.h>
 
+#include <linker/sections.h>
+
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #endif
@@ -174,6 +176,8 @@ def wrapper_defs(func_name, func_type, args):
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args]) or "void"
 
     wrap = "extern %s z_impl_%s(%s);\n" % (func_type, func_name, decl_arglist)
+    wrap += "\n"
+    wrap += "__pinned_func\n"
     wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
     wrap += "{\n"
     wrap += "#ifdef CONFIG_USERSPACE\n"

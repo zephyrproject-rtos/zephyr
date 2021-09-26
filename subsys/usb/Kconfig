@@ -5,7 +5,7 @@
 
 menuconfig USB_DEVICE_STACK
 	bool "USB Device Support"
-	depends on USB_DEVICE_DRIVER || ARCH_POSIX
+	select USB_DEVICE_DRIVER
 	select HWINFO
 	help
 	  Enable USB device stack.
@@ -52,7 +52,6 @@ config USB_DEVICE_SN
 
 config USB_COMPOSITE_DEVICE
 	bool "Enable composite device driver"
-	depends on USB
 	help
 	  Enable composite USB device driver.
 

@@ -61,6 +61,11 @@ drivers from installation directory
    :width: 850
    :align: center
 
+.. note::
+
+    Starting with PTS 8.0.1 the Bluetooth Protocol Viewer is no longer included.
+    So to capture Bluetooth events, you have to download it separately.
+
 Setup Zephyr project for Windows
 =================================
 
@@ -82,7 +87,7 @@ Get the Zephyr source code:
 
 .. code-block::
 
-    west init zephyrproject:
+    west init zephyrproject
 
 Go into freshly created folder:
 
@@ -375,6 +380,15 @@ Server and client by default will run on localhost address. Run server:
    :width: 800
    :align: center
 
+.. note::
+
+    If the error "ImportError: No module named pywintypes" appeared after the fresh setup,
+    uninstall and install the pywin32 module:
+
+    .. code-block::
+
+        pip install --upgrade --force-reinstall pywin32
+
 Run client:
 
 .. code-block::
@@ -392,3 +406,36 @@ At the first run, when Windows asks, enable connection through firewall:
    :height: 450
    :width: 600
    :align: center
+
+Troubleshooting
+================
+
+- "When running actual hardware test mode, I have only BTP TIMEOUTs."
+
+This is a problem with connection between auto-pts client and board. There are many possible causes. Try:
+
+- Clean your auto-pts and zephyr repos with
+
+.. warning::
+
+    This command will force the irreversible removal of all uncommitted files in the repo.
+
+.. code-block::
+
+    git clean -fdx
+
+then build and flash tester elf again.
+
+- If you have set up Windows on virtual machine, check if guest extensions are installed properly or change USB compatibility mode in VM settings to USB 2.0.
+
+- Check, if firewall in not blocking python.exe or socat.exe.
+
+- Check if board sends ready event after restart (hex 00 00 80 ff 00 00). Open serial connection to board with e.g. PuTTy with proper COM and baud rate. After board reset you should see some strings in console.
+
+- Check if socat.exe creates tunel to board. Run in console
+
+.. code-block::
+
+    socat.exe -x -v tcp-listen:65123 /dev/ttyS2,raw,b115200
+
+where /dev/ttyS2 is the COM3 equivalent. Open PuTTY, set connection type to Raw, IP to 127.0.0.1, port to 65123. After board reset you should see some strings in console.

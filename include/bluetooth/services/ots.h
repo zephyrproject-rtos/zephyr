@@ -23,12 +23,25 @@ extern "C" {
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
+#include <sys/types.h>
 #include <sys/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
+
+/** @brief Minimum allowed value for object ID (except ID for directory listing) */
+#define BT_OTS_OBJ_ID_MIN 0x000000000100
+
+/** @brief Maximum allowed value for object ID (except ID for directory listing) */
+#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFF
+
+/** @brief ID of the Directory Listing Object */
+#define OTS_OBJ_ID_DIR_LIST     0x000000000000
+
+/** @brief Mask for OTS object IDs, preserving the 48 bits */
+#define BT_OTS_OBJ_ID_MASK BIT64_MASK(48)
 
 /** @brief Length of OTS object ID string (in bytes). */
 #define BT_OTS_OBJ_ID_STR_LEN 15
@@ -541,10 +554,41 @@ struct bt_ots_cb {
 	 *
 	 *  @return Data length to be sent via data parameter. This value
 	 *          shall be smaller or equal to the len parameter.
+	 *  @return Negative value in case of an error.
 	 */
-	uint32_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
-			     uint64_t id, uint8_t **data, uint32_t len,
-			     uint32_t offset);
+	ssize_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
+			   uint64_t id, void **data, size_t len,
+			   off_t offset);
+
+	/** @brief Object write callback
+	 *
+	 *  This callback is called multiple times during the Object write
+	 *  operation. OTS module will keep providing successive Object
+	 *  fragments to the application until the write operation is
+	 *  completed. The offset and length of each write fragment is
+	 *  validated by the OTS module to be within the allocated size
+	 *  of the object. The remaining length indicates data length
+	 *  remaining to be written and will decrease each write iteration
+	 *  until it reaches 0 in the last write fragment.
+	 *
+	 *  @param ots    OTS instance.
+	 *  @param conn   The connection that wrote object.
+	 *  @param id     Object ID.
+	 *  @param data   Next chunk of data to be written.
+	 *  @param len    Length of the current chunk of data in the buffer.
+	 *  @param offset Object data offset.
+	 *  @param rem    Remaining length in the write operation.
+	 *
+	 *  @return Number of bytes written in case of success, if the number
+	 *          of bytes written does not match len, -EIO is returned to
+	 *          the L2CAP layer.
+	 *  @return A negative value in case of an error.
+	 *  @return -EINPROGRESS has a special meaning and is unsupported at
+	 *          the moment. It should not be returned.
+	 */
+	ssize_t (*obj_write)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			     const void *data, size_t len, off_t offset,
+			     size_t rem);
 
 	/** @brief Object name written callback
 	 *

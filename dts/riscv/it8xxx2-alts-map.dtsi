@@ -99,5 +99,19 @@
 		pinctrl_i2c_data5: i2c_data5 {
 			pinctrls = <&pinmuxa 5 IT8XXX2_PINMUX_FUNC_3>;
 		};
+
+		/* SHI alternate function */
+		pinctrl_shi_mosi: shi_mosi {
+			pinctrls = <&pinmuxm 0 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_shi_miso: shi_miso {
+			pinctrls = <&pinmuxm 1 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_shi_clk: shi_clk {
+			pinctrls = <&pinmuxm 4 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_shi_cs: shi_cs {
+			pinctrls = <&pinmuxm 5 IT8XXX2_PINMUX_FUNC_1>;
+		};
 	};
 };

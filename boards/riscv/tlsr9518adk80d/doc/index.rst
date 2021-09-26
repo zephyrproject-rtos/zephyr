@@ -1,4 +1,4 @@
-.. _tlst9518adk80d:
+.. _tlsr9518adk80d:
 
 Telink TLSR9518ADK80D
 #####################
@@ -63,6 +63,18 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | UART           | on-chip    | serial                       |
 +----------------+------------+------------------------------+
+| PWM            | on-chip    | pwm                          |
++----------------+------------+------------------------------+
+| TRNG           | on-chip    | entopy                       |
++----------------+------------+------------------------------+
+| FLASH (MSPI)   | on-chip    | flash                        |
++----------------+------------+------------------------------+
+| RADIO          | on-chip    | ieee802154, OpenThread       |
++----------------+------------+------------------------------+
+| SPI (Master)   | on-chip    | spi                          |
++----------------+------------+------------------------------+
+| I2C (Master)   | on-chip    | i2c                          |
++----------------+------------+------------------------------+
 
 The following example projects are supported:
 
@@ -71,12 +83,19 @@ The following example projects are supported:
 - samples/philosophers
 - samples/basic/threads
 - samples/basic/blinky
+- samples/basic/blinky_pwm
+- samples/basic/fade_led
 - samples/basic/button
+- samples/subsys/nvs
 - samples/subsys/console/echo
 - samples/subsys/console/getchar
 - samples/subsys/console/getline
 - samples/subsys/shell/shell_module
 - samples/subsys/cpp/cpp_synchronization
+- samples/drivers/flash_shell
+- samples/net/sockets/echo_client (OpenThread and IEEE802154)
+- samples/net/sockets/echo_server (OpenThread and IEEE802154)
+- samples/net/openthread/coprocessor
 
 .. note::
    To support "button" example project PC3-KEY3 (J20-19, J20-20) jumper needs to be removed and KEY3 (J20-19) should be connected to VDD3_DCDC (J51-13) externally.
@@ -89,8 +108,10 @@ Limitations
 -----------
 
 - Maximum 3 GPIO pins could be configured to generate interrupts simultaneously. All pins must be related to different ports and use different IRQ numbers.
-- DMA mode is not supported by Serial Port.
+- DMA mode is not supported by I2C, SPI and Serial Port.
 - UART hardware flow control is not implemented.
+- SPI Slave mode is not implemented.
+- I2C Slave mode is not implemented.
 
 Default configuration and IOs
 =============================
@@ -128,14 +149,17 @@ currently enabled (PORT_B for LEDs control and PORT_C for buttons) in the board 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d.dts`` file:
 
-- UART0 RX: PB2, TX: PB3
-- UART1 RX: PC6, TX: PC7
+- UART0 TX: PB2, RX: PB3
+- UART1 TX: PC6, RX: PC7
+- PWM Channel 0: PB4
+- PSPI CS0: PC4, CLK: PC5, MISO: PC6, MOSI: PC7
+- HSPI CS0: PA1, CLK: PA2, MISO: PA3, MOSI: PA4
+- I2C SCL: PE1, SDA: PE3
 
 Serial Port
 -----------
 
-The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned
-to UART0 in the ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
+The TLSR9518A SoC has 2 UARTs. The Zephyr console output is assigned to UART0.
 The default settings are 115200 8N1.
 
 Programming and debugging
@@ -153,6 +177,7 @@ the "hello_world" application.
    west build -b tlsr9518adk80d samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
+In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
 
 .. code-block:: console
 

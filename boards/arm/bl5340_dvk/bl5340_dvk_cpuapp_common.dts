@@ -14,17 +14,66 @@
 		zephyr,bt-c2h-uart = &uart0;
 	};
 
+	/* Main LEDs and buttons are on an I2C TCA9538 GPIO port expander */
+	/* Note TCA9538 does not have configurable internal pull ups/ downs */
 	buttons {
 		compatible = "gpio-keys";
 		boot_button0: boot_button {
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-			label = "Bootloader button S4";
+			label = "Bootloader button (S4)";
+		};
+
+		button1: button_1 {
+			gpios = <&gpio_exp0 0 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 1 (S1)";
+		};
+
+		button2: button_2 {
+			gpios = <&gpio_exp0 1 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 2 (S2)";
+		};
+
+		button3: button_3 {
+			gpios = <&gpio_exp0 2 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 3 (S9)";
+		};
+
+		button4: button_4 {
+			gpios = <&gpio_exp0 3 GPIO_ACTIVE_LOW>;
+			label = "Push button switch 4 (S10)";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio_exp0 4 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio_exp0 6 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio_exp0 7 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 4";
 		};
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		sw0 = &boot_button0;
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+		sw0 = &button1;
+		sw1 = &button2;
+		sw2 = &button3;
+		sw3 = &button4;
 	};
 };
 
@@ -85,6 +134,22 @@
 		reg = <0x60>;
 		label = "dac0";
 		#io-channel-cells = <1>;
+	};
+
+	extrtc0: mcp7940n@6f {
+		compatible = "microchip,mcp7940n";
+		reg = <0x6f>;
+		label = "mcp7940n";
+	};
+
+	gpio_exp0: tca9538@70 {
+		compatible = "ti,tca9538";
+		reg = <0x70>;
+		label = "tca9538";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		nint-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 	};
 };
 

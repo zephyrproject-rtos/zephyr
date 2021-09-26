@@ -14,28 +14,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
-/* Control external timer3~8 */
-#define IT8XXX2_EXT_TIMER_BASE	(DT_INST_REG_ADDR(0))/*0x00F01F10*/
-#define IT8XXX2_EXT_CTRLX(n)	ECREG(IT8XXX2_EXT_TIMER_BASE + (n << 3))
-#define IT8XXX2_EXT_PSRX(n)	ECREG(IT8XXX2_EXT_TIMER_BASE + 0x01 + (n << 3))
-#define IT8XXX2_EXT_CNTX(n)	ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x04 + \
-						(n << 3))
-#define IT8XXX2_EXT_CNTOX(n)	ECREG_u32(IT8XXX2_EXT_TIMER_BASE + 0x38 + \
-						(n << 2))
-
 /* Event timer configurations */
 #define EVENT_TIMER		EXT_TIMER_3
 #define EVENT_TIMER_IRQ		DT_INST_IRQ_BY_IDX(0, 0, irq)
 #define EVENT_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 0, flags)
 /* Event timer max count is 512 sec (base on clock source 32768Hz) */
 #define EVENT_TIMER_MAX_CNT	0x00FFFFFFUL
-
-/* Free run timer configurations */
-#define FREE_RUN_TIMER		EXT_TIMER_4
-#define FREE_RUN_TIMER_IRQ	DT_INST_IRQ_BY_IDX(0, 1, irq)
-#define FREE_RUN_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 1, flags)
-/* Free run timer max count is 36.4 hr (base on clock source 32768Hz) */
-#define FREE_RUN_TIMER_MAX_CNT	0xFFFFFFFFUL
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 /*
@@ -65,26 +49,6 @@ LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 /* Event timer max count is as how much system (kernal) tick */
 #define EVEN_TIMER_MAX_CNT_SYS_TICK	(EVENT_TIMER_MAX_CNT \
 					/ HW_CNT_PER_SYS_TICK)
-
-enum ext_clk_src_sel {
-	EXT_PSR_32P768K = 0,
-	EXT_PSR_1P024K,
-	EXT_PSR_32,
-	EXT_PSR_8M,
-};
-
-/*
- * 24-bit timers: external timer 3, 5, and 7
- * 32-bit timers: external timer 4, 6, and 8
- */
-enum ext_timer_idx {
-	EXT_TIMER_3 = 0,	/* Event timer */
-	EXT_TIMER_4,		/* Free run timer */
-	EXT_TIMER_5,
-	EXT_TIMER_6,
-	EXT_TIMER_7,
-	EXT_TIMER_8,
-};
 
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
@@ -180,9 +144,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Critical section */
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* NOTE: To reduce cpu effort, we don't add critical section here */
+	/* Disable event timer */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
+
 	if (ticks == K_TICKS_FOREVER) {
-		hw_cnt = EVENT_TIMER_MAX_CNT;
+		/* Return since no future timer interrupts are required */
+		k_spin_unlock(&lock, key);
+		return;
 	} else if (ticks <= 1) {
 		/*
 		 * Ticks <= 1 means the kernel wants the tick announced
@@ -210,12 +178,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Set event timer 24-bit count */
 	IT8XXX2_EXT_CNTX(EVENT_TIMER) = hw_cnt;
 
-	/* Enable and re-start event timer */
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
-					   IT8XXX2_EXT_ETXRST);
-
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	/*
+	 * When timer enable bit is from 0->1, timer will reload counts and
+	 * start countdown.
+	 */
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= IT8XXX2_EXT_ETXEN;
 
 	k_spin_unlock(&lock, key);
 

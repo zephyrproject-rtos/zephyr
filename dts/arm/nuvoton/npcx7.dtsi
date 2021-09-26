@@ -202,4 +202,8 @@
 		chip-id = <0x07>;
 		revision-reg = <0x00007FFC 1>;
 	};
+
+	booter-variant {
+		hif-type-auto;
+	};
 };

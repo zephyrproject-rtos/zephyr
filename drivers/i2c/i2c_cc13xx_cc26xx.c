@@ -32,9 +32,6 @@ struct i2c_cc13xx_cc26xx_data {
 	Power_NotifyObj postNotify;
 	uint32_t dev_config;
 #endif
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct i2c_cc13xx_cc26xx_config {
@@ -329,13 +326,13 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					     enum pm_device_state new_state)
+static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
+					enum pm_device_action action)
 {
 	int ret = 0;
 
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
-		(new_state != get_dev_data(dev)->pm_state)) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 		IOCPinTypeI2c(get_dev_config(dev)->base,
 			get_dev_config(dev)->sda_pin,
@@ -344,45 +341,20 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			get_dev_data(dev)->dev_config);
 		if (ret == 0) {
 			I2CMasterIntEnable(get_dev_config(dev)->base);
-			get_dev_data(dev)->pm_state = new_state;
 		}
-	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
-
-		if (get_dev_data(dev)->pm_state == PM_DEVICE_STATE_ACTIVE) {
-			I2CMasterIntDisable(get_dev_config(dev)->base);
-			I2CMasterDisable(get_dev_config(dev)->base);
-			/* Reset pin type to default GPIO configuration */
-			IOCPortConfigureSet(get_dev_config(dev)->scl_pin,
-				IOC_PORT_GPIO, IOC_STD_OUTPUT);
-			IOCPortConfigureSet(get_dev_config(dev)->sda_pin,
-				IOC_PORT_GPIO, IOC_STD_OUTPUT);
-			Power_releaseDependency(PowerCC26XX_PERIPH_I2C0);
-			get_dev_data(dev)->pm_state = new_state;
-		}
-	}
-
-	return ret;
-}
-
-static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
-					uint32_t ctrl_command,
-					enum pm_device_state *state)
-{
-	int ret = 0;
-
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
-
-		if (new_state != get_dev_data(dev)->pm_state) {
-			ret = i2c_cc13xx_cc26xx_set_power_state(dev,
-				new_state);
-		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = get_dev_data(dev)->pm_state;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		I2CMasterIntDisable(get_dev_config(dev)->base);
+		I2CMasterDisable(get_dev_config(dev)->base);
+		/* Reset pin type to default GPIO configuration */
+		IOCPortConfigureSet(get_dev_config(dev)->scl_pin,
+			IOC_PORT_GPIO, IOC_STD_OUTPUT);
+		IOCPortConfigureSet(get_dev_config(dev)->sda_pin,
+			IOC_PORT_GPIO, IOC_STD_OUTPUT);
+		Power_releaseDependency(PowerCC26XX_PERIPH_I2C0);
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;
@@ -393,10 +365,6 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 {
 	uint32_t cfg;
 	int err;
-
-#ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 
 #ifdef CONFIG_PM
 	/* Set Power dependencies & constraints */

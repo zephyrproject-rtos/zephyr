@@ -96,9 +96,6 @@ struct bq274xx_data {
 	uint16_t remaining_charge_capacity;
 	uint16_t nom_avail_capacity;
 	uint16_t full_avail_capacity;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct bq274xx_config {

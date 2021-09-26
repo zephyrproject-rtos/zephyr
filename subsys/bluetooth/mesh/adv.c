@@ -23,6 +23,7 @@
 #include "net.h"
 #include "foundation.h"
 #include "beacon.h"
+#include "host/ecc.h"
 #include "prov.h"
 #include "proxy.h"
 
@@ -49,7 +50,8 @@ static void adv_buf_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
-		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, adv_buf_destroy);
+		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE,
+		    adv_buf_destroy);
 
 static struct bt_mesh_adv adv_pool[CONFIG_BT_MESH_ADV_BUF_COUNT];
 

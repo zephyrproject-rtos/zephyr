@@ -173,7 +173,7 @@ static void disconnected(struct bt_conn *disconn, uint8_t reason)
 	LOG_INF("Disconnected (reason %u)", reason);
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -191,7 +191,6 @@ void main(void)
 	if (err) {
 		return;
 	}
-	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);

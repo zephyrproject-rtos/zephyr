@@ -199,8 +199,8 @@ struct settings_handler_static {
 
 #define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
 				       _export)				     \
-	const Z_STRUCT_SECTION_ITERABLE(settings_handler_static,	     \
-					settings_handler_ ## _hname) = {     \
+	const STRUCT_SECTION_ITERABLE(settings_handler_static,		     \
+				      settings_handler_ ## _hname) = {       \
 		.name = _tree,						     \
 		.h_get = _get,						     \
 		.h_set = _set,						     \

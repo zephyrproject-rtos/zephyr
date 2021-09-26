@@ -16,11 +16,11 @@
 #define LOG_MODULE_NAME bt_ecc
 #include "common/log.h"
 
-static uint8_t pub_key[64];
+static uint8_t pub_key[BT_PUB_KEY_LEN];
 static sys_slist_t pub_key_cb_slist;
 static bt_dh_key_cb_t dh_key_cb;
 
-static const uint8_t debug_public_key[64] = {
+static const uint8_t debug_public_key[BT_PUB_KEY_LEN] = {
 	/* X */
 	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc,
 	0xdb, 0xfd, 0xf4, 0xac, 0x11, 0x91, 0xf4, 0xef,
@@ -35,7 +35,7 @@ static const uint8_t debug_public_key[64] = {
 
 bool bt_pub_key_is_debug(uint8_t *pub_key)
 {
-	return memcmp(pub_key, debug_public_key, 64) == 0;
+	return memcmp(pub_key, debug_public_key, BT_PUB_KEY_LEN) == 0;
 }
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
@@ -150,7 +150,7 @@ static int hci_generate_dhkey_v2(const uint8_t *remote_pk, uint8_t key_type)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_GENERATE_DHKEY_V2, buf, NULL);
 }
 
-int bt_dh_key_gen(const uint8_t remote_pk[64], bt_dh_key_cb_t cb)
+int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 {
 	int err;
 
@@ -195,7 +195,7 @@ void bt_hci_evt_le_pkey_complete(struct net_buf *buf)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
 
 	if (!evt->status) {
-		memcpy(pub_key, evt->key, 64);
+		memcpy(pub_key, evt->key, BT_PUB_KEY_LEN);
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 

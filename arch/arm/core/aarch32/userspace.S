@@ -14,6 +14,10 @@
 
 #include <arch/arm/aarch32/exc.h>
 
+#if defined(CONFIG_CPU_CORTEX_R)
+#include <arch/cpu.h>
+#endif
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_userspace_enter)
@@ -59,6 +63,14 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
+#elif defined(CONFIG_CPU_CORTEX_R)
+    ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
+    add r0, r0, ip
+
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    str r0, [ip, #_thread_offset_to_priv_stack_end] /* priv stack end */
 #endif
 
     /* store current stack pointer to ip
@@ -67,6 +79,9 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      */
     mov ip, sp
 
+#if defined(CONFIG_CPU_CORTEX_R)
+    mov sp, r0
+#else
     /* set stack to privileged stack
      *
      * Note [applies only when CONFIG_BUILTIN_STACK_GUARD is enabled]:
@@ -76,6 +91,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      * located in memory higher than the default (user) thread stack.
      */
     msr PSP, r0
+#endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* At this point the privileged stack is not yet protected by PSPLIM.
@@ -96,7 +112,8 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     mov r1, ip
     push {r0,r1}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     push {r0,ip}
 #endif
 
@@ -127,7 +144,8 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov ip, r3
 
     push {r0,r3}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     pop {r0,ip}
 
     /* load up stack info from user stack */
@@ -143,14 +161,15 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #ifdef CONFIG_INIT_STACKS
     ldr r1,=0xaaaaaaaa
 #else
-    eors.n r1, r1
+    eors r1, r1
 #endif
     bl memset
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov ip, r1
-#elif (defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     pop {r0,ip}
 #endif
 
@@ -164,10 +183,18 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     pop {r1,r2,r3,r4}
     mov lr, r4
     mov r4, ip
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     pop {r1,r2,r3,lr}
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * set stack to user stack.  We are in SYSTEM state, so r13 and r14 are
+     * shared with USER state
+     */
+    mov sp, r0
+#else
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /*
      * Guard the default (user) stack until thread drops privileges.
@@ -192,7 +219,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
     /* Lock PendSV while reprogramming PSP and PSPLIM */
     mov r0, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI, r0
+    msr BASEPRI_MAX, r0
     isb
 
     /* Set PSPLIM to guard the thread's user stack. */
@@ -206,6 +233,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
     /* set stack to user stack */
     msr PSP, r0
+#endif
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* Restore interrupt lock status */
@@ -216,6 +244,10 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* restore r0 */
     mov r0, lr
 
+#if defined(CONFIG_CPU_CORTEX_R)
+    /* change processor mode to unprivileged, with all interrrupts enabled. */
+    msr CPSR_c, #MODE_USR
+#else
     /* change processor mode to unprivileged */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     push {r0, r1, r2, r3}
@@ -244,6 +276,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #endif
     dsb
     msr CONTROL, ip
+#endif
 
     /* ISB is not strictly necessary here (stack pointer is not being
      * touched), but it's recommended to avoid executing pre-fetched
@@ -262,7 +295,8 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     ldr r0, =z_thread_entry
     mov ip, r0
     pop {r0, r1}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     ldr ip, =z_thread_entry
 #endif
     bx ip
@@ -317,8 +351,7 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     /* Restore user stack and original r0, r1 */
     pop {r0, r1}
 
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
     /* setup privileged stack */
     ldr ip, =_kernel
     ldr ip, [ip, #_kernel_offset_to_current]
@@ -329,10 +362,18 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     subs ip, #8
     str sp, [ip, #0]
     str lr, [ip, #4]
+#elif defined(CONFIG_CPU_CORTEX_R)
+    /* Store current LR at the beginning of the priv stack */
+    push {lr}
 #endif
 
-    /* switch to privileged stack */
+#if !defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * switch to privileged stack
+     * The stack switch happens on exception entry for Cortex-R
+     */
     msr PSP, ip
+#endif
 
     /* Note (applies when using stack limit checking):
      * We do not need to lock IRQs after switching PSP to the privileged stack;
@@ -404,7 +445,8 @@ dispatch_syscall:
     /* Restore r0 */
     mov r0, ip
 
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
+    || defined(CONFIG_CPU_CORTEX_R)
     ldr ip, =K_SYSCALL_BAD
     cmp r6, ip
     bne valid_syscall
@@ -412,7 +454,11 @@ dispatch_syscall:
     /* BAD SYSCALL path */
     /* fixup stack frame on the privileged stack, adding ssf */
     mov ip, sp
+#if defined(CONFIG_CPU_CORTEX_R)
+    push {r4,r5,ip}
+#else
     push {r4,r5,ip,lr}
+#endif
     b dispatch_syscall
 
 valid_syscall:
@@ -425,11 +471,35 @@ dispatch_syscall:
     lsl r6, #2
     add ip, r6
     ldr ip, [ip]	/* load table address */
+
+#if defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * We can only be in this system call handling code if interrupts were
+     * enabled.  This is because we would only come down this path if we were
+     * actively running in user state, and user state CANNOT disable external
+     * interrupts via irq_lock().  We want external interrupts enabled while
+     * running the system call handler, so we can blindly enable them now, and
+     * disable them afterwards.
+     */
+    cpsie i
+#endif
+
     /* execute function from dispatch table */
     blx ip
 
+#if defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * for same reasoning as above: we now disable external interrupts.
+     */
+    cpsid i
+
+    /* restore LR */
+    ldr lr, [sp,#12]
+#else
     /* restore LR */
     ldr lr, [sp,#16]
+#endif
+
 #endif
 
 
@@ -456,7 +526,7 @@ dispatch_syscall:
 
     /* Lock PendSV while reprogramming PSP and PSPLIM */
     mov r3, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI, r3
+    msr BASEPRI_MAX, r3
     isb
 
     /* Set PSPLIM to guard the thread's user stack. */
@@ -475,7 +545,7 @@ dispatch_syscall:
     /* Restore r0 */
     mov r0, ip
 
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
     /* set stack back to unprivileged stack */
     ldr ip, [sp,#12]
     msr PSP, ip
@@ -568,7 +638,54 @@ dispatch_syscall:
     orrs ip, ip, #1
 
 #endif
+
+#if defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * The stack contains (from top)
+     * spsr lr lr_svc r12 r3 r2 r1 r0 lr sp r5 r4
+     * Unwind everything except the return state that will be used for rfeia.
+     */
+    add sp, sp, #(8*4)
+    ldmia sp!, {r12,lr}
+    pop {r2, r3}
+
+    cps #MODE_SVC
+
+    /*
+     * Restore lr_svc stored into the SVC mode stack by the mode entry
+     * function. This ensures that the return address of the interrupted
+     * context is preserved in case of interrupt nesting.
+     */
+    pop {lr}
+
+    /*
+     * Move the return state from the privileged stack to the service
+     * stack.  We need to put the user stack back in $sp, but we cannot
+     * trust the user stack.  Therefore, put the return state on the svc
+     * stack and return from there.
+     */
+    push {r2, r3}
+
+    /* Restore user stack pointer */
+    ldr r1, =_kernel
+    ldr r1, [r1, #_kernel_offset_to_current]
+    cps #MODE_SYS
+    ldr sp, [r1, #_thread_offset_to_sp_usr] /* sp_usr */
+    cps #MODE_SVC
+
+    /* Zero out volatile (caller-saved) registers so as to not leak state from
+     * kernel mode. The C calling convention for the syscall handler will
+     * restore the others to original values.
+     */
+    mov r1, #0
+    mov r2, #0
+    mov r3, #0
+
+    /* return from SVC state to user state. */
+    rfeia sp!
+#else
     bx ip
+#endif
 
 
 /*
@@ -578,7 +695,8 @@ SECTION_FUNC(TEXT, arch_user_string_nlen)
     push {r0, r1, r2, r4, r5, lr}
 
     /* sp+4 is error value, init to -1 */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
+    || defined(CONFIG_ARMV7_R)
     ldr r3, =-1
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     mov.w r3, #-1
@@ -594,6 +712,16 @@ z_arm_user_string_nlen_fault_start:
     ldrb r5, [r0, r3]
 
 z_arm_user_string_nlen_fault_end:
+#if defined(CONFIG_CPU_CORTEX_R)
+    cmp r5, #0
+    beq strlen_done
+
+    cmp r3, r1
+    beq strlen_done
+
+    adds r3, #1
+    b strlen_loop
+#else
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     cmp r5, #0
     beq strlen_done
@@ -605,6 +733,7 @@ z_arm_user_string_nlen_fault_end:
 
     adds r3, #1
     b.n	strlen_loop
+#endif
 
 strlen_done:
     /* Move length calculation from r3 to r0 (return value register) */

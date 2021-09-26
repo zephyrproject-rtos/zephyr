@@ -89,6 +89,13 @@ tests:
     integration_platforms:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_4_0_dbg:
+    extra_args: CONF_FILE=prj_ctlr_4_0_dbg.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+    integration_platforms:
+      - nrf52dk_nrf52832
+      - nrf51dk_nrf51422
   bluetooth.init.test_ctlr_tiny:
     extra_args: CONF_FILE=prj_ctlr_tiny.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832

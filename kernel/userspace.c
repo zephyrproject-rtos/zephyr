@@ -21,6 +21,7 @@
 #include <sys/libc-hooks.h>
 #include <sys/mutex.h>
 #include <inttypes.h>
+#include <linker/linker-defs.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -223,7 +224,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	struct dyn_obj *ret;
 
 	/* For any dynamically allocated kernel object, the object
-	 * pointer is just a member of the conatining struct dyn_obj,
+	 * pointer is just a member of the containing struct dyn_obj,
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
@@ -665,7 +666,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
 	if (likely(init == _OBJ_INIT_TRUE)) {
-		/* Object MUST be intialized */
+		/* Object MUST be initialized */
 		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0U)) {
 			return -EINVAL;
 		}
@@ -859,13 +860,42 @@ static int app_shmem_bss_zero(const struct device *unused)
 	region = (struct z_app_region *)&__app_shmem_regions_start;
 
 	for ( ; region < end; region++) {
-		(void)memset(region->bss_start, 0, region->bss_size);
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+		/* When BSS sections are not present at boot, we need to wait for
+		 * paging mechanism to be initialized before we can zero out BSS.
+		 */
+		extern bool z_sys_post_kernel;
+		bool do_clear = z_sys_post_kernel;
+
+		/* During pre-kernel init, z_sys_post_kernel == false, but
+		 * with pinned rodata region, so clear. Otherwise skip.
+		 * In post-kernel init, z_sys_post_kernel == true,
+		 * skip those in pinned rodata region as they have already
+		 * been cleared and possibly already in use. Otherwise clear.
+		 */
+		if (((uint8_t *)region->bss_start >= (uint8_t *)_app_smem_pinned_start) &&
+		    ((uint8_t *)region->bss_start < (uint8_t *)_app_smem_pinned_end)) {
+			do_clear = !do_clear;
+		}
+
+		if (do_clear)
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+		{
+			(void)memset(region->bss_start, 0, region->bss_size);
+		}
 	}
 
 	return 0;
 }
 
 SYS_INIT(app_shmem_bss_zero, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+/* When BSS sections are not present at boot, we need to wait for
+ * paging mechanism to be initialized before we can zero out BSS.
+ */
+SYS_INIT(app_shmem_bss_zero, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 /*
  * Default handlers if otherwise unimplemented

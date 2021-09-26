@@ -22,7 +22,7 @@ endchoice
 
 if IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
 
-rsource "../ipc_service_backend/Kconfig.rpmsg_mi"
+rsource "backends/Kconfig.rpmsg_mi"
 
 endif # IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
 

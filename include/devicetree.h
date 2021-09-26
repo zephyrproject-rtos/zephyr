@@ -1715,6 +1715,105 @@
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_VARGS)(fn, __VA_ARGS__)
 
 /**
+ * @brief Call "fn" on all nodes with compatible DT_DRV_COMPAT
+ *        and status "okay"
+ *
+ * This macro expands to:
+ *
+ *     fn(node_id_1) fn(node_id_2) ... fn(node_id_n)
+ *
+ * where each "node_id_<i>" is a node identifier for some node with
+ * compatible "compat" and status "okay". Whitespace is added between
+ * expansions as shown above.
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             a {
+ *                     compatible = "foo";
+ *                     status = "okay";
+ *             };
+ *             b {
+ *                     compatible = "foo";
+ *                     status = "disabled";
+ *             };
+ *             c {
+ *                     compatible = "foo";
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_FOREACH_STATUS_OKAY(foo, DT_NODE_PATH)
+ *
+ * This expands to one of the following:
+ *
+ *     "/a" "/c"
+ *     "/c" "/a"
+ *
+ * "One of the following" is because no guarantees are made about the
+ * order that node identifiers are passed to "fn" in the expansion.
+ *
+ * (The "/c" string literal is present because a missing status
+ * property is always treated as if the status were set to "okay".)
+ *
+ * Note also that "fn" is responsible for adding commas, semicolons,
+ * or other terminators as needed.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param fn Macro to call for each enabled node. Must accept a
+ *           node_id as its only parameter.
+ */
+#define DT_FOREACH_STATUS_OKAY(compat, fn)				\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			\
+		    (UTIL_CAT(DT_FOREACH_OKAY_, compat)(fn)),	\
+		    ())
+
+/**
+ * @brief Invokes "fn" for each status "okay" node of a compatible
+ *        with multiple arguments.
+ *
+ * This is like DT_FOREACH_STATUS_OKAY() except you can also pass
+ * additional arguments to "fn".
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             a {
+ *                     compatible = "foo";
+ *                     val = <3>;
+ *             };
+ *             b {
+ *                     compatible = "foo";
+ *                     val = <4>;
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *     #define MY_FN(node_id, operator) DT_PROP(node_id, val) operator
+ *     x = DT_FOREACH_STATUS_OKAY_VARGS(foo, MY_FN, +) 0;
+ *
+ * This expands to one of the following:
+ *
+ *     x = 3 + 4 + 0;
+ *     x = 4 + 3 + 0;
+ *
+ * i.e. it sets x to 7. As with DT_FOREACH_STATUS_OKAY(), there are no
+ * guarantees about the order nodes appear in the expansion.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param fn Macro to call for each enabled node. Must accept a
+ *           node_id as its only parameter.
+ * @param ... Additional arguments to pass to "fn"
+ */
+#define DT_FOREACH_STATUS_OKAY_VARGS(compat, fn, ...)			\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			\
+		    (UTIL_CAT(DT_FOREACH_OKAY_VARGS_,			\
+			      compat)(fn, __VA_ARGS__)),		\
+		    ())
+
+/**
  * @}
  */
 
@@ -2574,5 +2673,6 @@
 #include <devicetree/fixed-partitions.h>
 #include <devicetree/zephyr.h>
 #include <devicetree/ordinals.h>
+#include <devicetree/pinctrl.h>
 
 #endif /* DEVICETREE_H */

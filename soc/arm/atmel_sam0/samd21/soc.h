@@ -50,6 +50,7 @@
 
 #endif /* _ASMLANGUAGE */
 
+#include "../common/soc_port.h"
 #include "../common/atmel_sam0_dt.h"
 
 /** Processor Clock (HCLK) Frequency */

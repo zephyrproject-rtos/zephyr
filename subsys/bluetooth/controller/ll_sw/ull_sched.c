@@ -12,6 +12,7 @@
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
+#include "util/util.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
 
@@ -22,6 +23,7 @@
 #include "lll.h"
 #include "lll/lll_vendor.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 
 #include "ull_scan_types.h"
@@ -227,7 +229,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role) {
 		conn->llcp_conn_param.ticks_to_offset_next =
-			conn->slave.ticks_to_offset;
+			conn->periph.ticks_to_offset;
 
 		ticks_to_offset_next =
 			&conn->llcp_conn_param.ticks_to_offset_next;

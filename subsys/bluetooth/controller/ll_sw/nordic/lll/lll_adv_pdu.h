@@ -138,6 +138,13 @@ static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
 
 	return (void *)lll->data.pdu[last];
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+static inline void *lll_adv_sync_extra_data_peek(struct lll_adv_sync *lll)
+{
+	return lll->data.extra_data[lll->data.last];
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

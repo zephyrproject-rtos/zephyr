@@ -25,9 +25,26 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
-#define RAMABLE_REGION ram :ram_phdr
-#define ROMABLE_REGION ram :ram_phdr
 #define LP_SRAM_REGION lpram
+
+/* DSP RAM regions (all of them) are mapped twice on the DSP: once in
+ * a 512MB region from 0x80000000-0x9fffffff and again from
+ * 0xa0000000-0xbfffffff.  The first mapping is set up to bypass the
+ * L1 cache, so it must be used when multiprocessor coherence is
+ * desired, where the latter mapping is best used for processor-local
+ * data (e.g. stacks) or shared data that is managed with explicit
+ * cache flush/invalidate operations.
+ *
+ * The UNCACHED_RAM_OFFSET will be used before to move the address
+ * pointer forward or backward so code and data land in correct
+ * region. Remember to align the memory, and be sure to also emit the
+ * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
+ * appropriate. (Forgetting the correct PHDR will actually work, as
+ * the output tooling ignores it, but it will cause the linker to emit
+ * 512MB of unused data into the output file!)
+ *
+ */
+#define UNCACHED_RAM_OFFSET	0x20000000
 
 MEMORY
 {
@@ -97,6 +114,9 @@ MEMORY
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
+  ucram :
+	org = RAM_BASE - UNCACHED_RAM_OFFSET,
+	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
 	org = IDT_BASE,
@@ -145,7 +165,7 @@ PHDRS
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   ram_phdr PT_LOAD;
-
+  ucram_phdr PT_LOAD;
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
   metadata_entries_phdr PT_NOTE;
@@ -190,16 +210,7 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
  * as cacheattr_set macro sets them both to the same set of
  * attributes.
  */
-#ifndef CONFIG_SMP
 _memmap_cacheattr_intel_cavs20_adsp = 0xFF42FFF2;
-#else
-/*
- * FIXME: Make 0xA0000000 - 0xBFFFFFFF to bypass cache under SMP
- * since there is no data cache manipulation for spinlock, kernel
- * object, scheduler, etc...
- */
-_memmap_cacheattr_intel_cavs20_adsp = 0xFF22FFF2;
-#endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs20_adsp);
 SECTIONS
@@ -391,6 +402,7 @@ SECTIONS
     _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
   } >ram :ram_phdr
+
   .module_init : ALIGN(4)
   {
     _module_init_start = ABSOLUTE(.);
@@ -398,6 +410,8 @@ SECTIONS
     _module_init_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
+#define RAMABLE_REGION ram :ram_phdr
+#define ROMABLE_REGION ram :ram_phdr
 #include <linker/common-rom.ld>
 
   .fw_ready : ALIGN(4)
@@ -406,11 +420,18 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  .noinit : ALIGN(4)
+  /*
+   * Address pointer here is at cached ram.
+   * So need to go into uncached memory region, hence
+   * the subtraction.
+   */
+  segstart_uncached_noinit = ALIGN(64) - UNCACHED_RAM_OFFSET;
+
+  .noinit segstart_uncached_noinit : ALIGN(64)
   {
     *(.noinit)
     *(.noinit.*)
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
 
   .data : ALIGN(4)
   {
@@ -431,8 +452,12 @@ SECTIONS
     *(.gna_model)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4096);
-  } >ram :ram_phdr
-  .lit4 : ALIGN(4)
+  } >ucram :ucram_phdr
+
+  /* Going back into cached memory region. */
+  segstart_cached_lit4 = ALIGN(64) + UNCACHED_RAM_OFFSET;
+
+  .lit4 segstart_cached_lit4 : ALIGN(64)
   {
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -440,20 +465,41 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
-  .cached :
+
+/* These values need to change in our scheme, where the common-ram
+ * sections need to be linked in safe/uncached memory but common-rom
+ * wants to use the cache
+ */
+
+#undef RAMABLE_REGION
+#undef ROMABLE_REGION
+#define RAMABLE_REGION ucram :ucram_phdr
+#define ROMABLE_REGION ucram :ucram_phdr
+#include <linker/common-ram.ld>
+
+  /* Going back into cached memory region. */
+  segstart_cached_cached = ALIGN(64) + UNCACHED_RAM_OFFSET;
+
+  /* This section is cached.  By default it contains only declared
+   * thread stacks, but applications can put symbols here too.
+   */
+  .cached segstart_cached_cached :
   {
     *(.cached .cached.*)
   } >ram :ram_phdr
-#include <linker/common-ram.ld>
 
-  .tm_clone_table :
+  /* Going back into un-cached memory region. */
+  segstart_uncached_tm_clone_table = ALIGN(64) - UNCACHED_RAM_OFFSET;
+
+  .tm_clone_table segstart_uncached_tm_clone_table :
   {
     *(.tm_clone_table)
   } >ram :ram_phdr
 
-  .bss (NOLOAD) : ALIGN(4096)
+  . = ALIGN(4096);
+
+  .bss ALIGN(64) (NOLOAD) :
   {
-    . = ALIGN(4096);
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
@@ -470,12 +516,19 @@ SECTIONS
     *(COMMON)
     . = ALIGN(8);
     _bss_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
 
-  /* stack */
-  _end = ALIGN(8);
+  _end = ALIGN(64);
   PROVIDE(end = ALIGN(8));
+
+  /* Re-adjust to the upper mapping for the final symbols below */
+  segstart_cached_stack = _end + UNCACHED_RAM_OFFSET;
+  . = segstart_cached_stack;
   __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
+
+  segstart_uncached_lpbuf = ALIGN(4) - UNCACHED_RAM_OFFSET;
+  . = segstart_uncached_lpbuf;
+
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
   {
@@ -483,7 +536,10 @@ SECTIONS
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
   } >LP_SRAM_REGION
-  _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
+
+  . = L2_SRAM_BASE + L2_SRAM_SIZE;
+  _heap_sentry = . - UNCACHED_RAM_OFFSET;
+
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }

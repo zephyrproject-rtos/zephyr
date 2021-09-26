@@ -80,7 +80,6 @@ config APIC_TIMER_IRQ_PRIORITY
 
 config HPET_TIMER
 	bool "HPET timer"
-	depends on X86
 	select IOAPIC if X86
 	select LOAPIC if X86
 	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
@@ -253,6 +252,7 @@ config ESP32C3_SYS_TIMER
 	bool "ESP32C3 sys-timer support"
 	depends on SOC_ESP32C3
 	default y
+	select TICKLESS_CAPABLE
 	help
 	  This option enables the system timer driver for the Espressif ESP32C3
 	  and provides the standard "system clock driver" interface.

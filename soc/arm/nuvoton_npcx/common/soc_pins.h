@@ -168,6 +168,13 @@ void npcx_lvol_suspend_io_pads(void);
  */
 bool npcx_lvol_is_enabled(int port, int pin);
 
+/**
+ * @brief Select the host interface type
+ *
+ * @param hif_type host interface type
+ */
+void npcx_host_interface_sel(enum npcx_hif_type hif_type);
+
 #ifdef __cplusplus
 }
 #endif

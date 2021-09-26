@@ -42,6 +42,12 @@
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
 	};
+
+	sram1: memory@40140000 {
+		compatible = "mmio-sram";
+		reg = <0x40140000 DT_SIZE_K(16)>;
+	};
+
 };
 
 &systick {
@@ -64,14 +70,14 @@
 
 	clkctl0: clkctl@1000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x1000 0x4000>;
+		reg = <0x1000 0x1000>;
 		label = "CLKCTL_0";
 		#clock-cells = <1>;
 	};
 
 	clkctl1: clkctl@21000 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x21000 0x4000>;
+		reg = <0x21000 0x1000>;
 		label = "CLKCTL_1";
 		#clock-cells = <1>;
 	};
@@ -83,7 +89,7 @@
 
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
 		label = "GPIO_0";
 		gpio-controller;
@@ -93,12 +99,21 @@
 
 	gpio1: gpio@1 {
 		compatible = "nxp,lpc-gpio";
-		reg = <0x100000 0x4000>;
+		reg = <0x100000 0x1000>;
 		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
 		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
 		port = <1>;
+	};
+
+	gpio2: gpio@2 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x1000>;
+		label = "GPIO_2";
+		gpio-controller;
+		#gpio-cells = <2>;
+		port = <2>;
 	};
 
 	flexspi: spi@134000 {
@@ -182,6 +197,15 @@
 		status = "disabled";
 	};
 
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x144000 0x1000>;
+		interrupts = <50 1>;
+		num-bidir-endpoints = <6>;
+		status = "disabled";
+		label = "USBHS_0";
+	};
+
 	hs_lspi: spi@126000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
@@ -235,10 +259,137 @@
 
 	trng: random@138000 {
 		compatible = "nxp,kinetis-trng";
-		reg = <0x138000 0x4000>;
+		reg = <0x138000 0x1000>;
 		status = "okay";
 		interrupts = <31 0>;
 		label = "TRNG";
+	};
+
+	sc_timer: pwm@146000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x146000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		prescaler = <8>;
+		label = "SC_TIMER";
+		#pwm-cells = <2>;
+	};
+
+	wwdt0: watchdog@e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xe000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_0";
+	};
+
+	wwdt1: watchdog@2e000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0x2e000 0x1000>;
+		interrupts = <52 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_1";
+	};
+
+	usdhc1: usdhc@136000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x136000 0x1000>;
+		status = "disabled";
+		interrupts = <45 0>;
+		clocks = <&clkctl1 MCUX_USDHC1_CLK>;
+		label = "USDHC_1";
+	};
+
+	usdhc2: usdhc@137000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x137000 0x1000>;
+		status = "disabled";
+		interrupts = <46 0>;
+		clocks = <&clkctl1 MCUX_USDHC2_CLK>;
+		label = "USDHC_2";
+	};
+
+	lpadc0: lpadc@13A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x13A000 0x304>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		clk-source = <0>;
+		voltage-ref= <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		label = "LPADC_0";
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
+
+	ctimer0: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <10 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_0";
+	};
+
+	ctimer1: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_1";
+	};
+
+	ctimer2: ctimer@2a000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2a000 0x1000>;
+		interrupts = <39 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_2";
+	};
+
+	ctimer3: ctimer@2b000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2b000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_3";
+	};
+
+	ctimer4: ctimer@2c000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2c000 0x1000>;
+		interrupts = <40 0>;
+		status = "disabled";
+		clk-source = <1>;
+		clocks = <&clkctl1 MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_4";
 	};
 };
 

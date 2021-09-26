@@ -67,14 +67,14 @@ test_spi_bmi160: bmi160@7 {
 };
 
 test_spi_lpd8803: lpd8803@8 {
-	compatible = "colorway,lpd8803";
+	compatible = "greeled,lpd8803";
 	label = "LPD8803";
 	reg = <0x8>;
 	spi-max-frequency = <0>;
 };
 
 test_spi_lpd8806: lpd8806@9 {
-	compatible = "colorway,lpd8806";
+	compatible = "greeled,lpd8806";
 	label = "LPD8806";
 	reg = <0x9>;
 	spi-max-frequency = <0>;

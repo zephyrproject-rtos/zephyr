@@ -31,12 +31,6 @@ SECTIONS
 
 SECTIONS
 {
-	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
-	{
-		. = ALIGN(8);
-		PROVIDE (__global_pointer$ = __data_ram_start + 0x800);
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	SECTION_DATA_PROLOGUE(retention_data,,)
 	{
 		. = ALIGN(8);

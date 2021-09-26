@@ -62,7 +62,7 @@ if(WEST OR ZEPHYR_MODULES)
   endif()
 
   if(EXISTS ${ZEPHYR_SETTINGS_FILE})
-    file(STRINGS ${ZEPHYR_SETTINGS_FILE} ZEPHYR_SETTINGS_TXT ENCODING UTF-8)
+    file(STRINGS ${ZEPHYR_SETTINGS_FILE} ZEPHYR_SETTINGS_TXT ENCODING UTF-8 REGEX "^[^#]")
     foreach(setting ${ZEPHYR_SETTINGS_TXT})
       # Match <key>:<value> for each line of file, each corresponding to
       # a setting.  The use of quotes is required due to CMake not supporting

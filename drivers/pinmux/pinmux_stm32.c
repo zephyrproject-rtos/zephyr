@@ -169,16 +169,12 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 			   size_t list_size, uint32_t base)
 {
-	int remap;
-	uint32_t mux;
+	uint8_t remap;
 
-	remap = STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
+	remap = (uint8_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
 
-	for (int i = 1; i < list_size; i++) {
-		mux = pinctrl[i].pinmux;
-		remap = STM32_DT_PINMUX_REMAP(mux);
-
-		if (STM32_DT_PINMUX_REMAP(mux) != remap) {
+	for (size_t i = 1U; i < list_size; i++) {
+		if (STM32_DT_PINMUX_REMAP(pinctrl[i].pinmux) != remap) {
 			return -EINVAL;
 		}
 	}

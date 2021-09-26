@@ -2012,6 +2012,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
                          "DEVICE_DEFINE()=" \
                          "BUILD_ASSERT()=" \
+                         "_LINKER" \
                          "__deprecated=" \
                          "__packed=" \
                          "__aligned(x)=" \

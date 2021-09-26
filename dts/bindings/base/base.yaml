@@ -1,5 +1,7 @@
 # Common fields for all devices
 
+include: [pm.yaml]
+
 properties:
     status:
         type: string

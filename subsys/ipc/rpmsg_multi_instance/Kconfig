@@ -31,6 +31,8 @@ config RPMSG_MULTI_INSTANCES_NO
 	help
 	  How many instances are to be used.
 
+ipm_name_instance_num = 0
+rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 1
 rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 2
@@ -44,8 +46,6 @@ rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 6
 rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 7
-rsource "Kconfig.ipm_name_instance"
-ipm_name_instance_num = 8
 rsource "Kconfig.ipm_name_instance"
 
 config RPMSG_MULTI_INSTANCE_SHM_BASE_ADDRESS
@@ -67,13 +67,6 @@ config RPMSG_MULTI_INSTANCE_INIT_PRIORITY
 	default 46
 	help
 	  If in doubt, do not modify this value.
-
-config IPM_MSG_ID
-	int "IPM message identifier."
-	default 0
-	help
-	  Values are constrained by ipm_max_data_size_get since many boards
-	  only allow for a subset of bits in a 32-bit register to store the ID.
 
 module = RPMSG_MULTI_INSTANCE
 module-str = RPMsg multi instance

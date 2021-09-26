@@ -371,7 +371,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 void net_if_stats_reset(struct net_if *iface)
 {
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		if (iface == tmp) {
 			memset(&iface->stats, 0, sizeof(iface->stats));
 			return;
@@ -387,7 +387,7 @@ void net_if_stats_reset_all(void)
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		memset(&iface->stats, 0, sizeof(iface->stats));
 	}
 
@@ -524,7 +524,7 @@ int net_if_set_link_addr_locked(struct net_if *iface,
 
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (!memcmp(net_if_get_link_addr(iface)->addr, ll_addr->addr,
 			    ll_addr->len)) {
 			return iface;
@@ -536,7 +536,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 
 struct net_if *net_if_lookup_by_dev(const struct device *dev)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_get_device(iface) == dev) {
 			return iface;
 		}
@@ -583,7 +583,7 @@ struct net_if *net_if_get_default(void)
 
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 		    !l2 && net_if_offload(iface)) {
 			return iface;
@@ -1288,7 +1288,7 @@ static void rs_timeout(struct k_work *work)
 		/* Did not receive RA yet. */
 		ipv6->rs_count++;
 
-		Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+		STRUCT_SECTION_FOREACH(net_if, tmp) {
 			if (tmp->config.ip.ipv6 == ipv6) {
 				iface = tmp;
 				break;
@@ -1381,7 +1381,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 		int i;
 
@@ -1921,7 +1921,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 		int i;
 
@@ -2355,7 +2355,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		struct net_if_ipv6 *ipv6 = tmp->config.ip.ipv6;
 		int i;
 
@@ -2529,7 +2529,7 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		addr = net_if_ipv6_get_ll(tmp, state);
 		if (addr) {
 			if (iface) {
@@ -2578,7 +2578,7 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		if (iface && *iface && tmp != *iface) {
 			continue;
 		}
@@ -2666,7 +2666,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 			src = net_if_ipv6_get_best_match(dst_iface, dst,
 							 &best_match);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_best_match(iface, dst,
@@ -2681,7 +2681,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv6_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_ll(iface,
@@ -3036,7 +3036,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 		goto out;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		ret = ipv4_is_broadcast_address(iface, addr);
 		if (ret) {
 			goto out;
@@ -3055,7 +3055,7 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		bool ret;
 
 		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
@@ -3193,7 +3193,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			src = net_if_ipv4_get_best_match(dst_iface, dst,
 							 &best_match);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in_addr *addr;
 
 				addr = net_if_ipv4_get_best_match(iface, dst,
@@ -3208,7 +3208,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in_addr *addr;
 
 				addr = net_if_ipv4_get_ll(iface,
@@ -3244,7 +3244,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 		int i;
 
@@ -3710,7 +3710,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (ret && *ret && iface != *ret) {
 			continue;
 		}
@@ -3949,7 +3949,7 @@ int net_if_get_by_iface(struct net_if *iface)
 
 void net_if_foreach(net_if_cb_t cb, void *user_data)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		cb(iface, user_data);
 	}
 }
@@ -3990,7 +3990,15 @@ done:
 	/* In many places it's assumed that link address was set with
 	 * net_if_set_link_addr(). Better check that now.
 	 */
-	NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+#if defined(CONFIG_NET_L2_CANBUS_RAW)
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
+		/* CAN does not require link address. */
+	} else
+#endif	/* CONFIG_NET_L2_CANBUS_RAW */
+	{
+		NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+	}
 
 	net_if_flag_set(iface, NET_IF_UP);
 
@@ -4271,7 +4279,7 @@ void net_if_init(void)
 
 	net_tc_tx_init();
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		init_iface(iface);
 		if_count++;
 	}
@@ -4299,7 +4307,7 @@ void net_if_init(void)
 	 */
 	if_count = 0;
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 			if_count++;
 		}
@@ -4321,7 +4329,7 @@ void net_if_post_init(void)
 	NET_DBG("");
 
 	/* After TX is running, attempt to bring the interface up */
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (!net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
 			net_if_up(iface);
 		}

@@ -429,10 +429,6 @@ static int lis2mdl_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	lis2mdl->power_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lis2mdl_init_interrupt(dev) < 0) {
@@ -446,14 +442,15 @@ static int lis2mdl_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
-		const struct lis2mdl_config *const config,
-		enum pm_device_state new_state)
+static int lis2mdl_pm_control(const struct device *dev,
+			      enum pm_device_action action)
 {
+	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int status = 0;
 
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (config->single_mode) {
 			status = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_SINGLE_TRIGGER);
@@ -464,46 +461,17 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		if (status) {
 			LOG_ERR("Power up failed");
 		}
-		lis2mdl->power_state = PM_DEVICE_STATE_ACTIVE;
 		LOG_DBG("State changed to active");
-	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
 		status = lis2mdl_operating_mode_set(ctx, LIS2MDL_POWER_DOWN);
 		if (status) {
 			LOG_ERR("Power down failed");
 		}
-		lis2mdl->power_state = new_state;
 		LOG_DBG("State changed to inactive");
-	}
-
-	return status;
-}
-
-static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
-				enum pm_device_state *state)
-{
-	struct lis2mdl_data *lis2mdl = dev->data;
-	const struct lis2mdl_config *const config = dev->config;
-	enum pm_device_state current_state = lis2mdl->power_state;
-	int status = 0;
-	enum pm_device_state new_state;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		new_state = *state;
-		if (new_state != current_state) {
-			status = lis2mdl_set_power_state(lis2mdl, config,
-							new_state);
-		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = current_state;
 		break;
 	default:
-		LOG_ERR("Got unknown power management control command");
-		status = -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return status;

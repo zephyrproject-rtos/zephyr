@@ -61,6 +61,25 @@
 				#gpio-cells = <2>;
 				gpio-controller;
 			};
+
+			test_i2c_pca953x: pca953x@70 {
+				compatible = "ti,tca9538";
+				reg = <0x70>;
+				label = "PCA953X";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				nint-gpios = <&test_gpio 0 0>;
+			};
+			test_i2c_fxl6408: fxl6408@43 {
+				status = "okay";
+				compatible = "fcs,fxl6408";
+				label = "FXL6408";
+				reg = <0x43>;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			    };
 		};
 
 		test_spi: spi@33334444 {

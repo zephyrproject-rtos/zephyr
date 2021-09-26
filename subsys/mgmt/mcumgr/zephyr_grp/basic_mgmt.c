@@ -13,9 +13,7 @@
 
 LOG_MODULE_REGISTER(mgmt_zephyr_basic, CONFIG_MGMT_SETTINGS_LOG_LEVEL);
 
-#define STORAGE_MGMT_ID_ERASE 6
-
-int storage_erase(void)
+static int storage_erase(void)
 {
 	const struct flash_area *fa;
 	int rc = flash_area_open(FLASH_AREA_ID(storage), &fa);

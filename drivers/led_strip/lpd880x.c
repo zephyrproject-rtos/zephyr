@@ -9,10 +9,10 @@
 #include <errno.h>
 #include <string.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, colorway_lpd8806), okay)
-#define DT_DRV_COMPAT colorway_lpd8806
+#if DT_NODE_HAS_STATUS(DT_INST(0, greeled_lpd8806), okay)
+#define DT_DRV_COMPAT greeled_lpd8806
 #else
-#define DT_DRV_COMPAT colorway_lpd8803
+#define DT_DRV_COMPAT greeled_lpd8803
 #endif
 
 #define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
@@ -30,19 +30,18 @@ LOG_MODULE_REGISTER(lpd880x);
  * - mode 0 (the default), 8 bit, MSB first, one-line SPI
  * - no shenanigans (no CS hold, release device lock, not an EEPROM)
  */
-#define LPD880X_SPI_OPERATION (SPI_OP_MODE_MASTER |	\
-			       SPI_TRANSFER_MSB |	\
-			       SPI_WORD_SET(8) |	\
+#define LPD880X_SPI_OPERATION (SPI_OP_MODE_MASTER | \
+			       SPI_TRANSFER_MSB |   \
+			       SPI_WORD_SET(8) |    \
 			       SPI_LINES_SINGLE)
 
-struct lpd880x_data {
-	const struct device *spi;
-	struct spi_config config;
+struct lpd880x_config {
+	struct spi_dt_spec bus;
 };
 
 static int lpd880x_update(const struct device *dev, void *data, size_t size)
 {
-	struct lpd880x_data *drv_data = dev->data;
+	const struct lpd880x_config *config = dev->config;
 	/*
 	 * Per the AdaFruit reverse engineering notes on the protocol,
 	 * a zero byte propagates through at most 32 LED driver ICs.
@@ -77,7 +76,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 
 	(void)memset(reset_buf, 0x00, reset_size);
 
-	rc = spi_write(drv_data->spi, &drv_data->config, &tx);
+	rc = spi_write_dt(&config->bus, &tx);
 	if (rc) {
 		LOG_ERR("can't update strip: %d", rc);
 	}
@@ -129,25 +128,19 @@ static int lpd880x_strip_update_channels(const struct device *dev,
 
 static int lpd880x_strip_init(const struct device *dev)
 {
-	struct lpd880x_data *data = dev->data;
-	struct spi_config *config = &data->config;
+	const struct lpd880x_config *config = dev->config;
 
-	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!data->spi) {
-		LOG_ERR("SPI device %s not found",
-			    DT_INST_BUS_LABEL(0));
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI device %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
-
-	config->frequency = DT_INST_PROP(0, spi_max_frequency);
-	config->operation = LPD880X_SPI_OPERATION;
-	config->slave = DT_INST_REG_ADDR(0); /* MOSI/CLK only; CS is not supported. */
-	config->cs = NULL;
 
 	return 0;
 }
 
-static struct lpd880x_data lpd880x_strip_data;
+static const struct lpd880x_config lpd880x_config = {
+	.bus = SPI_DT_SPEC_INST_GET(0, LPD880X_SPI_OPERATION, 0)
+};
 
 static const struct led_strip_driver_api lpd880x_strip_api = {
 	.update_rgb = lpd880x_strip_update_rgb,
@@ -155,6 +148,6 @@ static const struct led_strip_driver_api lpd880x_strip_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL,
-		    &lpd880x_strip_data,
-		    NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
-		    &lpd880x_strip_api);
+		      NULL, &lpd880x_config,
+		      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
+		      &lpd880x_strip_api);

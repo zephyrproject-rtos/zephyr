@@ -119,7 +119,7 @@ uext_serial: &usart1 {};
 	};
 };
 
-&usb {
+zephyr_udc0: &usb {
 	status = "okay";
 	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;

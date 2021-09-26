@@ -35,16 +35,18 @@ PROVIDE(_MemErrorHandler = 0x00000000);
  * data (e.g. stacks) or shared data that is managed with explicit
  * cache flush/invalidate operations.
  *
- * The UNCACHED_RAM_OFFSET will be used before to move the address
- * pointer forward or backward so code and data land in correct
- * region. Remember to align the memory, and be sure to also emit the
+ * These macros will set up a segment start address correctly,
+ * including alignment to a cache line.  Be sure to also emit the
  * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
  * appropriate. (Forgetting the correct PHDR will actually work, as
  * the output tooling ignores it, but it will cause the linker to emit
  * 512MB of unused data into the output file!)
  *
+ * (Note clumsy syntax because XCC doesn't understand the "~" operator)
+ *
  */
-#define UNCACHED_RAM_OFFSET	0x20000000
+#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
 
 MEMORY
 {
@@ -115,7 +117,7 @@ MEMORY
 	org = RAM_BASE,
 	len = RAM_SIZE
   ucram :
-	org = RAM_BASE - UNCACHED_RAM_OFFSET,
+	org = RAM_BASE - 0x20000000,
 	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
@@ -429,14 +431,7 @@ SECTIONS
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
-  /*
-   * Address pointer here is at cached ram.
-   * So need to go into uncached memory region, hence
-   * the subtraction.
-   */
-  segstart_uncached_data = ALIGN(64) - UNCACHED_RAM_OFFSET;
-
-  .data segstart_uncached_data : ALIGN(4)
+  .data SEGSTART_UNCACHED : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
     *(.data)
@@ -473,28 +468,22 @@ SECTIONS
 #define ROMABLE_REGION ucram :ucram_phdr
 #include <linker/common-ram.ld>
 
-  /* Going back into cached memory region. */
-  segstart_cached_cached = ALIGN(64) + UNCACHED_RAM_OFFSET;
-
   /* This section is cached.  By default it contains only declared
    * thread stacks, but applications can put symbols here too.
    */
-  .cached segstart_cached_cached :
+  .cached SEGSTART_CACHED :
   {
     *(.cached .cached.*)
   } >ram :ram_phdr
 
-  /* Going back into un-cached memory region. */
-  segstart_uncached_tm_clone_table = ALIGN(64) - UNCACHED_RAM_OFFSET;
-
-  .tm_clone_table segstart_uncached_tm_clone_table :
+  .tm_clone_table SEGSTART_UNCACHED :
   {
     *(.tm_clone_table)
   } >ram :ram_phdr
 
   . = ALIGN(4096);
 
-  .bss ALIGN(64) (NOLOAD) :
+  .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
@@ -515,17 +504,16 @@ SECTIONS
   } >ucram :ucram_phdr
 
   /* Re-adjust to the upper mapping for the final symbols below */
-  segstart_cached_stack = ALIGN(64) + UNCACHED_RAM_OFFSET;
-  . = segstart_cached_stack;
+  . = SEGSTART_CACHED;
 
   /* Initial/boot stack lives in the CPU0 interrupt stack */
   __stack = z_interrupt_stacks + CONFIG_ISR_STACK_SIZE;
 
   /* These symbols bound the newlib heap, which must be uncached */
-  segstart_uncached_end = ALIGN(64) - UNCACHED_RAM_OFFSET;
-  . = segstart_uncached_end;
+  . = SEGSTART_UNCACHED;
   _end = .;
   . = L2_SRAM_BASE + L2_SRAM_SIZE;
+  . = SEGSTART_UNCACHED;
   _heap_sentry = .;
 
   /* dma buffers */

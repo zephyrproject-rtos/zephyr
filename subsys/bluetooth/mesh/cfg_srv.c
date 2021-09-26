@@ -216,7 +216,7 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
 		return STATUS_SUCCESS;
 	}
 
-	if (!bt_mesh_app_key_exists(app_idx)) {
+	if (!bt_mesh_app_key_exists(app_idx) || !bt_mesh_model_has_key(model, app_idx)) {
 		return STATUS_INVALID_APPKEY;
 	}
 
@@ -1145,8 +1145,7 @@ send_status:
 				   mod_id, vnd);
 }
 
-static enum bt_mesh_walk mod_sub_clear_visitor(struct bt_mesh_model *mod,
-					       uint32_t depth, void *user_data)
+static enum bt_mesh_walk mod_sub_clear_visitor(struct bt_mesh_model *mod, void *user_data)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
@@ -1206,8 +1205,7 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 
 
 	if (ARRAY_SIZE(mod->groups) > 0) {
-		bt_mesh_model_tree_walk(bt_mesh_model_root(mod),
-					mod_sub_clear_visitor, NULL);
+		bt_mesh_model_extensions_walk(mod, mod_sub_clear_visitor, NULL);
 
 		mod->groups[0] = sub_addr;
 		status = STATUS_SUCCESS;
@@ -1269,8 +1267,7 @@ static int mod_sub_del_all(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_clear_visitor,
-				NULL);
+	bt_mesh_model_extensions_walk(mod, mod_sub_clear_visitor, NULL);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_model_sub_store(mod);
@@ -1288,8 +1285,7 @@ struct mod_sub_list_ctx {
 	struct net_buf_simple *msg;
 };
 
-static enum bt_mesh_walk mod_sub_list_visitor(struct bt_mesh_model *mod,
-					      uint32_t depth, void *ctx)
+static enum bt_mesh_walk mod_sub_list_visitor(struct bt_mesh_model *mod, void *ctx)
 {
 	struct mod_sub_list_ctx *visit = ctx;
 	int count = 0;
@@ -1365,8 +1361,7 @@ static int mod_sub_get(struct bt_mesh_model *model,
 
 	visit_ctx.msg = &msg;
 	visit_ctx.elem_idx = mod->elem_idx;
-	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_list_visitor,
-				&visit_ctx);
+	bt_mesh_model_extensions_walk(mod, mod_sub_list_visitor, &visit_ctx);
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -1425,8 +1420,7 @@ static int mod_sub_get_vnd(struct bt_mesh_model *model,
 
 	visit_ctx.msg = &msg;
 	visit_ctx.elem_idx = mod->elem_idx;
-	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_list_visitor,
-				&visit_ctx);
+	bt_mesh_model_extensions_walk(mod, mod_sub_list_visitor, &visit_ctx);
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -1639,8 +1633,7 @@ static int mod_sub_va_overwrite(struct bt_mesh_model *model,
 
 		status = bt_mesh_va_add(label_uuid, &sub_addr);
 		if (status == STATUS_SUCCESS) {
-			bt_mesh_model_tree_walk(bt_mesh_model_root(mod),
-						mod_sub_clear_visitor, NULL);
+			bt_mesh_model_extensions_walk(mod, mod_sub_clear_visitor, NULL);
 			mod->groups[0] = sub_addr;
 
 			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {

@@ -24,7 +24,7 @@ void main(void)
 	printk("Device ready\n");
 
 	/* Don't let the system power off / low power this device */
-	device_busy_set(led.port);
+	pm_device_busy_set(led.port);
 
 	while (true) {
 		gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);

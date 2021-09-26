@@ -442,7 +442,7 @@ Additional notes on the above:
   values as *node identifiers*. Node identifiers are covered in more detail in
   :ref:`dt-from-c`.
 
-- Array and similar type property values can be split several ``<>``
+- Array and similar type property values can be split into several ``<>``
   blocks, like this:
 
   .. code-block:: none

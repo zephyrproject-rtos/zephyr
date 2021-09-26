@@ -73,6 +73,10 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| SDMMC     | on-chip    | disk access                         |
++-----------+------------+-------------------------------------+
+| IPM       | on-chip    | virtual mailbox based on HSEM       |
++-----------+------------+-------------------------------------+
 
 (*) From UM2411 Rev 4:
    With the default setting, the Ethernet feature is not working because of
@@ -99,6 +103,7 @@ Default Zephyr Peripheral Mapping:
 - UART_1 TX/RX : PA9/PA10 (ST-Link Virtual Port Com)
 - UART_8 TX/RX : PJ8/PJ9 (Arduino Serial)
 - SPI_5 NSS/SCK/MISO/MOSI : PK1/PK0/PJ11/PJ10 (Arduino SPI)
+- SDMMC_1 D0/D1/D2/D3/CK/CMD: PC8/PC9/PC10/PC11/PC12/PD2
 - LD1 : PI12
 - LD2 : PI13
 - LD3 : PI14

@@ -279,6 +279,38 @@ more details.
 .. _set() command:
    https://cmake.org/cmake/help/latest/command/set.html
 
+Build tool arguments
+--------------------
+
+Use ``-o`` to pass options to the underlying build tool.
+
+This works with both ``ninja`` (:ref:`the default <west-building-generator>`)
+and ``make`` based build systems.
+
+For example, to pass ``-dexplain`` to ``ninja``::
+
+  west build -o=-dexplain
+
+As another example, to pass ``--keep-going`` to ``make``::
+
+  west build -o=--keep-going
+
+Note that using ``-o=--foo`` instead of ``-o --foo`` is required to prevent
+``--foo`` from being treated as a ``west build`` option.
+
+Build parallelism
+-----------------
+
+By default, ``ninja`` uses all of your cores to build, while ``make`` uses only
+one. You can control this explicitly with the ``-j`` option supported by both
+tools.
+
+For example, to build with 4 cores::
+
+  west build -o=-j4
+
+The ``-o`` option is described further in the previous section.
+
 .. _west-building-config:
 
 Configuration Options

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+	sda-pin = <30>;
+	scl-pin = <31>;
+
+	wm8731: wm8731@1a {
+		compatible = "wolfson,wm8731";
+		reg = <0x1a>;
+		label = "WM8731";
+	};
+};
+
+i2s_rxtx: &i2s0 {
+	status = "okay";
+	sck-pin = <47>;
+	lrck-pin = <44>;
+	sdout-pin = <45>;
+	sdin-pin = <46>;
+};

@@ -52,31 +52,30 @@ static uint8_t sht3xd_compute_crc(uint16_t value)
 
 int sht3xd_write_command(const struct device *dev, uint16_t cmd)
 {
+	const struct sht3xd_config *config = dev->config;
 	uint8_t tx_buf[2];
 
 	sys_put_be16(cmd, tx_buf);
-	return i2c_write(sht3xd_i2c_device(dev), tx_buf, sizeof(tx_buf),
-			 sht3xd_i2c_address(dev));
+	return i2c_write_dt(&config->bus, tx_buf, sizeof(tx_buf));
 }
 
 int sht3xd_write_reg(const struct device *dev, uint16_t cmd, uint16_t val)
 {
+	const struct sht3xd_config *config = dev->config;
 	uint8_t tx_buf[5];
 
 	sys_put_be16(cmd, &tx_buf[0]);
 	sys_put_be16(val, &tx_buf[2]);
 	tx_buf[4] = sht3xd_compute_crc(val);
 
-	return i2c_write(sht3xd_i2c_device(dev), tx_buf, sizeof(tx_buf),
-			 sht3xd_i2c_address(dev));
+	return i2c_write_dt(&config->bus, tx_buf, sizeof(tx_buf));
 }
 
 static int sht3xd_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
+	const struct sht3xd_config *config = dev->config;
 	struct sht3xd_data *data = dev->data;
-	const struct device *i2c = sht3xd_i2c_device(dev);
-	uint8_t address = sht3xd_i2c_address(dev);
 	uint8_t rx_buf[6];
 	uint16_t t_sample, rh_sample;
 
@@ -92,7 +91,7 @@ static int sht3xd_sample_fetch(const struct device *dev,
 	}
 	k_sleep(K_MSEC(measure_wait[SHT3XD_REPEATABILITY_IDX] / USEC_PER_MSEC));
 
-	if (i2c_read(i2c, rx_buf, sizeof(rx_buf), address) < 0) {
+	if (i2c_read_dt(&config->bus, rx_buf, sizeof(rx_buf)) < 0) {
 		LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}
@@ -102,8 +101,8 @@ static int sht3xd_sample_fetch(const struct device *dev,
 
 	sys_put_be16(SHT3XD_CMD_FETCH, tx_buf);
 
-	if (i2c_write_read(i2c, address, tx_buf, sizeof(tx_buf),
-			   rx_buf, sizeof(rx_buf)) < 0) {
+	if (i2c_write_read_dt(&config->bus, tx_buf, sizeof(tx_buf),
+			      rx_buf, sizeof(rx_buf)) < 0) {
 		LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}
@@ -167,22 +166,12 @@ static const struct sensor_driver_api sht3xd_driver_api = {
 
 static int sht3xd_init(const struct device *dev)
 {
-	struct sht3xd_data *data = dev->data;
 	const struct sht3xd_config *cfg = dev->config;
-	const struct device *i2c = device_get_binding(cfg->bus_name);
 
-	if (i2c == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-			cfg->bus_name);
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR("I2C bus %s is not ready!", cfg->bus.bus->name);
 		return -EINVAL;
 	}
-	data->bus = i2c;
-
-	if (!cfg->base_address) {
-		LOG_DBG("No I2C address");
-		return -EINVAL;
-	}
-	data->dev = dev;
 
 	/* clear status register */
 	if (sht3xd_write_command(dev, SHT3XD_CMD_CLEAR_STATUS) < 0) {
@@ -204,6 +193,9 @@ static int sht3xd_init(const struct device *dev)
 	k_busy_wait(measure_wait[SHT3XD_REPEATABILITY_IDX]);
 #endif
 #ifdef CONFIG_SHT3XD_TRIGGER
+	struct sht3xd_data *data = dev->data;
+
+	data->dev = dev;
 	if (sht3xd_init_interrupt(dev) < 0) {
 		LOG_DBG("Failed to initialize interrupt");
 		return -EIO;
@@ -213,20 +205,24 @@ static int sht3xd_init(const struct device *dev)
 	return 0;
 }
 
-struct sht3xd_data sht3xd0_driver;
-static const struct sht3xd_config sht3xd0_cfg = {
-	.bus_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_gpio_name = DT_INST_GPIO_LABEL(0, alert_gpios),
+#define SHT3XD_TRIGGER_INIT(inst)						\
+	.alert_gpio_name = DT_INST_GPIO_LABEL(inst, alert_gpios),		\
+	.alert_pin = DT_INST_GPIO_PIN(inst, alert_gpios),			\
+	.alert_flags = DT_INST_GPIO_FLAGS(inst, alert_gpios),
+#else
+#define SHT3XD_TRIGGER_INIT(inst)
 #endif
-	.base_address = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_pin = DT_INST_GPIO_PIN(0, alert_gpios),
-	.alert_flags = DT_INST_GPIO_FLAGS(0, alert_gpios),
-#endif
-};
 
-DEVICE_DT_INST_DEFINE(0, sht3xd_init, NULL,
-		    &sht3xd0_driver, &sht3xd0_cfg,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &sht3xd_driver_api);
+#define SHT3XD_DEFINE(inst)							\
+	struct sht3xd_data sht3xd0_data_##inst;					\
+	static const struct sht3xd_config sht3xd0_cfg_##inst = {		\
+		.bus = I2C_DT_SPEC_INST_GET(inst),				\
+		SHT3XD_TRIGGER_INIT(inst)					\
+	};									\
+	DEVICE_DT_INST_DEFINE(inst, sht3xd_init, NULL,				\
+		&sht3xd0_data_##inst, &sht3xd0_cfg_##inst,			\
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+		&sht3xd_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SHT3XD_DEFINE)

@@ -85,7 +85,7 @@ static ssize_t read_location(struct bt_conn *conn, const struct bt_gatt_attr *at
 {
 	struct bt_vocs *inst = attr->user_data;
 
-	BT_DBG("0x%02x", inst->srv.location);
+	BT_DBG("0x%08x", inst->srv.location);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.location,
 				 sizeof(inst->srv.location));
 }
@@ -351,8 +351,6 @@ int bt_vocs_register(struct bt_vocs *vocs,
 }
 #endif /* CONFIG_BT_VOCS */
 
-#if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
-
 int bt_vocs_state_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
@@ -487,5 +485,3 @@ int bt_vocs_description_set(struct bt_vocs *inst, const char *description)
 
 	return -ENOTSUP;
 }
-
-#endif /* CONFIG_BT_VOCS || CONFIG_BT_VOCS_CLIENT */

@@ -27,8 +27,8 @@ struct bt_mesh_app_key_cb {
  *  @param _handler Handler function, see @ref bt_mesh_app_key_cb::evt_handler.
  */
 #define BT_MESH_APP_KEY_CB_DEFINE(_handler)                                    \
-	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_app_key_cb,             \
-					       _CONCAT(bt_mesh_app_key_cb_,    \
+	static const STRUCT_SECTION_ITERABLE(bt_mesh_app_key_cb,               \
+					     _CONCAT(bt_mesh_app_key_cb_,      \
 						       _handler)) = {          \
 		.evt_handler = (_handler),                                     \
 	}

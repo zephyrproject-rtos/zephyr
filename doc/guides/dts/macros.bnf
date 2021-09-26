@@ -19,6 +19,8 @@ dt-macro = node-macro / other-macro
 
 ; A macro about a property value
 node-macro =  property-macro
+; A macro about the pinctrl properties in a node.
+node-macro =/ pinctrl-macro
 ; EXISTS macro: node exists in the devicetree
 node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; Bus macros: the plain BUS is a way to access a node's bus controller.
@@ -70,6 +72,50 @@ node-macro =/ %s"DT_N" path-id %s"_FULL_NAME"
 node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
 ; The dependency ordinals of a node supports (reverse direct dependencies).
 node-macro =/ %s"DT_N" path-id %s"_SUPPORTS_ORDS"
+
+; --------------------------------------------------------------------
+; pinctrl-macro: a macro related to the pinctrl properties in a node
+;
+; These are a bit of a special case because they kind of form an array,
+; but the array indexes correspond to pinctrl-DIGIT properties in a node.
+;
+; So they're related to a node, but not just one property within the node.
+;
+; The following examples assume something like this:
+;
+;      foo {
+;              pinctrl-0 = <&bar>;
+;              pinctrl-1 = <&baz>;
+;              pinctrl-names = "default", "sleep";
+;      };
+
+; Total number of pinctrl-DIGIT properties in the node. May be zero.
+;
+;   #define DT_N_<node path>_PINCTRL_NUM 2
+pinctrl-macro = %s"DT_N" path-id %s"_PINCTRL_NUM"
+; A given pinctrl-DIGIT property exists.
+;
+;     #define DT_N_<node path>_PINCTRL_IDX_0_EXISTS 1
+;     #define DT_N_<node path>_PINCTRL_IDX_1_EXISTS 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_IDX_" DIGIT %s"_EXISTS"
+; A given pinctrl property name exists.
+;
+;     #define DT_N_<node path>_PINCTRL_NAME_default_EXISTS 1
+;     #define DT_N_<node path>_PINCTRL_NAME_sleep_EXISTS 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_EXISTS"
+; The corresponding index number of a named pinctrl property.
+;
+;     #define DT_N_<node path>_PINCTRL_NAME_default_IDX 0
+;     #define DT_N_<node path>_PINCTRL_NAME_sleep_IDX 1
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX"
+; The node identifier for the phandle in a named pinctrl property.
+;
+;    #define DT_N_<node path>_PINCTRL_NAME_default_IDX_0_PH <node id for 'bar'>
+;
+; There's no need for a separate macro for access by index: that's
+; covered by property-macro. We only need this because the map from
+; names to properties is implicit in the structure of the DT.
+pinctrl-macro =/ %s"DT_N" path-id %s"_PINCTRL_NAME_" dt-name %s"_IDX_" DIGIT %s"_PH"
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
@@ -167,8 +213,12 @@ prop-suf = 1*( "_" gen-name ["_" dt-name] )
 other-macro =  %s"DT_N_" alternate-id
 ; Total count of enabled instances of a compatible.
 other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM_OKAY"
-; These are used internally by DT_INST_FOREACH, which iterates over
-; each enabled instance of a compatible.
+; These are used internally by DT_FOREACH_STATUS_OKAY,
+; which iterates over each enabled node of a compatible.
+other-macro =/ %s"DT_FOREACH_OKAY_" dt-name
+other-macro =/ %s"DT_FOREACH_OKAY_VARGS_" dt-name
+; These are used internally by DT_INST_FOREACH_STATUS_OKAY,
+; which iterates over each enabled instance of a compatible.
 other-macro =/ %s"DT_FOREACH_OKAY_INST_" dt-name
 other-macro =/ %s"DT_FOREACH_OKAY_INST_VARGS_" dt-name
 ; E.g.: #define DT_CHOSEN_zephyr_flash

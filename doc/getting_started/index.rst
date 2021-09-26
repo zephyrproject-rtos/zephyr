@@ -62,7 +62,7 @@ The current minimum required version for the main dependencies are:
      - Min. Version
 
    * - `CMake <https://cmake.org/>`_
-     - 3.13.1
+     - 3.20.0
 
    * - `Python <https://www.python.org/>`_
      - 3.6
@@ -75,6 +75,16 @@ The current minimum required version for the main dependencies are:
    .. group-tab:: Ubuntu
 
       .. _install_dependencies_ubuntu:
+
+      #. Download, inspect and execute the Kitware archive script to add the
+         Kitware APT repository to your sources list.
+         A detailed explanation of ``kitware-archive.sh`` can be found here
+         `kitware third-party apt repository <https://apt.kitware.com/>`_:
+
+         .. code-block:: bash
+
+            wget https://apt.kitware.com/kitware-archive.sh
+            sudo bash kitware-archive.sh
 
       #. Use ``apt`` to install the required dependencies:
 
@@ -153,7 +163,7 @@ The current minimum required version for the main dependencies are:
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git
+            choco install ninja gperf python git dtc-msys2
 
       #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
@@ -477,14 +487,14 @@ to build Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.12.4/zephyr-sdk-0.12.4-x86_64-linux-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.13.1/zephyr-sdk-0.13.1-linux-x86_64-setup.run
 
-      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.12.4`:
+      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.13.1`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.12.4-x86_64-linux-setup.run
-            ./zephyr-sdk-0.12.4-x86_64-linux-setup.run -- -d ~/zephyr-sdk-0.12.4
+            chmod +x zephyr-sdk-0.13.1-linux-x86_64-setup.run
+            ./zephyr-sdk-0.13.1-linux-x86_64-setup.run -- -d ~/zephyr-sdk-0.13.1
 
          .. note::
             It is recommended to install the Zephyr SDK at one of the following locations:
@@ -497,7 +507,7 @@ to build Zephyr applications.
             * ``/usr/zephyr-sdk[-x.y.z]``
             * ``/usr/local/zephyr-sdk[-x.y.z]``
 
-            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.12.4``.
+            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.13.1``.
 
             If installing the Zephyr SDK outside any of those locations, please read: :ref:`zephyr_sdk`
 
@@ -508,7 +518,7 @@ to build Zephyr applications.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.12.4/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.13.1/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
@@ -613,13 +623,12 @@ Here are some next steps for exploring Zephyr:
 Asking for Help
 ***************
 
-You can ask for help on a mailing list or on Slack. Please send bug reports and
+You can ask for help on a mailing list or on Discord. Please send bug reports and
 feature requests to GitHub.
 
 * **Mailing Lists**: users@lists.zephyrproject.org is usually the right list to
   ask for help. `Search archives and sign up here`_.
-* **Slack**: Zephyr's workspace is https://zephyrproject.slack.com; you can
-  register with this `Slack invite`_.
+* **Discord**: You can join with this `Discord invite`_.
 * **GitHub**: Use `GitHub issues`_ for bugs and feature requests.
 
 How to Ask
@@ -646,9 +655,9 @@ Text includes source code, terminal commands, and their output.
 Doing this makes it easier for people to help you, and also helps other users
 search the archives.
 
-When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
+When copy/pasting more than 5 lines of text into Discord, create a snippet using
+three backticks to delimit the snippet.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
-.. _Slack invite: https://tinyurl.com/2vue8666
+.. _Discord invite: https://chat.zephyrproject.org
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
-.. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet

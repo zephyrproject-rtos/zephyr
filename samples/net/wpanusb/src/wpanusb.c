@@ -9,7 +9,6 @@
 LOG_MODULE_REGISTER(wpanusb);
 
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
 #include <net/buf.h>
@@ -50,7 +49,7 @@ static struct k_thread tx_thread_data;
 #define INITIALIZER_IF(num_ep, iface_class)				\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = num_ep,				\
@@ -63,7 +62,7 @@ static struct k_thread tx_thread_data;
 #define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
 	{								\
 		.bLength = sizeof(struct usb_ep_descriptor),		\
-		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bDescriptorType = USB_DESC_ENDPOINT,			\
 		.bEndpointAddress = addr,				\
 		.bmAttributes = attr,					\
 		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
@@ -74,7 +73,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
 } __packed wpanusb_desc = {
-	.if0 = INITIALIZER_IF(1, CUSTOM_CLASS),
+	.if0 = INITIALIZER_IF(1, USB_BCC_VENDOR),
 	.if0_in_ep = INITIALIZER_IF_EP(AUTO_EP_IN, USB_DC_EP_BULK,
 				       WPANUSB_BULK_EP_MPS, 0),
 };
@@ -132,6 +131,10 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 				  int32_t *len, uint8_t **data)
 {
 	struct net_pkt *pkt;
+
+	if (usb_reqtype_is_to_host(setup)) {
+		return -ENOTSUP;
+	}
 
 	/* Maximum 2 bytes are added to the len */
 	pkt = net_pkt_alloc_with_buffer(NULL, *len + 2, AF_UNSPEC, 0,
@@ -404,6 +407,11 @@ out:
 	net_pkt_unref(pkt);
 
 	return ret;
+}
+
+enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+{
+	return NET_CONTINUE;
 }
 
 void main(void)

@@ -51,12 +51,17 @@ struct ll_adv_set {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	uint8_t  own_addr[BDADDR_SIZE];
+	uint8_t  own_id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint32_t delay;
+	uint32_t delay_remain;
+	uint32_t ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

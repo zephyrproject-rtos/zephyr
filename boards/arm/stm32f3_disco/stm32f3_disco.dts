@@ -142,7 +142,7 @@
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	status = "okay";
 };
@@ -193,4 +193,8 @@
 	status = "okay";
 	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */
 	pinctrl-0 = <&dac_out1_pa4>;
+};
+
+&dma1 {
+	status = "okay";
 };

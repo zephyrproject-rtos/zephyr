@@ -34,11 +34,6 @@
 extern "C" {
 #endif
 
-#define K_NUM_PRIORITIES \
-	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
-
-#define K_NUM_PRIO_BITMAPS ((K_NUM_PRIORITIES + 31) >> 5)
-
 /*
  * Bitmask definitions for the struct k_thread.thread_state field.
  *
@@ -140,11 +135,6 @@ typedef struct _cpu _cpu_t;
 struct z_kernel {
 	struct _cpu cpus[CONFIG_MP_NUM_CPUS];
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	/* queue of timeouts */
-	sys_dlist_t timeout_q;
-#endif
-
 #ifdef CONFIG_PM
 	int32_t idle; /* Number of ticks for kernel idling */
 #endif
@@ -187,14 +177,12 @@ bool z_smp_cpu_mobile(void);
 
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-#define _current k_current_get()
+#define _current z_current_get()
 
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.cpus[0].current
 #endif
-
-#define _timeout_q _kernel.timeout_q
 
 /* kernel wait queue record */
 

@@ -6,9 +6,6 @@ if SOC_NSIM
 config SOC
 	default "snps_nsim"
 
-config UART_CONSOLE_ON_DEV_NAME
-	default "UART_0"
-
 config XIP
 	default n
 
@@ -18,5 +15,7 @@ source "soc/arc/snps_nsim/Kconfig.defconfig.sem"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs_smp"
 source "soc/arc/snps_nsim/Kconfig.defconfig.hs6x"
+source "soc/arc/snps_nsim/Kconfig.defconfig.hs6x_smp"
+source "soc/arc/snps_nsim/Kconfig.defconfig.hs_mpuv6"
 
 endif # SOC_NSIM

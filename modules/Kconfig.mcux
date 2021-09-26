@@ -182,6 +182,11 @@ config HAS_MCUX_USB_EHCI
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
 
+config HAS_MCUX_USB_LPCIP3511
+	bool
+	help
+	  Set if the USB controller LPCIP3511 module is present in the SoC.
+
 config HAS_MCUX_USDHC1
 	bool
 	help
@@ -206,6 +211,11 @@ config HAS_MCUX_PWM
 	bool
 	help
 	  Set if the PWM  module is present in the SoC.
+
+config HAS_MCUX_SCTIMER
+	bool
+	help
+	  Set if the sctimer module is present in the SoC.
 
 config HAS_MCUX_SMC
 	bool
@@ -277,5 +287,10 @@ config HAS_MCUX_RCM
 	help
 	  Set if the Reset Control Module (RCM) module is present in
 	  the SoC.
+
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
 
 endif # HAS_MCUX

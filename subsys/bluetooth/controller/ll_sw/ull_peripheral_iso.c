@@ -55,7 +55,7 @@ uint8_t ll_cis_accept(uint16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (acl_conn->lll.role == BT_CONN_ROLE_MASTER) {
+	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
 		BT_ERR("Not allowed for central");
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -185,8 +185,9 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	return 0;
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = { 0, 0, &link, NULL,

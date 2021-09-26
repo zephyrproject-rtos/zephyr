@@ -13,9 +13,9 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include <drivers/adc.h>
 #include <drivers/pinmux.h>
 #include <soc.h>
+#include <soc_dt.h>
 #include <errno.h>
 #include <assert.h>
-#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -23,13 +23,6 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define DEV_DATA(dev) ((struct adc_it8xxx2_data * const)(dev)->data)
 
 #define DEV_CFG(dev) ((struct adc_it8xxx2_cfg * const)(dev)->config)
-
-#define DEV_PIN(adc_ch)      DT_PHA(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), \
-	pinctrl_0, adc_ch), pinctrls, pin)
-#define DEV_ALT_FUNC(adc_ch) DT_PHA(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), \
-	pinctrl_0, adc_ch), pinctrls, alt_func)
-#define DEV_PINMUX(adc_ch)   DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DT_NODELABEL \
-	(pinctrl_adc##adc_ch), pinctrls, 0))
 
 /* ADC internal reference voltage (Unit:mV) */
 #define IT8XXX2_ADC_VREF_VOL 3000
@@ -334,16 +327,10 @@ static struct adc_it8xxx2_data adc_it8xxx2_data_0 = {
 		ADC_CONTEXT_INIT_LOCK(adc_it8xxx2_data_0, ctx),
 		ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
 };
-#define ITE_DT_ITEMS_BY_CH(adc_ch, _)        \
-	{                                    \
-	  .pin = DEV_PIN(adc_ch),            \
-	  .alt_fun = DEV_ALT_FUNC(adc_ch),   \
-	  .pinctrls = DEV_PINMUX(adc_ch),    \
-	},
 
-static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0[CHIP_ADC_COUNT] = {
-	UTIL_LISTIFY(DT_INST_PROP_LEN(0, pinctrl_0), ITE_DT_ITEMS_BY_CH, _)
-};
+static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0[CHIP_ADC_COUNT] =
+	IT8XXX2_DT_ALT_ITEMS_LIST(0);
+
 DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
 		      NULL,
 		      &adc_it8xxx2_data_0,

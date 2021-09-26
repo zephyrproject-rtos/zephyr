@@ -43,6 +43,7 @@
 
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
+#include "lll/lll_df_types.h"
 #include "ll_sw/lll_conn.h"
 #include "ll.h"
 

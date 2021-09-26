@@ -16,6 +16,7 @@ API Reference
    display/index.rst
    edac/index.rst
    file_system/index.rst
+   iterable_sections/index.rst
    misc/formatted_output.rst
    kernel/index.rst
    libc/index.rst

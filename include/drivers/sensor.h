@@ -121,6 +121,9 @@ enum sensor_channel {
 	SENSOR_CHAN_VOLTAGE,
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
+	/** Power in watts **/
+	SENSOR_CHAN_POWER,
+
 	/** Resistance , in Ohm **/
 	SENSOR_CHAN_RESISTANCE,
 
@@ -219,8 +222,8 @@ enum sensor_trigger_type {
 	/**
 	 * Trigger fires when channel reading transitions configured
 	 * thresholds.  The thresholds are configured via the @ref
-	 * SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
-	 * attributes.
+	 * SENSOR_ATTR_LOWER_THRESH, @ref SENSOR_ATTR_UPPER_THRESH, and
+	 * @ref SENSOR_ATTR_HYSTERESIS attributes.
 	 */
 	SENSOR_TRIG_THRESHOLD,
 
@@ -280,6 +283,8 @@ enum sensor_attribute {
 	 * outside the threshold for the trigger to fire.
 	 */
 	SENSOR_ATTR_SLOPE_DUR,
+	/* Hysteresis for trigger thresholds. */
+	SENSOR_ATTR_HYSTERESIS,
 	/** Oversampling factor */
 	SENSOR_ATTR_OVERSAMPLING,
 	/** Sensor range, in SI units. */
@@ -294,6 +299,14 @@ enum sensor_attribute {
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
 	SENSOR_ATTR_CALIB_TARGET,
+	/** Configure the operating modes of a sensor. */
+	SENSOR_ATTR_CONFIGURATION,
+	/** Set a calibration value needed by a sensor. */
+	SENSOR_ATTR_CALIBRATION,
+	/** Enable/disable sensor features */
+	SENSOR_ATTR_FEATURE_MASK,
+	/** Alert threshold or alert enable/disable */
+	SENSOR_ATTR_ALERT,
 
 	/**
 	 * Number of all common sensor attributes.

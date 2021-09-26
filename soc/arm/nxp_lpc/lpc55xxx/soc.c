@@ -25,6 +25,28 @@
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
 #include <fsl_pint.h>
+#if CONFIG_USB_DC_NXP_LPCIP3511
+#include "usb_phy.h"
+#include "usb_dc_mcux.h"
+#endif
+
+#define CTIMER_CLOCK_SOURCE(node_id) \
+	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
+#define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
+#define TO_CLOCK_ATTACH_ID(inst, val) MUX_A(CM_CTIMERCLKSEL##inst, val)
+#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+
+#ifdef CONFIG_INIT_PLL0
+const pll_setup_t pll0Setup = {
+	.pllctrl = SYSCON_PLL0CTRL_CLKEN_MASK | SYSCON_PLL0CTRL_SELI(2U) |
+		   SYSCON_PLL0CTRL_SELP(31U),
+	.pllndec = SYSCON_PLL0NDEC_NDIV(125U),
+	.pllpdec = SYSCON_PLL0PDEC_PDIV(8U),
+	.pllsscg = {0x0U, (SYSCON_PLL0SSCG1_MDIV_EXT(3072U) | SYSCON_PLL0SSCG1_SEL_EXT_MASK)},
+	.pllRate = 24576000U,
+	.flags = PLL_SETUPFLAG_WAITLOCK}
+;
+#endif
 
 /**
  *
@@ -49,6 +71,25 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Enable FRO HF(96MHz) output */
 	CLOCK_SetupFROClocking(96000000U);
+
+#ifdef CONFIG_INIT_PLL0
+	/*!< Ensure XTAL16M is on  */
+	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_XTAL32M_MASK;
+	PMC->PDRUNCFGCLR0 |= PMC_PDRUNCFG0_PDEN_LDOXO32M_MASK;
+
+	/*!< Ensure CLK_IN is on  */
+	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_CLKIN_ENA_MASK;
+	ANACTRL->XO32M_CTRL |= ANACTRL_XO32M_CTRL_ENABLE_SYSTEM_CLK_OUT_MASK;
+
+	/*!< Switch PLL0 clock source selector to XTAL16M */
+	CLOCK_AttachClk(kEXT_CLK_to_PLL0);
+
+	/*!< Configure PLL to the desired values */
+	CLOCK_SetPLL0Freq(&pll0Setup);
+
+	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivPll0Clk, 1U, false);
+#endif
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/*!< Set FLASH wait states for core */
@@ -93,6 +134,43 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Mailbox);
 	/* Reset the MAILBOX module */
 	RESET_PeripheralReset(kMAILBOX_RST_SHIFT_RSTn);
+#endif
+
+#if CONFIG_USB_DC_NXP_LPCIP3511
+	/* enable usb1 host clock */
+	CLOCK_EnableClock(kCLOCK_Usbh1);
+	/* Put PHY powerdown under software control */
+	*((uint32_t *)(USBHSH_BASE + 0x50)) = USBHSH_PORTMODE_SW_PDCOM_MASK;
+	/*
+	 * According to reference mannual, device mode setting has to be set by
+	 * access usb host register
+	 */
+	*((uint32_t *)(USBHSH_BASE + 0x50)) |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
+	/* enable usb1 host clock */
+	CLOCK_DisableClock(kCLOCK_Usbh1);
+
+	/* enable USB IP clock */
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_UsbPhySrcExt, CLK_CLK_IN);
+	CLOCK_EnableUsbhs0DeviceClock(kCLOCK_UsbSrcUnused, 0U);
+	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	for (int i = 0; i < FSL_FEATURE_USBHSD_USB_RAM; i++) {
+		((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS)[i] = 0x00U;
+	}
+#endif
+
+#endif
+
+DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
+	/* attach PLL0 clock to FLEXCOMM6 */
+	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM6);
+#endif
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
+	/* attach PLL0 clock to FLEXCOMM6 */
+	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
 #endif
 
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */

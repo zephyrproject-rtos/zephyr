@@ -5,6 +5,7 @@
  */
 
 #include <kernel.h>
+#include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
 #include <sys/byteorder.h>
@@ -16,6 +17,8 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 /* Register addresses */
 #define TI_HDC20XX_REG_TEMP		0x00
 #define TI_HDC20XX_REG_HUMIDITY		0x02
+#define TI_HDC20XX_REG_INT_EN		0x07
+#define TI_HDC20XX_REG_CONFIG		0x0E
 #define TI_HDC20XX_REG_MEAS_CFG		0x0F
 #define TI_HDC20XX_REG_MANUFACTURER_ID	0xFC
 #define TI_HDC20XX_REG_DEVICE_ID	0xFE
@@ -24,23 +27,44 @@ LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 #define TI_HDC20XX_MANUFACTURER_ID	0x5449
 #define TI_HDC20XX_DEVICE_ID		0x07D0
 
+/* Register bits */
+#define TI_HDC20XX_BIT_INT_EN_DRDY_EN		0x80
+#define TI_HDC20XX_BIT_CONFIG_SOFT_RES		0x80
+#define TI_HDC20XX_BIT_CONFIG_DRDY_INT_EN	0x04
+
+/* Reset time: not in the datasheet, but found by trial and error */
+#define TI_HDC20XX_RESET_TIME		K_MSEC(1)
+
 /* Conversion time for 14-bit resolution. Temperature needs 660us and humidity 610us */
 #define TI_HDC20XX_CONVERSION_TIME      K_MSEC(2)
 
 /* Temperature and humidity scale and factors from the datasheet ("Register Maps" section) */
 #define TI_HDC20XX_RH_SCALE		100U
-#define TI_HDC20XX_TEMP_OFFSET		-40U
+#define TI_HDC20XX_TEMP_OFFSET		-2654208	/* = -40.5 * 2^16 */
 #define TI_HDC20XX_TEMP_SCALE		165U
 
 struct ti_hdc20xx_config {
-	const struct device *bus;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec bus;
+	struct gpio_dt_spec gpio_int;
 };
 
 struct ti_hdc20xx_data {
-	int32_t t_sample;
-	int32_t rh_sample;
+	struct gpio_callback cb_int;
+	struct k_sem sem_int;
+
+	uint16_t t_sample;
+	uint16_t rh_sample;
 };
+
+static void ti_hdc20xx_int_callback(const struct device *dev,
+				    struct gpio_callback *cb, uint32_t pins)
+{
+	struct ti_hdc20xx_data *data = CONTAINER_OF(cb, struct ti_hdc20xx_data, cb_int);
+
+	ARG_UNUSED(pins);
+
+	k_sem_give(&data->sem_int);
+}
 
 static int ti_hdc20xx_sample_fetch(const struct device *dev,
 				   enum sensor_channel chan)
@@ -53,18 +77,21 @@ static int ti_hdc20xx_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* start conversion of both temperature and humidity with the default accuracy (14 bits) */
-	rc = i2c_reg_write_byte(config->bus, config->i2c_addr, TI_HDC20XX_REG_MEAS_CFG, 0x01);
+	rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_MEAS_CFG, 0x01);
 	if (rc < 0) {
 		LOG_ERR("Failed to write measurement configuration register");
 		return rc;
 	}
 
 	/* wait for the conversion to finish */
-	k_sleep(TI_HDC20XX_CONVERSION_TIME);
+	if (config->gpio_int.port) {
+		k_sem_take(&data->sem_int, K_FOREVER);
+	} else {
+		k_sleep(TI_HDC20XX_CONVERSION_TIME);
+	}
 
 	/* temperature and humidity registers are consecutive, read them in the same burst */
-	rc = i2c_burst_read(config->bus, config->i2c_addr,
-			    TI_HDC20XX_REG_TEMP, (uint8_t *)buf, sizeof(buf));
+	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_TEMP, (uint8_t *)buf, sizeof(buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read sample data");
 		return rc;
@@ -87,9 +114,9 @@ static int ti_hdc20xx_channel_get(const struct device *dev,
 	/* See datasheet "Register Maps" section for more details on processing sample data. */
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		/* val = -40 + 165 * sample / 2^16 */
-		tmp = data->t_sample * TI_HDC20XX_TEMP_SCALE;
-		val->val1 = TI_HDC20XX_TEMP_OFFSET + (tmp >> 16);
+		/* val = -40.5 + 165 * sample / 2^16 */
+		tmp = data->t_sample * TI_HDC20XX_TEMP_SCALE + TI_HDC20XX_TEMP_OFFSET;
+		val->val1 = tmp >> 16;
 		/* x * 1000000 / 2^16 = x * 15625 / 2^10 */
 		val->val2 = ((tmp & 0xFFFF) * 15625U) >> 10;
 		break;
@@ -112,20 +139,37 @@ static const struct sensor_driver_api ti_hdc20xx_api_funcs = {
 	.channel_get = ti_hdc20xx_channel_get,
 };
 
+static int ti_hdc20xx_reset(const struct device *dev)
+{
+	const struct ti_hdc20xx_config *config = dev->config;
+	int rc;
+
+	rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_CONFIG,
+				   TI_HDC20XX_BIT_CONFIG_SOFT_RES);
+	if (rc < 0) {
+		LOG_ERR("Failed to soft-reset device");
+		return rc;
+	}
+	k_sleep(TI_HDC20XX_RESET_TIME);
+
+	return 0;
+}
+
 static int ti_hdc20xx_init(const struct device *dev)
 {
 	const struct ti_hdc20xx_config *config = dev->config;
+	struct ti_hdc20xx_data *data = dev->data;
 	uint16_t buf[2];
 	int rc;
 
-	if (!device_is_ready(config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus->name);
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	/* manufacturer and device ID registers are consecutive, read them in the same burst */
-	rc = i2c_burst_read(config->bus, config->i2c_addr,
-			    TI_HDC20XX_REG_MANUFACTURER_ID, (uint8_t *)buf, sizeof(buf));
+	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_MANUFACTURER_ID,
+			       (uint8_t *)buf, sizeof(buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read manufacturer and device IDs");
 		return rc;
@@ -140,6 +184,60 @@ static int ti_hdc20xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* Soft-reset the device to bring all registers in a known and consistent state */
+	rc = ti_hdc20xx_reset(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Configure the interrupt GPIO if available */
+	if (config->gpio_int.port) {
+		if (!device_is_ready(config->gpio_int.port)) {
+			LOG_ERR("Cannot get pointer to gpio interrupt device");
+			return -ENODEV;
+		}
+
+		rc = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
+		if (rc) {
+			LOG_ERR("Failed to configure interrupt pin");
+			return rc;
+		}
+
+		gpio_init_callback(&data->cb_int, ti_hdc20xx_int_callback,
+				   BIT(config->gpio_int.pin));
+
+		rc = gpio_add_callback(config->gpio_int.port, &data->cb_int);
+		if (rc) {
+			LOG_ERR("Failed to set interrupt callback");
+			return rc;
+		}
+
+		rc = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+		if (rc) {
+			LOG_ERR("Failed to configure interrupt");
+			return rc;
+		}
+
+		/* Initialize the semaphore */
+		k_sem_init(&data->sem_int, 0, K_SEM_MAX_LIMIT);
+
+		/* Enable the data ready interrupt */
+		rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_INT_EN,
+					   TI_HDC20XX_BIT_INT_EN_DRDY_EN);
+		if (rc) {
+			LOG_ERR("Failed to enable the data ready interrupt");
+			return rc;
+		}
+
+		/* Enable the interrupt pin with level sensitive active low polarity */
+		rc = i2c_reg_write_byte_dt(&config->bus, TI_HDC20XX_REG_CONFIG,
+					   TI_HDC20XX_BIT_CONFIG_DRDY_INT_EN);
+		if (rc) {
+			LOG_ERR("Failed to enable the interrupt pin");
+			return rc;
+		}
+	}
+
 	return 0;
 }
 
@@ -147,8 +245,8 @@ static int ti_hdc20xx_init(const struct device *dev)
 #define TI_HDC20XX_DEFINE(inst, compat)							\
 	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;			\
 	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {	\
-		.bus = DEVICE_DT_GET(DT_BUS(DT_INST(inst, compat))),			\
-		.i2c_addr = DT_REG_ADDR(DT_INST(inst, compat))				\
+		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),				\
+		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),	\
 	};										\
 	DEVICE_DT_DEFINE(DT_INST(inst, compat),						\
 			ti_hdc20xx_init,						\

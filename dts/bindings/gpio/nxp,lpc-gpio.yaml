@@ -24,6 +24,7 @@ properties:
       enum:
         - 0
         - 1
+        - 2
 
 gpio-cells:
   - pin

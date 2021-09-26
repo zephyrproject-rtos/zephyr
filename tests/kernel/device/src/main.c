@@ -10,6 +10,7 @@
 #include <ztest.h>
 #include <sys/printk.h>
 #include <pm/device_runtime.h>
+#include <linker/sections.h>
 #include "abstract_driver.h"
 
 
@@ -51,8 +52,7 @@ extern void test_mmio_device_map(void);
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 void test_dummy_device(void)
 {
@@ -65,9 +65,6 @@ void test_dummy_device(void)
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
-
-	device_busy_set(dev);
-	device_busy_clear(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
@@ -134,14 +131,17 @@ static void test_null_dynamic_name(void)
 #endif
 }
 
+__pinned_bss
 static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
 	bool is_pre_kernel;
 } init_records[4];
 
+__pinned_data
 static struct init_record *rp = init_records;
 
+__pinned_func
 static int add_init_record(bool pre_kernel)
 {
 	rp->pre_kernel = pre_kernel;
@@ -151,11 +151,13 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
+__pinned_func
 static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
+__pinned_func
 static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
@@ -283,35 +285,35 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  * enabled. It also checks if the device is in the middle of a transaction,
  * sets/clears busy status and validates status again.
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * device_busy_check(), device_any_busy_check(),
+ * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
+ * pm_device_is_busy(), pm_device_is_any_busy(),
  * pm_device_state_set()
  */
 void test_dummy_device_pm(void)
 {
 	const struct device *dev;
 	int busy, ret;
-	enum pm_device_state device_power_state = PM_DEVICE_STATE_SUSPEND;
+	enum pm_device_state device_power_state = PM_DEVICE_STATE_SUSPENDED;
 
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
-	busy = device_any_busy_check();
+	busy = pm_device_is_any_busy();
 	zassert_true((busy == 0), NULL);
 
 	/* Set device state to BUSY*/
-	device_busy_set(dev);
+	pm_device_busy_set(dev);
 
-	busy = device_any_busy_check();
+	busy = pm_device_is_any_busy();
 	zassert_false((busy == 0), NULL);
 
-	busy = device_busy_check(dev);
+	busy = pm_device_is_busy(dev);
 	zassert_false((busy == 0), NULL);
 
 	/* Clear device BUSY state*/
-	device_busy_clear(dev);
+	pm_device_busy_clear(dev);
 
-	busy = device_busy_check(dev);
+	busy = pm_device_is_busy(dev);
 	zassert_true((busy == 0), NULL);
 
 	test_build_suspend_device_list();
@@ -333,8 +335,8 @@ void test_dummy_device_pm(void)
 	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
 			"Error power status");
 
-	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_FORCE_SUSPEND);
+	/* Set device state to PM_DEVICE_STATE_SUSPENDED */
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 

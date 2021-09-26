@@ -24,6 +24,14 @@
 		#size-cells = < 0x1 >;
 		interrupt-parent = <&test_intc>;
 
+		test_pinctrl: pin-controller {
+			compatible = "vnd,pinctrl";
+			test_pincfg_a: pincfg-a {};
+			test_pincfg_b: pincfg-b {};
+			test_pincfg_c: pincfg-c {};
+			test_pincfg_d: pincfg-d {};
+		};
+
 		test_arrays: array-holder {
 			/*
 			 * vnd,undefined-compat is for DT_NODE_HAS_COMPAT_STATUS(..,okay).
@@ -308,6 +316,10 @@
 			dma-names = "tx", "rx";
 			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
 			clock-names = "clk-a", "clk-fixed", "clk-b";
+			pinctrl-0 = <&test_pincfg_a &test_pincfg_b>;
+			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
+			pinctrl-2 = <&test_pincfg_d>;
+			pinctrl-names = "default", "sleep", "f.o.o2";
 		};
 
 		/* there should only be one of these */

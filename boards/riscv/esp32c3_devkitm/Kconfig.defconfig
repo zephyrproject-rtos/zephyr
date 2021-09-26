@@ -6,3 +6,14 @@
 config BOARD
 	default "esp32c3"
 	depends on BOARD_ESP32C3_DEVKITM
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

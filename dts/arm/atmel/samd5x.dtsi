@@ -8,6 +8,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
+#include "samd5x-pinctrl.dtsi"
+
 / {
 	chosen {
 		zephyr,flash-controller = &nvmctrl;
@@ -241,36 +243,47 @@
 			clock-names = "GCLK", "MCLK";
 		};
 
-		porta: gpio@41008000 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41008000 0x80>;
-			label = "PORTA";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+		pinctrl@41008000 {
+			compatible = "atmel,sam0-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x41008000 0x41008000 0x200>;
 
-		portb: gpio@41008080 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41008080 0x80>;
-			label = "PORTB";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			porta: gpio@41008000 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008000 0x80>;
+				label = "PORTA";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
 
-		portc: gpio@41008100 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41008100 0x80>;
-			label = "PORTC";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			portb: gpio@41008080 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008080 0x80>;
+				label = "PORTB";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
 
-		portd: gpio@41008180 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41008180 0x80>;
-			label = "PORTD";
-			gpio-controller;
-			#gpio-cells = <2>;
+			portc: gpio@41008100 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008100 0x80>;
+				label = "PORTC";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			portd: gpio@41008180 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41008180 0x80>;
+				label = "PORTD";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
 		};
 
 		usb0: usb@41000000 {
@@ -303,6 +316,7 @@
 			compatible = "atmel,sam0-adc";
 			reg = <0x43001C00 0x4A>;
 			interrupts = <118 0>, <119 0>;
+			interrupt-names = "overrun", "resrdy";
 			label = "ADC_0";
 
 			/*
@@ -323,6 +337,7 @@
 			compatible = "atmel,sam0-adc";
 			reg = <0x43002000 0x4A>;
 			interrupts = <120 0>, <121 0>;
+			interrupt-names = "overrun", "resrdy";
 			label = "ADC_1";
 
 			/*

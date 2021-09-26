@@ -679,7 +679,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
  *
  * @param spec GPIO specification from devicetree
  * @param flags interrupt configuration flags
- * @retval a value from gpio_pin_interrupt_configure()
+ * @return a value from gpio_pin_interrupt_configure()
  */
 static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
 						  gpio_flags_t flags)
@@ -770,7 +770,7 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
  *
  * @param spec GPIO specification from devicetree
  * @param extra_flags additional flags
- * @retval a value from gpio_pin_configure()
+ * @return a value from gpio_pin_configure()
  */
 static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
 					gpio_flags_t extra_flags)
@@ -1123,7 +1123,7 @@ static inline int gpio_pin_get(const struct device *port, gpio_pin_t pin)
  *     gpio_pin_get(spec->port, spec->pin);
  *
  * @param spec GPIO specification from devicetree
- * @retval a value from gpio_pin_get()
+ * @return a value from gpio_pin_get()
  */
 static inline int gpio_pin_get_dt(const struct gpio_dt_spec *spec)
 {
@@ -1214,7 +1214,7 @@ static inline int gpio_pin_set(const struct device *port, gpio_pin_t pin,
  *
  * @param spec GPIO specification from devicetree
  * @param value Value assigned to the pin.
- * @retval a value from gpio_pin_set()
+ * @return a value from gpio_pin_set()
  */
 static inline int gpio_pin_set_dt(const struct gpio_dt_spec *spec, int value)
 {
@@ -1251,7 +1251,7 @@ static inline int gpio_pin_toggle(const struct device *port, gpio_pin_t pin)
  *     gpio_pin_toggle(spec->port, spec->pin);
  *
  * @param spec GPIO specification from devicetree
- * @retval a value from gpio_pin_toggle()
+ * @return a value from gpio_pin_toggle()
  */
 static inline int gpio_pin_toggle_dt(const struct gpio_dt_spec *spec)
 {

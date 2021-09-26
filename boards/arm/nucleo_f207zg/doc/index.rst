@@ -104,6 +104,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-------------+------------+-------------------------------------+
 | RNG         | on-chip    | Random Number Generator             |
 +-------------+------------+-------------------------------------+
+| DMA         | on-chip    | Direct Memory Access                |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

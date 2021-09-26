@@ -60,9 +60,6 @@ struct spi_flash_at45_data {
 	const struct device *spi;
 	struct spi_cs_control spi_cs;
 	struct k_sem lock;
-#if IS_ENABLED(CONFIG_PM_DEVICE)
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct spi_flash_at45_config {
@@ -628,48 +625,30 @@ static int spi_flash_at45_init(const struct device *dev)
 
 #if IS_ENABLED(CONFIG_PM_DEVICE)
 static int spi_flash_at45_pm_control(const struct device *dev,
-				     uint32_t ctrl_command,
-				     enum pm_device_state *state)
+				     enum pm_device_action action)
 {
-	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
-	int err = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		acquire(dev);
+		power_down_op(dev, CMD_EXIT_DPD, dev_config->t_exit_dpd);
+		release(dev);
+		break;
 
-		if (new_state != dev_data->pm_state) {
-			switch (new_state) {
-			case PM_DEVICE_STATE_ACTIVE:
-				acquire(dev);
-				power_down_op(dev, CMD_EXIT_DPD,
-					      dev_config->t_exit_dpd);
-				release(dev);
-				break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		acquire(dev);
+		power_down_op(dev,
+			dev_config->use_udpd ? CMD_ENTER_UDPD : CMD_ENTER_DPD,
+			dev_config->t_enter_dpd);
+		release(dev);
+		break;
 
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_SUSPEND:
-			case PM_DEVICE_STATE_OFF:
-				acquire(dev);
-				power_down_op(dev,
-					dev_config->use_udpd ? CMD_ENTER_UDPD
-							     : CMD_ENTER_DPD,
-					dev_config->t_enter_dpd);
-				release(dev);
-				break;
-
-			default:
-				return -ENOTSUP;
-			}
-
-			dev_data->pm_state = new_state;
-		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = dev_data->pm_state;
+	default:
+		return -ENOTSUP;
 	}
 
-	return err;
+	return 0;
 }
 #endif /* IS_ENABLED(CONFIG_PM_DEVICE) */
 
@@ -715,8 +694,6 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	};								     \
 	static struct spi_flash_at45_data inst_##idx##_data = {		     \
 		.lock = Z_SEM_INITIALIZER(inst_##idx##_data.lock, 1, 1),     \
-		IF_ENABLED(CONFIG_PM_DEVICE, (		     \
-			.pm_state = PM_DEVICE_STATE_ACTIVE))		     \
 	};						\
 	INST_RESET_GPIO_SPEC(idx)				\
 	INST_WP_GPIO_SPEC(idx)					\

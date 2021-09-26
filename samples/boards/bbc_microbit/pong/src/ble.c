@@ -244,7 +244,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	bt_conn_get_info(conn, &info);
-	initiator = (info.role == BT_CONN_ROLE_MASTER);
+	initiator = (info.role == BT_CONN_ROLE_CENTRAL);
 	remote_ready = false;
 	remote_handle = 0U;
 
@@ -271,7 +271,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -533,8 +533,6 @@ void ble_init(void)
 	}
 
 	k_work_init_delayable(&ble_work, ble_timeout);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	local_attr = &pong_svc.attrs[1];
 }

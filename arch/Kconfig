@@ -701,6 +701,17 @@ config DEMAND_PAGING_ALLOW_IRQ
 	  runs with interrupts disabled for the entire operation. However,
 	  ISRs may also page fault.
 
+config DEMAND_PAGING_PAGE_FRAMES_RESERVE
+	int "Number of page frames reserved for paging"
+	default 32 if !LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	default 0
+	help
+	  This sets the number of page frames that will be reserved for
+	  paging that do not count towards free memory. This is to
+	  ensure that there are some page frames available for paging
+	  code and data. Otherwise, it would be possible to exhaust
+	  all page frames via anonymous memory mappings.
+
 config DEMAND_PAGING_STATS
 	bool "Gather Demand Paging Statistics"
 	help

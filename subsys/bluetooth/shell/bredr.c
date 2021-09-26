@@ -44,7 +44,7 @@ NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_BREDR_MTU, NULL);
 NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
 			  SDP_CLIENT_USER_BUF_LEN, NULL);
 
-static int cmd_auth_pincode(const struct shell *shell,
+static int cmd_auth_pincode(const struct shell *sh,
 			    size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -59,24 +59,24 @@ static int cmd_auth_pincode(const struct shell *shell,
 	}
 
 	if (!conn) {
-		shell_print(shell, "Not connected");
+		shell_print(sh, "Not connected");
 		return 0;
 	}
 
 	if (strlen(argv[1]) > max) {
-		shell_print(shell, "PIN code value invalid - enter max %u "
+		shell_print(sh, "PIN code value invalid - enter max %u "
 			    "digits", max);
 		return 0;
 	}
 
-	shell_print(shell, "PIN code \"%s\" applied", argv[1]);
+	shell_print(sh, "PIN code \"%s\" applied", argv[1]);
 
 	bt_conn_auth_pincode_entry(conn, argv[1]);
 
 	return 0;
 }
 
-static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
 	bt_addr_t addr;
@@ -84,16 +84,16 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_addr_from_str(argv[1], &addr);
 	if (err) {
-		shell_print(shell, "Invalid peer address (err %d)", err);
+		shell_print(sh, "Invalid peer address (err %d)", err);
 		return -ENOEXEC;
 	}
 
 	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
 	if (!conn) {
-		shell_print(shell, "Connection failed");
+		shell_print(sh, "Connection failed");
 	} else {
 
-		shell_print(shell, "Connection pending");
+		shell_print(sh, "Connection pending");
 
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
@@ -164,7 +164,7 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 	}
 }
 
-static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *action;
 
@@ -186,20 +186,20 @@ static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 		if (bt_br_discovery_start(&param, br_discovery_results,
 					  ARRAY_SIZE(br_discovery_results),
 					  br_discovery_complete) < 0) {
-			shell_print(shell, "Failed to start discovery");
+			shell_print(sh, "Failed to start discovery");
 			return 0;
 		}
 
-		shell_print(shell, "Discovery started");
+		shell_print(sh, "Discovery started");
 	} else if (!strcmp(action, "off")) {
 		if (bt_br_discovery_stop()) {
-			shell_print(shell, "Failed to stop discovery");
+			shell_print(sh, "Failed to stop discovery");
 			return 0;
 		}
 
-		shell_print(shell, "Discovery stopped");
+		shell_print(sh, "Discovery stopped");
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 	}
 
 	return 0;
@@ -261,28 +261,28 @@ static struct bt_l2cap_server br_server = {
 	.accept = l2cap_accept,
 };
 
-static int cmd_l2cap_register(const struct shell *shell,
+static int cmd_l2cap_register(const struct shell *sh,
 			      size_t argc, char *argv[])
 {
 	if (br_server.psm) {
-		shell_print(shell, "Already registered");
+		shell_print(sh, "Already registered");
 		return 0;
 	}
 
 	br_server.psm = strtoul(argv[1], NULL, 16);
 
 	if (bt_l2cap_br_server_register(&br_server) < 0) {
-		shell_error(shell, "Unable to register psm");
+		shell_error(sh, "Unable to register psm");
 		br_server.psm = 0U;
 		return -ENOEXEC;
 	} else {
-		shell_print(shell, "L2CAP psm %u registered", br_server.psm);
+		shell_print(sh, "L2CAP psm %u registered", br_server.psm);
 	}
 
 	return 0;
 }
 
-static int cmd_discoverable(const struct shell *shell,
+static int cmd_discoverable(const struct shell *sh,
 			    size_t argc, char *argv[])
 {
 	int err;
@@ -295,22 +295,22 @@ static int cmd_discoverable(const struct shell *shell,
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_discoverable(false);
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 		return 0;
 	}
 
 	if (err) {
-		shell_print(shell, "BR/EDR set/reset discoverable failed "
+		shell_print(sh, "BR/EDR set/reset discoverable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
 	} else {
-		shell_print(shell, "BR/EDR set/reset discoverable done");
+		shell_print(sh, "BR/EDR set/reset discoverable done");
 	}
 
 	return 0;
 }
 
-static int cmd_connectable(const struct shell *shell,
+static int cmd_connectable(const struct shell *sh,
 			   size_t argc, char *argv[])
 {
 	int err;
@@ -323,22 +323,22 @@ static int cmd_connectable(const struct shell *shell,
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_connectable(false);
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 		return 0;
 	}
 
 	if (err) {
-		shell_print(shell, "BR/EDR set/rest connectable failed "
+		shell_print(sh, "BR/EDR set/rest connectable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
 	} else {
-		shell_print(shell, "BR/EDR set/reset connectable done");
+		shell_print(sh, "BR/EDR set/reset connectable done");
 	}
 
 	return 0;
 }
 
-static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_STR_LEN];
 	struct bt_br_oob oob;
@@ -346,14 +346,14 @@ static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_br_oob_get_local(&oob);
 	if (err) {
-		shell_print(shell, "BR/EDR OOB data failed");
+		shell_print(sh, "BR/EDR OOB data failed");
 		return -ENOEXEC;
 	}
 
 	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
 
-	shell_print(shell, "BR/EDR OOB data:");
-	shell_print(shell, "  addr %s", addr);
+	shell_print(sh, "BR/EDR OOB data:");
+	shell_print(sh, "  addr %s", addr);
 	return 0;
 }
 
@@ -495,14 +495,14 @@ static struct bt_sdp_discover_params discov_a2src = {
 
 static struct bt_sdp_discover_params discov;
 
-static int cmd_sdp_find_record(const struct shell *shell,
+static int cmd_sdp_find_record(const struct shell *sh,
 			       size_t argc, char *argv[])
 {
 	int res;
 	const char *action;
 
 	if (!default_conn) {
-		shell_print(shell, "Not connected");
+		shell_print(sh, "Not connected");
 		return 0;
 	}
 
@@ -513,18 +513,18 @@ static int cmd_sdp_find_record(const struct shell *shell,
 	} else if (!strcmp(action, "A2SRC")) {
 		discov = discov_a2src;
 	} else {
-		shell_help(shell);
+		shell_help(sh);
 		return 0;
 	}
 
-	shell_print(shell, "SDP UUID \'%s\' gets applied", action);
+	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
 
 	res = bt_sdp_discover(default_conn, &discov);
 	if (res) {
-		shell_error(shell, "SDP discovery failed: result %d", res);
+		shell_error(sh, "SDP discovery failed: result %d", res);
 		return -ENOEXEC;
 	} else {
-		shell_print(shell, "SDP discovery started");
+		shell_print(sh, "SDP discovery started");
 	}
 
 	return 0;
@@ -547,15 +547,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_br(const struct shell *shell, size_t argc, char **argv)
+static int cmd_br(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help(shell);
+		shell_help(sh);
 		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }

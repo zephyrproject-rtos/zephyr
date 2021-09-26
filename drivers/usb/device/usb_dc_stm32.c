@@ -67,15 +67,16 @@ static const struct soc_gpio_pinctrl usb_pinctrl[] =
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /*
- * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
- * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
- * controller. STM32 F4 and F7 series support USB_OTG_FS device controller.
- * STM32 F1 and L4 series support either USB or USB_OTG_FS device controller.
+ * USB, USB_OTG_FS and USB_DRD_FS are defined in STM32Cube HAL and allows to
+ * distinguish between two kind of USB DC. STM32 F0, F3, L0 and G4 series
+ * support USB device controller. STM32 F4 and F7 series support USB_OTG_FS
+ * device controller. STM32 F1 and L4 series support either USB or USB_OTG_FS
+ * device controller.STM32 G0 series supports USB_DRD_FS device controller.
  *
- * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB from Zephyr
+ * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
  * Kconfig system.
  */
-#ifdef USB
+#if defined(USB) || defined(USB_DRD_FS)
 
 #define EP0_MPS 64U
 #define EP_MPS 64U
@@ -145,7 +146,7 @@ struct usb_dc_stm32_state {
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
 
-#ifdef USB
+#if defined(USB) || defined(USB_DRD_FS)
 	uint32_t pma_offset;
 #endif /* USB */
 };
@@ -344,8 +345,12 @@ static int usb_dc_stm32_init(void)
 	HAL_StatusTypeDef status;
 	unsigned int i;
 
+#if defined(USB) || defined(USB_DRD_FS)
 #ifdef USB
 	usb_dc_stm32_state.pcd.Instance = USB;
+#else
+	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
+#endif
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
@@ -426,7 +431,7 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_mps = EP0_MPS;
 	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_type = EP_TYPE_CTRL;
 
-#ifdef USB
+#if defined(USB) || defined(USB_DRD_FS)
 	/* Start PMA configuration for the endpoints after the BTABLE. */
 	usb_dc_stm32_state.pma_offset = USB_BTABLE_SIZE;
 
@@ -628,7 +633,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
 		ep_cfg->ep_type);
 
-#ifdef USB
+#if defined(USB) || defined(USB_DRD_FS)
 	if (ep_cfg->ep_mps > ep_state->ep_pma_buf_len) {
 		if (USB_RAM_SIZE <=
 		    (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
@@ -1042,8 +1047,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 
 		if (!(setup->wLength == 0U) &&
-		    !(REQTYPE_GET_DIR(setup->bmRequestType) ==
-		    REQTYPE_DIR_TO_HOST)) {
+		    usb_reqtype_is_to_device(setup)) {
 			usb_dc_ep_start_read(EP0_OUT,
 					     usb_dc_stm32_state.ep_buf[EP0_IDX],
 					     setup->wLength);
@@ -1088,7 +1092,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
-#if defined(USB) && defined(CONFIG_USB_DC_STM32_DISCONN_ENABLE)
+#if (defined(USB) || defined(USB_DRD_FS)) && defined(CONFIG_USB_DC_STM32_DISCONN_ENABLE)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
 	const struct device *usb_disconnect;

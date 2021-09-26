@@ -32,6 +32,14 @@
 		#size-cells = <1>;
 		ranges;
 
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0xc0>;
+			label = "BBRAM";
+		};
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
@@ -602,8 +610,8 @@
 			label = "I2C_0";
 			port-num = <0>;
 			gpio-dev = <&gpiob>;
-			pinctrl-0 = <&pinctrl_i2c_clk0>;  /* GPB3 */
-			pinctrl-1 = <&pinctrl_i2c_data0>; /* GPB4 */
+			pinctrl-0 = <&pinctrl_i2c_clk0    /* GPB3 */
+				     &pinctrl_i2c_data0>; /* GPB4 */
 		};
 		i2c1: i2c@f01c80 {
 			compatible = "ite,it8xxx2-i2c";
@@ -616,8 +624,8 @@
 			label = "I2C_1";
 			port-num = <1>;
 			gpio-dev = <&gpioc>;
-			pinctrl-0 = <&pinctrl_i2c_clk1>;  /* GPC1 */
-			pinctrl-1 = <&pinctrl_i2c_data1>; /* GPC2 */
+			pinctrl-0 = <&pinctrl_i2c_clk1    /* GPC1 */
+				     &pinctrl_i2c_data1>; /* GPC2 */
 		};
 		i2c2: i2c@f01cc0 {
 			compatible = "ite,it8xxx2-i2c";
@@ -630,8 +638,8 @@
 			label = "I2C_2";
 			port-num = <2>;
 			gpio-dev = <&gpiof>;
-			pinctrl-0 = <&pinctrl_i2c_clk2>;  /* GPF6 */
-			pinctrl-1 = <&pinctrl_i2c_data2>; /* GPF7 */
+			pinctrl-0 = <&pinctrl_i2c_clk2    /* GPF6 */
+				     &pinctrl_i2c_data2>; /* GPF7 */
 		};
 		i2c3: i2c@f03680 {
 			compatible = "ite,it8xxx2-i2c";
@@ -644,8 +652,8 @@
 			label = "I2C_3";
 			port-num = <3>;
 			gpio-dev = <&gpioh>;
-			pinctrl-0 = <&pinctrl_i2c_clk3>;  /* GPH1 */
-			pinctrl-1 = <&pinctrl_i2c_data3>; /* GPH2 */
+			pinctrl-0 = <&pinctrl_i2c_clk3    /* GPH1 */
+				     &pinctrl_i2c_data3>; /* GPH2 */
 		};
 		i2c4: i2c@f03500 {
 			compatible = "ite,it8xxx2-i2c";
@@ -658,8 +666,8 @@
 			label = "I2C_4";
 			port-num = <4>;
 			gpio-dev = <&gpioe>;
-			pinctrl-0 = <&pinctrl_i2c_clk4>;  /* GPE0 */
-			pinctrl-1 = <&pinctrl_i2c_data4>; /* GPE7 */
+			pinctrl-0 = <&pinctrl_i2c_clk4    /* GPE0 */
+				     &pinctrl_i2c_data4>; /* GPE7 */
 		};
 		i2c5: i2c@f03580 {
 			compatible = "ite,it8xxx2-i2c";
@@ -672,8 +680,8 @@
 			label = "I2C_5";
 			port-num = <5>;
 			gpio-dev = <&gpioa>;
-			pinctrl-0 = <&pinctrl_i2c_clk5>;  /* GPA4 */
-			pinctrl-1 = <&pinctrl_i2c_data5>; /* GPA5 */
+			pinctrl-0 = <&pinctrl_i2c_clk5    /* GPA4 */
+				     &pinctrl_i2c_data5>; /* GPA5 */
 		};
 
 		ecpm: clock-controller@f01e00 {
@@ -790,6 +798,12 @@
 			pwmctrl = <&prs>;
 			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
 			#pwm-cells = <2>;
+		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it8xxx2-gctrl";
+			reg = <0x00f02000 0x100>;
+			label = "GCTRL";
 		};
 	};
 };

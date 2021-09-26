@@ -8,3 +8,5 @@ footprints,default,altera_max10,tests/benchmarks/footprints,
 footprints,default,hifive1_revb,tests/benchmarks/footprints,
 footprints,default,ehl_crb,tests/benchmarks/footprints,
 footprints,userspace,ehl_crb,tests/benchmarks/footprints,-DCONF_FILE=prj_userspace.conf
+echo_client,default,frdm_k64f,samples/net/sockets/echo_client,
+echo_server,default,frdm_k64f,samples/net/sockets/echo_server,

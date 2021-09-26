@@ -1,9 +1,14 @@
 # Copyright (c) 2020 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Documentation GitHub Workflow
+name: Documentation Build
 
 on:
+  schedule:
+    - cron: '0 */3 * * *'
+  push:
+    tags:
+      - v*
   pull_request:
     paths:
     - 'doc/**'
@@ -19,16 +24,19 @@ on:
     - 'scripts/dts/**'
     - 'scripts/requirements-doc.txt'
 
+env:
+  # NOTE: west docstrings will be extracted from the version listed here
+  WEST_VERSION: 0.11.1
+  # The latest CMake available directly with apt is 3.18, but we need >=3.20
+  # so we fetch that through pip.
+  CMAKE_VERSION: 3.20.5
+
 jobs:
-  doc-build:
-    name: "Documentation Build"
+  doc-build-html:
+    name: "Documentation Build (HTML)"
     runs-on: ubuntu-latest
 
     steps:
-    - name: Update PATH for west
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
     - name: checkout
       uses: actions/checkout@v2
 
@@ -40,26 +48,82 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-doc-pip
+        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
 
     - name: install-pip
       run: |
         sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-doc.txt
-        pip3 install west==0.11.0
+        pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
 
     - name: west setup
       run: |
-        west init -l . || true
+        west init -l .
 
     - name: build-docs
       run: |
-        SPHINXOPTS="-q -W -j auto" make -C doc html
-        tar cvf htmldocs.tar --directory=./doc/_build html
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto" make -C doc html
+
+    - name: compress-docs
+      run: |
+        tar cfJ html-output.tar.xz --directory=doc/_build html
 
     - name: upload-build
       uses: actions/upload-artifact@master
-      continue-on-error: True
       with:
-        name: htmldocs.tar
-        path: htmldocs.tar
+        name: html-output
+        path: html-output.tar.xz
+
+  doc-build-pdf:
+    name: "Documentation Build (PDF)"
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - name: install-pkgs
+      run: |
+        apt-get update
+        apt-get install -y python3-pip ninja-build doxygen graphviz librsvg2-bin
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('scripts/requirements-doc.txt') }}
+
+    - name: install-pip
+      run: |
+        pip3 install -U setuptools wheel pip
+        pip3 install -r scripts/requirements-doc.txt
+        pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
+
+    - name: west setup
+      run: |
+        west init -l .
+
+    - name: build-docs
+      run: |
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -j auto" LATEXMKOPTS="-quiet -halt-on-error" make -C doc pdf
+
+    - name: upload-build
+      uses: actions/upload-artifact@master
+      with:
+        name: pdf-output
+        path: doc/_build/latex/zephyr.pdf

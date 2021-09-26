@@ -12,6 +12,8 @@ config SOC_IT8XXX2
 
 endchoice
 
+if SOC_IT8XXX2
+
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"
 	default y
@@ -31,3 +33,5 @@ config SOC_IT8XXX2_EXT_32K
 	bool "Use external 32.768 kHz clock source"
 
 endchoice
+
+endif # SOC_IT8XXX2

@@ -42,6 +42,8 @@ LOG_OFFSET = WIN_OFFSET + WIN_IDX * WIN_SIZE
 mem = None
 sys_devices = "/sys/bus/pci/devices"
 
+reset_logged = False
+
 for dev_addr in os.listdir(sys_devices):
     class_file = sys_devices + "/" + dev_addr + "/class"
     pciclass = open(class_file).read()
@@ -93,6 +95,7 @@ def read_slot(slot, mem):
     return (sid, msg.decode(encoding="utf-8", errors="ignore"))
 
 def read_hist(start_slot):
+    global reset_logged
     id0, msg = read_slot(start_slot, mem)
 
     # An invalid slot zero means no data has ever been placed in the
@@ -101,10 +104,14 @@ def read_hist(start_slot):
     # been observed to hang the flash process (which I think can only
     # be a hardware bug).
     if start_slot == 0 and id0 < 0:
-        sys.stdout.write("===\n=== [ADSP Device Reset]\n===\n")
-        sys.stdout.flush()
-        time.sleep(1)
+        if not reset_logged:
+            sys.stdout.write("===\n=== [ADSP Device Reset?]\n===\n")
+            sys.stdout.flush()
+        reset_logged = True
+        time.sleep(0.1)
         return (0, 0, "")
+
+    reset_logged = False
 
     # Start at zero and read forward to get the last data in the
     # buffer.  We are always guaranteed that slot zero will contain

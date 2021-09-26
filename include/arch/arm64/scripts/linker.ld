@@ -27,12 +27,6 @@
   #define RAMABLE_REGION SRAM
 #endif
 
-#if defined(CONFIG_XIP)
-  #define _DATA_IN_ROM __data_rom_start
-#else
-  #define _DATA_IN_ROM
-#endif
-
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
   #define ROM_ADDR RAM_ADDR
 #else
@@ -69,7 +63,7 @@ MEMORY
     FLASH     (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM      (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx) : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+    IDT_LIST  (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -95,11 +89,11 @@ SECTIONS
 
     GROUP_START(ROMABLE_REGION)
 
-    _image_rom_start = ROM_ADDR;
+    __rom_region_start = ROM_ADDR;
 
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
-        _image_text_start = .;
+        __text_region_start = .;
 #ifndef CONFIG_XIP
         z_mapped_start = .;
 #endif
@@ -132,8 +126,8 @@ SECTIONS
         MMU_ALIGN;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-    _image_text_end = .;
-    _image_text_size = _image_text_end - _image_text_start;
+    __text_region_end = .;
+    __text_region_size = __text_region_end - __text_region_start;
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -160,7 +154,7 @@ SECTIONS
         __exidx_end = .;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-        _image_rodata_start = .;
+        __rodata_region_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -185,9 +179,9 @@ SECTIONS
 #include <linker/cplusplus-rom.ld>
     MMU_ALIGN;
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
-    _image_rom_end = .;
+    __rodata_region_end = .;
+    __rodata_region_size = __rodata_region_end - __rodata_region_start;
+    __rom_region_end = .;
 
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -256,7 +250,8 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
     {
-        __data_ram_start = .;
+	__data_region_start = .;
+	__data_start = .;
         *(.data)
         *(".data.*")
         *(".kernel.*")
@@ -266,15 +261,24 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
-    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+        __data_end = .;
 
-    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+    __data_size = __data_end - __data_start;
+    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
+
+    __data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
 #include <linker/cplusplus-ram.ld>
 
-    __data_ram_end = .;
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
+    __data_region_end = .;
 
 
     /* Define linker symbols */
@@ -312,6 +316,6 @@ SECTIONS
 
     /* To provide the image size as a const expression,
      * calculate this value here. */
-    _flash_used = LOADADDR(.last_section) - _image_rom_start;
+    _flash_used = LOADADDR(.last_section) - __rom_region_start;
 
 }

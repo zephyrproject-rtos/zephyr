@@ -2008,7 +2008,7 @@ class CMake():
             ldflags = "-Wl,--fatal-warnings"
             cflags = "-Werror"
             aflags = "-Wa,--fatal-warnings"
-            gen_defines_args = "--err-on-deprecated-properties"
+            gen_defines_args = "--edtlib-Werror"
         else:
             ldflags = cflags = aflags = ""
             gen_defines_args = ""
@@ -2093,6 +2093,13 @@ class CMake():
 
         p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
+
+        # It might happen that the environment adds ANSI escape codes like \x1b[0m,
+        # for instance if twister is executed from inside a makefile. In such a
+        # scenario it is then necessary to remove them, as otherwise the JSON decoding
+        # will fail.
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        out = ansi_escape.sub('', out.decode())
 
         if p.returncode == 0:
             msg = "Finished running  %s" % (args[0])
@@ -2280,8 +2287,7 @@ class ProjectBuilder(FilterBuilder):
         elif instance.platform.simulation == "mdb-nsim":
             if find_executable("mdb"):
                 instance.handler = BinaryHandler(instance, "nsim")
-                instance.handler.pid_fn = os.path.join(instance.build_dir, "mdb.pid")
-                instance.handler.call_west_flash = True
+                instance.handler.call_make_run = True
         elif instance.platform.simulation == "armfvp":
             instance.handler = BinaryHandler(instance, "armfvp")
             instance.handler.call_make_run = True
@@ -3196,6 +3202,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
+                        and "host" not in plat.supported_toolchains \
                         and tc.type != 'unit':
                     discards[instance] = discards.get(instance, "Not supported by the toolchain")
 
@@ -3271,8 +3278,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in self.discards:
             instance.reason = self.discards[instance]
             # If integration mode is on all skips on integration_platforms are treated as errors.
-            # TODO: add quarantine relief here when PR with quarantine feature gets merged
-            if self.integration and instance.platform.name in instance.testcase.integration_platforms:
+            if self.integration and instance.platform.name in instance.testcase.integration_platforms \
+                and "Quarantine" not in instance.reason:
                 instance.status = "error"
                 instance.reason += " but is one of the integration platforms"
                 instance.fill_results_by_status()
@@ -3310,16 +3317,16 @@ class TestSuite(DisablePyTestCollectionMixin):
             if build_only:
                 instance.run = False
 
-            if test_only and instance.run:
-                pipeline.put({"op": "run", "test": instance})
-            else:
-                if instance.status not in ['passed', 'skipped', 'error']:
-                    logger.debug(f"adding {instance.name}")
-                    instance.status = None
+            if instance.status not in ['passed', 'skipped', 'error']:
+                logger.debug(f"adding {instance.name}")
+                instance.status = None
+                if test_only and instance.run:
+                    pipeline.put({"op": "run", "test": instance})
+                else:
                     pipeline.put({"op": "cmake", "test": instance})
-                # If the instance got 'error' status before, proceed to the report stage
-                if instance.status == "error":
-                    pipeline.put({"op": "report", "test": instance})
+            # If the instance got 'error' status before, proceed to the report stage
+            if instance.status == "error":
+                pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
@@ -3668,7 +3675,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                 handler_time = instance.metrics.get('handler_time', 0)
                 ram_size = instance.metrics.get ("ram_size", 0)
                 rom_size  = instance.metrics.get("rom_size",0)
-
                 for k in instance.results.keys():
                     testcases = list(filter(lambda d: not (d.get('testcase') == k and d.get('platform') == p), testcases ))
                     testcase = {"testcase": k,
@@ -3680,12 +3686,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                     if rom_size:
                         testcase["rom_size"] = rom_size
 
-                    if instance.results[k] in ["PASS"]:
+                    if instance.results[k] in ["PASS"] or instance.status == 'passed':
                         testcase["status"] = "passed"
                         if instance.handler:
                             testcase["execution_time"] =  handler_time
 
-                    elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout"]:
+                    elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout", "flash_error"]:
                         testcase["status"] = "failed"
                         testcase["reason"] = instance.reason
                         testcase["execution_time"] =  handler_time
@@ -3695,7 +3701,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                             testcase["device_log"] = self.process_log(device_log)
                         else:
                             testcase["build_log"] = self.process_log(build_log)
-                    else:
+                    elif instance.status == 'skipped':
                         testcase["status"] = "skipped"
                         testcase["reason"] = instance.reason
                     testcases.append(testcase)
@@ -3736,12 +3742,12 @@ class CoverageTool:
         return t
 
     @staticmethod
-    def retrieve_gcov_data(intput_file):
-        logger.debug("Working on %s" % intput_file)
+    def retrieve_gcov_data(input_file):
+        logger.debug("Working on %s" % input_file)
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
-        with open(intput_file, 'r') as fp:
+        with open(input_file, 'r') as fp:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True

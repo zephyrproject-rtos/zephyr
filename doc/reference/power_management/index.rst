@@ -50,7 +50,6 @@ abstraction layers.
 
 The power management features are classified into the following categories.
 
-* Tickless Idle
 * System Power Management
 * Device Power Management
 
@@ -115,8 +114,8 @@ Power States Constraint
 
 The power management subsystem allows different Zephyr components and
 applications to set constraints on various power states preventing the
-system to go these states. This can be used by devices when executing
-tasks in background to avoid the system to go to state where it would
+system from transitiioning into these states. This can be used by devices when executing
+tasks in background to avoid the system to go to a specific state where it would
 lose context. Constraints can be set, released and checked using the
 follow APIs:
 
@@ -131,15 +130,14 @@ Power Management Policies
 
 The power management subsystem supports the following power management policies:
 
-* Residency
-* Application
-* Dummy
+* Residency based
+* Application defined
 
-The policy manager is responsible to inform the power subsystem which
-power state the system should go based on states available in the
+The policy manager is responsible for informing the power subsystem which
+power state the system should transition to based on states defined by the
 platform and possible runtime :ref:`constraints<pm_constraints>`
 
-Information about states can be get from device tree, see
+Information about states can be found in the device tree, see
 :zephyr_file:`dts/bindings/power/state.yaml`.
 
 Residency
@@ -171,68 +169,62 @@ the following function.
    struct pm_state_info pm_policy_next_state(int32_t ticks);
 
 In this policy the application is free to decide which power state the
-system should go based on the remaining time for the next scheduled
+system should transition to based on the remaining time for the next scheduled
 timeout.
 
 An example of an application that defines its own policy can be found in
 :zephyr_file:`tests/subsys/pm/power_mgmt/`.
 
-Dummy
------
-
-This policy returns the next supported power state in a loop. It is used mainly
-for testing purposes.
-
 Device Power Management Infrastructure
 **************************************
 
 The device power management infrastructure consists of interfaces to the
-Zephyr RTOS device model. These APIs send control commands to the device driver
+:ref:`device_model_api`. These APIs send control commands to the device driver
 to update its power state or to get its current power state.
 
 Zephyr RTOS supports two methods of doing device power management.
 
-* Distributed method
-* Central method
+* Runtime Device Power Management
+* System Power Management
 
-Distributed method
-==================
+Runtime Device Power Management
+===============================
 
 In this method, the application or any component that deals with devices directly
-and has the best knowledge of their use does the device power management. This
+and has the best knowledge of their use, performs the device power management. This
 saves power if some devices that are not in use can be turned off or put
 in power saving mode. This method allows saving power even when the CPU is
 active. The components that use the devices need to be power aware and should
-be able to make decisions related to managing device power. In this method, the
-SOC interface can enter CPU or SOC power states quickly when
-:code:`pm_system_suspend()` gets called. This is because it does not need to
-spend time doing device power management if the devices are already put in
-the appropriate power state by the application or component managing the
-devices.
+be able to make decisions related to managing device power.
 
-Central method
-==============
+In this method, the SOC interface can enter CPU or SOC power states quickly when
+:code:`pm_system_suspend()` gets called. This is because it does not need to
+spend time doing device power management if the devices are already put in the
+appropriate power state by the application or component managing the devices.
+
+System Power Management
+=======================
 
 In this method device power management is mostly done inside
 :code:`pm_system_suspend()` along with entering a CPU or SOC power state.
 
-If a decision to enter deep sleep is made, the implementation would enter it
+If a decision to enter a lower power state is made, the implementation would enter it
 only after checking if the devices are not in the middle of a hardware
 transaction that cannot be interrupted. This method can be used in
 implementations where the applications and components using devices are not
-expected to be power aware and do not implement device power management.
+expected to be power aware and do not implement runtime device power management.
 
 .. image:: central_method.svg
    :align: center
 
 This method can also be used to emulate a hardware feature supported by some
-SOCs which cause automatic entry to deep sleep when all devices are idle.
+SOCs which triggers automatic entry to a lower power state when all devices are idle.
 Refer to `Busy Status Indication`_ to see how to indicate whether a device is busy
 or idle.
 
 Device Power Management States
 ==============================
-The Zephyr RTOS power management subsystem defines four device states.
+The power management subsystem defines four device states.
 These states are classified based on the degree of device context that gets lost
 in those states, kind of operations done to save power, and the impact on the
 device behavior due to the state transition. Device context includes device
@@ -248,20 +240,10 @@ The four device power states:
 
    Device context is preserved by the HW and need not be restored by the driver.
 
-:code:`PM_DEVICE_STATE_SUSPEND`
+:code:`PM_DEVICE_STATE_SUSPENDED`
 
    Most device context is lost by the hardware. Device drivers must save and
    restore or reinitialize any context lost by the hardware.
-
-:code:`PM_DEVICE_STATE_SUSPENDING`
-
-   Device is currently transitioning from :c:macro:`PM_DEVICE_STATE_ACTIVE` to
-   :c:macro:`PM_DEVICE_STATE_SUSPEND`.
-
-:code:`PM_DEVICE_STATE_RESUMING`
-
-   Device is currently transitioning from :c:macro:`PM_DEVICE_STATE_SUSPEND` to
-   :c:macro:`PM_DEVICE_STATE_ACTIVE`.
 
 :code:`PM_DEVICE_STATE_OFF`
 
@@ -273,13 +255,8 @@ Device Power Management Operations
 ==================================
 
 Zephyr RTOS power management subsystem provides a control function interface
-to device drivers to indicate power management operations to perform.
-The supported PM control commands are:
-
-* PM_DEVICE_STATE_SET
-* PM_DEVICE_STATE_GET
-
-Each device driver defines:
+to device drivers to indicate power management operations to perform. Each
+device driver defines:
 
 * The device's supported power states.
 * The device's supported transitions between power states.
@@ -330,20 +307,17 @@ Device Set Power State
 
 .. code-block:: c
 
-   int pm_device_state_set(const struct device *dev, uint32_t device_power_state, pm_device_cb cb, void *arg);
+   int pm_device_state_set(const struct device *dev, enum pm_device_state state);
 
 Calls the :c:func:`pm_control()` handler function implemented by the
-device driver with PM_DEVICE_STATE_SET command.
+device driver with the provided state.
 
 Device Get Power State
 ----------------------
 
 .. code-block:: c
 
-   int pm_device_state_get(const struct device *dev, uint32_t * device_power_state);
-
-Calls the :c:func:`pm_control()` handler function implemented by the
-device driver with PM_DEVICE_STATE_GET command.
+   int pm_device_state_get(const struct device *dev, enum pm_device_state *state);
 
 Busy Status Indication
 ======================
@@ -402,6 +376,44 @@ Check Busy Status of All Devices API
    int device_any_busy_check(void);
 
 Checks if any device is busy. The API returns 0 if no device in the system is busy.
+
+Wakeup capability
+-----------------
+
+Some devices are capable of waking the system up from a sleep state.
+When a device has such capability, applications can enable or disable
+this feature on a device dynamically using
+:c:func:`pm_device_wakeup_enable`.
+
+This property can be set on device declaring the property ``wakeup-source`` in
+the device node in devicetree. For example, this devicetree fragment sets the
+``gpio0`` device as a "wakeup" source:
+
+.. code-block:: devicetree
+
+		gpio0: gpio@40022000 {
+			compatible = "ti,cc13xx-cc26xx-gpio";
+			reg = <0x40022000 0x400>;
+			interrupts = <0 0>;
+			status = "disabled";
+			label = "GPIO_0";
+			gpio-controller;
+			wakeup-source;
+			#gpio-cells = <2>;
+		};
+
+By default, "wakeup" capable devices do not have this functionality enabled
+during the device initialization. Applications can enable this functionality
+later calling :c:func:`pm_device_wakeup_enable`.
+
+.. note::
+
+   This property is **only** used by the system power management to identify
+   devices that should not be suspended.
+   It is responsability of driver or the application to do any additional
+   configuration required by the device to support it.
+
+
 
 Device Runtime Power Management
 *******************************

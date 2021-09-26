@@ -31,6 +31,10 @@ static ALWAYS_INLINE void arch_nop(void)
 	__asm__ volatile("nop");
 }
 
+#if defined(CONFIG_USERSPACE)
+extern bool z_arm_thread_is_in_user_mode(void);
+#endif
+
 #endif
 
 #ifdef __cplusplus

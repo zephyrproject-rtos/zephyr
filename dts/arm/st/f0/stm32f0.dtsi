@@ -79,7 +79,7 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <2>;
@@ -388,8 +388,8 @@
 		};
 
 		dma1: dma@40020000 {
-			compatible = "st,stm32-dma-v2";
-			#dma-cells = <3>;
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			interrupts = <9 0 10 0 10 0 11 0 11 0>;

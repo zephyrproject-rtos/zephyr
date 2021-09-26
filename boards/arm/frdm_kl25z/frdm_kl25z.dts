@@ -134,7 +134,7 @@
 	status = "okay";
 };
 
-&usbotg {
+zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;

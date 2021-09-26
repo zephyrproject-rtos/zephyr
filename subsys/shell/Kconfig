@@ -25,6 +25,19 @@ config SHELL_MINIMAL
 	  defaults which favor reduced flash or memory requirements over extra
 	  features.
 
+config SHELL_THREAD_PRIORITY_OVERRIDE
+	bool "Override default shell thread priority"
+	help
+	  Option to change the default value of shell thread priority.
+
+if SHELL_THREAD_PRIORITY_OVERRIDE
+config SHELL_THREAD_PRIORITY
+	int "Shell thread priority"
+	default 0
+	help
+	  Set thread priority of the shell
+endif
+
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
 	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER

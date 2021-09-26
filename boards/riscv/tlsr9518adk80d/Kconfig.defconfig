@@ -18,4 +18,25 @@ config UART_TELINK_B91
 config PINMUX_TELINK_B91
 	default y if PINMUX
 
+config PWM_TELINK_B91
+	default y if PWM
+
+config ENTROPY_TELINK_B91_TRNG
+	default y if ENTROPY_GENERATOR
+
+config SOC_FLASH_TELINK_B91
+	default y if FLASH
+
+config SPI_TELINK_B91
+	default y if SPI
+
+config IEEE802154_TELINK_B91
+	default y if IEEE802154
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default "IEEE802154_b91"
+
+config I2C_TELINK_B91
+	default y if I2C
+
 endif
