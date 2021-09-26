@@ -67,3 +67,69 @@ When you reset the development kit, the following messages (one for master and o
    RPMsg Multiple instance [no 1] demo ended.
    Remote [no 2] core received a message: 98
    RPMsg Multiple instance [no 2] demo ended.
+
+Building the application for bl5340_dvk_cpuapp
+**********************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/rpmsg_multi_instance
+   :board: bl5340_dvk_cpuapp
+   :goals: debug
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/rpmsg_multi_instance/remote
+   :board: bl5340_dvk_cpunet
+   :goals: debug
+
+Open a serial terminal (for example Minicom or PuTTY) and connect to the board
+with the following settings on both serial ports:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+When you reset the development kit after having flashed both the application
+and network core images, the following messages (one for master and one for
+remote) will appear on the corresponding serial ports:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v2.7.0-rc1-103-ge19875c88916  ***
+   Starting application thread!
+
+   RPMsg Multiple instance [master no 1] demo started
+
+   RPMsg Multiple instance [master no 2] demo started
+   Master [no 1] core received a message: 1
+   Master [no 2] core received a message: 1
+   Master [no 1] core received a message: 3
+   Master [no 2] core received a message: 3
+   Master [no 1] core received a message: 5
+   Master [no 2] core received a message: 5
+   ...
+   Master [no 1] core received a message: 99
+   RPMsg Multiple instance [no 1] demo ended.
+   Master [no 2] core received a message: 99
+   RPMsg Multiple instance [no 2] demo ended.
+
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v2.7.0-rc1-103-ge19875c88916  ***
+   Starting application thread!
+
+   RPMsg Multiple instance [remote no 1] demo started
+
+   RPMsg Multiple instance [remote no 2] demo started
+   Remote [no 1] core received a message: 0
+   Remote [no 2] core received a message: 0
+   Remote [no 1] core received a message: 2
+   Remote [no 2] core received a message: 2
+   Remote [no 1] core received a message: 4
+   Remote [no 2] core received a message: 4
+   ...
+   Remote [no 1] core received a message: 98
+   RPMsg Multiple instance [no 1] demo ended.
+   Remote [no 2] core received a message: 98
+   RPMsg Multiple instance [no 2] demo ended.
