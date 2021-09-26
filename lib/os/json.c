@@ -41,17 +41,23 @@ struct json_obj_key_value {
 	struct token value;
 };
 
+struct appender {
+	char *buffer;
+	size_t used;
+	size_t size;
+};
+
 static bool lexer_consume(struct lexer *lexer, struct token *token,
 			  enum json_tokens empty_token)
 {
-	if (lexer->token.type == empty_token) {
-		return false;
+	bool consume = lexer->token.type != empty_token;
+
+	if (consume) {
+		*token = lexer->token;
+		lexer->token.type = empty_token;
 	}
 
-	*token = lexer->token;
-	lexer->token.type = empty_token;
-
-	return true;
+	return consume;
 }
 
 static bool lexer_next(struct lexer *lexer, struct token *token)
@@ -81,7 +87,6 @@ static int next(struct lexer *lexer)
 {
 	if (lexer->pos >= lexer->end) {
 		lexer->pos = lexer->end + 1;
-
 		return '\0';
 	}
 
@@ -171,7 +176,7 @@ error:
 
 static int accept_run(struct lexer *lexer, const char *run)
 {
-	for (; *run; run++) {
+	for (; *run != '\0'; run++) {
 		if (next(lexer) != *run) {
 			return -EINVAL;
 		}
@@ -216,18 +221,16 @@ static void *lexer_null(struct lexer *lexer)
 
 static void *lexer_number(struct lexer *lexer)
 {
-	while (true) {
-		int chr = next(lexer);
+	int chr = next(lexer);
 
-		if (isdigit(chr) || chr == '.') {
-			continue;
-		}
-
-		backup(lexer);
-		emit(lexer, JSON_TOK_NUMBER);
-
-		return lexer_json;
+	while (isdigit(chr) || chr == '.') {
+		chr = next(lexer);
 	}
+
+	backup(lexer);
+	emit(lexer, JSON_TOK_NUMBER);
+
+	return lexer_json;
 }
 
 static void *lexer_json(struct lexer *lexer)
@@ -633,18 +636,16 @@ static int json_escape_internal(const char *str,
 				json_append_bytes_t append_bytes,
 				void *data)
 {
-	const char *cur;
 	int ret = 0;
 
-	for (cur = str; ret == 0 && *cur; cur++) {
-		char escaped = escape_as(*cur);
+	for (; ret == 0 && *str != '\0'; str++) {
+		char escaped = escape_as(*str);
 
 		if (escaped) {
 			char bytes[2] = { '\\', escaped };
-
 			ret = append_bytes(bytes, 2, data);
 		} else {
-			ret = append_bytes(cur, 1, data);
+			ret = append_bytes(str, 1, data);
 		}
 	}
 
@@ -654,9 +655,8 @@ static int json_escape_internal(const char *str,
 size_t json_calc_escaped_len(const char *str, size_t len)
 {
 	size_t escaped_len = len;
-	size_t pos;
 
-	for (pos = 0; pos < len; pos++) {
+	for (size_t pos = 0; pos < len; pos++) {
 		if (escape_as(str[pos])) {
 			escaped_len++;
 		}
@@ -882,12 +882,6 @@ int json_arr_encode(const struct json_obj_descr *descr, const void *val,
 			  data);
 }
 
-struct appender {
-	char *buffer;
-	size_t used;
-	size_t size;
-};
-
 static int append_bytes_to_buf(const char *bytes, size_t len, void *data)
 {
 	struct appender *appender = data;
@@ -922,11 +916,11 @@ int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
 
 static int measure_bytes(const char *bytes, size_t len, void *data)
 {
+	ARG_UNUSED(bytes);
+
 	ssize_t *total = data;
 
 	*total += (ssize_t)len;
-
-	ARG_UNUSED(bytes);
 
 	return 0;
 }
@@ -935,12 +929,7 @@ ssize_t json_calc_encoded_len(const struct json_obj_descr *descr,
 			      size_t descr_len, const void *val)
 {
 	ssize_t total = 0;
-	int ret;
+	int ret = json_obj_encode(descr, descr_len, val, measure_bytes, &total);
 
-	ret = json_obj_encode(descr, descr_len, val, measure_bytes, &total);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return total;
+	return (ret < 0) ? ret : total;
 }
