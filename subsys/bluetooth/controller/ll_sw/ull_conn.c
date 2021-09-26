@@ -5903,7 +5903,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		/* wait for response */
-		conn->llcp_length.state = LLCP_LENGTH_STATE_RSP_WAIT;
+		if (conn->llcp_length.state == LLCP_LENGTH_STATE_REQ_ACK_WAIT) {
+			conn->llcp_length.state = LLCP_LENGTH_STATE_RSP_WAIT;
+		}
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
