@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2021 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dev_default: dev_default {
+		compatible = "test-device-wakeup-state";
+		label = "DEV_DEFAULT";
+		status = "okay";
+	};
+	dev_active: dev_active {
+		compatible = "test-device-wakeup-state";
+		wakeup-state = "active";
+		label = "DEV_ACTIVE";
+		status = "okay";
+	};
+	dev_low_power: dev_low_power {
+		compatible = "test-device-wakeup-state";
+		wakeup-state = "low-power";
+		label = "DEV_LOW_POWER";
+		status = "okay";
+	};
+	dev_suspended: dev_suspended {
+		compatible = "test-device-wakeup-state";
+		wakeup-state = "suspended";
+		label = "DEV_SUSPENDED";
+		status = "okay";
+	};
+	dev_off: dev_off {
+		compatible = "test-device-wakeup-state";
+		wakeup-state = "off";
+		label = "DEV_OFF";
+		status = "okay";
+	};
+};
