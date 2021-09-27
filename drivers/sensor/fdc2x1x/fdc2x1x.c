@@ -610,7 +610,6 @@ static int fdc2x1x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 #ifdef CONFIG_PM_DEVICE
-	struct fdc2x1x_data *data = dev->data;
 	enum pm_device_state state;
 
 	(void)pm_device_state_get(dev, &state);
@@ -831,6 +830,8 @@ static int fdc2x1x_init_config(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	data->power_off = false;
 
 	return 0;
 }
