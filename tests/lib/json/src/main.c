@@ -39,6 +39,18 @@ struct obj_array {
 	size_t num_elements;
 };
 
+struct nested_elt_arr {
+	char *name[10];
+	size_t name_num;
+	int height[10];
+	size_t height_num;
+};
+
+struct obj_nested_arr {
+	struct nested_elt_arr elements[10];
+	size_t num_elements;
+};
+
 static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
@@ -75,6 +87,18 @@ static const struct json_obj_descr obj_array_descr[] = {
 				 elt_descr, ARRAY_SIZE(elt_descr)),
 };
 
+static const struct json_obj_descr nested_elt_arr_descr[] = {
+	JSON_OBJ_DESCR_ARRAY_NESTED(struct nested_elt_arr, name,
+			    10, name_num, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_ARRAY_NESTED(struct nested_elt_arr, height,
+			10, height_num, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr obj_nested_arr_descr[] = {
+	JSON_OBJ_DESCR_OBJ_ARRAY(struct obj_nested_arr, elements,
+			10, num_elements, nested_elt_arr_descr,
+			ARRAY_SIZE(nested_elt_arr_descr)),
+};
 
 struct array {
 	struct elt objects;
@@ -341,6 +365,92 @@ static void test_json_obj_arr_decoding(void)
 	}
 }
 
+static void test_json_obj_nested_arr_encoding(void)
+{
+	struct obj_nested_arr oa = {
+		.elements = {
+			[0] = { .name = {"Simón Bolívar", "Muggsy Bogues", "Pelé",
+							 "Hakeem Olajuwon"},
+					.name_num = 4,
+					.height = {168, 160, 173, 213},
+					.height_num = 4 },
+			[1] = { .name = {"Alex Honnold", "Hazel Findlay", "Daila Ojeda",
+							 "Albert Einstein"},
+					.name_num = 4,
+					.height = {180, 157, 158, 172},
+					.height_num = 4 }
+		},
+		.num_elements = 2,
+	};
+	static const char encoded[] = "{\"elements\":["
+		"{\"name\":[\"Simón Bolívar\",\"Muggsy Bogues\",\"Pelé\","
+		"\"Hakeem Olajuwon\"],\"height\":[168,160,173,213]},"
+		"{\"name\":[\"Alex Honnold\",\"Hazel Findlay\","
+		"\"Daila Ojeda\",\"Albert Einstein\"],\"height\":[180,157,158,172]}"
+		"]}";
+	char buffer[sizeof(encoded)];
+	int ret;
+	size_t size;
+
+	ret = json_obj_encode_buf(obj_nested_arr_descr,
+			ARRAY_SIZE(obj_nested_arr_descr),
+			&oa, buffer, sizeof(buffer));
+	size = json_calc_encoded_len(obj_nested_arr_descr,
+			ARRAY_SIZE(obj_nested_arr_descr), &oa);
+
+	zassert_equal(ret, 0, "Encoding array of object returned errors");
+	zassert_true(!strcmp(buffer, encoded),
+		     "Encoded array of objects is not consistent");
+}
+
+static void test_json_obj_nested_arr_decoding(void)
+{
+	struct obj_nested_arr oa;
+	char encoded[] = "{\"elements\":["
+		"{\"name\":[\"Simón Bolívar\",\"Muggsy Bogues\",\"Pelé\","
+		"\"Hakeem Olajuwon\"],\"height\":[168,160,173,213]},"
+		"{\"name\":[\"Alex Honnold\",\"Hazel Findlay\","
+		"\"Daila Ojeda\",\"Albert Einstein\"],\"height\":[180,157,158,172]}"
+		"]}";
+	const struct obj_nested_arr expected = {
+		.elements = {
+			[0] = { .name = {"Simón Bolívar", "Muggsy Bogues", "Pelé",
+							 "Hakeem Olajuwon"},
+					.name_num = 4,
+					.height = {168, 160, 173, 213},
+					.height_num = 4 },
+			[1] = { .name = {"Alex Honnold", "Hazel Findlay", "Daila Ojeda",
+							 "Albert Einstein"},
+					.name_num = 4,
+					.height = {180, 157, 158, 172},
+					.height_num = 4 }
+		},
+		.num_elements = 2,
+	};
+	int ret;
+
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, obj_nested_arr_descr,
+			     ARRAY_SIZE(obj_nested_arr_descr), &oa);
+
+	zassert_equal(ret, (1 << ARRAY_SIZE(obj_nested_arr_descr)) - 1,
+		      "Array of object fields decoded incorrectly");
+	zassert_equal(oa.num_elements, 2,
+		      "Number of object fields decoded incorrectly");
+
+	for (int i = 0; i < expected.num_elements; i++) {
+		for (int j = 0; j < expected.elements[i].name_num; j++) {
+			zassert_true(!strcmp(oa.elements[i].name[j],
+					     expected.elements[i].name[j]),
+				     "Element %d name %d decoded incorrectly", i, j);
+		}
+		for (int j = 0; j < expected.elements[i].height_num; j++) {
+			zassert_equal(oa.elements[i].height[j],
+				      expected.elements[i].height[j],
+				      "Element %d height %d decoded incorrectly", i, j);
+		}
+	}
+}
+
 struct encoding_test {
 	char *str;
 	int result;
@@ -561,6 +671,8 @@ void test_main(void)
 			 ztest_unit_test(test_json_decoding_array_array),
 			 ztest_unit_test(test_json_obj_arr_encoding),
 			 ztest_unit_test(test_json_obj_arr_decoding),
+			 ztest_unit_test(test_json_obj_nested_arr_encoding),
+			 ztest_unit_test(test_json_obj_nested_arr_decoding),
 			 ztest_unit_test(test_json_invalid_string),
 			 ztest_unit_test(test_json_invalid_bool),
 			 ztest_unit_test(test_json_invalid_null),

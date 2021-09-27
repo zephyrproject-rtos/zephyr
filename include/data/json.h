@@ -86,6 +86,7 @@ struct json_obj_descr {
 		struct {
 			const struct json_obj_descr *element_descr;
 			size_t n_elements;
+			uint8_t nested : 1;
 		} array;
 	};
 };
@@ -218,6 +219,68 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 							 len_field_), \
 				} }, \
 				.n_elements = (max_len_), \
+			}, \
+		}, \
+	}
+
+/**
+ * @brief Helper macro to declare a descriptor for an array of primitives
+ *        which is inside an array of objects.
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param field_name_ Field name in the struct
+ *
+ * @param max_len_ Maximum number of elements in array
+ *
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ *
+ * @param elem_type_ Element type, must be a primitive type
+ *
+ * Here's an example of use:
+ *
+ *      struct example {
+ *          int foo[10];
+ *          size_t foo_len;
+ *      };
+ *
+ *      struct json_obj_descr nested_array_descr[] = {
+ *           JSON_OBJ_DESCR_ARRAY_NESTED(struct example, foo, 10, foo_len,
+ *                                JSON_TOK_NUMBER)
+ *      };
+ *
+ *      struct example_obj_array {
+ *			struct example objs[10];
+ *			size_t objs_len;
+ *      };
+ *
+ *      struct json_obj_descr obj_array_descr[] = {
+ *           JSON_OBJ_DESCR_OBJ_ARRAY(struct example_obj_array, objs, 10,
+ *                                    objs_len, nested_array_descr,
+ *                                    ARRAY_SIZE(nested_array_descr)),
+ *      };
+ */
+#define JSON_OBJ_DESCR_ARRAY_NESTED(struct_, field_name_, max_len_, \
+			     len_field_, elem_type_) \
+	{ \
+		.field_name = (#field_name_), \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.field_name_len = sizeof(#field_name_) - 1, \
+		.type = JSON_TOK_LIST_START, \
+		.offset = offsetof(struct_, field_name_), \
+		{ \
+			.array = { \
+				.element_descr = (struct json_obj_descr[]) { { \
+					.align_shift = \
+						Z_ALIGN_SHIFT(struct_), \
+					.type = elem_type_, \
+					.offset = \
+						offsetof(struct_, \
+							 len_field_), \
+				} }, \
+				.n_elements = (max_len_), \
+				.nested = 1, \
 			}, \
 		}, \
 	}
@@ -450,6 +513,51 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 							   len_field_), \
 				} }, \
 				.n_elements = (max_len_), \
+			}, \
+		}, \
+	}
+
+/**
+ * @brief Variant of JSON_OBJ_DESCR_ARRAY_NESTED that can be used when the
+ *        structure and JSON field names differ.
+ *
+ * This is useful when the JSON field is not a valid C identifier.
+ *
+ * @param struct_ Struct packing the values
+ *
+ * @param json_field_name_ String, field name in JSON strings
+ *
+ * @param struct_field_name_ Field name in the struct
+ *
+ * @param max_len_ Maximum number of elements in array
+ *
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ *
+ * @param elem_type_ Element type, must be a primitive type
+ *
+ * @see JSON_OBJ_DESCR_ARRAY_NESTED
+ */
+#define JSON_OBJ_DESCR_ARRAY_NESTED_NAMED(struct_, json_field_name_,\
+				   struct_field_name_, max_len_, len_field_, \
+				   elem_type_) \
+	{ \
+		.field_name = (json_field_name_), \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.field_name_len = sizeof(json_field_name_) - 1, \
+		.type = JSON_TOK_LIST_START, \
+		.offset = offsetof(struct_, struct_field_name_), \
+		{ \
+			.array = { \
+				.element_descr = (struct json_obj_descr[]) { { \
+					.align_shift = \
+						Z_ALIGN_SHIFT(struct_), \
+					.type = elem_type_, \
+					.offset = offsetof(struct_, \
+							   len_field_), \
+				} }, \
+				.n_elements = (max_len_), \
+				.nested = 1 \
 			}, \
 		}, \
 	}
