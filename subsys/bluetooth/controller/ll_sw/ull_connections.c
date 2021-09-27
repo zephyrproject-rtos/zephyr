@@ -3857,10 +3857,10 @@ static inline void event_len_prep(struct ll_conn *conn)
 #if defined(CONFIG_BT_CTLR_PHY)
 static uint16_t calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
 {
-	uint16_t time = PDU_DC_MAX_US(max_octets, phy);
+	uint16_t payload_time = PDU_DC_MAX_US(max_octets, phy);
 	uint16_t eff_time;
 
-	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, time);
+	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, payload_time);
 	eff_time = MIN(eff_time, default_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	eff_time = MAX(eff_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
