@@ -21,8 +21,6 @@
 #include <device.h>
 #include <init.h>
 
-extern void *_VectorTable;
-
 #ifdef CONFIG_PM_DEVICE
 #include <pm/device.h>
 #include <kernel_structs.h>
