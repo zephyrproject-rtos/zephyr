@@ -5,8 +5,8 @@
  */
 
 #include <stdint.h>
-
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
 

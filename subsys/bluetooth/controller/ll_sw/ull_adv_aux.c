@@ -51,8 +51,9 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
 static void mfy_aux_offset_get(void *param);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
@@ -303,8 +304,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
 	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
-	if (sizeof(sr_com_hdr->ext_hdr_adv_data) -
-	    sr_com_hdr->ext_hdr_len < len) {
+	if ((PDU_AC_EXT_HEADER_SIZE_MIN + ext_hdr_len + len) >
+	    PDU_AC_PAYLOAD_SIZE_MAX) {
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
@@ -748,6 +749,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	sec_len += ad_len;
 
 	/* Check AdvData overflow */
+	/* TODO: need aux_chain_ind support */
 	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* FIXME: release allocations */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
@@ -1269,8 +1271,9 @@ static void mfy_aux_offset_get(void *param)
 	ull_adv_aux_lll_offset_fill(ticks_to_expire, 0, pdu);
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};

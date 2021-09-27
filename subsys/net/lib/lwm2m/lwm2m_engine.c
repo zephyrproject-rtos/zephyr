@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_rw_oma_tlv.h"
+#include "lwm2m_util.h"
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 #include "lwm2m_rw_json.h"
 #endif
@@ -829,50 +830,6 @@ static uint16_t atou16(uint8_t *buf, uint16_t buflen, uint16_t *len)
 	return val;
 }
 
-static int atof32(const char *input, float32_value_t *out)
-{
-	char *pos, *end, buf[24];
-	long int val;
-	int32_t base = 1000000, sign = 1;
-
-	if (!input || !out) {
-		return -EINVAL;
-	}
-
-	strncpy(buf, input, sizeof(buf) - 1);
-	buf[sizeof(buf) - 1] = '\0';
-
-	if (strchr(buf, '-')) {
-		sign = -1;
-	}
-
-	pos = strchr(buf, '.');
-	if (pos) {
-		*pos = '\0';
-	}
-
-	errno = 0;
-	val = strtol(buf, &end, 10);
-	if (errno || *end || val < INT_MIN) {
-		return -EINVAL;
-	}
-
-	out->val1 = (int32_t) val;
-	out->val2 = 0;
-
-	if (!pos) {
-		return 0;
-	}
-
-	while (*(++pos) && base > 1 && isdigit((unsigned char)*pos)) {
-		out->val2 = out->val2 * 10 + (*pos - '0');
-		base /= 10;
-	}
-
-	out->val2 *= sign * base;
-	return !*pos || base == 1 ? 0 : -EINVAL;
-}
-
 static int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
 {
@@ -1638,18 +1595,11 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 		*((bool *)data_ptr) = *(bool *)value;
 		break;
 
-	case LWM2M_RES_TYPE_FLOAT32:
+	case LWM2M_RES_TYPE_FLOAT:
 		((float32_value_t *)data_ptr)->val1 =
 				((float32_value_t *)value)->val1;
 		((float32_value_t *)data_ptr)->val2 =
 				((float32_value_t *)value)->val2;
-		break;
-
-	case LWM2M_RES_TYPE_FLOAT64:
-		((float64_value_t *)data_ptr)->val1 =
-				((float64_value_t *)value)->val1;
-		((float64_value_t *)data_ptr)->val2 =
-				((float64_value_t *)value)->val2;
 		break;
 
 	case LWM2M_RES_TYPE_OBJLNK:
@@ -1738,11 +1688,6 @@ int lwm2m_engine_set_bool(char *pathstr, bool value)
 int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(float32_value_t));
-}
-
-int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value)
-{
-	return lwm2m_engine_set(pathstr, value, sizeof(float64_value_t));
 }
 
 int lwm2m_engine_set_objlnk(char *pathstr, struct lwm2m_objlnk *value)
@@ -1884,18 +1829,11 @@ static int lwm2m_engine_get(char *pathstr, void *buf, uint16_t buflen)
 			*(bool *)buf = *(bool *)data_ptr;
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			((float32_value_t *)buf)->val1 =
 				((float32_value_t *)data_ptr)->val1;
 			((float32_value_t *)buf)->val2 =
 				((float32_value_t *)data_ptr)->val2;
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			((float64_value_t *)buf)->val1 =
-				((float64_value_t *)data_ptr)->val1;
-			((float64_value_t *)buf)->val2 =
-				((float64_value_t *)data_ptr)->val2;
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
@@ -1980,11 +1918,6 @@ int lwm2m_engine_get_bool(char *pathstr, bool *value)
 int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(float32_value_t));
-}
-
-int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
-{
-	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
 }
 
 int lwm2m_engine_get_objlnk(char *pathstr, struct lwm2m_objlnk *buf)
@@ -2391,14 +2324,9 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 					*(bool *)data_ptr);
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			engine_put_float32fix(&msg->out, &msg->path,
 				(float32_value_t *)data_ptr);
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			engine_put_float64fix(&msg->out, &msg->path,
-				(float64_value_t *)data_ptr);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
@@ -2665,16 +2593,10 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			len = 1;
 			break;
 
-		case LWM2M_RES_TYPE_FLOAT32:
+		case LWM2M_RES_TYPE_FLOAT:
 			engine_get_float32fix(&msg->in,
 					      (float32_value_t *)write_buf);
 			len = sizeof(float32_value_t);
-			break;
-
-		case LWM2M_RES_TYPE_FLOAT64:
-			engine_get_float64fix(&msg->in,
-					      (float64_value_t *)write_buf);
-			len = sizeof(float64_value_t);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
@@ -2866,7 +2788,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			val.val1 = v;
 		} else {
 			/* gt/lt/st: type float */
-			ret = atof32(opt_buf, &val);
+			ret = lwm2m_atof32(opt_buf, &val);
 		}
 
 		if (ret < 0) {

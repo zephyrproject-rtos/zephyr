@@ -237,7 +237,12 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>
 
 # @Intent: Enforce standard integer type correspondance to match Zephyr usage.
 # (must be after compiler specific flags)
-zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+if(NOT CONFIG_ARCH_POSIX)
+  # `zephyr_stdint.h` is not included for the POSIX (native) arch because it
+  # compiles with the host toolchain/headers and there can be conflicts if we
+  # arbitrarily redefine our own type system (see #37718).
+  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+endif()
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(
@@ -1670,12 +1675,16 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   endif()
 endif()
 
-# @Intent: Set compiler specific flags for standard C includes
+# @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may
 # be added by Zephyr components were first in list.
 # Note, the compile flags are moved, but the system include is still present here.
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
+
+if(NOT CONFIG_LIB_CPLUSPLUS)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
+endif()
 
 # Finally export all build flags from Zephyr
 add_subdirectory_ifdef(

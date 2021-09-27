@@ -2138,6 +2138,10 @@ static ssize_t sdp_get_attr_value_len(const uint8_t *data, size_t len)
 
 	BT_DBG("Attr val DTD 0x%02x", data[0]);
 
+	if (len < 1) {
+		goto err;
+	}
+
 	switch (data[0]) {
 	case BT_SDP_DATA_NIL:
 	case BT_SDP_BOOL:
@@ -2174,6 +2178,10 @@ static ssize_t sdp_get_attr_value_len(const uint8_t *data, size_t len)
 		BT_ERR("Unknown DTD 0x%02x", data[0]);
 		return -EINVAL;
 	}
+err:
+	BT_ERR("Too short buffer length %zu", len);
+	return -EMSGSIZE;
+
 }
 
 /* Type holding UUID item and related to it specific information. */

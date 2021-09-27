@@ -726,7 +726,9 @@ Documentation:
         - "area: LoRa"
 
 "Drivers: Modem":
-    status: orphaned
+    status: maintained
+    maintainers:
+        - rerickson1
     files:
         - drivers/modem/
     labels:
@@ -1203,6 +1205,7 @@ RISCV arch:
     collaborators:
         - mgielda
         - katsuster
+        - henrikbrixandersen
     files:
         - arch/riscv/
         - boards/riscv/
@@ -1371,10 +1374,9 @@ Intel Platforms (Xtensa):
 NXP Platforms:
   status: maintained
   maintainers:
-    - MaureenHelm
+    - dleach02
   collaborators:
     - mmahadevan108
-    - dleach02
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/

@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
@@ -13,6 +14,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -50,8 +52,9 @@
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
@@ -216,15 +219,20 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
+	 *
+	 * Setting `scan->per_scan.sync` to NULL represents cancellation
+	 * requested in the thread context. Checking `sync->timeout_reload`
+	 * confirms if synchronization was established before
+	 * `scan->per_scan.sync` was set to NULL.
 	 */
 	sync = scan->per_scan.sync;
-	if (!sync || sync->timeout_reload) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
 	scan->per_scan.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.sync = NULL;
+	}
+	cpu_dmb();
+	if (!sync || sync->timeout_reload) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	node_rx = (void *)scan->per_scan.node_rx_estab;
@@ -301,7 +309,15 @@ int ull_sync_init(void)
 
 int ull_sync_reset(void)
 {
+	uint16_t handle;
+	void *rx;
 	int err;
+
+	(void)ll_sync_create_cancel(&rx);
+
+	for (handle = 0U; handle < CONFIG_BT_PER_ADV_SYNC_MAX; handle++) {
+		(void)ll_sync_terminate(handle);
+	}
 
 	err = init_reset();
 	if (err) {
@@ -759,8 +775,9 @@ static void timeout_cleanup(struct ll_sync_set *sync)
 		  (ret == TICKER_STATUS_BUSY));
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};

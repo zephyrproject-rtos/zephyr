@@ -409,10 +409,18 @@ static int start_read(const struct device *dev,
 		return err;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32G0X)
+#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
 	/*
 	 * Errata: Writing ADC_CFGR1 register while ADEN bit is set
 	 * resets RES[1:0] bitfield. We need to disable and enable adc.
+	 * On all those stm32 devices it is allowed to write these bits only when ADEN = 0.
 	 */
 	if (LL_ADC_IsEnabled(adc) == 1UL) {
 		LL_ADC_Disable(adc);
@@ -433,8 +441,16 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
+	/*
+	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop
+	 */
+	LL_ADC_Disable(adc);
+	while (LL_ADC_IsEnabled(adc) == 1UL) {
+	}
 	switch (sequence->oversampling) {
 	case 0:
 		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_DISABLE);
@@ -513,8 +529,11 @@ static int start_read(const struct device *dev,
 		break;
 	default:
 		LOG_ERR("Invalid oversampling");
+		LL_ADC_Enable(adc);
 		return -EINVAL;
 	}
+	/* re-enable ADC after changing the OVS */
+	LL_ADC_Enable(adc);
 #else
 	if (sequence->oversampling) {
 		LOG_ERR("Oversampling not supported");

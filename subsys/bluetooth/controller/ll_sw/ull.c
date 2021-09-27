@@ -57,7 +57,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 #include "ull_conn_internal.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
@@ -242,7 +242,7 @@
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 /* NOTE: When ticker job is disabled inside radio events then all advertising,
- *       scanning, and slave latency cancel ticker operations will be deferred,
+ *       scanning, and peripheral latency cancel ticker operations will be deferred,
  *       requiring increased ticker thread context operation queue count.
  */
 #define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
@@ -619,8 +619,8 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-	/* reset whitelist, resolving list and initialise RPA timeout*/
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list, resolving list and initialise RPA timeout*/
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(true);
 	}
 
@@ -695,42 +695,6 @@ void ll_reset(void)
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_CONN)
-#if defined(CONFIG_BT_CENTRAL)
-	/* Reset initiator */
-	{
-		void *rx;
-
-		err = ll_connect_disable(&rx);
-		if (!err) {
-			struct ll_scan_set *scan;
-
-			scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-			    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-				struct ll_scan_set *scan_other;
-
-				scan_other = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
-				if (scan_other) {
-					if (scan) {
-						scan->is_enabled = 0U;
-						scan->lll.conn = NULL;
-					}
-
-					scan = scan_other;
-				}
-			}
-
-			LL_ASSERT(scan);
-
-			scan->is_enabled = 0U;
-			scan->lll.conn = NULL;
-		}
-
-		ARG_UNUSED(rx);
-	}
-#endif /* CONFIG_BT_CENTRAL */
-
 	/* Reset conn role */
 	err = ull_conn_reset();
 	LL_ASSERT(!err);
@@ -738,8 +702,8 @@ void ll_reset(void)
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
 
-	/* reset whitelist and resolving list */
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list and resolving list */
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(false);
 	}
 
@@ -1279,7 +1243,7 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_CENTRAL)
 			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-				ull_master_cleanup(rx_free);
+				ull_central_cleanup(rx_free);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)

@@ -173,8 +173,8 @@ config BT_PERIPHERAL_PREF_MAX_INT
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
-config BT_PERIPHERAL_PREF_SLAVE_LATENCY
-	int "Peripheral preferred slave latency in Connection Intervals"
+config BT_PERIPHERAL_PREF_LATENCY
+	int "Peripheral preferred peripheral latency in Connection Intervals"
 	default 0
 	range 0 499
 

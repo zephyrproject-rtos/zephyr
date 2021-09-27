@@ -922,7 +922,7 @@ struct bt_conn_cb {
 	 */
 	void (*le_data_len_updated)(struct bt_conn *conn,
 				    struct bt_conn_le_data_len_info *info);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 
 	struct bt_conn_cb *_next;
 };

@@ -184,7 +184,7 @@ static bool reassembly_cancel(uint32_t id,
 
 		reassembly[i].id = 0U;
 
-		for (j = 0; j < NET_IPV6_FRAGMENTS_MAX_PKT; j++) {
+		for (j = 0; j < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; j++) {
 			if (!reassembly[i].pkt[j]) {
 				continue;
 			}
@@ -219,6 +219,11 @@ static void reassembly_timeout(struct k_work *work)
 
 	reassembly_info("Reassembly cancelled", reass);
 
+	/* Send a ICMPv6 Time Exceeded only if we received the first fragment (RFC 2460 Sec. 5) */
+	if (reass->pkt[0] && net_pkt_ipv6_fragment_offset(reass->pkt[0]) == 0) {
+		net_icmpv6_send_error(reass->pkt[0], NET_ICMPV6_TIME_EXCEEDED, 1, 0);
+	}
+
 	reassembly_cancel(reass->id, &reass->src, &reass->dst);
 }
 
@@ -245,10 +250,13 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	/* We start from 2nd packet which is then appended to
 	 * the first one.
 	 */
-	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		int removed_len;
 
 		pkt = reass->pkt[i];
+		if (!pkt) {
+			break;
+		}
 
 		net_pkt_cursor_init(pkt);
 
@@ -362,65 +370,90 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
 }
 
 /* Verify that we have all the fragments received and in correct order.
+ * Return:
+ * - a negative value if the fragments are erroneous and must be dropped
+ * - zero if we are expecting more fragments
+ * - a positive value if we can proceed with the reassembly
  */
-static bool fragment_verify(struct net_ipv6_reassembly *reass)
+static int fragments_are_ready(struct net_ipv6_reassembly *reass)
 {
-	uint16_t offset;
-	int i, prev_len;
+	unsigned int expected_offset = 0;
+	bool more = true;
+	int i;
 
-	prev_len = net_pkt_get_len(reass->pkt[0]);
-	offset = net_pkt_ipv6_fragment_offset(reass->pkt[0]);
+	/* Fragments can arrive in any order, for example in reverse order:
+	 *   1 -> Fragment3(M=0, offset=x2)
+	 *   2 -> Fragment2(M=1, offset=x1)
+	 *   3 -> Fragment1(M=1, offset=0)
+	 * We have to test several requirements before proceeding with the reassembly:
+	 * - We received the first fragment (Fragment Offset is 0)
+	 * - All intermediate fragments are contiguous
+	 * - The More bit of the last fragment is 0
+	 */
+	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
+		struct net_pkt *pkt = reass->pkt[i];
+		unsigned int offset;
+		int payload_len;
 
-	NET_DBG("pkt %p offset %u", reass->pkt[0], offset);
-
-	if (offset != 0U) {
-		return false;
-	}
-
-	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		offset = net_pkt_ipv6_fragment_offset(reass->pkt[i]);
-
-		NET_DBG("pkt %p offset %u prev_len %d", reass->pkt[i],
-			offset, prev_len);
-
-		if (prev_len < offset) {
-			/* Something wrong with the offset value */
-			return false;
+		if (!pkt) {
+			break;
 		}
 
-		prev_len = net_pkt_get_len(reass->pkt[i]);
+		offset = net_pkt_ipv6_fragment_offset(pkt);
+
+		if (offset < expected_offset) {
+			/* Overlapping or duplicated
+			 * According to RFC8200 we can drop it
+			 */
+			return -EBADMSG;
+		} else if (offset != expected_offset) {
+			/* Not contiguous, let's wait for fragments */
+			return 0;
+		}
+
+		payload_len = net_pkt_get_len(pkt) - net_pkt_ipv6_fragment_start(pkt);
+		payload_len -= sizeof(struct net_ipv6_frag_hdr);
+		if (payload_len < 0) {
+			return -EBADMSG;
+		}
+
+		expected_offset += payload_len;
+		more = net_pkt_ipv6_fragment_more(pkt);
 	}
 
-	return true;
+	if (more) {
+		return 0;
+	}
+
+	return 1;
 }
 
 static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 {
 	int i;
 
-	for (i = pos + 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = pos + 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (!reass->pkt[i]) {
 			NET_DBG("Moving [%d] %p (offset 0x%x) to [%d]",
 				pos, reass->pkt[pos],
 				net_pkt_ipv6_fragment_offset(reass->pkt[pos]),
-				i);
+				pos + 1);
 
-			/* Do we have enough space in packet array to make
-			 * the move?
+			/* pkt[i] is free, so shift everything between
+			 * [pos] and [i - 1] by one element
 			 */
-			if (((i - pos) + 1) >
-			    (NET_IPV6_FRAGMENTS_MAX_PKT - i)) {
-				return -ENOMEM;
-			}
-
-			memmove(&reass->pkt[i], &reass->pkt[pos],
+			memmove(&reass->pkt[pos + 1], &reass->pkt[pos],
 				sizeof(void *) * (i - pos));
+
+			/* pkt[pos] is now free */
+			reass->pkt[pos] = NULL;
 
 			return 0;
 		}
 	}
 
-	return -EINVAL;
+	/* We do not have free space left in the array */
+	return -ENOMEM;
 }
 
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
@@ -432,6 +465,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	bool found;
 	uint8_t more;
 	uint32_t id;
+	int ret;
 	int i;
 
 	if (!reassembly_init_done) {
@@ -464,23 +498,22 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	}
 
 	more = flag & 0x01;
-	net_pkt_set_ipv6_fragment_offset(pkt, flag & 0xfff8);
+	net_pkt_set_ipv6_fragment_flags(pkt, flag);
 
-	if (!reass->pkt[0]) {
-		NET_DBG("Storing pkt %p to slot %d offset %d",
-			pkt, 0, net_pkt_ipv6_fragment_offset(pkt));
-		reass->pkt[0] = pkt;
-
-		reassembly_info("Reassembly 1st pkt", reass);
-
-		/* Wait for more fragments to receive. */
-		goto accept;
+	if (more && net_pkt_get_len(pkt) % 8) {
+		/* Fragment length is not multiple of 8, discard
+		 * the packet and send parameter problem error with the
+		 * offset of the "Payload Length" field in the IPv6 header.
+		 */
+		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
+				      NET_ICMPV6_PARAM_PROB_HEADER, NET_IPV6H_LENGTH_OFFSET);
+		goto drop;
 	}
 
 	/* The fragments might come in wrong order so place them
 	 * in reassembly chain in correct order.
 	 */
-	for (i = 0, found = false; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 0, found = false; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (reass->pkt[i]) {
 			if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) <
 			    net_pkt_ipv6_fragment_offset(pkt)) {
@@ -512,16 +545,19 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (more) {
-		if (net_pkt_get_len(pkt) % 8) {
-			/* Fragment length is not multiple of 8, discard
-			 * the packet and send parameter problem error.
-			 */
-			net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
-					      NET_ICMPV6_PARAM_PROB_OPTION, 0);
-			goto drop;
+	ret = fragments_are_ready(reass);
+	if (ret < 0) {
+		NET_DBG("Reassembled IPv6 verify failed, dropping id %u",
+			reass->id);
+
+		/* Let the caller release the already inserted pkt */
+		if (i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT) {
+			reass->pkt[i] = NULL;
 		}
 
+		net_pkt_unref(pkt);
+		goto drop;
+	} else if (ret == 0) {
 		reassembly_info("Reassembly nth pkt", reass);
 
 		NET_DBG("More fragments to be received");
@@ -529,19 +565,6 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	}
 
 	reassembly_info("Reassembly last pkt", reass);
-
-	if (!fragment_verify(reass)) {
-		NET_DBG("Reassembled IPv6 verify failed, dropping id %u",
-			reass->id);
-
-		/* Let the caller release the already inserted pkt */
-		if (i < NET_IPV6_FRAGMENTS_MAX_PKT) {
-			reass->pkt[i] = NULL;
-		}
-
-		net_pkt_unref(pkt);
-		goto drop;
-	}
 
 	/* The last fragment received, reassemble the packet */
 	reassemble_packet(reass);

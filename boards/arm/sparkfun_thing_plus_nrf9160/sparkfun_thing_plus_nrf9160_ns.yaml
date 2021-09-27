@@ -1,5 +1,5 @@
-identifier: nrf9160_innblue21ns
-name: nRF9160-INNBLUE21-Non-Secure
+identifier: sparkfun_thing_plus_nrf9160_ns
+name: Sparkfun-Thing-Plus-nRF9160-Non-Secure
 type: mcu
 arch: arm
 toolchain:

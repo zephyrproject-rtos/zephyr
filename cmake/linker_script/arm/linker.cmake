@@ -59,9 +59,9 @@ else()
 endif()
 
 zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
-zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION)
+zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
-zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION)
+zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
 
 # should go to a relocation.cmake - from include/linker/rel-sections.ld - start
 zephyr_linker_section(NAME  .rel.plt  HIDDEN)

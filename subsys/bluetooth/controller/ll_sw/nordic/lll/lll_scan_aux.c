@@ -278,8 +278,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 */
 	if (unlikely(scan_lll->is_stop ||
 		     (scan_lll->conn &&
-		      (scan_lll->conn->master.initiated ||
-		       scan_lll->conn->master.cancelled)))) {
+		      (scan_lll->conn->central.initiated ||
+		       scan_lll->conn->central.cancelled)))) {
 		radio_isr_set(isr_early_abort, lll);
 		radio_disable();
 
@@ -333,14 +333,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 		radio_ar_configure(count, irks, (lll->phy << 2) | BIT(1));
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) &&
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
 		   scan_lll->filter_policy) {
 		/* Setup Radio Filter */
-		struct lll_filter *wl = ull_filter_lll_get(true);
+		struct lll_filter *fal = ull_filter_lll_get(true);
 
-		radio_filter_configure(wl->enable_bitmask,
-				       wl->addr_type_bitmask,
-				       (uint8_t *)wl->bdaddr);
+		radio_filter_configure(fal->enable_bitmask,
+				       fal->addr_type_bitmask,
+				       (uint8_t *)fal->bdaddr);
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
@@ -540,13 +540,13 @@ void lll_scan_aux_isr_aux_setup(void *param)
 
 		radio_ar_configure(count, irks, (phy_aux << 2) | BIT(1));
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 		/* Setup Radio Filter */
-		struct lll_filter *wl = ull_filter_lll_get(true);
+		struct lll_filter *fal = ull_filter_lll_get(true);
 
-		radio_filter_configure(wl->enable_bitmask,
-				       wl->addr_type_bitmask,
-				       (uint8_t *) wl->bdaddr);
+		radio_filter_configure(fal->enable_bitmask,
+				       fal->addr_type_bitmask,
+				       (uint8_t *) fal->bdaddr);
 	}
 
 	/* Setup radio rx on micro second offset. Note that radio_end_us stores
@@ -739,7 +739,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn && !lll->conn->master.cancelled &&
+	} else if (lll->conn && !lll->conn->central.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   lll_scan_ext_tgta_check(lll, false, true, pdu,
 					   rl_idx)) {
@@ -879,7 +879,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		 */
 
 		/* Stop further connection initiation */
-		lll->conn->master.initiated = 1U;
+		lll->conn->central.initiated = 1U;
 
 		/* Stop further initiating events */
 		lll->is_stop = 1U;
@@ -1287,7 +1287,7 @@ static void isr_rx_connect_rsp(void *param)
 		struct node_rx_ftr *ftr;
 
 		/* Try again with connection initiation */
-		lll->conn->master.initiated = 0U;
+		lll->conn->central.initiated = 0U;
 
 		/* Dont stop initiating events on primary channels */
 		lll->is_stop = 0U;

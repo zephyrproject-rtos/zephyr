@@ -577,7 +577,6 @@ endfunction()
 function(zephyr_library_property)
   set(single_args "ALLOW_EMPTY")
   cmake_parse_arguments(LIB_PROP "" "${single_args}" "" ${ARGN})
-  target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 
   if(LIB_PROP_UNPARSED_ARGUMENTS)
       message(FATAL_ERROR "zephyr_library_property(${ARGV0} ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
@@ -3084,8 +3083,8 @@ function(zephyr_linker_dts_memory)
 endfunction()
 
 # Usage:
-#   zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>])
-#   zephyr_linker_group(NAME <name> GROUP <group>)
+#   zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>] [SYMBOL <SECTION>])
+#   zephyr_linker_group(NAME <name> GROUP <group> [SYMBOL <SECTION>])
 #
 # Zephyr linker group.
 # This function specifies a group inside a memory region or another group.
@@ -3109,6 +3108,8 @@ endfunction()
 #                       If a group is used then the VMA region of that group will be used.
 # LMA <region|group>  : Memory region or group to be used for this group.
 # GROUP <group>       : Place the new group inside the existing group <group>
+# SYMBOL <SECTION>    : Specify that start symbol of the region should be identical
+#                       to the start address of the first section in the group.
 #
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
@@ -3154,7 +3155,8 @@ endfunction()
 # |                     |
 # +---------------------+
 function(zephyr_linker_group)
-  set(single_args "NAME;GROUP;LMA;VMA")
+  set(single_args "NAME;GROUP;LMA;SYMBOL;VMA")
+  set(symbol_values SECTION)
   cmake_parse_arguments(GROUP "" "${single_args}" "" ${ARGN})
 
   if(GROUP_UNPARSED_ARGUMENTS)
@@ -3167,6 +3169,12 @@ function(zephyr_linker_group)
     message(FATAL_ERROR "zephyr_linker_group(GROUP ...) cannot be used with "
                         "VMA or LMA"
     )
+  endif()
+
+  if(DEFINED GROUP_SYMBOL)
+    if(NOT ${GROUP_SYMBOL} IN_LIST symbol_values)
+      message(FATAL_ERROR "zephyr_linker_group(SYMBOL ...) given unknown value")
+    endif()
   endif()
 
   set(GROUP)

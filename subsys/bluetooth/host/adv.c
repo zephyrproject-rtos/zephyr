@@ -413,6 +413,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	struct bt_hci_cp_le_set_ext_adv_data *set_data;
 	struct net_buf *buf;
 	int err;
+	uint8_t max_data_size;
 
 	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
 	if (!buf) {
@@ -422,8 +423,15 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	set_data = net_buf_add(buf, sizeof(*set_data));
 	(void)memset(set_data, 0, sizeof(*set_data));
 
-	err = set_data_add_complete(set_data->data, BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN,
-				    ad, ad_len, &set_data->len);
+	if (atomic_test_bit(adv->flags, BT_ADV_EXT_ADV)) {
+		max_data_size = BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN;
+	} else {
+		max_data_size = BT_GAP_ADV_MAX_ADV_DATA_LEN;
+	}
+
+	err = set_data_add_complete(set_data->data, max_data_size, ad, ad_len,
+				    &set_data->len);
+
 	if (err) {
 		net_buf_unref(buf);
 		return err;
@@ -695,16 +703,16 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 static uint8_t get_filter_policy(uint32_t options)
 {
 	if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
-		return BT_LE_ADV_FP_NO_WHITELIST;
+		return BT_LE_ADV_FP_NO_FILTER;
 	} else if ((options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) &&
 		   (options & BT_LE_ADV_OPT_FILTER_CONN)) {
-		return BT_LE_ADV_FP_WHITELIST_BOTH;
+		return BT_LE_ADV_FP_FILTER_BOTH;
 	} else if (options & BT_LE_ADV_OPT_FILTER_SCAN_REQ) {
-		return BT_LE_ADV_FP_WHITELIST_SCAN_REQ;
+		return BT_LE_ADV_FP_FILTER_SCAN_REQ;
 	} else if (options & BT_LE_ADV_OPT_FILTER_CONN) {
-		return BT_LE_ADV_FP_WHITELIST_CONN_IND;
+		return BT_LE_ADV_FP_FILTER_CONN_IND;
 	} else {
-		return BT_LE_ADV_FP_NO_WHITELIST;
+		return BT_LE_ADV_FP_NO_FILTER;
 	}
 }
 

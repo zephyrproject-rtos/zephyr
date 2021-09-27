@@ -92,7 +92,6 @@ enum sm_engine_state {
 	ENGINE_UPDATE_SENT,
 	ENGINE_DEREGISTER,
 	ENGINE_DEREGISTER_SENT,
-	ENGINE_DEREGISTER_FAILED,
 	ENGINE_DEREGISTERED,
 	ENGINE_NETWORK_ERROR,
 };
@@ -176,7 +175,7 @@ static void set_sm_state(uint8_t sm_state)
 static bool sm_is_registered(void)
 {
 	return (client.engine_state >= ENGINE_REGISTRATION_DONE &&
-		client.engine_state <= ENGINE_DEREGISTER_FAILED);
+		client.engine_state <= ENGINE_DEREGISTER_SENT);
 }
 
 static uint8_t get_sm_state(void)
@@ -195,14 +194,40 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE;
 	} else
 #endif
+	{
+		if (client.engine_state == ENGINE_REGISTRATION_SENT) {
+			event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
+		} else if (client.engine_state == ENGINE_UPDATE_SENT) {
+			event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
+		} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
+			event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
+		} else {
+			/* TODO: unknown timeout state */
+		}
+	}
+
+	set_sm_state(sm_state);
+
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
+		client.event_cb(client.ctx, event);
+	}
+}
+
+static void sm_handle_failure_state(enum sm_engine_state sm_state)
+{
+	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (client.engine_state == ENGINE_BOOTSTRAP_REG_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE;
+	} else
+#endif
 	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
 	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
 	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
-	} else {
-		/* TODO: unknown timeout state */
 	}
 
 	set_sm_state(sm_state);
@@ -244,6 +269,24 @@ void engine_trigger_update(bool update_objects)
 	}
 }
 
+static inline const char *code2str(uint8_t code)
+{
+	switch (code) {
+	case COAP_RESPONSE_CODE_BAD_REQUEST:
+		return "Bad Request";
+	case COAP_RESPONSE_CODE_FORBIDDEN:
+		return "Forbidden";
+	case COAP_RESPONSE_CODE_NOT_FOUND:
+		return "Not Found";
+	case COAP_RESPONSE_CODE_PRECONDITION_FAILED:
+		return "Precondition Failed";
+	default:
+		break;
+	}
+
+	return "Unknown";
+}
+
 /* state machine reply callbacks */
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -261,21 +304,15 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 	if (code == COAP_RESPONSE_CODE_CHANGED) {
 		LOG_INF("Bootstrap registration done!");
 		set_sm_state(ENGINE_BOOTSTRAP_REG_DONE);
-	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
-		/* TODO: try and find another bootstrap server entry? */
-		LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
-		set_sm_state(ENGINE_DO_REGISTRATION);
-	} else if (code == COAP_RESPONSE_CODE_FORBIDDEN) {
-		/* TODO: try and find another bootstrap server entry? */
-		LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
-		set_sm_state(ENGINE_DO_REGISTRATION);
-	} else {
-		/* TODO: Read payload for error message? */
-		LOG_ERR("Failed with code %u.%u. Retrying ...",
-			COAP_RESPONSE_CODE_CLASS(code),
-			COAP_RESPONSE_CODE_DETAIL(code));
-		set_sm_state(ENGINE_INIT);
+		return 0;
 	}
+
+	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
+		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
+		code2str(code));
+
+	lwm2m_engine_context_close(client.ctx);
+	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
 }
@@ -333,23 +370,15 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 			log_strdup(client.server_ep));
 
 		return 0;
-	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
-		LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
-		set_sm_state(ENGINE_REGISTRATION_DONE);
-		return 0;
-	} else if (code == COAP_RESPONSE_CODE_FORBIDDEN) {
-		LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
-		set_sm_state(ENGINE_REGISTRATION_DONE);
-		return 0;
 	}
 
-	/* TODO: Read payload for error message? */
-	/* Possible error response codes: 4.00 Bad request */
-	LOG_ERR("failed with code %u.%u. Re-init network",
-		COAP_RESPONSE_CODE_CLASS(code),
-		COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
+		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
+		code2str(code));
 
-	set_sm_state(ENGINE_INIT);
+	lwm2m_engine_context_close(client.ctx);
+	sm_handle_failure_state(ENGINE_IDLE);
+
 	return 0;
 }
 
@@ -380,12 +409,11 @@ static int do_update_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	/* TODO: Read payload for error message? */
-	/* Possible error response codes: 4.00 Bad request & 4.04 Not Found */
-	LOG_ERR("Failed with code %u.%u. Retrying registration",
-		COAP_RESPONSE_CODE_CLASS(code),
-		COAP_RESPONSE_CODE_DETAIL(code));
-	set_sm_state(ENGINE_DO_REGISTRATION);
+	LOG_ERR("Failed with code %u.%u (%s). Retrying registration.",
+		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
+		code2str(code));
+
+	sm_handle_failure_state(ENGINE_DO_REGISTRATION);
 
 	return 0;
 }
@@ -413,14 +441,15 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 		LOG_INF("Deregistration success");
 		lwm2m_engine_context_close(client.ctx);
 		set_sm_state(ENGINE_DEREGISTERED);
-	} else {
-		LOG_ERR("failed with code %u.%u",
-			COAP_RESPONSE_CODE_CLASS(code),
-			COAP_RESPONSE_CODE_DETAIL(code));
-		if (get_sm_state() == ENGINE_DEREGISTER_SENT) {
-			set_sm_state(ENGINE_DEREGISTER_FAILED);
-		}
+		return 0;
 	}
+
+	LOG_ERR("Failed with code %u.%u (%s). Not Retrying",
+		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
+		code2str(code));
+
+	lwm2m_engine_context_close(client.ctx);
+	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
 }
@@ -1003,10 +1032,6 @@ static void lwm2m_rd_client_service(struct k_work *work)
 
 		case ENGINE_DEREGISTER_SENT:
 			/* wait for deregister to be done or reset */
-			break;
-
-		case ENGINE_DEREGISTER_FAILED:
-			set_sm_state(ENGINE_IDLE);
 			break;
 
 		case ENGINE_DEREGISTERED:

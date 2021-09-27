@@ -83,7 +83,7 @@ void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 	}
 
 	if (msg && fmt) {
-		plen = cbvprintf_package(msg->data, plen, 0, fmt, ap);
+		plen = cbvprintf_package(msg->data, (size_t)plen, 0, fmt, ap);
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 

@@ -35,7 +35,7 @@ Deprecated in this release
 
 * :c:macro:`BT_CONN_ROLE_MASTER` and :c:macro:`BT_CONN_ROLE_SLAVE`
   have been deprecated in favor of
-  :c:macro:`BT_CONN_ROLE_CENTRAL` and :c:macro:`BT_CONN_ROLE_PERIPHAL`
+  :c:macro:`BT_CONN_ROLE_CENTRAL` and :c:macro:`BT_CONN_ROLE_PERIPHERAL`
 
 * :c:macro:`BT_LE_SCAN_OPT_FILTER_WHITELIST`
   has been deprecated in favor of
@@ -49,6 +49,42 @@ Deprecated in this release
   :c:func:`bt_le_filter_accept_list_add`
   :c:func:`bt_le_filter_accept_list_remove`
   :c:func:`bt_le_filter_accept_list_clear`
+
+Modified in this release
+
+* The following Bluetooth macros and structures in :file:`hci.h` have been
+  modified to align with the inclusive naming in the v5.3 specification:
+
+  * ``BT_LE_FEAT_BIT_SLAVE_FEAT_REQ`` is now ``BT_LE_FEAT_BIT_PER_INIT_FEAT_XCHG``
+  * ``BT_LE_FEAT_BIT_CIS_MASTER`` is now ``BT_LE_FEAT_BIT_CIS_CENTRAL``
+  * ``BT_LE_FEAT_BIT_CIS_SLAVE`` is now ``BT_LE_FEAT_BIT_CIS_PERIPHERAL``
+  * ``BT_FEAT_LE_SLAVE_FEATURE_XCHG`` is now ``BT_FEAT_LE_PER_INIT_FEAT_XCHG``
+  * ``BT_FEAT_LE_CIS_MASTER`` is now ``BT_FEAT_LE_CIS_CENTRAL``
+  * ``BT_FEAT_LE_CIS_SLAVE`` is now ``BT_FEAT_LE_CIS_PERIPHERAL``
+  * ``BT_LE_STATES_SLAVE_CONN_ADV`` is now ``BT_LE_STATES_PER_CONN_ADV``
+  * ``BT_HCI_OP_LE_READ_WL_SIZE`` is now ``BT_HCI_OP_LE_READ_FAL_SIZE``
+  * ``bt_hci_rp_le_read_wl_size`` is now ``bt_hci_rp_le_read_fal_size``
+  * ``bt_hci_rp_le_read_wl_size::wl_size`` is now ``bt_hci_rp_le_read_fal_size::fal_size``
+  * ``BT_HCI_OP_LE_CLEAR_WL`` is now ``BT_HCI_OP_LE_CLEAR_FAL``
+  * ``BT_HCI_OP_LE_ADD_DEV_TO_WL`` is now ``BT_HCI_OP_LE_REM_DEV_FROM_FAL``
+  * ``bt_hci_cp_le_add_dev_to_wl`` is now ``bt_hci_cp_le_add_dev_to_fal``
+  * ``BT_HCI_OP_LE_REM_DEV_FROM_WL`` is now ``BT_HCI_OP_LE_REM_DEV_FROM_FAL``
+  * ``bt_hci_cp_le_rem_dev_from_wl`` is now ``bt_hci_cp_le_rem_dev_from_fal``
+  * ``BT_HCI_ROLE_MASTER`` is now ``BT_HCI_ROLE_CENTRAL``
+  * ``BT_HCI_ROLE_SLAVE`` is now ``BT_HCI_ROLE_PERIPHERAL``
+  * ``BT_EVT_MASK_CL_SLAVE_BC_RX`` is now ``BT_EVT_MASK_CL_PER_BC_RX``
+  * ``BT_EVT_MASK_CL_SLAVE_BC_TIMEOUT`` is now ``BT_EVT_MASK_CL_PER_BC_TIMEOUT``
+  * ``BT_EVT_MASK_SLAVE_PAGE_RSP_TIMEOUT`` is now ``BT_EVT_MASK_PER_PAGE_RSP_TIMEOUT``
+  * ``BT_EVT_MASK_CL_SLAVE_BC_CH_MAP_CHANGE`` is now ``BT_EVT_MASK_CL_PER_BC_CH_MAP_CHANGE``
+  * ``m_*`` structure members are now ``c_*``
+  * ``s_*`` structure members are now ``p_*``
+
+* The ``CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY`` Kconfig option is now
+  :kconfig:`CONFIG_BT_PERIPHERAL_PREF_LATENCY`
+* The ``CONFIG_BT_CTLR_SLAVE_FEAT_REQ_SUPPORT`` Kconfig option is now
+  :kconfig:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT`
+* The ``CONFIG_BT_CTLR_SLAVE_FEAT_REQ`` Kconfig option is now
+  :kconfig:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG`
 
 Changes in this release
 ==========================
@@ -70,6 +106,8 @@ Removed APIs in this release
   in favor of direct use of chosen node ``zephyr,bt-uart``.
 * Removed ``CONFIG_BT_MONITOR_ON_DEV_NAME`` Kconfig option
   in favor of direct use of chosen node ``zephyr,bt-mon-uart``.
+* Removed ``CONFIG_MODEM_GSM_UART_NAME`` Kconfig option
+  in favor of direct use of chosen node ``zephyr,gsm-ppp``.
 * Removed ``CONFIG_UART_MCUMGR_ON_DEV_NAME`` Kconfig option
   in favor of direct use of chosen node ``zephyr,uart-mcumgr``.
 * Removed ``CONFIG_UART_CONSOLE_ON_DEV_NAME`` Kconfig option
@@ -110,6 +148,12 @@ Architectures
   * AARCH64
 
 
+* RISC-V
+
+  * Added support to RISC-V CPU devicetree compatible bindings
+  * Added support to link with ITCM & DTCM sections
+
+
 * x86
 
 
@@ -139,6 +183,16 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Added Atmel SAM0 pinctrl support
+  * Added Atmel SAM4L USBC device controller
+  * Added Atmel GMAC support for MDIO driver
+  * Added Atmel GMAC support to use generic PHY driver
+  * Added Atmel SAM counter (TC) Driver
+  * Added Atmel SAM DAC (DACC) driver
+  * Enabled Atmel SAM ``clock-frequency`` support from devicetree
+  * Free Atmel SAM TRACESWO pin when unused
+  * Enabled Cypress PSoC-6 Cortex-M4 support
+
 
 * Changes for ARC boards:
 
@@ -156,6 +210,21 @@ Boards & SoC Support
 
 
 * Made these changes in other boards:
+
+  * arduino_due: Added support for TC driver
+  * atsame54_xpro: Added support for PHY driver
+  * sam4l_ek: Added support for TC driver
+  * sam4e_xpro: Added support for PHY driver
+  * sam4e_xpro: Added support for TC driver
+  * sam4s_xplained: Added support for TC driver
+  * sam_e70_xplained: Added support for DACC driver
+  * sam_e70_xplained: Added support for PHY driver
+  * sam_e70_xplained: Added support for TC driver
+  * sam_v71_xult: Added support for DACC driver
+  * sam_v71_xult: Added support for PHY driver
+  * sam_v71_xult: Added support for TC driver
+  * sam_v71_xult: Enable pwm on LED0
+  * cy8ckit_062_ble: Added arduino's nexus map
 
 
 * Added support for these following shields:
@@ -181,10 +250,14 @@ Drivers and Sensors
 
 * Counter
 
+  * Add Atmel SAM counter (TC) Driver
+
 
 * DAC
 
-   * Added support for Microchip MCP4725
+  * Added Atmel SAM DAC (DACC) driver
+  * Added support for Microchip MCP4725
+
 
 * Disk
 
@@ -199,7 +272,9 @@ Drivers and Sensors
 
 * DMA
 
+  * Added Atmel SAM XDMAC reload support
   * Added support on STM32G0 and STM32H7
+
 
 * EEPROM
 
@@ -210,6 +285,11 @@ Drivers and Sensors
   * Added support for Microchip eSPI SAF
 
 * Ethernet
+
+  * Added Atmel SAM/SAM0 GMAC devicetree support
+  * Added Atmel SAM/SAM0 MDIO driver
+  * Added MDIO driver
+  * Added generic PHY driver
 
 
 * Flash
@@ -225,6 +305,8 @@ Drivers and Sensors
 
 
 * I2S
+
+  * Added Atmel SAM I2S driver support to XDMAC reload
 
 
 * IEEE 802.15.4
@@ -243,6 +325,13 @@ Drivers and Sensors
 
 * Modem
 
+  * Added gsm_ppp devicetree support
+
+
+* Pinmux
+
+  * Added Atmel SAM0 pinctrl support
+
 
 * PWM
 
@@ -260,6 +349,8 @@ Drivers and Sensors
 
 
 * USB
+
+  * Add Atmel SAM4L USBC device controller
 
 
 * Watchdog
@@ -341,6 +432,12 @@ Build and Infrastructure
 
 * West (extensions)
 
+    * openocd runner: Zephyr thread awareness is now available in GDB by default
+      for application builds with :kconfig:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
+      in :ref:`kconfig`. This applies to ``west debug``, ``west debugserver``,
+      and ``west attach``. OpenOCD version later than 0.11.0 must be installed
+      on the host system.
+
 
 Libraries / Subsystems
 **********************
@@ -365,6 +462,17 @@ Libraries / Subsystems
     * ``device_busy_clear`` -> ``pm_device_busy_clear``
     * ``device_busy_check`` -> ``pm_device_is_busy``
     * ``device_any_busy_check`` -> ``pm_device_is_any_busy``
+
+  * The device power management callback (``pm_device_control_callback_t``) has
+    been largely simplified to work based on *actions*, resulting in simpler and
+    more natural implementations. This principle is also used by other OSes like
+    the Linux Kernel. As a result, the callback argument list has been reduced
+    to the device instance and an action (e.g. ``PM_DEVICE_ACTION_RESUME``).
+    Other improvements include specification of error codes, removal of some
+    unused/unclear states, or guarantees such as avoid calling a device for
+    suspend/resume if it is already at the right state. All these changes
+    together have allowed simplifying multiple device power management callback
+    implementations.
 
 * Logging
 

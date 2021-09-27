@@ -1,5 +1,5 @@
-identifier: circuitdojo_feather_nrf9160ns
-name: CircuitDojo-Feather-nRF9160-Non-Secure
+identifier: nrf9160_innblue21_ns
+name: nRF9160-INNBLUE21-Non-Secure
 type: mcu
 arch: arm
 toolchain:

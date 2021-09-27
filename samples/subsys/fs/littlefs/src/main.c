@@ -14,16 +14,6 @@
 #include <fs/littlefs.h>
 #include <storage/flash_map.h>
 
-/*
- * FIXME: The Zephyr always overrides uintptr_t as long int, which causes type size mismatch with
- * 32bit tools that may define PRIuPTR as "u".
- * See: include/toolchain/zephyr_stdint.h.
- * The UINTPTR_T_CAST should be replaced with cast to uintptr_t when this thing gets fixed.
- */
-#undef PRIuPTR
-#define PRIuPTR		"lu"
-#define UINTPTR_T_CAST(t)	((unsigned long)(t))
-
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
 
@@ -84,8 +74,7 @@ void main(void)
 	rc = fs_mount(mp);
 	if (rc < 0) {
 		printk("FAIL: mount id %" PRIuPTR " at %s: %d\n",
-		       UINTPTR_T_CAST(mp->storage_dev), mp->mnt_point,
-		       rc);
+		       (uintptr_t)mp->storage_dev, mp->mnt_point, rc);
 		return;
 	}
 	printk("%s mount: %d\n", mp->mnt_point, rc);

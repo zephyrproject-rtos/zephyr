@@ -10,10 +10,8 @@
 #include <device.h>
 #include <drivers/i2c.h>
 
-#define I2C_NODE DT_ALIAS(i2c_0)
-
 /**
- * @file Sample app using the Fujitsu MB85RC256V FRAM through ARC I2C.
+ * @file Sample app using the Fujitsu MB85RC256V FRAM through I2C.
  */
 
 #define FRAM_I2C_ADDR	0x50
@@ -72,7 +70,7 @@ static int read_bytes(const struct device *i2c_dev, uint16_t addr,
 
 void main(void)
 {
-	const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
+	const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 	uint8_t cmp_data[16];
 	uint8_t data[16];
 	int i, ret;

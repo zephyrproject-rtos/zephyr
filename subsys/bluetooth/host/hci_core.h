@@ -38,7 +38,7 @@ enum {
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
-	BT_DEV_SCAN_WL,
+	BT_DEV_SCAN_FILTERED,
 	BT_DEV_SCAN_LIMITED,
 	BT_DEV_INITIATING,
 
@@ -396,7 +396,7 @@ void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
 int bt_setup_random_id_addr(void);
-void bt_setup_public_id_addr(void);
+int bt_setup_public_id_addr(void);
 
 void bt_finalize_init(void);
 

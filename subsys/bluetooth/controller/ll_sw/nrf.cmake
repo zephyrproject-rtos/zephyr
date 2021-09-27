@@ -37,11 +37,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
     zephyr_library_sources_ifdef(
       CONFIG_BT_PERIPHERAL
-      ll_sw/nordic/lll/lll_slave.c
+      ll_sw/nordic/lll/lll_peripheral.c
       )
     zephyr_library_sources_ifdef(
       CONFIG_BT_CENTRAL
-      ll_sw/nordic/lll/lll_master.c
+      ll_sw/nordic/lll/lll_central.c
       )
   endif()
   zephyr_library_sources_ifdef(
