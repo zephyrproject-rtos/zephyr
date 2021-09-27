@@ -1035,7 +1035,7 @@ int bt_audio_cig_terminate(struct bt_audio_chan *chan)
 	}
 
 	BT_DBG("CIG not found for chan %p", chan);
-	return -EINVAL;
+	return 0; /* Return 0 as it would already be terminated */
 }
 
 int bt_audio_chan_connect(struct bt_audio_chan *chan)
