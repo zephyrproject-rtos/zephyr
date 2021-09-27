@@ -74,8 +74,6 @@ extern "C" {
 /** Broadcast code size */
 #define BT_ISO_BROADCAST_CODE_SIZE  16
 
-struct bt_iso_chan;
-
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
  *  context.
