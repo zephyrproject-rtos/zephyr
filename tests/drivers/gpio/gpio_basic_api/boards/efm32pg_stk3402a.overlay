@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2021 Dennis Ruffer <daruffer@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa 3 0>;
+		in-gpios = <&gpioa 4 0>;
+	};
+};

@@ -723,6 +723,7 @@ class DeviceHandler(Handler):
             serial_device = hardware.serial
 
         logger.debug("Using serial device {}".format(serial_device))
+        logger.debug("Using serial baud {}".format(hardware.serial_baud))
 
         if (self.suite.west_flash is not None) or runner:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
@@ -779,7 +780,7 @@ class DeviceHandler(Handler):
         try:
             ser = serial.Serial(
                 serial_device,
-                baudrate=115200,
+                baudrate=hardware.serial_baud,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
@@ -3920,6 +3921,7 @@ class DUT(object):
     def __init__(self,
                  id=None,
                  serial=None,
+                 serial_baud=115200,
                  platform=None,
                  product=None,
                  serial_pty=None,
@@ -3930,6 +3932,7 @@ class DUT(object):
                  runner=None):
 
         self.serial = serial
+        self.serial_baud = serial_baud
         self.platform = platform
         self.serial_pty = serial_pty
         self._counter = Value("i", 0)
@@ -4021,8 +4024,10 @@ class HardwareMap:
         self.detected = []
         self.duts = []
 
-    def add_device(self, serial, platform, pre_script, is_pty):
+    def add_device(self, serial, baud, platform, pre_script, is_pty):
         device = DUT(platform=platform, connected=True, pre_script=pre_script)
+
+        device.serial_baud = baud
 
         if is_pty:
             device.serial_pty = serial
@@ -4042,6 +4047,9 @@ class HardwareMap:
             id = dut.get('id')
             runner = dut.get('runner')
             serial = dut.get('serial')
+            baud = dut.get('baud')
+            if (baud == None):
+                baud = 115200
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             new_dut = DUT(platform=platform,
@@ -4049,6 +4057,7 @@ class HardwareMap:
                           runner=runner,
                           id=id,
                           serial=serial,
+                          serial_baud=baud,
                           connected=serial is not None,
                           pre_script=pre_script,
                           post_script=post_script,

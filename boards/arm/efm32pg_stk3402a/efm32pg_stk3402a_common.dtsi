@@ -9,8 +9,8 @@
 	model = "Silicon Labs EFM32PG STK3402A board";
 
 	chosen {
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
+		zephyr,console = &leuart0;
+		zephyr,shell-uart = &leuart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		watchdog0 = &wdog0;

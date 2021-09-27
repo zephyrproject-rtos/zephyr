@@ -621,6 +621,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support")
 
+    parser.add_argument(
+        "--device-serial-baud", action="append", default=[],
+        help="Change the baud rate from 115200 default")
+
     serial = parser.add_mutually_exclusive_group()
     serial.add_argument("--device-serial",
                         help="""Serial device for accessing the board
@@ -924,12 +928,21 @@ def main():
         elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
                 if options.device_serial:
-                    hwm.add_device(options.device_serial,
+                    if options.device_serial_baud:
+                        hwm.add_device(options.device_serial,
+                                                 int(options.device_serial_baud[0]),
+                                                 options.platform[0],
+                                                 options.pre_script,
+                                                 False)
+                    else:
+                        hwm.add_device(options.device_serial,
+                                                 115200,
                                                  options.platform[0],
                                                  options.pre_script,
                                                  False)
                 else:
                     hwm.add_device(options.device_serial_pty,
+                                                 115200,
                                                  options.platform[0],
                                                  options.pre_script,
                                                  True)
