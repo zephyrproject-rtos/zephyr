@@ -937,6 +937,8 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 		new_thread = next_up();
 
+		z_sched_usage_switch(new_thread);
+
 		if (old_thread != new_thread) {
 			update_metairq_preempt(new_thread);
 			wait_for_switch(new_thread);
@@ -976,6 +978,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	}
 	return ret;
 #else
+	z_sched_usage_switch(_kernel.ready_q.cache);
 	_current->switch_handle = interrupted;
 	set_current(_kernel.ready_q.cache);
 	return _current->switch_handle;
@@ -1731,3 +1734,55 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 	}
 	return ret;
 }
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+
+static struct k_spinlock usage_lock;
+
+static uint32_t usage_now(void)
+{
+	uint32_t now = k_cycle_get_32();
+
+	/* Edge case: we use a zero as a null ("stop() already called") */
+	return (now == 0) ? 1 : now;
+}
+
+void z_sched_usage_start(struct k_thread *thread)
+{
+	/* One write through a volatile pointer doesn't require
+	 * synchronization as long as _usage() treats it as volatile
+	 * (we can't race with _stop() by design).
+	 */
+	_current_cpu->usage0 = usage_now();
+}
+
+void z_sched_usage_stop(void)
+{
+	k_spinlock_key_t k = k_spin_lock(&usage_lock);
+	uint32_t u0 = _current_cpu->usage0;
+
+	if (u0 != 0) {
+		_current->base.usage += usage_now() - u0;
+	}
+
+	_current_cpu->usage0 = 0;
+	k_spin_unlock(&usage_lock, k);
+}
+
+uint64_t z_sched_thread_usage(struct k_thread *thread)
+{
+	k_spinlock_key_t k = k_spin_lock(&usage_lock);
+	uint32_t u0 = _current_cpu->usage0, now = usage_now();
+	uint64_t ret = thread->base.usage;
+
+	if (u0 != 0) {
+		ret += now - u0;
+		thread->base.usage = ret;
+		_current_cpu->usage0 = now;
+	}
+
+	k_spin_unlock(&usage_lock, k);
+	return ret;
+}
+
+#endif /* CONFIG_SCHED_THREAD_USAGE */
