@@ -323,3 +323,8 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 
 	return ret;
 }
+
+const struct pm_state_info pm_power_state_next_get(void)
+{
+	return z_power_state;
+}
