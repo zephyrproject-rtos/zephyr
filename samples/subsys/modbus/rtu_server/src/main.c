@@ -109,7 +109,6 @@ const static struct modbus_iface_param server_param = {
 
 static int init_modbus_server(void)
 {
-	const uint32_t mb_rtu_br = 19200;
 	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
 	int iface;
 
