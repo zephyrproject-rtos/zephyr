@@ -1,0 +1,146 @@
+# Configuration for the wasm-micro-runtime (WAMR) module
+
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_WAMR_MODULE
+	bool
+
+menuconfig WAMR
+	bool "WebAssembly Micro Runtime support"
+	help
+	  This option enables the WebAssembly Micro Runtime library.
+
+if WAMR
+
+config WAMR_BUILD_TARGET
+	string "WAMR build target architecture"
+	help
+	  Set the target CPU architecture. Current supported targets are:
+		X86_64, X86_32, AARCH64, ARM, THUMB, XTENSA, ARC,
+		RISCV64, RSCV32 and MIPS.
+	  If it is not set, system will try to set it according to the
+	  board name and other config info.
+	  For ARM and THUMB, the format is <arch>[<sub-arch>][_VFP], where
+	  <sub-arch> is the ARM sub-architecture and the "_VFP" suffix
+	  means using VFP coprocessor registers s0-s15 (d0-d7) for passing
+	  arguments or returning results in standard procedure-call. Both
+	  <sub-arch> and "_VFP" are optional, e.g. ARMV7, ARMV7_VFP,
+	  THUMBV7, THUMBV7_VFP and so on.
+	  For AARCH64, the format is <arch>[<sub-arch>], VFP is enabled by
+	  default. <sub-arch> is optional, e.g. AARCH64, AARCH64V8,
+	  AARCH64V8.1 and so on.
+	  For RISCV64, the format is <arch>[_abi], where "_abi" is
+	  optional, currently the supported formats are RISCV64,
+	  RISCV64_LP64D and RISCV64_LP64. RISCV64 and RISCV64_LP64D are
+	  identical, using LP64D as abi (LP64 with hardware floating-point
+	  calling convention for FLEN=64). And RISCV64_LP64 uses LP64 as
+	  abi (Integer calling-convention only, and hardware floating-point
+	  calling convention is not used).
+	  For RISCV32, the format is <arch>[_abi], where "_abi" is
+	  optional, currently the supported formats are RISCV32,
+	  RISCV32_ILP32D and RISCV32_ILP32. RISCV32 and RISCV32_ILP32D are
+	  identical, using ILP32D as abi (ILP32 with hardware
+	  floating-point calling convention for FLEN=64). And RISCV32_ILP32
+	  uses ILP32 as abi (Integer calling-convention only, and hardware
+	  floating-point calling convention is not used).
+
+config WAMR_INTERP
+	bool "WebAssembly interpreter support"
+	default y
+	help
+	  Enable WebAssembly interpreter
+
+config WAMR_FAST_INTERP
+	bool "WebAssembly fast interpreter support"
+	depends on WAMR_INTERP
+	default y
+	help
+	  Enable WebAssembly fast interpreter, if not, the classic
+	  interpreter will be enabled
+
+config WAMR_AOT
+	bool "WebAssembly Ahead of Time support"
+	default y
+	help
+	  Enable WebAssembly Ahead of Time
+
+config WAMR_LIBC_BUILTIN
+	bool "WAMR built-in libc native library support"
+	default y
+	help
+	  Enable WAMR built-in libc native library
+
+config WAMR_LIBC_WASI
+	bool "WAMR WASI libc native library support"
+	default n
+	help
+	  Enable WAMR WASI libc native library
+
+config WAMR_LIB_PTHREAD
+	bool "WAMR pthread native native library support"
+	default n
+	help
+	  Enable WAMR built-in libc native library
+
+config WAMR_SIMD
+	bool "WAMR 128-bit SIMD support"
+	depends on WAMR_AOT
+	default y
+	help
+	  Enable WAMR 128-bit SIMD feature
+
+config WAMR_REF_TYPES
+	bool "WAMR reference types support"
+	default n
+	help
+	  Enable WAMR reference types feature
+
+config WAMR_MEMORY_PROFILING
+	bool "WAMR runtime memory profiling support"
+	default n
+	help
+	  Enable WAMR runtime memory profiling feature
+
+config WAMR_PERF_PROFILING
+	bool "WAMR runtime performance profiling support"
+	default n
+	help
+	  Enable WAMR runtime performance profiling feature
+
+config WAMR_DUMP_CALL_STACK
+	bool "WAMR runtime dump call stack support"
+	default n
+	help
+	  Enable dumping call stack when runtime throws
+	  exception while executing wasm functions
+
+config WAMR_APP_FRAMEWORK
+	bool "WAMR application framework support"
+	default n
+	help
+	  Enable WAMR application framework: the application manager to
+	  enable install/uninstall/query wasm applications from host,
+	  and the wasm app API libraries, including timer API, request
+	  and response handler, event publisher and subscriber, sensor
+	  API, wgl API and so on.
+
+config WAMR_MPU_STACK_COUNT
+	int "WAMR MPU stack count"
+	default 4
+	help
+	  The count of MPU stack: when multi-thread and Zephyr MPU are
+	  enabled, the native thread's stack must be previously defined
+	  by Macro provided by Zephyr, this setting configures how many
+	  mpu stacks are enabled, or, how many threads can be created.
+
+config WAMR_MPU_STACK_SIZE
+	int "WAMR MPU stack size"
+	default 4096
+	help
+	  The size of each MPU stack: when multi-thread and Zephyr MPU are
+	  enabled, the native thread's stack must be previously defined
+	  by Macro provided by Zephyr, this setting configures the size
+	  of each MPU stack.
+
+endif # WAMR

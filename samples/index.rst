@@ -25,6 +25,7 @@ Samples and Demos
    tfm_integration/tfm_integration.rst
    modules/*
    compression/*
+   wasm_micro_runtime/*
 
 .. comment
    To add a new sample document, please use the template available under
