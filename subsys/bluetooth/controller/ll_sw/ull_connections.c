@@ -1078,7 +1078,8 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 	rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	tx_time = MIN(conn->lll.dle.local.max_tx_time, PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
+	tx_time = MIN(conn->lll.dle.local.max_tx_time,
+		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
 	tx_time = PDU_DC_MAX_US(conn->lll.dle.local.max_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */
@@ -3677,7 +3678,8 @@ static inline void dle_max_time_get(const struct ll_conn *conn, uint16_t *max_rx
 	if (!conn->common.fex_valid || (!feature_coded_phy && !feature_phy_2m)) {
 		rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M);
 #if defined(CONFIG_BT_CTLR_PHY)
-		tx_time = CLAMP(conn->default_tx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
+		tx_time = CLAMP(conn->default_tx_time,
+				PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
 				PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M));
 #else /* !CONFIG_BT_CTLR_PHY */
 		tx_time = PDU_DC_MAX_US(conn->default_tx_octets, PHY_1M);
@@ -3688,7 +3690,8 @@ static inline void dle_max_time_get(const struct ll_conn *conn, uint16_t *max_rx
 	} else if (feature_coded_phy) {
 		rx_time = MAX(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_CODED),
 			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_CODED));
-		tx_time = MIN(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_CODED), conn->default_tx_time);
+		tx_time = MIN(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_CODED),
+			      conn->default_tx_time);
 		tx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M), tx_time);
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
@@ -3697,7 +3700,8 @@ static inline void dle_max_time_get(const struct ll_conn *conn, uint16_t *max_rx
 		rx_time = MAX(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_2M),
 			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M));
 		tx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
-			      MIN(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_2M), conn->default_tx_time));
+			      MIN(PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY_2M),
+				  conn->default_tx_time));
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 #endif /* CONFIG_BT_CTLR_PHY */
 	}
@@ -4995,8 +4999,10 @@ static void length_resp_send(struct ll_conn *conn, struct node_tx *tx, uint16_t 
 	pdu_tx->llctrl.length_rsp.max_tx_octets = sys_cpu_to_le16(eff_tx_octets);
 
 #if !defined(CONFIG_BT_CTLR_PHY)
-	pdu_tx->llctrl.length_rsp.max_rx_time = sys_cpu_to_le16(PDU_DC_MAX_US(eff_rx_octets, PHY_1M));
-	pdu_tx->llctrl.length_rsp.max_tx_time = sys_cpu_to_le16(PDU_DC_MAX_US(eff_tx_octets, PHY_1M));
+	pdu_tx->llctrl.length_rsp.max_rx_time =
+		sys_cpu_to_le16(PDU_DC_MAX_US(eff_rx_octets, PHY_1M));
+	pdu_tx->llctrl.length_rsp.max_tx_time =
+		sys_cpu_to_le16(PDU_DC_MAX_US(eff_tx_octets, PHY_1M));
 #else /* CONFIG_BT_CTLR_PHY */
 	pdu_tx->llctrl.length_rsp.max_rx_time = sys_cpu_to_le16(eff_rx_time);
 	pdu_tx->llctrl.length_rsp.max_tx_time = sys_cpu_to_le16(eff_tx_time);
@@ -5091,8 +5097,9 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		if (lr_rx_time >= PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)) {
 			eff_tx_time = MIN(lr_rx_time, max_tx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-			eff_tx_time =
-				MAX(eff_tx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, conn->lll.phy_tx));
+			eff_tx_time = MAX(eff_tx_time,
+					  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							conn->lll.phy_tx));
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 		}
 
@@ -5102,8 +5109,9 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		if (lr_tx_time >= PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)) {
 			eff_rx_time = MIN(lr_tx_time, max_rx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-			eff_rx_time =
-				MAX(eff_rx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, conn->lll.phy_rx));
+			eff_rx_time = MAX(eff_rx_time,
+					  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+							conn->lll.phy_rx));
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 		}
 #endif /* CONFIG_BT_CTLR_PHY */

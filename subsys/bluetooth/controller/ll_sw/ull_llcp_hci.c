@@ -977,8 +977,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
 	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) * 1000000UL / tx_rate;
-	time_outgoing = PDU_MAX_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) + PDU_MAX_US(0U, 0U, phy) +
-			(EVENT_IFS_US << 1);
+	time_outgoing = PDU_MAX_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
+		PDU_MAX_US(0U, 0U, phy) +
+		(EVENT_IFS_US << 1);
 
 	force_md_cnt = 0U;
 	if (time_incoming > time_outgoing) {
