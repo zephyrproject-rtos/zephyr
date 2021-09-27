@@ -65,7 +65,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 	 */
 	return 0;
 }
-#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 int ull_chan_reset(void)
 {
@@ -91,7 +91,7 @@ uint8_t ull_chan_map_get(uint8_t *const chan_map)
 static void chan_map_set(uint8_t const *const chan_map)
 #else
 void ull_chan_map_set(uint8_t const *const chan_map)
-#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 {
 	(void)memcpy(map, chan_map, sizeof(map));
 	count = util_ones_count_get(map, sizeof(map));
