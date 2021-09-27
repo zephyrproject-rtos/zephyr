@@ -199,7 +199,7 @@ extern "C" {
  * @return  HID Feature item
  */
 #define HID_FEATURE(a)			\
-	HID_ITEM(HID_ITEM_TAG_OUTPUT, HID_ITEM_TYPE_MAIN, 1), a
+	HID_ITEM(HID_ITEM_TAG_FEATURE, HID_ITEM_TYPE_MAIN, 1), a
 
 /**
  * @brief Define HID Collection item with the data length of one byte.
