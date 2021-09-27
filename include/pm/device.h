@@ -29,13 +29,6 @@ enum pm_device_state {
 	/** Device is in active or regular state. */
 	PM_DEVICE_STATE_ACTIVE,
 	/**
-	 * Device is in low power state.
-	 *
-	 * @note
-	 *     Device context is preserved.
-	 */
-	PM_DEVICE_STATE_LOW_POWER,
-	/**
 	 * Device is suspended.
 	 *
 	 * @note
@@ -78,8 +71,6 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_TURN_OFF,
 	/** Force suspend. */
 	PM_DEVICE_ACTION_FORCE_SUSPEND,
-	/** Low power. */
-	PM_DEVICE_ACTION_LOW_POWER,
 };
 
 /**
