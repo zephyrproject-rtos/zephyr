@@ -216,8 +216,6 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	bool should_resume_devices = true;
 
 	switch (z_power_state.state) {
-	case PM_STATE_RUNTIME_IDLE:
-		__fallthrough;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		__fallthrough;
 	case PM_STATE_STANDBY:
