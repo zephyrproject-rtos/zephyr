@@ -12,6 +12,7 @@
 #include <sys/util.h>
 #include <logging/log.h>
 #include <math.h>
+#include <pm/pm.h>
 
 #include "fdc2x1x.h"
 #include "drivers/sensor/fdc2x1x.h"
@@ -485,15 +486,15 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				  enum pm_device_action action)
 {
 	int ret;
+	struct pm_state_info next_state;
 	struct fdc2x1x_data *data = dev->data;
 	const struct fdc2x1x_config *cfg = dev->config;
-	enum pm_device_state curr_state;
 
-	(void)pm_device_state_get(dev, &curr_state);
+	next_state = pm_power_state_next_get();
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (curr_state == PM_DEVICE_STATE_OFF) {
+		if (data->power_off) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
 				return ret;
@@ -507,25 +508,27 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (curr_state == PM_DEVICE_STATE_OFF) {
-			ret = fdc2x1x_set_shutdown(dev, false);
+		if (next_state.state == PM_STATE_SOFT_OFF) {
+			if (cfg->sd_gpio->name) {
+				ret = fdc2x1x_set_shutdown(dev, true);
+				data->power_off = true;
+			} else {
+				LOG_ERR("SD pin not defined");
+				ret = -ENOTSUP;
+			}
+		} else {
+			if (data->power_off) {
+				ret = fdc2x1x_set_shutdown(dev, false);
+				if (ret) {
+					return ret;
+				}
+			}
+			ret = fdc2x1x_set_op_mode(dev, FDC2X1X_SLEEP_MODE);
 			if (ret) {
 				return ret;
 			}
 		}
-		ret = fdc2x1x_set_op_mode(dev, FDC2X1X_SLEEP_MODE);
-		if (ret) {
-			return ret;
-		}
 
-		break;
-	case PM_DEVICE_ACTION_TURN_OFF:
-		if (cfg->sd_gpio->name) {
-			ret = fdc2x1x_set_shutdown(dev, true);
-		} else {
-			LOG_ERR("SD pin not defined");
-			ret = -ENOTSUP;
-		}
 		break;
 	default:
 		return -ENOTSUP;

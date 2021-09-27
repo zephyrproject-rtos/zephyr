@@ -19,12 +19,8 @@ const char *pm_device_state_str(enum pm_device_state state)
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		return "active";
-	case PM_DEVICE_STATE_LOW_POWER:
-		return "low power";
 	case PM_DEVICE_STATE_SUSPENDED:
 		return "suspended";
-	case PM_DEVICE_STATE_OFF:
-		return "off";
 	default:
 		return "";
 	}
@@ -48,8 +44,6 @@ int pm_device_state_set(const struct device *dev,
 	case PM_DEVICE_STATE_SUSPENDED:
 		if (dev->pm->state == PM_DEVICE_STATE_SUSPENDED) {
 			return -EALREADY;
-		} else if (dev->pm->state == PM_DEVICE_STATE_OFF) {
-			return -ENOTSUP;
 		}
 
 		action = PM_DEVICE_ACTION_SUSPEND;
@@ -60,20 +54,6 @@ int pm_device_state_set(const struct device *dev,
 		}
 
 		action = PM_DEVICE_ACTION_RESUME;
-		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		if (dev->pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_LOW_POWER;
-		break;
-	case PM_DEVICE_STATE_OFF:
-		if (dev->pm->state == state) {
-			return -EALREADY;
-		}
-
-		action = PM_DEVICE_ACTION_TURN_OFF;
 		break;
 	default:
 		return -ENOTSUP;
