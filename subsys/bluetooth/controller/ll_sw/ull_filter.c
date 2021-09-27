@@ -1019,7 +1019,7 @@ static int rl_access_check(bool check_ar)
 	 */
 	return ((IS_ENABLED(CONFIG_BT_BROADCASTER) && ull_adv_is_enabled(0)) ||
 		(IS_ENABLED(CONFIG_BT_OBSERVER) &&
-		 (ull_scan_is_enabled(0) & ~BIT(0))))
+		 (ull_scan_is_enabled(0) & ~ULL_SCAN_IS_PASSIVE)))
 		? 0 : 1;
 }
 
