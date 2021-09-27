@@ -413,6 +413,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	struct bt_hci_cp_le_set_ext_adv_data *set_data;
 	struct net_buf *buf;
 	int err;
+	uint8_t max_data_size;
 
 	buf = bt_hci_cmd_create(hci_op, sizeof(*set_data));
 	if (!buf) {
@@ -422,8 +423,15 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	set_data = net_buf_add(buf, sizeof(*set_data));
 	(void)memset(set_data, 0, sizeof(*set_data));
 
-	err = set_data_add_complete(set_data->data, BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN,
-				    ad, ad_len, &set_data->len);
+	if (atomic_test_bit(adv->flags, BT_ADV_EXT_ADV)) {
+		max_data_size = BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN;
+	} else {
+		max_data_size = BT_GAP_ADV_MAX_ADV_DATA_LEN;
+	}
+
+	err = set_data_add_complete(set_data->data, max_data_size, ad, ad_len,
+				    &set_data->len);
+
 	if (err) {
 		net_buf_unref(buf);
 		return err;
