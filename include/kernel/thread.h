@@ -116,6 +116,10 @@ struct _thread_base {
 	/* this thread's entry in a timeout queue */
 	struct _timeout timeout;
 #endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	uint64_t usage;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
