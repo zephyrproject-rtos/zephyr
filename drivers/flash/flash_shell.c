@@ -124,7 +124,10 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	shell_print(shell, "Write OK.");
 
-	flash_read(flash_dev, w_addr, check_array, sizeof(buf_array[0]) * j);
+	if (flash_read(flash_dev, w_addr, check_array, sizeof(buf_array[0]) * j) != 0) {
+		shell_print(shell, "Verification read ERROR!");
+		return -EIO;
+	}
 
 	if (memcmp(buf_array, check_array, sizeof(buf_array[0]) * j) == 0) {
 		shell_print(shell, "Verified.");
