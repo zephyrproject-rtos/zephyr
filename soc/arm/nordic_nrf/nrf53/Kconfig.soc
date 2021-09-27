@@ -10,6 +10,7 @@ config SOC_NRF5340_CPUAPP
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_HW_NRF_CC312
+	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_DPPIC
 	select HAS_HW_NRF_EGU0
@@ -24,6 +25,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_I2S
 	select HAS_HW_NRF_IPC
 	select HAS_HW_NRF_KMU
+	select HAS_HW_NRF_LPCOMP
 	select HAS_HW_NRF_NFCT
 	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
@@ -76,6 +78,7 @@ config SOC_NRF5340_CPUNET
 	select HAS_HW_NRF_CCM
 	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_DPPIC
+	select HAS_HW_NRF_ECB
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIO1
@@ -91,6 +94,10 @@ config SOC_NRF5340_CPUNET
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SPIM0
 	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_SWI0
+	select HAS_HW_NRF_SWI1
+	select HAS_HW_NRF_SWI2
+	select HAS_HW_NRF_SWI3
 	select HAS_HW_NRF_TEMP
 	select HAS_HW_NRF_TIMER0
 	select HAS_HW_NRF_TIMER1
