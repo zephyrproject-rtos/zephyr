@@ -934,6 +934,20 @@ Filesystems:
     labels:
         - "area: File System"
 
+IPC:
+    status: maintained
+    maintainers:
+        - carlocaione
+        - arnopo
+    files:
+        - include/ipc/
+        - samples/subsys/ipc/
+        - subsys/ipc/
+    description: >-
+        Inter-Processor Communication
+    labels:
+        - "area: IPC"
+
 JSON Web Token:
     status: orphaned
     collaborators:
