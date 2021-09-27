@@ -249,13 +249,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	case PM_STATE_SUSPEND_TO_IDLE:
 		__fallthrough;
 	case PM_STATE_STANDBY:
-		/* low power peripherals. */
-		if (pm_low_power_devices()) {
-			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
-					ticks, _handle_device_abort(z_power_state));
-			return _handle_device_abort(z_power_state);
-		}
-		break;
+		__fallthrough;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
