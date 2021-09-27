@@ -695,7 +695,8 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
 			uint16_t handle = ll_conn_handle_get(conn);
 
 			ull_slave_latency_cancel(conn, handle);
