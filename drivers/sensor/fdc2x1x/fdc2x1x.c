@@ -517,12 +517,6 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				ret = -ENOTSUP;
 			}
 		} else {
-			if (data->power_off) {
-				ret = fdc2x1x_set_shutdown(dev, false);
-				if (ret) {
-					return ret;
-				}
-			}
 			ret = fdc2x1x_set_op_mode(dev, FDC2X1X_SLEEP_MODE);
 			if (ret) {
 				return ret;
