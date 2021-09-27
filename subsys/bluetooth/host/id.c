@@ -656,7 +656,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	memcpy(cp->peer_irk, peer_irk, 16);
 
 #if defined(CONFIG_BT_PRIVACY)
-	memcpy(cp->local_irk, bt_dev.irk[id], 16);
+	(void)memcpy(cp->local_irk, &bt_dev.irk[id], 16);
 #else
 	(void)memset(cp->local_irk, 0, 16);
 #endif
