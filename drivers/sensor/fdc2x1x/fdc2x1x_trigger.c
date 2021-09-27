@@ -24,11 +24,7 @@ static void fdc2x1x_thread_cb(const struct device *dev)
 	uint16_t status;
 
 #ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	/* INTB asserts after exiting shutdown mode. Drop this interrupt */
-	(void)pm_device_state_get(dev, &state);
-	if (state == PM_DEVICE_STATE_OFF) {
+	if (drv_data->power_off) {
 		return;
 	}
 #endif

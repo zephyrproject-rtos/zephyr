@@ -46,8 +46,8 @@ static void pm_info(enum pm_device_state state, int status)
 	case PM_DEVICE_STATE_SUSPENDED:
 		printk("Enter SUSPEND_STATE ");
 		break;
-	case PM_DEVICE_STATE_OFF:
-		printk("Enter OFF_STATE ");
+	default:
+		printk("Invalid state ");
 		break;
 	}
 
@@ -99,10 +99,6 @@ void main(void)
 	ret = pm_device_state_set(dev, p_state);
 	pm_info(p_state, ret);
 
-	p_state = PM_DEVICE_STATE_OFF;
-	ret = pm_device_state_set(dev, p_state);
-	pm_info(p_state, ret);
-
 	p_state = PM_DEVICE_STATE_ACTIVE;
 	ret = pm_device_state_set(dev, p_state);
 	pm_info(p_state, ret);
@@ -133,10 +129,6 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = PM_DEVICE_STATE_OFF;
-		ret = pm_device_state_set(dev, p_state);
-		pm_info(p_state, ret);
-		k_sleep(K_MSEC(2000));
 		p_state = PM_DEVICE_STATE_ACTIVE;
 		ret = pm_device_state_set(dev, p_state);
 		pm_info(p_state, ret);

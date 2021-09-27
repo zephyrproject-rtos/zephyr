@@ -148,6 +148,7 @@ enum fdc2x1x_op_mode {
 
 struct fdc2x1x_data {
 	bool fdc221x;
+	bool power_off;
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
 	struct gpio_callback gpio_cb;
