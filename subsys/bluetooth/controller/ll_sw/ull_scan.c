@@ -618,31 +618,25 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 {
 	struct ll_scan_set *scan;
 
-	/* NOTE: BIT(0) - passive scanning enabled
-	 *       BIT(1) - active scanning enabled
-	 *       BIT(2) - initiator enabled
-	 *       BIT(3) - periodic sync create active
-	 */
-
 	scan = ull_scan_is_enabled_get(handle);
 	if (!scan) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		scan = ull_scan_set_get(handle);
 
-		return scan->per_scan.sync ? BIT(3) : 0;
+		return scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U;
 #else
-		return 0;
+		return 0U;
 #endif
 	}
 
 	return (((uint32_t)scan->is_enabled << scan->lll.type) |
 #if defined(CONFIG_BT_CENTRAL)
-		(scan->lll.conn ? BIT(2) : 0) |
+		(scan->lll.conn ? ULL_SCAN_IS_INITIATOR : 0U) |
 #endif
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		(scan->per_scan.sync ? BIT(3) : 0) |
+		(scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U) |
 #endif
-		0);
+		0U);
 }
 
 uint32_t ull_scan_filter_pol_get(uint8_t handle)
