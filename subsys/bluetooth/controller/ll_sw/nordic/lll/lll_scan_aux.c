@@ -50,16 +50,10 @@
 #include <ull_scan_types.h>
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CENTRAL)
-static uint8_t lll_scan_connect_req_pdu[PDU_AC_LL_HEADER_SIZE +
-					sizeof(struct pdu_adv_connect_ind)];
-#endif /* CONFIG_BT_CENTRAL */
-
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
-static void isr_scan_aux_setup(void *param);
 static void isr_rx_ull_schedule(void *param);
 static void isr_rx_lll_schedule(void *param);
 static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
@@ -1257,8 +1251,6 @@ static void isr_tx_connect_req(void *param)
 static void isr_rx_connect_rsp(void *param)
 {
 	struct lll_scan_aux *lll_aux;
-	struct ll_scan_aux_set *aux;
-	struct ll_scan_set *scan;
 	struct pdu_adv *pdu_rx;
 	struct node_rx_pdu *rx;
 	struct lll_scan *lll;
