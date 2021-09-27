@@ -871,6 +871,12 @@ static void uart_ns16550_isr(const struct device *dev)
 		dev_data->cb(dev, dev_data->cb_data);
 	}
 
+#ifdef CONFIG_UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	uint8_t cached_ier = INBYTE(IER(dev));
+
+	OUTBYTE(IER(dev), 0U);
+	OUTBYTE(IER(dev), cached_ier);
+#endif
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
