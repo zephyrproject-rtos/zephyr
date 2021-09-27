@@ -130,6 +130,10 @@ struct _cpu {
 	uint8_t swap_ok;
 #endif
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	uint32_t usage0;
+#endif
+
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
 };
