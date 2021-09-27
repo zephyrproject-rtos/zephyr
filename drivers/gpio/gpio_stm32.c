@@ -692,7 +692,8 @@ GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
 
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_GPIO_STM32_SWJ_ENABLE)
 
 static int gpio_stm32_afio_init(const struct device *dev)
 {
@@ -716,6 +717,6 @@ static int gpio_stm32_afio_init(const struct device *dev)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_2, 0);
+SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_1, 0);
 
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
+#endif /* CONFIG_SOC_SERIES_STM32F1X && !CONFIG_GPIO_STM32_SWJ_ENABLE */
