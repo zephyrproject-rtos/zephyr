@@ -622,13 +622,35 @@ void log_core_init(void)
 	}
 }
 
-void log_init(void)
+static uint32_t activate_foreach_backend(uint32_t mask)
 {
+	uint32_t mask_cpy = mask;
+
+	while (mask_cpy) {
+		uint32_t i = __builtin_ctz(mask_cpy);
+		const struct log_backend *backend = log_backend_get(i);
+
+		mask_cpy &= ~BIT(i);
+		if (log_backend_is_ready(backend) == 0) {
+			mask &= ~BIT(i);
+			log_backend_enable(backend,
+					   backend->cb->ctx,
+					   CONFIG_LOG_MAX_LEVEL);
+		}
+	}
+
+	return mask;
+}
+
+static uint32_t z_log_init(bool blocking, bool can_sleep)
+{
+	uint32_t mask = 0;
+
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
 
 	if (atomic_inc(&initialized) != 0) {
-		return;
+		return 0;
 	}
 
 	/* Assign ids to backends. */
@@ -636,15 +658,37 @@ void log_init(void)
 		const struct log_backend *backend = log_backend_get(i);
 
 		if (backend->autostart) {
-			if (backend->api->init != NULL) {
-				backend->api->init(backend);
-			}
+			log_backend_init(backend);
 
-			log_backend_enable(backend,
-					   backend->cb->ctx,
-					   CONFIG_LOG_MAX_LEVEL);
+			/* If backend has activation function then backend is
+			 * not ready until activated.
+			 */
+			if (log_backend_is_ready(backend) == 0) {
+				log_backend_enable(backend,
+						   backend->cb->ctx,
+						   CONFIG_LOG_MAX_LEVEL);
+			} else {
+				mask |= BIT(i);
+			}
 		}
 	}
+
+	/* If blocking init, wait until all backends are activated. */
+	if (blocking) {
+		while (mask) {
+			mask = activate_foreach_backend(mask);
+			if (IS_ENABLED(CONFIG_MULTITHREADING) && can_sleep) {
+				k_msleep(10);
+			}
+		}
+	}
+
+	return mask;
+}
+
+void log_init(void)
+{
+	(void)z_log_init(true, true);
 }
 
 static void thread_set(k_tid_t process_tid)
@@ -694,7 +738,7 @@ void z_impl_log_panic(void)
 	/* If panic happened early logger might not be initialized.
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
-	log_init();
+	(void)z_log_init(true, false);
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_panic();
@@ -1338,12 +1382,24 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
 
-	log_init();
+	uint32_t activate_mask = z_log_init(false, false);
+	k_timeout_t timeout = K_MSEC(50); /* Arbitrary value */
+
 	thread_set(k_current_get());
 
+	/* Logging thread is periodically waken up until all backends that
+	 * should be autostarted are ready.
+	 */
 	while (true) {
+		if (activate_mask) {
+			activate_mask = activate_foreach_backend(activate_mask);
+			if (!activate_mask) {
+				timeout = K_FOREVER;
+			}
+		}
+
 		if (log_process(false) == false) {
-			k_sem_take(&log_process_thread_sem, K_FOREVER);
+			(void)k_sem_take(&log_process_thread_sem, timeout);
 		}
 	}
 }
@@ -1368,7 +1424,7 @@ static int enable_logger(const struct device *arg)
 					K_NO_WAIT));
 		k_thread_name_set(&logging_thread, "logging");
 	} else {
-		log_init();
+		(void)z_log_init(false, false);
 	}
 
 	return 0;
