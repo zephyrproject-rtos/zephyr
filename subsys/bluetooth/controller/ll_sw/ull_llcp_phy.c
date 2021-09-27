@@ -239,13 +239,16 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 	return (ctx->data.pu.m_to_s_phy || ctx->data.pu.s_to_m_phy);
 }
 
+/*
+ * EGON TODO: this is the same as calc_eff_time in ull_connections.c
+ */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t pu_calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
 {
-	uint16_t time = PDU_DC_MAX_US(max_octets, phy);
+	uint16_t payload_time = PDU_DC_MAX_US(max_octets, phy);
 	uint16_t eff_time;
 
-	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, time);
+	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, payload_time);
 	eff_time = MIN(eff_time, default_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	eff_time = MAX(eff_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
