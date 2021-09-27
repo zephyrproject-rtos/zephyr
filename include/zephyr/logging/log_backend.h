@@ -49,6 +49,7 @@ struct log_backend_api {
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
 	void (*init)(const struct log_backend *const backend);
+	int (*is_ready)(const struct log_backend *const backend);
 	int (*format_set)(const struct log_backend *const backend,
 				uint32_t log_type);
 };
@@ -100,6 +101,45 @@ extern const struct log_backend __log_backends_end[];
 		.autostart = _autostart					       \
 	}
 
+
+/**
+ * @brief Initialize or initiate the logging backend.
+ *
+ * If backend initialization takes longer time it could block logging thread
+ * if backend is autostarted. That is because all backends are initilized in
+ * the context of the logging thread. In that case, backend shall provide
+ * function for polling for readiness (@ref log_backend_is_ready).
+ *
+ * @param[in] backend  Pointer to the backend instance.
+ */
+static inline void log_backend_init(const struct log_backend *const backend)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+	if (backend->api->init) {
+		backend->api->init(backend);
+	}
+}
+
+/**
+ * @brief Poll for backend readiness.
+ *
+ * If backend is ready immediately after initialization then backend may not
+ * provide this function.
+ *
+ * @param[in] backend  Pointer to the backend instance.
+ *
+ * @retval 0 if backend is ready.
+ * @retval -EBUSY if backend is not yet ready.
+ */
+static inline int log_backend_is_ready(const struct log_backend *const backend)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+	if (backend->api->is_ready) {
+		return backend->api->is_ready(backend);
+	}
+
+	return 0;
+}
 
 /**
  * @brief Put message with log entry to the backend.
