@@ -4048,7 +4048,7 @@ class HardwareMap:
             runner = dut.get('runner')
             serial = dut.get('serial')
             baud = dut.get('baud')
-            if (baud == None):
+            if baud is None:
                 baud = 115200
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
