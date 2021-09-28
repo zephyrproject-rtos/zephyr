@@ -383,6 +383,12 @@ config SCHED_THREAD_USAGE
 	help
 	  Alternate implementation of thread runtime cycle usage
 
+config SCHED_THREAD_USAGE_ALL
+	bool "Collect total system runtime usage"
+	default y if SCHED_THREAD_USAGE
+	help
+	  Maintain a sum of all non-idle thread cycle usage.
+
 menuconfig THREAD_RUNTIME_STATS
 	bool "Thread runtime statistics"
 	select INSTRUMENT_THREAD_SWITCHING
