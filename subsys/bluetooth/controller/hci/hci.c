@@ -738,6 +738,13 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Start Encryption */
 	rp->commands[28] |= BIT(0);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	/* LE Set CIG Parameters */
+	rp->commands[41] |= BIT(7);
+	/* LE Set CIG Parameters Test, LE Create CIS, LE Remove CIS */
+	rp->commands[42] |= BIT(0) | BIT(1) | BIT(2);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -745,6 +752,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE LTK Request Reply, LE LTK Request Negative Reply */
 	rp->commands[28] |= BIT(1) | BIT(2);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	/* LE Accept CIS Request, LE Reject CIS Request */
+	rp->commands[42] |= BIT(3) | BIT(4);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	/* Disconnect. */
@@ -822,10 +833,30 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[38] |= BIT(7);
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-	/* LE Read Buffer Size v2 */
-	rp->commands[41] |= BIT(5);
+	/* LE Read Buffer Size v2, LE Read ISO TX Sync */
+	rp->commands[41] |= BIT(5) | BIT(6);
+	/* LE ISO Transmit Test */
+	rp->commands[43] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-#endif /* CONFIG_BT_CTLR_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	/* LE ISO Receive Test, LE ISO Read Test Counters */
+	rp->commands[43] |= BIT(6) | BIT(7);
+	/* LE Read ISO Link Quality */
+	rp->commands[44] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ISO)
+	/* LE Setup ISO Data Path, LE Remove ISO Data Path */
+	rp->commands[43] |= BIT(3) | BIT(4);
+	/* LE ISO Test End */
+	rp->commands[44] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_ISO */
+
+#if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
+	/* LE Set Host Feature */
+	rp->commands[44] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
 	/* Read Supported Codecs */
@@ -1942,7 +1973,23 @@ static void le_remove_cig(struct net_buf *buf, struct net_buf **evt)
 
 #endif /* CONFIG_BT_CENTRAL */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_iso_transmit_test *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_iso_transmit_test *rp;
+	uint8_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_iso_transmit_test(handle, cmd->payload_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
 static void le_read_iso_tx_sync(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_iso_tx_sync *cmd = (void *)buf->data;
@@ -1965,6 +2012,46 @@ static void le_read_iso_tx_sync(struct net_buf *buf, struct net_buf **evt)
 	rp->seq       = sys_cpu_to_le16(seq);
 	rp->timestamp = sys_cpu_to_le32(timestamp);
 	sys_put_le24(offset, rp->offset);
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_iso_receive_test *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_iso_receive_test *rp;
+	uint8_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_iso_receive_test(handle, cmd->payload_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
+static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_test_counters *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_read_test_counters *rp;
+	uint8_t status;
+	uint16_t handle;
+	uint32_t received_cnt;
+	uint32_t missed_cnt;
+	uint32_t failed_cnt;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_iso_read_test_counters(handle, &received_cnt,
+					   &missed_cnt, &failed_cnt);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+	rp->received_cnt = sys_cpu_to_le32(received_cnt);
+	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
+	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
 }
 
 static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
@@ -2004,7 +2091,9 @@ static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
 	rp->rx_unreceived_packets = sys_cpu_to_le32(rx_unreceived_packets);
 	rp->duplicate_packets     = sys_cpu_to_le32(duplicate_packets);
 }
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
+#if defined(CONFIG_BT_CTLR_ISO)
 static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_setup_iso_path *cmd = (void *)buf->data;
@@ -2050,38 +2139,6 @@ static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
 	rp->handle = sys_cpu_to_le16(handle);
 }
 
-static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
-{
-	struct bt_hci_cp_le_iso_receive_test *cmd = (void *)buf->data;
-	struct bt_hci_rp_le_iso_receive_test *rp;
-	uint8_t status;
-	uint16_t handle;
-
-	handle = sys_le16_to_cpu(cmd->handle);
-
-	status = ll_iso_receive_test(handle, cmd->payload_type);
-
-	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->status = status;
-	rp->handle = cmd->handle;
-}
-
-static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
-{
-	struct bt_hci_cp_le_iso_transmit_test *cmd = (void *)buf->data;
-	struct bt_hci_rp_le_iso_transmit_test *rp;
-	uint8_t status;
-	uint16_t handle;
-
-	handle = sys_le16_to_cpu(cmd->handle);
-
-	status = ll_iso_transmit_test(handle, cmd->payload_type);
-
-	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->status = status;
-	rp->handle = cmd->handle;
-}
-
 static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_test_end *cmd = (void *)buf->data;
@@ -2103,29 +2160,7 @@ static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
 	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
 }
-
-static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
-{
-	struct bt_hci_cp_le_read_test_counters *cmd = (void *)buf->data;
-	struct bt_hci_rp_le_read_test_counters *rp;
-	uint8_t status;
-	uint16_t handle;
-	uint32_t received_cnt;
-	uint32_t missed_cnt;
-	uint32_t failed_cnt;
-
-	handle = sys_le16_to_cpu(cmd->handle);
-	status = ll_iso_read_test_counters(handle, &received_cnt,
-					   &missed_cnt, &failed_cnt);
-
-	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->status = status;
-	rp->handle = cmd->handle;
-	rp->received_cnt = sys_cpu_to_le32(received_cnt);
-	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
-	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
-}
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_ISO */
 
 #if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
 static void le_set_host_feature(struct net_buf *buf, struct net_buf **evt)
@@ -3763,39 +3798,38 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-	case BT_OCF(BT_HCI_OP_LE_READ_ISO_TX_SYNC):
-		le_read_iso_tx_sync(cmd, evt);
-		break;
-
+#if defined(CONFIG_BT_CTLR_ISO)
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
 		le_setup_iso_path(cmd, evt);
 		break;
-
 	case BT_OCF(BT_HCI_OP_LE_REMOVE_ISO_PATH):
 		le_remove_iso_path(cmd, evt);
 		break;
-
-	case BT_OCF(BT_HCI_OP_LE_ISO_RECEIVE_TEST):
-		le_iso_receive_test(cmd, evt);
-		break;
-
-	case BT_OCF(BT_HCI_OP_LE_ISO_TRANSMIT_TEST):
-		le_iso_transmit_test(cmd, evt);
-		break;
-
 	case BT_OCF(BT_HCI_OP_LE_ISO_TEST_END):
 		le_iso_test_end(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_ISO */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_OCF(BT_HCI_OP_LE_ISO_TRANSMIT_TEST):
+		le_iso_transmit_test(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_READ_ISO_TX_SYNC):
+		le_read_iso_tx_sync(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_OCF(BT_HCI_OP_LE_ISO_RECEIVE_TEST):
+		le_iso_receive_test(cmd, evt);
+		break;
 	case BT_OCF(BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS):
 		le_iso_read_test_counters(cmd, evt);
 		break;
-
 	case BT_OCF(BT_HCI_OP_LE_READ_ISO_LINK_QUALITY):
 		le_read_iso_link_quality(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
 	case BT_OCF(BT_HCI_OP_LE_SET_HOST_FEATURE):
