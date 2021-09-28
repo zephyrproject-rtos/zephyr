@@ -172,6 +172,10 @@ struct z_kernel {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	uint64_t all_thread_usage;
+#endif
 };
 
 typedef struct z_kernel _kernel_t;
