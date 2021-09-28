@@ -180,6 +180,7 @@ gw	Gateworks Corporation
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
+hid	HID Global
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
 hisilicon	Hisilicon Limited.
