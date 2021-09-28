@@ -178,6 +178,11 @@ static inline void *lll_adv_sync_extra_data_peek(struct lll_adv_sync *lll)
 {
 	return lll->data.extra_data[lll->data.last];
 }
+
+static inline void *lll_adv_sync_extra_data_curr_get(struct lll_adv_sync *lll)
+{
+	return lll->data.extra_data[lll->data.first];
+}
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
