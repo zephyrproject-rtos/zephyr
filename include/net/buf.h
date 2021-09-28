@@ -984,6 +984,9 @@ struct net_buf_pool {
 	/** LIFO to place the buffer into when free */
 	struct k_lifo free;
 
+	/* to prevent concurrent access/modifications */
+	struct k_spinlock lock;
+
 	/** Number of buffers in pool */
 	const uint16_t buf_count;
 
@@ -1016,6 +1019,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
 	{                                                                    \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
+		.lock = { },                                                 \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = ATOMIC_INIT(_count),                          \
@@ -1028,6 +1032,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \
 	{                                                                    \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
+		.lock = { },                                                 \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.destroy = _destroy,                                         \
