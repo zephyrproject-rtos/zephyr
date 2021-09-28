@@ -379,7 +379,7 @@ config INSTRUMENT_THREAD_SWITCHING
 
 config SCHED_THREAD_USAGE
 	bool "Collect thread runtime usage"
-	depends on USE_SWITCH
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
 	help
 	  Alternate implementation of thread runtime cycle usage
 
