@@ -30,12 +30,12 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
-			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
+			ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
-			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+			ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 		}
 		break;
 	default:
@@ -91,9 +91,9 @@ static int pm_device_request(const struct device *dev,
 		 * the gpio. Lets just power on/off the device.
 		 */
 		if (dev->pm->usage == 1) {
-			(void)pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+			(void)pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 		} else if (dev->pm->usage == 0) {
-			(void)pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
+			(void)pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		}
 		goto out;
 	}

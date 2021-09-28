@@ -26,11 +26,11 @@ const char *pm_device_state_str(enum pm_device_state state)
 	}
 }
 
-int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state)
+int pm_device_action_run(const struct device *dev,
+			enum pm_device_action action)
 {
 	int ret;
-	enum pm_device_action action;
+	enum pm_device_state state;
 
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
@@ -40,20 +40,20 @@ int pm_device_state_set(const struct device *dev,
 		return -EBUSY;
 	}
 
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		if (dev->pm->state == PM_DEVICE_STATE_SUSPENDED) {
 			return -EALREADY;
 		}
 
-		action = PM_DEVICE_ACTION_SUSPEND;
+		state = PM_DEVICE_STATE_SUSPENDED;
 		break;
-	case PM_DEVICE_STATE_ACTIVE:
+	case PM_DEVICE_ACTION_RESUME:
 		if (dev->pm->state == PM_DEVICE_STATE_ACTIVE) {
 			return -EALREADY;
 		}
 
-		action = PM_DEVICE_ACTION_RESUME;
+		state = PM_DEVICE_STATE_ACTIVE;
 		break;
 	default:
 		return -ENOTSUP;

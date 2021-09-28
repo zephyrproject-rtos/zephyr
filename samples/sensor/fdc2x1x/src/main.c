@@ -96,11 +96,11 @@ void main(void)
 	int ret;
 
 	p_state = PM_DEVICE_STATE_SUSPENDED;
-	ret = pm_device_state_set(dev, p_state);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 	pm_info(p_state, ret);
 
 	p_state = PM_DEVICE_STATE_ACTIVE;
-	ret = pm_device_state_set(dev, p_state);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 	pm_info(p_state, ret);
 #endif
 
@@ -130,7 +130,7 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 		p_state = PM_DEVICE_STATE_ACTIVE;
-		ret = pm_device_state_set(dev, p_state);
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 		pm_info(p_state, ret);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
