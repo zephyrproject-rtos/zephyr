@@ -377,26 +377,14 @@ config THREAD_MAX_NAME_LEN
 config INSTRUMENT_THREAD_SWITCHING
 	bool
 
-config SCHED_THREAD_USAGE
-	bool "Collect thread runtime usage"
-	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
-	help
-	  Alternate implementation of thread runtime cycle usage
-
-config SCHED_THREAD_USAGE_ALL
-	bool "Collect total system runtime usage"
-	default y if SCHED_THREAD_USAGE
-	help
-	  Maintain a sum of all non-idle thread cycle usage.
-
 menuconfig THREAD_RUNTIME_STATS
 	bool "Thread runtime statistics"
-	select INSTRUMENT_THREAD_SWITCHING
 	help
 	  Gather thread runtime statistics.
 
 	  For example:
 	    - Thread total execution cycles
+	    - System total execution cycles
 
 if THREAD_RUNTIME_STATS
 
@@ -408,6 +396,20 @@ config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 
 	  Note that timing functions may use a different timer than
 	  the default timer for OS timekeeping.
+
+config SCHED_THREAD_USAGE
+	bool "Collect thread runtime usage"
+	default y
+	select INSTRUMENT_THREAD_SWITCHING if !USE_SWITCH
+	help
+	  Collect thread runtime info at context switch time
+
+config SCHED_THREAD_USAGE_ALL
+	bool "Collect total system runtime usage"
+	default y if SCHED_THREAD_USAGE
+	depends on SCHED_THREAD_USAGE
+	help
+	  Maintain a sum of all non-idle thread cycle usage.
 
 endif # THREAD_RUNTIME_STATS
 
