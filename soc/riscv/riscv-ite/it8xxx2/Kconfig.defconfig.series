@@ -19,6 +19,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 32768
 
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
 	default 185
