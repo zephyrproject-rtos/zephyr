@@ -108,6 +108,8 @@ void common_release_adv_set(struct ll_adv_set *adv_set)
 		if (sync) {
 			sync->is_started = 0U;
 		}
+
+		lll_adv_data_reset(&sync->lll.data);
 	}
 	adv_set->lll.sync = NULL;
 	if (adv_set->df_cfg->is_enabled) {
@@ -196,8 +198,14 @@ void common_release_per_adv_chain(struct ll_adv_set *adv_set)
 
 	lll_sync = adv_set->lll.sync;
 	pdu = lll_adv_sync_data_peek(lll_sync, NULL);
+	if (pdu != NULL) {
+		lll_adv_pdu_linked_release_all(pdu);
+	}
 
-	lll_adv_pdu_linked_release_all(pdu);
+	pdu = (void *)lll_sync->data.pdu[lll_sync->data.first];
+	if (pdu != NULL) {
+		lll_adv_pdu_linked_release_all(pdu);
+	}
 }
 
 /*
@@ -443,6 +451,17 @@ void common_validate_chain_with_cte(struct ll_adv_set *adv, uint8_t cte_count,
 	}
 }
 
+/*
+ * @brief Helper function to cleanup after test case end.
+ *
+ * @param adv               Pointer to advertising set
+ */
+void common_teardown(struct ll_adv_set *adv)
+{
+	common_release_per_adv_chain(adv);
+	common_release_adv_set(adv);
+	lll_adv_init();
+}
 /*
  * @brief Helper function to add payload data to extended advertising PDU.
  *

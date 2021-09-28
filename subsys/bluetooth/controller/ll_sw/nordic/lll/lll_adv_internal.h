@@ -78,3 +78,8 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 			       uint8_t tx_addr, uint8_t *addr,
 			       uint8_t rx_addr, uint8_t *tgt_addr,
 			       uint8_t devmatch_ok, uint8_t *rl_idx);
+
+#if defined(CONFIG_ZTEST)
+uint32_t lll_adv_free_pdu_fifo_count_get(void);
+uint32_t lll_adv_pdu_mem_free_count_get(void);
+#endif /* CONFIG_ZTEST */
