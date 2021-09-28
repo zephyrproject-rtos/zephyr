@@ -5,7 +5,6 @@
  */
 
 #include <zephyr.h>
-#include <devicetree/memory.h>
 #include <linker/linker-defs.h>
 
 /* Variables placed in reserved sections */
@@ -18,17 +17,17 @@ void main(void)
 	uint32_t res_size_outer, res_size_inner;
 
 	res_ptr_outer =
-		DT_RESERVED_MEM_GET_PTR_BY_PHANDLE(DT_NODELABEL(sample_driver_outer),
-						   memory_region);
+		LINKER_DT_RESERVED_MEM_GET_PTR_BY_PHANDLE(DT_NODELABEL(sample_driver_outer),
+							  memory_region);
 	res_size_outer =
-		DT_RESERVED_MEM_GET_SIZE_BY_PHANDLE(DT_NODELABEL(sample_driver_outer),
-						    memory_region);
+		LINKER_DT_RESERVED_MEM_GET_SIZE_BY_PHANDLE(DT_NODELABEL(sample_driver_outer),
+							   memory_region);
 
 	printk("Reserved memory address for the outer driver: %p\n", res_ptr_outer);
 	printk("Reserved memory size for the outer driver: %d\n", res_size_outer);
 
-	res_ptr_inner = DT_RESERVED_MEM_GET_PTR(DT_NODELABEL(res1));
-	res_size_inner = DT_RESERVED_MEM_GET_SIZE(DT_NODELABEL(res1));
+	res_ptr_inner = LINKER_DT_RESERVED_MEM_GET_PTR(DT_NODELABEL(res1));
+	res_size_inner = LINKER_DT_RESERVED_MEM_GET_SIZE(DT_NODELABEL(res1));
 
 	printk("Reserved memory address for the inner driver: %p\n", res_ptr_inner);
 	printk("Reserved memory size for the inner driver: %d\n", res_size_inner);
