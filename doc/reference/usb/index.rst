@@ -10,3 +10,4 @@ USB device support
    uds.rst
    uds_testing.rst
    hid.rst
+   uds_cdc_acm.rst
