@@ -1542,3 +1542,15 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 	return (tx_addr == ci->rx_addr) &&
 		!memcmp(addr, ci->connect_ind.adv_addr, BDADDR_SIZE);
 }
+
+#if defined(CONFIG_ZTEST)
+uint32_t lll_adv_free_pdu_fifo_count_get(void)
+{
+	return MFIFO_AVAIL_COUNT_GET(pdu_free);
+}
+
+uint32_t lll_adv_pdu_mem_free_count_get(void)
+{
+	return mem_free_count_get(mem_pdu.free);
+}
+#endif /* CONFIG_ZTEST */
