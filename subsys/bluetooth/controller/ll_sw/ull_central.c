@@ -98,7 +98,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	const uint8_t *own_id_addr;
 
 	/* Do not connect twice to the same peer */
-	own_id_addr = ll_addr_get(own_id_addr_type, NULL);
+	own_id_addr = ll_addr_get(own_id_addr_type);
 	if (ull_conn_peer_connected(own_id_addr_type, own_id_addr,
 				    peer_addr_type, peer_addr)) {
 		return BT_HCI_ERR_CONN_ALREADY_EXISTS;

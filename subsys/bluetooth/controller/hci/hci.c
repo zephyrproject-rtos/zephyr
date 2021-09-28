@@ -852,7 +852,7 @@ static void read_bd_addr(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = 0x00;
 
-	ll_addr_get(0, &rp->bdaddr.val[0]);
+	(void)ll_addr_read(0, &rp->bdaddr.val[0]);
 }
 
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
