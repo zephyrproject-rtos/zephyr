@@ -37,6 +37,13 @@ config SERIAL_INIT_PRIORITY
 	help
 	  Serial driver device initialization priority.
 
+config SERIAL_SUPPORT_WIDE_DATA
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware support data longer
+	  than 8-bit.
+
 config UART_USE_RUNTIME_CONFIGURE
 	bool "Enable runtime configuration for UART controllers"
 	default y
@@ -82,6 +89,13 @@ config UART_DRV_CMD
 	  This allows drivers to expose hardware specific functions.
 
 	  Says no if not sure.
+
+config UART_WIDE_DATA
+	bool "Enable API to support data longer than 8-bit"
+	help
+	  This enables the API to process data longer than 8-bit.
+	  This is up to the driver to implement the necessary functions
+	  to properly support this.
 
 comment "Serial Drivers"
 
