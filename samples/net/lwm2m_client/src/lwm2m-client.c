@@ -450,6 +450,32 @@ static void rd_client_event(struct lwm2m_ctx *client,
 	}
 }
 
+static void observe_cb(enum lwm2m_observe_event event, void *path)
+{
+	switch (event)
+	{
+	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
+		LOG_ERR("Observer added for path %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
+		LOG_ERR("Observer removed for path %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
+		LOG_ERR("Notify ack for path %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
+		LOG_ERR("Notify timeout for path %s", lwm2m_path_log_strdup(buf, path));
+		break;
+
+	default:
+		LOG_ERR("Unknown observe event for path %s", lwm2m_path_log_strdup(buf, path));
+		break;
+	}
+}
+
 void main(void)
 {
 	uint32_t flags = IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) ?
@@ -492,10 +518,10 @@ void main(void)
 		sprintf(&dev_str[i*2], "%02x", dev_id[i]);
 	}
 
-	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, dev_str, flags, rd_client_event, observe_cb);
 #else
 	/* client.sec_obj_inst is 0 as a starting point */
-	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event);
+	lwm2m_rd_client_start(&client, CONFIG_BOARD, flags, rd_client_event, observe_cb);
 #endif
 
 	k_sem_take(&quit_lock, K_FOREVER);
