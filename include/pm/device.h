@@ -132,22 +132,23 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @brief Set the power state of a device.
  *
  * This function calls the device PM control callback so that the device does
- * the necessary operations to put the device into the given state.
+ * the necessary operations to put the device into the proper state based on
+ * the given action.
  *
  * @note Some devices may not support all device power states.
  *
  * @param dev Device instance.
- * @param state Device power state to be set.
+ * @param action Device action to run
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP If requested state is not supported.
+ * @retval -ENOTSUP If requested action is not supported.
  * @retval -EALREADY If device is already at the requested state.
  * @retval -EBUSY If device is changing its state.
 
  * @retval Errno Other negative errno on failure.
  */
-int pm_device_state_set(const struct device *dev,
-			enum pm_device_state state);
+int pm_device_action_run(const struct device *dev,
+			enum pm_device_action action);
 
 /**
  * @brief Obtain the power state of a device.

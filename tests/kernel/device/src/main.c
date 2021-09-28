@@ -287,7 +287,7 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  *
  * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
  * pm_device_is_busy(), pm_device_is_any_busy(),
- * pm_device_state_set()
+ * pm_device_action_run()
  */
 void test_dummy_device_pm(void)
 {
@@ -319,7 +319,7 @@ void test_dummy_device_pm(void)
 	test_build_suspend_device_list();
 
 	/* Set device state to PM_DEVICE_STATE_ACTIVE */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
 	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
@@ -336,7 +336,7 @@ void test_dummy_device_pm(void)
 			"Error power status");
 
 	/* Set device state to PM_DEVICE_STATE_SUSPENDED */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
+	ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 

@@ -292,12 +292,12 @@ identify the devices on which to execute power management operations.
    Ensure that the SOC interface does not alter the original list. Since the kernel
    uses the original list, it must remain unchanged.
 
-Device Set Power State
+Device Action Run
 ----------------------
 
 .. code-block:: c
 
-   int pm_device_state_set(const struct device *dev, enum pm_device_state state);
+   int pm_device_action_run(const struct device *dev, enum pm_device_state state);
 
 Calls the :c:func:`pm_control()` handler function implemented by the
 device driver with the provided state.
@@ -413,7 +413,7 @@ Management mechanism which reduces the overall system Power consumtion
 by suspending the devices which are idle or not being used while the
 System is active or running.
 
-The framework uses :c:func:`pm_device_state_set()` API set the
+The framework uses :c:func:`pm_device_action_run()` API set the
 device power state accordingly based on the usage count.
 
 The interfaces and APIs provided by the Device Runtime PM are
