@@ -368,38 +368,131 @@ Drivers and Sensors
 Networking
 **********
 
+* 802.15.4 L2:
+
+  * Fixed a bug, where the net_pkt structure contained invalid LL address
+    pointers after being processed by 802.15.4 L2.
+  * Added an optional destination address filtering in the 802.15.4 L2.
+
 * CoAP:
 
+  * Added ``user_data`` field to the :c:struct:`coap_packet` structure.
+  * Fixed processing of out-of-order notifications.
+  * Fixed :c:func:`coap_packet_get_payload` function.
+  * Converted CoAP test suite to ztest API.
+  * Improved :c:func:`coap_packet_get_payload` function to minimize number
+    of RNG calls.
+  * Fixed retransmissions in the ``coap_server`` sample.
+  * Fixed observer removal in the ``coap_server`` sample (on notification
+    timeout).
 
 * DHCPv4:
 
+  * Fixed a bug, where DHPCv4 library removed statically configured gateway
+    before obtaining a new one from the server.
 
 * DNS:
 
+  * Fixed a bug, where the same IP address was used to populate the result
+    address info entries, when multiple IP addresses were obtained from the
+    server.
 
 * HTTP:
 
+  * Switched the library to use ``zsock_*`` API, to improve compatibility with
+    various POSIX configurations.
+  * Fixed a bug, where ``HTTP_DATA_FINAL`` notification was triggered even for
+    intermediate response fragments.
 
-* IPv4:
+* IPv6:
 
+  * Multiple IPv6 fixes, addressing failures in IPv6Ready compliance tests.
 
 * LwM2M:
 
+  * Added support for notification timeout reporting to the application.
+  * Fixed a bug, where a multi instance resource with only one active instance
+    was incorrectly encoded on reads.
+  * Fixed a bug, where notifications were generated on changes to non-readable
+    resources.
+  * Added mutex protection  for the state variable of the ``lwm2m_rd_client``
+    module.
+  * Removed LWM2M_RES_TYPE_U64 type, as it's not possible to encode it properly
+    for large values.
+  * Fixed a bug, where large unsigned integers were incorrectly encoded in TLV.
+  * Multiple fixes for FLOAT type processing in the LwM2M engine and encoders.
+  * Fix a bug, where IPSO Push Button counter resource was not triggering
+    notification on incrementation.
+  * Fixed a bug, where Register failures were reported as success to the
+    application.
 
 * Misc:
 
+  * Added RX/TX timeout on a socket in ``big_http_download`` sample.
+  * Introduced :c:func:`net_pkt_remove_tail` function.
+    Added IEEE 802.15.4 security-related flags to the :c:struct:`net_pkt`
+    structure.
+  * Added bridging support to the Ethernet L2.
+  * Fixed a bug in mDNS, where an incorrect address type could be set as a
+    response destination.
+  * Added an option to suppress ICMP destination unreachable errors.
+  * Fixed possible assertion in ``net nbr`` shell command.
+  * Major refactoring of the TFTP library.
+
+* MQTT:
+
+  * Added an option to register a custom transport type.
+  * Fixed a bug in :c:func:`mqtt_abort`, where the function could return without
+    releasing a lock.
 
 * OpenThread:
 
+  * Update OpenThread module up to commit ``9ea34d1e2053b6b2a80e1d46b65a6aee99fc504a``.
+    Added several new Kconfig options to align with new OpenThread
+    configurations.
+  * Added OpenThread API mutex protection during initialization.
+  * Converted OpenThread thread to a dedicated work queue.
+  * Implemented missing :c:func:`otPlatAssertFail` platform function.
+  * Fixed a bug, where NONE level OpenThread logs were not processed.
+  * Added possibility to disable CSL sampling, when used.
+  * Fixed a potential bug, where invalid error code could be returned by the
+    platform radio layer to OpenThread.
+  * Reworked UART configuration in the OpenThread Coprocessor sample.
 
 * Socket:
 
+  * Added microsecond accuracy in :c:func:`zsock_select` function.
+  * Reworked :c:func:`zsock_select` into a syscall.
+  * Fixed a bug, where :c:func:`poll` events were not signalled correctly
+    for socketpair sockets.
+  * Fixed a bug, where socket mutex could be used after being initialized by a
+    new owner after being deallocated in :c:func:`zsock_close`.
+  * Fixed a possible assert after enabling CAN sockets.
+  * Fixed IPPROTO_RAW usage in packet socket implementation.
 
 * TCP:
 
+  * Fixed a bug, where ``unacked_len`` could be set to a negative value.
+  * Fixed possible assertion failure in :c:func:`tcp_send_data`.
+  * Fixed a bug, where [FIN, PSH, ACK] was not handled properly in
+    TCP_FIN_WAIT_2 state.
 
 * TLS:
 
+  * Reworked TLS sockets to use secure random generator from Zephyr.
+  * Fixed busy looping during DTLS handshake with offloaded sockets.
+  * Fixed busy looping during TLS/DTLS handshake on non blocking sockets.
+  * Reset mbed TLS session on timed out DTLS handshake, to allow a retry without
+    closing a socket.
+  * Fixed TLS/DTLS :c:func:`sendmsg` implementation for larger payloads.
+  * Fixed TLS/DTLS sockets ``POLLHUP`` notification.
+
+* WebSocket:
+
+  * Fixed :c:func:`poll` implementation for WebSocket, which did not work
+    correctly with offloaded sockets.
+  * Fixed :c:func:`ioctl` implementation for WebSocket, which did not work
+    correctly with offloaded sockets.
 
 USB
 ***
