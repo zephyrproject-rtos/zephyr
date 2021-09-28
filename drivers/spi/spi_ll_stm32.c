@@ -559,7 +559,11 @@ static int spi_stm32_configure(const struct device *dev,
 
 #if !defined(CONFIG_SOC_SERIES_STM32F1X) \
 	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
-	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
+	if (cfg->ti_mode) {
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_TI);
+	} else {
+		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
+	}
 #endif
 
 	/* At this point, it's mandatory to set this on the context! */
@@ -924,6 +928,14 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_DMA_STATUS_SEM(id)
 #endif
 
+#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
+	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
+#define STM32_SPI_TI_MODE_CONFIG(id)				\
+	.ti_mode = DT_INST_PROP(id, frame_format),
+#else
+#define STM32_SPI_TI_MODE_CONFIG(id)
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 #define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
 	.use_subghzspi_nss = DT_INST_PROP_OR(				\
@@ -948,6 +960,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
+	STM32_SPI_TI_MODE_CONFIG(id)					\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
