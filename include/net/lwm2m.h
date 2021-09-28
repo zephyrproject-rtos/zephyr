@@ -1004,5 +1004,9 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
  */
 void lwm2m_rd_client_update(void);
 
+#if defined(CONFIG_LOG)
+char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
+#endif /* CONFIG_LOG */
+
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
