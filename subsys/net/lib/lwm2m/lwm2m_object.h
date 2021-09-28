@@ -148,14 +148,6 @@ struct lwm2m_message;
 #define LWM2M_PATH_LEVEL_RESOURCE_INST 4
 
 /* path representing object instances */
-struct lwm2m_obj_path {
-	uint16_t obj_id;
-	uint16_t obj_inst_id;
-	uint16_t res_id;
-	uint16_t res_inst_id;
-	uint8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
-};
-
 #define OBJ_FIELD(_id, _perm, _type) \
 	{ .res_id = _id, \
 	  .permissions = LWM2M_PERM_ ## _perm, \

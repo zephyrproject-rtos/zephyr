@@ -67,7 +67,37 @@
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
-typedef void (*lwm2m_notify_timeout_cb_t)(void);
+
+struct lwm2m_obj_path {
+	uint16_t obj_id;
+	uint16_t obj_inst_id;
+	uint16_t res_id;
+	uint16_t res_inst_id;
+	uint8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
+};
+
+/**
+ * @brief Observe callback events
+ */
+enum lwm2m_observe_event {
+	LWM2M_OBSERVE_EVENT_OBSERVER_ADDED,
+	LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED,
+	LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
+	LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+};
+
+/**
+ * @brief Observe callback indicating observer adds and deletes, and
+ *	  notification ACKs and timeouts
+ *
+ * @param[in] event Observer add/delete or notification ack/timeout
+ * @param[in] path LwM2M path
+ * @param[in] user_data Pointer to user_data buffer, as provided in
+ *			send_traceable_notification(). Used to determine for which
+ *			data the ACKed/timed out notification was.
+ */
+typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
+				   void *user_data);
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -134,10 +164,10 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
 
-	/** Notify Timeout Callback. LwM2M processing thread will call this
-	 *  callback in case of notify timeout.
+	/** Callback for new or cancelled observations, and acknowledged or timed
+	 *  out notifications.
 	 */
-	lwm2m_notify_timeout_cb_t notify_timeout_cb;
+	lwm2m_observe_cb_t observe_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -980,9 +1010,13 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  * @param[in] ep_name Registered endpoint name
  * @param[in] flags Flags used to configure current LwM2M session.
  * @param[in] event_cb Client event callback function
+ * @param[in] observe_cb Observe callback function called when an observer was
+ *			 added or deleted, and when a notification was acked or
+ *			 has timed out
  */
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb);
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
+			   lwm2m_observe_cb_t observe_cb);
 
 /**
  * @brief Stop the LwM2M RD (De-register) Client
@@ -1004,6 +1038,21 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
  * @brief Trigger a Registration Update of the LwM2M RD Client
  */
 void lwm2m_rd_client_update(void);
+
+/**
+ * @brief LwM2M path maximum length
+ */
+#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
+
+/**
+ * @brief Helper function to print path objects' contents to log
+ *
+ * @param[in] buf The buffer to use for formatting the string
+ * @param[in] path The path to stringify
+ *
+ * @return Resulting formatted path string
+ */
+char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
