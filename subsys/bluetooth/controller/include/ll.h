@@ -15,8 +15,9 @@ void ll_reset(void);
 uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value);
 uint64_t ll_feat_get(void);
 
-uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *p_bdaddr);
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
+uint8_t *ll_addr_get(uint8_t addr_type);
+uint8_t *ll_addr_read(uint8_t addr_type, uint8_t *const bdaddr);
 
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
