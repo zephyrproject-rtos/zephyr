@@ -249,6 +249,8 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * 4.2inch epaper display (GDEW042T2)
+  * X-NUCLEO-EEPRMA2 EEPROM memory expansion board
 
 Drivers and Sensors
 *******************
