@@ -2108,7 +2108,7 @@ class CMake():
 
         else:
             logger.error("Cmake script failure: %s" % (args[0]))
-            results = {"returncode": p.returncode}
+            results = {"returncode": p.returncode, "returnmsg": out}
 
         return results
 
@@ -2898,7 +2898,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         try:
             if result['returncode']:
-                raise TwisterRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
         except Exception as e:
             print(str(e))
             sys.exit(2)
