@@ -535,6 +535,15 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		/* Convert "Legacy" property to Extended property. */
 		adv_info.adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
 
+		if (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type) ==
+		    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+			/* Handling of incomplete reports is currently not
+			 * handled in the host. The remaining advertising
+			 * reports may therefore contain partial data.
+			 */
+			BT_WARN("Incomplete adv report");
+		}
+
 		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
 
 		net_buf_pull(buf, evt->length);
@@ -628,6 +637,14 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	info.rssi = evt->rssi;
 	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
+
+	if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+		/* Handling of incomplete reports is currently not
+		 * handled in the host. The remaining advertising
+		 * reports may therefore contain partial data.
+		 */
+		BT_WARN("Incomplete per adv report");
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->recv) {
