@@ -69,8 +69,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define MAX_TOKEN_LEN		8
 
-#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
-
 struct observe_node {
 	sys_snode_t node;
 	struct lwm2m_obj_path path;
@@ -521,10 +519,29 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		log_strdup(sprint_token(token, tkl)),
 		log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
+	if (msg->ctx->observe_cb) {
+		msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &msg->path, NULL);
+	}
+
 	return 0;
 }
 
-static int engine_remove_observer(struct lwm2m_ctx *ctx, const uint8_t *token, uint8_t tkl)
+static void remove_observer_from_list(struct lwm2m_ctx *ctx, sys_snode_t *prev_node,
+				      struct observe_node *obs)
+{
+	char buf[LWM2M_MAX_PATH_STR_LEN];
+
+	LOG_DBG("Removing observer %p for path %s", obs, lwm2m_path_log_strdup(buf, &obs->path));
+
+	if (ctx->observe_cb) {
+		ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED, &obs->path, NULL);
+	}
+
+	sys_slist_remove(&ctx->observer, prev_node, &obs->node);
+	(void)memset(obs, 0, sizeof(*obs));
+}
+
+static int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t *token, uint8_t tkl)
 {
 	struct observe_node *obs, *found_obj = NULL;
 	sys_snode_t *prev_node = NULL;
@@ -549,8 +566,7 @@ static int engine_remove_observer(struct lwm2m_ctx *ctx, const uint8_t *token, u
 		return -ENOENT;
 	}
 
-	sys_slist_remove(&ctx->observer, prev_node, &found_obj->node);
-	(void)memset(found_obj, 0, sizeof(*found_obj));
+	remove_observer_from_list(ctx, prev_node, found_obj);
 
 	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
 
@@ -600,8 +616,8 @@ static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx,
 
 	LOG_INF("Removing observer for path %s",
 		lwm2m_path_log_strdup(buf, path));
-	sys_slist_remove(&ctx->observer, prev_node, &found_obj->node);
-	(void)memset(found_obj, 0, sizeof(*found_obj));
+
+	remove_observer_from_list(ctx, prev_node, found_obj);
 
 	return 0;
 }
@@ -623,8 +639,7 @@ static void engine_remove_observer_by_id(uint16_t obj_id, int32_t obj_inst_id)
 				continue;
 			}
 
-			sys_slist_remove(&sock_ctx[i]->observer, prev_node, &obs->node);
-			(void)memset(obs, 0, sizeof(*obs));
+			remove_observer_from_list(sock_ctx[i], prev_node, obs);
 		}
 	}
 }
@@ -3830,7 +3845,7 @@ static int handle_request(struct coap_packet *request,
 				}
 			} else if (observe == 1) {
 				/* remove observer */
-				r = engine_remove_observer(msg->ctx, token, tkl);
+				r = engine_remove_observer_by_token(msg->ctx, token, tkl);
 				if (r < 0) {
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
 					r = engine_remove_observer_by_path(msg->ctx,
@@ -4038,7 +4053,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		}
 
 		/* skip release if reply->user_data has error condition */
-		if (reply && reply->user_data != COAP_REPLY_STATUS_NONE) {
+		if (reply && reply->user_data == (void *)COAP_REPLY_STATUS_ERROR) {
 			/* reset reply->user_data for next time */
 			reply->user_data = (void *)COAP_REPLY_STATUS_NONE;
 			LOG_DBG("reply %p NOT removed", reply);
@@ -4156,8 +4171,9 @@ static void notify_message_timeout_cb(struct lwm2m_message *msg)
 	if (msg->ctx != NULL) {
 		struct lwm2m_ctx *client_ctx = msg->ctx;
 
-		if (client_ctx->notify_timeout_cb != NULL) {
-			client_ctx->notify_timeout_cb();
+		if (client_ctx->observe_cb) {
+			client_ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+					       &msg->path, msg->reply->user_data);
 		}
 	}
 
@@ -4171,6 +4187,7 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 	int ret = 0;
 	uint8_t type, code;
 	struct lwm2m_message *msg;
+	struct observe_node *obs, *found_obj = NULL;
 
 	type = coap_header_get_type(response);
 	code = coap_header_get_code(response);
@@ -4181,16 +4198,31 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_DETAIL(code),
 		log_strdup(sprint_token(reply->token, reply->tkl)));
 
+	msg = find_msg(NULL, reply);
+
 	/* remove observer on COAP_TYPE_RESET */
 	if (type == COAP_TYPE_RESET) {
 		if (reply->tkl > 0) {
-			msg = find_msg(NULL, reply);
-			ret = engine_remove_observer(msg->ctx, reply->token, reply->tkl);
+			ret = engine_remove_observer_by_token(msg->ctx, reply->token, reply->tkl);
 			if (ret) {
 				LOG_ERR("remove observe error: %d", ret);
 			}
 		} else {
 			LOG_ERR("notify reply missing token -- ignored.");
+		}
+	} else {
+		SYS_SLIST_FOR_EACH_CONTAINER(&msg->ctx->observer, obs, node) {
+			if (memcmp(obs->token, reply->token, reply->tkl) == 0) {
+				found_obj = obs;
+				break;
+			}
+		}
+
+		if (found_obj) {
+			if (msg->ctx->observe_cb) {
+				msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
+						     &obs->path, reply->user_data);
+			}
 		}
 	}
 
@@ -4199,7 +4231,8 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 
 static int generate_notify_message(struct lwm2m_ctx *ctx,
 				   struct observe_node *obs,
-				   bool manual_trigger)
+				   bool manual_trigger,
+				   void *user_data)
 {
 	struct lwm2m_message *msg;
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -4249,6 +4282,9 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		LOG_ERR("Unable to init lwm2m message! (err: %d)", ret);
 		goto cleanup;
 	}
+
+	/* lwm2m_init_message() cleans the coap reply fields, so we assign our data here */
+	msg->reply->user_data = user_data;
 
 	/* each notification should increment the obs counter */
 	obs->counter++;
@@ -4374,7 +4410,7 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	while (!sys_slist_is_empty(&client_ctx->observer)) {
 		obs_node = sys_slist_get_not_empty(&client_ctx->observer);
 		obs = SYS_SLIST_CONTAINER(obs_node, obs, node);
-		(void)memset(obs, 0, sizeof(*obs));
+		remove_observer_from_list(client_ctx, NULL, obs);
 	}
 
 	for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
@@ -4474,7 +4510,7 @@ static void check_notifications(struct lwm2m_ctx *ctx,
 		if (!manual_notify && !automatic_notify) {
 			continue;
 		}
-		rc = generate_notify_message(ctx, obs, manual_notify);
+		rc = generate_notify_message(ctx, obs, manual_notify, NULL);
 		if (rc == -ENOMEM) {
 			/* no memory/messages available, retry later */
 			return;
