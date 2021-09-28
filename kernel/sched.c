@@ -1737,6 +1737,11 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
 
+/* Need one of these for this to work */
+#if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+#error "No data backend configured for CONFIG_SCHED_THREAD_USAGE"
+#endif
+
 static struct k_spinlock usage_lock;
 
 static uint32_t usage_now(void)
