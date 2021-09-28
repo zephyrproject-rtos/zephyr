@@ -201,12 +201,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 	/* TBD: If the Host issues this command with a Connection_Handle that does not exist
 	 * or is not for a CIS or a BIS, the Controller shall return the error code Unknown
 	 * Connection Identifier (0x02).
 	 */
-	struct ll_iso_datapath *dp;
+	struct ll_iso_datapath *dp = NULL;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 		dp = cis->datapath_in;
@@ -224,6 +226,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		/* Reserved for future use */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 	if (!dp) {
 		/* Datapath was not previously set up */
@@ -234,29 +237,11 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 {
 	ARG_UNUSED(handle);
 	ARG_UNUSED(payload_type);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(payload_type);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
-			uint32_t *missed_cnt, uint32_t *failed_cnt)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(received_cnt);
-	ARG_UNUSED(missed_cnt);
-	ARG_UNUSED(failed_cnt);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -290,6 +275,28 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 	ARG_UNUSED(crc_error_packets);
 	ARG_UNUSED(rx_unreceived_packets);
 	ARG_UNUSED(duplicate_packets);
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(payload_type);
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
+			uint32_t *missed_cnt, uint32_t *failed_cnt)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(received_cnt);
+	ARG_UNUSED(missed_cnt);
+	ARG_UNUSED(failed_cnt);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
