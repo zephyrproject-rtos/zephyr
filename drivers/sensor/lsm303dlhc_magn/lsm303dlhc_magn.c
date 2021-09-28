@@ -52,11 +52,18 @@ static int lsm303dlhc_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static void lsm303dlhc_convert(struct sensor_value *val,
+static void lsm303dlhc_convert_xy(struct sensor_value *val,
 			       int64_t raw_val)
 {
-	val->val1 = raw_val / LSM303DLHC_MAGN_LSB_GAUSS;
-	val->val2 = (1000000 * raw_val / LSM303DLHC_MAGN_LSB_GAUSS) % 1000000;
+	val->val1 = raw_val / LSM303DLHC_MAGN_LSB_GAUSS_XY;
+	val->val2 = (1000000 * raw_val / LSM303DLHC_MAGN_LSB_GAUSS_XY) % 1000000;
+}
+
+static void lsm303dlhc_convert_z(struct sensor_value *val,
+			       int64_t raw_val)
+{
+	val->val1 = raw_val / LSM303DLHC_MAGN_LSB_GAUSS_Z;
+	val->val2 = (1000000 * raw_val / LSM303DLHC_MAGN_LSB_GAUSS_Z) % 1000000;
 }
 
 static int lsm303dlhc_channel_get(const struct device *dev,
@@ -67,18 +74,18 @@ static int lsm303dlhc_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case  SENSOR_CHAN_MAGN_X:
-		lsm303dlhc_convert(val, drv_data->magn_x);
+		lsm303dlhc_convert_xy(val, drv_data->magn_x);
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		lsm303dlhc_convert(val, drv_data->magn_y);
+		lsm303dlhc_convert_xy(val, drv_data->magn_y);
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		lsm303dlhc_convert(val, drv_data->magn_z);
+		lsm303dlhc_convert_z(val, drv_data->magn_z);
 		break;
 	case SENSOR_CHAN_MAGN_XYZ:
-		lsm303dlhc_convert(val, drv_data->magn_x);
-		lsm303dlhc_convert(val + 1, drv_data->magn_y);
-		lsm303dlhc_convert(val + 2, drv_data->magn_z);
+		lsm303dlhc_convert_xy(val, drv_data->magn_x);
+		lsm303dlhc_convert_xy(val + 1, drv_data->magn_y);
+		lsm303dlhc_convert_z(val + 2, drv_data->magn_z);
 		break;
 	default:
 		return -ENOTSUP;
