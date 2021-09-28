@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <sys/_types.h>
+#include <endian.h>
 
 typedef unsigned int mode_t;
 
