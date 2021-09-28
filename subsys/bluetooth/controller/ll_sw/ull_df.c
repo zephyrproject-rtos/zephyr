@@ -835,14 +835,18 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 	while (pdu_chained) {
 		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
 			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
-			lll_adv_pdu_linked_release_all(pdu_chained);
+			if (!new_chain) {
+				lll_adv_pdu_linked_release_all(pdu_chained);
+
+				/* Set new end of chain in PDUs linked list. If pdu differs from
+				 * prev_pdu then it is already end of a chain. If it doesn't differ,
+				 * then chain end is changed in right place by use of pdu_prev.
+				 * That makes sure there is no PDU released twice (here and when LLL
+				 * swaps PDU buffers).
+				 */
+				lll_adv_pdu_linked_append(NULL, *pdu_prev);
+			}
 			pdu_chained = NULL;
-			/* Set new end of chain in PDUs linked list. If pdu differs from prev_pdu
-			 * then it is alread end of a chain. If it doesn't differ, then chain end
-			 * is changed in rigth place by use of pdu_prev. That makes sure there
-			 * is no PDU released twice (here and when LLL swaps PDU buffers).
-			 */
-			lll_adv_pdu_linked_append(NULL, *pdu_prev);
 		} else {
 			/* Update one before pdu_chained */
 			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
