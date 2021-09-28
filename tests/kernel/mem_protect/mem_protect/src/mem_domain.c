@@ -493,3 +493,93 @@ void test_mem_domain_init_fail(void)
 	zassert_unreachable("should not be here");
 #endif
 }
+
+/**
+ * @brief Test error case of adding null memory partition fail
+ *
+ * @details Try to add a null partition to memory domain, then see
+ * if an expected fatal error happens.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_add_error_null(void)
+{
+	/* add partition fail, expected fault happened */
+	set_fault_valid(true);
+	k_mem_domain_add_partition(&test_domain_fail, NULL);
+	ztest_test_fail();
+}
+
+static volatile uint8_t __aligned(MEM_REGION_ALLOC) nosize_buf[MEM_REGION_ALLOC];
+K_MEM_PARTITION_DEFINE(nonsize_part, nosize_buf, sizeof(nosize_buf),
+			K_MEM_PARTITION_P_RO_U_RO);
+
+/**
+ * @brief Test error case of adding zero sized memory partition fail
+ *
+ * @details Try to add a zero sized partition to memory domain, then see
+ * if an expected fatal error happens.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_add_error_zerosize(void)
+{
+
+	struct k_mem_partition *nosize_part = &nonsize_part;
+
+	nosize_part->size = 0U;
+
+	/* add partition fail, expected fault happened */
+	set_fault_valid(true);
+	k_mem_domain_add_partition(&test_domain_fail, nosize_part);
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test error case of memory partition address wraparound
+ *
+ * @details Try to add a partition whose adddress is wraparound will cause
+ * assertion, then triggher an expected fatal error.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_error_wraparound(void)
+{
+#ifdef CONFIG_64BIT
+	K_MEM_PARTITION_DEFINE(wraparound_part, 0xfffffffffffff800, 2048,
+		       K_MEM_PARTITION_P_RO_U_RO);
+#else
+	K_MEM_PARTITION_DEFINE(wraparound_part, 0xfffff800, 2048,
+		       K_MEM_PARTITION_P_RO_U_RO);
+#endif
+
+	/* add partition fail, expected fault happened */
+	set_fault_valid(true);
+	k_mem_domain_add_partition(&test_domain_fail, &wraparound_part);
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test error case of removing memory partition fail
+ *
+ * @details Try to remove a partition size mismatched will cause
+ * assertion, then triggher an expected fatal error.
+ * And while the fatal error happened, the memory domain spinlock
+ * is held, we need to release them to make other follow test case.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_remove_error_zerosize(void)
+{
+	struct k_mem_partition *no_parts = &find_no_part;
+
+	k_mem_domain_remove_partition(&test_domain, &rw_parts[0]);
+	k_mem_domain_add_partition(&test_domain, no_parts);
+	no_parts->size = 0U;
+
+	/* remove partition fail, expected fault happened */
+	need_recover_spinlock = true;
+	set_fault_valid(true);
+	k_mem_domain_remove_partition(&test_domain, no_parts);
+	ztest_test_fail();
+}

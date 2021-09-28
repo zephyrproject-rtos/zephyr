@@ -41,6 +41,10 @@ void test_main(void)
 		ztest_unit_test(test_mem_part_overlap),
 		ztest_unit_test(test_mem_domain_init_fail),
 		ztest_unit_test(test_mem_domain_remove_part_fail),
+		ztest_unit_test(test_mem_part_add_error_null),
+		ztest_unit_test(test_mem_part_add_error_zerosize),
+		ztest_unit_test(test_mem_part_error_wraparound),
+		ztest_unit_test(test_mem_part_remove_error_zerosize),
 
 		/* mem_partition.c */
 		ztest_user_unit_test(test_mem_part_assign_bss_vars_zero),

@@ -23,6 +23,10 @@ extern void test_mem_domain_boot_threads(void);
 extern void test_mem_domain_migration(void);
 extern void test_mem_domain_init_fail(void);
 extern void test_mem_domain_remove_part_fail(void);
+extern void test_mem_part_add_error_null(void);
+extern void test_mem_part_add_error_zerosize(void);
+extern void test_mem_part_error_wraparound(void);
+extern void test_mem_part_remove_error_zerosize(void);
 
 extern void test_macros_obtain_names_data_bss(void);
 extern void test_mem_part_assign_bss_vars_zero(void);
