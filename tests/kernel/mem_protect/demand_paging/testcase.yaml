@@ -1,10 +1,11 @@
 tests:
   kernel.demand_paging:
     tags: kernel mmu demand_paging ignore_faults
+    platform_allow: qemu_x86_tiny qemu_x86
     filter: CONFIG_DEMAND_PAGING
   kernel.demand_paging.timing_funcs:
     tags: kernel mmu demand_paging ignore_faults
-    platform_allow: qemu_x86_tiny
+    platform_allow: qemu_x86_tiny qemu_x86
     filter: CONFIG_DEMAND_PAGING
     extra_configs:
       - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y
