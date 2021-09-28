@@ -17,6 +17,8 @@
 #include <logging/log.h>
 #include <sys/atomic.h>
 #include <sys/math_extras.h>
+#include <timing/timing.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_SCHED_DUMB)
@@ -1746,7 +1748,13 @@ static struct k_spinlock usage_lock;
 
 static uint32_t usage_now(void)
 {
-	uint32_t now = k_cycle_get_32();
+	uint32_t now;
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	now = (uint32_t)timing_counter_get();
+#else
+	now = k_cycle_get_32();
+#endif
 
 	/* Edge case: we use a zero as a null ("stop() already called") */
 	return (now == 0) ? 1 : now;
