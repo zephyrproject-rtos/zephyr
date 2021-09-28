@@ -13,7 +13,7 @@
 #ifndef __LL_H
 #define __LL_H
 
-int cmd_ll_addr_get(const struct shell *sh, size_t argc, char *argv[]);
+int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[]);
 
 int cmd_advx(const struct shell *sh, size_t  argc, char *argv[]);
 int cmd_scanx(const struct shell *sh, size_t  argc, char *argv[]);
