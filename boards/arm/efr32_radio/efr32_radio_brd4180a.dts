@@ -62,8 +62,8 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(1)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_C GECKO_PIN(0)>;
+	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(6)>;
+	location-tx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(5)>;
 	status = "okay";
 };
 
