@@ -454,8 +454,9 @@ Drivers and Sensors
 
 * USB
 
-  * Add Atmel SAM4L USBC device controller
-
+  * Added Atmel SAM4L USBC device controller driver
+  * Added support for NXP LPC USB controller
+  * Adapted drivers use new USB framework header
 
 * Watchdog
 
@@ -597,6 +598,20 @@ Networking
 USB
 ***
 
+* Added new header file where all defines and structures from Chapter 9
+  (USB Device Framework) should be included.
+* Revised configuraiton of USB device support.
+  Removed Kconfig option ``CONFIG_USB`` and introduced Kconfig option
+  ``CONFIG_USB_DEVICE_DRIVER`` to enable USB device controller drivers,
+  which is selected when option ``CONFIG_USB_DEVICE_STACK`` is enabled.
+* Enhanced verification of the control request in device stack, classes, and samples.
+* Added support to store alternate interface setting.
+* Added ``zephyr_udc0`` nodelabel to all boards with USB support to allow
+  generic USB device support samples to be build.
+* Reworked descriptors, config, and data definitions macros in CDC ACM class.
+* Changed CDC ACM UART implementation to get configuration from devicetree.
+  With this change, many ``CONFIG_*_ON_DEV_NAME`` options were removed and
+  applications revised. See :ref:`usb_device_cdc_acm` for more information.
 
 Build and Infrastructure
 ************************
