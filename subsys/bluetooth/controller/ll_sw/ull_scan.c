@@ -188,7 +188,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 	if ((is_coded_phy && (own_addr_type & 0x1)) ||
 	    (!is_coded_phy && (scan->own_addr_type & 0x1))) {
-		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+		if (!mem_nz(ll_addr_get(BT_ADDR_LE_RANDOM), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
@@ -362,7 +362,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	uint32_t ret;
 
 	lll->init_addr_type = scan->own_addr_type;
-	ll_addr_get(lll->init_addr_type, lll->init_addr);
+	(void)ll_addr_read(lll->init_addr_type, lll->init_addr);
 	lll->chan = 0U;
 	lll->is_stop = 0U;
 
