@@ -996,9 +996,11 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  * @param[in] ep_name Registered endpoint name
  * @param[in] flags Flags used to configure current LwM2M session.
  * @param[in] event_cb Client event callback function
+ * @param[in] observe_cb Observe/notification callback
  */
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb);
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
+			   lwm2m_observe_cb_t observe_cb);
 
 /**
  * @brief Stop the LwM2M RD (De-register) Client
