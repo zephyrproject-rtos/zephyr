@@ -56,7 +56,7 @@ data_template = """
 """
 
 library_data_template = """
-		*{0}:*(.data .data.*)
+		*{0}:*(.data .data.* .sdata .sdata.*)
 """
 
 bss_template = """
@@ -65,7 +65,7 @@ bss_template = """
 """
 
 library_bss_template = """
-		*{0}:*(.bss .bss.* COMMON COMMON.*)
+		*{0}:*(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)
 """
 
 footer_template = """
