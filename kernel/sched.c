@@ -1767,7 +1767,14 @@ void z_sched_usage_stop(void)
 	uint32_t u0 = _current_cpu->usage0;
 
 	if (u0 != 0) {
-		_current->base.usage += usage_now() - u0;
+		uint32_t dt = usage_now() - u0;
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+		if (!z_is_idle_thread_object(_current)) {
+			_kernel.all_thread_usage += dt;
+		}
+#endif
+		_current->base.usage += dt;
 	}
 
 	_current_cpu->usage0 = 0;
@@ -1781,7 +1788,15 @@ uint64_t z_sched_thread_usage(struct k_thread *thread)
 	uint64_t ret = thread->base.usage;
 
 	if (u0 != 0) {
-		ret += now - u0;
+		uint32_t dt = now - u0;
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+		if (!z_is_idle_thread_object(thread)) {
+			_kernel.all_thread_usage += dt;
+		}
+#endif
+
+		ret += dt;
 		thread->base.usage = ret;
 		_current_cpu->usage0 = now;
 	}
