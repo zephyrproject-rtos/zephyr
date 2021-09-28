@@ -183,6 +183,7 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Added STM32U5 basic SoC support
 
 * Removed support for these SoC series:
 
@@ -198,13 +199,26 @@ Boards & SoC Support
   * Enabled Atmel SAM ``clock-frequency`` support from devicetree
   * Free Atmel SAM TRACESWO pin when unused
   * Enabled Cypress PSoC-6 Cortex-M4 support
+  * Added low power support to STM32L0, STM32G0 and STM32WL series
+  * STM32: Enabled ART Flash accelerator by default when available (F2, F4, F7, H7, L5)
+  * STM32: Added Kconfig option to enable STM32Cube asserts (CONFIG_USE_STM32_ASSERT)
 
 
 * Changes for ARC boards:
 
 
+* Changes for ARM boards:
+
+  * Added SPI support on Arduino standard SPI when possible
+
 * Added support for these ARM boards:
 
+  * Dragino NBSN95 NB-IoT Sensor Node
+  * Seeedstudio LoRa-E5 Dev Board
+  * ST B_U585I_IOT02A Discovery kit
+  * ST Nucleo F446ZE
+  * ST Nucleo U575ZI Q
+  * ST STM32H735G Discovery
 
 * Added support for these ARM64 boards:
 
@@ -241,6 +255,8 @@ Drivers and Sensors
 
 * ADC
 
+  * Added STM32WL ADC driver
+  * STM32: Added support for oversampling
 
 * Bluetooth
 
@@ -257,13 +273,17 @@ Drivers and Sensors
 * Counter
 
   * Add Atmel SAM counter (TC) Driver
+  * Added STM32WL RTC counter driver
 
+* Crypto
+
+  * STM23: Add support for SOCs with AES hardware block (STM32G0, STM32L5 and STM32WL)
 
 * DAC
 
   * Added Atmel SAM DAC (DACC) driver
   * Added support for Microchip MCP4725
-
+  * Added support for STM32F3 series
 
 * Disk
 
@@ -275,16 +295,22 @@ Drivers and Sensors
 
 * Disk
 
+  * STM32 SDMMC now supports SDIO enabled devices
 
 * DMA
 
   * Added Atmel SAM XDMAC reload support
-  * Added support on STM32G0 and STM32H7
+  * Added support on STM32F3, STM32G0, STM32H7 and STM32L5
+  * STM32: Reviewed bindings definitions, "st,stm32-dma-v2bis" introduced.
 
 
 * EEPROM
 
   * Added support for EEPROM emulated in flash.
+
+* Entropy
+
+  * Added support for STM32F2, STM32G0, STM32WB and STM32WL
 
 * ESPI
 
@@ -300,6 +326,9 @@ Drivers and Sensors
 
 * Flash
 
+  * Added STM32F2, STM32L5 and STM32WL Flash driver support
+  * STM32: Max erase time parameter was moved to device tree
+  * Added quad SPI support for STM32F4
 
 * GPIO
 
@@ -324,6 +353,10 @@ Drivers and Sensors
 * Interrupt Controller
 
 
+* IPM
+
+  * STM32: Add HSEM based IPM driver for STM32H7 series
+
 * LED
 
 
@@ -331,6 +364,12 @@ Drivers and Sensors
 
   * lora_send now blocks until the transmission is complete. lora_send_async
     can be used for the previous, non-blocking behaviour.
+  * Enabled support for STM32WL series
+
+* MEMC
+
+  * Added STM32F4 support
+
 
 * Modem
 
@@ -345,9 +384,13 @@ Drivers and Sensors
 * Pinmux
 
   * Added Atmel SAM0 pinctrl support
+  * STM32: Deprecated definitions like 'STM32F2_PINMUX_FUNC_PA0_UART4_TX'
+    are now removed.
 
 
 * PWM
+
+  * Property "st,prescaler" of binding "st,stm32-pwm" now defaults to "0".
 
 
 * Sensor
@@ -373,6 +416,8 @@ Drivers and Sensors
 
 
 * Watchdog
+
+  * Added STM32L5 watchdog support
 
 
 * WiFi
