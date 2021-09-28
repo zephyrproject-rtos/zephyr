@@ -21,10 +21,6 @@
 #include <toolchain.h>
 #include <tracing/tracing_macros.h>
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
-#include <timing/timing.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -5874,8 +5870,6 @@ __syscall int k_float_disable(struct k_thread *thread);
  */
 __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-
 /**
  * @brief Get the runtime statistics of a thread
  *
@@ -5893,8 +5887,6 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  * @return -EINVAL if null pointers, otherwise 0
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
-
-#endif
 
 #ifdef __cplusplus
 }
