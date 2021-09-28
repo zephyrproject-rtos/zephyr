@@ -441,16 +441,6 @@ int ull_adv_aux_reset_finalize(void)
 	return 0;
 }
 
-uint8_t const *ull_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
-					   uint8_t *const addr)
-{
-	if (addr) {
-		(void)memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
-	}
-
-	return adv->rnd_addr;
-}
-
 uint8_t ull_adv_aux_chm_update(void)
 {
 	/* For each created extended advertising set */
