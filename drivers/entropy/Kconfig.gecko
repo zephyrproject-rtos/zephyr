@@ -1,6 +1,7 @@
 # gecko entropy generator driver configuration
 
 # Copyright (c) 2020 Lemonbeat GmbH
+# Copyright (c) 2021 Safran Passenger Innovations Germany GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config ENTROPY_GECKO_TRNG
@@ -11,3 +12,12 @@ config ENTROPY_GECKO_TRNG
 	help
 	  This option enables the true random number generator
 	  driver based on the TRNG.
+
+config ENTROPY_GECKO_SE
+	bool "GECKO SE driver"
+	depends on SOC_GECKO_SE
+	select ENTROPY_HAS_DRIVER
+	default y
+	help
+	  This option enables the true random number generator
+	  driver based on the Secure Element (SE) module.
