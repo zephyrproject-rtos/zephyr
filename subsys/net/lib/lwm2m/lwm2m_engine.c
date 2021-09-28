@@ -515,6 +515,10 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	sys_slist_append(&msg->ctx->observer,
 			 &observe_node_data[i].node);
 
+	if (msg->ctx->observe_cb != NULL) {
+		msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_ADDED, &msg->path);
+	}
+
 	LOG_DBG("OBSERVER ADDED %u/%u/%u(%u) token:'%s' addr:%s",
 		msg->path.obj_id, msg->path.obj_inst_id,
 		msg->path.res_id, msg->path.level,
@@ -551,6 +555,10 @@ static int engine_remove_observer(struct lwm2m_ctx *ctx, const uint8_t *token, u
 
 	sys_slist_remove(&ctx->observer, prev_node, &found_obj->node);
 	(void)memset(found_obj, 0, sizeof(*found_obj));
+
+	if (obs->ctx->observe_cb != NULL) {
+		obs->ctx->observe_cb(LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED, &obs->path);
+	}
 
 	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
 
@@ -4162,8 +4170,8 @@ static void notify_message_timeout_cb(struct lwm2m_message *msg)
 	if (msg->ctx != NULL) {
 		struct lwm2m_ctx *client_ctx = msg->ctx;
 
-		if (client_ctx->notify_timeout_cb != NULL) {
-			client_ctx->notify_timeout_cb();
+		if (client_ctx->observe_cb != NULL) {
+			client_ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT, &msg->path);
 		}
 	}
 
@@ -4177,9 +4185,21 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 	int ret = 0;
 	uint8_t type, code;
 	struct lwm2m_message *msg;
+	struct observe_node *obs, *found_obj = NULL;
 
 	type = coap_header_get_type(response);
 	code = coap_header_get_code(response);
+
+	/* find the node index */
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
+		if (memcmp(obs->token, reply->token, reply->tkl) == 0) {
+			/* call observe callback */
+			if (obs->ctx->observe_cb != NULL) {
+				obs->ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_ACK, &obs->path);
+			}
+			break;
+		}
+	}
 
 	LOG_DBG("NOTIFY ACK type:%u code:%d.%d reply_token:'%s'",
 		type,

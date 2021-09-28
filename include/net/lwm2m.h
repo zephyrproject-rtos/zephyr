@@ -64,8 +64,23 @@
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
 /* clang-format on */
 
+struct lwm2m_obj_path {
+	uint16_t obj_id;
+	uint16_t obj_inst_id;
+	uint16_t res_id;
+	uint16_t res_inst_id;
+	uint8_t  level;  /* 0/1/2/3/4 (4 = resource instance) */
+};
+
+enum lwm2m_observe_event {
+	LWM2M_OBSERVE_EVENT_OBSERVER_ADDED,
+	LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED,
+	LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
+	LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+};
+
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
-typedef void (*lwm2m_notify_timeout_cb_t)(void);
+typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path);
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -126,10 +141,10 @@ struct lwm2m_ctx {
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
 
-	/** Notify Timeout Callback. LwM2M processing thread will call this
-	 *  callback in case of notify timeout.
+	/** Observe callback for new or cancelled observations, and acknowledged or
+	 *  timed out notifications.
 	 */
-	lwm2m_notify_timeout_cb_t notify_timeout_cb;
+	lwm2m_observe_cb_t observe_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
