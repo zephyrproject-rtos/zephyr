@@ -427,15 +427,12 @@ config BT_CTLR_FAST_ENC
 	depends on BT_CTLR_LE_ENC
 	default y if BT_HCI_RAW
 	help
-	  Enable connection encryption setup in 3 connection intervals.
+	  Enable connection encryption setup in 4 connection events.
 	  Peripheral will respond to Encryption Request with Encryption Response
-	  in the same connection interval, and also, will respond with Start
-	  Encryption Response PDU in the 3rd connection interval, hence
-	  completing encryption setup in 3 connection intervals. Encrypted data
-	  would be transmitted as fast as in 3rd connection interval from the
-	  connection establishment.
-	  Maximum CPU time in Radio ISR will increase if this feature is
-	  selected.
+	  in the next connection event, and will transmit Start Encryption
+	  Request PDU in the same connection event, hence completing encryption
+	  setup in 4 connection events. Encrypted data would be transmitted as
+	  fast as in 4th connection event from Encryption Request.
 
 config BT_CTLR_LLCP_CONN
 	int "Number of connections with worst-case overlapping procedures"
