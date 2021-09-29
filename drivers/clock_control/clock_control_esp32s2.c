@@ -60,12 +60,6 @@ static void esp_clk_bbpll_enable(void)
 				RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
 }
 
-void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
-{
-	/* Update scale factors used by ets_delay_us */
-	esp_rom_g_ticks_per_us_pro = ticks_per_us;
-}
-
 static int esp_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
 	int dbias = DIG_DBIAS_80M_160M;
