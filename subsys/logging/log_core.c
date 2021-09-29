@@ -1174,35 +1174,6 @@ void z_log_msg2_init(void)
 	mpsc_pbuf_init(&log_buffer, &mpsc_config);
 }
 
-static uint32_t log_diff_timestamp(void)
-{
-	extern log_timestamp_get_t timestamp_func;
-
-	return timestamp_func();
-}
-
-void z_log_msg2_put_trace(struct log_msg2_trace trace)
-{
-	union log_msg2_generic generic = {
-		.trace = trace
-	};
-
-	trace.hdr.timestamp = IS_ENABLED(CONFIG_LOG_TRACE_SHORT_TIMESTAMP) ?
-				log_diff_timestamp() : timestamp_func();
-	mpsc_pbuf_put_word(&log_buffer, generic.buf);
-}
-
-void z_log_msg2_put_trace_ptr(struct log_msg2_trace trace, void *data)
-{
-	union log_msg2_generic generic = {
-		.trace = trace
-	};
-
-	trace.hdr.timestamp = IS_ENABLED(CONFIG_LOG_TRACE_SHORT_TIMESTAMP) ?
-				log_diff_timestamp() : timestamp_func();
-	mpsc_pbuf_put_word_ext(&log_buffer, generic.buf, data);
-}
-
 struct log_msg2 *z_log_msg2_alloc(uint32_t wlen)
 {
 	return (struct log_msg2 *)mpsc_pbuf_alloc(&log_buffer, wlen,

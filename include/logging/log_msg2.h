@@ -42,7 +42,6 @@ typedef uint32_t log_timestamp_t;
  */
 
 #define Z_LOG_MSG2_LOG 0
-#define Z_LOG_MSG2_TRACE 1
 
 #define LOG_MSG2_GENERIC_HDR \
 	MPSC_PBUF_HDR;\
@@ -55,16 +54,6 @@ struct log_msg2_desc {
 	uint32_t package_len:10;
 	uint32_t data_len:12;
 	uint32_t reserved:1;
-};
-
-struct log_msg2_trace_hdr {
-	LOG_MSG2_GENERIC_HDR;
-	uint32_t evt_id:5;
-#if CONFIG_LOG_TRACE_SHORT_TIMESTAMP
-	uint32_t timestamp:24;
-#else
-	log_timestamp_t timestamp;
-#endif
 };
 
 union log_msg2_source {
@@ -93,15 +82,6 @@ struct log_msg2_hdr {
 #endif
 };
 
-struct log_msg2_trace {
-	struct log_msg2_trace_hdr hdr;
-};
-
-struct log_msg2_trace_ptr {
-	struct log_msg2_trace_hdr hdr;
-	void *ptr;
-};
-
 struct log_msg2 {
 	struct log_msg2_hdr hdr;
 	uint8_t data[];
@@ -114,8 +94,6 @@ struct log_msg2_generic_hdr {
 union log_msg2_generic {
 	union mpsc_pbuf_generic buf;
 	struct log_msg2_generic_hdr generic;
-	struct log_msg2_trace trace;
-	struct log_msg2_trace_ptr trace_ptr;
 	struct log_msg2 log;
 };
 
@@ -424,16 +402,6 @@ do { \
 			   _domain_id, _source, _level, _data, _dlen, \
 			   Z_LOG_STR(_level, __VA_ARGS__))
 
-#define Z_TRACING_LOG_HDR_INIT(name, id) \
-	struct log_msg2_trace name = { \
-		.hdr = { \
-			.type = Z_LOG_MSG2_TRACE, \
-			.valid = 1, \
-			.busy = 0, \
-			.evt_id = id, \
-		} \
-	}
-
 /** @brief Allocate log message.
  *
  * @param wlen Length in 32 bit words.
@@ -560,7 +528,6 @@ static inline uint32_t log_msg2_generic_get_wlen(const union mpsc_pbuf_generic *
 		return log_msg2_get_total_wlen(msg->hdr.desc);
 	}
 
-	/* trace TODO */
 	return 0;
 }
 
