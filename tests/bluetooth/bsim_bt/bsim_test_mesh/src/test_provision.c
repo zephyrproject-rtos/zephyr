@@ -10,6 +10,10 @@
 #include "argparse.h"
 #include <bs_pc_backchannel.h>
 
+#include <tinycrypt/constants.h>
+#include <tinycrypt/ecc.h>
+#include <tinycrypt/ecc_dh.h>
+
 #include <sys/byteorder.h>
 
 #define LOG_MODULE_NAME mesh_prov
@@ -24,7 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PROV_MULTI_COUNT 3
 #define PROV_REPROV_COUNT 10
-#define WAIT_TIME 60 /*seconds*/
+#define WAIT_TIME 80 /*seconds*/
 
 enum test_flags {
 	IS_PROVISIONER,
@@ -36,7 +40,10 @@ static uint8_t static_key1[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F,
 		0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31};
 static uint8_t static_key2[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F};
 
-static struct {
+static uint8_t private_key_be[64];
+static uint8_t public_key_be[64];
+
+static struct oob_auth_test_vector_s {
 	const uint8_t *static_val;
 	uint8_t        static_val_len;
 	uint8_t        output_size;
@@ -44,6 +51,7 @@ static struct {
 	uint8_t        input_size;
 	uint16_t       input_actions;
 } oob_auth_test_vector[] = {
+	{NULL, 0, 0, 0, 0, 0},
 	{static_key1, sizeof(static_key1), 0, 0, 0, 0},
 	{static_key2, sizeof(static_key2), 0, 0, 0, 0},
 	{NULL, 0, 3, BT_MESH_BLINK, 0, 0},
@@ -75,6 +83,7 @@ static struct k_work_delayable oob_timer;
 static void delayed_input(struct k_work *work);
 
 static uint *oob_channel_id;
+static bool is_oob_auth;
 
 static void test_device_init(void)
 {
@@ -222,7 +231,7 @@ static void capabilities(const struct bt_mesh_dev_capabilities *cap)
 	} else if (cap->input_actions) {
 		LOG_INF("Input OOB authentication");
 		ASSERT_OK(bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size));
-	} else if (!oob_channel_id) {
+	} else if (!is_oob_auth) {
 		bt_mesh_auth_method_set_none();
 	} else {
 		FAIL("No OOB in capability frame");
@@ -231,7 +240,16 @@ static void capabilities(const struct bt_mesh_dev_capabilities *cap)
 
 static void oob_auth_set(int test_step)
 {
+	struct oob_auth_test_vector_s dummy = {0};
+
 	ASSERT_TRUE(test_step < ARRAY_SIZE(oob_auth_test_vector));
+
+	if (memcmp(&oob_auth_test_vector[test_step], &dummy,
+		sizeof(struct oob_auth_test_vector_s))) {
+		is_oob_auth = true;
+	} else {
+		is_oob_auth = false;
+	}
 
 	prov.static_val = oob_auth_test_vector[test_step].static_val;
 	prov.static_val_len = oob_auth_test_vector[test_step].static_val_len;
@@ -239,6 +257,95 @@ static void oob_auth_set(int test_step)
 	prov.output_actions = oob_auth_test_vector[test_step].output_actions;
 	prov.input_size = oob_auth_test_vector[test_step].input_size;
 	prov.input_actions = oob_auth_test_vector[test_step].input_actions;
+}
+static void oob_device(bool use_oob_pk)
+{
+	int err = 0;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	oob_channel_id = bs_open_back_channel(get_device_nbr(),
+			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
+	if (!oob_channel_id) {
+		FAIL("Can't open OOB interface (err %d)\n", err);
+	}
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	if (use_oob_pk) {
+		ASSERT_TRUE(uECC_make_key(public_key_be, private_key_be, uECC_secp256r1()));
+		prov.public_key_be = public_key_be;
+		prov.private_key_be = private_key_be;
+		bs_bc_send_msg(*oob_channel_id, public_key_be, 64);
+		LOG_HEXDUMP_INF(public_key_be, 64, "OOB Public Key:");
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
+		oob_auth_set(i);
+
+		ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+
+		/* Keep a long timeout so the prov multi case has time to finish: */
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+		/* Delay to complete procedure with Provisioning Complete PDU frame.
+		 * Device shall start later provisioner was able to set OOB public key.
+		 */
+		k_sleep(K_SECONDS(2));
+
+		bt_mesh_reset();
+	}
+}
+
+static void oob_provisioner(bool read_oob_pk, bool use_oob_pk)
+{
+	int err = 0;
+
+	k_sem_init(&prov_sem, 0, 1);
+
+	oob_channel_id = bs_open_back_channel(get_device_nbr(),
+			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
+	if (!oob_channel_id) {
+		FAIL("Can't open OOB interface (err %d)\n", err);
+	}
+
+	bt_mesh_device_setup(&prov, &comp);
+
+	if (read_oob_pk) {
+		/* Delay to complete procedure public key generation on provisioning device. */
+		k_sleep(K_SECONDS(1));
+
+		int size = bs_bc_is_msg_received(*oob_channel_id);
+
+		if (size <= 0) {
+			FAIL("OOB public key is not gotten");
+		}
+
+		bs_bc_receive_msg(*oob_channel_id, public_key_be, 64);
+		LOG_HEXDUMP_INF(public_key_be, 64, "OOB Public Key:");
+	}
+
+	ASSERT_OK(bt_mesh_cdb_create(test_net_key));
+
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key));
+
+	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
+		oob_auth_set(i);
+
+		if (use_oob_pk) {
+			ASSERT_OK(bt_mesh_prov_remote_pub_key_set(public_key_be));
+		}
+
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
+
+		bt_mesh_cdb_node_del(bt_mesh_cdb_node_get(prov_addr - 1), true);
+
+		/* Delay to complete procedure with cleaning of the public key.
+		 * This is important that the provisioner started the new cycle loop
+		 * earlier than device to get OOB public key before capabilities frame.
+		 */
+		k_sleep(K_SECONDS(1));
+	}
 }
 
 /** @brief Verify that this device pb-adv provision.
@@ -299,65 +406,35 @@ static void test_provisioner_pb_adv_no_oob(void)
 
 static void test_device_pb_adv_oob_auth(void)
 {
-	int err = 0;
-
-	k_sem_init(&prov_sem, 0, 1);
-
-	oob_channel_id = bs_open_back_channel(get_device_nbr(),
-			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
-	if (!oob_channel_id) {
-		FAIL("Can't open OOB interface (err %d)\n", err);
-	}
-
-	bt_mesh_device_setup(&prov, &comp);
-
-	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
-		oob_auth_set(i);
-
-		err = bt_mesh_prov_enable(BT_MESH_PROV_ADV);
-		ASSERT_OK(err, "Device PB-ADV Enable failed (err %d)", err);
-
-		/* Keep a long timeout so the prov multi case has time to finish: */
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)),
-			  "Device provision fail");
-
-		/* Delay to complete procedure with Provisioning Complete PDU frame. */
-		k_sleep(K_SECONDS(1));
-
-		bt_mesh_reset();
-	}
+	oob_device(false);
 
 	PASS();
 }
 
 static void test_provisioner_pb_adv_oob_auth(void)
 {
-	int err = 0;
+	oob_provisioner(false, false);
 
-	k_sem_init(&prov_sem, 0, 1);
+	PASS();
+}
 
-	oob_channel_id = bs_open_back_channel(get_device_nbr(),
-			(uint[]){(get_device_nbr() + 1) % 2}, (uint[]){0}, 1);
-	if (!oob_channel_id) {
-		FAIL("Can't open OOB interface (err %d)\n", err);
-	}
+static void test_device_pb_adv_oob_public_key(void)
+{
+	oob_device(true);
 
-	bt_mesh_device_setup(&prov, &comp);
+	PASS();
+}
 
-	err = bt_mesh_cdb_create(test_net_key);
-	ASSERT_OK(err, "Failed to create CDB (err %d)\n", err);
+static void test_provisioner_pb_adv_oob_public_key(void)
+{
+	oob_provisioner(true, true);
 
-	err = bt_mesh_provision(test_net_key, 0, 0, 0, 0x0001, dev_key);
-	ASSERT_OK(err, "Provisioning failed (err %d)", err);
+	PASS();
+}
 
-	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
-		oob_auth_set(i);
-
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)),
-			  "Provisioner provision fail");
-
-		bt_mesh_cdb_node_del(bt_mesh_cdb_node_get(prov_addr - 1), true);
-	}
+static void test_provisioner_pb_adv_oob_auth_no_oob_public_key(void)
+{
+	oob_provisioner(true, false);
 
 	PASS();
 }
@@ -507,6 +584,8 @@ static const struct bst_test_instance test_connect[] = {
 		  "Device: pb-adv provisioning use no-oob method"),
 	TEST_CASE(device, pb_adv_oob_auth,
 		  "Device: pb-adv provisioning use oob authentication"),
+	TEST_CASE(device, pb_adv_oob_public_key,
+		  "Device: pb-adv provisioning use oob public key"),
 	TEST_CASE(device, pb_adv_reprovision,
 		  "Device: pb-adv provisioning, reprovision"),
 
@@ -520,6 +599,10 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to one"),
 	TEST_CASE(provisioner, pb_adv_oob_auth,
 		  "Provisioner: pb-adv provisioning use oob authentication"),
+	TEST_CASE(provisioner, pb_adv_oob_public_key,
+		  "Provisioner: pb-adv provisioning use oob public key"),
+	TEST_CASE(provisioner, pb_adv_oob_auth_no_oob_public_key,
+		"Provisioner: pb-adv provisioning use oob authentication, ignore oob public key"),
 	TEST_CASE(provisioner, pb_adv_reprovision,
 		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
 
