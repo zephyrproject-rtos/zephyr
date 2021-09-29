@@ -842,6 +842,12 @@ config BT_MESH_DEBUG_PROVISIONER
 	  Use this option to enable Provisioner debug logs for the
 	  Bluetooth mesh functionality.
 
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "Provisioning device debug"
+	help
+	  Use this option to enable Provisioning device debug logs for the
+	  Bluetooth Mesh functionality.
+
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"
 	help
