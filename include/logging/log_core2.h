@@ -12,21 +12,6 @@
 extern "C" {
 #endif
 
-#define Z_TRACING_LOG_TRACE(id) do { \
-	Z_TRACING_LOG_HDR_INIT(_msg, id); \
-	z_log_msg2_put_trace(_msg); \
-} while (0)
-
-#define Z_TRACING_LOG_TRACE_PTR(id, ptr) do { \
-	Z_TRACING_LOG_HDR_INIT(_msg, id); \
-	z_log_msg2_put_trace_ptr(_msg, ptr); \
-} while (0)
-
-void z_log_msg2_put_trace(struct log_msg2_trace trace);
-
-void z_log_msg2_put_trace_ptr(struct log_msg2_trace hdr, void *data);
-
-
 /** @brief Initialize module for handling logging message. */
 void z_log_msg2_init(void);
 
