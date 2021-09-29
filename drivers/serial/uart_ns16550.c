@@ -431,8 +431,11 @@ static int uart_ns16550_configure(const struct device *dev,
 	case UART_CFG_PARITY_NONE:
 		uart_cfg.parity = LCR_PDIS;
 		break;
+	case UART_CFG_PARITY_ODD:
+		uart_cfg.parity = LCR_PEN;
+		break;
 	case UART_CFG_PARITY_EVEN:
-		uart_cfg.parity = LCR_EPS;
+		uart_cfg.parity = LCR_PEN | LCR_EPS;
 		break;
 	default:
 		ret = -ENOTSUP;
