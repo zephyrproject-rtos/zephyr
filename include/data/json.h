@@ -9,6 +9,7 @@
 
 #include <sys/util.h>
 #include <stddef.h>
+#include <toolchain.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
 
