@@ -347,6 +347,11 @@ Drivers and Sensors
 
 * Serial
 
+  * Added kconfig to disable runtime re-configuration of UART
+    to reduce footprint if so desired.
+  * Added ESP32-C3 polling only UART driver.
+  * Added ESP32-S2 polling only UART driver.
+  * Added Microchip XEC UART driver.
 
 * SPI
 
