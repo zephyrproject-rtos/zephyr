@@ -12,6 +12,7 @@
 #include <rom/spi_flash.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <esp_clk.h>
 #endif
 
 #include <arch/riscv/arch.h>
