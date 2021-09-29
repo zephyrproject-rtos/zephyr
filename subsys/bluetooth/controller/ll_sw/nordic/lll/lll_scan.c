@@ -71,8 +71,6 @@ static void isr_abort(void *param);
 static void isr_done_cleanup(void *param);
 static void isr_cleanup(void *param);
 
-static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
-				     uint8_t devmatch_ok, uint8_t rl_idx);
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
@@ -139,6 +137,21 @@ void lll_scan_isr_resume(void *param)
 
 	p.param = param;
 	resume_prepare_cb(&p);
+}
+
+bool lll_scan_isr_rx_check(struct lll_scan *lll, uint8_t irkmatch_ok,
+			   uint8_t devmatch_ok, uint8_t rl_idx)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	return (((lll->filter_policy & 0x01) == 0) &&
+		(!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
+							       rl_idx))) ||
+	       (((lll->filter_policy & 0x01) != 0) &&
+		(devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
+#else
+	return ((lll->filter_policy & 0x01) == 0U) ||
+		devmatch_ok;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -634,6 +647,7 @@ static void isr_rx(void *param)
 	uint8_t crc_ok;
 	uint8_t rl_idx;
 	bool has_adva;
+	int err;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -661,7 +675,7 @@ static void isr_rx(void *param)
 	lll = param;
 
 	/* No Rx */
-	if (!trx_done) {
+	if (!trx_done || !crc_ok) {
 		goto isr_rx_do_close;
 	}
 
@@ -736,21 +750,19 @@ static void isr_rx(void *param)
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (crc_ok &&
-	    (!has_adva ||
-	     isr_rx_scan_check(lll, irkmatch_ok, devmatch_ok, rl_idx))) {
-		int err;
+	if (has_adva &&
+	    !lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok, rl_idx)) {
+		goto isr_rx_do_close;
+	}
 
-		err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id,
-				 irkmatch_ok, irkmatch_id, rl_idx, rssi_ready,
-				 phy_flags_rx);
-		if (!err) {
-			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-				lll_prof_send();
-			}
-
-			return;
+	err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id, irkmatch_ok,
+			 irkmatch_id, rl_idx, rssi_ready, phy_flags_rx);
+	if (!err) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_send();
 		}
+
+		return;
 	}
 
 isr_rx_do_close:
@@ -1100,21 +1112,6 @@ static void isr_cleanup(void *param)
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
 	lll_isr_cleanup(param);
-}
-
-static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
-				     uint8_t devmatch_ok, uint8_t rl_idx)
-{
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	return (((lll->filter_policy & 0x01) == 0) &&
-		(!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
-							       rl_idx))) ||
-	       (((lll->filter_policy & 0x01) != 0) &&
-		(devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
-#else
-	return ((lll->filter_policy & 0x01) == 0U) ||
-		devmatch_ok;
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
