@@ -568,40 +568,6 @@ void test_saturate(void)
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 
-#define TRACE_ID1 (1)
-#define TRACE_ID2 (31)
-void test_log_msg2_put_trace(void)
-{
-	union log_msg2_generic *msg;
-
-	Z_TRACING_LOG_HDR_INIT(trace, TRACE_ID1);
-
-	test_init();
-	z_log_msg2_put_trace(trace);
-	msg = z_log_msg2_claim();
-	zassert_true(msg, "Unexpected null message");
-	zassert_equal(msg->generic.type, Z_LOG_MSG2_TRACE, "Unexpected type");
-	zassert_equal(msg->trace.hdr.evt_id, TRACE_ID1, "Unexpected ID");
-	z_log_msg2_free(msg);
-}
-
-#define SIZE_OF_TRACE_DATA (10)
-void test_log_msg2_put_trace_ptr(void)
-{
-	uint32_t trace_data = 0x1234;
-	union log_msg2_generic *msg;
-
-	Z_TRACING_LOG_HDR_INIT(trace, TRACE_ID2);
-
-	test_init();
-	z_log_msg2_put_trace_ptr(trace, (void *)&trace_data);
-	msg = z_log_msg2_claim();
-	zassert_true(msg, "Unexpected null message");
-	zassert_equal(msg->generic.type, Z_LOG_MSG2_TRACE, "Unexpected type");
-	zassert_equal(msg->trace.hdr.evt_id, TRACE_ID2, "Unexpected ID");
-	z_log_msg2_free(msg);
-}
-
 /*test case main entry*/
 void test_main(void)
 {
@@ -615,9 +581,7 @@ void test_main(void)
 		ztest_unit_test(test_mode_size_data_only),
 		ztest_unit_test(test_mode_size_plain_str_data),
 		ztest_unit_test(test_mode_size_str_with_2strings),
-		ztest_unit_test(test_saturate),
-		ztest_unit_test(test_log_msg2_put_trace),
-		ztest_unit_test(test_log_msg2_put_trace_ptr)
+		ztest_unit_test(test_saturate)
 		);
 	ztest_run_test_suite(test_log_msg2);
 }
