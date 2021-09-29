@@ -342,6 +342,9 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+* IPM
+
+  * Added STM32 HSEM IPM driver.
 
 * Interrupt Controller
 
