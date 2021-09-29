@@ -10,6 +10,17 @@
  */
 
 #include <zephyr.h>
+#include <bluetooth/bluetooth.h>
+
+/*
+ * The unpacked structs below are used inside __packed structures that reflect
+ * what goes on the wire. While alignment is not a problem for those, since all
+ * their members are bytes or byte arrays, the size is. They must not be padded
+ * by the compiler, otherwise the on-wire packet will not map the packed
+ * structure correctly.
+ */
+BUILD_ASSERT(sizeof(bt_addr_t) == BT_ADDR_SIZE);
+BUILD_ASSERT(sizeof(bt_addr_le_t) == BT_ADDR_LE_SIZE);
 
 #if defined(CONFIG_BT_HCI_HOST)
 /* The Bluetooth subsystem requires the Tx thread to execute at higher priority
