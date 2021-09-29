@@ -52,8 +52,6 @@ struct i2c_sam0_msg {
 struct i2c_sam0_dev_data {
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
-	struct i2c_msg *msgs;
-	uint8_t num_msgs;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -139,18 +137,6 @@ static void i2c_sam0_isr(const struct device *dev)
 		return;
 	}
 
-	/*
-	 * Directly send/receive next message if it is in the same direction and
-	 * the current message has no stop flag and the next message has no
-	 * restart flag.
-	 */
-	const bool continue_next = (data->msg.size == 1) && (data->num_msgs > 1) &&
-				   ((data->msgs[0].flags & I2C_MSG_RW_MASK) ==
-				    (data->msgs[1].flags & I2C_MSG_RW_MASK)) &&
-				   !(data->msgs[0].flags & I2C_MSG_STOP) &&
-				   !(data->msgs[1].flags & I2C_MSG_RESTART) &&
-				   ((status & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_SB)));
-
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
@@ -162,20 +148,11 @@ static void i2c_sam0_isr(const struct device *dev)
 		data->msg.buffer++;
 		data->msg.size--;
 	} else if (status & SERCOM_I2CM_INTFLAG_SB) {
-		if (!continue_next) {
-			/*
-			 * If this is the last byte, then prepare for an auto
-			 * NACK before doing the actual read.  This does not
-			 * require write synchronization.
-			 */
-			i2c->CTRLB.bit.ACKACT = 1;
-		}
-
 		*data->msg.buffer = i2c->DATA.reg;
 		data->msg.buffer++;
 		data->msg.size--;
 
-		if (!continue_next) {
+		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 			k_sem_give(&data->sem);
 			return;
@@ -186,16 +163,6 @@ static void i2c_sam0_isr(const struct device *dev)
 			i2c->CTRLB.bit.CMD = 2;
 		}
 	}
-
-	if (continue_next) {
-		data->msgs++;
-		data->num_msgs--;
-
-		data->msg.buffer = data->msgs->buf;
-		data->msg.size = data->msgs->len;
-		data->msg.status = 0;
-	}
-
 }
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
@@ -393,21 +360,20 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
+	uint32_t addr_reg_prev = 0xFF;
+	int rv = 0;
 
 	if (!num_msgs) {
 		return 0;
 	}
-	data->num_msgs = num_msgs;
-	data->msgs = msgs;
 
-	for (; data->num_msgs > 0;) {
-		if (!data->msgs->len) {
-			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+	for (; num_msgs > 0; num_msgs--, msgs++) {
+		if (!msgs->len) {
+			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 				return -EINVAL;
 			}
 		}
 
-		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		i2c->INTFLAG.reg = SERCOM_I2CM_INTFLAG_MASK;
 
 		i2c->STATUS.reg = SERCOM_I2CM_STATUS_ARBLOST |
@@ -418,12 +384,16 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				  SERCOM_I2CM_STATUS_BUSERR;
 		wait_synchronization(i2c);
 
-		data->msg.buffer = data->msgs->buf;
-		data->msg.size = data->msgs->len;
+#ifdef SERCOM_I2CM_INTENSET_ERROR
+		i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_ERROR;
+#endif
+
+		data->msg.buffer = msgs->buf;
+		data->msg.size = msgs->len;
 		data->msg.status = 0;
 
 		addr_reg = addr << 1U;
-		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			addr_reg |= 1U;
 
 			/* Set to auto ACK */
@@ -431,7 +401,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			wait_synchronization(i2c);
 		}
 
-		if (data->msgs->flags & I2C_MSG_ADDR_10_BITS) {
+		if (msgs->flags & I2C_MSG_ADDR_10_BITS) {
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
@@ -439,85 +409,79 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 #endif
 		}
 
+		/* Enable Interupts */
 		int key = irq_lock();
+		i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_MB | SERCOM_I2CM_INTENSET_SB;
+		irq_unlock(key);
 
 		/*
 		 * Writing the address starts the transaction, issuing
 		 * a start/repeated start as required.
 		 */
-		i2c->ADDR.reg = addr_reg;
-
-		/*
-		 * Have to wait here to make sure the address write
-		 * clears any pending requests or errors before DMA or
-		 * ISR tries to handle it.
-		 */
-		wait_synchronization(i2c);
-
-#ifdef SERCOM_I2CM_INTENSET_ERROR
-		i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_ERROR;
-#endif
-
-		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			/*
-			 * Always set MB even when reading, since that's how
-			 * some errors are indicated.
-			 */
-			i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_MB;
-
-#ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-			if (!i2c_sam0_dma_read_start(dev))
-#endif
+		if ((addr_reg_prev != addr_reg) || (msgs->flags & I2C_MSG_RESTART))
+		{
+			i2c->ADDR.reg = addr_reg;
+			addr_reg_prev = addr_reg;
+		}
+		else
+		{
+			if((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ)
 			{
-				i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_SB;
+				/* Continue a read by initiating another transaction */
+				i2c->CTRLB.bit.CMD = 2;
 			}
-
-		} else {
-#ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-			if (!i2c_sam0_dma_write_start(dev))
-#endif
+			else if (data->msg.size)
 			{
-				i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_MB;
+				/* Continue a write without a restart by sending the first byte of the next message */
+				i2c->DATA.reg = *data->msg.buffer;
+				data->msg.buffer++;
+				data->msg.size--;
+			}
+			else if (msgs->flags & I2C_MSG_STOP) {
+				/* There is no content in this message but a command to stop holding the bus */
+				i2c->CTRLB.bit.ACKACT = 1;
+				i2c->CTRLB.bit.CMD = 3;
+				continue;
 			}
 		}
 
-		irq_unlock(key);
+#ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
+		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+			i2c_sam0_dma_read_start(dev);
+		} else {
+			i2c_sam0_dma_write_start(dev);
+		}
+#endif
 
 		/* Now wait for the ISR to handle everything */
 		k_sem_take(&data->sem, K_FOREVER);
+
+		if ((msgs->flags & I2C_MSG_STOP) || data->msg.status) {
+			/* Release the bus if requested or there is an error */
+			i2c->CTRLB.bit.ACKACT = 1;
+			i2c->CTRLB.bit.CMD = 3;
+		}
 
 		if (data->msg.status) {
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					DEV_NAME(dev));
-				return -EAGAIN;
+				rv = -EAGAIN;
+			} else {
+				LOG_ERR("Transaction error on %s: %08X",
+					DEV_NAME(dev), data->msg.status);
+				rv = -EIO;
 			}
-
-			LOG_ERR("Transaction error on %s: %08X",
-				DEV_NAME(dev), data->msg.status);
-			return -EIO;
+			break;
 		}
-
-		if (data->msgs->flags & I2C_MSG_STOP) {
-			i2c->CTRLB.bit.CMD = 3;
-		} else if ((data->msgs->flags & I2C_MSG_RESTART) && data->num_msgs > 1) {
-			/*
-			 * No action, since we do this automatically if we
-			 * don't send an explicit stop
-			 */
-		} else {
-			/*
-			 * Neither present, so assume we want to release
-			 * the bus (by sending a stop)
-			 */
-			i2c->CTRLB.bit.CMD = 3;
-		}
-
-		data->num_msgs--;
-		data->msgs++;
 	}
 
-	return 0;
+	/* Disable Interupts */
+	int key = irq_lock();
+	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+	irq_unlock(key);
+
+	return rv;
 }
 
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
@@ -793,7 +757,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.irq_config_func = &i2c_sam0_irq_config_##n			\
+	.irq_config_func = &i2c_sam0_irq_config_##n,			\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
 #else /* !MCLK */
