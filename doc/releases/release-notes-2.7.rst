@@ -333,6 +333,11 @@ Drivers and Sensors
 
   * Added gsm_ppp devicetree support
 
+* PCI/PCIe
+
+  * Fixed an issue that MSI-X was used even though it is not available.
+  * Improved MBAR retrieval for MSI-X.
+  * Added ability to retrieve extended PCI/PCIe capabilities.
 
 * Pinmux
 
