@@ -21,7 +21,7 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/uuid.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV_DEVICE)
 #define LOG_MODULE_NAME bt_mesh_prov_device
 #include "common/log.h"
 
