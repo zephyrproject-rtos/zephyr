@@ -56,6 +56,13 @@ config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	help
 	  Extra room allocated to handle CoAP header data
 
+config LWM2M_COAP_MAX_MSG_SIZE
+	int "LWM2M CoAP maximum message size"
+	default LWM2M_COAP_BLOCK_SIZE
+	help
+	  CoAP message size used by LWM2M. Minimum is the block size used
+	  in blockwise transfers.
+
 config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	int "Size of the validation buffer for the incoming data"
 	default 64
