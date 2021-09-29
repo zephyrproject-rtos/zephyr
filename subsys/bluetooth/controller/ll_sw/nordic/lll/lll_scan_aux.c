@@ -58,6 +58,7 @@ static void isr_rx_lll_schedule(void *param);
 static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   uint8_t phy_aux);
 static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
+		      struct node_rx_pdu *node_rx, struct pdu_adv *pdu,
 		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
 		      uint8_t devmatch_ok, uint8_t devmatch_id,
 		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
@@ -351,6 +352,49 @@ void lll_scan_aux_isr_aux_setup(void *param)
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
+bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
+				 const struct pdu_adv *pdu,
+				 uint8_t *const devmatch_ok,
+				 uint8_t *const devmatch_id,
+				 uint8_t *const irkmatch_ok,
+				 uint8_t *const irkmatch_id)
+{
+	const struct pdu_adv_ext_hdr *ext_hdr;
+
+	ext_hdr = &pdu->adv_ext_ind.ext_hdr;
+	if (!ext_hdr->adv_addr) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && ull_filter_lll_rl_enabled()) {
+		struct lll_filter *fal =
+			ull_filter_lll_get(!!(lll->filter_policy & 0x1));
+		const uint8_t *adva = &ext_hdr->data[ADVA_OFFSET];
+
+		*devmatch_ok = ull_filter_lll_fal_match(fal, pdu->tx_addr, adva,
+							devmatch_id);
+		if (!*devmatch_ok && pdu->tx_addr) {
+			uint8_t count;
+
+			ull_filter_lll_irks_get(&count);
+			if (count) {
+				radio_ar_resolve(adva);
+				*irkmatch_ok = radio_ar_has_match();
+				*irkmatch_id = radio_ar_match_get();
+			}
+		}
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
+		   lll->filter_policy) {
+		struct lll_filter *fal = ull_filter_lll_get(true);
+		const uint8_t *adva = &ext_hdr->data[ADVA_OFFSET];
+
+		*devmatch_ok = ull_filter_lll_fal_match(fal, pdu->tx_addr, adva,
+							devmatch_id);
+	}
+
+	return true;
+}
+
 static int init_reset(void)
 {
 	return 0;
@@ -619,15 +663,18 @@ static void isr_rx_lll_schedule(void *param)
 static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		   uint8_t phy_aux)
 {
+	struct node_rx_pdu *node_rx;
 	uint8_t phy_aux_flags_rx;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
 	uint8_t irkmatch_id;
+	struct pdu_adv *pdu;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t rl_idx;
+	bool has_adva;
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -662,6 +709,24 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		goto isr_rx_do_close;
 	}
 
+	node_rx = ull_pdu_rx_alloc_peek(3);
+	if (!node_rx) {
+		err = -ENOBUFS;
+
+		goto isr_rx_do_close;
+	}
+
+	pdu = (void *)node_rx->pdu;
+	if ((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len) {
+		err = -EINVAL;
+
+		goto isr_rx_do_close;
+	}
+
+	has_adva = lll_scan_aux_addr_match_get(lll, pdu, &devmatch_ok,
+					       &devmatch_id, &irkmatch_ok,
+					       &irkmatch_id);
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = devmatch_ok ?
 		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
@@ -672,9 +737,16 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	err = isr_rx_pdu(lll, lll_aux, phy_aux, phy_aux_flags_rx, devmatch_ok,
-			 devmatch_id, irkmatch_ok, irkmatch_ok, rl_idx,
-			 rssi_ready);
+	if (has_adva &&
+	    !lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok, rl_idx)) {
+		err = -EINVAL;
+
+		goto isr_rx_do_close;
+	}
+
+	err = isr_rx_pdu(lll, lll_aux, node_rx, pdu, phy_aux, phy_aux_flags_rx,
+			 devmatch_ok, devmatch_id, irkmatch_ok, irkmatch_ok,
+			 rl_idx, rssi_ready);
 	if (!err) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_send();
@@ -726,26 +798,15 @@ isr_rx_do_close:
 }
 
 static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
+		      struct node_rx_pdu *node_rx, struct pdu_adv *pdu,
 		      uint8_t phy_aux, uint8_t phy_aux_flags_rx,
 		      uint8_t devmatch_ok, uint8_t devmatch_id,
 		      uint8_t irkmatch_ok, uint8_t irkmatch_id, uint8_t rl_idx,
 		      uint8_t rssi_ready)
 {
-	struct node_rx_pdu *node_rx;
 	struct node_rx_ftr *ftr;
-	struct pdu_adv *pdu;
 
 	bool dir_report = false;
-
-	node_rx = ull_pdu_rx_alloc_peek(3);
-	if (!node_rx) {
-		return -ENOBUFS;
-	}
-
-	pdu = (void *)node_rx->pdu;
-	if ((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len) {
-		return -EINVAL;
-	}
 
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
