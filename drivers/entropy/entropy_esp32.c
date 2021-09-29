@@ -7,20 +7,14 @@
 #define DT_DRV_COMPAT espressif_esp32_trng
 
 #include <string.h>
-#include <hal/cpu_hal.h>
-#include <esp_clk.h>
 #include <soc/rtc.h>
 #include <soc/wdev_reg.h>
 #include <soc/rtc_cntl_reg.h>
 #include <soc/apb_ctrl_reg.h>
 #include <esp_system.h>
 #include <soc.h>
+#include <hal/cpu_hal.h>
 #include <drivers/entropy.h>
-
-#ifdef CONFIG_SOC_ESP32
-#include <xtensa/core-macros.h>
-#include <soc/dport_reg.h>
-#endif
 
 static inline uint32_t entropy_esp32_get_u32(void)
 {

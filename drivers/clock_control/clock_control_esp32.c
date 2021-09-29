@@ -84,15 +84,6 @@ static void esp_clk_bbpll_enable(void)
 	REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_BBADC_CAL_7_0, BBPLL_BBADC_CAL_7_0_VAL);
 }
 
-void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
-{
-	/* Update scale factors used by ets_delay_us */
-	esp_rom_g_ticks_per_us_pro = ticks_per_us;
-#if defined(CONFIG_SMP)
-	esp_rom_g_ticks_per_us_app = ticks_per_us;
-#endif
-}
-
 static void esp_clk_wait_for_slow_cycle(void)
 {
 	REG_CLR_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING | TIMG_RTC_CALI_START);

@@ -14,6 +14,7 @@
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/spi_flash.h>
 #include <esp32s2/rom/cache.h>
+#include <esp_clk.h>
 
 #include <zephyr/types.h>
 #include <stdbool.h>
