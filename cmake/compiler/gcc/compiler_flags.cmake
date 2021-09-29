@@ -42,6 +42,9 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 # not portable
 check_set_compiler_property(APPEND PROPERTY warning_base -Wexpansion-to-defined)
 
+# C implicit promotion rules will want to make floats into doubles very easily
+check_set_compiler_property(APPEND PROPERTY warning_base -Wdouble-promotion)
+
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.1.0")
   set_compiler_property(APPEND PROPERTY warning_base
                         # FIXME: Remove once #16587 is fixed
