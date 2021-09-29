@@ -231,6 +231,126 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	return 1;
 }
 
+void lll_scan_aux_isr_aux_setup(void *param)
+{
+	struct pdu_adv_aux_ptr *aux_ptr;
+	struct node_rx_pdu *node_rx;
+	uint32_t window_widening_us;
+	uint32_t window_size_us;
+	struct node_rx_ftr *ftr;
+	uint32_t aux_offset_us;
+	uint32_t aux_start_us;
+	struct lll_scan *lll;
+	uint8_t phy_aux;
+	uint32_t hcto;
+
+	lll_isr_status_reset();
+
+	node_rx = param;
+	ftr = &node_rx->hdr.rx_ftr;
+	aux_ptr = ftr->aux_ptr;
+	phy_aux = BIT(aux_ptr->phy);
+	ftr->aux_phy = phy_aux;
+
+	lll = ftr->param;
+
+	/* Determine the window size */
+	if (aux_ptr->offs_units) {
+		window_size_us = OFFS_UNIT_300_US;
+	} else {
+		window_size_us = OFFS_UNIT_30_US;
+	}
+
+	/* Calculate the aux offset from start of the scan window */
+	aux_offset_us = (uint32_t) aux_ptr->offs * window_size_us;
+
+	/* Calculate the window widening that needs to be deducted */
+	if (aux_ptr->ca) {
+		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
+	} else {
+		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
+	}
+
+	/* Reset Tx/rx count */
+	trx_cnt = 0U;
+
+	/* Setup radio for auxiliary PDU scan */
+	radio_phy_set(phy_aux, 1);
+	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
+	lll_chan_set(aux_ptr->chan_idx);
+
+	radio_pkt_rx_set(node_rx->pdu);
+
+	/* FIXME: we could (?) use isr_rx_ull_schedule if already have aux
+	 *        context allocated, i.e. some previous aux was scheduled from
+	 *        ull already.
+	 */
+	radio_isr_set(isr_rx_lll_schedule, node_rx);
+
+	/* setup tIFS switching */
+	radio_tmr_tifs_set(EVENT_IFS_US);
+	/* TODO: for passive scanning use complete_and_disable */
+	radio_switch_complete_and_tx(phy_aux, 0, phy_aux, 1);
+
+	/* TODO: skip filtering if AdvA was already found in previous PDU */
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	} else if (ull_filter_lll_rl_enabled()) {
+		struct lll_filter *filter = ull_filter_lll_get(
+			!!(lll->filter_policy & 0x1));
+		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
+
+		radio_filter_configure(filter->enable_bitmask,
+				       filter->addr_type_bitmask,
+				       (uint8_t *) filter->bdaddr);
+
+		radio_ar_configure(count, irks, (phy_aux << 2) | BIT(1));
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
+		/* Setup Radio Filter */
+		struct lll_filter *fal = ull_filter_lll_get(true);
+
+		radio_filter_configure(fal->enable_bitmask,
+				       fal->addr_type_bitmask,
+				       (uint8_t *) fal->bdaddr);
+	}
+
+	/* Setup radio rx on micro second offset. Note that radio_end_us stores
+	 * PDU start time in this case.
+	 */
+	aux_start_us = ftr->radio_end_us + aux_offset_us;
+	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, 1);
+	aux_start_us -= window_widening_us;
+	aux_start_us -= EVENT_JITTER_US;
+	radio_tmr_start_us(0, aux_start_us);
+
+	/* Setup header complete timeout */
+	hcto = ftr->radio_end_us + aux_offset_us;
+	hcto += window_size_us;
+	hcto += window_widening_us;
+	hcto += EVENT_JITTER_US;
+	hcto += radio_rx_chain_delay_get(phy_aux, 1);
+	hcto += addr_us_get(phy_aux);
+	radio_tmr_hcto_configure(hcto);
+
+	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
+	 * channel chaining, create connection or to create periodic sync.
+	 */
+	radio_tmr_end_capture();
+
+	/* scanner always measures RSSI */
+	radio_rssi_measure();
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_setup();
+
+	radio_gpio_pa_lna_enable(aux_start_us +
+				 radio_rx_ready_delay_get(phy_aux, 1) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+}
+
 static int init_reset(void)
 {
 	return 0;
@@ -460,126 +580,6 @@ static void isr_done(void *param)
 	}
 
 	lll_isr_cleanup(param);
-}
-
-void lll_scan_aux_isr_aux_setup(void *param)
-{
-	struct pdu_adv_aux_ptr *aux_ptr;
-	struct node_rx_pdu *node_rx;
-	uint32_t window_widening_us;
-	uint32_t window_size_us;
-	struct node_rx_ftr *ftr;
-	uint32_t aux_offset_us;
-	uint32_t aux_start_us;
-	struct lll_scan *lll;
-	uint8_t phy_aux;
-	uint32_t hcto;
-
-	lll_isr_status_reset();
-
-	node_rx = param;
-	ftr = &node_rx->hdr.rx_ftr;
-	aux_ptr = ftr->aux_ptr;
-	phy_aux = BIT(aux_ptr->phy);
-	ftr->aux_phy = phy_aux;
-
-	lll = ftr->param;
-
-	/* Determine the window size */
-	if (aux_ptr->offs_units) {
-		window_size_us = OFFS_UNIT_300_US;
-	} else {
-		window_size_us = OFFS_UNIT_30_US;
-	}
-
-	/* Calculate the aux offset from start of the scan window */
-	aux_offset_us = (uint32_t) aux_ptr->offs * window_size_us;
-
-	/* Calculate the window widening that needs to be deducted */
-	if (aux_ptr->ca) {
-		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
-	} else {
-		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
-	}
-
-	/* Reset Tx/rx count */
-	trx_cnt = 0U;
-
-	/* Setup radio for auxiliary PDU scan */
-	radio_phy_set(phy_aux, 1);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
-	lll_chan_set(aux_ptr->chan_idx);
-
-	radio_pkt_rx_set(node_rx->pdu);
-
-	/* FIXME: we could (?) use isr_rx_ull_schedule if already have aux
-	 *        context allocated, i.e. some previous aux was scheduled from
-	 *        ull already.
-	 */
-	radio_isr_set(isr_rx_lll_schedule, node_rx);
-
-	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
-	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(phy_aux, 0, phy_aux, 1);
-
-	/* TODO: skip filtering if AdvA was already found in previous PDU */
-
-	if (0) {
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	} else if (ull_filter_lll_rl_enabled()) {
-		struct lll_filter *filter = ull_filter_lll_get(
-			!!(lll->filter_policy & 0x1));
-		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
-
-		radio_filter_configure(filter->enable_bitmask,
-				       filter->addr_type_bitmask,
-				       (uint8_t *) filter->bdaddr);
-
-		radio_ar_configure(count, irks, (phy_aux << 2) | BIT(1));
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
-		/* Setup Radio Filter */
-		struct lll_filter *fal = ull_filter_lll_get(true);
-
-		radio_filter_configure(fal->enable_bitmask,
-				       fal->addr_type_bitmask,
-				       (uint8_t *) fal->bdaddr);
-	}
-
-	/* Setup radio rx on micro second offset. Note that radio_end_us stores
-	 * PDU start time in this case.
-	 */
-	aux_start_us = ftr->radio_end_us + aux_offset_us;
-	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, 1);
-	aux_start_us -= window_widening_us;
-	aux_start_us -= EVENT_JITTER_US;
-	radio_tmr_start_us(0, aux_start_us);
-
-	/* Setup header complete timeout */
-	hcto = ftr->radio_end_us + aux_offset_us;
-	hcto += window_size_us;
-	hcto += window_widening_us;
-	hcto += EVENT_JITTER_US;
-	hcto += radio_rx_chain_delay_get(phy_aux, 1);
-	hcto += addr_us_get(phy_aux);
-	radio_tmr_hcto_configure(hcto);
-
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining, create connection or to create periodic sync.
-	 */
-	radio_tmr_end_capture();
-
-	/* scanner always measures RSSI */
-	radio_rssi_measure();
-
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_lna_setup();
-
-	radio_gpio_pa_lna_enable(aux_start_us +
-				 radio_rx_ready_delay_get(phy_aux, 1) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 
 static void isr_rx_ull_schedule(void *param)
