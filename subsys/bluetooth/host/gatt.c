@@ -70,6 +70,11 @@ struct gatt_sub {
 #define SUB_MAX 0
 #endif /* CONFIG_BT_GATT_CLIENT */
 
+/**
+ * Entry x is free for reuse whenever (subscriptions[x].peer == BT_ADDR_LE_ANY).
+ * Invariant: (sys_slist_is_empty(subscriptions[x].list))
+ *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
+ */
 static struct gatt_sub subscriptions[SUB_MAX];
 static sys_slist_t callback_list;
 
@@ -2699,6 +2704,19 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 	return false;
 }
 
+static bool gatt_sub_is_empty(struct gatt_sub *sub)
+{
+	return sys_slist_is_empty(&sub->list);
+}
+
+/** @brief Free sub for reuse.
+ */
+static void gatt_sub_free(struct gatt_sub *sub)
+{
+	__ASSERT_NO_MSG(gatt_sub_is_empty(sub));
+	bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
+}
+
 static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 			    sys_snode_t *prev,
 			    struct bt_gatt_subscribe_params *params)
@@ -2710,9 +2728,8 @@ static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 		params->notify(conn, params, NULL, 0);
 	}
 
-	if (sys_slist_is_empty(&sub->list)) {
-		/* Reset address if there are no subscription left */
-		bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
+	if (gatt_sub_is_empty(sub)) {
+		gatt_sub_free(sub);
 	}
 }
 
@@ -4595,6 +4612,10 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 	if (!found) {
 		return -EINVAL;
+	}
+
+	if (gatt_sub_is_empty(sub)) {
+		gatt_sub_free(sub);
 	}
 
 	if (has_subscription) {
