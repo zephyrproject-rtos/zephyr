@@ -646,6 +646,7 @@
 /scripts/pylib/twister/                   @nashif
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
+/scripts/utils/pinctrl_nrf_migrate.py     @gmarull
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west_commands/runners/gd32isp.py @mbolivar-nordic @nandojve
 /scripts/west_commands/tests/test_gd32isp.py @mbolivar-nordic @nandojve
