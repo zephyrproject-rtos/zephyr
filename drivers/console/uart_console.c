@@ -564,9 +564,6 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 }
 
 #else
-#define console_input_init(x) \
-	do {    /* nothing */ \
-	} while ((0))
 #define uart_register_input(x) \
 	do {    /* nothing */  \
 	} while ((0))
