@@ -97,18 +97,10 @@ static int console_out(int c)
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 extern void __stdout_hook_install(int (*hook)(int));
-#else
-#define __stdout_hook_install(x) \
-	do {    /* nothing */	 \
-	} while ((0))
 #endif
 
 #if defined(CONFIG_PRINTK)
 extern void __printk_hook_install(int (*fn)(int));
-#else
-#define __printk_hook_install(x) \
-	do {    /* nothing */	 \
-	} while ((0))
 #endif
 
 #if defined(CONFIG_CONSOLE_HANDLER)
@@ -564,9 +556,13 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 }
 
 #else
-#define uart_register_input(x) \
-	do {    /* nothing */  \
-	} while ((0))
+void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
+			 uint8_t (*completion)(char *str, uint8_t len))
+{
+	ARG_UNUSED(avail);
+	ARG_UNUSED(lines);
+	ARG_UNUSED(completion);
+}
 #endif
 
 /**
@@ -578,8 +574,12 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 
 static void uart_console_hook_install(void)
 {
+#if defined(CONFIG_STDOUT_CONSOLE)
 	__stdout_hook_install(console_out);
+#endif
+#if defined(CONFIG_PRINTK)
 	__printk_hook_install(console_out);
+#endif
 }
 
 /**
