@@ -163,6 +163,8 @@ struct i2c_slave_config;
 
 typedef int (*i2c_api_configure_t)(const struct device *dev,
 				   uint32_t dev_config);
+typedef int (*i2c_api_get_config_t)(const struct device *dev,
+				    uint32_t *dev_config);
 typedef int (*i2c_api_full_io_t)(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
@@ -175,6 +177,7 @@ typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
 __subsystem struct i2c_driver_api {
 	i2c_api_configure_t configure;
+	i2c_api_get_config_t get_config;
 	i2c_api_full_io_t transfer;
 	i2c_api_slave_register_t slave_register;
 	i2c_api_slave_unregister_t slave_unregister;
@@ -353,6 +356,39 @@ static inline int z_impl_i2c_configure(const struct device *dev,
 		(const struct i2c_driver_api *)dev->api;
 
 	return api->configure(dev, dev_config);
+}
+
+/**
+ * @brief Get configuration of a host controller.
+ *
+ * This routine provides a way to get current configuration. It is allowed to
+ * call the function before i2c_configure, because some I2C ports can be
+ * configured during init process. However, if the I2C port is not configured,
+ * i2c_get_config returns an error.
+ *
+ * i2c_get_config can return cached config or probe hardware, but it has to be
+ * up to date with current configuration.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dev_config Pointer to return bit-packed 32-bit value of
+ * the I2C controller configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -ERANGE Configured I2C frequency is invalid.
+ * @retval -ENOSYS If get config is not implemented
+ */
+__syscall int i2c_get_config(const struct device *dev, uint32_t *dev_config);
+
+static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+
+	if (api->get_config == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_config(dev, dev_config);
 }
 
 /**
