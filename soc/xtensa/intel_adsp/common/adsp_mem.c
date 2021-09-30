@@ -169,7 +169,54 @@ int32_t soc_adsp_pages_unmap(size_t count, void *vaddr)
 	return 0;
 }
 
-#endif /* ZEPHYR_SOC_ADSP_MEM_H_ */
+int32_t soc_adsp_pages_remap(size_t count, void *vaddr_old, void *vaddr_new)
+{
+	if (vaddr_new >= vaddr_old &&
+	    vaddr_new < (void *)((char *)vaddr_old + count * SOC_ADSP_PAGE_SZ)) {
+		return -EINVAL; /* overlaps */
+	}
+
+	k_spinlock_key_t k = k_spin_lock(&pagelock);
+
+	for (int i = 0; i < count; i++) {
+		void *va0 = (char *)vaddr_old + i * SOC_ADSP_PAGE_SZ;
+		void *va1 = (char *)vaddr_new + i * SOC_ADSP_PAGE_SZ;
+		void *pa = z_soc_mem_phys_addr(z_soc_cached_ptr(va0));
+
+		z_soc_mem_unmap(z_soc_cached_ptr(va0), SOC_ADSP_PAGE_SZ);
+		z_soc_mem_map(z_soc_cached_ptr(va1), (uintptr_t)pa,
+			      SOC_ADSP_PAGE_SZ, 0);
+	}
+
+	k_spin_unlock(&pagelock, k);
+	return 0;
+}
+
+int32_t soc_adsp_pages_copy(size_t count, void *vaddr_old, void *vaddr_new,
+			    soc_adsp_page_id_t *pages_new)
+{
+	if (vaddr_new >= vaddr_old &&
+	    vaddr_new < (void *)((char *)vaddr_old + count * SOC_ADSP_PAGE_SZ)) {
+		return -EINVAL; /* overlaps */
+	}
+
+	k_spinlock_key_t k = k_spin_lock(&pagelock);
+
+	for (int i = 0; i < count; i++) {
+		void *va0 = (char *)vaddr_old + i * SOC_ADSP_PAGE_SZ;
+		void *va1 = (char *)vaddr_new + i * SOC_ADSP_PAGE_SZ;
+		void *pa = soc_adsp_page_addr(pages_new[i]);
+
+		z_soc_mem_map(z_soc_cached_ptr(va1),
+			      (uintptr_t)z_soc_cached_ptr(pa),
+			      SOC_ADSP_PAGE_SZ, 0);
+		memcpy(va1, va0, SOC_ADSP_PAGE_SZ);
+		z_soc_mem_unmap(z_soc_cached_ptr(va0), SOC_ADSP_PAGE_SZ);
+	}
+
+	k_spin_unlock(&pagelock, k);
+	return 0;
+}
 
 static void pool_init(struct pagepool *pool, uintptr_t start, uintptr_t end)
 {
