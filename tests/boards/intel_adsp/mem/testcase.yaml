@@ -1,0 +1,3 @@
+tests:
+  boards.intel_adsp.mem:
+    platform_allow: intel_adsp_cavs25
