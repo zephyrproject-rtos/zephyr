@@ -8,5 +8,6 @@ CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 export SIMULATION_ID="edtt_hci_llcp"
 export TEST_FILE=${CWD}"/hci.llcp.test_list"
 export TEST_MODULE="hci_verification"
+export PRJ_CONF="prj_conf"
 
 ${CWD}/_controller_tests_inner.sh

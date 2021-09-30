@@ -9,5 +9,6 @@ CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 export SIMULATION_ID="edtt_ll_llcp1"
 export TEST_FILE=${CWD}"/ll.llcp1.test_list"
 export TEST_MODULE="ll_verification"
+export PRJ_CONF="prj_conf"
 
 ${CWD}/_controller_tests_inner.sh
