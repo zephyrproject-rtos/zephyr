@@ -19,16 +19,6 @@ struct spi_stm32_config {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #endif
-
-#if !defined(CONFIG_SOC_SERIES_STM32F1X) \
-	&& (!defined(CONFIG_SOC_SERIES_STM32L1X) || defined(SPI_CR2_FRF))
-	/*
-	 * if supported by the instance, this bit will configure the frame-format
-	 * of the SPI to be compliant with the TI protocol.
-	 */
-	bool ti_mode;
-#endif
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	bool use_subghzspi_nss;
 #endif
