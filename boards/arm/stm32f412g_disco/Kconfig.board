@@ -4,4 +4,4 @@
 
 config BOARD_STM32F412G_DISCO
 	bool "STM32F412G-DISCO Development Board"
-	depends on SOC_STM32F412ZG
+	depends on SOC_STM32F412ZX
