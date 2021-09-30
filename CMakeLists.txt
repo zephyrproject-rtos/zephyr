@@ -168,21 +168,29 @@ if(CONFIG_CPLUSPLUS)
   # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
   if(CONFIG_STD_CPP98)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp98>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp98})
   elseif(CONFIG_STD_CPP11)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp11>) # Default in kconfig
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp11})
   elseif(CONFIG_STD_CPP14)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp14>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp14})
   elseif(CONFIG_STD_CPP17)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp17>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp17})
   elseif(CONFIG_STD_CPP2A)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2a>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   elseif(CONFIG_STD_CPP20)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp20>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   elseif(CONFIG_STD_CPP2B)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   else()
     assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
+  set(CMAKE_CXX_COMPILE_FEATURES ${CMAKE_CXX_COMPILE_FEATURES} PARENT_SCOPE)
 
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
 endif()
@@ -979,6 +987,7 @@ set_ifndef(CSTD c99)
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
+set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
