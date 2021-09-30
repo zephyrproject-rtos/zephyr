@@ -23,3 +23,6 @@ CONFIG_GPIO=y
 
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y
