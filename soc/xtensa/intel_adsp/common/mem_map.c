@@ -110,3 +110,11 @@ void z_soc_mem_unmap(void *vaddr, size_t size)
 
 	k_spin_unlock(&soc_mem_map_lock, key);
 }
+
+void *z_soc_mem_phys_addr(void *vaddr)
+{
+	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	uint16_t ent = tlb_entries[get_tlb_entry_idx(POINTER_TO_UINT(vaddr))];
+
+	return (void *)((ent & TLB_PADDR_MASK) * PAGE_SIZE + HP_SRAM_BASE);
+}

@@ -247,6 +247,15 @@ void z_soc_mem_map(void *vaddr, uintptr_t paddr, size_t size, uint32_t flags);
  */
 void z_soc_mem_unmap(void *vaddr, size_t size);
 
+/**
+ * Returns the physical address associated with the (page-aligned)
+ * virtual address argument
+ *
+ * @param vaddr Virtual page address to translate
+ * @return Physical address of memory backing the page, or NULL if not mapped
+ */
+void *z_soc_mem_phys_addr(void *vaddr);
+
 void soc_adsp_mem_init(void);
 
 #endif /* ZEPHYR_SOC_ADSP_MEM_H_ */
