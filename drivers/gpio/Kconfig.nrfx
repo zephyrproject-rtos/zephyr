@@ -17,20 +17,6 @@ config GPIO_NRF_INIT_PRIORITY
 	help
 	  Initialization priority for nRF GPIO.
 
-config GPIO_NRF_P0
-	bool "nRF GPIO Port P0"
-	depends on HAS_HW_NRF_GPIO0
-	default y
-	help
-	  Enable nRF GPIO port P0 config options.
-
-config GPIO_NRF_P1
-	bool "nRF GPIO Port P1"
-	depends on HAS_HW_NRF_GPIO1
-	default y
-	help
-	  Enable nRF GPIO port P1 config options.
-
 choice
 	prompt "nRF GPIO edge interrupts mechanism"
 	default GPIO_NRF_INT_EDGE_USING_GPIOTE
