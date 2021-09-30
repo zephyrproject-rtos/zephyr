@@ -1987,7 +1987,7 @@ static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 }
 
 static void le_read_iso_tx_sync(struct net_buf *buf, struct net_buf **evt)
@@ -2029,7 +2029,7 @@ static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 }
 
 static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
@@ -2048,7 +2048,7 @@ static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 	rp->received_cnt = sys_cpu_to_le32(received_cnt);
 	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
@@ -2155,7 +2155,7 @@ static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 	rp->received_cnt = sys_cpu_to_le32(received_cnt);
 	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
