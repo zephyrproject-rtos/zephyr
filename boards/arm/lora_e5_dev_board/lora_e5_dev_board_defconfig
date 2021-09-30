@@ -25,3 +25,6 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable regulator for the power-rails
 CONFIG_REGULATOR=y
+
+# enable pin controller
+CONFIG_PINCTRL=y
