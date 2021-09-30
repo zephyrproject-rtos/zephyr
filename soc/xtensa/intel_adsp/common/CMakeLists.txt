@@ -16,6 +16,8 @@ zephyr_library_sources(main_entry.S)
 zephyr_library_sources(soc.c)
 zephyr_library_sources(soc_mp.c)
 zephyr_library_sources(trace_out.c)
+zephyr_library_sources(mem_map.c)
+zephyr_library_sources(adsp_mem.c)
 
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 

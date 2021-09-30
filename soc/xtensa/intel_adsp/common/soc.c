@@ -12,6 +12,7 @@
 
 #include <soc/shim.h>
 #include <cavs-idc.h>
+#include <adsp_mem.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -287,6 +288,8 @@ static int soc_init(const struct device *dev)
 #if CONFIG_MP_NUM_CPUS > 1
 	soc_idc_init();
 #endif
+
+	soc_adsp_mem_init();
 
 	return 0;
 }
