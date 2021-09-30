@@ -12,16 +12,6 @@ properties:
     interrupts:
       required: true
 
-    frame-format:
-      type: boolean
-      required: false
-      description: |
-        Use Frame Format to support TI or motorola SPI mode when the SPI
-        interface is compatible with the TI protocol. The FRF bit of the
-        SPIx_CR2 configures the SPI to be compliant with this protocol.
-        false: SPI Motorola mode (default)
-        true: SPI TI mode
-
     pinctrl-0:
       type: phandles
       required: false
