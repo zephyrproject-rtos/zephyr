@@ -116,6 +116,8 @@ struct pm_device {
 	enum pm_device_state state;
 	/** Device PM action callback */
 	pm_device_action_cb_t action_cb;
+	/** Power Domain it belongs */
+	const struct device *domain;
 };
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
@@ -145,6 +147,7 @@ struct pm_device {
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
 				(0)) << PM_DEVICE_FLAG_WS_CAPABLE),	\
+		.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, power_domain))\
 	}
 
 /**
