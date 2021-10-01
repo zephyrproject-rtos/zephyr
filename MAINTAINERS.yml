@@ -1297,7 +1297,7 @@ SPARC arch:
 Synopsys Platforms:
     status: maintained
     maintainers:
-        - ruudw
+        - ruuddw
     collaborators:
         - abrodkin
         - evgeniy-paltsev
