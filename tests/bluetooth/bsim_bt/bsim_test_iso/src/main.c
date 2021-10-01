@@ -358,7 +358,7 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(15000));
+	k_sleep(K_MSEC(13800));
 
 	printk("Terminating BIG...");
 	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
