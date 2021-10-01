@@ -82,8 +82,12 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, cleanup, pipe);
 
+	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+
 	CHECKIF(z_waitq_head(&pipe->wait_q.readers) != NULL ||
 			z_waitq_head(&pipe->wait_q.writers) != NULL) {
+		k_spin_unlock(&pipe->lock, key);
+
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
 
 		return -EAGAIN;
@@ -92,8 +96,20 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0U) {
 		k_free(pipe->buffer);
 		pipe->buffer = NULL;
+
+		/*
+		 * Freeing the buffer changes the pipe into a bufferless
+		 * pipe. Reset the pipe's counters to prevent malfunction.
+		 */
+
+		pipe->size = 0;
+		pipe->bytes_used = 0;
+		pipe->read_index = 0;
+		pipe->write_index = 0;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
 	}
+
+	k_spin_unlock(&pipe->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, 0);
 
