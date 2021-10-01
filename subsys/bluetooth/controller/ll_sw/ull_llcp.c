@@ -828,8 +828,10 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 	pdu = (struct pdu_data *)rx->pdu;
 
 	if (!pdu_is_terminate(pdu)) {
-		/* Process non LL_TERMINATE_IND PDU's as responses to active
-		 * procedures */
+		/*
+		 *Process non LL_TERMINATE_IND PDU's as responses to active
+		 * procedures
+		 */
 
 		ctx = llcp_lr_peek(conn);
 		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||

@@ -1497,7 +1497,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			ull_drift_ticks_get(done, &ticks_drift_plus, &ticks_drift_minus);
 
 			/*
-			** EGON TODO to be verified
+			 * EGON TODO to be verified
 			*/
 			if (!ull_tx_q_peek(&conn->tx_q)) {
 				ull_conn_tx_demux(UINT8_MAX);
@@ -1662,18 +1662,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 
 	/*
-	** EGON TODO: verify what we need to do here
+	 * EGON TODO: verify what we need to do here
 	*/
 
 	/* break latency based on ctrl procedure pending */
 	/*
-	** Original code
-	if (((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
-	     ((conn->llcp_type == LLCP_CONN_UPD) ||
-	      (conn->llcp_type == LLCP_CHAN_MAP))) ||
-	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
-		lll->latency_event = 0U;
-	}
+	 * Original code
+	 *	if (((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
+	 *	     ((conn->llcp_type == LLCP_CONN_UPD) ||
+	 *	      (conn->llcp_type == LLCP_CHAN_MAP))) ||
+	 *	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
+	 *		lll->latency_event = 0U;
+	 *	}
 	*/
 
 	/* check if latency needs update */
@@ -1836,9 +1836,11 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 			ull_cp_tx_ack(conn, tx);
 		}
 
-		/* If the link's next pointer points to the tx node itself,
+		/*
+		 *f the link's next pointer points to the tx node itself,
 		 * then the tx node belong to the ctrl pool and should be
-		 * free'ed (see tx_ull_dequeue) */
+		 * free'ed (see tx_ull_dequeue)
+		 */
 		if (link->next == (void *)tx) {
 			LL_ASSERT(link->next);
 			ull_cp_release_tx(tx);
@@ -1853,9 +1855,8 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 	}
 
 	ll_tx_ack_put(handle, tx);
-
-	return;
 }
+
 
 uint8_t ull_conn_llcp_req(void *conn)
 {
@@ -2000,6 +2001,7 @@ static void tx_demux(void *param)
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn)
 {
 	struct node_tx *tx = NULL;
+
 	tx = ull_tx_q_dequeue(&conn->tx_q);
 	if (tx) {
 		struct pdu_data *pdu_tx;

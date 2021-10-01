@@ -290,9 +290,11 @@ static inline void pu_set_preferred_phys(struct ll_conn *conn, struct proc_ctx *
 	conn->phy_pref_rx = ctx->data.pu.rx;
 	conn->phy_pref_tx = ctx->data.pu.tx;
 
-	/* Note: Since 'flags' indicate local coded phy preference (S2 or S8) and
-	   this is not negotiated with the peer, it is simply reconfigured in conn->lll when
-	   the update is initiated, and takes effect whenever the coded phy is in use. */
+	/*
+	 * Note: Since 'flags' indicate local coded phy preference (S2 or S8) and
+	 * this is not negotiated with the peer, it is simply reconfigured in conn->lll when
+	 * the update is initiated, and takes effect whenever the coded phy is in use.
+	 */
 	conn->lll.phy_flags = ctx->data.pu.flags;
 }
 
@@ -303,17 +305,17 @@ static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, u
 	ctx->data.pu.rx &= rx;
 	ctx->data.pu.tx &= tx;
 	/* If either tx or rx is 'no change' at this point we force both to no change to
-	   comply with the spec
-		Spec. BT5.2 Vol6, Part B, section 5.1.10:
-		The remainder of this section shall apply irrespective of which device initiated
-		the procedure.
-
-		Irrespective of the above rules, the master may leave both directions
-		unchanged. If the slave specified a single PHY in both the TX_PHYS and
-		RX_PHYS fields and both fields are the same, the master shall either select
-		the PHY specified by the slave for both directions or shall leave both directions
-		unchanged.
-	*/
+	 * comply with the spec
+	 *	Spec. BT5.2 Vol6, Part B, section 5.1.10:
+	 *	The remainder of this section shall apply irrespective of which device initiated
+	 *	the procedure.
+	 *
+	 *	Irrespective of the above rules, the master may leave both directions
+	 *	unchanged. If the slave specified a single PHY in both the TX_PHYS and
+	 *	RX_PHYS fields and both fields are the same, the master shall either select
+	 *	the PHY specified by the slave for both directions or shall leave both directions
+	 *	unchanged.
+	 */
 	if (conn->lll.role == BT_HCI_ROLE_CENTRAL && (!ctx->data.pu.rx || !ctx->data.pu.tx)) {
 		ctx->data.pu.tx = 0;
 		ctx->data.pu.rx = 0;
@@ -492,10 +494,12 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_RSP:
+		/* EGON TODO: should we swap the function call with variable declaration? */
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* 'Prefer' the phys from the REQ */
 		uint8_t tx_pref = ctx->data.pu.tx;
 		uint8_t rx_pref = ctx->data.pu.rx;
+
 		llcp_pdu_decode_phy_rsp(ctx, (struct pdu_data *)param);
 		/* Pause data tx */
 		llcp_tx_pause_data(conn);

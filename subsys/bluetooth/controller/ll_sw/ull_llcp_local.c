@@ -311,7 +311,8 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 	switch (evt) {
 	case LR_EVT_RUN:
-		if ((ctx = llcp_lr_peek(conn))) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx) {
 			lr_act_run(conn);
 			if (ctx->proc != PROC_TERMINATE) {
 				lr_set_state(conn, LR_STATE_ACTIVE);

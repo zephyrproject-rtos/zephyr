@@ -643,7 +643,7 @@ void llcp_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /*
  * Data Length Update Procedure Helpers
-*/
+ */
 void llcp_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
@@ -689,6 +689,7 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn, struct pdu_data *pdu)
 void llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
+
 	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
 	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
 	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
@@ -698,6 +699,7 @@ void llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
 void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
+
 	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
 	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
 	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
