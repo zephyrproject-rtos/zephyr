@@ -807,6 +807,9 @@ Because other property names are derived from the name of the property by
 removing the final ``s``, the property name must end in ``s``. An error is
 raised if it doesn't.
 
+An alternative is using a ``specifier-space`` property to indicate the base
+property name for ``*-names`` and ``*-cells``.
+
 ``*-gpios`` properties are special-cased so that e.g. ``foo-gpios`` resolves to
 ``#gpio-cells`` rather than ``#foo-gpio-cells``.
 
