@@ -16,3 +16,13 @@ properties:
 
         Wake up capable devices are disabled (interruptions will not wake up
         the system) by default but they can be enabled at runtime if necessary.
+
+    power-domain:
+      required: false
+      type: phandle
+      description: |
+
+        Power domain the device belongs to.
+
+        The device will be notified when the power domain it belongs to is either
+        suspended or resumed.
