@@ -1778,7 +1778,9 @@ void z_sched_usage_stop(void)
 		uint32_t dt = usage_now() - u0;
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		if (!z_is_idle_thread_object(_current)) {
+		if (z_is_idle_thread_object(_current)) {
+			_kernel.idle_thread_usage += dt;
+		} else {
 			_kernel.all_thread_usage += dt;
 		}
 #endif
@@ -1799,7 +1801,9 @@ uint64_t z_sched_thread_usage(struct k_thread *thread)
 		uint32_t dt = now - u0;
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-		if (!z_is_idle_thread_object(thread)) {
+		if (z_is_idle_thread_object(thread)) {
+			_kernel.idle_thread_usage += dt;
+		} else {
 			_kernel.all_thread_usage += dt;
 		}
 #endif

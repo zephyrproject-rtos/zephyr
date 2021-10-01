@@ -1044,7 +1044,8 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 	*stats = (k_thread_runtime_stats_t) {};
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	stats->execution_cycles = _kernel.all_thread_usage;
+	stats->execution_cycles = (_kernel.all_thread_usage
+				   + _kernel.idle_thread_usage);
 #endif
 
 	return 0;
