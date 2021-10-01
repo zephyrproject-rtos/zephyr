@@ -1219,6 +1219,31 @@ int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
 	return 0;
 }
 
+int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
+{
+	struct bt_audio_chan *chan;
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->chans, chan, node) {
+		if (chan->state != BT_AUDIO_CHAN_IDLE &&
+		    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+			BT_DBG("chan %p invalid state %u", chan, chan->state);
+			return -EINVAL;
+		}
+	}
+
+	/* If all channels are idle, then the CIG has also been terminated */
+	__ASSERT(unicast_group->cig == NULL, "CIG shall be NULL");
+
+	(void)memset(unicast_group, 0, sizeof(*unicast_group));
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_AUDIO_BROADCAST)
 static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 						struct bt_audio_chan *chan,

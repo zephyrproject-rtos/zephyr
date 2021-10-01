@@ -1017,6 +1017,17 @@ int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
 				  uint8_t num_chan,
 				  struct bt_audio_unicast_group **unicast_group);
 
+/** @brief Delete audio unicast group.
+ *
+ *  Delete a audio unicast group as a central. All channels in the group shall
+ *  be in the idle or configured state.
+ *
+ *  @param unicast_group  Pointer to the unicast group to delete
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
+
 /** @brief Create audio broadcast source.
  *
  *  Create a new audio broadcast source with one or more audio channels.
