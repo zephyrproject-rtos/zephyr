@@ -4,8 +4,8 @@ Pipes
 #####
 
 A :dfn:`pipe` is a kernel object that allows a thread to send a byte stream
-to another thread. Pipes can be used to transfer chunks of data in whole
-or in part, and either synchronously or asynchronously.
+to another thread. Pipes can be used to synchronously transfer chunks of data
+in whole or in part.
 
 .. contents::
     :local:
@@ -27,18 +27,14 @@ A pipe has the following key property:
 
 A pipe must be initialized before it can be used. The pipe is initially empty.
 
-Data can be synchronously **sent** either in whole or in part to a pipe by a
+Data is synchronously **sent** either in whole or in part to a pipe by a
 thread. If the specified minimum number of bytes can not be immediately
 satisfied, then the operation will either fail immediately or attempt to send
 as many bytes as possible and then pend in the hope that the send can be
 completed later. Accepted data is either copied to the pipe's ring buffer
 or directly to the waiting reader(s).
 
-Data can be asynchronously **sent** in whole using a memory block to a pipe by
-a thread. Once the pipe has accepted all the bytes in the memory block, it will
-free the memory block and may give a semaphore if one was specified.
-
-Data can be synchronously **received** from a pipe by a thread. If the specified
+Data is synchronously **received** from a pipe by a thread. If the specified
 minimum number of bytes can not be immediately satisfied, then the operation
 will either fail immediately or attempt to receive as many bytes as possible
 and then pend in the hope that the receive can be completed later. Accepted
@@ -171,7 +167,7 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:`CONFIG_NUM_PIPE_ASYNC_MSGS`
+* None.
 
 API Reference
 *************
