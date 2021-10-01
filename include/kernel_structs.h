@@ -175,6 +175,7 @@ struct z_kernel {
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	uint64_t all_thread_usage;
+	uint64_t idle_thread_usage;
 #endif
 };
 
