@@ -47,3 +47,23 @@
 &trng0 {
 	status = "okay";
 };
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <13>;
+	mosi-pin = <11>;
+	sclk-pin = <12>;
+	csel-pin = <10>;
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <37>;
+	mosi-pin = <35>;
+	sclk-pin = <36>;
+	csel-pin = <34>;
+};
