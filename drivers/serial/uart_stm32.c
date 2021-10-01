@@ -808,10 +808,10 @@ static inline void async_evt_rx_buf_release(struct uart_stm32_data *data)
 static inline void async_timer_start(struct k_work_delayable *work,
 				     int32_t timeout)
 {
-	if ((timeout != SYS_FOREVER_MS) && (timeout != 0)) {
+	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
 		/* start timer */
-		LOG_DBG("async timer started for %d ms", timeout);
-		k_work_reschedule(work, K_MSEC(timeout));
+		LOG_DBG("async timer started for %d us", timeout);
+		k_work_reschedule(work, K_USEC(timeout));
 	}
 }
 

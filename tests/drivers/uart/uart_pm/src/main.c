@@ -83,11 +83,11 @@ static bool async_verify(const struct device *dev, bool active)
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
 	if (HAS_RX) {
-		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1);
+		err = uart_rx_enable(dev, rxbuf, sizeof(rxbuf), 1 * USEC_PER_MSEC);
 		zassert_equal(err, 0, "Unexpected err: %d", err);
 	}
 
-	err = uart_tx(dev, txbuf, sizeof(txbuf), 10);
+	err = uart_tx(dev, txbuf, sizeof(txbuf), 10 * USEC_PER_MSEC);
 	zassert_equal(err, 0, "Unexpected err: %d", err);
 
 	k_busy_wait(10000);
