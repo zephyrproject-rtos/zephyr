@@ -156,6 +156,7 @@ static void lp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 				  void *param)
 {
 	uint16_t event_counter = lp_event_counter(conn);
+
 	if (is_instant_reached_or_passed(ctx->data.chmu.instant, event_counter)) {
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		lp_chmu_complete(conn, ctx, evt, param);
@@ -257,6 +258,7 @@ static void rp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 				  void *param)
 {
 	uint16_t event_counter = rp_event_counter(conn);
+
 	if (((event_counter - ctx->data.chmu.instant) & 0xFFFF) <= 0x7FFF) {
 		rp_chmu_complete(conn, ctx, evt, param);
 	}

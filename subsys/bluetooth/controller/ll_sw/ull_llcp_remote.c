@@ -70,6 +70,10 @@ enum {
 
 static bool proc_with_instant(struct proc_ctx *ctx)
 {
+	/*
+	 * EGON TODO: should we combine all the cases that return 0
+	 * and all the cases that return 1?
+	 */
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
 		return 0U;
@@ -465,6 +469,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				/* Send reject */
 				struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
 				struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
+
 				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
 				rr_act_reject(conn);
 			} else if (with_instant && incompat == INCOMPAT_RESERVED) {

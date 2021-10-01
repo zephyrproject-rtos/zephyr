@@ -496,8 +496,10 @@ static void lp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc
 {
 	switch (evt) {
 	case LP_ENC_EVT_PAUSE_ENC_RSP:
-		/* Pause Rx data; will be resumed when the encapsulated
-		 * Start Procedure is done. */
+		/*
+		 * Pause Rx data; will be resumed when the encapsulated
+		 * Start Procedure is done.
+		 */
 		ull_conn_pause_rx_data(conn);
 		lp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
 		break;
@@ -1041,8 +1043,10 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 		/* Pause Tx data */
 		llcp_tx_pause_data(conn);
 		llcp_tx_flush(conn);
-		/* Pause Rx data; will be resumed when the encapsulated
-		 * Start Procedure is done. */
+		/*
+		 * Pause Rx data; will be resumed when the encapsulated
+		 * Start Procedure is done.
+		 */
 		ull_conn_pause_rx_data(conn);
 		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
 		break;

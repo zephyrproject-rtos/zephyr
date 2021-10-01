@@ -102,7 +102,7 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	// apto unit is 10ms
+	/* apto unit is 10ms */
 	*apto = conn->apto_reload * conn->lll.interval * (CONN_INT_UNIT_US / 10) / 1000;
 
 	return 0;
@@ -117,7 +117,7 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	// apto unit is 10ms, RADIO_CONN_EVENTS converts us to connection events
+	/* apto unit is 10ms, RADIO_CONN_EVENTS converts us to connection events */
 	conn->apto_reload =
 		RADIO_CONN_EVENTS(apto * 10U * 1000U, conn->lll.interval * CONN_INT_UNIT_US);
 

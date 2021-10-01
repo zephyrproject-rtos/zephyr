@@ -1689,6 +1689,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 uint8_t ull_conn_llcp_req(void *conn)
 {
 	struct ll_conn * const conn_hdr = conn;
+
 	if (conn_hdr->llcp_req != conn_hdr->llcp_ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}

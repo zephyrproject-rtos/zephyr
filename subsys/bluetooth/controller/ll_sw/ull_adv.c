@@ -2494,8 +2494,10 @@ static void ext_disabled_cb(void *param)
 	struct lll_adv *lll = (void *)param;
 	struct node_rx_hdr *rx_hdr = (void *)lll->node_rx_adv_term;
 
-	/* Under race condition, if a connection has been established then
-	 * node_rx is already utilized to send terminate event on connection */
+	/*
+	 * Under race condition, if a connection has been established then
+	 * node_rx is already utilized to send terminate event on connection
+	 */
 	if (!rx_hdr) {
 		return;
 	}

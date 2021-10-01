@@ -22,7 +22,7 @@ enum llcp_proc {
 	PROC_CTE_REQ,
 };
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 struct llcp_enc {
 	uint8_t error;
 
@@ -132,7 +132,7 @@ struct proc_ctx {
 		} muc;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 		/* Used by Encryption Procedure */
 		struct llcp_enc enc;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -316,7 +316,7 @@ void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 void llcp_rp_comm_init_proc(struct proc_ctx *ctx);
 void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 /*
  * LLCP Local Procedure Encryption
  */
@@ -451,11 +451,11 @@ void llcp_pdu_decode_feature_rsp(struct ll_conn *conn,
 /*
  * Minimum number of used channels Procedure Helper
  */
-#if defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL)
 void llcp_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined (CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 void llcp_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
@@ -467,15 +467,15 @@ void llcp_pdu_encode_version_ind(struct pdu_data *pdu);
 void llcp_ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
 void llcp_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 /*
  * Encryption Start Procedure Helper
  */
-#if defined (CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
-#if defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL)
 void llcp_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu);
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu);
@@ -483,7 +483,7 @@ void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu);
 
 void llcp_pdu_encode_start_enc_rsp(struct pdu_data *pdu);
 
-#if defined (CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL)
 void llcp_pdu_encode_pause_enc_req(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CENTRAL */
 
