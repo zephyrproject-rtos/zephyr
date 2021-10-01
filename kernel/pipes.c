@@ -314,24 +314,9 @@ static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 	return -EAGAIN;
 }
 
-/**
- * @brief Ready a pipe thread
- *
- * Add the pipe thread to the ready queue.
- *
- * @return N/A
- */
-static void pipe_thread_ready(struct k_thread *thread)
-{
-	z_ready_thread(thread);
-}
-
-/**
- * @brief Internal API used to send data to a pipe
- */
-int z_pipe_put_internal(struct k_pipe *pipe, unsigned char *data,
-			size_t bytes_to_write, size_t *bytes_written,
-			size_t min_xfer, k_timeout_t timeout)
+int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer,
+		      k_timeout_t timeout)
 {
 	struct k_thread    *reader;
 	struct k_pipe_desc *desc;
@@ -473,6 +458,22 @@ int z_pipe_put_internal(struct k_pipe *pipe, unsigned char *data,
 	return ret;
 }
 
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer,
+		      k_timeout_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+
+	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
+				bytes_to_write, bytes_written, min_xfer,
+				timeout);
+}
+#include <syscalls/k_pipe_put_mrsh.c>
+#endif
+
 int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
 {
@@ -549,7 +550,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		if (num_bytes_read == bytes_to_read) {
 			break;
 		}
-		pipe_thread_ready(thread);
+		z_ready_thread(thread);
 
 		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
 	}
@@ -579,7 +580,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		desc->bytes_to_xfer  -= bytes_copied;
 
 		/* Write request has been satisfied */
-		pipe_thread_ready(thread);
+		z_ready_thread(thread);
 
 		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
 	}
@@ -654,31 +655,6 @@ int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				timeout);
 }
 #include <syscalls/k_pipe_get_mrsh.c>
-#endif
-
-int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
-{
-	return z_pipe_put_internal(pipe, data,
-				    bytes_to_write, bytes_written,
-				    min_xfer, timeout);
-}
-
-#ifdef CONFIG_USERSPACE
-int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
-
-	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
-				bytes_to_write, bytes_written, min_xfer,
-				timeout);
-}
-#include <syscalls/k_pipe_put_mrsh.c>
 #endif
 
 size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
