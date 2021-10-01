@@ -725,8 +725,8 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	irq_unlock(key);
 
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS
-	    && timeout != SYS_FOREVER_MS) {
-		k_timer_start(&data->async->tx_timeout_timer, K_MSEC(timeout),
+	    && timeout != SYS_FOREVER_US) {
+		k_timer_start(&data->async->tx_timeout_timer, K_USEC(timeout),
 			      K_NO_WAIT);
 	}
 	return 0;
@@ -806,9 +806,15 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	}
 
 	data->async->rx_timeout = timeout;
+	/* Set minimum interval to 3 RTC ticks. 3 is used due to RTC limitation
+	 * which cannot set timeout for next tick. Assuming delay in processing
+	 * 3 instead of 2 is used. Note that lower value would work in a similar
+	 * way but timeouts would always occur later than expected,  most likely
+	 * after ~3 ticks.
+	 */
 	data->async->rx_timeout_slab =
 		MAX(timeout / RX_TIMEOUT_DIV,
-		    NRFX_CEIL_DIV(1000, CONFIG_SYS_CLOCK_TICKS_PER_SEC));
+		    NRFX_CEIL_DIV(3 * 1000000, CONFIG_SYS_CLOCK_TICKS_PER_SEC));
 
 	data->async->rx_buf = buf;
 	data->async->rx_buf_len = len;
@@ -926,7 +932,7 @@ static void tx_timeout(struct k_timer *timer)
 
 /**
  * Whole timeout is divided by RX_TIMEOUT_DIV into smaller units, rx_timeout
- * is executed periodically every rx_timeout_slab ms. If between executions
+ * is executed periodically every rx_timeout_slab us. If between executions
  * data was received, then we start counting down time from start, if not, then
  * we subtract rx_timeout_slab from rx_timeout_left.
  * If rx_timeout_left is less than rx_timeout_slab it means that receiving has
@@ -996,7 +1002,7 @@ static void rx_timeout(struct k_timer *timer)
 		if (clipped ||
 			(data->async->rx_timeout_left
 				< data->async->rx_timeout_slab)) {
-			/* rx_timeout ms elapsed since last receiving */
+			/* rx_timeout us elapsed since last receiving */
 			notify_uart_rx_rdy(dev, len);
 			data->async->rx_offset += len;
 			data->async->rx_total_user_byte_cnt += len;
@@ -1044,11 +1050,11 @@ static void rxstarted_isr(const struct device *dev)
 		.type = UART_RX_BUF_REQUEST,
 	};
 	user_callback(dev, &evt);
-	if (data->async->rx_timeout != SYS_FOREVER_MS) {
+	if (data->async->rx_timeout != SYS_FOREVER_US) {
 		data->async->rx_timeout_left = data->async->rx_timeout;
 		k_timer_start(&data->async->rx_timeout_timer,
-			      K_MSEC(data->async->rx_timeout_slab),
-			      K_MSEC(data->async->rx_timeout_slab));
+			      K_USEC(data->async->rx_timeout_slab),
+			      K_USEC(data->async->rx_timeout_slab));
 	}
 }
 
