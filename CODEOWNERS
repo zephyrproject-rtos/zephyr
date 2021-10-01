@@ -341,6 +341,7 @@
 /drivers/spi/                             @tbursztyka
 /drivers/spi/*b91*                        @yurvyn
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
+/drivers/spi/*esp32*                      @glaubermaroto
 /drivers/timer/apic_timer.c               @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
 /drivers/timer/arm_arch_timer.c           @carlocaione
