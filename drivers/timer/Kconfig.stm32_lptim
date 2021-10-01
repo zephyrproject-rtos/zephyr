@@ -17,15 +17,15 @@ if STM32_LPTIM_TIMER
 choice STM32_LPTIM_CLOCK
 	prompt "LPTIM clock value configuration"
 
-config STM32_LPTIM_CLOCK_LSE
-	bool "LSE"
-	help
-	  Use LSE as LPTIM clock
-
 config STM32_LPTIM_CLOCK_LSI
 	bool "LSI"
 	help
 	  Use LSI as LPTIM clock
+
+config STM32_LPTIM_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as LPTIM clock
 
 endchoice
 
