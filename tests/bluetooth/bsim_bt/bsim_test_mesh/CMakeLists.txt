@@ -29,7 +29,8 @@ else()
   src/test_friendship.c
   src/test_provision.c
   src/test_beacon.c
-  src/test_scanner.c
+	src/test_scanner.c
+	src/test_heartbeat.c
  )
 endif()
 
