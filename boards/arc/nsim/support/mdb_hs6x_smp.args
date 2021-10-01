@@ -10,7 +10,6 @@
 	-prop=nsim_isa_vec64=1
 	-dcache=65536,64,2,a
 	-dcache_feature=2
-	-dcache_uncached_region
 	-dcache_mem_cycles=2
 	-icache=65536,64,4,a
 	-icache_feature=2
