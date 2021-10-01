@@ -24,66 +24,7 @@
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
 	size_t bytes_to_xfer;            /* # bytes left to transfer */
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	struct k_mem_block *block;       /* Pointer to memory block */
-	struct k_mem_block  copy_block;  /* For backwards compatibility */
-	struct k_sem *sem;               /* Semaphore to give if async */
-#endif
 };
-
-struct k_pipe_async {
-	struct _thread_base thread;   /* Dummy thread object */
-	struct k_pipe_desc  desc;     /* Pipe message descriptor */
-};
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-/* stack of unused asynchronous message descriptors */
-K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-
-/*
- * Do run-time initialization of pipe object subsystem.
- */
-static int init_pipes_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Array of asynchronous message descriptors */
-	static struct k_pipe_async __noinit async_msg[CONFIG_NUM_PIPE_ASYNC_MSGS];
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	/*
-	 * Create pool of asynchronous pipe message descriptors.
-	 *
-	 * A dummy thread requires minimal initialization, since it never gets
-	 * to execute. The _THREAD_DUMMY flag is sufficient to distinguish a
-	 * dummy thread from a real one. The threads are *not* added to the
-	 * kernel's list of known threads.
-	 *
-	 * Once initialized, the address of each descriptor is added to a stack
-	 * that governs access to them.
-	 */
-
-	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
-		async_msg[i].thread.thread_state = _THREAD_DUMMY;
-		async_msg[i].thread.swap_data = &async_msg[i].desc;
-
-		z_init_thread_timeout(&async_msg[i].thread);
-
-		k_stack_push(&pipe_async_msgs, (stack_data_t)&async_msg[i]);
-	}
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
-
-	/* Complete initialization of statically defined mailboxes. */
-
-	return 0;
-}
-
-SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS */
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -376,39 +317,27 @@ static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 /**
  * @brief Ready a pipe thread
  *
- * If the pipe thread is a real thread, then add it to the ready queue.
- * If it is a dummy thread, then finish the asynchronous work.
+ * Add the pipe thread to the ready queue.
  *
  * @return N/A
  */
 static void pipe_thread_ready(struct k_thread *thread)
 {
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if ((thread->base.thread_state & _THREAD_DUMMY) != 0U) {
-		return;
-	}
-#endif
-
 	z_ready_thread(thread);
 }
 
 /**
  * @brief Internal API used to send data to a pipe
  */
-int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
-			 unsigned char *data, size_t bytes_to_write,
-			 size_t *bytes_written, size_t min_xfer,
-			 k_timeout_t timeout)
+int z_pipe_put_internal(struct k_pipe *pipe, unsigned char *data,
+			size_t bytes_to_write, size_t *bytes_written,
+			size_t min_xfer, k_timeout_t timeout)
 {
 	struct k_thread    *reader;
 	struct k_pipe_desc *desc;
 	sys_dlist_t    xfer_list;
 	size_t         num_bytes_written = 0;
 	size_t         bytes_copied;
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS == 0)
-	ARG_UNUSED(async_desc);
-#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
@@ -731,7 +660,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 		     size_t *bytes_written, size_t min_xfer,
 		      k_timeout_t timeout)
 {
-	return z_pipe_put_internal(pipe, NULL, data,
+	return z_pipe_put_internal(pipe, data,
 				    bytes_to_write, bytes_written,
 				    min_xfer, timeout);
 }
