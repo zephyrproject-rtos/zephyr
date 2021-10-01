@@ -1292,14 +1292,19 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 /** @brief Configure Audio Channel QoS
  *
  *  This procedure is used by a client to configure the Quality of Service of
- *  a channel. This shall only be used to configure a unicast channel.
+ *  channels in a unicast group. All channels in the group for the specified
+ *  @p conn will have the Quality of Service configured.
+ *  This shall only be used to configure unicast channels.
  *
- *  @param chan Channel object
- *  @param qos Quality of Service configuration
+ *  @param conn  Connection object
+ *  @param group Unicast group object
+ *  @param qos   Quality of Service configuration
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos);
+int bt_audio_chan_qos(struct bt_conn *conn,
+		      struct bt_audio_unicast_group *group,
+		      struct bt_codec_qos *qos);
 
 /** @brief Enable Audio Channel
  *

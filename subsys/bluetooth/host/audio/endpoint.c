@@ -1173,7 +1173,7 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 }
 
 int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		    uint8_t cig, uint8_t cis, struct bt_codec_qos *qos)
+		    struct bt_codec_qos *qos)
 {
 	struct bt_ascs_qos *req;
 
@@ -1197,14 +1197,15 @@ int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	BT_DBG("id 0x%02x cig 0x%02x cis 0x%02x interval %u framing 0x%02x "
 	       "phy 0x%02x sdu %u rtn %u latency %u pd %u", ep->status.id,
-	       cig, cis, qos->interval, qos->framing, qos->phy, qos->sdu,
+	       ep->iso.iso->iso.cig_id, ep->iso.iso->iso.cis_id,
+	       qos->interval, qos->framing, qos->phy, qos->sdu,
 	       qos->rtn, qos->latency, qos->pd);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
 	/* TODO: don't hardcode CIG and CIS, they should come from ISO */
-	req->cig = cig;
-	req->cis = cis;
+	req->cig = ep->iso.iso->iso.cig_id;
+	req->cis = ep->iso.iso->iso.cis_id;
 	sys_put_le24(qos->interval, req->interval);
 	req->framing = qos->framing;
 	req->phy = qos->phy;

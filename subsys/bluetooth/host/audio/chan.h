@@ -37,10 +37,6 @@ enum bt_audio_state {
 	BT_AUDIO_EP_STATE_RELEASING =        0x06,
 };
 
-/* Bind ISO channel */
-struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
-					struct bt_codec_qos *qos);
-
 /* Unbind ISO channel */
 int bt_audio_cig_terminate(struct bt_audio_chan *chan);
 
@@ -61,3 +57,10 @@ int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
 				       struct bt_codec_qos *codec);
 
 void bt_audio_chan_detach(struct bt_audio_chan *chan);
+
+bool bt_audio_valid_qos(const struct bt_codec_qos *qos);
+
+bool bt_audio_valid_chan_qos(const struct bt_audio_chan *chan,
+			     const struct bt_codec_qos *qos);
+
+int bt_audio_chan_iso_listen(struct bt_audio_chan *chan);

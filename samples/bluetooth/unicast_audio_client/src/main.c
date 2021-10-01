@@ -579,11 +579,12 @@ static int create_group(struct bt_audio_chan *chan)
 	return 0;
 }
 
-static int set_chan_qos(struct bt_audio_chan *chan)
+static int set_chan_qos(void)
 {
 	int err;
 
-	err = bt_audio_chan_qos(chan, &preset_16_2_1.qos);
+	err = bt_audio_chan_qos(default_conn, unicast_group,
+				&preset_16_2_1.qos);
 	if (err != 0) {
 		printk("Unable to setup QoS: %d", err);
 		return err;
@@ -666,7 +667,7 @@ void main(void)
 	printk("Unicast group created\n");
 
 	printk("Setting channel QoS\n");
-	err = set_chan_qos(chan);
+	err = set_chan_qos();
 	if (err != 0) {
 		return;
 	}

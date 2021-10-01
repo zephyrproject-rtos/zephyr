@@ -743,6 +743,55 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+static int ase_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+{
+	BT_DBG("chan %p qos %p", chan, qos);
+
+	if (chan == NULL || chan->ep == NULL || chan->cap == NULL ||
+	    chan->cap->ops == NULL || qos == NULL) {
+		return -EINVAL;
+	}
+
+	switch (chan->ep->status.state) {
+	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+	/* or 0x02 (QoS Configured) */
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+		break;
+	default:
+		BT_ERR("Invalid state: %s",
+		bt_audio_ep_state_str(chan->ep->status.state));
+		return -EBADMSG;
+	}
+
+	if (!bt_audio_valid_qos(qos)) {
+		return -EINVAL;
+	}
+
+	if (!bt_audio_valid_chan_qos(chan, qos)) {
+		return -EINVAL;
+	}
+
+	if (chan->cap->ops->qos != NULL) {
+		int err;
+
+		err = chan->cap->ops->qos(chan, qos);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	chan->qos = qos;
+
+	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
+		bt_audio_ep_set_state(chan->ep,
+				      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		bt_audio_chan_iso_listen(chan);
+	}
+
+	return 0;
+}
+
 static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 {
 	struct bt_audio_chan *chan = ase->ep.chan;
@@ -762,7 +811,7 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 	       qos->cis, cqos->interval, cqos->framing, cqos->phy, cqos->sdu,
 	       cqos->rtn, cqos->latency, cqos->pd);
 
-	err = bt_audio_chan_qos(chan, cqos);
+	err = ase_chan_qos(chan, cqos);
 	if (err) {
 		uint8_t reason = BT_ASCS_REASON_NONE;
 
