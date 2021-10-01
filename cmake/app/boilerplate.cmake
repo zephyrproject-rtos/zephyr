@@ -489,10 +489,7 @@ zephyr_boilerplate_watch(CONF_FILE)
 
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable DTC_OVERLAY_FILE
-elseif(DEFINED ENV{DTC_OVERLAY_FILE})
-  set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
+  # in the CMakeCache.txt.
 elseif(APP_BOARD_DTS)
   set(DTC_OVERLAY_FILE ${APP_BOARD_DTS})
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
