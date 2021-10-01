@@ -157,6 +157,19 @@ out:
 
 int pm_device_get(const struct device *dev)
 {
+	/*
+	 * First it is necessary to get the domain
+	 */
+	if (dev->pm->domain != NULL) {
+		int ret;
+
+		ret = pm_device_request(dev->pm->domain,
+					PM_DEVICE_STATE_ACTIVE, 0);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, 0);
 }
 
@@ -167,7 +180,19 @@ int pm_device_get_async(const struct device *dev)
 
 int pm_device_put(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_STATE_SUSPENDED, 0);
+	int ret;
+
+	ret = pm_device_request(dev, PM_DEVICE_STATE_SUSPENDED, 0);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (dev->pm->domain != NULL) {
+		ret = pm_device_request(dev->pm->domain,
+					PM_DEVICE_STATE_SUSPENDED, 0);
+	}
+
+	return ret;
 }
 
 int pm_device_put_async(const struct device *dev)
