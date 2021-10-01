@@ -85,6 +85,9 @@ struct pm_device {
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
+
+	/** Power Domain it belongs */
+	const struct device *domain;
 };
 
 /**
@@ -106,6 +109,10 @@ struct pm_device {
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
 				(0)) << PM_DEVICE_FLAGS_WS_CAPABLE),	\
+		.domain = COND_CODE_1(DT_NODE_EXISTS(node_id),		\
+		(COND_CODE_1(DT_NODE_HAS_PROP(node_id, power_domain),	\
+			(DEVICE_GET(Z_DEVICE_DT_DEV_NAME(DT_PROP(node_id, \
+					power_domain)))), NULL)), NULL), \
 	}
 
 /**

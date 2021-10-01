@@ -97,3 +97,8 @@ properties:
       required: false
       type: string-array
       description: Provided names of IO channel specifiers
+
+    power-domain:
+      required: false
+      type: phandle
+      description: Power domain it belongs
