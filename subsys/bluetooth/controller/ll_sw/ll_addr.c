@@ -87,5 +87,5 @@ uint8_t *ll_addr_read(uint8_t addr_type, uint8_t *const bdaddr)
 
 void bt_ctlr_set_public_addr(const uint8_t *addr)
 {
-    (void)memcpy(pub_addr, addr, sizeof(pub_addr));
+	(void)memcpy(pub_addr, addr, sizeof(pub_addr));
 }
