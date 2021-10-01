@@ -1504,12 +1504,12 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 static void le_create_big(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_big *cmd = (void *)buf->data;
-	uint8_t status;
 	uint32_t sdu_interval;
-	uint16_t max_sdu;
 	uint16_t max_latency;
 	uint8_t big_handle;
 	uint8_t adv_handle;
+	uint16_t max_sdu;
+	uint8_t status;
 
 	status = ll_adv_iso_by_hci_handle_new(cmd->big_handle, &big_handle);
 	if (status) {
@@ -1538,11 +1538,11 @@ static void le_create_big(struct net_buf *buf, struct net_buf **evt)
 static void le_create_big_test(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_big_test *cmd = (void *)buf->data;
-	uint8_t status;
 	uint32_t sdu_interval;
 	uint16_t iso_interval;
 	uint16_t max_sdu;
 	uint16_t max_pdu;
+	uint8_t status;
 
 	sdu_interval = sys_get_le24(cmd->sdu_interval);
 	iso_interval = sys_le16_to_cpu(cmd->iso_interval);
@@ -1978,8 +1978,8 @@ static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_transmit_test *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_transmit_test *rp;
-	uint8_t status;
 	uint16_t handle;
+	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
@@ -1994,12 +1994,12 @@ static void le_read_iso_tx_sync(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_iso_tx_sync *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_iso_tx_sync *rp;
-	uint8_t status;
-	uint16_t handle, handle_le16;
-
-	uint16_t seq;
+	uint16_t handle_le16;
 	uint32_t timestamp;
 	uint32_t offset;
+	uint16_t handle;
+	uint8_t status;
+	uint16_t seq;
 
 	handle_le16 = cmd->handle;
 	handle = sys_le16_to_cpu(handle_le16);
@@ -2020,8 +2020,8 @@ static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_receive_test *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_receive_test *rp;
-	uint8_t status;
 	uint16_t handle;
+	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
@@ -2036,11 +2036,11 @@ static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_test_counters *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_test_counters *rp;
-	uint8_t status;
-	uint16_t handle;
 	uint32_t received_cnt;
 	uint32_t missed_cnt;
 	uint32_t failed_cnt;
+	uint16_t handle;
+	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 	status = ll_iso_read_test_counters(handle, &received_cnt,
@@ -2058,16 +2058,16 @@ static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_iso_link_quality *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_iso_link_quality *rp;
-	uint8_t status;
-	uint16_t handle, handle_le16;
-
-	uint32_t tx_unacked_packets;
-	uint32_t tx_flushed_packets;
 	uint32_t tx_last_subevent_packets;
 	uint32_t retransmitted_packets;
-	uint32_t crc_error_packets;
 	uint32_t rx_unreceived_packets;
+	uint32_t tx_unacked_packets;
+	uint32_t tx_flushed_packets;
+	uint32_t crc_error_packets;
 	uint32_t duplicate_packets;
+	uint16_t handle_le16;
+	uint16_t handle;
+	uint8_t status;
 
 	handle_le16 = cmd->handle;
 	handle = sys_le16_to_cpu(handle_le16);
@@ -2127,8 +2127,8 @@ static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_remove_iso_path *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_remove_iso_path *rp;
-	uint8_t status;
 	uint16_t handle;
+	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 
@@ -2143,11 +2143,11 @@ static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_test_end *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_test_end *rp;
-	uint8_t status;
-	uint16_t handle;
 	uint32_t received_cnt;
 	uint32_t missed_cnt;
 	uint32_t failed_cnt;
+	uint16_t handle;
+	uint8_t status;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 	status = ll_iso_test_end(handle, &received_cnt, &missed_cnt,
