@@ -569,8 +569,6 @@ static int spi_stm32_configure(const struct device *dev,
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
 
-	spi_context_cs_configure(&data->ctx);
-
 	LOG_DBG("Installed config %p: freq %uHz (div = %u),"
 		    " mode %u/%u/%u, slave %u",
 		    config, clock >> br, 1 << br,
@@ -863,6 +861,12 @@ static int spi_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -960,6 +964,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
 	SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 	SPI_DMA_STATUS_SEM(id)						\
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
