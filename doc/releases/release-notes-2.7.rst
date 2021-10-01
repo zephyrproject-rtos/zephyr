@@ -561,23 +561,84 @@ USB
 Build and Infrastructure
 ************************
 
+* Devicetree API
 
-* Devicetree
+  * New "for-each" macros which work like existing APIs, but take variable
+    numbers of arguments: :c:macro:`DT_FOREACH_CHILD_VARGS`,
+    :c:macro:`DT_FOREACH_CHILD_STATUS_OKAY_VARGS`,
+    :c:macro:`DT_FOREACH_PROP_ELEM_VARGS`,
+    :c:macro:`DT_INST_FOREACH_CHILD_VARGS`,
+    :c:macro:`DT_INST_FOREACH_STATUS_OKAY_VARGS`,
+    :c:macro:`DT_INST_FOREACH_PROP_ELEM_VARGS`
 
-  * Various compatibles had incorrect vendor prefixes in their :ref:`compatible
+  * Other new "for-each" macros: :c:macro:`DT_FOREACH_STATUS_OKAY`,
+    :c:macro:`DT_FOREACH_STATUS_OKAY_VARGS`
+
+  * New macros for converting strings to C tokens: :c:macro:`DT_STRING_TOKEN`,
+    :c:macro:`DT_STRING_UPPER_TOKEN`
+
+  * New :ref:`devicetree-pinctrl-api` helper macros
+
+* Devicetree tooling
+
+  * Errors are now generated when invalid YAML files are discovered while
+    searching for bindings. See :ref:`dt-where-bindings-are-located` for
+    information on the search path.
+
+  * File names ending in ``.yml`` are now considered YAML files when searching
+    for bindings.
+
+  * Errors are now generated if invalid node names are used. For example, the
+    node name ``node?`` now generates an error message ending in ``node?: Bad
+    character '?' in node name``. The valid node names are documented in
+    "2.2.2 Node Names" of the Devicetree specification v0.3.
+
+  * Warnings are now generated if a :ref:`compatible property
+    <dt-important-props>` in the ``vendor,device`` format uses an unknown
+    vendor prefix. This warning does not apply to the root node.
+
+    Known vendor prefixes are defined in
+    :file:`dts/bindings/vendor-prefixes.txt` files, which may appear in any
+    directory in :ref:`DTS_ROOT <dts_root>`.
+
+    These may be upgraded to errors using the edtlib Python APIs; Zephyr's CI
+    now generates such errors.
+
+* Devicetree bindings
+
+  * Various bindings had incorrect vendor prefixes in their :ref:`compatible
     <dt-important-props>` properties; the following changes were made to fix
     these.
 
-    * ``nios,i2c`` is now ``altr,nios2-i2c``
-    * ``colorway,lpd8803`` is now ``greeled,lpd8803``
-    * ``colorway,lpd8806`` is now ``greeled,lpd8806``
-    * ``grove,light`` is now ``seeed,grove-light``
-    * ``grove,temperature`` is now ``seeed,grove-temperature``
-    * ``max,max30101`` is now ``maxim,max30101``
-    * ``ublox,sara-r4`` is now ``u-blox,sara-r4``
-    * ``xtensa,core-intc`` is now ``cdns,xtensa-core-intc``
+    .. list-table::
+       :header-rows: 1
 
-    Out of tree users of these compatibles will need to update their
+       - * Old compatible
+         * New compatible
+       - * ``nios,i2c``
+         * :dtcompatible:`altr,nios2-i2c`
+       - * ``cadence,tensilica-xtensa-lx4``
+         * :dtcompatible:`cdns,tensilica-xtensa-lx4`
+       - * ``cadence,tensilica-xtensa-lx6``
+         * :dtcompatible:`cdns,tensilica-xtensa-lx6`
+       - * ``colorway,lpd8803``
+         * :dtcompatible:`greeled,lpd8803`
+       - * ``colorway,lpd8806``
+         * :dtcompatible:`greeled,lpd8806`
+       - * ``grove,light``
+         * :dtcompatible:`seeed,grove-light`
+       - * ``grove,temperature``
+         * :dtcompatible:`seeed,grove-temperature`
+       - * ``max,max30101``
+         * :dtcompatible:`maxim,max30101`
+       - * ``ublox,sara-r4``
+         * :dtcompatible:`u-blox,sara-r4`
+       - * ``xtensa,core-intc``
+         * :dtcompatible:`cdns,xtensa-core-intc`
+       - * ``vexriscv,intc0``
+         * :dtcompatible:`vexriscv-intc0`
+
+    Out of tree users of these bindings will need to update their
     devicetrees.
 
     You can support multiple versions of Zephyr with one devicetree by
@@ -588,6 +649,60 @@ Build and Infrastructure
                 compatible = "colorway,lpd8803", "greeled,lpd8803";
                 ...
         };
+
+  * Other new bindings in alphabetical order: :dtcompatible:`andestech,atcgpio100`,
+    :dtcompatible:`arm,gic-v3-its`, :dtcompatible:`atmel,sam0-gmac`,
+    :dtcompatible:`atmel,sam0-pinctrl`, :dtcompatible:`atmel,sam-dac`,
+    :dtcompatible:`atmel,sam-mdio`, :dtcompatible:`atmel,sam-usbc`,
+    :dtcompatible:`cdns,tensilica-xtensa-lx7`,
+    :dtcompatible:`espressif,esp32c3-uart`,
+    :dtcompatible:`espressif,esp32-intc`,
+    :dtcompatible:`espressif,esp32s2-uart`, :dtcompatible:`ethernet-phy`,
+    :dtcompatible:`fcs,fxl6408`, :dtcompatible:`ilitek,ili9341`,
+    :dtcompatible:`ite,it8xxx2-bbram`, :dtcompatible:`ite,it8xxx2-kscan`,
+    :dtcompatible:`ite,it8xxx2-pinctrl-conf`, :dtcompatible:`ite,it8xxx2-pwm`,
+    :dtcompatible:`ite,it8xxx2-pwmprs`, :dtcompatible:`ite,it8xxx2-watchdog`,
+    :dtcompatible:`lm75`, :dtcompatible:`lm77`, :dtcompatible:`meas,ms5607`,
+    :dtcompatible:`microchip,ksz8863`, :dtcompatible:`microchip,mcp7940n`,
+    :dtcompatible:`microchip,xec-adc-v2`, :dtcompatible:`microchip,xec-ecia`,
+    :dtcompatible:`microchip,xec-ecia-girq`,
+    :dtcompatible:`microchip,xec-gpio-v2`,
+    :dtcompatible:`microchip,xec-i2c-v2`, :dtcompatible:`microchip,xec-pcr`,
+    :dtcompatible:`microchip,xec-uart`, :dtcompatible:`nuvoton,npcx-bbram`,
+    :dtcompatible:`nuvoton,npcx-booter-variant`,
+    :dtcompatible:`nuvoton,npcx-ps2-channel`,
+    :dtcompatible:`nuvoton,npcx-ps2-ctrl`, :dtcompatible:`nuvoton,npcx-soc-id`,
+    :dtcompatible:`nxp,imx-ccm-rev2`, :dtcompatible:`nxp,lpc-ctimer`,
+    :dtcompatible:`nxp,lpc-uid`, :dtcompatible:`nxp,mcux-usbd`,
+    :dtcompatible:`nxp,sctimer-pwm`, :dtcompatible:`ovti,ov2640`,
+    :dtcompatible:`renesas,rcar-can`, :dtcompatible:`renesas,rcar-i2c`,
+    :dtcompatible:`reserved-memory`, :dtcompatible:`riscv,sifive-e24`,
+    :dtcompatible:`sensirion,sgp40`, :dtcompatible:`sensirion,sht4x`,
+    :dtcompatible:`sensirion,shtcx`, :dtcompatible:`silabs,si7055`,
+    :dtcompatible:`silabs,si7210`, :dtcompatible:`snps,creg-gpio`,
+    :dtcompatible:`st,i3g4250d`, :dtcompatible:`st,stm32-aes`,
+    :dtcompatible:`st,stm32-dma`, :dtcompatible:`st,stm32-dma-v2bis`,
+    :dtcompatible:`st,stm32-hsem-mailbox`, :dtcompatible:`st,stm32-nv-flash`,
+    :dtcompatible:`st,stm32-spi-subghz`,
+    :dtcompatible:`st,stm32u5-flash-controller`,
+    :dtcompatible:`st,stm32u5-msi-clock`, :dtcompatible:`st,stm32u5-pll-clock`,
+    :dtcompatible:`st,stm32u5-rcc`, :dtcompatible:`st,stm32wl-hse-clock`,
+    :dtcompatible:`st,stm32wl-subghz-radio`, :dtcompatible:`st,stmpe1600`,
+    :dtcompatible:`syscon`, :dtcompatible:`telink,b91`,
+    :dtcompatible:`telink,b91-flash-controller`,
+    :dtcompatible:`telink,b91-gpio`, :dtcompatible:`telink,b91-i2c`,
+    :dtcompatible:`telink,b91-pinmux`, :dtcompatible:`telink,b91-power`,
+    :dtcompatible:`telink,b91-pwm`, :dtcompatible:`telink,b91-spi`,
+    :dtcompatible:`telink,b91-trng`, :dtcompatible:`telink,b91-uart`,
+    :dtcompatible:`telink,b91-zb`, :dtcompatible:`ti,hdc2010`,
+    :dtcompatible:`ti,hdc2021`, :dtcompatible:`ti,hdc2022`,
+    :dtcompatible:`ti,hdc2080`, :dtcompatible:`ti,hdc20xx`,
+    :dtcompatible:`ti,ina219`, :dtcompatible:`ti,ina23x`,
+    :dtcompatible:`ti,tca9538`, :dtcompatible:`ti,tca9546a`,
+    :dtcompatible:`ti,tlc59108`,
+    :dtcompatible:`xlnx,gem`, :dtcompatible:`zephyr,bbram-emul`,
+    :dtcompatible:`zephyr,cdc-acm-uart`, :dtcompatible:`zephyr,gsm-ppp`,
+    :dtcompatible:`zephyr,native-posix-udc`
 
 * West (extensions)
 
