@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_esp32_spim.h"
 
 /* pins, signals and interrupts shall be placed into dts */
+#if defined(CONFIG_SOC_ESP32)
 #define MISO_IDX_2 HSPIQ_IN_IDX
 #define MISO_IDX_3 VSPIQ_IN_IDX
 #define MOSI_IDX_2 HSPID_OUT_IDX
@@ -30,6 +31,16 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #define SCLK_IDX_3 VSPICLK_OUT_IDX
 #define CSEL_IDX_2 HSPICS0_OUT_IDX
 #define CSEL_IDX_3 VSPICS0_OUT_IDX
+#elif defined(CONFIG_SOC_ESP32S2)
+#define MISO_IDX_2 FSPIQ_IN_IDX
+#define MISO_IDX_3 SPI3_Q_IN_IDX
+#define MOSI_IDX_2 FSPID_OUT_IDX
+#define MOSI_IDX_3 SPI3_D_OUT_IDX
+#define SCLK_IDX_2 FSPICLK_OUT_MUX_IDX
+#define SCLK_IDX_3 SPI3_CLK_OUT_MUX_IDX
+#define CSEL_IDX_2 FSPICS0_OUT_IDX
+#define CSEL_IDX_3 SPI3_CS0_OUT_IDX
+#endif
 
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 {
