@@ -971,7 +971,7 @@ class Node:
                     continue
                 prop_spec = _DEFAULT_PROP_SPECS[name]
                 val = self._prop_val(name, prop_spec.type, False, False, None,
-                                     err_on_deprecated)
+                                     None, err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
     def _init_prop(self, prop_spec, err_on_deprecated):
@@ -985,7 +985,7 @@ class Node:
 
         val = self._prop_val(name, prop_type, prop_spec.deprecated,
                              prop_spec.required, prop_spec.default,
-                             err_on_deprecated)
+                             prop_spec.specifier_space, err_on_deprecated)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -1013,7 +1013,7 @@ class Node:
         self.props[name] = Property(prop_spec, val, self)
 
     def _prop_val(self, name, prop_type, deprecated, required, default,
-                  err_on_deprecated):
+                  specifier_space, err_on_deprecated):
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -1031,6 +1031,9 @@ class Node:
         # default:
         #   Default value to use when the property doesn't exist, or None if
         #   the binding doesn't give a default value
+        #
+        # specifier_space:
+        #   Property specifier-space from binding (if prop_type is "phandle-array")
         #
         # err_on_deprecated:
         #   If True, a deprecated property is an error instead of warning.
@@ -1100,7 +1103,7 @@ class Node:
                      f"with '{name} = < &foo ... &bar 1 ... &baz 2 3 >' "
                      f"(a mix of phandles and numbers), not '{prop}'")
 
-            return self._standard_phandle_val_list(prop)
+            return self._standard_phandle_val_list(prop, specifier_space)
 
         if prop_type == "path":
             return self.edt._node2enode[prop.to_path()]
@@ -1212,41 +1215,59 @@ class Node:
 
         _add_names(node, "interrupt", self.interrupts)
 
-    def _standard_phandle_val_list(self, prop):
+    def _standard_phandle_val_list(self, prop, specifier_space):
         # Parses a property like
         #
-        #     <name>s = <phandle value phandle value ...>
-        #     (e.g., pwms = <&foo 1 2 &bar 3 4>)
+        #     <prop.name> = <phandle cell phandle cell ...>;
         #
-        # , where each phandle points to a node that has a
+        # where each phandle points to a controller node that has a
         #
-        #     #<name>-cells = <size>
+        #     #<specifier_space>-cells = <size>;
         #
         # property that gives the number of cells in the value after the
-        # phandle. These values are given names in *-cells in the binding for
-        # the controller.
+        # controller's phandle in the property.
+        #
+        # E.g. with a property like
+        #
+        #     pwms = <&foo 1 2 &bar 3>;
+        #
+        # If 'specifier_space' is "pwm", then we should have this elsewhere
+        # in the tree:
+        #
+        #     foo: ... {
+        #             #pwm-cells = <2>;
+        #     };
+        #
+        #     bar: ... {
+        #             #pwm-cells = <1>;
+        #     };
+        #
+        # These values can be given names using the <specifier_space>-names:
+        # list in the binding for the phandle nodes.
         #
         # Also parses any
         #
-        #     <name>-names = "...", "...", ...
+        #     <specifier_space>-names = "...", "...", ...
         #
         # Returns a list of Optional[ControllerAndData] instances.
-        # An index is None if the underlying phandle-array element
-        # is unspecified.
+        #
+        # An index is None if the underlying phandle-array element is
+        # unspecified.
 
-        if prop.name.endswith("gpios"):
-            # There's some slight special-casing for *-gpios properties in that
-            # e.g. foo-gpios still maps to #gpio-cells rather than
-            # #foo-gpio-cells
-            basename = "gpio"
-        else:
-            # Strip -s. We've already checked that the property names end in -s
-            # in _check_prop_type_and_default().
-            basename = prop.name[:-1]
+        if not specifier_space:
+            if prop.name.endswith("gpios"):
+                # There's some slight special-casing for *-gpios properties in that
+                # e.g. foo-gpios still maps to #gpio-cells rather than
+                # #foo-gpio-cells
+                specifier_space = "gpio"
+            else:
+                # Strip -s. We've already checked that property names end in -s
+                # if there is no specifier space in _check_prop_type_and_default().
+                specifier_space = prop.name[:-1]
 
         res = []
 
-        for item in _phandle_val_list(prop, basename):
+        for item in _phandle_val_list(prop, specifier_space):
             if item is None:
                 res.append(None)
                 continue
@@ -1254,17 +1275,18 @@ class Node:
             controller_node, data = item
             mapped_controller, mapped_data = \
                 _map_phandle_array_entry(prop.node, controller_node, data,
-                                         basename)
+                                         specifier_space)
 
             entry = ControllerAndData()
             entry.node = self
             entry.controller = self.edt._node2enode[mapped_controller]
+            entry.basename = specifier_space
             entry.data = self._named_cells(entry.controller, mapped_data,
-                                           basename)
+                                           specifier_space)
 
             res.append(entry)
 
-        _add_names(self._node, basename, res)
+        _add_names(self._node, specifier_space, res)
 
         return res
 
@@ -1354,6 +1376,9 @@ class ControllerAndData:
       The name of the entry as given in
       'interrupt-names'/'gpio-names'/'pwm-names'/etc., or None if there is no
       *-names property
+
+    basename:
+      Basename for the controller when supporting named cells
     """
     def __repr__(self):
         fields = []
@@ -1810,7 +1835,8 @@ class Binding:
             return
 
         ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default", "deprecated"}
+                        "enum", "const", "default", "deprecated",
+                        "specifier-space"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -1820,9 +1846,7 @@ class Binding:
                          f"expected one of {', '.join(ok_prop_keys)}")
 
             _check_prop_type_and_default(
-                prop_name, options.get("type"),
-                options.get("default"),
-                self.path)
+                prop_name, options, self.path)
 
             for true_false_opt in ["required", "deprecated"]:
                 if true_false_opt in options:
@@ -1922,6 +1946,9 @@ class PropertySpec:
 
     required:
       True if the property is marked required; False otherwise.
+
+    specifier_space:
+      The specifier space for the property as given in the binding, or None.
     """
 
     def __init__(self, name, binding):
@@ -2000,6 +2027,12 @@ class PropertySpec:
     def deprecated(self):
         "See the class docstring"
         return self._raw.get("deprecated", False)
+
+    @property
+    def specifier_space(self):
+        "See the class docstring"
+        return self._raw.get("specifier-space")
+
 
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
@@ -2225,9 +2258,12 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
-def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
-    # Binding._check_properties() helper. Checks 'type:' and 'default:' for the
-    # property named 'prop_name'
+def _check_prop_type_and_default(prop_name, options, binding_path):
+    # Binding._check_properties() helper. Checks 'type:', 'default:' and
+    # 'specifier-space:' for the property named 'prop_name'
+
+    prop_type = options.get("type")
+    default = options.get("default")
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
@@ -2242,13 +2278,15 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
              f"has unknown type '{prop_type}', expected one of " +
              ", ".join(ok_types))
 
-    if prop_type == "phandle-array" and not prop_name.endswith("s"):
-        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
-             "is 'type: phandle-array', but its "
-             "name does not end in -s. This is required since property names "
-             "like '#pwm-cells' and 'pwm-names' get derived from 'pwms', for "
-             "example.")
+    if "specifier-space" in options and prop_type != "phandle-array":
+        _err(f"'specifier-space' in 'properties: {prop_name}' "
+             f"has type '{prop_type}', expected 'phandle-array'")
 
+    if prop_type == "phandle-array":
+        if not prop_name.endswith("s") and not "specifier-space" in options:
+            _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+                 f"has type 'phandle-array' and its name does not end in 's', "
+                 f"but no 'specifier-space' was provided.")
     # Check default
 
     if default is None:

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Device.wrong_phandle_array_name test
+
+compatible: "wrong_phandle_array_name"
+
+properties:
+    wrong-phandle-array-name:
+        type: phandle-array
