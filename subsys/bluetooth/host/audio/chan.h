@@ -36,10 +36,6 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state);
 #endif /* CONFIG_BT_AUDIO_DEBUG_CHAN */
 
-/* Bind ISO channel */
-struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
-					struct bt_codec_qos *qos);
-
 /* Unbind ISO channel */
 int bt_audio_cig_terminate(struct bt_audio_chan *chan);
 
@@ -50,3 +46,9 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan);
 int bt_audio_chan_disconnect(struct bt_audio_chan *chan);
 
 void bt_audio_chan_reset(struct bt_audio_chan *chan);
+
+bool bt_audio_valid_qos(const struct bt_codec_qos *qos);
+bool bt_audio_valid_chan_qos(const struct bt_audio_chan *chan,
+			     const struct bt_codec_qos *qos);
+
+int bt_audio_chan_iso_listen(struct bt_audio_chan *chan);
