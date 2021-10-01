@@ -357,6 +357,8 @@ def test_nexus():
     assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
         f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 6)])>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 5)])>]>"
 
+    assert str(edt.get_node("/gpio-map/source").props["foo-gpios"].val[0].basename) == f"gpio"
+
 def test_prop_defaults():
     '''Test property default values given in bindings'''
     with from_here():
@@ -515,6 +517,22 @@ def test_bad_compatible(tmp_path):
 """,
                  dts_file,
                  r"node '/foo' compatible 'no, whitespace' must match this regular expression: '^[a-zA-Z][a-zA-Z0-9,+\-._]+$'")
+
+def test_wrong_props():
+    '''Test Node.wrong_props (derived from DT and 'properties:' in the binding)'''
+
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-specifier-space-type.yaml", None)
+        assert ("'specifier-space' in 'properties: wrong-type-for-specifier-space' has type 'phandle', expected 'phandle-array'"
+            in str(e.value))
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-phandle-array-name.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
+        assert value_str.endswith("but no 'specifier-space' was provided.")
+
 
 def verify_error(dts, dts_file, expected_err):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'
