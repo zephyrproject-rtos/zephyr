@@ -4,9 +4,9 @@ Memory Protection Design
 ########################
 
 Zephyr's memory protection design is geared towards microcontrollers with MPU
-(Memory Protection Unit) hardware. We do support some architectures which have
-a paged MMU (Memory Management Unit), but in that case the MMU is used like
-an MPU with an identity page table.
+(Memory Protection Unit) hardware. We do support some architectures, such as x86,
+which have a paged MMU (Memory Management Unit), but in that case the MMU is
+used like an MPU with an identity page table.
 
 All of the discussion below will be using MPU terminology; systems with MMUs
 can be considered to have an MPU with an unlimited number of programmable
@@ -46,7 +46,7 @@ text/ro-data, this is sufficient for the boot time configuration.
 Hardware Stack Overflow
 ***********************
 
-``CONFIG_HW_STACK_PROTECTION`` is an optional feature which detects stack
+:kconfig:`CONFIG_HW_STACK_PROTECTION` is an optional feature which detects stack
 buffer overflows when the system is running in supervisor mode. This
 catches issues when the entire stack buffer has overflowed, and not
 individual stack frames, use compiler-assisted :kconfig:`CONFIG_STACK_CANARIES`
