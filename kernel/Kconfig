@@ -529,17 +529,6 @@ config NUM_MBOX_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  mailbox messages.
 
-config NUM_PIPE_ASYNC_MSGS
-	int "Maximum number of in-flight asynchronous pipe messages"
-	default 10
-	help
-	  This option specifies the total number of asynchronous pipe
-	  messages that can exist simultaneously, across all pipes in
-	  the system.
-
-	  Setting this option to 0 disables support for asynchronous
-	  pipe messages.
-
 config EVENTS
 	bool "Enable event objects"
 	help
