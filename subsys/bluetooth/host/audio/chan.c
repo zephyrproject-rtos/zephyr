@@ -243,7 +243,7 @@ static bool bt_audio_chan_iso_linked(struct bt_audio_chan *chan1,
 	       (chan1->ep->cis_id == chan2->ep->cis_id);
 }
 
-static int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
+int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
 {
 	static bool server;
 	int err, i;
@@ -289,100 +289,275 @@ done:
 	return -ENOSPC;
 }
 
-int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
+				       struct bt_codec_qos *codec)
 {
-	int err;
+	struct bt_iso_chan_io_qos *io;
 
-	BT_DBG("chan %p qos %p", chan, qos);
-
-	if (!chan || !chan->ep || !chan->cap || !chan->cap->ops || !qos) {
-		return -EINVAL;
-	}
-
-	CHECKIF(bt_audio_ep_is_broadcast(chan->ep)) {
-		return -EINVAL;
-	}
-
-	switch (chan->ep->status.state) {
-	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	/* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+	switch (codec->dir) {
+	case BT_CODEC_QOS_IN:
+		io = qos->rx;
+		break;
+	case BT_CODEC_QOS_OUT:
+		io = qos->tx;
+		break;
+	case BT_CODEC_QOS_INOUT:
+		io = qos->rx = qos->tx;
 		break;
 	default:
-		BT_ERR("Invalid state: %s",
-		bt_audio_ep_state_str(chan->ep->status.state));
-		return -EBADMSG;
+		return -EINVAL;
 	}
 
-	/* Allowed Range: 0x0000FF–0xFFFFFF */
-	if (qos->interval < 0x0000ff || qos->interval > 0xffffff) {
-		BT_ERR("Interval not within allowed range: %u (%u-%u)",
-		       qos->interval, 0x0000ff, 0xffffff);
-		qos->interval = 0u;
-		return -ENOTSUP;
+	io->sdu = codec->sdu;
+	io->phy = codec->phy;
+	io->rtn = codec->rtn;
+
+	return 0;
+}
+
+static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
+			       struct bt_codec_qos *qos)
+{
+	struct bt_iso_cig_create_param param;
+	struct bt_audio_chan *chan;
+	uint8_t cis_count;
+	int err;
+
+	BT_DBG("group %p qos %p", group, qos);
+
+	cis_count = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->chans, chan, node) {
+		group->cis[cis_count++] = chan->iso;
 	}
 
-	/* Allowed values: Unframed and Framed */
-	if (qos->framing > BT_CODEC_QOS_FRAMED) {
-		BT_ERR("Invalid Framing 0x%02x", qos->framing);
-		qos->framing = 0xff;
-		return -ENOTSUP;
-	}
+	param.num_cis = cis_count;
+	param.cis_channels = group->cis;
+	param.framing = qos->framing;
+	param.packing = 0; /*  TODO: Add to QoS struct */
+	param.interval = qos->interval;
+	param.latency = qos->latency;
+	param.sca = BT_GAP_SCA_UNKNOWN;
 
-	/* Allowed values: 1M, 2M or Coded */
-	if (!qos->phy || qos->phy >
-	    (BT_CODEC_QOS_1M | BT_CODEC_QOS_2M | BT_CODEC_QOS_CODED)) {
-		BT_ERR("Invalid PHY 0x%02x", qos->phy);
-		qos->phy = 0x00;
-		return -ENOTSUP;
-	}
-
-	/* Allowed Range: 0x00–0x0FFF */
-	if (qos->sdu > 0x0fff) {
-		BT_ERR("Invalid SDU %u", qos->sdu);
-		qos->sdu = 0xffff;
-		return -ENOTSUP;
-	}
-
-	/* Allowed Range: 0x0005–0x0FA0 */
-	if (qos->latency < 0x0005 || qos->latency > 0x0fa0) {
-		BT_ERR("Invalid Latency %u", qos->latency);
-		qos->latency = 0u;
-		return -ENOTSUP;
-	}
-
-	if (chan->cap->pref.latency < qos->latency) {
-		BT_ERR("Latency not within range: max %u latency %u",
-		       chan->cap->pref.latency, qos->latency);
-		qos->latency = 0u;
-		return -ENOTSUP;
-	}
-
-	if (!IN_RANGE(chan->cap->pref.pd_min, chan->cap->pref.pd_max,
-		      qos->pd)) {
-		BT_ERR("Presentation Delay not within range: min %u max %u "
-		       "pd %u", chan->cap->pref.pd_min, chan->cap->pref.pd_max,
-		       qos->pd);
-		qos->pd = 0u;
-		return -ENOTSUP;
-	}
-
-	if (!chan->cap->ops->qos) {
-		return 0;
-	}
-
-	err = chan->cap->ops->qos(chan, qos);
-	if (err) {
+	err = bt_iso_cig_create(&param, &group->cig);
+	if (err != 0) {
+		BT_ERR("bt_iso_cig_create failed: %d", err);
 		return err;
 	}
 
-	chan->qos = qos;
+	group->qos = qos;
 
-	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
+	return 0;
+}
+
+bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
+{
+	if (qos->interval < BT_ISO_INTERVAL_MIN ||
+	    qos->interval > BT_ISO_INTERVAL_MAX) {
+		BT_DBG("Interval not within allowed range: %u (%u-%u)",
+		       qos->interval, BT_ISO_INTERVAL_MIN, BT_ISO_INTERVAL_MAX);
+		return false;
+	}
+
+	if (qos->framing > BT_CODEC_QOS_FRAMED) {
+		BT_DBG("Invalid Framing 0x%02x", qos->framing);
+		return false;
+	}
+
+	if (qos->phy != BT_CODEC_QOS_1M &&
+	    qos->phy != BT_CODEC_QOS_2M &&
+	    qos->phy != BT_CODEC_QOS_CODED) {
+		BT_DBG("Invalid PHY 0x%02x", qos->phy);
+		return false;
+	}
+
+	if (qos->sdu > BT_ISO_MAX_SDU) {
+		BT_DBG("Invalid SDU %u", qos->sdu);
+		return false;
+	}
+
+	if (qos->latency < BT_ISO_LATENCY_MIN ||
+	    qos->latency > BT_ISO_LATENCY_MAX) {
+		BT_DBG("Invalid Latency %u", qos->latency);
+		return false;
+	}
+
+	return true;
+}
+
+bool bt_audio_valid_chan_qos(const struct bt_audio_chan *chan,
+			     const struct bt_codec_qos *qos)
+{
+	if (chan->cap->pref.latency < qos->latency) {
+		BT_DBG("Latency %u higher than preferred max %u",
+			qos->latency, chan->cap->pref.latency);
+		return false;
+	}
+
+	if (!IN_RANGE(chan->cap->pref.pd_min, chan->cap->pref.pd_max, qos->pd)) {
+		BT_DBG("Presentation Delay not within range: min %u max %u pd %u",
+			chan->cap->pref.pd_min, chan->cap->pref.pd_max,
+			qos->pd);
+		return false;
+	}
+
+	return true;
+}
+
+int bt_audio_chan_qos(struct bt_conn *conn,
+		      struct bt_audio_unicast_group *group,
+		      struct bt_codec_qos *qos)
+{
+	struct bt_audio_chan *chan;
+	struct net_buf_simple *buf;
+	struct bt_ascs_qos_op *op;
+	struct bt_audio_ep *ep;
+	bool conn_chan_found;
+	bool cig_connected;
+	int err;
+
+	BT_DBG("conn %p group %p qos %p", conn, group, qos);
+
+	CHECKIF(conn == NULL) {
+		BT_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(group == NULL) {
+		BT_DBG("group is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(qos == NULL) {
+		BT_DBG("qos is NULL");
+		return -EINVAL;
+	}
+
+	if (sys_slist_is_empty(&group->chans)) {
+		BT_DBG("group chan list is empty");
+		return -ENOEXEC;
+	}
+
+	CHECKIF(!bt_audio_valid_qos(qos)) {
+		BT_DBG("Invalid QoS");
+		return -EINVAL;
+	}
+
+	/* Used to determine if a channel for the supplied connection pointer
+	 * was actually found
+	 */
+	conn_chan_found = false;
+
+	/* User to determine if any channel in the group is in
+	 * the connected state
+	 */
+	cig_connected = false;
+
+	/* Validate channels before starting the QoS execution */
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->chans, chan, node) {
+		if (chan->ep == NULL) {
+			BT_DBG("chan->ep is NULL");
+			return -EINVAL;
+		}
+
+		/* Can only be done if all the channels are in the codec
+		 * configured state or the QoS configured state
+		 */
+		switch (chan->ep->status.state) {
+		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			break;
+		default:
+			BT_DBG("Invalid state: %s",
+			       bt_audio_ep_state_str(chan->ep->status.state));
+			return -EINVAL;
+		}
+
+		if (chan->conn != conn) {
+			/* Channel not part of this ACL, skip */
+			continue;
+		}
+		conn_chan_found = true;
+
+		if (!bt_audio_valid_chan_qos(chan, qos)) {
+			return -EINVAL;
+		}
+
+		if (chan->iso == NULL) {
+			BT_DBG("chan->iso is NULL");
+			return -EINVAL;
+		}
+
+		err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos, qos);
+		if (err) {
+			BT_DBG("Unable to convert codec QoS to ISO QoS: %d",
+			       err);
+			return err;
+		}
+	}
+
+	if (!conn_chan_found) {
+		BT_DBG("No channels in the group %p for conn %p", group, conn);
+		return -EINVAL;
+	}
+
+	/* Create or recreate the CIG */
+	if (group->cig != NULL) {
+		/* TODO: Add support to update the CIG:
+		 *       For now we need to recreate it
+		 */
+
+		if (qos->interval != group->qos->interval ||
+		    qos->latency != group->qos->latency ||
+		    qos->framing != group->qos->framing) {
+			BT_DBG("Cannot override group QoS values");
+			return -EINVAL;
+		}
+
+		/* TODO: Terminate and recreate CIG */
+	}
+
+	err = bt_audio_cig_create(group, qos);
+	if (err != 0) {
+		BT_DBG("bt_audio_cig_create failed: %d", err);
+		return err;
+	}
+
+	/* Generate the control point write */
+	buf = bt_audio_ep_create_pdu(BT_ASCS_QOS_OP);
+
+	op = net_buf_simple_add(buf, sizeof(*op));
+
+	(void)memset(op, 0, sizeof(*op));
+	ep = NULL; /* Needed to find the control point handle */
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->chans, chan, node) {
+		if (chan->conn != conn) {
+			/* Channel not part of this ACL, skip */
+			continue;
+		}
+
+		op->num_ases++;
+
+		err = bt_audio_ep_qos(chan->ep, buf, qos);
+		if (err) {
+			return err;
+		}
+
+		if (ep == NULL) {
+			ep = chan->ep;
+		}
+	}
+
+	err = bt_audio_ep_send(conn, ep, buf);
+	if (err != 0) {
+		BT_DBG("Could not send config QoS: %d", err);
+		return err;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->chans, chan, node) {
+		chan->qos = qos;
+
 		bt_audio_ep_set_state(chan->ep,
 				      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-		bt_audio_chan_iso_listen(chan);
 	}
 
 	return 0;
@@ -818,94 +993,6 @@ void bt_audio_chan_detach(struct bt_audio_chan *chan)
 	}
 }
 
-int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-				       struct bt_codec_qos *codec)
-{
-	struct bt_iso_chan_io_qos *io;
-
-	switch (codec->dir) {
-	case BT_CODEC_QOS_IN:
-		io = qos->rx;
-		break;
-	case BT_CODEC_QOS_OUT:
-		io = qos->tx;
-		break;
-	case BT_CODEC_QOS_INOUT:
-		io = qos->rx = qos->tx;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	io->sdu = codec->sdu;
-	io->phy = codec->phy;
-	io->rtn = codec->rtn;
-
-	return 0;
-}
-
-struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
-					struct bt_codec_qos *qos)
-{
-	BT_DBG("chan %p iso %p qos %p", chan, chan->iso, qos);
-
-	if (!chan->iso) {
-		BT_ERR("Unable to bind: ISO channel not set");
-		return NULL;
-	}
-
-	if (!qos || !chan->iso->qos) {
-		BT_ERR("Unable to bind: QoS not set");
-		return NULL;
-	}
-
-	/* Fill up ISO QoS settings from Codec QoS*/
-	if (chan->qos != qos) {
-		int err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos,
-							     qos);
-
-		if (err) {
-			BT_ERR("Unable to convert codec QoS to ISO QoS");
-			return NULL;
-		}
-	}
-
-	if (!chan->iso->iso) {
-		struct bt_iso_cig_create_param param;
-		struct bt_iso_cig **free_cig;
-		int err;
-
-		free_cig = NULL;
-		for (int i = 0; i < ARRAY_SIZE(unicast_groups); i++) {
-			if (unicast_groups[i].cig == NULL) {
-				free_cig = &unicast_groups[i].cig;
-				break;
-			}
-		}
-
-		if (free_cig == NULL) {
-			return NULL;
-		}
-
-		/* TODO: Support more than a single CIS in a CIG */
-		param.num_cis = 1;
-		param.cis_channels = &chan->iso;
-		param.framing = qos->framing;
-		param.packing = 0; /*  TODO: Add to QoS struct */
-		param.interval = qos->interval;
-		param.latency = qos->latency;
-		param.sca = BT_GAP_SCA_UNKNOWN;
-
-		err = bt_iso_cig_create(&param, free_cig);
-		if (err != 0) {
-			BT_ERR("bt_iso_cig_create failed: %d", err);
-			return NULL;
-		}
-	}
-
-	return &chan->iso->iso->iso;
-}
-
 int bt_audio_cig_terminate(struct bt_audio_chan *chan)
 {
 	BT_DBG("chan %p", chan);
@@ -951,10 +1038,6 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 
 	switch (chan->iso->state) {
 	case BT_ISO_DISCONNECTED:
-		if (!bt_audio_cig_create(chan, chan->qos)) {
-			return -ENOTCONN;
-		}
-
 		return bt_iso_chan_connect(&param, 1);
 	case BT_ISO_CONNECT:
 		return 0;

@@ -150,57 +150,6 @@ static int bap_reconfig(struct bt_audio_chan *chan,
 	return 0;
 }
 
-static int bap_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
-{
-	struct bt_audio_ep *ep = chan->ep;
-	struct bt_conn_iso *iso;
-	struct net_buf_simple *buf;
-	struct bt_ascs_qos_op *op;
-	struct bt_audio_chan *tmp;
-	int err;
-	uint8_t cig_id = 0x00, cis_id = 0x00;
-
-	BT_DBG("chan %p qos %p", chan, qos);
-
-	buf = bt_audio_ep_create_pdu(BT_ASCS_QOS_OP);
-
-	op = net_buf_simple_add(buf, sizeof(*op));
-	op->num_ases = 0x01;
-
-	iso = bt_audio_cig_create(chan, qos);
-	if (iso) {
-		cig_id = iso->cig_id;
-		cis_id = iso->cis_id;
-	}
-
-	err = bt_audio_ep_qos(ep, buf, cig_id, cis_id, qos);
-	if (err) {
-		return err;
-	}
-
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			/* Link ISO channels */
-			tmp->iso = chan->iso;
-
-			err = bt_audio_ep_qos(tmp->ep, buf, cig_id, cis_id,
-					      qos);
-			if (err) {
-				return err;
-			}
-			tmp->qos = qos;
-			op->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_qos(tmp, qos);
-		}
-	}
-
-	return bt_audio_ep_send(chan->conn, ep, buf);
-}
-
 static int bap_enable(struct bt_audio_chan *chan,
 		      uint8_t meta_count, struct bt_codec_data *meta)
 {
@@ -503,7 +452,7 @@ static int bap_release(struct bt_audio_chan *chan)
 static struct bt_audio_capability_ops cap_ops = {
 	.config		= bap_config,
 	.reconfig	= bap_reconfig,
-	.qos		= bap_qos,
+	.qos		= NULL,
 	.enable		= bap_enable,
 	.metadata	= bap_metadata,
 	.start		= bap_start,

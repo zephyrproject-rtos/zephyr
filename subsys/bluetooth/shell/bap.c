@@ -39,6 +39,7 @@ static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_chan *default_chan;
+static struct bt_audio_unicast_group *default_unicast_group;
 static bool connecting;
 
 struct named_lc3_preset {
@@ -499,7 +500,16 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_audio_chan_qos(default_chan, &named_preset->preset.qos);
+	if (default_unicast_group == NULL) {
+		err = bt_audio_unicast_group_create(default_chan, 1, &default_unicast_group);
+		if (err != 0) {
+			shell_error(sh, "Unable to create default unicast group: %d", err);
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_audio_chan_qos(default_conn, default_unicast_group,
+				&named_preset->preset.qos);
 	if (err) {
 		shell_error(sh, "Unable to setup QoS");
 		return -ENOEXEC;
@@ -860,7 +870,20 @@ static int lc3_reconfig(struct bt_audio_chan *chan,
 	if (connecting) {
 		int err;
 
-		err = bt_audio_chan_qos(chan, &default_preset->preset.qos);
+		if (default_unicast_group == NULL) {
+			err = bt_audio_unicast_group_create(default_chan, 1,
+							    &default_unicast_group);
+			if (err != 0) {
+				shell_error(ctx_shell,
+					    "Unable to create default unicast group: %d",
+					    err);
+				connecting = false;
+				return -ENOEXEC;
+			}
+		}
+
+		err = bt_audio_chan_qos(default_conn, default_unicast_group,
+					&default_preset->preset.qos);
 		if (err) {
 			shell_error(ctx_shell, "Unable to setup QoS");
 			connecting = false;

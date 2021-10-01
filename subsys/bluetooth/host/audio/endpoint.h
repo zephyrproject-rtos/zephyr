@@ -72,6 +72,8 @@ struct bt_audio_ep {
 };
 
 struct bt_audio_unicast_group {
+	/* QoS used to create the CIG */
+	struct bt_codec_qos *qos;
 	struct bt_iso_cig *cig;
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
@@ -177,7 +179,7 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		       struct bt_audio_capability *cap, struct bt_codec *codec);
 
 int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		    uint8_t cig, uint8_t cis, struct bt_codec_qos *qos);
+		    struct bt_codec_qos *qos);
 
 int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		       uint8_t meta_count, struct bt_codec_data *meta);
