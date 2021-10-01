@@ -12,12 +12,7 @@ source "soc/arm/st_stm32/stm32l0/Kconfig.defconfig.stm32l0*"
 config SOC_SERIES
 	default "stm32l0"
 
-if PM
-config PM_DEVICE
-	default y
-
 config STM32_LPTIM_TIMER
-	default y
-endif # PM
+	default y if PM
 
 endif # SOC_SERIES_STM32L0X

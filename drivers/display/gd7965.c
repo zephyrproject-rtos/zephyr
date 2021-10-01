@@ -450,5 +450,5 @@ static struct display_driver_api gd7965_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, gd7965_init, NULL,
 		      &gd7965_driver, &gd7965_config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		      &gd7965_driver_api);

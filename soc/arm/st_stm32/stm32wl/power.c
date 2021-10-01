@@ -15,16 +15,24 @@
 #include <stm32wlxx_ll_rcc.h>
 #include <stm32wlxx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+
+/* select MSI as wake-up system clock if configured, HSI otherwise */
+#if STM32_SYSCLK_SRC_MSI
+#define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_MSI
+#else
+#define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
+#endif
 
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_power_state_set(struct pm_state_info info)
 {
 	switch (info.state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
+		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		LL_PWR_ClearFlag_WU();
 		switch (info.substate_id) {
 		case 1:

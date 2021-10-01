@@ -12,6 +12,10 @@
  * Wrapper installed in vector table for handling dynamic interrupts that accept
  * a parameter.
  */
+/*
+ * Tell armclang that stack alignment are ensured.
+ */
+.eabi_attribute Tag_ABI_align_preserved, 1
 
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -45,6 +49,35 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #if defined(CONFIG_CPU_CORTEX_M)
 	push {r0,lr}		/* r0, lr are now the first items on the stack */
 #elif defined(CONFIG_CPU_CORTEX_R)
+
+#if defined(CONFIG_USERSPACE)
+	/* See comment below about svc stack usage */
+	cps #MODE_SVC
+	push {r0}
+
+	/* Determine if interrupted thread was in user context */
+	cps #MODE_IRQ
+	mrs r0, spsr
+	and r0, #MODE_MASK
+	cmp r0, #MODE_USR
+	bne isr_system_thread
+
+	ldr r0, =_kernel
+	ldr r0, [r0, #_kernel_offset_to_current]
+
+	/* Save away user stack pointer */
+	cps #MODE_SYS
+	str sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+
+	/* Switch to privileged stack */
+	ldr sp, [r0, #_thread_offset_to_priv_stack_end] /* priv stack end */
+
+isr_system_thread:
+	cps #MODE_SVC
+	pop {r0}
+	cps #MODE_IRQ
+#endif
+
 	/*
 	 * Save away r0-r3, r12 and lr_irq for the previous context to the
 	 * process stack since they are clobbered here.  Also, save away lr

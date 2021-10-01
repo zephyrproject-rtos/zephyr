@@ -862,7 +862,7 @@ static int ppp_start(const struct device *dev)
 
 		dev_name = mux->name;
 #elif IS_ENABLED(CONFIG_MODEM_GSM_PPP)
-		dev_name = CONFIG_MODEM_GSM_UART_NAME;
+		dev_name = DT_BUS_LABEL(DT_INST(0, zephyr_gsm_ppp));
 #else
 		dev_name = CONFIG_NET_PPP_UART_NAME;
 #endif

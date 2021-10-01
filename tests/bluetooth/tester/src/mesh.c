@@ -38,6 +38,8 @@ static uint32_t iv_index;
 static uint16_t addr;
 static uint8_t dev_key[16];
 static uint8_t input_size;
+static uint8_t pub_key[64];
+static uint8_t priv_key[32];
 
 /* Configured provisioning data */
 static uint8_t dev_uuid[16];
@@ -50,6 +52,11 @@ static uint16_t vnd_app_key_idx = 0x000f;
 
 /* Model send data */
 #define MODEL_BOUNDS_MAX 2
+
+/* Model Authentication Method */
+#define AUTH_METHOD_STATIC 0x01
+#define AUTH_METHOD_OUTPUT 0x02
+#define AUTH_METHOD_INPUT 0x03
 
 static struct model_data {
 	struct bt_mesh_model *model;
@@ -436,6 +443,7 @@ static struct bt_mesh_prov prov = {
 static void config_prov(uint8_t *data, uint16_t len)
 {
 	const struct mesh_config_provisioning_cmd *cmd = (void *) data;
+	int err = 0;
 
 	LOG_DBG("");
 
@@ -447,8 +455,27 @@ static void config_prov(uint8_t *data, uint16_t len)
 	prov.input_size = cmd->in_size;
 	prov.input_actions = sys_le16_to_cpu(cmd->in_actions);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+	if (cmd->auth_method == AUTH_METHOD_OUTPUT) {
+		err = bt_mesh_auth_method_set_output(prov.output_actions, prov.output_size);
+	} else if (cmd->auth_method == AUTH_METHOD_INPUT) {
+		err = bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size);
+	} else if (cmd->auth_method == AUTH_METHOD_STATIC) {
+		err = bt_mesh_auth_method_set_static(static_auth, sizeof(static_auth));
+	}
+
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->set_keys->pub_key, sizeof(cmd->set_keys->pub_key));
+		memcpy(priv_key, cmd->set_keys->priv_key, sizeof(cmd->set_keys->priv_key));
+		prov.public_key_be = pub_key;
+		prov.private_key_be = priv_key;
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void provision_node(uint8_t *data, uint16_t len)
@@ -465,6 +492,16 @@ static void provision_node(uint8_t *data, uint16_t len)
 	flags = cmd->flags;
 	iv_index = sys_le32_to_cpu(cmd->iv_index);
 	net_key_idx = sys_le16_to_cpu(cmd->net_key_idx);
+
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->pub_key, sizeof(pub_key));
+
+		err = bt_mesh_prov_remote_pub_key_set(pub_key);
+		if (err) {
+			LOG_ERR("err %d", err);
+			goto fail;
+		}
+	}
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 	err = bt_mesh_cdb_create(net_key);
 	if (err) {
@@ -862,8 +899,7 @@ static void composition_data_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_krp_get(uint8_t *data, uint16_t len)
@@ -891,8 +927,7 @@ static void config_krp_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_krp_set(uint8_t *data, uint16_t len)
@@ -920,8 +955,7 @@ static void config_krp_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_beacon_get(uint8_t *data, uint16_t len)
@@ -943,8 +977,7 @@ static void config_beacon_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_beacon_set(uint8_t *data, uint16_t len)
@@ -967,8 +1000,7 @@ static void config_beacon_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_default_ttl_get(uint8_t *data, uint16_t len)
@@ -990,9 +1022,8 @@ static void config_default_ttl_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_default_ttl_set(uint8_t *data, uint16_t len)
@@ -1015,9 +1046,8 @@ static void config_default_ttl_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
@@ -1039,9 +1069,8 @@ static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
@@ -1064,9 +1093,8 @@ static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_friend_get(uint8_t *data, uint16_t len)
@@ -1088,8 +1116,7 @@ static void config_friend_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_friend_set(uint8_t *data, uint16_t len)
@@ -1112,8 +1139,7 @@ static void config_friend_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_relay_get(uint8_t *data, uint16_t len)
@@ -1137,8 +1163,7 @@ static void config_relay_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_relay_set(uint8_t *data, uint16_t len)
@@ -1162,8 +1187,7 @@ static void config_relay_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_get(uint8_t *data, uint16_t len)
@@ -1188,9 +1212,8 @@ static void config_mod_pub_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_set(uint8_t *data, uint16_t len)
@@ -1224,9 +1247,8 @@ static void config_mod_pub_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
@@ -1259,9 +1281,8 @@ static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_add(uint8_t *data, uint16_t len)
@@ -1286,9 +1307,8 @@ static void config_mod_sub_add(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
@@ -1313,9 +1333,8 @@ static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_del(uint8_t *data, uint16_t len)
@@ -1340,9 +1359,8 @@ static void config_mod_sub_del(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
@@ -1367,9 +1385,8 @@ static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_get(uint8_t *data, uint16_t len)
@@ -1396,9 +1413,8 @@ static void config_mod_sub_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
@@ -1425,9 +1441,8 @@ static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
@@ -1454,9 +1469,8 @@ static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
@@ -1483,9 +1497,8 @@ static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
@@ -1512,9 +1525,8 @@ static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_netkey_add(uint8_t *data, uint16_t len)
@@ -1538,8 +1550,7 @@ static void config_netkey_add(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_netkey_update(uint8_t *data, uint16_t len)
@@ -1564,9 +1575,8 @@ static void config_netkey_update(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_netkey_get(uint8_t *data, uint16_t len)
@@ -1591,8 +1601,7 @@ static void config_netkey_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_netkey_del(uint8_t *data, uint16_t len)
@@ -1616,8 +1625,7 @@ static void config_netkey_del(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_add(uint8_t *data, uint16_t len)
@@ -1642,8 +1650,7 @@ static void config_appkey_add(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_update(uint8_t *data, uint16_t len)
@@ -1668,9 +1675,8 @@ static void config_appkey_update(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_appkey_del(uint8_t *data, uint16_t len)
@@ -1695,8 +1701,7 @@ static void config_appkey_del(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_appkey_get(uint8_t *data, uint16_t len)
@@ -1723,8 +1728,7 @@ static void config_appkey_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_model_app_bind(uint8_t *data, uint16_t len)
@@ -1749,9 +1753,8 @@ static void config_model_app_bind(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
@@ -1776,9 +1779,8 @@ static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_unbind(uint8_t *data, uint16_t len)
@@ -1803,9 +1805,8 @@ static void config_model_app_unbind(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_get(uint8_t *data, uint16_t len)
@@ -1832,9 +1833,8 @@ static void config_model_app_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
@@ -1861,9 +1861,8 @@ static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_pub_set(uint8_t *data, uint16_t len)
@@ -1894,9 +1893,8 @@ static void config_hb_pub_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_pub_get(uint8_t *data, uint16_t len)
@@ -1920,9 +1918,8 @@ static void config_hb_pub_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_sub_set(uint8_t *data, uint16_t len)
@@ -1950,9 +1947,8 @@ static void config_hb_sub_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_hb_sub_get(uint8_t *data, uint16_t len)
@@ -1976,9 +1972,8 @@ static void config_hb_sub_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_net_trans_get(uint8_t *data, uint16_t len)
@@ -2002,9 +1997,8 @@ static void config_net_trans_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_net_trans_set(uint8_t *data, uint16_t len)
@@ -2028,9 +2022,8 @@ static void config_net_trans_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void config_node_identity_set(uint8_t *data, uint16_t len)
@@ -2061,8 +2054,7 @@ static void config_node_identity_set(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_node_identity_get(uint8_t *data, uint16_t len)
@@ -2093,8 +2085,7 @@ static void config_node_identity_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_node_reset(uint8_t *data, uint16_t len)
@@ -2117,8 +2108,7 @@ static void config_node_reset(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
@@ -2143,9 +2133,8 @@ static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET,
-		   CONTROLLER_INDEX,
-		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
 }
 
 static void health_fault_get(uint8_t *data, uint16_t len)

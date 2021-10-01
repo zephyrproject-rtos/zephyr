@@ -334,6 +334,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_CAN_MCUX_FLEXCAN
+	/* Configure CAN3 using OSC_RC_400M */
+	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 5;
+	CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
+#endif
+
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;

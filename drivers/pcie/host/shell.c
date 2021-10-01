@@ -9,6 +9,7 @@
 
 #ifdef CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>
+#include <drivers/pcie/cap.h>
 #endif
 
 static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
@@ -17,19 +18,48 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 	uint32_t msi;
 	uint32_t data;
 
-	msi = pcie_get_cap(bdf, PCIE_MSI_CAP_ID);
+	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
 	if (msi) {
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI support%s%s\n",
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
-			      (data & PCIE_MSI_MCR_EN) ? ", enabled" : "");
+			      (data & PCIE_MSI_MCR_EN) ?
+			      ", enabled" : ", disabled");
 	}
 
-	msi = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
+	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 
 	if (msi) {
-		shell_fprintf(shell, SHELL_NORMAL, "    MSI-X support\n");
+		uint32_t offset, table_size;
+		uint8_t bir;
+
+		data = pcie_conf_read(bdf, msi + PCIE_MSIX_MCR);
+
+		table_size = ((data & PCIE_MSIX_MCR_TSIZE) >>
+			      PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "    MSI-X support%s table size %d\n",
+			      (data & PCIE_MSIX_MCR_EN) ?
+			      ", enabled" : ", disabled",
+			      table_size);
+
+		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_TR);
+		bir = offset & PCIE_MSIX_TR_BIR;
+		offset &= PCIE_MSIX_TR_OFFSET;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "\tTable offset 0x%x BAR %d\n",
+			      offset, bir);
+
+		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_PBA);
+		bir = offset & PCIE_MSIX_PBA_BIR;
+		offset &= PCIE_MSIX_PBA_OFFSET;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "\tPBA offset 0x%x BAR %d\n",
+			      offset, bir);
 	}
 #endif
 }
@@ -45,15 +75,21 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "    bar %d: %s%s %x\n",
+		shell_fprintf(shell, SHELL_NORMAL, "    bar %d: %s%s",
 			      bar - PCIE_CONF_BAR0,
 			      PCIE_CONF_BAR_IO(data) ? "I/O" : "MEM",
-			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "",
-			      PCIE_CONF_BAR_ADDR(data));
+			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "");
+
+		shell_fprintf(shell, SHELL_NORMAL, " addr 0x");
 
 		if (PCIE_CONF_BAR_64(data)) {
 			++bar;
+			shell_fprintf(shell, SHELL_NORMAL, "%08x",
+				      pcie_conf_read(bdf, bar));
 		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "%08x\n",
+			      PCIE_CONF_BAR_ADDR(data));
 	}
 }
 

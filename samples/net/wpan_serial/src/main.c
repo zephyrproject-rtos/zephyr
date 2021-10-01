@@ -520,6 +520,11 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
+enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface, struct net_pkt *pkt)
+{
+	return NET_CONTINUE;
+}
+
 void main(void)
 {
 	const struct device *dev;
@@ -528,9 +533,9 @@ void main(void)
 
 	LOG_INF("Starting wpan_serial application");
 
-	dev = device_get_binding("CDC_ACM_0");
-	if (!dev) {
-		LOG_ERR("CDC ACM device not found");
+	dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
+	if (!device_is_ready(dev)) {
+		LOG_ERR("CDC ACM device not ready");
 		return;
 	}
 

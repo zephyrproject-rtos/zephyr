@@ -122,6 +122,7 @@ int bmp388_trigger_mode_init(const struct device *dev)
 {
 	struct bmp388_data *data = DEV_DATA(dev);
 	const struct bmp388_config *cfg = DEV_CFG(dev);
+	int ret;
 
 	if (!device_is_ready(cfg->gpio_int.port)) {
 		LOG_ERR("INT device is not ready");
@@ -150,17 +151,28 @@ int bmp388_trigger_mode_init(const struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio_pin_configure(cfg->gpio_int.port,
-			   cfg->gpio_int.pin,
-			   GPIO_INPUT | cfg->gpio_int.dt_flags);
+	ret = gpio_pin_configure(cfg->gpio_int.port,
+				 cfg->gpio_int.pin,
+				 GPIO_INPUT | cfg->gpio_int.dt_flags);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&data->gpio_cb,
 			   bmp388_gpio_callback,
 			   BIT(cfg->gpio_int.pin));
-	gpio_add_callback(cfg->gpio_int.port, &data->gpio_cb);
-	gpio_pin_interrupt_configure(cfg->gpio_int.port,
-				     cfg->gpio_int.pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+
+	ret = gpio_add_callback(cfg->gpio_int.port, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure(cfg->gpio_int.port,
+					   cfg->gpio_int.pin,
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

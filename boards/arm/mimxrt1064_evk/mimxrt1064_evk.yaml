@@ -19,7 +19,9 @@ supported:
   - arduino_serial
   - counter
   - display
+  - dma
   - gpio
+  - hwinfo
   - i2c
   - netif:eth
   - pwm
@@ -28,3 +30,4 @@ supported:
   - video
   - kscan:touch
   - can
+  - watchdog

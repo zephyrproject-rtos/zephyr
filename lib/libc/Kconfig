@@ -11,6 +11,10 @@ config REQUIRES_FULL_LIBC
 	  Helper symbol to indicate some feature requires a C library implementation
 	  with more functionality than what MINIMAL_LIBC provides
 
+config SUPPORT_MINIMAL_LIBC
+	bool
+	default y
+
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
 	default EXTERNAL_LIBC if NATIVE_APPLICATION
@@ -21,6 +25,7 @@ config MINIMAL_LIBC
 	bool "Minimal C library"
 	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
+	depends on SUPPORT_MINIMAL_LIBC
 	help
 	  Build with minimal C library.
 
@@ -30,6 +35,13 @@ config NEWLIB_LIBC
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
+
+config ARCMWDT_LIBC
+	bool "ARC MWDT C library"
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	help
+	  C library provided by ARC MWDT toolchain.
 
 config EXTERNAL_LIBC
 	bool "External C library"

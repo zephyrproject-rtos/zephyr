@@ -8,12 +8,16 @@
 #define __SOC_H__
 #include <soc/dport_reg.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/soc_caps.h>
 #include <esp32/rom/ets_sys.h>
 #include <esp32/rom/spi_flash.h>
 
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <arch/xtensa/arch.h>
+
+#include <xtensa/core-macros.h>
+#include <esp32/clk.h>
 
 static inline void esp32_set_mask32(uint32_t v, uint32_t mem_addr)
 {

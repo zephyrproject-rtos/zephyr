@@ -160,7 +160,7 @@ __no_optimization void test_nop(void)
 	 * ,leave it unchanged, or even reduce it. Therefore, NOP
 	 * instructions are not suitable for timing loops.
 	 *
-	 * So we skip the this test, it will get a negative cycles.
+	 * So we skip this test, it will get a negative cycles.
 	 *
 	 * And on physical EHL_CRB, up squared and INTEL ADSP boards,
 	 * we also got a similar situation, we skip the check as well.

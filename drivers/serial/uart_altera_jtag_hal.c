@@ -13,6 +13,8 @@
 #include "altera_avalon_jtag_uart.h"
 #include "altera_avalon_jtag_uart_regs.h"
 
+#define DT_DRV_COMPAT	altr_jtag_uart
+
 #define UART_ALTERA_JTAG_DATA_REG                  0
 #define UART_ALTERA_JTAG_CONTROL_REG               1
 
@@ -57,8 +59,7 @@ static const struct uart_device_config uart_altera_jtag_dev_cfg_0 = {
 	.sys_clk_freq = 0, /* Unused */
 };
 
-DEVICE_DEFINE(uart_altera_jtag_0, "jtag_uart0",
-		    uart_altera_jtag_init, NULL, NULL,
-		    &uart_altera_jtag_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_altera_jtag_driver_api);
+DEVICE_DT_INST_DEFINE(0, uart_altera_jtag_init, NULL,
+		      NULL, &uart_altera_jtag_dev_cfg_0,
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      &uart_altera_jtag_driver_api);

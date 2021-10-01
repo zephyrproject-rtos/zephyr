@@ -82,6 +82,10 @@ config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
 config OPENTHREAD_RADIO_LINK_TREL_ENABLE
 	bool "Thread Radio Encapsulation Link (TREL)"
 
+config OPENTHREAD_CSL_AUTO_SYNC
+	bool "Enable CSL autosync"
+	default y if OPENTHREAD_CSL_RECEIVER
+
 config OPENTHREAD_CSL_SAMPLE_WINDOW
 	int "CSL sample window in units of 10 symbols"
 	default 30
@@ -144,3 +148,14 @@ config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	int "The maximum number of supported IPv6 multicast addresses allows to be externally added"
 	range 0 32
 	default 2
+
+config OPENTHREAD_TCP_ENABLE
+	bool "Enable TCP"
+
+config OPENTHREAD_CLI_TCP_ENABLE
+	bool "Enable TCP in the CLI tool"
+	default y if SHELL
+	depends on OPENTHREAD_TCP_ENABLE
+
+config OPENTHREAD_HISTORY_TRACKER
+	bool "Enable history tracker support"

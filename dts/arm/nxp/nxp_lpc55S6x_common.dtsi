@@ -58,22 +58,22 @@
 
 	sram1: memory@20010000 {
 		compatible = "mmio-sram";
-		reg = <0x20010000 DT_SIZE_K(64)>;
+		reg = <0x20010000 DT_SIZE_K(32)>;
 	};
 
-	sram2: memory@20020000 {
+	sram2: memory@20018000 {
 		compatible = "mmio-sram";
-		reg = <0x20020000 DT_SIZE_K(64)>;
+		reg = <0x20018000 DT_SIZE_K(32)>;
 	};
 
-	sram3: memory@20030000 {
+	sram3: memory@20020000 {
 		compatible = "mmio-sram";
-		reg = <0x20030000 DT_SIZE_K(64)>;
+		reg = <0x20020000 DT_SIZE_K(32)>;
 	};
 
-	sram4: memory@20040000 {
+	sram4: memory@40100000 {
 		compatible = "mmio-sram";
-		reg = <0x20040000 DT_SIZE_K(16)>;
+		reg = <0x40100000 DT_SIZE_K(16)>;
 	};
 };
 
@@ -300,6 +300,80 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+	};
+
+	usbhs: usbhs@144000 {
+		compatible = "nxp,mcux-usbd";
+		reg = <0x94000 0x1000>;
+		interrupts = <47 1>;
+		num-bidir-endpoints = <5>;
+		status = "disabled";
+		label = "USBHS_0";
+	};
+
+	ctimer0: ctimer@8000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x8000 0x1000>;
+		interrupts = <10 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_0";
+	};
+
+	ctimer1: ctimer@9000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x9000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_1";
+	};
+
+	ctimer2: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <36 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_2";
+	};
+
+	ctimer3: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_3";
+	};
+
+	ctimer4: ctimer@2A000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2A000 0x1000>;
+		interrupts = <37 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+		label = "CTIMER_4";
 	};
 };
 

@@ -17,6 +17,9 @@
 #elif defined CONFIG_TRACING_TEST
 #include "tracing_test.h"
 
+#elif defined CONFIG_TRACING_USER
+#include "tracing_user.h"
+
 #else
 
 /**
@@ -391,6 +394,12 @@
  * @ingroup tracing_apis
  * @{
  */
+
+/**
+ * @brief Trace initialisation of a Work Queue structure
+ * @param queue Work Queue structure
+ */
+#define sys_port_trace_k_work_queue_init(queue)
 
 /**
  * @brief Trace start of a Work Queue call entry

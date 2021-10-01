@@ -234,6 +234,32 @@ You should see the following message on the console:
 
    Hello World! arm
 
+Debugging
+=========
+
+STM32U5 support is not currently supported in openocd. As a temporary workaround,
+user can use `STMicroelectronics customized version of OpenOCD`_ to debug the
+the Nucleo U575ZI Q.
+For this you need to fetch this repo, checkout branch "openocd-cubeide-r3" and
+build openocd following the instructions provided in the README of the project.
+Then, build zephyr project indicating the openocd location in west build command.
+
+Here is an example for the :ref:`blinky-sample` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_u575zi_q
+   :gen-args: -DOPENOCD="<path_to_openocd>/openocd/src/openocd" -DOPENOCD_DEFAULT_PATH="<path_to_openocd>/openocd/tcl/"
+   :goals: build
+
+Then, indicate openocd as the chosen runner in flash and debug commands:
+
+
+   .. code-block:: console
+
+      $ west flash -r openocd
+      $ west debug -r openocd
+
 
 .. _STM32 Nucleo-144 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00615305.pdf
@@ -246,3 +272,6 @@ You should see the following message on the console:
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STMicroelectronics customized version of OpenOCD:
+   https://github.com/STMicroelectronics/OpenOCD

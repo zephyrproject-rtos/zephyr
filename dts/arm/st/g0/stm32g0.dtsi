@@ -82,7 +82,7 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <8>;
@@ -207,7 +207,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <17 0>;
+			interrupts = <17 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";
@@ -218,7 +218,7 @@
 			reg = <0x40012C00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <13 0>, <14 0>;
-			interrupt-names = "brk", "cc";
+			interrupt-names = "brk_up_trg_com", "cc";
 			status = "disabled";
 			label = "TIMERS_1";
 

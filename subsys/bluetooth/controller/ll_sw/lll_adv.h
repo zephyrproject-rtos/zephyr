@@ -20,9 +20,14 @@ struct lll_adv_sync {
 	uint16_t latency_event;
 	uint16_t event_counter;
 
-	uint8_t data_chan_map[5];
-	uint8_t data_chan_count:6;
 	uint16_t data_chan_id;
+	struct {
+		uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
+		uint8_t data_chan_count:6;
+	} chm[DOUBLE_BUFFER_SIZE];
+	uint8_t  chm_first;
+	uint8_t  chm_last;
+	uint16_t chm_instant;
 
 	uint32_t ticks_offset;
 
@@ -51,6 +56,14 @@ struct lll_adv_aux {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
 
+	/* Implementation defined radio event counter to calculate auxiliary
+	 * PDU channel index.
+	 */
+	uint16_t data_chan_counter;
+
+	/* Temporary stored use by primary channel PDU event to fill the
+	 * auxiliary offset to this auxiliary PDU event.
+	 */
 	uint32_t ticks_offset;
 
 	struct lll_adv_pdu data;
@@ -79,6 +92,7 @@ struct lll_adv {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	uint8_t phy_p:3;
 	uint8_t phy_s:3;
+	uint8_t phy_flags:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)

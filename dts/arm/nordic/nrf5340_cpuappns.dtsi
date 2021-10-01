@@ -47,7 +47,6 @@
 			 */
 			#include "nrf5340_cpuapp_peripherals.dtsi"
 		};
-
 	};
 };
 

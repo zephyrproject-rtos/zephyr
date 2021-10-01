@@ -2,3 +2,9 @@ tests:
   kernel.multiprocessing:
     tags: kernel smp
     filter: CONFIG_MP_NUM_CPUS > 1
+  kernel.multiprocessing.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags: kernel smp linker_generator
+    filter: CONFIG_MP_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

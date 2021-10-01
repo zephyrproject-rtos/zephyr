@@ -746,6 +746,7 @@ struct l2cap_connect_cmd {
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
+	uint8_t ecfc;
 } __packed;
 struct l2cap_connect_rp {
 	uint8_t num;
@@ -767,6 +768,11 @@ struct l2cap_send_data_cmd {
 #define L2CAP_TRANSPORT_BREDR		0x00
 #define L2CAP_TRANSPORT_LE		0x01
 
+#define L2CAP_CONNECTION_RESPONSE_SUCCESS		0x00
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN		0x01
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR		0x02
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY		0x03
+
 #define L2CAP_LISTEN			0x05
 struct l2cap_listen_cmd {
 	uint16_t psm;
@@ -779,6 +785,18 @@ struct l2cap_listen_cmd {
 struct l2cap_accept_connection_cmd {
 	uint8_t chan_id;
 	uint16_t result;
+} __packed;
+
+#define L2CAP_CREDITS		0x08
+struct l2cap_credits_cmd {
+	uint8_t chan_id;
+} __packed;
+
+#define L2CAP_DISCONNECT_EATT_CHANS		0x09
+struct l2cap_disconnect_eatt_chans_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t count;
 } __packed;
 
 /* events */
@@ -837,6 +855,12 @@ struct mesh_read_supported_commands_rp {
 #define MESH_IN_ENTER_STRING		BIT(3)
 
 #define MESH_CONFIG_PROVISIONING	0x02
+
+struct set_keys {
+	uint8_t pub_key[64];
+	uint8_t priv_key[32];
+} __packed;
+
 struct mesh_config_provisioning_cmd {
 	uint8_t uuid[16];
 	uint8_t static_auth[16];
@@ -844,6 +868,8 @@ struct mesh_config_provisioning_cmd {
 	uint16_t out_actions;
 	uint8_t in_size;
 	uint16_t in_actions;
+	uint8_t auth_method;
+	struct set_keys set_keys[0];
 } __packed;
 
 #define MESH_PROVISION_NODE		0x03
@@ -855,6 +881,7 @@ struct mesh_provision_node_cmd {
 	uint32_t seq_num;
 	uint16_t addr;
 	uint8_t dev_key[16];
+	uint8_t pub_key[0];
 } __packed;
 
 #define MESH_INIT			0x04

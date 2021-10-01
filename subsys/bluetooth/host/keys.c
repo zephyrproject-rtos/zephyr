@@ -374,7 +374,14 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(next, NULL, 10);
+		unsigned long next_id = strtoul(next, NULL, 10);
+
+		if (next_id >= CONFIG_BT_ID_MAX) {
+			BT_ERR("Invalid local identity %lu", next_id);
+			return -EINVAL;
+		}
+
+		id = (uint8_t)next_id;
 	}
 
 	if (!len) {
@@ -396,24 +403,21 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		do {
+		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* Load shorter structure for compatibility with old
 			 * records format with no counter.
 			 */
-			if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
-			    len == BT_KEYS_STORAGE_LEN_COMPAT) {
-				BT_WARN("Keys for %s have no aging counter",
-					bt_addr_le_str(&addr));
-				memcpy(keys->storage_start, val, len);
-				continue;
-			}
-
+			BT_WARN("Keys for %s have no aging counter",
+				bt_addr_le_str(&addr));
+			memcpy(keys->storage_start, val, len);
+		} else {
 			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
 			return -EINVAL;
-		} while (0);
+		}
 	} else {
 		memcpy(keys->storage_start, val, len);
 	}
@@ -490,8 +494,8 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
 	}
 
-	if (keys->keys & BT_KEYS_SLAVE_LTK) {
-		sys_memcpy_swap(ltk, keys->slave_ltk.val, keys->enc_size);
+	if (keys->keys & BT_KEYS_PERIPH_LTK) {
+		sys_memcpy_swap(ltk, keys->periph_ltk.val, keys->enc_size);
 		BT_INFO("Legacy LTK: 0x%s (peripheral)",
 			bt_hex(ltk, keys->enc_size));
 	}

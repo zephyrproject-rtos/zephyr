@@ -12,14 +12,6 @@ config BOARD
 config STM32H7_DUAL_CORE
 	default y
 
-if IPM_STM32_HSEM
-
-config IPM_STM32_HSEM_CPU
-	default 1 if BOARD_STM32H747I_DISCO_M7
-	default 2 if BOARD_STM32H747I_DISCO_M4
-
-endif # IPM_STM32_HSEM
-
 if NETWORKING
 
 config NET_L2_ETHERNET

@@ -9,10 +9,10 @@
 #include <errno.h>
 #include <string.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, colorway_lpd8806), okay)
-#define DT_DRV_COMPAT colorway_lpd8806
+#if DT_NODE_HAS_STATUS(DT_INST(0, greeled_lpd8806), okay)
+#define DT_DRV_COMPAT greeled_lpd8806
 #else
-#define DT_DRV_COMPAT colorway_lpd8803
+#define DT_DRV_COMPAT greeled_lpd8803
 #endif
 
 #define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL

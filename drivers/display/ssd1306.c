@@ -408,7 +408,13 @@ static int ssd1306_init(const struct device *dev)
 	}
 
 	if (config->reset.port) {
-		gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->reset,
+					    GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (ssd1306_init_device(dev)) {
@@ -448,5 +454,5 @@ static struct display_driver_api ssd1306_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, ssd1306_init, NULL,
 		      &ssd1306_driver, &ssd1306_config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		      &ssd1306_driver_api);

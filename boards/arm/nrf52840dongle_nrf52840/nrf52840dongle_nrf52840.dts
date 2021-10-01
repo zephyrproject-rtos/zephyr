@@ -81,7 +81,6 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
-		usbd0 = &usbd;
 	};
 };
 
@@ -166,7 +165,7 @@
  */
 #include "fstab-stock.dts"
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

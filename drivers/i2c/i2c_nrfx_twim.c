@@ -20,13 +20,14 @@ struct i2c_nrfx_twim_data {
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 	uint32_t dev_config;
-	uint16_t concat_buf_size;
-	uint8_t *concat_buf;
+	uint8_t *msg_buf;
 };
 
 struct i2c_nrfx_twim_config {
 	nrfx_twim_t twim;
 	nrfx_twim_config_t config;
+	uint16_t concat_buf_size;
+	uint16_t flash_buf_max_size;
 };
 
 static inline struct i2c_nrfx_twim_data *get_dev_data(const struct device *dev)
@@ -44,20 +45,22 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
 {
+	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
+	const struct i2c_nrfx_twim_config *dev_config = get_dev_config(dev);
 	int ret = 0;
-	uint32_t concat_len = 0;
-	uint8_t *concat_buf = get_dev_data(dev)->concat_buf;
-	uint16_t concat_buf_size = get_dev_data(dev)->concat_buf_size;
+	uint8_t *msg_buf = dev_data->msg_buf;
+	uint16_t msg_buf_used = 0;
+	uint16_t concat_buf_size = dev_config->concat_buf_size;
 	nrfx_twim_xfer_desc_t cur_xfer = {
 		.address = addr
 	};
 
-	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
+	k_sem_take(&dev_data->transfer_sync, K_FOREVER);
 
 	/* Dummy take on completion_sync sem to be sure that it is empty */
-	k_sem_take(&(get_dev_data(dev)->completion_sync), K_NO_WAIT);
+	k_sem_take(&dev_data->completion_sync, K_NO_WAIT);
 
-	nrfx_twim_enable(&get_dev_config(dev)->twim);
+	nrfx_twim_enable(&dev_config->twim);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -65,52 +68,76 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			break;
 		}
 
-		/* Merge this fragment with the next if we have a buffer, this
-		 * isn't the last fragment, it doesn't end a bus transaction,
-		 * the next one doesn't start a bus transaction, and the
-		 * direction of the next fragment is the same as this one.
+		/* This fragment needs to be merged with the next one if:
+		 * - it is not the last fragment
+		 * - it does not end a bus transaction
+		 * - the next fragment does not start a bus transaction
+		 * - the direction of the next fragment is the same as this one
 		 */
-		bool concat_next = (concat_buf_size > 0)
-			&& ((i + 1) < num_msgs)
-			&& !(msgs[i].flags & I2C_MSG_STOP)
-			&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
-			&& ((msgs[i].flags & I2C_MSG_READ)
-			    == (msgs[i + 1].flags & I2C_MSG_READ));
+		bool concat_next = ((i + 1) < num_msgs)
+				&& !(msgs[i].flags & I2C_MSG_STOP)
+				&& !(msgs[i + 1].flags & I2C_MSG_RESTART)
+				&& ((msgs[i].flags & I2C_MSG_READ)
+				    == (msgs[i + 1].flags & I2C_MSG_READ));
 
 		/* If we need to concatenate the next message, or we've
 		 * already committed to concatenate this message, add it to
 		 * the buffer after verifying there's room.
 		 */
-		if (concat_next || (concat_len != 0)) {
-			if ((concat_len + msgs[i].len) > concat_buf_size) {
-				LOG_ERR("concat-buf overflow: %u + %u > %u",
-					concat_len, msgs[i].len, concat_buf_size);
+		if (concat_next || (msg_buf_used != 0)) {
+			if ((msg_buf_used + msgs[i].len) > concat_buf_size) {
+				LOG_ERR("Need to use concatenation buffer and "
+					"provided size is insufficient "
+					"(%u + %u > %u). "
+					"Adjust the zephyr,concat-buf-size "
+					"property in the \"%s\" node.",
+					msg_buf_used, msgs[i].len,
+					concat_buf_size, dev->name);
 				ret = -ENOSPC;
 				break;
 			}
 			if (!(msgs[i].flags & I2C_MSG_READ)) {
-				memcpy(concat_buf + concat_len,
+				memcpy(msg_buf + msg_buf_used,
 				       msgs[i].buf,
 				       msgs[i].len);
 			}
-			concat_len += msgs[i].len;
+			msg_buf_used += msgs[i].len;
+
+		/* TWIM peripherals cannot transfer data directly from
+		 * flash. If a buffer located in flash is provided for
+		 * a write transaction, its content must be copied to
+		 * RAM before the transfer can be requested.
+		 */
+		} else if (!(msgs[i].flags & I2C_MSG_READ) &&
+			   !nrfx_is_in_ram(msgs[i].buf)) {
+			if (msgs[i].len > dev_config->flash_buf_max_size) {
+				LOG_ERR("Cannot copy flash buffer of size: %u. "
+					"Adjust the zephyr,flash-buf-max-size "
+					"property in the \"%s\" node.",
+					msgs[i].len, dev->name);
+				ret = -EINVAL;
+				break;
+			}
+
+			memcpy(msg_buf, msgs[i].buf, msgs[i].len);
+			msg_buf_used = msgs[i].len;
 		}
 
 		if (concat_next) {
 			continue;
 		}
 
-		if (concat_len == 0) {
+		if (msg_buf_used == 0) {
 			cur_xfer.p_primary_buf = msgs[i].buf;
 			cur_xfer.primary_length = msgs[i].len;
 		} else {
-			cur_xfer.p_primary_buf = concat_buf;
-			cur_xfer.primary_length = concat_len;
+			cur_xfer.p_primary_buf = msg_buf;
+			cur_xfer.primary_length = msg_buf_used;
 		}
 		cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
 			NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
 
-		nrfx_err_t res = nrfx_twim_xfer(&get_dev_config(dev)->twim,
+		nrfx_err_t res = nrfx_twim_xfer(&dev_config->twim,
 						&cur_xfer,
 						(msgs[i].flags & I2C_MSG_STOP) ?
 						 0 : NRFX_TWIM_FLAG_TX_NO_STOP);
@@ -124,7 +151,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			}
 		}
 
-		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
+		ret = k_sem_take(&dev_data->completion_sync,
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
 			/* Whatever the frequency, completion_sync should have
@@ -144,14 +171,14 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
-			nrfx_twim_disable(&get_dev_config(dev)->twim);
-			nrfx_twim_bus_recover(get_dev_config(dev)->config.scl,
-					      get_dev_config(dev)->config.sda);
+			nrfx_twim_disable(&dev_config->twim);
+			nrfx_twim_bus_recover(dev_config->config.scl,
+					      dev_config->config.sda);
 			ret = -EIO;
 			break;
 		}
 
-		res = get_dev_data(dev)->res;
+		res = dev_data->res;
 
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
@@ -163,24 +190,24 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 * content of concatenation buffer has to be copied back into
 		 * buffers provided by user. */
 		if ((msgs[i].flags & I2C_MSG_READ)
-		    && cur_xfer.p_primary_buf == concat_buf) {
+		    && cur_xfer.p_primary_buf == msg_buf) {
 			int j = i;
 
-			while (concat_len >= msgs[j].len) {
-				concat_len -= msgs[j].len;
+			while (msg_buf_used >= msgs[j].len) {
+				msg_buf_used -= msgs[j].len;
 				memcpy(msgs[j].buf,
-				       concat_buf + concat_len,
+				       msg_buf + msg_buf_used,
 				       msgs[j].len);
 				j--;
 			}
 
 		}
 
-		concat_len = 0;
+		msg_buf_used = 0;
 	}
 
-	nrfx_twim_disable(&get_dev_config(dev)->twim);
-	k_sem_give(&(get_dev_data(dev)->transfer_sync));
+	nrfx_twim_disable(&dev_config->twim);
+	k_sem_give(&dev_data->transfer_sync);
 
 	return ret;
 }
@@ -291,12 +318,18 @@ static int twim_nrfx_pm_control(const struct device *dev,
 #define I2C_FREQUENCY(idx)						       \
 	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define CONCAT_BUF_SIZE(idx) DT_PROP(I2C(idx), zephyr_concat_buf_size)
-
-#define I2C_CONCAT_BUF(idx)						       \
+#define CONCAT_BUF_SIZE(idx)						       \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
-	(.concat_buf = twim_##idx##_concat_buf,				       \
-	.concat_buf_size = CONCAT_BUF_SIZE(idx),), ())
+		    (DT_PROP(I2C(idx), zephyr_concat_buf_size)), (0))
+#define FLASH_BUF_MAX_SIZE(idx)						       \
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_flash_buf_max_size),     \
+		    (DT_PROP(I2C(idx), zephyr_flash_buf_max_size)), (0))
+
+#define USES_MSG_BUF(idx)						       \
+	COND_CODE_0(CONCAT_BUF_SIZE(idx),				       \
+		(COND_CODE_0(FLASH_BUF_MAX_SIZE(idx), (0), (1))),	       \
+		(1))
+#define MSG_BUF_SIZE(idx)  MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
@@ -308,16 +341,15 @@ static int twim_nrfx_pm_control(const struct device *dev,
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
-	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
-	(static uint8_t twim_##idx##_concat_buf[CONCAT_BUF_SIZE(idx)];),       \
-	())								       \
-									       \
+	IF_ENABLED(USES_MSG_BUF(idx),					       \
+		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.transfer_sync = Z_SEM_INITIALIZER(                            \
-			twim_##idx##_data.transfer_sync, 1, 1),                \
-		.completion_sync = Z_SEM_INITIALIZER(                          \
-			twim_##idx##_data.completion_sync, 0, 1),              \
-		I2C_CONCAT_BUF(idx)					       \
+		.transfer_sync = Z_SEM_INITIALIZER(			       \
+			twim_##idx##_data.transfer_sync, 1, 1),		       \
+		.completion_sync = Z_SEM_INITIALIZER(			       \
+			twim_##idx##_data.completion_sync, 0, 1),	       \
+		IF_ENABLED(USES_MSG_BUF(idx),				       \
+			(.msg_buf = twim_##idx##_msg_buf,))		       \
 	};								       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
@@ -325,7 +357,9 @@ static int twim_nrfx_pm_control(const struct device *dev,
 			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
 			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
 			.frequency = I2C_FREQUENCY(idx),		       \
-		}							       \
+		},							       \
+		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
+		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
 	};								       \
 	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twim_##idx##_init,				       \

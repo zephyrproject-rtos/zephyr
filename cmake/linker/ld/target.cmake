@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+set_property(TARGET linker PROPERTY devices_start_symbol "__device_start")
 
 if(DEFINED TOOLCHAIN_HOME)
   # When Toolchain home is defined, then we are cross-compiling, so only look
@@ -30,51 +31,74 @@ endif()
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
 
-  # Different generators deal with depfiles differently.
-  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-    # Note that the IMPLICIT_DEPENDS option is currently supported only
-    # for Makefile generators and will be ignored by other generators.
-    set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-    # Using DEPFILE with other generators than Ninja is an error.
-    set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
+      set(PASS 1)
+    elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2")
+      set(PASS 2)
+    endif()
+
+    add_custom_command(
+      OUTPUT ${linker_script_gen}
+      COMMAND ${CMAKE_COMMAND}
+        -DPASS=${PASS}
+        -DFORMAT="$<TARGET_PROPERTY:linker,FORMAT>"
+        -DENTRY="$<TARGET_PROPERTY:linker,ENTRY>"
+        -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
+        -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
+        -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
+        -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
+        -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
+        -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
+        -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
+      )
   else()
-    # TODO: How would the linker script dependencies work for non-linker
-    # script generators.
-    message(STATUS "Warning; this generator is not well supported. The
-  Linker script may not be regenerated when it should.")
-    set(linker_script_dep "")
+    # Different generators deal with depfiles differently.
+    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      # Note that the IMPLICIT_DEPENDS option is currently supported only
+      # for Makefile generators and will be ignored by other generators.
+      set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+    elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+      # Using DEPFILE with other generators than Ninja is an error.
+      set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
+    else()
+      # TODO: How would the linker script dependencies work for non-linker
+      # script generators.
+      message(STATUS "Warning; this generator is not well supported. The
+    Linker script may not be regenerated when it should.")
+      set(linker_script_dep "")
+    endif()
+
+    zephyr_get_include_directories_for_lang(C current_includes)
+    get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
+    get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+
+    add_custom_command(
+      OUTPUT ${linker_script_gen}
+      DEPENDS
+      ${LINKER_SCRIPT}
+      ${AUTOCONF_H}
+      ${extra_dependencies}
+      # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
+      ${linker_script_dep}
+      COMMAND ${CMAKE_C_COMPILER}
+      -x assembler-with-cpp
+      ${NOSYSDEF_CFLAG}
+      -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+      -D_LINKER
+      -D_ASMLANGUAGE
+      -imacros ${AUTOCONF_H}
+      ${current_includes}
+      ${current_defines}
+      ${linker_pass_define}
+      -E ${LINKER_SCRIPT}
+      -P # Prevent generation of debug `#line' directives.
+      -o ${linker_script_gen}
+      VERBATIM
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMAND_EXPAND_LISTS
+    )
   endif()
-
-  zephyr_get_include_directories_for_lang(C current_includes)
-  get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
-  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
-
-  add_custom_command(
-    OUTPUT ${linker_script_gen}
-    DEPENDS
-    ${LINKER_SCRIPT}
-    ${AUTOCONF_H}
-    ${extra_dependencies}
-    # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
-    ${linker_script_dep}
-    COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp
-    ${NOSYSDEF_CFLAG}
-    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
-    -D_LINKER
-    -D_ASMLANGUAGE
-    -imacros ${AUTOCONF_H}
-    ${current_includes}
-    ${current_defines}
-    ${linker_pass_define}
-    -E ${LINKER_SCRIPT}
-    -P # Prevent generation of debug `#line' directives.
-    -o ${linker_script_gen}
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND_EXPAND_LISTS
-  )
 endmacro()
 
 # Force symbols to be entered in the output file as undefined symbols

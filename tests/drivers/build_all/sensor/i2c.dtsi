@@ -154,6 +154,18 @@ test_i2c_mpu9150: mpu9150@16 {
 	reg = <0x16>;
 };
 
+test_i2c_ina219: ina219@40 {
+	compatible = "ti,ina219";
+	label = "INA219";
+	reg = <0x40>;
+	brng = <0>;
+	pg = <0>;
+	sadc = <13>;
+	badc = <13>;
+	shunt-milliohm = <100>;
+	lsb-microamp = <10>;
+};
+
 test_i2c_isl29035: isl29035@17 {
 	compatible = "isil,isl29035";
 	label = "ISL29035";
@@ -162,7 +174,7 @@ test_i2c_isl29035: isl29035@17 {
 };
 
 test_i2c_max30101: max30101@18 {
-	compatible = "max,max30101";
+	compatible = "maxim,max30101";
 	label = "MAX30101";
 	reg = <0x18>;
 };
@@ -276,6 +288,12 @@ test_i2c_si7060: si7060@25 {
 	compatible = "silabs,si7060";
 	label = "SI7060";
 	reg = <0x25>;
+};
+
+test_i2c_si7210: si7010@30 {
+	compatible = "silabs,si7210";
+	label = "SI7210";
+	reg = <0x30>;
 };
 
 test_i2c_ssd1306fb: ssd1306fb@26 {

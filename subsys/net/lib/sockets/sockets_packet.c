@@ -394,4 +394,5 @@ static bool packet_is_supported(int family, int type, int proto)
 	return false;
 }
 
-NET_SOCKET_REGISTER(af_packet, AF_PACKET, packet_is_supported, zpacket_socket);
+NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, AF_PACKET,
+		    packet_is_supported, zpacket_socket);

@@ -329,7 +329,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->master.initiated)) {
+	if (unlikely(lll->conn && lll->conn->central.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -379,14 +379,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 			/* Setup Radio Filter */
-			struct lll_filter *wl = ull_filter_lll_get(true);
+			struct lll_filter *fal = ull_filter_lll_get(true);
 
 
-			radio_filter_configure(wl->enable_bitmask,
-					       wl->addr_type_bitmask,
-					       (uint8_t *)wl->bdaddr);
+			radio_filter_configure(fal->enable_bitmask,
+					       fal->addr_type_bitmask,
+					       (uint8_t *)fal->bdaddr);
 		}
 
 	ticks_at_event = prepare_param->ticks_at_expire;
@@ -557,7 +557,7 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
-	 * slave event.
+	 * peripheral event.
 	 */
 	radio_tmr_end_capture();
 
@@ -925,7 +925,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 		/* Stop further LLL radio events */
-		lll->conn->master.initiated = 1;
+		lll->conn->central.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
@@ -969,7 +969,7 @@ static inline bool isr_rx_sr_check(struct lll_adv *lll, struct pdu_adv *adv,
 						sr->scan_req.scan_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 		isr_rx_sr_adva_check(adv, sr);
 #else
 	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
@@ -1042,7 +1042,7 @@ static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 						ci->connect_ind.init_addr,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x02) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 	       isr_rx_ci_adva_check(adv, ci);
 #else
 	return (((lll->filter_policy & 0x02) == 0) ||

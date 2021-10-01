@@ -1,11 +1,18 @@
-# ESP32 Interrupt Allocator messages configuration
+# Espressif's Interrupt Allocator driver for Xtensa SoCs
 
 # Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+config INTC_ESP32
+	bool "Interrupt allocator for Xtensa-based Espressif SoCs"
+	default y if SOC_ESP32 || SOC_ESP32S2
+	help
+	  Enable custom interrupt allocator for Espressif SoCs based on Xtensa
+	  architecture.
+
 config INTC_ESP32_DECISIONS_LOG
-	bool "Enables ESP32 interrupt allocator logging"
-	depends on SOC_ESP32
+	bool "Enables Espressif's interrupt allocator logging"
+	depends on INTC_ESP32
 	select LOG
 	help
 	  Enable this option to visualize information on decisions made by the

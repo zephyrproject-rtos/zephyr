@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(ipc_rpmsg_multi_instance, CONFIG_IPC_SERVICE_LOG_LEVEL);
 
 #define PRIO_INIT_VAL		INT_MAX
 #define INSTANCE_NAME_SIZE	16
+#define IPM_MSG_ID		0
 
 #define CH_NAME(idx, sub)	(CONFIG_RPMSG_MULTI_INSTANCE_ ## idx ## _IPM_ ## sub ## _NAME)
 
@@ -54,6 +55,11 @@ struct ipc_rpmsg_mi_instances {
 };
 
 static struct ipc_rpmsg_mi_instances instances[NUM_INSTANCES];
+
+static struct rpmsg_mi_ctx_shm_cfg shm = {
+	.addr   = SHM_START_ADDR,
+	.size   = SHM_SIZE,
+};
 
 static void common_bound_cb(void *priv)
 {
@@ -136,6 +142,9 @@ static int register_ept(struct ipc_ept **ept, const struct ipc_ept_cfg *cfg)
 		ctx_cfg.ipm_thread_name = instances[i_idx].name;
 		ctx_cfg.ipm_rx_name = ipm_rx_name[i_idx];
 		ctx_cfg.ipm_tx_name = ipm_tx_name[i_idx];
+		ctx_cfg.ipm_tx_id = IPM_MSG_ID;
+
+		ctx_cfg.shm = &shm;
 
 		if (rpmsg_mi_ctx_init(&instances[i_idx].ctx, &ctx_cfg) < 0) {
 			LOG_ERR("Instance initialization failed");

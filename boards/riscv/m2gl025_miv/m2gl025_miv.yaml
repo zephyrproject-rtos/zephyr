@@ -7,6 +7,7 @@ toolchain:
 ram: 64
 simulation: renode
 testing:
+  default: true
   ignore_tags:
     - net
     - bluetooth

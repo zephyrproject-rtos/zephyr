@@ -216,7 +216,7 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
 		return STATUS_SUCCESS;
 	}
 
-	if (!bt_mesh_app_key_exists(app_idx)) {
+	if (!bt_mesh_app_key_exists(app_idx) || !bt_mesh_model_has_key(model, app_idx)) {
 		return STATUS_INVALID_APPKEY;
 	}
 

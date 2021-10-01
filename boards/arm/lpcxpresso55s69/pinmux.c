@@ -183,6 +183,70 @@ static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
 				  IOCON_PIO_OPENDRAIN_DI);
 #endif
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)) && \
+		(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay)) && \
+		CONFIG_I2S
+	CLOCK_EnableClock(kCLOCK_Sysctl);
+	/* Set shared signal set 0 SCK, WS from Transmit I2S - Flexcomm 7 */
+	SYSCTL->SHAREDCTRLSET[0] = SYSCTL_SHAREDCTRLSET_SHAREDSCKSEL(7) |
+				SYSCTL_SHAREDCTRLSET_SHAREDWSSEL(7);
+
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	/* Select Data in from Transmit I2S - Flexcomm 7 */
+	SYSCTL->SHAREDCTRLSET[0] |= SYSCTL_SHAREDCTRLSET_SHAREDDATASEL(7);
+	/* Enable Transmit I2S - Flexcomm 7 for Shared Data Out */
+	SYSCTL->SHAREDCTRLSET[0] |= SYSCTL_SHAREDCTRLSET_FC7DATAOUTEN(1);
+#endif
+
+	/* Set Receive I2S - Flexcomm 6 SCK, WS from shared signal set 0 */
+	SYSCTL->FCCTRLSEL[6] = SYSCTL_FCCTRLSEL_SCKINSEL(1) |
+				SYSCTL_FCCTRLSEL_WSINSEL(1);
+
+	/* Set Transmit I2S - Flexcomm 7 SCK, WS from shared signal set 0 */
+	SYSCTL->FCCTRLSEL[7] = SYSCTL_FCCTRLSEL_SCKINSEL(1) |
+				SYSCTL_FCCTRLSEL_WSINSEL(1);
+
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	/* Select Receive I2S - Flexcomm 6 Data in from shared signal set 0 */
+	SYSCTL->FCCTRLSEL[6] |= SYSCTL_FCCTRLSEL_DATAINSEL(1);
+	/* Select Transmit I2S - Flexcomm 7 Data out to shared signal set 0 */
+	SYSCTL->FCCTRLSEL[7] |= SYSCTL_FCCTRLSEL_DATAOUTSEL(1);
+#endif
+
+	/* Pin is configured as FC7_TXD_SCL_MISO_WS */
+	pinmux_pin_set(port0, 19, IOCON_PIO_FUNC7 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_SLEW_FAST |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* Pin is configured as FC7_RXD_SDA_MOSI_DATA */
+	pinmux_pin_set(port0, 20, IOCON_PIO_FUNC7 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_SLEW_FAST |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* Pin is configured as FC7_SCK */
+	pinmux_pin_set(port0, 21, IOCON_PIO_FUNC7 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_SLEW_FAST |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* Pin is configured as FC6_RXD_SDA_MOSI_DATA */
+	pinmux_pin_set(port1, 13, IOCON_PIO_FUNC2 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_SLEW_FAST |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+#endif
+
 	return 0;
 }
 

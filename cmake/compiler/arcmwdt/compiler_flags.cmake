@@ -115,20 +115,19 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_NEWLIB_LIBC AND
-    NOT CONFIG_NATIVE_APPLICATION)
+if (NOT CONFIG_ARCMWDT_LIBC)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib)
-  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
+set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 
 # C++ std options
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17")
 
-#no support of C++14, C++17, C++2a, C++20, C++2b
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "")
+#no support of C++2a, C++20, C++2b
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "")
@@ -173,7 +172,7 @@ set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
 set_compiler_property(PROPERTY security_fortify "")
 
 # Required C++ flags when using mwdt
-set_property(TARGET compiler-cpp PROPERTY required "")
+set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_alloca")
 
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")

@@ -73,7 +73,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
     if(CONFIG_BT_PERIPHERAL)
       zephyr_library_sources(
-        ll_sw/ull_slave.c
+        ll_sw/ull_peripheral.c
       )
     zephyr_library_sources_ifdef(
         CONFIG_BT_CTLR_PERIPHERAL_ISO
@@ -82,7 +82,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     endif()
     if(CONFIG_BT_CENTRAL)
       zephyr_library_sources(
-        ll_sw/ull_master.c
+        ll_sw/ull_central.c
         )
       zephyr_library_sources_ifdef(
         CONFIG_BT_CTLR_CENTRAL_ISO
@@ -112,6 +112,8 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
   if(CONFIG_BT_CONN OR
+     (CONFIG_BT_BROADCASTER AND
+      CONFIG_BT_CTLR_ADV_EXT) OR
      CONFIG_BT_CTLR_ADV_PERIODIC OR
      CONFIG_BT_CTLR_SYNC_PERIODIC)
     zephyr_library_sources(
@@ -120,7 +122,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
   zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_FILTER
+    CONFIG_BT_CTLR_FILTER_ACCEPT_LIST
     ll_sw/ull_filter.c
     )
   zephyr_library_sources_ifdef(

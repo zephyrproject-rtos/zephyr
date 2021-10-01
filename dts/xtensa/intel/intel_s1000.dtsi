@@ -14,13 +14,13 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
 	};
@@ -43,7 +43,7 @@
 
 	soc {
 		core_intc: core_intc@0 {
-			compatible = "xtensa,core-intc";
+			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;

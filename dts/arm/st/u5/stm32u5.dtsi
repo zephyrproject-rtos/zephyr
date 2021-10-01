@@ -190,7 +190,7 @@
 				#gpio-cells = <2>;
 				reg = <0x42022000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
-				label = "GPIOH";
+				label = "GPIOI";
 			};
 		};
 

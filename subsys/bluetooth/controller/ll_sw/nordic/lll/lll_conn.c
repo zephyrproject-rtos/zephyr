@@ -17,6 +17,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
+#include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
@@ -25,6 +26,7 @@
 
 #include "lll.h"
 #include "lll_clock.h"
+#include "lll_df_types.h"
 #include "lll_conn.h"
 
 #include "lll_internal.h"
@@ -254,7 +256,7 @@ void lll_conn_isr_rx(void *param)
 
 		if (0) {
 #if defined(CONFIG_BT_CENTRAL)
-		/* Event done for master */
+		/* Event done for central */
 		} else if (!lll->role) {
 			radio_disable();
 
@@ -269,7 +271,7 @@ void lll_conn_isr_rx(void *param)
 			goto lll_conn_isr_rx_exit;
 #endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_PERIPHERAL)
-		/* Event done for slave */
+		/* Event done for peripheral */
 		} else {
 			radio_switch_complete_and_disable();
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -658,12 +660,12 @@ static void isr_done(void *param)
 			e->drift.start_to_address_actual_us =
 				radio_tmr_aa_restore() - radio_tmr_ready_get();
 			e->drift.window_widening_event_us =
-				lll->slave.window_widening_event_us;
+				lll->periph.window_widening_event_us;
 			e->drift.preamble_to_addr_us = preamble_to_addr_us;
 
 			/* Reset window widening, as anchor point sync-ed */
-			lll->slave.window_widening_event_us = 0;
-			lll->slave.window_size_event_us = 0;
+			lll->periph.window_widening_event_us = 0;
+			lll->periph.window_size_event_us = 0;
 		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -709,10 +711,10 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* First ack (and redundantly any other ack) enable use of
-		 * slave latency.
+		 * peripheral latency.
 		 */
 		if (lll->role) {
-			lll->slave.latency_enabled = 1;
+			lll->periph.latency_enabled = 1;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 

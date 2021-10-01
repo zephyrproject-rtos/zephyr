@@ -250,14 +250,13 @@ static void iis3dhhc_config(const struct device *iis3dhhc)
 void main(void)
 {
 	static const struct device *led0, *led1;
-	const struct device *dev = device_get_binding(
-			CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int i, on = 1;
 	int cnt = 1;
 	uint32_t dtr = 0;
 
 	/* Application must enable USB by itself */
-	if (usb_enable(NULL)) {
+	if (!device_is_ready(dev) || usb_enable(NULL)) {
 		return;
 	}
 

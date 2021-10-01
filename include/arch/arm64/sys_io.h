@@ -81,6 +81,22 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 	__asm__ volatile("str %w0, [%1]" : : "r" (data), "r" (addr));
 }
 
+static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
+{
+	uint64_t val;
+
+	__asm__ volatile("ldr %x0, [%1]" : "=r" (val) : "r" (addr));
+
+	__DMB();
+	return val;
+}
+
+static ALWAYS_INLINE void sys_write64(uint64_t data, mem_addr_t addr)
+{
+	__DMB();
+	__asm__ volatile("str %x0, [%1]" : : "r" (data), "r" (addr));
+}
+
 #ifdef __cplusplus
 }
 #endif

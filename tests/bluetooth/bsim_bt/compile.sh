@@ -23,6 +23,7 @@ function compile(){
   local conf_file="${conf_file:-prj.conf}"
   local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y"}"
   local ninja_args="${ninja_args:-""}"
+  local cc_flags="${cc_flags:-"-Werror"}"
 
   local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
   local exe_name=${exe_name//\//_}
@@ -39,8 +40,9 @@ function compile(){
       [ -d "${this_dir}" ] && rm ${this_dir} -rf
       mkdir -p ${this_dir} && cd ${this_dir}
       cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-            -DCONF_FILE=${conf_file} ${cmake_args} ${app_root}/${app} \
-            &> cmake.out || { cat cmake.out && return 0; }
+        -DCONF_FILE=${conf_file} ${cmake_args} \
+        -DCMAKE_C_FLAGS="${cc_flags}" ${app_root}/${app} \
+        &> cmake.out || { cat cmake.out && return 0; }
   else
       cd ${this_dir}
   fi
@@ -61,7 +63,10 @@ app=tests/bluetooth/bsim_bt/bsim_test_multiple compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
-app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_dut.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_tst.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_low_lat.conf compile

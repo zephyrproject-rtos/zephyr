@@ -133,9 +133,6 @@ config HAS_HW_NRF_RADIO_BLE_CODED
 config HAS_HW_NRF_RADIO_IEEE802154
 	bool
 
-config HAS_HW_NRF_RADIO_BLE_DF
-	bool
-
 config HAS_HW_NRF_RNG
 	bool
 

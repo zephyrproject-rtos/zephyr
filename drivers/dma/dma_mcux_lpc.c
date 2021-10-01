@@ -485,9 +485,7 @@ static int dma_mcux_lpc_init(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	for (int i = 0; i < DEV_CFG(dev)->num_of_channels; i++) {
-		data->data_cb[i].dma_descriptor_table = NULL;
-	}
+	memset(data->data_cb, 0, size_channel_data);
 
 #if defined FSL_FEATURE_DMA_NUMBER_OF_CHANNELS
 	total_dma_channels = FSL_FEATURE_DMA_NUMBER_OF_CHANNELS;

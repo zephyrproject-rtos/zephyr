@@ -64,7 +64,7 @@ struct ring_buf {
  */
 
 /**
- * @brief Statically define and initialize a high performance ring buffer.
+ * @brief Define and initialize a high performance ring buffer.
  *
  * This macro establishes a ring buffer whose size must be a power of 2;
  * that is, the ring buffer contains 2^pow 32-bit words, where @a pow is
@@ -82,7 +82,7 @@ struct ring_buf {
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
 	BUILD_ASSERT((1 << pow) < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t _ring_buffer_data_##name[BIT(pow)]; \
+	static uint32_t __noinit _ring_buffer_data_##name[BIT(pow)]; \
 	struct ring_buf name = { \
 		.size = (BIT(pow)),	  \
 		.mask = (BIT(pow)) - 1, \
@@ -90,7 +90,7 @@ struct ring_buf {
 	}
 
 /**
- * @brief Statically define and initialize a standard ring buffer.
+ * @brief Define and initialize a standard ring buffer.
  *
  * This macro establishes a ring buffer of an arbitrary size. A standard
  * ring buffer uses modulo arithmetic operations to maintain itself.
@@ -106,14 +106,14 @@ struct ring_buf {
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
 	BUILD_ASSERT(size32 < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t _ring_buffer_data_##name[size32]; \
+	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
 		.size = size32, \
 		.buf = { .buf32 = _ring_buffer_data_##name} \
 	}
 
 /**
- * @brief Statically define and initialize a ring buffer for byte data.
+ * @brief Define and initialize a ring buffer for byte data.
  *
  * This macro establishes a ring buffer of an arbitrary size.
  *
@@ -128,7 +128,7 @@ struct ring_buf {
 #define RING_BUF_DECLARE(name, size8) \
 	BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint8_t _ring_buffer_data_##name[size8]; \
+	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
 		.size = size8, \
 		.buf = { .buf8 = _ring_buffer_data_##name} \
@@ -174,10 +174,7 @@ static inline void ring_buf_init(struct ring_buf *buf,
  *
  * @return 1 if the ring buffer is empty, or 0 if not.
  */
-static inline int ring_buf_is_empty(struct ring_buf *buf)
-{
-	return (buf->head == buf->tail);
-}
+int ring_buf_is_empty(struct ring_buf *buf);
 
 /**
  * @brief Reset ring buffer state.
@@ -198,10 +195,7 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words or bytes).
  */
-static inline uint32_t ring_buf_space_get(struct ring_buf *buf)
-{
-	return buf->size - (buf->tail - buf->head);
-}
+uint32_t ring_buf_space_get(struct ring_buf *buf);
 
 /**
  * @brief Return ring buffer capacity.
@@ -222,10 +216,7 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf *buf)
  *
  * @return Ring buffer space used (in 32-bit words or bytes).
  */
-static inline uint32_t ring_buf_size_get(struct ring_buf *buf)
-{
-	return buf->tail - buf->head;
-}
+uint32_t ring_buf_size_get(struct ring_buf *buf);
 
 /**
  * @brief Write a data item to a ring buffer.

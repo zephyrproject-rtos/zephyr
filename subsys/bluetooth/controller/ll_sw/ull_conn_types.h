@@ -56,10 +56,10 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	uint8_t own_addr_type:1;
-	uint8_t peer_addr_type:2;
-	uint8_t own_addr[BDADDR_SIZE];
-	uint8_t peer_addr[BDADDR_SIZE];
+	uint8_t own_id_addr_type:1;
+	uint8_t peer_id_addr_type:1;
+	uint8_t own_id_addr[BDADDR_SIZE];
+	uint8_t peer_id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 	union {
@@ -89,7 +89,7 @@ struct ll_conn {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint32_t ticks_to_offset;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-		} slave;
+		} periph;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -100,7 +100,7 @@ struct ll_conn {
 			uint8_t is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t terminate_ack:1;
-		} master;
+		} central;
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
@@ -229,10 +229,11 @@ struct ll_conn {
 			LLCP_CPR_STATE_APP_REQ,
 			LLCP_CPR_STATE_APP_WAIT,
 			LLCP_CPR_STATE_RSP_WAIT,
+			LLCP_CPR_STATE_UPD_WAIT,
 			LLCP_CPR_STATE_UPD,
 			LLCP_CPR_STATE_OFFS_REQ,
 			LLCP_CPR_STATE_OFFS_RDY,
-		} state:3 __packed;
+		} state:4 __packed;
 		uint8_t  cmd:1;
 		uint8_t  disabled:1;
 		uint8_t  status;
@@ -337,6 +338,10 @@ struct ll_conn {
 		uint16_t conn_event_count;
 	} llcp_cis;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	struct lll_df_conn_rx_params df_rx_params;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 };
 
 struct node_rx_cc {

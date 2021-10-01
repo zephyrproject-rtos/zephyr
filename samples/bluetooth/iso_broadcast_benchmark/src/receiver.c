@@ -363,7 +363,8 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	sync_timeout_ms = iso_interval_ms * ISO_RETRY_COUNT;
 	big_sync_param.sync_timeout = CLAMP(sync_timeout_ms / 10, 0x000A, 0x4000); /* 10 ms units */
 	big_sync_param.num_bis = bis_count;
-	for (int i = 0; i < big_sync_param.num_bis; i++) {
+	/* BIS indexes start from 0x01, so add one to `i` */
+	for (int i = 1; i <= big_sync_param.num_bis; i++) {
 		big_sync_param.bis_bitfield |= BIT(i);
 	}
 

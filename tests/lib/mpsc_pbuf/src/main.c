@@ -44,7 +44,7 @@ union test_item {
 	union mpsc_pbuf_generic item;
 };
 
-static uint32_t get_wlen(union mpsc_pbuf_generic *item)
+static uint32_t get_wlen(const union mpsc_pbuf_generic *item)
 {
 	union test_item *t_item = (union test_item *)item;
 
@@ -55,7 +55,7 @@ static uint32_t drop_cnt;
 static uintptr_t exp_dropped_data[10];
 static uint32_t exp_dropped_len[10];
 
-static void drop(struct mpsc_pbuf_buffer *buffer, union mpsc_pbuf_generic *item)
+static void drop(const struct mpsc_pbuf_buffer *buffer, const union mpsc_pbuf_generic *item)
 {
 	struct test_data_var *packet = (struct test_data_var *)item;
 
@@ -891,8 +891,8 @@ static void validate_packet(struct test_data_var *packet)
 	current_rd_idx++;
 }
 
-static void consistent_drop(struct mpsc_pbuf_buffer *buffer,
-			    union mpsc_pbuf_generic *item)
+static void consistent_drop(const struct mpsc_pbuf_buffer *buffer,
+			    const union mpsc_pbuf_generic *item)
 {
 	validate_packet((struct test_data_var *)item);
 }

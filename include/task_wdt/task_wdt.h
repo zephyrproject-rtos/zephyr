@@ -47,6 +47,9 @@ typedef void (*task_wdt_callback_t)(int channel_id, void *user_data);
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If assigning a hardware watchdog is not supported.
+ * @retval -Errno Negative errno if the fallback hw_wdt is used and the
+ *                install timeout API fails.  See wdt_install_timeout()
+ *                API for possible return values.
  */
 int task_wdt_init(const struct device *hw_wdt);
 

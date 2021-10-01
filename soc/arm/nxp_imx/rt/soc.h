@@ -22,7 +22,7 @@ extern "C" {
 
 #if CONFIG_DISK_DRIVER_SDMMC &&					\
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) ||	\
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay))
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay))
 
 typedef void (*usdhc_pin_cfg_cb)(uint16_t nusdhc, bool init,
 	uint32_t speed, uint32_t strength);

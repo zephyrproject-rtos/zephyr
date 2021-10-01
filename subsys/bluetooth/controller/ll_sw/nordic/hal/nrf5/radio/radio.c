@@ -403,6 +403,12 @@ void radio_status_reset(void)
 	NRF_RADIO->EVENTS_READY = 0;
 	NRF_RADIO->EVENTS_END = 0;
 	NRF_RADIO->EVENTS_DISABLED = 0;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
+	NRF_RADIO->EVENTS_RATEBOOST = 0;
+#endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 }
 
 uint32_t radio_is_ready(void)
@@ -687,6 +693,19 @@ void radio_switch_complete_and_disable(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
+uint8_t radio_phy_flags_rx_get(void)
+{
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
+	return (NRF_RADIO->EVENTS_RATEBOOST) ? 0U : 1U;
+#else /* !CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+	return 0;
+#endif /* !CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	return 0;
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+}
+
 void radio_rssi_measure(void)
 {
 	NRF_RADIO->SHORTS |=
@@ -895,6 +914,26 @@ void radio_tmr_start_us(uint8_t trx, uint32_t us)
 	nrf_timer_cc_set(EVENT_TIMER, 0, us);
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	last_pdu_end_us = 0U;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
 uint32_t radio_tmr_start_now(uint8_t trx)

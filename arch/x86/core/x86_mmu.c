@@ -1238,7 +1238,7 @@ void z_x86_mmu_init(void)
 }
 
 #if CONFIG_X86_STACK_PROTECTION
-__boot_func
+__pinned_func
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
 	/* Applied to all page tables as this affects supervisor mode.

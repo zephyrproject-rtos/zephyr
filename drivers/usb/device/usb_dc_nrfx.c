@@ -895,6 +895,12 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 		}
 		break;
 
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
+		}
+		break;
+
 		default: {
 			LOG_ERR("Unexpected event (nrfx_usbd): %d, ep 0x%02x",
 				p_event->data.eptransfer.status,

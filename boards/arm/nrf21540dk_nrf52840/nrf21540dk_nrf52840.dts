@@ -132,7 +132,6 @@
 		sw2 = &button2;
 		sw3 = &button3;
 		bootloader-led0 = &led0;
-		usbd0 = &usbd;
 	};
 };
 
@@ -274,7 +273,7 @@ fem_spi: &spi3 {
 	};
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

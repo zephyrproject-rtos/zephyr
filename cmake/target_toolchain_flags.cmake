@@ -24,12 +24,6 @@ set(TOOLCHAIN_SIGNATURE ${CMAKE_C_COMPILER_MD5_SUM})
 string(MD5 COMPILER_SIGNATURE ${CMAKE_C_COMPILER}_${CMAKE_C_COMPILER_ID}_${CMAKE_C_COMPILER_VERSION})
 set(TOOLCHAIN_SIGNATURE ${TOOLCHAIN_SIGNATURE}_${COMPILER_SIGNATURE})
 
-# Custom targets for compiler and linker flags.
-add_custom_target(asm)
-add_custom_target(compiler)
-add_custom_target(compiler-cpp)
-add_custom_target(linker)
-
 # Loading of templates are strictly not needed as they does not set any
 # properties.
 # They purely provides an overview as well as a starting point for supporting

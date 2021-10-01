@@ -5,12 +5,13 @@
  */
 
 #include <stdint.h>
-
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -26,6 +27,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
+#include "lll_conn.h"
 #include "lll_df.h"
 #include "lll/lll_df_internal.h"
 
@@ -33,6 +35,8 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_conn_types.h"
+#include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
 
@@ -347,75 +351,6 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-/* @brief Function sets CTE transmission parameters for a connection.
- *
- * @param[in]handle                     Connection handle.
- * @param[in]cte_types                  Bitfield holding information about
- *                                      allowed CTE types.
- * @param[in]switch_pattern_len         Number of antenna ids in switch pattern.
- * @param[in]ant_id                     Array of antenna identifiers.
- *
- * @return Status of command completion.
- */
-uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
-				     uint8_t switch_pattern_len,
-				     uint8_t *ant_id)
-{
-	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US ||
-	    cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
-
-		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX ||
-		    !ant_id) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-	}
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-/* @brief Function provides information about Direction Finding
- *        antennas switching and sampling related settings.
- *
- * @param[out]switch_sample_rates       Pointer to store available antennas
- *                                      switch-sampling configurations.
- * @param[out]num_ant                   Pointer to store number of available
- *                                      antennas.
- * @param[out]max_switch_pattern_len    Pointer to store maximum number of
- *                                      antennas ids in switch pattern.
- * @param[out]max_cte_len               Pointer to store maximum length of CTE
- *                                      in [8us] units.
- */
-void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
-			uint8_t *num_ant,
-			uint8_t *max_switch_pattern_len,
-			uint8_t *max_cte_len)
-{
-	*switch_sample_rates = 0;
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
-		*switch_sample_rates |= DF_AOD_1US_TX;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
-		*switch_sample_rates |= DF_AOD_1US_RX;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
-		*switch_sample_rates |= DF_AOA_1US;
-	}
-
-	*max_switch_pattern_len = BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
-	*num_ant = lll_df_ant_num_get();
-	*max_cte_len = LLL_DF_MAX_CTE_LEN;
-}
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 /* @brief Function sets IQ sampling enabled or disabled.
@@ -787,10 +722,8 @@ static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cf
 	cte_info.type = df_cfg->cte_type;
 	cte_info.time = df_cfg->cte_length;
 
-	/* Note: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	/* Note: ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS is just information that extra_data
 	 * is required in case of this ull_adv_sync_pdu_alloc.
-	 * Other flags here do not change anything. It may be changed to use
-	 * true/false flag for extra_data allocation.
 	 */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS, &pdu_prev, &pdu,
 				     NULL, &extra_data, ter_idx);
@@ -867,17 +800,17 @@ static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
  * advertising chain. If particular PDU is empty (holds cte_info only) it will be removed from
  * chain.
  *
- * @param lll_sync Pointer to periodic advertising sync object.
- * @param pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new PDU
- *                 payload.
- * @param pdu      Pointer to a new head of periodic advertising chain. The pointer may have
- *                 the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev was
- *                 already updated.
+ * @param[in] lll_sync     Pointer to periodic advertising sync object.
+ * @param[in-out] pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new
+ *                         PDU payload. Points to last PDU in a previous chain after return.
+ * @param[in-out] pdu      Pointer to a new head of periodic advertising chain. The pointer may have
+ *                         the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
+ *                         was already updated. Points to last PDU in a new chain after return.
  *
  * @return Zero in case of success, other value in case of failure.
  */
 static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
-					       struct pdu_adv *pdu_prev, struct pdu_adv *pdu)
+					       struct pdu_adv **pdu_prev, struct pdu_adv **pdu)
 {
 	struct pdu_adv *pdu_new, *pdu_chained;
 	uint8_t pdu_rem_field_flags;
@@ -891,12 +824,12 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 	 * new chain then. Reuse already allocated PDUs and allocate new ones only if the chain
 	 * was not updated yet.
 	 */
-	new_chain = (pdu_prev == pdu ? false : true);
+	new_chain = (*pdu_prev == *pdu ? false : true);
 
 	/* Get next PDU in a chain. Alway use pdu_prev because it points to actual
 	 * former chain.
 	 */
-	pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+	pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
 
 	/* Go through existing chain and remove CTE info. */
 	while (pdu_chained) {
@@ -909,10 +842,10 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 			 * is changed in rigth place by use of pdu_prev. That makes sure there
 			 * is no PDU released twice (here and when LLL swaps PDU buffers).
 			 */
-			lll_adv_pdu_linked_append(NULL, pdu_prev);
+			lll_adv_pdu_linked_append(NULL, *pdu_prev);
 		} else {
 			/* Update one before pdu_chained */
-			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
+			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
 							 pdu_rem_field_flags, NULL);
 			if (err != BT_HCI_ERR_SUCCESS) {
 				/* TODO: return here leaves periodic advertising chain in
@@ -926,17 +859,17 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 			 */
 			if (new_chain) {
 				pdu_new = lll_adv_pdu_alloc_pdu_adv();
-				lll_adv_pdu_linked_append(pdu_new, pdu);
-				pdu = pdu_new;
+				lll_adv_pdu_linked_append(pdu_new, *pdu);
+				*pdu = pdu_new;
 			} else {
-				pdu = lll_adv_pdu_linked_next_get(pdu);
+				*pdu = lll_adv_pdu_linked_next_get(*pdu);
 			}
 
 			/* Move to next chained PDU (it moves through chain that is in use
 			 * by LLL or is new one with updated advertising payload).
 			 */
-			pdu_prev = pdu_chained;
-			pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+			*pdu_prev = pdu_chained;
+			pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
 		}
 	}
 
@@ -966,10 +899,8 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 
 	lll_sync = adv->lll.sync;
 
-	/* NOTE: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	/* NOTE: ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER is just information that extra_data
 	 * should be removed in case of this call ull_adv_sync_pdu_alloc.
-	 * Other flags here do not change anything. It may be changed to use
-	 * true/false flag for extra_data allocation.
 	 */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, ter_idx);
@@ -987,7 +918,7 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
 
 #if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-	err = rem_cte_info_from_per_adv_chain(lll_sync, pdu_prev, pdu);
+	err = rem_cte_info_from_per_adv_chain(lll_sync, &pdu_prev, &pdu);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		return err;
 	}
@@ -1009,3 +940,206 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+#if defined CONFIG_BT_CTLR_DF_CONN_CTE_RSP
+/* @brief Function sets CTE transmission parameters for a connection.
+ *
+ * @param handle             Connection handle.
+ * @param cte_types          Bitfield holding information about
+ *                           allowed CTE types.
+ * @param switch_pattern_len Number of antenna ids in switch pattern.
+ * @param ant_id             Array of antenna identifiers.
+ *
+ * @return Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t switch_pattern_len,
+				     uint8_t *ant_id)
+{
+	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US || cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
+		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !ant_id) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+	}
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/* @brief Function sets CTE reception parameters for a connection.
+ *
+ * @param handle             Connection handle.
+ * @param sampling_enable    Enable or disable CTE RX. When the parameter is set to false,
+ *                           @p slot_durations, @p switch_pattern_len and @ant_ids are ignored.
+ * @param slot_durations     Switching and samplig slot durations for AoA mode.
+ * @param switch_pattern_len Number of antenna ids in switch pattern.
+ * @param ant_ids            Array of antenna identifiers.
+ *
+ * @return HCI status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
+				     uint8_t slot_durations, uint8_t switch_pattern_len,
+				     const uint8_t *ant_ids)
+{
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	df_rx_params = &conn->lll.df_rx_params;
+
+	if (!sampling_enable) {
+		df_rx_params->state = DF_CTE_SAMPLING_DISABLED;
+	} else {
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
+			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+			      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+			    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+		}
+
+
+		df_rx_params->state = DF_CTE_SAMPLING_ENABLED;
+		df_rx_params->slot_durations = slot_durations;
+		memcpy(df_rx_params->ant_ids, ant_ids, switch_pattern_len);
+		df_rx_params->ant_sw_len = switch_pattern_len;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+/* @brief Function enables or disables CTE request control procedure for a connection.
+ *
+ * The procedure may be enabled in two modes:
+ * - single-shot, it is autmatically disabled when the occurrence finishes.
+ * - periodic, it is executed periodically until disabled, connection is lost or PHY is changed
+ *   to the one that does not support CTE.
+ *
+ * @param handle               Connection handle.
+ * @param enable               Enable or disable CTE request. When the parameter is set to false
+ *                             @p cte_request_interval, @requested_cte_length and
+ *                             @p requested_cte_type are ignored.
+ * @param cte_request_interval Value zero enables single-shot mode. Other values enable periodic
+ *                             mode. In periodic mode, the value is a number of connection envets
+ *                             the procedure is executed. The value may not be lower than
+ *                             connection peer latency.
+ * @param requested_cte_length Minimum value of CTE length requested from peer.
+ * @param requested_cte_type   Type of CTE requested from peer.
+ *
+ * @return HCI Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
+				      uint8_t requested_cte_length, uint8_t requested_cte_type)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!enable) {
+		/* There is no parameter validation for disable operation. */
+
+		/* TODO: Add missing implementation of disable CTE reques.
+		 * Requires refactored LLCPs.
+		 */
+	} else {
+		if (conn->df_rx_params.state == DF_CTE_SAMPLING_UNINITIALIZED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		/* TODO: check if CTE_REQ LLCP is active. Add when merged with refactored LLCPs */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
+		 * case the mandatory PHY1M is used (that supports CTE).
+		 */
+		if (conn->lll.phy_tx == PHY_CODED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
+		    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		/* If controller is aware of features supported by peer device then check
+		 * whether required features are enabled.
+		 */
+		if (conn->common.fex_valid &&
+		    (!(conn->llcp_feature.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
+		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
+		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
+		      !(conn->llcp_feature.features_peer &
+			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
+			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		}
+	}
+
+	/* TODO: implement disable of the CTE if PHY is changed to coded */
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+/* @brief Function provides information about Direction Finding
+ *        antennas switching and sampling related settings.
+ *
+ * @param[out]switch_sample_rates       Pointer to store available antennas
+ *                                      switch-sampling configurations.
+ * @param[out]num_ant                   Pointer to store number of available
+ *                                      antennas.
+ * @param[out]max_switch_pattern_len    Pointer to store maximum number of
+ *                                      antennas ids in switch pattern.
+ * @param[out]max_cte_len               Pointer to store maximum length of CTE
+ *                                      in [8us] units.
+ */
+void ll_df_read_ant_inf(uint8_t *switch_sample_rates, uint8_t *num_ant,
+			uint8_t *max_switch_pattern_len, uint8_t *max_cte_len)
+{
+	*switch_sample_rates = 0;
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_TX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_RX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOA_1US;
+	}
+
+	*max_switch_pattern_len = BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
+	*num_ant = lll_df_ant_num_get();
+	*max_cte_len = LLL_DF_MAX_CTE_LEN;
+}

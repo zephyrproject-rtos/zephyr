@@ -28,10 +28,7 @@ if USB_DEVICE_STACK
 
 # Enable UART driver, needed for CDC ACM
 config SERIAL
-	default USB_CDC_ACM
-
-config UART_INTERRUPT_DRIVEN
-	default USB_CDC_ACM
+	default y
 
 endif # USB_DEVICE_STACK
 

@@ -14,6 +14,8 @@
 #include <soc_common.h>
 #include <devicetree.h>
 
+#if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM)
+
 /* PINMUX IO Hardware Functions */
 #define SIFIVE_PINMUX_IOF0            0x00
 #define SIFIVE_PINMUX_IOF1            0x01
@@ -24,10 +26,6 @@
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10008000
 
-/* Timer configuration */
-#define RISCV_MTIME_BASE             0x0200BFF8
-#define RISCV_MTIMECMP_BASE          0x02004000
-
 /* Always ON Domain */
 #define SIFIVE_PMUIE		     0x10000140
 #define SIFIVE_PMUCAUSE		     0x10000144
@@ -36,6 +34,17 @@
 #define SIFIVE_SLEEP_KEY_VAL	     0x0051F15E
 
 #define SIFIVE_BACKUP_REG_BASE	     0x10000080
+
+#elif defined(CONFIG_SOC_RISCV_SIFIVE_FU540) || defined(CONFIG_SOC_RISCV_SIFIVE_FU740)
+
+/* Clock controller. */
+#define PRCI_BASE_ADDR               0x10000000
+
+#endif
+
+/* Timer configuration */
+#define RISCV_MTIME_BASE             0x0200BFF8
+#define RISCV_MTIMECMP_BASE          0x02004000
 
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE               CONFIG_SRAM_BASE_ADDRESS

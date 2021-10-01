@@ -53,7 +53,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
- __data_ram_end = .;
+__data_region_end = .;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

@@ -108,11 +108,11 @@ extern const void *x86_irq_args[];
 			"irq connect dynamic failed");
 
 	/*
-	 * The reason we need to hard code the the trigger vector here
+	 * The reason we need to hard code the trigger vector here
 	 * is that the x86 only support immediate number for INT
 	 * instruction. So trigger an interrupt of x86 under gcov code
 	 * coverage report enabled, which means GCC optimization will
-	 * be -O0. In this case, an build error happends and shows:
+	 * be -O0. In this case, an build error happens and shows:
 	 * "error: 'asm' operand 0 probably does not match constraints"
 	 * and "error: impossible constraint in 'asm'"
 	 *

@@ -253,6 +253,10 @@ i2s1: &flexcomm3 {
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &dma0 {
 	/*
 	 * The total number of dma channels available is defined by
@@ -291,5 +295,40 @@ i2s1: &flexcomm3 {
 };
 
 &sc_timer {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
+	no-1-8-v;
+	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
 	status = "okay";
 };

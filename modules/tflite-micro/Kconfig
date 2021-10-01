@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_TFLITE-MICRO_MODULE
+	bool
+
+config TENSORFLOW_LITE_MICRO
+	bool "TensorFlow Lite Micro Support"
+	help
+	  This option enables the TensorFlow Lite Micro library.

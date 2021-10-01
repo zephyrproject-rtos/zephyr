@@ -19,8 +19,7 @@ config ARCV2_INTERRUPT_UNIT
 config PLIC
 	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on SOC_FAMILY_RISCV_PRIVILEGE
-	select RISCV_HAS_PLIC
+	depends on RISCV_HAS_PLIC
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
 	help

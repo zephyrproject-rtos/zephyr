@@ -171,4 +171,9 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
+
+	zephyr_udc0: udc0 {
+		compatible = "zephyr,native-posix-udc";
+		label = "USBD";
+	};
 };

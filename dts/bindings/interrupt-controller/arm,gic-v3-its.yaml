@@ -1,0 +1,15 @@
+# Copyright (c) 2021 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: GIC v3 Interrupt Translation Service
+
+compatible: "arm,gic-v3-its"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

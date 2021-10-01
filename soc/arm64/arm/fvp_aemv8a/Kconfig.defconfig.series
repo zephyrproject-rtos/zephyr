@@ -10,7 +10,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
 
 config NUM_IRQS
-	default 128
+	default 16384 if GIC_V3_ITS
+	default 128 if !GIC_V3_ITS
 
 if SOC_FVP_BASE_REVC_2XAEMV8A
 

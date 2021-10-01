@@ -27,9 +27,12 @@ LOG_MODULE_REGISTER(test);
 #undef RING_BUFFER_MAX_SIZE
 #define RING_BUFFER_MAX_SIZE 0x00000200
 
+/* Use global variable that can be modified by the test. */
+uint32_t test_rewind_threshold = RING_BUFFER_MAX_SIZE;
+
 uint32_t ring_buf_get_rewind_threshold(void)
 {
-	return RING_BUFFER_MAX_SIZE;
+	return test_rewind_threshold;
 }
 
 /**
@@ -50,6 +53,12 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define DATA_MAX_SIZE 3
 #define POW 2
 extern void test_ringbuffer_concurrent(void);
+extern void test_ringbuffer_shpsc(void);
+extern void test_ringbuffer_spshc(void);
+extern void test_ringbuffer_cpy_shpsc(void);
+extern void test_ringbuffer_cpy_spshc(void);
+extern void test_ringbuffer_item_shpsc(void);
+extern void test_ringbuffer_item_spshc(void);
 /**
  * @brief Test APIs of ring buffer
  *
@@ -1048,7 +1057,13 @@ void test_main(void)
 		       ztest_unit_test(test_peek),
 		       ztest_unit_test(test_reset),
 		       ztest_unit_test(test_ringbuffer_performance),
-		       ztest_unit_test(test_ringbuffer_concurrent)
+		       ztest_unit_test(test_ringbuffer_concurrent),
+		       ztest_unit_test(test_ringbuffer_shpsc),
+		       ztest_unit_test(test_ringbuffer_spshc),
+		       ztest_unit_test(test_ringbuffer_cpy_shpsc),
+		       ztest_unit_test(test_ringbuffer_cpy_spshc),
+		       ztest_unit_test(test_ringbuffer_item_shpsc),
+		       ztest_unit_test(test_ringbuffer_item_spshc)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }

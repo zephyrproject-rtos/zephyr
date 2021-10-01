@@ -29,8 +29,6 @@
 #define GPIO_CLK_PIN	19
 #define GPIO_NAME	"GPIO_"
 
-#define GPIO_DRV_NAME	DT_LABEL(DT_ALIAS(gpio_0))
-
 #define APA102C_START_FRAME	0x00000000
 #define APA102C_END_FRAME	0xFFFFFFFF
 
@@ -72,9 +70,9 @@ void main(void)
 	int idx = 0;
 	int leds = 0;
 
-	gpio_dev = device_get_binding(GPIO_DRV_NAME);
-	if (!gpio_dev) {
-		printk("Cannot find %s!\n", GPIO_DRV_NAME);
+	gpio_dev = DEVICE_DT_GET(DT_ALIAS(gpio_0));
+	if (!device_is_ready(gpio_dev)) {
+		printk("GPIO device %s is not ready!\n", gpio_dev->name);
 		return;
 	}
 

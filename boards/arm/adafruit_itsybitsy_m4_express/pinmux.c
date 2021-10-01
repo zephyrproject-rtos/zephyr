@@ -10,15 +10,17 @@
 
 static int board_pinmux_init(const struct device *dev)
 {
-	__unused const struct device *muxa = DEVICE_DT_GET(DT_NODELABEL(pinmux_a));
-	__unused const struct device *muxb = DEVICE_DT_GET(DT_NODELABEL(pinmux_b));
-
-	__ASSERT_NO_MSG(device_is_ready(muxa));
-	__ASSERT_NO_MSG(device_is_ready(muxb));
+	const struct device *muxa = DEVICE_DT_GET(DT_NODELABEL(pinmux_a));
+	const struct device *muxb = DEVICE_DT_GET(DT_NODELABEL(pinmux_b));
 
 	ARG_UNUSED(dev);
-	ARG_UNUSED(muxa);
-	ARG_UNUSED(muxb);
+
+	if (!device_is_ready(muxa)) {
+		return -ENXIO;
+	}
+	if (!device_is_ready(muxb)) {
+		return -ENXIO;
+	}
 
 #if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi) && defined(CONFIG_SPI_SAM0)
 	/* SPI SERCOM1 on MISO=PB23/pad 3, MOSI=PA0/pad 0, SCK=PA1/pad 1 */
@@ -62,4 +64,4 @@ static int board_pinmux_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(board_pinmux_init, PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(board_pinmux_init, PRE_KERNEL_2, CONFIG_PINMUX_INIT_PRIORITY);

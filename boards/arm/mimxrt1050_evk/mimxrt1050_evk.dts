@@ -17,7 +17,6 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
-		usbd0 = &usb1;
 	};
 
 	chosen {
@@ -153,7 +152,7 @@ arduino_serial: &lpuart3 {};
 	};
 };
 
-&usb1 {
+zephyr_udc0: &usb1 {
 	status = "okay";
 };
 

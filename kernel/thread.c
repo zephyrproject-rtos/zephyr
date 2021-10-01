@@ -44,7 +44,7 @@ static struct k_spinlock z_thread_monitor_lock;
 #endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
-	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
+	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
 
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
@@ -582,7 +582,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif
 #ifdef CONFIG_SCHED_CPU_MASK
-	new_thread->base.cpu_mask = -1;
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
+	} else {
+		new_thread->base.cpu_mask = -1; /* allow all cpus */
+	}
 #endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
@@ -711,7 +715,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 static void grant_static_access(void)
 {
-	Z_STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
+	STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
 		for (int i = 0; pos->objects[i] != NULL; i++) {
 			k_object_access_grant(pos->objects[i],
 					      pos->thread);
@@ -1050,7 +1054,7 @@ void z_thread_mark_switched_out(void)
 	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
 #else
 	now = k_cycle_get_32();
-	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
+	diff = (uint64_t)(now - thread->rt_stats.last_switched_in);
 	thread->rt_stats.last_switched_in = 0;
 #endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
 

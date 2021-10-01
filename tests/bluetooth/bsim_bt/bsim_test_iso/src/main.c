@@ -14,6 +14,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/iso.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -116,7 +117,7 @@ static void test_iso_main(void)
 	uint8_t packing = 0;
 	uint8_t framing = 0;
 	uint8_t encryption = 0;
-	uint8_t bcode[16] = { 0 };
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
 
 	/* Assume that index == handle */
 	adv_handle = bt_le_ext_adv_get_index(adv);
@@ -344,7 +345,7 @@ static void test_iso_recv_main(void)
 	uint8_t big_handle = 0;
 	uint8_t mse = 0;
 	uint8_t encryption = 0;
-	uint8_t bcode[16] = { 0 };
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
 	uint16_t sync_timeout = 0;
 	struct node_rx_hdr *node_rx;
 

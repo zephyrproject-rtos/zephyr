@@ -6,18 +6,6 @@
 
 # Setting shared by different subsystems
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CONSOLE := zephyr,console
-
-config UART_CONSOLE_ON_DEV_NAME
-	string "Device Name of UART Device for UART Console"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_CONSOLE))" if HAS_DTS
-	default "UART_0"
-	depends on (UART_CONSOLE || CONSOLE_SUBSYS)
-	help
-	  This option specifies the name of UART device to be used for
-	  UART console.
-
 menuconfig CONSOLE
 	bool "Console drivers"
 
@@ -49,8 +37,7 @@ config UART_CONSOLE
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
-	  Enable this option to use one UART for console. Make sure
-	  CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
+	  Enable this option to use one UART for console.
 
 config UART_CONSOLE_INIT_PRIORITY
 	int "Init priority"
@@ -246,17 +233,6 @@ config UART_MCUMGR
 
 if UART_MCUMGR
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
-
-config UART_MCUMGR_ON_DEV_NAME
-	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_MCUMGR))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used
-	  for mcumgr UART.
-
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
 	default 128
@@ -323,7 +299,7 @@ config XTENSA_CONSOLE_INIT_PRIORITY
 
 config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default 99
 	depends on NATIVE_POSIX_CONSOLE
 	help
 	  Device driver initialization priority.

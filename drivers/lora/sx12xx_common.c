@@ -8,7 +8,7 @@
 #include <drivers/gpio.h>
 #include <drivers/lora.h>
 #include <logging/log.h>
-#include <sys/atomic_builtin.h>
+#include <sys/atomic.h>
 #include <zephyr.h>
 
 /* LoRaMac-node specific includes */
@@ -32,6 +32,7 @@ struct sx12xx_rx_params {
 static struct sx12xx_data {
 	struct k_poll_signal *operation_done;
 	RadioEvents_t events;
+	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
@@ -142,16 +143,72 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 
 static void sx12xx_ev_tx_done(void)
 {
-	modem_release(&dev_data);
+	struct k_poll_signal *sig = dev_data.operation_done;
+
+	if (modem_release(&dev_data)) {
+		/* Raise signal if provided */
+		if (sig) {
+			k_poll_signal_raise(sig, 0);
+		}
+	}
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
-	/* Ensure available, decremented by sx12xx_ev_tx_done */
+	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
+	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
+		K_POLL_TYPE_SIGNAL,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&done);
+	uint32_t air_time;
+	int ret;
+
+	/* Validate that we have a TX configuration */
+	if (!dev_data.tx_cfg.frequency) {
+		return -EINVAL;
+	}
+
+	ret = sx12xx_lora_send_async(dev, data, data_len, &done);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Calculate expected airtime of the packet */
+	air_time = Radio.TimeOnAir(MODEM_LORA,
+				   dev_data.tx_cfg.bandwidth,
+				   dev_data.tx_cfg.datarate,
+				   dev_data.tx_cfg.coding_rate,
+				   dev_data.tx_cfg.preamble_len,
+				   0, data_len, true);
+	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
+
+	/* Wait for the packet to finish transmitting.
+	 * Use twice the tx duration to ensure that we are actually detecting
+	 * a failed transmission, and not some minor timing variation between
+	 * modem and driver.
+	 */
+	ret = k_poll(&evt, 1, K_MSEC(2 * air_time));
+	if (ret < 0) {
+		LOG_ERR("Packet transmission failed!");
+		if (!modem_release(&dev_data)) {
+			/* TX done interrupt is currently running */
+			k_poll(&evt, 1, K_FOREVER);
+		}
+	}
+	return 0;
+}
+
+int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
+			   uint32_t data_len, struct k_poll_signal *async)
+{
+	/* Ensure available, freed by sx12xx_ev_tx_done */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
 	}
+
+	/* Store signal */
+	dev_data.operation_done = async;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
@@ -216,6 +273,9 @@ int sx12xx_lora_config(const struct device *dev,
 	Radio.SetChannel(config->frequency);
 
 	if (config->tx) {
+		/* Store TX config locally for airtime calculations */
+		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
+		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  config->bandwidth, config->datarate,
 				  config->coding_rate, config->preamble_len,

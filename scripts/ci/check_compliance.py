@@ -268,36 +268,6 @@ class KconfigCheck(ComplianceTest):
                 ))
             fp_module_file.write(content)
 
-    def write_kconfig_soc(self):
-        """
-        Write KConfig soc files to be sourced during Kconfig parsing
-
-        """
-
-        soc_defconfig_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc.defconfig")
-        soc_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc")
-        soc_arch_file = os.path.join(tempfile.gettempdir(), "Kconfig.soc.arch")
-        shield_defconfig_file = os.path.join(tempfile.gettempdir(), "Kconfig.shield.defconfig")
-        shield_file = os.path.join(tempfile.gettempdir(), "Kconfig.shield")
-        try:
-            with open(soc_defconfig_file, 'w', encoding="utf-8") as fp:
-                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig"\n')
-
-            with open(soc_file, 'w', encoding="utf-8") as fp:
-                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc"\n')
-
-            with open(soc_arch_file, 'w', encoding="utf-8") as fp:
-                fp.write(f'osource "{ZEPHYR_BASE}/soc/$(ARCH)/Kconfig"\n\
-osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig"\n')
-
-            with open(shield_defconfig_file, 'w', encoding="utf-8") as fp:
-                fp.write(f'osource "{ZEPHYR_BASE}/boards/shields/*/Kconfig.defconfig"\n')
-
-            with open(shield_file, 'w', encoding="utf-8") as fp:
-                fp.write(f'osource "{ZEPHYR_BASE}/boards/shields/*/Kconfig.shield"\n')
-        except IOError as ex:
-            self.error(ex.output)
-
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -328,6 +298,7 @@ osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig"\n')
         os.environ["ARCH"] = "*"
         os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
+        os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
@@ -335,9 +306,6 @@ osource "{ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig"\n')
 
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
-
-        # For list of SOC_ROOT support
-        self.write_kconfig_soc()
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
@@ -522,6 +490,9 @@ def get_defined_syms(kconf):
 UNDEF_KCONFIG_WHITELIST = {
     "ALSO_MISSING",
     "APP_LINK_WITH_",
+    "ARMCLANG_STD_LIBC",  # The ARMCLANG_STD_LIBC is defined in the toolchain
+                          # Kconfig which is sourced based on Zephyr toolchain
+			  # variant and therefore not visible to compliance.
     "CDC_ACM_PORT_NAME_",
     "CLOCK_STM32_SYSCLK_SRC_",
     "CMU",
@@ -568,6 +539,10 @@ UNDEF_KCONFIG_WHITELIST = {
     "USB_CONSOLE",
     "USE_STDC_",
     "WHATEVER",
+    "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
+    "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
 }
 
 class KconfigBasicCheck(KconfigCheck, ComplianceTest):

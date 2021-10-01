@@ -22,14 +22,14 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
 			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cadence,tensilica-xtensa-lx6";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
@@ -149,7 +149,7 @@
 			interrupts = <I2C_EXT0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "I2C_0";
-			clocks = <&rtc ESP32_I2C_EXT0_MODULE>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
 			status = "disabled";
 		};
 
@@ -161,7 +161,7 @@
 			interrupts = <I2C_EXT1_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "I2C_1";
-			clocks = <&rtc ESP32_I2C_EXT1_MODULE>;
+			clocks = <&rtc ESP32_I2C1_MODULE>;
 			status = "disabled";
 		};
 
@@ -197,7 +197,7 @@
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "SPI_2";
-			clocks = <&rtc ESP32_SPI2_MODULE>;
+			clocks = <&rtc ESP32_HSPI_MODULE>;
 			status = "disabled";
 		};
 
@@ -207,7 +207,7 @@
 			interrupts = <SPI3_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			label = "SPI_3";
-			clocks = <&rtc ESP32_SPI3_MODULE>;
+			clocks = <&rtc ESP32_VSPI_MODULE>;
 			status = "disabled";
 		};
 

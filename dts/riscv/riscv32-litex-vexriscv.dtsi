@@ -20,7 +20,7 @@
 		#size-cells = <0>;
 		cpu@0 {
 			clock-frequency = <100000000>;
-			compatible = "spinalhdl,vexriscv", "riscv";
+			compatible = "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32imac";
@@ -35,7 +35,7 @@
 		ranges;
 		intc0: interrupt-controller@bc0 {
 			#interrupt-cells = <2>;
-			compatible = "vexriscv,intc0";
+			compatible = "vexriscv-intc0";
 			interrupt-controller;
 			reg = <0xbc0 0x4 0xfc0 0x4>;
 			reg-names = "irq_mask", "irq_pending";

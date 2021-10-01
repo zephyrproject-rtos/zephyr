@@ -22,6 +22,21 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <20>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <100>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_4 {
@@ -65,6 +80,11 @@
 	apb1-prescaler = <1>;
 };
 
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;
@@ -90,7 +110,16 @@
 	pwm3: pwm {
 		status = "okay";
 		st,prescaler = <10000>;
-		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-0 = <&tim3_ch1_pb4>;
+	};
+};
+
+&timers15 {
+	status = "okay";
+	pwm15: pwm {
+		status = "okay";
+		st,prescaler = <10000>;
+		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };
 
@@ -113,8 +142,8 @@
 };
 
 &spi2 {
-	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
-		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-0 = <&spi2_nss_pd0 &spi2_sck_pd1
+		     &spi2_miso_pd3 &spi2_mosi_pd4>;
 	status = "okay";
 };
 
@@ -153,4 +182,12 @@
 			reg = <0x00070000 0x00010000>;
 		};
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&lptim1 {
+	status = "okay";
 };

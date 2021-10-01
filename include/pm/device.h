@@ -43,29 +43,27 @@ enum pm_device_state {
 	 */
 	PM_DEVICE_STATE_SUSPENDED,
 	/**
-	 * Device is suspended (forced).
-	 *
-	 * @note
-	 *     Device context may be lost.
-	 */
-	PM_DEVICE_STATE_FORCE_SUSPEND,
-	/**
 	 * Device is turned off (power removed).
 	 *
 	 * @note
 	 *     Device context is lost.
 	 */
-	PM_DEVICE_STATE_OFF,
-	/** Device is being resumed. */
-	PM_DEVICE_STATE_RESUMING,
-	/** Device is being suspended. */
-	PM_DEVICE_STATE_SUSPENDING,
+	PM_DEVICE_STATE_OFF
 };
 
 /** @brief Device PM flags. */
 enum pm_device_flag {
 	/** Indicate if the device is busy or not. */
 	PM_DEVICE_FLAG_BUSY,
+	/**
+	 * Indicates whether or not the device is capable of waking the system
+	 * up.
+	 */
+	PM_DEVICE_FLAGS_WS_CAPABLE,
+	/** Indicates if the device is being used as wakeup source. */
+	PM_DEVICE_FLAGS_WS_ENABLED,
+	/** Indicates that the device is changing its state */
+	PM_DEVICE_FLAG_TRANSITIONING,
 	/** Number of flags (internal use only). */
 	PM_DEVICE_FLAG_COUNT
 };
@@ -96,7 +94,7 @@ struct pm_device {
 	/** Device pm enable flag */
 	bool enable : 1;
 	/* Device PM status flags. */
-	ATOMIC_DEFINE(flags, PM_DEVICE_FLAG_COUNT);
+	atomic_t flags;
 	/** Device usage count */
 	uint32_t usage;
 	/** Device power state */
@@ -106,6 +104,27 @@ struct pm_device {
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
 };
+
+/**
+ * @brief Utility macro to initialize #pm_device.
+ *
+ * @note DT_PROP_OR is used to retrieve the wakeup_source property because
+ * it may not be defined on all devices.
+ *
+ * @param obj Name of the #pm_device structure being initialized.
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ */
+#define Z_PM_DEVICE_INIT(obj, node_id)					\
+	{								\
+		.usage = 0U,						\
+		.lock = Z_MUTEX_INITIALIZER(obj.lock),			\
+		.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),		\
+		.state = PM_DEVICE_STATE_ACTIVE,			\
+		.flags = ATOMIC_INIT(COND_CODE_1(			\
+				DT_NODE_EXISTS(node_id),		\
+				(DT_PROP_OR(node_id, wakeup_source, 0)),\
+				(0)) << PM_DEVICE_FLAGS_WS_CAPABLE),	\
+	}
 
 /**
  * @brief Device power management control function callback.
@@ -140,8 +159,10 @@ const char *pm_device_state_str(enum pm_device_state state);
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If requested state is not supported.
- * @retval -EALREADY If device is already at (or transitioning to) the requested
- *         state.
+ * @retval -EALREADY If device is already at the requested state.
+ * @retval -EBUSY If device is changing its state.
+
+ * @retval Errno Other negative errno on failure.
  */
 int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state);
@@ -230,6 +251,42 @@ __deprecated static inline int device_busy_check(const struct device *dev)
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
+
+/**
+ * @brief Enable a power management wakeup source
+ *
+ * Enable a wakeup source. This will keep the current device active when the
+ * system is suspended, allowing it to be used to wake up the system.
+ *
+ * @param dev device object to enable.
+ * @param enable @c true to enable or @c false to disable
+ *
+ * @retval true if the wakeup source was successfully enabled.
+ * @retval false if the wakeup source was not successfully enabled.
+ */
+bool pm_device_wakeup_enable(struct device *dev, bool enable);
+
+/**
+ * @brief Check if a power management wakeup source is enabled
+ *
+ * Checks if a wake up source is enabled.
+ *
+ * @param dev device object to check.
+ *
+ * @retval true if the wakeup source is enabled.
+ * @retval false if the wakeup source is not enabled.
+ */
+bool pm_device_wakeup_is_enabled(const struct device *dev);
+
+/**
+ * @brief Check if a device is wake up capable
+ *
+ * @param dev device object to check.
+ *
+ * @retval true if the device is wake up capable.
+ * @retval false if the device is not wake up capable.
+ */
+bool pm_device_wakeup_is_capable(const struct device *dev);
 
 /** @} */
 

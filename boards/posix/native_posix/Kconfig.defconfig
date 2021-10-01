@@ -81,4 +81,14 @@ config EEPROM_SIMULATOR
 	default y
 	depends on EEPROM
 
+if I2C
+
+config EMUL
+	default y
+
+config I2C_EMUL
+	default y
+
+endif # I2C
+
 endif # BOARD_NATIVE_POSIX

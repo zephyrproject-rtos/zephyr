@@ -6,7 +6,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 		out-gpios = <&arduino_header 6 0>; /* Arduino D0 */
 		in-gpios = <&arduino_header 7 0>;  /* Arduino D1 */
 	};

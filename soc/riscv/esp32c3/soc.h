@@ -12,6 +12,7 @@
 #include <rom/spi_flash.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <esp_clk.h>
 #endif
 
 #include <arch/riscv/arch.h>
@@ -40,8 +41,6 @@ extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
 extern STATUS esp_rom_uart_tx_one_char(uint8_t chr);
 extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
 extern void esp_rom_ets_set_user_start(uint32_t start);
-
-ulong_t __soc_get_gp_initial_value(void);
 
 #endif /* _ASMLANGUAGE */
 

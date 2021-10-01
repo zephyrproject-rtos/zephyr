@@ -147,7 +147,7 @@ A subsystem API definition typically looks like this:
         struct subsystem_api *api;
 
         api = (struct subsystem_api *)dev->api;
-        api->do_that(dev, foo, bar);
+        api->do_that(dev, baz);
   }
 
 A driver implementing a particular subsystem will define the real implementation
@@ -474,7 +474,7 @@ is made within the init function:
    {
       ...
       /* Write some data to the MMIO region */
-      sys_write32(DEVICE_MMIO_GET(dev), 0xDEADBEEF);
+      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev));
       ...
    }
 
@@ -499,14 +499,14 @@ For example:
 
    struct my_driver_config {
       ...
-    	DEVICE_MMIO_NAMED_ROM(courge);
+    	DEVICE_MMIO_NAMED_ROM(corge);
    	DEVICE_MMIO_NAMED_ROM(grault);
       ...
    }
 
    struct my_driver_dev_data {
   	   ...
-   	DEVICE_MMIO_NAMED_RAM(courge);
+   	DEVICE_MMIO_NAMED_RAM(corge);
    	DEVICE_MMIO_NAMED_RAM(grault);
    	...
    }
@@ -519,7 +519,7 @@ For example:
 
    const static struct my_driver_config my_driver_config_0 = {
       ...
-      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(corge, DT_DRV_INST(...)),
       DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...)),
       ...
    }
@@ -527,7 +527,7 @@ For example:
    int my_driver_init(const struct device *dev)
    {
       ...
-      DEVICE_MMIO_NAMED_MAP(dev, courge, K_MEM_CACHE_NONE);
+      DEVICE_MMIO_NAMED_MAP(dev, corge, K_MEM_CACHE_NONE);
       DEVICE_MMIO_NAMED_MAP(dev, grault, K_MEM_CACHE_NONE);
       ...
    }
@@ -536,8 +536,8 @@ For example:
    {
       ...
       /* Write some data to the MMIO regions */
-      sys_write32(DEVICE_MMIO_GET(dev, grault), 0xDEADBEEF);
-      sys_write32(DEVICE_MMIO_GET(dev, courge), 0xF0CCAC1A);
+      sys_write32(0xDEADBEEF, DEVICE_MMIO_GET(dev, grault));
+      sys_write32(0xF0CCAC1A, DEVICE_MMIO_GET(dev, corge));
       ...
    }
 

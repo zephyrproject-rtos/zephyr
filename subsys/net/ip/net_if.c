@@ -90,7 +90,7 @@ static struct {
  */
 static sys_slist_t link_callbacks;
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 /* Multicast join/leave tracking.
  */
 static sys_slist_t mcast_monitor_callbacks;
@@ -371,7 +371,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 void net_if_stats_reset(struct net_if *iface)
 {
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		if (iface == tmp) {
 			memset(&iface->stats, 0, sizeof(iface->stats));
 			return;
@@ -387,7 +387,7 @@ void net_if_stats_reset_all(void)
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		memset(&iface->stats, 0, sizeof(iface->stats));
 	}
 
@@ -524,7 +524,7 @@ int net_if_set_link_addr_locked(struct net_if *iface,
 
 struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (!memcmp(net_if_get_link_addr(iface)->addr, ll_addr->addr,
 			    ll_addr->len)) {
 			return iface;
@@ -536,7 +536,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 
 struct net_if *net_if_lookup_by_dev(const struct device *dev)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_get_device(iface) == dev) {
 			return iface;
 		}
@@ -583,7 +583,7 @@ struct net_if *net_if_get_default(void)
 
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 		    !l2 && net_if_offload(iface)) {
 			return iface;
@@ -918,6 +918,50 @@ static void iface_router_init(void)
 }
 #else
 #define iface_router_init(...)
+#endif
+
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+			       struct net_if *iface,
+			       net_if_mcast_callback_t cb)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
+
+	mon->iface = iface;
+	mon->cb = cb;
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_mcast_monitor(struct net_if *iface,
+			  const struct net_addr *addr,
+			  bool is_joined)
+{
+	struct net_if_mcast_monitor *mon, *tmp;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
+					  mon, tmp, node) {
+		if (iface == mon->iface) {
+			mon->cb(iface, addr, is_joined);
+		}
+	}
+
+	k_mutex_unlock(&lock);
+}
 #endif
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -1288,7 +1332,7 @@ static void rs_timeout(struct k_work *work)
 		/* Did not receive RA yet. */
 		ipv6->rs_count++;
 
-		Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+		STRUCT_SECTION_FOREACH(net_if, tmp) {
 			if (tmp->config.ip.ipv6 == ipv6) {
 				iface = tmp;
 				break;
@@ -1381,7 +1425,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 		int i;
 
@@ -1921,7 +1965,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 		int i;
 
@@ -1977,48 +2021,6 @@ void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	addr->is_joined = true;
-
-	k_mutex_unlock(&lock);
-}
-
-void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
-			       struct net_if *iface,
-			       net_if_mcast_callback_t cb)
-{
-	k_mutex_lock(&lock, K_FOREVER);
-
-	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
-	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
-
-	mon->iface = iface;
-	mon->cb = cb;
-
-	k_mutex_unlock(&lock);
-}
-
-void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
-{
-	k_mutex_lock(&lock, K_FOREVER);
-
-	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
-
-	k_mutex_unlock(&lock);
-}
-
-void net_if_mcast_monitor(struct net_if *iface,
-			  const struct in6_addr *addr,
-			  bool is_joined)
-{
-	struct net_if_mcast_monitor *mon, *tmp;
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
-					  mon, tmp, node) {
-		if (iface == mon->iface) {
-			mon->cb(iface, addr, is_joined);
-		}
-	}
 
 	k_mutex_unlock(&lock);
 }
@@ -2355,7 +2357,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		struct net_if_ipv6 *ipv6 = tmp->config.ip.ipv6;
 		int i;
 
@@ -2529,7 +2531,7 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		addr = net_if_ipv6_get_ll(tmp, state);
 		if (addr) {
 			if (iface) {
@@ -2578,7 +2580,7 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, tmp) {
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		if (iface && *iface && tmp != *iface) {
 			continue;
 		}
@@ -2666,7 +2668,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 			src = net_if_ipv6_get_best_match(dst_iface, dst,
 							 &best_match);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_best_match(iface, dst,
@@ -2681,7 +2683,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv6_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_ll(iface,
@@ -3036,7 +3038,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 		goto out;
 	}
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		ret = ipv4_is_broadcast_address(iface, addr);
 		if (ret) {
 			goto out;
@@ -3055,7 +3057,7 @@ struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		bool ret;
 
 		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
@@ -3193,7 +3195,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			src = net_if_ipv4_get_best_match(dst_iface, dst,
 							 &best_match);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in_addr *addr;
 
 				addr = net_if_ipv4_get_best_match(iface, dst,
@@ -3208,7 +3210,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		if (dst_iface) {
 			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
 		} else {
-			Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in_addr *addr;
 
 				addr = net_if_ipv4_get_ll(iface,
@@ -3244,7 +3246,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 		int i;
 
@@ -3673,6 +3675,11 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 
 		NET_DBG("interface %p address %s added", iface,
 			log_strdup(net_sprint_ipv4_addr(addr)));
+
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_MADDR_ADD, iface,
+			&maddr->address.in_addr,
+			sizeof(struct in_addr));
 	}
 
 out:
@@ -3695,6 +3702,11 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 		NET_DBG("interface %p address %s removed",
 			iface, log_strdup(net_sprint_ipv4_addr(addr)));
 
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_IPV4_MADDR_DEL, iface,
+			&maddr->address.in_addr,
+			sizeof(struct in_addr));
+
 		ret = true;
 	}
 
@@ -3710,7 +3722,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (ret && *ret && iface != *ret) {
 			continue;
 		}
@@ -3949,7 +3961,7 @@ int net_if_get_by_iface(struct net_if *iface)
 
 void net_if_foreach(net_if_cb_t cb, void *user_data)
 {
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		cb(iface, user_data);
 	}
 }
@@ -4279,7 +4291,7 @@ void net_if_init(void)
 
 	net_tc_tx_init();
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		init_iface(iface);
 		if_count++;
 	}
@@ -4307,7 +4319,7 @@ void net_if_init(void)
 	 */
 	if_count = 0;
 
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 			if_count++;
 		}
@@ -4329,7 +4341,7 @@ void net_if_post_init(void)
 	NET_DBG("");
 
 	/* After TX is running, attempt to bring the interface up */
-	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
+	STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (!net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
 			net_if_up(iface);
 		}

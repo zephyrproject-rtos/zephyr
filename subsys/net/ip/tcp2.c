@@ -1925,7 +1925,8 @@ next_state:
 		break;
 	case TCP_FIN_WAIT_2:
 		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
-			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack))) {
+			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack) ||
+			   FL(&fl, ==, FIN | PSH | ACK, th_seq(th) == conn->ack))) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
 			k_work_cancel_delayable(&conn->fin_timer);
 

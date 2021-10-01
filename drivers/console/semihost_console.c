@@ -6,7 +6,6 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <kernel_arch_interface.h>
 
 extern void __stdout_hook_install(int (*fn)(int));
 

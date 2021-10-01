@@ -156,7 +156,7 @@ const struct i2c_driver_api tca9546a_api_funcs = {
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst))			      \
 	};								      \
 	static struct tca9546a_root_data tca9546a_data_##inst = {	      \
-		.lock = Z_MUTEX_INITIALIZER(tca9546a_data_0.lock),	      \
+		.lock = Z_MUTEX_INITIALIZER(tca9546a_data_##inst.lock),	      \
 	};								      \
 	DEVICE_DT_INST_DEFINE(inst,					      \
 			      tca9546_root_init, NULL,			      \

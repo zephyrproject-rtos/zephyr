@@ -309,8 +309,13 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32_hse_clock, okay)
 #define STM32_HSE_BYPASS	DT_PROP(DT_NODELABEL(clk_hse), hse_bypass)
-#else
+#elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
 #define STM32_HSE_BYPASS	CONFIG_CLOCK_STM32_HSE_BYPASS
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
+#define STM32_HSE_TCXO	DT_PROP(DT_NODELABEL(clk_hse), hse_tcxo)
+#define STM32_HSE_DIV2	DT_PROP(DT_NODELABEL(clk_hse), hse_div2)
 #endif
 
 struct stm32_pclken {

@@ -32,6 +32,12 @@ set(CMAKE_SYSTEM_VERSION ${PROJECT_VERSION})
 # We are not building dynamically loadable libraries
 set(BUILD_SHARED_LIBS OFF)
 
+# Custom targets for compiler and linker flags.
+add_custom_target(asm)
+add_custom_target(compiler)
+add_custom_target(compiler-cpp)
+add_custom_target(linker)
+
 if(NOT (COMPILER STREQUAL "host-gcc"))
   include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/target.cmake)
 endif()

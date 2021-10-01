@@ -157,12 +157,29 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 	return z_get_next_switch_handle(interrupted_stack);		\
 }
 
+#if XCHAL_NMILEVEL >= 2
 DEF_INT_C_HANDLER(2)
+#endif
+
+#if XCHAL_NMILEVEL >= 3
 DEF_INT_C_HANDLER(3)
+#endif
+
+#if XCHAL_NMILEVEL >= 4
 DEF_INT_C_HANDLER(4)
+#endif
+
+#if XCHAL_NMILEVEL >= 5
 DEF_INT_C_HANDLER(5)
+#endif
+
+#if XCHAL_NMILEVEL >= 6
 DEF_INT_C_HANDLER(6)
+#endif
+
+#if XCHAL_NMILEVEL >= 7
 DEF_INT_C_HANDLER(7)
+#endif
 
 static inline DEF_INT_C_HANDLER(1)
 

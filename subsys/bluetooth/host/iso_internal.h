@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,19 @@ struct iso_data {
 
 	/** ISO connection handle */
 	uint16_t handle;
+};
+
+struct bt_iso_cig {
+	/** Array of ISO channels to setup as CIS (the CIG). */
+	struct bt_iso_chan **cis;
+
+	/** Total number of CISes in the CIG. */
+	uint8_t  num_cis;
+
+	/** The CIG ID */
+	uint8_t id;
+
+	bool initialized;
 };
 
 enum {
@@ -81,13 +95,13 @@ void hci_le_big_sync_established(struct net_buf *buf);
 void hci_le_big_sync_lost(struct net_buf *buf);
 
 /* Notify ISO channels of a new connection */
-int bt_iso_accept(struct bt_conn *conn);
+int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso);
 
 /* Notify ISO channels of a new connection */
-void bt_iso_connected(struct bt_conn *conn);
+void bt_iso_connected(struct bt_conn *iso);
 
 /* Notify ISO channels of a disconnect event */
-void bt_iso_disconnected(struct bt_conn *conn);
+void bt_iso_disconnected(struct bt_conn *iso);
 
 /* Allocate ISO PDU */
 #if defined(CONFIG_NET_BUF_LOG)
@@ -140,8 +154,6 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state);
 #endif /* CONFIG_BT_DEBUG_ISO */
 
 /* Process incoming data for a connection */
-void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
+void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);
 
-struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn);
-
-void bt_iso_remove_data_path(struct bt_conn *conn);
+void bt_iso_remove_data_path(struct bt_conn *iso);

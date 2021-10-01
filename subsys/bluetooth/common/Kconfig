@@ -111,7 +111,7 @@ config BT_BUF_ACL_RX_COUNT
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default 255 if (BT_EXT_ADV && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
+	default 255 if (BT_EXT_ADV && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0)) || BT_PER_ADV
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 255
@@ -166,6 +166,9 @@ config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"
 	# LE Set Extended Advertising Data command
 	default 255 if (BT_EXT_ADV || BT_BREDR)
+	# LE Set Connection CTE Receive Parameters. Value required to store max allowed number
+	# of antenna ids for platforms other than Nordic.
+	default 83 if (!BT_EXT_ADV && !BT_BREDR && BT_CTLR_DF && BT_CTLR_DF_CONN_CTE_REQ && !SOC_COMPATIBLE_NRF)
 	# LE Generate DHKey v2 command
 	default 65
 	range 65 255
@@ -268,7 +271,7 @@ config BT_DEBUG
 config BT_MONITOR
 	bool
 
-choice
+choice BT_DEBUG_TYPE
 	prompt "Bluetooth debug type"
 	default BT_DEBUG_NONE
 
@@ -344,18 +347,6 @@ endif # BT_DEBUG_MONITOR_RTT
 endchoice # Bluetooth debug type
 
 if BT_DEBUG
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
-
-config BT_MONITOR_ON_DEV_NAME
-	string "Device Name of Bluetooth monitor logging UART"
-	depends on BT_DEBUG_MONITOR_UART
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
-	default "UART_0"
-	help
-	  This option specifies the name of UART device to be used
-	  for the Bluetooth monitor logging.
 
 config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"

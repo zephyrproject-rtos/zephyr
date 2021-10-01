@@ -285,7 +285,7 @@ struct bt_conn_le_info {
 	/** Remote device address used during connection setup. */
 	const bt_addr_le_t *remote;
 	uint16_t interval; /** Connection interval */
-	uint16_t latency; /** Connection slave latency */
+	uint16_t latency; /** Connection peripheral latency */
 	uint16_t timeout; /** Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -303,11 +303,14 @@ struct bt_conn_br_info {
 	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
 };
 
-/** Connection role (master or slave) */
 enum {
-	BT_CONN_ROLE_MASTER,
-	BT_CONN_ROLE_SLAVE,
+	BT_CONN_ROLE_CENTRAL = 0,
+	BT_CONN_ROLE_PERIPHERAL = 1,
 };
+
+/** Connection role (central or peripheral) */
+#define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
+#define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
 
 /** Connection Info Structure */
 struct bt_conn_info {
@@ -582,7 +585,7 @@ struct bt_conn_le_create_param {
 				BT_GAP_SCAN_FAST_INTERVAL, \
 				BT_GAP_SCAN_FAST_INTERVAL)
 
-/** Default LE create connection using whitelist parameters.
+/** Default LE create connection using filter accept list parameters.
  *  Scan window:   30 ms.
  *  Scan interval: 60 ms.
  */
@@ -615,14 +618,14 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
 
-/** @brief Automatically connect to remote devices in whitelist.
+/** @brief Automatically connect to remote devices in the filter accept list..
  *
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
  *  procedure is stopped through @ref bt_conn_create_auto_stop.
- *  To establish connections to all devices in the whitelist the procedure
- *  should be started again in the connected callback after a new connection has
- *  been established.
+ *  To establish connections to all devices in the the filter accept list the
+ *  procedure should be started again in the connected callback after a
+ *  new connection has been established.
  *
  *  @param create_param Create connection parameters
  *  @param conn_param   Initial connection parameters.
@@ -919,7 +922,7 @@ struct bt_conn_cb {
 	 */
 	void (*le_data_len_updated)(struct bt_conn *conn,
 				    struct bt_conn_le_data_len_info *info);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 
 	struct bt_conn_cb *_next;
 };
@@ -931,6 +934,17 @@ struct bt_conn_cb {
  *  @param cb Callback struct. Must point to memory that remains valid.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
+
+/** @def BT_CONN_CB_DEFINE
+ *
+ *  @brief Register a callback structure for connection events.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_CONN_CB_DEFINE(_name)					\
+	static const STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
+						_CONCAT(bt_conn_cb_,	\
+							_name))
 
 /** @brief Enable/disable bonding.
  *

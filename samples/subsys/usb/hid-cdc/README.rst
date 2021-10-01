@@ -79,7 +79,7 @@ After both ports have been connected to, messages explaining usage of each port 
 
 .. code-block:: console
 
-	Welcome to CDC ACM 0!
+	Welcome to CDC_ACM_0
 	Supported commands:
 	up    - moves the mouse up
 	down  - moves the mouse down
@@ -88,7 +88,7 @@ After both ports have been connected to, messages explaining usage of each port 
 
 .. code-block:: console
 
-	Welcome to CDC ACM 1!
+	Welcome to CDC_ACM_1
 	Enter a string and terminate it with ENTER.
 	It will be sent via HID when BUTTON 2 is pressed.
 	You can modify it by sending a new one here.

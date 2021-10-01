@@ -7,7 +7,7 @@
 &spi2 {
 
 	led_strip@0 {
-		compatible = "colorway,lpd8806";
+		compatible = "greeled,lpd8806";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
 		label = "LPD8806";

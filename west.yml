@@ -32,17 +32,17 @@ manifest:
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: c3bd2094f92d574377f7af2aec147ae181aa5f8e
+      revision: b0612c97c1401feeb4160add6462c3627fe90fc7
       path: modules/hal/cmsis
       groups:
         - hal
     - name: edtt
-      revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
+      revision: 31badfbbd04f2948e3df6ebf329f930317550961
       path: tools/edtt
       groups:
         - tools
     - name: fatfs
-      revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
+      revision: 94fcd6bfb3801ac0a5e12ea2f52187e0a688b90e
       path: modules/fs/fatfs
       groups:
         - fs
@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 56a84e45eeaf3b6dea88b198c5c252c06f8ac774
+      revision: 2f438dfde14900d35bf703ddc4c0f71efc0d065f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -78,7 +78,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 00fd2aa97a22ea1052d9dabe1b18ab396daab93a
+      revision: a6e5299041f152da5ae0ab17b2e44e088bb96d6d
       path: modules/hal/nordic
       groups:
         - hal
@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: bb97ba1cb3820d5799f53c7af765830d766b56a2
+      revision: 78efc4ba7c1057c1cf2bf06e3e27ed7cc33e1da7
       path: modules/hal/nxp
       groups:
         - hal
@@ -114,7 +114,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 4200321ef1cd27cacc37b0439389424156bb1267
+      revision: 5c8275071ec1cf160bfe8c18bbd9330a7d714dc8
       path: modules/hal/stm32
       groups:
         - hal
@@ -147,7 +147,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
+      revision: 783c1f78c8e39751fe89d0883c8bce7336f55e94
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -158,10 +158,10 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 62b78ff2a2148490f91ee9a4b4d7a7ab8bbc4fd4
+      revision: 70bfbd21cdf5f6d1402bc8d0031e197222ed2ec0
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: a15a953e35b0d3100893fd86a127c3e8b7e3257c
+      revision: 31a2aa9cea58d3ceecbf0d5b91361bff7c94aeca
       path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -183,7 +183,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: 3bcb1e8e502c20a32f57626396a88af5f860da4a
+      revision: fd1ab161f7d5cfd5d0120cd5d1797811e78ff918
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -191,12 +191,12 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
+      revision: 76feb11d1b8f425021b5691668af2250fee444ac
       path: modules/audio/sof
-    - name: tensorflow
-      revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
-      path: modules/lib/tensorflow
-      repo-path: tensorflow
+    - name: tflite-micro
+      revision: 9156d050927012da87079064db59d07f03b8baf6
+      path: modules/lib/tflite-micro
+      repo-path: tflite-micro
     - name: tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
       path: modules/lib/tinycbor
@@ -206,13 +206,13 @@ manifest:
       groups:
         - crypto
     - name: TraceRecorderSource
-      revision: 5b5f8d7adbf0e93a09087e8f5708f0eebb8b25bf
+      revision: 36c577727642457b0db7274298a4b96558374832
       path: modules/debug/TraceRecorder
       groups:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 1ab3b62d641070a6e8574634168c374645f382b8
+      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
       groups:
         - tee
 

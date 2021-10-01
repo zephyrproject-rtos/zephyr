@@ -123,7 +123,7 @@ void test_i2s_state_ready_neg(void)
 	zassert_equal(ret, -EIO, NULL);
 
 	/* Configure TX stream changing its state to READY */
-	ret = configure_stream(dev_i2s_rx, I2S_DIR_TX);
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
 	zassert_equal(ret, TC_PASS, NULL);
 
 	/* Send TX stream triggers */

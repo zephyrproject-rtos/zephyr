@@ -31,6 +31,18 @@ extern "C" {
 /** @brief Size of OTS object ID (in bytes). */
 #define BT_OTS_OBJ_ID_SIZE 6
 
+/** @brief Minimum allowed value for object ID (except ID for directory listing) */
+#define BT_OTS_OBJ_ID_MIN 0x000000000100
+
+/** @brief Maximum allowed value for object ID (except ID for directory listing) */
+#define BT_OTS_OBJ_ID_MAX 0xFFFFFFFFFFFF
+
+/** @brief ID of the Directory Listing Object */
+#define OTS_OBJ_ID_DIR_LIST     0x000000000000
+
+/** @brief Mask for OTS object IDs, preserving the 48 bits */
+#define BT_OTS_OBJ_ID_MASK BIT64_MASK(48)
+
 /** @brief Length of OTS object ID string (in bytes). */
 #define BT_OTS_OBJ_ID_STR_LEN 15
 

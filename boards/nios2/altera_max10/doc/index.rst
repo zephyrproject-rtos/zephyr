@@ -122,13 +122,15 @@ minicom with flow control disabled, 115200-8N1 settings.
 JTAG UART
 ---------
 
-You can also have it send its console output to the JTAG UART. Set these in your
-project configuration:
+You can also have it send its console output to the JTAG UART.
+Enable ``jtag_uart`` node in :file:`altera_max10.dts` or overlay file:
 
-.. code-block:: console
+.. code-block:: devicetree
 
-   CONFIG_UART_ALTERA_JTAG=y
-   CONFIG_UART_CONSOLE_ON_DEV_NAME="jtag_uart0"
+   &jtag_uart {
+       status = "okay";
+       current-speed = <115200>;
+   };
 
 To view these messages on your local workstation, run the terminal application
 in the SDK:

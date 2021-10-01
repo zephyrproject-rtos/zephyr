@@ -656,7 +656,7 @@
 		};
 
 		usb1: usbd@40430000 {
-			compatible = "nxp,kinetis-usbd";
+			compatible = "nxp,mcux-usbd";
 			reg = <0x40430000 0x200>;
 			interrupts = <136 1>;
 			interrupt-names = "usb_otg";
@@ -667,7 +667,7 @@
 		};
 
 		usb2: usbd@4042c000 {
-			compatible = "nxp,kinetis-usbd";
+			compatible = "nxp,mcux-usbd";
 			reg = <0x4042c000 0x200>;
 			interrupts = <135 1>;
 			interrupt-names = "usb_otg";

@@ -32,6 +32,7 @@ Peripherals
    sensor.rst
    spi.rst
    uart.rst
+   mdio.rst
    watchdog.rst
    video.rst
    espi.rst

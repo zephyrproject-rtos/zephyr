@@ -52,6 +52,8 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 
+uint8_t radio_phy_flags_rx_get(void);
+
 void radio_rssi_measure(void);
 uint32_t radio_rssi_get(void);
 void radio_rssi_status_reset(void);

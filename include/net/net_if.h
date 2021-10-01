@@ -1043,11 +1043,11 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
 
  * @param iface A pointer to a struct net_if to which the multicast address is
  *        attached.
- * @param addr IPv6 multicast address.
+ * @param addr IP multicast address.
  * @param is_joined True if the address is joined, false if left.
  */
 typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
-					const struct in6_addr *addr,
+					const struct net_addr *addr,
 					bool is_joined);
 
 /**
@@ -1095,7 +1095,7 @@ void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
  * @param addr Multicast address
  * @param is_joined Is this multicast address joined (true) or not (false)
  */
-void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
+void net_if_mcast_monitor(struct net_if *iface, const struct net_addr *addr,
 			  bool is_joined);
 
 /**
@@ -2210,7 +2210,7 @@ struct net_if_api {
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
-	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_name, sfx)) = { \
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
@@ -2228,7 +2228,7 @@ struct net_if_api {
 	}
 
 #define NET_IF_OFFLOAD_INIT(dev_name, sfx, _mtu)			\
-	static Z_STRUCT_SECTION_ITERABLE(net_if_dev,			\
+	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_name, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.mtu = _mtu,						\
