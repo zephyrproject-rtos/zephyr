@@ -204,21 +204,32 @@ variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
 list of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they
 are included in that order by the C preprocessor.
 
-Here are some ways to set it:
+Devicetree overlays can be specified by the user directly, in a
+:file:`CMakeLists.txt` file, or applied automatically.
 
-1. on the cmake build command line
-   (``-DDTC_OVERLAY_FILE="file1.overlay;file2.overlay"``)
-#. with the CMake ``set()`` command in the application ``CMakeLists.txt``,
-   before including zephyr's :file:`boilerplate.cmake` file
-#. create a ``boards/<BOARD>_<revision>.overlay`` file in the application
-   folder for the current board revision. This requires that the board supports
+Overlay files are applied according to the following scheme:
+
+1. If ``DTC_OVERLAY_FILE`` is set, the overlay file(s) in it are merged and used
+   by the application. ``DTC_OVERLAY_FILE`` can be set in various ways:
+
+   1. In :file:`CMakeLists.txt`, before calling ``find_package(Zephyr)``
+
+   2. By passing ``-DDTC_OVERLAY_FILE="file1.overlay;file2.overlay;..."``,
+      either directly or via ``west``
+
+   3. From the CMake variable cache
+
+#. Otherwise, the file :file:`boards/<BOARD>_<revision>.overlay` is used if it
+   exists in the application folder. This requires that the board supports
    multiple revisions, see :ref:`porting_board_revisions`.
-   The ``boards/<BOARD>_<revision>.overlay`` file will be merged with
-   ``boards/<BOARD>.overlay`` if this file also exists.
-#. create a ``boards/<BOARD>.overlay`` file in the application
-   folder, for the current board
-#. create a ``<BOARD>.overlay`` file in the application folder
-#. create an ``app.overlay`` file in the application folder
+   The :file:`boards/<BOARD>_<revision>.overlay` file will be merged with
+   :file:`boards/<BOARD>.overlay` if this file also exists.
+#. Otherwise the file :file:`boards/<BOARD>.overlay` is used if it exists in the
+   application folder.
+#. Otherwise, :file:`<BOARD>.overlay` is used if it exists in the application
+   folder.
+#. Otherwise, :file:`app.overlay` will from the application folder is used if it
+   exists.
 
 Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
 However you set the value, it is saved in the CMake cache between builds.
