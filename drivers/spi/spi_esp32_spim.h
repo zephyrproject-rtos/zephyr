@@ -25,6 +25,7 @@ struct spi_esp32_config {
 	int duty_cycle;
 	int input_delay_ns;
 	int irq_source;
+	bool use_iomux;
 
 	clock_control_subsys_t clock_subsys;
 

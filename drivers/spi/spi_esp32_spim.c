@@ -31,9 +31,6 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #define CSEL_IDX_2 HSPICS0_OUT_IDX
 #define CSEL_IDX_3 VSPICS0_OUT_IDX
 
-#define INST_2_ESPRESSIF_ESP32_SPI_IRQ_0 13
-#define INST_3_ESPRESSIF_ESP32_SPI_IRQ_0 17
-
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
@@ -125,6 +122,7 @@ static int spi_esp32_init(const struct device *dev)
 }
 
 static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
+				   bool use_iomux,
 				   gpio_flags_t pin_mode)
 {
 	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
@@ -142,10 +140,12 @@ static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
 		return -EIO;
 	}
 
-	ret = gpio_pin_configure(gpio, pin, pin_mode);
-	if (ret < 0) {
-		LOG_ERR("SPI pin configuration failed");
-		return ret;
+	if (use_iomux) {
+		ret = gpio_pin_configure(gpio, pin, pin_mode);
+		if (ret < 0) {
+			LOG_ERR("SPI pin configuration failed");
+			return ret;
+		}
 	}
 
 	if (pin_mode == GPIO_INPUT) {
@@ -207,14 +207,17 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	spi_esp32_configure_pin(cfg->pins.miso,
 				cfg->signals.miso_s,
+				cfg->use_iomux,
 				GPIO_INPUT);
 
 	spi_esp32_configure_pin(cfg->pins.mosi,
 				cfg->signals.mosi_s,
+				cfg->use_iomux,
 				GPIO_OUTPUT_LOW);
 
 	spi_esp32_configure_pin(cfg->pins.sclk,
 				cfg->signals.sclk_s,
+				cfg->use_iomux,
 				GPIO_OUTPUT);
 
 	if (ctx->config->cs == NULL) {
@@ -224,6 +227,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 		spi_esp32_configure_pin(cfg->pins.csel,
 					cfg->signals.csel_s,
+					cfg->use_iomux,
 					GPIO_OUTPUT | GPIO_ACTIVE_LOW);
 	}
 
@@ -366,6 +370,12 @@ static const struct spi_driver_api spi_api = {
 	.release = spi_esp32_release
 };
 
+#ifdef CONFIG_SOC_ESP32
+#define GET_AS_CS(idx) .as_cs = DT_PROP(DT_NODELABEL(spi##idx), clk_as_cs),
+#else
+#define GET_AS_CS(idx)
+#endif
+
 #define ESP32_SPI_INIT(idx)	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
@@ -376,7 +386,7 @@ static const struct spi_driver_api spi_api = {
 		},	\
 		.dev_config = {	\
 			.half_duplex = DT_PROP(DT_NODELABEL(spi##idx), half_duplex),	\
-			.as_cs = DT_PROP(DT_NODELABEL(spi##idx), clk_as_cs),	\
+			GET_AS_CS(idx)							\
 			.positive_cs = DT_PROP(DT_NODELABEL(spi##idx), positive_cs),	\
 			.no_compensate = DT_PROP(DT_NODELABEL(spi##idx), dummy_comp),	\
 			.sio = DT_PROP(DT_NODELABEL(spi##idx), sio)	\
@@ -391,6 +401,7 @@ static const struct spi_driver_api spi_api = {
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
 		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \
+		.use_iomux = DT_PROP(DT_NODELABEL(spi##idx), use_iomux), \
 		.signals = {	\
 			.miso_s = MISO_IDX_##idx,	\
 			.mosi_s = MOSI_IDX_##idx,	\
