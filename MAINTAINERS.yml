@@ -1066,6 +1066,17 @@ OSDP:
     labels:
         - "area: OSDP"
 
+hawkBit:
+    status: orphaned
+    collaborators:
+        - ycsin
+    files:
+        - subsys/mgmt/hawkbit/
+        - include/mgmt/hawkbit.h
+        - samples/subsys/mgmt/hawkbit/
+    labels:
+        - "area: hawkBit"
+
 Native POSIX and POSIX arch:
     status: maintained
     maintainers:
