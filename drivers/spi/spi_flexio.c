@@ -28,14 +28,13 @@ LOG_MODULE_REGISTER(spi_flexio);
 struct spi_flexio_config {
     const struct device *clock_dev;
     clock_control_subsys_t clock_subsys;
-    FLEXIO_Type *base;
+    FLEXIO_SPI_Type spiDev;
 };
 
 /* Device run time data */
 struct spi_flexio_data {
     const struct device *dev;
     flexio_spi_master_handle_t handle;
-    FLEXIO_SPI_Type spiDev;
     struct spi_context ctx;
 };
 
@@ -44,8 +43,6 @@ static int spi_flexio_configure(const struct device *dev,
                                 const struct spi_config *spi_cfg) {
     const struct spi_flexio_config *config = dev->config;
     struct spi_flexio_data *data = dev->data;
-    FLEXIO_Type *base = config->base;
-
 
     if (spi_context_configured(&data->ctx, spi_cfg)) {
         // This configuration is already in use
@@ -93,11 +90,10 @@ static int spi_flexio_configure(const struct device *dev,
         return -EINVAL;
     }
 
+    FLEXIO_SPI_MasterInit(&(config->spiDev), &master_config, clock_freq);
+
+
     /*
-    if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-                               &clock_freq)) {
-        return -EINVAL;
-    }
 
     LPSPI_MasterInit(base, &master_config, clock_freq);
 
@@ -200,9 +196,13 @@ static const struct spi_driver_api spi_flexio_driver_api = {
         .release = spi_flexio_release,
 };
 
-#define SPI_FLEXIO_DEFINE_CONFIG(n)                    \
-    static const struct spi_flexio_config spi_flexio_config_##n = {    \
-        .base = (FLEXIO_Type *)DT_INST_REG_ADDR(n),            \
+#define SPI_FLEXIO_DEFINE_CONFIG(n) \
+    static const struct spi_flexio_config spi_flexio_config_##n = { \
+        .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
+        .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+        .spiDev = { \
+            .flexioBase= (FLEXIO_Type *)DT_INST_REG_ADDR(n), \
+       },\
     }
 
 #define SPI_FLEXIO_DEVICE_INIT(n)                        \
