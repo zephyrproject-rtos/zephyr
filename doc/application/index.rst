@@ -219,22 +219,30 @@ Zephyr.)
 
    .. code-block:: cmake
 
-      # Find Zephyr. This also loads Zephyr's build system.
-      cmake_minimum_required(VERSION 3.13.1)
+      cmake_minimum_required(VERSION 3.20.0)
+
       find_package(Zephyr)
       project(my_zephyr_app)
 
-      # Add your source file to the "app" target. This must come after
-      # find_package(Zephyr) which defines the target.
       target_sources(app PRIVATE src/main.c)
 
-   ``find_package(Zephyr)`` sets the minimum CMake version and pulls in the
-   Zephyr build system, which creates a CMake target named ``app`` (see
-   :ref:`cmake_pkg`). Adding sources to this target is how you include them in
-   the build.
+   ``cmake_minimum_required()`` is required to be in your
+   :file:`CMakeListst.txt` by CMake. It is also invoked by the Zephyr
+   package. The most recent of the two versions will be enforced by CMake.
 
-   .. note:: ``cmake_minimum_required()`` is also invoked by the Zephyr package.
-              The most recent of the two versions will be enforced by CMake.
+   ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
+   CMake target named ``app`` (see :ref:`cmake_pkg`). Adding sources to this
+   target is how you include them in the build. The Zephyr package will define
+   ``Zephyr-Kernel`` as a CMake project and enable support for the ``C``,
+   ``CXX``, ``ASM`` languages.
+
+   ``project(my_zephyr_app)`` is required for defining your application
+   project.  This must be called after ``find_package(Zephyr)`` to avoid
+   interference with Zephyr's ``project(Zephyr-Kernel)``.
+
+   ``target_sources(app PRIVATE src/main.c)`` is to add your source file to the
+   ``app`` target. This must come after ``find_package(Zephyr)`` which defines
+   the target.
 
 #. Set Kconfig configuration options. See :ref:`application-kconfig`.
 
