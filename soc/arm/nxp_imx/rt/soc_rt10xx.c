@@ -181,6 +181,51 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
 #endif
 
+#ifdef CONFIG_SPI_MCUX_FLEXIO
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1_spi), okay)
+    // Choose fastest available PFD (2) of PLL3, which runs at 508.24MHz. Datasheet:
+    //  "The main PLL3 output and its PFD outputs are used as inputs for many clock roots that require constant
+    //  frequency, such as UART and other serial interfaces, audio interfaces, etc."
+    CLOCK_SetMux(kCLOCK_Flexio1Mux, 1);
+
+    // Choose smallest possible dividers
+    CLOCK_SetDiv(kCLOCK_Flexio1PreDiv, 1); // div by 2
+    CLOCK_SetDiv(kCLOCK_Flexio1Div, 0); // div by 1
+    // -> FlexIO1 clock: 254.12MHz
+
+    // The baud rate divider for SPI master mode is between 4 and 512 (multiple of 2)
+    //  -> Max SPI baud rate: 63.53MHz
+    //  -> Min SPI baud rate: 496.33kHz
+
+    // One bit should be at least 1.25µs and at most 6µs
+    //  1bit in 500ns (longest 0) -> 2MHz
+    //  16bit in 1.25µs -> 12.8MHz
+    // A zero pulse can be 200ns to 500ns
+    // A one pulse can be encoded with at least 625ns
+    // -> At least 2MHz are needed to produce the shortest required pulse
+    //    To fit the entire symbol in one 16-bit word, less than 12.8MHz are needed
+    //    Higher frequencies work, with symbols spanning multiple SPI words
+
+    // Enable clock, this configures gating
+    CLOCK_EnableClock(kCLOCK_Flexio1);
+#endif
+
+#if  DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1_spi), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3_spi), okay)
+    // FlexIO 2 and 3 share clock selector/divider
+    CLOCK_SetMux(kCLOCK_Flexio2Mux, 1);
+    CLOCK_SetDiv(kCLOCK_Flexio2PreDiv, 1);
+    CLOCK_SetDiv(kCLOCK_Flexio2Div, 0);
+#endif
+
+#if   DT_NODE_HAS_STATUS(DT_NODELABEL(flexio2_spi), okay)
+    CLOCK_EnableClock(kCLOCK_Flexio2);
+#endif
+
+#if   DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3_spi), okay)
+    CLOCK_EnableClock(kCLOCK_Flexio3);
+#endif
+#endif // CONFIG_SPI_MCUX_FLEXIO
+
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
 	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
 	CLOCK_SetDiv(kCLOCK_LcdifPreDiv, 4);
