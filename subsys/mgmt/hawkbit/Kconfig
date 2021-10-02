@@ -40,6 +40,12 @@ config HAWKBIT_SHELL
 	help
 	  Activate shell module that provides Hawkbit commands.
 
+config HAWKBIT_DEVID_BIN_MAX_SIZE
+	int "Maximum length of device identity in binary"
+	default 16
+	help
+	  Define the maximum length of device identity in binary.
+
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	default ""

@@ -6,12 +6,12 @@
 #include "hawkbit_device.h"
 #include <string.h>
 
-bool hawkbit_get_device_identity(char *id, int id_max_len)
+bool __weak hawkbit_get_device_identity(char *id, int id_max_len)
 {
-	uint8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
+	uint8_t hwinfo_id[CONFIG_HAWKBIT_DEVID_BIN_MAX_SIZE];
 	ssize_t length;
 
-	length = hwinfo_get_device_id(hwinfo_id, DEVICE_ID_BIN_MAX_SIZE);
+	length = hwinfo_get_device_id(hwinfo_id, CONFIG_HAWKBIT_DEVID_BIN_MAX_SIZE);
 	if (length <= 0) {
 		return false;
 	}
