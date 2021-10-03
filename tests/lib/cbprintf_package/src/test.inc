@@ -121,11 +121,11 @@ void test_cbprintf_package(void)
 	TEST_PACKAGING("test %c %p", c, vp);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
-		float f = -1.234;
+		float f = -1.234f;
 		double d = 1.2333;
 
 		TEST_PACKAGING("test double %x %f %x", 0xb1b2b3b4, d, 0xe4e3e2e1);
-		TEST_PACKAGING("test %f %a", f, d);
+		TEST_PACKAGING("test %f %a", (double)f, d);
 #if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
 		long double ld = 1.2333;
 
