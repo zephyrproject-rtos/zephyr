@@ -168,8 +168,8 @@ static int bq274xx_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (bq274xx->internal_temperature * 0.1);
-		int_temp = int_temp - 273.15;
+		int_temp = (bq274xx->internal_temperature * 0.1f);
+		int_temp = int_temp - 273.15f;
 		val->val1 = (int32_t)int_temp;
 		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
