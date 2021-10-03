@@ -114,7 +114,7 @@ static void hwm_sleep_until_next_timer(void)
 
 	if (signaled_end || (simu_time > end_of_time)) {
 		posix_print_trace("\nStopped at %.3Lfs\n",
-				((long double)simu_time)/1.0e6);
+				((long double)simu_time)/1.0e6L);
 		posix_exit(0);
 	}
 }
