@@ -193,7 +193,7 @@ static inline bool test_near_equal_f32(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(a[index] - b[index]) > threshold) {
+		if (fabsf(a[index] - b[index]) > threshold) {
 			return false;
 		}
 	}
@@ -209,7 +209,7 @@ static inline bool test_near_equal_f16(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(a[index] - b[index]) > threshold) {
+		if (fabsf((float)a[index] - (float)b[index]) > (float)threshold) {
 			return false;
 		}
 	}
@@ -305,8 +305,8 @@ static inline bool test_rel_error_f32(
 	float32_t rel, delta, average;
 
 	for (index = 0; index < length; index++) {
-		delta = fabs(a[index] - b[index]);
-		average = (fabs(a[index]) + fabs(b[index])) / 2.0f;
+		delta = fabsf(a[index] - b[index]);
+		average = (fabsf(a[index]) + fabsf(b[index])) / 2.0f;
 
 		if (average != 0) {
 			rel = delta / average;
@@ -329,8 +329,8 @@ static inline bool test_rel_error_f16(
 	float32_t rel, delta, average;
 
 	for (index = 0; index < length; index++) {
-		delta = fabs(a[index] - b[index]);
-		average = (fabs(a[index]) + fabs(b[index])) / 2.0f;
+		delta = fabsf((float)a[index] - (float)b[index]);
+		average = (fabsf((float)a[index]) + fabsf((float)b[index])) / 2.0f;
 
 		if (average != 0) {
 			rel = delta / average;
@@ -368,8 +368,8 @@ static inline bool test_close_error_f32(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(val[index] - ref[index]) >
-			(abs_threshold + rel_threshold * fabs(ref[index]))) {
+		if (fabsf(val[index] - ref[index]) >
+			(abs_threshold + rel_threshold * fabsf(ref[index]))) {
 			return false;
 		}
 	}
@@ -385,8 +385,8 @@ static inline bool test_close_error_f16(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(val[index] - ref[index]) >
-			(abs_threshold + rel_threshold * fabs(ref[index]))) {
+		if (fabsf((float)val[index] - (float)ref[index]) >
+			(abs_threshold + rel_threshold * fabsf((float)ref[index]))) {
 			return false;
 		}
 	}
