@@ -41,6 +41,7 @@ struct sys_multi_heap;
  * NULL may be returned, which will cause the
  * allocation to fail and a NULL reported to the calling code.
  *
+ * @param mheap Multi-heap structure.
  * @param cfg An opaque user-provided value.  It may be interpreted in
  *            any way by the application
  * @param align Alignment of requested memory (or zero for no alignment)
