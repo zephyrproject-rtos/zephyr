@@ -46,7 +46,7 @@ static int collect_data(void)
 	(void)snprintf(ctx.payload, sizeof(ctx.payload),
 		       "{\"variable\": \"temperature\","
 		       "\"unit\": \"c\",\"value\": %f}",
-		       temp);
+		       (double)temp);
 
 	/* LOG doesn't print float #18351 */
 	LOG_INF("Temp: %d", (int) temp);
