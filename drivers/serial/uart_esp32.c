@@ -221,24 +221,24 @@ static int uart_esp32_configure_pins(const struct device *dev)
 {
 	const struct uart_esp32_config *const cfg = DEV_CFG(dev);
 
-	esp32_rom_gpio_matrix_out(cfg->pins.tx,
+	esp_rom_gpio_matrix_out(cfg->pins.tx,
 				  cfg->signals.tx_out,
 				  false,
 				  false);
 
-	esp32_rom_gpio_matrix_in(cfg->pins.rx,
+	esp_rom_gpio_matrix_in(cfg->pins.rx,
 				 cfg->signals.rx_in,
 				 false);
 
 	if (cfg->pins.cts) {
-		esp32_rom_gpio_matrix_out(cfg->pins.cts,
+		esp_rom_gpio_matrix_out(cfg->pins.cts,
 					  cfg->signals.cts_in,
 					  false,
 					  false);
 	}
 
 	if (cfg->pins.rts) {
-		esp32_rom_gpio_matrix_in(cfg->pins.rts,
+		esp_rom_gpio_matrix_in(cfg->pins.rts,
 					 cfg->signals.rts_out,
 					 false);
 	}

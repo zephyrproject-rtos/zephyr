@@ -120,8 +120,8 @@ static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 		return ret;
 	}
 
-	esp32_rom_gpio_matrix_out(pin, matrix_out, false, false);
-	esp32_rom_gpio_matrix_in(pin, matrix_in, false);
+	esp_rom_gpio_matrix_out(pin, matrix_out, false, false);
+	esp_rom_gpio_matrix_in(pin, matrix_in, false);
 
 	return 0;
 }

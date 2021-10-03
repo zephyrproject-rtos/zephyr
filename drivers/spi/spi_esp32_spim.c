@@ -149,9 +149,9 @@ static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
 	}
 
 	if (pin_mode == GPIO_INPUT) {
-		esp32_rom_gpio_matrix_in(pin, pin_sig, false);
+		esp_rom_gpio_matrix_in(pin, pin_sig, false);
 	} else {
-		esp32_rom_gpio_matrix_out(pin, pin_sig, false, false);
+		esp_rom_gpio_matrix_out(pin, pin_sig, false, false);
 	}
 
 	return 0;
