@@ -62,7 +62,7 @@ void main(void)
 	float f = 66.67;
 	double d = 68.69;
 
-	LOG_DBG("float %f, double %f", f, d);
+	LOG_DBG("float %f, double %f", (double)f, d);
 #ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
 	long double ld = 70.71;
 
