@@ -28,21 +28,40 @@ LOG_MODULE_REGISTER(spi_flexio);
 struct spi_flexio_config {
     const struct device *clock_dev;
     clock_control_subsys_t clock_subsys;
-    FLEXIO_SPI_Type spiDev;
+    FLEXIO_Type *flexioBase;
 };
 
 /* Device run time data */
 struct spi_flexio_data {
     const struct device *dev;
     flexio_spi_master_handle_t handle;
+    FLEXIO_SPI_Type spiDev;
     struct spi_context ctx;
+    size_t transfer_len;
 };
+
+static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
+    // TODO:
+}
+
+
+static void spi_mcux_flexio_master_transfer_callback(FLEXIO_SPI_Type *base,
+                                                     flexio_spi_master_handle_t *handle, status_t status,
+                                                     void *userData) {
+    struct spi_flexio_data *data = userData;
+
+    spi_context_update_tx(&data->ctx, 1, data->transfer_len);
+    spi_context_update_rx(&data->ctx, 1, data->transfer_len);
+
+    spi_mcux_flexio_transfer_next_packet(data->dev);
+}
 
 
 static int spi_flexio_configure(const struct device *dev,
                                 const struct spi_config *spi_cfg) {
     const struct spi_flexio_config *config = dev->config;
     struct spi_flexio_data *data = dev->data;
+    FLEXIO_SPI_Type *spiDev = &data->spiDev;
 
     if (spi_context_configured(&data->ctx, spi_cfg)) {
         // This configuration is already in use
@@ -81,7 +100,7 @@ static int spi_flexio_configure(const struct device *dev,
             ? kFLEXIO_SPI_ClockPhaseSecondEdge
             : kFLEXIO_SPI_ClockPhaseFirstEdge;
 
-    // TODO: Direction in flexio_spi_master_handle_t
+    // TODO: Direction (lsb/msb first) is set in flexio_spi_master_handle_t, perhaps for every transfer?
 
     master_config.baudRate_Bps = spi_cfg->frequency;
 
@@ -90,24 +109,25 @@ static int spi_flexio_configure(const struct device *dev,
         return -EINVAL;
     }
 
+    spiDev->SDOPinIndex = 0;
+    spiDev->SCKPinIndex = 1;
+    spiDev->SDIPinIndex = 2;
+    spiDev->CSnPinIndex = 3;
+    spiDev->shifterIndex[0] = 0;
+    spiDev->shifterIndex[1] = 1;
+    spiDev->timerIndex[0] = 0;
+    spiDev->timerIndex[1] = 1;
+
     FLEXIO_SPI_MasterInit(&(config->spiDev), &master_config, clock_freq);
 
+    FLEXIO_SPI_MasterTransferCreateHandle(&(config->spiDev), &data->handle, spi_mcux_flexio_master_transfer_callback,
+                                          data);
 
-    /*
-
-    LPSPI_MasterInit(base, &master_config, clock_freq);
-
-    LPSPI_MasterTransferCreateHandle(base, &data->handle,
-                                     spi_mcux_master_transfer_callback,
-                                     data);
-
-    LPSPI_SetDummyData(base, 0);
 
     data->ctx.config = spi_cfg;
     spi_context_cs_configure(&data->ctx);
 
     return 0;
-    */
 }
 
 
@@ -131,7 +151,7 @@ static int transceive(const struct device *dev,
 
     spi_context_cs_control(&data->ctx, true);
 
-    spi_mcux_transfer_next_packet(dev);
+    spi_mcux_flexio_transfer_next_packet(dev);
 
     ret = spi_context_wait_for_completion(&data->ctx);
     out:
@@ -147,6 +167,16 @@ static int spi_flexio_transceive(const struct device *dev,
                                  const struct spi_buf_set *rx_bufs) {
     const struct spi_flexio_config *cfg = dev->config;
     struct spi_flexio_data *data = dev->data;
+
+    // TODO
+
+    flexio_spi_transfer_t xfer = {0};
+    //xfer.flags
+    //xfer.rxData
+    //xfer.txData
+    //xfer.dataSize
+
+
 
 
     return 0;
@@ -200,9 +230,7 @@ static const struct spi_driver_api spi_flexio_driver_api = {
     static const struct spi_flexio_config spi_flexio_config_##n = { \
         .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
         .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
-        .spiDev = { \
-            .flexioBase= (FLEXIO_Type *)DT_INST_REG_ADDR(n), \
-       },\
+        .flexioBase= (FLEXIO_Type *)DT_INST_REG_ADDR(n), \
     }
 
 #define SPI_FLEXIO_DEVICE_INIT(n)                        \

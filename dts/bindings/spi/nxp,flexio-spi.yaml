@@ -11,33 +11,3 @@ properties:
 
   clocks:
     required: true
-
-  sdo-pin-index:
-    type: int
-    required: false
-    description: TODO
-
-  sdi-pin-index:
-    type: int
-    required: false
-    description: TODO
-
-  sck-pin-index:
-    type: int
-    required: false
-    description: TODO
-
-  csn-pin-index:
-    type: int
-    required: false
-    description: TODO
-
-  shifter-index:
-    type: array
-    required: false
-    description: TODO
-
-  timer-index:
-    type: array
-    required: false
-    description: TODO
