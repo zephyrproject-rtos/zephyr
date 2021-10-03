@@ -38,13 +38,13 @@ PROJECT_NAME           = "Zephyr Project"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         =
+PROJECT_NUMBER         = @ZEPHYR_VERSION@
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "A Scalable Open Source RTOS for IoT Embedded Devices"
+PROJECT_BRIEF          = "A Scalable Open Source RTOS"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
