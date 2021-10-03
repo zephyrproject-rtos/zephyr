@@ -1,0 +1,10 @@
+sample:
+  name: bq35100 sample
+  description: BQ35100 sample application
+tests:
+  sample.sensor.bq35100:
+    harness: sensor
+    tags: sensors
+    platform_allow: nrf52840_mdk
+    integration_platforms:
+      - nrf52840_mdk

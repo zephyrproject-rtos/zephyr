@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 arithmetics.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	bq35100@55 {
+		compatible = "ti,bq35100";
+		reg = <0x55>;
+		label = "BQ35100";
+		ge-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		alert-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	};
+};

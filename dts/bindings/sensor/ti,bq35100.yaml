@@ -1,0 +1,24 @@
+# Copyright (c) 2021 arithmetics.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments BQ35100 lithium primary battery fuel gauge
+compatible: "ti,bq35100"
+
+include: i2c-device.yaml
+
+properties:
+    ge-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The Gauge Enable (GE) pin defaults to active high when consumed by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    alert-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The ALERT pin defaults to active low when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.

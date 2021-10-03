@@ -1,0 +1,11 @@
+# BQ35100 lithium primary battery fuel gauge configuration options
+
+# Copyright (c) 2021 arithmetics.io
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BQ35100
+	bool "BQ35100 lithium primary battery fuel gauge"
+	depends on I2C && NEWLIB_LIBC
+	help
+	  Enable driver for BQ35100 BQ35100 lithium primary battery fuel gauge.
+
