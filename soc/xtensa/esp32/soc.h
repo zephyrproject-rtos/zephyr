@@ -31,9 +31,9 @@ static inline void esp32_clear_mask32(uint32_t v, uint32_t mem_addr)
 
 extern void esp32_rom_intr_matrix_set(int cpu_no, uint32_t model_num, uint32_t intr_num);
 
-extern int esp32_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index,
+extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index,
 				    bool inverted);
-extern int esp32_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
+extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
 				     bool out_inverted,
 				     bool out_enabled_inverted);
 

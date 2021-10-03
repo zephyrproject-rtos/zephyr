@@ -245,7 +245,7 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 	} else {
 		sig_out_idx = LEDC_LS_SIG_OUT0_IDX + channel;
 	}
-	esp32_rom_gpio_matrix_out(pin, sig_out_idx, 0, 0);
+	esp_rom_gpio_matrix_out(pin, sig_out_idx, 0, 0);
 
 	return 0;
 }
