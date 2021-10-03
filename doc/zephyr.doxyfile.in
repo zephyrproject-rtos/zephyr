@@ -1257,7 +1257,8 @@ HTML_STYLESHEET        =
 
 HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome.css \
                          @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-sidebar-only.css \
-                         @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-sidebar-only-darkmode-toggle.css
+                         @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-sidebar-only-darkmode-toggle.css \
+                         @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-zephyr.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
