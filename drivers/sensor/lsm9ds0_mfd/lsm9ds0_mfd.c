@@ -398,7 +398,7 @@ static inline void lsm9ds0_mfd_convert_accel(struct sensor_value *val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * scale;
+	dval = (double)(raw_val) * (double)scale;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
@@ -484,7 +484,7 @@ static inline void lsm9ds0_mfd_convert_magn(struct sensor_value *val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * scale;
+	dval = (double)(raw_val) * (double)scale;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }

@@ -390,27 +390,27 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, float ratio)
 	float val;
 
 	/* No change needed. */
-	if (ratio == 1.0) {
+	if (ratio == 1.0f) {
 		return 0;
 	}
 
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	if ((ratio > 1.0f + 1.0f/(2 * hw_inc)) ||
+			(ratio < 1.0f - 1.0f/(2 * hw_inc))) {
 		return -EINVAL;
 	}
 
 	/* Save new ratio. */
 	context->clk_ratio = ratio;
 
-	if (ratio < 1.0) {
+	if (ratio < 1.0f) {
 		corr = hw_inc - 1;
-		val = 1.0 / (hw_inc * (1.0 - ratio));
-	} else if (ratio > 1.0) {
+		val = 1.0f / (hw_inc * (1.0f - ratio));
+	} else if (ratio > 1.0f) {
 		corr = hw_inc + 1;
-		val = 1.0 / (hw_inc * (ratio-1.0));
+		val = 1.0f / (hw_inc * (ratio - 1.0f));
 	} else {
 		val = 0;
 		corr = hw_inc;
