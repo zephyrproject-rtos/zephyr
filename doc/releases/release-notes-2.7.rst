@@ -166,17 +166,57 @@ Architectures
 Bluetooth
 *********
 
+* Updated all APIs and internal implementation to be conformant with the new
+  inclusive terminology in version 5.3 of the Bluetooth Core Specification
+
 * Audio
 
+  * Added the Microphone Input Control Service and client.
+  * Changed the connected isochronous API to use a group-based opaque struct
+  * Split the configuration options into connected and broadcast groups
+  * Added support for a new sent callback to be notified when an SDU has been
+    transmitted
+
+* Direction Finding
+
+  * Added configurability for conditional CTE RX support
+  * Added support for CTE periodic advertising chain transmissions
+
 * Host
+
+  * Added support for setting more than 251 bytes of advertising data
+  * Added new callbacks on ATT MTU update
+  * Added a new call to retrieve the handle of an advertising set
+  * Fixed key overwrite algorithm when working with multiple connections
+  * Added configuration support for GATT security re-establishment
+  * Added support for writing a long device name
+  * OTS: Added object name write capability
 
 * Mesh
 
   * Added return value for opcode callback
+  * Added support for OOB Public Key in the provisionee role
+  * Added a new API to manually store pending RPL entries
+  * Added support for application access to mesh messages
+  * Refactored the Mesh Model Extensions
 
 * Bluetooth LE split software Controller
 
+  * Added support for advertising PDU chaining, implementing advertising trains
+    for Direction Finding
+  * Added support for adding or removing the ACAD field in Common Extended
+    Header Format to support BIGInfo
+  * Refactored the legacy, extended and periodic advertising time reservation
+    slot calculations
+  * Implemented CSA#2 in Extended Advertising and Broadcast ISO sub-events
+  * Added support for Extended Active Scanning
+  * Added support for advertising on the S2 and S8 coding schemes
+  * Added support for the Periodic Advertising channel map update indication
+
 * HCI Driver
+
+  * Removed all ``CONFIG_BT_*_ON_DEV_NAME`` Kconfig options, use Devicetree
+    instead
 
 Boards & SoC Support
 ********************
