@@ -1590,6 +1590,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
 
 /**
+ * @brief Trace Pipe flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_exit(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
+
+/**
  * @brief Trace Pipe put attempt entry
  * @param pipe Pipe object
  * @param timeout Timeout period
