@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "route.h"
 #include "net_stats.h"
 
+BUILD_ASSERT(sizeof(struct in6_addr) == NET_IPV6_ADDR_SIZE);
+
 /* Timeout value to be used when allocating net buffer during various
  * neighbor discovery procedures.
  */
