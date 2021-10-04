@@ -87,4 +87,11 @@ void test_init(void)
 	bst_result = In_progress;
 }
 
+void print_hex(const uint8_t *ptr, size_t len)
+{
+	while (len-- != 0) {
+		printk("%02x", *ptr++);
+	}
+}
+
 #endif /* CONFIG_BT_TBS */
