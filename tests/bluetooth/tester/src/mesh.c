@@ -885,6 +885,8 @@ static void composition_data_get(uint8_t *data, uint16_t len)
 
 	LOG_DBG("");
 
+	bt_mesh_cfg_cli_timeout_set(10 * MSEC_PER_SEC);
+
 	net_buf_simple_init(comp, 0);
 
 	err = bt_mesh_cfg_comp_data_get(cmd->net_idx, cmd->address, cmd->page,
