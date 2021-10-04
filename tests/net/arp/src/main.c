@@ -210,8 +210,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	memcpy(&hdr->src_hwaddr.addr, addr,
 	       sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->dst_ipaddr, &NET_ARP_HDR(req)->src_ipaddr);
-	net_ipaddr_copy(&hdr->src_ipaddr, &NET_ARP_HDR(req)->dst_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, NET_ARP_HDR(req)->src_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->src_ipaddr, NET_ARP_HDR(req)->dst_ipaddr);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
@@ -260,8 +260,8 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 	memcpy(&hdr->src_hwaddr.addr, addr, sizeof(struct net_eth_addr));
 
-	net_ipaddr_copy(&hdr->src_ipaddr, &req_hdr->src_ipaddr);
-	net_ipaddr_copy(&hdr->dst_ipaddr, &req_hdr->dst_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->src_ipaddr, req_hdr->src_ipaddr);
+	net_ipv4_addr_copy_raw(hdr->dst_ipaddr, req_hdr->dst_ipaddr);
 
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
@@ -430,16 +430,16 @@ void test_arp(void)
 		zassert_true(0, "exiting");
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &NET_IPV4_HDR(pkt)->dst)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+				   (uint8_t *)&NET_IPV4_HDR(pkt)->dst)) {
 		printk("ARP IP dest invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 		zassert_true(0, "exiting");
 	}
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->src_ipaddr,
-			       &NET_IPV4_HDR(pkt)->src)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
+				   (uint8_t *)&NET_IPV4_HDR(pkt)->src)) {
 		printk("ARP IP src invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
@@ -468,8 +468,8 @@ void test_arp(void)
 
 	arp_hdr = NET_ARP_HDR(pkt2);
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &iface->config.ip.ipv4->gw)) {
+	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
+				   (uint8_t *)&iface->config.ip.ipv4->gw)) {
 		printk("ARP IP dst invalid %s, should be %s\n",
 			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 			net_sprint_ipv4_addr(&iface->config.ip.ipv4->gw));
@@ -526,8 +526,8 @@ void test_arp(void)
 	arp_hdr = NET_ARP_HDR(pkt);
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
-	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
-	net_ipaddr_copy(&arp_hdr->src_ipaddr, &src);
+	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
+	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&src);
 
 	pkt2 = prepare_arp_reply(iface, pkt, &hwaddr, &eth_hdr);
 
@@ -567,8 +567,8 @@ void test_arp(void)
 					 (sizeof(struct net_eth_hdr)));
 	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
-	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);
-	net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
+	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&src);
+	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
 	pkt2 = prepare_arp_request(iface, pkt, &hwaddr, &eth_hdr);
 
@@ -627,8 +627,8 @@ void test_arp(void)
 		arp_hdr->opcode = htons(NET_ARP_REQUEST);
 		memcpy(&arp_hdr->src_hwaddr, &new_hwaddr, 6);
 		memcpy(&arp_hdr->dst_hwaddr, net_eth_broadcast_addr(), 6);
-		net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
-		net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
+		net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (uint8_t *)&dst);
+		net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (uint8_t *)&dst);
 
 		net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
