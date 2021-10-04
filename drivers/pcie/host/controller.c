@@ -311,34 +311,102 @@ static bool pcie_generic_ctrl_enumerate_endpoint(const struct device *ctrl_dev,
 	return is_bridge;
 }
 
+/* Return the next BDF or PCIE_BDF_NONE without changing bus number */
+static inline unsigned int pcie_bdf_bus_next(unsigned int bdf, bool skip_next_func)
+{
+	if (skip_next_func) {
+		if (PCIE_BDF_TO_DEV(bdf) == PCIE_BDF_DEV_MASK) {
+			return PCIE_BDF_NONE;
+		}
+
+		return PCIE_BDF(PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf) + 1, 0);
+	}
+
+	if (PCIE_BDF_TO_DEV(bdf) == PCIE_BDF_DEV_MASK &&
+	    PCIE_BDF_TO_FUNC(bdf) == PCIE_BDF_FUNC_MASK) {
+		return PCIE_BDF_NONE;
+	}
+
+	return PCIE_BDF(PCIE_BDF_TO_BUS(bdf),
+			(PCIE_BDF_TO_DEV(bdf) +
+			 ((PCIE_BDF_TO_FUNC(bdf) + 1) / (PCIE_BDF_FUNC_MASK + 1))),
+			((PCIE_BDF_TO_FUNC(bdf) + 1) & PCIE_BDF_FUNC_MASK));
+}
+
+struct pcie_bus_state {
+	/* Current scanned bus BDF, always valid */
+	unsigned int bus_bdf;
+	/* Current bridge endpoint BDF, either valid or PCIE_BDF_NONE */
+	unsigned int bridge_bdf;
+	/* Next BDF to scan on bus, either valid or PCIE_BDF_NONE when all EP scanned */
+	unsigned int next_bdf;
+};
+
+#define MAX_TRAVERSE_STACK 256
+
+/* Non-recursive stack based PCIe bus & bridge enumeration */
 void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_start)
 {
-	uint32_t data, class, id;
+	struct pcie_bus_state stack[MAX_TRAVERSE_STACK], *state;
 	unsigned int bus_number = PCIE_BDF_TO_BUS(bdf_start) + 1;
 	bool skip_next_func = false;
 	bool is_bridge = false;
-	unsigned int dev = PCIE_BDF_TO_DEV(bdf_start),
-		     func = 0,
-		     bus = PCIE_BDF_TO_BUS(bdf_start);
 
-	for (; dev <= PCIE_MAX_DEV; dev++) {
-		func = 0;
-		for (; func <= PCIE_MAX_FUNC; func++) {
-			pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+	int stack_top = 0;
 
-			is_bridge = pcie_generic_ctrl_enumerate_endpoint(ctrl_dev, bdf,
-									  bus_number,
-									  &skip_next_func);
+	/* Start with first endpoint of immediate Root Controller bus */
+	stack[stack_top].bus_bdf = PCIE_BDF(PCIE_BDF_TO_BUS(bdf_start), 0, 0);
+	stack[stack_top].bridge_bdf = PCIE_BDF_NONE;
+	stack[stack_top].next_bdf = bdf_start;
 
-			if (is_bridge) {
-				bus_number++;
-				pcie_generic_ctrl_post_enumerate_type1(ctrl_dev, bdf,
-							               bus_number);
+	while (stack_top >= 0) {
+		/* Top of stack contains the current PCIe bus to traverse */
+		state = &stack[stack_top];
+
+		/* Finish current bridge configuration before scanning other endpoints */
+		if (state->bridge_bdf != PCIE_BDF_NONE) {
+			pcie_generic_ctrl_post_enumerate_type1(ctrl_dev, state->bridge_bdf,
+							       bus_number);
+
+			state->bridge_bdf = PCIE_BDF_NONE;
+		}
+
+		/* We still have more endpoints to scan */
+		if (state->next_bdf != PCIE_BDF_NONE) {
+			while (state->next_bdf != PCIE_BDF_NONE) {
+				is_bridge = pcie_generic_ctrl_enumerate_endpoint(ctrl_dev,
+										 state->next_bdf,
+										 bus_number,
+										 &skip_next_func);
+				if (is_bridge) {
+					state->bridge_bdf = state->next_bdf;
+					state->next_bdf = pcie_bdf_bus_next(state->next_bdf,
+									    skip_next_func);
+
+					/* If we can't handle more bridges, don't go further */
+					if (stack_top == (MAX_TRAVERSE_STACK - 1) ||
+					    bus_number == PCIE_BDF_BUS_MASK) {
+						break;
+					}
+
+					/* Push to stack to scan this bus */
+					stack_top++;
+					stack[stack_top].bus_bdf = PCIE_BDF(bus_number, 0, 0);
+					stack[stack_top].bridge_bdf = PCIE_BDF_NONE;
+					stack[stack_top].next_bdf = PCIE_BDF(bus_number, 0, 0);
+
+					/* Increase bus number */
+					bus_number++;
+
+					break;
+				}
+
+				state->next_bdf = pcie_bdf_bus_next(state->next_bdf,
+								    skip_next_func);
 			}
-
-			if (skip_next_func) {
-				break;
-			}
+		} else {
+			/* We finished scanning this bus, go back and scan next endpoints */
+			stack_top--;
 		}
 	}
 }
