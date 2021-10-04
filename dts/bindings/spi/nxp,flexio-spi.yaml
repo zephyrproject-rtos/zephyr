@@ -11,3 +11,6 @@ properties:
 
   clocks:
     required: true
+
+  interrupts:
+    required: true

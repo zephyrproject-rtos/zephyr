@@ -276,8 +276,6 @@ static int teensy4_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-    // TODO: FLEXIO PINMUX
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) && CONFIG_SPI
 	/* LPSPI3 MISO, MOSI, SCK, CS on Teensy-Pins 39/26/27/38 */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_12_LPSPI3_PCS0, 0);
@@ -333,8 +331,6 @@ static int teensy4_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
-
-    // TODO: FLEXIO PINMUX
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3_spi), okay) && CONFIG_SPI_MCUX_FLEXIO
 
