@@ -4,6 +4,10 @@
 
 #define DT_DRV_COMPAT nxp_flexio_spi
 
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(spi_flexio, CONFIG_SPI_LOG_LEVEL);
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/spi.h>
@@ -11,9 +15,7 @@
 #include "spi_context.h"
 #include <drivers/clock_control.h>
 #include <fsl_flexio_spi.h>
-#include <logging/log.h>
 
-LOG_MODULE_REGISTER(spi_flexio, CONFIG_SPI_LOG_LEVEL);
 
 /* Device constant configuration parameters */
 struct spi_flexio_config {
@@ -267,7 +269,7 @@ static int spi_flexio_init(const struct device *dev) {
     const struct spi_flexio_config *config = dev->config;
     struct spi_flexio_data *data = dev->data;
 
-    //config->irq_config_func(dev);
+    config->irq_config_func(dev);
 
     spi_context_unlock_unconditionally(&data->ctx);
 
