@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/crc.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <zephyr/net/net_pkt.h>
@@ -95,6 +96,8 @@ static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
+
+static struct net_if_mcast_monitor mcast_monitor;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
@@ -222,8 +225,8 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 
 	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
-	MACFilterConf.HashMulticast = DISABLE;
-	MACFilterConf.PassAllMulticast = ENABLE;
+	MACFilterConf.HashMulticast = ENABLE;
+	MACFilterConf.PassAllMulticast = DISABLE;
 	MACFilterConf.HachOrPerfectFilter = DISABLE;
 
 	HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
@@ -232,13 +235,12 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 #else
 	uint32_t tmp = heth->Instance->MACFFR;
 
-	/* disable multicast filtering */
+	/* disable multicast perfect filtering */
 	tmp &= ~(ETH_MULTICASTFRAMESFILTER_PERFECTHASHTABLE |
-		 ETH_MULTICASTFRAMESFILTER_HASHTABLE |
 		 ETH_MULTICASTFRAMESFILTER_PERFECT);
 
-	/* enable receiving all multicast frames */
-	tmp |= ETH_MULTICASTFRAMESFILTER_NONE;
+	/* enable multicast hash receive filter */
+	tmp |= ETH_MULTICASTFRAMESFILTER_HASHTABLE;
 
 	heth->Instance->MACFFR = tmp;
 
@@ -1163,7 +1165,7 @@ static int eth_initialize(const struct device *dev)
 		LOG_ERR("HAL_ETH_Start{_IT} failed");
 	}
 
-	disable_mcast_filter(heth);
+	setup_mac_filter(heth);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Adjust MDC clock range depending on HCLK frequency: */
@@ -1185,6 +1187,103 @@ static int eth_initialize(const struct device *dev)
 		dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 	return 0;
+}
+
+static uint32_t reverse(uint32_t val)
+{
+	uint32_t res = 0;
+	int i;
+
+	for (i = 0; i < 32; i++) {
+		if (val & (1 << i)) {
+			res |= 1 << (31 - i);
+		}
+	}
+
+	return res;
+}
+
+static void net_if_mcast_cb(struct net_if *iface,
+			    const struct net_addr *addr,
+			    bool is_joined)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(is_joined);
+
+	const struct device *dev;
+	struct eth_stm32_hal_dev_data *dev_data;
+	ETH_HandleTypeDef *heth;
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if_ipv6 *ipv6;
+#endif
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	struct net_if_ipv4 *ipv4;
+#endif
+	struct net_eth_addr mac_addr;
+	uint32_t crc;
+	uint32_t hash_table[2];
+	uint32_t hash_index;
+	int i;
+
+	__ASSERT_NO_MSG(iface != NULL);
+
+	dev = net_if_get_device(iface);
+	__ASSERT_NO_MSG(dev != NULL);
+
+	dev_data = DEV_DATA(dev);
+	__ASSERT_NO_MSG(dev_data != NULL);
+
+	heth = &dev_data->heth;
+	__ASSERT_NO_MSG(heth != NULL);
+
+	hash_table[0] = 0;
+	hash_table[1] = 0;
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+		if (!ipv6->mcast[i].is_used) {
+			continue;
+		}
+
+		net_eth_ipv6_mcast_to_mac_addr(&ipv6->mcast[i].address.in_addr,
+					       &mac_addr);
+		crc = reverse(crc32_ieee(mac_addr.addr,
+					 sizeof(struct net_eth_addr)));
+		hash_index = (crc >> 26) & 0x3f;
+		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	if (net_if_config_ipv4_get(iface, &ipv4) < 0) {
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if (!ipv4->mcast[i].is_used) {
+			continue;
+		}
+
+		net_eth_ipv4_mcast_to_mac_addr(&ipv4->mcast[i].address.in_addr,
+					       &mac_addr);
+		crc = reverse(crc32_ieee(mac_addr.addr,
+					 sizeof(struct net_eth_addr)));
+		hash_index = (crc >> 26) & 0x3f;
+		hash_table[hash_index / 32] |= (1 << (hash_index % 32));
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	heth->Instance->MACHT0R = hash_table[0];
+	heth->Instance->MACHT1R = hash_table[1];
+#else
+	heth->Instance->MACHTLR = hash_table[0];
+	heth->Instance->MACHTHR = hash_table[1];
+#endif
 }
 
 static void eth_iface_init(struct net_if *iface)
@@ -1209,6 +1308,8 @@ static void eth_iface_init(struct net_if *iface)
 		dev_data->iface = iface;
 		is_first_init = true;
 	}
+
+	net_if_mcast_mon_register(&mcast_monitor, iface, net_if_mcast_cb);
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
