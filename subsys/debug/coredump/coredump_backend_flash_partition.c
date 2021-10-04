@@ -353,7 +353,6 @@ static void coredump_flash_backend_start(void)
 static void coredump_flash_backend_end(void)
 {
 	int ret;
-	const struct device *flash_dev;
 
 	struct flash_hdr_t hdr = {
 		.id = {'C', 'D'},
@@ -375,22 +374,10 @@ static void coredump_flash_backend_end(void)
 	hdr.error = backend_ctx.error;
 	hdr.flags = 0;
 
-	flash_dev = flash_area_get_device(backend_ctx.flash_area);
-
-	/* Need to re-init context to write at beginning of flash */
-	ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
-				stream_flash_buf,
-				sizeof(stream_flash_buf),
-				backend_ctx.flash_area->fa_off,
-				backend_ctx.flash_area->fa_size, NULL);
-	if (ret == 0) {
-		ret = stream_flash_buffered_write(&backend_ctx.stream_ctx,
-						  (void *)&hdr, sizeof(hdr),
-						  true);
-		if (ret != 0) {
-			LOG_ERR("Cannot write coredump header!");
-			backend_ctx.error = ret;
-		}
+	ret = flash_area_write(backend_ctx.flash_area, 0, (void *)&hdr, sizeof(hdr));
+	if (ret != 0) {
+		LOG_ERR("Cannot write coredump header!");
+		backend_ctx.error = ret;
 	}
 
 	if (backend_ctx.error != 0) {
