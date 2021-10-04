@@ -115,7 +115,10 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	cli = NULL;
+	if (cli) {
+		bt_mesh_proxy_role_cleanup(cli);
+		cli = NULL;
+	}
 
 	bt_mesh_pb_gatt_close(conn);
 

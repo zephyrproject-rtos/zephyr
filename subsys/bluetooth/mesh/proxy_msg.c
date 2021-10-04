@@ -219,14 +219,8 @@ struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
 	return role;
 }
 
-static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
+void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 {
-	struct bt_mesh_proxy_role *role;
-
-	BT_DBG("conn %p reason 0x%02x", (void *)conn, reason);
-
-	role = &roles[bt_conn_index(conn)];
-
 	/* If this fails, the work handler exits early, as
 	 * there's no active connection.
 	 */
@@ -236,7 +230,3 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_mesh_adv_update();
 }
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.disconnected = gatt_disconnected,
-};
