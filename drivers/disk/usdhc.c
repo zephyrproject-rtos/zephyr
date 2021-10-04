@@ -2386,12 +2386,14 @@ APP_SEND_OP_COND_AGAIN:
 		/* high capacity check */
 		if (cmd->response[0U] & SD_OCR_CARD_CAP_FLAG) {
 			priv->card_info.card_flags |= SDHC_HIGH_CAPACITY_FLAG;
+			LOG_DBG("SD card reports high capacity support");
 		}
 
 		if (priv->config->no_1_8_v == false) {
 			/* 1.8V support */
 			if (cmd->response[0U] & SD_OCR_SWITCH_18_ACCEPT_FLAG) {
 				priv->card_info.card_flags |= SDHC_1800MV_FLAG;
+				LOG_DBG("SD card reports 1.8V (LVS) support");
 			}
 		}
 		priv->card_info.raw_ocr = cmd->response[0U];
