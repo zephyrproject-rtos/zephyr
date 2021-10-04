@@ -71,5 +71,6 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
+void print_hex(const uint8_t *ptr, size_t len);
 
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */
