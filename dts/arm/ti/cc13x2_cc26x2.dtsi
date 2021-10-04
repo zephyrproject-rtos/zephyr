@@ -45,6 +45,11 @@
 	};
 
 	soc {
+		serialDomain: serialDomain {
+			compatible = "ti,cc13xx-cc26xx-power-domain";
+			resource-id = <0x00000002>;
+		};
+
 		pinmux: pinmux@40081000 {
 			compatible = "ti,cc13xx-cc26xx-pinmux";
 			reg = <0x40081000 0x1000>;
@@ -75,6 +80,7 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 			label = "UART_0";
+			power-domain = <&serialDomain>;
 		};
 
 		uart1: uart@4000b000 {
