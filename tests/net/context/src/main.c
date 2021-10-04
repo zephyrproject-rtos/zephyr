@@ -921,10 +921,10 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		} else {
 			struct in_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-					&NET_IPV4_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+			net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
+					       NET_IPV4_HDR(pkt)->dst);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 		}
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);

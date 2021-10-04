@@ -104,7 +104,7 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 	addr->sin_family = AF_INET;
 	addr->sin_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin_addr, &NET_IPV4_HDR(pkt)->src);
+	net_ipv4_addr_copy_raw((uint8_t *)&addr->sin_addr, NET_IPV4_HDR(pkt)->src);
 }
 #endif
 
@@ -352,7 +352,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv4->src);
+				    (struct in_addr *)ip_hdr->ipv4->src);
 		if (!addr) {
 			return -ENOENT;
 		}

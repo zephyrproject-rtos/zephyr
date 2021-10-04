@@ -161,9 +161,9 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 
 			ep->sin.sin_port = src == TCP_EP_SRC ? th_sport(th) :
 							       th_dport(th);
-			net_ipaddr_copy(&ep->sin.sin_addr,
-					src == TCP_EP_SRC ?
-							&ip->src : &ip->dst);
+			net_ipv4_addr_copy_raw((uint8_t *)&ep->sin.sin_addr,
+					       src == TCP_EP_SRC ?
+							ip->src : ip->dst);
 			ep->sa.sa_family = AF_INET;
 		} else {
 			ret = -EINVAL;
@@ -828,8 +828,10 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 static bool is_destination_local(struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
-		    net_ipv4_is_my_addr(&NET_IPV4_HDR(pkt)->dst)) {
+		if (net_ipv4_is_addr_loopback(
+				(struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
+		    net_ipv4_is_my_addr(
+				(struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 			return true;
 		}
 	}

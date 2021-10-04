@@ -486,8 +486,8 @@ struct net_ipv4_hdr {
 	uint8_t ttl;
 	uint8_t proto;
 	uint16_t chksum;
-	struct in_addr src;
-	struct in_addr dst;
+	uint8_t src[NET_IPV4_ADDR_SIZE];
+	uint8_t dst[NET_IPV4_ADDR_SIZE];
 } __packed;
 
 struct net_icmp_hdr {

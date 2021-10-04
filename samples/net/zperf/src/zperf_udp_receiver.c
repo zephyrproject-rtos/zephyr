@@ -44,8 +44,8 @@ static inline void set_dst_addr(const struct shell *shell,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
-				&ip_hdr->ipv4->src);
+		net_ipv4_addr_copy_raw((uint8_t *)&net_sin(dst_addr)->sin_addr,
+				       ip_hdr->ipv4->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
 		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}
