@@ -883,7 +883,10 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	conn_count--;
 
 	client = find_client(conn);
-	client->cli = NULL;
+	if (client->cli) {
+		bt_mesh_proxy_role_cleanup(client->cli);
+		client->cli = NULL;
+	}
 }
 
 static int proxy_send(struct bt_conn *conn,
