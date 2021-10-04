@@ -18,6 +18,7 @@
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
+#include <stm32_ll_system.h>
 #include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -37,6 +38,56 @@ const struct device * const gpio_ports[STM32_PORTS_MAX] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
 };
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11)
+#define REMAP_PA11	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11)
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa12)
+#define REMAP_PA12	DT_PROP(DT_NODELABEL(pinctrl), remap_pa12)
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11_pa12)
+#define REMAP_PA11_PA12	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11_pa12)
+#endif
+
+#if REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12
+
+int stm32_pinmux_init_remap(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if REMAP_PA11 || REMAP_PA12
+
+#if !defined(CONFIG_SOC_SERIES_STM32G0X)
+#error "Pin remap property available only on STM32G0 SoC series"
+#endif
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+#if REMAP_PA11
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA11);
+#endif
+#if REMAP_PA12
+	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA12);
+#endif
+
+#elif REMAP_PA11_PA12
+
+#if !defined(SYSCFG_CFGR1_PA11_PA12_RMP)
+#error "Pin remap property available only on STM32F070x SoC series"
+#endif
+
+	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
+	LL_SYSCFG_EnablePinRemap();
+
+#endif /* (REMAP_PA11 || REMAP_PA12) || REMAP_PA11_PA12 */
+
+	return 0;
+}
+
+SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
+	 CONFIG_PINMUX_STM32_REMAP_INIT_PRIORITY);
+
+#endif /* REMAP_PA11 || REMAP_PA12 || REMAP_PA11_PA12 */
+
 
 static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {

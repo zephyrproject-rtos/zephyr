@@ -19,3 +19,10 @@ config PINMUX_STM32_DEVICE_INITIALIZATION_PRIORITY
 	  the startup cycle. Note that the pinmux device needs to be initialized
 	  after clock control device, but possibly before all other devices.
 	  If unsure, leave at default value 2
+
+config PINMUX_STM32_REMAP_INIT_PRIORITY
+	int "Remap initialization priority"
+	default 2
+	help
+	  Initialization priority for the routine in charge of configuring the
+	  remap for pins PA11/12.
