@@ -85,6 +85,8 @@ static void arc_connect_debug_mask_update(int cpu_num)
 }
 #endif
 
+void arc_core_private_intc_init(void);
+
 /* the C entry of slave cores */
 void z_arc_slave_start(int cpu_num)
 {
@@ -101,6 +103,8 @@ void z_arc_slave_start(int cpu_num)
 	}
 
 	z_irq_setup();
+
+	arc_core_private_intc_init();
 
 	z_arc_connect_ici_clear();
 	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
