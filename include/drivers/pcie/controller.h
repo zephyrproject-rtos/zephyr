@@ -76,6 +76,25 @@ typedef bool (*pcie_ctrl_region_allocate_t)(const struct device *dev, pcie_bdf_t
 					    uintptr_t *bar_bus_addr);
 
 /**
+ * @brief Function called to get the current allocation base of a memory region subset
+ * for an endpoint Base Address Register.
+ *
+ * When enumerating PCIe Endpoints, Type1 bridge endpoints requires a range of memory
+ * allocated by all endpoints in the bridged bus.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param mem True if the BAR is of memory type
+ * @param mem64 True if the BAR is of 64bit memory type
+ * @param align size to take in account for alignment
+ * @param bar_base_addr bus-centric address allocation base
+ * @return True if allocation was possible, False if allocation failed
+ */
+typedef bool (*pcie_ctrl_region_get_allocate_base_t)(const struct device *dev, pcie_bdf_t bdf,
+						     bool mem, bool mem64, size_t align,
+						     uintptr_t *bar_base_addr);
+
+/**
  * @brief Function called to translate an endpoint Base Address Register bus-centric address
  * into Physical address.
  *
@@ -147,6 +166,7 @@ __subsystem struct pcie_ctrl_driver_api {
 	pcie_ctrl_conf_read_t conf_read;
 	pcie_ctrl_conf_write_t conf_write;
 	pcie_ctrl_region_allocate_t region_allocate;
+	pcie_ctrl_region_get_allocate_base_t region_get_allocate_base;
 	pcie_ctrl_region_translate_t region_translate;
 };
 
@@ -215,6 +235,31 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
 		(const struct pcie_ctrl_driver_api *)dev->api;
 
 	return api->region_allocate(dev, bdf, mem, mem64, bar_size, bar_bus_addr);
+}
+
+/**
+ * @brief Function called to get the current allocation base of a memory region subset
+ * for an endpoint Base Address Register.
+ *
+ * When enumerating PCIe Endpoints, Type1 bridge endpoints requires a range of memory
+ * allocated by all endpoints in the bridged bus.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param mem True if the BAR is of memory type
+ * @param mem64 True if the BAR is of 64bit memory type
+ * @param align size to take in account for alignment
+ * @param bar_base_addr bus-centric address allocation base
+ * @return True if allocation was possible, False if allocation failed
+ */
+static inline bool pcie_ctrl_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
+						      bool mem, bool mem64, size_t align,
+						      uintptr_t *bar_base_addr)
+{
+	const struct pcie_ctrl_driver_api *api =
+		(const struct pcie_ctrl_driver_api *)dev->api;
+
+	return api->region_get_allocate_base(dev, bdf, mem, mem64, align, bar_base_addr);
 }
 
 /**
