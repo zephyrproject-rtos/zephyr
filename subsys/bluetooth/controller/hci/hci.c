@@ -842,8 +842,11 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* LE ISO Receive Test, LE ISO Read Test Counters */
 	rp->commands[43] |= BIT(6) | BIT(7);
+
+#if defined(CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY)
 	/* LE Read ISO Link Quality */
 	rp->commands[44] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ISO)
@@ -2054,6 +2057,7 @@ static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
 }
 
+#if defined(CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY)
 static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_iso_link_quality *cmd = (void *)buf->data;
@@ -2091,6 +2095,8 @@ static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
 	rp->rx_unreceived_packets = sys_cpu_to_le32(rx_unreceived_packets);
 	rp->duplicate_packets     = sys_cpu_to_le32(duplicate_packets);
 }
+#endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
+
 #endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ISO)
@@ -3826,9 +3832,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS):
 		le_iso_read_test_counters(cmd, evt);
 		break;
+#if defined(CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY)
 	case BT_OCF(BT_HCI_OP_LE_READ_ISO_LINK_QUALITY):
 		le_read_iso_link_quality(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
 #endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)

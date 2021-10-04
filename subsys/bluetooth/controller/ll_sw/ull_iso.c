@@ -258,6 +258,7 @@ uint8_t ll_iso_read_test_counters(uint16_t handle, uint32_t *received_cnt,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
+#if defined(CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY)
 uint8_t ll_read_iso_link_quality(uint16_t  handle,
 				 uint32_t *tx_unacked_packets,
 				 uint32_t *tx_flushed_packets,
@@ -278,6 +279,8 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
+#endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
+
 #endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
