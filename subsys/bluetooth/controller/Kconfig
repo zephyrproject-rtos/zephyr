@@ -81,6 +81,12 @@ config BT_CTLR_CONN_RSSI_SUPPORT
 config BT_CTLR_ECDH_SUPPORT
 	bool
 
+config BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO_SUPPORT || \
+		   BT_CTLR_CENTRAL_ISO_SUPPORT || \
+		   BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -626,6 +632,13 @@ config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
+
+config BT_CTLR_READ_ISO_LINK_QUALITY
+	bool "LE Read ISO Link Quality"
+	depends on BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	help
+	  Enable support for LE Read ISO Link Quality command.
 
 config BT_CTLR_DTM
 	bool
