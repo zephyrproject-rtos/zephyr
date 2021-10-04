@@ -1464,8 +1464,6 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 /** @brief Create audio broadcast source.
  *
  *  Create a new audio broadcast source with one or more audio channels.
- *  To create a broadcast source with multiple channels, the channels must be
- *  linked with bt_audio_chan_link().
  *
  *  The broadcast source will be visible for scanners once this has been called,
  *  and the device will advertise audio announcements.
@@ -1571,11 +1569,9 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
  *                            e.g. BIS index 1 and 2, this should have the value
  *                            of BIT(1) | BIT(2).
- *  @param chan               Channel object to be used for the receiver. If
+ *  @param chans              Channel objects to be used for the receiver. If
  *                            multiple BIS indexes shall be synchronized,
- *                            multiple channels shall be provided. To provide
- *                            multiple channels use bt_audio_chan_link to link
- *                            them.
+ *                            multiple channels shall be provided.
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
  *                            the broadcast is encrypted (see the syncable
  *                            callback).
@@ -1584,7 +1580,7 @@ int bt_audio_broadcast_sink_scan_stop(void);
  */
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
-				 struct bt_audio_chan *chan,
+				 struct bt_audio_chan *chans,
 				 const uint8_t broadcast_code[16]);
 
 /** @brief Stop audio broadcast sink.
