@@ -28,7 +28,62 @@
 				compatible = "qemu,pci-edu";
 				reg = <0x0 0x0 PCIE_BDF(0,0x02,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
 				label = "pci_edu";
+				status = "okay";
+			};
 
+			pci_edu1: test@10000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(1,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu1";
+				status = "okay";
+			};
+
+			pci_edu2: test@20000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(2,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu2";
+				status = "okay";
+			};
+
+			pci_edu3: test@30000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(3,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu3";
+				status = "okay";
+			};
+
+			pci_edu4: test@40000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(4,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu4";
+				status = "okay";
+			};
+
+			pci_edu5: test@50000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(5,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu5";
+				status = "okay";
+			};
+
+			pci_edu6: test@60000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(6,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu6";
+				status = "okay";
+			};
+
+			pci_edu7: test@80000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(8,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu6";
+				status = "okay";
+			};
+
+			pci_edu8: test@90000 {
+				compatible = "qemu,pci-edu";
+				reg = <0x0 0x0 PCIE_BDF(9,0,0) 0x0 PCIE_ID(0x1234,0x11e8)>;
+				label = "pci_edu6";
 				status = "okay";
 			};
 		};

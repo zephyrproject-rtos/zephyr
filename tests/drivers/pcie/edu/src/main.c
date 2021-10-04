@@ -131,8 +131,13 @@ static int pcie_edu_init(const struct device *dev)
 #endif
 
 	if (!pcie_probe(cfg->pcie_bdf, cfg->pcie_id)) {
+		LOG_INF("edu probe [%02x:%02x.%x] fail", PCIE_BDF_TO_BUS(cfg->pcie_bdf),
+		PCIE_BDF_TO_DEV(cfg->pcie_bdf), PCIE_BDF_TO_FUNC(cfg->pcie_bdf));
 		return -EINVAL;
 	}
+
+	LOG_INF("edu probe [%02x:%02x.%x]", PCIE_BDF_TO_BUS(cfg->pcie_bdf),
+		PCIE_BDF_TO_DEV(cfg->pcie_bdf), PCIE_BDF_TO_FUNC(cfg->pcie_bdf));
 
 	pcie_get_mbar(cfg->pcie_bdf, 0, &ctx->mem_bar);
 
@@ -184,20 +189,35 @@ static struct pcie_edu_driver_api pcie_edu_api = {
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_TESTED_DEVICE_INIT)
 
-static const struct device *dev;
+#define PCIE_EDU_DEV(n) DEVICE_DT_GET(DT_DRV_INST(n)),
+
+static const struct device *dev[] = {
+	DT_INST_FOREACH_STATUS_OKAY(PCIE_EDU_DEV)
+	NULL
+};
 
 static void test_dev_probe(void)
 {
 	struct pcie_edu_driver_api *api;
+	const struct pcie_edu_config *cfg;
+	int i;
 
-	dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	zassert_not_null(dev, "");
+	for (i = 0 ; dev[i] ; ++i) {
+		LOG_INF("edu device %d", i);
 
-	zassert_equal(dev->state->initialized, true, "");
-	zassert_equal(dev->state->init_res, 0, "");
+		zassert_not_null(dev[i], "");
 
-	api = (struct pcie_edu_driver_api *)dev->api;
-	zassert_not_null(api, "");
+		cfg = (const struct pcie_edu_config *)dev[i]->config;
+		LOG_INF("edu device %d bdf [%02x:%02x.%x]", i,
+			PCIE_BDF_TO_BUS(cfg->pcie_bdf), PCIE_BDF_TO_DEV(cfg->pcie_bdf),
+			PCIE_BDF_TO_FUNC(cfg->pcie_bdf));
+
+		zassert_equal(dev[i]->state->initialized, true, "");
+		zassert_equal(dev[i]->state->init_res, 0, "");
+
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
+		zassert_not_null(api, "");
+	}
 }
 
 static void test_run_get_id(void)
@@ -205,24 +225,34 @@ static void test_run_get_id(void)
 	struct pcie_edu_driver_api *api;
 	int ret;
 	uint32_t id;
+	int i;
 
-	api = (struct pcie_edu_driver_api *)dev->api;
+	for (i = 0 ; dev[i] ; ++i) {
+		LOG_INF("edu device %d", i);
 
-	ret = api->get_id(dev, &id);
-	zassert_equal(ret, 0, "");
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
 
-	LOG_INF("id %08x", id);
+		ret = api->get_id(dev[i], &id);
+		zassert_equal(ret, 0, "");
+
+		LOG_INF("id %08x", id);
+	}
 }
 
 static void test_run_check_liveness(void)
 {
 	struct pcie_edu_driver_api *api;
 	int ret;
+	int i;
 
-	api = (struct pcie_edu_driver_api *)dev->api;
+	for (i = 0 ; dev[i] ; ++i) {
+		LOG_INF("edu device %d", i);
 
-	ret = api->check_liveness(dev);
-	zassert_equal(ret, 0, "");
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
+
+		ret = api->check_liveness(dev[i]);
+		zassert_equal(ret, 0, "");
+	}
 }
 
 #ifdef CONFIG_PCIE_MSI
@@ -230,31 +260,41 @@ static void test_run_test_msi(void)
 {
 	struct pcie_edu_driver_api *api;
 	int ret;
+	int i;
 
-	api = (struct pcie_edu_driver_api *)dev->api;
+	for (i = 0 ; dev[i] ; ++i) {
+		LOG_INF("edu device %d", i);
 
-	ret = api->test_msi(dev);
-	zassert_equal(ret, 0, "");
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
+
+		ret = api->test_msi(dev[i]);
+		zassert_equal(ret, 0, "");
+	}
 }
 
 static void test_run_calc_fact(void)
 {
 	struct pcie_edu_driver_api *api;
 	uint32_t ret;
+	int i;
 
-	api = (struct pcie_edu_driver_api *)dev->api;
+	for (i = 0 ; dev[i] ; ++i) {
+		LOG_INF("edu device %d", i);
 
-	ret = api->calc_fact(dev, 0);
-	zassert_equal(ret, 1, "");
-	LOG_INF("fact(%d)=%d", 1, ret);
+		api = (struct pcie_edu_driver_api *)dev[i]->api;
 
-	ret = api->calc_fact(dev, 5);
-	zassert_equal(ret, 120, "");
-	LOG_INF("fact(%d)=%d", 5, ret);
+		ret = api->calc_fact(dev[i], 0);
+		zassert_equal(ret, 1, "");
+		LOG_INF("fact(%d)=%d", 1, ret);
 
-	ret = api->calc_fact(dev, 10);
-	zassert_equal(ret, 3628800, "");
-	LOG_INF("fact(%d)=%d", 10, ret);
+		ret = api->calc_fact(dev[i], 5);
+		zassert_equal(ret, 120, "");
+		LOG_INF("fact(%d)=%d", 5, ret);
+
+		ret = api->calc_fact(dev[i], 10);
+		zassert_equal(ret, 3628800, "");
+		LOG_INF("fact(%d)=%d", 10, ret);
+	}
 }
 #else
 static void test_run_test_msi(void)
