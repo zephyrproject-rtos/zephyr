@@ -740,6 +740,18 @@ static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 	UNALIGNED_PUT(UNALIGNED_GET(src), dest)
 
 /**
+ *  @brief Copy an IPv4 address raw buffer
+ *
+ *  @param dest Destination IP address.
+ *  @param src Source IP address.
+ */
+static inline void net_ipv4_addr_copy_raw(uint8_t *dest,
+					  const uint8_t *src)
+{
+	net_ipaddr_copy((struct in_addr *)dest, (const struct in_addr *)src);
+}
+
+/**
  *  @brief Compare two IPv4 addresses
  *
  *  @param addr1 Pointer to IPv4 address.
@@ -751,6 +763,21 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
 	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
+}
+
+/**
+ *  @brief Compare two raw IPv4 address buffers
+ *
+ *  @param addr1 Pointer to IPv4 address buffer.
+ *  @param addr2 Pointer to IPv4 address buffer.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
+					 const uint8_t *addr2)
+{
+	return net_ipv4_addr_cmp((const struct in_addr *)addr1,
+				 (const struct in_addr *)addr2);
 }
 
 /**
