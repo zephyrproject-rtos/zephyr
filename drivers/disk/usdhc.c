@@ -716,12 +716,9 @@ enum usdhc_reset {
 	/*!< All reset types */
 };
 
-static void usdhc_millsec_delay(unsigned int cycles_to_wait)
+static void usdhc_millsec_delay(unsigned int millis)
 {
-	unsigned int start = sys_clock_cycle_get_32();
-
-	while (sys_clock_cycle_get_32() - start < (cycles_to_wait * 1000))
-		;
+	k_msleep(millis);
 }
 
 uint32_t g_usdhc_boot_dummy __aligned(64);
@@ -1617,12 +1614,12 @@ static int usdhc_vol_switch(struct usdhc_priv *priv)
 	/* host switch to 1.8V */
 	usdhc_select_1_8_vol(base, true);
 
-	usdhc_millsec_delay(20000U);
+	usdhc_millsec_delay(100U);
 
 	/*enable force clock on*/
 	usdhc_force_clk_on(base, true);
-	/* dealy 1ms,not exactly correct when use while */
-	usdhc_millsec_delay(20000U);
+	/* delay 10ms,not exactly correct when use while */
+	usdhc_millsec_delay(10U);
 	/*disable force clock on*/
 	usdhc_force_clk_on(base, false);
 
