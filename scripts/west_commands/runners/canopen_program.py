@@ -6,6 +6,7 @@
 
 import argparse
 import os
+import time
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -18,6 +19,14 @@ except ImportError:
 
 # Default Python-CAN context to use, see python-can documentation for details
 DEFAULT_CAN_CONTEXT = 'default'
+
+# Default program number
+DEFAULT_PROGRAM_NUMBER = 1
+
+# Default timeouts and retries
+DEFAULT_TIMEOUT = 10.0 # seconds
+DEFAULT_SDO_TIMEOUT = 0.3 # seconds
+DEFAULT_SDO_RETRIES = 1
 
 # Object dictionary indexes
 H1F50_PROGRAM_DATA = 0x1F50
@@ -40,8 +49,9 @@ class ToggleAction(argparse.Action):
 class CANopenBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for CANopen.'''
     def __init__(self, cfg, node_id, can_context=DEFAULT_CAN_CONTEXT,
-                 program_number=1, confirm=True,
-                 confirm_only=True, timeout=10):
+                 program_number=DEFAULT_PROGRAM_NUMBER, confirm=True,
+                 confirm_only=True, timeout=DEFAULT_TIMEOUT,
+                 sdo_retries=DEFAULT_SDO_RETRIES, sdo_timeout=DEFAULT_SDO_TIMEOUT):
         if MISSING_REQUIREMENTS:
             raise RuntimeError('one or more Python dependencies were missing; '
                                "see the getting started guide for details on "
@@ -55,7 +65,9 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         self.downloader = CANopenProgramDownloader(logger=self.logger,
                                                    node_id=node_id,
                                                    can_context=can_context,
-                                                   program_number=program_number)
+                                                   program_number=program_number,
+                                                   sdo_retries=sdo_retries,
+                                                   sdo_timeout=sdo_timeout)
 
     @classmethod
     def name(cls):
@@ -72,17 +84,22 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
         # Optional:
         parser.add_argument('--can-context', default=DEFAULT_CAN_CONTEXT,
-                            help='Custom Python-CAN context to use')
-        parser.add_argument('--program-number', default=1,
-                            help='program number, default is 1')
+                            help=f'Python-CAN context to use (default: {DEFAULT_CAN_CONTEXT})')
+        parser.add_argument('--program-number', type=int, default=DEFAULT_PROGRAM_NUMBER,
+                            help=f'program number (default: {DEFAULT_PROGRAM_NUMBER})')
         parser.add_argument('--confirm', '--no-confirm',
                             dest='confirm', nargs=0,
                             action=ToggleAction,
                             help='confirm after starting? (default: yes)')
         parser.add_argument('--confirm-only', default=False, action='store_true',
                             help='confirm only, no program download (default: no)')
-        parser.add_argument('--timeout', default=10,
-                            help='boot-up timeout, default is 10 seconds')
+        parser.add_argument('--timeout', type=float, default=DEFAULT_TIMEOUT,
+                            help=f'Timeout in seconds (default: {DEFAULT_TIMEOUT})')
+        parser.add_argument('--sdo-retries', type=int, default=DEFAULT_SDO_RETRIES,
+                            help=f'CANopen SDO request retries (default: {DEFAULT_SDO_RETRIES})')
+        parser.add_argument('--sdo-timeout', type=float, default=DEFAULT_SDO_TIMEOUT,
+                            help=f'''CANopen SDO response timeout in seconds
+                            (default: {DEFAULT_SDO_TIMEOUT})''')
 
         parser.set_defaults(confirm=True)
 
@@ -90,10 +107,12 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
     def do_create(cls, cfg, args):
         return CANopenBinaryRunner(cfg, int(args.node_id),
                                    can_context=args.can_context,
-                                   program_number=int(args.program_number),
+                                   program_number=args.program_number,
                                    confirm=args.confirm,
                                    confirm_only=args.confirm_only,
-                                   timeout=int(args.timeout))
+                                   timeout=args.timeout,
+                                   sdo_retries=args.sdo_retries,
+                                   sdo_timeout=args.sdo_timeout)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':
@@ -107,7 +126,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                          self.downloader.program_number)
 
         self.downloader.connect()
-        status = self.downloader.flash_status()
+        status = self.downloader.wait_for_flash_status_ok(self.timeout)
         if status == 0:
             self.downloader.swid()
         else:
@@ -126,13 +145,15 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
         self.downloader.stop_program()
         self.downloader.clear_program()
+        self.downloader.wait_for_flash_status_ok(self.timeout)
         self.downloader.download(self.bin_file)
 
-        status = self.downloader.flash_status()
+        status = self.downloader.wait_for_flash_status_ok(self.timeout)
         if status != 0:
             raise ValueError('Program download failed: '
                              'flash status 0x{:02x}'.format(status))
 
+        self.downloader.swid()
         self.downloader.start_program()
         self.downloader.wait_for_bootup(self.timeout)
         self.downloader.swid()
@@ -146,7 +167,8 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 class CANopenProgramDownloader(object):
     '''CANopen program downloader'''
     def __init__(self, logger, node_id, can_context=DEFAULT_CAN_CONTEXT,
-                 program_number=1):
+                 program_number=DEFAULT_PROGRAM_NUMBER,
+                 sdo_retries=DEFAULT_SDO_RETRIES, sdo_timeout=DEFAULT_SDO_TIMEOUT):
         super(CANopenProgramDownloader, self).__init__()
         self.logger = logger
         self.node_id = node_id
@@ -159,6 +181,9 @@ class CANopenProgramDownloader(object):
         self.ctrl_sdo = self.node.sdo[H1F51_PROGRAM_CTRL][self.program_number]
         self.swid_sdo = self.node.sdo[H1F56_PROGRAM_SWID][self.program_number]
         self.flash_sdo = self.node.sdo[H1F57_FLASH_STATUS][self.program_number]
+
+        self.node.sdo.MAX_RETRIES = sdo_retries
+        self.node.sdo.RESPONSE_TIMEOUT = sdo_timeout
 
     def connect(self):
         '''Connect to CAN network'''
@@ -238,19 +263,35 @@ class CANopenProgramDownloader(object):
                     break
                 outfile.write(chunk)
                 progress.next(n=len(chunk))
+        except:
+            raise ValueError('Failed to download program')
+        finally:
             progress.finish()
             infile.close()
             outfile.close()
-        except:
-            raise ValueError('Failed to download program')
 
-    def wait_for_bootup(self, timeout=10):
+    def wait_for_bootup(self, timeout=DEFAULT_TIMEOUT):
         '''Wait for boot-up message reception'''
         self.logger.info('Waiting for boot-up message...')
         try:
             self.node.nmt.wait_for_bootup(timeout=timeout)
         except:
             raise ValueError('Timeout waiting for boot-up message')
+
+    def wait_for_flash_status_ok(self, timeout=DEFAULT_TIMEOUT):
+        '''Wait for flash status ok'''
+        self.logger.info('Waiting for flash status ok')
+        end_time = time.time() + timeout
+        while True:
+            now = time.time()
+            status = self.flash_status()
+            if status == 0:
+                break
+
+            if now > end_time:
+                return status
+
+        return status
 
     @staticmethod
     def create_object_dictionary():
