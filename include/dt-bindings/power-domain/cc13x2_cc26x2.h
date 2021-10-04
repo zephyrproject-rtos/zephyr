@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_POWER_DOMAIN_CC13X2_CC26X2_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_POWER_DOMAIN_CC13X2_CC26X2_H_
+
+/* @brief Serial domain - PRCM_DOMAIN_SERIAL value */
+#define CC13XX_CC26X2_SERIAL_DOMAIN 0x00000002U
+
+/* @brief Peripheral domain - PRCM_DOMAIN_PERIPH value */
+#define CC13XX_CC26X2_PERIPHERAL_DOMAIN 0x00000004U
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_DOMAIN_CC13X2_CC26X2_H_ */

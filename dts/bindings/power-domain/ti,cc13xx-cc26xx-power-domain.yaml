@@ -1,0 +1,15 @@
+# Copyright (c) 2021, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC13xx / CC26xx power domain
+
+compatible: "ti,cc13xx-cc26xx-power-domain"
+
+include: power-domain.yaml
+
+properties:
+    resource-id:
+      type: int
+      required: true
+      description:
+        Power domain resource ID as defined in prcm.h (TI HAL).

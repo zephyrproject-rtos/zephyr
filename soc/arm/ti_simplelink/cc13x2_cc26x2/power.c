@@ -3,8 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_power_domain
+
+#include <device.h>
+#include <kernel.h>
 #include <init.h>
+#include <pm/device.h>
 #include <pm/pm.h>
 
 #include <driverlib/pwr_ctrl.h>
@@ -238,3 +243,65 @@ bool pm_constraint_get(enum pm_state state)
 
 SYS_INIT(power_initialize, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 SYS_INIT(unlatch_pins, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+
+struct domain_cc13xx_cc26xx_dev_cfg {
+	uint32_t resource_id;
+};
+
+#ifdef CONFIG_PM_DEVICE
+static int domain_cc13xx_cc26xx_pm_action(const struct device *dev,
+		enum pm_device_action action)
+{
+	int ret = 0;
+	const struct domain_cc13xx_cc26xx_dev_cfg *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		PRCMPowerDomainOn(cfg->resource_id);
+		while (PRCMPowerDomainStatus(cfg->resource_id) !=
+		       PRCM_DOMAIN_POWER_ON) {
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		PRCMPowerDomainOff(cfg->resource_id);
+		while (PRCMPowerDomainStatus(cfg->resource_id) !=
+		       PRCM_DOMAIN_POWER_OFF) {
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif
+
+static int domain_cc13xx_cc26xx_init(const struct device *dev)
+{
+	const struct domain_cc13xx_cc26xx_dev_cfg *cfg = dev->config;
+
+	PRCMPowerDomainOn(cfg->resource_id);
+	while (PRCMPowerDomainStatus(cfg->resource_id) !=
+	       PRCM_DOMAIN_POWER_ON) {
+	}
+
+	return 0;
+}
+
+#define POWER_DOMAIN_CC13XX_CC26XX_INIT(n)				\
+	static const struct domain_cc13xx_cc26xx_dev_cfg		\
+	domain_cc13xx_cc26xx_config_##n = {				\
+		.resource_id = DT_INST_PROP(n, resource_id),		\
+	};								\
+									\
+	PM_DEVICE_DT_INST_DEFINE(n, domain_cc13xx_cc26xx_pm_action);	\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			      domain_cc13xx_cc26xx_init,		\
+			      PM_DEVICE_DT_INST_REF(n),			\
+			      NULL, &domain_cc13xx_cc26xx_config_##n,	\
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_CC13XX_CC26XX_INIT)
