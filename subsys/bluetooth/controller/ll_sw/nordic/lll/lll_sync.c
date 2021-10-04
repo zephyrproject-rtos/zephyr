@@ -7,6 +7,7 @@
 
 #include <toolchain.h>
 #include <sys/util.h>
+#include <sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -160,10 +161,8 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 
 	/* Set access address for sync */
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((uint32_t)lll->crc_init[2] << 16) |
-			     ((uint32_t)lll->crc_init[1] << 8) |
-			     ((uint32_t)lll->crc_init[0])));
+	radio_crc_configure(RADIO_CRC_POLYNOMIAL,
+			    sys_get_le24(lll->crc_init));
 
 	lll_chan_set(lll_aux->chan);
 
@@ -405,10 +404,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
-			    (((uint32_t)lll->crc_init[2] << 16) |
-			     ((uint32_t)lll->crc_init[1] << 8) |
-			     ((uint32_t)lll->crc_init[0])));
+	radio_crc_configure(RADIO_CRC_POLYNOMIAL,
+			    sys_get_le24(lll->crc_init));
 
 	lll_chan_set(chan_idx);
 
