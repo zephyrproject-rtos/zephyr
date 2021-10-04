@@ -192,6 +192,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 #define TERM_REQ   1
 #define TERM_ACKED 3
 
+/* CIS Establishment procedure state values */
+#define CIS_REQUEST_AWAIT_HOST 2
+
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_BUF_ACL_TX_COUNT);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
 		    (CONFIG_BT_BUF_ACL_TX_COUNT + CONN_TX_CTRL_BUFFERS));
@@ -5954,6 +5957,11 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 void event_send_cis_rsp(struct ll_conn *conn)
 {
 	struct node_tx *tx;
+
+	/* If waiting for accept/reject from host, do nothing */
+	if (((conn->llcp_cis.req - conn->llcp_cis.ack) & 0xFF) == CIS_REQUEST_AWAIT_HOST) {
+		return;
+	}
 
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (tx) {
