@@ -330,14 +330,12 @@ Drivers and Sensors
 * Disk
 
   * Added SDMMC support on STM32L4+
+  * STM32 SDMMC now supports SDIO enabled devices
+  * Added USDHC support for i.MX RT685
 
 * Display
 
   * Added support for ST7735R
-
-* Disk
-
-  * STM32 SDMMC now supports SDIO enabled devices
 
 * DMA
 
