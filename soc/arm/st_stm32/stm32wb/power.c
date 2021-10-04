@@ -16,6 +16,8 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include "stm32_hsem.h"
 
+#include <bluetooth/hci.h>
+
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -40,6 +42,7 @@ static void lpm_hsem_lock(void)
 {
 	/* Implementation of STM32 AN5289 algorithm to enter/exit lowpower */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_WAIT_FOREVER);
+
 	if (!LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID)) {
 		if (LL_PWR_IsActiveFlag_C2DS()) {
 			/* Release ENTRY_STOP_MODE semaphore */
@@ -54,10 +57,49 @@ static void lpm_hsem_lock(void)
 	}
 }
 
+#define ACI_HAL_STACK_RESET 0xFC3B
+
+static void send_stack_reset(void)
+{
+	struct net_buf *rsp;
+	int err = 0;
+
+	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, &rsp);
+
+	net_buf_unref(rsp);
+
+	if (err) {
+		LOG_ERR("M0 BLE stack reset issue");
+	}
+}
+
+
+static void shutdown_ble_stack(void)
+{
+	send_stack_reset();
+
+	/* Wait till C2DS set */
+	while (LL_PWR_IsActiveFlag_C2DS() == 0) {
+	};
+}
+
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_power_state_set(struct pm_state_info info)
 {
-	if (info.state == PM_STATE_SUSPEND_TO_IDLE) {
+	if (info.state == PM_STATE_SOFT_OFF) {
+
+		if (IS_ENABLED(CONFIG_BT)) {
+			shutdown_ble_stack();
+		}
+
+		lpm_hsem_lock();
+
+		/* Clear all Wake-Up flags */
+		LL_PWR_ClearFlag_WU();
+
+		LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+
+	} else if (info.state == PM_STATE_SUSPEND_TO_IDLE) {
 
 		lpm_hsem_lock();
 
