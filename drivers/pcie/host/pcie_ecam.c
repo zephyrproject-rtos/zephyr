@@ -240,6 +240,46 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 	return pcie_ecam_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
 }
 
+static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
+					       bool mem, bool mem64, size_t align,
+					       uintptr_t *bar_base_addr)
+{
+	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
+	enum pcie_region_type type;
+
+	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
+	    !data->regions[PCIE_REGION_MEM].size) {
+		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
+		return false;
+	}
+
+	if (!mem && !data->regions[PCIE_REGION_IO].size) {
+		LOG_DBG("bdf %x no io region defined for allocation", bdf);
+		return false;
+	}
+
+	/*
+	 * Allocate into mem64 region if available or is the only available
+	 *
+	 * TOFIX:
+	 * - handle allocation from/to mem/mem64 when a region is full
+	 */
+	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+		    (data->regions[PCIE_REGION_MEM64].size &&
+		     !data->regions[PCIE_REGION_MEM].size))) {
+		type = PCIE_REGION_MEM64;
+	} else if (mem) {
+		type = PCIE_REGION_MEM;
+	} else {
+		type = PCIE_REGION_IO;
+	}
+
+	*bar_base_addr = (((data->regions[type].bus_start +
+			    data->regions[type].allocation_offset) - 1) | ((align) - 1)) + 1;
+
+	return true;
+}
+
 static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
 				       bool mem, bool mem64, uintptr_t bar_bus_addr,
 				       uintptr_t *bar_addr)
@@ -270,6 +310,7 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 	.conf_read = pcie_ecam_ctrl_conf_read,
 	.conf_write = pcie_ecam_ctrl_conf_write,
 	.region_allocate = pcie_ecam_region_allocate,
+	.region_get_allocate_base = pcie_ecam_region_get_allocate_base,
 	.region_translate = pcie_ecam_region_translate,
 };
 
