@@ -167,9 +167,53 @@ static void pcie_generic_ctrl_enumerate_type0(const struct device *ctrl_dev, pci
 	pcie_generic_ctrl_enumerate_bars(ctrl_dev, bdf, 6);
 }
 
+static void pcie_generic_ctrl_enumerate_endpoint(const struct device *ctrl_dev,
+						 pcie_bdf_t bdf, bool *skip_next_func)
+{
+	bool multifunction_device = false;
+	bool layout_type_1 = false;
+	uint32_t data, class, id;
+
+	*skip_next_func = false;
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == PCIE_ID_NONE) {
+		return;
+	}
+
+	class = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
+	data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+
+	multifunction_device = PCIE_CONF_MULTIFUNCTION(data);
+	layout_type_1 = PCIE_CONF_TYPE_BRIDGE(data);
+
+	LOG_INF("[%02x:%02x.%x] %04x:%04x class %x subclass %x progif %x "
+		"rev %x Type%x multifunction %s",
+		PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf),
+		id & 0xffff, id >> 16,
+		PCIE_CONF_CLASSREV_CLASS(class),
+		PCIE_CONF_CLASSREV_SUBCLASS(class),
+		PCIE_CONF_CLASSREV_PROGIF(class),
+		PCIE_CONF_CLASSREV_REV(class),
+		layout_type_1 ? 1 : 0,
+		multifunction_device ? "true" : "false");
+
+	/* Do not enumerate sub-functions if not a multifunction device */
+	if (PCIE_BDF_TO_FUNC(bdf) == 0 && !multifunction_device) {
+		*skip_next_func = true;
+	}
+
+	if (layout_type_1) {
+		pcie_generic_ctrl_enumerate_type1(ctrl_dev, bdf);
+	} else {
+		pcie_generic_ctrl_enumerate_type0(ctrl_dev, bdf);
+	}
+}
+
 void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_start)
 {
 	uint32_t data, class, id;
+	bool skip_next_func = false;
 	unsigned int dev = PCIE_BDF_TO_DEV(bdf_start),
 		     func = 0,
 		     bus = PCIE_BDF_TO_BUS(bdf_start);
@@ -178,39 +222,10 @@ void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_s
 		func = 0;
 		for (; func <= PCIE_MAX_FUNC; func++) {
 			pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
-			bool multifunction_device = false;
-			bool layout_type_1 = false;
 
-			id = pcie_conf_read(bdf, PCIE_CONF_ID);
-			if (id == PCIE_ID_NONE) {
-				continue;
-			}
+			pcie_generic_ctrl_enumerate_endpoint(ctrl_dev, bdf, &skip_next_func);
 
-			class = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
-			data = pcie_conf_read(bdf, PCIE_CONF_TYPE);
-
-			multifunction_device = PCIE_CONF_MULTIFUNCTION(data);
-			layout_type_1 = PCIE_CONF_TYPE_BRIDGE(data);
-
-			LOG_INF("[%02x:%02x.%x] %04x:%04x class %x subclass %x progif %x "
-				"rev %x Type%x multifunction %s",
-				PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf),
-				id & 0xffff, id >> 16,
-				PCIE_CONF_CLASSREV_CLASS(class),
-				PCIE_CONF_CLASSREV_SUBCLASS(class),
-				PCIE_CONF_CLASSREV_PROGIF(class),
-				PCIE_CONF_CLASSREV_REV(class),
-				layout_type_1 ? 1 : 0,
-				multifunction_device ? "true" : "false");
-
-			if (layout_type_1) {
-				pcie_generic_ctrl_enumerate_type1(ctrl_dev, bdf);
-			} else {
-				pcie_generic_ctrl_enumerate_type0(ctrl_dev, bdf);
-			}
-
-			/* Do not enumerate sub-functions if not a multifunction device */
-			if (PCIE_BDF_TO_FUNC(bdf) == 0 && !multifunction_device) {
+			if (skip_next_func) {
 				break;
 			}
 		}
