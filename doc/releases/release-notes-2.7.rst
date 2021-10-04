@@ -742,6 +742,10 @@ Libraries / Subsystems
 
 * Logging
 
+* MODBUS
+
+  * Changed server handler to copy Transaction and Protocol Identifiers
+    to response header.
 
 * Random
 
