@@ -1393,32 +1393,6 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan);
  */
 int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache);
 
-/** @brief Link Audio Channels
- *
- *  This procedure links channels so that any procedure on either of the
- *  channel is replicated on the other.
- *
- *  @param chan1 First Channel object
- *  @param chan2 Second Channel object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_chan_link(struct bt_audio_chan *chan1,
-		       struct bt_audio_chan *chan2);
-
-/** @brief Unlink Audio Channels
- *
- *  This procedure links channels so that any procedure on either of the
- *  channel is replicated on the other.
- *
- *  @param chan1 First Channel object
- *  @param chan2 Second Channel object
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
-			 struct bt_audio_chan *chan2);
-
 /** @brief Send data to Audio channel
  *
  *  Send data from buffer to the channel.

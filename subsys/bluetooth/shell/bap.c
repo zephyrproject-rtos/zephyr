@@ -667,12 +667,9 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_audio_chan *chan = &chans[i];
 
 		if (chan->conn) {
-			shell_print(sh, "  %s#%u: chan %p dir 0x%02x "
-				    "group %p linked %s",
+			shell_print(sh, "  %s#%u: chan %p dir 0x%02x group %p",
 				    chan == default_chan ? "*" : " ", i, chan,
-				    chan->cap->type, chan->group,
-				    sys_slist_is_empty(&chan->links) ? "no" :
-				    "yes");
+				    chan->cap->type, chan->group);
 		}
 	}
 
@@ -743,86 +740,6 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	set_channel(chan);
-
-	return 0;
-}
-
-static int cmd_link(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct bt_audio_chan *chan1, *chan2;
-	int index1, index2, err;
-
-	index1 = strtol(argv[1], NULL, 0);
-	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
-		shell_error(sh, "Invalid index1");
-		return -ENOEXEC;
-	}
-
-	index2 = strtol(argv[2], NULL, 0);
-	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
-		shell_error(sh, "Invalid index2");
-		return -ENOEXEC;
-	}
-
-	chan1 = &chans[index1 - 1];
-	if (!chan1->conn) {
-		shell_error(sh, "Invalid index1");
-		return -ENOEXEC;
-	}
-
-	chan2 = &chans[index2 - 1];
-	if (!chan2->conn) {
-		shell_error(sh, "Invalid index2");
-		return -ENOEXEC;
-	}
-
-	err = bt_audio_chan_link(chan1, chan2);
-	if (err) {
-		shell_error(sh, "Unable to bind: %d", err);
-		return -ENOEXEC;
-	}
-
-	shell_print(sh, "channnels %d:%d linked", index1, index2);
-
-	return 0;
-}
-
-static int cmd_unlink(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct bt_audio_chan *chan1, *chan2;
-	int index1, index2, err;
-
-	index1 = strtol(argv[1], NULL, 0);
-	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
-		shell_error(sh, "Invalid index1");
-		return -ENOEXEC;
-	}
-
-	index2 = strtol(argv[2], NULL, 0);
-	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
-		shell_error(sh, "Invalid index2");
-		return -ENOEXEC;
-	}
-
-	chan1 = &chans[index1 - 1];
-	if (!chan1->conn) {
-		shell_error(sh, "Invalid index1");
-		return -ENOEXEC;
-	}
-
-	chan2 = &chans[index2 - 1];
-	if (!chan2->conn) {
-		shell_error(sh, "Invalid index2");
-		return -ENOEXEC;
-	}
-
-	err = bt_audio_chan_unlink(chan1, chan2);
-	if (err) {
-		shell_error(sh, "Unable to bind: %d", err);
-		return -ENOEXEC;
-	}
-
-	shell_print(sh, "ases %d:%d unbound", index1, index2);
 
 	return 0;
 }
@@ -1499,8 +1416,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
 	SHELL_CMD_ARG(select, NULL, "<chan> [broadcast]", cmd_select, 2, 0),
-	SHELL_CMD_ARG(link, NULL, "<chan1> <chan2>", cmd_link, 3, 0),
-	SHELL_CMD_ARG(unlink, NULL, "<chan1> <chan2>", cmd_unlink, 3, 0),
 	SHELL_CMD_ARG(connect, NULL,
 		      "<direction: sink, source> <index>  [codec] [preset]",
 		      cmd_connect, 3, 2),

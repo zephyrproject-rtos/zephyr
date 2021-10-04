@@ -210,39 +210,6 @@ static struct bt_iso_server iso_server = {
 	.accept = bt_audio_chan_iso_accept,
 };
 
-static bool bt_audio_chan_linked(struct bt_audio_chan *chan1,
-				 struct bt_audio_chan *chan2)
-{
-	struct bt_audio_chan *tmp;
-
-	if (!chan1 || !chan2) {
-		return false;
-	}
-
-	if (chan1 == chan2) {
-		return true;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan1->links, tmp, node) {
-		if (tmp == chan2) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static bool bt_audio_chan_iso_linked(struct bt_audio_chan *chan1,
-				     struct bt_audio_chan *chan2)
-{
-	if (!chan1 || !chan2 || chan1->conn != chan2->conn) {
-		return false;
-	}
-
-	return (chan1->ep->cig_id == chan2->ep->cig_id) &&
-	       (chan1->ep->cis_id == chan2->ep->cis_id);
-}
-
 int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
 {
 	static bool server;
@@ -266,11 +233,6 @@ int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
 done:
 	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
 		if (enabling[i] == chan) {
-			return 0;
-		}
-
-		if (bt_audio_chan_iso_linked(enabling[i], chan)) {
-			bt_audio_chan_link(enabling[i], chan);
 			return 0;
 		}
 
@@ -904,78 +866,6 @@ done:
 	return err;
 }
 
-int bt_audio_chan_link(struct bt_audio_chan *chan1, struct bt_audio_chan *chan2)
-{
-	BT_DBG("chan1 %p chan2 %p", chan1, chan2);
-
-	if (!chan1 || !chan2) {
-		return -EINVAL;
-	}
-
-	if (chan1->ep != NULL &&
-	    chan1->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("chan1 %p is not idle", chan1);
-		return -EINVAL;
-	}
-
-	if (chan2->ep != NULL &&
-	    chan2->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("chan2 %p is not idle", chan2);
-		return -EINVAL;
-	}
-
-	if (bt_audio_chan_linked(chan1, chan2)) {
-		return -EALREADY;
-	}
-
-	sys_slist_append(&chan1->links, &chan2->node);
-	sys_slist_append(&chan2->links, &chan1->node);
-
-	return 0;
-}
-
-int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
-			 struct bt_audio_chan *chan2)
-{
-	BT_DBG("chan1 %p chan2 %p", chan1, chan2);
-
-	if (!chan1) {
-		return -EINVAL;
-	}
-
-	if (chan1->ep != NULL &&
-	    chan1->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("chan1 %p is not idle", chan1);
-		return -EINVAL;
-	}
-
-	/* Unbind all channels if chan2 is NULL */
-	if (!chan2) {
-		SYS_SLIST_FOR_EACH_CONTAINER(&chan1->links, chan2, node) {
-			int err;
-
-			err = bt_audio_chan_unlink(chan1, chan2);
-			if (err) {
-				return err;
-			}
-		}
-	} else if (chan2->ep != NULL &&
-		   chan2->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("chan2 %p is not idle", chan2);
-		return -EINVAL;
-	}
-
-	if (!sys_slist_find_and_remove(&chan1->links, &chan2->node)) {
-		return -ENOENT;
-	}
-
-	if (!sys_slist_find_and_remove(&chan2->links, &chan1->node)) {
-		return -ENOENT;
-	}
-
-	return 0;
-}
-
 void bt_audio_chan_detach(struct bt_audio_chan *chan)
 {
 	const bool is_broadcast = bt_audio_ep_is_broadcast(chan->ep);
@@ -1086,7 +976,6 @@ void bt_audio_chan_reset(struct bt_audio_chan *chan)
 	if (err != 0) {
 		BT_ERR("Failed to terminate CIG: %d", err);
 	}
-	bt_audio_chan_unlink(chan, NULL);
 }
 
 int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
