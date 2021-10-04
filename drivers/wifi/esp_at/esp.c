@@ -829,9 +829,10 @@ static int esp_mgmt_connect(const struct device *dev,
 	memcpy(&data->conn_cmd[len], params->ssid, params->ssid_length);
 	len += params->ssid_length;
 
-	if (params->security == WIFI_SECURITY_TYPE_PSK) {
-		len += snprintk(&data->conn_cmd[len],
+	len += snprintk(&data->conn_cmd[len],
 				sizeof(data->conn_cmd) - len, "\",\"");
+
+	if (params->security == WIFI_SECURITY_TYPE_PSK) {
 		memcpy(&data->conn_cmd[len], params->psk, params->psk_length);
 		len += params->psk_length;
 	}
