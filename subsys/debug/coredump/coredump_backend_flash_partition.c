@@ -304,7 +304,7 @@ static int erase_flash_partition(void)
 static void coredump_flash_backend_start(void)
 {
 	const struct device *flash_dev;
-	size_t offset;
+	size_t offset, header_size;
 	int ret;
 
 	ret = partition_open();
@@ -325,15 +325,14 @@ static void coredump_flash_backend_start(void)
 		 * The header size is rounded up so the beginning of coredump
 		 * is aligned to write size (for easier read and seek).
 		 */
-		offset = backend_ctx.flash_area->fa_off;
-		offset += ROUND_UP(sizeof(struct flash_hdr_t),
-				   FLASH_WRITE_SIZE);
+		header_size = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
+		offset = backend_ctx.flash_area->fa_off + header_size;
 
 		ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
 					stream_flash_buf,
 					sizeof(stream_flash_buf),
 					offset,
-					backend_ctx.flash_area->fa_size,
+					backend_ctx.flash_area->fa_size - header_size,
 					NULL);
 	}
 
