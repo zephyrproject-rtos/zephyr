@@ -71,13 +71,14 @@ static void pcie_generic_ctrl_enumerate_type1(const struct device *ctrl_dev, pci
 	/* Not yet supported */
 }
 
-static void pcie_generic_ctrl_type0_enumerate_bars(const struct device *ctrl_dev, pcie_bdf_t bdf)
+static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie_bdf_t bdf,
+					     unsigned int nbars)
 {
 	unsigned int bar, reg, data;
 	uintptr_t scratch, bar_bus_addr;
 	size_t size, bar_size;
 
-	for (bar = 0, reg = PCIE_CONF_BAR0; reg <= PCIE_CONF_BAR5; reg ++, bar++) {
+	for (bar = 0, reg = PCIE_CONF_BAR0; bar < nbars && reg <= PCIE_CONF_BAR5; reg ++, bar++) {
 		bool found_mem64 = false;
 		bool found_mem = false;
 
@@ -163,7 +164,7 @@ static void pcie_generic_ctrl_type0_enumerate_bars(const struct device *ctrl_dev
 static void pcie_generic_ctrl_enumerate_type0(const struct device *ctrl_dev, pcie_bdf_t bdf)
 {
 	/* Setup Type0 BARs */
-	pcie_generic_ctrl_type0_enumerate_bars(ctrl_dev, bdf);
+	pcie_generic_ctrl_enumerate_bars(ctrl_dev, bdf, 6);
 }
 
 void pcie_generic_ctrl_enumerate(const struct device *ctrl_dev, pcie_bdf_t bdf_start)
