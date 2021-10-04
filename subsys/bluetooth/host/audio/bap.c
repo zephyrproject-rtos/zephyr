@@ -94,7 +94,6 @@ static int bap_reconfig(struct bt_audio_chan *chan,
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_config_op *op;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p cap %p codec %p", chan, cap, codec);
@@ -109,21 +108,6 @@ static int bap_reconfig(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			err = bt_audio_ep_config(tmp->ep, buf, cap, codec);
-			if (err) {
-				return err;
-			}
-			op->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_reconfig(tmp, cap, codec);
-		}
-	}
-
 	err = bt_audio_ep_send(chan->conn, ep, buf);
 	if (err) {
 		return err;
@@ -131,11 +115,6 @@ static int bap_reconfig(struct bt_audio_chan *chan,
 
 	chan->cap = cap;
 	chan->codec = codec;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->cap = cap;
-		tmp->codec = codec;
-	}
 
 	/* Terminate CIG if there is an existing QoS,
 	 * so that we can create a new one
@@ -156,7 +135,6 @@ static int bap_enable(struct bt_audio_chan *chan,
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_enable_op *req;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p", chan);
@@ -171,22 +149,6 @@ static int bap_enable(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			err = bt_audio_ep_enable(tmp->ep, buf, meta_count,
-						 meta);
-			if (err) {
-				return err;
-			}
-			req->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_enable(tmp, meta_count, meta);
-		}
-	}
-
 	return bt_audio_ep_send(chan->conn, ep, buf);
 }
 
@@ -196,7 +158,6 @@ static int bap_metadata(struct bt_audio_chan *chan,
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_enable_op *req;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p", chan);
@@ -211,22 +172,6 @@ static int bap_metadata(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			err = bt_audio_ep_metadata(tmp->ep, buf, meta_count,
-						   meta);
-			if (err) {
-				return err;
-			}
-			req->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_metadata(tmp, meta_count, meta);
-		}
-	}
-
 	return bt_audio_ep_send(chan->conn, ep, buf);
 }
 
@@ -235,7 +180,6 @@ static int bap_start(struct bt_audio_chan *chan)
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_start_op *req;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p", chan);
@@ -269,34 +213,11 @@ static int bap_start(struct bt_audio_chan *chan)
 			return err;
 		}
 		req->num_ases++;
+
+		return bt_audio_ep_send(chan->conn, ep, buf);
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			/* When initiated by the client, valid only if
-			 * Direction field parameter value = 0x02
-			 * (Server is Audio Source)
-			 */
-			if (tmp->cap->type == BT_AUDIO_SOURCE) {
-				err = bt_audio_ep_start(tmp->ep, buf);
-				if (err) {
-					return err;
-				}
-				req->num_ases++;
-			}
-		} else {
-			/* Recurse for other connections */
-			bap_start(tmp);
-		}
-	}
-
-	if (!req->num_ases) {
-		return 0;
-	}
-
-	return bt_audio_ep_send(chan->conn, ep, buf);
+	return 0;
 }
 
 static int bap_disable(struct bt_audio_chan *chan)
@@ -304,7 +225,6 @@ static int bap_disable(struct bt_audio_chan *chan)
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_disable_op *req;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p", chan);
@@ -319,21 +239,6 @@ static int bap_disable(struct bt_audio_chan *chan)
 		return err;
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			err = bt_audio_ep_disable(tmp->ep, buf);
-			if (err) {
-				return err;
-			}
-			req->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_disable(tmp);
-		}
-	}
-
 	return bt_audio_ep_send(chan->conn, ep, buf);
 }
 
@@ -342,7 +247,6 @@ static int bap_stop(struct bt_audio_chan *chan)
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_start_op *req;
-	struct bt_audio_chan *tmp;
 	int err;
 
 	BT_DBG("chan %p", chan);
@@ -361,34 +265,11 @@ static int bap_stop(struct bt_audio_chan *chan)
 			return err;
 		}
 		req->num_ases++;
+
+		return bt_audio_ep_send(chan->conn, ep, buf);
 	}
 
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			/* When initiated by the client, valid only if
-			 * Direction field parameter value = 0x02
-			 * (Server is Audio Source)
-			 */
-			if (tmp->cap->type == BT_AUDIO_SOURCE) {
-				err = bt_audio_ep_stop(tmp->ep, buf);
-				if (err) {
-					return err;
-				}
-				req->num_ases++;
-			}
-		} else {
-			/* Recurse for other connections */
-			bap_stop(tmp);
-		}
-	}
-
-	if (!req->num_ases) {
-		return 0;
-	}
-
-	return bt_audio_ep_send(chan->conn, ep, buf);
+	return 0;
 }
 
 static int bap_release(struct bt_audio_chan *chan)
@@ -396,7 +277,6 @@ static int bap_release(struct bt_audio_chan *chan)
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
 	struct bt_ascs_disable_op *req;
-	struct bt_audio_chan *tmp;
 	int err, len;
 
 	BT_DBG("chan %p", chan);
@@ -418,26 +298,6 @@ static int bap_release(struct bt_audio_chan *chan)
 		err = bt_audio_ep_release(ep, buf);
 		if (err) {
 			return err;
-		}
-	}
-
-	/* Include links as well */
-	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		/* Only group ASEs for the same connection */
-		if (tmp->conn == chan->conn) {
-			/* Only attempt to release if not IDLE already */
-			if (chan->ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
-				bt_audio_chan_reset(chan);
-			} else {
-				err = bt_audio_ep_release(tmp->ep, buf);
-				if (err) {
-					return err;
-				}
-			}
-			req->num_ases++;
-		} else {
-			/* Recurse for other connections */
-			bap_release(tmp);
 		}
 	}
 
