@@ -253,7 +253,7 @@ static int send_response(struct net_context *ctx,
 		const struct in_addr *addr;
 
 		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv4->src);
+						   (struct in_addr *)ip_hdr->ipv4->src);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in_addr), (uint8_t *)addr);
@@ -347,7 +347,7 @@ static void send_sd_response(struct net_context *ctx,
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		/* Look up the local IPv4 address */
 		addr4 = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-					   &ip_hdr->ipv4->src);
+						    (struct in_addr *)ip_hdr->ipv4->src);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {

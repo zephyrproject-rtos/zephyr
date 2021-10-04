@@ -369,12 +369,12 @@ void test_arp(void)
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
 						  sizeof(struct net_ipv4_hdr));
-	net_ipaddr_copy(&ipv4->src, &src);
-	net_ipaddr_copy(&ipv4->dst, &dst);
+	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)&src);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
 
 	memcpy(net_buf_add(pkt->buffer, len), app_data, len);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst, NULL);
 
 	/* pkt2 is the ARP packet and pkt is the IPv4 packet and it was
 	 * stored in ARP table.
@@ -431,7 +431,7 @@ void test_arp(void)
 	}
 
 	if (!net_ipv4_addr_cmp_raw(arp_hdr->dst_ipaddr,
-				   (uint8_t *)&NET_IPV4_HDR(pkt)->dst)) {
+				   NET_IPV4_HDR(pkt)->dst)) {
 		printk("ARP IP dest invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
@@ -439,7 +439,7 @@ void test_arp(void)
 	}
 
 	if (!net_ipv4_addr_cmp_raw(arp_hdr->src_ipaddr,
-				   (uint8_t *)&NET_IPV4_HDR(pkt)->src)) {
+				   NET_IPV4_HDR(pkt)->src)) {
 		printk("ARP IP src invalid %s, should be %s",
 			net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
@@ -455,9 +455,9 @@ void test_arp(void)
 		"ARP cache should own the original packet");
 
 	/* Then a case where target is not in the same subnet */
-	net_ipaddr_copy(&ipv4->dst, &dst_far);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
 
 	zassert_not_equal((void *)(pkt2), (void *)(pkt),
 		"ARP cache should not find anything");
@@ -481,14 +481,14 @@ void test_arp(void)
 	/* Try to find the same destination again, this should fail as there
 	 * is a pending request in ARP cache.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst_far);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far);
 
 	/* Make sure prepare will not free the pkt because it will be
 	 * needed in the later test case.
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache is not sending the request again");
@@ -498,14 +498,14 @@ void test_arp(void)
 	/* Try to find the different destination, this should fail too
 	 * as the cache table should be full.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst_far2);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst_far2);
 
 	/* Make sure prepare will not free the pkt because it will be
 	 * needed in the next test case.
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+	pkt2 = net_arp_prepare(pkt, &dst_far2, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache did not send a req");
@@ -513,7 +513,7 @@ void test_arp(void)
 	/* Restore the original address so that following test case can
 	 * work properly.
 	 */
-	net_ipaddr_copy(&ipv4->dst, &dst);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)&dst);
 
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.

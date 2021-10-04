@@ -189,7 +189,7 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 	/* TODO: receive from arbitrary group address instead of
 	 * all_systems
 	 */
-	if (!net_ipv4_addr_cmp(&ip_hdr->dst, &all_systems)) {
+	if (!net_ipv4_addr_cmp_raw(ip_hdr->dst, (uint8_t *)&all_systems)) {
 		NET_DBG("DROP: Invalid dst address");
 		return NET_DROP;
 	}

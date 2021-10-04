@@ -179,9 +179,9 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 						struct net_eth_hdr *hdr)
 {
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst) ||
+	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
 	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     &NET_IPV4_HDR(pkt)->dst))) {
+				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
 		return NET_DROP;
 	}
 
@@ -353,8 +353,8 @@ drop:
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   &NET_IPV4_HDR(pkt)->dst) ||
-	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
+				   (struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
+	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -365,9 +365,10 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
+	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
-		net_eth_ipv4_mcast_to_mac_addr(&NET_IPV4_HDR(pkt)->dst, dst);
+		net_eth_ipv4_mcast_to_mac_addr(
+			(struct in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
 
 		return true;
 	}
@@ -385,7 +386,7 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
 		struct net_pkt *arp_pkt;
 
-		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+		arp_pkt = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL);
 		if (!arp_pkt) {
 			return NULL;
 		}
@@ -461,7 +462,7 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_if *target;
 
-		if (net_if_ipv4_addr_lookup(&NET_IPV4_HDR(pkt)->src,
+		if (net_if_ipv4_addr_lookup((struct in_addr *)NET_IPV4_HDR(pkt)->src,
 					    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,
