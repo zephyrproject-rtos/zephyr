@@ -826,7 +826,6 @@ struct bt_audio_chan {
 	struct bt_iso_chan *iso;
 	/** Audio channel operations */
 	struct bt_audio_chan_ops *ops;
-	sys_slist_t links;
 	sys_snode_t node;
 
 	union {

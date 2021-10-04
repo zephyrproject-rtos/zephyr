@@ -89,8 +89,6 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 		return chan;
 	}
 
-	sys_slist_init(&chan->links);
-
 	bt_audio_chan_attach(conn, chan, ep, cap, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
