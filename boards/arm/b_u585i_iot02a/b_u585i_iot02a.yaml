@@ -8,3 +8,6 @@ toolchain:
   - xtools
 ram: 786
 flash: 2048
+supported:
+  - arduino_spi
+  - spi
