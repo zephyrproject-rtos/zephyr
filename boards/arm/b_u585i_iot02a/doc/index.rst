@@ -280,7 +280,7 @@ Then, indicate openocd as the chosen runner in flash and debug commands:
    https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html
 
 .. _B U585I IOT02A board User Manual:
-   https://www.st.com/resource/en/user_manual/dm00698410.pdf
+   https://www.st.com/resource/en/user_manual/um2839-discovery-kit-for-iot-node-with-stm32u5-series-stmicroelectronics.pdf
 
 .. _STM32U585 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32u575-585.html
