@@ -175,6 +175,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 
 The default configuration can be found in the defconfig file:
@@ -197,6 +199,7 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PH7
 - LD2 : PH6
 - user button : PC13
+- SPI1 NSS/SCK/MISO/MOSI : PE12/P13/P14/P15 (Arduino SPI)
 
 System Clock
 ------------
