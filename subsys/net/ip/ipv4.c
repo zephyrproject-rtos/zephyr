@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "ipv4.h"
 
+BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE);
+
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
 
