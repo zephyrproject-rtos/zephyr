@@ -995,9 +995,11 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  *
  * @param[in] client_ctx LwM2M context
  * @param[in] event_cb Client event callback function
+ * @param[in] deregister True to deregister the client if registered.
+ *                       False to force close the connection.
  */
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
-			  lwm2m_ctx_event_cb_t event_cb);
+			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
 
 /**
  * @brief Trigger a Registration Update of the LwM2M RD Client
