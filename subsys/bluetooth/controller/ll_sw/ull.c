@@ -305,10 +305,31 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event FIFO: mfifo_done.
  * Queue of pointers to struct node_rx_event_done.
- * The actual backing behind these pointers is mem_done
+ * The actual backing behind these pointers is mem_done.
+ *
+ * When there are radio events with time reservations lower than the preemption
+ * timeout of 1.5 ms, the pipeline has to account for the maximum radio events
+ * that can be enqueued during the preempt timeout duration. All these enqueued
+ * events could be aborted in case of late scheduling, needing as many done
+ * event buffers.
+ *
+ * During continuous scanning, there can be 1 active radio event, 1 scan resume
+ * and 1 new scan prepare. If there are peripheral prepares in addition, and due
+ * to late scheduling all these will abort needing 4 done buffers.
+ *
+ * If there are additional peripheral prepares enqueued, which are apart by
+ * their time reservations, these are not yet late and hence no more additional
+ * done buffers are needed.
+ *
+ * If Extended Scanning is supported, then an additional auxiliary scan event's
+ * prepare could be enqueued in the pipeline during the preemption duration.
  */
 #if !defined(VENDOR_EVENT_DONE_MAX)
-#define EVENT_DONE_MAX 3
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#define EVENT_DONE_MAX 5
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
+#define EVENT_DONE_MAX 4
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
 #endif
