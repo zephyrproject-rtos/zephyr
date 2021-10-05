@@ -214,7 +214,7 @@ logger.setLevel(logging.DEBUG)
 def size_report(sc):
     logger.info(sc.filename)
     logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for i in range(len(sc.sections)):
+    for i in enumerate(sc.sections):
         v = sc.sections[i]
 
         logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
@@ -621,6 +621,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support")
 
+    parser.add_argument(
+        "--device-serial-baud", action="store", default=None,
+        help="Serial device baud rate (default 115200)")
+
     serial = parser.add_mutually_exclusive_group()
     serial.add_argument("--device-serial",
                         help="""Serial device for accessing the board
@@ -925,9 +929,11 @@ def main():
             if options.platform and len(options.platform) == 1:
                 if options.device_serial:
                     hwm.add_device(options.device_serial,
-                                                 options.platform[0],
-                                                 options.pre_script,
-                                                 False)
+                                   options.platform[0],
+                                   options.pre_script,
+                                   False,
+                                   baud=options.device_serial_baud
+                                   )
                 else:
                     hwm.add_device(options.device_serial_pty,
                                                  options.platform[0],
