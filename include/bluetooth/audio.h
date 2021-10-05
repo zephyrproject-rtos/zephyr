@@ -717,6 +717,12 @@ struct bt_audio_capability_pref {
 	 *  requirement.
 	 */
 	uint32_t pd_max;
+
+	/** @brief Preferred minimun Presentation Delay */
+	uint32_t pref_pd_min;
+
+	/** @brief Preferred maximum Presentation Delay	*/
+	uint32_t pref_pd_max;
 };
 
 /** @brief Audio Capability structure.
