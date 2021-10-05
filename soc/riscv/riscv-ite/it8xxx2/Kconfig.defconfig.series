@@ -13,6 +13,9 @@ config ITE_IT8XXX2_INTC
 	select FLASH_HAS_DRIVER_ENABLED
 	select HAS_FLASH_LOAD_OFFSET
 
+config RISCV_GP
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768
 
