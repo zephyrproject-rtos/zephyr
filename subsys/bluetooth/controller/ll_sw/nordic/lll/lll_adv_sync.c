@@ -174,8 +174,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_phy_set(phy_s, lll->adv->phy_flags);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(RADIO_CRC_POLYNOMIAL,
-				sys_get_le24(lll->crc_init));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+                sys_get_le24(lll->crc_init));
 	lll_chan_set(data_chan_use);
 
 	upd = 0U;

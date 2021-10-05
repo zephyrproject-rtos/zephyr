@@ -70,6 +70,12 @@
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
 
+/* Advertisement channel CRC init value */
+#define PDU_AC_CRC_IV          0x555555
+
+/* CRC polynomial */
+#define PDU_CRC_POLYNOMIAL     ((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16))
+
 /* Data channel minimum payload size and time */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 #define PDU_DC_PAYLOAD_TIME_MIN 328
