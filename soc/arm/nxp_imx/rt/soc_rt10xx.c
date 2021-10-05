@@ -224,9 +224,16 @@ static ALWAYS_INLINE void clock_init(void)
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
 	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
 	CLOCK_DisableClock(kCLOCK_FlexSpi);
-	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, 24);
-	CLOCK_SetMux(kCLOCK_FlexspiMux, 3);
-	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 2);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay) && \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI)
+	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, DT_PROP(DT_NODELABEL(flexspi),
+				pll3_pfd0_div));
+	CLOCK_SetMux(kCLOCK_FlexspiMux, DT_PROP(DT_NODELABEL(flexspi),
+				flexspi_sel_mux));
+	CLOCK_SetDiv(kCLOCK_FlexspiDiv, DT_PROP(DT_NODELABEL(flexspi),
+				flexspi_clock_div));
 #endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from

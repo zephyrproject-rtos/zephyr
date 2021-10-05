@@ -68,6 +68,35 @@ properties:
         Source clock for flash read. See the RXCLKSRC field in register MCR0.
         The default corresponds to the reset value of the register field.
 
+    pll3-pfd0-div:
+      type: int
+      required: false
+      default: 24
+      description: |
+        Divisor for PLL3_PFD0. Output frequency is input to flexspi clock
+        selection mux.
+
+    flexspi-sel-mux:
+      type: int
+      required: false
+      default: 3
+      enum:
+        - 0 # SEMC root clock
+        - 1 # PLL2_PFD2 clock
+        - 2 # PLL3_SW clock
+        - 3 # PLL3_PFD0 clock
+      description: |
+        Source clock for flexspi clock.
+
+    flexspi-clock-div:
+      type: int
+      required: false
+      default: 2
+      description: |
+        Divisor for flexspi clock. The output frequency is (mux_output/(1+div)).
+
+
+
 child-binding:
     description: NXP FlexSPI port
 
