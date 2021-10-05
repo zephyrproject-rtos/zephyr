@@ -1043,6 +1043,12 @@ again.
    QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
    to the path of the QEMU binary you want to use instead.
 
+.. note::
+
+   You can choose a specific emulator by appending ``_<emulator>`` to your
+   target name, for example ``west build -t run_qemu`` or ``ninja run_qemu``
+   for QEMU.
+
 .. _application_debugging:
 
 Application Debugging
