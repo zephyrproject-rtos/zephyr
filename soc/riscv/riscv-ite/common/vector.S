@@ -16,6 +16,14 @@ GTEXT(__initialize)
 GTEXT(__irq_wrapper)
 
 SECTION_FUNC(vectors, __start)
+#ifdef CONFIG_RISCV_GP
+	.option push
+	.option norelax
+	/* Configure the GP register */
+	la gp, __global_pointer$
+	.option pop
+#endif
+
 	.option norvc;
 
 	/*
