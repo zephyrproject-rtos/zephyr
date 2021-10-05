@@ -36,6 +36,14 @@ SECTION_FUNC(vectors, __start)
 	ori  t1, t1, 0x8
 	sb t1, 0(t0)
 
+#ifdef CONFIG_RISCV_GP
+.option push
+.option norelax
+        /* Configure the GP register */
+        la gp, __global_pointer$
+.option pop
+#endif
+
 	/* Jump to __initialize */
 	tail __initialize
 
