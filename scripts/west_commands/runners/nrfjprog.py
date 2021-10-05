@@ -5,6 +5,7 @@
 
 '''Runner for flashing with nrfjprog.'''
 
+from functools import partial
 import os
 from pathlib import Path
 import shlex
@@ -12,7 +13,7 @@ import subprocess
 import sys
 from re import fullmatch, escape
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import ZephyrBinaryRunner, RunnerCaps, depr_action
 
 try:
     from intelhex import IntelHex
@@ -80,6 +81,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             action='store_true',
                             help='use reset instead of pinreset')
         parser.add_argument('--snr', required=False, dest='dev_id',
+                            action=partial(depr_action,
+                                           replacement='-i/--dev-id'),
                             help='Deprecated: use -i/--dev-id instead')
         parser.add_argument('--tool-opt', default=[], action='append',
                             help='''Additional options for nrfjprog,
