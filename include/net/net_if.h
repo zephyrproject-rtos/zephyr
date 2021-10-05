@@ -2391,13 +2391,14 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn,		\
-				    pm_control_fn, data, cfg, prio,	\
-				    api, l2, l2_ctx_type, mtu)		\
-	Z_NET_DEVICE_INIT_INSTANCE(node_id, node_id, DT_LABEL(node_id),	\
-				   instance, init_fn, pm_control_fn,	\
-				   data, cfg, prio, api, l2,		\
-				   l2_ctx_type, mtu)
+#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn,	\
+				      pm_control_fn, data, cfg, prio,	\
+				      api, l2, l2_ctx_type, mtu)	\
+	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
+				   Z_DEVICE_DT_DEV_NAME(node_id),	\
+				   DT_LABEL(node_id), instance,		\
+				   pm_control_fn, data, cfg, prio, api,	\
+				   l2, l2_ctx_type, mtu)
 
 /**
  * @def NET_DEVICE_DT_INST_DEFINE_INSTANCE
