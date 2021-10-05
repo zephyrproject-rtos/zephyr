@@ -152,6 +152,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
             uint32_t flexio1_mux = CLOCK_GetMux(kCLOCK_Flexio1Mux);
             clock_name_t flexio1_clock = flexio_clocks[flexio1_mux];
             *rate = CLOCK_GetFreq(flexio1_clock)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio1PreDiv) + 1)
                     / (CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
             break;
         }
@@ -159,6 +160,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
             uint32_t flexio2_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);
             clock_name_t flexio2_clock = flexio_clocks[flexio2_mux];
             *rate = CLOCK_GetFreq(flexio2_clock)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio2PreDiv) + 1)
                     / (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
             break;
         }
