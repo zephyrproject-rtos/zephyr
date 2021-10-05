@@ -50,7 +50,7 @@ static struct {
 } mem_iso_tx;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-/* must be implemented by vendor */
+/* Must be implemented by vendor */
 __weak bool ll_data_path_configured(uint8_t data_path_dir,
 				    uint8_t data_path_id)
 {
@@ -83,6 +83,21 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 	ARG_UNUSED(offset);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+/* Must be implemented by vendor */
+__weak bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+				     isoal_sink_sdu_alloc_cb *sdu_alloc,
+				     isoal_sink_sdu_emit_cb *sdu_emit,
+				     isoal_sink_sdu_write_cb *sdu_write)
+{
+	ARG_UNUSED(datapath);
+
+	*sdu_alloc = NULL;
+	*sdu_emit  = NULL;
+	*sdu_write = NULL;
+
+	return false;
 }
 
 static inline bool path_is_vendor_specific(uint8_t path_id)
@@ -180,12 +195,24 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	}
 
 	if (path_id == BT_HCI_DATAPATH_ID_HCI) {
-		/* Not vendor specific, thus alloc and emit functions known */
+		/* Set up HCI data path */
 		err = isoal_sink_create(&sink_hdl, handle, burst_number, sdu_interval,
 					cig->iso_interval, sink_sdu_alloc_hci,
 					sink_sdu_emit_hci, sink_sdu_write_hci);
 	} else {
-		/* TBD call vendor specific function to set up ISO path */
+		/* Set up vendor specific data path */
+		isoal_sink_sdu_alloc_cb sdu_alloc;
+		isoal_sink_sdu_emit_cb  sdu_emit;
+		isoal_sink_sdu_write_cb sdu_write;
+
+		/* Request vendor sink callbacks for path */
+		if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+			err = isoal_sink_create(&sink_hdl, handle, burst_number,
+						sdu_interval, cig->iso_interval,
+						sdu_alloc, sdu_emit, sdu_write);
+		} else {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	if (!err) {
