@@ -214,8 +214,8 @@ static bool check_packet_addresses(struct net_pkt *pkt)
 			&ipv6_hdr->src,
 			sizeof(struct in6_addr)) != 0) ||
 			(memcmp(&active_scenario.mcast,
-					&ipv6_hdr->dst,
-					sizeof(struct in6_addr)) != 0)) {
+				ipv6_hdr->dst,
+				sizeof(struct in6_addr)) != 0)) {
 		return false;
 	}
 

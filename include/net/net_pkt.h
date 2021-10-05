@@ -1199,7 +1199,7 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    &NET_IPV6_HDR(pkt)->src);
+				    (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
 }
 
 static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)

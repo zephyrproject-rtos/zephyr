@@ -466,8 +466,8 @@ struct net_ipv6_hdr {
 	uint16_t len;
 	uint8_t nexthdr;
 	uint8_t hop_limit;
-	struct in6_addr src;
-	struct in6_addr dst;
+	uint8_t src[NET_IPV6_ADDR_SIZE];
+	uint8_t dst[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_ipv6_frag_hdr {
@@ -752,6 +752,18 @@ static inline void net_ipv4_addr_copy_raw(uint8_t *dest,
 }
 
 /**
+ *  @brief Copy an IPv6 address raw buffer
+ *
+ *  @param dest Destination IP address.
+ *  @param src Source IP address.
+ */
+static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
+					  const uint8_t *src)
+{
+	memcpy(dest, src, sizeof(struct in6_addr));
+}
+
+/**
  *  @brief Compare two IPv4 addresses
  *
  *  @param addr1 Pointer to IPv4 address.
@@ -792,6 +804,21 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 				     const struct in6_addr *addr2)
 {
 	return !memcmp(addr1, addr2, sizeof(struct in6_addr));
+}
+
+/**
+ *  @brief Compare two raw IPv6 address buffers
+ *
+ *  @param addr1 Pointer to IPv6 address buffer.
+ *  @param addr2 Pointer to IPv6 address buffer.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
+					 const uint8_t *addr2)
+{
+	return net_ipv6_addr_cmp((const struct in6_addr *)addr1,
+				 (const struct in6_addr *)addr2);
 }
 
 /**
