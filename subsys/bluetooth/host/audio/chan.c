@@ -404,17 +404,17 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 		return -ENOTSUP;
 	}
 
-	if (chan->cap->qos.latency < qos->latency) {
+	if (chan->cap->pref.latency < qos->latency) {
 		BT_ERR("Latency not within range: max %u latency %u",
-		       chan->cap->qos.latency, qos->latency);
+		       chan->cap->pref.latency, qos->latency);
 		qos->latency = 0u;
 		return -ENOTSUP;
 	}
 
-	if (!IN_RANGE(chan->cap->qos.pd_min, chan->cap->qos.pd_max,
+	if (!IN_RANGE(chan->cap->pref.pd_min, chan->cap->pref.pd_max,
 		      qos->pd)) {
 		BT_ERR("Presentation Delay not within range: min %u max %u "
-		       "pd %u", chan->cap->qos.pd_min, chan->cap->qos.pd_max,
+		       "pd %u", chan->cap->pref.pd_min, chan->cap->pref.pd_max,
 		       qos->pd);
 		qos->pd = 0u;
 		return -ENOTSUP;

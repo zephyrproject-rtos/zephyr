@@ -320,7 +320,7 @@ static void ep_qos_reset(struct bt_audio_ep *ep)
 static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_qos *qos;
+	struct bt_audio_capability_pref *pref;
 
 	if (buf->len < sizeof(*cfg)) {
 		BT_ERR("Config status too short");
@@ -349,20 +349,20 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	/* Reset any exiting QoS configuration */
 	ep_qos_reset(ep);
 
-	qos = &ep->chan->cap->qos;
+	pref = &ep->chan->cap->pref;
 
 	/* Convert to interval representation so they can be matched by QoS */
-	qos->framing = cfg->framing;
-	qos->phy = cfg->phy;
-	qos->rtn = cfg->rtn;
-	qos->latency = sys_le16_to_cpu(cfg->latency);
-	qos->pd_min = sys_get_le24(cfg->pd_min);
-	qos->pd_max = sys_get_le24(cfg->pd_max);
+	pref->framing = cfg->framing;
+	pref->phy = cfg->phy;
+	pref->rtn = cfg->rtn;
+	pref->latency = sys_le16_to_cpu(cfg->latency);
+	pref->pd_min = sys_get_le24(cfg->pd_min);
+	pref->pd_max = sys_get_le24(cfg->pd_max);
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
 	       "pd_min %u pd_max %u codec 0x%02x ", ep->chan->cap->type,
-	       qos->framing, qos->phy, qos->rtn, qos->latency, qos->pd_min,
-	       qos->pd_max, ep->chan->codec->id);
+	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
+	       pref->pd_max, ep->chan->codec->id);
 
 	bt_audio_ep_set_codec(ep, cfg->codec.id,
 			      sys_le16_to_cpu(cfg->codec.cid),
@@ -665,15 +665,15 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 				 struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_qos *qos = &ep->chan->cap->qos;
+	struct bt_audio_capability_pref *pref = &ep->chan->cap->pref;
 
 	cfg = net_buf_simple_add(buf, sizeof(*cfg));
-	cfg->framing = qos->framing;
-	cfg->phy = qos->phy;
-	cfg->rtn = qos->rtn;
-	cfg->latency = sys_cpu_to_le16(qos->latency);
-	sys_put_le24(qos->pd_min, cfg->pd_min);
-	sys_put_le24(qos->pd_max, cfg->pd_max);
+	cfg->framing = pref->framing;
+	cfg->phy = pref->phy;
+	cfg->rtn = pref->rtn;
+	cfg->latency = sys_cpu_to_le16(pref->latency);
+	sys_put_le24(pref->pd_min, cfg->pd_min);
+	sys_put_le24(pref->pd_max, cfg->pd_max);
 	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_min);
 	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_max);
 	cfg->codec.id = ep->codec.id;
@@ -682,8 +682,8 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
 	       "pd_min %u pd_max %u codec 0x%02x ", ep->chan->cap->type,
-	       qos->framing, qos->phy, qos->rtn, qos->latency, qos->pd_min,
-	       qos->pd_max, ep->chan->codec->id);
+	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
+	       pref->pd_max, ep->chan->codec->id);
 
 	cfg->cc_len = buf->len;
 	codec_data_add(buf, "data", ep->codec.data_count, ep->codec.data);
