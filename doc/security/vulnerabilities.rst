@@ -784,6 +784,24 @@ Possible overflow in mempool
 CVE-2021
 ========
 
+CVE-2021-3319
+-------------
+
+DOS: Incorrect 802154 Frame Validation for Omitted Source / Dest Addresses
+
+Improper processing of omitted source and destination addresses in
+ieee802154 frame validation (ieee802154_validate_frame)
+
+This has been fixed in main for v2.5.0
+
+- `CVE-2020-3319 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3319>`_
+
+- `Zephyr project bug tracker GHSA-94jg-2p6q-5364
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-94jg-2p6q-5364>`_
+
+- `PR31908 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31908>`_
+
 CVE-2021-3320
 -------------------
 Mismatch between validation and handling of 802154 ACK frames, where
