@@ -76,7 +76,7 @@ extern const struct device *__pm_device_slots_start[];
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static int _pm_devices(enum pm_device_action action)
+static int pm_suspend_devices(void)
 {
 	const struct device *devs;
 	size_t devc;
@@ -93,13 +93,14 @@ static int _pm_devices(enum pm_device_action action)
 			continue;
 		}
 
-		ret = pm_device_action_run(dev, action);
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
 		/* ignore devices not supporting or already at the given state */
 		if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
 			continue;
 		} else if (ret < 0) {
-			LOG_ERR("Device %s did not run action (%d). Error: (%d)",
-				dev->name, action, ret);
+			LOG_ERR("Device %s did not run action "
+				"(PM_DEVICE_ACTION_SUSPEND). Error: (%d)",
+				dev->name, ret);
 			return ret;
 		}
 
@@ -268,7 +269,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	bool should_resume_devices = false;
 
 	if (z_power_state.state != PM_STATE_RUNTIME_IDLE) {
-		if (_pm_devices(PM_DEVICE_ACTION_SUSPEND)) {
+		if (pm_suspend_devices()) {
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
 				ticks, _handle_device_abort(z_power_state));
 			return _handle_device_abort(z_power_state);
