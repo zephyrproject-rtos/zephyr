@@ -956,6 +956,36 @@ This has been fixed in main for v2.6.0
 - `PR 33418 fix for 1.14.2
   <https://github.com/zephyrproject-rtos/zephyr/pull/33418>`_
 
+CVE-2021-3436
+-------------
+
+Bluetooth: Possible to overwrite an existing bond during keys
+distribution phase when the identity address of the bond is known
+
+During the distribution of the identity address information we don’t
+check for an existing bond with the same identity address.This means
+that a duplicate entry will be created in RAM while the newest entry
+will overwrite the existing one in persistent storage.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3436 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3436>`_
+
+- `Zephyr project bug tracker GHSA-j76f-35mc-4h63
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j76f-35mc-4h63>`_
+
+- `PR 33266 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33266>`_
+
+- `PR 33432 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33432>`_
+
+- `PR 33433 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33433>`_
+
+- `PR 33718 fix for 1.14.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33718>`_
+
 CVE-2021-3454
 -------------
 
