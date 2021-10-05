@@ -1007,6 +1007,30 @@ This has been fixed in main for v2.6.0
 - `PR 36105 fix for 2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/36105>`_
 
+CVE-2021-3510
+-------------
+
+Zephyr JSON decoder incorrectly decodes array of array
+
+When using JSON_OBJ_DESCR_ARRAY_ARRAY, the subarray is has the token
+type JSON_TOK_LIST_START, but then assigns to the object part of the
+union. arr_parse then takes the offset of the array-object (which has
+nothing todo with the list) treats it as relative to the parent
+object, and stores the length of the subarray in there.
+
+This has been fixed in main for v2.7.0
+
+- `CVE-2021-3510 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3510>`_
+
+- `Zephyr project bug tracker GHSA-289f-7mw3-2qf4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-289f-7mw3-2qf4>`_
+
+- `PR 36340 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36340>`_
+
+- `PR 37816 fix for 2.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/37816>`_
+
 CVE-2021-3581
 -------------
 
