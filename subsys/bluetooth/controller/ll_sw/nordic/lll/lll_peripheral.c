@@ -195,8 +195,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_conn_rx_pkt_set(lll);
 
 	radio_aa_set(lll->access_addr);
-	radio_crc_configure(RADIO_CRC_POLYNOMIAL,
-			    sys_get_le24(lll->crc_init));
+	radio_crc_configure(PDU_CRC_POLYNOMIAL,
+                sys_get_le24(lll->crc_init));
 
 	lll_chan_set(data_chan_use);
 

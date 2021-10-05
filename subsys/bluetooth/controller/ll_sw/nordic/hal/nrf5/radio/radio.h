@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define RADIO_CRC_POLYNOMIAL ((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16))
-
-
 typedef void (*radio_isr_cb_t) (void *param);
 
 void isr_radio(void);
