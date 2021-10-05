@@ -16,6 +16,12 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2021-3510: `Zephyr project bug tracker GHSA-289f-7mw3-2qf4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-289f-7mw3-2qf4>`_.
+
 
 Known issues
 ************
