@@ -28,40 +28,50 @@ static struct k_spinlock pm_notifier_lock;
 
 #ifdef CONFIG_PM_DEBUG
 
-struct pm_debug_info {
+struct pm_state_debug_info {
 	uint32_t count;
 	uint32_t last_res;
 	uint32_t total_res;
 };
 
-static struct pm_debug_info pm_dbg_info[PM_STATES_LEN];
-static uint32_t timer_start, timer_end;
+struct pm_cpu_debug_info {
+	uint32_t timer_start;
+	uint32_t timer_end;
+	struct pm_state_debug_info state_info[PM_STATES_LEN];
+};
+
+static struct pm_cpu_debug_info pm_cpu_dbg_info[CONFIG_MP_NUM_CPUS];
 
 static inline void pm_debug_start_timer(void)
 {
-	timer_start = k_cycle_get_32();
+	pm_cpu_dbg_info[_current_cpu->id].timer_start = k_cycle_get_32();
 }
 
 static inline void pm_debug_stop_timer(void)
 {
-	timer_end = k_cycle_get_32();
+	pm_cpu_dbg_info[_current_cpu->id].timer_end = k_cycle_get_32();
 }
 
 static void pm_log_debug_info(enum pm_state state)
 {
-	uint32_t res = timer_end - timer_start;
+	uint32_t res = pm_cpu_dbg_info[_current_cpu->id].timer_end
+		- pm_cpu_dbg_info[_current_cpu->id].timer_start;
 
-	pm_dbg_info[state].count++;
-	pm_dbg_info[state].last_res = res;
-	pm_dbg_info[state].total_res += res;
+	pm_cpu_dbg_info[_current_cpu->id].state_info[state].count++;
+	pm_cpu_dbg_info[_current_cpu->id].state_info[state].last_res = res;
+	pm_cpu_dbg_info[_current_cpu->id].state_info[state].total_res += res;
 }
 
 void pm_dump_debug_info(void)
 {
-	for (int i = 0; i < PM_STATES_LEN; i++) {
-		LOG_DBG("PM:state = %d, count = %d last_res = %d, "
-			"total_res = %d\n", i, pm_dbg_info[i].count,
-			pm_dbg_info[i].last_res, pm_dbg_info[i].total_res);
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		for (int j = 0; j < PM_STATES_LEN; j++) {
+			LOG_DBG("PM:cpu = %d state = %d, count = %u last_res = %u, "
+				"total_res = %u\n", i, j,
+				pm_cpu_dbg_info[i].state_info[j].count,
+				pm_cpu_dbg_info[i].state_info[j].last_res,
+				pm_cpu_dbg_info[i].state_info[j].total_res);
+		}
 	}
 }
 #else
