@@ -18,6 +18,8 @@
 
 #include "util/memq.h"
 
+#include "pdu.h"
+
 #include "lll.h"
 #include "lll_clock.h"
 #include "lll_internal.h"
@@ -195,7 +197,7 @@ static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 	radio_tx_power_max_set();
 	radio_freq_chan_set((chan << 1) + 2);
 	radio_aa_set((uint8_t *)&test_sync_word);
-	radio_crc_configure(0x65b, 0x555555);
+	radio_crc_configure(0x65b, PDU_AC_CRC_IV);
 	radio_pkt_configure(8, 255, (test_phy << 1));
 
 	return 0;
