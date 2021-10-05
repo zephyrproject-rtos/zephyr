@@ -141,6 +141,13 @@ Architectures
 
 * ARC
 
+  * Add SMP support to ARCv3 HS6x
+  * Add MWDT C library support
+  * Add basic C++ support with MWDT toolchain
+  * Add MPUv3 and MPUv6 support
+  * Remove dead PM code from ARC core interrupt controller driver
+  * Add updating arc connect debug mask dynamically
+
 
 * ARM
 
@@ -245,6 +252,10 @@ Boards & SoC Support
 
 
 * Changes for ARC boards:
+
+  * Implement 'run' command for SMP nSIM simulation board
+  * Enable upstream verification on QEMU ARCv3 HS6x board (qemu_arc_hs6x)
+  * Implement creg GPIO driver and add it to hsdk and em_starterkit boards
 
 
 * Changes for ARM boards:
