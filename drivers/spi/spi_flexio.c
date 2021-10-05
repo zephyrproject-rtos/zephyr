@@ -57,6 +57,7 @@ static void spi_flexio_isr(const struct device *dev) {
 
 static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
     // TODO
+    LOG_DBG("FlexIO SPI transfering next packet");
 
 
     const struct spi_flexio_config *config = dev->config;
@@ -66,6 +67,7 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
 
     if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
         /* nothing left to rx or tx, we're done! */
+        LOG_DBG("FlexIO SPI nothing left to transfer, complete");
         spi_context_cs_control(&data->ctx, false);
         spi_context_complete(&data->ctx, 0);
         return;
@@ -76,16 +78,19 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
 
     if (ctx->tx_len == 0) {
         /* rx only, nothing to tx */
+        LOG_DBG("FlexIO SPI transfer RX only");
         transfer.txData = NULL;
         transfer.rxData = ctx->rx_buf;
         transfer.dataSize = ctx->rx_len;
     } else if (ctx->rx_len == 0) {
         /* tx only, nothing to rx */
+        LOG_DBG("FlexIO SPI transfer TX only");
         transfer.txData = (uint8_t *) ctx->tx_buf;
         transfer.rxData = NULL;
         transfer.dataSize = ctx->tx_len;
     } else if (ctx->tx_len == ctx->rx_len) {
         /* rx and tx are the same length */
+        LOG_DBG("FlexIO SPI transfer TX and RX of same length");
         transfer.txData = (uint8_t *) ctx->tx_buf;
         transfer.rxData = ctx->rx_buf;
         transfer.dataSize = ctx->tx_len;
@@ -94,6 +99,7 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
          * rx into a longer intermediate buffer. Leave chip select
          * active between transfers.
          */
+        LOG_DBG("FlexIO SPI transfer TX>RX");
         transfer.txData = (uint8_t *) ctx->tx_buf;
         transfer.rxData = ctx->rx_buf;
         transfer.dataSize = ctx->rx_len;
@@ -102,6 +108,7 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
          * tx from a longer intermediate buffer. Leave chip select
          * active between transfers.
          */
+        LOG_DBG("FlexIO SPI transfer RX>TX");
         transfer.txData = (uint8_t *) ctx->tx_buf;
         transfer.rxData = ctx->rx_buf;
         transfer.dataSize = ctx->tx_len;
@@ -113,34 +120,48 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
     }
 
     data->transfer_len = transfer.dataSize;
+    LOG_DBG("FlexIO SPI transfer of %i bytes", data->transfer_len);
+
 
     status_t status = FLEXIO_SPI_MasterTransferNonBlocking(base, &data->handle,
                                                            &transfer);
     if (status != kStatus_Success) {
         LOG_ERR("Transfer could not start");
     }
+    LOG_DBG("FlexIO SPI transfer initiated");
 }
 
 
 static void spi_mcux_flexio_master_transfer_callback(FLEXIO_SPI_Type *base,
                                                      flexio_spi_master_handle_t *handle, status_t status,
                                                      void *userData) {
+    LOG_DBG("FlexIO SPI transfer callback called");
     struct spi_flexio_data *data = userData;
 
     spi_context_update_tx(&data->ctx, 1, data->transfer_len);
     spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
+    LOG_DBG("FlexIO SPI initiating transfer of next packet");
     spi_mcux_flexio_transfer_next_packet(data->dev);
 }
 
 
 static int spi_flexio_configure(const struct device *dev,
                                 const struct spi_config *spi_cfg) {
+    LOG_DBG("FlexIO SPI configuring device at %p", dev);
+
     const struct spi_flexio_config *config = dev->config;
+    LOG_DBG("FlexIO SPI configuring with device config at %p", config);
     struct spi_flexio_data *data = dev->data;
+    LOG_DBG("FlexIO SPI configuring with device data at %p", data);
     FLEXIO_SPI_Type *spiDev = &data->spiDev;
+    LOG_DBG("FlexIO SPI configuring with spiDev at %p", spiDev);
+    spiDev->flexioBase = config->flexioBase;
+    LOG_DBG("FlexIO SPI configuring with base address at %p", spiDev->flexioBase);
 
     if (spi_context_configured(&data->ctx, spi_cfg)) {
+        LOG_DBG("FlexIO SPI configuration is already in use");
+
         // This configuration is already in use
         return 0;
     }
@@ -213,6 +234,7 @@ static int transceive(const struct device *dev,
                       const struct spi_config *spi_cfg,
                       const struct spi_buf_set *tx_bufs,
                       const struct spi_buf_set *rx_bufs) {
+    LOG_DBG("FlexIO SPI transceive");
     struct spi_flexio_data *data = dev->data;
     int ret;
 
@@ -220,18 +242,25 @@ static int transceive(const struct device *dev,
 
     ret = spi_flexio_configure(dev, spi_cfg);
     if (ret) {
+        LOG_ERR("FlexIO SPI error configuring");
         goto out;
     }
 
+    LOG_DBG("FlexIO SPI setting up buffers");
     spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
+    LOG_DBG("FlexIO SPI applying CS");
     spi_context_cs_control(&data->ctx,
                            true); // TODO: Chip select? This supports GPIO, how is this configured, and how does this use HW CS pins?
 
+    LOG_DBG("FlexIO SPI initiating transfer of first packet");
     spi_mcux_flexio_transfer_next_packet(dev);
 
+    LOG_DBG("FlexIO SPI transceive waiting for completion");
     ret = spi_context_wait_for_completion(&data->ctx);
+    LOG_DBG("FlexIO SPI transceive complete");
     out:
+    LOG_DBG("FlexIO SPI transceive done");
     spi_context_release(&data->ctx, ret);
 
     return ret;
@@ -310,4 +339,5 @@ static const struct spi_driver_api spi_flexio_driver_api = {
             IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_flexio_isr, DEVICE_DT_INST_GET(n), 0); \
             irq_enable(DT_INST_IRQN(n)); \
     };
+
 DT_INST_FOREACH_STATUS_OKAY(SPI_FLEXIO_DEVICE_INIT)
