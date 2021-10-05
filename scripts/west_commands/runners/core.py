@@ -288,6 +288,17 @@ class _ToggleAction(argparse.Action):
     def __call__(self, parser, args, ignored, option):
         setattr(args, self.dest, not option.startswith('--no-'))
 
+class DeprecatedAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        _logger.warning(f'Argument {self.option_strings[0]} is deprecated, '
+                        f'use {self._replacement} instead.')
+        setattr(namespace, self.dest, values)
+
+def depr_action(*args, replacement=None, **kwargs):
+    action = DeprecatedAction(*args, **kwargs)
+    setattr(action, '_replacement', replacement)
+    return action
 
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
