@@ -41,8 +41,8 @@ To run the script in the local tree, follow the steps below:
         $ source zephyr-env.sh
         $ ./scripts/twister
 
-If you have a system with a large number of cores, you can build and run
-all possible tests using the following options:
+If you have a system with a large number of cores and plenty of free storage space,
+you can build and run all possible tests using the following options:
 
 ::
 
@@ -512,12 +512,15 @@ Executing tests on a single device
 To use this feature on a single connected device, run twister with
 the following new options::
 
-	scripts/twister --device-testing --device-serial /dev/ttyACM0 -p \
-	frdm_k64f  -T tests/kernel
+	scripts/twister --device-testing --device-serial /dev/ttyACM0 \
+	--device-serial-baud 9600 -p frdm_k64f  -T tests/kernel
 
 The ``--device-serial`` option denotes the serial device the board is connected to.
 This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
+
+The ``--device-serial-baud`` option is only needed if your device does not run at
+115200 baud.
 
 
 Executing tests on multiple devices
@@ -525,8 +528,8 @@ Executing tests on multiple devices
 
 To build and execute tests on multiple devices connected to the host PC, a
 hardware map needs to be created with all connected devices and their
-details such as the serial device and their IDs if available. Run the following
-command to produce the hardware map::
+details such as the serial device, baud and their IDs if available.
+Run the following command to produce the hardware map::
 
     ./scripts/twister --generate-hardware-map map.yml
 
@@ -558,12 +561,16 @@ this example we are using a reel_board and an nrf52840dk_nrf52840::
     product: DAPLink CMSIS-DAP
     runner: pyocd
     serial: /dev/cu.usbmodem146114202
+    baud: '9600'
   - connected: true
     id: 000683759358
     platform: nrf52840dk_nrf52840
     product: J-Link
     runner: nrfjprog
     serial: /dev/cu.usbmodem0006837593581
+    baud: '9600'
+
+The baud entry is only needed if not running at 115200.
 
 If the map file already exists, then new entries are added and existing entries
 will be updated. This way you can use one single master hardware map and update
