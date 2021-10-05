@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_TBS
 #include "../../../../../subsys/bluetooth/host/audio/tbs.h"
 #include "../../../../../subsys/bluetooth/host/audio/ccp.h"
 #include "common.h"
@@ -93,5 +92,3 @@ void print_hex(const uint8_t *ptr, size_t len)
 		printk("%02x", *ptr++);
 	}
 }
-
-#endif /* CONFIG_BT_TBS */
