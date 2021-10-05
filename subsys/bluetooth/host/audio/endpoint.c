@@ -358,6 +358,8 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	pref->latency = sys_le16_to_cpu(cfg->latency);
 	pref->pd_min = sys_get_le24(cfg->pd_min);
 	pref->pd_max = sys_get_le24(cfg->pd_max);
+	pref->pref_pd_min = sys_get_le24(cfg->prefer_pd_min);
+	pref->pref_pd_max = sys_get_le24(cfg->prefer_pd_max);
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
 	       "pd_min %u pd_max %u codec 0x%02x ", ep->chan->cap->type,
@@ -674,8 +676,8 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 	cfg->latency = sys_cpu_to_le16(pref->latency);
 	sys_put_le24(pref->pd_min, cfg->pd_min);
 	sys_put_le24(pref->pd_max, cfg->pd_max);
-	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_min);
-	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_max);
+	sys_put_le24(pref->pref_pd_min, cfg->prefer_pd_min);
+	sys_put_le24(pref->pref_pd_max, cfg->prefer_pd_max);
 	cfg->codec.id = ep->codec.id;
 	cfg->codec.cid = sys_cpu_to_le16(ep->codec.cid);
 	cfg->codec.vid = sys_cpu_to_le16(ep->codec.vid);
