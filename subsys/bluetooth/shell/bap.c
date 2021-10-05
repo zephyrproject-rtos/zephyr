@@ -1123,13 +1123,17 @@ static struct bt_audio_chan_ops chan_ops = {
 static struct bt_audio_capability caps[MAX_PAC] = {
 	{
 		.type = BT_AUDIO_SOURCE,
-		.qos = BT_AUDIO_QOS(0x00, 0x02, 0u, 60u, 20000u, 40000u),
+		.pref = BT_AUDIO_CAPABILITY_PREF(
+				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
+				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	},
 	{
 		.type = BT_AUDIO_SINK,
-		.qos = BT_AUDIO_QOS(0x00, 0x02, 0u, 60u, 20000u, 40000u),
+		.pref = BT_AUDIO_CAPABILITY_PREF(
+				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
+				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	},

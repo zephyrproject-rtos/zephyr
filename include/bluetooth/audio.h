@@ -660,8 +660,11 @@ enum bt_audio_pac_type {
 #define BT_AUDIO_CONTENT_MAN_MACHINE     BIT(6)
 #define BT_AUDIO_CONTENT_EMERGENCY       BIT(7)
 
-/** @def BT_AUDIO_QOS
- *  @brief Helper to declare elements of bt_audio_qos
+#define BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED     0x00
+#define BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED 0x01
+
+/** @def BT_AUDIO_CAPABILITY_PREF
+ *  @brief Helper to declare elements of @ref bt_audio_capability_pref
  *
  *  @param _framing Framing
  *  @param _phy Target PHY
@@ -670,7 +673,7 @@ enum bt_audio_pac_type {
  *  @param _pd_min Minimum Presentation Delay (usec)
  *  @param _pd_max Maximum Presentation Delay (usec)
  */
-#define BT_AUDIO_QOS(_framing, _phy, _rtn, _latency, _pd_min, _pd_max) \
+#define BT_AUDIO_CAPABILITY_PREF(_framing, _phy, _rtn, _latency, _pd_min, _pd_max) \
 	{ \
 		.framing = _framing, \
 		.phy = _phy, \
@@ -680,19 +683,39 @@ enum bt_audio_pac_type {
 		.pd_max = _pd_max, \
 	}
 
-/** @brief Audio Capability QoS structure. */
-struct bt_audio_qos {
-	/** QoS Framing */
+/** @brief Audio Capability Preference structure. */
+struct bt_audio_capability_pref {
+	/** @brief Supported framing
+	 *
+	 *  Unlike the other fields, this is not a preference but whether
+	 *  the capability supports framed ISOAL PDUs.
+	 *
+	 *  Possible values: BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED and
+	 *  BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED.
+	 */
 	uint8_t  framing;
-	/** QoS PHY */
+
+	/** Preferred PHY */
 	uint8_t  phy;
-	/** QoS Retransmission Number */
+
+	/** Preferred Retransmission Number */
 	uint8_t  rtn;
-	/** QoS Transport Latency */
+
+	/** Preferred Transport Latency */
 	uint16_t latency;
-	/** QoS Minimun Presentation Delay */
+
+	/** @brief Minimun Presentation Delay
+	 *
+	 *  Unlike the other fields, this is not a preference but a minimum
+	 *  requirement.
+	 */
 	uint32_t pd_min;
-	/** QoS Maximun Presentation Delay */
+
+	/** @brief Maximum Presentation Delay
+	 *
+	 *  Unlike the other fields, this is not a preference but a maximum
+	 *  requirement.
+	 */
 	uint32_t pd_max;
 };
 
@@ -709,8 +732,8 @@ struct bt_audio_capability {
 	uint16_t context;
 	/** Capability codec reference */
 	struct bt_codec *codec;
-	/** Capability QoS */
-	struct bt_audio_qos qos;
+	/** Capability preferences */
+	struct bt_audio_capability_pref pref;
 	/** Capability operations reference */
 	struct bt_audio_capability_ops *ops;
 	sys_snode_t node;
