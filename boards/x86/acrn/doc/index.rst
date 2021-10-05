@@ -235,8 +235,8 @@ Now create a FAT filesystem in the new partition and mount it:
     .. code-block:: console
 
         # mkfs.vfat -n ACRN_ZEPHYR /dev/sdb1
-	# mkdir -p /mnt/acrn
-	# mount /dev/sdb1 /mnt/acrn
+        # mkdir -p /mnt/acrn
+        # mount /dev/sdb1 /mnt/acrn
 
 Copy Images and Configure GRUB
 ==============================
@@ -251,9 +251,9 @@ files (GRUB, ACRN and Zephyr) all need to be copied into the
     .. code-block:: console
 
         # mkdir -p /mnt/acrn/efi/boot
-	# cp $PATH_TO_GRUB_BINARY /mnt/acrn/efi/boot/bootx64.efi
-	# cp $ZEPHYR_BASE/build/zephyr/zephyr.bin /mnt/acrn/efi/boot/
-	# cp $PATH_TO_ACRN/build/hypervisor/acrn.bin /mnt/acrn/efi/boot/
+        # cp $PATH_TO_GRUB_BINARY /mnt/acrn/efi/boot/bootx64.efi
+        # cp $ZEPHYR_BASE/build/zephyr/zephyr.bin /mnt/acrn/efi/boot/
+        # cp $PATH_TO_ACRN/build/hypervisor/acrn.bin /mnt/acrn/efi/boot/
 
 At boot, GRUB will load a "efi/boot/grub.cfg" file for its runtime
 configuration instructions (a feature, ironically, that both ACRN and
