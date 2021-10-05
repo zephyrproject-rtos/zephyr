@@ -319,6 +319,70 @@ static void adc_stm32_calib(const struct device *dev)
 }
 #endif
 
+static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
+{
+	/* oversampling parameter is the value to set as 2^ratio */
+	uint32_t oversampling_ratio;
+
+#if defined(LL_ADC_OVS_RATIO_2)
+	static const uint32_t stm32_adc_ratio_table[] = {
+		0,
+		LL_ADC_OVS_RATIO_2,
+		LL_ADC_OVS_RATIO_4,
+		LL_ADC_OVS_RATIO_8,
+		LL_ADC_OVS_RATIO_16,
+		LL_ADC_OVS_RATIO_32,
+		LL_ADC_OVS_RATIO_64,
+		LL_ADC_OVS_RATIO_128,
+		LL_ADC_OVS_RATIO_256,
+	};
+#endif /* LL_ADC_OVS_RATIO_ */
+	static const uint32_t stm32_adc_shift_table[] = {
+		0,
+		LL_ADC_OVS_SHIFT_RIGHT_1,
+		LL_ADC_OVS_SHIFT_RIGHT_2,
+		LL_ADC_OVS_SHIFT_RIGHT_3,
+		LL_ADC_OVS_SHIFT_RIGHT_4,
+		LL_ADC_OVS_SHIFT_RIGHT_5,
+		LL_ADC_OVS_SHIFT_RIGHT_6,
+		LL_ADC_OVS_SHIFT_RIGHT_7,
+		LL_ADC_OVS_SHIFT_RIGHT_8,
+#if defined(LL_ADC_OVS_SHIFT_RIGHT_9)
+		LL_ADC_OVS_SHIFT_RIGHT_9,
+		LL_ADC_OVS_SHIFT_RIGHT_10,
+		LL_ADC_OVS_SHIFT_RIGHT_11,
+#endif /* LL_ADC_OVS_SHIFT_RIGHT_9 */
+	};
+	LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+
+	/*
+	 * The parameter to give to the LL_ADC_ConfigOverSamplingRatioShift function
+	 * depends on the stm32 serie and on the ADC instance in the serie.
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* the LL function expects a value from 1. to 1024 */
+	oversampling_ratio = (1 << ratio);
+	/*
+	 * The stm32Cube h7 includes the
+	 * https://github.com/zephyrproject-rtos/hal_stm32/pull/117/
+	 */
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC1) {
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		oversampling_ratio = (1 << ratio);
+	} else {
+		/* the LL function expects a value from 1 to 1024 */
+		oversampling_ratio = stm32_adc_ratio_table[ratio];
+	}
+#else
+	/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+	oversampling_ratio = stm32_adc_ratio_table[ratio];
+#endif
+	LL_ADC_ConfigOverSamplingRatioShift(adc,
+		oversampling_ratio,
+		stm32_adc_shift_table[ratio]);
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -451,76 +515,18 @@ static int start_read(const struct device *dev,
 		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_DISABLE);
 		break;
 	case 1:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_2,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_1);
-		break;
 	case 2:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_4,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_2);
-		break;
 	case 3:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_8,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_3);
-		break;
 	case 4:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_16,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_4);
-		break;
 	case 5:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_32,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_5);
-		break;
 	case 6:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_64,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_6);
-		break;
 	case 7:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_128,
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-						    LL_ADC_OVS_SHIFT_RIGHT_7);
-		break;
 	case 8:
-		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		LL_ADC_ConfigOverSamplingRatioShift(adc, sequence->oversampling,
-#else
-		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_256,
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	case 9:
+	case 10:
 #endif
-						    LL_ADC_OVS_SHIFT_RIGHT_8);
+		adc_stm32_oversampling(adc, sequence->oversampling);
 		break;
 	default:
 		LOG_ERR("Invalid oversampling");
