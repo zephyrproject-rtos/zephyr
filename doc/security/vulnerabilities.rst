@@ -1035,3 +1035,18 @@ This has been fixed in main for v2.6.0
 
 - `PR 35985 fix for 1.14
   <https://github.com/zephyrproject-rtos/zephyr/pull/35985>`_
+
+CVE-2021-3625
+-------------
+
+Buffer overflow in Zephyr USB DFU DNLOAD
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3625 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3625>`_
+
+- `Zephyr project bug tracker GHSA-c3gr-hgvr-f363
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c3gr-hgvr-f363>`_
+
+- `PR 36694 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36694>`_
