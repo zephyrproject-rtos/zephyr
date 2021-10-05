@@ -54,6 +54,9 @@ static void mimxrt1060_evk_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t spe
 	}
 
 	if (init) {
+		/* Enable pull up on clock */
+		clk |= IOMUXC_SW_PAD_CTL_PAD_PUS(1);
+
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_05_GPIO1_IO05, 0U);
 
 		/* SD_CD */

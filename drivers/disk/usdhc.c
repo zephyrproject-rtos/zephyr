@@ -718,7 +718,7 @@ enum usdhc_reset {
 
 static void usdhc_millsec_delay(unsigned int millis)
 {
-	k_msleep(millis);
+	k_busy_wait(millis * 1000U);
 }
 
 uint32_t g_usdhc_boot_dummy __aligned(64);
@@ -1121,7 +1121,7 @@ static int usdhc_wait_cmd_done(struct usdhc_priv *priv,
 	bool poll_cmd)
 {
 	int error = 0;
-	uint32_t int_status = 0U;
+	volatile uint32_t int_status = 0U;
 	USDHC_Type *base = priv->config->base;
 
 	/* check if need polling command done or not */
@@ -2037,22 +2037,14 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		return error;
 	}
 
+	/* Set I/O strength */
+	imxrt_usdhc_pinmux(config->nusdhc, priv->card_info.busclk_hz);
 	/* SDR50 and SDR104 mode need tuning */
 	if ((priv->card_info.sd_timing == SD_TIMING_SDR50_MODE) ||
 		(priv->card_info.sd_timing == SD_TIMING_SDR104_MODE)) {
 		struct usdhc_cmd *cmd = &priv->op_context.cmd;
 		struct usdhc_data *data = &priv->op_context.data;
 
-		/* config IO strength in IOMUX*/
-		if (priv->card_info.sd_timing == SD_TIMING_SDR50_MODE) {
-			imxrt_usdhc_pinmux(config->nusdhc, false,
-				CARD_BUS_FREQ_100MHZ1,
-				CARD_BUS_STRENGTH_7);
-		} else {
-			imxrt_usdhc_pinmux(config->nusdhc, false,
-				CARD_BUS_FREQ_200MHZ,
-				CARD_BUS_STRENGTH_7);
-		}
 		/* execute tuning */
 		priv->op_context.cmd_only = 0;
 
@@ -2069,13 +2061,6 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		error = usdhc_execute_tuning(priv);
 		if (error)
 			return error;
-	} else {
-		/* set default IO strength to 4 to cover card adapter driver
-		 * strength difference
-		 */
-		imxrt_usdhc_pinmux(config->nusdhc, false,
-			CARD_BUS_FREQ_100MHZ1,
-			CARD_BUS_STRENGTH_4);
 	}
 
 	return error;
@@ -2302,9 +2287,6 @@ APP_CMD_XFER_AGAIN:
 	cmd->argument = app_arg;
 	cmd->rsp_type = app_rsp_type;
 	ret = usdhc_xfer(priv);
-	if (ret && retry > 0) {
-		goto APP_CMD_XFER_AGAIN;
-	}
 
 	return ret;
 }
@@ -2419,6 +2401,7 @@ APP_SEND_OP_COND_AGAIN:
 		}
 		priv->card_info.raw_ocr = cmd->response[0U];
 	} else {
+		usdhc_millsec_delay(10U);
 		goto APP_SEND_OP_COND_AGAIN;
 	}
 

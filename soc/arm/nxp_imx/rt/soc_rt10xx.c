@@ -197,15 +197,15 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
-	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 0U);
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
+	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc1Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
-	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 0U);
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 24U);
+	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 1U);
 	CLOCK_SetMux(kCLOCK_Usdhc2Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
 #endif
@@ -254,12 +254,24 @@ void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
 	g_usdhc_pin_cfg_cb = cb;
 }
 
-void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
-	uint32_t speed, uint32_t strength)
+void imxrt_usdhc_pinmux(uint16_t nusdhc, uint32_t freq)
 {
-	if (g_usdhc_pin_cfg_cb)
-		g_usdhc_pin_cfg_cb(nusdhc, init,
+	uint32_t speed = 0U, strength = 0U;
+
+	if (g_usdhc_pin_cfg_cb) {
+		if (freq <= 50000000) {
+			speed    = 0U;
+			strength = 7U;
+		} else if (freq <= 100000000) {
+			speed    = 2U;
+			strength = 7U;
+		} else {
+			speed    = 3U;
+			strength = 7U;
+		}
+		g_usdhc_pin_cfg_cb(nusdhc, false,
 			speed, strength);
+	}
 }
 #endif
 
