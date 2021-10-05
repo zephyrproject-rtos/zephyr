@@ -185,9 +185,9 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 
 			ep->sin6.sin6_port = src == TCP_EP_SRC ? th_sport(th) :
 								 th_dport(th);
-			net_ipaddr_copy(&ep->sin6.sin6_addr,
-					src == TCP_EP_SRC ?
-							&ip->src : &ip->dst);
+			net_ipv6_addr_copy_raw((uint8_t *)&ep->sin6.sin6_addr,
+					       src == TCP_EP_SRC ?
+							ip->src : ip->dst);
 			ep->sa.sa_family = AF_INET6;
 		} else {
 			ret = -EINVAL;
@@ -837,8 +837,10 @@ static bool is_destination_local(struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
-		    net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_loopback(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr(
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
 			return true;
 		}
 	}

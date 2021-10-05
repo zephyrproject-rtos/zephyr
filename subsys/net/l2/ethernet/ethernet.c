@@ -415,11 +415,11 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((uint8_t *)dst + 2,
-		       (uint8_t *)(&NET_IPV6_HDR(pkt)->dst) + 12,
+		       NET_IPV6_HDR(pkt)->dst + 12,
 		       sizeof(struct net_eth_addr) - 2);
 
 		return true;
@@ -446,7 +446,7 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct net_if *target;
 
-		if (net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->src,
+		if (net_if_ipv6_addr_lookup((struct in6_addr *)NET_IPV6_HDR(pkt)->src,
 					    &target)) {
 			if (target != iface) {
 				NET_DBG("Iface %p should be %p", iface,

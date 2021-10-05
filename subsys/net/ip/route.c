@@ -659,7 +659,7 @@ int net_route_mcast_forward_packet(struct net_pkt *pkt,
 
 		if (!net_if_flag_is_set(route->iface,
 					NET_IF_FORWARD_MULTICASTS) ||
-		    !net_ipv6_is_prefix(hdr->dst.s6_addr,
+		    !net_ipv6_is_prefix(hdr->dst,
 					route->group.s6_addr,
 					route->prefix_len)         ||
 		    (pkt->iface == route->iface)) {
