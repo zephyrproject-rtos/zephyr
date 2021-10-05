@@ -2169,6 +2169,23 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
 
+/** @brief Configure vendor data path
+ *
+ *  Request the Controller to configure the data transport path in a given direction between
+ *  the Controller and the Host.
+ *
+ *  @param dir            Direction to be configured, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR or
+ *                        BT_HCI_DATAPATH_DIR_CTLR_TO_HOST
+ *  @param id             Vendor specific logical transport channel ID, range
+ *                        [BT_HCI_DATAPATH_ID_VS..BT_HCI_DATAPATH_ID_VS_END]
+ *  @param vs_config_len  Length of additional vendor specific configuration data
+ *  @param vs_config      Pointer to additional vendor specific configuration data
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
+			   const uint8_t *vs_config);
+
 /**
  * @}
  */

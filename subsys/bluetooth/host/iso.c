@@ -292,15 +292,10 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 	rx_qos = chan->qos->rx;
 
 	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &default_path;
+	in_path.pid  = tx_qos ? tx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
+
 	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &default_path;
-
-	if (!tx_qos) {
-		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
-	}
-
-	if (!rx_qos) {
-		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
-	}
+	out_path.pid  = rx_qos ? rx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
 
 	if (iso->iso.is_bis) {
 		/* Only set one data path for BIS as per the spec */

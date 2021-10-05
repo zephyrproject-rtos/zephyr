@@ -3801,3 +3801,40 @@ void bt_data_parse(struct net_buf_simple *ad,
 		net_buf_simple_pull(ad, len - 1);
 	}
 }
+
+int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
+			   const uint8_t *vs_config)
+{
+	struct bt_hci_rp_configure_data_path *rp;
+	struct bt_hci_cp_configure_data_path *cp;
+	struct net_buf *rsp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONFIGURE_DATA_PATH, sizeof(*cp) +
+				vs_config_len);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->data_path_dir = dir;
+	cp->data_path_id  = id;
+	cp->vs_config_len = vs_config_len;
+	if (vs_config_len) {
+		(void)memcpy(cp->vs_config, vs_config, vs_config_len);
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONFIGURE_DATA_PATH, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	if (rp->status) {
+		err = -EIO;
+	}
+	net_buf_unref(rsp);
+
+	return err;
+}
