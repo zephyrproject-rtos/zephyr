@@ -1041,7 +1041,7 @@ static void canbus_ipv6_mcast_to_dest(struct net_pkt *pkt,
 				      struct net_canbus_lladdr *dest_addr)
 {
 	dest_addr->addr =
-		sys_be16_to_cpu(UNALIGNED_GET(&NET_IPV6_HDR(pkt)->dst.s6_addr16[7]));
+		sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&NET_IPV6_HDR(pkt)->dst[14]));
 }
 
 static inline uint16_t canbus_eth_to_can_addr(struct net_linkaddr *lladdr)
@@ -1062,7 +1062,7 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	mcast = net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst);
+	mcast = net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst);
 	if (mcast || canbus_dest_is_mcast(pkt)) {
 		canbus_ipv6_mcast_to_dest(pkt, &dest_addr);
 	} else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR) &&

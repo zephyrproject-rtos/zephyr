@@ -76,7 +76,7 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 	addr->sin6_family = AF_INET6;
 	addr->sin6_port = udp_hdr->src_port;
 
-	net_ipaddr_copy(&addr->sin6_addr, &NET_IPV6_HDR(pkt)->src);
+	net_ipv6_addr_copy_raw((uint8_t *)&addr->sin6_addr, NET_IPV6_HDR(pkt)->src);
 }
 #endif
 
@@ -301,7 +301,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 	} else if (qtype == DNS_RR_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
@@ -343,7 +343,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    &ip_hdr->ipv6->src);
+				    (struct in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}

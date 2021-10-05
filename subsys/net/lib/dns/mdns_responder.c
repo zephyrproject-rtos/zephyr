@@ -264,7 +264,7 @@ static int send_response(struct net_context *ctx,
 		const struct in6_addr *addr;
 
 		addr = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						   &ip_hdr->ipv6->src);
+						   (struct in6_addr *)ip_hdr->ipv6->src);
 
 		ret = create_answer(ctx, query, qtype,
 				      sizeof(struct in6_addr), (uint8_t *)addr);
@@ -353,7 +353,7 @@ static void send_sd_response(struct net_context *ctx,
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* Look up the local IPv6 address */
 		addr6 = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-					   &ip_hdr->ipv6->src);
+						    (struct in6_addr *)ip_hdr->ipv6->src);
 	}
 
 	ret = dns_sd_query_extract(dns_msg->msg,
