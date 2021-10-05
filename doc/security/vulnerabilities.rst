@@ -992,4 +992,28 @@ This has been fixed in main for v2.6.0
 CVE-2021-3581
 -------------
 
-Under embargo until 2021/09/04
+HCI data not properly checked leads to memory overflow in the Bluetooth stack
+
+In the process of setting SCAN_RSP through the HCI command, the Zephyr
+Bluetooth protocol stack did not effectively check the length of the
+incoming HCI data. Causes memory overflow, and then the data in the
+memory is overwritten, and may even cause arbitrary code execution.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3581 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3581>`_
+
+- `Zephyr project bug tracker GHSA-8q65-5gqf-fmw5
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8q65-5gqf-fmw5>`_
+
+- `PR 35935 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35935>`_
+
+- `PR 35984 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35984>`_
+
+- `PR 35985 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35985>`_
+
+- `PR 35985 fix for 1.14
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35985>`_
