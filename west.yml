@@ -161,7 +161,7 @@ manifest:
       revision: 70bfbd21cdf5f6d1402bc8d0031e197222ed2ec0
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: df9be737619956efbdeb65d4d6935ee0432a580f
+      revision: a7301143b3b46a8f7d410b12580a875cc1b6f8c8
       path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
