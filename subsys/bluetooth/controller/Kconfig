@@ -445,6 +445,7 @@ config BT_CTLR_CHAN_SEL_2
 config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_CHAN_SEL_2 if BT_LL_SW_SPLIT && BT_BROADCASTER
 	select BT_CTLR_SCAN_REQ_NOTIFY if BT_LL_SW_SPLIT && BT_BROADCASTER
 	# Enable by default for BT_LL_SW_SPLIT when "LE Advertising Set Terminated event" is implemented
 	default y if BT_EXT_ADV && !BT_LL_SW_SPLIT
