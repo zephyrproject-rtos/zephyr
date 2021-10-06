@@ -48,3 +48,13 @@ properties:
     pinctrl-0:
       type: phandles
       required: true
+
+    bank:
+      type: int
+      description: qspi bank pins to configure
+      required: false
+      enum:
+        - 1
+        - 2
+      default: 1
+

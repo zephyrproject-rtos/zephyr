@@ -886,6 +886,11 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 			.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE,
 			.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,
 			.ClockMode = QSPI_CLOCK_MODE_0,
+#if DT_PROP(STM32_QSPI_NODE, bank) == 1
+			.FlashID = QSPI_FLASH_ID_1,
+#elif DT_PROP(STM32_QSPI_NODE, bank) == 2
+			.FlashID = QSPI_FLASH_ID_2,
+#endif
 			},
 	},
 	QSPI_DMA_CHANNEL(STM32_QSPI_NODE, tx_rx)
