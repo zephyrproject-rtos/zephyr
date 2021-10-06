@@ -104,6 +104,19 @@ static inline uint64_t *pte_desc_table(uint64_t desc)
 	return (uint64_t *)address;
 }
 
+static inline bool is_desc_block_aligned(uint64_t desc, unsigned int level_size)
+{
+	uint64_t mask = GENMASK(47, PAGE_SIZE_SHIFT);
+	bool aligned = !((desc & mask) & (level_size - 1));
+
+	if (!aligned) {
+		MMU_DEBUG("misaligned desc 0x%016llx for block size 0x%x\n",
+			  desc, level_size);
+	}
+
+	return aligned;
+}
+
 static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
 				    unsigned int level)
 {
@@ -259,7 +272,8 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			goto move_on;
 		}
 
-		if ((size < level_size) || (virt & (level_size - 1))) {
+		if ((size < level_size) || (virt & (level_size - 1)) ||
+		    !is_desc_block_aligned(desc, level_size)) {
 			/* Range doesn't fit, create subtable */
 			table = expand_to_table(pte, level);
 			if (!table) {
