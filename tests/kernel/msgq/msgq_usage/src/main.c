@@ -50,7 +50,7 @@ enum message_info {
 
 static void service_manager_entry(void *p1, void *p2, void *p3)
 {
-	unsigned long data[2];
+	static unsigned long data[2];
 
 	while (1) {
 		k_msgq_get(&manager_q, data, K_FOREVER);
@@ -96,7 +96,7 @@ static void start_service_manager(void)
 
 static void service1_entry(void *p1, void *p2, void *p3)
 {
-	unsigned long service_data[2];
+	static unsigned long service_data[2];
 	struct k_msgq *client;
 	int ret;
 
@@ -127,7 +127,7 @@ static void service1_entry(void *p1, void *p2, void *p3)
 
 static void service2_entry(void *p1, void *p2, void *p3)
 {
-	unsigned long service_data[2];
+	static unsigned long service_data[2];
 	struct k_msgq *client;
 	int ret;
 
@@ -174,8 +174,8 @@ static void register_service(void)
 
 static void client_entry(void *p1, void *p2, void *p3)
 {
-	unsigned long client_data[2];
-	unsigned long service_data[2];
+	static unsigned long client_data[2];
+	static unsigned long service_data[2];
 	struct k_msgq *service1q;
 	struct k_msgq *service2q;
 	bool query_service = false;
