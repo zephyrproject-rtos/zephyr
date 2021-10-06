@@ -279,6 +279,12 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
 	((attr) & (AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE))
 
+/*
+ * BUILD_ASSERT in case of MWDT is a bit more picky in performing compile-time check.
+ * For example it can't evaluate variable address at build time like GCC toolchain can do.
+ * That's why we don't provide _ARCH_MEM_PARTITION_ALIGN_CHECK for MWDT toolchain.
+ */
+#ifndef __CCAC__
 #if CONFIG_ARC_MPU_VER == 2
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT(!(((size) & ((size) - 1))) && (size) >= Z_ARC_MPU_ALIGN \
@@ -295,6 +301,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 		     " and greater than or equal to 32." \
 		     "start address of the partition must align with 32.")
 #endif
+#endif /* __CCAC__ */
 #endif /* CONFIG_ARC_MPU*/
 
 /* Typedef for the k_mem_partition attribute*/
