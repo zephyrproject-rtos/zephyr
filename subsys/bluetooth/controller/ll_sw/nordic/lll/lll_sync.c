@@ -58,6 +58,7 @@ static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 			    uint8_t packet_status);
+static bool is_max_cte_reached(uint8_t max_cte_count, uint8_t cte_count);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 static uint8_t data_channel_calc(struct lll_sync *lll);
 static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t filter_policy);
@@ -547,10 +548,9 @@ static void isr_aux_setup(void *param)
 
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
 
-	if (cfg->is_enabled) {
-		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
-					  cfg->ant_ids, aux_ptr->chan_idx);
-		cfg->cte_count = 0;
+	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
+					  aux_ptr->chan_idx);
 
 		radio_switch_complete_and_phy_end_disable();
 	} else
@@ -930,8 +930,7 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 	cfg = lll_df_sync_cfg_curr_get(&lll->df_cfg);
 
 	if (cfg->is_enabled) {
-
-		if (cfg->cte_count < cfg->max_cte_count) {
+		if (is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 			sample_cnt = radio_df_iq_samples_amount_get();
 
 			/* If there are no samples available, the CTEInfo was
@@ -954,6 +953,8 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 				ftr->rssi = ((rssi_ready) ? radio_rssi_get() :
 					     BT_HCI_LE_RSSI_NOT_AVAILABLE);
 
+				cfg->cte_count += 1U;
+
 				ull_rx_put(iq_report->hdr.link, iq_report);
 			} else {
 				return -ENODATA;
@@ -962,6 +963,11 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 	}
 
 	return 0;
+}
+
+static bool is_max_cte_reached(uint8_t max_cte_count, uint8_t cte_count)
+{
+	return max_cte_count == BT_HCI_LE_SAMPLE_CTE_ALL || cte_count < max_cte_count;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
