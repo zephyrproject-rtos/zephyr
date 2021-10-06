@@ -452,6 +452,25 @@ Drivers and Sensors
 
 * Sensor
 
+  * Refactored various drivers to use ``_dt_spec``.
+  * Refactored various drivers to support multiple instances.
+  * Enhanced TI HDC20XX driver to support DRDY/INT pin.
+  * Updated temperature conversion formula in TI HDC20XX driver.
+  * Enhanced MS5607 pressure sensor driver to support I2C.
+  * Fixed temperature compensation in MS5607 pressure sensor driver.
+  * Refactored ST LIS2DW12 driver to move range, power, and trigger
+    configuration from Kconfig to dts.
+  * Enhanced TI BQ274XX fuel gauge driver to support power management.
+  * Aligned ST sensor drivers to use STMEMC HAL I/F v2.00.
+  * Added Sensirion SGP40 multipixel gas sensor driver.
+  * Added Sensirion SHTCX humidity sensor driver.
+  * Added Sensirion SHT4X temperature and humidity sensor driver.
+  * Added SiLabs SI7270 hall effect magnetic position and temperature sensor
+    driver.
+  * Added ST I3G4250D gyroscope driver.
+  * Added TI INA219 and INA23X current/power monitor drivers.
+  * Added TI LM75 and LM77 temperature sensor drivers.
+  * Added TI HDC20XX humidity and temperature sensor driver.
 
 * Serial
 
