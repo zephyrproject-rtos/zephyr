@@ -520,8 +520,9 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
 
-		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
-		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst)) {
+		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
+		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst))) {
 			memcpy(&hdr_vlan->dst, net_pkt_lladdr_dst(pkt)->addr,
 			       sizeof(struct net_eth_addr));
 		}
@@ -541,8 +542,9 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	} else {
 		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
-		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
-		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst)) {
+		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
+		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst))) {
 			memcpy(&hdr->dst, net_pkt_lladdr_dst(pkt)->addr,
 			       sizeof(struct net_eth_addr));
 		}
