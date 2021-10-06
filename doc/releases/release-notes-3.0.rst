@@ -29,6 +29,11 @@ API Changes
 
 Changes in this release
 
+* Following functions in UART Asynchronous API are using microseconds to represent
+  timeout instead of milliseconds:
+  * :c:func:`uart_tx`
+  * :c:func:`uart_rx_enable`
+
 ==========================
 
 Removed APIs in this release
