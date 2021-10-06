@@ -55,7 +55,7 @@ static int mld_create(struct net_pkt *pkt,
 	mld->aux_data_len = 0U;
 	mld->num_sources = htons(num_sources);
 
-	net_ipaddr_copy(&mld->mcast_address, addr);
+	net_ipv6_addr_copy_raw(mld->mcast_address, (uint8_t *)addr);
 
 	if (net_pkt_set_data(pkt, &mld_access)) {
 		return -ENOBUFS;
@@ -332,8 +332,8 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 	}
 
 	/* Currently we only support an unspecified address query. */
-	if (!net_ipv6_addr_cmp(&mld_query->mcast_address,
-			       net_ipv6_unspecified_address())) {
+	if (!net_ipv6_addr_cmp_raw(mld_query->mcast_address,
+				   (uint8_t *)net_ipv6_unspecified_address())) {
 		NET_DBG("DROP: only supporting unspecified address query");
 		goto drop;
 	}
