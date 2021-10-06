@@ -28,6 +28,7 @@ config NET_IF_MAX_IPV4_COUNT
 config NET_IF_UNICAST_IPV4_ADDR_COUNT
 	int "Max number of unicast IPv4 addresses per network interface"
 	default 2 if NET_IPV4_AUTO
+	default 2 if NET_LOOPBACK
 	default 1
 
 config NET_IF_MCAST_IPV4_ADDR_COUNT

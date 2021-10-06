@@ -390,6 +390,8 @@ extern const struct in6_addr in6addr_loopback;
 #define INADDR_ANY 0
 #define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
+#define INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
+
 /** @endcond */
 
 enum net_ip_mtu {
