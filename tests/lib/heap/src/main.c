@@ -106,6 +106,23 @@ void *testalloc(void *arg, size_t bytes)
 {
 	void *ret = sys_heap_alloc(arg, bytes);
 
+	if (ret != NULL) {
+		/* White box: the heap internals will allocate memory
+		 * in 8 chunk units, no more than needed, but with a
+		 * header prepended that is 4 or 8 bytes.  Use this to
+		 * validate the block_size predicate.
+		 */
+		size_t blksz = sys_heap_usable_size(arg, ret);
+		size_t addr = (size_t) ret;
+		size_t chunk = ROUND_DOWN(addr - 1, 8);
+		size_t hdr = addr - chunk;
+		size_t expect = ROUND_UP(bytes + hdr, 8) - hdr;
+
+		zassert_equal(blksz, expect,
+			      "wrong size block returned bytes = %ld ret = %ld",
+			      bytes, blksz);
+	}
+
 	fill_block(ret, bytes);
 	sys_heap_validate(arg);
 	return ret;
