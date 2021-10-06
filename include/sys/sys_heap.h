@@ -149,6 +149,22 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 #define sys_heap_realloc(heap, ptr, bytes) \
 	sys_heap_aligned_realloc(heap, ptr, 0, bytes)
 
+/** @brief Return allocated memory size
+ *
+ * Returns the size, in bytes, of a block returned from a successful
+ * sys_heap_alloc() or sys_heap_alloc_aligned() call.  The value
+ * returned is the size of the heap-managed memory, which may be
+ * larger than the number of bytes requested due to allocation
+ * granularity.  The heap code is guaranteed to make no access to this
+ * region of memory until a subsequent sys_heap_free() on the same
+ * pointer.
+ *
+ * @param heap Heap containing the block
+ * @param mem Pointer to memory allocated from this heap
+ * @return Size in bytes of the memory region
+ */
+size_t sys_heap_usable_size(struct sys_heap *heap, void *mem);
+
 /** @brief Validate heap integrity
  *
  * Validates the internal integrity of a sys_heap.  Intended for unit
