@@ -84,13 +84,12 @@
 
 #include <toolchain/gcc.h>
 
-/* Metaware toolchain has _Static_assert. However it not able to calculate
- * conditional expression in build time for some realy complex cases. ARC GNU
- * toolchain works fine in this cases, so it looks like MWDT bug. So, disable
- * BUILD_ASSERT macro until we fix that issue in MWDT toolchain.
- */
 #undef BUILD_ASSERT
-#define BUILD_ASSERT(EXPR, MSG...)
+#ifdef __cplusplus
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#else
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#endif
 
 #define __builtin_arc_nop()	_nop()
 
