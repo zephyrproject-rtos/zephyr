@@ -169,7 +169,7 @@ static inline void set_6lo_context(struct net_if *iface, uint8_t index,
 	ctx_6co[index].compress = get_6co_compress(context);
 	ctx_6co[index].cid = get_6co_cid(context);
 
-	net_ipaddr_copy(&ctx_6co[index].prefix, &context->prefix);
+	net_ipv6_addr_copy_raw((uint8_t *)&ctx_6co[index].prefix, context->prefix);
 }
 
 void net_6lo_set_context(struct net_if *iface,
