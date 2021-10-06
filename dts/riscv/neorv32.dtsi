@@ -10,6 +10,10 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -66,6 +70,14 @@
 			interrupt-names = "RX", "TX";
 			syscon = <&sysinfo>;
 			label = "UART_0";
+		};
+
+		trng: rng@ffffffb8 {
+			compatible = "neorv32-trng";
+			status = "disabled";
+			reg = <0xffffffb8 4>;
+			syscon = <&sysinfo>;
+			label = "TRNG";
 		};
 
 		gpio: gpio {
