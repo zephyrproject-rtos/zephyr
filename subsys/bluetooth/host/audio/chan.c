@@ -824,7 +824,7 @@ const char *bt_audio_chan_state_str(uint8_t state)
 	switch (state) {
 	case BT_AUDIO_CHAN_IDLE:
 		return "idle";
-	case BT_AUDIO_CHAN_CONFIGURED:
+	case BT_AUDIO_CHAN_QOS_CONFIGURED:
 		return "configured";
 	case BT_AUDIO_CHAN_STREAMING:
 		return "streaming";
@@ -845,11 +845,11 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 	case BT_AUDIO_CHAN_IDLE:
 		/* regardless of old state always allows this state */
 		break;
-	case BT_AUDIO_CHAN_CONFIGURED:
+	case BT_AUDIO_CHAN_QOS_CONFIGURED:
 		/* regardless of old state always allows this state */
 		break;
 	case BT_AUDIO_CHAN_STREAMING:
-		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		if (chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
@@ -1146,7 +1146,7 @@ int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
 		chan = &chans[i];
 
 		if (chan->state != BT_AUDIO_CHAN_IDLE &&
-		    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
 			BT_DBG("Incorrect channel[%u] %p state: %u",
 			       i, chan, chan->state);
 
@@ -1179,7 +1179,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->chans, chan, node) {
 		if (chan->state != BT_AUDIO_CHAN_IDLE &&
-		    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+		    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
 			BT_DBG("chan %p invalid state %u", chan, chan->state);
 			return -EINVAL;
 		}

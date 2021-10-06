@@ -383,7 +383,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 		struct bt_audio_chan *chan = &chans[i];
 
 		chan->ep->broadcast_source = source;
-		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
+		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
 	}
 
 	source->qos = qos;
@@ -409,8 +409,8 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+	if (chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_QOS_CONFIGURED state: %u",
 		       chan, chan->state);
 		return -EBADMSG;
 	}
@@ -445,8 +445,8 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+	if (chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_QOS_CONFIGURED state: %u",
 		       chan, chan->state);
 		return -EBADMSG;
 	}
@@ -515,8 +515,8 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_CONFIGURED state: %u",
+	if (chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+		BT_DBG("Source chan %p is not in the BT_AUDIO_CHAN_QOS_CONFIGURED state: %u",
 		       chan, chan->state);
 		return -EBADMSG;
 	}

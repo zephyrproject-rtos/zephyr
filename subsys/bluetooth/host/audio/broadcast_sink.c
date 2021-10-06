@@ -889,7 +889,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 		chan = &chans[i];
 
-		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
+		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
 	}
 
 	return 0;
@@ -908,7 +908,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 	chan = &sink->chans[0];
 
 	if (chan->state != BT_AUDIO_CHAN_STREAMING &&
-	    chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+	    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
 		BT_DBG("Channel is not configured or streaming");
 		return -EALREADY;
 	}
