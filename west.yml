@@ -153,12 +153,12 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: pull/27/head
+      revision: 8c358faaaa09492c4c0d91d4a74806180cb8abd0
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 70bfbd21cdf5f6d1402bc8d0031e197222ed2ec0
+      revision: c61538748ead773ea75a551a7beee299228bdcaf
       path: bootloader/mcuboot
     - name: mcumgr
       revision: a7301143b3b46a8f7d410b12580a875cc1b6f8c8
@@ -212,7 +212,7 @@ manifest:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
+      revision: 00d0e38cf89656b0f3ef8d1757109c0ea021a780
       groups:
         - tee
 
