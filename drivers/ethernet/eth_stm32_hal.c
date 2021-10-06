@@ -819,6 +819,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		| ETHERNET_PROMISC_MODE
+#endif
 		;
 }
 
@@ -826,14 +829,15 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
+	int ret = -ENOTSUP;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
 
+	dev_data = DEV_DATA(dev);
+	heth = &dev_data->heth;
+
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		dev_data = DEV_DATA(dev);
-		heth = &dev_data->heth;
-
 		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
 		heth->Instance->MACA0HR = (dev_data->mac_addr[5] << 8) |
 			dev_data->mac_addr[4];
@@ -844,7 +848,26 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr),
 				     NET_LINK_ETHERNET);
-		return 0;
+		ret = 0;
+		break;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		if (config->promisc_mode) {
+			heth->Instance->MACPFR |= ETH_MACPFR_PR;
+		} else {
+			heth->Instance->MACPFR &= ~ETH_MACPFR_PR;
+		}
+#else
+		if (config->promisc_mode) {
+			heth->Instance->MACFFR |= ETH_MACFFR_PM;
+		} else {
+			heth->Instance->MACFFR &= ~ETH_MACFFR_PM;
+		}
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
+		ret = 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
+		break;
 	default:
 		break;
 	}
