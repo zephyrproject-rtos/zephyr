@@ -104,7 +104,7 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	if (is_broadcast) {
 		if (bt_audio_ep_is_broadcast_src(ep)) {
 			bt_audio_chan_set_state(ep->chan,
-						BT_AUDIO_CHAN_CONFIGURED);
+						BT_AUDIO_CHAN_QOS_CONFIGURED);
 		} else {
 			bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_IDLE);
 		}
@@ -416,7 +416,7 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		bt_audio_chan_disconnect(ep->chan);
 	}
 
-	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_CONFIGURED);
+	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
 
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->qos) {
@@ -980,7 +980,7 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_IDLE);
 		break;
 	case BT_ASCS_ASE_STATE_QOS:
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_CONFIGURED);
+		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
 		break;
 	case BT_ASCS_ASE_STATE_STREAMING:
 		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
