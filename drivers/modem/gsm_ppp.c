@@ -1030,6 +1030,10 @@ void gsm_ppp_stop(const struct device *dev)
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
 		gsm->mux_enabled = false;
+		k_work_cancel_delayable(&rssi_work_handle);
+		k_work_cancel_delayable(&gsm->gsm_configure_work);
+		gsm->attached = false;
+		gsm->rssi_retries = 0;
 
 		if (gsm->ppp_dev) {
 			uart_mux_disable(gsm->ppp_dev);
