@@ -751,7 +751,7 @@ config NET_PKT_TIMESTAMP
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
-	default y if NET_GPTP
+	default y if NET_L2_PTP
 	depends on NET_PKT_TIMESTAMP
 	help
 	  Create a TX timestamp thread that will pass the timestamped network

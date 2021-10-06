@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021 Teltonika
+ *
+ * SoC device tree include for STM32F103xD SoCs
+ * where 'x' is replaced for specific SoCs like {R,V,Z}
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f1/stm32f103Xc.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(384)>;
+				erase-block-size = <DT_SIZE_K(2)>;
+			};
+		};
+	};
+};

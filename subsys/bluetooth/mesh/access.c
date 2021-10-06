@@ -821,12 +821,12 @@ void bt_mesh_model_extensions_walk(struct bt_mesh_model *model,
 #else
 	struct bt_mesh_model *it;
 
-	if (model->next == NULL) {
-		(void)cb(model, user_data);
+	if (cb(model, user_data) == BT_MESH_WALK_STOP || !model->next) {
 		return;
 	}
 
-	for (it = model; (it != NULL) && (it->next != model); it = it->next) {
+	/* List is circular. Step through all models until we reach the start: */
+	for (it = model->next; it != model; it = it->next) {
 		if (cb(it, user_data) == BT_MESH_WALK_STOP) {
 			return;
 		}

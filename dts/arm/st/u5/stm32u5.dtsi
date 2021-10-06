@@ -247,6 +247,39 @@
 			status = "disabled";
 			label = "LPUART_1";
 		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <59 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <60 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+
+		spi3: spi@46002000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <46002000 0x400>;
+			interrupts = <99 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000020>;
+			status = "disabled";
+			label = "SPI_3";
+		};
 	};
 };
 

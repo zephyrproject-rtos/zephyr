@@ -51,6 +51,10 @@ Hardware
   - JTAG 10-pin connector
   - OpenSDA with DAPLink
 
+- Sensor
+
+  - 6-axis FXOS8700CQ digital accelerometer and magnetometer
+
 For more information about the MIMXRT1024 SoC and MIMXRT1024-EVK board, see
 these references:
 
@@ -74,12 +78,22 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | QSPI flash                          |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | reset cause                         |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -126,6 +140,14 @@ The MIMXRT1024 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_EMC_41   | ENET_MDC        | Ethernet                  |
 +---------------+-----------------+---------------------------+
 | GPIO_EMC_40   | ENET_MDIO       | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_00 | FLEXCAN1_TX     | CAN TX                    |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_01 | FLEXCAN1_RX     | CAN RX                    |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_02 | LPI2C4_SCL      | I2C SCL                   |
++---------------+-----------------+---------------------------+
+| GPIO_SD_B1_03 | LPI2C4_SDA      | I2C SDA                   |
 +---------------+-----------------+---------------------------+
 
 System Clock

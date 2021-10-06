@@ -1673,6 +1673,10 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 			struct iovec *vec = msg->msg_iov + i;
 			size_t sent = 0;
 
+			if (vec->iov_len == 0) {
+				continue;
+			}
+
 			while (sent < vec->iov_len) {
 				uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
 
@@ -2658,4 +2662,13 @@ static bool tls_is_supported(int family, int type, int proto)
 	return false;
 }
 
-NET_SOCKET_REGISTER(tls, AF_UNSPEC, tls_is_supported, ztls_socket);
+/* Since both, TLS sockets and regular ones fall under the same address family,
+ * it's required to process TLS first in order to capture socket calls which
+ * create sockets for secure protocols. Every other call for AF_INET/AF_INET6
+ * will be forwarded to regular socket implementation.
+ */
+BUILD_ASSERT(CONFIG_NET_SOCKETS_TLS_PRIORITY < CONFIG_NET_SOCKETS_PRIORITY_DEFAULT,
+	     "CONFIG_NET_SOCKETS_TLS_PRIORITY have to be smaller than CONFIG_NET_SOCKETS_PRIORITY_DEFAULT");
+
+NET_SOCKET_REGISTER(tls, CONFIG_NET_SOCKETS_TLS_PRIORITY, AF_UNSPEC,
+		    tls_is_supported, ztls_socket);

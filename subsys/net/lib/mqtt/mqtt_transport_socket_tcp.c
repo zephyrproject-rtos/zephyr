@@ -83,11 +83,37 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 			      const struct msghdr *message)
 
 {
-	int ret;
+	int ret, i;
+	size_t offset = 0;
+	size_t total_len = 0;
 
-	ret = zsock_sendmsg(client->transport.tcp.sock, message, 0);
-	if (ret < 0) {
-		return -errno;
+	for (i = 0; i < message->msg_iovlen; i++) {
+		total_len += message->msg_iov[i].iov_len;
+	}
+
+	while (offset < total_len) {
+		ret = zsock_sendmsg(client->transport.tcp.sock, message, 0);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		offset += ret;
+		if (offset >= total_len) {
+			break;
+		}
+
+		/* Update msghdr for the next iteration. */
+		for (i = 0; i < message->msg_iovlen; i++) {
+			if (ret < message->msg_iov[i].iov_len) {
+				message->msg_iov[i].iov_len -= ret;
+				message->msg_iov[i].iov_base =
+					(uint8_t *)message->msg_iov[i].iov_base + ret;
+				break;
+			}
+
+			ret -= message->msg_iov[i].iov_len;
+			message->msg_iov[i].iov_len = 0;
+		}
 	}
 
 	return 0;

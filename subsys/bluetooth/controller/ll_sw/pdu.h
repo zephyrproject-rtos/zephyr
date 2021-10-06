@@ -103,10 +103,18 @@
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
 /* Offset Units field encoding */
-#define OFFS_UNIT_30_US         30
-#define OFFS_UNIT_300_US        300
+#define OFFS_UNIT_30_US        30
+#define OFFS_UNIT_300_US       300
+#define OFFS_UNIT_VALUE_30_US  0
+#define OFFS_UNIT_VALUE_300_US 1
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
-#define OFFS_ADJUST_US          245760
+#define OFFS_ADJUST_US         245760
+
+/* Advertiser's Sleep Clock Accuracy Value */
+#define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
+#define SCA_50_PPM        50  /* 0 ppm to 50 ppm */
+#define SCA_VALUE_500_PPM 0   /* 51 ppm to 500 ppm */
+#define SCA_VALUE_50_PPM  1   /* 0 ppm to 50 ppm */
 
 /* Sleep Clock Accuracy, calculate drift in microseconds */
 #define SCA_DRIFT_50_PPM_US(t)  (((t) * 50UL) / 1000000UL)

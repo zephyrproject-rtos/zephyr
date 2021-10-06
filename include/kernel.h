@@ -743,7 +743,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * integers.  The number of cycles between the "first" deadline in the
  * scheduler queue and the "last" deadline must be less than 2^31 (i.e
  * a signed non-negative quantity).  Failure to adhere to this rule
- * may result in scheduled threads running in an incorrect dealine
+ * may result in scheduled threads running in an incorrect deadline
  * order.
  *
  * @note Despite the API naming, the scheduler makes no guarantees the

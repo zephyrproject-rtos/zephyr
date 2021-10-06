@@ -81,6 +81,12 @@ config BT_CTLR_CONN_RSSI_SUPPORT
 config BT_CTLR_ECDH_SUPPORT
 	bool
 
+config BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO_SUPPORT || \
+		   BT_CTLR_CENTRAL_ISO_SUPPORT || \
+		   BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -391,7 +397,7 @@ config BT_CTLR_FAL_SIZE
 	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	help
-	  Set the size of the White List for LE Controller-based Privacy.
+	  Set the size of the Filter Accept List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
 	  On OpenISA-based controllers, the hardware imposes a limit of 8 devices.
 
@@ -430,7 +436,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
@@ -496,6 +502,22 @@ config BT_CTLR_SYNC_PERIODIC
 
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	bool "LE Periodic Advertiser List support"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for LE Periodic Advertiser List support.
+
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
+	int "LE Periodic Advertiser List size"
+	depends on BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	range 1 255
+	default 8
+	help
+	  Set Periodic Advertiser List size, this will be return in the HCI LE
+	  Read Periodic Advertiser List Command.
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
@@ -610,6 +632,13 @@ config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
+
+config BT_CTLR_READ_ISO_LINK_QUALITY
+	bool "LE Read ISO Link Quality"
+	depends on BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	help
+	  Enable support for LE Read ISO Link Quality command.
 
 config BT_CTLR_DTM
 	bool

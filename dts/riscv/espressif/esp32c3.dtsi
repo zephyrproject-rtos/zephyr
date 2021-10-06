@@ -4,10 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+	chosen {
+		zephyr,entropy = &trng0;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -31,10 +36,51 @@
 			reg = <0x3fc7c000 0x50000>;
 		};
 
+		pinmux: pinmux@60009000 {
+			compatible = "espressif,esp32-pinmux";
+			reg = <0x60009000 0x800>;
+		};
+
+		intc: interrupt-controller@600c2000 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x600c2000 0x198>;
+			label = "INTC_0";
+			status = "okay";
+		};
+
+		systimer0: systimer@60023000 {
+			compatible = "espressif,esp32-systimer";
+			reg = <0x60023000 0x80>;
+			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "SYSTIMER_0";
+			status = "okay";
+		};
+
+		gpio0: gpio@60004000 {
+			compatible = "espressif,esp32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x60004000 0x800>;
+			interrupts = <GPIO_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_0";
+			ngpios = <32>;   /* 0..31 */
+		};
+
 		uart0: uart@60000000 {
 			compatible = "espressif,esp32c3-uart";
 			reg = <0x60000000 0x400>;
 			label = "UART_0";
+			status = "disabled";
+		};
+
+		trng0: trng@3ff700b0 {
+			compatible = "espressif,esp32-trng";
+			reg = <0x3FF700B0 0x4>;
+			label = "TRNG_0";
 			status = "disabled";
 		};
 	};

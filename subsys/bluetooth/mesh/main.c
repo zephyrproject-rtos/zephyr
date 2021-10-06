@@ -36,6 +36,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "pb_gatt_srv.h"
 #include "settings.h"
 #include "mesh.h"
 
@@ -43,7 +44,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		      uint8_t flags, uint32_t iv_index, uint16_t addr,
 		      const uint8_t dev_key[16])
 {
-	bool pb_gatt_enabled;
 	int err;
 
 	BT_INFO("Primary Element: 0x%04x", addr);
@@ -52,16 +52,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		if (bt_mesh_proxy_prov_disable(false) == 0) {
-			pb_gatt_enabled = true;
-		} else {
-			pb_gatt_enabled = false;
-		}
-	} else {
-		pb_gatt_enabled = false;
 	}
 
 	/*
@@ -108,11 +98,6 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	err = bt_mesh_net_create(net_idx, flags, net_key, iv_index);
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
-
-		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && pb_gatt_enabled) {
-			(void)bt_mesh_proxy_prov_enable();
-		}
-
 		return err;
 	}
 
@@ -197,7 +182,7 @@ void bt_mesh_reset(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		bt_mesh_proxy_gatt_disable();
+		(void)bt_mesh_proxy_gatt_disable();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -321,10 +306,6 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT)) {
-		bt_mesh_proxy_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		err = bt_mesh_prov_init(prov);
 		if (err) {
@@ -370,10 +351,16 @@ int bt_mesh_start(void)
 		bt_mesh_beacon_disable();
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
-		bt_mesh_proxy_gatt_enable();
-		bt_mesh_adv_update();
+	if (!IS_ENABLED(CONFIG_BT_MESH_PROV) || !bt_mesh_prov_active() ||
+	    bt_mesh_prov_link.bearer->type == BT_MESH_PROV_ADV) {
+		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+			(void)bt_mesh_pb_gatt_disable();
+		}
+
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+			(void)bt_mesh_proxy_gatt_enable();
+			bt_mesh_adv_update();
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {

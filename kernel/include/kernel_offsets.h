@@ -40,7 +40,9 @@ GEN_OFFSET_SYM(_kernel_t, threads);
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 
+#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
 GEN_OFFSET_SYM(_kernel_t, ready_q);
+#endif
 
 #ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_ready_q_t, cache);

@@ -24,6 +24,7 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}
     -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+    -DPYTHON=${PYTHON_EXECUTABLE}
     BUILD_COMMAND
     ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""      # This particular build system has no install command
@@ -35,20 +36,20 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     BINARY_DIR ${espidf_build_dir}
     CONFIGURE_COMMAND ""
     BUILD_COMMAND
-    python ${ESP_IDF_PATH}/components/partition_table/gen_esp32part.py -q
-    --offset 0x1000 --flash-size 4MB ${ESP_IDF_PATH}/components/partition_table/partitions_singleapp.csv ${espidf_build_dir}/partitions_singleapp.bin
+    ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/partition_table/gen_esp32part.py -q
+    --offset 0x8000 --flash-size 4MB ${ESP_IDF_PATH}/components/partition_table/partitions_singleapp.csv ${espidf_build_dir}/partitions_singleapp.bin
     INSTALL_COMMAND ""
     )
 
   if(CONFIG_BUILD_OUTPUT_BIN)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND python ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
+      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
       ARGS --chip esp32c3 elf2image --flash_mode dio --flash_freq 40m
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
   endif()
 
-	set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+  set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
   add_dependencies(app EspIdfBootloader EspPartitionTable)
 

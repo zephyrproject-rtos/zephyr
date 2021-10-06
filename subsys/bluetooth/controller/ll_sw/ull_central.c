@@ -77,9 +77,11 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct lll_conn *conn_lll;
-	struct ll_scan_set *scan;
 	uint32_t conn_interval_us;
+	uint8_t own_id_addr_type;
+	struct ll_scan_set *scan;
 	uint32_t ready_delay_us;
+	uint8_t *own_id_addr;
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	uint16_t max_tx_time;
@@ -93,12 +95,15 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
-	const uint8_t own_id_addr_type = (own_addr_type & 0x01);
-	const uint8_t *own_id_addr;
+	/* Check if random address has been set */
+	own_id_addr_type = (own_addr_type & 0x01);
+	own_id_addr = ll_addr_get(own_id_addr_type);
+	if (own_id_addr_type && !mem_nz((void *)own_id_addr, BDADDR_SIZE)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	/* Do not connect twice to the same peer */
-	own_id_addr = ll_addr_get(own_id_addr_type, NULL);
 	if (ull_conn_peer_connected(own_id_addr_type, own_id_addr,
 				    peer_addr_type, peer_addr)) {
 		return BT_HCI_ERR_CONN_ALREADY_EXISTS;

@@ -65,6 +65,15 @@
 			#interrupt-cells = <4>;
 			label = "GIC";
 			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			its: msi-controller@2f020000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x2f020000 0x20000>;
+				label = "ITS";
+				status = "okay";
+			};
 		};
 
 		uart0: uart@1c090000 {

@@ -1264,8 +1264,8 @@ static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 }
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(simplelink, AF_UNSPEC, simplelink_is_supported,
-		    simplelink_socket_create);
+NET_SOCKET_REGISTER(simplelink, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    simplelink_is_supported, simplelink_socket_create);
 #endif
 
 void simplelink_sockets_init(void)

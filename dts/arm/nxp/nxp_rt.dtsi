@@ -529,6 +529,13 @@
 			};
 		};
 
+		src: reset-controller@400f8000 {
+			compatible = "nxp,imx-src";
+			reg = <0x400f8000 0x4000>;
+			status = "okay";
+			label = "SRC";
+		};
+
 		trng: random@400cc000 {
 			compatible = "nxp,kinetis-trng";
 			reg = <0x400cc000 0x4000>;

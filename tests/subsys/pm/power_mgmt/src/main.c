@@ -69,7 +69,7 @@ struct pm_state_info pm_policy_next_state(int ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
-		info.state = PM_STATE_RUNTIME_IDLE;
+		info.state = PM_STATE_SUSPEND_TO_IDLE;
 	} else {
 		/* only test pm_policy_next_state()
 		 * no PM operation done
@@ -88,7 +88,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(notify_app_entry == true,
 		     "Notification to enter suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
 
 	/* at this point, devices should not be active */
 	pm_device_state_get(dev, &device_power_state);
@@ -106,7 +106,7 @@ static void notify_pm_state_exit(enum pm_state state)
 	zassert_true(notify_app_exit == true,
 		     "Notification to leave suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
 
 	/* at this point, devices are active again*/
 	pm_device_state_get(dev, &device_power_state);

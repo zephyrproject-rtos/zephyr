@@ -15,8 +15,9 @@ void ll_reset(void);
 uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value);
 uint64_t ll_feat_get(void);
 
-uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *p_bdaddr);
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
+uint8_t *ll_addr_get(uint8_t addr_type);
+uint8_t *ll_addr_read(uint8_t addr_type, uint8_t *const bdaddr);
 
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
@@ -217,6 +218,11 @@ uint8_t ll_fal_size_get(void);
 uint8_t ll_fal_clear(void);
 uint8_t ll_fal_add(bt_addr_le_t *addr);
 uint8_t ll_fal_remove(bt_addr_le_t *addr);
+
+uint8_t ll_pal_size_get(void);
+uint8_t ll_pal_clear(void);
+uint8_t ll_pal_add(const bt_addr_le_t *const addr, const uint8_t sid);
+uint8_t ll_pal_remove(const bt_addr_le_t *const addr, const uint8_t sid);
 
 void ll_rl_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type, uint8_t *id_addr);
 uint8_t ll_rl_size_get(void);

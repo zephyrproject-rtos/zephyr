@@ -112,6 +112,8 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
   if(CONFIG_BT_CONN OR
+     (CONFIG_BT_BROADCASTER AND
+      CONFIG_BT_CTLR_ADV_EXT) OR
      CONFIG_BT_CTLR_ADV_PERIODIC OR
      CONFIG_BT_CTLR_SYNC_PERIODIC)
     zephyr_library_sources(
@@ -119,10 +121,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
       ll_sw/lll_chan.c
       )
   endif()
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_FILTER_ACCEPT_LIST
-    ll_sw/ull_filter.c
-    )
+  if(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST OR
+     CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST)
+    zephyr_library_sources(
+      ll_sw/ull_filter.c
+      )
+  endif()
   zephyr_library_sources_ifdef(
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c

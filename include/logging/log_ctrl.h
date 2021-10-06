@@ -169,6 +169,26 @@ void log_backend_enable(struct log_backend const *const backend,
  */
 void log_backend_disable(struct log_backend const *const backend);
 
+/**
+ * @brief Get current number of allocated buffers for string duplicates.
+ */
+uint32_t log_get_strdup_pool_current_utilization(void);
+
+/**
+ * @brief Get maximal number of simultaneously allocated buffers for string
+ *	  duplicates.
+ *
+ * Value can be used to determine pool size.
+ */
+uint32_t log_get_strdup_pool_utilization(void);
+
+/**
+ * @brief Get length of the longest string duplicated.
+ *
+ * Value can be used to determine buffer size in the string duplicates pool.
+ */
+uint32_t log_get_strdup_longest_string(void);
+
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_INIT() log_init()

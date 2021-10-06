@@ -15,6 +15,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <drivers/emul.h>
 
 /**
  * @brief eSPI Emulation Interface
@@ -111,9 +112,11 @@ struct emul_espi_device_api {
 /** Node in a linked list of emulators for eSPI devices */
 struct espi_emul {
 	sys_snode_t node;
-	/* API provided for this device */
+	/** Parent emulator */
+	const struct emul *parent;
+	/** API provided for this device */
 	const struct emul_espi_device_api *api;
-	/* eSPI chip-select of the emulated device */
+	/** eSPI chip-select of the emulated device */
 	uint16_t chipsel;
 };
 

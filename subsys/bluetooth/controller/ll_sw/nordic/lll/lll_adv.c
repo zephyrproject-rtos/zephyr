@@ -910,7 +910,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 		/* Setup Radio Filter */
 		struct lll_filter *fal = ull_filter_lll_get(true);
 
-
 		radio_filter_configure(fal->enable_bitmask,
 				       fal->addr_type_bitmask,
 				       (uint8_t *)fal->bdaddr);
@@ -1217,9 +1216,13 @@ static void isr_done(void *param)
 		start_us = radio_tmr_start_now(1);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if (lll->aux) {
-			ull_adv_aux_lll_offset_fill(lll->aux->ticks_offset,
-						    start_us, pdu);
+		struct lll_adv_aux *lll_aux;
+
+		lll_aux = lll->aux;
+		if (lll_aux) {
+			(void)ull_adv_aux_lll_offset_fill(pdu,
+							  lll_aux->ticks_offset,
+							  start_us);
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		ARG_UNUSED(pdu);
@@ -1538,3 +1541,15 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 	return (tx_addr == ci->rx_addr) &&
 		!memcmp(addr, ci->connect_ind.adv_addr, BDADDR_SIZE);
 }
+
+#if defined(CONFIG_ZTEST)
+uint32_t lll_adv_free_pdu_fifo_count_get(void)
+{
+	return MFIFO_AVAIL_COUNT_GET(pdu_free);
+}
+
+uint32_t lll_adv_pdu_mem_free_count_get(void)
+{
+	return mem_free_count_get(mem_pdu.free);
+}
+#endif /* CONFIG_ZTEST */

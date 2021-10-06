@@ -476,6 +476,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 			BT_DBG("Volume state");
 			vcs_inst->cli.state_handle = chrc->value_handle;
 			sub_params = &vcs_inst->cli.state_sub_params;
+			sub_params->disc_params = &vcs_inst->cli.state_sub_disc_params;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_VCS_CONTROL) == 0) {
 			BT_DBG("Control Point");
 			vcs_inst->cli.control_handle = chrc->value_handle;
@@ -483,6 +484,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 			BT_DBG("Flags");
 			vcs_inst->cli.flag_handle = chrc->value_handle;
 			sub_params = &vcs_inst->cli.flag_sub_params;
+			sub_params->disc_params = &vcs_inst->cli.flag_sub_disc_params;
 		}
 
 		if (sub_params != NULL) {
@@ -490,11 +492,8 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
-			/*
-			 * TODO: Don't assume that CCC is at handle + 2;
-			 * do proper discovery;
-			 */
-			sub_params->ccc_handle = attr->handle + 2;
+			sub_params->ccc_handle = 0;
+			sub_params->end_handle = vcs_inst->cli.end_handle;
 			sub_params->notify = vcs_client_notify_handler;
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err == 0) {

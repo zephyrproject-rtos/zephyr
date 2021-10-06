@@ -134,52 +134,6 @@ struct z_object_assignment {
  * @param obj Address of the kernel object
  */
 void z_object_init(const void *obj);
-#else
-/* LCOV_EXCL_START */
-#define K_THREAD_ACCESS_GRANT(thread, ...)
-
-/**
- * @internal
- */
-static inline void z_object_init(const void *obj)
-{
-	ARG_UNUSED(obj);
-}
-
-/**
- * @internal
- */
-static inline void z_impl_k_object_access_grant(const void *object,
-						struct k_thread *thread)
-{
-	ARG_UNUSED(object);
-	ARG_UNUSED(thread);
-}
-
-/**
- * @internal
- */
-static inline void k_object_access_revoke(const void *object,
-					  struct k_thread *thread)
-{
-	ARG_UNUSED(object);
-	ARG_UNUSED(thread);
-}
-
-/**
- * @internal
- */
-static inline void z_impl_k_object_release(const void *object)
-{
-	ARG_UNUSED(object);
-}
-
-static inline void k_object_access_all_grant(const void *object)
-{
-	ARG_UNUSED(object);
-}
-/* LCOV_EXCL_STOP */
-#endif /* !CONFIG_USERSPACE */
 
 /**
  * Grant a thread access to a kernel object
@@ -236,6 +190,54 @@ __syscall void k_object_release(const void *object);
  */
 void k_object_access_all_grant(const void *object);
 
+#else
+/* LCOV_EXCL_START */
+#define K_THREAD_ACCESS_GRANT(thread, ...)
+
+/**
+ * @internal
+ */
+static inline void z_object_init(const void *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+/**
+ * @internal
+ */
+static inline void z_impl_k_object_access_grant(const void *object,
+						struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+}
+
+/**
+ * @internal
+ */
+static inline void k_object_access_revoke(const void *object,
+					  struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+}
+
+/**
+ * @internal
+ */
+static inline void z_impl_k_object_release(const void *object)
+{
+	ARG_UNUSED(object);
+}
+
+static inline void k_object_access_all_grant(const void *object)
+{
+	ARG_UNUSED(object);
+}
+/* LCOV_EXCL_STOP */
+#endif /* !CONFIG_USERSPACE */
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
 /**
  * Allocate a kernel object of a designated type
  *
@@ -252,7 +254,6 @@ void k_object_access_all_grant(const void *object);
  */
 __syscall void *k_object_alloc(enum k_objects otype);
 
-#ifdef CONFIG_DYNAMIC_OBJECTS
 /**
  * Allocate memory and install as a generic kernel object
  *
@@ -310,6 +311,7 @@ static inline struct z_object *z_dynamic_object_create(size_t size)
  */
 void k_object_free(void *obj);
 #else
+
 /* LCOV_EXCL_START */
 static inline void *z_impl_k_object_alloc(enum k_objects otype)
 {

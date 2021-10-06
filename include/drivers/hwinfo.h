@@ -42,6 +42,9 @@ extern "C" {
 #define RESET_PARITY				BIT(9)
 #define RESET_PLL				BIT(10)
 #define RESET_CLOCK				BIT(11)
+#define RESET_HARDWARE				BIT(12)
+#define RESET_USER				BIT(13)
+#define RESET_TEMPERATURE			BIT(14)
 
 /**
  * @brief Copy the device id to a buffer

@@ -1257,9 +1257,16 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 		int i;
 
 		for (i = 0; i < msghdr->msg_iovlen; i++) {
+			int len = MIN(msghdr->msg_iov[i].iov_len, buf_len);
+
 			ret = net_pkt_write(pkt, msghdr->msg_iov[i].iov_base,
-					    msghdr->msg_iov[i].iov_len);
+					    len);
 			if (ret < 0) {
+				break;
+			}
+
+			buf_len -= len;
+			if (buf_len == 0) {
 				break;
 			}
 		}

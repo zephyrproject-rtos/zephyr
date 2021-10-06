@@ -66,7 +66,8 @@ __no_optimization static void trigger_fault_access(void)
 	 * address instead to trigger exception. See issue #31419.
 	 */
 	void *a = (void *)0xFFFFFFFF;
-#elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_R) || \
+	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 	/* As this test case only runs when User Mode is enabled,
 	 * accessing _current always triggers a memory access fault,
 	 * and is guaranteed not to trigger SecureFault exceptions.
@@ -118,7 +119,8 @@ __no_optimization static void trigger_fault_divide_zero(void)
 	(defined(CONFIG_SOC_SERIES_MPS3) && defined(CONFIG_QEMU_TARGET)) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_BOARD_QEMU_CORTEX_R5)
+	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
+	defined(CONFIG_BOARD_FVP_BASER_AEMV8R)
 	ztest_test_skip();
 #endif
 }
