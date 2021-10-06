@@ -564,6 +564,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	}
 
 	if (0) {
+#if defined(CONFIG_BT_CENTRAL)
+	} else if (lll->conn && lll->conn->central.initiated) {
+		/* Connection Establishment initiated, do not abort */
+		return 0;
+#endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (unlikely(lll->duration_reload && !lll->duration_expire)) {
 		/* Duration expired, do not continue, close and generate
