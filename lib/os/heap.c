@@ -167,6 +167,17 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	free_chunk(h, c);
 }
 
+size_t sys_heap_usable_size(struct sys_heap *heap, void *mem)
+{
+	struct z_heap *h = heap->heap;
+	chunkid_t c = mem_to_chunkid(h, mem);
+	size_t addr = (size_t)mem;
+	size_t chunk_base = (size_t)&chunk_buf(h)[c];
+	size_t chunk_sz = chunk_size(h, c) * CHUNK_UNIT;
+
+	return chunk_sz - (addr - chunk_base);
+}
+
 static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 {
 	int bi = bucket_idx(h, sz);
