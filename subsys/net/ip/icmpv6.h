@@ -21,7 +21,7 @@
 
 struct net_icmpv6_ns_hdr {
 	uint32_t reserved;
-	struct in6_addr tgt;
+	uint8_t tgt[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_icmpv6_nd_opt_hdr {
@@ -32,7 +32,7 @@ struct net_icmpv6_nd_opt_hdr {
 struct net_icmpv6_na_hdr {
 	uint8_t flags;
 	uint8_t reserved[3];
-	struct in6_addr tgt;
+	uint8_t tgt[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_icmpv6_rs_hdr {
@@ -58,7 +58,7 @@ struct net_icmpv6_nd_opt_prefix_info {
 	uint32_t valid_lifetime;
 	uint32_t preferred_lifetime;
 	uint32_t reserved;
-	struct in6_addr prefix;
+	uint8_t prefix[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_icmpv6_nd_opt_6co {
@@ -66,7 +66,7 @@ struct net_icmpv6_nd_opt_6co {
 	uint8_t flag; /*res:3,c:1,cid:4 */
 	uint16_t reserved;
 	uint16_t lifetime;
-	struct in6_addr prefix;
+	uint8_t prefix[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_icmpv6_echo_req {
@@ -77,7 +77,7 @@ struct net_icmpv6_echo_req {
 struct net_icmpv6_mld_query {
 	uint16_t max_response_code;
 	uint16_t reserved;
-	struct in6_addr mcast_address;
+	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
 	uint16_t flagg; /*S, QRV & QQIC */
 	uint16_t num_sources;
 } __packed;
@@ -86,7 +86,7 @@ struct net_icmpv6_mld_mcast_record {
 	uint8_t record_type;
 	uint8_t aux_data_len;
 	uint16_t num_sources;
-	struct in6_addr mcast_address;
+	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 
