@@ -177,6 +177,24 @@
 			clocks = <&rtc ESP32_HSPI_MODULE>;
 			status = "disabled";
 		};
+
+		wdt0: watchdog@3f41f048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x3f41f048 0x20>;
+			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_0";
+			status = "disabled";
+		};
+
+		wdt1: watchdog@3f42f048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x3f42f048 0x20>;
+			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_1";
+			status = "disabled";
+		};
 	};
 
 };
