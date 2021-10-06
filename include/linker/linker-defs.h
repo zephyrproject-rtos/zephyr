@@ -78,9 +78,6 @@
 		Z_LINK_ITERABLE(struct_type); \
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#define Z_ITERABLE_SECTION_ROM(struct_type, subalign) \
-	ITERABLE_SECTION_ROM(struct_type, subalign)
-
 /**
  * @brief Define a garbage collectable read-only iterable section output.
  *
@@ -98,9 +95,6 @@
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_LINK_IN(ROMABLE_REGION)
-
-#define Z_ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
-	ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign)
 
 /**
  * @brief Define a read-write iterable section output.
@@ -122,9 +116,6 @@
 		Z_LINK_ITERABLE(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#define Z_ITERABLE_SECTION_RAM(struct_type, subalign) \
-	ITERABLE_SECTION_RAM(struct_type, subalign)
-
 /**
  * @brief Define a garbage collectable read-write iterable section output.
  *
@@ -142,9 +133,6 @@
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-#define Z_ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
-	ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign)
 
 /**
  * @}
