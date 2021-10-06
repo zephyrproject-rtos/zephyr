@@ -422,6 +422,52 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Location Object (ID 6)
 
+config LWM2M_GATEWAY_OBJ_SUPPORT
+	bool "Enable LwM2M Gateway Object (25) [EXPERIMENTAL]"
+
+if LWM2M_GATEWAY_OBJ_SUPPORT
+
+config LWM2M_GATEWAY_MAX_INSTANCES
+	int "Maximum number of bridged devices"
+	default 1
+	help
+	  This setting establishes the total count of LwM2M Gateway
+	  instances available to the LWM2M client.
+
+config LWM2M_GATEWAY_DEFAULT_DEVICE_ID
+	string "Identifies the IoT Device bridged to the LwM2M Gateway"
+	default "Node"
+
+config LWM2M_GATEWAY_DEVICE_ID_MAX_STR_SIZE
+	int "Maximum string size for device ID"
+	default 32
+
+config LWM2M_GATEWAY_DEFAULT_DEVICE_PREFIX
+	string "Used for access to LwM2M Objects of this IoT Device"
+	default "n"
+	help
+	  Defaults are n0, n1, n2, ..., n<max instances - 1>
+
+config LWM2M_GATEWAY_PREFIX_MAX_STR_SIZE
+	int "Max string size for prefix"
+	default 32
+
+config LWM2M_GATEWAY_DEFAULT_IOT_DEVICE_OBJECTS
+	string "Contains the Objects and Object Instances exposed by Gateway"
+	default ""
+	help
+	  It uses the same CoreLnk format as Registration Interface.
+	  This must be populated by Gateway.
+	  Example:
+	    </3>;ver=1.0,</3/0>,</4>;ver=1.0,</4/0>,
+	    </5>;ver=1.0,</5/0>,</9>;ver=1.0,</9/0>,</3303/0>
+
+config LWM2M_GATEWAY_IOT_DEVICE_OBJECTS_MAX_STR_SIZE
+	int "Maximum string size for IoT device objects"
+	default 128
+
+endif # LWM2M_GATEWAY_OBJ_SUPPORT
+
 menu "IPSO Alliance Smart Object Support"
 
 source "subsys/net/lib/lwm2m/Kconfig.ipso"
