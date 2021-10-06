@@ -17,15 +17,26 @@
 /** Life-span states of ASE. Used only by internal APIs
  *  dealing with setting ASE to proper state depending on operational
  *  context.
+ *
+ * The values are defined by the ASCS spec and shall not be changed.
  */
 enum bt_audio_chan_state {
-	/** Audio Stream Endpoint idle state */
-	BT_AUDIO_CHAN_IDLE,
-	/** Audio Stream Endpoint configured state */
-	BT_AUDIO_CHAN_CONFIGURED,
-	/** Audio Stream Endpoint streaming state */
-	BT_AUDIO_CHAN_STREAMING,
+	/** Audio Stream Endpoint Idle state */
+	BT_AUDIO_CHAN_IDLE =             0x00,
+	/** Audio Stream Endpoint Codec Configured state */
+	BT_AUDIO_CHAN_CODEC_CONFIGURED = 0x01,
+	/** Audio Stream Endpoint QoS Configured state */
+	BT_AUDIO_CHAN_QOS_CONFIGURED =   0x02,
+	/** Audio Stream Endpoint Enabling state */
+	BT_AUDIO_CHAN_ENABLING =         0x03,
+	/** Audio Stream Endpoint Streaming state */
+	BT_AUDIO_CHAN_STREAMING =        0x04,
+	/** Audio Stream Endpoint Disabling state */
+	BT_AUDIO_CHAN_DISABLING =        0x05,
+	/** Audio Stream Endpoint Streaming state */
+	BT_AUDIO_CHAN_RELEASING =        0x06,
 };
+
 
 #if defined(CONFIG_BT_AUDIO_DEBUG_CHAN)
 void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
