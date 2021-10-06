@@ -104,7 +104,8 @@ static int init(void)
 		.type = BT_AUDIO_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u),
+				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u,
+				20000u, 40000u),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	};

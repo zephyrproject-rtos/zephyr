@@ -669,14 +669,17 @@ enum bt_audio_pac_type {
 /** @def BT_AUDIO_CAPABILITY_PREF
  *  @brief Helper to declare elements of @ref bt_audio_capability_pref
  *
- *  @param _framing Framing
- *  @param _phy Target PHY
- *  @param _rtn Retransmission number
- *  @param _latency Maximum Transport Latency (msec)
+ *  @param _framing Framing Support
+ *  @param _phy Preferred Target PHY
+ *  @param _rtn Preferred Retransmission number
+ *  @param _latency Preferred Maximum Transport Latency (msec)
  *  @param _pd_min Minimum Presentation Delay (usec)
  *  @param _pd_max Maximum Presentation Delay (usec)
+ *  @param _pref_pd_min Preferred Minimum Presentation Delay (usec)
+ *  @param _pref_pd_max Preferred Maximum Presentation Delay (usec)
  */
-#define BT_AUDIO_CAPABILITY_PREF(_framing, _phy, _rtn, _latency, _pd_min, _pd_max) \
+#define BT_AUDIO_CAPABILITY_PREF(_framing, _phy, _rtn, _latency, _pd_min, \
+				 _pd_max, _pref_pd_min, _pref_pd_max) \
 	{ \
 		.framing = _framing, \
 		.phy = _phy, \
@@ -684,6 +687,8 @@ enum bt_audio_pac_type {
 		.latency = _latency, \
 		.pd_min = _pd_min, \
 		.pd_max = _pd_max, \
+		.pref_pd_min = _pref_pd_min, \
+		.pref_pd_max = _pref_pd_max, \
 	}
 
 /** @brief Audio Capability Preference structure. */
