@@ -169,10 +169,13 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		pulse_cycles /= 2;
 	}
 
-	/* Check if period_cycle is either matching currently used, or
+	/* Check if period_cycles is either matching currently used, or
 	 * possible to use with our prescaler options.
+	 * Don't do anything if the period length happens to be zero.
+	 * In such case, pulse cycles will be right below limited to 0
+	 * and this will result in making the channel inactive.
 	 */
-	if (period_cycles != data->period_cycles) {
+	if (period_cycles != 0 && period_cycles != data->period_cycles) {
 		int ret = pwm_period_check_and_set(config, data, channel,
 						   period_cycles);
 		if (ret) {
