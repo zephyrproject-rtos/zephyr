@@ -349,18 +349,19 @@ static int spi_b91_config(const struct device *dev,
 	/* save context config */
 	b91_data->ctx.config = config;
 
-	/* config software CS control if enabled */
-	if (config->cs != NULL) {
-		spi_context_cs_configure(&b91_data->ctx);
-	}
-
 	return 0;
 }
 
 /* API implementation: init */
 static int spi_b91_init(const struct device *dev)
 {
+	int err;
 	struct spi_b91_data *data = SPI_DATA(dev);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -458,6 +459,7 @@ static struct spi_driver_api spi_b91_api = {
 	static struct spi_b91_data spi_b91_data_##inst = {			\
 		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),		\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)		\
 	};									\
 										\
 	static struct spi_b91_cfg spi_b91_cfg_##inst = {			\
