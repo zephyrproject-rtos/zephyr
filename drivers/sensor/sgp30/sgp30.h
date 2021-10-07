@@ -423,6 +423,8 @@ extern "C"
     struct sensor_value tvoc;
     struct sensor_value co2eq;
 
+    struct sensor_value absolute_humidity;
+
     /* Used to submit sample fetching to the system work queue */
     struct k_work fetch_work;
     /* Timer used to submit fetching of data to the system work queue */
