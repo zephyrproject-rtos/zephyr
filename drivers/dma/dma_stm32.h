@@ -45,7 +45,10 @@ struct dma_stm32_config {
 	struct dma_stm32_stream *streams;
 };
 
-#if !defined(CONFIG_DMA_STM32_V1)
+#if defined(CONFIG_DMA_STM32_V3)
+/* from DTS the dma stream id is in range 0..<dma-requests>-1 */
+#define STREAM_OFFSET 0
+#elif !defined(CONFIG_DMA_STM32_V1)
 /* from DTS the dma stream id is in range 1..<dma-requests> */
 /* so decrease to set range from 0 from now on */
 #define STREAM_OFFSET 1
