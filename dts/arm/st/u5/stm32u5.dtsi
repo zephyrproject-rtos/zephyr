@@ -275,7 +275,7 @@
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <46002000 0x400>;
+			reg = <0x46002000 0x400>;
 			interrupts = <99 5>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000020>;
 			status = "disabled";
