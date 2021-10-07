@@ -1574,16 +1574,20 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		case 's': {
 			bps = (const char *)value->ptr;
 
-			size_t len;
+			if (bps != NULL) {
+				size_t len;
 
-			if (precision >= 0) {
-				len = strnlen(bps, precision);
+				if (precision >= 0) {
+					len = strnlen(bps, precision);
+				} else {
+					len = strlen(bps);
+				}
+
+				bpe = bps + len;
+				precision = -1;
 			} else {
-				len = strlen(bps);
+				OUTS("(nil)", NULL);
 			}
-
-			bpe = bps + len;
-			precision = -1;
 
 			break;
 		}
