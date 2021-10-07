@@ -3331,8 +3331,13 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	if ((cmd->cte_type & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_INVALID_VALUE) != 0) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
+#else
+	if (cmd->cte_type != BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 	} else {
 		status = ll_sync_create(cmd->options, cmd->sid, cmd->addr.type, cmd->addr.a.val,
 					skip, sync_timeout, cmd->cte_type);

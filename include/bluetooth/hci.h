@@ -1445,7 +1445,7 @@ struct bt_hci_cp_le_ext_create_conn {
 
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044)
 struct bt_hci_cp_le_per_adv_create_sync {
-	uint8_t      options;
+	uint8_t options;
 	uint8_t      sid;
 	bt_addr_le_t addr;
 	uint16_t     skip;

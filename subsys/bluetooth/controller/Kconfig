@@ -519,6 +519,14 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 	  Set Periodic Advertiser List size, this will be return in the HCI LE
 	  Read Periodic Advertiser List Command.
 
+config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
+	bool "LE Periodic Advertiser filtering by CTE type"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable filtering of periodic advertisements depending on type of
+	  Constant Tone Extension.
+
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
