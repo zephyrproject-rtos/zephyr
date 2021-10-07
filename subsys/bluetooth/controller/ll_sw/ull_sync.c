@@ -60,9 +60,10 @@ static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
-#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	!defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu);
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static void ticker_update_op_status_give(uint32_t status, void *param);
@@ -182,8 +183,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->skip_event = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
 	lll_sync->window_widening_event_us = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	lll_sync->cte_type = sync_cte_type;
 	lll_sync->filter_policy = scan->per_scan.filter_policy;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	/* TODO: Add support for reporting initially enabled/disabled */
 	lll_sync->is_rx_enabled =
@@ -594,7 +597,6 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 {
-	enum sync_status sync_status;
 	struct node_rx_pdu *rx_establ;
 	struct ll_sync_set *ull_sync;
 	struct node_rx_ftr *ftr;
@@ -602,6 +604,9 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	struct lll_sync *lll;
 
 	ftr = &rx->rx_ftr;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
+	enum sync_status sync_status;
 
 #if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	sync_status = ftr->sync_status;
@@ -624,35 +629,46 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
 	 */
 	if (sync_status != SYNC_STAT_READY_OR_CONT_SCAN) {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+
 		/* Set the sync handle corresponding to the LLL context passed in the node rx
 		 * footer field.
 		 */
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 		lll = ftr->param;
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		ull_sync = HDR_LLL2ULL(lll);
 
 		/* Prepare and dispatch sync notification */
 		rx_establ = (void *)ull_sync->node_rx_sync_estab;
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
 		se = (void *)rx_establ->pdu;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 		se->status = (ftr->sync_status == SYNC_STAT_TERM) ?
 					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
 					   BT_HCI_ERR_SUCCESS;
 
-		/* Notify done event handler to terminate sync scan */
 #if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+		/* Notify done event handler to terminate sync scan if required. */
 		ull_sync->sync_term = sync_status == SYNC_STAT_TERM;
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#else
+		se->status = BT_HCI_ERR_SUCCESS;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 		ll_rx_put(rx_establ->hdr.link, rx_establ);
 		ll_rx_sched();
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	/* Handle periodic advertising PDU and send periodic advertising scan report when
 	 * the sync was found or was established in the past. The report is not send if
 	 * scanning is terminated due to wrong CTE type.
 	 */
 	if (sync_status != SYNC_STAT_TERM) {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
 		mfy_lll_prepare.fp = lll_sync_prepare;
 
@@ -677,6 +693,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 	lll = &sync->lll;
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 #if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	if (done->extra.sync_term) {
 #else
@@ -684,7 +701,9 @@ void ull_sync_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 		/* Stop periodic advertising scan ticker */
 		sync_ticker_cleanup(sync, NULL);
-	} else {
+	} else
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+	{
 		/* Events elapsed used in timeout checks below */
 		skip_event = lll->skip_event;
 		elapsed_event = skip_event + 1;
@@ -992,7 +1011,8 @@ static void ticker_update_op_status_give(uint32_t status, void *param)
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	!defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
@@ -1015,4 +1035,4 @@ static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu)
 
 	return (struct pdu_cte_info *)hdr->data;
 }
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
