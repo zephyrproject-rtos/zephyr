@@ -374,7 +374,7 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			    NPCX_MIWU_INIT_FUNC(inst),                         \
-			    NULL,					       \
+			    PM_DISABLED,				       \
 			    NULL, &miwu_config_##inst,                         \
 			    PRE_KERNEL_1,                                      \
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);        \

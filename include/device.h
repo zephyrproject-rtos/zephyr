@@ -628,6 +628,10 @@ static inline bool device_is_ready(const struct device *dev)
 /**
  * @}
  */
+/* Temporary definition of PM_DISABLED to point to NULL to maintain
+ * backward compatibility.
+ */
+#define PM_DISABLED NULL
 
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.

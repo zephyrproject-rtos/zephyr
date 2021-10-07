@@ -332,7 +332,7 @@ int gpio_npcx_init(const struct device *dev)
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			    gpio_npcx_init,                                    \
-			    NULL,					       \
+			    PM_DISABLED,					       \
 			    &gpio_npcx_data_##inst,                            \
 			    &gpio_npcx_cfg_##inst,                             \
 			    POST_KERNEL,                                       \

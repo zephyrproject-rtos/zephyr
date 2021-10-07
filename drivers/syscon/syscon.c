@@ -140,7 +140,7 @@ static int syscon_generic_init(const struct device *dev)
 	static struct syscon_generic_data syscon_generic_data_##inst = {                           \
 		.size = DT_REG_SIZE(DT_DRV_INST(inst)),                                            \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, syscon_generic_init, NULL, &syscon_generic_data_##inst,        \
+	DEVICE_DT_INST_DEFINE(inst, syscon_generic_init, PM_DISABLED, &syscon_generic_data_##inst,        \
 			      &syscon_generic_config_##inst, PRE_KERNEL_1,                         \
 			      CONFIG_SYSCON_INIT_PRIORITY, &syscon_generic_driver_api);
 
