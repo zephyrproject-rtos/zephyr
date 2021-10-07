@@ -7,6 +7,7 @@
 DT_COMPAT_ST_STM32_DMA_V1 := st,stm32-dma-v1
 DT_COMPAT_ST_STM32_DMA_V2 := st,stm32-dma-v2
 DT_COMPAT_ST_STM32_DMA_V2BIS := st,stm32-dma-v2bis
+DT_COMPAT_ST_STM32_DMA_V3 := st,stm32-dma-v3
 DT_COMPAT_ST_STM32_DMAMUX := st,stm32-dmamux
 
 config DMA_STM32
@@ -33,6 +34,12 @@ config DMA_STM32_V2
 	  peripheral request must be specified in the dma slot of the dma cell
 	  With the versions V2 bis of DMA, the peripheral request (slot) is not
 	  a parameter of the dma-cell.
+
+config DMA_STM32_V3
+	bool
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V3))
+	help
+	  Enable DMA V3 support.
 
 config DMAMUX_STM32
 	bool
