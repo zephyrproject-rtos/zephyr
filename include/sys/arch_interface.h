@@ -650,6 +650,21 @@ void arch_mem_domain_partition_add(struct k_mem_domain *domain,
 int arch_buffer_validate(void *addr, size_t size, int write);
 
 /**
+ * Get the optimal virtual region alignment to optimize the MMU table layout
+ *
+ * Some MMU HW requires some region to be aligned to some of the intermediate
+ * block alignment in order to reduce table usage.
+ * This call returns the optimal virtual address alignment in order to permit
+ * such optimization in the following MMU mapping call.
+ *
+ * @param[in] phys Physical address of region to be mapped, aligned to MMU_PAGE_SIZE
+ * @param[in] size Size of region to be mapped, aligned to MMU_PAGE_SIZE
+ *
+ * @retval alignment to apply on the virtual address of this region
+ */
+size_t arch_virt_region_align(uintptr_t phys, size_t size);
+
+/**
  * Perform a one-way transition from supervisor to kernel mode.
  *
  * Implementations of this function must do the following:
