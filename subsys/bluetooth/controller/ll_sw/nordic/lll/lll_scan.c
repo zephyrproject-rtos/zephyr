@@ -62,7 +62,12 @@ static void isr_rx(void *param);
 static void isr_tx(void *param);
 static void isr_done(void *param);
 static void isr_window(void *param);
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
+	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 static void isr_abort(void *param);
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
+	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	*/
 static void isr_done_cleanup(void *param);
 static void isr_cleanup(void *param);
 
@@ -452,7 +457,9 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
 	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
+	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	*/
 	{
 		uint32_t ret;
 
@@ -578,8 +585,11 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 				cpu_sleep();
 			}
 #endif /* CONFIG_BT_CENTRAL */
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			radio_isr_set(isr_done_cleanup, param);
+			radio_disable();
 		} else {
-			radio_isr_set(isr_abort, param);
+			radio_isr_set(isr_cleanup, param);
 			radio_disable();
 		}
 		return;
@@ -908,10 +918,54 @@ static void isr_window(void *param)
 #endif /* CONFIG_BT_CENTRAL */
 }
 
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
+	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 static void isr_abort(void *param)
 {
 	/* Clear radio status and events */
 	lll_isr_status_reset();
+
+	/* Disable Rx filters when aborting scan prepare */
+	radio_filter_disable();
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct event_done_extra *extra;
+
+	/* Generate Scan done events so that duration and max expiry is
+	 * detected in ULL.
+	 */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
+	LL_ASSERT(extra);
+#endif  /* CONFIG_BT_CTLR_ADV_EXT */
+
+	lll_isr_cleanup(param);
+}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED &&
+	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
+	*/
+
+static void isr_done_cleanup(void *param)
+{
+	struct lll_scan *lll;
+
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+
+	/* Under race between duration expire, is_stop is set in this function,
+	 * and event preemption, prevent generating duplicate scan done events.
+	 */
+	if (lll_is_done(param)) {
+		return;
+	}
+
+	/* Disable Rx filters when yielding or stopping scan window */
+	radio_filter_disable();
+
+	/* Next window to use next advertising radio channel */
+	lll = param;
+	if (++lll->chan == 3U) {
+		lll->chan = 0U;
+	}
 
 	/* Scanner stop can expire while here in this ISR.
 	 * Deferred attempt to stop can fail as it would have
@@ -920,26 +974,9 @@ static void isr_abort(void *param)
 	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
-	/* Under race conditions, radio could get started while entering ISR */
-	radio_disable();
-
-	isr_cleanup(param);
-}
-
-static void isr_done_cleanup(void *param)
-{
-	/* Clear radio status and events */
-	lll_isr_status_reset();
-
-	if (lll_is_done(param)) {
-		return;
-	}
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct event_done_extra *extra;
-	struct lll_scan *lll;
 
-	lll = param;
 	if (lll->is_aux_sched) {
 		struct node_rx_pdu *node_rx;
 
@@ -954,25 +991,48 @@ static void isr_done_cleanup(void *param)
 		ull_rx_sched();
 	}
 
-	extra = ull_event_done_extra_get();
+	/* Generate Scan done events so that duration and max expiry is
+	 * detected in ULL.
+	 */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
 	LL_ASSERT(extra);
 
-	extra->type = EVENT_DONE_EXTRA_TYPE_SCAN;
+	/* Prevent scan events in pipeline from being scheduled if duration has
+	 * expired.
+	 */
+	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+		lll->is_stop = 1U;
+	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
-	isr_cleanup(param);
+	lll_isr_cleanup(param);
 }
 
 static void isr_cleanup(void *param)
 {
-	struct lll_scan *lll;
+	/* Clear radio status and events */
+	lll_isr_status_reset();
 
+	/* Do not generate done event for connection initiation, ULL will
+	 * disable the event when establishing/setting up the connection.
+	 * Also, do not generate done event when duration expire, as ULL
+	 * will disable the event.
+	 * As it was transmission of CONNECT_IND, there is not filters to
+	 * disable either.
+	 */
+	if (lll_is_done(param)) {
+		return;
+	}
+
+	/* Disable Rx filters, if cleanup after being in Rx state */
 	radio_filter_disable();
 
-	lll = param;
-	if (++lll->chan == 3U) {
-		lll->chan = 0U;
-	}
+	/* Scanner stop can expire while here in this ISR.
+	 * Deferred attempt to stop can fail as it would have
+	 * expired, hence ignore failure.
+	 */
+	ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
+		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (_radio.advertiser.is_enabled && _radio.advertiser.is_mesh &&
@@ -1103,7 +1163,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			lll_prof_cputime_capture();
 		}
 
-		radio_isr_set(isr_done_cleanup, lll);
+		radio_isr_set(isr_cleanup, lll);
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
