@@ -86,6 +86,7 @@ enum pm_device_action {
  * @brief Device PM info
  */
 struct pm_device {
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
@@ -93,17 +94,27 @@ struct pm_device {
 	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
 	bool enable : 1;
-	/* Device PM status flags. */
-	atomic_t flags;
 	/** Device usage count */
 	uint32_t usage;
-	/** Device power state */
-	enum pm_device_state state;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+	/* Device PM status flags. */
+	atomic_t flags;
+	/** Device power state */
+	enum pm_device_state state;
 };
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+#define INIT_PM_DEVICE_RUNTIME(obj)			\
+	.usage = 0U,					\
+	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
+	.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),
+#else
+#define INIT_PM_DEVICE_RUNTIME(obj)
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 /**
  * @brief Utility macro to initialize #pm_device.
@@ -116,9 +127,7 @@ struct pm_device {
  */
 #define Z_PM_DEVICE_INIT(obj, node_id)					\
 	{								\
-		.usage = 0U,						\
-		.lock = Z_MUTEX_INITIALIZER(obj.lock),			\
-		.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),		\
+		INIT_PM_DEVICE_RUNTIME(obj)				\
 		.state = PM_DEVICE_STATE_ACTIVE,			\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
