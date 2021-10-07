@@ -455,10 +455,8 @@ static void isr_done(void *param)
 	lll_isr_status_reset();
 
 	if (!trx_cnt) {
-		e = ull_event_done_extra_get();
+		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
-
-		e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
 	}
 
 	lll_isr_cleanup(param);
@@ -1421,10 +1419,8 @@ static void isr_early_abort(void *param)
 {
 	struct event_done_extra *e;
 
-	e = ull_event_done_extra_get();
+	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
-
-	e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
 
 	lll_isr_early_abort(param);
 }
