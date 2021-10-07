@@ -8,13 +8,24 @@ DT_COMPAT_ST_STM32_DMA_V1 := st,stm32-dma-v1
 DT_COMPAT_ST_STM32_DMA_V2 := st,stm32-dma-v2
 DT_COMPAT_ST_STM32_DMA_V2BIS := st,stm32-dma-v2bis
 DT_COMPAT_ST_STM32_DMAMUX := st,stm32-dmamux
+DT_COMPAT_ST_STM32U5_DMA := st,stm32u5-dma
 
 config DMA_STM32
 	bool "STM32 DMA driver"
 	select USE_STM32_LL_DMA
 	depends on SOC_FAMILY_STM32
+	default y if !$(dt_compat_enabled,$(DT_COMPAT_ST_STM32U5_DMA))
 	help
-	  DMA driver for STM32 series SoCs.
+	  Driver for STM32 DMA V1, V2 and V2bis types.
+
+config DMA_STM32U5
+	bool "STM32U5 serie DMA driver"
+	select USE_STM32_LL_DMA
+	depends on SOC_FAMILY_STM32
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32U5_DMA))
+	help
+	  Enable DMA support mainly for stm32U5 family.
+	  It differs from the DMA driver due to the GPDMA peripheral.
 
 if DMA_STM32
 
