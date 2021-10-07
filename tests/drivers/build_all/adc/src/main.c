@@ -4,20 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
 #include <device.h>
-
-
-/*
- * @file
- * @brief Hello World demo
- */
-
 
 void main(void)
 {
-	printk("Hello World!\n");
 }
 
 #if DT_NODE_EXISTS(DT_INST(0, vnd_gpio))
