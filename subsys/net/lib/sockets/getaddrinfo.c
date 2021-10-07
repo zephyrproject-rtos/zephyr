@@ -163,7 +163,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 	struct sockaddr *ai_addr;
 	int ret;
-	struct getaddrinfo_state ai_state;
+	static struct getaddrinfo_state ai_state;
 
 	if (hints) {
 		family = hints->ai_family;
