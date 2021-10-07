@@ -943,6 +943,29 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	return 0;
 }
 
+size_t arch_virt_region_align(uintptr_t phys, size_t size)
+{
+	size_t alignment = CONFIG_MMU_PAGE_SIZE;
+	size_t level_size;
+	int level;
+
+	for (level = XLAT_LAST_LEVEL; level >= BASE_XLAT_LEVEL; level--) {
+		level_size = 1 << LEVEL_TO_VA_SIZE_SHIFT(level);
+
+		if (size < level_size) {
+			break;
+		}
+
+		if ((phys & (level_size - 1))) {
+			break;
+		}
+
+		alignment = level_size;
+	}
+
+	return alignment;
+}
+
 #ifdef CONFIG_USERSPACE
 
 static void z_arm64_swap_ptables(struct k_thread *incoming);
