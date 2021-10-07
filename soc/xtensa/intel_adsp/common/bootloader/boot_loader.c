@@ -99,12 +99,12 @@ static void parse_module(struct sof_man_fw_header *hdr,
 		switch (mod->segment[i].flags.r.type) {
 		case SOF_MAN_SEGMENT_TEXT:
 		case SOF_MAN_SEGMENT_DATA:
-			bias = (mod->segment[i].file_offset -
-				SOF_MAN_ELF_TEXT_OFFSET);
+			bias = mod->segment[i].file_offset -
+				SOF_MAN_ELF_TEXT_OFFSET;
 
 			/* copy from IMR to SRAM */
 			bmemcpy((void *)mod->segment[i].v_base_addr,
-				(void *)((int)hdr + bias),
+				(uint8_t *)hdr + bias,
 				mod->segment[i].flags.r.length *
 				HOST_PAGE_SIZE);
 			break;
@@ -140,8 +140,8 @@ static uint32_t get_fw_size_in_use(void)
 
 	/* Calculate fw size passed in BASEFW module in MANIFEST */
 	for (i = MAN_SKIP_ENTRIES; i < hdr->num_module_entries; i++) {
-		mod = (struct sof_man_module *)((char *)desc +
-						SOF_MAN_MODULE_OFFSET(i));
+		mod = desc->man_module + i;
+
 		if (strcmp((char *)mod->name, "BASEFW"))
 			continue;
 		for (i = 0; i < MANIFEST_SEGMENT_COUNT; i++) {
@@ -172,8 +172,8 @@ static void parse_manifest(void)
 
 	/* copy module to SRAM  - skip bootloader module */
 	for (i = MAN_SKIP_ENTRIES; i < hdr->num_module_entries; i++) {
+		mod = desc->man_module + i;
 
-		mod = (void *)((uintptr_t)desc + SOF_MAN_MODULE_OFFSET(i));
 		z_xtensa_cache_inv(mod, sizeof(*mod));
 		parse_module(hdr, mod);
 	}
