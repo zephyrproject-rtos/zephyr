@@ -8,6 +8,7 @@
 #include <kernel_internal.h>
 #include <sys/__assert.h>
 #include <sys/check.h>
+#include <sys/math_extras.h>
 #include "core_pmp.h"
 #include <arch/riscv/csr.h>
 
@@ -245,6 +246,49 @@ static __unused int riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t a
 	csr_write_enum(pmpcfg_csr, reg_val);
 	return 0;
 }
+
+#ifdef CONFIG_USERSPACE
+/*
+ * @brief Get the expected PMP region value of current thread in user mode.
+ *
+ * Because PMP stack guard support will set different dynamic PMP regions for
+ * thread in user and supervisor mode, checking user thread permission couldn't
+ * directly use PMP CSR values in the HW, but also use expected PMP region
+ * of current thread in user mode.
+ */
+static int riscv_pmp_get_user_thread(unsigned int index, uint8_t *cfg_val, ulong_t *addr_val)
+{
+#ifdef CONFIG_PMP_STACK_GUARD
+	unsigned int static_regions_num = 1;
+#else
+	unsigned int static_regions_num = 0;
+#endif
+
+	if (index >= CONFIG_PMP_SLOT) {
+		return -1;
+	}
+
+	if (index < static_regions_num) {
+		/* This PMP index is static PMP region, check PMP CSRs. */
+		riscv_pmp_get(index, cfg_val, addr_val);
+	} else {
+		/*
+		 * This PMP index is dynamic PMP region, check u_pmpcfg of
+		 * current thread.
+		 */
+		uint8_t *u8_pmpcfg = (uint8_t *) _current->arch.u_pmpcfg;
+		ulong_t *pmpaddr = _current->arch.u_pmpaddr;
+
+		*cfg_val = u8_pmpcfg[index];
+
+		if (addr_val) {
+			*addr_val = pmpaddr[index];
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_USERSPACE */
 
 static int riscv_pmp_region_translate(int index,
 	const struct riscv_pmp_region *region, bool to_csr,
@@ -511,84 +555,131 @@ out:
 	return ret;
 }
 
+/*
+ * Check the 1st bit zero of value from the least significant bit to most one.
+ */
+static ALWAYS_INLINE ulong_t count_trailing_one(ulong_t value)
+{
+#ifdef HAS_BUILTIN___builtin_ctzl
+	ulong_t revert_value = ~value;
+
+	return __builtin_ctzl(revert_value);
+#else
+	int shift = 0;
+
+	while ((value >> shift) & 0x1) {
+		shift++;
+	}
+
+	return shift;
+#endif
+}
+
+/**
+ * This internal function checks if the given buffer is in the region.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int is_in_region(uint32_t index, uint32_t start, uint32_t size)
+{
+	ulong_t addr_start;
+	ulong_t addr_end;
+	ulong_t end;
+	uint8_t pmpcfg = 0;
+	ulong_t pmpaddr = 0;
+
+	riscv_pmp_get_user_thread(index, &pmpcfg, &pmpaddr);
+
+	if ((pmpcfg & PMP_TYPE_MASK) == PMP_NA4) {
+		addr_start = FROM_PMP_ADDR(pmpaddr);
+		addr_end = addr_start + 4UL - 1UL;
+	} else if ((pmpcfg & PMP_TYPE_MASK) == PMP_NAPOT) {
+		ulong_t shift = count_trailing_one(pmpaddr);
+		ulong_t bitmask = (1UL << (shift+1)) - 1UL;
+		ulong_t size = FROM_PMP_ADDR(bitmask + 1UL);
+
+		addr_start = FROM_PMP_ADDR(pmpaddr & ~bitmask);
+		addr_end = addr_start - 1UL + size;
+	} else if ((pmpcfg & PMP_TYPE_MASK) == PMP_TOR) {
+		if (index == 0) {
+			addr_start = 0;
+		} else {
+			ulong_t pmpaddr_prev = csr_read_enum(CSR_PMPADDR0 + index - 1);
+
+			addr_start = FROM_PMP_ADDR(pmpaddr_prev);
+		}
+
+		addr_end = FROM_PMP_ADDR(pmpaddr) - 1UL;
+	} else {
+		/* PMP_OFF: PMP region isn't enabled. */
+		return 0;
+	}
+
+	size = size == 0U ? 0U : size - 1U;
+#ifdef CONFIG_64BIT
+	if (u64_add_overflow(start, size, &end)) {
+		return 0;
+	}
+#else
+	if (u32_add_overflow(start, size, (uint32_t *)&end)) {
+		return 0;
+	}
+#endif
+
+	if ((start >= addr_start) && (end <= addr_end)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * This internal function checks if the region is user accessible or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int is_user_accessible_region(uint32_t index, int write)
+{
+	uint8_t pmpcfg = 0;
+
+	riscv_pmp_get_user_thread(index, &pmpcfg, NULL);
+
+	if (write != 0) {
+		return (pmpcfg & PMP_W) == PMP_W;
+	}
+	return (pmpcfg & PMP_R) == PMP_R;
+}
+
+/**
+ * This function validates whether a given memory buffer
+ * is user accessible or not.
+ */
 int arch_buffer_validate(void *addr, size_t size, int write)
 {
-	uint32_t index, i;
-	ulong_t pmp_type, pmp_addr_start, pmp_addr_stop;
-	unsigned char *uchar_pmpcfg;
-	struct k_thread *thread = _current;
-	ulong_t start = (ulong_t) addr;
-	ulong_t access_type = PMP_R;
-	ulong_t napot_mask;
-#ifdef CONFIG_64BIT
-	ulong_t max_bit = 64;
-#else
-	ulong_t max_bit = 32;
-#endif /* CONFIG_64BIT */
+	uint32_t index;
 
-	if (write) {
-		access_type |= PMP_W;
-	}
-
-	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
-
-#ifdef CONFIG_PMP_STACK_GUARD
-	index = 1U;
-#else
-	index = 0U;
-#endif /* CONFIG_PMP_STACK_GUARD */
-
-#if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
-__ASSERT((uchar_pmpcfg[index] & PMP_TYPE_MASK) != PMP_TOR,
-	"The 1st PMP entry shouldn't configured as TOR");
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT || CONFIG_PMP_STACK_GUARD */
-
-	for (; (index < CONFIG_PMP_SLOT) && uchar_pmpcfg[index]; index++) {
-		if ((uchar_pmpcfg[index] & access_type) != access_type) {
+	/* Iterate all PMP regions */
+	for (index = 0; index < CONFIG_PMP_SLOT; index++) {
+		if (!is_in_region(index, (ulong_t)addr, size)) {
 			continue;
 		}
 
-		pmp_type = uchar_pmpcfg[index] & PMP_TYPE_MASK;
-
-#if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
-		if (pmp_type == PMP_TOR) {
-			continue;
-		}
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT || CONFIG_PMP_STACK_GUARD */
-
-		if (pmp_type == PMP_NA4) {
-			pmp_addr_start =
-				FROM_PMP_ADDR(thread->arch.u_pmpaddr[index]);
-
-			if ((index == CONFIG_PMP_SLOT - 1)  ||
-				((uchar_pmpcfg[index + 1U] & PMP_TYPE_MASK)
-					!= PMP_TOR)) {
-				pmp_addr_stop = pmp_addr_start + 4;
-			} else {
-				pmp_addr_stop = FROM_PMP_ADDR(
-					thread->arch.u_pmpaddr[index + 1U]);
-				index++;
-			}
-		} else { /* pmp_type == PMP_NAPOT */
-			for (i = 0U; i < max_bit; i++) {
-				if (!(thread->arch.u_pmpaddr[index] & (1 << i))) {
-					break;
-				}
-			}
-
-			napot_mask = (1 << i) - 1;
-			pmp_addr_start = FROM_PMP_ADDR(
-				thread->arch.u_pmpaddr[index] & ~napot_mask);
-			pmp_addr_stop = pmp_addr_start + (1 << (i + 3));
-		}
-
-		if ((start >= pmp_addr_start) && ((start + size - 1) <
-			pmp_addr_stop)) {
+		/*
+		 * For RISC-V PMP, low region number takes priority.
+		 * Since we iterate all PMP regions, we can stop the iteration
+		 * immediately once we find the matched region that
+		 * grants permission or denies access.
+		 */
+		if (is_user_accessible_region(index, write)) {
 			return 0;
+		} else {
+			return -EPERM;
 		}
 	}
 
-	return 1;
+	return -EPERM;
 }
 
 int arch_mem_domain_max_partitions_get(void)
