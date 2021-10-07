@@ -1296,12 +1296,9 @@ else()
   # The final linker pass uses the same source linker script of the
   # previous passes, but this time with a different output
   # file and preprocessed with the define LINKER_ZEPHYR_FINAL.
-  #
-  # LINKER_PASS2 is deprecated but being kept to avoid breaking
-  # external projects. It will be removed in the future.
   configure_linker_script(
     linker.cmd
-    "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2"
+    "-DLINKER_ZEPHYR_FINAL"
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     zephyr_generated_headers
