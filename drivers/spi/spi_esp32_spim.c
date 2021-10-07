@@ -131,6 +131,7 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 
 static int spi_esp32_init(const struct device *dev)
 {
+	int err;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
 
@@ -145,6 +146,11 @@ static int spi_esp32_init(const struct device *dev)
 			(void *)dev,
 			NULL);
 #endif
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -260,8 +266,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 					cfg->use_iomux,
 					GPIO_OUTPUT | GPIO_ACTIVE_LOW);
 	}
-
-	spi_context_cs_configure(&data->ctx);
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -411,6 +415,7 @@ static const struct spi_driver_api spi_api = {
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
 		.hal = {	\
 			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 		},	\
