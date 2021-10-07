@@ -156,6 +156,7 @@ struct sof_man_fw_desc {
 	 * struct sof_man_mod_config mod_config[];
 	 */
 
+	struct sof_man_module man_module[];
 } __attribute__((packed));
 
 /*
@@ -188,12 +189,5 @@ struct sof_man_module_manifest {
 	struct sof_man_module module;
 	uint32_t text_size;
 };
-
-/*
- * Module offset in manifest.
- */
-#define SOF_MAN_MODULE_OFFSET(index) \
-	(sizeof(struct sof_man_fw_header) + \
-		(index) * sizeof(struct sof_man_module))
 
 #endif
