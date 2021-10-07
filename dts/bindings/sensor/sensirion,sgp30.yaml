@@ -1,0 +1,12 @@
+# Copyright (c) 2021, Advanced Climate Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SGP30 VOC Sensor
+
+compatible: "sensirion,sgp30"
+
+include: i2c-device.yaml
+
+properties:
+    label:
+      required: true
