@@ -344,6 +344,7 @@
 /drivers/serial/serial_test.c             @str4t0m
 /drivers/serial/Kconfig.xen               @lorc @firscity
 /drivers/serial/uart_hvc_xen.c            @lorc @firscity
+/drivers/serial/uart_hvc_xen_consoleio.c  @lorc @firscity
 /drivers/serial/Kconfig.it8xxx2           @GTLin08
 /drivers/serial/uart_ite_it8xxx2.c        @GTLin08
 /drivers/disk/                            @jfischer-no
