@@ -2620,8 +2620,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* dequeue prepare pipeline */
 	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-	/* LLL done synchronized */
-	lll_done_sync();
+	/* LLL done synchronize count */
+	lll_done_ull_inc();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* If disable initiated, signal the semaphore */
