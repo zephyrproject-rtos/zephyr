@@ -186,6 +186,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_policy,
 					 uint8_t rx_cte_time, uint8_t rx_cte_type)
 {
@@ -236,6 +237,7 @@ enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_p
 
 	return SYNC_STAT_ALLOWED;
 }
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 static int init_reset(void)
 {
@@ -745,11 +747,12 @@ static void isr_rx_adv_sync_estab(void *param)
 	}
 
 isr_rx_done:
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_STAT_TERM);
 #else
 	isr_rx_done_cleanup(lll, crc_ok, false);
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 }
 
 static void isr_rx_adv_sync(void *param)
@@ -889,9 +892,10 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	e->sync_term = sync_term;
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 	if (trx_cnt) {
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 		e->drift.start_to_address_actual_us =
@@ -987,7 +991,8 @@ static uint8_t data_channel_calc(struct lll_sync *lll)
 
 static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t filter_policy)
 {
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	uint8_t rx_cte_time;
 	uint8_t rx_cte_type;
 
@@ -996,6 +1001,6 @@ static enum sync_status sync_filtrate_by_cte_type(uint8_t cte_type_mask, uint8_t
 
 	return lll_sync_cte_is_allowed(cte_type_mask, filter_policy, rx_cte_time, rx_cte_type);
 
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 	return SYNC_STAT_ALLOWED;
 }
