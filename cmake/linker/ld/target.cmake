@@ -34,7 +34,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   if(CONFIG_CMAKE_LINKER_GENERATOR)
     if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
       set(PASS 1)
-    elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2")
+    elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL")
       set(PASS 2)
     endif()
 

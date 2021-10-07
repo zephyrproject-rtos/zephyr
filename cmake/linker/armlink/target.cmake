@@ -33,7 +33,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
 
   if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
     set(PASS 1)
-  elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2")
+  elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL")
     set(PASS 2)
     set(STEERING_FILE ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.steer)
     set(STEERING_C ${CMAKE_CURRENT_BINARY_DIR}/armlink_symbol_steering.c)
