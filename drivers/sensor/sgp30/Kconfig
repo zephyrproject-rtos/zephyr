@@ -1,0 +1,17 @@
+menuconfig SGP30
+    bool "SGP30 VOC sensor"
+    help
+      Enable the Sensirion SGP30 sensor
+
+if SGP30
+
+comment "SGP30 Options"
+
+config SGP30_ABSOLUTE_HUMIDITY_COMP
+    bool "SGP30 Humdity compensation"
+    help
+      Enable absolute humidity compensation in the SGP30
+      driver. This will require the user of this device to
+      this value using sensor_attr_set().
+
+endif
