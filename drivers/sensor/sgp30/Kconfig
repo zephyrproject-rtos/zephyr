@@ -1,3 +1,6 @@
+# Copyright (c) 2021 Advanced Climate Systems
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig SGP30
     bool "SGP30 VOC sensor"
     help
