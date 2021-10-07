@@ -179,7 +179,6 @@ static int configure(const struct device *dev,
 	dev_data->initialized = true;
 
 	ctx->config = spi_cfg;
-	spi_context_cs_configure(ctx);
 
 	return 0;
 }
@@ -392,15 +391,21 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
+		int err;                                                       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);   \
+		if (err < 0) {                                                 \
+			return err;                                            \
+		}                                                              \
 		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
 		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)         \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
