@@ -142,8 +142,6 @@ menuconfig RISCV_PMP
 	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
-	  Memory protection against read-only area writing
-	  is natively supported on real HW.
 
 if RISCV_PMP
 source "arch/riscv/core/pmp/Kconfig"

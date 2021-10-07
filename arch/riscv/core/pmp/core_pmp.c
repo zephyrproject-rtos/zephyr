@@ -6,10 +6,13 @@
 
 #include <kernel.h>
 #include <kernel_internal.h>
+#include <device.h>
+#include <init.h>
 #include <sys/__assert.h>
 #include <sys/check.h>
 #include <sys/math_extras.h>
-#include "core_pmp.h"
+#include <linker/linker-defs.h>
+#include <core_pmp.h>
 #include <arch/riscv/csr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
@@ -40,22 +43,13 @@ LOG_MODULE_REGISTER(mpu);
 
 #ifdef CONFIG_USERSPACE
 /*
- * Define the used PMP regions before memory domain/partition.
+ * Define used PMP regions before memory domain/partition.
  *
  * Already used PMP regions:
- *   1. 0/1 entry for interrupt stack guard: None
- *   2. 1   entry for MCU state: R
- *   3. 1/2 entry for program and read only data: RX
- *   4. 1/2 entry for user thread stack: RW
+ *   1. 1   entry for MCU state: R
+ *   2. 1/2 entry for user thread stack: RW
  */
-#define PMP_REGION_NUM_FOR_U_THREAD	( \
-	(IS_ENABLED(CONFIG_PMP_STACK_GUARD) ? 1 : 0) + \
-	 1 + (2 * PMP_USED_ENTRY_DEFAULT))
-
-#define PMP_MAX_DYNAMIC_REGION		( \
-	(CONFIG_PMP_SLOT - PMP_REGION_NUM_FOR_U_THREAD) \
-	/ PMP_USED_ENTRY_DEFAULT)
-
+#define PMP_REGION_NUM_FOR_U_THREAD	(1 + (1 * PMP_USED_ENTRY_DEFAULT))
 #endif /* CONFIG_USERSPACE */
 
 enum pmp_region_mode {
@@ -77,11 +71,75 @@ struct riscv_pmp_region {
 extern ulong_t is_user_mode;
 #endif
 
+/*
+ * RISC-V PMP regions usage (from low number to high):
+ *   dynamic region -> static region -> MPRV region
+ *
+ * Lower number PMP region has higher priority. For overlapping PMP
+ * regions, static regions should have lower priority than dynamic
+ * regions. MPRV region should have the lowest priority.
+ */
+static uint8_t static_regions_num;
+static uint8_t mprv_regions_num;
+
+/* Get the number of PMP regions */
+static inline uint8_t get_num_regions(void)
+{
+	return CONFIG_PMP_SLOT;
+}
+
+/* Get the maximum PMP region index for dynamic PMP region */
+static inline uint8_t max_dynamic_region(void)
+{
+	return get_num_regions() - static_regions_num -
+		mprv_regions_num - 1;
+}
+
+static const struct riscv_pmp_region static_regions[] = {
+	{
+		/*
+		 * Program and RO data: RX permission for both
+		 * user/supervisor mode.
+		 */
+		.start = (ulong_t) __rom_region_start,
+		.size = (ulong_t) __rom_region_size,
+		.perm = PMP_R | PMP_X | PMP_L,
+		.mode = PMP_MODE_DEFAULT,
+	},
 #ifdef CONFIG_PMP_STACK_GUARD
-static const struct riscv_pmp_region irq_stack_guard_region = {
-	.start = (ulong_t) z_interrupt_stacks[0],
-	.size = PMP_GUARD_ALIGN_AND_SIZE,
-	.perm = 0,
+	{
+		/* IRQ stack guard */
+		.start = (ulong_t) z_interrupt_stacks[0],
+		.size = PMP_GUARD_ALIGN_AND_SIZE,
+		.perm = 0,
+		.mode = PMP_MODE_NAPOT,
+	},
+#endif
+};
+
+#ifdef CONFIG_PMP_STACK_GUARD
+/*
+ * Basically, RISC-V PMP regions affecting M-mode permission should be
+ * locked and can't be a dynamic PMP region. RISC-V PMP stack guard rely
+ * on consistently using mstatus.MPRV bit in M-mode which can emulate
+ * U-mode memory protection policy in M-mode when MPRV bit is enabled.
+ *
+ * For consistent MPRV in M-mode, all memory accesses are denied by
+ * default (like U-mode default). We need to use a lowest priority PMP
+ * region (MPRV region) to permit memory access of whole memory.
+ *
+ * p.s. Zephyr User/Supervisor mode maps to RISC-V U-mode/M-mode.
+ * p.s. MPRV region only used in CONFIG_PMP_STACK_GUARD.
+ */
+static const struct riscv_pmp_region mprv_region = {
+	/*
+	 * Enable all other memory access with lowest priority.
+	 *
+	 * Special case: start = size = 0 means whole memory.
+	 */
+	.start = 0,
+	.size = 0,
+	.perm = PMP_R | PMP_W | PMP_X,
 	.mode = PMP_MODE_NAPOT,
 };
 #endif
@@ -109,7 +167,7 @@ enum {
 	CSR_PMPADDR15
 };
 
-static __unused ulong_t csr_read_enum(int pmp_csr_enum)
+static ulong_t csr_read_enum(int pmp_csr_enum)
 {
 	ulong_t res = -1;
 
@@ -221,14 +279,14 @@ static void csr_write_enum(int pmp_csr_enum, ulong_t value)
  *
  * @return -1 if bad argument, 0 otherwise.
  */
-static __unused int riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
+static int riscv_pmp_set(unsigned int index, uint8_t cfg_val, ulong_t addr_val)
 {
 	ulong_t reg_val;
 	ulong_t shift, mask;
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if (index >= CONFIG_PMP_SLOT) {
+	if (index >= get_num_regions()) {
 		return -1;
 	}
 
@@ -248,6 +306,85 @@ static __unused int riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t a
 }
 
 #ifdef CONFIG_USERSPACE
+static int riscv_pmp_get(unsigned int index, uint8_t *cfg_val, ulong_t *addr_val)
+{
+	ulong_t reg_val;
+	ulong_t shift, mask;
+	int pmpcfg_csr;
+	int pmpaddr_csr;
+
+	if (index >= get_num_regions()) {
+		return -1;
+	}
+
+	/* Calculate PMP config/addr register, shift */
+	pmpcfg_csr = CSR_PMPCFG0 + PMPCFG_NUM(index);
+	pmpaddr_csr = CSR_PMPADDR0 + index;
+	shift = PMPCFG_SHIFT(index);
+	mask = 0xFF << shift;
+
+	reg_val = csr_read_enum(pmpcfg_csr);
+	*cfg_val = (reg_val & mask) >> shift;
+
+	if (addr_val) {
+		pmpaddr_csr = CSR_PMPADDR0 + index;
+		*addr_val = csr_read_enum(pmpaddr_csr);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_USERSPACE */
+
+/*
+ * @brief Configure the range of pmpcfg CSRs.
+ *
+ * Configure pmpcfg array to range of pmpcfg CSRs from min_index to max_index.
+ * If u8_pmpcfg is NULL, this function will clear range of $pmpcfg CSRs to 0.
+ *
+ * @param min_index	First number of the targeted PMP entry.
+ * @param max_index	Last number of the targeted PMP entry.
+ * @param u8_pmpcfg	Array of PMP configuration value. NULL means clearing PMPCFG.
+ */
+void riscv_pmpcfg_set_range(uint8_t min_index, uint8_t max_index, uint8_t *u8_pmpcfg)
+{
+	ulong_t cfg_mask = 0;
+	ulong_t new_pmpcfg = 0;
+	ulong_t shift;
+
+	for (int index = min_index; index <= max_index; index++) {
+		shift = PMPCFG_SHIFT(index);
+		cfg_mask |= (0xFF << shift);
+
+		/* If u8_pmpcfg is NULL, new_pmpcfg is always 0 to clear pmpcfg CSR. */
+		if (u8_pmpcfg != NULL) {
+			new_pmpcfg |= (u8_pmpcfg[index] << shift);
+		}
+
+		/* If index+1 is new CSR or it's last index, apply new_pmpcfg value to the CSR. */
+		if ((PMPCFG_SHIFT(index+1) == 0) || (index == max_index)) {
+			int pmpcfg_csr = CSR_PMPCFG0 + PMPCFG_NUM(index);
+
+			/* Update pmpcfg CSR */
+			if (cfg_mask == -1UL) {
+				/* Update whole CSR */
+				csr_write_enum(pmpcfg_csr, new_pmpcfg);
+			} else {
+				/* Only update cfg_mask bits of CSR */
+				ulong_t pmpcfg = csr_read_enum(pmpcfg_csr);
+
+				pmpcfg &= ~cfg_mask;
+				pmpcfg |= (cfg_mask & new_pmpcfg);
+				csr_write_enum(pmpcfg_csr, pmpcfg);
+			}
+
+			/* Clear variables for next pmpcfg */
+			cfg_mask = 0;
+			new_pmpcfg = 0;
+		}
+	}
+}
+
+#ifdef CONFIG_USERSPACE
 /*
  * @brief Get the expected PMP region value of current thread in user mode.
  *
@@ -258,17 +395,13 @@ static __unused int riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t a
  */
 static int riscv_pmp_get_user_thread(unsigned int index, uint8_t *cfg_val, ulong_t *addr_val)
 {
-#ifdef CONFIG_PMP_STACK_GUARD
-	unsigned int static_regions_num = 1;
-#else
-	unsigned int static_regions_num = 0;
-#endif
+	uint8_t last_static_index = max_dynamic_region() + 1;
 
-	if (index >= CONFIG_PMP_SLOT) {
+	if (index >= get_num_regions()) {
 		return -1;
 	}
 
-	if (index < static_regions_num) {
+	if (index >= last_static_index) {
 		/* This PMP index is static PMP region, check PMP CSRs. */
 		riscv_pmp_get(index, cfg_val, addr_val);
 	} else {
@@ -402,7 +535,7 @@ static int riscv_pmp_region_translate(int index,
 }
 
 #if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_USERSPACE)
-static __unused int riscv_pmp_regions_translate(int start_reg_index,
+static int riscv_pmp_regions_translate(int start_reg_index,
 	const struct riscv_pmp_region regions[], uint8_t regions_num,
 	ulong_t pmpcfg[], ulong_t pmpaddr[])
 {
@@ -434,33 +567,73 @@ static __unused int riscv_pmp_regions_translate(int start_reg_index,
 
 static int riscv_pmp_region_set(int index, const struct riscv_pmp_region *region)
 {
-	/* Check 4 bytes alignment */
-	CHECKIF(!(((region->start & 0x3) == 0) &&
-		((region->size & 0x3) == 0) &&
-		region->size)) {
-		LOG_ERR("PMP address/size are not 4 bytes aligned");
-		return -EINVAL;
+	/* Don't check special case: start = size = 0 */
+	if (!((region->start == 0) && (region->size == 0))) {
+		/* Check 4 bytes alignment */
+		CHECKIF(!(((region->start & 0x3) == 0) &&
+			((region->size & 0x3) == 0) &&
+			(region->size))) {
+			LOG_ERR("PMP address/size are not 4 bytes aligned");
+			return -EINVAL;
+		}
 	}
 
 	return riscv_pmp_region_translate(index, region, true, NULL, NULL);
 }
 
+static int riscv_pmp_regions_set_from_last(int last_reg_index,
+	const struct riscv_pmp_region regions[], uint8_t regions_num)
+{
+	int reg_index = last_reg_index;
+
+	for (int i = 0; i < regions_num; i++) {
+		/*
+		 * Empty region.
+		 *
+		 * Note: start = size = 0 is valid region (special case).
+		 */
+		if ((regions[i].size == 0U) && (regions[i].start != 0)) {
+			continue;
+		}
+
+		/* Non-empty region. */
+		int used_entry = 1;
+
+		if (regions[i].mode == PMP_MODE_TOR) {
+			used_entry = 2;
+		}
+
+		/* Update reg_index to next free entry (from last). */
+		reg_index -= used_entry;
+
+		/* Use reg_index+1 PMP entry. */
+		riscv_pmp_region_set(reg_index+1, &regions[i]);
+	}
+
+	return reg_index;
+}
+
 void z_riscv_pmp_clear_config(void)
 {
-	LOG_DBG("Clear all dynamic PMP regions");
-	for (unsigned int i = 0; i < RISCV_PMP_CFG_NUM; i++)
-		csr_write_enum(CSR_PMPCFG0 + i, 0);
+	uint8_t min_index = 0;
+	uint8_t max_index = max_dynamic_region();
+	uint8_t mprv_index = get_num_regions() - mprv_regions_num;
+
+	LOG_DBG("Clear all dynamic PMP regions: (%d, %d) index",
+		min_index, max_index);
+
+	/* Clear all dynamic PMP regions (from min_index to max_index). */
+	riscv_pmpcfg_set_range(min_index, max_index, NULL);
+
+	/* Clear MPRV region which is also a dynamic region.
+	 * It would be reconfigured when configuring M-mode dynamic region.
+	 */
+	riscv_pmpcfg_set_range(mprv_index, get_num_regions() - 1, NULL);
 }
 
 #if defined(CONFIG_USERSPACE)
-#include <linker/linker-defs.h>
 void z_riscv_init_user_accesses(struct k_thread *thread)
 {
-	unsigned char index = 0U;
-#ifdef CONFIG_PMP_STACK_GUARD
-	index++;
-#endif /* CONFIG_PMP_STACK_GUARD */
-
 	struct riscv_pmp_region dynamic_regions[] = {
 		{
 			/* MCU state */
@@ -468,13 +641,6 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 			.size = 4,
 			.perm = PMP_R,
 			.mode = PMP_MODE_NA4,
-		},
-		{
-			/* Program and RO data */
-			.start = (ulong_t) __rom_region_start,
-			.size = (ulong_t) __rom_region_size,
-			.perm = PMP_R | PMP_X,
-			.mode = PMP_MODE_DEFAULT,
 		},
 		{
 			/* User-mode thread stack */
@@ -485,6 +651,8 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 		},
 	};
 
+	uint8_t index = 0;
+
 	riscv_pmp_regions_translate(index, dynamic_regions,
 		ARRAY_SIZE(dynamic_regions), thread->arch.u_pmpcfg,
 		thread->arch.u_pmpaddr);
@@ -492,18 +660,20 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 
 void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
 {
-	unsigned int i;
+	uint8_t min_index = 0;
+	uint8_t max_index = max_dynamic_region();
 
 	z_riscv_pmp_clear_config();
 
-	for (i = 0U; i < CONFIG_PMP_SLOT; i++)
+	/* Set all dynamic PMP regions (from min_index to max_index). */
+	for (uint8_t i = min_index; i <= max_index; i++)
 		csr_write_enum(CSR_PMPADDR0 + i, thread->arch.u_pmpaddr[i]);
 
-	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
-		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.u_pmpcfg[i]);
+	riscv_pmpcfg_set_range(min_index, max_index, (uint8_t *)thread->arch.u_pmpcfg);
 
-	LOG_DBG("Apply user PMP context " PR_ADDR " to dynamic PMP regions",
-		(ulong_t) thread->arch.u_pmpcfg);
+	LOG_DBG("Apply user PMP context " PR_ADDR " to dynamic PMP regions: "
+		"(%d, %d) index", (ulong_t) thread->arch.u_pmpcfg,
+		min_index, max_index);
 }
 
 int z_riscv_pmp_add_dynamic(struct k_thread *thread,
@@ -513,6 +683,7 @@ int z_riscv_pmp_add_dynamic(struct k_thread *thread,
 {
 	unsigned char index = 0U;
 	unsigned char *uchar_pmpcfg;
+	unsigned char max_index = max_dynamic_region();
 	int ret = 0;
 
 	/* Check 4 bytes alignment */
@@ -533,7 +704,7 @@ int z_riscv_pmp_add_dynamic(struct k_thread *thread,
 
 	index = PMP_REGION_NUM_FOR_U_THREAD;
 
-	while ((index < CONFIG_PMP_SLOT) && uchar_pmpcfg[index]) {
+	while ((index <= max_index) && uchar_pmpcfg[index]) {
 		index++;
 	}
 
@@ -604,13 +775,13 @@ static inline int is_in_region(uint32_t index, uint32_t start, uint32_t size)
 	} else if ((pmpcfg & PMP_TYPE_MASK) == PMP_TOR) {
 		if (index == 0) {
 			addr_start = 0;
+			addr_end = FROM_PMP_ADDR(pmpaddr) - 1UL;
 		} else {
 			ulong_t pmpaddr_prev = csr_read_enum(CSR_PMPADDR0 + index - 1);
 
 			addr_start = FROM_PMP_ADDR(pmpaddr_prev);
+			addr_end = FROM_PMP_ADDR(pmpaddr) - 1UL;
 		}
-
-		addr_end = FROM_PMP_ADDR(pmpaddr) - 1UL;
 	} else {
 		/* PMP_OFF: PMP region isn't enabled. */
 		return 0;
@@ -661,7 +832,7 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	uint32_t index;
 
 	/* Iterate all PMP regions */
-	for (index = 0; index < CONFIG_PMP_SLOT; index++) {
+	for (index = 0; index < get_num_regions(); index++) {
 		if (!is_in_region(index, (ulong_t)addr, size)) {
 			continue;
 		}
@@ -684,7 +855,15 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 
 int arch_mem_domain_max_partitions_get(void)
 {
-	return PMP_MAX_DYNAMIC_REGION;
+	/*
+	 * Note: All static region numbers should be computed before PRE_KERNEL_1
+	 * stage, because kernel will check max_partitions at that time.
+	 */
+
+	int available_regions = get_num_regions() - PMP_REGION_NUM_FOR_U_THREAD -
+		static_regions_num - mprv_regions_num;
+
+	return available_regions / PMP_USED_ENTRY_DEFAULT;
 }
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
@@ -717,6 +896,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 {
 	sys_dnode_t *node, *next_node;
 	uint32_t index, i, num;
+	uint32_t max_index = max_dynamic_region();
 	ulong_t pmp_mode, pmp_addr;
 	unsigned char *uchar_pmpcfg;
 	struct k_thread *thread;
@@ -761,7 +941,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 	for (index = PMP_REGION_NUM_FOR_U_THREAD;
-		index < CONFIG_PMP_SLOT;
+		index <= max_index;
 		index++) {
 		if (((uchar_pmpcfg[index] & PMP_TYPE_MASK) == pmp_mode) &&
 			(pmp_addr == thread->arch.u_pmpaddr[index])) {
@@ -769,7 +949,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		}
 	}
 
-	CHECKIF(!(index < CONFIG_PMP_SLOT)) {
+	CHECKIF(!(index <= max_index)) {
 		LOG_DBG("%s: partition not found\n", __func__);
 		ret = -ENOENT;
 		goto out;
@@ -791,15 +971,15 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 
 		uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
-		for (i = index + num; i < CONFIG_PMP_SLOT; i++) {
+		for (i = index + num; i <= max_index; i++) {
 			uchar_pmpcfg[i - num] = uchar_pmpcfg[i];
 			thread->arch.u_pmpaddr[i - num] =
 				thread->arch.u_pmpaddr[i];
 		}
 
-		uchar_pmpcfg[CONFIG_PMP_SLOT - 1] = 0U;
+		uchar_pmpcfg[max_index] = 0U;
 		if (num == 2U) {
-			uchar_pmpcfg[CONFIG_PMP_SLOT - 2] = 0U;
+			uchar_pmpcfg[max_index - 1] = 0U;
 		}
 	}
 
@@ -840,7 +1020,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
-	for (i = PMP_REGION_NUM_FOR_U_THREAD; i < CONFIG_PMP_SLOT; i++) {
+	for (i = PMP_REGION_NUM_FOR_U_THREAD; i < get_num_regions(); i++) {
 		uchar_pmpcfg[i] = 0U;
 	}
 
@@ -852,8 +1032,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 #ifdef CONFIG_PMP_STACK_GUARD
 void z_riscv_init_stack_guard(struct k_thread *thread)
 {
-	ulong_t stack_guard_addr;
-	struct riscv_pmp_region dynamic_regions[4]; /* Maximum region_num is 4 */
+	struct riscv_pmp_region dynamic_regions[3]; /* Maximum region_num is 3 */
 	uint8_t region_num = 0U;
 
 	/* stack guard: None */
@@ -865,6 +1044,8 @@ void z_riscv_init_stack_guard(struct k_thread *thread)
 
 #ifdef CONFIG_USERSPACE
 	if (thread->arch.priv_stack_start) {
+		ulong_t stack_guard_addr;
+
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
 		stack_guard_addr = thread->arch.priv_stack_start;
 #else
@@ -885,16 +1066,7 @@ void z_riscv_init_stack_guard(struct k_thread *thread)
 	dynamic_regions[region_num].mode = PMP_MODE_NAPOT;
 	region_num++;
 
-	/* All other memory: RWX */
-	/* special case: start = size = 0 means whole memory. */
-	dynamic_regions[region_num].start = 0;
-	dynamic_regions[region_num].size = 0;
-	dynamic_regions[region_num].perm = PMP_R | PMP_W | PMP_X;
-	dynamic_regions[region_num].mode = PMP_MODE_NAPOT;
-	region_num++;
-
-	/* Reserve index 0 for PMP stack guard */
-	unsigned char index = 1;
+	uint8_t index = 0;
 
 	riscv_pmp_regions_translate(index, dynamic_regions, region_num,
 		thread->arch.s_pmpcfg, thread->arch.s_pmpaddr);
@@ -902,34 +1074,28 @@ void z_riscv_init_stack_guard(struct k_thread *thread)
 
 void z_riscv_configure_stack_guard(struct k_thread *thread)
 {
-	unsigned int i;
+	uint8_t min_index = 0;
+	uint8_t max_index = min_index + PMP_REGION_NUM_FOR_STACK_GUARD - 1;
+	uint8_t mprv_index = get_num_regions() - 1;
 
 	/* Disable PMP for machine mode */
 	csr_clear(mstatus, MSTATUS_MPRV);
 
 	z_riscv_pmp_clear_config();
 
-	for (i = 1U; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
+	/* Set all dynamic PMP regions (from min_index to max_index). */
+	for (uint8_t i = min_index; i <= max_index; i++)
 		csr_write_enum(CSR_PMPADDR0 + i, thread->arch.s_pmpaddr[i]);
 
-	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
-		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.s_pmpcfg[i]);
+	riscv_pmpcfg_set_range(min_index, max_index, (uint8_t *)thread->arch.s_pmpcfg);
+
+	/* Set MPRV region for consistently using mstatus.MPRV in M-mode */
+	riscv_pmp_region_set(mprv_index, &mprv_region);
 
 	/* Enable PMP for machine mode */
 	csr_set(mstatus, MSTATUS_MPRV);
 }
 
-void z_riscv_configure_interrupt_stack_guard(void)
-{
-	int index = 0, ret;
-
-	LOG_DBG("Set static PMP region %d for IRQ stack guard", index);
-	ret = riscv_pmp_region_set(index, &irq_stack_guard_region);
-	if (ret == -EINVAL) {
-		LOG_ERR("Configure static PMP region of IRQ stack guard "
-			"failed");
-	}
-}
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_USERSPACE)
@@ -953,3 +1119,17 @@ void z_riscv_pmp_init_thread(struct k_thread *thread)
 #endif /* CONFIG_USERSPACE */
 }
 #endif /* CONFIG_PMP_STACK_GUARD || CONFIG_USERSPACE */
+
+void z_riscv_configure_static_pmp_regions(void)
+{
+#ifdef CONFIG_PMP_STACK_GUARD
+	mprv_regions_num = 1;
+#endif
+
+	/* Max dynamic PMP entry is also next free static PMP entry (from last). */
+	int index = max_dynamic_region();
+	int new_index = riscv_pmp_regions_set_from_last(index,
+		static_regions, ARRAY_SIZE(static_regions));
+
+	static_regions_num += index - new_index;
+}
