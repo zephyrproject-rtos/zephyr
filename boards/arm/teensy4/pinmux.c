@@ -88,14 +88,13 @@ static int teensy4_init(const struct device *dev)
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 
-//#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay) && CONFIG_CAN
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm4), okay) && CONFIG_PWM
     /* FLEXPWM for Pins 2, 3, 4 and 5 */
     IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_04_FLEXPWM4_PWMA02, 0);
     IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_05_FLEXPWM4_PWMB02, 0);
     IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_06_FLEXPWM2_PWMA00, 0);
     IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_08_FLEXPWM2_PWMA01, 0);
-
-//#endif
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart6), okay) && CONFIG_SERIAL
 	/* LPUART6 TX/RX on Teensy-Pins 1/0 */
