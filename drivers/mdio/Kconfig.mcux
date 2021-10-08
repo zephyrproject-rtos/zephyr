@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Bernhard Kraemer
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NXP_MCUX
+	bool "NXP MCUX MDIO driver"
+	depends on ETH_MCUX
+	default y
+	help
+	  Enable NXP MCUX MDIO driver.
