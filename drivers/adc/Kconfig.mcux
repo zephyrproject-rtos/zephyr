@@ -15,6 +15,12 @@ config ADC_MCUX_ADC16
 	help
 	  Enable the MCUX ADC16 driver.
 
+config ADC_MCUX_12B1MSPS_SAR
+	bool "MCUX 12B1MSPS SAR ADC driver"
+	depends on HAS_MCUX_12B1MSPS_SAR
+	help
+	  Enable the MCUX 12B1MSPS SAR ADC driver.
+
 config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
 	depends on HAS_MCUX_LPADC
