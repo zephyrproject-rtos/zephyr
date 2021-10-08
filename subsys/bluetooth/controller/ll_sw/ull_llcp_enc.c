@@ -303,8 +303,8 @@ static void lp_enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx)
 	conn->lll.ccm_rx.counter = 0U;
 
 	/* Set CCM direction:
-	 *	slave to master = 0,
-	 *	master to slave = 1
+	 *	periph to central = 0,
+	 *	central to periph = 1
 	 */
 	conn->lll.ccm_tx.direction = 1U;
 	conn->lll.ccm_rx.direction = 0U;
@@ -778,8 +778,8 @@ static void rp_enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx)
 	conn->lll.ccm_rx.counter = 0U;
 
 	/* Set CCM direction:
-	 *	slave to master = 0,
-	 *	master to slave = 1
+	 *	periph to central = 0,
+	 *	central to periph = 1
 	 */
 	conn->lll.ccm_tx.direction = 0U;
 	conn->lll.ccm_rx.direction = 1U;

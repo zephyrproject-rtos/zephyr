@@ -27,7 +27,7 @@
 #define FEAT_EXT_REJ 0x00
 #endif
 
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 #define FEAT_SLAVE_FREQ 0x08
 #else
 #define FEAT_SLAVE_FREQ 0x00

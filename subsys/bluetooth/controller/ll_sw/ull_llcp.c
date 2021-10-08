@@ -34,7 +34,7 @@
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
-#include "ull_slave_internal.h"
+#include "ull_periph_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp
@@ -429,7 +429,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -443,7 +443,7 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
@@ -699,7 +699,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
 			uint16_t handle = ll_conn_handle_get(conn);
 
-			ull_slave_latency_cancel(conn, handle);
+			ull_periph_latency_cancel(conn, handle);
 		}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	} else {

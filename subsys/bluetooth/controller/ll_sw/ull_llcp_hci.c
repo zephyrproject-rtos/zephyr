@@ -6,7 +6,7 @@
 
 /*
  * EGON TODO:
- * before merging with master these functions need to be re-visited
+ * before merging with central these functions need to be re-visited
  * and compared to their counterpart in ull_conn.c
  * to verify that any bug-fixes and new features there are included here
  */
@@ -52,11 +52,11 @@
 
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
-#include "ull_slave_internal.h"
+#include "ull_periph_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_llcp_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
@@ -125,7 +125,7 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 uint8_t ll_feature_req_send(uint16_t handle)
 {
 	struct ll_conn *conn;
@@ -137,7 +137,7 @@ uint8_t ll_feature_req_send(uint16_t handle)
 
 	return ull_cp_feature_exchange(conn);
 }
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx)
@@ -328,7 +328,7 @@ uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 /*
- * the following are only valid for slave configuration
+ * the following are only valid for periph configuration
  */
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code, uint8_t const *const ltk)
@@ -348,7 +348,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code, uint8_t const
 	 * and use that info to decide if the cmd is allowed
 	 * or if we should terminate the connection
 	 * see BT 5.2 Vol. 6 part B chapter 5.1.3
-	 * see also ull_slave.c line 395-439
+	 * see also ull_periph.c line 395-439
 	 *
 	 * EGON TODO: the ull_cp_ltx_req* functions should return success/fail status
 	 */
@@ -519,8 +519,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window, uint8
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
-	conn_lll->master.initiated = 0;
-	conn_lll->master.cancelled = 0;
+	conn_lll->central.initiated = 0;
+	conn_lll->central.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -548,7 +548,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window, uint8
 					   conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	conn->master.terminate_ack = 0U;
+	conn->central.terminate_ack = 0U;
 
 	/* Re-initialize the control procedure data structures */
 	ll_conn_init(conn);
@@ -739,7 +739,7 @@ uint8_t ll_connect_disable(void **rx)
 
 /* EGON TODO: see the implementation in ull_chan.c; this function needs updating */
 /* FIXME: Refactor out this interface so that its usable by extended
- * advertising channel classification, and also master role connections can
+ * advertising channel classification, and also central role connections can
  * perform channel map update control procedure.
  */
 uint8_t ll_chm_update(uint8_t const *const chm)
@@ -893,7 +893,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		ull_slave_latency_cancel(conn, handle);
+		ull_periph_latency_cancel(conn, handle);
 	}
 
 #if defined(CONFIG_BT_CTLR_THROUGHPUT)
