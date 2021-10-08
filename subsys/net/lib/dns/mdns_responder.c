@@ -304,7 +304,8 @@ static void send_sd_response(struct net_context *ctx,
 {
 	int ret;
 	const struct dns_sd_rec *record;
-	struct dns_sd_rec filter;
+	/* filter must be zero-initialized for "wildcard" port */
+	struct dns_sd_rec filter = {0};
 	struct sockaddr dst;
 	socklen_t dst_len;
 	bool service_type_enum = false;
