@@ -21,6 +21,24 @@
 	};
 };
 
+&enet {
+	status = "okay";
+	ptp {
+		status = "okay";
+	};
+	phy {
+		compatible = "ethernet-phy";
+		status = "okay";
+		no-reset;
+		late_mii_start;
+		address = <0>;
+		mdio = <&mdio>;
+	};
+	mdio: mdio {
+		status = "okay";
+	};
+};
+
 &lpspi3 {
 	status = "okay";
 };

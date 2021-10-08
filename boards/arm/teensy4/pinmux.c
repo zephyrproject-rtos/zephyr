@@ -411,5 +411,5 @@ static int teensy4_phy_reset(const struct device *dev)
 
 SYS_INIT(teensy4_init, PRE_KERNEL_1, 0);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
-SYS_INIT(teensy4_phy_reset, PRE_KERNEL_2, 0);
+SYS_INIT(teensy4_phy_reset, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY);
 #endif
