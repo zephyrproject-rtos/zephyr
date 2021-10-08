@@ -40,6 +40,7 @@ struct spi_flexio_data {
     FLEXIO_SPI_Type spiDev;
     struct spi_context ctx;
     size_t transfer_len;
+    flexio_spi_master_config_t master_config;
 };
 
 /**
@@ -56,9 +57,7 @@ static void spi_flexio_isr(const struct device *dev) {
 
 
 static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
-    // TODO
     LOG_DBG("FlexIO SPI transfering next packet");
-
 
     const struct spi_flexio_config *config = dev->config;
     struct spi_flexio_data *data = dev->data;
@@ -74,7 +73,23 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
     }
 
     flexio_spi_transfer_t transfer;
-    transfer.flags = kFLEXIO_SPI_8bitMsb; // TODO: Support 16bit and LSB first modes
+    bool bit16 = data->master_config.dataMode == kFLEXIO_SPI_16BitMode;
+    bool msbFirst = data->handle.direction == kFLEXIO_SPI_MsbFirst;
+
+    if (bit16) {
+        if (msbFirst) {
+            transfer.flags = kFLEXIO_SPI_16bitMsb;
+        } else {
+            transfer.flags = kFLEXIO_SPI_16bitLsb;
+        }
+    } else {
+        if (msbFirst) {
+            transfer.flags = kFLEXIO_SPI_8bitMsb;
+        } else {
+            transfer.flags = kFLEXIO_SPI_8bitLsb;
+        }
+    }
+
 
     if (ctx->tx_len == 0) {
         /* rx only, nothing to tx */
@@ -112,11 +127,6 @@ static void spi_mcux_flexio_transfer_next_packet(const struct device *dev) {
         transfer.txData = (uint8_t *) ctx->tx_buf;
         transfer.rxData = ctx->rx_buf;
         transfer.dataSize = ctx->tx_len;
-    }
-
-    if (!(ctx->tx_count <= 1 && ctx->rx_count <= 1)) {
-        // TODO: ?
-        //transfer.configFlags |= kLPSPI_MasterPcsContinuous;
     }
 
     data->transfer_len = transfer.dataSize;
@@ -166,10 +176,10 @@ static int spi_flexio_configure(const struct device *dev,
         return 0;
     }
 
-    flexio_spi_master_config_t master_config;
-    FLEXIO_SPI_MasterGetDefaultConfig(&master_config);
+    FLEXIO_SPI_MasterGetDefaultConfig(&data->master_config);
 
     /*
+     * TODO: Chip select
     if (spi_cfg->slave > CHIP_SELECT_COUNT) {
         LOG_ERR("Slave %d is greater than %d",
                 spi_cfg->slave,
@@ -181,9 +191,9 @@ static int spi_flexio_configure(const struct device *dev,
     uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
     if (word_size == 8) {
-        master_config.dataMode = kFLEXIO_SPI_8BitMode;
+        data->master_config.dataMode = kFLEXIO_SPI_8BitMode;
     } else if (word_size == 16) {
-        master_config.dataMode = kFLEXIO_SPI_16BitMode;
+        data->master_config.dataMode = kFLEXIO_SPI_16BitMode;
     } else {
         LOG_ERR("Word size %u is not supported, only 8 or 16 bit are supported.", word_size);
         return -EINVAL;
@@ -194,14 +204,17 @@ static int spi_flexio_configure(const struct device *dev,
         return -EINVAL;
     }
 
-    master_config.phase =
+    data->master_config.phase =
             (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
             ? kFLEXIO_SPI_ClockPhaseSecondEdge
             : kFLEXIO_SPI_ClockPhaseFirstEdge;
 
-    // TODO: Direction (lsb/msb first) is set in flexio_spi_master_handle_t, perhaps for every transfer?
+    data->handle.direction =
+            (spi_cfg->operation & SPI_TRANSFER_LSB)
+            ? kFLEXIO_SPI_LsbFirst
+            : kFLEXIO_SPI_MsbFirst;
 
-    master_config.baudRate_Bps = spi_cfg->frequency;
+    data->master_config.baudRate_Bps = spi_cfg->frequency;
 
     uint32_t clock_freq;
     if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
@@ -217,7 +230,7 @@ static int spi_flexio_configure(const struct device *dev,
     spiDev->timerIndex[0] = 0;
     spiDev->timerIndex[1] = 1;
 
-    FLEXIO_SPI_MasterInit(&(data->spiDev), &master_config, clock_freq);
+    FLEXIO_SPI_MasterInit(&(data->spiDev), &data->master_config, clock_freq);
 
     FLEXIO_SPI_MasterTransferCreateHandle(&(data->spiDev), &data->handle, spi_mcux_flexio_master_transfer_callback,
                                           data);
@@ -249,9 +262,9 @@ static int transceive(const struct device *dev,
     LOG_DBG("FlexIO SPI setting up buffers");
     spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-    LOG_DBG("FlexIO SPI applying CS");
-    spi_context_cs_control(&data->ctx,
-                           true); // TODO: Chip select? This supports GPIO, how is this configured, and how does this use HW CS pins?
+
+    // LOG_DBG("FlexIO SPI applying CS");
+    // TODO: Chip select
 
     LOG_DBG("FlexIO SPI initiating transfer of first packet");
     spi_mcux_flexio_transfer_next_packet(dev);
