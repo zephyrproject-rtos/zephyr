@@ -141,6 +141,10 @@ arduino_serial: &lpuart3 {};
 	current-speed = <115200>;
 };
 
+&lpspi1 {
+	status = "okay";
+};
+
 &lpspi3 {
 	status = "okay";
 };
