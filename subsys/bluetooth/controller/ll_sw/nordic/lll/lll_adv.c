@@ -411,11 +411,6 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
-void lll_adv_pdu_release(struct pdu_adv *pdu)
-{
-	mem_release(pdu, &mem_pdu.free);
-}
-
 void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
 {
 	struct pdu_adv *pdu = pdu_first;
@@ -425,7 +420,7 @@ void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
 
 		pdu_next = PDU_ADV_NEXT_PTR(pdu);
 		PDU_ADV_NEXT_PTR(pdu) = NULL;
-		lll_adv_pdu_release(pdu);
+		mem_release(pdu, &mem_pdu.free);
 		pdu = pdu_next;
 	}
 }
