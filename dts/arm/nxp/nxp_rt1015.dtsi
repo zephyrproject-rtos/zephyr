@@ -33,3 +33,10 @@
 /* RT1015 only has two LPSPI blocks */
 /delete-node/ &lpspi3;
 /delete-node/ &lpspi4;
+
+/ {
+	soc {
+		/* Remove ADC2, it doesn't exist on RT1015 */
+		/delete-node/ adc@400C8000;
+	};
+};
