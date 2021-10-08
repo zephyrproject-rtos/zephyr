@@ -280,5 +280,23 @@ void test_stack_multithread_competition(void)
 }
 
 /**
+ * @brief Test case of requesting a buffer larger than resource pool.
+ *
+ * @details Try to request a buffer larger than resource pool for stack,
+ * then see if returns an expected value.
+ *
+ * @ingroup kernel_stack_tests
+ */
+void test_stack_alloc_null(void)
+{
+	int ret;
+
+	/* Requested buffer allocation from the test pool. */
+	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
+	zassert_true(ret == -ENOMEM,
+			"requested buffer is smaller than resource pool");
+}
+
+/**
  * @}
  */
