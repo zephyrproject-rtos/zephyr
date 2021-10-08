@@ -198,6 +198,8 @@ uint8_t get_irq(void *arg)
 	intc_irq -= IVECT_OFFSET_WITH_IRQ;
 	/* clear interrupt status */
 	ite_intc_isr_clear(intc_irq);
+	/* Clear flag on each interrupt. */
+	wait_interrupt_fired = 0;
 	/* return interrupt number */
 	return intc_irq;
 }
