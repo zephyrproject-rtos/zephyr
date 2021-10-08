@@ -427,7 +427,8 @@ static int uart_b91_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 
-	return (uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) ? 1 : 0;
+	return ((uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) &&
+		((uart->ctrl0 & UART_TX_IRQ_MASK) != 0)) ? 1 : 0;
 }
 
 /* API implementation: irq_tx_complete */
