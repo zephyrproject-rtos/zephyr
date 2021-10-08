@@ -157,6 +157,18 @@
 #define sys_port_trace_k_thread_abort(thread)
 
 /**
+ * @brief Called when a thread enters the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_enter(thread)
+
+/**
+ * @brief Called when a thread exits the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_exit(thread)
+
+/**
  * @brief Called when setting priority of a thread
  * @param thread Thread object
  */
