@@ -1,0 +1,6 @@
+common:
+  filter: CONFIG_SOC_NSIM
+  arch_allow: arc
+tests:
+  arch.arc.interrupt-controller:
+    tags: arc interrupt
