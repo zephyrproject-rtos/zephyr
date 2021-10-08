@@ -26,6 +26,7 @@ supported:
   - netif:eth
   - pwm
   - sdhc
+  - spi
   - usb_device
   - video
   - kscan:touch
