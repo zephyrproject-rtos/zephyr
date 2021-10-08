@@ -664,9 +664,9 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 
 		if (chan->conn) {
 			shell_print(sh, "  %s#%u: chan %p dir 0x%02x "
-				    "state 0x%02x linked %s",
+				    "group %p linked %s",
 				    chan == default_chan ? "*" : " ", i, chan,
-				    chan->cap->type, chan->state,
+				    chan->cap->type, chan->group,
 				    sys_slist_is_empty(&chan->links) ? "no" :
 				    "yes");
 		}

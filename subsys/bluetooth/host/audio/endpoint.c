@@ -59,7 +59,7 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	BT_DBG("chan %p ep %p", chan, ep);
 
 	if (is_broadcast) {
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_STREAMING);
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	if (ops != NULL && ops->connected != NULL) {
@@ -102,11 +102,10 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	if (is_broadcast) {
 		if (bt_audio_ep_is_broadcast_src(ep)) {
-			bt_audio_chan_set_state(ep->chan,
-						BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+			bt_audio_ep_set_state(ep,
+					      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 		} else {
-			bt_audio_chan_set_state(ep->chan,
-						BT_AUDIO_EP_STATE_IDLE);
+			bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_IDLE);
 		}
 	}
 
@@ -416,8 +415,6 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		bt_audio_chan_disconnect(ep->chan);
 	}
 
-	bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->qos) {
 		ep->cap->ops->qos(ep->chan, ep->chan->qos);
@@ -472,8 +469,6 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
 	       ep->cig_id, ep->cis_id);
-
-	bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_STREAMING);
 
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->start) {
@@ -963,6 +958,10 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	       bt_audio_ep_state_str(ep->status.state),
 	       bt_audio_ep_state_str(state));
 
+	/* TODO: Verify state changes with keeping in mind that broadcast
+	 * endpoints have different state changes than unicast
+	 */
+
 	old_state = ep->status.state;
 	ep->status.state = state;
 
@@ -975,7 +974,9 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 		return;
 	}
 
-	bt_audio_chan_set_state(ep->chan, state);
+	if (state == BT_AUDIO_EP_STATE_IDLE) {
+		bt_audio_chan_detach(ep->chan);
+	}
 }
 
 #if defined(CONFIG_BT_BAP)

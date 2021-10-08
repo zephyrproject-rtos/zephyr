@@ -411,7 +411,13 @@ struct bt_audio_chan {
 	struct bt_audio_chan_ops *ops;
 	sys_slist_t links;
 	sys_snode_t node;
-	uint8_t  state;
+
+	union {
+		void *group;
+		struct bt_audio_unicast_group *unicast_group;
+		struct bt_audio_broadcast_source *broadcast_source;
+		struct bt_audio_broadcast_sink *broadcast_sink;
+	};
 };
 
 /** @brief Capability operations structure.

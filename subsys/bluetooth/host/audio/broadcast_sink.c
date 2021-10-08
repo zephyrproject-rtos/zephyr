@@ -741,8 +741,8 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 	struct bt_audio_ep *ep;
 	int err;
 
-	if (chan->state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("Channel %p not idle", chan);
+	if (chan->group != NULL) {
+		BT_DBG("Channel %p already in group %p", chan, chan->group);
 		return -EALREADY;
 	}
 
@@ -781,7 +781,7 @@ static void broadcast_sink_cleanup_chans(struct bt_audio_broadcast_sink *sink)
 		chan->qos = NULL;
 		chan->codec = NULL;
 		chan->iso = NULL;
-		chan->state = BT_AUDIO_EP_STATE_IDLE;
+		chan->group = NULL;
 	}
 }
 
@@ -884,11 +884,10 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	}
 
 	for (size_t i = 0; i < chan_count; i++) {
-		struct bt_audio_chan *chan;
+		struct bt_audio_ep *ep = chans[i].ep;
 
-		chan = &chans[i];
-
-		bt_audio_chan_set_state(chan, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		ep->broadcast_sink = sink;
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
 	return 0;
@@ -906,10 +905,21 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 	chan = &sink->chans[0];
 
-	if (chan->state != BT_AUDIO_EP_STATE_STREAMING &&
-	    chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Channel is not configured or streaming");
-		return -EALREADY;
+	if (chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep == NULL) {
+		BT_DBG("chan->ep is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep->status.state != BT_AUDIO_EP_STATE_STREAMING &&
+	    chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast sink chan %p invalid state: %u",
+		       chan, chan->ep->status.state);
+		return -EBADMSG;
 	}
 
 	err = bt_iso_big_terminate(sink->big);
@@ -936,10 +946,17 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 
 	chan = &sink->chans[0];
 
-	if (chan != NULL && chan->state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("Sink chan %p is not in the BT_AUDIO_EP_STATE_IDLE state: %u",
-		       chan, chan->state);
-		return -EBADMSG;
+	if (chan != NULL) {
+		if (chan->ep == NULL) {
+			BT_DBG("chan->ep is NULL");
+			return -EINVAL;
+		}
+
+		if (chan->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
+			BT_DBG("Broadcast sink chan %p invalid state: %u",
+			chan, chan->ep->status.state);
+			return -EBADMSG;
+		}
 	}
 
 	if (sink->pa_sync == NULL) {
