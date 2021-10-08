@@ -951,9 +951,9 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
 
 		/* check for the "wildcard" pointer */
 		if (filt_label != NULL) {
-			if (!checkers[i](filt_label)) {
+			if (!checkers[i](rec_label)) {
 				LOG_WRN("invalid %s label: '%s'",
-					names[i], filt_label);
+					names[i], rec_label);
 				return false;
 			}
 
@@ -965,8 +965,10 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
 	}
 
 	/* check for the "wildcard" port */
-	if (filter->port != NULL && *(record->port) != *(filter->port)) {
-		return false;
+	if (filter->port != NULL && *(filter->port) != 0) {
+		if (*(record->port) != *(filter->port)) {
+			return false;
+		}
 	}
 
 	return true;
@@ -1032,8 +1034,8 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			return -EINVAL;
 		}
 
-		if (qsize > size[i] - 1) {
-			NET_DBG("qsize %zu > size[%zu] - 1 %zu", qsize, i, size[i] - 1);
+		if (qsize > size[i]) {
+			NET_DBG("qsize %zu > size[%zu] %zu", qsize, i, size[i]);
 			return -ENOBUFS;
 		}
 
