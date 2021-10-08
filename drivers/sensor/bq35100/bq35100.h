@@ -31,7 +31,7 @@
 #define BQ35100_CMD_MAC_DATA_SUM                       0x60     /* 1 Byte */
 #define BQ35100_CMD_MAC_DATA_LEN                       0x61     /* 1 Byte */
 #define BQ35100_CMD_CAL_COUNT                          0x79     /* 1 Byte */
-#define BQ35100_CMD_CAl_CURRENT                        0x7A     /* 2 Byte */
+#define BQ35100_CMD_CAL_CURRENT                        0x7A     /* 2 Byte */
 #define BQ35100_CMD_CAL_VOLTAGE                        0x7C     /* 2 Byte */
 #define BQ35100_CMD_CAL_TEMPERATURE                    0x7E     /* 2 Byte */
 

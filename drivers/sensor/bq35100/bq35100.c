@@ -102,10 +102,28 @@ static int bq35100_reg_write(const struct device *dev,
  * @param status - Data stored in the TEMPERATURE register
  * @return 0 in case of success, negative error code otherwise.
  */
+static int bq35100_get_temp(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	return bq35100_reg_read(dev, BQ35100_CMD_TEMPERATURE, &data->temperature);
+}
+
 static int bq35100_get_voltage(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
 	return bq35100_reg_read(dev, BQ35100_CMD_VOLTAGE, &data->voltage);
+}
+
+static int bq35100_get_avg_current(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	return bq35100_reg_read(dev, BQ35100_CMD_CURRENT, &data->avg_current);
+}
+
+static int bq35100_get_state_of_charge(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	return bq35100_reg_read(dev, BQ35100_CMD_SOH, &data->state_of_charge);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -201,8 +219,11 @@ static int bq35100_get_sensor_data(const struct device *dev)
 	/* here you need to read the values from the fuel gauge registers
 	   and write them to *data, e.g. data->temperature */
 
+	bq35100_get_temp(dev);
 	bq35100_get_voltage(dev);
-
+	bq35100_get_avg_current(dev);
+	bq35100_get_state_of_charge(dev);
+	
 	return 0;
 }
 
@@ -245,20 +266,19 @@ static int bq35100_channel_get(const struct device *dev,
 
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_GAUGE_TEMP:
-		/* you need to implement this */
-		return -ENOTSUP;
+		val->val1 = (uint16_t)(data->temperature)/10-273;
+		val->val2 = ((uint16_t)((data->temperature)-2731)%10);
 		break;
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = (uint16_t)data->voltage/1000;
 		val->val2 = ((uint16_t)data->voltage % 1000);
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
-		/* you need to implement this */
-		return -ENOTSUP;
+		val->val1 = (int)data->avg_current;
+		//val->val2 = (int)data->avg_current;
 		break;
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
-		/* you need to implement this */
-		return -ENOTSUP;
+		val->val1 = (uint16_t)data->state_of_charge;
 		break;
 	default:
 		LOG_ERR("Channel type not supported.");
