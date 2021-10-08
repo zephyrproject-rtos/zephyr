@@ -116,3 +116,7 @@
 &edma0 {
 	status = "okay";
 };
+
+&lpspi1 {
+	status = "okay";
+};
