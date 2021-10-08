@@ -37,16 +37,6 @@ enum bt_audio_state {
 	BT_AUDIO_EP_STATE_RELEASING =        0x06,
 };
 
-
-#if defined(CONFIG_BT_AUDIO_DEBUG_CHAN)
-void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
-				   const char *func, int line);
-#define bt_audio_chan_set_state(_chan, _state) \
-	bt_audio_chan_set_state_debug(_chan, _state, __func__, __LINE__)
-#else
-void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state);
-#endif /* CONFIG_BT_AUDIO_DEBUG_CHAN */
-
 /* Bind ISO channel */
 struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
 					struct bt_codec_qos *qos);
@@ -69,3 +59,5 @@ void bt_audio_chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 
 int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
 				       struct bt_codec_qos *codec);
+
+void bt_audio_chan_detach(struct bt_audio_chan *chan);

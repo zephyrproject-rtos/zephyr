@@ -62,6 +62,7 @@ static struct bt_audio_broadcast_source broadcast_sources[BROADCAST_SRC_CNT];
 
 static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec);
+
 static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 						struct bt_audio_chan *chan,
 						struct bt_codec *codec,
@@ -70,8 +71,8 @@ static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 	struct bt_audio_ep *ep;
 	int err;
 
-	if (chan->state != BT_AUDIO_EP_STATE_IDLE) {
-		BT_DBG("Channel %p not idle", chan);
+	if (chan->group != NULL) {
+		BT_DBG("Channel %p already in group %p", chan, chan->group);
 		return -EALREADY;
 	}
 
@@ -225,7 +226,7 @@ static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 		chan->codec = NULL;
 		chan->qos = NULL;
 		chan->iso = NULL;
-		chan->state = BT_AUDIO_EP_STATE_IDLE;
+		chan->group = NULL;
 	}
 
 	(void)memset(source, 0, sizeof(*source));
@@ -378,10 +379,10 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	}
 
 	for (size_t i = 0; i < source->chan_count; i++) {
-		struct bt_audio_chan *chan = &chans[i];
+		struct bt_audio_ep *ep = chans[i].ep;
 
-		chan->ep->broadcast_source = source;
-		bt_audio_chan_set_state(chan, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+		ep->broadcast_source = source;
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
 	source->qos = qos;
@@ -407,9 +408,19 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_EP_STATE_QOS_CONFIGURED state: %u",
-		       chan, chan->state);
+	if (chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep == NULL) {
+		BT_DBG("chan->ep is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast source chan %p invalid state: %u",
+		       chan, chan->ep->status.state);
 		return -EBADMSG;
 	}
 
@@ -443,9 +454,19 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_EP_STATE_QOS_CONFIGURED state: %u",
-		       chan, chan->state);
+	if (chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep == NULL) {
+		BT_DBG("chan->ep is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast source chan %p invalid state: %u",
+		       chan, chan->ep->status.state);
 		return -EBADMSG;
 	}
 
@@ -478,9 +499,19 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_EP_STATE_STREAMING) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_EP_STATE_STREAMING state: %u",
-		       chan, chan->state);
+	if (chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep == NULL) {
+		BT_DBG("chan->ep is NULL");
+		return -EINVAL;
+	}
+
+	if (chan->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+		BT_DBG("Broadcast source chan %p invalid state: %u",
+		       chan, chan->ep->status.state);
 		return -EBADMSG;
 	}
 
@@ -513,10 +544,17 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 
 	chan = &source->chans[0];
 
-	if (chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Source chan %p is not in the BT_AUDIO_EP_STATE_QOS_CONFIGURED state: %u",
-		       chan, chan->state);
-		return -EBADMSG;
+	if (chan != NULL) {
+		if (chan->ep == NULL) {
+			BT_DBG("chan->ep is NULL");
+			return -EINVAL;
+		}
+
+		if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+			BT_DBG("Broadcast source chan %p invalid state: %u",
+			chan, chan->ep->status.state);
+			return -EBADMSG;
+		}
 	}
 
 	adv = source->adv;
