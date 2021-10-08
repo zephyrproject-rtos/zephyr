@@ -903,7 +903,8 @@ static inline void z_impl_uart_irq_tx_disable(const struct device *dev)
  *
  * @param dev UART device structure.
  *
- * @retval 1 If at least one char can be written to UART.
+ * @retval 1 If TX interrupt is enabled and at least one char can be
+ *           written to UART.
  * @retval 0 If device is not ready to write a new byte.
  * @retval -ENOSYS  if this function is not supported.
  * @retval -ENOTSUP if API is not enabled.
