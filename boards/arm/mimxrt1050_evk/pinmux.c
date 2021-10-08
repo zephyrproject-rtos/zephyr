@@ -183,6 +183,40 @@ static int mimxrt1050_evk_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) && CONFIG_SPI
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+	#error "SPI and SDMMC pins conflict on this board." \
+		"Please disable one via KConfig or device tree"
+#else
+	/* LPSPI1 SCK, SDO, SDI, PCS0 */
+	/* Expose these pins by connecting R278, R279, R280, and R281 on evk board */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_00_LPSPI1_SCK, 0);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_01_LPSPI1_PCS0, 0);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_02_LPSPI1_SDO, 0);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_03_LPSPI1_SDI, 0);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_00_LPSPI1_SCK,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_01_LPSPI1_PCS0,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_02_LPSPI1_SDO,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_03_LPSPI1_SDI,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) && CONFIG_SPI
 	/* LPSPI3 SCK, SDO, SDI, PCS0 */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_00_LPSPI3_SCK, 0);
