@@ -31,7 +31,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-#if DT_INST_IRQ_HAS_IDX(0, 7)
+#if DT_INST_IRQ_HAS_IDX(0, 15)
+#define DMA_STM32_0_STREAM_COUNT 16
+#elif DT_INST_IRQ_HAS_IDX(0, 7)
 #define DMA_STM32_0_STREAM_COUNT 8
 #elif DT_INST_IRQ_HAS_IDX(0, 6)
 #define DMA_STM32_0_STREAM_COUNT 7
@@ -856,6 +858,18 @@ DMA_STM32_DEFINE_IRQ_HANDLER(0, 7);
 #endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
 #endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
 
+#if defined(CONFIG_DMA_STM32_V3)
+/* stm32U5 have one GPdma with 16 channels */
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 8);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 9);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 10);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 11);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 12);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 13);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 14);
+DMA_STM32_DEFINE_IRQ_HANDLER(0, 15);
+#endif /* CONFIG_DMA_STM32_V3 */
+
 static void dma_stm32_config_irq_0(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -879,12 +893,23 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 #endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 /* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
+
+#if defined(CONFIG_DMA_STM32_V3)
+/* stm32U5 have one GPdma with 16 channels : connect all IRQs */
+	DMA_STM32_IRQ_CONNECT(0, 8);
+	DMA_STM32_IRQ_CONNECT(0, 9);
+	DMA_STM32_IRQ_CONNECT(0, 10);
+	DMA_STM32_IRQ_CONNECT(0, 11);
+	DMA_STM32_IRQ_CONNECT(0, 12);
+	DMA_STM32_IRQ_CONNECT(0, 13);
+	DMA_STM32_IRQ_CONNECT(0, 14);
+	DMA_STM32_IRQ_CONNECT(0, 15);
+#endif /* CONFIG_DMA_STM32_V3 */
 }
 
 DMA_STM32_INIT_DEV(0);
 
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
-
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
