@@ -255,6 +255,27 @@ Boards & SoC Support
   * Added low power support to STM32L0, STM32G0 and STM32WL series
   * STM32: Enabled ART Flash accelerator by default when available (F2, F4, F7, H7, L5)
   * STM32: Added Kconfig option to enable STM32Cube asserts (CONFIG_USE_STM32_ASSERT)
+  * NXP FRDM-K82F: Added arduino_i2c and arduino_spi aliases
+  * NXP i.MX RT series: Added support for flash controller with XIP
+  * NXP i.MX RT series: Added TRNG support
+  * NXP i.MX RT1170: Added LPSPI driver support
+  * NXP i.MX RT1170: Added ADC driver support
+  * NXP i.MX RT1170: Enabled Segger RTT/SystemView
+  * NXP i.MX RT1170: Added MCUX FlexCan support
+  * NXP i.MX RT1064: Added watchdog driver support
+  * NXP i.MX RT1064: Added DMA driver support
+  * NXP i.MX RT600: Added arduino serial port
+  * NXP i.MX RT600: Add mcuboot flash partitions
+  * NXP i.MX RT600: Added counter support
+  * NXP i.MX RT600: Added PWM support
+  * NXP i.MX RT600: Added disk driver support
+  * NXP i.MX RT600: Added USB driver support
+  * NXP i.MX RT600: Added LPADC driver support
+  * NXP i.MX RT600: Added CTimer Counter support
+  * NXP KE1xF: Added SoC Power Management support
+  * NXP LPC55s69: Added USB driver support
+  * NXP LPC55s69: Added ctimer driver support
+  * NXP LPC55s69: Added I2S driver support
 
 
 * Changes for ARC boards:
@@ -276,6 +297,7 @@ Boards & SoC Support
   * ST Nucleo F446ZE
   * ST Nucleo U575ZI Q
   * ST STM32H735G Discovery
+  * PJRC Teensy 4 Board
 
 * Added support for these ARM64 boards:
 
