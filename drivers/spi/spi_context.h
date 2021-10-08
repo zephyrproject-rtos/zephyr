@@ -225,28 +225,6 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 	return 0;
 }
 
-static inline int spi_context_cs_configure(struct spi_context *ctx)
-{
-	int ret;
-
-	if (ctx->config->cs && ctx->config->cs->gpio.port) {
-		/* Validate CS active levels are equivalent */
-		__ASSERT(spi_context_cs_active_level(ctx) ==
-			 (ctx->config->cs->gpio.dt_flags & GPIO_ACTIVE_LOW),
-			 "Devicetree and spi_context CS levels are not equal");
-		ret = gpio_pin_configure_dt(&ctx->config->cs->gpio,
-				      GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			LOG_ERR("Failed to configure 'cs' gpio: %d", ret);
-			return ret;
-		}
-	} else {
-		LOG_INF("CS control inhibited (no GPIO device)");
-	}
-
-	return 0;
-}
-
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
 {
