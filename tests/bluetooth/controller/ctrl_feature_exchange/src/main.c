@@ -153,7 +153,7 @@ void test_feature_exchange_mas_loc_2(void)
  * | UT  | | LL_A  |                 | LT  |
  * +-----+ +-------+                 +-----+
  *   |        |                         |
- *   |        |    LL_SLAVE_FEATURE_REQ |
+ *   |        |    LL_PERIPH_FEAT_XCHG |
  *   |        |<------------------------|
  *   |        |                         |
  *   |        | LL_FEATURE_RSP          |
@@ -191,7 +191,7 @@ void test_feature_exchange_mas_rem(void)
 
 		event_prepare(&conn);
 
-		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		lt_tx(LL_PERIPH_FEAT_XCHG, &conn, &remote_feature_req);
 
 		event_done(&conn);
 
@@ -267,7 +267,7 @@ void test_feature_exchange_mas_rem_2(void)
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 		event_prepare(&conn);
-		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		lt_tx(LL_PERIPH_FEAT_XCHG, &conn, &remote_feature_req);
 		event_done(&conn);
 
 		event_prepare(&conn);
@@ -331,7 +331,7 @@ void test_slave_feature_exchange_sla_loc(void)
 
 	event_prepare(&conn);
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_SLAVE_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx(LL_PERIPH_FEAT_XCHG, &conn, &tx, &local_feature_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
@@ -366,7 +366,7 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
-		.type = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ
+		.type = PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG
 	};
 
 	featureset = DEFAULT_FEATURE;
@@ -393,7 +393,7 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_SLAVE_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx(LL_PERIPH_FEAT_XCHG, &conn, &tx, &local_feature_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx Commented out for know, handling of UNKNOWN response will come in an update */

@@ -150,8 +150,8 @@ struct proc_ctx {
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 			uint8_t error;
 			uint16_t instant;
-			uint8_t m_to_s_phy;
-			uint8_t s_to_m_phy;
+			uint8_t c_to_p_phy;
+			uint8_t p_to_c_phy;
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -226,9 +226,9 @@ static inline bool is_instant_passed(uint16_t instant, uint16_t event_count)
 	/*
 	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
 	 * 5.5.1 ACL Control Procedures
-	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
-	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
-	 * shall listen to all the connection events until it has confirmation that the master
+	 * When a periph receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the periph
+	 * shall listen to all the connection events until it has confirmation that the central
 	 * has received its acknowledgment of the PDU or connEventCount equals
 	 * Instant.
 	 *
@@ -246,9 +246,9 @@ static inline bool is_instant_not_passed(uint16_t instant, uint16_t event_count)
 	/*
 	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
 	 * 5.5.1 ACL Control Procedures
-	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
-	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
-	 * shall listen to all the connection events until it has confirmation that the master
+	 * When a periph receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the periph
+	 * shall listen to all the connection events until it has confirmation that the central
 	 * has received its acknowledgment of the PDU or connEventCount equals
 	 * Instant.
 	 *
@@ -266,9 +266,9 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 	/*
 	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
 	 * 5.5.1 ACL Control Procedures
-	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
-	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
-	 * shall listen to all the connection events until it has confirmation that the master
+	 * When a periph receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the periph
+	 * shall listen to all the connection events until it has confirmation that the central
 	 * has received its acknowledgment of the PDU or connEventCount equals
 	 * Instant.
 	 *

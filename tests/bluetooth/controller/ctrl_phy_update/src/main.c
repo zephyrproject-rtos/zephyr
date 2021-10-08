@@ -110,8 +110,8 @@ void test_phy_update_mas_loc(void)
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
 					       .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
-						   .m_to_s_phy = PHY_2M,
-						   .s_to_m_phy = PHY_2M };
+						   .c_to_p_phy = PHY_2M,
+						   .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
@@ -274,8 +274,8 @@ void test_phy_update_mas_rem(void)
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
-						   .m_to_s_phy = 0,
-						   .s_to_m_phy = PHY_2M };
+						   .c_to_p_phy = 0,
+						   .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
@@ -380,8 +380,8 @@ void test_phy_update_sla_loc(void)
 
 	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { .m_to_s_phy = PHY_2M,
-							      .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { .c_to_p_phy = PHY_2M,
+							      .p_to_c_phy = PHY_2M };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -468,8 +468,8 @@ void test_phy_update_sla_rem(void)
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
 					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
-						   .m_to_s_phy = 0,
-						   .s_to_m_phy = PHY_2M };
+						   .c_to_p_phy = 0,
+						   .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
@@ -574,8 +574,8 @@ void test_phy_update_mas_loc_collision(void)
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
 					       .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9,
-						   .m_to_s_phy = PHY_2M,
-						   .s_to_m_phy = PHY_2M };
+						   .c_to_p_phy = PHY_2M,
+						   .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M)
@@ -746,11 +746,11 @@ void test_phy_update_mas_rem_collision(void)
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
 					       .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7,
-						     .m_to_s_phy = 0,
-						     .s_to_m_phy = PHY_2M };
+						     .c_to_p_phy = 0,
+						     .p_to_c_phy = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14,
-						     .m_to_s_phy = PHY_2M,
-						     .s_to_m_phy = 0 };
+						     .c_to_p_phy = PHY_2M,
+						     .p_to_c_phy = 0 };
 	struct pdu_data_llctrl_length_rsp length_ntf_1 = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)
@@ -917,8 +917,8 @@ void test_phy_update_sla_loc_collision(void)
 	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
-						   .m_to_s_phy = PHY_2M,
-						   .s_to_m_phy = PHY_1M };
+						   .c_to_p_phy = PHY_2M,
+						   .p_to_c_phy = PHY_1M };
 	struct pdu_data_llctrl_length_rsp length_ntf = {
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_2M),
 		3 * PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_MAX_US(3 * PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M)

@@ -132,14 +132,14 @@ static void pu_prep_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 	ctx->data.pu.rx = pu_select_phy(ctx->data.pu.rx);
 
 	if (ctx->data.pu.tx != conn->lll.phy_tx) {
-		ctx->data.pu.m_to_s_phy = ctx->data.pu.tx;
+		ctx->data.pu.c_to_p_phy = ctx->data.pu.tx;
 	} else {
-		ctx->data.pu.m_to_s_phy = 0U;
+		ctx->data.pu.c_to_p_phy = 0U;
 	}
 	if (ctx->data.pu.rx != conn->lll.phy_rx) {
-		ctx->data.pu.s_to_m_phy = ctx->data.pu.rx;
+		ctx->data.pu.p_to_c_phy = ctx->data.pu.rx;
 	} else {
-		ctx->data.pu.s_to_m_phy = 0U;
+		ctx->data.pu.p_to_c_phy = 0U;
 	}
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -194,7 +194,7 @@ static uint16_t pu_event_counter(struct ll_conn *conn)
 static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	/* Both tx and rx PHY unchanged */
-	if (!((ctx->data.pu.m_to_s_phy | ctx->data.pu.s_to_m_phy) & 0x07)) {
+	if (!((ctx->data.pu.c_to_p_phy | ctx->data.pu.p_to_c_phy) & 0x07)) {
 		/* if no phy changes, quit procedure, and possibly signal host */
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		return 1;
@@ -216,27 +216,27 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 	if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
-		if (ctx->data.pu.s_to_m_phy) {
-			lll->phy_tx = ctx->data.pu.s_to_m_phy;
+		if (ctx->data.pu.p_to_c_phy) {
+			lll->phy_tx = ctx->data.pu.p_to_c_phy;
 		}
-		if (ctx->data.pu.m_to_s_phy) {
-			lll->phy_rx = ctx->data.pu.m_to_s_phy;
+		if (ctx->data.pu.c_to_p_phy) {
+			lll->phy_rx = ctx->data.pu.c_to_p_phy;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 	} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
-		if (ctx->data.pu.s_to_m_phy) {
-			lll->phy_rx = ctx->data.pu.s_to_m_phy;
+		if (ctx->data.pu.p_to_c_phy) {
+			lll->phy_rx = ctx->data.pu.p_to_c_phy;
 		}
-		if (ctx->data.pu.m_to_s_phy) {
-			lll->phy_tx = ctx->data.pu.m_to_s_phy;
+		if (ctx->data.pu.c_to_p_phy) {
+			lll->phy_tx = ctx->data.pu.c_to_p_phy;
 		}
 #endif /* CONFIG_BT_CENTRAL */
 	} else {
 		/* empty clause */
 	}
 
-	return (ctx->data.pu.m_to_s_phy || ctx->data.pu.s_to_m_phy);
+	return (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy);
 }
 
 /*
@@ -263,13 +263,13 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	uint16_t eff_tx_time = lll->dle.eff.max_tx_time;
 	uint16_t eff_rx_time = lll->dle.eff.max_rx_time;
 
-	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL)) ||
-	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_CENTRAL))) {
+	if ((ctx->data.pu.p_to_c_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL)) ||
+	    (ctx->data.pu.c_to_p_phy && (lll->role == BT_HCI_ROLE_CENTRAL))) {
 		eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets, lll->phy_tx,
 					       lll->dle.local.max_tx_time);
 	}
-	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_CENTRAL)) ||
-	    (ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL))) {
+	if ((ctx->data.pu.p_to_c_phy && (lll->role == BT_HCI_ROLE_CENTRAL)) ||
+	    (ctx->data.pu.c_to_p_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL))) {
 		eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx,
 					       lll->dle.local.max_rx_time);
 	}
@@ -310,10 +310,10 @@ static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, u
 	 *	The remainder of this section shall apply irrespective of which device initiated
 	 *	the procedure.
 	 *
-	 *	Irrespective of the above rules, the master may leave both directions
-	 *	unchanged. If the slave specified a single PHY in both the TX_PHYS and
-	 *	RX_PHYS fields and both fields are the same, the master shall either select
-	 *	the PHY specified by the slave for both directions or shall leave both directions
+	 *	Irrespective of the above rules, the central may leave both directions
+	 *	unchanged. If the periph specified a single PHY in both the TX_PHYS and
+	 *	RX_PHYS fields and both fields are the same, the central shall either select
+	 *	the PHY specified by the periph for both directions or shall leave both directions
 	 *	unchanged.
 	 */
 	if (conn->lll.role == BT_HCI_ROLE_CENTRAL && (!ctx->data.pu.rx || !ctx->data.pu.tx)) {
@@ -577,11 +577,11 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 	switch (evt) {
 	case LP_PU_EVT_ACK:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
-		if (ctx->data.pu.s_to_m_phy || ctx->data.pu.m_to_s_phy) {
+		if (ctx->data.pu.p_to_c_phy || ctx->data.pu.c_to_p_phy) {
 			/* Either phys should change */
-			if (ctx->data.pu.m_to_s_phy) {
-				/* master to slave tx phy changes so, apply timing restriction */
-				pu_set_timing_restrict(conn, ctx->data.pu.m_to_s_phy);
+			if (ctx->data.pu.c_to_p_phy) {
+				/* central to periph tx phy changes so, apply timing restriction */
+				pu_set_timing_restrict(conn, ctx->data.pu.c_to_p_phy);
 			}
 
 			/* Since at least one phy will change, we clear procedure response timeout */
@@ -614,9 +614,9 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure) {
-			if (ctx->data.pu.s_to_m_phy) {
-				/* If slave to master phy changes apply tx timing restriction */
-				pu_set_timing_restrict(conn, ctx->data.pu.s_to_m_phy);
+			if (ctx->data.pu.p_to_c_phy) {
+				/* If periph to central phy changes apply tx timing restriction */
+				pu_set_timing_restrict(conn, ctx->data.pu.p_to_c_phy);
 			}
 
 			/* Since at least one phy will change, we clear procedure response timeout */
@@ -930,17 +930,20 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 			/* When we act as peripheral apply timing restriction */
 			pu_set_timing_restrict(
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
-			/* RSP acked, now await update ind from master */
+			/* RSP acked, now await update ind from central */
 			ctx->state = RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND) {
 			LL_ASSERT(conn->lll.role == BT_HCI_ROLE_CENTRAL);
-			if (ctx->data.pu.m_to_s_phy || ctx->data.pu.s_to_m_phy) {
+			if (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy) {
 				/* UPDATE_IND acked, so lets await instant */
-				if (ctx->data.pu.m_to_s_phy) {
-					/* And if master to slave phys changes apply timining restrictions */
-					pu_set_timing_restrict(conn, ctx->data.pu.m_to_s_phy);
+				if (ctx->data.pu.c_to_p_phy) {
+					/*
+					 * And if central to periph phys changes
+					 * apply timining restrictions
+					 */
+					pu_set_timing_restrict(conn, ctx->data.pu.c_to_p_phy);
 				}
 				ctx->state = RP_PU_STATE_WAIT_INSTANT;
 			} else {
