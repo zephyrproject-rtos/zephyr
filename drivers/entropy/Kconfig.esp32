@@ -5,7 +5,7 @@
 
 config ENTROPY_ESP32_RNG
 	bool "ESP32 entropy number generator driver"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32C3 || SOC_ESP32S2
 	select ENTROPY_HAS_DRIVER
 	default y
 	help

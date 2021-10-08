@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This file contains color customizations that follow Zephyr's branding */
+
+html {
+    --primary-color: #af7fe4;
+    --primary-dark-color: #7929d2;
+    --primary-light-color: #cb99f6;
+    --primary-lighter-color: #dfc8fa;
+    --primary-lightest-color: #efe4fc;
+
+    --side-nav-background: #333f67;
+    --side-nav-foreground: #c3e3ff;
+
+    --searchbar-background: var(--page-background-color);
+    --searchbar-foreground: var(--page-foreground-color);
+
+    --link-color: #2980b9;
+    --param-color: #b71c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.light-mode) {
+        color-scheme: dark;
+
+        --primary-color: #af7fe4;
+        --primary-dark-color: #cb99f6;
+        --primary-light-color: #7929d2;
+        --primary-lighter-color: #191e21;
+        --primary-lightest-color: #191a1c;
+
+        --side-nav-background: #252628;
+        --side-nav-foreground: var(--page-foreground-color);
+
+        --param-color: #ef9a9a;
+    }
+}
+
+html.dark-mode {
+    color-scheme: dark;
+
+    --primary-color: #af7fe4;
+    --primary-dark-color: #cb99f6;
+    --primary-light-color: #7929d2;
+    --primary-lighter-color: #191e21;
+    --primary-lightest-color: #191a1c;
+
+    --side-nav-background: #252628;
+    --side-nav-foreground: var(--page-foreground-color);
+
+    --param-color: #ef9a9a;
+}
+
+@media screen and (min-width: 767px) {
+    #projectname, #projectbrief, #projectnumber {
+        color: var(--side-nav-foreground);
+    }
+}
+
+a:link, a:visited, a:hover, a:focus, a:active {
+    color: var(--link-color) !important;
+}
+
+.paramname {
+    color: var(--param-color);
+}
+
+dl.section dd, dl.bug dd, dl.deprecated dd {
+    margin-inline-start: revert;
+}

@@ -28,11 +28,20 @@ extern "C" {
 #include <bluetooth/hci.h>
 
 /** @def BT_ISO_CHAN_SEND_RESERVE
- *  @brief Headroom needed for outgoing buffers
+ *  @brief Headroom needed for outgoing ISO SDUs
  */
-#define BT_ISO_CHAN_SEND_RESERVE (CONFIG_BT_HCI_RESERVE + \
-				  BT_HCI_ISO_HDR_SIZE + \
-				  BT_HCI_ISO_DATA_HDR_SIZE)
+#define BT_ISO_CHAN_SEND_RESERVE BT_BUF_ISO_SIZE(0)
+
+/** @def BT_ISO_SDU_BUF_SIZE
+ *
+ *  @brief Helper to calculate needed buffer size for ISO SDUs.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Required ISO SDU size
+ *
+ *  @return Needed buffer size to match the requested ISO SDU MTU.
+ */
+#define BT_ISO_SDU_BUF_SIZE(mtu) BT_BUF_ISO_SIZE(mtu)
 
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
@@ -73,8 +82,6 @@ extern "C" {
 #define BT_ISO_BROADCAST_RTN_MAX    0x1E
 /** Broadcast code size */
 #define BT_ISO_BROADCAST_CODE_SIZE  16
-
-struct bt_iso_chan;
 
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
@@ -446,6 +453,23 @@ struct bt_iso_chan_ops {
 	void (*sent)(struct bt_iso_chan *chan);
 };
 
+struct bt_iso_accept_info {
+	/** The ACL connection that is requesting authorization */
+	struct bt_conn *acl;
+
+	/** @brief The ID of the connected isochronous group (CIG) on the central
+	 *
+	 * The ID is unique per ACL
+	 */
+	uint8_t cig_id;
+
+	/** @brief The ID of the connected isochronous stream (CIS) on the central
+	 *
+	 * This ID is unique within a CIG
+	 */
+	uint8_t cis_id;
+};
+
 /** @brief ISO Server structure. */
 struct bt_iso_server {
 	/** Required minimim security level */
@@ -456,12 +480,13 @@ struct bt_iso_server {
 	 *  This callback is called whenever a new incoming connection requires
 	 *  authorization.
 	 *
-	 *  @param acl The ACL connection that is requesting authorization
+	 *  @param info The ISO accept information structure
 	 *  @param chan Pointer to receive the allocated channel
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*accept)(struct bt_conn *acl, struct bt_iso_chan **chan);
+	int (*accept)(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan);
 };
 
 /** @brief Register ISO server.

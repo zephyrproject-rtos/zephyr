@@ -71,6 +71,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_util.h"
 
 /* some temporary buffer space for format conversions */
 static char pt_buffer[42]; /* can handle float64 format */
@@ -146,32 +147,6 @@ size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
 				     value->val1, buf);
 }
 
-size_t plain_text_put_float64fix(struct lwm2m_output_context *out,
-				 struct lwm2m_obj_path *path,
-				 float64_value_t *value)
-{
-	size_t len;
-	char buf[sizeof("000000000")];
-
-	/* value of 123 -> "000000123" -- ignore sign */
-	len = snprintf(buf, sizeof(buf), "%09lld",
-		       (long long int)abs(value->val2));
-	if (len != 9U) {
-		strcpy(buf, "0");
-	} else {
-		/* clear ending zeroes, but leave 1 if needed */
-		while (len > 1U && buf[len - 1] == '0') {
-			buf[--len] = '\0';
-		}
-	}
-
-	return plain_text_put_format(out, "%s%lld.%s",
-				     /* handle negative val2 when val1 is 0 */
-				     (value->val1 == 0 && value->val2 < 0) ?
-						"-" : "",
-				     value->val1, buf);
-}
-
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
@@ -202,22 +177,15 @@ static size_t put_objlnk(struct lwm2m_output_context *out,
 				     value->obj_inst);
 }
 
-static size_t plain_text_read_number(struct lwm2m_input_context *in,
-				     int64_t *value1,
-				     int64_t *value2,
-				     bool accept_sign, bool accept_dot)
+static size_t plain_text_read_int(struct lwm2m_input_context *in,
+				  int64_t *value, bool accept_sign)
 {
-	int64_t *counter = value1;
 	int i = 0;
 	bool neg = false;
-	bool dot_found = false;
 	uint8_t tmp;
 
 	/* initialize values to 0 */
-	*value1 = 0;
-	if (value2) {
-		*value2 = 0;
-	}
+	*value = 0;
 
 	while (in->offset < in->in_cpkt->offset) {
 		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
@@ -227,12 +195,8 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 
 		if (tmp == '-' && accept_sign && i == 0) {
 			neg = true;
-		} else if (tmp == '.' && i > 0 && accept_dot && !dot_found &&
-			   value2) {
-			dot_found = true;
-			counter = value2;
 		} else if (isdigit(tmp)) {
-			*counter = *counter * 10 + (tmp - '0');
+			*value = *value * 10 + (tmp - '0');
 		} else {
 			/* anything else stop reading */
 			in->offset--;
@@ -243,7 +207,7 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 	}
 
 	if (neg) {
-		*value1 = -*value1;
+		*value = -*value;
 	}
 
 	return i;
@@ -254,7 +218,7 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 	int64_t tmp = 0;
 	size_t len = 0;
 
-	len = plain_text_read_number(in, &tmp, NULL, true, false);
+	len = plain_text_read_int(in, &tmp, true);
 	if (len > 0) {
 		*value = (int32_t)tmp;
 	}
@@ -264,7 +228,7 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 
 static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
-	return plain_text_read_number(in, value, NULL, true, false);
+	return plain_text_read_int(in, value, true);
 }
 
 static size_t get_string(struct lwm2m_input_context *in,
@@ -292,23 +256,45 @@ static size_t get_string(struct lwm2m_input_context *in,
 static size_t get_float32fix(struct lwm2m_input_context *in,
 			     float32_value_t *value)
 {
-	int64_t tmp1, tmp2;
-	size_t len = 0;
+	size_t i = 0, len = 0;
+	bool has_dot = false;
+	uint8_t tmp, buf[24];
 
-	len = plain_text_read_number(in, &tmp1, &tmp2, true, true);
-	if (len > 0) {
-		value->val1 = (int32_t)tmp1;
-		value->val2 = (int32_t)tmp2;
+
+	while (in->offset < in->in_cpkt->offset) {
+		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
+				&in->offset) < 0) {
+			break;
+		}
+
+		if ((tmp == '-' && i == 0) || (tmp == '.' && !has_dot) ||
+		    isdigit(tmp)) {
+			len++;
+
+			/* Copy only if it fits into provided buffer - we won't
+			 * get better precision anyway.
+			 */
+			if (i < sizeof(buf) - 1) {
+				buf[i++] = tmp;
+			}
+
+			if (tmp == '.') {
+				has_dot = true;
+			}
+		} else {
+			/* anything else stop reading */
+			in->offset--;
+			break;
+		}
+	}
+
+	buf[i] = '\0';
+
+	if (lwm2m_atof32(buf, value) != 0) {
+		LOG_ERR("Failed to parse float value");
 	}
 
 	return len;
-}
-
-static size_t get_float64fix(struct lwm2m_input_context *in,
-			     float64_value_t *value)
-{
-	return plain_text_read_number(in, &value->val1, &value->val2,
-				      true, true);
 }
 
 static size_t get_bool(struct lwm2m_input_context *in,
@@ -375,14 +361,14 @@ static size_t get_objlnk(struct lwm2m_input_context *in,
 	int64_t tmp;
 	size_t len;
 
-	len = plain_text_read_number(in, &tmp, NULL, false, false);
+	len = plain_text_read_int(in, &tmp, false);
 	value->obj_id = (uint16_t)tmp;
 
 	/* Skip ':' delimeter. */
 	in->offset++;
 	len++;
 
-	len += plain_text_read_number(in, &tmp, NULL, false, false);
+	len += plain_text_read_int(in, &tmp, false);
 	value->obj_inst = (uint16_t)tmp;
 
 	return len;
@@ -395,7 +381,6 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float32fix = plain_text_put_float32fix,
-	.put_float64fix = plain_text_put_float64fix,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -405,7 +390,6 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s64 = get_s64,
 	.get_string = get_string,
 	.get_float32fix = get_float32fix,
-	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,

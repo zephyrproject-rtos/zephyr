@@ -18,7 +18,7 @@ config BT_LLL_VENDOR_NORDIC
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
@@ -35,6 +35,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_DF_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
+	select BT_CTLR_CTEINLINE_SUPPORT if $(DT_NORDIC_RADIO_DFE_SUPPORTED)
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -307,15 +308,15 @@ config BT_CTLR_SCHED_ADVANCED
 	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
 	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
 	help
-	  Enable non-overlapping placement of observer, initiator and master
+	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
-	  connection parameter request in slave role to negotiate
-	  non-overlapping placement with active master roles to avoid slave
-	  roles drifting into active master roles in the local controller.
+	  connection parameter request in peripheral role to negotiate
+	  non-overlapping placement with active central roles to avoid peripheral
+	  roles drifting into active central roles in the local controller.
 
 	  This feature maximizes the average data transmission amongst active
-	  concurrent master and slave connections while other observer,
-	  initiator, master or slave roles are active in the local controller.
+	  concurrent central and peripheral connections while other observer,
+	  initiator, central or peripheral roles are active in the local controller.
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
@@ -427,15 +428,12 @@ config BT_CTLR_FAST_ENC
 	depends on BT_CTLR_LE_ENC
 	default y if BT_HCI_RAW
 	help
-	  Enable connection encryption setup in 3 connection intervals.
+	  Enable connection encryption setup in 4 connection events.
 	  Peripheral will respond to Encryption Request with Encryption Response
-	  in the same connection interval, and also, will respond with Start
-	  Encryption Response PDU in the 3rd connection interval, hence
-	  completing encryption setup in 3 connection intervals. Encrypted data
-	  would be transmitted as fast as in 3rd connection interval from the
-	  connection establishment.
-	  Maximum CPU time in Radio ISR will increase if this feature is
-	  selected.
+	  in the next connection event, and will transmit Start Encryption
+	  Request PDU in the same connection event, hence completing encryption
+	  setup in 4 connection events. Encrypted data would be transmitted as
+	  fast as in 4th connection event from Encryption Request.
 
 config BT_CTLR_LLCP_CONN
 	int "Number of connections with worst-case overlapping procedures"

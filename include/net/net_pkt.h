@@ -148,10 +148,10 @@ struct net_pkt {
 				     * the driver yet.
 				     * Used only if defined(CONFIG_NET_TCP)
 				     */
-		uint8_t gptp_pkt: 1; /* For outgoing packet: is this packet
-				   * a GPTP packet.
-				   * Used only if defined (CONFIG_NET_GPTP)
-				   */
+		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
+				     * a L2 PTP packet.
+				     * Used only if defined (CONFIG_NET_L2_PTP)
+				     */
 	};
 
 	uint8_t forwarding : 1;	/* Are we forwarding this pkt
@@ -232,7 +232,7 @@ struct net_pkt {
 	uint16_t ipv6_prev_hdr_start;
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
 	uint32_t ipv6_fragment_id;	/* Fragment id */
 	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
@@ -336,14 +336,14 @@ static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 	pkt->family = family;
 }
 
-static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
+static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
 {
-	return !!(pkt->gptp_pkt);
+	return !!(pkt->ptp_pkt);
 }
 
-static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
+static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
 {
-	pkt->gptp_pkt = is_gptp;
+	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_captured(struct net_pkt *pkt)
@@ -649,13 +649,17 @@ static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_offset;
+	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+}
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv6_fragment_flags & 0x01) != 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
 {
-	pkt->ipv6_fragment_offset = offset;
+	pkt->ipv6_fragment_flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
@@ -690,11 +694,18 @@ static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 	return 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(offset);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)

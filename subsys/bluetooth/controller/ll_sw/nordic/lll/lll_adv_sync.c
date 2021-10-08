@@ -334,7 +334,7 @@ static void isr_tx(void *param)
 	lll_sync = param;
 	lll = lll_sync->adv;
 
-	/* TODO: do not hardcode to single value */
+	/* FIXME: Use implementation defined channel index */
 	lll_chan_set(0);
 
 	pdu = lll_adv_pdu_linked_next_get(lll_sync->last_pdu);
@@ -393,6 +393,7 @@ static void isr_tx(void *param)
 static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu, uint32_t cte_len_us)
 {
 	while (pdu) {
+		/* FIXME: Use implementation defined channel index */
 		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, lll->adv->phy_flags, 0,
 				       ADV_SYNC_PDU_B2B_AFS, cte_len_us);
 		pdu = lll_adv_pdu_linked_next_get(pdu);
@@ -403,8 +404,8 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 				   uint8_t chan_idx, uint32_t offset_us, uint32_t cte_len_us)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_ext_hdr *hdr;
-	struct pdu_adv_aux_ptr *aux;
 	uint8_t *dptr;
 
 	com_hdr = &pdu->adv_ext_ind;
@@ -426,7 +427,7 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 	LL_ASSERT(!hdr->adi);
 
 	/* Update AuxPtr */
-	aux = (void *)dptr;
+	aux_ptr = (void *)dptr;
 	offset_us += PDU_AC_US(pdu->len, phy, flags);
 	/* Add CTE length to PDUs that have CTE attached.
 	 * Periodic advertising chain may include PDUs without CTE.
@@ -436,15 +437,16 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 	}
 	offset_us = offset_us / OFFS_UNIT_30_US;
 	if ((offset_us >> 13) != 0) {
-		aux->offs = offset_us / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
-		aux->offs_units = 1U;
+		aux_ptr->offs = offset_us / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
-		aux->offs = offset_us;
-		aux->offs_units = 0U;
+		aux_ptr->offs = offset_us;
+		aux_ptr->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
-	aux->chan_idx = chan_idx;
-	aux->ca = 0;
-	aux->phy = find_lsb_set(phy) - 1;
+	aux_ptr->chan_idx = chan_idx;
+	aux_ptr->ca = (lll_clock_ppm_local_get() <= SCA_50_PPM) ?
+		      SCA_VALUE_50_PPM : SCA_VALUE_500_PPM;
+	aux_ptr->phy = find_lsb_set(phy) - 1;
 }
 
 static void switch_radio_complete_and_b2b_tx(const struct lll_adv_sync *lll, uint8_t phy_s)

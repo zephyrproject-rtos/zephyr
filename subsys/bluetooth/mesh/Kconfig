@@ -107,6 +107,12 @@ config BT_MESH_PROXY
 config BT_MESH_GATT
 	bool
 
+config BT_MESH_PROXY_MSG_LEN
+	int
+	depends on BT_MESH_GATT
+	default 66 if BT_MESH_PB_GATT
+	default 33 if BT_MESH_GATT_PROXY
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
@@ -119,6 +125,14 @@ config BT_MESH_PB_GATT
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
+
+config BT_MESH_PB_GATT_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_PB_GATT
+	default y
+	help
+	  This option includes GAP device name in scan response when
+	  the PB-GATT is enabled.
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
@@ -158,10 +172,9 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 3 if BT_MESH_GATT_PROXY
-	default 1
+	default 3
 	range 1 32767
-	depends on BT_MESH_GATT_SERVER
+	depends on BT_MESH_GATT_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
@@ -828,6 +841,12 @@ config BT_MESH_DEBUG_PROVISIONER
 	help
 	  Use this option to enable Provisioner debug logs for the
 	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "Provisioning device debug"
+	help
+	  Use this option to enable Provisioning device debug logs for the
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"

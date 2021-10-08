@@ -12,14 +12,11 @@
 
 #include <drivers/syscon.h>
 
-static const struct device *syscon_dev;
+#include "syscon_common.h"
 
 struct syscon_generic_config {
 	DEVICE_MMIO_ROM;
-};
-
-static struct syscon_generic_config syscon_generic_config_0 = {
-	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
+	uint8_t reg_width;
 };
 
 struct syscon_generic_data {
@@ -27,91 +24,124 @@ struct syscon_generic_data {
 	size_t size;
 };
 
-static struct syscon_generic_data syscon_generic_data_0;
-
-uintptr_t syscon_generic_get_base(void)
+static int syscon_generic_get_base(const struct device *dev, uintptr_t *addr)
 {
-	if (!syscon_dev) {
+	if (!dev) {
 		return -ENODEV;
 	}
 
-	return DEVICE_MMIO_GET(syscon_dev);
-}
-
-static int sanitize_reg(uint16_t *reg, size_t reg_size)
-{
-	/* Avoid unaligned readings */
-	*reg = ROUND_DOWN(*reg, sizeof(uint32_t));
-
-	/* Check for out-of-bounds readings */
-	if (*reg >= reg_size) {
-		return -EINVAL;
-	}
-
+	*addr = DEVICE_MMIO_GET(dev);
 	return 0;
 }
 
-int syscon_generic_read_reg(uint16_t reg, uint32_t *val)
+static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
+	const struct syscon_generic_config *config;
 	struct syscon_generic_data *data;
 	uintptr_t base_address;
 
-	if (!syscon_dev) {
+	if (!dev) {
 		return -ENODEV;
 	}
 
-	data = syscon_dev->data;
+	data = dev->data;
+	config = dev->config;
 
 	if (!val) {
 		return -EINVAL;
 	}
 
-	if (sanitize_reg(&reg, data->size)) {
+	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
 		return -EINVAL;
 	}
 
-	base_address = DEVICE_MMIO_GET(syscon_dev);
+	base_address = DEVICE_MMIO_GET(dev);
 
-	*val = sys_read32(base_address + reg);
+	switch (config->reg_width) {
+	case 1:
+		*val = sys_read8(base_address + reg);
+		break;
+	case 2:
+		*val = sys_read16(base_address + reg);
+		break;
+	case 4:
+		*val = sys_read32(base_address + reg);
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	return 0;
 }
 
-int syscon_generic_write_reg(uint16_t reg, uint32_t val)
+static int syscon_generic_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
+	const struct syscon_generic_config *config;
 	struct syscon_generic_data *data;
 	uintptr_t base_address;
 
-	if (!syscon_dev) {
+	if (!dev) {
 		return -ENODEV;
 	}
 
-	data = syscon_dev->data;
+	data = dev->data;
+	config = dev->config;
 
-	if (sanitize_reg(&reg, data->size)) {
+	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
 		return -EINVAL;
 	}
 
-	base_address = DEVICE_MMIO_GET(syscon_dev);
+	base_address = DEVICE_MMIO_GET(dev);
 
-	sys_write32(val, (base_address + reg));
+	switch (config->reg_width) {
+	case 1:
+		sys_write8(val, (base_address + reg));
+		break;
+	case 2:
+		sys_write16(val, (base_address + reg));
+		break;
+	case 4:
+		sys_write32(val, (base_address + reg));
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	return 0;
 }
 
-int syscon_generic_init(const struct device *dev)
+static int syscon_generic_get_size(const struct device *dev, size_t *size)
 {
 	struct syscon_generic_data *data = dev->data;
 
-	syscon_dev = dev;
+	*size = data->size;
+	return 0;
+}
 
-	DEVICE_MMIO_MAP(syscon_dev, K_MEM_CACHE_NONE);
+static const struct syscon_driver_api syscon_generic_driver_api = {
+	.read = syscon_generic_read_reg,
+	.write = syscon_generic_write_reg,
+	.get_base = syscon_generic_get_base,
+	.get_size = syscon_generic_get_size,
+};
 
-	data->size = DT_REG_SIZE(DT_DRV_INST(0));
+static int syscon_generic_init(const struct device *dev)
+{
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, syscon_generic_init, NULL, &syscon_generic_data_0,
-		&syscon_generic_config_0, PRE_KERNEL_1,
-		CONFIG_SYSCON_GENERIC_INIT_PRIORITY_DEVICE, NULL);
+#define SYSCON_INIT(inst)                                                                          \
+	static const struct syscon_generic_config syscon_generic_config_##inst = {                 \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
+		.reg_width = DT_INST_PROP_OR(inst, reg_io_width, 4),                               \
+	};                                                                                         \
+	static struct syscon_generic_data syscon_generic_data_##inst = {                           \
+		.size = DT_REG_SIZE(DT_DRV_INST(inst)),                                            \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, syscon_generic_init, NULL, &syscon_generic_data_##inst,        \
+			      &syscon_generic_config_##inst, PRE_KERNEL_1,                         \
+			      CONFIG_SYSCON_INIT_PRIORITY, &syscon_generic_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SYSCON_INIT);

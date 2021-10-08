@@ -21,9 +21,6 @@ extern "C" {
 #define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
 #define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
 
-/** @brief ID of the Directory Listing Object */
-#define OTS_OBJ_ID_DIR_LIST     0x000000000000
-
 /**@brief OTS Attribute Protocol Application Error codes. */
 enum bt_gatt_ots_att_err_codes {
 	/** An attempt was made to write a value that is invalid or

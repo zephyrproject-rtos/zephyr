@@ -164,6 +164,33 @@ static const struct i2c_pin i2c_pin_regs[] = {
 	{ &GPDMRA, &GPDMRA,	0x10, 0x20},
 };
 
+static int i2c_parsing_return_value(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
+	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+
+	if (!data->err)
+		return 0;
+
+	/* Connection timed out */
+	if (data->err == ETIMEDOUT)
+		return -ETIMEDOUT;
+
+	if (config->port < I2C_STANDARD_PORT_COUNT) {
+		/* The device does not respond ACK */
+		if (data->err == HOSTA_NACK)
+			return -ENXIO;
+		else
+			return -EIO;
+	} else {
+		/* The device does not respond ACK */
+		if (data->err == E_HOSTA_ACK)
+			return -ENXIO;
+		else
+			return -EIO;
+	}
+}
+
 static int i2c_get_line_levels(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
@@ -835,7 +862,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
-	return data->err;
+	return i2c_parsing_return_value(dev);
 }
 
 static void i2c_it8xxx2_isr(void *arg)

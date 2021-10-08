@@ -18,4 +18,11 @@ config FLASH_MCUX_FLEXSPI_NOR
 config FLASH_MCUX_FLEXSPI_XIP
 	default y if FLASH
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_MIMXRT1024_EVK

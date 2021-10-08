@@ -6,4 +6,5 @@ zephyr_library()
 zephyr_library_sources(
   arcmwdt-string.c
   libc-hooks.c
+  threading.c
 )

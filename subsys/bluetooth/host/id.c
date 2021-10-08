@@ -388,7 +388,7 @@ static void le_update_private_addr(void)
 	}
 #endif
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    IS_ENABLED(CONFIG_BT_WHITELIST) &&
+	    IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		/* Canceled initiating procedure will be restarted by
 		 * connection complete event.
@@ -656,7 +656,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	memcpy(cp->peer_irk, peer_irk, 16);
 
 #if defined(CONFIG_BT_PRIVACY)
-	memcpy(cp->local_irk, bt_dev.irk[id], 16);
+	(void)memcpy(cp->local_irk, &bt_dev.irk[id], 16);
 #else
 	(void)memset(cp->local_irk, 0, 16);
 #endif
@@ -962,7 +962,7 @@ static int id_find(const bt_addr_le_t *addr)
 	return -ENOENT;
 }
 
-static void id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
+static int id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&bt_dev.id_addr[id], addr);
@@ -970,7 +970,12 @@ static void id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		bt_addr_le_t new_addr;
 
 		do {
-			bt_addr_le_create_static(&new_addr);
+			int err;
+
+			err = bt_addr_le_create_static(&new_addr);
+			if (err) {
+				return err;
+			}
 			/* Make sure we didn't generate a duplicate */
 		} while (id_find(&new_addr) >= 0);
 
@@ -988,7 +993,13 @@ static void id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		if (irk && memcmp(irk, zero_irk, 16)) {
 			memcpy(&bt_dev.irk[id], irk, 16);
 		} else {
-			bt_rand(&bt_dev.irk[id], 16);
+			int err;
+
+			err = bt_rand(&bt_dev.irk[id], 16);
+			if (err) {
+				return err;
+			}
+
 			if (irk) {
 				memcpy(irk, &bt_dev.irk[id], 16);
 			}
@@ -1003,11 +1014,13 @@ static void id_create(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		bt_settings_save_id();
 	}
+
+	return 0;
 }
 
 int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 {
-	int new_id;
+	int new_id, err;
 
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
@@ -1044,13 +1057,18 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 	}
 
 	new_id = bt_dev.id_count++;
-	id_create(new_id, addr, irk);
+	err = id_create(new_id, addr, irk);
+	if (err) {
+		return err;
+	}
 
 	return new_id;
 }
 
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
+	int err;
+
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
@@ -1085,15 +1103,16 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
 	    bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
-		int err;
-
 		err = bt_unpair(id, NULL);
 		if (err) {
 			return err;
 		}
 	}
 
-	id_create(id, addr, irk);
+	err = id_create(id, addr, irk);
+	if (err) {
+		return err;
+	}
 
 	return id;
 }
@@ -1212,7 +1231,7 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 	return 1U;
 }
 
-void bt_setup_public_id_addr(void)
+int bt_setup_public_id_addr(void)
 {
 	bt_addr_le_t addr;
 	uint8_t *irk = NULL;
@@ -1220,7 +1239,7 @@ void bt_setup_public_id_addr(void)
 	bt_dev.id_count = bt_id_read_public_addr(&addr);
 
 	if (!bt_dev.id_count) {
-		return;
+		return 0;
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -1236,7 +1255,7 @@ void bt_setup_public_id_addr(void)
 	}
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
-	id_create(BT_ID_DEFAULT, &addr, irk);
+	return id_create(BT_ID_DEFAULT, &addr, irk);
 }
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
@@ -1303,6 +1322,7 @@ int bt_setup_random_id_addr(void)
 
 		if (bt_dev.id_count) {
 			for (uint8_t i = 0; i < bt_dev.id_count; i++) {
+				int err;
 				bt_addr_le_t addr;
 				uint8_t *irk = NULL;
 #if defined(CONFIG_BT_PRIVACY)
@@ -1319,7 +1339,10 @@ int bt_setup_random_id_addr(void)
 				bt_addr_copy(&addr.a, &addrs[i].bdaddr);
 				addr.type = BT_ADDR_LE_RANDOM;
 
-				id_create(i, &addr, irk);
+				err = id_create(i, &addr, irk);
+				if (err) {
+					return err;
+				}
 			}
 
 			return 0;
@@ -1613,6 +1636,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+		    CONFIG_BT_ID_MAX > 1 &&
 		    id != BT_ID_DEFAULT &&
 		    (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
 		     atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
@@ -1732,7 +1756,11 @@ int bt_id_init(void)
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
 		BT_DBG("No user identity. Trying to set public.");
 
-		bt_setup_public_id_addr();
+		err = bt_setup_public_id_addr();
+		if (err) {
+			BT_ERR("Unable to set identity address");
+			return err;
+		}
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {

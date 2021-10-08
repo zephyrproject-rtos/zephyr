@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    intc_arcv2_irq_unit.c)
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL               intc_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL                 intc_dw.c)
@@ -8,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_EXTI_STM32              intc_exti_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_GIC_V1                  intc_gic.c)
 zephyr_library_sources_ifdef(CONFIG_GIC_V2                  intc_gic.c)
 zephyr_library_sources_ifdef(CONFIG_GIC_V3                  intc_gicv3.c)
+zephyr_library_sources_ifdef(CONFIG_GIC_V3_ITS              intc_gicv3_its.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_VTD_ICTL          intc_intel_vtd.c)
 zephyr_library_sources_ifdef(CONFIG_IOAPIC                  intc_ioapic.c)
 zephyr_library_sources_ifdef(CONFIG_ITE_IT8XXX2_INTC        intc_ite_it8xxx2.c)
@@ -21,5 +23,6 @@ zephyr_library_sources_ifdef(CONFIG_RV32M1_INTMUX           intc_rv32m1_intmux.c
 zephyr_library_sources_ifdef(CONFIG_SAM0_EIC                intc_sam0_eic.c)
 zephyr_library_sources_ifdef(CONFIG_SHARED_IRQ              intc_shared_irq.c)
 zephyr_library_sources_ifdef(CONFIG_INTC_ESP32              intc_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_INTC_ESP32C3            intc_esp32c3.c)
 zephyr_library_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.c)

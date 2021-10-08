@@ -151,10 +151,16 @@ static struct bt_mesh_model_pub vnd_pub = {
 
 static struct bt_mesh_cfg_cli cfg_cli;
 
+static struct bt_mesh_health_srv health_srv;
+static struct bt_mesh_model_pub health_pub = {
+	.msg = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX),
+};
+
 static struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MOD_ID, model_op, &pub, NULL, &test_model_cb),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 struct bt_mesh_model *test_model = &models[2];

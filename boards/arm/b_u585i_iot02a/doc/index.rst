@@ -175,7 +175,10 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
-
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -197,6 +200,9 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PH7
 - LD2 : PH6
 - user button : PC13
+- SPI1 NSS/SCK/MISO/MOSI : PE12/P13/P14/P15 (Arduino SPI)
+- I2C_1 SDA/SDL : PB9/PB8 (Arduino I2C)
+- I2C_2 SDA/SDL : PH5/PH4
 
 System Clock
 ------------
@@ -255,9 +261,9 @@ Debugging
 STM32U5 support is not currently supported in openocd. As a temporary workaround,
 user can use `STMicroelectronics customized version of OpenOCD`_ to debug the
 the B_U585I_IOT02A Discovery kit.
-For this you need to fetch this repo and build openocd following the instructions
-provided in the README of the project. Then, build zephyr project indicating the
-openocd location in west build command.
+For this you need to fetch this repo, checkout branch "openocd-cubeide-r3" and
+build openocd following the instructions provided in the README of the project.
+Then, build zephyr project indicating the openocd location in west build command.
 
 Here is an example for the :ref:`blinky-sample` application.
 
@@ -269,24 +275,18 @@ Here is an example for the :ref:`blinky-sample` application.
 
 Then, indicate openocd as the chosen runner in flash and debug commands:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: b_u585i_iot02a
-   :gen-args: -r openocd
-   :goals: flash
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: nucleo_u575zi_q
-   :gen-args: -r openocd
-   :goals: debug
+   .. code-block:: console
+
+      $ west flash -r openocd
+      $ west debug -r openocd
 
 
 .. _B U585I IOT02A Discovery kit website:
    https://www.st.com/en/evaluation-tools/b-u585i-iot02a.html
 
 .. _B U585I IOT02A board User Manual:
-   https://www.st.com/resource/en/user_manual/dm00698410.pdf
+   https://www.st.com/resource/en/user_manual/um2839-discovery-kit-for-iot-node-with-stm32u5-series-stmicroelectronics.pdf
 
 .. _STM32U585 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32u575-585.html

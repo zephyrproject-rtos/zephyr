@@ -63,6 +63,7 @@ endif # BT_VCS
 config BT_VCS_CLIENT
 	bool "Volume Control Profile Support"
 	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
 	default n
 	help
 	  This option enables support for Volume Control Profile.

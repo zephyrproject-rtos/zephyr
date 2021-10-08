@@ -95,9 +95,6 @@ void hci_le_big_sync_established(struct net_buf *buf);
 void hci_le_big_sync_lost(struct net_buf *buf);
 
 /* Notify ISO channels of a new connection */
-int bt_iso_accept(struct bt_conn *acl, struct bt_conn *iso);
-
-/* Notify ISO channels of a new connection */
 void bt_iso_connected(struct bt_conn *iso);
 
 /* Notify ISO channels of a disconnect event */

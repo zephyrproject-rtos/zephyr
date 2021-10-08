@@ -302,6 +302,19 @@ typedef int16_t device_handle_t;
 		    (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
+ * @def DEVICE_DT_GET_OR_NULL
+ *
+ * @brief Utility macro to obtain an optional reference to a device.
+ *
+ * @param node_id Node identifier.
+ *
+ * @return Pointer to a device if it exists, NULL otherwise.
+ */
+#define DEVICE_DT_GET_OR_NULL(node_id)					\
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),			\
+		    (DEVICE_DT_GET(node_id)), (NULL))
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
@@ -431,7 +444,7 @@ device_from_handle(device_handle_t dev_handle)
 	const struct device *dev = NULL;
 	size_t numdev = __device_end - __device_start;
 
-	if ((dev_handle > 0) && ((size_t)dev_handle < numdev)) {
+	if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
 		dev = &__device_start[dev_handle - 1];
 	}
 
@@ -479,48 +492,8 @@ device_required_handles_get(const struct device *dev,
 	if (rv != NULL) {
 		size_t i = 0;
 
-		while (rv[i] != DEVICE_HANDLE_SEP) {
-			++i;
-		}
-		*count = i;
-	}
-
-	return rv;
-}
-
-/**
- * @brief Get the set of handles that this device supports.
- *
- * The set of supported devices is inferred from devicetree, and does not
- * include any software constructs that may depend on the device.
- *
- * @param dev the device for which supports are desired.
- *
- * @param count pointer to a place to store the number of devices provided at
- * the returned pointer. The value is not set if the call returns a null
- * pointer. The value may be set to zero.
- *
- * @return a pointer to a sequence of @p *count device handles, or a null
- * pointer if @p dh does not provide dependency information.
- */
-static inline const device_handle_t *
-device_supported_handles_get(const struct device *dev,
-			     size_t *count)
-{
-	const device_handle_t *rv = dev->handles;
-	size_t region = 0;
-	size_t i = 0;
-
-	if (rv != NULL) {
-		/* Fast forward to supporting devices */
-		while (region != 2) {
-			if (*rv == DEVICE_HANDLE_SEP) {
-				region++;
-			}
-			rv++;
-		}
-		/* Count supporting devices */
-		while (rv[i] != DEVICE_HANDLE_ENDS) {
+		while ((rv[i] != DEVICE_HANDLE_ENDS)
+		       && (rv[i] != DEVICE_HANDLE_SEP)) {
 			++i;
 		}
 		*count = i;
@@ -565,42 +538,6 @@ device_supported_handles_get(const struct device *dev,
 int device_required_foreach(const struct device *dev,
 			  device_visitor_callback_t visitor_cb,
 			  void *context);
-
-/**
- * @brief Visit every device that @p dev directly supports.
- *
- * Zephyr maintains information about which devices are directly supported by
- * another device; for example an I2C controller will support an I2C-based
- * sensor driver. Supported devices can derive from statically-defined
- * devicetree relationships.
- *
- * This API supports operating on the set of supported devices. Example uses
- * include iterating over the devices connected to a regulator when it is
- * powered on.
- *
- * There is no guarantee on the order in which required devices are visited.
- *
- * If the @p visitor function returns a negative value iteration is halted,
- * and the returned value from the visitor is returned from this function.
- *
- * @note This API is not available to unprivileged threads.
- *
- * @param dev a device of interest. The devices that this device supports
- * will be used as the set of devices to visit. This parameter must not be
- * null.
- *
- * @param visitor_cb the function that should be invoked on each device in the
- * support set. This parameter must not be null.
- *
- * @param context state that is passed through to the visitor function. This
- * parameter may be null if @p visitor tolerates a null @p context.
- *
- * @return The number of devices that were visited if all visits succeed, or
- * the negative value returned from the first visit that did not succeed.
- */
-int device_supported_foreach(const struct device *dev,
-			     device_visitor_callback_t visitor_cb,
-			     void *context);
 
 /**
  * @brief Retrieve the device structure for a driver by name
@@ -762,6 +699,50 @@ static inline bool device_is_ready(const struct device *dev)
 	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
 	Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 
+/* Helper macros needed for CONFIG_DEVICE_HANDLE_PADDING. These should
+ * be deleted when that option is removed.
+ *
+ * This is implemented "by hand" -- rather than using a helper macro
+ * like UTIL_LISTIFY() -- because we need to allow users to wrap
+ * DEVICE_DT_DEFINE with UTIL_LISTIFY, like this:
+ *
+ *     #define DEFINE_FOO_DEVICE(...) DEVICE_DT_DEFINE(...)
+ *     UTIL_LISTIFY(N, DEFINE_FOO_DEVICE)
+ *
+ * If Z_DEVICE_HANDLE_PADDING uses UTIL_LISTIFY, this type of code
+ * would fail, because the UTIL_LISTIFY token within the
+ * Z_DEVICE_DEFINE_HANDLES expansion would not be expanded again,
+ * since it appears in a context where UTIL_LISTIFY is already being
+ * expanded. Standard C does not reexpand macros appearing in their
+ * own expansion; this would lead to infinite recursions in general.
+ */
+#define Z_DEVICE_HANDLE_PADDING \
+	Z_DEVICE_HANDLE_PADDING_(CONFIG_DEVICE_HANDLE_PADDING)
+#define Z_DEVICE_HANDLE_PADDING_(count) \
+	Z_DEVICE_HANDLE_PADDING__(count)
+#define Z_DEVICE_HANDLE_PADDING__(count) \
+	Z_DEVICE_HANDLE_PADDING_ ## count
+#define Z_DEVICE_HANDLE_PADDING_10 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_9
+#define Z_DEVICE_HANDLE_PADDING_9 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_8
+#define Z_DEVICE_HANDLE_PADDING_8 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_7
+#define Z_DEVICE_HANDLE_PADDING_7 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_6
+#define Z_DEVICE_HANDLE_PADDING_6 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_5
+#define Z_DEVICE_HANDLE_PADDING_5 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_4
+#define Z_DEVICE_HANDLE_PADDING_4 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_3
+#define Z_DEVICE_HANDLE_PADDING_3 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_2
+#define Z_DEVICE_HANDLE_PADDING_2 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_1
+#define Z_DEVICE_HANDLE_PADDING_1 \
+	DEVICE_HANDLE_ENDS, Z_DEVICE_HANDLE_PADDING_0
+#define Z_DEVICE_HANDLE_PADDING_0 EMPTY
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
@@ -769,26 +750,6 @@ static inline bool device_is_ready(const struct device *dev)
  * from being captured when the original object file is compiled), and
  * in a distinct pass1 section (which will be replaced by
  * postprocessing).
- *
- * Before processing in gen_handles.py, the array format is:
- * {
- *     DEVICE_ORDINAL (or DEVICE_HANDLE_NULL if not a devicetree node),
- *     List of devicetree dependency ordinals (if any),
- *     DEVICE_HANDLE_SEP,
- *     List of injected dependency ordinals (if any),
- *     DEVICE_HANDLE_SEP,
- *     List of devicetree supporting ordinals (if any),
- * }
- *
- * After processing in gen_handles.py, the format is updated to:
- * {
- *     List of existing devicetree dependency handles (if any),
- *     DEVICE_HANDLE_SEP,
- *     List of injected dependency ordinals (if any),
- *     DEVICE_HANDLE_SEP,
- *     List of existing devicetree support handles (if any),
- *     DEVICE_HANDLE_NULL padding to original length (at least one)
- * }
  *
  * It is also (experimentally) necessary to provide explicit alignment
  * on each object. Otherwise x86-64 builds will introduce padding
@@ -818,9 +779,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		))							\
 			DEVICE_HANDLE_SEP,				\
 			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
-			DEVICE_HANDLE_SEP,				\
-	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
-			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
+			Z_DEVICE_HANDLE_PADDING				\
 		};
 
 #ifdef CONFIG_PM_DEVICE

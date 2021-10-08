@@ -29,9 +29,9 @@ static struct ut_bt_df_conn_cte_request_data g_data;
 
 /* Macros delivering common values for unit tests */
 #define CONN_HANDLE_INVALID (CONFIG_BT_MAX_CONN + 1)
-#define CONN_SLAVE_LATENCY 7 /* arbitrary latency value */
-#define REQUEST_INTERVAL_OK (CONN_SLAVE_LATENCY)
-#define REQUEST_INTERVAL_TOO_LOW (CONN_SLAVE_LATENCY - 1)
+#define CONN_PERIPH_LATENCY 7 /* arbitrary latency value */
+#define REQUEST_INTERVAL_OK (CONN_PERIPH_LATENCY)
+#define REQUEST_INTERVAL_TOO_LOW (CONN_PERIPH_LATENCY - 1)
 
 /* CTE length is stored in 1 octet. If BT Core spec. extends the max value to UINT8_MAX
  * expected failures may not be checked. If storage size is increased, tests shall be updated.
@@ -173,7 +173,7 @@ static void cte_rx_param_setup(void)
 	};
 
 	connection_setup();
-	common_set_slave_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
+	common_set_periph_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
 
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);
 }

@@ -39,6 +39,15 @@ The kernel's scheduler selects the highest priority ready thread
 to be the current thread. When multiple ready threads of the same priority
 exist, the scheduler chooses the one that has been waiting longest.
 
+A thread's relative priority is primarily determined by its static priority.
+However, when both earliest-deadline-first scheduling is enabled
+(:kconfig:`CONFIG_SCHED_DEADLINE`) and a choice of threads have equal
+static priority, then the thread with the earlier deadline is considered
+to have the higher priority. Thus, when earliest-deadline-first scheduling is
+enabled, two threads are only considered to have the same priority when both
+their static priorities and deadlines are equal. The routine
+:c:func:`k_thread_deadline_set` is used to set a thread's deadline.
+
 .. note::
     Execution of ISRs takes precedence over thread execution,
     so the execution of the current thread may be replaced by an ISR

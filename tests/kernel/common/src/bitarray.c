@@ -616,5 +616,56 @@ void test_bitarray_region_set_clear(void)
 }
 
 /**
+ * @brief Test find MSB and LSB operations
+ *
+ * @details Verify the functions that find out the most significiant
+ * bit and least significiant bit work as expected.
+ *
+ * @see find_msb_set(), find_lsb_set()
+ */
+void test_ffs(void)
+{
+	uint32_t value;
+	unsigned int bit;
+
+	/* boundary test, input is min */
+	value = 0x0;
+	zassert_equal(find_msb_set(value), 0, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 0, "LSB is not matched");
+
+	/* boundary test, input is min + 1 */
+	value = 0x00000001;
+	zassert_equal(find_msb_set(value), 1, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* average value test */
+	value = 0x80000000;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 32, "LSB is not matched");
+
+	/* mediate value test */
+	value = 0x000FF000;
+	zassert_equal(find_msb_set(value), 20, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 13, "LSB is not matched");
+
+	/* boundary test, input is max */
+	value = 0xffffffff;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 1, "LSB is not matched");
+
+	/* boundary test, input is max - 1 */
+	value = 0xfffffffe;
+	zassert_equal(find_msb_set(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set(value), 2, "LSB is not matched");
+
+	/* equivalent class testing, each bit means a class */
+	for (bit = 0; bit < 32 ; bit++) {
+		value = 1UL << bit;
+		zassert_equal(find_msb_set(value), bit + 1, "MSB is not matched");
+		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
+	}
+}
+
+/**
  * @}
  */

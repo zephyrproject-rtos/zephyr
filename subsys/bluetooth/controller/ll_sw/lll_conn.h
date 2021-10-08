@@ -60,7 +60,7 @@ struct lll_conn {
 		struct {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
-		} master;
+		} central;
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  initiated:1;
@@ -73,7 +73,7 @@ struct lll_conn {
 			uint32_t window_widening_event_us;
 			uint32_t window_size_prepare_us;
 			uint32_t window_size_event_us;
-		} slave;
+		} periph;
 #endif /* CONFIG_BT_PERIPHERAL */
 	};
 

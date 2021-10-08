@@ -71,6 +71,29 @@ To run with FVP, ARMFVP_BIN_PATH must be set before running:
 
 e.g. export ARMFVP_BIN_PATH=<path/to/fvp/dir>
 
+Running Zephyr at EL1NS
+***********************
+
+In order to run Zephyr as EL1NS with ``CONFIG_ARMV8_A_NS``, you'll need a proper
+Trusted Firmware loaded in the FVP model.
+
+The ARM TF-A for FVP can be used to run Zephyr as preloaded BL33 payload.
+
+Checkout and Build the TF-A:
+
+.. code-block:: console
+
+   git clone https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git --depth 1
+   cd trusted-firmware-a/
+   make PLAT=fvp PRELOADED_BL33_BASE="0x88000000" all fip
+
+then export the ``ARMFVP_BL1_FILE` and ``ARMFVP_FIP_FILE`` environment variables:
+
+.. code-block:: console
+
+   export ARMFVP_BL1_FILE=<path/to/tfa-a/build/fvp/release/bl1.bin>
+   export ARMFVP_FIP_FILE=<path/to/tfa-a/build/fvp/release/fip.bin>
+
 Debugging
 =========
 

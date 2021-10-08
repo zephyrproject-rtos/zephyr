@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include <kernel_internal.h>
 #include <irq_offload.h>
+#include <sys/multi_heap.h>
 #include "test_mheap.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -235,4 +236,63 @@ void test_malloc_in_thread(void)
 	k_sem_take(&thread_sem, K_FOREVER);
 
 	k_thread_abort(tid);
+}
+
+#define N_MULTI_HEAPS 4
+#define MHEAP_BYTES 128
+
+static struct sys_multi_heap multi_heap;
+static char heap_mem[N_MULTI_HEAPS][MHEAP_BYTES];
+static struct sys_heap mheaps[N_MULTI_HEAPS];
+
+void *multi_heap_choice(struct sys_multi_heap *mheap, void *cfg,
+			size_t align, size_t size)
+{
+	struct sys_heap *h = &mheaps[(int)(long)cfg];
+
+	return sys_heap_aligned_alloc(h, align, size);
+}
+
+void test_multi_heap(void)
+{
+	char *blocks[N_MULTI_HEAPS];
+
+	sys_multi_heap_init(&multi_heap, multi_heap_choice);
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		sys_heap_init(&mheaps[i], &heap_mem[i][0], MHEAP_BYTES);
+		sys_multi_heap_add_heap(&multi_heap, &mheaps[i]);
+	}
+
+	/* Allocate half the buffer from each heap, make sure it works
+	 * and that the pointer is in the correct memory
+	 */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+						 MHEAP_BYTES / 2);
+
+		zassert_not_null(blocks[i], "allocation failed");
+		zassert_true(blocks[i] >= &heap_mem[i][0] &&
+			     blocks[i] < &heap_mem[i+1][0],
+			     "allocation not in correct heap");
+	}
+
+	/* Make sure all heaps fail to allocate another */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		void *b = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+					       MHEAP_BYTES / 2);
+
+		zassert_is_null(b, "second allocation succeeded?");
+	}
+
+	/* Free all blocks */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		sys_multi_heap_free(&multi_heap, blocks[i]);
+	}
+
+	/* Allocate again to make sure they're still valid */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
+						 MHEAP_BYTES / 2);
+		zassert_not_null(blocks[i], "final re-allocation failed");
+	}
 }

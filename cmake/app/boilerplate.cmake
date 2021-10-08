@@ -31,11 +31,6 @@ cmake_minimum_required(VERSION 3.20.0)
 # CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
 
-# Use the old CMake behaviour until the build scripts have been ported
-# to the new behaviour.
-# CMP0079: "target_link_libraries() allows use with targets in other directories"
-cmake_policy(SET CMP0079 OLD)
-
 # Use the old CMake behaviour until we are updating the CMake 3.20 as minimum
 # required. This ensure that CMake >=3.20 will be consistent with older CMakes.
 # CMP0116: Ninja generators transform DEPFILE s from add_custom_command().
@@ -494,10 +489,7 @@ zephyr_boilerplate_watch(CONF_FILE)
 
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
-  # in the CMakeCache.txt. This has precedence over the environment
-  # variable DTC_OVERLAY_FILE
-elseif(DEFINED ENV{DTC_OVERLAY_FILE})
-  set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
+  # in the CMakeCache.txt.
 elseif(APP_BOARD_DTS)
   set(DTC_OVERLAY_FILE ${APP_BOARD_DTS})
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)

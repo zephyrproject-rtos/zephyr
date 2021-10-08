@@ -113,8 +113,10 @@ static int enable_shell_rtt(const struct device *arg)
 	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;
+	static const struct shell_backend_config_flags cfg_flags =
+					SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
 
-	shell_init(&shell_rtt, NULL, true, log_backend, level);
+	shell_init(&shell_rtt, NULL, cfg_flags, log_backend, level);
 
 	return 0;
 }

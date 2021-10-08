@@ -147,7 +147,8 @@ static void zsock_flush_queue(struct net_context *ctx)
 	k_fifo_cancel_wait(&ctx->recv_q);
 }
 
-int zsock_socket_internal(int family, int type, int proto)
+#if defined(CONFIG_NET_NATIVE)
+static int zsock_socket_internal(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	struct net_context *ctx;
@@ -205,6 +206,7 @@ int zsock_socket_internal(int family, int type, int proto)
 
 	return fd;
 }
+#endif /* CONFIG_NET_NATIVE */
 
 int z_impl_zsock_socket(int family, int type, int proto)
 {
@@ -221,10 +223,6 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		}
 
 		return sock_family->handler(family, type, proto);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_NATIVE)) {
-		return zsock_socket_internal(family, type, proto);
 	}
 
 	errno = EAFNOSUPPORT;
@@ -962,7 +960,7 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 	}
 }
 
-static int wait_data(struct net_context *ctx, k_timeout_t *timeout)
+int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
@@ -1003,7 +1001,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 
-		ret = wait_data(ctx, &timeout);
+		ret = zsock_wait_data(ctx, &timeout);
 		if (ret < 0) {
 			errno = -ret;
 			return -1;
@@ -1142,7 +1140,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			res = wait_data(ctx, &timeout);
+			res = zsock_wait_data(ctx, &timeout);
 			if (res < 0) {
 				errno = -res;
 				return -1;
@@ -2208,3 +2206,17 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.setsockopt = sock_setsockopt_vmeth,
 	.getsockname = sock_getsockname_vmeth,
 };
+
+#if defined(CONFIG_NET_NATIVE)
+static bool inet_is_supported(int family, int type, int proto)
+{
+	if (family != AF_INET && family != AF_INET6) {
+		return false;
+	}
+
+	return true;
+}
+
+NET_SOCKET_REGISTER(af_inet46, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    inet_is_supported, zsock_socket_internal);
+#endif /* CONFIG_NET_NATIVE */

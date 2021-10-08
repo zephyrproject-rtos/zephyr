@@ -319,6 +319,8 @@ static int enable_shell_uart(const struct device *arg)
 	uint32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
+	static const struct shell_backend_config_flags cfg_flags =
+					SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
 
 	if (!device_is_ready(dev)) {
 		return -ENODEV;
@@ -328,10 +330,11 @@ static int enable_shell_uart(const struct device *arg)
 		smp_shell_init();
 	}
 
-	shell_init(&shell_uart, dev, true, log_backend, level);
+	shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
 
 	return 0;
 }
+
 SYS_INIT(enable_shell_uart, POST_KERNEL,
 	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
 

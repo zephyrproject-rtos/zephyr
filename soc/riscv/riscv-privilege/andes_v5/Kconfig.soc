@@ -8,6 +8,7 @@ depends on SOC_SERIES_RISCV_ANDES_V5
 config SOC_RISCV_ANDES_AE350
 	bool "Andes AE350 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
 
 endchoice
 

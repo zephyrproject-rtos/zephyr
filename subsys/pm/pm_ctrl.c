@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(power);
 
 static atomic_t power_state_disable_count[PM_STATES_LEN];
 
-void pm_constraint_set(enum pm_state state)
+__weak void pm_constraint_set(enum pm_state state)
 {
 	atomic_val_t v;
 
@@ -30,7 +30,7 @@ void pm_constraint_set(enum pm_state state)
 	(void)(v);
 }
 
-void pm_constraint_release(enum pm_state state)
+__weak void pm_constraint_release(enum pm_state state)
 {
 	atomic_val_t v;
 
@@ -42,7 +42,7 @@ void pm_constraint_release(enum pm_state state)
 	(void)(v);
 }
 
-bool pm_constraint_get(enum pm_state state)
+__weak bool pm_constraint_get(enum pm_state state)
 {
 	__ASSERT(state < PM_STATES_LEN, "Invalid power state!");
 

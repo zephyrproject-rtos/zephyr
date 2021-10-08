@@ -29,12 +29,35 @@ properties:
     zephyr,concat-buf-size:
         type: int
         required: false
-        description:
-            If concatenation buffer size is set, then multiple messages in the
-            same direction will be concatenated into single transfers as long
-            as there is space in buffer and no restart or stop flag is set.
+        default: 16
+        description: |
+            Size of a concatenation buffer that the driver is to use for merging
+            multiple same direction I2C messages that have no RESTART or STOP
+            flag between them (see e.g. the i2c_burst_write() function) into one
+            transfer on the bus.
 
             This property must be provided when interacting with devices like
             the SSD1306 display that cannot tolerate a repeated start and
-            address appearing on the bus between message fragments.  For many
+            address appearing on the bus between message fragments. For many
             devices a concatenation buffer is not necessary.
+
+    zephyr,flash-buf-max-size:
+        type: int
+        required: false
+        default: 16
+        description: |
+            TWIM peripherals cannot perform write transactions from buffers
+            located in flash. If such buffers are expected to be used with
+            a given instance of the TWIM peripheral, this property must be
+            set to the maximum possible size of those buffers, so that the
+            driver can reserve enough space in RAM to copy there the contents
+            of particular buffers before requesting the actual transfers.
+
+            If this property is not set to a value adequate for a given
+            application, write transactions may fail for buffers that are
+            located in flash, what in turn may cause certain components,
+            like the DPS310 sensor driver, to not work.
+
+            It is recommended to use the same value for this property and for
+            the zephyr,concat-buf-size one, as both these buffering mechanisms
+            can utilize the same space in RAM.

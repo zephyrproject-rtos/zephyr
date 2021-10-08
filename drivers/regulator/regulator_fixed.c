@@ -115,7 +115,7 @@ static void finalize_transition(struct driver_data_onoff *data,
 			data->task = WORK_TASK_DELAY;
 			data->notify = notify;
 			rc = k_work_schedule(&data->dwork, K_USEC(delay_us));
-			if (rc == 0) {
+			if (rc >= 0) {
 				return;
 			}
 #endif /* CONFIG_MULTITHREADING */

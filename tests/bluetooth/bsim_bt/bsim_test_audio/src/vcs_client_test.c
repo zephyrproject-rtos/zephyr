@@ -15,7 +15,6 @@
 #define VOCS_DESC_SIZE 64
 #define AICS_DESC_SIZE 64
 
-static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
 static struct bt_vcs *vcs;

@@ -24,6 +24,12 @@ config MULTIBOOT_INFO
 config MULTIBOOT_MEMMAP
 	default y if MULTIBOOT
 
+config QEMU_ICOUNT
+	default n if HPET_TIMER && SHELL
+
+config QEMU_ICOUNT_SHIFT
+	default 5
+
 endif # BOARD_QEMU_X86
 
 if BOARD_QEMU_X86_64
@@ -55,6 +61,12 @@ config X86_PC_COMPATIBLE
 	# QEMU presents a PC-compatible machine
 	default y
 
+config QEMU_ICOUNT
+	default n if HPET_TIMER && SHELL
+
+config QEMU_ICOUNT_SHIFT
+	default 5
+
 endif # BOARD_QEMU_X86_LAKEMONT
 
 if BOARD_QEMU_X86_TINY
@@ -75,6 +87,12 @@ config MULTIBOOT
 config X86_PC_COMPATIBLE
 	# QEMU presents a PC-compatible machine
 	default y
+
+config QEMU_ICOUNT
+	default n if HPET_TIMER && SHELL
+
+config QEMU_ICOUNT_SHIFT
+	default 5
 
 config HAVE_CUSTOM_LINKER_SCRIPT
 	default y

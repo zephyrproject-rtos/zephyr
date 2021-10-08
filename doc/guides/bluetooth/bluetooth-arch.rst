@@ -332,17 +332,17 @@ capable of displaying a passkey to the user.
 Depending on the local and remote security requirements & capabilities,
 there are four possible security levels that can be reached:
 
-    :c:enumerator:`BT_SECURITY_LOW`
+    :c:enumerator:`BT_SECURITY_L1`
         No encryption and no authentication.
 
-    :c:enumerator:`BT_SECURITY_MEDIUM`
+    :c:enumerator:`BT_SECURITY_L2`
         Encryption but no authentication (no MITM protection).
 
-    :c:enumerator:`BT_SECURITY_HIGH`
+    :c:enumerator:`BT_SECURITY_L3`
         Encryption and authentication using the legacy pairing method
         from Bluetooth 4.0 and 4.1.
 
-    :c:enumerator:`BT_SECURITY_FIPS`
+    :c:enumerator:`BT_SECURITY_L4`
         Encryption and authentication using the LE Secure Connections
         feature available since Bluetooth 4.2.
 

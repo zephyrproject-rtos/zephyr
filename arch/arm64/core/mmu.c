@@ -17,7 +17,7 @@
 #include <logging/log.h>
 #include <arch/arm64/cpu.h>
 #include <arch/arm64/lib_helpers.h>
-#include <arch/arm64/arm_mmu.h>
+#include <arch/arm64/mm.h>
 #include <linker/linker-defs.h>
 #include <spinlock.h>
 #include <sys/util.h>
@@ -102,6 +102,19 @@ static inline uint64_t *pte_desc_table(uint64_t desc)
 	uint64_t address = desc & GENMASK(47, PAGE_SIZE_SHIFT);
 
 	return (uint64_t *)address;
+}
+
+static inline bool is_desc_block_aligned(uint64_t desc, unsigned int level_size)
+{
+	uint64_t mask = GENMASK(47, PAGE_SIZE_SHIFT);
+	bool aligned = !((desc & mask) & (level_size - 1));
+
+	if (!aligned) {
+		MMU_DEBUG("misaligned desc 0x%016llx for block size 0x%x\n",
+			  desc, level_size);
+	}
+
+	return aligned;
 }
 
 static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
@@ -259,7 +272,8 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			goto move_on;
 		}
 
-		if ((size < level_size) || (virt & (level_size - 1))) {
+		if ((size < level_size) || (virt & (level_size - 1)) ||
+		    !is_desc_block_aligned(desc, level_size)) {
 			/* Range doesn't fit, create subtable */
 			table = expand_to_table(pte, level);
 			if (!table) {
@@ -931,6 +945,8 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 
 #ifdef CONFIG_USERSPACE
 
+static void z_arm64_swap_ptables(struct k_thread *incoming);
+
 static inline bool is_ptable_active(struct arm_mmu_ptables *ptables)
 {
 	return read_sysreg(ttbr0_el1) == (uintptr_t)ptables->base_xlat_table;
@@ -1037,7 +1053,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	} else {
 #ifdef CONFIG_SMP
 		/* the thread could be running on another CPU right now */
-		z_arm64_ptable_ipi();
+		z_arm64_mem_cfg_ipi();
 #endif
 	}
 
@@ -1067,7 +1083,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 		  thread->stack_info.size);
 }
 
-void z_arm64_swap_ptables(struct k_thread *incoming)
+static void z_arm64_swap_ptables(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables = incoming->arch.ptables;
 
@@ -1076,7 +1092,7 @@ void z_arm64_swap_ptables(struct k_thread *incoming)
 	}
 }
 
-void z_arm64_thread_pt_init(struct k_thread *incoming)
+void z_arm64_thread_mem_domains_init(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables;
 
@@ -1088,6 +1104,11 @@ void z_arm64_thread_pt_init(struct k_thread *incoming)
 	/* Map the thread stack */
 	map_thread_stack(incoming, ptables);
 
+	z_arm64_swap_ptables(incoming);
+}
+
+void z_arm64_swap_mem_domains(struct k_thread *incoming)
+{
 	z_arm64_swap_ptables(incoming);
 }
 

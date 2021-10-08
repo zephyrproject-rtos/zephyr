@@ -193,7 +193,8 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	if (!bt_conn_is_handle_valid(conn)) {
+	if (conn->state != BT_CONN_CONNECTED &&
+	    conn->state != BT_CONN_DISCONNECT) {
 		BT_WARN("Not reporting packet for non-connected conn");
 		bt_conn_unref(conn);
 		return;
@@ -496,7 +497,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	uint8_t num_phys;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	}
 
@@ -522,7 +523,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	if (use_filter) {
 		/* User Initiated procedure use fast scan parameters. */
 		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
-		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_FILTER;
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
@@ -534,7 +535,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		}
 #endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
-		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_DIRECT;
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
 
 	cp->own_addr_type = own_addr_type;
@@ -575,7 +576,7 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	uint8_t own_addr_type;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 		use_filter = atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	}
 
@@ -596,7 +597,7 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	if (use_filter) {
 		/* User Initiated procedure use fast scan parameters. */
 		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
-		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_WHITELIST;
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_FILTER;
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
@@ -608,7 +609,7 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 		}
 #endif
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
-		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_DIRECT;
+		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
 
 	cp->scan_interval = sys_cpu_to_le16(bt_dev.create_param.interval);
@@ -761,12 +762,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
-#if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_WHITELIST)
+#if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		bt_le_scan_update(false);
 	}
-#endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_WHITELIST) */
+#endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	bt_conn_unref(conn);
 }
@@ -896,10 +897,10 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	 * Make lookup to check if there's a connection object in
 	 * CONNECT or CONNECT_AUTO state associated with passed peer LE address.
 	 */
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_MASTER) {
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_CENTRAL) {
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, peer_addr,
 					       BT_CONN_CONNECT);
-		if (IS_ENABLED(CONFIG_BT_WHITELIST) && !conn) {
+		if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) && !conn) {
 			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT,
 						       BT_ADDR_LE_NONE,
 						       BT_CONN_CONNECT_AUTO);
@@ -908,7 +909,7 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 		return conn;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_SLAVE) {
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_PERIPHERAL) {
 		conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id, peer_addr,
 					       BT_CONN_CONNECT_DIR_ADV);
 		if (!conn) {
@@ -936,8 +937,8 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) &&
-	    ((conn->role == BT_HCI_ROLE_MASTER) ||
-	     BT_FEAT_LE_SLAVE_FEATURE_XCHG(bt_dev.le.features))) {
+	    ((conn->role == BT_HCI_ROLE_CENTRAL) ||
+	     BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features))) {
 		err = hci_le_read_remote_features(conn);
 		if (!err) {
 			return;
@@ -994,18 +995,18 @@ static void le_conn_complete_cancel(void)
 	/* Handle create connection cancel.
 	 *
 	 * There is no need to check ID address as only one
-	 * connection in master role can be in pending state.
+	 * connection in central role can be in pending state.
 	 */
-	conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL);
+	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL);
 	if (!conn) {
-		BT_ERR("No pending master connection");
+		BT_ERR("No pending central connection");
 		return;
 	}
 
 	conn->err = BT_HCI_ERR_UNKNOWN_CONN_ID;
 
 	/* Handle cancellation of outgoing connection attempt. */
-	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
+	if (!IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
 		/* We notify before checking autoconnect flag
 		 * as application may choose to change it from
 		 * callback.
@@ -1018,7 +1019,7 @@ static void le_conn_complete_cancel(void)
 		}
 	} else {
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			/* Restart whitelist initiator after RPA timeout. */
+			/* Restart FAL initiator after RPA timeout. */
 			bt_le_create_conn(conn);
 		} else {
 			/* Create connection canceled by timeout */
@@ -1051,11 +1052,11 @@ static void le_conn_complete_adv_timeout(void)
 		}
 
 		/* There is no need to check ID address as only one
-		 * connection in slave role can be in pending state.
+		 * connection in peripheral role can be in pending state.
 		 */
-		conn = find_pending_connect(BT_HCI_ROLE_SLAVE, NULL);
+		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL);
 		if (!conn) {
-			BT_ERR("No pending slave connection");
+			BT_ERR("No pending peripheral connection");
 			return;
 		}
 
@@ -1070,7 +1071,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 #if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		evt->role == BT_HCI_ROLE_SLAVE &&
+		evt->role == BT_HCI_ROLE_PERIPHERAL &&
 		evt->status == BT_HCI_ERR_SUCCESS &&
 		(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 				BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
@@ -1141,7 +1142,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		bt_addr_copy(&peer_addr.a, &evt->peer_rpa);
 		peer_addr.type = BT_ADDR_LE_RANDOM;
 	} else {
-		uint8_t id = evt->role == BT_HCI_ROLE_SLAVE ? bt_dev.adv_conn_id :
+		uint8_t id = evt->role == BT_HCI_ROLE_PERIPHERAL ? bt_dev.adv_conn_id :
 							   BT_ID_DEFAULT;
 
 		bt_addr_le_copy(&id_addr,
@@ -1152,7 +1153,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	conn = find_pending_connect(evt->role, &id_addr);
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    evt->role == BT_HCI_ROLE_SLAVE &&
+	    evt->role == BT_HCI_ROLE_PERIPHERAL &&
 	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
@@ -1164,7 +1165,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    evt->role == BT_HCI_ROLE_MASTER) {
+	    evt->role == BT_HCI_ROLE_CENTRAL) {
 		/* Clear initiating even if we are not able to add connection
 		 * object to keep the host in sync with controller state.
 		 */
@@ -1199,11 +1200,11 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 #endif
 	/*
 	 * Use connection address (instead of identity address) as initiator
-	 * or responder address. Only slave needs to be updated. For master all
+	 * or responder address. Only peripheral needs to be updated. For central all
 	 * was set during outgoing connection creation.
 	 */
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_HCI_ROLE_SLAVE) {
+	    conn->role == BT_HCI_ROLE_PERIPHERAL) {
 		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
 		if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -1233,11 +1234,11 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 
 		/* if the controller supports, lets advertise for another
-		 * slave connection.
+		 * peripheral connection.
 		 * check for connectable advertising state is sufficient as
-		 * this is how this le connection complete for slave occurred.
+		 * this is how this le connection complete for peripheral occurred.
 		 */
-		if (BT_LE_STATES_SLAVE_CONN_ADV(bt_dev.le.states)) {
+		if (BT_LE_STATES_PER_CONN_ADV(bt_dev.le.states)) {
 			bt_le_adv_resume();
 		}
 
@@ -1254,7 +1255,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_HCI_ROLE_MASTER) {
+	    conn->role == BT_HCI_ROLE_CENTRAL) {
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -1310,7 +1311,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	bt_conn_unref(conn);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_HCI_ROLE_MASTER) {
+	    conn->role == BT_HCI_ROLE_CENTRAL) {
 		bt_le_scan_update(false);
 	}
 }
@@ -1565,9 +1566,9 @@ static void le_conn_update_complete(struct net_buf *buf)
 		conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 		notify_le_param_updated(conn);
 	} else if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
-		   conn->role == BT_HCI_ROLE_SLAVE &&
+		   conn->role == BT_HCI_ROLE_PERIPHERAL &&
 		   !atomic_test_and_set_bit(conn->flags,
-					    BT_CONN_SLAVE_PARAM_L2CAP)) {
+					    BT_CONN_PERIPHERAL_PARAM_L2CAP)) {
 		/* CPR not supported, let's try L2CAP CPUP instead */
 		struct bt_le_conn_param param;
 
@@ -1786,10 +1787,10 @@ static void hci_encrypt_change(struct net_buf *buf)
 		if (IS_ENABLED(CONFIG_BT_SMP)) {
 			/*
 			 * Start SMP over BR/EDR if we are pairing and are
-			 * master on the link
+			 * central on the link
 			 */
 			if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING) &&
-			    conn->role == BT_CONN_ROLE_MASTER) {
+			    conn->role == BT_CONN_ROLE_CENTRAL) {
 				bt_smp_br_send_pairing_req(conn);
 			}
 		}
@@ -2010,6 +2011,12 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	if (cmd(buf)->opcode != opcode) {
 		BT_WARN("OpCode 0x%04x completed instead of expected 0x%04x",
 			opcode, cmd(buf)->opcode);
+		return;
+	}
+
+	if (bt_dev.sent_cmd) {
+		net_buf_unref(bt_dev.sent_cmd);
+		bt_dev.sent_cmd = NULL;
 	}
 
 	if (cmd(buf)->state && !status) {
@@ -2751,7 +2758,7 @@ static int le_set_event_mask(void)
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_CIS(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_CIS_ESTABLISHED;
-		if (BT_FEAT_LE_CIS_SLAVE(bt_dev.le.features)) {
+		if (BT_FEAT_LE_CIS_PERIPHERAL(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_CIS_REQ;
 		}
 	}
@@ -3465,6 +3472,13 @@ static int bt_init(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		err = bt_conn_iso_init();
+		if (err) {
+			return err;
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		if (!bt_dev.id_count) {
 			BT_INFO("No ID address. App must call settings_load()");
@@ -3653,10 +3667,10 @@ bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 	}
 }
 
-#if defined(CONFIG_BT_WHITELIST)
-int bt_le_whitelist_add(const bt_addr_le_t *addr)
+#if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
+int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 {
-	struct bt_hci_cp_le_add_dev_to_wl *cp;
+	struct bt_hci_cp_le_add_dev_to_fal *cp;
 	struct net_buf *buf;
 	int err;
 
@@ -3664,7 +3678,7 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_WL, sizeof(*cp));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_FAL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3672,9 +3686,9 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->addr, addr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_WL, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_FAL, buf, NULL);
 	if (err) {
-		BT_ERR("Failed to add device to whitelist");
+		BT_ERR("Failed to add device to filter accept list");
 
 		return err;
 	}
@@ -3682,9 +3696,9 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr)
 	return 0;
 }
 
-int bt_le_whitelist_rem(const bt_addr_le_t *addr)
+int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr)
 {
-	struct bt_hci_cp_le_rem_dev_from_wl *cp;
+	struct bt_hci_cp_le_rem_dev_from_fal *cp;
 	struct net_buf *buf;
 	int err;
 
@@ -3692,7 +3706,7 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_WL, sizeof(*cp));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_FAL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3700,16 +3714,16 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->addr, addr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_WL, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_FAL, buf, NULL);
 	if (err) {
-		BT_ERR("Failed to remove device from whitelist");
+		BT_ERR("Failed to remove device from filter accept list");
 		return err;
 	}
 
 	return 0;
 }
 
-int bt_le_whitelist_clear(void)
+int bt_le_filter_accept_list_clear(void)
 {
 	int err;
 
@@ -3717,15 +3731,15 @@ int bt_le_whitelist_clear(void)
 		return -EAGAIN;
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_WL, NULL, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_FAL, NULL, NULL);
 	if (err) {
-		BT_ERR("Failed to clear whitelist");
+		BT_ERR("Failed to clear filter accept list");
 		return err;
 	}
 
 	return 0;
 }
-#endif /* defined(CONFIG_BT_WHITELIST) */
+#endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 int bt_le_set_chan_map(uint8_t chan_map[5])
 {
@@ -3786,4 +3800,41 @@ void bt_data_parse(struct net_buf_simple *ad,
 
 		net_buf_simple_pull(ad, len - 1);
 	}
+}
+
+int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
+			   const uint8_t *vs_config)
+{
+	struct bt_hci_rp_configure_data_path *rp;
+	struct bt_hci_cp_configure_data_path *cp;
+	struct net_buf *rsp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONFIGURE_DATA_PATH, sizeof(*cp) +
+				vs_config_len);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->data_path_dir = dir;
+	cp->data_path_id  = id;
+	cp->vs_config_len = vs_config_len;
+	if (vs_config_len) {
+		(void)memcpy(cp->vs_config, vs_config, vs_config_len);
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONFIGURE_DATA_PATH, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	if (rp->status) {
+		err = -EIO;
+	}
+	net_buf_unref(rsp);
+
+	return err;
 }

@@ -274,7 +274,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
 
-	mbedtls_sha1_ret((const unsigned char *)&rnd_value, sizeof(rnd_value),
+	mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value),
 			 sec_accept_key);
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
@@ -338,7 +338,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-	mbedtls_sha1_ret(key_accept, olen + key_len, sec_accept_key);
+	mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {

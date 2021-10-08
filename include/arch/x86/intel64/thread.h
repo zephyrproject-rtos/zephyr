@@ -36,7 +36,12 @@
 
 #define X86_FXSAVE_SIZE		512	/* size and alignment of buffer ... */
 #define X86_FXSAVE_ALIGN	16	/* ... for FXSAVE/FXRSTOR ops */
-#define X86_MXCSR_SANE		0x1dc0	/* enable division-by-zero exception */
+
+/* MXCSR Control and Status Register for SIMD floating-point operations.
+ * Set default value 1F80H according to the Intel(R) 64 and IA-32 Manual.
+ * Disable denormals-are-zeros mode.
+ */
+#define X86_MXCSR_SANE		0x1f80
 
 #ifndef _ASMLANGUAGE
 

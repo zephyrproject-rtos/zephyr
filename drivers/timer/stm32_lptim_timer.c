@@ -83,8 +83,13 @@ int sys_clock_driver_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* enable LPTIM clock source */
+#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
+#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
+	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
+	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
+#endif
 
 #if defined(CONFIG_STM32_LPTIM_CLOCK_LSI)
 	/* enable LSI clock */
@@ -137,28 +142,51 @@ int sys_clock_driver_init(const struct device *dev)
 	LL_LPTIM_SetClockSource(LPTIM1, LL_LPTIM_CLK_SOURCE_INTERNAL);
 	/* configure the LPTIM1 prescaler with 1 */
 	LL_LPTIM_SetPrescaler(LPTIM1, LL_LPTIM_PRESCALER_DIV1);
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	LL_LPTIM_OC_SetPolarity(LPTIM1, LL_LPTIM_CHANNEL_CH1,
+				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+#else
 	LL_LPTIM_SetPolarity(LPTIM1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+#endif
 	LL_LPTIM_SetUpdateMode(LPTIM1, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
 	LL_LPTIM_SetCounterMode(LPTIM1, LL_LPTIM_COUNTER_MODE_INTERNAL);
 	LL_LPTIM_DisableTimeout(LPTIM1);
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM1);
 
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	/* Enable the LPTIM1 before proceeding with configuration */
+	LL_LPTIM_Enable(LPTIM1);
+
+	LL_LPTIM_DisableIT_CC1(LPTIM1);
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM1) == 0) {
+	}
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM1);
+	LL_LPTIM_ClearFLAG_CC1(LPTIM1);
+#else
 	/* LPTIM1 interrupt set-up before enabling */
 	/* no Compare match Interrupt */
 	LL_LPTIM_DisableIT_CMPM(LPTIM1);
 	LL_LPTIM_ClearFLAG_CMPM(LPTIM1);
+#endif
 
 	/* Autoreload match Interrupt */
 	LL_LPTIM_EnableIT_ARRM(LPTIM1);
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM1) == 0) {
+	}
+	LL_LPTIM_ClearFlag_DIEROK(LPTIM1);
+#endif
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 	/* ARROK bit validates the write operation to ARR register */
 	LL_LPTIM_ClearFlag_ARROK(LPTIM1);
 
 	accumulated_lptim_cnt = 0;
 
+#ifndef CONFIG_SOC_SERIES_STM32U5X
 	/* Enable the LPTIM1 counter */
 	LL_LPTIM_Enable(LPTIM1);
+#endif
 
 	/* Set the Autoreload value once the timer is enabled */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -175,7 +203,12 @@ int sys_clock_driver_init(const struct device *dev)
 
 #ifdef CONFIG_DEBUG
 	/* stop LPTIM1 during DEBUG */
+#if defined(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP)
 	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_LPTIM1_STOP);
+#elif defined(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP)
+	LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_LPTIM1_STOP);
+#endif
+
 #endif
 	return 0;
 }
@@ -210,14 +243,24 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	if (ticks == K_TICKS_FOREVER) {
 		/* disable LPTIM clock to avoid counting */
+#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
+#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
+		LL_APB3_GRP1_DisableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
+#endif
 		return;
 	}
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
+#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
 	if (!LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_LPTIM1)) {
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
 	}
+#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
+	if (!LL_APB3_GRP1_IsEnabledClock(LL_APB3_GRP1_PERIPH_LPTIM1)) {
+		LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_LPTIM1);
+	}
+#endif
 
 	/* passing ticks==1 means "announce the next tick",
 	 * ticks value of zero (or even negative) is legal and

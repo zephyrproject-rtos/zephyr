@@ -37,7 +37,7 @@ manifest:
       groups:
         - hal
     - name: edtt
-      revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
+      revision: 31badfbbd04f2948e3df6ebf329f930317550961
       path: tools/edtt
       groups:
         - tools
@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 22d8246a520d2cf1ca6ba2e690471913cc00482a
+      revision: 051266aafbd966825bad1d9b5ab98e8bed45b918
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: c7bb88ec3240f1f44b1aafd2831b1472ca99b1d8
+      revision: 78efc4ba7c1057c1cf2bf06e3e27ed7cc33e1da7
       path: modules/hal/nxp
       groups:
         - hal
@@ -114,7 +114,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 2d95b36c57c3245e2d08714592790750c95a73af
+      revision: 5c8275071ec1cf160bfe8c18bbd9330a7d714dc8
       path: modules/hal/stm32
       groups:
         - hal
@@ -153,15 +153,15 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 5765cb7f75a9973ae9232d438e361a9d7bbc49e7
+      revision: 8c358faaaa09492c4c0d91d4a74806180cb8abd0
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: ca01db4216c63678768ea78fe04f27cd80b83246
+      revision: c61538748ead773ea75a551a7beee299228bdcaf
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 31a2aa9cea58d3ceecbf0d5b91361bff7c94aeca
+      revision: a7301143b3b46a8f7d410b12580a875cc1b6f8c8
       path: modules/lib/mcumgr
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -183,7 +183,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: 5d706547ebcb0a85e11412bcd88e80e2af98c74d
+      revision: fd1ab161f7d5cfd5d0120cd5d1797811e78ff918
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -206,16 +206,17 @@ manifest:
       groups:
         - crypto
     - name: TraceRecorderSource
-      revision: 5b5f8d7adbf0e93a09087e8f5708f0eebb8b25bf
+      revision: 36c577727642457b0db7274298a4b96558374832
       path: modules/debug/TraceRecorder
       groups:
         - debug
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
+      revision: 00d0e38cf89656b0f3ef8d1757109c0ea021a780
       groups:
         - tee
 
   self:
     path: zephyr
     west-commands: scripts/west-commands.yml
+    import: submanifests

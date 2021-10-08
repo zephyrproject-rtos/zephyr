@@ -13,12 +13,12 @@
 
 MEMORY
 {
-    DT_RESERVED_MEM_REGIONS()
+    LINKER_DT_RESERVED_MEM_REGIONS()
 }
 
 SECTIONS
 {
-    DT_RESERVED_MEM_SECTIONS()
+    LINKER_DT_RESERVED_MEM_SECTIONS()
 }
 
 #include <arch/arm64/scripts/linker.ld>

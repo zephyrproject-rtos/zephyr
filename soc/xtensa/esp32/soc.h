@@ -16,6 +16,9 @@
 #include <stdbool.h>
 #include <arch/xtensa/arch.h>
 
+#include <xtensa/core-macros.h>
+#include <esp32/clk.h>
+
 static inline void esp32_set_mask32(uint32_t v, uint32_t mem_addr)
 {
 	sys_write32(sys_read32(mem_addr) | v, mem_addr);

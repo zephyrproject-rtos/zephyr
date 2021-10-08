@@ -278,10 +278,9 @@ SECTIONS
 
 #include <linker/common-noinit.ld>
 
-    __data_region_start = .;
-
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
     {
+        __data_region_start = .;
         __data_start = .;
         *(.data)
         *(".data.*")

@@ -62,6 +62,10 @@
 	apb1-prescaler = <1>;
 };
 
+&pinctrl {
+	remap-pa11;
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	current-speed = <115200>;

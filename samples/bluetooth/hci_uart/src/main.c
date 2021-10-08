@@ -43,6 +43,7 @@ static K_FIFO_DEFINE(uart_tx_queue);
 #define H4_ACL 0x02
 #define H4_SCO 0x03
 #define H4_EVT 0x04
+#define H4_ISO 0x05
 
 /* Receiver states. */
 #define ST_IDLE 0	/* Waiting for packet type. */
@@ -70,22 +71,39 @@ static int h4_read(const struct device *uart, uint8_t *buf, size_t len)
 
 static bool valid_type(uint8_t type)
 {
-	return (type == H4_CMD) | (type == H4_ACL);
+	return (type == H4_CMD) | (type == H4_ACL) | (type == H4_ISO);
 }
 
-/* Function assumes that type is validated and only CMD or ACL will be used. */
+/* Function expects that type is validated and only CMD, ISO or ACL will be used. */
 static uint32_t get_len(const uint8_t *hdr_buf, uint8_t type)
 {
-	return (type == BT_BUF_CMD) ?
-		((const struct bt_hci_cmd_hdr *)hdr_buf)->param_len :
-		sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
+	switch (type) {
+	case H4_CMD:
+		return ((const struct bt_hci_cmd_hdr *)hdr_buf)->param_len;
+	case H4_ISO:
+		return sys_le16_to_cpu(((const struct bt_hci_iso_data_hdr *)hdr_buf)->slen);
+	case H4_ACL:
+		return sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
+	default:
+		LOG_ERR("Invalid type: %u", type);
+		return 0;
+	}
 }
 
-/* Function assumes that type is validated and only CMD or ACL will be used. */
+/* Function expects that type is validated and only CMD, ISO or ACL will be used. */
 static int hdr_len(uint8_t type)
 {
-	return (type == H4_CMD) ?
-		sizeof(struct bt_hci_cmd_hdr) : sizeof(struct bt_hci_acl_hdr);
+	switch (type) {
+	case H4_CMD:
+		return sizeof(struct bt_hci_cmd_hdr);
+	case H4_ISO:
+		return sizeof(struct bt_hci_iso_data_hdr);
+	case H4_ACL:
+		return sizeof(struct bt_hci_acl_hdr);
+	default:
+		LOG_ERR("Invalid type: %u", type);
+		return 0;
+	}
 }
 
 static void rx_isr(void)

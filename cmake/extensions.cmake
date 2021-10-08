@@ -565,6 +565,30 @@ function(zephyr_library_app_memory partition)
                "-l" $<TARGET_FILE_NAME:${ZEPHYR_CURRENT_LIBRARY}> "${partition}")
 endfunction()
 
+# Configure a Zephyr library specific property.
+#
+# Usage:
+#   zephyr_library_property(<property> <value>)
+#
+# Current Zephyr library specific properties that are supported:
+# ALLOW_EMPTY <TRUE:FALSE>: Allow a Zephyr library to be empty.
+#                           An empty Zephyr library will generate a CMake
+#                           configure time warning unless `ALLOW_EMPTY` is TRUE.
+function(zephyr_library_property)
+  set(single_args "ALLOW_EMPTY")
+  cmake_parse_arguments(LIB_PROP "" "${single_args}" "" ${ARGN})
+
+  if(LIB_PROP_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "zephyr_library_property(${ARGV0} ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
+  endif()
+
+  foreach(arg ${single_args})
+    if(DEFINED LIB_PROP_${arg})
+      set_property(TARGET ${ZEPHYR_CURRENT_LIBRARY} PROPERTY ${arg} ${LIB_PROP_${arg}})
+    endif()
+  endforeach()
+endfunction()
+
 # 1.2.1 zephyr_interface_library_*
 #
 # A Zephyr interface library is a thin wrapper over a CMake INTERFACE
@@ -790,8 +814,11 @@ function(board_finalize_runner_args runner)
     # Default arguments from the common runner file come first.
     ${ARGN}
     # Arguments explicitly given with board_runner_args() come
-    # last, so they take precedence.
+    # next, so they take precedence over the common runner file.
     ${explicit}
+    # Arguments given via the CMake cache come last of all. Users
+    # can provide variables in this way from the CMake command line.
+    ${BOARD_RUNNER_ARGS_${runner_id}}
     )
 
   # Add the finalized runner to the global property list.
@@ -1769,30 +1796,35 @@ endfunction()
 # The argument 'include_files' is an output parameter with the result
 # of parsing the include files.
 function(toolchain_parse_make_rule input_file include_files)
-  file(READ ${input_file} input)
+  file(STRINGS ${input_file} input)
 
   # The file is formatted like this:
   # empty_file.o: misc/empty_file.c \
   # nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts \
   # nrf52840_qiaa.dtsi
 
-  # Get rid of the backslashes
-  string(REPLACE "\\" ";" input_as_list ${input})
+  # The dep file will contain `\` for line continuation.
+  # This results in `\;` which is then treated a the char `;` instead of
+  # the element separator, so let's get the pure `;` back.
+  string(REPLACE "\;" ";" input_as_list ${input})
 
   # Pop the first line and treat it specially
-  list(GET input_as_list 0 first_input_line)
+  list(POP_FRONT input_as_list first_input_line)
   string(FIND ${first_input_line} ": " index)
   math(EXPR j "${index} + 2")
   string(SUBSTRING ${first_input_line} ${j} -1 first_include_file)
-  list(REMOVE_AT input_as_list 0)
 
-  list(APPEND result ${first_include_file})
+  # Remove whitespace before and after filename and convert to CMake path.
+  string(STRIP "${first_include_file}" first_include_file)
+  file(TO_CMAKE_PATH "${first_include_file}" first_include_file)
+  set(result "${first_include_file}")
 
-  # Add the other lines
-  list(APPEND result ${input_as_list})
-
-  # Strip away the newlines and whitespaces
-  list(TRANSFORM result STRIP)
+  # Remove whitespace before and after filename and convert to CMake path.
+  foreach(file ${input_as_list})
+    string(STRIP "${file}" file)
+    file(TO_CMAKE_PATH "${file}" file)
+    list(APPEND result "${file}")
+  endforeach()
 
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
@@ -3051,8 +3083,8 @@ function(zephyr_linker_dts_memory)
 endfunction()
 
 # Usage:
-#   zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>])
-#   zephyr_linker_group(NAME <name> GROUP <group>)
+#   zephyr_linker_group(NAME <name> [VMA <region|group>] [LMA <region|group>] [SYMBOL <SECTION>])
+#   zephyr_linker_group(NAME <name> GROUP <group> [SYMBOL <SECTION>])
 #
 # Zephyr linker group.
 # This function specifies a group inside a memory region or another group.
@@ -3076,6 +3108,8 @@ endfunction()
 #                       If a group is used then the VMA region of that group will be used.
 # LMA <region|group>  : Memory region or group to be used for this group.
 # GROUP <group>       : Place the new group inside the existing group <group>
+# SYMBOL <SECTION>    : Specify that start symbol of the region should be identical
+#                       to the start address of the first section in the group.
 #
 # Note: VMA and LMA are mutual exclusive with GROUP
 #
@@ -3121,7 +3155,8 @@ endfunction()
 # |                     |
 # +---------------------+
 function(zephyr_linker_group)
-  set(single_args "NAME;GROUP;LMA;VMA")
+  set(single_args "NAME;GROUP;LMA;SYMBOL;VMA")
+  set(symbol_values SECTION)
   cmake_parse_arguments(GROUP "" "${single_args}" "" ${ARGN})
 
   if(GROUP_UNPARSED_ARGUMENTS)
@@ -3134,6 +3169,12 @@ function(zephyr_linker_group)
     message(FATAL_ERROR "zephyr_linker_group(GROUP ...) cannot be used with "
                         "VMA or LMA"
     )
+  endif()
+
+  if(DEFINED GROUP_SYMBOL)
+    if(NOT ${GROUP_SYMBOL} IN_LIST symbol_values)
+      message(FATAL_ERROR "zephyr_linker_group(SYMBOL ...) given unknown value")
+    endif()
   endif()
 
   set(GROUP)

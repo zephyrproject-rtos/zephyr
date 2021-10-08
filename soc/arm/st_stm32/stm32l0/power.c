@@ -15,6 +15,7 @@
 #include <stm32l0xx_ll_rcc.h>
 #include <stm32l0xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -88,6 +89,7 @@ static int stm32_power_init(const struct device *dev)
 	/* Enable the Debug Module during STOP mode */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 	LL_DBGMCU_EnableDBGStopMode();
+	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #endif /* CONFIG_DEBUG */
 
 	return 0;

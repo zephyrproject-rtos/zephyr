@@ -51,21 +51,19 @@ On Linux and macOS:
 .. code-block:: console
 
    export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-   export ESPRESSIF_TOOLCHAIN_PATH="${HOME}/.espressif/tools/riscv32-esp-elf/1.24.0.123_64eb9ff-8.4.0/riscv32-esp-elf"
+   export ESPRESSIF_TOOLCHAIN_PATH="${HOME}/.espressif/tools/zephyr"
 
 On Windows:
 
 .. code-block:: console
 
   # on CMD:
-  set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\riscv32-esp-elf\1.24.0.123_64eb9ff-8.4.0\riscv32-esp-elf
+  set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\zephyr
   set ZEPHYR_TOOLCHAIN_VARIANT=espressif
-  set PATH=%PATH%;%ESPRESSIF_TOOLCHAIN_PATH%\bin
 
   # on PowerShell
-  $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\riscv32-esp-elf\1.24.0.123_64eb9ff-8.4.0\riscv32-esp-elf"
+  $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\zephyr"
   $env:ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-  $env:Path += "$env:ESPRESSIF_TOOLCHAIN_PATH\bin"
 
 Finally, retrieve required submodules to build this port. This might take a while for the first time:
 

@@ -205,19 +205,24 @@ static int sht3xd_init(const struct device *dev)
 	return 0;
 }
 
-struct sht3xd_data sht3xd0_driver;
-static const struct sht3xd_config sht3xd0_cfg = {
-	.bus = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_gpio_name = DT_INST_GPIO_LABEL(0, alert_gpios),
+#define SHT3XD_TRIGGER_INIT(inst)						\
+	.alert_gpio_name = DT_INST_GPIO_LABEL(inst, alert_gpios),		\
+	.alert_pin = DT_INST_GPIO_PIN(inst, alert_gpios),			\
+	.alert_flags = DT_INST_GPIO_FLAGS(inst, alert_gpios),
+#else
+#define SHT3XD_TRIGGER_INIT(inst)
 #endif
-#ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_pin = DT_INST_GPIO_PIN(0, alert_gpios),
-	.alert_flags = DT_INST_GPIO_FLAGS(0, alert_gpios),
-#endif
-};
 
-DEVICE_DT_INST_DEFINE(0, sht3xd_init, NULL,
-		      &sht3xd0_driver, &sht3xd0_cfg,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &sht3xd_driver_api);
+#define SHT3XD_DEFINE(inst)							\
+	struct sht3xd_data sht3xd0_data_##inst;					\
+	static const struct sht3xd_config sht3xd0_cfg_##inst = {		\
+		.bus = I2C_DT_SPEC_INST_GET(inst),				\
+		SHT3XD_TRIGGER_INIT(inst)					\
+	};									\
+	DEVICE_DT_INST_DEFINE(inst, sht3xd_init, NULL,				\
+		&sht3xd0_data_##inst, &sht3xd0_cfg_##inst,			\
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+		&sht3xd_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SHT3XD_DEFINE)

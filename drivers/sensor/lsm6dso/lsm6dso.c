@@ -753,6 +753,12 @@ static int lsm6dso_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
+	/* I3C disable stay preserved after s/w reset */
+	if (lsm6dso_i3c_disable_set(ctx, LSM6DSO_I3C_DISABLE) < 0) {
+		LOG_DBG("Failed to disable I3C");
+		return -EIO;
+	}
+
 	/* reset device */
 	if (lsm6dso_reset_set(ctx, 1) < 0) {
 		return -EIO;

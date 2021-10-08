@@ -23,9 +23,9 @@
  */
 #define _MLIBC_RESTRICT
 
-__syscall int z_zephyr_read_stdin(char *buf, int nbytes);
+__syscall int zephyr_read_stdin(char *buf, int nbytes);
 
-__syscall int z_zephyr_write_stdout(const void *buf, int nbytes);
+__syscall int zephyr_write_stdout(const void *buf, int nbytes);
 
 #else
 /* Minimal libc */

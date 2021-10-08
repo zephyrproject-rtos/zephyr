@@ -537,33 +537,6 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	return len;
 }
 
-static size_t put_float64fix(struct lwm2m_output_context *out,
-			     struct lwm2m_obj_path *path,
-			     float64_value_t *value)
-{
-	struct tlv_out_formatter_data *fd;
-	size_t len;
-	struct oma_tlv tlv;
-	uint8_t b64[8];
-	int ret;
-
-	fd = engine_get_out_user_data(out);
-	if (!fd) {
-		return 0;
-	}
-
-	ret = lwm2m_f64_to_b64(value, b64, sizeof(b64));
-	if (ret < 0) {
-		LOG_ERR("float64 conversion error: %d", ret);
-		return 0;
-	}
-
-	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
-		  tlv_calc_id(fd->writer_flags, path), sizeof(b64));
-	len = oma_tlv_put(&tlv, out, b64, false);
-	return len;
-}
-
 static size_t put_bool(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path, bool value)
 {
@@ -679,16 +652,16 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
-	uint8_t b32[4];
+	uint8_t buf[8];
 	int ret;
 
 	if (size > 0) {
-		if (tlv.length != 4U) {
-			LOG_ERR("Invalid float32 length: %d", tlv.length);
+		if (tlv.length != 4U && tlv.length != 8U) {
+			LOG_ERR("Invalid float length: %d", tlv.length);
 
 			/* dummy read */
 			while (tlv.length--) {
-				if (buf_read_u8(b32,
+				if (buf_read_u8(buf,
 						CPKT_BUF_READ(in->in_cpkt),
 						&in->offset) < 0) {
 					break;
@@ -699,56 +672,21 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 		}
 
 		/* read b32 in network byte order */
-		if (buf_read(b32, tlv.length, CPKT_BUF_READ(in->in_cpkt),
+		if (buf_read(buf, tlv.length, CPKT_BUF_READ(in->in_cpkt),
 			     &in->offset) < 0) {
 			/* TODO: Generate error? */
 			return 0;
 		}
 
-		ret = lwm2m_b32_to_f32(b32, sizeof(b32), value);
+		if (tlv.length == 4U) {
+			ret = lwm2m_b32_to_f32(buf, 4, value);
+		} else {
+			ret = lwm2m_b64_to_f32(buf, 8, value);
+		}
+
 		if (ret < 0) {
-			LOG_ERR("binary32 conversion error: %d", ret);
-			return 0;
-		}
-	}
-
-	return size;
-}
-
-static size_t get_float64fix(struct lwm2m_input_context *in,
-			     float64_value_t *value)
-{
-	struct oma_tlv tlv;
-	size_t size = oma_tlv_get(&tlv, in, false);
-	uint8_t b64[8];
-	int ret;
-
-	if (size > 0) {
-		if (tlv.length != 8U) {
-			LOG_ERR("invalid float64 length: %d", tlv.length);
-
-			/* dummy read */
-			while (tlv.length--) {
-				if (buf_read_u8(b64,
-						CPKT_BUF_READ(in->in_cpkt),
-						&in->offset) < 0) {
-					break;
-				}
-			}
-
-			return 0;
-		}
-
-		/* read b64 in network byte order */
-		if (buf_read(b64, tlv.length, CPKT_BUF_READ(in->in_cpkt),
-			     &in->offset) < 0) {
-			/* TODO: Generate error? */
-			return 0;
-		}
-
-		ret = lwm2m_b64_to_f64(b64, sizeof(b64), value);
-		if (ret < 0) {
-			LOG_ERR("binary64 conversion error: %d", ret);
+			LOG_ERR("binary%s conversion error: %d",
+				tlv.length == 4U ? "32" : "64", ret);
 			return 0;
 		}
 	}
@@ -815,7 +753,6 @@ const struct lwm2m_writer oma_tlv_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float32fix = put_float32fix,
-	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
@@ -826,7 +763,6 @@ const struct lwm2m_reader oma_tlv_reader = {
 	.get_s64 = get_s64,
 	.get_string = get_string,
 	.get_float32fix = get_float32fix,
-	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,

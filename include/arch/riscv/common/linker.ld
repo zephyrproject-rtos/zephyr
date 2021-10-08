@@ -187,7 +187,23 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 	__rodata_region_end = .;
-	MPU_ALIGN(__rodata_region_end - __rom_region_start);
+
+	/* For non-XIP system, __rom_region_end symbol should be set to
+	 * the end of common ROMABLE_REGIONs (text and rodata) instead of
+	 * the linker script end, so it wouldn't mistakely contain
+	 * RAMABLE_REGION in it.
+	 */
+#ifndef CONFIG_XIP
+#ifdef CONFIG_RISCV_PMP
+	SECTION_PROLOGUE(rom_mpu_padding,,)
+	{
+		MPU_ALIGN(__rodata_region_end - __rom_region_start);
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_RISCV_PMP */
+
+	__rom_region_end = .;
+	__rom_region_size = __rom_region_end - __rom_region_start;
+#endif /* CONFIG_XIP */
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -229,12 +245,11 @@ SECTIONS
 #include <linker/common-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
-    __data_region_start = .;
-
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
+		 __data_region_start = .;
 		 __data_start = .;
 
 		 *(.data)
@@ -362,6 +377,11 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+/* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
+ * to set __rom_region_end symbol at the end of linker script and
+ * doesn't mistakely contain the RAMABLE_REGION in it.
+ */
+#ifdef CONFIG_XIP
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,(NOLOAD),)
 {
@@ -371,5 +391,6 @@ SECTION_PROLOGUE(.last_section,(NOLOAD),)
  * calculate this value here. */
 __rom_region_end = LOADADDR(.last_section);
 __rom_region_size = __rom_region_end - __rom_region_start;
+#endif
 
 }

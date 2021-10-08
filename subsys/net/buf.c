@@ -232,16 +232,16 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 {
 	uint64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_buf *buf;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(pool);
 
 	NET_BUF_DBG("%s():%d: pool %p size %zu", func, line, pool, size);
 
-	/* We need to lock interrupts temporarily to prevent race conditions
+	/* We need to prevent race conditions
 	 * when accessing pool->uninit_count.
 	 */
-	key = irq_lock();
+	key = k_spin_lock(&pool->lock);
 
 	/* If there are uninitialized buffers we're guaranteed to succeed
 	 * with the allocation one way or another.
@@ -256,19 +256,19 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 		if (pool->uninit_count < pool->buf_count) {
 			buf = k_lifo_get(&pool->free, K_NO_WAIT);
 			if (buf) {
-				irq_unlock(key);
+				k_spin_unlock(&pool->lock, key);
 				goto success;
 			}
 		}
 
 		uninit_count = pool->uninit_count--;
-		irq_unlock(key);
+		k_spin_unlock(&pool->lock, key);
 
 		buf = pool_get_uninit(pool, uninit_count);
 		goto success;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&pool->lock, key);
 
 #if defined(CONFIG_NET_BUF_LOG) && (CONFIG_NET_BUF_LOG_LEVEL >= LOG_LEVEL_WRN)
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
@@ -449,10 +449,12 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 	buf->data = buf->__buf + reserve;
 }
 
+static struct k_spinlock net_buf_slist_lock;
+
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 {
 	struct net_buf *tail;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(list);
 	__ASSERT_NO_MSG(buf);
@@ -461,40 +463,37 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 		tail->flags |= NET_BUF_FRAGS;
 	}
 
-	key = irq_lock();
+	key = k_spin_lock(&net_buf_slist_lock);
 	sys_slist_append_list(list, &buf->node, &tail->node);
-	irq_unlock(key);
+	k_spin_unlock(&net_buf_slist_lock, key);
 }
 
 struct net_buf *net_buf_slist_get(sys_slist_t *list)
 {
 	struct net_buf *buf, *frag;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(list);
 
-	key = irq_lock();
+	key = k_spin_lock(&net_buf_slist_lock);
+
 	buf = (void *)sys_slist_get(list);
-	irq_unlock(key);
 
-	if (!buf) {
-		return NULL;
+	if (buf) {
+		/* Get any fragments belonging to this buffer */
+		for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
+			frag->frags = (void *)sys_slist_get(list);
+			__ASSERT_NO_MSG(frag->frags);
+
+			/* The fragments flag is only for list-internal usage */
+			frag->flags &= ~NET_BUF_FRAGS;
+		}
+
+		/* Mark the end of the fragment list */
+		frag->frags = NULL;
 	}
 
-	/* Get any fragments belonging to this buffer */
-	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-		key = irq_lock();
-		frag->frags = (void *)sys_slist_get(list);
-		irq_unlock(key);
-
-		__ASSERT_NO_MSG(frag->frags);
-
-		/* The fragments flag is only for list-internal usage */
-		frag->flags &= ~NET_BUF_FRAGS;
-	}
-
-	/* Mark the end of the fragment list */
-	frag->frags = NULL;
+	k_spin_unlock(&net_buf_slist_lock, key);
 
 	return buf;
 }

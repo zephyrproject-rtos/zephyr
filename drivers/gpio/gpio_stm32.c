@@ -464,15 +464,10 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
 	/* Enable device clock before configuration (requires bank writes) */
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		err = pm_device_get(dev);
-		if (err < 0) {
-			return err;
-		}
+	err = pm_device_get(dev);
+	if (err < 0) {
+		return err;
 	}
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
@@ -697,7 +692,8 @@ GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
 
 
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_GPIO_STM32_SWJ_ENABLE)
 
 static int gpio_stm32_afio_init(const struct device *dev)
 {
@@ -721,6 +717,6 @@ static int gpio_stm32_afio_init(const struct device *dev)
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_2, 0);
+SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_1, 0);
 
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
+#endif /* CONFIG_SOC_SERIES_STM32F1X && !CONFIG_GPIO_STM32_SWJ_ENABLE */

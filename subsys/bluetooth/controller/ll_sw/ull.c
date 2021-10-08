@@ -57,7 +57,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
-#include "ull_master_internal.h"
+#include "ull_central_internal.h"
 #include "ull_conn_internal.h"
 #include "lll_conn_iso.h"
 #include "ull_conn_iso_types.h"
@@ -242,7 +242,7 @@
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 /* NOTE: When ticker job is disabled inside radio events then all advertising,
- *       scanning, and slave latency cancel ticker operations will be deferred,
+ *       scanning, and peripheral latency cancel ticker operations will be deferred,
  *       requiring increased ticker thread context operation queue count.
  */
 #define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
@@ -305,10 +305,31 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event FIFO: mfifo_done.
  * Queue of pointers to struct node_rx_event_done.
- * The actual backing behind these pointers is mem_done
+ * The actual backing behind these pointers is mem_done.
+ *
+ * When there are radio events with time reservations lower than the preemption
+ * timeout of 1.5 ms, the pipeline has to account for the maximum radio events
+ * that can be enqueued during the preempt timeout duration. All these enqueued
+ * events could be aborted in case of late scheduling, needing as many done
+ * event buffers.
+ *
+ * During continuous scanning, there can be 1 active radio event, 1 scan resume
+ * and 1 new scan prepare. If there are peripheral prepares in addition, and due
+ * to late scheduling all these will abort needing 4 done buffers.
+ *
+ * If there are additional peripheral prepares enqueued, which are apart by
+ * their time reservations, these are not yet late and hence no more additional
+ * done buffers are needed.
+ *
+ * If Extended Scanning is supported, then an additional auxiliary scan event's
+ * prepare could be enqueued in the pipeline during the preemption duration.
  */
 #if !defined(VENDOR_EVENT_DONE_MAX)
-#define EVENT_DONE_MAX 3
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#define EVENT_DONE_MAX 5
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
+#define EVENT_DONE_MAX 4
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
 #endif
@@ -619,8 +640,8 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-	/* reset whitelist, resolving list and initialise RPA timeout*/
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list, resolving list and initialise RPA timeout*/
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(true);
 	}
 
@@ -695,42 +716,6 @@ void ll_reset(void)
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_CONN)
-#if defined(CONFIG_BT_CENTRAL)
-	/* Reset initiator */
-	{
-		void *rx;
-
-		err = ll_connect_disable(&rx);
-		if (!err) {
-			struct ll_scan_set *scan;
-
-			scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
-
-			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-			    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-				struct ll_scan_set *scan_other;
-
-				scan_other = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
-				if (scan_other) {
-					if (scan) {
-						scan->is_enabled = 0U;
-						scan->lll.conn = NULL;
-					}
-
-					scan = scan_other;
-				}
-			}
-
-			LL_ASSERT(scan);
-
-			scan->is_enabled = 0U;
-			scan->lll.conn = NULL;
-		}
-
-		ARG_UNUSED(rx);
-	}
-#endif /* CONFIG_BT_CENTRAL */
-
 	/* Reset conn role */
 	err = ull_conn_reset();
 	LL_ASSERT(!err);
@@ -738,8 +723,8 @@ void ll_reset(void)
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
 
-	/* reset whitelist and resolving list */
-	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+	/* reset filter accept list and resolving list */
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)) {
 		ull_filter_reset(false);
 	}
 
@@ -1279,7 +1264,7 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_CENTRAL)
 			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-				ull_master_cleanup(rx_free);
+				ull_central_cleanup(rx_free);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
@@ -2407,6 +2392,14 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_scan_aux_release(link, rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	case NODE_RX_TYPE_SYNC:
+	{
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ull_sync_established_report(link, rx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 

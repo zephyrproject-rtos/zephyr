@@ -160,11 +160,11 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 	set_param->own_addr_type = own_addr_type;
 	set_param->phys = 0;
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
-		set_param->filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_FILTERED)) {
+		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
-		set_param->filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+		set_param->filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
 	}
 
 	if (phy_1m) {
@@ -209,11 +209,11 @@ static int start_le_scan_legacy(uint8_t scan_type, uint16_t interval, uint16_t w
 	set_param.interval = sys_cpu_to_le16(interval);
 	set_param.window = sys_cpu_to_le16(window);
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_WL)) {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_USE_WHITELIST;
+	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_FILTERED)) {
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
 	} else {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_NO_WHITELIST;
+		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
 	}
 
 	active_scan = scan_type == BT_HCI_LE_SCAN_ACTIVE;
@@ -535,6 +535,15 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		/* Convert "Legacy" property to Extended property. */
 		adv_info.adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
 
+		if (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type) ==
+		    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+			/* Handling of incomplete reports is currently not
+			 * handled in the host. The remaining advertising
+			 * reports may therefore contain partial data.
+			 */
+			BT_WARN("Incomplete adv report");
+		}
+
 		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
 
 		net_buf_pull(buf, evt->length);
@@ -629,6 +638,14 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
 
+	if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+		/* Handling of incomplete reports is currently not
+		 * handled in the host. The remaining advertising
+		 * reports may therefore contain partial data.
+		 */
+		BT_WARN("Incomplete per adv report");
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->recv) {
 			net_buf_simple_save(&buf->b, &state);
@@ -694,8 +711,10 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 	}
 
 	if (!pending_per_adv_sync ||
-	    pending_per_adv_sync->sid != evt->sid ||
-	    bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)) {
+	    (!atomic_test_bit(pending_per_adv_sync->flags,
+			      BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
+	     ((pending_per_adv_sync->sid != evt->sid) ||
+	      bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)))) {
 		struct bt_le_per_adv_sync_term_info term_info;
 
 		BT_ERR("Unexpected per adv sync established event");
@@ -935,7 +954,7 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 	}
 
 	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE |
-			       BT_LE_SCAN_OPT_FILTER_WHITELIST |
+			       BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
 			       BT_LE_SCAN_OPT_CODED |
 			       BT_LE_SCAN_OPT_NO_1M)) {
 		return false;
@@ -989,10 +1008,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP,
 			  param->options & BT_LE_SCAN_OPT_FILTER_DUPLICATE);
 
-#if defined(CONFIG_BT_WHITELIST)
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_WL,
-			  param->options & BT_LE_SCAN_OPT_FILTER_WHITELIST);
-#endif /* defined(CONFIG_BT_WHITELIST) */
+#if defined(CONFIG_BT_FILTER_ACCEPT_LIST)
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTERED,
+			  param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
+#endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
@@ -1161,6 +1180,9 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	bt_addr_le_copy(&cp->addr, &param->addr);
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
+		atomic_set_bit(per_adv_sync->flags,
+			       BT_PER_ADV_SYNC_SYNCING_USE_LIST);
+
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	}
 

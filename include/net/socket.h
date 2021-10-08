@@ -880,12 +880,14 @@ struct net_socket_register {
 	int (*handler)(int family, int type, int proto);
 };
 
-#define NET_SOCKET_GET_NAME(socket_name)	\
-	(__net_socket_register_##socket_name)
+#define NET_SOCKET_DEFAULT_PRIO CONFIG_NET_SOCKETS_PRIORITY_DEFAULT
 
-#define NET_SOCKET_REGISTER(socket_name, _family, _is_supported, _handler) \
+#define NET_SOCKET_GET_NAME(socket_name, prio)	\
+	(__net_socket_register_##prio##_##socket_name)
+
+#define NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
-			NET_SOCKET_GET_NAME(socket_name)) = {		\
+			NET_SOCKET_GET_NAME(socket_name, prio)) = {		\
 		.family = _family,					\
 		.is_supported = _is_supported,				\
 		.handler = _handler,					\

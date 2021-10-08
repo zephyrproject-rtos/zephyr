@@ -1285,7 +1285,8 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	ctx_ccm.rx_pkt_out = (struct pdu_data *)pkt;
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the
+	 * peripheral
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
@@ -1383,7 +1384,8 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	memcpy(key_local, ccm->key, sizeof(key_local));
 	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
 	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
-	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 * the central and set to 0 for Data Physical Chan PDUs sent by the
+	 * peripheral
 	 */
 	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
 	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */

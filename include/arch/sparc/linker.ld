@@ -68,7 +68,6 @@ SECTIONS
     __rom_region_end = .;
 
     __data_region_load_start = .;
-    __data_region_start = .;
 
 
     SECTION_PROLOGUE(.plt,,)
@@ -85,6 +84,7 @@ SECTIONS
 	{
 		 . = ALIGN(8);
 		 _image_ram_start = .;
+		 __data_region_start = .;
 		 __data_start = .;
 
 		 *(.data)

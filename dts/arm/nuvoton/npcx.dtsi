@@ -101,6 +101,18 @@
 			label = "SCFG";
 		};
 
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+
 		miwu0: miwu@400bb000 {
 			compatible = "nuvoton,npcx-miwu";
 			reg = <0x400bb000 0x2000>;
@@ -425,6 +437,7 @@
 			interrupts = <13 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			label = "I2CCTRL_0";
+			status = "disabled";
 		};
 
 		i2c_ctrl1: i2c@4000b000 {
@@ -433,6 +446,7 @@
 			interrupts = <14 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			label = "I2CCTRL_1";
+			status = "disabled";
 		};
 
 		i2c_ctrl2: i2c@400c0000 {
@@ -441,6 +455,7 @@
 			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
 			label = "I2CCTRL_2";
+			status = "disabled";
 		};
 
 		i2c_ctrl3: i2c@400c2000 {
@@ -449,6 +464,7 @@
 			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
 			label = "I2CCTRL_3";
+			status = "disabled";
 		};
 
 		i2c_ctrl4: i2c@40008000 {
@@ -457,6 +473,7 @@
 			interrupts = <19 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			label = "I2CCTRL_4";
+			status = "disabled";
 		};
 
 		i2c_ctrl5: i2c@40017000 {
@@ -465,6 +482,7 @@
 			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
 			label = "I2CCTRL_5";
+			status = "disabled";
 		};
 
 		i2c_ctrl6: i2c@40018000 {
@@ -473,6 +491,7 @@
 			interrupts = <16 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
 			label = "I2CCTRL_6";
+			status = "disabled";
 		};
 
 		i2c_ctrl7: i2c@40019000 {
@@ -481,6 +500,7 @@
 			interrupts = <8 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
 			label = "I2CCTRL_7";
+			status = "disabled";
 		};
 
 		tach1: tach@400e1000 {

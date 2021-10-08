@@ -62,6 +62,7 @@ struct lll_scan_aux {
 
 	uint8_t chan:6;
 	uint8_t state:1;
+	uint8_t is_chain_sched:1;
 
 	uint8_t phy:3;
 

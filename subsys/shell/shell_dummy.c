@@ -101,7 +101,9 @@ const struct shell_transport_api shell_dummy_transport_api = {
 static int enable_shell_dummy(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	shell_init(&shell_dummy, NULL, true, true, LOG_LEVEL_INF);
+	static const struct shell_backend_config_flags cfg_flags =
+					SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
+	shell_init(&shell_dummy, NULL, cfg_flags, true, LOG_LEVEL_INF);
 	return 0;
 }
 SYS_INIT(enable_shell_dummy, POST_KERNEL, 0);

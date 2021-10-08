@@ -44,8 +44,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* resource state */
 struct ipso_buzzer_data {
 	float32_value_t level;
-	float64_value_t delay_duration;
-	float64_value_t min_off_time;
+	float32_value_t delay_duration;
+	float32_value_t min_off_time;
 
 	uint64_t trigger_offset;
 
@@ -61,9 +61,9 @@ static struct ipso_buzzer_data buzzer_data[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_obj buzzer;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(ON_OFF_RID, RW, BOOL),
-	OBJ_FIELD_DATA(LEVEL_RID, RW_OPT, FLOAT32),
-	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW_OPT, FLOAT64),
-	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW, FLOAT64),
+	OBJ_FIELD_DATA(LEVEL_RID, RW_OPT, FLOAT),
+	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW_OPT, FLOAT),
+	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW, FLOAT),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 	/* This field is actually not in the spec, so nothing sets it except
 	 * here users can listen for post_write events to it for buzzer on/off
@@ -72,7 +72,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
 #if defined(CONFIG_LWM2M_IPSO_BUZZER_VERSION_1_1)
 	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
-	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT),
 #endif
 };
 
@@ -81,10 +81,10 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][BUZZER_MAX_ID];
 static struct lwm2m_engine_res_inst
 		res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int float2ms(float64_value_t *f, uint32_t *ms)
+static int float2ms(float32_value_t *f, uint32_t *ms)
 {
 	*ms = f->val1 * MSEC_PER_SEC;
-	*ms += f->val2 / (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
+	*ms += f->val2 / (LWM2M_FLOAT32_DEC_MAX / MSEC_PER_SEC);
 
 	return 0;
 }

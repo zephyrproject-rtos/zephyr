@@ -11,8 +11,8 @@
 #define BIG_TERMINATE_TIMEOUT 60 /* seconds */
 
 #define BIS_ISO_CHAN_COUNT 1
-#define ISO_MTU (BT_ISO_CHAN_SEND_RESERVE + sizeof(uint32_t))
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT, ISO_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
 static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
@@ -36,7 +36,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = 502, /* bytes */
+	.sdu = sizeof(uint32_t), /* bytes */
 	.rtn = 2,
 	.phy = BT_GAP_LE_PHY_2M,
 };

@@ -108,6 +108,8 @@ void common_release_adv_set(struct ll_adv_set *adv_set)
 		if (sync) {
 			sync->is_started = 0U;
 		}
+
+		lll_adv_data_reset(&sync->lll.data);
 	}
 	adv_set->lll.sync = NULL;
 	if (adv_set->df_cfg->is_enabled) {
@@ -141,8 +143,8 @@ void common_create_per_adv_chain(struct ll_adv_set *adv_set, uint8_t pdu_count)
 	pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 	ull_adv_sync_pdu_init(pdu, 0);
 
-	err = ull_adv_sync_pdu_alloc(adv_set, 0, 0, NULL, &pdu_prev, &pdu, &extra_data_prev,
-				     &extra_data, &pdu_idx);
+	err = ull_adv_sync_pdu_alloc(adv_set, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev,
+				     &pdu, &extra_data_prev, &extra_data, &pdu_idx);
 	zassert_equal(err, 0, "Unexpected error while PDU allocation, err: %d", err);
 
 	if (extra_data) {
@@ -196,8 +198,14 @@ void common_release_per_adv_chain(struct ll_adv_set *adv_set)
 
 	lll_sync = adv_set->lll.sync;
 	pdu = lll_adv_sync_data_peek(lll_sync, NULL);
+	if (pdu != NULL) {
+		lll_adv_pdu_linked_release_all(pdu);
+	}
 
-	lll_adv_pdu_linked_release_all(pdu);
+	pdu = (void *)lll_sync->data.pdu[lll_sync->data.first];
+	if (pdu != NULL) {
+		lll_adv_pdu_linked_release_all(pdu);
+	}
 }
 
 /*
@@ -443,6 +451,17 @@ void common_validate_chain_with_cte(struct ll_adv_set *adv, uint8_t cte_count,
 	}
 }
 
+/*
+ * @brief Helper function to cleanup after test case end.
+ *
+ * @param adv               Pointer to advertising set
+ */
+void common_teardown(struct ll_adv_set *adv)
+{
+	common_release_per_adv_chain(adv);
+	common_release_adv_set(adv);
+	lll_adv_init();
+}
 /*
  * @brief Helper function to add payload data to extended advertising PDU.
  *

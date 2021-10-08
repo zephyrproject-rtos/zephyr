@@ -139,28 +139,11 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 
 	struct uart_sam0_dev_data *const dev_data =
 		(struct uart_sam0_dev_data *const) arg;
-	const struct device *dev = dev_data->dev;
+	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
 
-	k_work_cancel_delayable(&dev_data->tx_timeout_work);
+	SercomUsart * const regs = cfg->regs;
 
-	int key = irq_lock();
-
-	struct uart_event evt = {
-		.type = UART_TX_DONE,
-		.data.tx = {
-			.buf = dev_data->tx_buf,
-			.len = dev_data->tx_len,
-		},
-	};
-
-	dev_data->tx_buf = NULL;
-	dev_data->tx_len = 0U;
-
-	if (evt.data.tx.len != 0U && dev_data->async_cb) {
-		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-	}
-
-	irq_unlock(key);
+	regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
 }
 
 static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
@@ -672,6 +655,47 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 	usart->DATA.reg = c;
 }
 
+static int uart_sam0_err_check(const struct device *dev)
+{
+	SercomUsart * const regs = DEV_CFG(dev)->regs;
+	uint32_t err = 0U;
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_FERR) {
+		err |= UART_ERROR_PARITY;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_PERR) {
+		err |= UART_ERROR_FRAMING;
+	}
+
+#if defined(SERCOM_REV500)
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_ISF) {
+		err |= UART_BREAK;
+	}
+
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
+		err |= UART_ERROR_COLLISION;
+	}
+
+	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
+			 |	SERCOM_USART_STATUS_FERR
+			 |	SERCOM_USART_STATUS_PERR
+			 |	SERCOM_USART_STATUS_COLL
+			 |	SERCOM_USART_STATUS_ISF;
+#else
+	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
+			 |	SERCOM_USART_STATUS_FERR
+			 |	SERCOM_USART_STATUS_PERR;
+#endif
+
+	wait_synchronization(regs);
+	return err;
+}
+
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 
 static void uart_sam0_isr(const struct device *dev)
@@ -687,6 +711,31 @@ static void uart_sam0_isr(const struct device *dev)
 #if CONFIG_UART_ASYNC_API
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
 	SercomUsart * const regs = cfg->regs;
+
+	if (dev_data->tx_len && regs->INTFLAG.bit.TXC) {
+		regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
+
+		k_work_cancel_delayable(&dev_data->tx_timeout_work);
+
+		int key = irq_lock();
+
+		struct uart_event evt = {
+			.type = UART_TX_DONE,
+			.data.tx = {
+				.buf = dev_data->tx_buf,
+				.len = dev_data->tx_len,
+			},
+		};
+
+		dev_data->tx_buf = NULL;
+		dev_data->tx_len = 0U;
+
+		if (evt.data.tx.len != 0U && dev_data->async_cb) {
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+		}
+
+		irq_unlock(key);
+	}
 
 	if (dev_data->rx_len && regs->INTFLAG.bit.RXC &&
 	    dev_data->rx_waiting_for_irq) {
@@ -834,47 +883,6 @@ static int uart_sam0_irq_update(const struct device *dev)
 	regs->INTFLAG.reg |=	SERCOM_USART_INTENCLR_RXS;
 #endif
 	return 1;
-}
-
-static int uart_sam0_err_check(const struct device *dev)
-{
-	SercomUsart * const regs = DEV_CFG(dev)->regs;
-	uint32_t err = 0U;
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) {
-		err |= UART_ERROR_OVERRUN;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_FERR) {
-		err |= UART_ERROR_PARITY;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_PERR) {
-		err |= UART_ERROR_FRAMING;
-	}
-
-#if defined(SERCOM_REV500)
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_ISF) {
-		err |= UART_BREAK;
-	}
-
-	if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
-		err |= UART_ERROR_COLLISION;
-	}
-
-	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
-			 |	SERCOM_USART_STATUS_FERR
-			 |	SERCOM_USART_STATUS_PERR
-			 |	SERCOM_USART_STATUS_COLL
-			 |	SERCOM_USART_STATUS_ISF;
-#else
-	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
-			 |	SERCOM_USART_STATUS_FERR
-			 |	SERCOM_USART_STATUS_PERR;
-#endif
-
-	wait_synchronization(regs);
-	return err;
 }
 
 static void uart_sam0_irq_callback_set(const struct device *dev,

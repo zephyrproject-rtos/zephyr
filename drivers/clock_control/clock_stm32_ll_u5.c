@@ -30,18 +30,6 @@
 #define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
 #define apb3_prescaler(v) z_apb3_prescaler(v)
 
-
-#if STM32_AHB_PRESCALER > 1
-/*
- * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
- * lower than SYSCLK frequency (actual core frequency).
- * Though, zephyr doesn't make a difference today between these two clocks.
- * So, changing this prescaler is not allowed until it is made possible to
- * use them independently in zephyr clock subsystem.
- */
-#error "AHB prescaler can't be higher than 1"
-#endif
-
 #if STM32_SYSCLK_SRC_PLL
 
 /**
@@ -335,6 +323,10 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 				     STM32_PLL_M_DIVISOR,
 				     STM32_PLL_N_MULTIPLIER,
 				     STM32_PLL_R_DIVISOR);
+
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 55) {
 		/*

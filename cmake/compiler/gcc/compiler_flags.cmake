@@ -120,6 +120,8 @@ if (NOT CONFIG_NEWLIB_LIBC AND
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
+set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx "-nostdinc++")
+
 # Required C++ flags when using gcc
 set_property(TARGET compiler-cpp PROPERTY required "-fcheck-new")
 

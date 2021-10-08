@@ -46,10 +46,10 @@ enum ipso_timer_mode {
 
 /* resource state */
 struct ipso_timer_data {
-	float64_value_t delay_duration;
-	float64_value_t remaining_time;
-	float64_value_t min_off_time;
-	float64_value_t cumulative_time;
+	float32_value_t delay_duration;
+	float32_value_t remaining_time;
+	float32_value_t min_off_time;
+	float32_value_t cumulative_time;
 
 	uint64_t trigger_offset;
 	uint32_t trigger_counter;
@@ -67,13 +67,13 @@ static struct ipso_timer_data timer_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj timer;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT64),
-	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT64),
-	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW_OPT, FLOAT64),
+	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT),
+	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT),
+	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW_OPT, FLOAT),
 	OBJ_FIELD_EXECUTE_OPT(TRIGGER_RID),
 	OBJ_FIELD_DATA(ON_OFF_RID, RW_OPT, BOOL),
 	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, RW_OPT, U32), /* TODO */
-	OBJ_FIELD_DATA(CUMULATIVE_TIME_RID, RW_OPT, FLOAT64),
+	OBJ_FIELD_DATA(CUMULATIVE_TIME_RID, RW_OPT, FLOAT),
 	OBJ_FIELD_DATA(DIGITAL_STATE_RID, R_OPT, BOOL),
 	OBJ_FIELD_DATA(COUNTER_RID, R_OPT, U32),
 	OBJ_FIELD_DATA(TIMER_MODE_RID, RW_OPT, U8),
@@ -85,18 +85,18 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][TIMER_MAX_ID];
 static struct lwm2m_engine_res_inst
 		res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int ms2float(uint32_t ms, float64_value_t *f)
+static int ms2float(uint32_t ms, float32_value_t *f)
 {
 	f->val1 = ms / MSEC_PER_SEC;
-	f->val2 = (ms % MSEC_PER_SEC) * (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
+	f->val2 = (ms % MSEC_PER_SEC) * (LWM2M_FLOAT32_DEC_MAX / MSEC_PER_SEC);
 
 	return 0;
 }
 
-static int float2ms(float64_value_t *f, uint32_t *ms)
+static int float2ms(float32_value_t *f, uint32_t *ms)
 {
 	*ms = f->val1 * MSEC_PER_SEC;
-	*ms += f->val2 / (LWM2M_FLOAT64_DEC_MAX / MSEC_PER_SEC);
+	*ms += f->val2 / (LWM2M_FLOAT32_DEC_MAX / MSEC_PER_SEC);
 
 	return 0;
 }

@@ -271,7 +271,7 @@ config BT_DEBUG
 config BT_MONITOR
 	bool
 
-choice
+choice BT_DEBUG_TYPE
 	prompt "Bluetooth debug type"
 	default BT_DEBUG_NONE
 

@@ -2641,7 +2641,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 			priv->inserted = true;
 		} else {
 			priv->inserted = false;
-			ret = -ENODEV;
+			return -ENODEV;
 		}
 	} else {
 		ret = usdhc_cd_gpio_init(priv->detect_gpio,
@@ -2668,7 +2668,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		priv->inserted = true;
 		LOG_INF("SD inserted!");
 	}
-	return ret;
+	return 0;
 }
 
 static int usdhc_access_init(const struct device *dev)

@@ -58,11 +58,12 @@ function(get_parent)
 endfunction()
 
 function(create_group)
-  cmake_parse_arguments(OBJECT "" "GROUP;LMA;NAME;OBJECT;VMA" "" ${ARGN})
+  cmake_parse_arguments(OBJECT "" "GROUP;LMA;NAME;OBJECT;SYMBOL;VMA" "" ${ARGN})
 
   set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}          TRUE)
   set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_OBJ_TYPE GROUP)
   set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_NAME     ${OBJECT_NAME})
+  set_property(GLOBAL PROPERTY GROUP_${OBJECT_NAME}_SYMBOL   ${OBJECT_SYMBOL})
 
   if(DEFINED OBJECT_GROUP)
     find_object(OBJECT parent NAME ${OBJECT_GROUP})

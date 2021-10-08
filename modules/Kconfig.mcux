@@ -121,6 +121,11 @@ config HAS_MCUX_LPSPI
 	help
 	  Set if the low power SPI (LPSPI) module is present in the SoC.
 
+config HAS_MCUX_FLEXIO
+    bool
+    help
+      Set if the FlexIO module is present in the SoC.
+
 config HAS_MCUX_LPUART
 	bool
 	help
@@ -169,6 +174,12 @@ config HAS_MCUX_SIM
 	bool
 	help
 	  Set if the system integration module (SIM) module is present in the
+	  SoC.
+
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
 	  SoC.
 
 config HAS_MCUX_TRNG

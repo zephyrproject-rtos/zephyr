@@ -5,8 +5,8 @@
  */
 
 #include <stdint.h>
-
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
 
@@ -722,10 +722,8 @@ static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cf
 	cte_info.type = df_cfg->cte_type;
 	cte_info.time = df_cfg->cte_length;
 
-	/* Note: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	/* Note: ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS is just information that extra_data
 	 * is required in case of this ull_adv_sync_pdu_alloc.
-	 * Other flags here do not change anything. It may be changed to use
-	 * true/false flag for extra_data allocation.
 	 */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS, &pdu_prev, &pdu,
 				     NULL, &extra_data, ter_idx);
@@ -802,17 +800,17 @@ static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
  * advertising chain. If particular PDU is empty (holds cte_info only) it will be removed from
  * chain.
  *
- * @param lll_sync Pointer to periodic advertising sync object.
- * @param pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new PDU
- *                 payload.
- * @param pdu      Pointer to a new head of periodic advertising chain. The pointer may have
- *                 the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev was
- *                 already updated.
+ * @param[in] lll_sync     Pointer to periodic advertising sync object.
+ * @param[in-out] pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new
+ *                         PDU payload. Points to last PDU in a previous chain after return.
+ * @param[in-out] pdu      Pointer to a new head of periodic advertising chain. The pointer may have
+ *                         the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
+ *                         was already updated. Points to last PDU in a new chain after return.
  *
  * @return Zero in case of success, other value in case of failure.
  */
 static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
-					       struct pdu_adv *pdu_prev, struct pdu_adv *pdu)
+					       struct pdu_adv **pdu_prev, struct pdu_adv **pdu)
 {
 	struct pdu_adv *pdu_new, *pdu_chained;
 	uint8_t pdu_rem_field_flags;
@@ -826,28 +824,32 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 	 * new chain then. Reuse already allocated PDUs and allocate new ones only if the chain
 	 * was not updated yet.
 	 */
-	new_chain = (pdu_prev == pdu ? false : true);
+	new_chain = (*pdu_prev == *pdu ? false : true);
 
 	/* Get next PDU in a chain. Alway use pdu_prev because it points to actual
 	 * former chain.
 	 */
-	pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+	pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
 
 	/* Go through existing chain and remove CTE info. */
 	while (pdu_chained) {
 		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
 			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
-			lll_adv_pdu_linked_release_all(pdu_chained);
+			if (!new_chain) {
+				lll_adv_pdu_linked_release_all(pdu_chained);
+
+				/* Set new end of chain in PDUs linked list. If pdu differs from
+				 * prev_pdu then it is already end of a chain. If it doesn't differ,
+				 * then chain end is changed in right place by use of pdu_prev.
+				 * That makes sure there is no PDU released twice (here and when LLL
+				 * swaps PDU buffers).
+				 */
+				lll_adv_pdu_linked_append(NULL, *pdu_prev);
+			}
 			pdu_chained = NULL;
-			/* Set new end of chain in PDUs linked list. If pdu differs from prev_pdu
-			 * then it is alread end of a chain. If it doesn't differ, then chain end
-			 * is changed in rigth place by use of pdu_prev. That makes sure there
-			 * is no PDU released twice (here and when LLL swaps PDU buffers).
-			 */
-			lll_adv_pdu_linked_append(NULL, pdu_prev);
 		} else {
 			/* Update one before pdu_chained */
-			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
+			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
 							 pdu_rem_field_flags, NULL);
 			if (err != BT_HCI_ERR_SUCCESS) {
 				/* TODO: return here leaves periodic advertising chain in
@@ -861,17 +863,17 @@ static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
 			 */
 			if (new_chain) {
 				pdu_new = lll_adv_pdu_alloc_pdu_adv();
-				lll_adv_pdu_linked_append(pdu_new, pdu);
-				pdu = pdu_new;
+				lll_adv_pdu_linked_append(pdu_new, *pdu);
+				*pdu = pdu_new;
 			} else {
-				pdu = lll_adv_pdu_linked_next_get(pdu);
+				*pdu = lll_adv_pdu_linked_next_get(*pdu);
 			}
 
 			/* Move to next chained PDU (it moves through chain that is in use
 			 * by LLL or is new one with updated advertising payload).
 			 */
-			pdu_prev = pdu_chained;
-			pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+			*pdu_prev = pdu_chained;
+			pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
 		}
 	}
 
@@ -901,10 +903,8 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 
 	lll_sync = adv->lll.sync;
 
-	/* NOTE: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	/* NOTE: ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER is just information that extra_data
 	 * should be removed in case of this call ull_adv_sync_pdu_alloc.
-	 * Other flags here do not change anything. It may be changed to use
-	 * true/false flag for extra_data allocation.
 	 */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, ter_idx);
@@ -922,7 +922,7 @@ static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_
 	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
 
 #if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
-	err = rem_cte_info_from_per_adv_chain(lll_sync, pdu_prev, pdu);
+	err = rem_cte_info_from_per_adv_chain(lll_sync, &pdu_prev, &pdu);
 	if (err != BT_HCI_ERR_SUCCESS) {
 		return err;
 	}

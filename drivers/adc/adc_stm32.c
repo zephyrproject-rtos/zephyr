@@ -428,13 +428,24 @@ static int start_read(const struct device *dev,
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
+#ifdef CONFIG_SOC_SERIES_STM32L0X
+	/*
+	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
+	 * or enabled without conversion on going : disable it, it will stop
+	 */
+	LL_ADC_Disable(adc);
+	while (LL_ADC_IsEnabled(adc) == 1UL) {
+	}
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
+
 	switch (sequence->oversampling) {
 	case 0:
 		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_DISABLE);
@@ -513,8 +524,11 @@ static int start_read(const struct device *dev,
 		break;
 	default:
 		LOG_ERR("Invalid oversampling");
+		LL_ADC_Enable(adc);
 		return -EINVAL;
 	}
+	/* re-enable ADC after changing the OVS */
+	LL_ADC_Enable(adc);
 #else
 	if (sequence->oversampling) {
 		LOG_ERR("Oversampling not supported");

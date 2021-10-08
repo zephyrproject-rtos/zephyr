@@ -72,9 +72,8 @@ int ull_adv_aux_reset_finalize(void);
 /* Return the aux set handle given the aux set instance */
 uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
 
-/* Helper to read back random address */
-uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
-				       uint8_t *const addr);
+/* Helper function to apply Channel Map Update for auxiliary PDUs */
+uint8_t ull_adv_aux_chm_update(void);
 
 /* helper function to initialize event timings */
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux);

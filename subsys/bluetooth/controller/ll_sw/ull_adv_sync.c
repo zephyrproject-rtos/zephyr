@@ -59,8 +59,9 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 					 uint32_t ticks_offset,
 					 uint32_t start_us);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
@@ -510,7 +511,12 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO: Add Periodic Advertising ADI Support feature */
+	if (enable > 1U) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
@@ -902,7 +908,7 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 	 * If sync_info is part of ADV PDU the offs_adjust field
 	 * is always set to 0.
 	 */
-	si->offs_units = 0U;
+	si->offs_units = OFFS_UNIT_VALUE_30_US;
 	si->offs_adjust = 0U;
 	si->offs = 0U;
 
@@ -1544,7 +1550,7 @@ static void mfy_sync_offset_get(void *param)
 	 */
 	lll_sync->ticks_offset = ticks_to_expire + 1;
 
-	pdu = lll_adv_aux_data_curr_get(adv->lll.aux);
+	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
 	si = sync_info_get(pdu);
 	sync_info_offset_fill(si, ticks_to_expire, 0);
 	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
@@ -1609,15 +1615,16 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> 13)) {
 		si->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
-		si->offs_units = 1U;
+		si->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
 		si->offs = offs;
-		si->offs_units = 0U;
+		si->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_sync_prepare};

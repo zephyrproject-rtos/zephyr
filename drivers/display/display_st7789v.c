@@ -407,7 +407,7 @@ static int st7789v_pm_control(const struct device *dev,
 		st7789v_exit_sleep(data);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		ret = st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
+		st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -439,5 +439,5 @@ static struct st7789v_data st7789v_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &st7789v_init,
-	      st7789v_pm_control, &st7789v_data, NULL, APPLICATION,
+	      st7789v_pm_control, &st7789v_data, NULL, POST_KERNEL,
 	      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);

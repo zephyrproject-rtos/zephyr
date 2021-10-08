@@ -4,6 +4,7 @@ sample:
 tests:
   sample.mgmt.osdp.peripheral_device:
     tags: osdp
+    depends_on: gpio
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and CONFIG_SERIAL
     harness: osdp
     integration_platforms:

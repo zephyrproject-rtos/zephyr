@@ -103,10 +103,18 @@
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
 /* Offset Units field encoding */
-#define OFFS_UNIT_30_US         30
-#define OFFS_UNIT_300_US        300
+#define OFFS_UNIT_30_US        30
+#define OFFS_UNIT_300_US       300
+#define OFFS_UNIT_VALUE_30_US  0
+#define OFFS_UNIT_VALUE_300_US 1
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
-#define OFFS_ADJUST_US          245760
+#define OFFS_ADJUST_US         245760
+
+/* Advertiser's Sleep Clock Accuracy Value */
+#define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
+#define SCA_50_PPM        50  /* 0 ppm to 50 ppm */
+#define SCA_VALUE_500_PPM 0   /* 51 ppm to 500 ppm */
+#define SCA_VALUE_50_PPM  1   /* 0 ppm to 50 ppm */
 
 /* Sleep Clock Accuracy, calculate drift in microseconds */
 #define SCA_DRIFT_50_PPM_US(t)  (((t) * 50UL) / 1000000UL)
@@ -279,7 +287,7 @@ struct pdu_adv_com_ext_adv {
 #endif
 	union {
 		struct pdu_adv_ext_hdr ext_hdr;
-		uint8_t ext_hdr_adv_data[254];
+		uint8_t ext_hdr_adv_data[0];
 	};
 } __packed;
 
@@ -456,7 +464,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP = 0x0B,
 	PDU_DATA_LLCTRL_TYPE_VERSION_IND = 0x0C,
 	PDU_DATA_LLCTRL_TYPE_REJECT_IND = 0x0D,
-	PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ = 0x0E,
+	PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG = 0x0E,
 	PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ = 0x0F,
 	PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP = 0x10,
 	PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND = 0x11,
@@ -542,7 +550,7 @@ struct pdu_data_llctrl_reject_ind {
 	uint8_t error_code;
 } __packed;
 
-struct pdu_data_llctrl_slave_feature_req {
+struct pdu_data_llctrl_per_init_feat_xchg {
 	uint8_t features[8];
 } __packed;
 
@@ -614,8 +622,8 @@ struct pdu_data_llctrl_phy_rsp {
 } __packed;
 
 struct pdu_data_llctrl_phy_upd_ind {
-	uint8_t  m_to_s_phy;
-	uint8_t  s_to_m_phy;
+	uint8_t  c_to_p_phy;
+	uint8_t  p_to_c_phy;
 	uint16_t instant;
 } __packed;
 
@@ -704,7 +712,7 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_pause_enc_rsp pause_enc_rsp;
 		struct pdu_data_llctrl_version_ind version_ind;
 		struct pdu_data_llctrl_reject_ind reject_ind;
-		struct pdu_data_llctrl_slave_feature_req slave_feature_req;
+		struct pdu_data_llctrl_per_init_feat_xchg per_init_feat_xchg;
 		struct pdu_data_llctrl_conn_param_req conn_param_req;
 		struct pdu_data_llctrl_conn_param_rsp conn_param_rsp;
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;

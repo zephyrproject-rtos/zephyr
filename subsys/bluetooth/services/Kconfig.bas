@@ -7,17 +7,10 @@ menuconfig BT_BAS
 	bool "Enable GATT Battery service"
 	select SENSOR
 
-config BT_BAS_LOG_LEVEL
-	int "Battery service log level"
-	depends on LOG
-	range 0 4
-	default 0
-	depends on BT_BAS
-	help
-	  Sets log level for the Battery service.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write LOG_ERR
-	  2 WARNING, write LOG_WRN in addition to previous level
-	  3 INFO, write LOG_INF in addition to previous levels
-	  4 DEBUG, write LOG_DBG in addition to previous levels
+if BT_BAS
+
+module = BT_BAS
+module-str = BAS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # BT_BAS

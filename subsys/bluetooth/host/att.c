@@ -2902,6 +2902,27 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 	return err;
 }
 
+#if defined(CONFIG_BT_TESTING)
+int bt_eatt_disconnect_one(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan = att_get_fixed_chan(conn);
+	struct bt_att *att = chan->att;
+	int err = -ENOTCONN;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+			err = bt_l2cap_chan_disconnect(&chan->chan.chan);
+			return err;
+		}
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_EATT */
 
 static int bt_eatt_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)

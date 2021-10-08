@@ -76,6 +76,11 @@ static struct {
 	uint8_t buf[MAX_BUFFER_SIZE];
 } gatt_buf;
 
+struct get_attr_data {
+	struct net_buf_simple *buf;
+	struct bt_conn *conn;
+};
+
 static void *gatt_buf_add(const void *data, size_t len)
 {
 	void *ptr = gatt_buf.buf + gatt_buf.len;
@@ -1908,7 +1913,9 @@ static uint8_t err_to_att(int err)
 static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 			       void *user_data)
 {
-	struct net_buf_simple *buf = user_data;
+	struct get_attr_data *u_data = user_data;
+	struct net_buf_simple *buf = u_data->buf;
+	struct bt_conn *conn = u_data->conn;
 	struct gatt_get_attribute_value_rp *rp;
 	ssize_t read, to_read;
 
@@ -1924,7 +1931,7 @@ static uint8_t get_attr_val_rp(const struct bt_gatt_attr *attr, uint16_t handle,
 			break;
 		}
 
-		read = attr->read(NULL, attr, buf->data + buf->len, to_read,
+		read = attr->read(conn, attr, buf->data + buf->len, to_read,
 				  rp->value_length);
 		if (read < 0) {
 			rp->att_response = err_to_att(read);
@@ -1944,10 +1951,15 @@ static void get_attr_val(uint8_t *data, uint16_t len)
 	const struct gatt_get_attribute_value_cmd *cmd = (void *) data;
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 	uint16_t handle = sys_le16_to_cpu(cmd->handle);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)cmd);
 
 	net_buf_simple_init(buf, 0);
 
-	bt_gatt_foreach_attr(handle, handle, get_attr_val_rp, buf);
+	struct get_attr_data cb_data = { .buf = buf, .conn = conn };
+
+	bt_gatt_foreach_attr(handle, handle, get_attr_val_rp, &cb_data);
 
 	if (buf->len) {
 		tester_send(BTP_SERVICE_ID_GATT, GATT_GET_ATTRIBUTE_VALUE,

@@ -14,6 +14,13 @@ config QEMU_TARGET
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
 
+config NET_DRIVERS
+	bool
+	default y if QEMU_TARGET && NETWORKING
+	help
+	  When building for a qemu target then NET_DRIVERS will be default
+	  enabled to allow for easy use of SLIP or PPP
+
 # Note: $BOARD_DIR might be a glob pattern
 
 choice

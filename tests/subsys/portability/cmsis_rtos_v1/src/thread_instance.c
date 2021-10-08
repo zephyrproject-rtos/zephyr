@@ -26,6 +26,7 @@ osThreadDef(thread_inst_check, osPriorityNormal, 3, STACKSZ);
 void test_thread_instances(void)
 {
 	osThreadId id1, id2, id3, id4;
+	osStatus status;
 
 	id1 = osThreadCreate(osThread(thread_inst_check), NULL);
 	zassert_true(id1 != NULL, "Failed creating thread_inst_check");
@@ -38,4 +39,14 @@ void test_thread_instances(void)
 
 	id4 = osThreadCreate(osThread(thread_inst_check), NULL);
 	zassert_true(id4 == NULL, "Something wrong with thread instances");
+
+	status = osThreadTerminate(id2);
+	zassert_true(status == osOK, "Error terminating thread_inst_check");
+
+	/* after terminating thread id2, when creating a new thread,
+	 * it should re-use the available thread instance of id2.
+	 */
+	id4 = osThreadCreate(osThread(thread_inst_check), NULL);
+	zassert_true(id4 != NULL, "Failed creating thread_inst_check");
+	zassert_true(id2 == id4, "Error creating thread_inst_check");
 }

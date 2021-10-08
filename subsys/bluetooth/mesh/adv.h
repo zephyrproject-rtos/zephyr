@@ -46,8 +46,6 @@ extern struct k_fifo bt_mesh_adv_queue;
 /* Lookup table for Advertising data types for bt_mesh_adv_type: */
 extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 
-void bt_mesh_adv_buf_destroy(struct net_buf *buf);
-
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
 				   k_timeout_t timeout);

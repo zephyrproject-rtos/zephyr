@@ -142,21 +142,21 @@ extern void _arch_isr_direct_pm(void);
 /* arch/arm/core/aarch32/exc_exit.S */
 extern void z_arm_int_exit(void);
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
 #endif
 
 static inline void arch_isr_direct_header(void)
 {
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	sys_trace_isr_enter();
 #endif
 }
 
 static inline void arch_isr_direct_footer(int maybe_swap)
 {
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	sys_trace_isr_exit();
 #endif
 	if (maybe_swap != 0) {

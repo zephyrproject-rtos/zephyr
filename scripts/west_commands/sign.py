@@ -402,6 +402,8 @@ class RimageSigner(Signer):
             return 'tgl'
         if 'nxp_adsp_imx8' in board:
             return 'imx8'
+        if 'nxp_adsp_imx8x' in board:
+            return 'imx8'
 
         log.die('Signing not supported for board ' + board)
 
@@ -459,13 +461,18 @@ class RimageSigner(Signer):
         else:
             no_manifest = False
 
+        if no_manifest:
+            extra_ri_args = ['-i', '3']
+        else:
+            extra_ri_args = ['-i', '3', '-e']
+
         if 'imx8' in target:
             sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
                          [kernel])
         else:
             sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
+                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
                          [bootloader, kernel])
 
         if not args.quiet:

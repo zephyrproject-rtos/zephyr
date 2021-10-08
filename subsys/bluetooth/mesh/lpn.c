@@ -992,7 +992,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 	if (!lpn->established) {
 		/* This is normally checked on the transport layer, however
-		 * in this state we're also still accepting master
+		 * in this state we're also still accepting flooding
 		 * credentials so we need to ensure the right ones (Friend
 		 * Credentials) were used for this message.
 		 */

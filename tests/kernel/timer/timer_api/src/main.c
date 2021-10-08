@@ -802,11 +802,11 @@ void test_sleep_abs(void)
 	/* Systems with very high tick rates and/or slow idle resume
 	 * (I've seen this on intel_adsp) can occasionally take more
 	 * than a tick to return from k_sleep().  Set a 100us real
-	 * time slop.
+	 *  time slop or more depending on the time to resume
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
 
-	zassert_true(late >= 0 && late < k_us_to_ticks_ceil32(100),
+	zassert_true(late >= 0 && late < k_us_to_ticks_ceil32(250),
 		     "expected wakeup at %lld, got %lld (late %lld)",
 		     start + sleep_ticks, end, late);
 }

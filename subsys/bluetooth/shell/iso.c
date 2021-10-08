@@ -24,8 +24,6 @@
 
 #include "bt.h"
 
-#define DATA_MTU CONFIG_BT_ISO_TX_MTU
-
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -75,11 +73,14 @@ struct bt_iso_chan iso_chan = {
 
 static struct bt_iso_cig *cig;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  NULL);
 
-static int iso_accept(struct bt_conn *acl, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	shell_print(ctx_shell, "Incoming request from %p", acl);
+	shell_print(ctx_shell, "Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
+		    info->acl, info->cig_id, info->cis_id);
 
 	if (iso_chan.iso) {
 		shell_print(ctx_shell, "No channels available");
@@ -96,7 +97,7 @@ struct bt_iso_server iso_server = {
 	.accept = iso_accept,
 };
 
-static int cmd_listen(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	static struct bt_iso_chan_io_qos *tx_qos, *rx_qos;
@@ -111,7 +112,7 @@ static int cmd_listen(const struct shell *shell, size_t argc, char *argv[])
 		tx_qos = &iso_tx_qos;
 		rx_qos = &iso_rx_qos;
 	} else {
-		shell_error(shell, "Invalid argument - use tx, rx or txrx");
+		shell_error(sh, "Invalid argument - use tx, rx or txrx");
 		return -ENOEXEC;
 	}
 
@@ -121,7 +122,7 @@ static int cmd_listen(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
-		shell_error(shell, "Unable to register ISO cap (err %d)",
+		shell_error(sh, "Unable to register ISO cap (err %d)",
 			    err);
 		return err;
 	}
@@ -273,9 +274,11 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 }
 
 
-static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
+		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
+	};
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -284,48 +287,48 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!iso_chan.iso) {
-		shell_error(shell, "Not bound");
+		shell_error(sh, "Not bound");
 		return 0;
 	}
 
 	if (!iso_chan.qos->tx) {
-		shell_error(shell, "Transmission QoS disabled");
+		shell_error(sh, "Transmission QoS disabled");
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, DATA_MTU - BT_ISO_CHAN_SEND_RESERVE);
+	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
 	while (count--) {
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
-		shell_info(shell, "send: %d bytes of data", len);
+		shell_info(sh, "send: %d bytes of data", len);
 		ret = bt_iso_chan_send(&iso_chan, buf);
 		if (ret < 0) {
-			shell_print(shell, "Unable to send: %d", -ret);
+			shell_print(sh, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
 	}
 
-	shell_print(shell, "ISO sending...");
+	shell_print(sh, "ISO sending...");
 
 	return 0;
 }
 
-static int cmd_disconnect(const struct shell *shell, size_t argc,
+static int cmd_disconnect(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	int err;
 
 	err = bt_iso_chan_disconnect(&iso_chan);
 	if (err) {
-		shell_error(shell, "Unable to disconnect (err %d)", err);
+		shell_error(sh, "Unable to disconnect (err %d)", err);
 		return 0;
 	}
 
-	shell_print(shell, "ISO Disconnect pending...");
+	shell_print(sh, "ISO Disconnect pending...");
 
 	return 0;
 }
@@ -345,11 +348,14 @@ static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 
 static struct bt_iso_big *big;
 
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
-static int cmd_broadcast(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {
+		[0 ... (CONFIG_BT_ISO_TX_MTU - 1)] = 0xff
+	};
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -358,16 +364,16 @@ static int cmd_broadcast(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!bis_iso_chan.iso) {
-		shell_error(shell, "BIG not created");
+		shell_error(sh, "BIG not created");
 		return -ENOEXEC;
 	}
 
 	if (!bis_iso_qos.tx) {
-		shell_error(shell, "BIG not setup as broadcaster");
+		shell_error(sh, "BIG not setup as broadcaster");
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, DATA_MTU - BT_ISO_CHAN_SEND_RESERVE);
+	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
 	while (count--) {
 		for (int i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
@@ -377,26 +383,26 @@ static int cmd_broadcast(const struct shell *shell, size_t argc, char *argv[])
 			net_buf_add_mem(buf, buf_data, len);
 			ret = bt_iso_chan_send(&bis_iso_chan, buf);
 			if (ret < 0) {
-				shell_print(shell, "[%i]: Unable to broadcast: %d", i, -ret);
+				shell_print(sh, "[%i]: Unable to broadcast: %d", i, -ret);
 				net_buf_unref(buf);
 				return -ENOEXEC;
 			}
 		}
 	}
 
-	shell_print(shell, "ISO broadcasting...");
+	shell_print(sh, "ISO broadcasting...");
 
 	return 0;
 }
 
-static int cmd_big_create(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct bt_iso_big_create_param param;
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 
 	if (!adv) {
-		shell_error(shell, "No (periodic) advertising set selected");
+		shell_error(sh, "No (periodic) advertising set selected");
 		return -ENOEXEC;
 	}
 
@@ -417,28 +423,28 @@ static int cmd_big_create(const struct shell *shell, size_t argc, char *argv[])
 			uint8_t bcode_len = hex2bin(argv[1], strlen(argv[1]), param.bcode,
 						    sizeof(param.bcode));
 			if (!bcode_len || bcode_len != sizeof(param.bcode)) {
-				shell_error(shell, "Invalid Broadcast Code Length");
+				shell_error(sh, "Invalid Broadcast Code Length");
 				return -ENOEXEC;
 			}
 			param.encryption = true;
 		} else {
-			shell_help(shell);
+			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
 	err = bt_iso_big_create(adv, &param, &big);
 	if (err) {
-		shell_error(shell, "Unable to create BIG (err %d)", err);
+		shell_error(sh, "Unable to create BIG (err %d)", err);
 		return 0;
 	}
 
-	shell_print(shell, "BIG created");
+	shell_print(sh, "BIG created");
 
 	return 0;
 }
 
-static int cmd_big_sync(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	/* TODO: Add support to select which PA sync to BIG sync to */
@@ -446,7 +452,7 @@ static int cmd_big_sync(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_iso_big_sync_param param;
 
 	if (!pa_sync) {
-		shell_error(shell, "No PA sync selected");
+		shell_error(sh, "No PA sync selected");
 		return -ENOEXEC;
 	}
 
@@ -469,7 +475,7 @@ static int cmd_big_sync(const struct shell *shell, size_t argc, char *argv[])
 
 			i++;
 			if (i == argc) {
-				shell_help(shell);
+				shell_help(sh);
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
@@ -477,38 +483,38 @@ static int cmd_big_sync(const struct shell *shell, size_t argc, char *argv[])
 					    sizeof(param.bcode));
 
 			if (!bcode_len || bcode_len != sizeof(param.bcode)) {
-				shell_error(shell, "Invalid Broadcast Code Length");
+				shell_error(sh, "Invalid Broadcast Code Length");
 				return -ENOEXEC;
 			}
 			param.encryption = true;
 		} else {
-			shell_help(shell);
+			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
 	err = bt_iso_big_sync(pa_sync, &param, &big);
 	if (err) {
-		shell_error(shell, "Unable to sync to BIG (err %d)", err);
+		shell_error(sh, "Unable to sync to BIG (err %d)", err);
 		return 0;
 	}
 
-	shell_print(shell, "BIG syncing");
+	shell_print(sh, "BIG syncing");
 
 	return 0;
 }
 
-static int cmd_big_term(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	err = bt_iso_big_terminate(big);
 	if (err) {
-		shell_error(shell, "Unable to terminate BIG", err);
+		shell_error(sh, "Unable to terminate BIG", err);
 		return 0;
 	}
 
-	shell_print(shell, "BIG terminated");
+	shell_print(sh, "BIG terminated");
 
 	return 0;
 }
@@ -537,13 +543,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_iso(const struct shell *shell, size_t argc, char **argv)
+static int cmd_iso(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
-		shell_error(shell, "%s unknown parameter: %s",
+		shell_error(sh, "%s unknown parameter: %s",
 			    argv[0], argv[1]);
 	} else {
-		shell_error(shell, "%s Missing subcommand", argv[0]);
+		shell_error(sh, "%s Missing subcommand", argv[0]);
 	}
 
 	return -ENOEXEC;

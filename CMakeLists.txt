@@ -168,21 +168,29 @@ if(CONFIG_CPLUSPLUS)
   # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
   if(CONFIG_STD_CPP98)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp98>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp98})
   elseif(CONFIG_STD_CPP11)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp11>) # Default in kconfig
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp11})
   elseif(CONFIG_STD_CPP14)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp14>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp14})
   elseif(CONFIG_STD_CPP17)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp17>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp17})
   elseif(CONFIG_STD_CPP2A)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2a>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   elseif(CONFIG_STD_CPP20)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp20>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   elseif(CONFIG_STD_CPP2B)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
   else()
     assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
+  set(CMAKE_CXX_COMPILE_FEATURES ${CMAKE_CXX_COMPILE_FEATURES} PARENT_SCOPE)
 
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
 endif()
@@ -237,7 +245,12 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>
 
 # @Intent: Enforce standard integer type correspondance to match Zephyr usage.
 # (must be after compiler specific flags)
-zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+if(NOT CONFIG_ARCH_POSIX)
+  # `zephyr_stdint.h` is not included for the POSIX (native) arch because it
+  # compiles with the host toolchain/headers and there can be conflicts if we
+  # arbitrarily redefine our own type system (see #37718).
+  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+endif()
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(
@@ -712,9 +725,12 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
     if(NOT source_list
        AND NOT ${lib_imported}
     )
-      message(WARNING
-        "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
-      )
+      get_property(allow_empty TARGET ${zephyr_lib} PROPERTY ALLOW_EMPTY)
+      if(NOT "${allow_empty}")
+        message(WARNING
+          "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+        )
+      endif()
       target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
       set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
       list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
@@ -971,6 +987,7 @@ set_ifndef(CSTD c99)
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
+set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
@@ -1667,12 +1684,16 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   endif()
 endif()
 
-# @Intent: Set compiler specific flags for standard C includes
+# @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may
 # be added by Zephyr components were first in list.
 # Note, the compile flags are moved, but the system include is still present here.
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
+
+if(NOT CONFIG_LIB_CPLUSPLUS)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
+endif()
 
 # Finally export all build flags from Zephyr
 add_subdirectory_ifdef(

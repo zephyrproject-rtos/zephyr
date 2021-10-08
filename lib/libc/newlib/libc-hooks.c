@@ -130,20 +130,6 @@ static int malloc_prepare(const struct device *unused)
 		 "minimum required size specified by "
 		 "CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE");
 
-#ifdef CONFIG_XTENSA
-	/*
-	 * FIXME: For Xtensa, the first `malloc` call may fail if the HEAP_BASE
-	 *        is such that the first `sbrk` call returns a 4096-byte
-	 *        aligned address.
-	 *
-	 *        This is a very ugly workaround for the issue #38258 and must
-	 *        be removed once it is fixed.
-	 */
-	void *ptr = malloc(16);
-
-	free(ptr);
-#endif /* CONFIG_XTENSA */
-
 	return 0;
 }
 
@@ -193,12 +179,12 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_read_stdin(char *buf, int nbytes)
+static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_read_stdin_mrsh.c>
+#include <syscalls/zephyr_read_stdin_mrsh.c>
 #endif
 
 int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
@@ -216,12 +202,12 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_zephyr_write_stdout(const void *buf, int nbytes)
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
-#include <syscalls/z_zephyr_write_stdout_mrsh.c>
+#include <syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API
@@ -229,7 +215,7 @@ int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_read_stdin(buf, nbytes);
+	return zephyr_read_stdin(buf, nbytes);
 }
 __weak FUNC_ALIAS(_read, read, int);
 
@@ -237,7 +223,7 @@ int _write(int fd, const void *buf, int nbytes)
 {
 	ARG_UNUSED(fd);
 
-	return z_impl_zephyr_write_stdout(buf, nbytes);
+	return zephyr_write_stdout(buf, nbytes);
 }
 __weak FUNC_ALIAS(_write, write, int);
 

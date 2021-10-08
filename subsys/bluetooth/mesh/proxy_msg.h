@@ -18,15 +18,20 @@
 #define CFG_FILTER_REMOVE  0x02
 #define CFG_FILTER_STATUS  0x03
 
+#define BT_MESH_PROXY_NET_PDU   0x00
+#define BT_MESH_PROXY_BEACON    0x01
+#define BT_MESH_PROXY_CONFIG    0x02
+#define BT_MESH_PROXY_PROV      0x03
+
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
+
+struct bt_mesh_proxy_role;
 
 typedef int (*proxy_send_cb_t)(struct bt_conn *conn,
 			       const void *data, uint16_t len,
 			       bt_gatt_complete_func_t end, void *user_data);
 
-typedef void (*proxy_recv_cb_t)(struct bt_conn *conn,
-				struct bt_mesh_net_rx *rx,
-				struct net_buf_simple *buf);
+typedef void (*proxy_recv_cb_t)(struct bt_mesh_proxy_role *role);
 
 struct bt_mesh_proxy_role {
 	struct bt_conn *conn;
@@ -46,6 +51,9 @@ ssize_t bt_mesh_proxy_msg_recv(struct bt_mesh_proxy_role *role,
 int bt_mesh_proxy_msg_send(struct bt_mesh_proxy_role *role, uint8_t type,
 			   struct net_buf_simple *msg,
 			   bt_gatt_complete_func_t end, void *user_data);
-void bt_mesh_proxy_msg_init(struct bt_mesh_proxy_role *role);
+struct bt_mesh_proxy_role *bt_mesh_proxy_role_setup(struct bt_conn *conn,
+						    proxy_send_cb_t send,
+						    proxy_recv_cb_t recv);
+void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role);
 
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_PROXY_MSG_H_ */

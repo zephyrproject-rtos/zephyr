@@ -9,6 +9,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
+#include <arch/arm64/mm.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
@@ -66,7 +67,7 @@ abv_loop:
 	b	2f
 1:	at	S1E0W, x0
 
-2:	orr	x0, x0, #(CONFIG_MMU_PAGE_SIZE - 1)
+2:	orr	x0, x0, #(MEM_DOMAIN_ALIGN_AND_SIZE - 1)
 	add	x0, x0, #1
 
 	isb

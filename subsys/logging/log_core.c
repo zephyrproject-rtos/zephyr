@@ -9,8 +9,7 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
-#include <logging/log_msg2.h>
-#include <logging/log_core2.h>
+#include <logging/log_internal.h>
 #include <sys/mpsc_pbuf.h>
 #include <sys/printk.h>
 #include <sys_clock.h>
@@ -98,8 +97,8 @@ struct mpsc_pbuf_buffer log_buffer;
 static uint32_t __aligned(Z_LOG_MSG2_ALIGNMENT)
 	buf32[CONFIG_LOG_BUFFER_SIZE / sizeof(int)];
 
-static void notify_drop(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic *item);
+static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *item);
 
 static const struct mpsc_pbuf_buffer_config mpsc_config = {
 	.buf = (uint32_t *)buf32,
@@ -182,7 +181,7 @@ static bool is_rodata(const void *addr)
  */
 static void detect_missed_strdup(struct log_msg *msg)
 {
-#define ERR_MSG	"argument %d in source %s log message \"%s\" missing" \
+#define ERR_MSG	"argument %d in source %s log message \"%s\" missing " \
 		"log_strdup()."
 	uint32_t idx;
 	const char *str;
@@ -859,9 +858,12 @@ bool z_log_dropped_pending(void)
 	return dropped_cnt > 0;
 }
 
-static void notify_drop(struct mpsc_pbuf_buffer *buffer,
-			union mpsc_pbuf_generic *item)
+static void notify_drop(const struct mpsc_pbuf_buffer *buffer,
+			const union mpsc_pbuf_generic *item)
 {
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(item);
+
 	z_log_dropped();
 }
 
@@ -929,7 +931,7 @@ bool log_is_strdup(const void *buf)
 
 }
 
-void log_free(void *str)
+void z_log_free(void *str)
 {
 	struct log_strdup_buf *dup = CONTAINER_OF(str, struct log_strdup_buf,
 						  buf);
@@ -943,6 +945,7 @@ void log_free(void *str)
 }
 
 #if defined(CONFIG_USERSPACE)
+/* LCOV_EXCL_START */
 void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
 	ARG_UNUSED(src_level_val);
@@ -950,6 +953,7 @@ void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 
 	__ASSERT(false, "This function can be called from user mode only.");
 }
+/* LCOV_EXCL_STOP */
 
 void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
@@ -972,12 +976,12 @@ void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 		"Invalid log level"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(source_id < z_log_sources_count(),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (level != LOG_LEVEL_INTERNAL_RAW_STRING) &&
-	    (level > LOG_FILTER_SLOT_GET(log_dynamic_filters_get(source_id),
+	    (level > LOG_FILTER_SLOT_GET(z_log_dynamic_filters_get(source_id),
 					LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;
@@ -1037,6 +1041,7 @@ void log_from_user(struct log_msg_ids src_level, const char *fmt, ...)
 	va_end(ap);
 }
 
+/* LCOV_EXCL_START */
 void z_impl_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata,
 				    const uint8_t *data, uint32_t len)
 {
@@ -1047,6 +1052,7 @@ void z_impl_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 
 	__ASSERT(false, "This function can be called from user mode only.");
 }
+/* LCOV_EXCL_STOP */
 
 void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata,
 				    const uint8_t *data, uint32_t len)
@@ -1068,12 +1074,12 @@ void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 		src_level_union.structure.domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
-		src_level_union.structure.source_id < log_sources_count(),
+		src_level_union.structure.source_id < z_log_sources_count(),
 		"Invalid log source id"));
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) &&
 	    (src_level_union.structure.level > LOG_FILTER_SLOT_GET(
-	     log_dynamic_filters_get(src_level_union.structure.source_id),
+	     z_log_dynamic_filters_get(src_level_union.structure.source_id),
 	     LOG_FILTER_AGGR_SLOT_IDX))) {
 		/* Skip filtered out messages. */
 		return;
@@ -1112,6 +1118,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 				(const uint8_t *)data, len);
 }
 #else
+/* LCOV_EXCL_START */
 void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
 	ARG_UNUSED(src_level_val);
@@ -1159,40 +1166,12 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 
 	__ASSERT_NO_MSG(false);
 }
+/* LCOV_EXCL_STOP */
 #endif /* !defined(CONFIG_USERSPACE) */
 
 void z_log_msg2_init(void)
 {
 	mpsc_pbuf_init(&log_buffer, &mpsc_config);
-}
-
-static uint32_t log_diff_timestamp(void)
-{
-	extern log_timestamp_get_t timestamp_func;
-
-	return timestamp_func();
-}
-
-void z_log_msg2_put_trace(struct log_msg2_trace trace)
-{
-	union log_msg2_generic generic = {
-		.trace = trace
-	};
-
-	trace.hdr.timestamp = IS_ENABLED(CONFIG_LOG_TRACE_SHORT_TIMESTAMP) ?
-				log_diff_timestamp() : timestamp_func();
-	mpsc_pbuf_put_word(&log_buffer, generic.buf);
-}
-
-void z_log_msg2_put_trace_ptr(struct log_msg2_trace trace, void *data)
-{
-	union log_msg2_generic generic = {
-		.trace = trace
-	};
-
-	trace.hdr.timestamp = IS_ENABLED(CONFIG_LOG_TRACE_SHORT_TIMESTAMP) ?
-				log_diff_timestamp() : timestamp_func();
-	mpsc_pbuf_put_word_ext(&log_buffer, generic.buf, data);
 }
 
 struct log_msg2 *z_log_msg2_alloc(uint32_t wlen)

@@ -92,7 +92,7 @@ void stack_buffer_scenarios(void)
 	k_thread_stack_t *stack_obj = scenario_data.stack;
 	size_t obj_size = scenario_data.object_size;
 	size_t stack_size, unused, carveout, reserved, alignment, adjusted;
-	uint8_t val;
+	uint8_t val = 0;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	char *stack_buf;
 	volatile char *pos;
@@ -160,6 +160,7 @@ void stack_buffer_scenarios(void)
 	 *
 	 * First test does direct read & write starting at the estimated
 	 * stack pointer up to the highest addresses in the buffer
+	 * Starting from &val which is close enough to stack pointer
 	 */
 	stack_ptr = &val;
 	for (pos = stack_ptr; pos < stack_end; pos++) {

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_bus.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -51,6 +52,15 @@ static int stm32l0_init(const struct device *arg)
 	 */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+
+	/* On STM32L0, there are some hardfault when enabling DBGMCU bit:
+	 * Sleep, Stop or Standby.
+	 * See https://github.com/zephyrproject-rtos/zephyr/issues/#37119
+	 * For unclear reason, enabling DMA clock fixes this issue
+	 * (similarly than it fixes
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/#34324 )
+	 */
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
 
 	return 0;
 }

@@ -173,19 +173,23 @@ config BT_SETTINGS_USE_PRINTK
 endif # BT_SETTINGS
 
 config BT_WHITELIST
-	bool "Enable whitelist support"
+	bool "DEPRECATED: Use BT_FILTER_ACCEPT_LIST instead"
+	select BT_FILTER_ACCEPT_LIST
+
+config BT_FILTER_ACCEPT_LIST
+	bool "Enable filter accept list support"
 	help
-	  This option enables the whitelist API. This takes advantage of the
-	  whitelisting feature of a BLE controller.
-	  The whitelist is a global list and the same whitelist is used
-	  by both scanner and advertiser. The whitelist cannot be modified while
+	  This option enables the filter accep list API. This takes advantage of the
+	  filtering feature of a BLE controller.
+	  The filter accept list is a global list and the same list is used
+	  by both scanner and advertiser. The filter accept list cannot be modified while
 	  it is in use.
 
-	  An Advertiser can whitelist which peers can connect or request scan
+	  An Advertiser can filter which peers can connect or request scan
 	  response data.
-	  A scanner can whitelist advertiser for which it will generate
+	  A scanner can filter advertisers for which it will generate
 	  advertising reports.
-	  Connections can be established automatically for whitelisted peers.
+	  Connections can be established automatically for accepted peers.
 
 	  This options deprecates the bt_le_set_auto_conn API in favor of the
 	  bt_conn_create_aute_le API.
@@ -351,10 +355,10 @@ config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	  This option enables support for USB HCI controllers that sometimes
 	  send out-of-order HCI events and ACL Data due to using different USB
 	  endpoints.
-	  Enabling this option will make the master role not require the
+	  Enabling this option will make the central role not require the
 	  encryption-change event to be received before accepting key-distribution
 	  data.
-	  It opens up for a potential vulnerability as the master cannot detect
+	  It opens up for a potential vulnerability as the central cannot detect
 	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY

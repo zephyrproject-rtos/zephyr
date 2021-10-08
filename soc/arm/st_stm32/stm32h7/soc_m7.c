@@ -30,29 +30,11 @@ static int stm32h7_m4_wakeup(const struct device *arg)
 	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
 
 	if (READ_BIT(SYSCFG->UR1, SYSCFG_UR1_BCM4)) {
-		/* CM4 is started at boot in parallel of CM7
-		 * but CM4 should set itself into stop mode,
-		 * waiting for CM7 clock initialization.
+		/* Cortex-M4 is waiting for end of system initialization made by
+		 * Cortex-M7. This initialization is now finished,
+		 * then Cortex-M7 takes HSEM so that CM4 can continue running.
 		 */
-		int timeout;
-
-		/*
-		 * When system initialization is finished, Cortex-M7 will
-		 * release Cortex-M4  by means of HSEM notification
-		 */
-
-		/*Take HSEM */
 		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
-		/*Release HSEM in order to notify the CPU2(CM4)*/
-		LL_HSEM_ReleaseLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID, 0);
-
-		/* wait until CPU2 wakes up from stop mode */
-		timeout = 0xFFFF;
-		while ((LL_RCC_D2CK_IsReady() == 0) && ((timeout--) > 0)) {
-		}
-		if (timeout < 0) {
-			return -EIO;
-		}
 	} else {
 		/* CM4 is not started at boot, start it now */
 		LL_RCC_ForceCM4Boot();

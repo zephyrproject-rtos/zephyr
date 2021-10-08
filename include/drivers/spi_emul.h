@@ -15,6 +15,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <drivers/emul.h>
 
 /**
  * @brief SPI Emulation Interface
@@ -33,6 +34,9 @@ struct spi_emul_api;
 /** Node in a linked list of emulators for SPI devices */
 struct spi_emul {
 	sys_snode_t node;
+
+	/** Parent emulator */
+	const struct emul *parent;
 
 	/* API provided for this device */
 	const struct spi_emul_api *api;

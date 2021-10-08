@@ -340,6 +340,15 @@ static int teensy4_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3_spi), okay) && CONFIG_SPI_MCUX_FLEXIO
+    IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_FLEXIO3_FLEXIO00, 0);
+
+    IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_00_FLEXIO3_FLEXIO00,
+                        IOMUXC_SW_PAD_CTL_PAD_PKE(1) |
+                        IOMUXC_SW_PAD_CTL_PAD_SPEED(1) |
+                        IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_14_GPIO2_IO14, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_15_GPIO2_IO15, 0);

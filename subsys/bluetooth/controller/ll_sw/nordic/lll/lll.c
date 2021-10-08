@@ -72,8 +72,9 @@ static void isr_race(void *param);
 static uint32_t preempt_ticker_start(struct lll_event *prev,
 				     struct lll_event *next);
 static uint32_t preempt_ticker_stop(void);
-static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			      uint16_t lazy, uint8_t force, void *param);
+static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			      uint32_t remainder, uint16_t lazy, uint8_t force,
+			      void *param);
 static void preempt(void *param);
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
@@ -857,8 +858,9 @@ static uint32_t preempt_ticker_stop(void)
 	return ret;
 }
 
-static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			       uint16_t lazy, uint8_t force, void *param)
+static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			      uint32_t remainder, uint16_t lazy, uint8_t force,
+			      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, preempt};

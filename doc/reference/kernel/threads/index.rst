@@ -245,6 +245,10 @@ A thread's initial priority value can be altered up or down after the thread
 has been started. Thus it is possible for a preemptible thread to become
 a cooperative thread, and vice versa, by changing its priority.
 
+.. note::
+    The scheduler does not make heuristic decisions to re-prioritize threads.
+    Thread priorities are set and changed only at the application's request.
+
 The kernel supports a virtually unlimited number of thread priority levels.
 The configuration options :kconfig:`CONFIG_NUM_COOP_PRIORITIES` and
 :kconfig:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
@@ -269,9 +273,10 @@ When enabled (see :kconfig:`CONFIG_NUM_METAIRQ_PRIORITIES`), there is a special
 subclass of cooperative priorities at the highest (numerically lowest)
 end of the priority space: meta-IRQ threads.  These are scheduled
 according to their normal priority, but also have the special ability
-to preempt all other threads (and other meta-irq threads) at lower
+to preempt all other threads (and other meta-IRQ threads) at lower
 priorities, even if those threads are cooperative and/or have taken a
-scheduler lock.
+scheduler lock. Meta-IRQ threads are still threads, however,
+and can still be interrupted by any hardware interrupt.
 
 This behavior makes the act of unblocking a meta-IRQ thread (by any
 means, e.g. creating it, calling k_sem_give(), etc.) into the
@@ -284,7 +289,7 @@ run before the current CPU returns into application code.
 
 Unlike similar features in other OSes, meta-IRQ threads are true
 threads and run on their own stack (which must be allocated normally),
-not the per-CPU interrupt stack.  Design work to enable the use of the
+not the per-CPU interrupt stack. Design work to enable the use of the
 IRQ stack on supported architectures is pending.
 
 Note that because this breaks the promise made to cooperative

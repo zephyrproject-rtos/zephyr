@@ -42,6 +42,13 @@ void test_threads_cpu_mask(void)
 	zassert_true(ret == -EINVAL, "");
 
 	for (pass = 0; pass < 4; pass++) {
+		if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY) && pass == 1) {
+			/* Pass 1 enables more than one CPU in the
+			 * mask, which is illegal when PIN_ONLY
+			 */
+			continue;
+		}
+
 		child_has_run = false;
 
 		/* Create a thread at a higher priority, don't start
