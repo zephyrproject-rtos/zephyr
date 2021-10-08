@@ -9,7 +9,7 @@
 	model = "Silicon Labs EFM32PG STK3402A board";
 
 	chosen {
-		zephyr,console = &usart0;
+		zephyr,console = &usart0; 
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -56,6 +56,7 @@
 	clock-frequency = <40000000>;
 };
 
+&usart2 { compatible = "silabs,gecko-spi-usart"; location-clk = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(8)>; location-rx = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(7)>; location-tx = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(6)>; cs-gpios = <&gpioa 9 GPIO_ACTIVE_LOW>; status = "okay"; #address-cells = <1>; #size-cells = <0>; at45db0: at45db041e@0 { compatible = "atmel,at45"; reg = <0>; spi-max-frequency = <15000000>; label = "DATAFLASH_0"; jedec-id = [1f 24 00]; size = <4194304>; sector-size = <65536>; block-size = <2048>; page-size = <256>; enter-dpd-delay = <2000>; exit-dpd-delay = <35000>; status = "okay"; };};
 &usart0 {
 	current-speed = <115200>;
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
@@ -74,6 +75,12 @@
 	location-sda = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(10)>;
 	location-scl = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(11)>;
 	status = "okay";
+	si7006: si7006@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40 0x4>;
+		status = "okay";
+		label = "TEMP_0";
+	};
 };
 
 &rtcc0 {

@@ -24,7 +24,20 @@ static int efm32pg_stk3402a_init(const struct device *dev)
 	}
 
 	gpio_pin_configure(bce_dev, BC_ENABLE_GPIO_PIN, GPIO_OUTPUT_HIGH);
+	
+#if IS_ENABLED(CONFIG_SI7006)
 
+	const struct device *temp_sensor; /* Board Controller Enable Gpio Device */
+
+	/* Enable the board controller to be able to use the serial port */
+	temp_sensor = device_get_binding(SENSOR1_ENABLE_GPIO_NAME);
+
+	if (!temp_sensor) {
+		printk("Temp sensor GPIO port not found\n");
+		return -ENODEV;
+	}
+	gpio_pin_configure(temp_sensor, SENSOR1_ENABLE_GPIO_PIN, GPIO_OUTPUT_HIGH);
+#endif
 	return 0;
 }
 
