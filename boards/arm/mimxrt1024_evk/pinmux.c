@@ -115,6 +115,40 @@ static int mimxrt1024_evk_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) && CONFIG_SPI
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+	#error "LPSPI1 and ENET share pins on this board, please disable one" \
+			"using KConfig or the devicetree"
+#else
+	/* LPSPI1 CS, SDO, SDI, CLK exposed as pins 6, 8, 10, and 12 on J19 */
+	/* GPIO_AD_B0_10 is configured as LPSPI1_SCK */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_LPSPI1_SCK, 0U);
+	/* GPIO_AD_B0_11 is configured as LPSPI1_PCS0 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_11_LPSPI1_PCS0, 0U);
+	/* GPIO_AD_B0_12 is configured as LPSPI1_SDO */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_12_LPSPI1_SDO, 0U);
+	/* GPIO_AD_B0_13 is configured as LPSPI1_SDI */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_13_LPSPI1_SDI, 0U);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_10_LPSPI1_SCK,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_11_LPSPI1_PCS0,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_12_LPSPI1_SDO,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_13_LPSPI1_SDI,
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
+#endif
+
 	return 0;
 }
 

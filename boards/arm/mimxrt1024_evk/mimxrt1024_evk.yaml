@@ -20,3 +20,4 @@ supported:
   - hwinfo
   - netif:eth
   - watchdog
+  - spi
