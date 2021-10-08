@@ -126,11 +126,11 @@ void llcp_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 		   sizeof(struct pdu_data_llctrl_feature_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
 
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG;
 	}
-#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_PERIPHERAL */
 
 	p = &pdu->llctrl.feature_req;
 	sys_put_le64(LL_FEAT, p->features);
@@ -474,8 +474,8 @@ void llcp_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 void llcp_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
-	ctx->data.pu.m_to_s_phy = pdu->llctrl.phy_upd_ind.m_to_s_phy;
-	ctx->data.pu.s_to_m_phy = pdu->llctrl.phy_upd_ind.s_to_m_phy;
+	ctx->data.pu.c_to_p_phy = pdu->llctrl.phy_upd_ind.c_to_p_phy;
+	ctx->data.pu.p_to_c_phy = pdu->llctrl.phy_upd_ind.p_to_c_phy;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -487,8 +487,8 @@ void llcp_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 		   sizeof(struct pdu_data_llctrl_phy_upd_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(ctx->data.pu.instant);
-	pdu->llctrl.phy_upd_ind.m_to_s_phy = ctx->data.pu.m_to_s_phy;
-	pdu->llctrl.phy_upd_ind.s_to_m_phy = ctx->data.pu.s_to_m_phy;
+	pdu->llctrl.phy_upd_ind.c_to_p_phy = ctx->data.pu.c_to_p_phy;
+	pdu->llctrl.phy_upd_ind.p_to_c_phy = ctx->data.pu.p_to_c_phy;
 }
 void llcp_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {

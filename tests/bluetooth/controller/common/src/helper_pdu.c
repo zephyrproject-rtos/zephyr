@@ -75,7 +75,7 @@ void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
 		   sizeof(struct pdu_data_llctrl_feature_req);
-	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG;
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
@@ -234,8 +234,8 @@ void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
 		   sizeof(struct pdu_data_llctrl_phy_upd_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 	pdu->llctrl.phy_upd_ind.instant = p->instant;
-	pdu->llctrl.phy_upd_ind.m_to_s_phy = p->m_to_s_phy;
-	pdu->llctrl.phy_upd_ind.s_to_m_phy = p->s_to_m_phy;
+	pdu->llctrl.phy_upd_ind.c_to_p_phy = p->c_to_p_phy;
+	pdu->llctrl.phy_upd_ind.p_to_c_phy = p->p_to_c_phy;
 }
 
 void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
@@ -446,7 +446,7 @@ void helper_pdu_verify_slave_feature_req(const char *file, uint32_t line, struct
 	struct pdu_data_llctrl_feature_req *feature_req = param;
 
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ, NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG, NULL);
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
@@ -651,10 +651,10 @@ void helper_pdu_verify_phy_update_ind(const char *file, uint32_t line, struct pd
 		      "Not a LL_PHY_UPDATE_IND.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.phy_upd_ind.instant, p->instant,
 		      "instant mismatch.\nCalled at %s:%d\n", file, line);
-	zassert_equal(pdu->llctrl.phy_upd_ind.m_to_s_phy, p->m_to_s_phy,
-		      "m_to_s_phy mismatch.\nCalled at %s:%d\n", file, line);
-	zassert_equal(pdu->llctrl.phy_upd_ind.s_to_m_phy, p->s_to_m_phy,
-		      "s_to_m_phy mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_upd_ind.c_to_p_phy, p->c_to_p_phy,
+		      "c_to_p_phy mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_upd_ind.p_to_c_phy, p->p_to_c_phy,
+		      "p_to_c_phy mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_node_verify_phy_update(const char *file, uint32_t line, struct node_rx_pdu *rx,

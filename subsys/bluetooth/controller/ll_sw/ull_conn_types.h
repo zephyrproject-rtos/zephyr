@@ -471,13 +471,13 @@ struct ll_conn {
 			uint8_t  sca:3;
 			uint32_t force;
 			uint32_t ticks_to_offset;
-		} slave;
+		} periph;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
 			uint8_t terminate_ack:1;
-		} master;
+		} central;
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
@@ -513,6 +513,13 @@ struct ll_conn {
 	uint16_t default_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t own_id_addr_type:1;
+	uint8_t peer_id_addr_type:1;
+	uint8_t own_id_addr[BDADDR_SIZE];
+	uint8_t peer_id_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 	/* Detect empty L2CAP start frame */

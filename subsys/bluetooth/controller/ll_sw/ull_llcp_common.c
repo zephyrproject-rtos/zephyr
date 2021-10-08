@@ -169,10 +169,10 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		llcp_ntf_encode_feature_rsp(conn, pdu);
 		break;
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 		/*
-		 * No notification on feature-request or slave-feature request
+		 * No notification on feature-request or periph-feature request
 		 * TODO: probably handle as an unexpected call
 		 */
 		break;
@@ -662,9 +662,9 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 #endif /* CONFIG_BT_PERIPHERAL */
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_CENTRAL)
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
-#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
+	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
+#endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
 		llcp_pdu_decode_feature_req(conn, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)

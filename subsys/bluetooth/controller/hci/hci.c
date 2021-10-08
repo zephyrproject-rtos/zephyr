@@ -2328,7 +2328,7 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 
 #endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_remote_features *cmd = (void *)buf->data;
@@ -2340,7 +2340,7 @@ static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status(status);
 }
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 static void le_read_chan_map(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4000,11 +4000,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_read_chan_map(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 	case BT_OCF(BT_HCI_OP_LE_READ_REMOTE_FEATURES):
 		le_read_remote_features(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
 	case BT_OCF(BT_HCI_OP_LE_CONN_UPDATE):
 		le_conn_update(cmd, evt);

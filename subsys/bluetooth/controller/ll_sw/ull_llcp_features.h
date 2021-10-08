@@ -36,10 +36,10 @@ static inline bool feature_ext_rej_ind(struct ll_conn *conn)
 #endif
 }
 
-static inline bool feature_slave_feat_req(struct ll_conn *conn)
+static inline bool feature_periph_feat_req(struct ll_conn *conn)
 {
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
-	return conn->llcp.fex.features_used & LL_FEAT_BIT_SLAVE_FEAT_REQ;
+#if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_PER_INIT_FEAT_XCHG;
 #else
 	return 0;
 #endif
@@ -159,8 +159,8 @@ static inline bool feature_peer_smi_tx(struct ll_conn *conn)
  * per_adv_sync_rx
  * sleep_upd
  * rpk_valid
- * iso_master
- * iso_slave
+ * iso_central
+ * iso_periph
  * iso_broadcast
  * iso_receiver
  * iso_channels

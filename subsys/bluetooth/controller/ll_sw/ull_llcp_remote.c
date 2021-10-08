@@ -426,8 +426,8 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 		ctx = llcp_rr_peek(conn);
 		if (ctx) {
 			const enum proc_incompat incompat = rr_get_incompat(conn);
-			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
-			const bool master = !!(conn->lll.role == BT_HCI_ROLE_CENTRAL);
+			const bool periph = !!(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+			const bool central = !!(conn->lll.role == BT_HCI_ROLE_CENTRAL);
 			const bool with_instant = proc_with_instant(ctx);
 
 			if (ctx->proc == PROC_TERMINATE) {
@@ -449,21 +449,21 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_ACTIVE);
-			} else if (slave && incompat == INCOMPAT_RESOLVABLE) {
+			} else if (periph && incompat == INCOMPAT_RESOLVABLE) {
 				/* Slave collision
 				 * => Run procedure
 				 *
-				 * Local slave procedure completes with error.
+				 * Local periph procedure completes with error.
 				 */
 
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_ACTIVE);
-			} else if (with_instant && master && incompat == INCOMPAT_RESOLVABLE) {
+			} else if (with_instant && central && incompat == INCOMPAT_RESOLVABLE) {
 				/* Master collision
 				 * => Send reject
 				 *
-				 * Local master incompatible procedure continues unaffected.
+				 * Local central incompatible procedure continues unaffected.
 				 */
 
 				/* Send reject */
@@ -609,7 +609,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 		proc = PROC_CONN_UPDATE;
 		break;
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 		proc = PROC_FEATURE_EXCHANGE;
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
