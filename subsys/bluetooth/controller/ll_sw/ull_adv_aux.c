@@ -342,6 +342,7 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
+	int err;
 
 	/* Get the advertising set instance */
 	adv = ull_adv_is_created_get(handle);
@@ -389,6 +390,26 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 		lll->aux = NULL;
 
 		ull_adv_aux_release(aux);
+	}
+
+	/* Release any allocated advertising data double buffers and
+	 * initialize with one initial buffer.
+	 */
+	lll_adv_data_release(&adv->lll.adv_data);
+	lll_adv_data_reset(&adv->lll.adv_data);
+	err = lll_adv_data_init(&adv->lll.adv_data);
+	if (err) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Release any allocated scan response double buffers and
+	 * initialize with one initial buffer.
+	 */
+	lll_adv_data_release(&adv->lll.scan_rsp);
+	lll_adv_data_reset(&adv->lll.scan_rsp);
+	err = lll_adv_data_init(&adv->lll.scan_rsp);
+	if (err) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	adv->is_created = 0;
