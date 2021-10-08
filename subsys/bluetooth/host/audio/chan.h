@@ -20,21 +20,21 @@
  *
  * The values are defined by the ASCS spec and shall not be changed.
  */
-enum bt_audio_chan_state {
+enum bt_audio_state {
 	/** Audio Stream Endpoint Idle state */
-	BT_AUDIO_CHAN_IDLE =             0x00,
+	BT_AUDIO_EP_STATE_IDLE =             0x00,
 	/** Audio Stream Endpoint Codec Configured state */
-	BT_AUDIO_CHAN_CODEC_CONFIGURED = 0x01,
+	BT_AUDIO_EP_STATE_CODEC_CONFIGURED = 0x01,
 	/** Audio Stream Endpoint QoS Configured state */
-	BT_AUDIO_CHAN_QOS_CONFIGURED =   0x02,
+	BT_AUDIO_EP_STATE_QOS_CONFIGURED =   0x02,
 	/** Audio Stream Endpoint Enabling state */
-	BT_AUDIO_CHAN_ENABLING =         0x03,
+	BT_AUDIO_EP_STATE_ENABLING =         0x03,
 	/** Audio Stream Endpoint Streaming state */
-	BT_AUDIO_CHAN_STREAMING =        0x04,
+	BT_AUDIO_EP_STATE_STREAMING =        0x04,
 	/** Audio Stream Endpoint Disabling state */
-	BT_AUDIO_CHAN_DISABLING =        0x05,
+	BT_AUDIO_EP_STATE_DISABLING =        0x05,
 	/** Audio Stream Endpoint Streaming state */
-	BT_AUDIO_CHAN_RELEASING =        0x06,
+	BT_AUDIO_EP_STATE_RELEASING =        0x06,
 };
 
 

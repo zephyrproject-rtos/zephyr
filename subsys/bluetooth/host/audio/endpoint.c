@@ -20,7 +20,6 @@
 #include "common/log.h"
 
 #include "endpoint.h"
-#include "chan.h"
 
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
@@ -60,7 +59,7 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	BT_DBG("chan %p ep %p", chan, ep);
 
 	if (is_broadcast) {
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
+		bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	if (ops != NULL && ops->connected != NULL) {
@@ -72,7 +71,7 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	if (ep->status.state != BT_ASCS_ASE_STATE_ENABLING) {
+	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		return;
 	}
 
@@ -104,9 +103,10 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	if (is_broadcast) {
 		if (bt_audio_ep_is_broadcast_src(ep)) {
 			bt_audio_chan_set_state(ep->chan,
-						BT_AUDIO_CHAN_QOS_CONFIGURED);
+						BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 		} else {
-			bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_IDLE);
+			bt_audio_chan_set_state(ep->chan,
+						BT_AUDIO_EP_STATE_IDLE);
 		}
 	}
 
@@ -124,14 +124,14 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	}
 
 	switch (ep->status.state) {
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		/* noop */
 		break;
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		bt_audio_chan_stop(ep->chan);
 		break;
-	case BT_ASCS_ASE_STATE_ENABLING:
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		bt_audio_chan_disable(ep->chan);
 		break;
 	}
@@ -416,7 +416,7 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		bt_audio_chan_disconnect(ep->chan);
 	}
 
-	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
+	bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->qos) {
@@ -473,7 +473,7 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
 	       ep->cig_id, ep->cis_id);
 
-	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
+	bt_audio_chan_set_state(ep->chan, BT_AUDIO_EP_STATE_STREAMING);
 
 	/* Notify local capability */
 	if (ep->cap && ep->cap->ops && ep->cap->ops->start) {
@@ -548,19 +548,19 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	ep->status = *status;
 
 	switch (status->state) {
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 		ep_idle(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		switch (old_state) {
 		/* Valid only if ASE_State field = 0x00 (Idle) */
-		case BT_ASCS_ASE_STATE_IDLE:
+		case BT_AUDIO_EP_STATE_IDLE:
 		 /* or 0x01 (Codec Configured) */
-		case BT_ASCS_ASE_STATE_CONFIG:
+		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		 /* or 0x02 (QoS Configured) */
-		case BT_ASCS_ASE_STATE_QOS:
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		 /* or 0x06 (Releasing) */
-		case BT_ASCS_ASE_STATE_RELEASING:
+		case BT_AUDIO_EP_STATE_RELEASING:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -569,12 +569,12 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		}
 		ep_config(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		switch (old_state) {
 		/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-		case BT_ASCS_ASE_STATE_CONFIG:
+		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		 /* or 0x02 (QoS Configured) */
-		case BT_ASCS_ASE_STATE_QOS:
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -583,21 +583,21 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		}
 		ep_qos(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
-		if (old_state != BT_ASCS_ASE_STATE_QOS) {
+		if (old_state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 			BT_WARN("Invalid state transition: %s -> %s",
 				bt_audio_ep_state_str(old_state),
 				bt_audio_ep_state_str(ep->status.state));
 		}
 		ep_enabling(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		switch (old_state) {
 		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
-		case BT_ASCS_ASE_STATE_QOS:
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		 /* or  0x03 (Enabling)*/
-		case BT_ASCS_ASE_STATE_ENABLING:
+		case BT_AUDIO_EP_STATE_ENABLING:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -606,12 +606,12 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		}
 		ep_streaming(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		switch (old_state) {
 		/* Valid only if ASE_State field = 0x03 (Enabling) */
-		case BT_ASCS_ASE_STATE_ENABLING:
+		case BT_AUDIO_EP_STATE_ENABLING:
 		 /* or 0x04 (Streaming) */
-		case BT_ASCS_ASE_STATE_STREAMING:
+		case BT_AUDIO_EP_STATE_STREAMING:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -620,18 +620,18 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		}
 		ep_disabling(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_RELEASING:
+	case BT_AUDIO_EP_STATE_RELEASING:
 		switch (old_state) {
 		/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-		case BT_ASCS_ASE_STATE_CONFIG:
+		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		 /* or 0x02 (QoS Configured) */
-		case BT_ASCS_ASE_STATE_QOS:
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		 /* or 0x03 (Enabling) */
-		case BT_ASCS_ASE_STATE_ENABLING:
+		case BT_AUDIO_EP_STATE_ENABLING:
 		 /* or 0x04 (Streaming) */
-		case BT_ASCS_ASE_STATE_STREAMING:
+		case BT_AUDIO_EP_STATE_STREAMING:
 		 /* or 0x04 (Disabling) */
-		case BT_ASCS_ASE_STATE_DISABLING:
+		case BT_AUDIO_EP_STATE_DISABLING:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -750,21 +750,21 @@ int bt_audio_ep_get_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 					sizeof(ep->status));
 
 	switch (ep->status.state) {
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 	/* Fallthrough */
-	case BT_ASCS_ASE_STATE_RELEASING:
+	case BT_AUDIO_EP_STATE_RELEASING:
 		break;
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		ep_get_status_config(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		ep_get_status_qos(ep, buf);
 		break;
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	/* Fallthrough */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 	/* Fallthrough */
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		ep_get_status_enable(ep, buf);
 		break;
 	default:
@@ -975,17 +975,7 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 		return;
 	}
 
-	switch (state) {
-	case BT_ASCS_ASE_STATE_IDLE:
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_IDLE);
-		break;
-	case BT_ASCS_ASE_STATE_QOS:
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
-		break;
-	case BT_ASCS_ASE_STATE_STREAMING:
-		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
-		break;
-	}
+	bt_audio_chan_set_state(ep->chan, state);
 }
 
 #if defined(CONFIG_BT_BAP)
@@ -1150,11 +1140,11 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 	 /* or 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -1193,9 +1183,9 @@ int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -1235,7 +1225,7 @@ int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		return -EINVAL;
 	}
 
-	if (ep->status.state != BT_ASCS_ASE_STATE_QOS) {
+	if (ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(ep->status.state));
 		return -EINVAL;
@@ -1266,9 +1256,9 @@ int bt_audio_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	switch (ep->status.state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	/* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -1296,8 +1286,8 @@ int bt_audio_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		return -EINVAL;
 	}
 
-	if (ep->status.state != BT_ASCS_ASE_STATE_ENABLING &&
-	    ep->status.state != BT_ASCS_ASE_STATE_DISABLING) {
+	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING &&
+	    ep->status.state != BT_AUDIO_EP_STATE_DISABLING) {
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(ep->status.state));
 		return -EINVAL;
@@ -1320,9 +1310,9 @@ int bt_audio_ep_disable(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	 /* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -1346,7 +1336,7 @@ int bt_audio_ep_stop(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	/* Valid only if ASE_State field value = 0x05 (Disabling). */
-	if (ep->status.state != BT_ASCS_ASE_STATE_DISABLING) {
+	if (ep->status.state != BT_AUDIO_EP_STATE_DISABLING) {
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(ep->status.state));
 		return -EINVAL;
@@ -1369,15 +1359,15 @@ int bt_audio_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 	 /* or 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	 /* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 	 /* or 0x05 (Disabling) */
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
 		if (ep->cap) {
