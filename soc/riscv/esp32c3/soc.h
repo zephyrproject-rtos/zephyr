@@ -43,6 +43,9 @@ extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
 extern void esp_rom_ets_set_user_start(uint32_t start);
 extern void esprv_intc_int_set_threshold(int priority_threshold);
 uint32_t soc_intr_get_next_source(void);
+extern void esp_rom_Cache_Resume_ICache(uint32_t autoload);
+extern int esp_rom_Cache_Invalidate_Addr(uint32_t addr, uint32_t size);
+extern spiflash_legacy_data_t esp_rom_spiflash_legacy_data;
 
 #endif /* _ASMLANGUAGE */
 
