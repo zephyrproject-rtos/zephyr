@@ -94,6 +94,10 @@ arduino_serial: &lpuart4 {};
 	current-speed = <115200>;
 };
 
+&lpspi1 {
+	status = "okay";
+};
+
 zephyr_udc0: &usb1 {
 	status = "okay";
 };
