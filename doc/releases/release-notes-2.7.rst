@@ -316,6 +316,11 @@ Drivers and Sensors
 
   * Added STM32WL ADC driver
   * STM32: Added support for oversampling
+  * Added driver for Microchip MEC172x
+
+* Audio
+
+  * Added DMIC driver for nRF PDM peripherals
 
 * Bluetooth
 
@@ -399,7 +404,7 @@ Drivers and Sensors
 * I2S
 
   * Added Atmel SAM I2S driver support to XDMAC reload
-
+  * Added driver for nRF I2S peripherals
 
 * IEEE 802.15.4
 
@@ -448,7 +453,9 @@ Drivers and Sensors
 * PWM
 
   * Property "st,prescaler" of binding "st,stm32-pwm" now defaults to "0".
-
+  * Added driver for ITE IT8XXX2 series
+  * Added driver for NXP LPC devices
+  * Added driver for Telink B91
 
 * Sensor
 
