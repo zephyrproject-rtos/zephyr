@@ -28,6 +28,7 @@ struct pwm_mcux_config {
 
 struct pwm_mcux_data {
 	uint32_t period_cycles[CHANNEL_COUNT];
+	uint16_t pulse_cycles[CHANNEL_COUNT];
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
@@ -64,6 +65,7 @@ static int mcux_pwm_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
+	data->pulse_cycles[pwm] = pulse_cycles;
 
 	/* FIXME: Force re-setup even for duty-cycle update */
 	if (period_cycles != data->period_cycles[pwm]) {
@@ -99,9 +101,16 @@ static int mcux_pwm_pin_set(const struct device *dev, uint32_t pwm,
 
 		PWM_StartTimer(config->base, 1U << config->index);
 	} else {
-		PWM_UpdatePwmDutycycle(config->base, config->index,
-				       (pwm == 0) ? kPWM_PwmA : kPWM_PwmB,
-				       config->mode, duty_cycle);
+		// update both buffers, so that the reload of the compare registers doesn't destroy un-updated PWMs
+		// this formula calculates the duty_cycle * 65535 so that the range matches the expected one
+		uint16_t duty_cycleA = (65535U * data->pulse_cycles[0]) / period_cycles;
+		PWM_UpdatePwmDutycycleHighAccuracy(config->base, config->index, kPWM_PwmA,
+										   config->mode, duty_cycleA);
+
+		uint16_t duty_cycleB = (65535U * data->pulse_cycles[1]) / period_cycles;
+		PWM_UpdatePwmDutycycleHighAccuracy(config->base, config->index, kPWM_PwmB,
+										   config->mode, duty_cycleB);
+
 		PWM_SetPwmLdok(config->base, 1U << config->index, true);
 	}
 
