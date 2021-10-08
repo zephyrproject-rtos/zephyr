@@ -38,6 +38,9 @@ Changes in this release
 
 * Added function for getting status of USB device remote wakeup feature.
 
+* Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
+  along ``reg`` and ``interrupts``.
+
 ==========================
 
 Removed APIs in this release
