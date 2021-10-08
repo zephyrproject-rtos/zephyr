@@ -549,7 +549,8 @@
  * - reg property: use DT_NUM_REGS(node_id) instead
  * - interrupts property: use DT_NUM_IRQS(node_id) instead
  *
- * It is an error to use this macro with the reg or interrupts properties.
+ * It is an error to use this macro with the ranges, dma-ranges, reg
+ * or interrupts properties.
  *
  * For other properties, behavior is undefined.
  *
