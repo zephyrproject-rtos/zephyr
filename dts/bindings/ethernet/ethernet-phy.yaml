@@ -22,6 +22,9 @@ properties:
       type: boolean
       required: false
       description: Do not reset the PHY during initialization
+    late_mii_start:
+      type: boolean
+      description: Start MII communication when callback is registered (instead of init)
     fixed-link:
       type: string
       required: false
