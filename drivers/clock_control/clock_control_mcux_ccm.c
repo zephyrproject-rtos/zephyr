@@ -24,6 +24,18 @@ static const clock_name_t lpspi_clocks[] = {
 };
 #endif
 
+#ifdef CONFIG_SPI_MCUX_FLEXIO
+// Same for flexio1 and flexio2
+static const clock_name_t flexio_clocks[] = {
+        kCLOCK_AudioPllClk, // PLL4 (Audio PLL)
+        kCLOCK_Usb1PllPfd2Clk, // PLL3 (USB1 PLL) PFD2
+        kCLOCK_VideoPllClk, // PLL5 (Video PLL)
+        kCLOCK_Usb1PllClk, // really pll3_sw_clk, which is pll3 main clock or CCM_PLL3_BYP. But since the datasheet
+                           // says "This bit should only be used for testing purposes.", and I can't make sense of
+                           // CCM_PLL3_BYP, assume pll3 main clock...
+};
+#endif
+
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
@@ -135,7 +147,26 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-	}
+#ifdef CONFIG_SPI_MCUX_FLEXIO
+        case IMX_CCM_FLEXIO1_CLK: {
+            uint32_t flexio1_mux = CLOCK_GetMux(kCLOCK_Flexio1Mux);
+            clock_name_t flexio1_clock = flexio_clocks[flexio1_mux];
+            *rate = CLOCK_GetFreq(flexio1_clock)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio1PreDiv) + 1)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
+            break;
+        }
+        case IMX_CCM_FLEXIO2_CLK: {
+            uint32_t flexio2_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);
+            clock_name_t flexio2_clock = flexio_clocks[flexio2_mux];
+            *rate = CLOCK_GetFreq(flexio2_clock)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio2PreDiv) + 1)
+                    / (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
+            break;
+        }
+#endif
+
+    }
 
 	return 0;
 }

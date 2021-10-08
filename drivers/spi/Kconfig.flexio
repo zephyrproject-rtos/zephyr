@@ -1,0 +1,7 @@
+# NXP FlexIO SPI driver configuration options
+
+menuconfig SPI_MCUX_FLEXIO
+	bool "NXP FlexIO SPI controller driver"
+	depends on HAS_MCUX_FLEXIO && CLOCK_CONTROL
+	help
+	  Enable FlexIO SPI support.
