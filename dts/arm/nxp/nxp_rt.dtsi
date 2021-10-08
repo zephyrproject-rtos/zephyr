@@ -527,6 +527,11 @@
 				interrupts = <115 0>;
 				interrupt-names = "IEEE1588_TMR";
 			};
+			mdio: mdio {
+				compatible = "nxp,kinetis-mdio";
+				label = "MDIO_0";
+				status = "disabled";
+			};
 		};
 
 		src: reset-controller@400f8000 {

@@ -33,6 +33,11 @@
 				interrupts = <153 0>;
 				interrupt-names = "IEEE1588_TMR";
 			};
+			mdio2: mdio {
+			compatible = "nxp,kinetis-mdio";
+			label = "MDIO_1";
+			status = "disabled";
+			};
 		};
 	};
 };
