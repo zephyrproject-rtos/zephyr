@@ -377,6 +377,15 @@ static int mimxrt1050_evk_init(const struct device *dev)
 	imxrt_usdhc_pinmux_cb_register(mimxrt1050_evk_usdhc_pinmux);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
+	/* ADC1 Input 0 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27, 0xB0u);
+	/* ADC1 Input 15 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26, 0xB0u);
+#endif
+
 	return 0;
 }
 
