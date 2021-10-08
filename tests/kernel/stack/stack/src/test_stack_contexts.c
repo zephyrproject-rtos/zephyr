@@ -183,7 +183,7 @@ void test_stack_alloc_thread2thread(void)
 	/** Requested buffer allocation from the test pool.*/
 	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
 	zassert_true(ret == -ENOMEM,
-			"resource pool is smaller then requested buffer");
+			"requested buffer is smaller than resource pool");
 }
 
 static void low_prio_wait_for_stack(void *p1, void *p2, void *p3)
