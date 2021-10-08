@@ -19,7 +19,6 @@
 #include "../iso_internal.h"
 
 #include "endpoint.h"
-#include "chan.h"
 #include "capabilities.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_BROADCAST_SINK)
@@ -742,7 +741,7 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 	struct bt_audio_ep *ep;
 	int err;
 
-	if (chan->state != BT_AUDIO_CHAN_IDLE) {
+	if (chan->state != BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("Channel %p not idle", chan);
 		return -EALREADY;
 	}
@@ -782,7 +781,7 @@ static void broadcast_sink_cleanup_chans(struct bt_audio_broadcast_sink *sink)
 		chan->qos = NULL;
 		chan->codec = NULL;
 		chan->iso = NULL;
-		chan->state = BT_AUDIO_CHAN_IDLE;
+		chan->state = BT_AUDIO_EP_STATE_IDLE;
 	}
 }
 
@@ -889,7 +888,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 		chan = &chans[i];
 
-		bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_QOS_CONFIGURED);
+		bt_audio_chan_set_state(chan, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
 	return 0;
@@ -907,8 +906,8 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 	chan = &sink->chans[0];
 
-	if (chan->state != BT_AUDIO_CHAN_STREAMING &&
-	    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+	if (chan->state != BT_AUDIO_EP_STATE_STREAMING &&
+	    chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 		BT_DBG("Channel is not configured or streaming");
 		return -EALREADY;
 	}
@@ -937,8 +936,8 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 
 	chan = &sink->chans[0];
 
-	if (chan != NULL && chan->state != BT_AUDIO_CHAN_IDLE) {
-		BT_DBG("Sink chan %p is not in the BT_AUDIO_CHAN_IDLE state: %u",
+	if (chan != NULL && chan->state != BT_AUDIO_EP_STATE_IDLE) {
+		BT_DBG("Sink chan %p is not in the BT_AUDIO_EP_STATE_IDLE state: %u",
 		       chan, chan->state);
 		return -EBADMSG;
 	}

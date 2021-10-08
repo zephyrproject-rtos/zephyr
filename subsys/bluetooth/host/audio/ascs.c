@@ -25,7 +25,6 @@
 #include "../hci_core.h"
 #include "../conn_internal.h"
 
-#include "chan.h"
 #include "endpoint.h"
 #include "capabilities.h"
 #include "pacs_internal.h"
@@ -225,9 +224,9 @@ static void ascs_clear(struct bt_ascs *ascs)
 	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
-		if (ase->ep.status.state != BT_ASCS_ASE_STATE_IDLE) {
+		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
 			ase_release(ase, false);
-			bt_audio_ep_set_state(&ase->ep, BT_ASCS_ASE_STATE_IDLE);
+			bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 		}
 	}
 
@@ -267,7 +266,7 @@ static void ascs_dettach(struct bt_ascs *ascs)
 	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
-		if (ase->ep.status.state != BT_ASCS_ASE_STATE_IDLE) {
+		if (ase->ep.status.state != BT_AUDIO_EP_STATE_IDLE) {
 			/* Cache if disconnected with codec configured */
 			ase_release(ase, true);
 		}
@@ -418,12 +417,12 @@ static void ase_process(struct k_work *work)
 
 	bt_gatt_notify(ase->ascs->conn, &attr, ase_buf.data, ase_buf.len);
 
-	if (ase->ep.status.state == BT_ASCS_ASE_STATE_RELEASING &&
+	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING &&
 	    !ase->ep.chan) {
-		bt_audio_ep_set_state(&ase->ep, BT_ASCS_ASE_STATE_IDLE);
+		bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 	}
 
-	if (ase->ep.status.state == BT_ASCS_ASE_STATE_IDLE) {
+	if (ase->ep.status.state == BT_AUDIO_EP_STATE_IDLE) {
 		return;
 	}
 }
@@ -454,8 +453,8 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 
 	BT_DBG("ase %p conn %p", ase, ase->ascs->conn);
 
-	if (state == BT_ASCS_ASE_STATE_RELEASING ||
-	    state == BT_ASCS_ASE_STATE_IDLE) {
+	if (state == BT_AUDIO_EP_STATE_RELEASING ||
+	    state == BT_AUDIO_EP_STATE_IDLE) {
 		ase_chan_del(ase);
 	}
 
@@ -596,11 +595,11 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 
 	switch (ase->ep.status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 	 /* or 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",

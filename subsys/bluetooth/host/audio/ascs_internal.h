@@ -44,15 +44,6 @@
 #define BT_ASCS_QOS_FRAMING_UNFRAMED     0x00
 #define BT_ASCS_QOS_FRAMING_FRAMED       0x01
 
-/* ASE characteristic states */
-#define BT_ASCS_ASE_STATE_IDLE           0x00
-#define BT_ASCS_ASE_STATE_CONFIG         0x01
-#define BT_ASCS_ASE_STATE_QOS            0x02
-#define BT_ASCS_ASE_STATE_ENABLING       0x03
-#define BT_ASCS_ASE_STATE_STREAMING      0x04
-#define BT_ASCS_ASE_STATE_DISABLING      0x05
-#define BT_ASCS_ASE_STATE_RELEASING      0x06
-
 /* Format of the ASE characteristic, defined in Table 4.6 */
 struct bt_ascs_ase_status {
 	uint8_t  id;

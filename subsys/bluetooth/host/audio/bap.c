@@ -19,7 +19,6 @@
 #include "../hci_core.h"
 #include "../conn_internal.h"
 
-#include "chan.h"
 #include "endpoint.h"
 #include "capabilities.h"
 #include "pacs_internal.h"
@@ -464,7 +463,7 @@ static int bap_release(struct bt_audio_chan *chan)
 	len = buf->len;
 
 	/* Only attempt to release if not IDLE already */
-	if (chan->ep->status.state == BT_ASCS_ASE_STATE_IDLE) {
+	if (chan->ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
 		bt_audio_chan_reset(chan);
 	} else {
 		err = bt_audio_ep_release(ep, buf);
@@ -478,7 +477,7 @@ static int bap_release(struct bt_audio_chan *chan)
 		/* Only group ASEs for the same connection */
 		if (tmp->conn == chan->conn) {
 			/* Only attempt to release if not IDLE already */
-			if (chan->ep->status.state == BT_ASCS_ASE_STATE_IDLE) {
+			if (chan->ep->status.state == BT_AUDIO_EP_STATE_IDLE) {
 				bt_audio_chan_reset(chan);
 			} else {
 				err = bt_audio_ep_release(tmp->ep, buf);

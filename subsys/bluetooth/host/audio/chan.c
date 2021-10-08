@@ -19,7 +19,6 @@
 #include "../iso_internal.h"
 
 #include "endpoint.h"
-#include "chan.h"
 #include "capabilities.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CHAN)
@@ -63,11 +62,11 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 	 /* or 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -95,7 +94,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 	bt_audio_chan_attach(conn, chan, ep, cap, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(ep, BT_ASCS_ASE_STATE_CONFIG);
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	}
 
 	return chan;
@@ -133,11 +132,11 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 	 /* or 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -160,7 +159,8 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 	bt_audio_chan_attach(chan->conn, chan, chan->ep, cap, codec);
 
 	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_CONFIG);
+		bt_audio_ep_set_state(chan->ep,
+				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	}
 
 	return 0;
@@ -305,9 +305,9 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	/* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -380,7 +380,8 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 	chan->qos = qos;
 
 	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_QOS);
+		bt_audio_ep_set_state(chan->ep,
+				      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 		bt_audio_chan_iso_listen(chan);
 	}
 
@@ -399,7 +400,7 @@ int bt_audio_chan_enable(struct bt_audio_chan *chan,
 	}
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (chan->ep->status.state != BT_ASCS_ASE_STATE_QOS) {
+	if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(chan->ep->status.state));
 		return -EBADMSG;
@@ -419,7 +420,7 @@ done:
 		return 0;
 	}
 
-	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_ENABLING);
+	bt_audio_ep_set_state(chan->ep, BT_AUDIO_EP_STATE_ENABLING);
 
 	if (bt_audio_chan_enabling(chan)) {
 		return 0;
@@ -451,9 +452,9 @@ int bt_audio_chan_metadata(struct bt_audio_chan *chan,
 
 	switch (chan->ep->status.state) {
 	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	/* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -493,9 +494,9 @@ int bt_audio_chan_disable(struct bt_audio_chan *chan)
 
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	 /* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -518,7 +519,7 @@ done:
 		return 0;
 	}
 
-	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_DISABLING);
+	bt_audio_ep_set_state(chan->ep, BT_AUDIO_EP_STATE_DISABLING);
 
 	if (chan->cap->type == BT_AUDIO_SOURCE) {
 		return 0;
@@ -562,7 +563,7 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -582,7 +583,7 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 
 done:
 	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_STREAMING);
+		bt_audio_ep_set_state(chan->ep, BT_AUDIO_EP_STATE_STREAMING);
 	}
 
 	return err;
@@ -617,7 +618,7 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan)
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x03 (Disabling) */
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -649,7 +650,7 @@ done:
 		return err;
 	}
 
-	bt_audio_ep_set_state(ep, BT_ASCS_ASE_STATE_QOS);
+	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	bt_audio_chan_iso_listen(chan);
 
 	return err;
@@ -666,7 +667,7 @@ int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 		return -EINVAL;
 	}
 
-	if (chan->state == BT_AUDIO_CHAN_IDLE) {
+	if (chan->state == BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("Audio channel is idle");
 		return -EALREADY;
 	}
@@ -686,15 +687,15 @@ int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	 /* or 0x02 (QoS Configured) */
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 	 /* or 0x03 (Enabling) */
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 	 /* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 	 /* or 0x04 (Disabling) */
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
@@ -710,7 +711,7 @@ int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 	err = chan->cap->ops->release(chan);
 	if (err) {
 		if (err == -ENOTCONN) {
-			bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
+			bt_audio_chan_set_state(chan, BT_AUDIO_EP_STATE_IDLE);
 			return 0;
 		}
 		return err;
@@ -725,9 +726,10 @@ done:
 	 * server.
 	 */
 	if (!cache) {
-		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_RELEASING);
+		bt_audio_ep_set_state(chan->ep, BT_AUDIO_EP_STATE_RELEASING);
 	} else {
-		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_CONFIG);
+		bt_audio_ep_set_state(chan->ep,
+				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	}
 
 	return err;
@@ -741,12 +743,12 @@ int bt_audio_chan_link(struct bt_audio_chan *chan1, struct bt_audio_chan *chan2)
 		return -EINVAL;
 	}
 
-	if (chan1->state != BT_AUDIO_CHAN_IDLE) {
+	if (chan1->state != BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("chan1 %p is not idle", chan1);
 		return -EINVAL;
 	}
 
-	if (chan2->state != BT_AUDIO_CHAN_IDLE) {
+	if (chan2->state != BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("chan2 %p is not idle", chan2);
 		return -EINVAL;
 	}
@@ -770,7 +772,7 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 		return -EINVAL;
 	}
 
-	if (chan1->state != BT_AUDIO_CHAN_IDLE) {
+	if (chan1->state != BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("chan1 %p is not idle", chan1);
 		return -EINVAL;
 	}
@@ -785,7 +787,7 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 				return err;
 			}
 		}
-	} else if (chan2->state != BT_AUDIO_CHAN_IDLE) {
+	} else if (chan2->state != BT_AUDIO_EP_STATE_IDLE) {
 		BT_DBG("chan2 %p is not idle", chan2);
 		return -EINVAL;
 	}
@@ -822,11 +824,11 @@ static void chan_detach(struct bt_audio_chan *chan)
 const char *bt_audio_chan_state_str(uint8_t state)
 {
 	switch (state) {
-	case BT_AUDIO_CHAN_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 		return "idle";
-	case BT_AUDIO_CHAN_QOS_CONFIGURED:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		return "configured";
-	case BT_AUDIO_CHAN_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		return "streaming";
 	default:
 		return "unknown";
@@ -842,14 +844,14 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 
 	/* check transitions validness */
 	switch (state) {
-	case BT_AUDIO_CHAN_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 		/* regardless of old state always allows this state */
 		break;
-	case BT_AUDIO_CHAN_QOS_CONFIGURED:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		/* regardless of old state always allows this state */
 		break;
-	case BT_AUDIO_CHAN_STREAMING:
-		if (chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+	case BT_AUDIO_EP_STATE_STREAMING:
+		if (chan->state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
@@ -858,7 +860,7 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 		return;
 	}
 
-	if (state == BT_AUDIO_CHAN_IDLE) {
+	if (state == BT_AUDIO_EP_STATE_IDLE) {
 		chan_detach(chan);
 	}
 
@@ -867,7 +869,7 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 #else
 void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state)
 {
-	if (state == BT_AUDIO_CHAN_IDLE) {
+	if (state == BT_AUDIO_EP_STATE_IDLE) {
 		chan_detach(chan);
 	}
 
@@ -1061,7 +1063,7 @@ void bt_audio_chan_reset(struct bt_audio_chan *chan)
 		BT_ERR("Failed to terminate CIG: %d", err);
 	}
 	bt_audio_chan_unlink(chan, NULL);
-	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
+	bt_audio_chan_set_state(chan, BT_AUDIO_EP_STATE_IDLE);
 }
 
 int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
@@ -1070,7 +1072,7 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (chan->state != BT_AUDIO_CHAN_STREAMING) {
+	if (chan->state != BT_AUDIO_EP_STATE_STREAMING) {
 		BT_DBG("Channel not ready for streaming");
 		return -EBADMSG;
 	}
@@ -1081,7 +1083,7 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 	} else if (!bt_audio_ep_is_broadcast_src(chan->ep)) {
 		switch (chan->ep->status.state) {
 		/* or 0x04 (Streaming) */
-		case BT_ASCS_ASE_STATE_STREAMING:
+		case BT_AUDIO_EP_STATE_STREAMING:
 			break;
 		default:
 			BT_ERR("Invalid state: %s",
@@ -1145,8 +1147,8 @@ int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
 
 		chan = &chans[i];
 
-		if (chan->state != BT_AUDIO_CHAN_IDLE &&
-		    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+		if (chan->state != BT_AUDIO_EP_STATE_IDLE &&
+		    chan->state != BT_AUDIO_EP_STATE_CODEC_CONFIGURED) {
 			BT_DBG("Incorrect channel[%u] %p state: %u",
 			       i, chan, chan->state);
 
@@ -1178,8 +1180,8 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->chans, chan, node) {
-		if (chan->state != BT_AUDIO_CHAN_IDLE &&
-		    chan->state != BT_AUDIO_CHAN_QOS_CONFIGURED) {
+		if (chan->state != BT_AUDIO_EP_STATE_IDLE &&
+		    chan->state != BT_AUDIO_EP_STATE_CODEC_CONFIGURED) {
 			BT_DBG("chan %p invalid state %u", chan, chan->state);
 			return -EINVAL;
 		}

@@ -7,6 +7,7 @@
  */
 
 #include "ascs_internal.h"
+#include "chan.h"
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST)
 #define UNICAST_GROUP_CNT CONFIG_BT_BAP_UNICAST_GROUP_COUNT
@@ -113,19 +114,19 @@ struct bt_audio_broadcast_sink {
 static inline const char *bt_audio_ep_state_str(uint8_t state)
 {
 	switch (state) {
-	case BT_ASCS_ASE_STATE_IDLE:
+	case BT_AUDIO_EP_STATE_IDLE:
 		return "idle";
-	case BT_ASCS_ASE_STATE_CONFIG:
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 		return "codec-configured";
-	case BT_ASCS_ASE_STATE_QOS:
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
 		return "qos-configured";
-	case BT_ASCS_ASE_STATE_ENABLING:
+	case BT_AUDIO_EP_STATE_ENABLING:
 		return "enabling";
-	case BT_ASCS_ASE_STATE_STREAMING:
+	case BT_AUDIO_EP_STATE_STREAMING:
 		return "streaming";
-	case BT_ASCS_ASE_STATE_DISABLING:
+	case BT_AUDIO_EP_STATE_DISABLING:
 		return "disabling";
-	case BT_ASCS_ASE_STATE_RELEASING:
+	case BT_AUDIO_EP_STATE_RELEASING:
 		return "releasing";
 	default:
 		return "unknown";
