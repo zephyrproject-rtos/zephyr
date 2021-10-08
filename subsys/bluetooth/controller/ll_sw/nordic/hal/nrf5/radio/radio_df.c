@@ -11,8 +11,10 @@
 #include <sys/util_macro.h>
 #include <hal/nrf_radio.h>
 #include <hal/nrf_gpio.h>
+#include <hal/ccm.h>
 
 #include "radio_nrf5.h"
+#include "radio.h"
 #include "radio_df.h"
 #include "radio_internal.h"
 
@@ -237,39 +239,6 @@ void radio_df_mode_set_aoa(void)
 void radio_df_mode_set_aod(void)
 {
 	radio_df_mode_set(NRF_RADIO_DFE_OP_MODE_AOD);
-}
-
-/* @brief Function configures CTE inline register to start sampling of CTE
- *        according to information parsed from CTEInfo filed of received PDU.
- *
- * @param[in] cte_info_in_s1    Informs where to expect CTEInfo filed in PDU:
- *                              in S1 for data pdu, not in S1 for adv. PDU
- */
-void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
-{
-	const nrf_radio_cteinline_conf_t inline_conf = {
-		.enable = true,
-		/* Indicates whether CTEInfo is in S1 byte or not. */
-		.info_in_s1 = cte_info_in_s1,
-		/* Enable or disable switching and sampling when CRC is not OK. */
-#if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-		.err_handling = true,
-#else
-		.err_handling = false,
-#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
-		/* Maximum range of CTE time. 20 * 8us according to BT spec.*/
-		.time_range = NRF_RADIO_CTEINLINE_TIME_RANGE_20,
-		/* Spacing between samples for 1us AoD or AoA is set to 2us. */
-		.rx1us = NRF_RADIO_CTEINLINE_RX_MODE_2US,
-		/* Spacing between samples for 2us AoD or AoA is set to 4us. */
-		.rx2us = NRF_RADIO_CTEINLINE_RX_MODE_4US,
-		/**< S0 bit pattern to match all types of adv. PDUs */
-		.s0_pattern = 0x0,
-		/**< S0 bit mask set to don't match any bit in SO octet */
-		.s0_mask = 0x0
-	};
-
-	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
 }
 
 static void radio_df_cte_inline_set_disabled(void)

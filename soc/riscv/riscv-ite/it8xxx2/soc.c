@@ -5,6 +5,7 @@
  *
  */
 
+#include <arch/riscv/csr.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -51,9 +52,15 @@ static const struct pll_config_t pll_configuration[] = {
 
 void __intc_ram_code chip_pll_ctrl(enum chip_pll_mode mode)
 {
+	volatile uint8_t _pll_ctrl __unused;
+
 	IT8XXX2_ECPM_PLLCTRL = mode;
-	/* for deep doze / sleep mode */
-	IT8XXX2_ECPM_PLLCTRL = mode;
+	/*
+	 * for deep doze / sleep mode
+	 * This load operation will ensure PLL setting is taken into
+	 * control register before wait for interrupt instruction.
+	 */
+	_pll_ctrl = IT8XXX2_ECPM_PLLCTRL;
 }
 
 void __intc_ram_code chip_run_pll_sequence(const struct pll_config_t *pll)
@@ -131,6 +138,48 @@ static int chip_change_pll(const struct device *dev)
 }
 SYS_INIT(chip_change_pll, POST_KERNEL, 0);
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
+
+extern volatile int wait_interrupt_fired;
+
+static ALWAYS_INLINE void riscv_idle(unsigned int key)
+{
+	/* Disable M-mode external interrupt */
+	csr_clear(mie, MIP_MEIP);
+
+	sys_trace_idle();
+	/* Chip doze after wfi instruction */
+	chip_pll_ctrl(CHIP_PLL_DOZE);
+	/* Set flag before entering low power mode. */
+	wait_interrupt_fired = 1;
+	/* unlock interrupts */
+	irq_unlock(key);
+	/* Wait for interrupt */
+	__asm__ volatile ("wfi");
+
+	/* Enable M-mode external interrupt */
+	csr_set(mie, MIP_MEIP);
+	/*
+	 * Sometimes wfi instruction may fail due to CPU's MTIP@mip
+	 * register is non-zero.
+	 * If the wait_interrupt_fired flag is true at this point,
+	 * it means that EC waked-up by the above issue not an
+	 * interrupt. Hence we loop running wfi instruction here until
+	 * wfi success.
+	 */
+	while (wait_interrupt_fired) {
+		__asm__ volatile ("wfi");
+	}
+}
+
+void arch_cpu_idle(void)
+{
+	riscv_idle(MSTATUS_IEN);
+}
+
+void arch_cpu_atomic_idle(unsigned int key)
+{
+	riscv_idle(key);
+}
 
 static int ite_it8xxx2_init(const struct device *arg)
 {

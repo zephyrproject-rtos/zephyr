@@ -1432,15 +1432,20 @@ struct bt_hci_cp_le_ext_create_conn {
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
 
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING     0
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA           BIT(0)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US       BIT(1)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US       BIT(2)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE           BIT(3)
 #define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE         BIT(4)
+/* Constants to check correctness of CTE type */
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ALLOWED_BITS 5
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_INVALID_VALUE \
+	(~BIT_MASK(BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ALLOWED_BITS))
 
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044)
 struct bt_hci_cp_le_per_adv_create_sync {
-	uint8_t      options;
+	uint8_t options;
 	uint8_t      sid;
 	bt_addr_le_t addr;
 	uint16_t     skip;

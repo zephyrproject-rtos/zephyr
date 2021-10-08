@@ -3331,10 +3331,17 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
 
-	status = ll_sync_create(cmd->options, cmd->sid, cmd->addr.type,
-				cmd->addr.a.val, skip, sync_timeout,
-				cmd->cte_type);
-
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
+	if ((cmd->cte_type & BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_INVALID_VALUE) != 0) {
+		status = BT_HCI_ERR_CMD_DISALLOWED;
+#else
+	if (cmd->cte_type != BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_FILTERING) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+	} else {
+		status = ll_sync_create(cmd->options, cmd->sid, cmd->addr.type, cmd->addr.a.val,
+					skip, sync_timeout, cmd->cte_type);
+	}
 	*evt = cmd_status(status);
 }
 
@@ -5623,7 +5630,7 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	sep->status = se->status;
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
-	if (sep->status) {
+	if (sep->status != BT_HCI_ERR_SUCCESS && sep->status != BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) {
 		return;
 	}
 

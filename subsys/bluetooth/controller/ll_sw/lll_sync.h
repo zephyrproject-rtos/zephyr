@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Periodic advertisements synchronization status. */
+enum sync_status {
+	SYNC_STAT_ALLOWED,
+	SYNC_STAT_READY_OR_CONT_SCAN,
+	SYNC_STAT_TERM
+};
+
 struct lll_sync {
 	struct lll_hdr hdr;
 
@@ -12,6 +19,12 @@ struct lll_sync {
 
 	uint8_t phy:3;
 	uint8_t is_rx_enabled:1;
+	/* Bitmask providing not allowed types of CTE. */
+	uint8_t cte_type:5;
+	/* The member is required for filtering by CTE type. If filtering policy is disabled then
+	 * synchronization is terminated for periodic advertisements with wrong CTE type.
+	 */
+	uint8_t filter_policy:1;
 	uint8_t is_aux_sched:1;
 
 	uint16_t skip_prepare;
@@ -43,6 +56,8 @@ struct lll_sync {
 
 int lll_sync_init(void);
 int lll_sync_reset(void);
+void lll_sync_create_prepare(void *param);
 void lll_sync_prepare(void *param);
-
+enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_policy,
+					 uint8_t rx_cte_time, uint8_t rx_cte_type);
 extern uint16_t ull_sync_lll_handle_get(struct lll_sync *lll);

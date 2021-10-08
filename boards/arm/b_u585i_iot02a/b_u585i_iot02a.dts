@@ -25,6 +25,14 @@
 	};
 };
 
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
+};
+
+&lptim1 {
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
@@ -35,4 +43,22 @@
 	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
 		     &spi1_miso_pe14 &spi1_mosi_pe15>;
 	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		label = "HTS221";
+	};
 };

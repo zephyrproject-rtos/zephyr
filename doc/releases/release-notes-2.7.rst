@@ -837,6 +837,32 @@ Libraries / Subsystems
     together have allowed simplifying multiple device power management callback
     implementations.
 
+  * Introduced a new API to allow devices capable of wake up the system
+    register themselves was wake up sources. This permits applications to
+    select the most appropriate way to wake up the system when it is
+    suspended. Devices marked as wake up source are not suspended by the kernel
+    when the system is idle. It is possible to declare a device wake up capable
+    direct in devicetree like this example::
+
+        &gpio0 {
+                compatible = "zephyr,gpio-emul";
+                gpio-controller;
+                wakeup-source;
+        };
+
+    * Removed  ``PM_DEVICE_STATE_FORCE_SUSPEND`` device power state.because it
+      is an action and not a state.
+
+    * Removed ``PM_DEVICE_STATE_RESUMING`` and ``PM_DEVICE_STATE_SUSPENDING``.
+      They were transitional states and only used in device runtime. Now the
+      subsystem is using device flag to keep track of a transition.
+
+    * Implement constraint API as weak symbols so applications or platform
+      can override them. Platforms can have their own way to
+      set/release constraints in their drivers that are not part of
+      Zephyr code base.
+
+
 * Logging
 
 * MODBUS

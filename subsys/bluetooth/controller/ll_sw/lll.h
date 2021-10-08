@@ -284,6 +284,9 @@ struct node_rx_ftr {
 	uint8_t  aux_lll_sched:1;
 	uint8_t  aux_w4next:1;
 	uint8_t  aux_failed:1;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	uint8_t sync_status:2;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	uint8_t  phy_flags:1;
 	uint8_t  scan_req:1;
@@ -400,7 +403,14 @@ struct event_done_extra {
 	union {
 		struct {
 			uint16_t trx_cnt;
-			uint8_t  crc_valid;
+			uint8_t  crc_valid:1;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
+	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
+			/* Used to inform ULL that periodic advertising sync scan should be
+			 * terminated.
+			 */
+			uint8_t  sync_term:1;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */

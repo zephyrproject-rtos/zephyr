@@ -69,7 +69,7 @@ drivers from installation directory
 Setup Zephyr project for Windows
 =================================
 
-Setup from Zephyr site https://docs.zephyrproject.org/latest/getting_started/index.html:
+Brief of setup `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_:
 
 Open Git Bash and go to home:
 
@@ -115,134 +115,23 @@ dependencies. Install them with pip:
 
     pip3 install -r ~\zephyrproject\zephyr\scripts\requirements.txt
 
-Setup WSL1 with Ubuntu 20.4
+Setup WSL with Ubuntu
 ============================
 
-Setup Install Ubuntu 20.4 on `WSL1 <https://docs.microsoft.com/en-us/windows/wsl/install-win10>`_.
-Open PowerShell as Administrator and run:
+Install Ubuntu 20.4 on `WSL <https://docs.microsoft.com/en-us/windows/wsl/install-win10>`_.
+
+When finished, perform the Ubuntu setup from `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_,
+but skip west init and west update commands, as you can use the previously downloaded
+Zephyr source code at mounted Windows folder /mnt/c/Users/<user>/zephyrproject.
+Skip install of udev rules also, because we won't flash the board from wsl.
+
+Remember to run:
 
 .. code-block::
 
-   dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-
-Restart Windows. After restart, open Microsoft Store and install Ubuntu 20.4 LTS.
-
-.. image:: install_ubuntu_on_wsl.png
-   :height: 350
-   :width: 500
-   :align: center
-
-Run Ubuntu. You will be asked to create a user account and password:
-
-.. image:: ubuntu_first_launch.png
-   :height: 150
-   :width: 800
-   :align: center
-
-When finished, run commands:
-
-.. code-block::
-
-    sudo apt update
-    sudo apt upgrade
-
-Install python3:
-
-.. code-block::
-
-    sudo apt install python3
-
-Install pip:
-
-.. code-block::
-
-    sudo apt install python3-pip
-
-Install west:
-
-.. code-block::
-
-    pip3 install --user -U west
-
-Export local bin to PATH:
-
-.. code-block::
-
-    echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-
-Reload PATH:
-
-.. code-block::
-
-    source ~/.bashrc
-
-Install cmake:
-
-.. code-block::
-
-    sudo apt install cmake
-
-Go to your zephyrproject:
-
-.. code-block::
-
-    cd /mnt/c/Users/Codecoup/zephyrproject
-
-and then run:
-
-.. code-block::
-
+    cd /mnt/c/Users/<user>/zephyrproject
     west zephyr-export
-    pip3 install --user wheel
-    pip3 install --user -r /mnt/c/Users/codecoup/zephyrproject/zephyr/scripts/requirements.txt
-
-Check if all modules have been installed:
-
-.. code-block::
-
-    pip3 list
-
-If modules still will be missing, just install them with:
-
-.. code-block::
-
-    pip3 install <module_name>
-
-Install Ninja:
-
-.. code-block::
-
-    pip3 install ninja
-
-Go to home:
-
-.. code-block::
-
-    cd ~
-
-Download latest toolchain installer from https://github.com/zephyrproject-rtos/sdk-ng/releases. Move it to ~
-
-.. code-block::
-
-    mv /mnt/c/Users/Codecoup/Downloads/zephyr-sdk-<your_version>-setup.run ~
-
-Give permissions to the installer:
-
-.. code-block::
-
-    chmod +x zephyr-sdk-<your_version>-setup.run
-
-and run the installer:
-
-.. code-block::
-
-    ./zephyr-sdk-<your_version>-setup.run -- -d ~/zephyr-sdk-<your_version>
-
-Copy rules:
-
-.. code-block::
-
-    sudo cp ~/zephyr-sdk-<your_version>/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+    pip3 install --user -r zephyr/scripts/requirements.txt
 
 Restart the Ubuntu machine. You may want to shutdown all WSL consoles from
 Windows's Git Bash:
@@ -255,7 +144,7 @@ After Ubuntu restart, go to:
 
 .. code-block::
 
-    cd /mnt/c/Users/codecoup/zephyrproject
+    cd /mnt/c/Users/<user>/zephyrproject
 
 and test if west can build:
 
@@ -267,7 +156,7 @@ From now on, you can build projects by typing in Windows's Git Bash:
 
 .. code-block::
 
-    wsl -d Ubuntu-20.04 -u codecoup -- bash -c -i "cd /mnt/c/Users/Codecoup/zephyrproject/ ; west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/"
+    wsl -d Ubuntu-20.04 -u <user> -- bash -c -i "cd /mnt/c/Users/<user>/zephyrproject/ ; west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/"
 
 Install nrftools
 =================

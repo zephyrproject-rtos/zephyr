@@ -1,23 +1,14 @@
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
+ * Organisation (CSIRO) ABN 41 687 119 230.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
 #include <device.h>
-
-
-/*
- * @file
- * @brief Hello World demo
- */
-
 
 void main(void)
 {
-	printk("Hello World!\n");
 }
 
 #if DT_NODE_EXISTS(DT_INST(0, vnd_gpio))

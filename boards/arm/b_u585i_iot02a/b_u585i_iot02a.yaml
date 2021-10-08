@@ -9,5 +9,7 @@ toolchain:
 ram: 786
 flash: 2048
 supported:
+  - arduino_i2c
   - arduino_spi
+  - hts221
   - spi
