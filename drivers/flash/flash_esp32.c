@@ -10,6 +10,17 @@
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
+/*
+ * HAL includes go first to
+ * avoid BIT macro redefinition
+ */
+#include <esp_spi_flash.h>
+#include <hal/spi_ll.h>
+#include <hal/spi_flash_ll.h>
+#include <hal/spi_flash_hal.h>
+#include <soc/spi_struct.h>
+#include <spi_flash_defs.h>
+
 #include <kernel.h>
 #include <device.h>
 #include <stddef.h>
@@ -17,12 +28,6 @@
 #include <errno.h>
 #include <drivers/flash.h>
 #include <soc.h>
-#include <esp_spi_flash.h>
-#include <hal/spi_ll.h>
-#include <hal/spi_flash_ll.h>
-#include <hal/spi_flash_hal.h>
-#include <soc/spi_struct.h>
-#include <spi_flash_defs.h>
 
 #if defined(CONFIG_SOC_ESP32)
 #include "soc/dport_reg.h"
@@ -33,6 +38,13 @@
 #include "soc/spi_mem_reg.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/spi_flash.h"
+#elif defined(CONFIG_SOC_ESP32C3)
+#include "soc/spi_periph.h"
+#include "soc/spi_mem_reg.h"
+#include "soc/dport_access.h"
+#include "esp32c3/dport_access.h"
+#include "esp32c3/rom/cache.h"
+#include "esp32c3/rom/spi_flash.h"
 #endif
 
 #include "soc/mmu.h"
@@ -56,7 +68,15 @@ static const struct flash_parameters flash_esp32_parameters = {
 
 #define DEV_DATA(dev) ((struct flash_esp32_dev_data *const)(dev)->data)
 #define DEV_CFG(dev) ((const struct flash_esp32_dev_config *const)(dev)->config)
+
+#if !defined(CONFIG_SOC_ESP32C3)
 #define SPI1_EXTRA_DUMMIES (g_rom_spiflash_dummy_len_plus[1])
+#else
+#define SPI1_EXTRA_DUMMIES ((uint8_t)((rom_spiflash_legacy_data->dummy_len_plus)[1]))
+#define SPI_FREAD_QIO 0
+#define SPI_FREAD_DIO 0
+#endif
+
 #define MAX_BUFF_ALLOC_RETRIES 5
 #define MAX_READ_CHUNK 16384
 #define MAX_WRITE_CHUNK 8192
@@ -67,12 +87,17 @@ static const struct flash_parameters flash_esp32_parameters = {
 #define HOST_FLASH_CONTROLLER SPI0
 #define HOST_FLASH_RDSR SPI_FLASH_RDSR
 #define HOST_FLASH_FASTRD SPI_FASTRD_MODE
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_ESP32S2) || defined(CONFIG_SOC_ESP32C3)
 #define HOST_FLASH_CONTROLLER SPIMEM0
 #define HOST_FLASH_RDSR SPI_MEM_FLASH_RDSR
 #define HOST_FLASH_FASTRD SPI_MEM_FASTRD_MODE
 #endif
 
+#if defined(CONFIG_SOC_ESP32C3)
+static esp_rom_spiflash_chip_t esp_flashchip_info;
+#else
+#define esp_flashchip_info g_rom_flashchip
+#endif
 
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
@@ -307,7 +332,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	const spi_flash_guard_funcs_t *guard = spi_flash_guard_get();
 	uint32_t chip_size = cfg->chip->chip_size;
 
-#if defined(CONFIG_SOC_ESP32S2)
+#if defined(CONFIG_SOC_ESP32S2) || defined(CONFIG_SOC_ESP32C3)
 	WRITE_PERI_REG(PERIPHS_SPI_FLASH_CTRL, 0);
 #endif
 
@@ -426,7 +451,7 @@ static inline bool host_idle(spi_dev_t *hw)
 	bool idle = spi_flash_ll_host_idle(hw);
 
 	idle &= spi_flash_ll_host_idle(&HOST_FLASH_CONTROLLER);
-#elif defined(CONFIG_SOC_ESP32S2)
+#elif defined(CONFIG_SOC_ESP32S2) || defined(CONFIG_SOC_ESP32C3)
 	bool idle = spimem_flash_ll_host_idle((spi_mem_dev_t *)hw);
 
 	idle &= spimem_flash_ll_host_idle(&HOST_FLASH_CONTROLLER);
@@ -458,7 +483,6 @@ static int wait_idle(const struct device *dev)
 static int write_protect(const struct device *dev, bool write_protect)
 {
 	const struct flash_esp32_dev_config *const cfg = DEV_CFG(dev);
-	uint32_t flash_status = 0;
 
 	wait_idle(dev);
 
@@ -470,12 +494,14 @@ static int write_protect(const struct device *dev, bool write_protect)
 	if (rc != 0) {
 		return rc;
 	}
+#if !defined(CONFIG_SOC_ESP32C3)
+	uint32_t flash_status = 0;
 
 	/* make sure the flash is ready for writing */
 	while (ESP_ROM_SPIFLASH_WRENABLE_FLAG != (flash_status & ESP_ROM_SPIFLASH_WRENABLE_FLAG)) {
 		read_status(dev, &flash_status);
 	}
-
+#endif
 	return 0;
 }
 
@@ -670,7 +696,6 @@ out:
 	guard->start();
 	flash_esp32_flush_cache(address, length);
 	guard->end();
-
 	flash_esp32_sem_give(dev);
 
 	return rc;
@@ -777,6 +802,14 @@ static int flash_esp32_init(const struct device *dev)
 {
 	struct flash_esp32_dev_data *const dev_data = DEV_DATA(dev);
 
+#if defined(CONFIG_SOC_ESP32C3)
+	spiflash_legacy_data_t *legacy_data = rom_spiflash_legacy_data;
+
+	esp_flashchip_info.chip_size = legacy_data->chip.chip_size;
+	esp_flashchip_info.sector_size = legacy_data->chip.sector_size;
+	esp_flashchip_info.page_size = legacy_data->chip.page_size;
+#endif
+
 	k_sem_init(&dev_data->sem, 1, 1);
 
 	return 0;
@@ -796,7 +829,7 @@ static struct flash_esp32_dev_data flash_esp32_data;
 
 static const struct flash_esp32_dev_config flash_esp32_config = {
 	.controller = (spi_dev_t *) DT_INST_REG_ADDR(0),
-	.chip = &g_rom_flashchip
+	.chip = &esp_flashchip_info
 };
 
 DEVICE_DT_INST_DEFINE(0, flash_esp32_init,
