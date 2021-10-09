@@ -342,7 +342,6 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
-	int err;
 
 	/* Get the advertising set instance */
 	adv = ull_adv_is_created_get(handle);
@@ -392,26 +391,17 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 		ull_adv_aux_release(aux);
 	}
 
-	/* Release any allocated advertising data double buffers and
-	 * initialize with one initial buffer.
+	/* Dequeue and release, advertising and scan response data, to keep
+	 * one initial primary channel PDU each for the advertising set.
+	 * This is done to prevent common extended payload format contents from
+	 * being overwritten and corrupted due to same primary PDU buffer being
+	 * used to remove AdvA and other fields are moved over in its place when
+	 * auxiliary PDU is allocated to new advertising set.
 	 */
-	lll_adv_data_release(&adv->lll.adv_data);
-	lll_adv_data_reset(&adv->lll.adv_data);
-	err = lll_adv_data_init(&adv->lll.adv_data);
-	if (err) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
+	(void)lll_adv_data_dequeue(&adv->lll.adv_data);
+	(void)lll_adv_data_dequeue(&adv->lll.scan_rsp);
 
-	/* Release any allocated scan response double buffers and
-	 * initialize with one initial buffer.
-	 */
-	lll_adv_data_release(&adv->lll.scan_rsp);
-	lll_adv_data_reset(&adv->lll.scan_rsp);
-	err = lll_adv_data_init(&adv->lll.scan_rsp);
-	if (err) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
+	/* Make the advertising set available for new advertisements */
 	adv->is_created = 0;
 
 	return BT_HCI_ERR_SUCCESS;
