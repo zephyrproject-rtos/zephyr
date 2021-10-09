@@ -18,6 +18,7 @@
 
 int lll_adv_data_init(struct lll_adv_pdu *pdu);
 int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_dequeue(struct lll_adv_pdu *pdu);
 int lll_adv_data_release(struct lll_adv_pdu *pdu);
 
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
