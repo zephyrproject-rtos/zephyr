@@ -112,3 +112,28 @@
 &rng {
 	status = "okay";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x20000>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 0x60000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x80000 0x60000>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0xe0000 0x20000>;
+		};
+	};
+};
