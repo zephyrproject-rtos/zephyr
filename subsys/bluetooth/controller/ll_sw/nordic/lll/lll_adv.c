@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -289,6 +289,29 @@ int lll_adv_data_reset(struct lll_adv_pdu *pdu)
 	pdu->extra_data[0] = NULL;
 	pdu->extra_data[1] = NULL;
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+	return 0;
+}
+
+int lll_adv_data_dequeue(struct lll_adv_pdu *pdu)
+{
+	uint8_t first;
+	void *p;
+
+	first = pdu->first;
+	if (first == pdu->last) {
+		return -ENOMEM;
+	}
+
+	p = pdu->pdu[first];
+	pdu->pdu[first] = NULL;
+	mem_release(p, &mem_pdu.free);
+
+	first++;
+	if (first == DOUBLE_BUFFER_SIZE) {
+		first = 0U;
+	}
+	pdu->first = first;
+
 	return 0;
 }
 
