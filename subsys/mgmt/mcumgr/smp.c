@@ -197,6 +197,10 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 		.tx_rsp_cb = zephyr_smp_tx_rsp,
 	};
 
+#ifdef CONFIG_MCUMGR_SMP_NOTIFY_CALLBACK
+	mcumgr_smp_notify_callback();
+#endif
+
 	rc = smp_process_request_packet(&streamer, nb);
 	return rc;
 }
