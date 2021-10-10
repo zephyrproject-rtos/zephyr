@@ -176,6 +176,8 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+	/** Accumulated coulombs in mAh*/
+	SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,

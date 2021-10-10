@@ -53,23 +53,36 @@ static int bq35100_bus_access(const struct device *dev, uint8_t reg,
 }
 
 /**
- * Read (16 Bit) from device.
+ * Read 8, 16 or 32 Bit from device.
  * @param dev - The device structure.
  * @param reg_addr - The register address.
  * @param reg_data - The register data.
+ * @param length - Number of bytes being read
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_reg_read(const struct device *dev,
 			    uint8_t reg_addr,
-			    uint16_t *reg_data)
+			    uint8_t *reg_data,
+			    size_t length)
 {
-	uint8_t buf[2];
+	uint8_t buf[length];
 	int ret;
 
-	ret = bq35100_bus_access(dev, BQ35100_REG_READ(reg_addr), buf, 2);
+	ret = bq35100_bus_access(dev, BQ35100_REG_READ(reg_addr), buf, length);
 
 	/* Little Endian */
-	*reg_data = ((uint16_t)buf[1] << 8) | buf[0];
+	switch (length) {
+	case 1:
+		*reg_data = buf[0];
+		break;
+	case 2:
+		*reg_data = ((uint16_t)buf[1] << 8) | buf[0];
+		break;
+	case 4:
+		*reg_data = ((uint32_t)buf[3] << 24) | ((uint32_t)buf[2] << 16) |
+			    ((uint32_t)buf[2] << 8) | buf[0];
+		break;
+	}
 
 	return ret;
 }
@@ -97,33 +110,55 @@ static int bq35100_reg_write(const struct device *dev,
 }
 
 /**
- * Get the VOLTAGE register data
+ * Get the temperature register data
  * @param dev - The device structure.
- * @param status - Data stored in the TEMPERATURE register
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_get_temp(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
-	return bq35100_reg_read(dev, BQ35100_CMD_TEMPERATURE, &data->temperature);
+
+	return bq35100_reg_read(dev, BQ35100_CMD_TEMPERATURE,
+				(uint8_t *)&data->temperature, 2);
 }
 
+/**
+ * Get the voltage register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
 static int bq35100_get_voltage(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
-	return bq35100_reg_read(dev, BQ35100_CMD_VOLTAGE, &data->voltage);
+
+	return bq35100_reg_read(dev, BQ35100_CMD_VOLTAGE,
+				(uint8_t *)&data->voltage, 2);
 }
 
+/**
+ * Get the current register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
 static int bq35100_get_avg_current(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
-	return bq35100_reg_read(dev, BQ35100_CMD_CURRENT, &data->avg_current);
+
+	return bq35100_reg_read(dev, BQ35100_CMD_CURRENT,
+				(uint8_t *)&data->avg_current, 2);
 }
 
-static int bq35100_get_state_of_charge(const struct device *dev)
+/**
+ * Get the state of health register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_state_of_health(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
-	return bq35100_reg_read(dev, BQ35100_CMD_SOH, &data->state_of_charge);
+
+	return bq35100_reg_read(dev, BQ35100_CMD_SOH,
+				(uint8_t *)&data->state_of_health, 1);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -213,17 +248,11 @@ static int bq35100_attr_set(const struct device *dev,
  */
 static int bq35100_get_sensor_data(const struct device *dev)
 {
-	const struct bq35100_config *cfg = dev->config;
-	struct bq35100_data *data = dev->data;
-
-	/* here you need to read the values from the fuel gauge registers
-	   and write them to *data, e.g. data->temperature */
-
 	bq35100_get_temp(dev);
 	bq35100_get_voltage(dev);
 	bq35100_get_avg_current(dev);
-	bq35100_get_state_of_charge(dev);
-	
+	bq35100_get_state_of_health(dev);
+
 	return 0;
 }
 
@@ -261,24 +290,25 @@ static int bq35100_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	const struct bq35100_config *cfg = dev->config;
+	//const struct bq35100_config *cfg = dev->config;
 	struct bq35100_data *data = dev->data;
 
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_GAUGE_TEMP:
-		val->val1 = (uint16_t)(data->temperature)/10-273;
-		val->val2 = ((uint16_t)((data->temperature)-2731)%10);
+		val->val1 = (uint16_t)(data->temperature) / 10 - 273;
+		val->val2 = ((uint16_t)((data->temperature) - 2731) % 10);
 		break;
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
-		val->val1 = (uint16_t)data->voltage/1000;
+		val->val1 = (uint16_t)data->voltage / 1000;
 		val->val2 = ((uint16_t)data->voltage % 1000);
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
-		val->val1 = (int)data->avg_current;
-		//val->val2 = (int)data->avg_current;
+		val->val1 = (int16_t)data->avg_current;
+		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
-		val->val1 = (uint16_t)data->state_of_charge;
+		val->val1 = (uint8_t)data->state_of_health;
+		val->val2 = 0;
 		break;
 	default:
 		LOG_ERR("Channel type not supported.");
