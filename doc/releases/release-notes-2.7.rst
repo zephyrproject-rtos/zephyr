@@ -344,6 +344,8 @@ Drivers and Sensors
 
 * CAN
 
+  * Renesas R-Car driver added
+
 
 * Clock Control
 
