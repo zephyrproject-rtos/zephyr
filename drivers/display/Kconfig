@@ -34,6 +34,7 @@ source "drivers/display/Kconfig.gd7965"
 source "drivers/display/Kconfig.dummy"
 source "drivers/display/Kconfig.ls0xx"
 source "drivers/display/Kconfig.rm68200"
+source "drivers/display/Kconfig.st7789h2_gpio"
 
 config FRAMEBUF_DISPLAY
 	# Hidden, selected by client drivers.

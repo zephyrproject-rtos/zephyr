@@ -1,0 +1,35 @@
+# ST7789H2 display driver configuration options
+
+# Copyright (c) 2021, Jeremy LOCHE
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ST7789H2_GPIO := sitronix,st7789h2-gpio
+
+config ST7789H2_GPIO
+	bool "ST7789H2 display driver"
+	depends on GPIO
+	default $(dt_compat_enabled,$(DT_COMPAT_ST7789H2_GPIO))
+	help
+	  Enable driver for ST7789H2 display driver.
+
+config ST7789H2_GPIO_PORT_WRITING
+	bool "Group data bus writing by GPIO ports"
+	default y
+	help
+	  Allow the driver to group GPIOs that can be set in one shot
+	  Requirement: needs to be on the same port and in correct order
+	  Example:
+	    D0=GPIOD 14
+	    D1=GPIOD 15
+	    D2=GPIOD 0
+	    D3=GPIOD 1
+	    D4=GPIOE 8
+	    D5=GPIOE 9
+	    D6=GPIOE 10
+	    D7=GPIOE 11
+	    ...
+	  The driver will then write the ports in this order:
+	    DO,D1 -> GPIOD 14,15
+	    D2,D3 -> GPIOD 0,1
+	    D4,D5,D6,D7 -> GPIOE 8,9,10,11
+	  This will considerably reduce the number of GPIO writing and speed up the parallel bus.
