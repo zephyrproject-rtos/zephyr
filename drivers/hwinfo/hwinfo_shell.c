@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <logging/log.h>
 
-static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv)
+static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t dev_id[16];
 	ssize_t length;
@@ -19,21 +19,21 @@ static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv
 	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
 
 	if (length == -ENOTSUP) {
-		shell_error(shell, "Not supported by hardware");
+		shell_error(sh, "Not supported by hardware");
 		return -ENOTSUP;
 	} else if (length < 0) {
-		shell_error(shell, "Error: %zd", length);
+		shell_error(sh, "Error: %zd", length);
 		return length;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Length: %zd\n", length);
-	shell_fprintf(shell, SHELL_NORMAL, "ID: 0x");
+	shell_fprintf(sh, SHELL_NORMAL, "Length: %zd\n", length);
+	shell_fprintf(sh, SHELL_NORMAL, "ID: 0x");
 
 	for (i = 0 ; i < length ; i++) {
-		shell_fprintf(shell, SHELL_NORMAL, "%02x", dev_id[i]);
+		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_id[i]);
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "\n");
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 	return 0;
 }
