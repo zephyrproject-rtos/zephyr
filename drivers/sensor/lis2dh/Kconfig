@@ -49,7 +49,7 @@ config LIS2DH_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
+choice LIS2DH_ACCEL_RANGE
 	prompt "Acceleration measurement range"
 	default LIS2DH_ACCEL_RANGE_RUNTIME
 	help
@@ -72,7 +72,7 @@ config LIS2DH_ACCEL_RANGE_16G
 
 endchoice
 
-choice
+choice LIS2DH_OPER_MODE
 	prompt "Operation mode"
 	default LIS2DH_OPER_MODE_NORMAL
 	help
@@ -90,7 +90,7 @@ config LIS2DH_OPER_MODE_LOW_POWER
 
 endchoice
 
-choice
+choice LIS2DH_ODR
 	prompt "Output data rate frequency"
 	default LIS2DH_ODR_RUNTIME
 	help
