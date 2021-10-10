@@ -14,3 +14,12 @@ config SPI_MCUX_FLEXCOMM
 config CLOCK_CONTROL_MCUX_SYSCON
 	default y if HAS_MCUX_SYSCON
 	depends on CLOCK_CONTROL
+
+#
+# Initialization priority overrides
+#
+# MCUX UART initialization has a dependency on clock driver which is
+# initialized at KERNEL_INIT_PRIORITY_DEVICE level
+#
+config UART_INIT_PRIORITY
+	default 55

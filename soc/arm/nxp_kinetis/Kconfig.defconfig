@@ -1,3 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
+#
+# Initialization priority overrides
+#
+# MCUX UART initialization has a dependency on clock driver which is
+# initialized at KERNEL_INIT_PRIORITY_DEVICE level
+#
+config UART_INIT_PRIORITY
+	default 55
+
 source "soc/arm/nxp_kinetis/*/Kconfig.defconfig.series"

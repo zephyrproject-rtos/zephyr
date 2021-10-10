@@ -316,7 +316,7 @@
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
-/drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
+/drivers/serial/Kconfig.mcux              @Mani-Sadhasivam @mmahadevan108 @dleach02
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78
 /drivers/serial/uart_rtt.c                @carlescufi @pkral78

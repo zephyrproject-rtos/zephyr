@@ -10,3 +10,35 @@ config UART_MCUX
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX uart driver.
+
+config UART_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM UART driver"
+	depends on HAS_MCUX_FLEXCOMM
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX USART driver.
+
+config UART_MCUX_IUART
+	bool "MCUX IUART driver"
+	depends on HAS_MCUX && CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX IUART driver.
+
+config UART_MCUX_LPSCI
+	bool "MCUX LPSCI driver"
+	depends on HAS_MCUX_LPSCI && CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX LPSCI driver.
+
+config UART_MCUX_LPUART
+	bool "MCUX LPUART driver"
+	depends on HAS_MCUX_LPUART && CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX LPUART driver.
