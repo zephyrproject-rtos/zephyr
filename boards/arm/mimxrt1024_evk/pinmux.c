@@ -149,6 +149,22 @@ static int mimxrt1024_evk_init(const struct device *dev)
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
+	/* ADC1 Channel 10 and 11 are on pins 2 and 4 of J18 */
+	/* ADC1 Channel 10 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26, 0U);
+	/* ADC1 Channel 11 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27, 0U);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+
+#endif
+
 	return 0;
 }
 
