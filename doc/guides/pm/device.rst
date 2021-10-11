@@ -134,3 +134,12 @@ later calling :c:func:`pm_device_wakeup_enable`.
    devices that should not be suspended.
    It is responsability of driver or the application to do any additional
    configuration required by the device to support it.
+
+Power Domain
+************
+
+Power domain on Zephyr is represented as a regular device. The power management
+subsystem ensures that a domain is resumed before and suspended after devices
+using it. When :kconfig:`CONFIG_PM_DEVICE_RUNTIME` is enabled, every time a
+device is suspended or resumed the same action is done in the domain the
+device belongs.
