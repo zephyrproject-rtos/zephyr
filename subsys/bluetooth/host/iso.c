@@ -54,16 +54,6 @@ static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 /* Prototype */
 int hci_le_remove_cig(uint8_t cig_id);
 
-struct bt_iso_data_path {
-	/* Data Path direction */
-	uint8_t dir;
-	/* Data Path ID */
-	uint8_t pid;
-	/* Data Path param reference */
-	struct bt_iso_chan_path *path;
-};
-
-
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 {
 	struct net_buf *buf = net_buf_alloc(&iso_rx_pool, timeout);
@@ -190,8 +180,8 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 }
 
 
-static int hci_le_setup_iso_data_path(struct bt_conn *iso,
-				      struct bt_iso_data_path *path)
+static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
+				      const struct bt_iso_chan_path *path)
 {
 	struct bt_hci_cp_le_setup_iso_path *cp;
 	struct bt_hci_rp_le_setup_iso_path *rp;
@@ -206,15 +196,15 @@ static int hci_le_setup_iso_data_path(struct bt_conn *iso,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(iso->handle);
-	cp->path_dir = path->dir;
+	cp->path_dir = dir;
 	cp->path_id = path->pid;
-	cp->codec_id.coding_format = path->path->format;
-	cp->codec_id.company_id = sys_cpu_to_le16(path->path->cid);
-	cp->codec_id.vs_codec_id = sys_cpu_to_le16(path->path->vid);
-	sys_put_le24(path->path->delay, cp->controller_delay);
-	cp->codec_config_len = path->path->cc_len;
+	cp->codec_id.coding_format = path->format;
+	cp->codec_id.company_id = sys_cpu_to_le16(path->cid);
+	cp->codec_id.vs_codec_id = sys_cpu_to_le16(path->vid);
+	sys_put_le24(path->delay, cp->controller_delay);
+	cp->codec_config_len = path->cc_len;
 	cc = net_buf_add(buf, cp->codec_config_len);
-	memcpy(cc, path->path->cc, cp->codec_config_len);
+	memcpy(cc, path->cc, cp->codec_config_len);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SETUP_ISO_PATH, buf, &rsp);
 	if (err) {
@@ -275,13 +265,13 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 {
 	int err;
 	struct bt_iso_chan *chan;
-	struct bt_iso_chan_path default_path = { .pid = BT_ISO_DATA_PATH_HCI };
-	struct bt_iso_data_path out_path = {
-		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
-	struct bt_iso_data_path in_path = {
-		.dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR };
+	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
+	struct bt_iso_chan_path disabled_path = { .pid = BT_ISO_DATA_PATH_DISABLED };
+	struct bt_iso_chan_path *out_path;
+	struct bt_iso_chan_path *in_path;
 	struct bt_iso_chan_io_qos *tx_qos;
 	struct bt_iso_chan_io_qos *rx_qos;
+	uint8_t dir;
 
 	chan = iso_chan(iso);
 	if (chan == NULL) {
@@ -302,50 +292,47 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 
 	if (tx_qos != NULL) {
 		if (tx_qos->path != NULL) { /* Use application path */
-			in_path.path = tx_qos->path;
-			in_path.pid = tx_qos->path->pid;
+			in_path = tx_qos->path;
 		} else { /* else fallback to HCI path */
-			in_path.path = &default_path;
-			in_path.pid = default_path.pid;
+			in_path = &default_hci_path;
 		}
 	} else {
 		/* Disable TX */
-		in_path.path = &default_path;
-		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
+		in_path = &disabled_path;
 	}
 
 	if (rx_qos != NULL) {
 		if (rx_qos->path != NULL) { /* Use application path */
-			out_path.path = rx_qos->path;
-			out_path.pid = rx_qos->path->pid;
+			out_path = rx_qos->path;
 		} else { /* else fallback to HCI path */
-			out_path.path = &default_path;
-			out_path.pid = default_path.pid;
+			out_path = &default_hci_path;
 		}
 	} else {
 		/* Disable RX */
-		out_path.path = &default_path;
-		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
+		out_path = &disabled_path;
 	}
 
 	if (iso->iso.is_bis) {
 		/* Only set one data path for BIS as per the spec */
 		if (tx_qos) {
-			return hci_le_setup_iso_data_path(iso, &in_path);
+			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+			return hci_le_setup_iso_data_path(iso, dir, in_path);
 
 		} else {
-			return hci_le_setup_iso_data_path(iso, &out_path);
+			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+			return hci_le_setup_iso_data_path(iso, dir, out_path);
 		}
 
 	} else {
 		/* Setup both directions for CIS*/
-		err = hci_le_setup_iso_data_path(iso, &in_path);
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		err = hci_le_setup_iso_data_path(iso, dir, in_path);
 		if (err) {
 			return err;
 		}
 
-		return hci_le_setup_iso_data_path(iso, &out_path);
-
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+		return hci_le_setup_iso_data_path(iso, dir, out_path);
 	}
 }
 
