@@ -8,11 +8,15 @@
 
 #include <sys/byteorder.h>
 #include <sys/check.h>
+#include <sys/dlist.h>
+
+#include <kernel.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/iso.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/direction.h>
+#include <bluetooth/addr.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -27,6 +31,105 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
 
 #if defined(CONFIG_BT_EXT_ADV)
+/* A buffer pool used to reassemble advertisement data from the controller. */
+NET_BUF_POOL_FIXED_DEFINE(ext_scan_buf_pool, 1, CONFIG_BT_EXT_SCAN_BUF_SIZE, NULL);
+static struct net_buf *ext_scan_buf;
+
+/* Information needed to keep a list of advertisers and disambiguate them */
+struct fragmented_advertiser {
+	sys_dnode_t node;
+	bt_addr_le_t addr;
+	uint8_t sid;
+	/* If true, reports are added to the remcombination buffer
+	 * if false, reports are discarded
+	*/
+	bool should_keep_reports;
+	int64_t time_added_ms;
+};
+
+/* Get a pointer to the fragmented advertiser the dnode pointer points to */
+#define FRAG_ADVERTISER_FROM_DNODE(dnode_ptr)                                                      \
+	((struct fragmented_advertiser *)((dnode_ptr)-offsetof(struct fragmented_advertiser, node)))
+#define FRAGMENTED_ADVERTISER_TIMEOUT_MS 10000
+
+static sys_dlist_t fragmented_advertisers;
+
+static void init_fragmented_advertisers(void)
+{
+	sys_dlist_init(&fragmented_advertisers);
+}
+
+static bool frag_advertisers_equal(const struct fragmented_advertiser *a, const bt_addr_le_t *addr,
+				   uint8_t sid)
+{
+	/* Two advertisers are equal if they are the same adv set from the same device */
+	return a->sid == sid && bt_addr_le_cmp(&a->addr, addr) == 0;
+}
+
+static bool frag_advertiser_timed_out(const struct fragmented_advertiser *frag_adv)
+{
+	return (k_uptime_get() - frag_adv->time_added_ms) > FRAGMENTED_ADVERTISER_TIMEOUT_MS;
+}
+
+/* Allocates a new fragmented advertiser with the given address and sid and adds it to the list of
+ * fragmented advertisers. Returns a pointer to the list node representing the fragmented advertiser.
+ * Returns NULL if allocation fails.
+ */
+static sys_dnode_t *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
+{
+	struct fragmented_advertiser *frag_adv = k_malloc(sizeof(struct fragmented_advertiser));
+	if (!frag_adv) {
+		BT_ERR("Could not allocate memory for a fragmented_advertiser");
+		return NULL;
+	}
+	sys_dlist_append(&fragmented_advertisers, &frag_adv->node);
+	frag_adv->time_added_ms = k_uptime_get();
+	bt_addr_le_copy(&frag_adv->addr, addr);
+	frag_adv->sid = sid;
+	frag_adv->should_keep_reports = false;
+	return &frag_adv->node;
+}
+
+/* Returns a pointer to the list node representing the fragmented advertiser that has the given address and
+ * adv set id. Returns NULL if such an fragmented advertiser does not exist.
+ */
+static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t sid)
+{
+	sys_dnode_t *dnode_ptr;
+	SYS_DLIST_FOR_EACH_NODE (&fragmented_advertisers, dnode_ptr) {
+		struct fragmented_advertiser *frag_adv = FRAG_ADVERTISER_FROM_DNODE(dnode_ptr);
+		if (frag_advertisers_equal(frag_adv, addr, sid)) {
+			return dnode_ptr;
+		}
+	}
+	return NULL;
+}
+
+/* Returns a pointer to the list node representing the advertiser whose reports are currently
+ * being recombined. Returns NULL if no such advertiser exists.
+ */
+static sys_dnode_t *get_active_fragmented_advertiser(void)
+{
+	sys_dnode_t *dnode_ptr;
+	SYS_DLIST_FOR_EACH_NODE (&fragmented_advertisers, dnode_ptr) {
+		struct fragmented_advertiser *frag_adv = FRAG_ADVERTISER_FROM_DNODE(dnode_ptr);
+		if (frag_adv->should_keep_reports) {
+			return dnode_ptr;
+		}
+	}
+	return NULL;
+}
+
+/* Removes the node from the list of fragmented advertisers and frees the memory.
+ */
+static void remove_frag_advertiser_node(sys_dnode_t *to_remove)
+{
+	if (to_remove) {
+		sys_dlist_remove(to_remove);
+		k_free(FRAG_ADVERTISER_FROM_DNODE(to_remove));
+	}
+}
+
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void);
 static struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
@@ -37,6 +140,15 @@ static sys_slist_t pa_sync_cbs = SYS_SLIST_STATIC_INIT(&pa_sync_cbs);
 void bt_scan_reset(void)
 {
 	scan_dev_found_cb = NULL;
+#if defined(CONFIG_BT_EXT_ADV)
+	init_fragmented_advertisers();
+	if (ext_scan_buf) {
+		net_buf_reset(ext_scan_buf);
+	} else {
+		ext_scan_buf = net_buf_alloc(&ext_scan_buf_pool, K_NO_WAIT);
+		__ASSERT_NO_MSG(ext_scan_buf);
+	}
+#endif
 }
 
 static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
@@ -391,8 +503,8 @@ static uint8_t get_adv_props(uint8_t evt_type)
 	}
 }
 
-static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
-			struct net_buf *buf, uint8_t len)
+static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info, struct net_buf *buf,
+			uint16_t len)
 {
 	struct bt_le_scan_cb *listener, *next;
 	struct net_buf_simple_state state;
@@ -507,15 +619,31 @@ static uint8_t get_adv_type(uint8_t evt_type)
 	}
 }
 
+static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const *const evt,
+				struct bt_le_scan_recv_info *const adv_info)
+{
+	adv_info->primary_phy = bt_get_phy(evt->prim_phy);
+	adv_info->secondary_phy = bt_get_phy(evt->sec_phy);
+	adv_info->tx_power = evt->tx_power;
+	adv_info->rssi = evt->rssi;
+	adv_info->sid = evt->sid;
+	adv_info->interval = sys_le16_to_cpu(evt->interval);
+	adv_info->adv_type = get_adv_type(evt->evt_type);
+	/* Convert "Legacy" property to Extended property. */
+	adv_info->adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
+}
+
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 
-	BT_DBG("Adv number of reports %u",  num_reports);
+	BT_DBG("Adv number of reports %u", num_reports);
 
 	while (num_reports--) {
 		struct bt_hci_evt_le_ext_advertising_info *evt;
 		struct bt_le_scan_recv_info adv_info;
+		uint8_t size_to_copy;
+		bool truncate;
 
 		if (buf->len < sizeof(*evt)) {
 			BT_ERR("Unexpected end of buffer");
@@ -523,33 +651,140 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		const bool legacy_pdu_used = evt->evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY;
+		const uint16_t data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type);
+		const bool is_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+		const bool more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		const bool ctrl_truncated =
+			data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 
-		adv_info.primary_phy = bt_get_phy(evt->prim_phy);
-		adv_info.secondary_phy = bt_get_phy(evt->sec_phy);
-		adv_info.tx_power = evt->tx_power;
-		adv_info.rssi = evt->rssi;
-		adv_info.sid = evt->sid;
-		adv_info.interval = sys_le16_to_cpu(evt->interval);
+		BT_DBG("Evt: length: %d, type: %X", evt->length, evt->evt_type);
+		BT_DBG("data_status: %d", data_status);
+		BT_DBG("legacy_pdu_used: %d", legacy_pdu_used);
+		BT_DBG("is_complete: %d", is_complete);
+		BT_DBG("more_to_come: %d", more_to_come);
+		BT_DBG("ctrl_truncated: %d", ctrl_truncated);
 
-		adv_info.adv_type = get_adv_type(evt->evt_type);
-		/* Convert "Legacy" property to Extended property. */
-		adv_info.adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
-
-		if (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type) ==
-		    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
-			/* Handling of incomplete reports is currently not
-			 * handled in the host. The remaining advertising
-			 * reports may therefore contain partial data.
-			 */
-			BT_WARN("Incomplete adv report");
+		if (legacy_pdu_used) {
+			/* Complete advertising report.
+			 * Does not need reassembly, create event immediately
+			*/
+			create_ext_adv_info(evt, &adv_info);
+			le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
+			continue;
 		}
 
-		le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
+		sys_dnode_t *current_advertiser = find_frag_advertiser_node(&evt->addr, evt->sid);
+		const bool new_advertiser = (current_advertiser == NULL);
+
+		if (new_advertiser && is_complete) {
+			/* Only adv report from this advertiser.
+			 * Create event immeadiately. Do not add it to the list of advertisers.
+			 */
+			create_ext_adv_info(evt, &adv_info);
+			le_adv_recv(&evt->addr, &adv_info, buf, evt->length);
+			continue;
+		} else if (new_advertiser) {
+			/* This is a new advertiser and more data is expected.
+			 * Add it to the list of advertisers.
+			 */
+			current_advertiser = add_frag_advertiser(&evt->addr, evt->sid);
+			if (!current_advertiser) {
+				/* Failed to add it to the list of advertisers. Discard the report. */
+				net_buf_pull_mem(buf, evt->length);
+				continue;
+			}
+		}
+
+		sys_dnode_t *active_advertiser = get_active_fragmented_advertiser();
+
+		if (active_advertiser) {
+			if (frag_advertiser_timed_out(
+				    FRAG_ADVERTISER_FROM_DNODE(active_advertiser))) {
+				/* Do not keep reports from timed out advertiser */
+				FRAG_ADVERTISER_FROM_DNODE(active_advertiser)->should_keep_reports =
+					false;
+				/* Already recombined data must be discarded */
+				net_buf_reset(ext_scan_buf);
+				if (new_advertiser) {
+					/* If this is the first report from this advertiser,
+					 * we can start combining the reports from it.
+					 */
+					FRAG_ADVERTISER_FROM_DNODE(current_advertiser)
+						->should_keep_reports = true;
+				}
+			}
+
+			else if (active_advertiser != current_advertiser) {
+				/* Receiving adv report from a non-active advertiser. Discard the report. */
+				net_buf_pull_mem(buf, evt->length);
+				continue;
+			}
+		} else if (new_advertiser) {
+			/* There is no active advertiser and this is the first report from the current advertiser.
+			 * Make the current advertiser active.
+			 */
+			FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports = true;
+		}
+
+		if (!FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports) {
+			/* Discard report */
+			net_buf_pull_mem(buf, evt->length);
+			if (!more_to_come) {
+				/* We do no longer need to keep track of this advertiser as
+				 * all the expected data is received.
+				 */
+				remove_frag_advertiser_node(current_advertiser);
+			}
+			continue;
+		}
+
+		/* Find the maximum amount of data that can be added to the recombination buffer */
+		if (evt->length + ext_scan_buf->len > net_buf_max_len(ext_scan_buf)) {
+			size_to_copy = net_buf_max_len(ext_scan_buf) - ext_scan_buf->len;
+			truncate = true;
+		} else {
+			size_to_copy = evt->length;
+			truncate = false;
+		}
+		BT_DBG("truncate: %d", truncate);
+
+		net_buf_add_mem(ext_scan_buf, buf->data, size_to_copy);
+		BT_HEXDUMP_DBG(buf->data, size_to_copy, "Added to ext_scan_buf");
+		if (!truncate && more_to_come) {
+			/* More data to come. */
+			BT_DBG("Current len: %d. More data to come", ext_scan_buf->len);
+			continue;
+		}
+
+		/* Either we have truncated or there is no more data coming from the controller.
+		 * Create event.
+		 */
+		create_ext_adv_info(evt, &adv_info);
+		adv_info.adv_props &= BIT_MASK(5);
+
+		if (truncate || ctrl_truncated) {
+			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_TRUNCATED;
+		}
+
+		BT_DBG("le_adv_recv len: %d", ext_scan_buf->len);
+		BT_HEXDUMP_DBG(ext_scan_buf->data, ext_scan_buf->len, "ext_scan_buf");
+		le_adv_recv(&evt->addr, &adv_info, ext_scan_buf, ext_scan_buf->len);
+		net_buf_reset(ext_scan_buf);
+
+		if (truncate && more_to_come) {
+			/* We have truncated the data and the controller will provide more data.
+			 * Therefore we must discard the remaining part of the advertisement.
+			 */
+			FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports = false;
+		} else {
+			/* No more data will come. We do no longer need to keep track of this advertiser */
+			remove_frag_advertiser_node(current_advertiser);
+		}
 
 		net_buf_pull(buf, evt->length);
 	}
 }
-
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 static void per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)

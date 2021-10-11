@@ -125,6 +125,13 @@ enum {
 	BT_GAP_ADV_PROP_SCAN_RESPONSE         = BIT(3),
 	/** Extended advertising. */
 	BT_GAP_ADV_PROP_EXT_ADV               = BIT(4),
+	/** The reported data is a truncated.
+	 *
+	 * Either the controller or the host
+	 * was not able to receive or store
+	 * the complete advertisement.
+	 */
+	BT_GAP_ADV_PROP_REPORT_TRUNCATED      = BIT(5),
 };
 
 /** Maximum advertising data length. */

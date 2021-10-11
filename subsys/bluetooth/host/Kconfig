@@ -496,6 +496,18 @@ config BT_BACKGROUND_SCAN_WINDOW
 	int "Scan window used for background scanning in 0.625 ms units"
 	default 18
 	range 4 16384
+
+if BT_EXT_ADV
+config BT_EXT_SCAN_BUF_SIZE
+	int "Maximum advertisement report size"
+	range 1 1650
+	default 255
+	help
+	  Maximum size of an advertisement report. If the advertisement
+	  provided by the controller is larger than this buffer size,
+	  the remaining data will be discarded.
+endif # BT_EXT_ADV
+
 endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY
