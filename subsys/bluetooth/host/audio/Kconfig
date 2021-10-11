@@ -108,6 +108,20 @@ config BT_DEBUG_BAP
 	  Use this option to enable Basic Audio Profile debug logs for the
 	  Bluetooth Audio functionality.
 
+config BT_AUDIO_DEBUG_BROADCAST_SOURCE
+	bool "Bluetooth Audio Broadcast Source debug"
+	depends on BT_AUDIO_BROADCAST_SOURCE
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Source debug logs
+	  for the Bluetooth Audio functionality.
+
+config BT_AUDIO_DEBUG_BROADCAST_SINK
+	bool "Bluetooth Audio Broadcast Sink debug"
+	depends on BT_AUDIO_BROADCAST_SINK
+	help
+	  Use this option to enable Bluetooth Audio Broadcast Sink debug logs
+	  for the Bluetooth Audio functionality.
+
 endif # BT_AUDIO_DEBUG
 
 # Include Kconfig files for the various parts of the host audio stack

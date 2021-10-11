@@ -22,7 +22,7 @@
 #include "chan.h"
 #include "capabilities.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CHAN)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_BROADCAST_SINK)
 #define LOG_MODULE_NAME bt_audio_broadcast_sink
 #include "common/log.h"
 
