@@ -165,7 +165,7 @@ void _arch_isr_direct_pm(void)
 	|| defined(CONFIG_ARMV7_R)
 	unsigned int key;
 
-	/* irq_lock() does what we wan for this CPU */
+	/* irq_lock() does what we want for this CPU */
 	key = irq_lock();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
