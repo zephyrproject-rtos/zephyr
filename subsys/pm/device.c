@@ -172,6 +172,9 @@ bool pm_device_is_any_busy(void)
 	devc = z_device_get_all_static(&devs);
 
 	for (const struct device *dev = devs; dev < (devs + devc); dev++) {
+		if (dev->pm_control == NULL) {
+			continue;
+		}
 		if (atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY)) {
 			return true;
 		}
@@ -182,22 +185,35 @@ bool pm_device_is_any_busy(void)
 
 bool pm_device_is_busy(const struct device *dev)
 {
+	if (dev->pm_control == NULL) {
+		return false;
+	}
 	return atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 void pm_device_busy_set(const struct device *dev)
 {
+	if (dev->pm_control == NULL) {
+		return;
+	}
 	atomic_set_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 void pm_device_busy_clear(const struct device *dev)
 {
+	if (dev->pm_control == NULL) {
+		return;
+	}
 	atomic_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
 
 bool pm_device_wakeup_enable(struct device *dev, bool enable)
 {
 	atomic_val_t flags, new_flags;
+
+	if (dev->pm_control == NULL) {
+		return false;
+	}
 
 	flags =	 atomic_get(&dev->pm->flags);
 
@@ -217,12 +233,18 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 
 bool pm_device_wakeup_is_enabled(const struct device *dev)
 {
+	if (dev->pm_control == NULL) {
+		return false;
+	}
 	return atomic_test_bit(&dev->pm->flags,
 			       PM_DEVICE_FLAGS_WS_ENABLED);
 }
 
 bool pm_device_wakeup_is_capable(const struct device *dev)
 {
+	if (dev->pm_control == NULL) {
+		return false;
+	}
 	return atomic_test_bit(&dev->pm->flags,
 			       PM_DEVICE_FLAGS_WS_CAPABLE);
 }
