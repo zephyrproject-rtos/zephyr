@@ -293,10 +293,17 @@ void test_dummy_device_pm(void)
 {
 	const struct device *dev;
 	int busy, ret;
-	enum pm_device_state device_power_state = PM_DEVICE_STATE_SUSPENDED;
+	enum pm_device_state device_power_state;
 
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
+
+	ret = pm_device_state_get(dev, &device_power_state);
+	if (ret == -ENOSYS) {
+		TC_PRINT("Power management not supported on device");
+		ztest_test_skip();
+		return;
+	}
 
 	busy = pm_device_is_any_busy();
 	zassert_true((busy == 0), NULL);
@@ -320,15 +327,11 @@ void test_dummy_device_pm(void)
 
 	/* Set device state to PM_DEVICE_STATE_ACTIVE */
 	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-	if (ret == -ENOSYS) {
-		TC_PRINT("Power management not supported on device");
-		ztest_test_skip();
-		return;
-	}
 
-	zassert_true((ret == 0),
+	zassert_true((ret == 0) || (ret == -EALREADY),
 			"Unable to set active state to device");
 
+	device_power_state = PM_DEVICE_STATE_SUSPENDED;
 	ret = pm_device_state_get(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get active state to device");
@@ -343,7 +346,7 @@ void test_dummy_device_pm(void)
 	ret = pm_device_state_get(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get suspend state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
+	zassert_true((device_power_state == PM_DEVICE_STATE_SUSPENDED),
 			"Error power status");
 }
 #else
