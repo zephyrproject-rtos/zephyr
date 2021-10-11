@@ -54,7 +54,18 @@ esp_err_t esp_event_send_internal(esp_event_base_t event_base,
 				  size_t event_data_size,
 				  uint32_t ticks_to_wait)
 {
-	k_msgq_put(&esp_wifi_msgq, (int32_t *)&event_id, K_FOREVER);
+	system_event_t evt = {
+		.event_id = event_id,
+	};
+
+	if (event_data_size > sizeof(evt.event_info)) {
+		LOG_ERR("MSG %d wont find %d > %d",
+			event_id, event_data_size, sizeof(evt.event_info));
+		return ESP_FAIL;
+	}
+
+	memcpy(&evt.event_info, event_data, event_data_size);
+	k_msgq_put(&esp_wifi_msgq, &evt, K_FOREVER);
 	return ESP_OK;
 }
 
@@ -111,12 +122,12 @@ pkt_unref:
 
 static void esp_wifi_event_task(void)
 {
-	int32_t event_id;
+	system_event_t evt;
 
 	while (1) {
-		k_msgq_get(&esp_wifi_msgq, &event_id, K_FOREVER);
+		k_msgq_get(&esp_wifi_msgq, &evt, K_FOREVER);
 
-		switch (event_id) {
+		switch (evt.event_id) {
 		case ESP32_WIFI_EVENT_STA_START:
 			LOG_INF("WIFI_EVENT_STA_START");
 			net_if_up(esp32_wifi_iface);
