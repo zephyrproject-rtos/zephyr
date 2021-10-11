@@ -306,26 +306,22 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb,
 			 void *arg)
 {
 	uint16_t crc;
-	int data_bytes_txed;
-	int src_off;
+	int data_bytes_txed = 0;
 	int rc;
 
 	/* Calculate CRC of entire packet. */
 	crc = mcumgr_serial_calc_crc(data, len);
 
 	/* Transmit packet as a sequence of frames. */
-	src_off = 0;
-	while (src_off < len) {
-		rc = mcumgr_serial_tx_frame(data + src_off,
-					    src_off == 0,
-					    len - src_off,
-					    crc, cb, arg,
+	while (len) {
+		rc = mcumgr_serial_tx_frame(data, data_bytes_txed == 0, len, crc, cb, arg,
 					    &data_bytes_txed);
 		if (rc != 0) {
 			return rc;
 		}
 
-		src_off += data_bytes_txed;
+		data += data_bytes_txed;
+		len -= data_bytes_txed;
 	}
 
 	return 0;
