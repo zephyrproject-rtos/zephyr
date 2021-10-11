@@ -77,6 +77,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access                         |
@@ -128,13 +130,13 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_09 | ENET_RX_DATA01  | Ethernet                  |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_10 | ENET_RX_DATA00  | Ethernet                  |
+| GPIO_AD_B0_10 | ENET_RX_DATA00/LPSPI1_SCK | Ethernet/SPI    |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_11 | ENET_RX_EN      | Ethernet                  |
+| GPIO_AD_B0_11 | ENET_RX_EN/LPSPI1_PCS0 | Ethernet/SPI       |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_12 | ENET_RX_ER      | Ethernet                  |
+| GPIO_AD_B0_12 | ENET_RX_ER/LPSPI1_SDO | Ethernet/SPI        |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_13 | ENET_TX_EN      | Ethernet                  |
+| GPIO_AD_B0_13 | ENET_TX_EN/LPSPI1_SDI | Ethernet/SPI        |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_14 | ENET_TX_DATA00  | Ethernet                  |
 +---------------+-----------------+---------------------------+
