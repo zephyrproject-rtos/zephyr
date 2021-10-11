@@ -51,9 +51,10 @@ int bt_audio_chan_disconnect(struct bt_audio_chan *chan);
 
 void bt_audio_chan_reset(struct bt_audio_chan *chan);
 
-void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
-		 struct bt_audio_ep *ep, struct bt_audio_capability *cap,
-		 struct bt_codec *codec);
+void bt_audio_chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
+			  struct bt_audio_ep *ep,
+			  struct bt_audio_capability *cap,
+			  struct bt_codec *codec);
 
-int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-			 struct bt_codec_qos *codec);
+int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
+				       struct bt_codec_qos *codec);

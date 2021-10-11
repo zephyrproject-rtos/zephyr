@@ -31,9 +31,10 @@
 static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
-void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
-		 struct bt_audio_ep *ep, struct bt_audio_capability *cap,
-		 struct bt_codec *codec)
+void bt_audio_chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
+			  struct bt_audio_ep *ep,
+			  struct bt_audio_capability *cap,
+			  struct bt_codec *codec)
 {
 	BT_DBG("conn %p chan %p ep %p cap %p codec %p", conn, chan, ep, cap,
 	       codec);
@@ -91,7 +92,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 
 	sys_slist_init(&chan->links);
 
-	chan_attach(conn, chan, ep, cap, codec);
+	bt_audio_chan_attach(conn, chan, ep, cap, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(ep, BT_ASCS_ASE_STATE_CONFIG);
@@ -156,7 +157,7 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 		}
 	}
 
-	chan_attach(chan->conn, chan, chan->ep, cap, codec);
+	bt_audio_chan_attach(chan->conn, chan, chan->ep, cap, codec);
 
 	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_CONFIG);
@@ -874,8 +875,8 @@ void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state)
 }
 #endif /* CONFIG_BT_AUDIO_DEBUG_CHAN */
 
-int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-			 struct bt_codec_qos *codec)
+int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
+				       struct bt_codec_qos *codec)
 {
 	struct bt_iso_chan_io_qos *io;
 
@@ -917,7 +918,8 @@ struct bt_conn_iso *bt_audio_cig_create(struct bt_audio_chan *chan,
 
 	/* Fill up ISO QoS settings from Codec QoS*/
 	if (chan->qos != qos) {
-		int err = codec_qos_to_iso_qos(chan->iso->qos, qos);
+		int err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos,
+							     qos);
 
 		if (err) {
 			BT_ERR("Unable to convert codec QoS to ISO QoS");

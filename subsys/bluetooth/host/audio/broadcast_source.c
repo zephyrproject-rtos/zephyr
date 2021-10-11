@@ -83,9 +83,9 @@ static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 		return -ENOMEM;
 	}
 
-	chan_attach(NULL, chan, ep, NULL, codec);
+	bt_audio_chan_attach(NULL, chan, ep, NULL, codec);
 	chan->qos = qos;
-	err = codec_qos_to_iso_qos(chan->iso->qos, qos);
+	err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos, qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;
@@ -418,7 +418,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	for (size_t i = 0; i < source->chan_count; i++) {
 		chan = &source->chans[i];
 
-		chan_attach(NULL, chan, chan->ep, NULL, codec);
+		bt_audio_chan_attach(NULL, chan, chan->ep, NULL, codec);
 	}
 
 	err = bt_audio_set_base(source, codec);
