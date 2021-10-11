@@ -127,7 +127,7 @@
 		NET_DBG("conn: %p total=%zd, unacked_len=%d, "                 \
 			"send_win=%hu, mss=%hu",                               \
 			(_conn), net_pkt_get_len((_conn)->send_data),          \
-			conn->unacked_len, conn->send_win,                     \
+			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
 		NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu", \
 			(_conn),                                               \
