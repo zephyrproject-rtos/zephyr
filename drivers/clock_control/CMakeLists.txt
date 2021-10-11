@@ -17,9 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SIM            clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SYSCON         clock_control_mcux_syscon.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NPCX                clock_control_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF                 clock_control_nrf.c)
-if(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION AND NOT CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)
-  zephyr_library_sources(nrf_clock_calibration.c)
-endif()
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION nrf_clock_calibration.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR       clock_control_rcar_cpg_mssr.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
 
