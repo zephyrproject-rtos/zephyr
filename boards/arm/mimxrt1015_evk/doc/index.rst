@@ -76,6 +76,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1015_evk/mimxrt1015_evk_defconfig``
@@ -113,6 +115,10 @@ The MIMXRT1015 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_B0_12 | LPSPI1_SDO      | SPI                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_13 | LPSPI1_SDI      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_14 | ADC             | ADC1 Channel 1            |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_13 | ADC             | ADC1 Channel 13           |
 +---------------+-----------------+---------------------------+
 
 System Clock
