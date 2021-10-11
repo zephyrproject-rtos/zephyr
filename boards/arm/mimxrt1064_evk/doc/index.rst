@@ -114,6 +114,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
@@ -262,6 +264,10 @@ The MIMXRT1064 SoC has four pairs of pinmux/gpio controllers.
 | GPIO_SD_B1_10 | FLEXSPIA_DATA02 | QSPI Flash                |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B1_11 | FLEXSPIA_DATA03 | QSPI Flash                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_11 | ADC             | ADC1 Channel 0            |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_10 | ADC             | ADC1 Channel 1            |
 +---------------+-----------------+---------------------------+
 
 .. note::
