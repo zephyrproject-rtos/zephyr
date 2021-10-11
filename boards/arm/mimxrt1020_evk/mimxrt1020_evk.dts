@@ -138,6 +138,10 @@ arduino_serial: &lpuart2 {};
 	current-speed = <115200>;
 };
 
+&lpspi1 {
+	status = "okay";
+};
+
 &enet {
 	status = "okay";
 	ptp {
