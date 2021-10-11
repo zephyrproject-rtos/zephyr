@@ -28,7 +28,7 @@
 
 static struct bt_audio_chan chans[MAX_PAC];
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
-static struct bt_audio_chan broadcast_source_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct bt_audio_chan broadcast_source_chans[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_broadcast_source *default_source;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)

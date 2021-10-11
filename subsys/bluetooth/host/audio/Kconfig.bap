@@ -32,54 +32,10 @@ config BT_BAP_UNICAST_GROUP_STREAM_COUNT
 	  This option sets the maximum number of streams per unicast group
 	  to support.
 
-config BT_BAP_BROADCAST_SRC_COUNT
-	int "Basic Audio Broadcaster source count"
-	depends on BT_ISO_BROADCAST
-	default 1
-	range 0 BT_ISO_MAX_BIG
-	help
-	  This option sets the number of broadcast sources to support.
-	  One broadcast source can send multiple streams
-	  (up to BT_BAP_BROADCAST_SRC_STREAM_COUNT per broadcast source).
-
-
-config BT_BAP_BROADCAST_SRC_STREAM_COUNT
-	int "Basic Audio Broadcast Source Stream count"
-	depends on BT_ISO_BROADCAST
-	default 1
-	range 0 BT_ISO_MAX_CHAN
-	help
-	  This option sets the maximum number of streams per broadcast source
-	  to support.
-
-config BT_BAP_BROADCAST_SUBGROUP_COUNT
-	int # hidden: TODO: Update once the API supports it
-	default 1
-
-config BT_BAP_BROADCAST_SNK_COUNT
-	int "Basic Audio Broadcaster Sink count"
-	depends on BT_ISO_BROADCAST
-	default 1
-	range 0 BT_ISO_MAX_BIG
-	help
-	  This option sets the number of broadcast sinks to support.
-	  One broadcast sink can receive multiple streams
-	  (up to BT_BAP_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
-
-config BT_BAP_BROADCAST_SNK_STREAM_COUNT
-	int "Basic Audio Broadcast Sink Stream count"
-	depends on BT_ISO_BROADCAST
-	depends on BT_BAP_BROADCAST_SNK_COUNT > 0
-	default 1
-	range 1 BT_ISO_MAX_CHAN
-	help
-	  This option sets the maximum number of streams per broadcast sink
-	  to support.
-
 config BT_BAP_PAC_COUNT
 	int "Basic Audio Profile PAC count"
 	default 2
-	range 1 4 if BT_BAP_BROADCAST_SRC_STREAM_COUNT = 0
+	range 1 4 if BT_AUDIO_BROADCAST_SRC_STREAM_COUNT = 0
 	range 0 4
 	help
 	  This option enables caching a number of Published Audio Capabilities

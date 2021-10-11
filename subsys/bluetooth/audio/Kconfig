@@ -48,18 +48,68 @@ config BT_AUDIO_UNICAST_CLIENT
 config BT_AUDIO_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support"
 	select BT_ISO_BROADCAST
-	select BT_BAP
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
 
+if BT_AUDIO_BROADCAST_SOURCE
+
+config BT_AUDIO_BROADCAST_SRC_COUNT
+	int "Basic Audio Broadcaster source count"
+	depends on BT_ISO_BROADCAST
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sources to support.
+	  One broadcast source can send multiple streams
+	  (up to BT_AUDIO_BROADCAST_SRC_STREAM_COUNT per broadcast source).
+
+
+config BT_AUDIO_BROADCAST_SRC_STREAM_COUNT
+	int "Basic Audio Broadcast Source Stream count"
+	depends on BT_ISO_BROADCAST
+	default 1
+	range 0 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast source
+	  to support.
+
+endif # BT_AUDIO_BROADCAST_SOURCE
+
 config BT_AUDIO_BROADCAST_SINK
 	bool "Bluetooth Broadcast Sink Audio Support"
 	select BT_ISO_BROADCAST
-	select BT_BAP
 	help
 	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
+
+if BT_AUDIO_BROADCAST_SINK
+
+config BT_AUDIO_BROADCAST_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
+
+config BT_AUDIO_BROADCAST_SNK_COUNT
+	int "Basic Audio Broadcaster Sink count"
+	depends on BT_ISO_BROADCAST
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sinks to support.
+	  One broadcast sink can receive multiple streams
+	  (up to BT_AUDIO_BROADCAST_SNK_STREAM_COUNT per broadcast sink).
+
+config BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
+	int "Basic Audio Broadcast Sink Stream count"
+	depends on BT_ISO_BROADCAST
+	depends on BT_AUDIO_BROADCAST_SNK_COUNT > 0
+	default 1
+	range 1 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast sink
+	  to support.
+
+endif # BT_AUDIO_BROADCAST_SINK
 
 config BT_AUDIO_DEBUG
 	bool "Enable debug logs"
