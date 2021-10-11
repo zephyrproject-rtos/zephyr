@@ -459,6 +459,12 @@ config SOC_DCDC_NRF52X
 	help
 	  Enable nRF52 series System on Chip DC/DC converter.
 
+config SOC_DCDC_NRF52X_HV
+	bool
+	depends on SOC_NRF52840
+	help
+	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
+
 config GPIO_AS_PINRESET
 	bool "GPIO as pin reset (reset button)"
 	depends on SOC_SERIES_NRF52X
