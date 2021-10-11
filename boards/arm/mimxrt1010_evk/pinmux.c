@@ -36,6 +36,10 @@ static int mimxrt1010_evk_init(const struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
+/* MCUX SDK sets the drive strength of pins on RT1010 to 4 by default,
+ * hence the difference between the drive strength selected here and in other
+ * board pinmux files
+ */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_09_LPUART1_RXD, 0);
@@ -44,12 +48,12 @@ static int mimxrt1010_evk_init(const struct device *dev)
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_09_LPUART1_RXD,
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_10_LPUART1_TXD,
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
@@ -62,14 +66,14 @@ static int mimxrt1010_evk_init(const struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_ODE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_01_LPI2C1_SDA,
 				IOMUXC_SW_PAD_CTL_PAD_PUS(3) |
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_ODE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) && CONFIG_SPI
