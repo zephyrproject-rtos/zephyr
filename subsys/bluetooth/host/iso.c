@@ -291,11 +291,42 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 	tx_qos = chan->qos->tx;
 	rx_qos = chan->qos->rx;
 
-	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &default_path;
-	in_path.pid  = tx_qos ? tx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
+	/* The following code sets the in and out paths for ISO data.
+	 * If the application provides a path for a direction (tx/rx) we use
+	 * that, otherwise we simply fall back to HCI.
+	 *
+	 * If the direction is not set (by whether tx_qos or rx_qos is NULL),
+	 * then we fallback to the HCI path object, but we disable the direction
+	 * in the controller.
+	 */
 
-	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &default_path;
-	out_path.pid  = rx_qos ? rx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
+	if (tx_qos != NULL) {
+		if (tx_qos->path != NULL) { /* Use application path */
+			in_path.path = tx_qos->path;
+			in_path.pid = tx_qos->path->pid;
+		} else { /* else fallback to HCI path */
+			in_path.path = &default_path;
+			in_path.pid = default_path.pid;
+		}
+	} else {
+		/* Disable TX */
+		in_path.path = &default_path;
+		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
+	}
+
+	if (rx_qos != NULL) {
+		if (rx_qos->path != NULL) { /* Use application path */
+			out_path.path = rx_qos->path;
+			out_path.pid = rx_qos->path->pid;
+		} else { /* else fallback to HCI path */
+			out_path.path = &default_path;
+			out_path.pid = default_path.pid;
+		}
+	} else {
+		/* Disable RX */
+		out_path.path = &default_path;
+		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
+	}
 
 	if (iso->iso.is_bis) {
 		/* Only set one data path for BIS as per the spec */
