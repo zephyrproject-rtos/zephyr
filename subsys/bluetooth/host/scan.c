@@ -637,6 +637,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 	info.rssi = evt->rssi;
 	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
+	info.sid = per_adv_sync->sid;
 
 	if (evt->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
 		/* Handling of incomplete reports is currently not
