@@ -3308,7 +3308,8 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		}
 
 		value = (struct bt_gatt_chrc)BT_GATT_CHRC_INIT(
-			&u.uuid, chrc->value_handle, chrc->properties);
+			&u.uuid, sys_le16_to_cpu(chrc->value_handle),
+			chrc->properties);
 		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
 			BT_UUID_GATT_CHRC, 0, NULL, NULL, &value);
 		attr.handle = handle;
