@@ -121,6 +121,17 @@ void zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
  */
 void zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb);
 
+#ifdef CONFIG_MCUMGR_SMP_NOTIFY_CALLBACK
+/**
+ * @brief Called whenever an SMP message is received.
+ *
+ * Called whenever an SMP message is received to notify that there is
+ * activity on the SMP server.
+ *
+ */
+extern void mcumgr_smp_notify_callback();
+#endif
+
 #ifdef __cplusplus
 }
 #endif
