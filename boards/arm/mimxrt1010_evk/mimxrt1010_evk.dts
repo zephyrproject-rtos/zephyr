@@ -72,3 +72,7 @@ arduino_serial: &lpuart1 {};
 zephyr_udc0: &usb1 {
 	status = "okay";
 };
+
+&adc1 {
+	status = "okay";
+};
