@@ -106,6 +106,19 @@ static int mimxrt1015_evk_init(const struct device *dev)
 			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) & CONFIG_ADC
+	/* ADC1 Channels 1 and 13 exposed as pins 2 and 1 on J18 of eval board */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_14_GPIO1_IO14, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_13_GPIO1_IO29, 0U);
+
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_14_GPIO1_IO14,
+				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_13_GPIO1_IO29,
+				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
+
 	return 0;
 }
 
