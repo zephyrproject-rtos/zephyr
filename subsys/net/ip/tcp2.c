@@ -620,9 +620,9 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 	for ( ; options && len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
 
-		if (opt == TCPOPT_END) {
+		if (opt == NET_TCP_END_OPT) {
 			break;
-		} else if (opt == TCPOPT_NOP) {
+		} else if (opt == NET_TCP_NOP_OPT) {
 			opt_len = 1;
 			continue;
 		} else {
@@ -642,7 +642,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 		}
 
 		switch (opt) {
-		case TCPOPT_MAXSEG:
+		case NET_TCP_MSS_OPT:
 			if (opt_len != 4) {
 				result = false;
 				goto end;
@@ -653,7 +653,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			recv_options->mss_found = true;
 			NET_DBG("MSS=%hu", recv_options->mss);
 			break;
-		case TCPOPT_WINDOW:
+		case NET_TCP_WINDOW_SCALE_OPT:
 			if (opt_len != 3) {
 				result = false;
 				goto end;
