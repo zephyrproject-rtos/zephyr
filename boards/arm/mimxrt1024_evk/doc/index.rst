@@ -97,6 +97,8 @@ features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1024_evk/mimxrt1024_evk_defconfig``
@@ -150,6 +152,10 @@ The MIMXRT1024 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_SD_B1_02 | LPI2C4_SCL      | I2C SCL                   |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B1_03 | LPI2C4_SDA      | I2C SDA                   |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_11 | ADC1            | ADC1 Channel 11           |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_10 | ADC1            | ADC1 Channel 10           |
 +---------------+-----------------+---------------------------+
 
 System Clock
