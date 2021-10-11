@@ -14,7 +14,6 @@
 #include <fs/fs.h>
 #include <fs/fs_sys.h>
 #include <sys/check.h>
-#include <sys/stat.h>
 
 
 #define LOG_LEVEL CONFIG_FS_LOG_LEVEL
