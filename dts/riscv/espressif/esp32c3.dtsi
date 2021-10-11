@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
+#include <dt-bindings/clock/esp32c3_clock.h>
 
 / {
 	#address-cells = <1>;
@@ -57,6 +58,16 @@
 			interrupt-parent = <&intc>;
 			label = "SYSTIMER_0";
 			status = "okay";
+		};
+
+		rtc: rtc@60008000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x60008000 0x1000>;
+			label = "RTC";
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			xtal-div = <0>;
+			#clock-cells = <1>;
+			status = "ok";
 		};
 
 		gpio0: gpio@60004000 {
