@@ -753,7 +753,7 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 		return -ENOMEM;
 	}
 
-	chan_attach(NULL, chan, ep, NULL, codec);
+	bt_audio_chan_attach(NULL, chan, ep, NULL, codec);
 	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
@@ -761,7 +761,7 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 	chan->iso->qos->tx = NULL;
 	codec_qos.dir = BT_CODEC_QOS_IN;
 	chan->qos = &codec_qos;
-	err = codec_qos_to_iso_qos(chan->iso->qos, &codec_qos);
+	err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos, &codec_qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;
