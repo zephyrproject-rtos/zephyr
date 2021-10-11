@@ -244,7 +244,7 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 	return NULL;
 }
 
-#if defined(CONFIG_BT_AUDIO_BROADCAST)
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SINK) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
 {
 	int i, size;
@@ -285,7 +285,7 @@ struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
 
 	return NULL;
 }
-#endif /* CONFIG_BT_AUDIO_BROADCAST */
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SINK || CONFIG_BT_AUDIO_BROADCAST_SOURCE*/
 
 struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 				    uint16_t handle)

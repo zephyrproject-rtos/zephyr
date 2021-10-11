@@ -45,12 +45,20 @@ config BT_AUDIO_UNICAST_CLIENT
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
 
-config BT_AUDIO_BROADCAST
-	bool "Bluetooth Broadcast Audio Support"
+config BT_AUDIO_BROADCAST_SOURCE
+	bool "Bluetooth Broadcast Source Audio Support"
 	select BT_ISO_BROADCAST
 	select BT_BAP
 	help
-	  This option enables support for Bluetooth Broadcast Audio using
+	  This option enables support for Bluetooth Broadcast Source Audio using
+	  Isochronous channels.
+
+config BT_AUDIO_BROADCAST_SINK
+	bool "Bluetooth Broadcast Sink Audio Support"
+	select BT_ISO_BROADCAST
+	select BT_BAP
+	help
+	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
 
 config BT_AUDIO_DEBUG
