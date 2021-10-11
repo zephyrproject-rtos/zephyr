@@ -137,11 +137,6 @@
 			(_conn)->send_data_retries);                           \
 	})
 
-#define TCPOPT_END	0
-#define TCPOPT_NOP	1
-#define TCPOPT_MAXSEG	2
-#define TCPOPT_WINDOW	3
-
 enum pkt_addr {
 	TCP_EP_SRC = 1,
 	TCP_EP_DST = 0
