@@ -29,7 +29,7 @@ protocol stack:
   way.
 * **Controller**: The Controller implements the Link Layer (LE LL), the
   low-level, real-time protocol which provides, in conjunction with the Radio
-  Hardware, standard interoperable over the air communication. The LL schedules
+  Hardware, standard-interoperable over-the-air communication. The LL schedules
   packet reception and transmission, guarantees the delivery of data, and
   handles all the LL control procedures.
 * **Radio Hardware**: Hardware implements the required analog and digital
