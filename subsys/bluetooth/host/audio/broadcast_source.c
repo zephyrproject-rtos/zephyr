@@ -15,7 +15,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CHAN)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_BROADCAST_SOURCE)
 #define LOG_MODULE_NAME bt_audio_broadcast_source
 #include "common/log.h"
 
