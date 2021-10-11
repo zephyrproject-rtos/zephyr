@@ -75,6 +75,11 @@ Glossary of Terms
       The set of Zephyr-supplied files that implement the Zephyr kernel,
       including its core services, device drivers, network stack, and so on.
 
+   power domain
+      A power domain is a collection of devices for which power is
+      applied and removed collectively in a single action. Power
+      domains are represented by :c:struct:`device`.
+
    power gating
       Power gating reduces power consumption by shutting off areas of an
       integrated circuit that are not in use.
