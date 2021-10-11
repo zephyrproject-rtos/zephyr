@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_BROADCAST)
+#if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/audio.h>
@@ -237,11 +237,11 @@ struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_unicast_server);
 }
 
-#else /* !(CONFIG_BT_BAP && CONFIG_BT_AUDIO_BROADCAST) */
+#else /* !(CONFIG_BT_BAP && CONFIG_BT_AUDIO_UNICAST_SERVER) */
 
 struct bst_test_list *test_unicast_server_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_BAP && CONFIG_BT_AUDIO_BROADCAST */
+#endif /* CONFIG_BT_BAP && CONFIG_BT_AUDIO_UNICAST_SERVER */
