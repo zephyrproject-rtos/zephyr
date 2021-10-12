@@ -562,9 +562,31 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
 	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
 				   &rl_idx)) {
-		radio_isr_set(isr_done, lll);
-		radio_switch_complete_and_disable();
-		radio_pkt_tx_set(lll_adv_scan_rsp_curr_get(lll));
+		struct pdu_adv *sr_pdu;
+
+		sr_pdu = lll_adv_scan_rsp_curr_get(lll);
+
+		if (0) {
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_BACK2BACK)
+		} else if (sr_pdu->adv_ext_ind.ext_hdr_len &&
+			   sr_pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+			lll_aux->last_pdu = sr_pdu;
+
+			radio_isr_set(isr_tx_chain, lll_aux);
+			radio_tmr_tifs_set(EVENT_B2B_MAFS_US);
+			radio_switch_complete_and_b2b_tx(lll->phy_s,
+							 lll->phy_flags,
+							 lll->phy_s,
+							 lll->phy_flags);
+#endif /* CONFIG_BT_CTLR_ADV_PDU_BACK2BACK */
+
+		} else {
+			radio_isr_set(isr_done, lll_aux);
+			radio_switch_complete_and_disable();
+		}
+
+		radio_pkt_tx_set(sr_pdu);
 
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
