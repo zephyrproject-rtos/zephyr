@@ -402,8 +402,8 @@ Once enabled, it is the responsibility of the application to call
 settings_load() after having initialized Bluetooth (using the
 bt_enable() API).
 
-BLE Controller
-**************
+Bluetooth Low Energy Controller
+*******************************
 
 Standard
 ========
