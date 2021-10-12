@@ -71,9 +71,11 @@ static int gdb_send_packet(const uint8_t *data, size_t len)
 }
 
 /**
- * Receives a packet
+ * Receives one whole GDB packet.
  *
- * Return 0 in case of success, otherwise -1
+ * @retval  0 Success
+ * @retval -1 Checksum error
+ * @retval -2 Incoming packet too large
  */
 static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 {
@@ -90,16 +92,20 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	}
 
 	*len = 0;
-	/* Read until receive # or the end of the buffer */
-	while (*len < (buf_len - 1)) {
+	/* Read until receive '#' */
+	while (true) {
 		ch = z_gdb_getchar();
 
 		if (ch == '#') {
 			break;
 		}
 
+		/* Only put into buffer if not full */
+		if (*len < (buf_len - 1)) {
+			buf[*len] = ch;
+		}
+
 		checksum += ch;
-		buf[*len] = ch;
 		(*len)++;
 	}
 
@@ -125,7 +131,11 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	/* ACK packet */
 	z_gdb_putchar('+');
 
-	return 0;
+	if (*len >= (buf_len - 1)) {
+		return -2;
+	} else {
+		return 0;
+	}
 }
 
 /**
@@ -248,6 +258,11 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		int ret;
 
 		ret = gdb_get_packet(buf, sizeof(buf), &pkt_len);
+		if (ret == -2) {
+			/* Packet too big. Send error and wait for next packet. */
+			gdb_send_packet(GDB_ERROR_GENERAL, 3);
+			continue;
+		}
 		CHECK_FAILURE(ret == -1);
 
 		if (pkt_len == 0) {
