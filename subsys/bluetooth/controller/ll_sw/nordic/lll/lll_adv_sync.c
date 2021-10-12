@@ -436,7 +436,7 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 		offset_us += cte_len_us;
 	}
 	offset_us = offset_us / OFFS_UNIT_30_US;
-	if ((offset_us >> 13) != 0) {
+	if (!!(offset_us >> OFFS_UNIT_BITS)) {
 		aux_ptr->offs = offset_us / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {

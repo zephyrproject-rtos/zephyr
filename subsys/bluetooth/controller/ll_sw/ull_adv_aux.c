@@ -981,7 +981,7 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 		      SCA_VALUE_50_PPM : SCA_VALUE_500_PPM;
 
 	offs = offs_us / OFFS_UNIT_30_US;
-	if (!!(offs >> 13)) {
+	if (!!(offs >> OFFS_UNIT_BITS)) {
 		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
@@ -1182,7 +1182,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 	aux_ptr = (void *)ptr;
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
 	offs = offs / OFFS_UNIT_30_US;
-	if (!!(offs >> 13)) {
+	if (!!(offs >> OFFS_UNIT_BITS)) {
 		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
 		aux_ptr->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
