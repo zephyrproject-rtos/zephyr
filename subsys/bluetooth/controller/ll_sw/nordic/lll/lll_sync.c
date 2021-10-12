@@ -858,6 +858,7 @@ static void isr_rx_aux_chain(void *param)
 		return;
 	}
 
+isr_rx_aux_chain_done:
 	if (!crc_ok) {
 		struct node_rx_pdu *node_rx;
 
@@ -873,7 +874,6 @@ static void isr_rx_aux_chain(void *param)
 		ull_rx_sched();
 	}
 
-isr_rx_aux_chain_done:
 	if (lll->is_aux_sched) {
 		lll->is_aux_sched = 0U;
 
