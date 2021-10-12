@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "connection.h"
 #include "net_stats.h"
 #include "net_private.h"
-#include "tcp2_priv.h"
+#include "tcp_internal.h"
 
 #define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
@@ -49,7 +49,6 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
-uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
 
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
