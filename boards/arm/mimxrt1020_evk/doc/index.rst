@@ -90,6 +90,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1020_evk/mimxrt1020_evk_defconfig``
@@ -163,6 +165,10 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_SD_B0_01 | USDHC1_DATA3    | SD Card                   |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_06 | USDHC1_CD_B     | SD Card                   |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_10 | ADC             | ADC1 Channel 10           |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_11 | ADC             | ADC1 Channel 11           |
 +---------------+-----------------+---------------------------+
 
 System Clock
