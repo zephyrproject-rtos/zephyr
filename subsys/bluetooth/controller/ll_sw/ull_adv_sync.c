@@ -1227,7 +1227,9 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 			memmove(ter_dptr, ter_dptr_prev,
 				sizeof(struct pdu_adv_aux_ptr));
 		} else {
-			ull_adv_aux_ptr_fill(&ter_dptr, lll_sync->adv->phy_s);
+			ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
+			ull_adv_aux_ptr_fill((void *)ter_dptr, 0U,
+					     lll_sync->adv->phy_s);
 		}
 	}
 
