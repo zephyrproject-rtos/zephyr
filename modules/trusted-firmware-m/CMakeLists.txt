@@ -207,12 +207,25 @@ if (CONFIG_BUILD_WITH_TFM)
 
   include(ExternalProject)
 
+  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+    # Set number of parallel jobs for TF-M build to 1.
+    # In some circumstances it has been experienced that building TF-M with
+    # multiple parallel jobs then `permission denied` may occur. Root cause on
+    # Windows has not been identified but current suspicion is around folder /
+    # file lock mechanism. To ensure correct behaviour in all cases, limit
+    # number of parallel jobs to 1.
+    set(PARALLEL_JOBS -j 1)
+  else()
+	# Leave PARALLEL_JOBS unset and use the default number of
+	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
+  endif()
+
   ExternalProject_Add(
     tfm
     SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
     BINARY_DIR ${TFM_BINARY_DIR}
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${CMAKE_COMMAND} --build .
+    BUILD_COMMAND ${CMAKE_COMMAND} --build . ${PARALLEL_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install .
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
