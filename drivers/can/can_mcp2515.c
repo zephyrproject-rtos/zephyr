@@ -314,6 +314,12 @@ static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_MAX_FILTER;
+}
 
 static int mcp2515_set_timing(const struct device *dev,
 			      const struct can_timing *timing,
@@ -785,6 +791,7 @@ static const struct can_driver_api can_api_funcs = {
 #endif
 	.register_state_change_isr = mcp2515_register_state_change_isr,
 	.get_core_clock = mcp2515_get_core_clock,
+	.get_max_filters = mcp2515_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
