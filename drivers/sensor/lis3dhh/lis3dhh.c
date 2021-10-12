@@ -294,13 +294,13 @@ int lis3dhh_init(const struct device *dev)
 		},                                            \
 	}
 
-#define LIS3DHH_DATA_SPI(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst),
+#define LIS3DHH_DATA_SPI(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
 			(LIS3DHH_DATA_SPI_CS(inst)), ({}))
 
-#define LIS3DHH_SPI_CS_PTR(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst),
+#define LIS3DHH_SPI_CS_PTR(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
 			(&(lis3dhh_data_##inst.cs_ctrl)), (NULL))
 
-#define LIS3DHH_SPI_CS_LABEL(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst),
+#define LIS3DHH_SPI_CS_LABEL(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
 			(DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
 
 #define LIS3DHH_SPI_CFG(inst)                          \
