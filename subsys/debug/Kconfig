@@ -368,5 +368,12 @@ config GDBSTUB_SERIAL_BACKEND_NAME
 	help
 	  Use serial as backenf for GDB
 
+config GDBSTUB_BUF_SZ
+	int "GDB backend send/receive buffer size (in bytes)"
+	default 256
+	help
+	  This specifies the size (in bytes) of the send/receive buffer
+	  for GDB backend. This needs to be big enough to hold one
+	  full GDB packet at a time.
 
 endif
