@@ -49,6 +49,8 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
+static uint8_t set_clear_ad_data_get(const uint8_t *value,
+				     uint8_t **const ad_data);
 static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			     struct pdu_adv *pdu_scan);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
@@ -527,12 +529,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_pdu_prev = lll_adv_data_peek(lll);
 	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
 		if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-			/* pick the data length */
-			ad_len = *((uint8_t *)value);
-			value = (uint8_t *)value + sizeof(uint8_t);
-
-			/* pick the reference to data */
-			(void)memcpy(&ad_data, value, sizeof(ad_data));
+			ad_len = set_clear_ad_data_get(value, &ad_data);
 
 			return ull_adv_data_set(adv, ad_len, ad_data);
 		}
@@ -803,12 +800,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* AD Data, add or remove */
 	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-		/* pick the data length */
-		ad_len = *((uint8_t *)value);
-		value = (uint8_t *)value + sizeof(uint8_t);
-
-		/* pick the reference to data */
-		(void)memcpy(&ad_data, value, sizeof(ad_data));
+		ad_len = set_clear_ad_data_get(value, &ad_data);
 	} else {
 		/* Calc the previous AD data length in auxiliary PDU */
 		ad_len = sec_pdu_prev->len - sec_len_prev;
@@ -1237,12 +1229,27 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
+static uint8_t set_clear_ad_data_get(const uint8_t *value,
+				     uint8_t **const ad_data)
+{
+	uint8_t ad_len;
+
+	/* pick the data length */
+	ad_len = *((uint8_t *)value);
+	value = (uint8_t *)value + sizeof(ad_len);
+
+	/* pick the reference to data */
+	(void)memcpy(ad_data, value, sizeof(*ad_data));
+
+	return ad_len;
+}
+
 static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			     struct pdu_adv *pdu_scan)
 {
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
-	uint16_t time_us;
+	uint32_t time_us;
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
