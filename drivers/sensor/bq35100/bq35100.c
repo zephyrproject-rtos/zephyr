@@ -82,6 +82,8 @@ static int bq35100_reg_read(const struct device *dev,
 		*reg_data = ((uint32_t)buf[3] << 24) | ((uint32_t)buf[2] << 16) |
 			    ((uint32_t)buf[2] << 8) | buf[0];
 		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;
@@ -107,6 +109,48 @@ static int bq35100_reg_write(const struct device *dev,
 	buf[1] = (uint8_t)(reg_data >> 8);
 
 	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf, 2);
+}
+
+/**
+ * Write a subcommand to the device.
+ * @param dev - The device structure.
+ * @param subcommand - the subcommand register address
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_control_reg_write(const struct device *dev,
+				     uint16_t subcommand)
+{
+	LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
+
+	uint8_t buf[2];
+
+	/* Little Endian */
+	buf[0] = (uint8_t)subcommand;
+	buf[1] = (uint8_t)(subcommand >> 8);
+
+	return bq35100_bus_access(dev, BQ35100_REG_WRITE(BQ35100_CMD_MAC_CONTROL),
+				  buf, 2);
+}
+
+/**
+ * Read the response data of the previous subcommand from the device.
+ * @param dev - The device structure.
+ * @param data - The data response from the previous subcommand
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_control_reg_read(const struct device *dev,
+				    uint16_t *data)
+{
+	uint8_t buf[2];
+	int ret;
+
+	ret = bq35100_bus_access(dev, BQ35100_REG_READ(BQ35100_CMD_MAC_DATA),
+				 buf, 2);
+
+	/* Little Endian */
+	*data = ((uint16_t)buf[1] << 8) | buf[0];
+
+	return ret;
 }
 
 /**
@@ -290,7 +334,7 @@ static int bq35100_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	//const struct bq35100_config *cfg = dev->config;
+	// const struct bq35100_config *cfg = dev->config;
 	struct bq35100_data *data = dev->data;
 
 	switch ((int16_t)chan) {
@@ -332,6 +376,26 @@ static const struct sensor_driver_api bq35100_api_funcs = {
  */
 static int bq35100_probe(const struct device *dev)
 {
+	int status;
+	uint16_t device_type;
+
+	status = bq35100_control_reg_write(dev, BQ35100_CTRL_DEVICE_TYPE);
+	if (status < 0) {
+		LOG_ERR("Unable to write control register");
+		return -EIO;
+	}
+
+	status = bq35100_control_reg_read(dev, &device_type);
+	if (status < 0) {
+		LOG_ERR("Unable to read register");
+		return -EIO;
+	}
+
+	if (device_type != BQ35100_DEVICE_TYPE_ID) {
+		LOG_ERR("Wrong device type. Should be 0x%x, but is 0x%x",
+			BQ35100_DEVICE_TYPE_ID, device_type);
+		return -ENODEV;
+	}
 
 	return 0;
 }

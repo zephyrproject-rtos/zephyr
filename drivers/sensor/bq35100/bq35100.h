@@ -247,6 +247,8 @@
 #define BQ35100_FLASH_FULL_UNSEAL_STEP1                0x41D0
 #define BQ35100_FLASH_FULL_UNSEAL_STEP2                0x41D2
 
+/* could also be 0x100 as in the reference manual. In the datasheet it says 0x40 */
+#define BQ35100_DEVICE_TYPE_ID                         0x40 
 
 /*
  * I2C helper bit masks
