@@ -9,6 +9,9 @@ Overview
 This tutorial shows how to setup AutoPTS client on Linux with AutoPTS server running on Windows 10
 virtual machine. Tested with Ubuntu 20.4 and Linux Mint 20.4.
 
+You must have a Zephyr development environment set up. See
+:ref:`getting_started` for details.
+
 Supported methods to test zephyr bluetooth host:
 
 - Testing Zephyr Host Stack on QEMU
@@ -22,11 +25,6 @@ For running with QEMU or native posix, please visit:
 
 Setup Linux
 ===========================
-
-Setup Zephyr project
----------------------
-
-Do the setup from `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_.
 
 Install nrftools (only required in the actual hardware test mode)
 =================================================================
