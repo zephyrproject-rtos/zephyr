@@ -287,6 +287,15 @@ static struct disk_info stm32_sdmmc_info = {
 	.ops = &stm32_sdmmc_ops,
 };
 
+#ifdef CONFIG_SDMMC_STM32_HWFC
+static void stm32_sdmmc_fc_enable(struct stm32_sdmmc_priv *priv)
+{
+	MMC_TypeDef *sdmmcx = priv->hsd.Instance;
+
+	sdmmcx->CLKCR |= SDMMC_CLKCR_HWFC_EN;
+}
+#endif
+
 /*
  * Check if the card is present or not. If no card detect gpio is set, assume
  * the card is present. If reading the gpio fails for some reason, assume the
@@ -443,6 +452,10 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 	/* Initialize semaphores */
 	k_sem_init(&priv->thread_lock, 1, 1);
 	k_sem_init(&priv->sync, 0, 1);
+
+#ifdef CONFIG_SDMMC_STM32_HWFC
+	stm32_sdmmc_fc_enable(priv);
+#endif
 
 	err = stm32_sdmmc_card_detect_init(priv);
 	if (err) {
