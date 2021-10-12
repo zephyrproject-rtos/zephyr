@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(gdbstub);
 
 #include "gdbstub_backend.h"
 
-#define GDB_PACKET_SIZE 256
+/* +1 is for the NULL character added during receive */
+#define GDB_PACKET_SIZE     (CONFIG_GDBSTUB_BUF_SZ + 1)
 
 /* GDB remote serial protocol does not define errors value properly
  * and handle all error packets as the same the code error is not
@@ -202,7 +203,12 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
  */
 int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 {
-	uint8_t buf[GDB_PACKET_SIZE];
+	/* 'static' modifier is intentional so the buffer
+	 * is not declared inside running stack, which may
+	 * not have enough space.
+	 */
+	static uint8_t buf[GDB_PACKET_SIZE];
+
 	enum loop_state {
 		RECEIVING,
 		CONTINUE,
