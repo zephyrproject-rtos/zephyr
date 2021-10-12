@@ -130,6 +130,8 @@ source "drivers/sensor/lis2dw12/Kconfig"
 
 source "drivers/sensor/lis2mdl/Kconfig"
 
+source "drivers/sensor/lis3dhh/Kconfig"
+
 source "drivers/sensor/lis3mdl/Kconfig"
 
 source "drivers/sensor/lm75/Kconfig"

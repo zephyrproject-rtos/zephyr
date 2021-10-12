@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+	STMicroelectronics LIS3DHH 3-axis accelerometer accessed through SPI bus
+
+compatible: "st,lis3dhh"
+
+include: ["spi-device.yaml", "st,lis2dh-common.yaml"]
+
+properties:
+		irq-gpios:
+			type: phandle-array
+			required: false
+			description: |
+				The INT1 and INT2 signal connections. These signals
+				are active-high as produced by the sensor.
