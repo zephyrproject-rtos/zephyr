@@ -105,6 +105,7 @@
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
 /* Offset Units field encoding */
+#define OFFS_UNIT_BITS         13
 #define OFFS_UNIT_30_US        30
 #define OFFS_UNIT_300_US       300
 #define OFFS_UNIT_VALUE_30_US  0
