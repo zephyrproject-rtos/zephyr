@@ -77,14 +77,6 @@ struct i2c_emul_api {
 	i2c_emul_transfer_t transfer;
 };
 
-/**
- * Back door to allow an emulator to retrieve the host configuration.
- *
- * @param dev I2C device associated with the emulator
- * @return Bit-packed 32-bit value containing the device's runtime configuration
- */
-uint32_t i2c_emul_get_config(const struct device *dev);
-
 #ifdef __cplusplus
 }
 #endif
