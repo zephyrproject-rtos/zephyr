@@ -7,15 +7,15 @@ menuconfig LIS3DHH
 	bool "LIS3DHH Three Axis Accelerometer"
 	depends on SPI
 	help
-		Enable SPI-based driver for LIS3DHH triaxial
-		accelerometer sensor.
+	  Enable SPI-based driver for LIS3DHH triaxial
+	  accelerometer sensor.
 
 if LIS3DHH
 
 choice LIS3DHH_MODE_SELECTION
 	prompt "Mode selection"
 	help
-		Enable or disable the sensor
+	  Enable or disable the sensor
 
 config LIS3DHH_NORMAL_MODE
 	bool "Turn on sensor"
@@ -29,29 +29,29 @@ config LIS3DHH_IF_ADD_INC
 	bool "Auto increment register address"
 	depends on LIS3DHH_NORMAL_MODE
 	help
-		Register address automatically incremented during
-		a multiple byte access with SPI serial interface.
+	  Register address automatically incremented during
+	  a multiple byte access with SPI serial interface.
 
 config LIS3DHH_ENABLE_BDU
 	bool "Block data update"
 	depends on LIS3DHH_NORMAL_MODE
 	help
-		Output registers are not updated until MSB and
-		LSB are read.
+	  Output registers are not updated until MSB and
+	  LSB are read.
 
 config LIS3DHH_INT1_AS_EXT_ASYNC_INPUT_TRIG
 	bool "INT1 as asynchronous input trigger to FIFO"
 	depends on LIS3DHH_NORMAL_MODE
 	help
-		Configures the INT1 pad as external asynchronous
-		input trigger to FIFO. Otherwise, INT1 is configured
-		as output for FIFO flags.
+	  Configures the INT1 pad as external asynchronous
+	  input trigger to FIFO. Otherwise, INT1 is configured
+	  as output for FIFO flags.
 
 choice LIS3DHH_FILTER_SELECTION
 	prompt "Digital filter mode selection"
 	help
-		Enable either FIR linear phase oder IIR nonlinear
-		phase filter. Both are digital filters.
+	  Enable either FIR linear phase oder IIR nonlinear
+	  phase filter. Both are digital filters.
 
 config LIS3DHH_FILTER_FIR
 	bool "FIR linear phase filter"
@@ -64,7 +64,7 @@ endchoice
 choice LIS3DHH_BANDWIDTH_SELECTION
 	prompt "Bandwidth selection"
 	help
-		Choose either 440 Hz or 235 Hz typ bandwidth.
+	  Choose either 440 Hz or 235 Hz typ bandwidth.
 
 config LIS3DHH_BANDWIDTH_440HZ
 	bool "440 Hz"
@@ -77,7 +77,7 @@ endchoice
 choice LIS3DHH_INT1_MODE_SELECTION
 	prompt "INT1 pin mode selection"
 	help
-		Choose either push-pull or open drain on INT1.
+	  Choose either push-pull or open drain on INT1.
 
 config LIS3DHH_INT1_PUSH_PULL
 	bool "push-pull on INT1 pin"
@@ -90,7 +90,7 @@ endchoice
 choice LIS3DHH_INT2_MODE_SELECTION
 	prompt "INT2 pin mode selection"
 	help
-		Choose either push-pull or open drain on INT2.
+	  Choose either push-pull or open drain on INT2.
 
 config LIS3DHH_INT2_PUSH_PULL
 	bool "push-pull on INT2 pin"
@@ -104,23 +104,23 @@ config LIS3DHH_ENABLE_FIFO
 	bool "Enable FIFO"
 	depends on LIS3DHH_NORMAL_MODE
 	help
-		Enables the FIFO memory.
+	  Enables the FIFO memory.
 
 config LIS3DHH_SPI_HS_CONFIG
 	bool "Enable SPI high speed configuration"
 	depends on LIS3DHH_NORMAL_MODE
 	help
-		Enables the SPI high speed configuration for the
-		FIFO block that is used to guarantee a minimum
-		duration of the window in which writing operation
-		of RAM output is blocked. This is recommended for
-		SPI clock frequencies higher than 6 MHz.
+	  Enables the SPI high speed configuration for the
+	  FIFO block that is used to guarantee a minimum
+	  duration of the window in which writing operation
+	  of RAM output is blocked. This is recommended for
+	  SPI clock frequencies higher than 6 MHz.
 
 choice LIS3DHH_FIFO_MODE_SELECTION
 	prompt "FIFO mode selection"
 	depends on LIS3DHH_ENABLE_FIFO
 	help
-		Configure the mode in which FIFO operates.
+	  Configure the mode in which FIFO operates.
 
 config LIS3DHH_FIFO_BYPASS
 	bool "Bypass mode. FIFO turned off."
@@ -143,8 +143,8 @@ choice LIS3DHH_FIFO_THRESHOLD_SELECTION
 	prompt "FIFO threshold configuration"
 	depends on LIS3DHH_ENABLE_FIFO
 	help
-		Configure the FIFO threshold level setting freely to
-		a maximum of 31.
+	  Configure the FIFO threshold level setting freely to
+	  a maximum of 31.
 
 config LIS3DHH_FIFO_THRESH_ADD_ONE
 	bool "Add 1 to threshold level"
