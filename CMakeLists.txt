@@ -1406,6 +1406,21 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   )
 endif()
 
+if(CONFIG_BUILD_OUTPUT_META)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
+            ${WEST_ARG}
+            ${ZEPHYR_MODULES_ARG}
+            ${ZEPHYR_EXTRA_MODULES_ARG}
+            --meta-out ${KERNEL_META_NAME}
+  )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_META_NAME}
+  )
+endif()
+
 # Cleanup intermediate files
 if(CONFIG_CLEANUP_INTERMEDIATE_FILES)
     list(APPEND
