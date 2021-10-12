@@ -313,8 +313,10 @@ static void *virt_region_alloc(size_t size, size_t align)
 		/* Free the two unused regions */
 		virt_region_free(UINT_TO_POINTER(dest_addr),
 				 aligned_dest_addr - dest_addr);
-		virt_region_free(UINT_TO_POINTER(aligned_dest_addr + size),
-				 (dest_addr + alloc_size) - (aligned_dest_addr + size));
+		if (((dest_addr + alloc_size) - (aligned_dest_addr + size)) > 0) {
+			virt_region_free(UINT_TO_POINTER(aligned_dest_addr + size),
+					 (dest_addr + alloc_size) - (aligned_dest_addr + size));
+		}
 
 		dest_addr = aligned_dest_addr;
 	}
