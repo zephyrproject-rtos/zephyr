@@ -77,18 +77,6 @@ struct pm_notifier {
  */
 void pm_power_state_force(struct pm_state_info info);
 
-#ifdef CONFIG_PM_DEBUG
-/**
- * @brief Dump Low Power states related debug info
- *
- * Dump Low Power states debug info like LPS entry count and residencies.
- */
-void pm_dump_debug_info(void);
-#else
-static inline void pm_dump_debug_info(void) { }
-
-#endif /* CONFIG_PM_DEBUG */
-
 /**
  * @brief Register a power management notifier
  *
