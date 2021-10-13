@@ -15,47 +15,22 @@
 /* common clock control device node for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NODE DT_NODELABEL(rcc)
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb3_prescaler)
 #define STM32_APB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb3_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 #define STM32_AHB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define STM32_AHB4_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
 #define STM32_CPU1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
 #define STM32_CPU2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
-#endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32h7_rcc, okay) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), d1cpre)
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), d1cpre)
 #define STM32_HPRE	DT_PROP(DT_NODELABEL(rcc), hpre)
 #define STM32_D2PPRE1	DT_PROP(DT_NODELABEL(rcc), d2ppre1)
 #define STM32_D2PPRE2	DT_PROP(DT_NODELABEL(rcc), d2ppre2)
 #define STM32_D1PPRE	DT_PROP(DT_NODELABEL(rcc), d1ppre)
 #define STM32_D3PPRE	DT_PROP(DT_NODELABEL(rcc), d3ppre)
-#endif
+
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f2_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) || \
