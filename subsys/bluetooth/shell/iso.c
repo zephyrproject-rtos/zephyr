@@ -510,7 +510,7 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_iso_big_terminate(big);
 	if (err) {
-		shell_error(sh, "Unable to terminate BIG", err);
+		shell_error(sh, "Unable to terminate BIG (err %d)", err);
 		return 0;
 	}
 

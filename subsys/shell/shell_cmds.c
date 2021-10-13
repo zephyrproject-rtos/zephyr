@@ -296,7 +296,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 
 		if (len) {
 			shell_print(shell, "[%3d] %s",
-				    i++, shell->ctx->temp_buff);
+				    (int)i++, shell->ctx->temp_buff);
 
 		} else {
 			break;
