@@ -131,7 +131,7 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
-	shell_print(ctx_shell, "Channel %p status %u", chan, status);
+	shell_print(ctx_shell, "Channel %p status %u", chan, (uint32_t)*status);
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
