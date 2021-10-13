@@ -204,7 +204,7 @@ config TRACING_CMD_BUFFER_SIZE
 
 menu "Tracing Configuration"
 
-config SYSCALL_TRACING
+config TRACING_SYSCALL
 	bool "Enable tracing Syscalls"
 	default y
 	help

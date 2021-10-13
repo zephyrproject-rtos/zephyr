@@ -427,10 +427,6 @@
 
 #define sys_port_trace_k_thread_resume_exit(thread) sys_trace_k_thread_resume_exit(thread)
 
-#define sys_port_trace_syscall_enter() sys_trace_syscall_enter()
-#define sys_port_trace_syscall_exit() sys_trace_syscall_exit()
-
-
 #define sys_port_trace_pm_system_suspend_enter(ticks)
 #define sys_port_trace_pm_system_suspend_exit(ticks, ret)
 #define sys_port_trace_pm_device_request_enter(dev, target_state)
@@ -441,8 +437,6 @@
 #define sys_port_trace_pm_device_disable_enter(dev)
 #define sys_port_trace_pm_device_disable_exit(dev)
 
-void sys_trace_syscall_enter(void);
-void sys_trace_syscall_exit(void);
 void sys_trace_idle(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
