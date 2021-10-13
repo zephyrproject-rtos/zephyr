@@ -21,16 +21,16 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	int ret = 0;
 
 	/* Clear transitioning flags */
-	atomic_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
+	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
 
-	switch (dev->pm->state) {
+	switch (pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
-		if ((dev->pm->usage == 0) && dev->pm->enable) {
+		if ((pm->usage == 0) && pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
-		if ((dev->pm->usage > 0) || !dev->pm->enable) {
+		if ((pm->usage > 0) || !pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 		}
 		break;
@@ -44,7 +44,7 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	 * This function returns the number of woken threads on success. There
 	 * is nothing we can do with this information. Just ignoring it.
 	 */
-	(void)k_condvar_broadcast(&dev->pm->condvar);
+	(void)k_condvar_broadcast(&pm->condvar);
 }
 
 static void pm_work_handler(struct k_work *work)
@@ -61,6 +61,7 @@ static int pm_device_request(const struct device *dev,
 			enum pm_device_state state, uint32_t pm_flags)
 {
 	int ret = 0;
+	struct pm_device *pm = dev->pm;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, state);
 
@@ -70,9 +71,9 @@ static int pm_device_request(const struct device *dev,
 
 	if (k_is_pre_kernel()) {
 		if (state == PM_DEVICE_STATE_ACTIVE) {
-			dev->pm->usage++;
+			pm->usage++;
 		} else {
-			dev->pm->usage--;
+			pm->usage--;
 		}
 
 		/* If we are being called before the kernel was initialized
@@ -86,34 +87,34 @@ static int pm_device_request(const struct device *dev,
 		 * cases, for example, like the pinmux being initialized before
 		 * the gpio. Lets just power on/off the device.
 		 */
-		if (dev->pm->usage == 1) {
+		if (pm->usage == 1) {
 			(void)pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
-		} else if (dev->pm->usage == 0) {
+		} else if (pm->usage == 0) {
 			(void)pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 		}
 		goto out;
 	}
 
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
+	(void)k_mutex_lock(&pm->lock, K_FOREVER);
 
-	if (!dev->pm->enable) {
+	if (!pm->enable) {
 		ret = -ENOTSUP;
 		goto out_unlock;
 	}
 
 	if (state == PM_DEVICE_STATE_ACTIVE) {
-		dev->pm->usage++;
-		if (dev->pm->usage > 1) {
+		pm->usage++;
+		if (pm->usage > 1) {
 			goto out_unlock;
 		}
 	} else {
 		/* Check if it is already 0 to avoid an underflow */
-		if (dev->pm->usage == 0) {
+		if (pm->usage == 0) {
 			goto out_unlock;
 		}
 
-		dev->pm->usage--;
-		if (dev->pm->usage > 0) {
+		pm->usage--;
+		if (pm->usage > 0) {
 			goto out_unlock;
 		}
 	}
@@ -121,31 +122,31 @@ static int pm_device_request(const struct device *dev,
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
-		atomic_set_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
-		(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
+		atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING);
+		(void)k_work_schedule(&pm->work, K_NO_WAIT);
 		goto out_unlock;
 	}
 
-	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
-	       atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
-		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
+	while ((k_work_delayable_is_pending(&pm->work)) ||
+	       atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
+		ret = k_condvar_wait(&pm->condvar, &pm->lock,
 			       K_FOREVER);
 		if (ret != 0) {
 			break;
 		}
 	}
 
-	pm_device_runtime_state_set(dev->pm);
+	pm_device_runtime_state_set(pm);
 
 	/*
-	 * dev->pm->state was set in pm_device_runtime_state_set(). As the
+	 * pm->state was set in pm_device_runtime_state_set(). As the
 	 * device may not have been properly changed to the state or
 	 * another thread we check it here before returning.
 	 */
-	ret = state == dev->pm->state ? 0 : -EIO;
+	ret = state == pm->state ? 0 : -EIO;
 
 out_unlock:
-	(void)k_mutex_unlock(&dev->pm->lock);
+	(void)k_mutex_unlock(&pm->lock);
 out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, ret);
 	return ret;
@@ -173,73 +174,78 @@ int pm_device_put_async(const struct device *dev)
 
 void pm_device_enable(const struct device *dev)
 {
+	struct pm_device *pm = dev->pm;
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
-		dev->pm->dev = dev;
+		pm->dev = dev;
 		if (dev->pm_control != NULL) {
-			dev->pm->enable = true;
-			dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
-			k_work_init_delayable(&dev->pm->work, pm_work_handler);
+			pm->enable = true;
+			pm->state = PM_DEVICE_STATE_SUSPENDED;
+			k_work_init_delayable(&pm->work, pm_work_handler);
 		}
 		goto out;
 	}
 
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
+	(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	if (dev->pm_control == NULL) {
-		dev->pm->enable = false;
+		pm->enable = false;
 		goto out_unlock;
 	}
 
-	dev->pm->enable = true;
+	pm->enable = true;
 
 	/* During the driver init, device can set the
 	 * PM state accordingly. For later cases we need
 	 * to check the usage and set the device PM state.
 	 */
-	if (!dev->pm->dev) {
-		dev->pm->dev = dev;
-		dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
-		k_work_init_delayable(&dev->pm->work, pm_work_handler);
+	if (!pm->dev) {
+		pm->dev = dev;
+		pm->state = PM_DEVICE_STATE_SUSPENDED;
+		k_work_init_delayable(&pm->work, pm_work_handler);
 	} else {
-		k_work_schedule(&dev->pm->work, K_NO_WAIT);
+		k_work_schedule(&pm->work, K_NO_WAIT);
 	}
 
 out_unlock:
-	(void)k_mutex_unlock(&dev->pm->lock);
+	(void)k_mutex_unlock(&pm->lock);
 out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 }
 
 void pm_device_disable(const struct device *dev)
 {
+	struct pm_device *pm = dev->pm;
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_disable, dev);
 	__ASSERT(k_is_pre_kernel() == false, "Device should not be disabled "
 		 "before kernel is initialized");
 
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
-	if (dev->pm->enable) {
-		dev->pm->enable = false;
+	(void)k_mutex_lock(&pm->lock, K_FOREVER);
+	if (pm->enable) {
+		pm->enable = false;
 		/* Bring up the device before disabling the Idle PM */
-		k_work_schedule(&dev->pm->work, K_NO_WAIT);
+		k_work_schedule(&pm->work, K_NO_WAIT);
 	}
-	(void)k_mutex_unlock(&dev->pm->lock);
+	(void)k_mutex_unlock(&pm->lock);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }
 
 int pm_device_wait(const struct device *dev, k_timeout_t timeout)
 {
 	int ret = 0;
+	struct pm_device *pm = dev->pm;
 
-	k_mutex_lock(&dev->pm->lock, K_FOREVER);
-	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
-	       atomic_test_bit(&dev->pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
-		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
+	k_mutex_lock(&pm->lock, K_FOREVER);
+	while ((k_work_delayable_is_pending(&pm->work)) ||
+	       atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TRANSITIONING)) {
+		ret = k_condvar_wait(&pm->condvar, &pm->lock,
 			       timeout);
 		if (ret != 0) {
 			break;
 		}
 	}
-	k_mutex_unlock(&dev->pm->lock);
+	k_mutex_unlock(&pm->lock);
 
 	return ret;
 }
