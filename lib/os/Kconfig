@@ -46,6 +46,53 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
+choice
+	prompt "Supported heap sizes"
+	depends on !64BIT
+	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
+	default SYS_HEAP_AUTO
+	help
+	  Heaps using reduced-size chunk headers can accommodate so called
+	  "small" heaps with a total size of 262136 bytes or less.
+
+	  Heaps using full-size chunk headers can have a total size up to
+	  16383 megabytes. The overhead is of course bigger.
+
+	  On 32-bit system the tradeoff is selectable between:
+
+	  - "small" heaps with low memory and runtime overhead;
+
+	  - "big" heaps with bigger memory overhead even for small heaps;
+
+	  - "auto" providing optimal memory overhead in all cases but with
+	    a higher runtime overhead and somewhat bigger code footprint.
+
+	  On 64-bit systems the "big" chunk header size conveniently provides
+	  the needed alignment on returned memory allocations. Small chunk
+	  headers would require alignment padding up to the big header size
+	  anyway so "big" heap is the only option in that case.
+
+config SYS_HEAP_SMALL_ONLY
+	bool "Support for small heaps only"
+	help
+	  Select this to optimize the code and memory usage if all your
+	  heaps are 262136 bytes or less.
+
+config SYS_HEAP_BIG_ONLY
+	bool "Support for big heaps only"
+	help
+	  Select this to optimize the code for big heaps only. This can
+	  accommodate any heap size but memory usage won't be as
+	  efficient with small sized heaps.
+
+config SYS_HEAP_AUTO
+	bool "Support for both small and big heaps at run time"
+	help
+	  This option optimizes memory usage for each heap according to
+	  their size albeit with some overhead in code size and execution.
+
+endchoice
+
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1

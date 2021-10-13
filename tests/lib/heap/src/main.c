@@ -210,6 +210,11 @@ static void test_big_heap(void)
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
 
+	if (IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY)) {
+		TC_PRINT("big heap support is disabled\n");
+		ztest_test_skip();
+	}
+
 	TC_PRINT("Testing big (%d byte) heap\n", (int) BIG_HEAP_SZ);
 
 	sys_heap_init(&heap, heapmem, BIG_HEAP_SZ);
