@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2019 Linaro Limited.
  * Copyright (c) 2020 Jeremy LOCHE
+ * Copyright (c) 2021 Electrolance Solutions
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +113,10 @@
 #define SYSCLK_FREQ_MAX		550000000UL
 #define AHB_FREQ_MAX		275000000UL
 #define APBx_FREQ_MAX		137500000UL
+#elif defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ)
+#define SYSCLK_FREQ_MAX		280000000UL
+#define AHB_FREQ_MAX		280000000UL
+#define APBx_FREQ_MAX		140000000UL
 #else
 /* Default: All h7 SoC with maximum 280MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		280000000UL
@@ -534,8 +539,12 @@ static int stm32_clock_control_init(const struct device *dev)
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
 	/* HW semaphore Clock enable */
+#if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ)
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
+#else
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 
+#endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	/* Configure Voltage scale to comply with the desired system frequency */
