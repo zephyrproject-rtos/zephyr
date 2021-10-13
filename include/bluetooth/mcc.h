@@ -53,7 +53,7 @@ typedef void (*bt_mcc_discover_mcs_cb)(struct bt_conn *conn, int err);
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param name          Player name
  */
-typedef void (*bt_mcc_player_name_read_cb)(struct bt_conn *conn, int err, const char *name);
+typedef void (*bt_mcc_read_player_name_cb)(struct bt_conn *conn, int err, const char *name);
 
 #ifdef CONFIG_BT_OTC
 /**
@@ -65,7 +65,7 @@ typedef void (*bt_mcc_player_name_read_cb)(struct bt_conn *conn, int err, const 
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param icon_id       The ID of the Icon Object. This is a UINT48 in a uint64_t
  */
-typedef void (*bt_mcc_icon_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_icon_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
 /**
@@ -77,7 +77,7 @@ typedef void (*bt_mcc_icon_obj_id_read_cb)(struct bt_conn *conn, int err, uint64
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param icon_url      The URL of the Icon
  */
-typedef void (*bt_mcc_icon_url_read_cb)(struct bt_conn *conn, int err, const char *icon_url);
+typedef void (*bt_mcc_read_icon_url_cb)(struct bt_conn *conn, int err, const char *icon_url);
 
 /**
  * @brief Callback function for track changed notifications
@@ -102,7 +102,7 @@ typedef void (*bt_mcc_track_changed_ntf_cb)(struct bt_conn *conn, int err);
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param title         The title of the track
  */
-typedef void (*bt_mcc_track_title_read_cb)(struct bt_conn *conn, int err, const char *title);
+typedef void (*bt_mcc_read_track_title_cb)(struct bt_conn *conn, int err, const char *title);
 
 /**
  * @brief Callback function for bt_mcc_read_track_duration()
@@ -113,7 +113,7 @@ typedef void (*bt_mcc_track_title_read_cb)(struct bt_conn *conn, int err, const 
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param dur           The duration of the track
  */
-typedef void (*bt_mcc_track_duration_read_cb)(struct bt_conn *conn, int err, int32_t dur);
+typedef void (*bt_mcc_read_track_duration_cb)(struct bt_conn *conn, int err, int32_t dur);
 
 /**
  * @brief Callback function for bt_mcc_read_track_position()
@@ -124,7 +124,7 @@ typedef void (*bt_mcc_track_duration_read_cb)(struct bt_conn *conn, int err, int
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param pos           The Track Position
  */
-typedef void (*bt_mcc_track_position_read_cb)(struct bt_conn *conn, int err, int32_t pos);
+typedef void (*bt_mcc_read_track_position_cb)(struct bt_conn *conn, int err, int32_t pos);
 
 /**
  * @brief Callback function for bt_mcc_set_track_position()
@@ -135,7 +135,7 @@ typedef void (*bt_mcc_track_position_read_cb)(struct bt_conn *conn, int err, int
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param pos           The Track Position set (or attempted to set)
  */
-typedef void (*bt_mcc_track_position_set_cb)(struct bt_conn *conn, int err, int32_t pos);
+typedef void (*bt_mcc_set_track_position_cb)(struct bt_conn *conn, int err, int32_t pos);
 
 /**
  * @brief Callback function for bt_mcc_read_playback_speed()
@@ -146,7 +146,7 @@ typedef void (*bt_mcc_track_position_set_cb)(struct bt_conn *conn, int err, int3
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Playback Speed
  */
-typedef void (*bt_mcc_playback_speed_read_cb)(struct bt_conn *conn, int err, int8_t speed);
+typedef void (*bt_mcc_read_playback_speed_cb)(struct bt_conn *conn, int err, int8_t speed);
 
 /**
  * @brief Callback function for bt_mcc_set_playback_speed()
@@ -157,7 +157,7 @@ typedef void (*bt_mcc_playback_speed_read_cb)(struct bt_conn *conn, int err, int
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Playback Speed set (or attempted to set)
  */
-typedef void (*bt_mcc_playback_speed_set_cb)(struct bt_conn *conn, int err, int8_t speed);
+typedef void (*bt_mcc_set_playback_speed_cb)(struct bt_conn *conn, int err, int8_t speed);
 
 /**
  * @brief Callback function for bt_mcc_read_seeking_speed()
@@ -168,7 +168,7 @@ typedef void (*bt_mcc_playback_speed_set_cb)(struct bt_conn *conn, int err, int8
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param speed         The Seeking Speed
  */
-typedef void (*bt_mcc_seeking_speed_read_cb)(struct bt_conn *conn, int err, int8_t speed);
+typedef void (*bt_mcc_read_seeking_speed_cb)(struct bt_conn *conn, int err, int8_t speed);
 
 #ifdef CONFIG_BT_OTC
 /**
@@ -180,7 +180,7 @@ typedef void (*bt_mcc_seeking_speed_read_cb)(struct bt_conn *conn, int err, int8
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Track Segments Object ID (UINT48)
  */
-typedef void (*bt_mcc_segments_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_segments_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_read_current_track_obj_id()
@@ -191,7 +191,7 @@ typedef void (*bt_mcc_segments_obj_id_read_cb)(struct bt_conn *conn, int err, ui
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Current Track Object ID (UINT48)
  */
-typedef void (*bt_mcc_current_track_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_current_track_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_set_current_track_obj_id()
@@ -202,7 +202,7 @@ typedef void (*bt_mcc_current_track_obj_id_read_cb)(struct bt_conn *conn, int er
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) set (or attempted to set)
  */
-typedef void (*bt_mcc_current_track_obj_id_set_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_set_current_track_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_read_next_track_obj_id_obj()
@@ -213,7 +213,7 @@ typedef void (*bt_mcc_current_track_obj_id_set_cb)(struct bt_conn *conn, int err
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Next Track Object ID (UINT48)
  */
-typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_next_track_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_set_next_track_obj_id()
@@ -224,7 +224,7 @@ typedef void (*bt_mcc_next_track_obj_id_read_cb)(struct bt_conn *conn, int err, 
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) set (or attempted to set)
  */
-typedef void (*bt_mcc_next_track_obj_id_set_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_set_next_track_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_read_parent_group_obj_id()
@@ -235,7 +235,7 @@ typedef void (*bt_mcc_next_track_obj_id_set_cb)(struct bt_conn *conn, int err, u
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Parent Group Object ID (UINT48)
  */
-typedef void (*bt_mcc_parent_group_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_parent_group_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_read_current_group_obj_id()
@@ -246,7 +246,7 @@ typedef void (*bt_mcc_parent_group_obj_id_read_cb)(struct bt_conn *conn, int err
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Current Group Object ID (UINT48)
  */
-typedef void (*bt_mcc_current_group_obj_id_read_cb)(struct bt_conn *conn, int err, uint64_t id);
+typedef void (*bt_mcc_read_current_group_obj_id_cb)(struct bt_conn *conn, int err, uint64_t id);
 
 /**
  * @brief Callback function for bt_mcc_set_current_group_obj_id()
@@ -257,7 +257,7 @@ typedef void (*bt_mcc_current_group_obj_id_read_cb)(struct bt_conn *conn, int er
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Object ID (UINT48) set (or attempted to set)
  */
-typedef void (*bt_mcc_current_group_obj_id_set_cb)(struct bt_conn *conn, int err, uint64_t obj_id);
+typedef void (*bt_mcc_set_current_group_obj_id_cb)(struct bt_conn *conn, int err, uint64_t obj_id);
 
 #endif /* CONFIG_BT_OTC */
 
@@ -270,7 +270,7 @@ typedef void (*bt_mcc_current_group_obj_id_set_cb)(struct bt_conn *conn, int err
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param order         The playback order
  */
-typedef void (*bt_mcc_playing_order_read_cb)(struct bt_conn *conn, int err, uint8_t order);
+typedef void (*bt_mcc_read_playing_order_cb)(struct bt_conn *conn, int err, uint8_t order);
 
 /**
  * @brief Callback function for bt_mcc_set_playing_order()
@@ -281,7 +281,7 @@ typedef void (*bt_mcc_playing_order_read_cb)(struct bt_conn *conn, int err, uint
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param order         The Playing Order set (or attempted to set)
  */
-typedef void (*bt_mcc_playing_order_set_cb)(struct bt_conn *conn, int err, uint8_t order);
+typedef void (*bt_mcc_set_playing_order_cb)(struct bt_conn *conn, int err, uint8_t order);
 
 /**
  * @brief Callback function for bt_mcc_read_playing_orders_supported()
@@ -292,7 +292,7 @@ typedef void (*bt_mcc_playing_order_set_cb)(struct bt_conn *conn, int err, uint8
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param orders        The playing orders supported (bitmap)
  */
-typedef void (*bt_mcc_playing_orders_supported_read_cb)(struct bt_conn *conn, int err,
+typedef void (*bt_mcc_read_playing_orders_supported_cb)(struct bt_conn *conn, int err,
 							uint16_t orders);
 
 /**
@@ -304,7 +304,7 @@ typedef void (*bt_mcc_playing_orders_supported_read_cb)(struct bt_conn *conn, in
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param state         The Media State
  */
-typedef void (*bt_mcc_media_state_read_cb)(struct bt_conn *conn, int err, uint8_t state);
+typedef void (*bt_mcc_read_media_state_cb)(struct bt_conn *conn, int err, uint8_t state);
 
 /**
  * @brief Callback function for bt_mcc_send_cmd()
@@ -315,7 +315,7 @@ typedef void (*bt_mcc_media_state_read_cb)(struct bt_conn *conn, int err, uint8_
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param cmd           The command sent
  */
-typedef void (*bt_mcc_cmd_send_cb)(struct bt_conn *conn, int err, struct mpl_cmd cmd);
+typedef void (*bt_mcc_send_cmd_cb)(struct bt_conn *conn, int err, struct mpl_cmd cmd);
 
 /**
  * @brief Callback function for command notifications
@@ -341,7 +341,7 @@ typedef void (*bt_mcc_cmd_ntf_cb)(struct bt_conn *conn, int err, struct mpl_cmd_
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param opcodes       The supported opcodes
  */
-typedef void (*bt_mcc_opcodes_supported_read_cb)(struct bt_conn *conn, int err,
+typedef void (*bt_mcc_read_opcodes_supported_cb)(struct bt_conn *conn, int err,
 						 uint32_t opcodes);
 
 #ifdef CONFIG_BT_OTC
@@ -354,7 +354,7 @@ typedef void (*bt_mcc_opcodes_supported_read_cb)(struct bt_conn *conn, int err,
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param search        The search set (or attempted to set)
  */
-typedef void (*bt_mcc_search_send_cb)(struct bt_conn *conn, int err,
+typedef void (*bt_mcc_send_search_cb)(struct bt_conn *conn, int err,
 				      struct mpl_search search);
 
 /**
@@ -386,7 +386,7 @@ typedef void (*bt_mcc_search_ntf_cb)(struct bt_conn *conn, int err,
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param id            The Search Results Object ID (UINT48)
  */
-typedef void (*bt_mcc_search_results_obj_id_read_cb)(struct bt_conn *conn,
+typedef void (*bt_mcc_read_search_results_obj_id_cb)(struct bt_conn *conn,
 						     int err, uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
@@ -399,8 +399,8 @@ typedef void (*bt_mcc_search_results_obj_id_read_cb)(struct bt_conn *conn,
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param ccid          The Content Control ID
  */
-typedef void (*bt_mcc_content_control_id_read_cb)(struct bt_conn *conn,
-						    int err, uint8_t ccid);
+typedef void (*bt_mcc_read_content_control_id_cb)(struct bt_conn *conn,
+						  int err, uint8_t ccid);
 #ifdef CONFIG_BT_OTC
 /**** Callback functions for the included Object Transfer service *************/
 
@@ -516,42 +516,42 @@ typedef void (*bt_mcc_otc_read_current_group_object_cb)(struct bt_conn *conn, in
  */
 struct bt_mcc_cb {
 	bt_mcc_discover_mcs_cb                   discover_mcs;
-	bt_mcc_player_name_read_cb               player_name_read;
+	bt_mcc_read_player_name_cb               read_player_name;
 #ifdef CONFIG_BT_OTC
-	bt_mcc_icon_obj_id_read_cb               icon_obj_id_read;
+	bt_mcc_read_icon_obj_id_cb               read_icon_obj_id;
 #endif /* CONFIG_BT_OTC */
-	bt_mcc_icon_url_read_cb                  icon_url_read;
+	bt_mcc_read_icon_url_cb                  read_icon_url;
 	bt_mcc_track_changed_ntf_cb              track_changed_ntf;
-	bt_mcc_track_title_read_cb               track_title_read;
-	bt_mcc_track_duration_read_cb            track_duration_read;
-	bt_mcc_track_position_read_cb            track_position_read;
-	bt_mcc_track_position_set_cb             track_position_set;
-	bt_mcc_playback_speed_read_cb            playback_speed_read;
-	bt_mcc_playback_speed_set_cb             playback_speed_set;
-	bt_mcc_seeking_speed_read_cb             seeking_speed_read;
+	bt_mcc_read_track_title_cb               read_track_title;
+	bt_mcc_read_track_duration_cb            read_track_duration;
+	bt_mcc_read_track_position_cb            read_track_position;
+	bt_mcc_set_track_position_cb             set_track_position;
+	bt_mcc_read_playback_speed_cb            read_playback_speed;
+	bt_mcc_set_playback_speed_cb             set_playback_speed;
+	bt_mcc_read_seeking_speed_cb             read_seeking_speed;
 #ifdef CONFIG_BT_OTC
-	bt_mcc_segments_obj_id_read_cb           segments_obj_id_read;
-	bt_mcc_current_track_obj_id_read_cb      current_track_obj_id_read;
-	bt_mcc_current_track_obj_id_set_cb       current_track_obj_id_set;
-	bt_mcc_next_track_obj_id_read_cb         next_track_obj_id_read;
-	bt_mcc_next_track_obj_id_set_cb          next_track_obj_id_set;
-	bt_mcc_current_group_obj_id_read_cb      current_group_obj_id_read;
-	bt_mcc_current_group_obj_id_set_cb       current_group_obj_id_set;
-	bt_mcc_parent_group_obj_id_read_cb       parent_group_obj_id_read;
+	bt_mcc_read_segments_obj_id_cb           read_segments_obj_id;
+	bt_mcc_read_current_track_obj_id_cb      read_current_track_obj_id;
+	bt_mcc_set_current_track_obj_id_cb       set_current_track_obj_id;
+	bt_mcc_read_next_track_obj_id_cb         read_next_track_obj_id;
+	bt_mcc_set_next_track_obj_id_cb          set_next_track_obj_id;
+	bt_mcc_read_current_group_obj_id_cb      read_current_group_obj_id;
+	bt_mcc_set_current_group_obj_id_cb       set_current_group_obj_id;
+	bt_mcc_read_parent_group_obj_id_cb       read_parent_group_obj_id;
 #endif /* CONFIG_BT_OTC */
-	bt_mcc_playing_order_read_cb	         playing_order_read;
-	bt_mcc_playing_order_set_cb              playing_order_set;
-	bt_mcc_playing_orders_supported_read_cb  playing_orders_supported_read;
-	bt_mcc_media_state_read_cb               media_state_read;
-	bt_mcc_cmd_send_cb                       cmd_send;
+	bt_mcc_read_playing_order_cb	         read_playing_order;
+	bt_mcc_set_playing_order_cb              set_playing_order;
+	bt_mcc_read_playing_orders_supported_cb  read_playing_orders_supported;
+	bt_mcc_read_media_state_cb               read_media_state;
+	bt_mcc_send_cmd_cb                       send_cmd;
 	bt_mcc_cmd_ntf_cb                        cmd_ntf;
-	bt_mcc_opcodes_supported_read_cb         opcodes_supported_read;
+	bt_mcc_read_opcodes_supported_cb         read_opcodes_supported;
 #ifdef CONFIG_BT_OTC
-	bt_mcc_search_send_cb                    search_send;
+	bt_mcc_send_search_cb                    send_search;
 	bt_mcc_search_ntf_cb                     search_ntf;
-	bt_mcc_search_results_obj_id_read_cb     search_results_obj_id_read;
+	bt_mcc_read_search_results_obj_id_cb     read_search_results_obj_id;
 #endif /* CONFIG_BT_OTC */
-	bt_mcc_content_control_id_read_cb        content_control_id_read;
+	bt_mcc_read_content_control_id_cb        read_content_control_id;
 #ifdef CONFIG_BT_OTC
 	bt_mcc_otc_obj_selected_cb               otc_obj_selected;
 	bt_mcc_otc_obj_metadata_cb               otc_obj_metadata;

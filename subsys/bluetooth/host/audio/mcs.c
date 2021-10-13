@@ -34,11 +34,11 @@ static struct media_proxy_sctrl_cbs cbs;
  * of attribute configuration changes.
  * Functions for notifications are placed after the service defition.
  */
-static ssize_t player_name_read(struct bt_conn *conn,
+static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	const char *name = media_proxy_sctrl_player_name_get();
+	const char *name = media_proxy_sctrl_get_player_name();
 
 	BT_DBG("Player name read: %s", log_strdup(name));
 
@@ -53,11 +53,11 @@ static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t icon_id_read(struct bt_conn *conn,
+static ssize_t read_icon_id(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
-	uint64_t icon_id = media_proxy_sctrl_icon_id_get();
+	uint64_t icon_id = media_proxy_sctrl_get_icon_id();
 
 	BT_DBG_OBJ_ID("Icon object read: ", icon_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
@@ -65,11 +65,11 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t icon_url_read(struct bt_conn *conn,
+static ssize_t read_icon_url(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	const char *url = media_proxy_sctrl_icon_url_get();
+	const char *url = media_proxy_sctrl_get_icon_url();
 
 	BT_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len,
 	       log_strdup(url));
@@ -83,11 +83,11 @@ static void track_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t track_title_read(struct bt_conn *conn,
+static ssize_t read_track_title(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
-	const char *title = media_proxy_sctrl_track_title_get();
+	const char *title = media_proxy_sctrl_get_track_title();
 
 	BT_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len,
 	       log_strdup(title));
@@ -102,11 +102,11 @@ static void track_title_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t track_duration_read(struct bt_conn *conn,
+static ssize_t read_track_duration(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t duration = media_proxy_sctrl_track_duration_get();
+	int32_t duration = media_proxy_sctrl_get_track_duration();
 
 	BT_DBG("Track duration read: %d (0x%08x)", duration, duration);
 
@@ -120,11 +120,11 @@ static void track_duration_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t track_position_read(struct bt_conn *conn,
+static ssize_t read_track_position(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t position = media_proxy_sctrl_track_position_get();
+	int32_t position = media_proxy_sctrl_get_track_position();
 
 	BT_DBG("Track position read: %d (0x%08x)", position, position);
 
@@ -132,7 +132,7 @@ static ssize_t track_position_read(struct bt_conn *conn,
 				 sizeof(position));
 }
 
-static ssize_t track_position_write(struct bt_conn *conn,
+static ssize_t write_track_position(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    const void *buf, uint16_t len,
 				    uint16_t offset, uint8_t flags)
@@ -148,7 +148,7 @@ static ssize_t track_position_write(struct bt_conn *conn,
 
 	memcpy(&position, buf, len);
 
-	media_proxy_sctrl_track_position_set(position);
+	media_proxy_sctrl_set_track_position(position);
 
 	BT_DBG("Track position write: %d", position);
 
@@ -161,11 +161,11 @@ static void track_position_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t playback_speed_read(struct bt_conn *conn,
+static ssize_t read_playback_speed(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int8_t speed = media_proxy_sctrl_playback_speed_get();
+	int8_t speed = media_proxy_sctrl_get_playback_speed();
 
 	BT_DBG("Playback speed read: %d", speed);
 
@@ -173,7 +173,7 @@ static ssize_t playback_speed_read(struct bt_conn *conn,
 				 sizeof(speed));
 }
 
-static ssize_t playback_speed_write(struct bt_conn *conn,
+static ssize_t write_playback_speed(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
 				    const void *buf, uint16_t len, uint16_t offset,
 				    uint8_t flags)
@@ -189,7 +189,7 @@ static ssize_t playback_speed_write(struct bt_conn *conn,
 
 	memcpy(&speed, buf, len);
 
-	media_proxy_sctrl_playback_speed_set(speed);
+	media_proxy_sctrl_set_playback_speed(speed);
 
 	BT_DBG("Playback speed write: %d", speed);
 
@@ -202,11 +202,11 @@ static void playback_speed_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t seeking_speed_read(struct bt_conn *conn,
+static ssize_t read_seeking_speed(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	int8_t speed = media_proxy_sctrl_seeking_speed_get();
+	int8_t speed = media_proxy_sctrl_get_seeking_speed();
 
 	BT_DBG("Seeking speed read: %d", speed);
 
@@ -221,29 +221,29 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t track_segments_id_read(struct bt_conn *conn,
+static ssize_t read_track_segments_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t track_segments_id = media_proxy_sctrl_track_segments_id_get();
+	uint64_t track_segments_id = media_proxy_sctrl_get_track_segments_id();
 
 	BT_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &track_segments_id, BT_OTS_OBJ_ID_SIZE);
 }
 
-static ssize_t current_track_id_read(struct bt_conn *conn,
+static ssize_t read_current_track_id(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = media_proxy_sctrl_current_track_id_get();
+	uint64_t track_id = media_proxy_sctrl_get_current_track_id();
 
 	BT_DBG_OBJ_ID("Current track ID read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
 
-static ssize_t current_track_id_write(struct bt_conn *conn,
+static ssize_t write_current_track_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
@@ -269,7 +269,7 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	media_proxy_sctrl_current_track_id_set(id);
+	media_proxy_sctrl_set_current_track_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -280,11 +280,11 @@ static void current_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t next_track_id_read(struct bt_conn *conn,
+static ssize_t read_next_track_id(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = media_proxy_sctrl_next_track_id_get();
+	uint64_t track_id = media_proxy_sctrl_get_next_track_id();
 
 	if (track_id == MPL_NO_TRACK_ID) {
 		BT_DBG("Next track read, but it is empty");
@@ -295,10 +295,10 @@ static ssize_t next_track_id_read(struct bt_conn *conn,
 
 	BT_DBG_OBJ_ID("Next track read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 &track_id, BT_OTS_OBJ_ID_SIZE);
+				 &track_id, BT_OTS_OBJ_ID_SIZE);
 }
 
-static ssize_t next_track_id_write(struct bt_conn *conn,
+static ssize_t write_next_track_id(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -324,7 +324,7 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	media_proxy_sctrl_next_track_id_set(id);
+	media_proxy_sctrl_set_next_track_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -335,11 +335,11 @@ static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t parent_group_id_read(struct bt_conn *conn,
+static ssize_t read_parent_group_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = media_proxy_sctrl_parent_group_id_get();
+	uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
 
 	BT_DBG_OBJ_ID("Parent group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
@@ -352,21 +352,21 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t current_group_id_read(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
+static ssize_t read_current_group_id(struct bt_conn *conn,
+				     const struct bt_gatt_attr *attr, void *buf,
+				     uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = media_proxy_sctrl_current_group_id_get();
+	uint64_t group_id = media_proxy_sctrl_get_current_group_id();
 
 	BT_DBG_OBJ_ID("Current group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
 
-static ssize_t current_group_id_write(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr,
-			      const void *buf, uint16_t len, uint16_t offset,
-			      uint8_t flags)
+static ssize_t write_current_group_id(struct bt_conn *conn,
+				      const struct bt_gatt_attr *attr,
+				      const void *buf, uint16_t len, uint16_t offset,
+				      uint8_t flags)
 {
 	uint64_t id;
 
@@ -389,7 +389,7 @@ static ssize_t current_group_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	media_proxy_sctrl_current_group_id_set(id);
+	media_proxy_sctrl_set_current_group_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -400,11 +400,11 @@ static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t playing_order_read(struct bt_conn *conn,
+static ssize_t read_playing_order(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint8_t order = media_proxy_sctrl_playing_order_get();
+	uint8_t order = media_proxy_sctrl_get_playing_order();
 
 	BT_DBG("Playing order read: %d (0x%02x)", order, order);
 
@@ -412,7 +412,7 @@ static ssize_t playing_order_read(struct bt_conn *conn,
 				 sizeof(order));
 }
 
-static ssize_t playing_order_write(struct bt_conn *conn,
+static ssize_t write_playing_order(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -430,7 +430,7 @@ static ssize_t playing_order_write(struct bt_conn *conn,
 
 	memcpy(&order, buf, len);
 
-	media_proxy_sctrl_playing_order_set(order);
+	media_proxy_sctrl_set_playing_order(order);
 
 	BT_DBG("Playing order write: %d", order);
 
@@ -443,11 +443,11 @@ static void playing_order_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t playing_orders_supported_read(struct bt_conn *conn,
+static ssize_t read_playing_orders_supported(struct bt_conn *conn,
 					     const struct bt_gatt_attr *attr,
 					     void *buf, uint16_t len, uint16_t offset)
 {
-	uint16_t orders = media_proxy_sctrl_playing_orders_supported_get();
+	uint16_t orders = media_proxy_sctrl_get_playing_orders_supported();
 
 	BT_DBG("Playing orders read: %d (0x%04x)", orders, orders);
 
@@ -455,11 +455,11 @@ static ssize_t playing_orders_supported_read(struct bt_conn *conn,
 				 sizeof(orders));
 }
 
-static ssize_t media_state_read(struct bt_conn *conn,
+static ssize_t read_media_state(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	uint8_t state = media_proxy_sctrl_media_state_get();
+	uint8_t state = media_proxy_sctrl_get_media_state();
 
 	BT_DBG("Media state read: %d", state);
 
@@ -473,7 +473,7 @@ static void media_state_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t control_point_write(struct bt_conn *conn,
+static ssize_t write_control_point(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
@@ -501,22 +501,22 @@ static ssize_t control_point_write(struct bt_conn *conn,
 		BT_DBG("Parameter: %d", command.param);
 	}
 
-	media_proxy_sctrl_command_send(command);
+	media_proxy_sctrl_send_command(command);
 
 	return len;
 }
 
 static void control_point_cfg_changed(const struct bt_gatt_attr *attr,
-					 uint16_t value)
+				      uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t opcodes_supported_read(struct bt_conn *conn,
+static ssize_t read_opcodes_supported(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint32_t opcodes = media_proxy_sctrl_commands_supported_get();
+	uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
 
 	BT_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
 
@@ -531,7 +531,7 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
 }
 
 #ifdef CONFIG_BT_OTS
-static ssize_t search_control_point_write(struct bt_conn *conn,
+static ssize_t write_search_control_point(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
 					  uint16_t offset, uint8_t flags)
@@ -551,7 +551,7 @@ static ssize_t search_control_point_write(struct bt_conn *conn,
 	BT_DBG("Search length: %d", len);
 	BT_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	media_proxy_sctrl_search_send(search);
+	media_proxy_sctrl_send_search(search);
 
 	return len;
 }
@@ -562,11 +562,11 @@ static void search_control_point_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t search_results_id_read(struct bt_conn *conn,
+static ssize_t read_search_results_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t search_id = media_proxy_sctrl_search_results_id_get();
+	uint64_t search_id = media_proxy_sctrl_get_search_results_id();
 
 	BT_DBG_OBJ_ID("Search results id read: ", search_id);
 
@@ -595,11 +595,11 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t content_ctrl_id_read(struct bt_conn *conn,
+static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint8_t id = media_proxy_sctrl_content_ctrl_id_get();
+	uint8_t id = media_proxy_sctrl_get_content_ctrl_id();
 
 	BT_DBG("Content control ID read: %d", id);
 
@@ -612,18 +612,18 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS  \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID,	\
 	BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-	icon_id_read, NULL, NULL),
+	read_icon_id, NULL, NULL),
 #define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS  \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID,	\
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       track_segments_id_read, NULL, NULL), \
+			       read_track_segments_id, NULL, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       current_track_id_read, current_track_id_write, \
+			       read_current_track_id, write_current_track_id, \
 			       NULL), \
 	BT_GATT_CCC(current_track_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
@@ -633,13 +633,13 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       next_track_id_read, next_track_id_write, NULL), \
+			       read_next_track_id, write_next_track_id, NULL), \
 	BT_GATT_CCC(next_track_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       parent_group_id_read, NULL, NULL), \
+			       read_parent_group_id, NULL, NULL), \
 	BT_GATT_CCC(parent_group_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, \
@@ -648,7 +648,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       current_group_id_read, current_group_id_write, NULL), \
+			       read_current_group_id, write_current_group_id, NULL), \
 	BT_GATT_CCC(current_group_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 #define	SEARCH_CHARACTERISTICS_IF_OTS \
@@ -657,13 +657,13 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, search_control_point_write, NULL), \
+			       NULL, write_search_control_point, NULL), \
 	BT_GATT_CCC(search_control_point_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       search_results_id_read, NULL, NULL), \
+			       read_search_results_id, NULL, NULL), \
 	BT_GATT_CCC(search_results_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 
@@ -680,13 +680,13 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYER_NAME, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       player_name_read, NULL, NULL), \
+			       read_player_name, NULL, NULL), \
 	BT_GATT_CCC(player_name_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	ICON_OBJ_ID_CHARACTERISTIC_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URL, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       icon_url_read, NULL, NULL), \
+			       read_icon_url, NULL, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_CHANGED, \
 			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, \
 			       NULL, NULL, NULL), \
@@ -695,13 +695,13 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_TITLE, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       track_title_read, NULL, NULL), \
+			       read_track_title, NULL, NULL), \
 	BT_GATT_CCC(track_title_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_DURATION, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       track_duration_read, NULL, NULL), \
+			       read_track_duration, NULL, NULL), \
 	BT_GATT_CCC(track_duration_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_POSITION, \
@@ -710,8 +710,8 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       track_position_read, \
-			       track_position_write, NULL), \
+			       read_track_position, \
+			       write_track_position, NULL), \
 	BT_GATT_CCC(track_position_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYBACK_SPEED, \
@@ -720,14 +720,14 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       playback_speed_read, playback_speed_write, \
+			       read_playback_speed, write_playback_speed, \
 			       NULL), \
 	BT_GATT_CCC(playback_speed_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEEKING_SPEED, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       seeking_speed_read, NULL, NULL), \
+			       read_seeking_speed, NULL, NULL), \
 	BT_GATT_CCC(seeking_speed_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS \
@@ -737,16 +737,16 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       playing_order_read, playing_order_write, NULL), \
+			       read_playing_order, write_playing_order, NULL), \
 	BT_GATT_CCC(playing_order_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYING_ORDERS, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       playing_orders_supported_read, NULL, NULL), \
+			       read_playing_orders_supported, NULL, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_STATE, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       media_state_read, NULL, NULL), \
+			       read_media_state, NULL, NULL), \
 	BT_GATT_CCC(media_state_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_CONTROL_POINT, \
@@ -754,20 +754,20 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, control_point_write, NULL), \
+			       NULL, write_control_point, NULL), \
 	BT_GATT_CCC(control_point_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       opcodes_supported_read, NULL, NULL), \
+			       read_opcodes_supported, NULL, NULL), \
 	BT_GATT_CCC(opcodes_supported_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	SEARCH_CHARACTERISTICS_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_CCID, \
 			       BT_GATT_CHRC_READ, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
-			       content_ctrl_id_read, NULL, NULL)
+			       read_content_ctrl_id, NULL, NULL)
 
 static struct bt_gatt_attr svc_attrs[] = { BT_MCS_SERVICE_DEFINITION };
 static struct bt_gatt_service mcs;

@@ -71,59 +71,59 @@ struct media_proxy_sctrl_cbs {
 int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs);
 
 
-const char *media_proxy_sctrl_player_name_get(void);
+const char *media_proxy_sctrl_get_player_name(void);
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_sctrl_icon_id_get(void);
+uint64_t media_proxy_sctrl_get_icon_id(void);
 #endif /* CONFIG_BT_OTS */
 
-const char *media_proxy_sctrl_icon_url_get(void);
+const char *media_proxy_sctrl_get_icon_url(void);
 
 
-const char *media_proxy_sctrl_track_title_get(void);
+const char *media_proxy_sctrl_get_track_title(void);
 
-int32_t media_proxy_sctrl_track_duration_get(void);
+int32_t media_proxy_sctrl_get_track_duration(void);
 
-int32_t media_proxy_sctrl_track_position_get(void);
-void media_proxy_sctrl_track_position_set(int32_t position);
+int32_t media_proxy_sctrl_get_track_position(void);
+void media_proxy_sctrl_set_track_position(int32_t position);
 
-int8_t media_proxy_sctrl_playback_speed_get(void);
-void media_proxy_sctrl_playback_speed_set(int8_t speed);
+int8_t media_proxy_sctrl_get_playback_speed(void);
+void media_proxy_sctrl_set_playback_speed(int8_t speed);
 
-int8_t media_proxy_sctrl_seeking_speed_get(void);
+int8_t media_proxy_sctrl_get_seeking_speed(void);
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_sctrl_track_segments_id_get(void);
+uint64_t media_proxy_sctrl_get_track_segments_id(void);
 
-uint64_t media_proxy_sctrl_current_track_id_get(void);
-void media_proxy_sctrl_current_track_id_set(uint64_t id);
+uint64_t media_proxy_sctrl_get_current_track_id(void);
+void media_proxy_sctrl_set_current_track_id(uint64_t id);
 
-uint64_t media_proxy_sctrl_next_track_id_get(void);
-void media_proxy_sctrl_next_track_id_set(uint64_t id);
+uint64_t media_proxy_sctrl_get_next_track_id(void);
+void media_proxy_sctrl_set_next_track_id(uint64_t id);
 
-uint64_t media_proxy_sctrl_current_group_id_get(void);
-void media_proxy_sctrl_current_group_id_set(uint64_t id);
+uint64_t media_proxy_sctrl_get_current_group_id(void);
+void media_proxy_sctrl_set_current_group_id(uint64_t id);
 
-uint64_t media_proxy_sctrl_parent_group_id_get(void);
+uint64_t media_proxy_sctrl_get_parent_group_id(void);
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_sctrl_playing_order_get(void);
-void media_proxy_sctrl_playing_order_set(uint8_t order);
+uint8_t media_proxy_sctrl_get_playing_order(void);
+void media_proxy_sctrl_set_playing_order(uint8_t order);
 
-uint16_t media_proxy_sctrl_playing_orders_supported_get(void);
+uint16_t media_proxy_sctrl_get_playing_orders_supported(void);
 
-uint8_t media_proxy_sctrl_media_state_get(void);
+uint8_t media_proxy_sctrl_get_media_state(void);
 
-void media_proxy_sctrl_command_send(struct mpl_cmd command);
+void media_proxy_sctrl_send_command(struct mpl_cmd command);
 
-uint32_t media_proxy_sctrl_commands_supported_get(void);
+uint32_t media_proxy_sctrl_get_commands_supported(void);
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_search_send(struct mpl_search search);
+void media_proxy_sctrl_send_search(struct mpl_search search);
 
-uint64_t media_proxy_sctrl_search_results_id_get(void);
+uint64_t media_proxy_sctrl_get_search_results_id(void);
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_sctrl_content_ctrl_id_get(void);
+uint8_t media_proxy_sctrl_get_content_ctrl_id(void);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_INTERNAL_H_ */

@@ -193,8 +193,8 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Player name: %s", log_strdup(name));
 	}
 
-	if (mcc_cb && mcc_cb->player_name_read) {
-		mcc_cb->player_name_read(conn, cb_err, name);
+	if (mcc_cb && mcc_cb->read_player_name) {
+		mcc_cb->read_player_name(conn, cb_err, name);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -222,8 +222,8 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG_OBJ_ID("Icon Object ID: ", id);
 	}
 
-	if (mcc_cb && mcc_cb->icon_obj_id_read) {
-		mcc_cb->icon_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_icon_obj_id) {
+		mcc_cb->read_icon_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -252,8 +252,8 @@ static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Icon URL: %s", log_strdup(url));
 	}
 
-	if (mcc_cb && mcc_cb->icon_url_read) {
-		mcc_cb->icon_url_read(conn, cb_err, url);
+	if (mcc_cb && mcc_cb->read_icon_url) {
+		mcc_cb->read_icon_url(conn, cb_err, url);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -282,8 +282,8 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Track title: %s", log_strdup(title));
 	}
 
-	if (mcc_cb && mcc_cb->track_title_read) {
-		mcc_cb->track_title_read(conn, cb_err, title);
+	if (mcc_cb && mcc_cb->read_track_title) {
+		mcc_cb->read_track_title(conn, cb_err, title);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -308,8 +308,8 @@ static uint8_t mcc_read_track_duration_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(int32_t), "Track duration");
 	}
 
-	if (mcc_cb && mcc_cb->track_duration_read) {
-		mcc_cb->track_duration_read(conn, cb_err, dur);
+	if (mcc_cb && mcc_cb->read_track_duration) {
+		mcc_cb->read_track_duration(conn, cb_err, dur);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -334,8 +334,8 @@ static uint8_t mcc_read_track_position_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(pos), "Track position");
 	}
 
-	if (mcc_cb && mcc_cb->track_position_read) {
-		mcc_cb->track_position_read(conn, cb_err, pos);
+	if (mcc_cb && mcc_cb->read_track_position) {
+		mcc_cb->read_track_position(conn, cb_err, pos);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -360,8 +360,8 @@ static void mcs_write_track_position_cb(struct bt_conn *conn, uint8_t err,
 			       "Track position in callback");
 	}
 
-	if (mcc_cb && mcc_cb->track_position_set) {
-		mcc_cb->track_position_set(conn, cb_err, pos);
+	if (mcc_cb && mcc_cb->set_track_position) {
+		mcc_cb->set_track_position(conn, cb_err, pos);
 	}
 }
 
@@ -384,8 +384,8 @@ static uint8_t mcc_read_playback_speed_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(int8_t), "Playback speed");
 	}
 
-	if (mcc_cb && mcc_cb->playback_speed_read) {
-		mcc_cb->playback_speed_read(conn, cb_err, speed);
+	if (mcc_cb && mcc_cb->read_playback_speed) {
+		mcc_cb->read_playback_speed(conn, cb_err, speed);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -408,8 +408,8 @@ static void mcs_write_playback_speed_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Playback_speed: %d", speed);
 	}
 
-	if (mcc_cb && mcc_cb->playback_speed_set) {
-		mcc_cb->playback_speed_set(conn, cb_err, speed);
+	if (mcc_cb && mcc_cb->set_playback_speed) {
+		mcc_cb->set_playback_speed(conn, cb_err, speed);
 	}
 }
 
@@ -432,8 +432,8 @@ static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(int8_t), "Seeking speed");
 	}
 
-	if (mcc_cb && mcc_cb->seeking_speed_read) {
-		mcc_cb->seeking_speed_read(conn, cb_err, speed);
+	if (mcc_cb && mcc_cb->read_seeking_speed) {
+		mcc_cb->read_seeking_speed(conn, cb_err, speed);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -462,8 +462,8 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = 0;
 	}
 
-	if (mcc_cb && mcc_cb->segments_obj_id_read) {
-		mcc_cb->segments_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_segments_obj_id) {
+		mcc_cb->read_segments_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -491,8 +491,8 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 		cb_err = 0;
 	}
 
-	if (mcc_cb && mcc_cb->current_track_obj_id_read) {
-		mcc_cb->current_track_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_current_track_obj_id) {
+		mcc_cb->read_current_track_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -515,8 +515,8 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG_OBJ_ID("Object ID: ", obj_id);
 	}
 
-	if (mcc_cb && mcc_cb->current_track_obj_id_set) {
-		mcc_cb->current_track_obj_id_set(conn, cb_err, obj_id);
+	if (mcc_cb && mcc_cb->set_current_track_obj_id) {
+		mcc_cb->set_current_track_obj_id(conn, cb_err, obj_id);
 	}
 }
 
@@ -542,8 +542,8 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG_OBJ_ID("Next Track Object ID: ", id);
 	}
 
-	if (mcc_cb && mcc_cb->next_track_obj_id_read) {
-		mcc_cb->next_track_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_next_track_obj_id) {
+		mcc_cb->read_next_track_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -566,8 +566,8 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG_OBJ_ID("Object ID: ", obj_id);
 	}
 
-	if (mcc_cb && mcc_cb->next_track_obj_id_set) {
-		mcc_cb->next_track_obj_id_set(conn, cb_err, obj_id);
+	if (mcc_cb && mcc_cb->set_next_track_obj_id) {
+		mcc_cb->set_next_track_obj_id(conn, cb_err, obj_id);
 	}
 }
 
@@ -591,8 +591,8 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 		BT_DBG_OBJ_ID("Parent Group Object ID: ", id);
 	}
 
-	if (mcc_cb && mcc_cb->parent_group_obj_id_read) {
-		mcc_cb->parent_group_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_parent_group_obj_id) {
+		mcc_cb->read_parent_group_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -618,8 +618,8 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 		BT_DBG_OBJ_ID("Current Group Object ID: ", id);
 	}
 
-	if (mcc_cb && mcc_cb->current_group_obj_id_read) {
-		mcc_cb->current_group_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_current_group_obj_id) {
+		mcc_cb->read_current_group_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -642,8 +642,8 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG_OBJ_ID("Object ID: ", obj_id);
 	}
 
-	if (mcc_cb && mcc_cb->current_group_obj_id_set) {
-		mcc_cb->current_group_obj_id_set(conn, cb_err, obj_id);
+	if (mcc_cb && mcc_cb->set_current_group_obj_id) {
+		mcc_cb->set_current_group_obj_id(conn, cb_err, obj_id);
 	}
 }
 #endif /* CONFIG_BT_MCC_OTS */
@@ -667,8 +667,8 @@ static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(order), "Playing order");
 	}
 
-	if (mcc_cb && mcc_cb->playing_order_read) {
-		mcc_cb->playing_order_read(conn, cb_err, order);
+	if (mcc_cb && mcc_cb->read_playing_order) {
+		mcc_cb->read_playing_order(conn, cb_err, order);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -691,8 +691,8 @@ static void mcs_write_playing_order_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Playing order: %d", *(uint8_t *)params->data);
 	}
 
-	if (mcc_cb && mcc_cb->playing_order_set) {
-		mcc_cb->playing_order_set(conn, cb_err, order);
+	if (mcc_cb && mcc_cb->set_playing_order) {
+		mcc_cb->set_playing_order(conn, cb_err, order);
 	}
 }
 
@@ -715,8 +715,8 @@ static uint8_t mcc_read_playing_orders_supported_cb(struct bt_conn *conn, uint8_
 		BT_HEXDUMP_DBG(data, sizeof(orders), "Playing orders supported");
 	}
 
-	if (mcc_cb && mcc_cb->playing_orders_supported_read) {
-		mcc_cb->playing_orders_supported_read(conn, cb_err, orders);
+	if (mcc_cb && mcc_cb->read_playing_orders_supported) {
+		mcc_cb->read_playing_orders_supported(conn, cb_err, orders);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -741,8 +741,8 @@ static uint8_t mcc_read_media_state_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(uint8_t), "Media state");
 	}
 
-	if (mcc_cb && mcc_cb->media_state_read) {
-		mcc_cb->media_state_read(conn, cb_err, state);
+	if (mcc_cb && mcc_cb->read_media_state) {
+		mcc_cb->read_media_state(conn, cb_err, state);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -776,8 +776,8 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 		}
 	}
 
-	if (mcc_cb && mcc_cb->cmd_send) {
-		mcc_cb->cmd_send(conn, cb_err, cmd);
+	if (mcc_cb && mcc_cb->send_cmd) {
+		mcc_cb->send_cmd(conn, cb_err, cmd);
 	}
 }
 
@@ -802,8 +802,8 @@ static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(data, sizeof(operations), "Opcodes_supported");
 	}
 
-	if (mcc_cb && mcc_cb->opcodes_supported_read) {
-		mcc_cb->opcodes_supported_read(conn, cb_err, operations);
+	if (mcc_cb && mcc_cb->read_opcodes_supported) {
+		mcc_cb->read_opcodes_supported(conn, cb_err, operations);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -830,8 +830,8 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Length of returned value in callback: %d", search.len);
 	}
 
-	if (mcc_cb && mcc_cb->search_send) {
-		mcc_cb->search_send(conn, cb_err, search);
+	if (mcc_cb && mcc_cb->send_search) {
+		mcc_cb->send_search(conn, cb_err, search);
 	}
 }
 
@@ -858,8 +858,8 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 		BT_DBG_OBJ_ID("Search Results Object ID: ", id);
 	}
 
-	if (mcc_cb && mcc_cb->search_results_obj_id_read) {
-		mcc_cb->search_results_obj_id_read(conn, cb_err, id);
+	if (mcc_cb && mcc_cb->read_search_results_obj_id) {
+		mcc_cb->read_search_results_obj_id(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -886,8 +886,8 @@ static uint8_t mcc_read_content_control_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Content control ID: %d", ccid);
 	}
 
-	if (mcc_cb && mcc_cb->content_control_id_read) {
-		mcc_cb->content_control_id_read(conn, cb_err, ccid);
+	if (mcc_cb && mcc_cb->read_content_control_id) {
+		mcc_cb->read_content_control_id(conn, cb_err, ccid);
 	}
 
 	return BT_GATT_ITER_STOP;

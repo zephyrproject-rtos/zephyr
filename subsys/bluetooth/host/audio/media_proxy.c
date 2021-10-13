@@ -68,147 +68,147 @@ int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs)
 	return 0;
 };
 
-const char *media_proxy_sctrl_player_name_get(void)
+const char *media_proxy_sctrl_get_player_name(void)
 {
 	/* TODO: Add check for whether function pointer is non-NULL everywhere */
-	return mprx.local_player.calls->player_name_get();
+	return mprx.local_player.calls->get_player_name();
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_sctrl_icon_id_get(void)
+uint64_t media_proxy_sctrl_get_icon_id(void)
 {
-	return mprx.local_player.calls->icon_id_get();
+	return mprx.local_player.calls->get_icon_id();
 }
 #endif /* CONFIG_BT_OTS */
 
-const char *media_proxy_sctrl_icon_url_get(void)
+const char *media_proxy_sctrl_get_icon_url(void)
 {
-	return mprx.local_player.calls->icon_url_get();
+	return mprx.local_player.calls->get_icon_url();
 }
 
-const char *media_proxy_sctrl_track_title_get(void)
+const char *media_proxy_sctrl_get_track_title(void)
 {
-	return mprx.local_player.calls->track_title_get();
+	return mprx.local_player.calls->get_track_title();
 }
 
-int32_t media_proxy_sctrl_track_duration_get(void)
+int32_t media_proxy_sctrl_get_track_duration(void)
 {
-	return mprx.local_player.calls->track_duration_get();
+	return mprx.local_player.calls->get_track_duration();
 }
 
-int32_t media_proxy_sctrl_track_position_get(void)
+int32_t media_proxy_sctrl_get_track_position(void)
 {
-	return mprx.local_player.calls->track_position_get();
+	return mprx.local_player.calls->get_track_position();
 }
 
-void media_proxy_sctrl_track_position_set(int32_t position)
+void media_proxy_sctrl_set_track_position(int32_t position)
 {
-	mprx.local_player.calls->track_position_set(position);
+	mprx.local_player.calls->set_track_position(position);
 }
 
-int8_t media_proxy_sctrl_playback_speed_get(void)
+int8_t media_proxy_sctrl_get_playback_speed(void)
 {
-	return mprx.local_player.calls->playback_speed_get();
+	return mprx.local_player.calls->get_playback_speed();
 }
 
-void media_proxy_sctrl_playback_speed_set(int8_t speed)
+void media_proxy_sctrl_set_playback_speed(int8_t speed)
 {
-	mprx.local_player.calls->playback_speed_set(speed);
+	mprx.local_player.calls->set_playback_speed(speed);
 }
 
-int8_t media_proxy_sctrl_seeking_speed_get(void)
+int8_t media_proxy_sctrl_get_seeking_speed(void)
 {
-	return mprx.local_player.calls->seeking_speed_get();
+	return mprx.local_player.calls->get_seeking_speed();
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_sctrl_track_segments_id_get(void)
+uint64_t media_proxy_sctrl_get_track_segments_id(void)
 {
-	return mprx.local_player.calls->track_segments_id_get();
+	return mprx.local_player.calls->get_track_segments_id();
 }
 
-uint64_t media_proxy_sctrl_current_track_id_get(void)
+uint64_t media_proxy_sctrl_get_current_track_id(void)
 {
-	return mprx.local_player.calls->current_track_id_get();
+	return mprx.local_player.calls->get_current_track_id();
 }
 
-void media_proxy_sctrl_current_track_id_set(uint64_t id)
+void media_proxy_sctrl_set_current_track_id(uint64_t id)
 {
-	mprx.local_player.calls->current_track_id_set(id);
+	mprx.local_player.calls->set_current_track_id(id);
 }
 
-uint64_t media_proxy_sctrl_next_track_id_get(void)
+uint64_t media_proxy_sctrl_get_next_track_id(void)
 {
-	return mprx.local_player.calls->next_track_id_get();
+	return mprx.local_player.calls->get_next_track_id();
 }
 
-void media_proxy_sctrl_next_track_id_set(uint64_t id)
+void media_proxy_sctrl_set_next_track_id(uint64_t id)
 {
-	mprx.local_player.calls->next_track_id_set(id);
+	mprx.local_player.calls->set_next_track_id(id);
 }
 
-uint64_t media_proxy_sctrl_parent_group_id_get(void)
+uint64_t media_proxy_sctrl_get_parent_group_id(void)
 {
-	return mprx.local_player.calls->parent_group_id_get();
+	return mprx.local_player.calls->get_parent_group_id();
 }
 
-uint64_t media_proxy_sctrl_current_group_id_get(void)
+uint64_t media_proxy_sctrl_get_current_group_id(void)
 {
-	return mprx.local_player.calls->current_group_id_get();
+	return mprx.local_player.calls->get_current_group_id();
 }
 
-void media_proxy_sctrl_current_group_id_set(uint64_t id)
+void media_proxy_sctrl_set_current_group_id(uint64_t id)
 {
-	mprx.local_player.calls->current_group_id_set(id);
+	mprx.local_player.calls->set_current_group_id(id);
 }
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_sctrl_playing_order_get(void)
+uint8_t media_proxy_sctrl_get_playing_order(void)
 {
-	return mprx.local_player.calls->playing_order_get();
+	return mprx.local_player.calls->get_playing_order();
 }
 
-void media_proxy_sctrl_playing_order_set(uint8_t order)
+void media_proxy_sctrl_set_playing_order(uint8_t order)
 {
-	mprx.local_player.calls->playing_order_set(order);
+	mprx.local_player.calls->set_playing_order(order);
 }
 
-uint16_t media_proxy_sctrl_playing_orders_supported_get(void)
+uint16_t media_proxy_sctrl_get_playing_orders_supported(void)
 {
-	return mprx.local_player.calls->playing_orders_supported_get();
+	return mprx.local_player.calls->get_playing_orders_supported();
 }
 
-uint8_t media_proxy_sctrl_media_state_get(void)
+uint8_t media_proxy_sctrl_get_media_state(void)
 {
-	return mprx.local_player.calls->media_state_get();
+	return mprx.local_player.calls->get_media_state();
 }
 
-void media_proxy_sctrl_command_send(struct mpl_cmd cmd)
+void media_proxy_sctrl_send_command(struct mpl_cmd cmd)
 {
-	mprx.local_player.calls->command_send(cmd);
+	mprx.local_player.calls->send_command(cmd);
 }
 
-uint32_t media_proxy_sctrl_commands_supported_get(void)
+uint32_t media_proxy_sctrl_get_commands_supported(void)
 {
-	return mprx.local_player.calls->commands_supported_get();
+	return mprx.local_player.calls->get_commands_supported();
 }
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_search_send(struct mpl_search search)
+void media_proxy_sctrl_send_search(struct mpl_search search)
 {
-	mprx.local_player.calls->search_send(search);
+	mprx.local_player.calls->send_search(search);
 }
 
-uint64_t media_proxy_sctrl_search_results_id_get(void)
+uint64_t media_proxy_sctrl_get_search_results_id(void)
 {
-	return mprx.local_player.calls->search_results_id_get();
+	return mprx.local_player.calls->get_search_results_id();
 }
 void media_proxy_sctrl_search_results_id_cb(uint64_t id);
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_sctrl_content_ctrl_id_get(void)
+uint8_t media_proxy_sctrl_get_content_ctrl_id(void)
 {
-	return mprx.local_player.calls->content_ctrl_id_get();
+	return mprx.local_player.calls->get_content_ctrl_id();
 }
 
 
@@ -230,7 +230,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *name)
+static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *name)
 {
 	/* Debug statements for at least a couple of the callbacks, to show flow */
 	BT_DBG("MCC player name callback");
@@ -247,7 +247,7 @@ static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *n
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	BT_DBG("Icon Object ID callback");
 
@@ -263,7 +263,7 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, const char *url)
+static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
 		BT_ERR("Icon URL read failed (%d)", err);
@@ -290,7 +290,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *title)
+static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
 		BT_ERR("Track title read failed (%d)", err);
@@ -303,7 +303,7 @@ static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *t
 	}
 }
 
-static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t dur)
+static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
 		BT_ERR("Track duration read failed (%d)", err);
@@ -316,7 +316,7 @@ static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t du
 	}
 }
 
-static void mcc_track_position_read_cb(struct bt_conn *conn, int err, int32_t pos)
+static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
 		BT_ERR("Track position read failed (%d)", err);
@@ -329,7 +329,7 @@ static void mcc_track_position_read_cb(struct bt_conn *conn, int err, int32_t po
 	}
 }
 
-static void mcc_track_position_set_cb(struct bt_conn *conn, int err, int32_t pos)
+static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
 		BT_ERR("Track Position set failed (%d)", err);
@@ -342,7 +342,7 @@ static void mcc_track_position_set_cb(struct bt_conn *conn, int err, int32_t pos
 	}
 }
 
-static void mcc_playback_speed_read_cb(struct bt_conn *conn, int err, int8_t speed)
+static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
 		BT_ERR("Playback speed read failed (%d)", err);
@@ -355,7 +355,7 @@ static void mcc_playback_speed_read_cb(struct bt_conn *conn, int err, int8_t spe
 	}
 }
 
-static void mcc_playback_speed_set_cb(struct bt_conn *conn, int err, int8_t speed)
+static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
 		BT_ERR("Playback speed set failed (%d)", err);
@@ -368,7 +368,7 @@ static void mcc_playback_speed_set_cb(struct bt_conn *conn, int err, int8_t spee
 	}
 }
 
-static void mcc_seeking_speed_read_cb(struct bt_conn *conn, int err, int8_t speed)
+static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
 		BT_ERR("Seeking speed read failed (%d)", err);
@@ -382,7 +382,7 @@ static void mcc_seeking_speed_read_cb(struct bt_conn *conn, int err, int8_t spee
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_segments_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Track Segments Object ID read failed (%d)", err);
@@ -395,7 +395,7 @@ static void mcc_segments_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t 
 	}
 }
 
-static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Current Track Object ID read failed (%d)", err);
@@ -410,7 +410,7 @@ static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err, uint
 
 /* TODO: current track set callback - must be added to MCC first */
 
-static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Next Track Object ID read failed (%d)", err);
@@ -425,7 +425,7 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err, uint64_
 
 /* TODO: next track set callback - must be added to MCC first */
 
-static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Parent Group Object ID read failed (%d)", err);
@@ -438,7 +438,7 @@ static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err, uint6
 	}
 }
 
-static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Current Group Object ID read failed (%d)", err);
@@ -455,7 +455,7 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err, uint
 
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_playing_order_read_cb(struct bt_conn *conn, int err, uint8_t order)
+static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
 		BT_ERR("Playing order read failed (%d)", err);
@@ -468,7 +468,7 @@ static void mcc_playing_order_read_cb(struct bt_conn *conn, int err, uint8_t ord
 	}
 }
 
-static void mcc_playing_order_set_cb(struct bt_conn *conn, int err, uint8_t order)
+static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
 		BT_ERR("Playing order set failed (%d)", err);
@@ -481,7 +481,7 @@ static void mcc_playing_order_set_cb(struct bt_conn *conn, int err, uint8_t orde
 	}
 }
 
-static void mcc_playing_orders_supported_read_cb(struct bt_conn *conn, int err, uint16_t orders)
+static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err, uint16_t orders)
 {
 	if (err) {
 		BT_ERR("Playing orders supported read failed (%d)", err);
@@ -494,7 +494,7 @@ static void mcc_playing_orders_supported_read_cb(struct bt_conn *conn, int err, 
 	}
 }
 
-static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state)
+static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
 	if (err) {
 		BT_ERR("Media State read failed (%d)", err);
@@ -507,7 +507,7 @@ static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state
 	}
 }
 
-static void mcc_cmd_send_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
+static void mcc_send_cmd_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
 {
 	if (err) {
 		BT_ERR("Command send failed (%d) - opcode: %d, param: %d",
@@ -536,7 +536,7 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 	}
 }
 
-static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err, uint32_t opcodes)
+static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_t opcodes)
 {
 	if (err) {
 		BT_ERR("Opcodes supported read failed (%d)", err);
@@ -550,7 +550,7 @@ static void mcc_opcodes_supported_read_cb(struct bt_conn *conn, int err, uint32_
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_search_send_cb(struct bt_conn *conn, int err, struct mpl_search search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, struct mpl_search search)
 {
 	if (err) {
 		BT_ERR("Search send failed (%d)", err);
@@ -577,7 +577,7 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 	}
 }
 
-static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		BT_ERR("Search Results Object ID read failed (%d)", err);
@@ -591,7 +591,7 @@ static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err, uin
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_content_control_id_read_cb(struct bt_conn *conn, int err, uint8_t ccid)
+static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
 	if (err) {
 		BT_ERR("Content Control ID read failed (%d)", err);
@@ -630,39 +630,39 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 
 	/* Initialize MCC */
 	mcc_cbs.discover_mcs                  = mcc_discover_mcs_cb;
-	mcc_cbs.player_name_read              = mcc_player_name_read_cb;
+	mcc_cbs.read_player_name              = mcc_read_player_name_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	mcc_cbs.icon_obj_id_read              = mcc_icon_obj_id_read_cb;
+	mcc_cbs.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	mcc_cbs.icon_url_read                 = mcc_icon_url_read_cb;
+	mcc_cbs.read_icon_url                 = mcc_read_icon_url_cb;
 	mcc_cbs.track_changed_ntf             = mcc_track_changed_ntf_cb;
-	mcc_cbs.track_title_read              = mcc_track_title_read_cb;
-	mcc_cbs.track_duration_read           = mcc_track_duration_read_cb;
-	mcc_cbs.track_position_read           = mcc_track_position_read_cb;
-	mcc_cbs.track_position_set            = mcc_track_position_set_cb;
-	mcc_cbs.playback_speed_read           = mcc_playback_speed_read_cb;
-	mcc_cbs.playback_speed_set            = mcc_playback_speed_set_cb;
-	mcc_cbs.seeking_speed_read            = mcc_seeking_speed_read_cb;
+	mcc_cbs.read_track_title              = mcc_read_track_title_cb;
+	mcc_cbs.read_track_duration           = mcc_read_track_duration_cb;
+	mcc_cbs.read_track_position           = mcc_read_track_position_cb;
+	mcc_cbs.set_track_position            = mcc_set_track_position_cb;
+	mcc_cbs.read_playback_speed           = mcc_read_playback_speed_cb;
+	mcc_cbs.set_playback_speed            = mcc_set_playback_speed_cb;
+	mcc_cbs.read_seeking_speed            = mcc_read_seeking_speed_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	mcc_cbs.segments_obj_id_read          = mcc_segments_obj_id_read_cb;
-	mcc_cbs.current_track_obj_id_read     = mcc_current_track_obj_id_read_cb;
-	mcc_cbs.next_track_obj_id_read        = mcc_next_track_obj_id_read_cb;
-	mcc_cbs.parent_group_obj_id_read      = mcc_parent_group_obj_id_read_cb;
-	mcc_cbs.current_group_obj_id_read     = mcc_current_group_obj_id_read_cb;
+	mcc_cbs.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
+	mcc_cbs.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
+	mcc_cbs.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
+	mcc_cbs.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
+	mcc_cbs.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	mcc_cbs.playing_order_read	      = mcc_playing_order_read_cb;
-	mcc_cbs.playing_order_set             = mcc_playing_order_set_cb;
-	mcc_cbs.playing_orders_supported_read = mcc_playing_orders_supported_read_cb;
-	mcc_cbs.media_state_read              = mcc_media_state_read_cb;
-	mcc_cbs.cmd_send                      = mcc_cmd_send_cb;
+	mcc_cbs.read_playing_order	      = mcc_read_playing_order_cb;
+	mcc_cbs.set_playing_order             = mcc_set_playing_order_cb;
+	mcc_cbs.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
+	mcc_cbs.read_media_state              = mcc_read_media_state_cb;
+	mcc_cbs.send_cmd                      = mcc_send_cmd_cb;
 	mcc_cbs.cmd_ntf                       = mcc_cmd_ntf_cb;
-	mcc_cbs.opcodes_supported_read        = mcc_opcodes_supported_read_cb;
+	mcc_cbs.read_opcodes_supported        = mcc_read_opcodes_supported_cb;
 #ifdef CONFIG_BT_MCC_OTS
-	mcc_cbs.search_send                   = mcc_search_send_cb;
+	mcc_cbs.send_search                   = mcc_send_search_cb;
 	mcc_cbs.search_ntf                    = mcc_search_ntf_cb;
-	mcc_cbs.search_results_obj_id_read    = mcc_search_results_obj_id_read_cb;
+	mcc_cbs.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	mcc_cbs.content_control_id_read       = mcc_content_control_id_read_cb;
+	mcc_cbs.read_content_control_id       = mcc_read_content_control_id_cb;
 
 	err = bt_mcc_init(&mcc_cbs);
 	if (err) {
@@ -684,7 +684,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_MCC	*/
 
-int media_proxy_ctrl_player_name_get(struct media_player *player)
+int media_proxy_ctrl_get_player_name(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -693,8 +693,8 @@ int media_proxy_ctrl_player_name_get(struct media_player *player)
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		BT_DBG("Local player");
-		if (mprx.local_player.calls->player_name_get) {
-			const char *name = mprx.local_player.calls->player_name_get();
+		if (mprx.local_player.calls->get_player_name) {
+			const char *name = mprx.local_player.calls->get_player_name();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->player_name_recv) {
 				mprx.ctrlr.cbs->player_name_recv(&mprx.local_player, 0, name);
@@ -718,7 +718,7 @@ int media_proxy_ctrl_player_name_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_icon_id_get(struct media_player *player)
+int media_proxy_ctrl_get_icon_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -726,8 +726,8 @@ int media_proxy_ctrl_icon_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->icon_id_get) {
-			uint64_t id = mprx.local_player.calls->icon_id_get();
+		if (mprx.local_player.calls->get_icon_id) {
+			uint64_t id = mprx.local_player.calls->get_icon_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_id_recv) {
 				mprx.ctrlr.cbs->icon_id_recv(&mprx.local_player, 0, id);
@@ -750,7 +750,7 @@ int media_proxy_ctrl_icon_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_icon_url_get(struct media_player *player)
+int media_proxy_ctrl_get_icon_url(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -758,8 +758,8 @@ int media_proxy_ctrl_icon_url_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->icon_url_get) {
-			const char *url = mprx.local_player.calls->icon_url_get();
+		if (mprx.local_player.calls->get_icon_url) {
+			const char *url = mprx.local_player.calls->get_icon_url();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_url_recv) {
 				mprx.ctrlr.cbs->icon_url_recv(player, 0, url);
@@ -782,7 +782,7 @@ int media_proxy_ctrl_icon_url_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_track_title_get(struct media_player *player)
+int media_proxy_ctrl_get_track_title(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -790,8 +790,8 @@ int media_proxy_ctrl_track_title_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->track_title_get) {
-			const char *title = mprx.local_player.calls->track_title_get();
+		if (mprx.local_player.calls->get_track_title) {
+			const char *title = mprx.local_player.calls->get_track_title();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_title_recv) {
 				mprx.ctrlr.cbs->track_title_recv(player, 0, title);
@@ -814,7 +814,7 @@ int media_proxy_ctrl_track_title_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_track_duration_get(struct media_player *player)
+int media_proxy_ctrl_get_track_duration(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -822,8 +822,8 @@ int media_proxy_ctrl_track_duration_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->track_duration_get) {
-			int32_t duration = mprx.local_player.calls->track_duration_get();
+		if (mprx.local_player.calls->get_track_duration) {
+			int32_t duration = mprx.local_player.calls->get_track_duration();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_duration_recv) {
 				mprx.ctrlr.cbs->track_duration_recv(player, 0, duration);
@@ -845,7 +845,7 @@ int media_proxy_ctrl_track_duration_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_track_position_get(struct media_player *player)
+int media_proxy_ctrl_get_track_position(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -853,8 +853,8 @@ int media_proxy_ctrl_track_position_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->track_position_get) {
-			int32_t position = mprx.local_player.calls->track_position_get();
+		if (mprx.local_player.calls->get_track_position) {
+			int32_t position = mprx.local_player.calls->get_track_position();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_recv) {
 				mprx.ctrlr.cbs->track_position_recv(player, 0, position);
@@ -877,7 +877,7 @@ int media_proxy_ctrl_track_position_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t position)
+int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t position)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -885,8 +885,8 @@ int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t pos
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->track_position_set) {
-			mprx.local_player.calls->track_position_set(position);
+		if (mprx.local_player.calls->set_track_position) {
+			mprx.local_player.calls->set_track_position(position);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_write) {
 				mprx.ctrlr.cbs->track_position_write(player, 0, position);
@@ -909,7 +909,7 @@ int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t pos
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_playback_speed_get(struct media_player *player)
+int media_proxy_ctrl_get_playback_speed(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -917,8 +917,8 @@ int media_proxy_ctrl_playback_speed_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->playback_speed_get) {
-			int8_t speed = mprx.local_player.calls->playback_speed_get();
+		if (mprx.local_player.calls->get_playback_speed) {
+			int8_t speed = mprx.local_player.calls->get_playback_speed();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_recv) {
 				mprx.ctrlr.cbs->playback_speed_recv(player, 0, speed);
@@ -941,7 +941,7 @@ int media_proxy_ctrl_playback_speed_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t speed)
+int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t speed)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -949,8 +949,8 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->playback_speed_set) {
-			mprx.local_player.calls->playback_speed_set(speed);
+		if (mprx.local_player.calls->set_playback_speed) {
+			mprx.local_player.calls->set_playback_speed(speed);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_write) {
 				mprx.ctrlr.cbs->playback_speed_write(player, 0, speed);
@@ -973,7 +973,7 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_seeking_speed_get(struct media_player *player)
+int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -981,8 +981,8 @@ int media_proxy_ctrl_seeking_speed_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->seeking_speed_get) {
-			int8_t speed = mprx.local_player.calls->seeking_speed_get();
+		if (mprx.local_player.calls->get_seeking_speed) {
+			int8_t speed = mprx.local_player.calls->get_seeking_speed();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->seeking_speed_recv) {
 				mprx.ctrlr.cbs->seeking_speed_recv(player, 0, speed);
@@ -1005,7 +1005,7 @@ int media_proxy_ctrl_seeking_speed_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_track_segments_id_get(struct media_player *player)
+int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1013,8 +1013,8 @@ int media_proxy_ctrl_track_segments_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->track_segments_id_get) {
-			uint64_t id = mprx.local_player.calls->track_segments_id_get();
+		if (mprx.local_player.calls->get_track_segments_id) {
+			uint64_t id = mprx.local_player.calls->get_track_segments_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_segments_id_recv) {
 				mprx.ctrlr.cbs->track_segments_id_recv(player, 0, id);
@@ -1037,7 +1037,7 @@ int media_proxy_ctrl_track_segments_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_current_track_id_get(struct media_player *player)
+int media_proxy_ctrl_get_current_track_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1045,8 +1045,8 @@ int media_proxy_ctrl_current_track_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->current_track_id_get) {
-			uint64_t id = mprx.local_player.calls->current_track_id_get();
+		if (mprx.local_player.calls->get_current_track_id) {
+			uint64_t id = mprx.local_player.calls->get_current_track_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id_recv) {
 				mprx.ctrlr.cbs->current_track_id_recv(player, 0, id);
@@ -1069,7 +1069,7 @@ int media_proxy_ctrl_current_track_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t id)
+int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t id)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1077,8 +1077,8 @@ int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t 
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->current_track_id_set) {
-			mprx.local_player.calls->current_track_id_set(id);
+		if (mprx.local_player.calls->set_current_track_id) {
+			mprx.local_player.calls->set_current_track_id(id);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id_write) {
 				mprx.ctrlr.cbs->current_track_id_write(player, 0, id);
@@ -1102,7 +1102,7 @@ int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t 
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_next_track_id_get(struct media_player *player)
+int media_proxy_ctrl_get_next_track_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1110,8 +1110,8 @@ int media_proxy_ctrl_next_track_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->next_track_id_get) {
-			uint64_t id = mprx.local_player.calls->next_track_id_get();
+		if (mprx.local_player.calls->get_next_track_id) {
+			uint64_t id = mprx.local_player.calls->get_next_track_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id_recv) {
 				mprx.ctrlr.cbs->next_track_id_recv(player, 0, id);
@@ -1134,7 +1134,7 @@ int media_proxy_ctrl_next_track_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
+int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1142,8 +1142,8 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->next_track_id_set) {
-			mprx.local_player.calls->next_track_id_set(id);
+		if (mprx.local_player.calls->set_next_track_id) {
+			mprx.local_player.calls->set_next_track_id(id);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id_write) {
 				mprx.ctrlr.cbs->next_track_id_write(player, 0, id);
@@ -1167,7 +1167,7 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
+int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1175,8 +1175,8 @@ int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->parent_group_id_get) {
-			uint64_t id = mprx.local_player.calls->parent_group_id_get();
+		if (mprx.local_player.calls->get_parent_group_id) {
+			uint64_t id = mprx.local_player.calls->get_parent_group_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
 				mprx.ctrlr.cbs->parent_group_id_recv(player, 0, id);
@@ -1199,7 +1199,7 @@ int media_proxy_ctrl_parent_group_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_current_group_id_get(struct media_player *player)
+int media_proxy_ctrl_get_current_group_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1207,8 +1207,8 @@ int media_proxy_ctrl_current_group_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->current_group_id_get) {
-			uint64_t id = mprx.local_player.calls->current_group_id_get();
+		if (mprx.local_player.calls->get_current_group_id) {
+			uint64_t id = mprx.local_player.calls->get_current_group_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_recv) {
 				mprx.ctrlr.cbs->current_group_id_recv(player, 0, id);
@@ -1231,7 +1231,7 @@ int media_proxy_ctrl_current_group_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t id)
+int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t id)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1239,8 +1239,8 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->current_group_id_set) {
-			mprx.local_player.calls->current_group_id_set(id);
+		if (mprx.local_player.calls->set_current_group_id) {
+			mprx.local_player.calls->set_current_group_id(id);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_write) {
 				mprx.ctrlr.cbs->current_group_id_write(player, 0, id);
@@ -1264,7 +1264,7 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_playing_order_get(struct media_player *player)
+int media_proxy_ctrl_get_playing_order(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1272,8 +1272,8 @@ int media_proxy_ctrl_playing_order_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->playing_order_get) {
-			uint8_t order = mprx.local_player.calls->playing_order_get();
+		if (mprx.local_player.calls->get_playing_order) {
+			uint8_t order = mprx.local_player.calls->get_playing_order();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_recv) {
 				mprx.ctrlr.cbs->playing_order_recv(player, 0, order);
@@ -1297,7 +1297,7 @@ int media_proxy_ctrl_playing_order_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t order)
+int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t order)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1305,8 +1305,8 @@ int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t orde
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->playing_order_set) {
-			mprx.local_player.calls->playing_order_set(order);
+		if (mprx.local_player.calls->set_playing_order) {
+			mprx.local_player.calls->set_playing_order(order);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_write) {
 				mprx.ctrlr.cbs->playing_order_write(player, 0, order);
@@ -1329,7 +1329,7 @@ int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t orde
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player)
+int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1337,8 +1337,8 @@ int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->playing_orders_supported_get) {
-			uint16_t orders = mprx.local_player.calls->playing_orders_supported_get();
+		if (mprx.local_player.calls->get_playing_orders_supported) {
+			uint16_t orders = mprx.local_player.calls->get_playing_orders_supported();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_orders_supported_recv) {
 				mprx.ctrlr.cbs->playing_orders_supported_recv(player, 0, orders);
@@ -1361,7 +1361,7 @@ int media_proxy_ctrl_playing_orders_supported_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_media_state_get(struct media_player *player)
+int media_proxy_ctrl_get_media_state(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1369,8 +1369,8 @@ int media_proxy_ctrl_media_state_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->media_state_get) {
-			uint8_t state = mprx.local_player.calls->media_state_get();
+		if (mprx.local_player.calls->get_media_state) {
+			uint8_t state = mprx.local_player.calls->get_media_state();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->media_state_recv) {
 				mprx.ctrlr.cbs->media_state_recv(player, 0, state);
@@ -1393,7 +1393,7 @@ int media_proxy_ctrl_media_state_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd cmd)
+int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cmd)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1401,8 +1401,8 @@ int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd cm
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->command_send) {
-			mprx.local_player.calls->command_send(cmd);
+		if (mprx.local_player.calls->send_command) {
+			mprx.local_player.calls->send_command(cmd);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_send) {
 				mprx.ctrlr.cbs->command_send(player, 0, cmd);
@@ -1425,7 +1425,7 @@ int media_proxy_ctrl_command_send(struct media_player *player, struct mpl_cmd cm
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_commands_supported_get(struct media_player *player)
+int media_proxy_ctrl_get_commands_supported(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1433,8 +1433,8 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->commands_supported_get) {
-			uint32_t opcodes = mprx.local_player.calls->commands_supported_get();
+		if (mprx.local_player.calls->get_commands_supported) {
+			uint32_t opcodes = mprx.local_player.calls->get_commands_supported();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported_recv) {
 				mprx.ctrlr.cbs->commands_supported_recv(player, 0, opcodes);
@@ -1457,7 +1457,7 @@ int media_proxy_ctrl_commands_supported_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search search)
+int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search search)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1465,8 +1465,8 @@ int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search 
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->search_send) {
-			mprx.local_player.calls->search_send(search);
+		if (mprx.local_player.calls->send_search) {
+			mprx.local_player.calls->send_search(search);
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_send) {
 				mprx.ctrlr.cbs->search_send(player, 0, search);
@@ -1489,7 +1489,7 @@ int media_proxy_ctrl_search_send(struct media_player *player, struct mpl_search 
 	return -EOPNOTSUPP;
 }
 
-int media_proxy_ctrl_search_results_id_get(struct media_player *player)
+int media_proxy_ctrl_get_search_results_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1497,8 +1497,8 @@ int media_proxy_ctrl_search_results_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->search_results_id_get) {
-			uint64_t id = mprx.local_player.calls->search_results_id_get();
+		if (mprx.local_player.calls->get_search_results_id) {
+			uint64_t id = mprx.local_player.calls->get_search_results_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_results_id_recv) {
 				mprx.ctrlr.cbs->search_results_id_recv(player, 0, id);
@@ -1521,7 +1521,7 @@ int media_proxy_ctrl_search_results_id_get(struct media_player *player)
 	return -EOPNOTSUPP;
 }
 
-uint8_t media_proxy_ctrl_content_ctrl_id_get(struct media_player *player)
+uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
@@ -1529,8 +1529,8 @@ uint8_t media_proxy_ctrl_content_ctrl_id_get(struct media_player *player)
 	}
 
 	if (mprx.local_player.registered && player == &mprx.local_player) {
-		if (mprx.local_player.calls->content_ctrl_id_get) {
-			uint8_t ccid = mprx.local_player.calls->content_ctrl_id_get();
+		if (mprx.local_player.calls->get_content_ctrl_id) {
+			uint8_t ccid = mprx.local_player.calls->get_content_ctrl_id();
 
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->content_ctrl_id_recv) {
 				mprx.ctrlr.cbs->content_ctrl_id_recv(player, 0, ccid);
