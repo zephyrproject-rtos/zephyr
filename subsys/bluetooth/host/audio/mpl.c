@@ -2324,39 +2324,39 @@ static bool find_group_by_id(const struct mpl_mediaplayer *pl, uint64_t id,
 }
 #endif /* CONFIG_BT_OTS */
 
-const char *player_name_get(void)
+const char *get_player_name(void)
 {
 	return pl.name;
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t icon_id_get(void)
+uint64_t get_icon_id(void)
 {
 	return pl.icon_id;
 }
 #endif /* CONFIG_BT_OTS */
 
-const char *icon_url_get(void)
+const char *get_icon_url(void)
 {
 	return pl.icon_url;
 }
 
-const char *track_title_get(void)
+const char *get_track_title(void)
 {
 	return pl.group->track->title;
 }
 
-int32_t track_duration_get(void)
+int32_t get_track_duration(void)
 {
 	return pl.group->track->duration;
 }
 
-int32_t track_position_get(void)
+int32_t get_track_position(void)
 {
 	return pl.track_pos;
 }
 
-void track_position_set(int32_t position)
+void set_track_position(int32_t position)
 {
 	int32_t old_pos = pl.track_pos;
 	int32_t new_pos;
@@ -2389,12 +2389,12 @@ void track_position_set(int32_t position)
 	}
 }
 
-int8_t playback_speed_get(void)
+int8_t get_playback_speed(void)
 {
 	return pl.playback_speed_param;
 }
 
-void playback_speed_set(int8_t speed)
+void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
 	if (speed != pl.playback_speed_param) {
@@ -2403,23 +2403,23 @@ void playback_speed_set(int8_t speed)
 	}
 }
 
-int8_t seeking_speed_get(void)
+int8_t get_seeking_speed(void)
 {
 	return pl.seeking_speed_factor;
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t track_segments_id_get(void)
+uint64_t get_track_segments_id(void)
 {
 	return pl.group->track->segments_id;
 }
 
-uint64_t current_track_id_get(void)
+uint64_t get_current_track_id(void)
 {
 	return pl.group->track->id;
 }
 
-void current_track_id_set(uint64_t id)
+void set_current_track_id(uint64_t id)
 {
 	struct mpl_group *group;
 	struct mpl_track *track;
@@ -2450,7 +2450,7 @@ void current_track_id_set(uint64_t id)
 	 */
 }
 
-uint64_t next_track_id_get(void)
+uint64_t get_next_track_id(void)
 {
 	/* If the next track has been set explicitly */
 	if (pl.next_track_set) {
@@ -2466,7 +2466,7 @@ uint64_t next_track_id_get(void)
 	return MPL_NO_TRACK_ID;
 }
 
-void next_track_id_set(uint64_t id)
+void set_next_track_id(uint64_t id)
 {
 	struct mpl_group *group;
 	struct mpl_track *track;
@@ -2485,17 +2485,17 @@ void next_track_id_set(uint64_t id)
 	BT_DBG("Track not found");
 }
 
-uint64_t parent_group_id_get(void)
+uint64_t get_parent_group_id(void)
 {
 	return pl.group->parent->id;
 }
 
-uint64_t current_group_id_get(void)
+uint64_t get_current_group_id(void)
 {
 	return pl.group->id;
 }
 
-void current_group_id_set(uint64_t id)
+void set_current_group_id(uint64_t id)
 {
 	struct mpl_group *group;
 	bool track_change;
@@ -2522,12 +2522,12 @@ void current_group_id_set(uint64_t id)
 }
 #endif /* CONFIG_BT_OTS */
 
-uint8_t playing_order_get(void)
+uint8_t get_playing_order(void)
 {
 	return pl.playing_order;
 }
 
-void playing_order_set(uint8_t order)
+void set_playing_order(uint8_t order)
 {
 	if (order != pl.playing_order) {
 		if (BIT(order - 1) & pl.playing_orders_supported) {
@@ -2537,17 +2537,17 @@ void playing_order_set(uint8_t order)
 	}
 }
 
-uint16_t playing_orders_supported_get(void)
+uint16_t get_playing_orders_supported(void)
 {
 	return pl.playing_orders_supported;
 }
 
-uint8_t media_state_get(void)
+uint8_t get_media_state(void)
 {
 	return pl.state;
 }
 
-void command_send(struct mpl_cmd command)
+void send_command(struct mpl_cmd command)
 {
 	struct mpl_cmd_ntf ntf;
 
@@ -2561,7 +2561,7 @@ void command_send(struct mpl_cmd command)
 	}
 }
 
-uint32_t commands_supported_get(void)
+uint32_t get_commands_supported(void)
 {
 	return pl.opcodes_supported;
 }
@@ -2621,7 +2621,7 @@ static void parse_search(struct mpl_search search)
 	media_proxy_pl_search_results_id_cb(pl.search_results_id);
 }
 
-void search_send(struct mpl_search search)
+void send_search(struct mpl_search search)
 {
 	if (search.len > SEARCH_LEN_MAX) {
 		BT_WARN("Search too long: %d", search.len);
@@ -2632,13 +2632,13 @@ void search_send(struct mpl_search search)
 	parse_search(search);
 }
 
-uint64_t search_results_id_get(void)
+uint64_t get_search_results_id(void)
 {
 	return pl.search_results_id;
 }
 #endif /* CONFIG_BT_OTS */
 
-uint8_t content_ctrl_id_get(void)
+uint8_t get_content_ctrl_id(void)
 {
 	return pl.content_ctrl_id;
 }
@@ -2697,38 +2697,38 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_OTS */
 
 	/* Set up the calls structure */
-	pl.calls.player_name_get              = player_name_get;
+	pl.calls.get_player_name              = get_player_name;
 #ifdef CONFIG_BT_OTS
-	pl.calls.icon_id_get                  = icon_id_get;
+	pl.calls.get_icon_id                  = get_icon_id;
 #endif /* CONFIG_BT_OTS */
-	pl.calls.icon_url_get                 = icon_url_get;
-	pl.calls.track_title_get              = track_title_get;
-	pl.calls.track_duration_get           = track_duration_get;
-	pl.calls.track_position_get           = track_position_get;
-	pl.calls.track_position_set           = track_position_set;
-	pl.calls.playback_speed_get           = playback_speed_get;
-	pl.calls.playback_speed_set           = playback_speed_set;
-	pl.calls.seeking_speed_get            = seeking_speed_get;
+	pl.calls.get_icon_url                 = get_icon_url;
+	pl.calls.get_track_title              = get_track_title;
+	pl.calls.get_track_duration           = get_track_duration;
+	pl.calls.get_track_position           = get_track_position;
+	pl.calls.set_track_position           = set_track_position;
+	pl.calls.get_playback_speed           = get_playback_speed;
+	pl.calls.set_playback_speed           = set_playback_speed;
+	pl.calls.get_seeking_speed            = get_seeking_speed;
 #ifdef CONFIG_BT_OTS
-	pl.calls.track_segments_id_get        = track_segments_id_get;
-	pl.calls.current_track_id_get         = current_track_id_get;
-	pl.calls.current_track_id_set         = current_track_id_set;
-	pl.calls.next_track_id_get            = next_track_id_get;
-	pl.calls.next_track_id_set            = next_track_id_set;
-	pl.calls.parent_group_id_get          = parent_group_id_get;
-	pl.calls.current_group_id_get         = current_group_id_get;
-	pl.calls.current_group_id_set         = current_group_id_set;
+	pl.calls.get_track_segments_id        = get_track_segments_id;
+	pl.calls.get_current_track_id         = get_current_track_id;
+	pl.calls.set_current_track_id         = set_current_track_id;
+	pl.calls.get_next_track_id            = get_next_track_id;
+	pl.calls.set_next_track_id            = set_next_track_id;
+	pl.calls.get_parent_group_id          = get_parent_group_id;
+	pl.calls.get_current_group_id         = get_current_group_id;
+	pl.calls.set_current_group_id         = set_current_group_id;
 #endif /* CONFIG_BT_OTS */
-	pl.calls.playing_order_get            = playing_order_get;
-	pl.calls.playing_order_set            = playing_order_set;
-	pl.calls.playing_orders_supported_get = playing_orders_supported_get;
-	pl.calls.media_state_get              = media_state_get;
-	pl.calls.command_send                 = command_send;
+	pl.calls.get_playing_order            = get_playing_order;
+	pl.calls.set_playing_order            = set_playing_order;
+	pl.calls.get_playing_orders_supported = get_playing_orders_supported;
+	pl.calls.get_media_state              = get_media_state;
+	pl.calls.send_command                 = send_command;
 #ifdef CONFIG_BT_OTS
-	pl.calls.search_send                  = search_send;
-	pl.calls.search_results_id_get        = search_results_id_get;
+	pl.calls.send_search                  = send_search;
+	pl.calls.get_search_results_id        = get_search_results_id;
 #endif /* CONFIG_BT_OTS */
-	pl.calls.content_ctrl_id_get          = content_ctrl_id_get;
+	pl.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
 	ret = media_proxy_pl_register(&pl.calls);
 	if (ret < 0) {

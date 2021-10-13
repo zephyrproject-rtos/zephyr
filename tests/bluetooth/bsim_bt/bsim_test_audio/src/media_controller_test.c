@@ -603,7 +603,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	int err;
 
 	UNSET_FLAG(media_state_read);
-	err = media_proxy_ctrl_media_state_get(current_player);
+	err = media_proxy_ctrl_get_media_state(current_player);
 	if (err) {
 		FAIL("Failed to read media state: %d", err);
 		return false;
@@ -630,7 +630,7 @@ static void test_send_cmd_wait_flags(struct mpl_cmd cmd)
 
 	UNSET_FLAG(command_sent_flag);
 	UNSET_FLAG(command_results_flag);
-	err = media_proxy_ctrl_command_send(current_player, cmd);
+	err = media_proxy_ctrl_send_command(current_player, cmd);
 	if (err) {
 		FAIL("Failed to send command: %d, opcode: %u",
 		     err, cmd.opcode);
@@ -748,7 +748,7 @@ static void test_cp_move_relative(void)
 	 * if the player is playing.
 	 */
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_track_position_get(current_player);
+	err = media_proxy_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
@@ -769,7 +769,7 @@ static void test_cp_move_relative(void)
 	}
 
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_track_position_get(current_player);
+	err = media_proxy_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
@@ -893,7 +893,7 @@ static void test_read_current_track_object_id_wait_flags(void)
 	int err;
 
 	UNSET_FLAG(current_track_object_id_read);
-	err = media_proxy_ctrl_current_track_id_get(current_player);
+	err = media_proxy_ctrl_get_current_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
@@ -1061,7 +1061,7 @@ static void test_read_current_group_object_id_wait_flags(void)
 	int err;
 
 	UNSET_FLAG(current_group_object_id_read);
-	err = media_proxy_ctrl_current_group_id_get(current_player);
+	err = media_proxy_ctrl_get_current_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
@@ -1234,7 +1234,7 @@ static void test_scp(void)
 	 */
 
 	UNSET_FLAG(search_results_object_id_read);
-	err = media_proxy_ctrl_search_results_id_get(current_player);
+	err = media_proxy_ctrl_get_search_results_id(current_player);
 
 	if (err) {
 		FAIL("Failed to read search results object ID: %d", err);
@@ -1272,7 +1272,7 @@ static void test_scp(void)
 	UNSET_FLAG(search_result_code_flag);
 	UNSET_FLAG(search_results_object_id_read);
 
-	err = media_proxy_ctrl_search_send(current_player, search);
+	err = media_proxy_ctrl_send_search(current_player, search);
 	if (err) {
 		FAIL("Failed to write to search control point\n");
 		return;
@@ -1310,7 +1310,7 @@ void test_media_controller_player(struct media_player *player)
 	int err;
 
 	UNSET_FLAG(player_name_read);
-	err = media_proxy_ctrl_player_name_get(current_player);
+	err = media_proxy_ctrl_get_player_name(current_player);
 	if (err) {
 		FAIL("Failed to read media player name ID: %d", err);
 		return;
@@ -1321,7 +1321,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read icon object id  ******************************************/
 	UNSET_FLAG(icon_object_id_read);
-	err = media_proxy_ctrl_icon_id_get(current_player);
+	err = media_proxy_ctrl_get_icon_id(current_player);
 	if (err) {
 		FAIL("Failed to read icon object ID: %d", err);
 		return;
@@ -1332,7 +1332,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read icon url *************************************************/
 	UNSET_FLAG(icon_url_read);
-	err =  media_proxy_ctrl_icon_url_get(current_player);
+	err =  media_proxy_ctrl_get_icon_url(current_player);
 	if (err) {
 		FAIL("Failed to read icon url: %d", err);
 		return;
@@ -1343,7 +1343,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track_title ******************************************/
 	UNSET_FLAG(track_title_read);
-	err = media_proxy_ctrl_track_title_get(current_player);
+	err = media_proxy_ctrl_get_track_title(current_player);
 	if (err) {
 		FAIL("Failed to read track_title: %d", err);
 		return;
@@ -1354,7 +1354,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track_duration ******************************************/
 	UNSET_FLAG(track_duration_read);
-	err = media_proxy_ctrl_track_duration_get(current_player);
+	err = media_proxy_ctrl_get_track_duration(current_player);
 	if (err) {
 		FAIL("Failed to read track_duration: %d", err);
 		return;
@@ -1365,7 +1365,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set track_position *************************************/
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_track_position_get(current_player);
+	err = media_proxy_ctrl_get_track_position(current_player);
 	if (err) {
 		FAIL("Failed to read track position: %d", err);
 		return;
@@ -1377,7 +1377,7 @@ void test_media_controller_player(struct media_player *player)
 	int32_t pos = g_pos + 1200; /*12 seconds further into the track */
 
 	UNSET_FLAG(track_position);
-	err = media_proxy_ctrl_track_position_set(current_player, pos);
+	err = media_proxy_ctrl_set_track_position(current_player, pos);
 	if (err) {
 		FAIL("Failed to set track position: %d", err);
 		return;
@@ -1393,7 +1393,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set playback speed *************************************/
 	UNSET_FLAG(playback_speed);
-	err = media_proxy_ctrl_playback_speed_get(current_player);
+	err = media_proxy_ctrl_get_playback_speed(current_player);
 	if (err) {
 		FAIL("Failed to read playback speed: %d", err);
 		return;
@@ -1405,7 +1405,7 @@ void test_media_controller_player(struct media_player *player)
 	int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
 
 	UNSET_FLAG(playback_speed);
-	err = media_proxy_ctrl_playback_speed_set(current_player, pb_speed);
+	err = media_proxy_ctrl_set_playback_speed(current_player, pb_speed);
 	if (err) {
 		FAIL("Failed to set playback speed: %d", err);
 		return;
@@ -1419,7 +1419,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read seeking speed *************************************/
 	UNSET_FLAG(seeking_speed_read);
-	err = media_proxy_ctrl_seeking_speed_get(current_player);
+	err = media_proxy_ctrl_get_seeking_speed(current_player);
 	if (err) {
 		FAIL("Failed to read seeking speed: %d", err);
 		return;
@@ -1430,7 +1430,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read track segments object *****************************************/
 	UNSET_FLAG(track_segments_object_id_read);
-	err = media_proxy_ctrl_track_segments_id_get(current_player);
+	err = media_proxy_ctrl_get_track_segments_id(current_player);
 	if (err) {
 		FAIL("Failed to read track segments object ID: %d", err);
 		return;
@@ -1441,7 +1441,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read current track object ******************************************/
 	UNSET_FLAG(current_track_object_id_read);
-	err = media_proxy_ctrl_current_track_id_get(current_player);
+	err = media_proxy_ctrl_get_current_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
@@ -1452,7 +1452,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read next track object ******************************************/
 	UNSET_FLAG(next_track_object_id_read);
-	err = media_proxy_ctrl_next_track_id_get(current_player);
+	err = media_proxy_ctrl_get_next_track_id(current_player);
 	if (err) {
 		FAIL("Failed to read next track object ID: %d", err);
 		return;
@@ -1463,7 +1463,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read parent group object ******************************************/
 	UNSET_FLAG(parent_group_object_id_read);
-	err = media_proxy_ctrl_parent_group_id_get(current_player);
+	err = media_proxy_ctrl_get_parent_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read parent group object ID: %d", err);
 		return;
@@ -1474,7 +1474,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read current group object ******************************************/
 	UNSET_FLAG(current_group_object_id_read);
-	err = media_proxy_ctrl_current_group_id_get(current_player);
+	err = media_proxy_ctrl_get_current_group_id(current_player);
 	if (err) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
@@ -1485,7 +1485,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read and set playing order *************************************/
 	UNSET_FLAG(playing_order_flag);
-	err = media_proxy_ctrl_playing_order_get(current_player);
+	err = media_proxy_ctrl_get_playing_order(current_player);
 	if (err) {
 		FAIL("Failed to read playing order: %d", err);
 		return;
@@ -1503,7 +1503,7 @@ void test_media_controller_player(struct media_player *player)
 	}
 
 	UNSET_FLAG(playing_order_flag);
-	err = media_proxy_ctrl_playing_order_set(current_player, playing_order);
+	err = media_proxy_ctrl_set_playing_order(current_player, playing_order);
 	if (err) {
 		FAIL("Failed to set playing_order: %d", err);
 		return;
@@ -1517,7 +1517,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read playing orders supported  *************************************/
 	UNSET_FLAG(playing_orders_supported_read);
-	err = media_proxy_ctrl_playing_orders_supported_get(current_player);
+	err = media_proxy_ctrl_get_playing_orders_supported(current_player);
 	if (err) {
 		FAIL("Failed to read playing orders supported: %d", err);
 		return;
@@ -1528,7 +1528,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read media state  ***************************************************/
 	UNSET_FLAG(media_state_read);
-	err = media_proxy_ctrl_media_state_get(current_player);
+	err = media_proxy_ctrl_get_media_state(current_player);
 	if (err) {
 		FAIL("Failed to read media state: %d", err);
 		return;
@@ -1539,7 +1539,7 @@ void test_media_controller_player(struct media_player *player)
 
 	/* Read content control ID  *******************************************/
 	UNSET_FLAG(ccid_read);
-	err = media_proxy_ctrl_content_ctrl_id_get(current_player);
+	err = media_proxy_ctrl_get_content_ctrl_id(current_player);
 	if (err) {
 		FAIL("Failed to read content control ID: %d", err);
 		return;

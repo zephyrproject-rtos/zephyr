@@ -92,7 +92,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 	SET_FLAG(discovery_done);
 }
 
-static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *name)
+static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *name)
 {
 	if (err) {
 		FAIL("Player Name read failed (%d)\n", err);
@@ -102,7 +102,7 @@ static void mcc_player_name_read_cb(struct bt_conn *conn, int err, const char *n
 	SET_FLAG(player_name_read);
 }
 
-static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
+static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
 		FAIL("Icon Object ID read failed (%d)", err);
@@ -113,7 +113,7 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 	SET_FLAG(icon_object_id_read);
 }
 
-static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, const char *url)
+static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
 		FAIL("Icon URL read failed (%d)", err);
@@ -133,7 +133,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 	SET_FLAG(track_change_notified);
 }
 
-static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *title)
+static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
 		FAIL("Track title read failed (%d)", err);
@@ -143,7 +143,7 @@ static void mcc_track_title_read_cb(struct bt_conn *conn, int err, const char *t
 	SET_FLAG(track_title_read);
 }
 
-static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t dur)
+static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
 		FAIL("Track duration read failed (%d)", err);
@@ -153,7 +153,7 @@ static void mcc_track_duration_read_cb(struct bt_conn *conn, int err, int32_t du
 	SET_FLAG(track_duration_read);
 }
 
-static void mcc_track_position_read_cb(struct bt_conn *conn, int err, int32_t pos)
+static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
 		FAIL("Track position read failed (%d)", err);
@@ -164,7 +164,7 @@ static void mcc_track_position_read_cb(struct bt_conn *conn, int err, int32_t po
 	SET_FLAG(track_position_read);
 }
 
-static void mcc_track_position_set_cb(struct bt_conn *conn, int err, int32_t pos)
+static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
 		FAIL("Track Position set failed (%d)", err);
@@ -175,7 +175,7 @@ static void mcc_track_position_set_cb(struct bt_conn *conn, int err, int32_t pos
 	SET_FLAG(track_position_set);
 }
 
-static void mcc_playback_speed_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err,
 				       int8_t speed)
 {
 	if (err) {
@@ -187,7 +187,7 @@ static void mcc_playback_speed_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(playback_speed_read);
 }
 
-static void mcc_playback_speed_set_cb(struct bt_conn *conn, int err, int8_t speed)
+static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
 		FAIL("Playback speed set failed (%d)", err);
@@ -198,7 +198,7 @@ static void mcc_playback_speed_set_cb(struct bt_conn *conn, int err, int8_t spee
 	SET_FLAG(playback_speed_set);
 }
 
-static void mcc_seeking_speed_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 				      int8_t speed)
 {
 	if (err) {
@@ -209,7 +209,7 @@ static void mcc_seeking_speed_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(seeking_speed_read);
 }
 
-static void mcc_segments_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 					uint64_t id)
 {
 	if (err) {
@@ -221,7 +221,7 @@ static void mcc_segments_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(track_segments_object_id_read);
 }
 
-static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
 	if (err) {
@@ -233,7 +233,7 @@ static void mcc_current_track_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(current_track_object_id_read);
 }
 
-static void mcc_current_track_obj_id_set_cb(struct bt_conn *conn, int err,
+static void mcc_set_current_track_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
 	if (err) {
@@ -245,7 +245,7 @@ static void mcc_current_track_obj_id_set_cb(struct bt_conn *conn, int err,
 	SET_FLAG(current_track_object_id_set);
 }
 
-static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
 	if (err) {
@@ -257,7 +257,7 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(next_track_object_id_read);
 }
 
-static void mcc_next_track_obj_id_set_cb(struct bt_conn *conn, int err,
+static void mcc_set_next_track_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
 	if (err) {
@@ -269,7 +269,7 @@ static void mcc_next_track_obj_id_set_cb(struct bt_conn *conn, int err,
 	SET_FLAG(next_track_object_id_set);
 }
 
-static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
 	if (err) {
@@ -281,7 +281,7 @@ static void mcc_parent_group_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(parent_group_object_id_read);
 }
 
-static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
 	if (err) {
@@ -293,7 +293,7 @@ static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(current_group_object_id_read);
 }
 
-static void mcc_current_group_obj_id_set_cb(struct bt_conn *conn, int err,
+static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
 	if (err) {
@@ -305,7 +305,7 @@ static void mcc_current_group_obj_id_set_cb(struct bt_conn *conn, int err,
 	SET_FLAG(current_group_object_id_set);
 }
 
-static void mcc_playing_order_read_cb(struct bt_conn *conn, int err, uint8_t order)
+static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
 		FAIL("Playing order read failed (%d)", err);
@@ -316,7 +316,7 @@ static void mcc_playing_order_read_cb(struct bt_conn *conn, int err, uint8_t ord
 	SET_FLAG(playing_order_read);
 }
 
-static void mcc_playing_order_set_cb(struct bt_conn *conn, int err, uint8_t order)
+static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
 		FAIL("Playing order set failed (%d)", err);
@@ -327,7 +327,7 @@ static void mcc_playing_order_set_cb(struct bt_conn *conn, int err, uint8_t orde
 	SET_FLAG(playing_order_set);
 }
 
-static void mcc_playing_orders_supported_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err,
 						 uint16_t orders)
 {
 	if (err) {
@@ -338,7 +338,7 @@ static void mcc_playing_orders_supported_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(playing_orders_supported_read);
 }
 
-static void mcc_media_state_read_cb(struct bt_conn *conn, int err, uint8_t state)
+static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
 	if (err) {
 		FAIL("Media State read failed (%d)", err);
@@ -372,7 +372,7 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, struct mpl_cmd_ntf ntf
 	SET_FLAG(command_notified);
 }
 
-static void mcc_search_send_cb(struct bt_conn *conn, int err,
+static void mcc_send_search_cb(struct bt_conn *conn, int err,
 			       struct mpl_search search)
 {
 	if (err) {
@@ -395,7 +395,7 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 	SET_FLAG(search_notified);
 }
 
-static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err,
+static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 					      uint64_t id)
 {
 	if (err) {
@@ -407,7 +407,7 @@ static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(search_results_object_id_read);
 }
 
-static void mcc_content_control_id_read_cb(struct bt_conn *conn, int err, uint8_t ccid)
+static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
 	if (err) {
 		FAIL("Content control ID read failed (%d)", err);
@@ -507,35 +507,35 @@ int do_mcc_init(void)
 {
 	/* Set up the callbacks */
 	mcc_cb.discover_mcs                  = mcc_discover_mcs_cb;
-	mcc_cb.player_name_read              = mcc_player_name_read_cb;
-	mcc_cb.icon_obj_id_read              = mcc_icon_obj_id_read_cb;
-	mcc_cb.icon_url_read                 = mcc_icon_url_read_cb;
+	mcc_cb.read_player_name              = mcc_read_player_name_cb;
+	mcc_cb.read_icon_obj_id              = mcc_read_icon_obj_id_cb;
+	mcc_cb.read_icon_url                 = mcc_read_icon_url_cb;
 	mcc_cb.track_changed_ntf             = mcc_track_changed_ntf_cb;
-	mcc_cb.track_title_read              = mcc_track_title_read_cb;
-	mcc_cb.track_duration_read           = mcc_track_duration_read_cb;
-	mcc_cb.track_position_read           = mcc_track_position_read_cb;
-	mcc_cb.track_position_set            = mcc_track_position_set_cb;
-	mcc_cb.playback_speed_read           = mcc_playback_speed_read_cb;
-	mcc_cb.playback_speed_set            = mcc_playback_speed_set_cb;
-	mcc_cb.seeking_speed_read            = mcc_seeking_speed_read_cb;
-	mcc_cb.current_track_obj_id_read     = mcc_current_track_obj_id_read_cb;
-	mcc_cb.current_track_obj_id_set      = mcc_current_track_obj_id_set_cb;
-	mcc_cb.next_track_obj_id_read        = mcc_next_track_obj_id_read_cb;
-	mcc_cb.next_track_obj_id_set         = mcc_next_track_obj_id_set_cb;
-	mcc_cb.segments_obj_id_read          = mcc_segments_obj_id_read_cb;
-	mcc_cb.parent_group_obj_id_read      = mcc_parent_group_obj_id_read_cb;
-	mcc_cb.current_group_obj_id_read     = mcc_current_group_obj_id_read_cb;
-	mcc_cb.current_group_obj_id_set      = mcc_current_group_obj_id_set_cb;
-	mcc_cb.playing_order_read            = mcc_playing_order_read_cb;
-	mcc_cb.playing_order_set             = mcc_playing_order_set_cb;
-	mcc_cb.playing_orders_supported_read = mcc_playing_orders_supported_read_cb;
-	mcc_cb.media_state_read              = mcc_media_state_read_cb;
-	mcc_cb.cmd_send                      = mcc_send_command_cb;
+	mcc_cb.read_track_title              = mcc_read_track_title_cb;
+	mcc_cb.read_track_duration           = mcc_read_track_duration_cb;
+	mcc_cb.read_track_position           = mcc_read_track_position_cb;
+	mcc_cb.set_track_position            = mcc_set_track_position_cb;
+	mcc_cb.read_playback_speed           = mcc_read_playback_speed_cb;
+	mcc_cb.set_playback_speed            = mcc_set_playback_speed_cb;
+	mcc_cb.read_seeking_speed            = mcc_read_seeking_speed_cb;
+	mcc_cb.read_current_track_obj_id     = mcc_read_current_track_obj_id_cb;
+	mcc_cb.set_current_track_obj_id      = mcc_set_current_track_obj_id_cb;
+	mcc_cb.read_next_track_obj_id        = mcc_read_next_track_obj_id_cb;
+	mcc_cb.set_next_track_obj_id         = mcc_set_next_track_obj_id_cb;
+	mcc_cb.read_segments_obj_id          = mcc_read_segments_obj_id_cb;
+	mcc_cb.read_parent_group_obj_id      = mcc_read_parent_group_obj_id_cb;
+	mcc_cb.read_current_group_obj_id     = mcc_read_current_group_obj_id_cb;
+	mcc_cb.set_current_group_obj_id      = mcc_set_current_group_obj_id_cb;
+	mcc_cb.read_playing_order            = mcc_read_playing_order_cb;
+	mcc_cb.set_playing_order             = mcc_set_playing_order_cb;
+	mcc_cb.read_playing_orders_supported = mcc_read_playing_orders_supported_cb;
+	mcc_cb.read_media_state              = mcc_read_media_state_cb;
+	mcc_cb.send_cmd                      = mcc_send_command_cb;
 	mcc_cb.cmd_ntf                       = mcc_cmd_ntf_cb;
-	mcc_cb.search_send                   = mcc_search_send_cb;
+	mcc_cb.send_search                   = mcc_send_search_cb;
 	mcc_cb.search_ntf                    = mcc_search_ntf_cb;
-	mcc_cb.search_results_obj_id_read    = mcc_search_results_obj_id_read_cb;
-	mcc_cb.content_control_id_read       = mcc_content_control_id_read_cb;
+	mcc_cb.read_search_results_obj_id    = mcc_read_search_results_obj_id_cb;
+	mcc_cb.read_content_control_id       = mcc_read_content_control_id_cb;
 	mcc_cb.otc_obj_selected              = mcc_otc_obj_selected_cb;
 	mcc_cb.otc_obj_metadata              = mcc_otc_obj_metadata_cb;
 	mcc_cb.otc_icon_object               = mcc_icon_object_read_cb;
