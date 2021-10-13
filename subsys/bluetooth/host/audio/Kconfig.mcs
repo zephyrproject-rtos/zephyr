@@ -23,13 +23,13 @@ config BT_MCS_MEDIA_PLAYER_NAME
 	string "Media Player Name"
 	default "Player0"
 	help
-	  Sets the name of the media player
+	  Use this option to set the name of the media player.
 
 config BT_MCS_ICON_URL
 	string "Media player Icon URL"
 	default "http://server.some.where/path/icon.png"
 	help
-	  This option sets the URL of the Media Player Icon
+	  Use this option to set the URL of the Media Player Icon.
 
 #### Debug logs ################################################################
 
@@ -80,7 +80,7 @@ config BT_MCC_TOTAL_OBJ_CONTENT_MEM
 	  Sets the total memory size (in octets) to use for storing the content
 	  of objects.
 	  This is used for the total memory pool buffer size from which memory
-	  is allocated when reading object content
+	  is allocated when reading object content.
 
 config BT_MCC_TRACK_SEGS_MAX_CNT
 	int "Maximum number of tracks segments in a track segment object"
@@ -89,7 +89,7 @@ config BT_MCC_TRACK_SEGS_MAX_CNT
 	help
 	  Sets the maximum number of tracks segments in a track segment object.
 	  If the received object is bigger, the remaining data in the object
-	  will be ignored
+	  will be ignored.
 
 config BT_MCC_GROUP_RECORDS_MAX
 	int "Maximum number of records in a group object"
@@ -129,7 +129,7 @@ config BT_MCS_MEDIA_PLAYER_NAME_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the name of the media player
+	  the name of the media player.
 
 config BT_MCS_ICON_URL_MAX
 	int "Max length of media player icon URL"
@@ -137,7 +137,7 @@ config BT_MCS_ICON_URL_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the media player icon URL
+	  the media player icon URL.
 
 config BT_MCS_TRACK_TITLE_MAX
 	int "Max length of the title of a track"
@@ -145,7 +145,7 @@ config BT_MCS_TRACK_TITLE_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player
+	  the title of any track in the media player.
 
 config BT_MCS_GROUP_TITLE_MAX
 	int "Max length of the title of a group of tracks"
@@ -153,7 +153,7 @@ config BT_MCS_GROUP_TITLE_MAX
 	range 1 255
 	help
 	  Sets the maximum number of bytes (including the null termination) of
-	  the title of any track in the media player
+	  the title of any track in the media player.
 
 config BT_MCS_SEGMENT_NAME_MAX
 	int "Max length of the name of a track segment"
@@ -161,7 +161,7 @@ config BT_MCS_SEGMENT_NAME_MAX
 	range 1 255
 	help
 	  Sets the the maximum number of bytes (including the null termination)
-	  of the name of any track segment in the media player
+	  of the name of any track segment in the media player.
 
 config BT_MCS_ICON_BITMAP_SIZE
 	int "Media player Icon bitmap object size"
@@ -173,19 +173,19 @@ config BT_MCS_TRACK_SEG_MAX_SIZE
 	int "Maximum size for a track segment object"
 	default 127
 	help
-	  This option sets the maximum size (in octets) of a track segment object
+	  This option sets the maximum size (in octets) of a track segment object.
 
 config BT_MCS_TRACK_MAX_SIZE
 	int "Maximum size for a track object"
 	default 127
 	help
-	  This option sets the maximum size (in octets) of a track object
+	  This option sets the maximum size (in octets) of a track object.
 
 config BT_MCS_GROUP_MAX_SIZE
 	int "Maximum size for a group object"
 	default 127
 	help
-	  This option sets the maximum size (in octets) of a group object
+	  This option sets the maximum size (in octets) of a group object.
 
 config BT_MCS_MAX_OBJ_SIZE
 	int "Total memory size to use for storing the content of objects"
