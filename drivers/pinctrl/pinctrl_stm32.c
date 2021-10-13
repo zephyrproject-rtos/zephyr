@@ -108,7 +108,7 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 	volatile uint32_t *reg;
 	uint16_t remap;
 
-	remap = (uint8_t)STM32_DT_PINMUX_REMAP(pins[0].pinmux);
+	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pins[0].pinmux);
 
 	/* not remappable */
 	if (remap == NO_REMAP) {
