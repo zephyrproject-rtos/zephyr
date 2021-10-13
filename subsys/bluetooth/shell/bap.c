@@ -41,104 +41,85 @@ static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_chan *default_chan;
 static bool connecting;
 
-#define LC3_PRESET(_name, _codec, _qos) \
-	{ \
-		.name = _name, \
-		.codec = _codec, \
-		.qos = _qos, \
-	}
-
-static struct lc3_preset {
+struct named_lc3_preset {
 	const char *name;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
-} lc3_presets[] = {
-	/* Table 4.43: QoS configuration support setting requirements */
-	LC3_PRESET("8_1_1",
-		   BT_CODEC_LC3_CONFIG_8_1,
-		   BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(26u, 2u, 8u, 40000u)),
-	LC3_PRESET("8_2_1",
-		   BT_CODEC_LC3_CONFIG_8_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(30u, 2u, 10u, 40000u)),
-	LC3_PRESET("16_1_1",
-		   BT_CODEC_LC3_CONFIG_16_1,
-		   BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(30u, 2u, 8u, 40000u)),
-	LC3_PRESET("16_2_1",
-		   BT_CODEC_LC3_CONFIG_16_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(40u, 2u, 10u, 40000u)),
-	LC3_PRESET("24_1_1",
-		   BT_CODEC_LC3_CONFIG_24_1,
-		   BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(45u, 2u, 8u, 40000u)),
-	LC3_PRESET("24_2_1",
-		   BT_CODEC_LC3_CONFIG_24_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(60u, 2u, 10u, 40000u)),
-	LC3_PRESET("32_1_1",
-		   BT_CODEC_LC3_CONFIG_32_1,
-		   BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(60u, 2u, 8u, 40000u)),
-	LC3_PRESET("32_2_1",
-		   BT_CODEC_LC3_CONFIG_32_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(80u, 2u, 10u, 40000u)),
-	LC3_PRESET("44_1_1",
-		   BT_CODEC_LC3_CONFIG_441_1,
-		   BT_CODEC_QOS(BT_CODEC_QOS_OUT,
-				8163u, BT_CODEC_QOS_FRAMED, BT_CODEC_QOS_2M,
-				98u, 5u, 24u, 40000u)),
-	LC3_PRESET("44_1_1",
-		   BT_CODEC_LC3_CONFIG_441_2,
-		   BT_CODEC_QOS(BT_CODEC_QOS_OUT,
-				10884u, BT_CODEC_QOS_FRAMED, BT_CODEC_QOS_2M,
-				130u, 5u, 31u, 40000u)),
-	LC3_PRESET("48_1_1",
-		   BT_CODEC_LC3_CONFIG_48_1,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(75u, 5u, 15u, 40000u)),
-	LC3_PRESET("48_2_1",
-		   BT_CODEC_LC3_CONFIG_48_2,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 5u, 20u, 40000u)),
-	LC3_PRESET("48_3_1",
-		   BT_CODEC_LC3_CONFIG_48_3,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(90u, 5u, 15u, 40000u)),
-	LC3_PRESET("48_4_1",
-		   BT_CODEC_LC3_CONFIG_48_4,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(120u, 5u, 20u, 40000u)),
-	LC3_PRESET("48_5_1",
-		   BT_CODEC_LC3_CONFIG_48_5,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(117u, 5u, 15u, 40000u)),
-	LC3_PRESET("48_6_1",
-		   BT_CODEC_LC3_CONFIG_48_6,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(155u, 5u, 20u, 40000u)),
-	/* QoS Configuration settings for high reliability audio data */
-	LC3_PRESET("44_1_2",
-		   BT_CODEC_LC3_CONFIG_441_2,
-		   BT_CODEC_QOS(BT_CODEC_QOS_OUT,
-				8163u, BT_CODEC_QOS_FRAMED, BT_CODEC_QOS_2M,
-				98u, 23u, 54u, 40000u)),
-	LC3_PRESET("44_1_2",
-		   BT_CODEC_LC3_CONFIG_441_2,
-		   BT_CODEC_QOS(BT_CODEC_QOS_OUT,
-				10884u, BT_CODEC_QOS_FRAMED, BT_CODEC_QOS_2M,
-				130u, 23u, 71u, 40000u)),
-	LC3_PRESET("48_1_2",
-		   BT_CODEC_LC3_CONFIG_48_1,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(75u, 23u, 45u, 40000u)),
-	LC3_PRESET("48_2_2",
-		   BT_CODEC_LC3_CONFIG_48_2,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u, 40000u)),
-	LC3_PRESET("48_3_2",
-		   BT_CODEC_LC3_CONFIG_48_1,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(90u, 23u, 45u, 40000u)),
-	LC3_PRESET("48_4_2",
-		   BT_CODEC_LC3_CONFIG_48_2,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(120u, 23u, 60u, 40000u)),
-	LC3_PRESET("48_5_2",
-		   BT_CODEC_LC3_CONFIG_48_1,
-		   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(117u, 23u, 45u, 40000u)),
-	LC3_PRESET("48_6_2",
-		   BT_CODEC_LC3_CONFIG_48_2,
-		   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(155u, 23u, 60u, 40000u)),
+	struct bt_audio_lc3_preset preset;
+};
+
+static struct named_lc3_preset lc3_unicast_presets[] = {
+	{"8_1_1",   BT_AUDIO_LC3_UNICAST_PRESET_8_1_1},
+	{"8_2_1",   BT_AUDIO_LC3_UNICAST_PRESET_8_2_1},
+	{"16_1_1",  BT_AUDIO_LC3_UNICAST_PRESET_16_1_1},
+	{"16_2_1",  BT_AUDIO_LC3_UNICAST_PRESET_16_2_1},
+	{"24_1_1",  BT_AUDIO_LC3_UNICAST_PRESET_24_1_1},
+	{"24_2_1",  BT_AUDIO_LC3_UNICAST_PRESET_24_2_1},
+	{"32_1_1",  BT_AUDIO_LC3_UNICAST_PRESET_32_1_1},
+	{"32_2_1",  BT_AUDIO_LC3_UNICAST_PRESET_32_2_1},
+	{"441_1_1", BT_AUDIO_LC3_UNICAST_PRESET_441_1_1},
+	{"441_2_1", BT_AUDIO_LC3_UNICAST_PRESET_441_2_1},
+	{"48_1_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_1_1},
+	{"48_2_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_2_1},
+	{"48_3_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_3_1},
+	{"48_4_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_4_1},
+	{"48_5_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_5_1},
+	{"48_6_1",  BT_AUDIO_LC3_UNICAST_PRESET_48_6_1},
+	/* High-reliability presets */
+	{"8_1_2",   BT_AUDIO_LC3_UNICAST_PRESET_8_1_2},
+	{"8_2_2",   BT_AUDIO_LC3_UNICAST_PRESET_8_2_2},
+	{"16_1_2",  BT_AUDIO_LC3_UNICAST_PRESET_16_1_2},
+	{"16_2_2",  BT_AUDIO_LC3_UNICAST_PRESET_16_2_2},
+	{"24_1_2",  BT_AUDIO_LC3_UNICAST_PRESET_24_1_2},
+	{"24_2_2",  BT_AUDIO_LC3_UNICAST_PRESET_24_2_2},
+	{"32_1_2",  BT_AUDIO_LC3_UNICAST_PRESET_32_1_2},
+	{"32_2_2",  BT_AUDIO_LC3_UNICAST_PRESET_32_2_2},
+	{"441_1_2", BT_AUDIO_LC3_UNICAST_PRESET_441_1_2},
+	{"441_2_2", BT_AUDIO_LC3_UNICAST_PRESET_441_2_2},
+	{"48_1_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_1_2},
+	{"48_2_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_2_2},
+	{"48_3_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_3_2},
+	{"48_4_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_4_2},
+	{"48_5_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_5_2},
+	{"48_6_2",  BT_AUDIO_LC3_UNICAST_PRESET_48_6_2},
+};
+
+static struct named_lc3_preset lc3_broadcast_presets[] = {
+	{"8_1_1",   BT_AUDIO_LC3_BROADCAST_PRESET_8_1_1},
+	{"8_2_1",   BT_AUDIO_LC3_BROADCAST_PRESET_8_2_1},
+	{"16_1_1",  BT_AUDIO_LC3_BROADCAST_PRESET_16_1_1},
+	{"16_2_1",  BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1},
+	{"24_1_1",  BT_AUDIO_LC3_BROADCAST_PRESET_24_1_1},
+	{"24_2_1",  BT_AUDIO_LC3_BROADCAST_PRESET_24_2_1},
+	{"32_1_1",  BT_AUDIO_LC3_BROADCAST_PRESET_32_1_1},
+	{"32_2_1",  BT_AUDIO_LC3_BROADCAST_PRESET_32_2_1},
+	{"441_1_1", BT_AUDIO_LC3_BROADCAST_PRESET_441_1_1},
+	{"441_2_1", BT_AUDIO_LC3_BROADCAST_PRESET_441_2_1},
+	{"48_1_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_1_1},
+	{"48_2_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_2_1},
+	{"48_3_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_3_1},
+	{"48_4_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_4_1},
+	{"48_5_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_5_1},
+	{"48_6_1",  BT_AUDIO_LC3_BROADCAST_PRESET_48_6_1},
+	/* High-reliability presets */
+	{"8_1_2",   BT_AUDIO_LC3_BROADCAST_PRESET_8_1_2},
+	{"8_2_2",   BT_AUDIO_LC3_BROADCAST_PRESET_8_2_2},
+	{"16_1_2",  BT_AUDIO_LC3_BROADCAST_PRESET_16_1_2},
+	{"16_2_2",  BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2},
+	{"24_1_2",  BT_AUDIO_LC3_BROADCAST_PRESET_24_1_2},
+	{"24_2_2",  BT_AUDIO_LC3_BROADCAST_PRESET_24_2_2},
+	{"32_1_2",  BT_AUDIO_LC3_BROADCAST_PRESET_32_1_2},
+	{"32_2_2",  BT_AUDIO_LC3_BROADCAST_PRESET_32_2_2},
+	{"441_1_2", BT_AUDIO_LC3_BROADCAST_PRESET_441_1_2},
+	{"441_2_2", BT_AUDIO_LC3_BROADCAST_PRESET_441_2_2},
+	{"48_1_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_1_2},
+	{"48_2_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_2_2},
+	{"48_3_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_3_2},
+	{"48_4_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_4_2},
+	{"48_5_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_5_2},
+	{"48_6_2",  BT_AUDIO_LC3_BROADCAST_PRESET_48_6_2},
 };
 
 /* Default to 16_2_1 */
-static struct lc3_preset *default_preset = &lc3_presets[3];
+static struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
 
 static void print_codec(const struct bt_codec *codec)
 {
@@ -286,55 +267,70 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	return bt_audio_discover(default_conn, &params);
 }
 
-static struct lc3_preset *set_preset(size_t argc, char **argv)
+static struct named_lc3_preset *set_preset(bool is_unicast, size_t argc,
+					   char **argv)
 {
-	static struct lc3_preset preset;
+	static struct named_lc3_preset named_preset;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(lc3_presets); i++) {
-		if (!strcmp(argv[0], lc3_presets[i].name)) {
-			default_preset = &lc3_presets[i];
-			break;
+	if (is_unicast) {
+		for (i = 0; i < ARRAY_SIZE(lc3_unicast_presets); i++) {
+			if (!strcmp(argv[0], lc3_unicast_presets[i].name)) {
+				default_preset = &lc3_unicast_presets[i];
+				break;
+			}
 		}
-	}
 
-	if (i == ARRAY_SIZE(lc3_presets)) {
-		return NULL;
+		if (i == ARRAY_SIZE(lc3_unicast_presets)) {
+			return NULL;
+		}
+	} else {
+		for (i = 0; i < ARRAY_SIZE(lc3_broadcast_presets); i++) {
+			if (!strcmp(argv[0], lc3_broadcast_presets[i].name)) {
+				default_preset = &lc3_broadcast_presets[i];
+				break;
+			}
+		}
+
+		if (i == ARRAY_SIZE(lc3_broadcast_presets)) {
+			return NULL;
+		}
+
 	}
 
 	if (argc == 1) {
 		return default_preset;
 	}
 
-	preset = *default_preset;
-	default_preset = &preset;
+	named_preset = *default_preset;
+	default_preset = &named_preset;
 
 	if (argc > 1) {
-		preset.qos.interval = strtol(argv[1], NULL, 0);
+		named_preset.preset.qos.interval = strtol(argv[1], NULL, 0);
 	}
 
 	if (argc > 2) {
-		preset.qos.framing = strtol(argv[2], NULL, 0);
+		named_preset.preset.qos.framing = strtol(argv[2], NULL, 0);
 	}
 
 	if (argc > 3) {
-		preset.qos.latency = strtol(argv[3], NULL, 0);
+		named_preset.preset.qos.latency = strtol(argv[3], NULL, 0);
 	}
 
 	if (argc > 4) {
-		preset.qos.pd = strtol(argv[4], NULL, 0);
+		named_preset.preset.qos.pd = strtol(argv[4], NULL, 0);
 	}
 
 	if (argc > 5) {
-		preset.qos.sdu = strtol(argv[5], NULL, 0);
+		named_preset.preset.qos.sdu = strtol(argv[5], NULL, 0);
 	}
 
 	if (argc > 6) {
-		preset.qos.phy = strtol(argv[6], NULL, 0);
+		named_preset.preset.qos.phy = strtol(argv[6], NULL, 0);
 	}
 
 	if (argc > 7) {
-		preset.qos.rtn = strtol(argv[7], NULL, 0);
+		named_preset.preset.qos.rtn = strtol(argv[7], NULL, 0);
 	}
 
 	return default_preset;
@@ -363,23 +359,23 @@ static void print_qos(struct bt_codec_qos *qos)
 
 static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct lc3_preset *preset;
+	struct named_lc3_preset *named_preset;
 
-	preset = default_preset;
+	named_preset = default_preset;
 
 	if (argc > 1) {
-		preset = set_preset(argc - 1, argv + 1);
-		if (!preset) {
-			shell_error(sh, "Unable to parse preset %s",
+		named_preset = set_preset(true, argc - 1, argv + 1);
+		if (named_preset == NULL) {
+			shell_error(sh, "Unable to parse named_preset %s",
 				    argv[1]);
 			return -ENOEXEC;
 		}
 	}
 
-	shell_print(sh, "%s", preset->name);
+	shell_print(sh, "%s", named_preset->name);
 
-	print_codec(&preset->codec);
-	print_qos(&preset->qos);
+	print_codec(&named_preset->preset.codec);
+	print_qos(&named_preset->preset.qos);
 
 	return 0;
 }
@@ -389,7 +385,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	int32_t index, dir;
 	struct bt_audio_capability *cap = NULL;
 	struct bt_audio_ep *ep = NULL;
-	struct lc3_preset *preset;
+	struct named_lc3_preset *named_preset;
 	int i;
 
 	if (!default_conn) {
@@ -419,12 +415,12 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	preset = default_preset;
+	named_preset = default_preset;
 
 	if (argc > 3) {
-		preset = set_preset(1, argv + 3);
-		if (!preset) {
-			shell_error(sh, "Unable to parse preset %s",
+		named_preset = set_preset(true, 1, argv + 3);
+		if (named_preset == NULL) {
+			shell_error(sh, "Unable to parse named_preset %s",
 				    argv[4]);
 			return -ENOEXEC;
 		}
@@ -444,7 +440,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 	if (default_chan && default_chan->ep == ep) {
 		if (bt_audio_chan_reconfig(default_chan, cap,
-					   &preset->codec) < 0) {
+					   &named_preset->preset.codec) < 0) {
 			shell_error(sh, "Unable reconfig channel");
 			return -ENOEXEC;
 		}
@@ -452,14 +448,14 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_audio_chan *chan;
 
 		chan = bt_audio_chan_config(default_conn, ep, cap,
-					    &preset->codec);
+					    &named_preset->preset.codec);
 		if (!chan) {
 			shell_error(sh, "Unable to config channel");
 			return -ENOEXEC;
 		}
 	}
 
-	shell_print(sh, "ASE config: preset %s", preset->name);
+	shell_print(sh, "ASE config: preset %s", named_preset->name);
 
 	return 0;
 }
@@ -485,31 +481,31 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	struct lc3_preset *preset = NULL;
+	struct named_lc3_preset *named_preset = NULL;
 
 	if (!default_chan) {
 		shell_print(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
-	preset = default_preset;
+	named_preset = default_preset;
 
 	if (argc > 1) {
-		preset = set_preset(argc - 1, argv + 1);
-		if (!preset) {
-			shell_error(sh, "Unable to parse preset %s",
+		named_preset = set_preset(true, argc - 1, argv + 1);
+		if (named_preset == NULL) {
+			shell_error(sh, "Unable to parse named_preset %s",
 				    argv[1]);
 			return -ENOEXEC;
 		}
 	}
 
-	err = bt_audio_chan_qos(default_chan, &preset->qos);
+	err = bt_audio_chan_qos(default_chan, &named_preset->preset.qos);
 	if (err) {
 		shell_error(sh, "Unable to setup QoS");
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "ASE config: preset %s", preset->name);
+	shell_print(sh, "ASE config: preset %s", named_preset->name);
 
 	return 0;
 }
@@ -524,8 +520,8 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_audio_chan_enable(default_chan,
-				   default_preset->codec.meta_count,
-				   default_preset->codec.meta);
+				   default_preset->preset.codec.meta_count,
+				   default_preset->preset.codec.meta);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -582,12 +578,13 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		sys_put_le16(context, default_preset->codec.meta[0].value);
+		sys_put_le16(context,
+			     default_preset->preset.codec.meta[0].value);
 	}
 
 	err = bt_audio_chan_metadata(default_chan,
-				     default_preset->codec.meta_count,
-				     default_preset->codec.meta);
+				     default_preset->preset.codec.meta_count,
+				     default_preset->preset.codec.meta);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
@@ -863,7 +860,7 @@ static int lc3_reconfig(struct bt_audio_chan *chan,
 	if (connecting) {
 		int err;
 
-		err = bt_audio_chan_qos(chan, &default_preset->qos);
+		err = bt_audio_chan_qos(chan, &default_preset->preset.qos);
 		if (err) {
 			shell_error(ctx_shell, "Unable to setup QoS");
 			connecting = false;
@@ -886,8 +883,8 @@ static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 		connecting = false;
 
 		err = bt_audio_chan_enable(chan,
-					   default_preset->codec.meta_count,
-					   default_preset->codec.meta);
+					   default_preset->preset.codec.meta_count,
+					   default_preset->preset.codec.meta);
 		if (err) {
 			shell_error(ctx_shell, "Unable to enable Channel");
 			return -ENOEXEC;
@@ -1150,7 +1147,7 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	struct lc3_preset *preset;
+	struct named_lc3_preset *named_preset;
 	int err;
 
 	if (default_source != NULL) {
@@ -1158,26 +1155,29 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	preset = default_preset;
+	named_preset = default_preset;
 
 	if (argc > 1) {
-		preset = set_preset(1, &argv[1]);
-		if (!preset) {
-			shell_error(sh, "Unable to parse preset %s", argv[1]);
+		named_preset = set_preset(false, 1, &argv[1]);
+		if (named_preset == NULL) {
+			shell_error(sh, "Unable to parse named_preset %s",
+				    argv[1]);
 			return -ENOEXEC;
 		}
 	}
 
 	err = bt_audio_broadcast_source_create(broadcast_source_chans,
 					       ARRAY_SIZE(broadcast_source_chans),
-					       &preset->codec, &preset->qos,
+					       &named_preset->preset.codec,
+					       &named_preset->preset.qos,
 					       &default_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
 		return err;
 	}
 
-	shell_print(sh, "Broadcast source created: preset %s", preset->name);
+	shell_print(sh, "Broadcast source created: preset %s",
+		    named_preset->name);
 
 	if (default_chan == NULL) {
 		default_chan = &broadcast_source_chans[0];
