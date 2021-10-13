@@ -397,8 +397,6 @@ struct device {
 	 */
 	const device_handle_t *const handles;
 #ifdef CONFIG_PM_DEVICE
-	/** Power Management function */
-	pm_device_control_callback_t pm_control;
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
 #endif
@@ -658,10 +656,11 @@ static inline bool device_is_ready(const struct device *dev)
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 #ifdef CONFIG_PM_DEVICE
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)			\
-	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm, node_id),
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name, pm_control_fn)	\
+	.pm = Z_PM_DEVICE_INIT(Z_DEVICE_STATE_NAME(dev_name).pm,	\
+			       node_id, pm_control_fn),
 #else
-#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name)
+#define Z_DEVICE_STATE_PM_INIT(node_id, dev_name, pm_control_fn)
 #endif
 
 /**
@@ -669,11 +668,12 @@ static inline bool device_is_ready(const struct device *dev)
 
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
+ * @param pm_control_fn Device PM control callback function.
  */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name, pm_control_fn)		\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
 	__attribute__((__section__(".z_devstate"))) = {			\
-		Z_DEVICE_STATE_PM_INIT(node_id, dev_name)		\
+		Z_DEVICE_STATE_PM_INIT(node_id, dev_name, pm_control_fn)\
 	};
 
 /* If device power management is enabled, this macro defines a pointer to a
@@ -694,9 +694,9 @@ static inline bool device_is_ready(const struct device *dev)
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
  */
-#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
+#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, pm_control_fn, ...)	\
 	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)		\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	Z_DEVICE_STATE_DEFINE(node_id, dev_name, pm_control_fn)		\
 	Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 
 /* Helper macros needed for CONFIG_DEVICE_HANDLE_PADDING. These should
@@ -783,23 +783,22 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		};
 
 #ifdef CONFIG_PM_DEVICE
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
-	.pm_control = (pm_control_fn),					\
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name)		\
 	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
 #else
-#define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+#define Z_DEVICE_DEFINE_PM_INIT(dev_name)
 #endif
 
-#define Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)		\
+#define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
 		.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),	\
-		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
+		Z_DEVICE_DEFINE_PM_INIT(dev_name)
 
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
 			data_ptr, cfg_ptr, level, prio, api_ptr, ...)	\
-	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
+	Z_DEVICE_DEFINE_PRE(node_id, dev_name, pm_control_fn, __VA_ARGS__) \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
@@ -809,7 +808,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.api = (api_ptr),					\
 		.state = &Z_DEVICE_STATE_NAME(dev_name),		\
 		.data = (data_ptr),					\
-		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)	\
+		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
 	};								\
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
