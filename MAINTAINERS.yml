@@ -1561,6 +1561,7 @@ TF-M Integration:
         - ioannisg
     files:
         - samples/tfm_integration/
+        - modules/trusted-firmware-m/
     labels:
         - "area: TF-M"
 
