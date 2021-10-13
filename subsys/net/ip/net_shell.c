@@ -1059,7 +1059,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
+			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
@@ -1118,7 +1118,7 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
+			PR("[%d] %s (%d)\t%d\t\t%d\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
@@ -1167,7 +1167,7 @@ static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
 	PR("\tAverage time  : %u ms\n",
 	   (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
 		   GET_STAT(iface, pm.suspend_count)));
-	PR("\tTotal time    : %llu ms\n",
+	PR("\tTotal time    : %" PRIu64 " ms\n",
 	   GET_STAT(iface, pm.overall_suspend_time));
 	PR("\tHow many times: %u\n",
 	   GET_STAT(iface, pm.suspend_count));
@@ -3004,9 +3004,9 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("Estimate of the ratio of the frequency with the peer          "
 	   ": %u\n", (uint32_t)port_ds->neighbor_rate_ratio);
 	PR("Asymmetry on the link relative to the grand master time base  "
-	   ": %lld\n", port_ds->delay_asymmetry);
+	   ": %" PRId64 "\n", port_ds->delay_asymmetry);
 	PR("Maximum interval between sync %s                        "
-	   ": %llu\n", "messages",
+	   ": %" PRIu64 "\n", "messages",
 	   port_ds->sync_receipt_timeout_time_itv);
 	PR("Maximum number of Path Delay Requests without a response      "
 	   ": %d\n", port_ds->allowed_lost_responses);
@@ -3041,16 +3041,16 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   gptp_uscaled_ns_to_timer_ms(
 		   &port_bmca_data->ann_rcpt_timeout_time_interval),
 	   port_ds->announce_receipt_timeout);
-	PR("Time without receiving sync %s %s      : %llu ms (%d)\n",
+	PR("Time without receiving sync %s %s      : %" PRIu64 " ms (%d)\n",
 	   "messages", "before running BMCA",
 	   (port_ds->sync_receipt_timeout_time_itv >> 16) /
 					(NSEC_PER_SEC / MSEC_PER_SEC),
 	   port_ds->sync_receipt_timeout);
-	PR("Sync event %s                 : %llu ms\n",
+	PR("Sync event %s                 : %" PRIu64 " ms\n",
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->half_sync_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
-	PR("Path Delay Request %s         : %llu ms\n",
+	PR("Path Delay Request %s         : %" PRIu64 " ms\n",
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->pdelay_req_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
@@ -3068,9 +3068,9 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("\tCurrent state                                    "
 	   ": %s\n", pdelay_req2str(port_state->pdelay_req.state));
 	PR("\tInitial Path Delay Response Peer Timestamp       "
-	   ": %llu\n", port_state->pdelay_req.ini_resp_evt_tstamp);
+	   ": %" PRIu64 "\n", port_state->pdelay_req.ini_resp_evt_tstamp);
 	PR("\tInitial Path Delay Response Ingress Timestamp    "
-	   ": %llu\n", port_state->pdelay_req.ini_resp_ingress_tstamp);
+	   ": %" PRIu64 "\n", port_state->pdelay_req.ini_resp_ingress_tstamp);
 	PR("\tPath Delay Response %s %s            : %u\n",
 	   "messages", "received",
 	   port_state->pdelay_req.rcvd_pdelay_resp);
@@ -3106,7 +3106,7 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   port_state->sync_rcv.follow_up_timeout_expired ? "yes" : "no");
 	PR("\tTime at which a Sync %s without Follow Up\n"
 	   "\t                             will be discarded   "
-	   ": %llu\n", "Message",
+	   ": %" PRIu64 "\n", "Message",
 	   port_state->sync_rcv.follow_up_receipt_timeout);
 
 	PR("SyncSend state machine variables:\n");
@@ -3134,10 +3134,10 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	PR("\tCurrent state                                    "
 	   ": %s\n", pss_send2str(port_state->pss_send.state));
 	PR("\tFollow Up Correction Field of last recv PSS      "
-	   ": %lld\n",
+	   ": %" PRId64 "\n",
 	   port_state->pss_send.last_follow_up_correction_field);
 	PR("\tUpstream Tx Time of the last recv PortSyncSync   "
-	   ": %llu\n", port_state->pss_send.last_upstream_tx_time);
+	   ": %" PRIu64 "\n", port_state->pss_send.last_upstream_tx_time);
 	PR("\tRate Ratio of the last received PortSyncSync     "
 	   ": %f\n",
 	   port_state->pss_send.last_rate_ratio);
@@ -4785,7 +4785,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 		return;
 	}
 
-	PR_SHELL(tcp_shell, "%d bytes received\n", net_pkt_get_len(pkt));
+	PR_SHELL(tcp_shell, "%zu bytes received\n", net_pkt_get_len(pkt));
 }
 #endif
 
@@ -5614,7 +5614,7 @@ static void websocket_context_cb(struct websocket_context *context,
 
 	net_ctx = z_get_fd_obj(context->real_sock, NULL, 0);
 	if (net_ctx == NULL) {
-		PR_ERROR("Invalid fd %d");
+		PR_ERROR("Invalid fd %d", context->real_sock);
 		return;
 	}
 
