@@ -163,6 +163,10 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 
 	interrupt = 0;
 
+	/* Test error_trigger() for unset error type */
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
+
 	errors_cor = edac_errors_cor_get(dev);
 	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
 
