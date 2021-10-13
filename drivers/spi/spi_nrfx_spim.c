@@ -531,9 +531,10 @@ static int spim_nrfx_pm_action(const struct device *dev,
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
 			())						       \
 	};								       \
+	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_##idx##_init,					       \
-		      spim_nrfx_pm_action,				       \
+		      PM_DEVICE_DT_REF(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

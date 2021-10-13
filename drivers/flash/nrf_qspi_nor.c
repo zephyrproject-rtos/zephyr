@@ -1139,8 +1139,6 @@ static int qspi_nor_pm_action(const struct device *dev,
 
 	return 0;
 }
-#else
-#define qspi_nor_pm_action NULL
 #endif /* CONFIG_PM_DEVICE */
 
 static struct qspi_nor_data qspi_nor_dev_data = {
@@ -1196,7 +1194,9 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 	.id = DT_INST_PROP(0, jedec_id),
 };
 
-DEVICE_DT_INST_DEFINE(0, qspi_nor_init, qspi_nor_pm_action,
+PM_DEVICE_DT_INST_DEFINE(0, qspi_nor_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, qspi_nor_init, PM_DEVICE_DT_INST_REF(0),
 		      &qspi_nor_dev_data, &qspi_nor_dev_config,
 		      POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		      &qspi_nor_api);

@@ -672,8 +672,6 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 
 	return 0;
 }
-#else
-#define gpio_emul_pm_device_pm_action NULL
 #endif
 
 /*
@@ -709,8 +707,10 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 		.flags = gpio_emul_flags_##_num,			\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);	\
+									\
 	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
-			    gpio_emul_pm_device_pm_action,		\
+			    PM_DEVICE_DT_INST_REF(_num),		\
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_GPIO_INIT_PRIORITY,			\

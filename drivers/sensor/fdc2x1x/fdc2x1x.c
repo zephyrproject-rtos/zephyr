@@ -1025,9 +1025,11 @@ static int fdc2x1x_init(const struct device *dev)
 		FDC2X1X_INTB(n)						   \
 	};								   \
 									   \
+	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);		   \
+									   \
 	DEVICE_DT_INST_DEFINE(n,					   \
 			      fdc2x1x_init,				   \
-			      fdc2x1x_device_pm_action,			   \
+			      PM_DEVICE_DT_INST_REF(n),			   \
 			      &fdc2x1x_data_##n,			   \
 			      &fdc2x1x_config_##n,			   \
 			      POST_KERNEL,				   \

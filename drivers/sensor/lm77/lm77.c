@@ -395,12 +395,6 @@ static int lm77_pm_action(const struct device *dev,
 #define LM77_INT_GPIO_INIT(n)
 #endif /* ! LM77_TRIGGER_SUPPORT */
 
-#ifdef CONFIG_PM_DEVICE
-#define LM77_PM_ACTION_CB lm77_pm_action
-#else /* CONFIG_PM_DEVICE */
-#define LM77_PM_ACTION_CB NULL
-#endif /* ! CONFIG_PM_DEVICE */
-
 #define LM77_INIT(n)							\
 	static struct lm77_data lm77_data_##n;				\
 									\
@@ -417,8 +411,10 @@ static int lm77_pm_action(const struct device *dev,
 		LM77_INT_GPIO_INIT(n)					\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);			\
+									\
 	DEVICE_DT_INST_DEFINE(n, lm77_init,				\
-			      LM77_PM_ACTION_CB,			\
+			      PM_DEVICE_DT_INST_REF(n),			\
 			      &lm77_data_##n,				\
 			      &lm77_config_##n, POST_KERNEL,		\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\

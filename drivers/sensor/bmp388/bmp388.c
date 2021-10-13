@@ -720,10 +720,11 @@ static int bmp388_init(const struct device *dev)
 		BMP388_INT_CFG(inst)					   \
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
 	DEVICE_DT_INST_DEFINE(						   \
 		inst,							   \
 		bmp388_init,						   \
-		bmp388_pm_action,					   \
+		PM_DEVICE_DT_INST_REF(inst),				   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \

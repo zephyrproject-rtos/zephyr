@@ -129,8 +129,9 @@ static int uart_it8xxx2_init(const struct device *dev)
 		.port = DT_INST_PROP(inst, port_num),                          \
 		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                \
 	};                                                                     \
+	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                \
 	DEVICE_DT_INST_DEFINE(inst, &uart_it8xxx2_init,                        \
-			      uart_it8xxx2_pm_action,                          \
+			      PM_DEVICE_DT_INST_REF(inst),                     \
 			      NULL, &uart_it8xxx2_cfg_##inst,                  \
 			      PRE_KERNEL_1,                                    \
 			      CONFIG_SERIAL_INIT_PRIORITY,                     \
