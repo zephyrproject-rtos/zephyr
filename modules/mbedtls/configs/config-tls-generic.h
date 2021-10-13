@@ -250,6 +250,7 @@
 #endif
 
 #if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED)
+#define MBEDTLS_SHA384_C
 #define MBEDTLS_SHA512_C
 #endif
 
