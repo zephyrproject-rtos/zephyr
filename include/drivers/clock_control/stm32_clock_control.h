@@ -15,46 +15,35 @@
 /* common clock control device node for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NODE DT_NODELABEL(rcc)
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), ahb_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), ahb_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), ahb_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), apb1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb1_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb2_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb2_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb2_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb2_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb3_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb3_prescaler)
 #define STM32_APB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb3_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), ahb3_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 #define STM32_AHB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), ahb4_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define STM32_AHB4_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), cpu1_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
 #define STM32_CPU1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu2_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), cpu2_prescaler)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
 #define STM32_CPU2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
 #endif
 
@@ -112,13 +101,7 @@
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #endif
 
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32h7_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32u5_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wb_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wl_rcc, okay)) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
 #define DT_RCC_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
 #define STM32_SYSCLK_SRC_PLL	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
 #define STM32_SYSCLK_SRC_HSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
@@ -127,20 +110,7 @@
 #define STM32_SYSCLK_SRC_CSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
 #endif
 
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f0_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f1_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f100_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f2_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f7_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g0_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g4_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32h7_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l0_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u5_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay)) && \
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
 #define DT_PLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll))
 #define STM32_PLL_SRC_MSI	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
