@@ -30,9 +30,8 @@
 	interrupts = <73 0>;
 };
 
-&gpt1 {
+&gpt_hw_timer {
 	interrupts = <30 0>;
-	gptfreq = <12500000>;
 };
 
 &gpt2 {
