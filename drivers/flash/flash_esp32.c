@@ -159,9 +159,9 @@ static void IRAM_ATTR flash_esp32_flush_cache(size_t start_addr, size_t length)
 #if CONFIG_ESP_SPIRAM
 			esp_spiram_writeback_cache();
 #endif
-			esp32_rom_Cache_Flush(0);
+			esp_rom_Cache_Flush(0);
 #ifdef CONFIG_SMP
-			esp32_rom_Cache_Flush(1);
+			esp_rom_Cache_Flush(1);
 #endif
 			return;
 		}
