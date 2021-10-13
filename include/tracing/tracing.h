@@ -1940,6 +1940,20 @@
 
 #define sys_port_trace_pm_device_disable_exit(dev)
 
+/**
+ * @brief Syscall Tracing APIs
+ * @defgroup syscall_tracing_apis Syscall Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+#define sys_port_trace_syscall_enter(syscall)
+
+#define sys_port_trace_syscall_exit(syscall)
+
+/**
+ * @}
+ */ /* end of syscall_tracing_apis */
 
 #if defined CONFIG_PERCEPIO_TRACERECORDER
 #include "tracing_tracerecorder.h"

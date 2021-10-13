@@ -82,6 +82,8 @@ syscall_template = """
 
 #include <linker/sections.h>
 
+#include <tracing/tracing_syscall.h>
+
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #endif
@@ -180,6 +182,7 @@ def wrapper_defs(func_name, func_type, args):
     wrap += "__pinned_func\n"
     wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
     wrap += "{\n"
+    wrap += "\tsys_port_tracing_syscall_enter(%s);\n" % (func_name)
     wrap += "#ifdef CONFIG_USERSPACE\n"
     wrap += ("\t" + "uint64_t ret64;\n") if ret64 else ""
     wrap += "\t" + "if (z_syscall_trap()) {\n"
@@ -208,12 +211,17 @@ def wrapper_defs(func_name, func_type, args):
 
     if ret64:
         wrap += "\t\t" + "(void)%s;\n" % invoke
+        wrap += "\t\tsys_port_tracing_syscall_exit(%s);\n" % (func_name)
         wrap += "\t\t" + "return (%s)ret64;\n" % func_type
     elif func_type == "void":
         wrap += "\t\t" + "%s;\n" % invoke
+        wrap += "\t\tsys_port_tracing_syscall_exit(%s);\n" % (func_name)
         wrap += "\t\t" + "return;\n"
     else:
-        wrap += "\t\t" + "return (%s) %s;\n" % (func_type, invoke)
+        wrap += "\t\t" + "%s ret = (%s) %s;\n" % (func_type, func_type, invoke)
+        wrap += "\t\tsys_port_tracing_syscall_exit(%s);\n" % (func_name)
+        wrap += "\t\t" + "return ret;\n"
+
 
     wrap += "\t" + "}\n"
     wrap += "#endif\n"
@@ -225,9 +233,15 @@ def wrapper_defs(func_name, func_type, args):
     impl_arglist = ", ".join([argrec[1] for argrec in args])
     impl_call = "z_impl_%s(%s)" % (func_name, impl_arglist)
     wrap += "\t" + "compiler_barrier();\n"
-    wrap += "\t" + "%s%s;\n" % ("return " if func_type != "void" else "",
-                               impl_call)
-
+    if func_type != "void":
+        wrap += "\t%s ret = %s;" % (func_type, impl_call)
+    else:
+        wrap += "\t%s;" % (impl_call)
+    wrap += "\tsys_port_tracing_syscall_exit(%s);\n" % (func_name)
+    if func_type != "void":
+        wrap += "\treturn ret;\n"
+    else:
+        wrap += "\treturn;\n"
     wrap += "}\n"
 
     return wrap
