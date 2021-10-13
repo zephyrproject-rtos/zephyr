@@ -1,0 +1,11 @@
+# NPCX SPI Driver configuration options
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_NPCX_FIU
+	bool "Nuvoton NPCX embedded controller (EC) SPI driver for NOR flash"
+	depends on SOC_FAMILY_NPCX
+	help
+	  Enable the SPI driver for NPCX family of processors. This driver is
+	  for the dedicated SPI controller (FIU) to access the NOR flash.
