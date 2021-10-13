@@ -1185,17 +1185,17 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			ctrl_tx_enqueue(conn, tx);
 		}
 
-		if (!conn->procedure_expire) {
+		if (!conn->proc_expire) {
 			/* Terminate Procedure timeout is started, will
 			 * replace any other timeout running
 			 */
-			conn->procedure_expire = conn->supervision_reload;
+			conn->proc_expire = conn->supervision_reload;
 
 			/* NOTE: if supervision timeout equals connection
 			 * interval, dont timeout in current event.
 			 */
-			if (conn->procedure_expire <= 1U) {
-				conn->procedure_expire++;
+			if (conn->proc_expire <= 1U) {
+				conn->proc_expire++;
 			}
 		}
 	}
@@ -1406,9 +1406,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* check procedure timeout */
-	if (conn->procedure_expire != 0U) {
-		if (conn->procedure_expire > elapsed_event) {
-			conn->procedure_expire -= elapsed_event;
+	if (conn->proc_expire != 0U) {
+		if (conn->proc_expire > elapsed_event) {
+			conn->proc_expire -= elapsed_event;
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_LL_RESP_TIMEOUT);
 
@@ -1447,7 +1447,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		} else {
 			conn->appto_expire = 0U;
 
-			if ((conn->procedure_expire == 0U) &&
+			if ((conn->proc_expire == 0U) &&
 			    (conn->llcp_req == conn->llcp_ack)) {
 				conn->llcp_type = LLCP_PING;
 				conn->llcp_ack -= 2U;
@@ -2727,7 +2727,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 			/* Stop procedure timeout */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 		}
 
 		/* Reset CPR mutex */
@@ -2871,7 +2871,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		conn->supervision_reload =
 			RADIO_CONN_EVENTS((conn->llcp_cu.timeout * 10U * 1000U),
 					  conn_interval_us);
-		conn->procedure_reload =
+		conn->proc_reload =
 			RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -3289,7 +3289,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure)
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 	}
 
 }
@@ -3335,7 +3335,7 @@ static inline void event_vex_prep(struct ll_conn *conn)
 			/* Start Procedure Timeout (TODO: this shall not
 			 * replace terminate procedure)
 			 */
-			conn->procedure_expire = conn->procedure_reload;
+			conn->proc_expire = conn->proc_reload;
 		}
 	} else if (conn->llcp_version.rx) {
 		struct node_rx_pdu *rx;
@@ -3414,7 +3414,7 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	/* Start Procedure Timeout (TODO: this shall not replace
 	 * terminate procedure).
 	 */
-	conn->procedure_expire = conn->procedure_reload;
+	conn->proc_expire = conn->proc_reload;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	/* move to wait for offset calculations */
@@ -3705,7 +3705,7 @@ static inline void event_ping_prep(struct ll_conn *conn)
 		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure)
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 	}
 
 }
@@ -3838,7 +3838,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure).
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 	}
 	break;
 
@@ -3875,7 +3875,7 @@ static inline void event_len_prep(struct ll_conn *conn)
 			if (!conn->llcp_length.cache.tx_octets) {
 				/* Procedure complete */
 				conn->llcp_length.ack = conn->llcp_length.req;
-				conn->procedure_expire = 0U;
+				conn->proc_expire = 0U;
 			} else {
 				/* Initiate cached procedure */
 				conn->llcp_length.tx_octets =
@@ -3996,7 +3996,7 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure).
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 	}
 	break;
 
@@ -4713,7 +4713,7 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 
 	/* Procedure complete */
 	conn->llcp_feature.ack = conn->llcp_feature.req;
-	conn->procedure_expire = 0U;
+	conn->proc_expire = 0U;
 }
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG */
 
@@ -4806,7 +4806,7 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		conn->llcp_version.ack = conn->llcp_version.req;
 
 		/* Procedure complete */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 	} else {
 		/* Tx-ed and Rx-ed before, ignore this invalid Rx. */
 
@@ -4905,7 +4905,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 		/* Stop procedure timeout */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 	}
 
 	/* skip event generation if not cmd initiated */
@@ -4936,7 +4936,7 @@ static inline int reject_ind_dle_recv(struct ll_conn *conn,
 
 	/* Procedure complete */
 	conn->llcp_length.ack = conn->llcp_length.req;
-	conn->procedure_expire = 0U;
+	conn->proc_expire = 0U;
 
 	/* prepare length rsp structure */
 	pdu_rx->len = offsetof(struct pdu_data_llctrl, length_rsp) +
@@ -4983,7 +4983,7 @@ static inline int reject_ind_phy_upd_recv(struct ll_conn *conn,
 		conn->llcp_phy.pause_tx = 0U;
 
 		/* Stop procedure timeout */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 	}
 
 	/* skip event generation if not cmd initiated */
@@ -5012,7 +5012,7 @@ static inline int reject_ind_enc_recv(struct ll_conn *conn)
 
 	/* Procedure complete */
 	conn->llcp_ack = conn->llcp_req;
-	conn->procedure_expire = 0U;
+	conn->proc_expire = 0U;
 
 	return 0;
 }
@@ -5330,7 +5330,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		} else {
 			/* Procedure complete */
 			conn->llcp_length.ack = conn->llcp_length.req;
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 
 			/* No change in effective octets or time */
 			if (eff_tx_octets == conn->lll.max_tx_octets &&
@@ -5493,8 +5493,8 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		/* Start Procedure Timeout (TODO: this shall not
 		 * replace terminate procedure).
 		 */
-		conn->procedure_expire =
-			conn->procedure_reload;
+		conn->proc_expire =
+			conn->proc_reload;
 	}
 
 	p = &pdu_rx->llctrl.phy_req;
@@ -5542,7 +5542,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		/* Procedure complete */
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 		conn->llcp_phy.pause_tx = 0U;
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 
 		/* Reset packet timing restrictions */
 		conn->lll.phy_tx_time = conn->lll.phy_tx;
@@ -5604,7 +5604,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		/* Procedure complete, just wait for instant */
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 		conn->llcp_phy.pause_tx = 0U;
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 
 		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
 	}
@@ -5825,7 +5825,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		 * procedure which always gets place before any packets
 		 * going out, hence safe by design).
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 
 		/* Reset enc req queued state */
 		conn->llcp_enc.ack = conn->llcp_enc.req;
@@ -5853,7 +5853,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			conn->llcp_enc.pause_tx = 0U;
 
 			/* Procedure complete */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -5874,7 +5874,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		 * procedure which always gets place before any packets
 		 * going out, hence safe by design).
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 
 		/* Reset enc req queued state */
 		conn->llcp_enc.ack = conn->llcp_enc.req;
@@ -5913,7 +5913,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		conn->llcp_enc.pause_tx = 0U;
 
 		/* Procedure complete */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -5957,7 +5957,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 					/* Procedure complete */
 					conn->llcp_length.ack =
 						conn->llcp_length.req;
-					conn->procedure_expire = 0U;
+					conn->proc_expire = 0U;
 
 					break;
 				}
@@ -6069,7 +6069,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		} else {
 			/* conn param req procedure, if any, is complete */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		}
 	}
@@ -6167,7 +6167,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		/* Start Procedure Timeout (TODO: this shall not replace
 		 * terminate procedure).
 		 */
-		conn->procedure_expire = conn->procedure_reload;
+		conn->proc_expire = conn->proc_reload;
 
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -6234,7 +6234,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp_enc.pause_tx = 0U;
 
 			/* Procedure complete */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -6615,7 +6615,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			}
 
 			/* Stop procedure timeout */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 
 			/* save parameters to be used to select offset
 			 */
@@ -6674,7 +6674,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Procedure complete */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -6824,7 +6824,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Procedure complete */
-		conn->procedure_expire = 0U;
+		conn->proc_expire = 0U;
 		break;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -6952,7 +6952,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp_phy.pause_tx = 1U;
 
 			/* Procedure timeout is stopped */
-			conn->procedure_expire = 0U;
+			conn->proc_expire = 0U;
 		}
 
 		/* Mark for buffer for release */

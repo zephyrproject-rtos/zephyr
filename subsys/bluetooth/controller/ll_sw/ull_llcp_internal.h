@@ -289,8 +289,8 @@ struct node_tx *llcp_tx_alloc(void);
 bool llcp_ntf_alloc_is_available(void);
 bool llcp_ntf_alloc_num_available(uint8_t count);
 struct node_rx_pdu *llcp_ntf_alloc(void);
-struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc);
-struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc);
+struct proc_ctx *llcp_create_local_proc(enum llcp_proc proc);
+struct proc_ctx *llcp_create_remote_proc(enum llcp_proc proc);
 
 /*
  * ULL -> LLL Interface

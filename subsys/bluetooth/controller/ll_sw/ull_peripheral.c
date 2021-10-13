@@ -200,7 +200,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
 		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
-	conn->procedure_reload =
+	conn->proc_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)

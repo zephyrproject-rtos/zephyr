@@ -151,7 +151,7 @@ void llcp_tx_flush(struct ll_conn *conn)
  * LLCP Procedure Creation
  */
 
-static struct proc_ctx *create_procedure(enum llcp_proc proc)
+static struct proc_ctx *create_proc(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
@@ -176,11 +176,11 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	return ctx;
 }
 
-struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
+struct proc_ctx *llcp_create_local_proc(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_procedure(proc);
+	ctx = create_proc(proc);
 	if (!ctx) {
 		return NULL;
 	}
@@ -244,11 +244,11 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 	return ctx;
 }
 
-struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
+struct proc_ctx *llcp_create_remote_proc(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_procedure(proc);
+	ctx = create_proc(proc);
 	if (!ctx) {
 		return NULL;
 	}
@@ -399,7 +399,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ctx = llcp_create_local_procedure(PROC_MIN_USED_CHANS);
+	ctx = llcp_create_local_proc(PROC_MIN_USED_CHANS);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -418,7 +418,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = llcp_create_local_procedure(PROC_LE_PING);
+	ctx = llcp_create_local_proc(PROC_LE_PING);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -434,7 +434,7 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
+	ctx = llcp_create_local_proc(PROC_FEATURE_EXCHANGE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -449,7 +449,7 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
+	ctx = llcp_create_local_proc(PROC_VERSION_EXCHANGE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -468,7 +468,7 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_START);
+	ctx = llcp_create_local_proc(PROC_ENCRYPTION_START);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -492,7 +492,7 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_PAUSE);
+	ctx = llcp_create_local_proc(PROC_ENCRYPTION_PAUSE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -536,7 +536,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = llcp_create_local_procedure(PROC_PHY_UPDATE);
+	ctx = llcp_create_local_proc(PROC_PHY_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -558,7 +558,7 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 
 	llcp_lr_abort(conn);
 
-	ctx = llcp_create_local_procedure(PROC_TERMINATE);
+	ctx = llcp_create_local_proc(PROC_TERMINATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -583,7 +583,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ctx = llcp_create_local_procedure(PROC_CHAN_MAP_UPDATE);
+	ctx = llcp_create_local_proc(PROC_CHAN_MAP_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -619,7 +619,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 {
 	struct proc_ctx *ctx;
 
-	ctx = llcp_create_local_procedure(PROC_DATA_LENGTH_UPDATE);
+	ctx = llcp_create_local_proc(PROC_DATA_LENGTH_UPDATE);
 
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -666,9 +666,9 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if (feature_conn_param_req(conn)) {
-		ctx = llcp_create_local_procedure(PROC_CONN_PARAM_REQ);
+		ctx = llcp_create_local_proc(PROC_CONN_PARAM_REQ);
 	} else if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
-		ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
+		ctx = llcp_create_local_proc(PROC_CONN_UPDATE);
 	} else {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
@@ -676,7 +676,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
+	ctx = llcp_create_local_proc(PROC_CONN_UPDATE);
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	if (!ctx) {
@@ -766,7 +766,7 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 {
 	struct proc_ctx *ctx;
 
-	ctx = llcp_create_local_procedure(PROC_CTE_REQ);
+	ctx = llcp_create_local_proc(PROC_CTE_REQ);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -973,7 +973,7 @@ void test_int_create_proc(void)
 	ull_tx_q_init(&conn.tx_q);
 	ll_conn_init(&conn);
 
-	ctx = create_procedure(PROC_VERSION_EXCHANGE);
+	ctx = create_proc(PROC_VERSION_EXCHANGE);
 	zassert_not_null(ctx, NULL);
 
 	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE, NULL);
@@ -982,7 +982,7 @@ void test_int_create_proc(void)
 
 	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
-		ctx = create_procedure(PROC_VERSION_EXCHANGE);
+		ctx = create_proc(PROC_VERSION_EXCHANGE);
 	}
 
 	zassert_is_null(ctx, NULL);

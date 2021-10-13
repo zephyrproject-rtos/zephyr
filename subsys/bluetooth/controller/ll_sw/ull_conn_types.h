@@ -38,8 +38,8 @@ struct ll_conn {
 	uint16_t connect_expire;
 	uint16_t supervision_reload;
 	uint16_t supervision_expire;
-	uint16_t procedure_reload;
-	uint16_t procedure_expire;
+	uint16_t proc_reload;
+	uint16_t proc_expire;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	uint16_t appto_reload;
@@ -497,8 +497,8 @@ struct ll_conn {
 	uint16_t connect_expire;
 	uint16_t supervision_reload;
 	uint16_t supervision_expire;
-	uint16_t procedure_reload;
-	uint16_t procedure_expire;
+	uint16_t proc_reload;
+	uint16_t proc_expire;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_pref_tx:3;

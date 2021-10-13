@@ -361,7 +361,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	llcp_tx_enqueue(conn, tx);
 
 	/* Update procedure timout */
-	ull_conn_prt_reload(conn, conn->procedure_reload);
+	ull_conn_prt_reload(conn, conn->proc_reload);
 }
 
 static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -612,8 +612,8 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	case LP_PU_EVT_PHY_UPDATE_IND:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
-		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
-		if (!end_procedure) {
+		const uint8_t end_proc = pu_check_update_ind(conn, ctx);
+		if (!end_proc) {
 			if (ctx->data.pu.p_to_c_phy) {
 				/* If periph to central phy changes apply tx timing restriction */
 				pu_set_timing_restrict(conn, ctx->data.pu.p_to_c_phy);
@@ -983,8 +983,8 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	switch (evt) {
 	case RP_PU_EVT_PHY_UPDATE_IND:
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
-		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
-		if (!end_procedure) {
+		const uint8_t end_proc = pu_check_update_ind(conn, ctx);
+		if (!end_proc) {
 			/* Since at least one phy will change, we clear procedure response timeout */
 			ull_conn_prt_clear(conn);
 

@@ -158,7 +158,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	llcp_tx_enqueue(conn, tx);
 
 	/* Update procedure timout. For TERMINATE supervision_timeout is used */
-	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE) ? conn->procedure_reload :
+	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE) ? conn->proc_reload :
 									conn->supervision_reload);
 }
 

@@ -1022,7 +1022,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
-		conn->procedure_expire = 0;
+		conn->proc_expire = 0;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		conn->apto_expire = 0U;

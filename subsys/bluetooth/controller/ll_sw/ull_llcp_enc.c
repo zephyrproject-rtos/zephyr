@@ -175,7 +175,7 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	llcp_tx_enqueue(conn, tx);
 
 	/* Update procedure timout */
-	ull_conn_prt_reload(conn, conn->procedure_reload);
+	ull_conn_prt_reload(conn, conn->proc_reload);
 
 	return tx;
 }

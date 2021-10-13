@@ -655,7 +655,7 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 		rr_abort(conn);
 	}
 
-	ctx = llcp_create_remote_procedure(proc);
+	ctx = llcp_create_remote_proc(proc);
 	if (!ctx) {
 		return;
 	}
