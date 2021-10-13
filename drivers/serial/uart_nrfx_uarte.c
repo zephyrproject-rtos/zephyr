@@ -1997,9 +1997,12 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			dev,						       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
+									       \
+	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action);		       \
+									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
-		      uarte_nrfx_pm_action,				       \
+		      PM_DEVICE_DT_REF(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \

@@ -573,7 +573,10 @@ static const struct display_driver_api st7735r_api = {
 		.x_offset = DT_INST_PROP(inst, x_offset),			\
 		.y_offset = DT_INST_PROP(inst, y_offset),			\
 	};									\
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, st7735r_pm_action,		\
+										\
+	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_REF(inst),	\
 			      &st7735r_data_ ## inst, &st7735r_config_ ## inst,	\
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	\
 			      &st7735r_api);

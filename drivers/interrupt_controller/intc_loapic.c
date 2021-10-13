@@ -428,7 +428,9 @@ static int loapic_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-DEVICE_DEFINE(loapic, "loapic", loapic_init, loapic_pm_action, NULL, NULL,
+PM_DEVICE_DEFINE(loapic, loapic_pm_action);
+
+DEVICE_DEFINE(loapic, "loapic", loapic_init, PM_DEVICE_REF(loapic), NULL, NULL,
 	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR

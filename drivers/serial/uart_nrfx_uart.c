@@ -1182,9 +1182,11 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	}
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, uart_nrfx_pm_action);
+
 DEVICE_DT_INST_DEFINE(0,
 	      uart_nrfx_init,
-	      uart_nrfx_pm_action,
+	      PM_DEVICE_DT_INST_REF(0),
 	      &uart_nrfx_uart0_data,
 	      NULL,
 	      /* Initialize UART device before UART console. */

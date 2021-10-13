@@ -534,8 +534,10 @@ static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, gpio_dw_device_pm_action);
+
 DEVICE_DT_INST_DEFINE(0,
-	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_0_runtime,
+	      gpio_dw_initialize, PM_DEVICE_DT_INST_REF(0), &gpio_0_runtime,
 	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -596,8 +598,10 @@ static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_INST_REG_ADDR(1),
 };
 
+PM_DEVICE_DT_INST_DEFINE(1, gpio_dw_device_pm_action);
+
 DEVICE_DT_INST_DEFINE(1,
-	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_1_runtime,
+	      gpio_dw_initialize, PM_DEVICE_DT_INST_REF(1), &gpio_1_runtime,
 	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -657,8 +661,10 @@ static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_INST_REG_ADDR(2),
 };
 
+PM_DEVICE_DT_INST_DEFINE(2, gpio_dw_device_pm_action);
+
 DEVICE_DT_INST_DEFINE(2,
-	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_2_runtime,
+	      gpio_dw_initialize, PM_DEVICE_DT_INST_REF(2), &gpio_2_runtime,
 	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
@@ -718,8 +724,10 @@ static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_INST_REG_ADDR(3),
 };
 
+PM_DEVICE_DT_INST_DEFINE(3, gpio_dw_device_pm_action);
+
 DEVICE_DT_INST_DEFINE(3,
-	      gpio_dw_initialize, gpio_dw_device_pm_action, &gpio_3_runtime,
+	      gpio_dw_initialize, PM_DEVICE_DT_INST_REF(3), &gpio_3_runtime,
 	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 	      &api_funcs);
 
