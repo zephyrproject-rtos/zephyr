@@ -283,13 +283,7 @@ struct bt_codec_lc3_frame_len {
 	BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_16KHZ, \
 			    BT_CODEC_CONFIG_LC3_DURATION_10, 40u, \
 			    BT_CODEC_META_CONTEXT_VOICE)
-/** @def BT_CODEC_LC3_CONFIG_16_2
- *  @brief Helper to declare 2 channels with LC3 16.2 codec configuration
- */
-#define BT_CODEC_LC3_CONFIG_2_16_2 \
-	BT_CODEC_LC3_CONFIG_N(BT_CODEC_CONFIG_LC3_FREQ_16KHZ, \
-			      BT_CODEC_CONFIG_LC3_DURATION_10, 0x00000003, \
-			      80u, BT_CODEC_META_CONTEXT_VOICE)
+
 /** @def BT_CODEC_LC3_CONFIG_24_1
  *  @brief Helper to declare LC3 24.1 codec configuration
  */
@@ -318,17 +312,17 @@ struct bt_codec_lc3_frame_len {
 	BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_32KHZ, \
 			    BT_CODEC_CONFIG_LC3_DURATION_10, 80u, \
 			    BT_CODEC_META_CONTEXT_VOICE)
-/** @def BT_CODEC_LC3_CONFIG_44_1
+/** @def BT_CODEC_LC3_CONFIG_441_1
  *  @brief Helper to declare LC3 441.1 codec configuration
  */
-#define BT_CODEC_LC3_CONFIG_44_1 \
+#define BT_CODEC_LC3_CONFIG_441_1 \
 	BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_44KHZ, \
 			    BT_CODEC_CONFIG_LC3_DURATION_7_5, 98u, \
 			    BT_CODEC_META_CONTEXT_MEDIA)
-/** @def BT_CODEC_LC3_CONFIG_44_2
+/** @def BT_CODEC_LC3_CONFIG_441_2
  *  @brief Helper to declare LC3 441.2 codec configuration
  */
-#define BT_CODEC_LC3_CONFIG_44_2 \
+#define BT_CODEC_LC3_CONFIG_441_2 \
 	BT_CODEC_LC3_CONFIG(BT_CODEC_CONFIG_LC3_FREQ_44KHZ, \
 			    BT_CODEC_CONFIG_LC3_DURATION_10, 130u, \
 			    BT_CODEC_META_CONTEXT_MEDIA)
