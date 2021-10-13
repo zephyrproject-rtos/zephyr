@@ -179,7 +179,7 @@ void pm_device_enable(const struct device *dev)
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
 		pm->dev = dev;
-		if (pm->pm_control != NULL) {
+		if (pm->action_cb != NULL) {
 			pm->enable = true;
 			pm->state = PM_DEVICE_STATE_SUSPENDED;
 			k_work_init_delayable(&pm->work, pm_work_handler);
@@ -188,7 +188,7 @@ void pm_device_enable(const struct device *dev)
 	}
 
 	(void)k_mutex_lock(&pm->lock, K_FOREVER);
-	if (pm->pm_control == NULL) {
+	if (pm->action_cb == NULL) {
 		pm->enable = false;
 		goto out_unlock;
 	}
