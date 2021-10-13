@@ -42,6 +42,11 @@ struct gicv3_its_data {
 	mm_reg_t base;
 	struct its_cmd_block *cmd_base;
 	struct its_cmd_block *cmd_write;
+	bool dev_table_is_indirect;
+	uint64_t *indirect_dev_lvl1_table;
+	size_t indirect_dev_lvl1_width;
+	size_t indirect_dev_lvl2_width;
+	size_t indirect_dev_page_size;
 };
 
 struct gicv3_its_config {
@@ -50,6 +55,22 @@ struct gicv3_its_config {
 	struct its_cmd_block *cmd_queue;
 	size_t cmd_queue_size;
 };
+
+static inline int fls_z(unsigned int x)
+{
+	unsigned int bits = sizeof(x) * 8;
+	unsigned int cmp = 1 << (bits - 1);
+
+	while (bits) {
+		if (x & cmp) {
+			return bits;
+		}
+		cmp >>= 1;
+		bits--;
+	}
+
+	return 0;
+}
 
 /* wait 500ms & wakeup every millisecond */
 #define WAIT_QUIESCENT 500
@@ -87,6 +108,44 @@ static const char *const its_base_type_string[] = {
 	[GITS_BASER_TYPE_COLLECTION] = "Interrupt Collections",
 };
 
+/* Probe the BASER(i) to get the largest supported page size */
+static size_t its_probe_baser_page_size(struct gicv3_its_data *data, int i)
+{
+	uint64_t page_size = GITS_BASER_PAGE_SIZE_64K;
+
+	while (page_size > GITS_BASER_PAGE_SIZE_4K) {
+		uint64_t reg = sys_read64(data->base + GITS_BASER(i));
+
+		reg &= ~MASK(GITS_BASER_PAGE_SIZE);
+		reg |= MASK_SET(page_size, GITS_BASER_PAGE_SIZE);
+
+		sys_write64(reg, data->base + GITS_BASER(i));
+
+		reg = sys_read64(data->base + GITS_BASER(i));
+
+		if (MASK_GET(reg, GITS_BASER_PAGE_SIZE) == page_size) {
+			break;
+		}
+
+		switch (page_size) {
+		case GITS_BASER_PAGE_SIZE_64K:
+			page_size = GITS_BASER_PAGE_SIZE_16K;
+			break;
+		default:
+			page_size = GITS_BASER_PAGE_SIZE_4K;
+		}
+	}
+
+	switch (page_size) {
+	case GITS_BASER_PAGE_SIZE_64K:
+		return SIZE_64K;
+	case GITS_BASER_PAGE_SIZE_16K:
+		return SIZE_16K;
+	default:
+		return SIZE_4K;
+	}
+}
+
 static int its_alloc_tables(struct gicv3_its_data *data)
 {
 	unsigned int device_ids = GITS_TYPER_DEVBITS_GET(sys_read64(data->base + GITS_TYPER)) + 1;
@@ -95,7 +154,8 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 	for (i = 0; i < GITS_BASER_NR_REGS; ++i) {
 		uint64_t reg = sys_read64(data->base + GITS_BASER(i));
 		unsigned int type = GITS_BASER_TYPE_GET(reg);
-		size_t page_size, entry_size, page_cnt;
+		size_t page_size, entry_size, page_cnt, lvl2_width = 0;
+		bool indirect = false;
 		void *alloc_addr;
 
 		entry_size = GITS_BASER_ENTRY_SIZE_GET(reg) + 1;
@@ -116,11 +176,25 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 
 		switch (type) {
 		case GITS_BASER_TYPE_DEVICE:
-			/*
-			 * TOFIX: implement & force support for indirect page table
-			 * 32bit device_ids can lead to 32GiB allocation
-			 * with PCIe, it should be 16bits max
-			 */
+			if (device_ids > 16) {
+				/* Use the largest possible page size for indirect */
+				page_size = its_probe_baser_page_size(data, i);
+
+				/*
+				 * lvl1 table size:
+				 * subtract ID bits that sparse lvl2 table from 'ids'
+				 * which is reported by ITS hardware times lvl1 table
+				 * entry size.
+				 */
+				lvl2_width = fls_z(page_size / entry_size) - 1;
+				device_ids -= lvl2_width + 1;
+
+				/* The level 1 entry size is a 64bit pointer */
+				entry_size = sizeof(uint64_t);
+
+				indirect = true;
+			}
+
 			page_cnt = ROUND_UP(entry_size << device_ids, page_size) / page_size;
 			break;
 		case GITS_BASER_TYPE_COLLECTION:
@@ -157,12 +231,21 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 		reg |= MASK_SET((uintptr_t)alloc_addr >> GITS_BASER_ADDR_SHIFT, GITS_BASER_ADDR);
 		reg |= MASK_SET(GIC_BASER_CACHE_INNERLIKE, GITS_BASER_OUTER_CACHE);
 		reg |= MASK_SET(GIC_BASER_CACHE_RAWAWB, GITS_BASER_INNER_CACHE);
-		reg |= MASK_SET(0, GITS_BASER_INDIRECT);
+		reg |= MASK_SET(indirect ? 1 : 0, GITS_BASER_INDIRECT);
 		reg |= MASK_SET(1, GITS_BASER_VALID);
 
 		sys_write64(reg, data->base + GITS_BASER(i));
 
 		/* TOFIX: check page size & SHAREABILITY validity after write */
+
+		if (type == GITS_BASER_TYPE_DEVICE && indirect) {
+			data->dev_table_is_indirect = indirect;
+			data->indirect_dev_lvl1_table = alloc_addr;
+			data->indirect_dev_lvl1_width = device_ids;
+			data->indirect_dev_lvl2_width = lvl2_width;
+			data->indirect_dev_page_size = page_size;
+			LOG_DBG("%s table Indirection enabled", its_base_type_string[type]);
+		}
 	}
 
 	return 0;
@@ -408,22 +491,6 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 	return its_send_sync_cmd(data, gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id));
 }
 
-static inline int fls_z(unsigned int x)
-{
-	unsigned int bits = sizeof(x) * 8;
-	unsigned int cmp = 1 << (bits - 1);
-
-	while (bits) {
-		if (x & cmp) {
-			return bits;
-		}
-		cmp >>= 1;
-		bits--;
-	}
-
-	return 0;
-}
-
 static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id,
 				    unsigned int nites)
 {
@@ -436,6 +503,36 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 	/* TOFIX check device_id & nites bounds */
 
 	entry_size = GITS_TYPER_ITT_ENTRY_SIZE_GET(sys_read64(data->base + GITS_TYPER)) + 1;
+
+	if (data->dev_table_is_indirect) {
+		size_t offset = device_id >> data->indirect_dev_lvl2_width;
+
+		/* Check if DeviceID can fit in the Level 1 table */
+		if (offset > (1 << data->indirect_dev_lvl1_width)) {
+			return -EINVAL;
+		}
+
+		/* Check if a Level 2 table has already been allocated for the DeviceID */
+		if (!data->indirect_dev_lvl1_table[offset]) {
+			void *alloc_addr;
+
+			LOG_INF("Allocating Level 2 Device %ldK table",
+				data->indirect_dev_page_size / 1024);
+
+			alloc_addr = k_aligned_alloc(data->indirect_dev_page_size,
+						     data->indirect_dev_page_size);
+			if (!alloc_addr) {
+				return -ENOMEM;
+			}
+
+			memset(alloc_addr, 0, data->indirect_dev_page_size);
+
+			data->indirect_dev_lvl1_table[offset] = (uintptr_t)alloc_addr |
+								MASK_SET(1, GITS_BASER_VALID);
+
+			dsb();
+		}
+	}
 
 	/* ITT must be of power of 2 */
 	nr_ites = MAX(2, nites);
