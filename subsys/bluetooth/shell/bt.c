@@ -1670,7 +1670,7 @@ static int cmd_per_adv_sync_delete(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Maximum index is %u but %u was requested",
+		shell_error(sh, "Maximum index is %ld but %d was requested",
 			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
@@ -1807,7 +1807,7 @@ static int cmd_per_adv_sync_transfer(const struct shell *sh, size_t argc,
 	}
 
 	if (index >= ARRAY_SIZE(per_adv_syncs)) {
-		shell_error(sh, "Maximum index is %u but %u was requested",
+		shell_error(sh, "Maximum index is %ld but %d was requested",
 			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
