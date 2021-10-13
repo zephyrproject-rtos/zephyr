@@ -390,8 +390,13 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 {
-	/* Must fit in a 31 bit count of HUNK_UNIT */
-	__ASSERT(bytes / CHUNK_UNIT <= 0x7fffffffU, "heap size is too big");
+	if (IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY)) {
+		/* Must fit in a 15 bit count of HUNK_UNIT */
+		__ASSERT(bytes / CHUNK_UNIT <= 0x7fffU, "heap size is too big");
+	} else {
+		/* Must fit in a 31 bit count of HUNK_UNIT */
+		__ASSERT(bytes / CHUNK_UNIT <= 0x7fffffffU, "heap size is too big");
+	}
 
 	/* Reserve the end marker chunk's header */
 	__ASSERT(bytes > heap_footer_bytes(bytes), "heap size is too small");
