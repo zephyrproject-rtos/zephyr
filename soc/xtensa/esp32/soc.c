@@ -133,9 +133,9 @@ void __attribute__((section(".iram1"))) __start(void)
 int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
-		esp32_rom_uart_tx_one_char('\r');
+		esp_rom_uart_tx_one_char('\r');
 	}
-	esp32_rom_uart_tx_one_char(c);
+	esp_rom_uart_tx_one_char(c);
 	return 0;
 }
 
@@ -156,9 +156,9 @@ void IRAM_ATTR esp_restart_noos(void)
 	soc_ll_stall_core(other_core_id);
 
 	/* Flush any data left in UART FIFOs */
-	esp32_rom_uart_tx_wait_idle(0);
-	esp32_rom_uart_tx_wait_idle(1);
-	esp32_rom_uart_tx_wait_idle(2);
+	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_uart_tx_wait_idle(1);
+	esp_rom_uart_tx_wait_idle(2);
 
 	/* Disable cache */
 	Cache_Read_Disable(0);
