@@ -8,14 +8,14 @@ external organization. Several of these are available.
 
 .. _toolchain_gnuarmemb:
 
-GNU ARM Embedded
+GNU Arm Embedded
 ****************
 
    .. warning::
 
       Do not install the toolchain into a path with spaces.
 
-#. Download and install a `GNU ARM Embedded`_ build for your operating system
+#. Download and install a `GNU Arm Embedded`_ build for your operating system
    and extract it on your file system.
 
    .. note::
@@ -210,6 +210,6 @@ You can build toolchains from source code using crosstool-NG.
       $ echo $XTOOLS_TOOLCHAIN_PATH
       /Volumes/CrossToolNGNew/build/output/
 
-.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _GNU Arm Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
 .. _crosstool-ng site: http://crosstool-ng.org
 .. _Arm Compiler 6: https://developer.arm.com/tools-and-software/embedded/arm-compiler/downloads/version-6
