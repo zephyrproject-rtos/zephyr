@@ -17,24 +17,8 @@
 
 #define MAX_PAC 1
 
-#define LC3_PRESET(_name, _codec, _qos) \
-	{ \
-		.name = _name, \
-		.codec = _codec, \
-		.qos = _qos, \
-	}
-
-struct lc3_preset {
-	const char *name;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
-};
-
 /* Mandatory support preset by both client and server */
-static struct lc3_preset preset_16_2_1 =
-	LC3_PRESET("16_2_1",
-		   BT_CODEC_LC3_CONFIG_16_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(40u, 2u, 10u, 40000u));
+static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
 static struct bt_conn *default_conn;
