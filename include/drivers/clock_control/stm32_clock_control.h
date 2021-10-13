@@ -92,10 +92,7 @@
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f100_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
-#define STM32_PLL_PREDIV1	DT_PROP(DT_NODELABEL(pll), prediv)
-/* We don't need to make a disctinction between PREDIV and PREDIV1 in dts */
-/* As PREDIV and PREDIV1 have the same description we can use prop prediv for both */
-#define STM32_PLL_PREDIV	STM32_PLL_PREDIV1
+#define STM32_PLL_PREDIV	DT_PROP(DT_NODELABEL(pll), prediv)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l0_pll_clock, okay)
 #define STM32_PLL_DIVISOR	DT_PROP(DT_NODELABEL(pll), div)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
