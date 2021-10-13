@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 BayLibre, SAS
- * Copyright (c) 2017 Linaro Limited.
+ * Copyright (c) 2017-2022 Linaro Limited.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,8 +12,10 @@
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/stm32_clock.h>
 
-/* common clock control device node for all STM32 chips */
+/** Common clock control device node for all STM32 chips */
 #define STM32_CLOCK_CONTROL_NODE DT_NODELABEL(rcc)
+
+/** RCC node related symbols */
 
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
@@ -31,6 +33,15 @@
 #define STM32_D1PPRE	DT_PROP(DT_NODELABEL(rcc), d1ppre)
 #define STM32_D3PPRE	DT_PROP(DT_NODELABEL(rcc), d3ppre)
 
+#define DT_RCC_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
+#define STM32_SYSCLK_SRC_PLL	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
+#define STM32_SYSCLK_SRC_HSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
+#define STM32_SYSCLK_SRC_HSE	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
+#define STM32_SYSCLK_SRC_MSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
+#define STM32_SYSCLK_SRC_CSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
+#define STM32_SYSCLK_SRC_MSIS	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
+
+/** PLL node related symbols */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f2_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) || \
@@ -73,16 +84,6 @@
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #endif
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
-#define DT_RCC_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
-#define STM32_SYSCLK_SRC_PLL	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
-#define STM32_SYSCLK_SRC_HSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
-#define STM32_SYSCLK_SRC_HSE	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
-#define STM32_SYSCLK_SRC_MSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
-#define STM32_SYSCLK_SRC_CSI	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
-#define STM32_SYSCLK_SRC_MSIS	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
 #define DT_PLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll))
@@ -93,6 +94,9 @@
 #define STM32_PLL_SRC_HSE	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
 #define STM32_PLL_SRC_PLL2	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(pll2))
 #endif
+
+
+/** Fixed clocks related symbols */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), fixed_clock, okay)
 #define STM32_LSE_CLOCK		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
@@ -124,6 +128,8 @@
 #define STM32_HSE_TCXO	DT_PROP(DT_NODELABEL(clk_hse), hse_tcxo)
 #define STM32_HSE_DIV2	DT_PROP(DT_NODELABEL(clk_hse), hse_div2)
 #endif
+
+/** Driver structure definition */
 
 struct stm32_pclken {
 	uint32_t bus;
