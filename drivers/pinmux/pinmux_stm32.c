@@ -219,7 +219,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	volatile uint32_t *reg;
 	uint16_t remap;
 
-	remap = (uint8_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
+	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
 
 	/* not remappable */
 	if (remap == NO_REMAP) {
