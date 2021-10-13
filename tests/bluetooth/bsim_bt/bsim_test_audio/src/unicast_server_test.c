@@ -14,10 +14,7 @@
 extern enum bst_result_t bst_result;
 
 /* Mandatory support preset by both client and server */
-static struct lc3_preset preset_16_2_1 =
-	LC3_PRESET("16_2_1",
-		   BT_CODEC_LC3_CONFIG_16_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(40u, 2u, 10u, 40000u));
+static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 static struct bt_audio_chan channels[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 

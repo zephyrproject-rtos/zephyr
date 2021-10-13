@@ -13,32 +13,11 @@
 
 extern enum bst_result_t bst_result;
 
-struct lc3_preset {
-	const char *name;
-	struct bt_codec codec;
-	struct bt_codec_qos qos;
-};
-
-#define LC3_PRESET(_name, _codec, _qos) \
-	{ \
-		.name = _name, \
-		.codec = _codec, \
-		.qos = _qos, \
-	}
-
 static void test_main(void)
 {
 	int err;
-	struct lc3_preset preset_48_1_2 =
-		LC3_PRESET("48_1_2",
-			   BT_CODEC_LC3_CONFIG_48_1,
-			   BT_CODEC_LC3_QOS_7_5_OUT_UNFRAMED(75u, 23u, 45u,
-							     40000u));
-	struct lc3_preset preset_48_2_2 =
-		LC3_PRESET("48_2_2",
-			   BT_CODEC_LC3_CONFIG_48_2,
-			   BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(100u, 23u, 60u,
-							    40000u));
+	struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
+	struct bt_audio_lc3_preset preset_16_2_2 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2;
 	struct bt_audio_chan broadcast_source_chans[BROADCAST_STREAM_CNT];
 	struct bt_audio_broadcast_source *source;
 
@@ -55,8 +34,8 @@ static void test_main(void)
 	printk("Creating broadcast source\n");
 	err = bt_audio_broadcast_source_create(broadcast_source_chans,
 					       ARRAY_SIZE(broadcast_source_chans),
-					       &preset_48_1_2.codec,
-					       &preset_48_1_2.qos,
+					       &preset_16_2_1.codec,
+					       &preset_16_2_1.qos,
 					       &source);
 	if (err != 0) {
 		FAIL("Unable to create broadcast source: %d", err);
@@ -64,8 +43,8 @@ static void test_main(void)
 	}
 
 	printk("Reconfiguring broadcast source\n");
-	err = bt_audio_broadcast_source_reconfig(source, &preset_48_2_2.codec,
-						 &preset_48_2_2.qos);
+	err = bt_audio_broadcast_source_reconfig(source, &preset_16_2_2.codec,
+						 &preset_16_2_2.qos);
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d", err);
 		return;
@@ -85,8 +64,8 @@ static void test_main(void)
 	printk("Recreating broadcast source\n");
 	err = bt_audio_broadcast_source_create(broadcast_source_chans,
 					       ARRAY_SIZE(broadcast_source_chans),
-					       &preset_48_1_2.codec,
-					       &preset_48_1_2.qos,
+					       &preset_16_2_1.codec,
+					       &preset_16_2_1.qos,
 					       &source);
 	if (err != 0) {
 		FAIL("Unable to create broadcast source: %d", err);

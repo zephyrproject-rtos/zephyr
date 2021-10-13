@@ -19,10 +19,7 @@ static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_conn *g_conn;
 
 /* Mandatory support preset by both client and server */
-static struct lc3_preset preset_16_2_1 =
-	LC3_PRESET("16_2_1",
-		   BT_CODEC_LC3_CONFIG_16_2,
-		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(40u, 2u, 10u, 40000u));
+static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_mtu_exchanged);
