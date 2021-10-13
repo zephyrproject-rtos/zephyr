@@ -1,0 +1,14 @@
+# ST STM32H7A3X MCU configuration options
+
+# Copyright (c) 2021 Electrolance Solutions
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H7A3XX
+
+config SOC
+	default "stm32h7a3xx"
+
+config NUM_IRQS
+	default 155
+
+endif # SOC_STM32H7A3XX
