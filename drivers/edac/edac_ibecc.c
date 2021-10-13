@@ -278,7 +278,7 @@ static const struct edac_driver_api api = {
 	.notify_cb_set = notify_callback_set,
 };
 
-int edac_ibecc_init(const struct device *dev)
+static int edac_ibecc_init(const struct device *dev)
 {
 	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
