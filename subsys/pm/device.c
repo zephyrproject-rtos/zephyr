@@ -97,7 +97,7 @@ int pm_device_state_set(const struct device *dev,
 	enum pm_device_action action;
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
@@ -140,7 +140,7 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = dev->pm_control(dev, action);
+	ret = pm->pm_control(dev, action);
 	if (ret < 0) {
 		return ret;
 	}
@@ -155,7 +155,7 @@ int pm_device_state_get(const struct device *dev,
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
@@ -174,7 +174,7 @@ bool pm_device_is_any_busy(void)
 	for (const struct device *dev = devs; dev < (devs + devc); dev++) {
 		struct pm_device *pm = dev->pm;
 
-		if (dev->pm_control == NULL) {
+		if (pm->pm_control == NULL) {
 			continue;
 		}
 
@@ -190,7 +190,7 @@ bool pm_device_is_busy(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return false;
 	}
 
@@ -201,7 +201,7 @@ void pm_device_busy_set(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return;
 	}
 
@@ -212,7 +212,7 @@ void pm_device_busy_clear(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return;
 	}
 
@@ -224,7 +224,7 @@ bool pm_device_wakeup_enable(struct device *dev, bool enable)
 	atomic_val_t flags, new_flags;
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool pm_device_wakeup_is_enabled(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return false;
 	}
 
@@ -260,7 +260,7 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	if (dev->pm_control == NULL) {
+	if (pm->pm_control == NULL) {
 		return false;
 	}
 
