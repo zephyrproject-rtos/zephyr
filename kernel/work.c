@@ -829,7 +829,7 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 
 static inline int work_delayable_busy_get_locked(const struct k_work_delayable *dwork)
 {
-	return atomic_get(&dwork->work.flags) & K_WORK_MASK;
+	return flags_get(&dwork->work.flags) & K_WORK_MASK;
 }
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
