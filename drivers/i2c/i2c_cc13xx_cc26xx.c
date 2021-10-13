@@ -435,9 +435,11 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 	.error = I2C_MASTER_ERR_NONE
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_pm_action);
+
 DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
-		i2c_cc13xx_cc26xx_pm_action,
+		PM_DEVICE_DT_INST_REF(0),
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		&i2c_cc13xx_cc26xx_driver_api);

@@ -230,11 +230,6 @@ out:
 
 	return ret;
 }
-
-#define ETH_MCUX_PM_ACTION_CB eth_mcux_device_pm_action
-
-#else
-#define ETH_MCUX_PM_ACTION_CB NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if ETH_MCUX_FIXED_LINK
@@ -1393,9 +1388,11 @@ static void eth_mcux_err_isr(const struct device *dev)
 		ETH_MCUX_PTP_FRAMEINFO(n)				\
 	};								\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
+	PM_DEVICE_DT_INST_DEFINE(n, eth_mcux_device_pm_action);		\
+									\
+	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
 			    eth_init,					\
-			    ETH_MCUX_PM_ACTION_CB,			\
+			    PM_DEVICE_DT_INST_REF(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

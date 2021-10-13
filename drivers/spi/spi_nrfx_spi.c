@@ -354,9 +354,10 @@ static int spi_nrfx_pm_action(const struct device *dev,
 			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
 		}							       \
 	};								       \
+	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_##idx##_init,					       \
-		      spi_nrfx_pm_action,				       \
+		      PM_DEVICE_DT_REF(SPI(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

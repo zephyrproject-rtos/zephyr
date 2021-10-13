@@ -488,9 +488,11 @@ static int lis2mdl_pm_action(const struct device *dev,
  */
 
 #define LIS2MDL_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2mdl_init,				\
-			    lis2mdl_pm_action,				\
+			    PM_DEVICE_DT_INST_REF(inst),		\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\
