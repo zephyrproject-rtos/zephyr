@@ -691,8 +691,7 @@ static int tls_set_own_cert(struct tls_context *tls,
 	}
 
 	err = mbedtls_pk_parse_key(&tls->priv_key, priv_key->buf,
-				   priv_key->len, NULL, 0,
-				   tls_ctr_drbg_random, NULL);
+				   priv_key->len, NULL, 0);
 	if (err != 0) {
 		return -EINVAL;
 	}
