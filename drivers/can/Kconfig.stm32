@@ -8,6 +8,7 @@ DT_COMPAT_ST_STM32_CAN := st,stm32-can
 config CAN_STM32
 	bool "STM32 CAN Driver"
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_CAN))
+	select CAN_HAS_RX_TIMESTAMP
 	help
 	  Enable STM32 CAN Driver.
 	  Tested on stm32F0, stm32L4 and stm32F7 series.

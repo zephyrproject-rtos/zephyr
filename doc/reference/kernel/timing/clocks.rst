@@ -36,7 +36,7 @@ For asynchronous timekeeping, the kernel defines a "ticks" concept.  A
 uptime and timeout bookkeeping.  Interrupts are expected to be
 delivered on tick boundaries to the extent practical, and no
 fractional ticks are tracked.  The choice of tick rate is configurable
-via :c:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.  Defaults on most
+via :c:kconfig:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.  Defaults on most
 hardware platforms (ones that support setting arbitrary interrupt
 timeouts) are expected to be in the range of 10 kHz, with software
 emulation platforms and legacy drivers using a more traditional 100 Hz
@@ -347,3 +347,9 @@ the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout
 value, and should never be called iteratively in a loop.
+
+
+API Reference
+*************
+
+.. doxygengroup:: clock_apis

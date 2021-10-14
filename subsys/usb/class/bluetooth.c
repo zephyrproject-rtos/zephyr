@@ -10,7 +10,6 @@
 #include <sys/byteorder.h>
 
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
 #include <net/buf.h>
@@ -24,6 +23,9 @@
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_bluetooth);
+
+#define USB_RF_SUBCLASS			0x01
+#define USB_BLUETOOTH_PROTOCOL		0x01
 
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
@@ -56,20 +58,20 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 	/* Interface descriptor 0 */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
+		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 3,
-		.bInterfaceClass = WIRELESS_DEVICE_CLASS,
-		.bInterfaceSubClass = RF_SUBCLASS,
-		.bInterfaceProtocol = BLUETOOTH_PROTOCOL,
+		.bInterfaceClass = USB_BCC_WIRELESS_CONTROLLER,
+		.bInterfaceSubClass = USB_RF_SUBCLASS,
+		.bInterfaceProtocol = USB_BLUETOOTH_PROTOCOL,
 		.iInterface = 0,
 	},
 
 	/* Interrupt Endpoint */
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = BLUETOOTH_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_INT_MPS),
@@ -79,7 +81,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 	/* Data Endpoint OUT */
 	.if0_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = BLUETOOTH_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
@@ -89,7 +91,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 	/* Data Endpoint IN */
 	.if0_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = BLUETOOTH_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
@@ -375,6 +377,11 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 				   int32_t *len, uint8_t **data)
 {
 	struct net_buf *buf;
+
+	if (usb_reqtype_is_to_host(setup) ||
+	    setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("len %u", *len);
 

@@ -76,13 +76,11 @@ struct bt_mesh_subnet_cb {
  *
  *  @brief Register a subnet event callback.
  *
- *  @param _handler Handler function, see @ref bt_mesh_subnet_cb::evt_handler.
+ *  @param _name Handler name.
  */
-#define BT_MESH_SUBNET_CB_DEFINE(_handler)                                     \
-	static const Z_STRUCT_SECTION_ITERABLE(                                \
-		bt_mesh_subnet_cb, _CONCAT(bt_mesh_subnet_cb_, _handler)) = {  \
-		.evt_handler = (_handler),                                     \
-	}
+#define BT_MESH_SUBNET_CB_DEFINE(_name)                                    \
+	static const STRUCT_SECTION_ITERABLE(                               \
+		bt_mesh_subnet_cb, _CONCAT(bt_mesh_subnet_cb_, _name))
 
 /** @brief Reset all Network keys. */
 void bt_mesh_net_keys_reset(void);

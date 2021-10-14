@@ -7,5 +7,10 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - dac
+  - adc
+  - dma
+  - usart
+  - spi
 ram: 192
 flash: 512

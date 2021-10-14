@@ -8,16 +8,6 @@ if BOARD_LPCXPRESSO55S16
 config BOARD
 	default "lpcxpresso55S16"
 
-if GPIO_MCUX_LPC
-
-config GPIO_MCUX_LPC_PORT0
-	default y
-
-config GPIO_MCUX_LPC_PORT1
-	default y
-
-endif # GPIO_MCUX_LPC
-
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

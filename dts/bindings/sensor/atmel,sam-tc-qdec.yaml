@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Timer Counter (TC) QDEC node
+
+compatible: "atmel,sam-tc-qdec"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    peripheral-id:
+      type: array
+      description: peripheral ID
+      required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        PIO pin configuration for Timer Counter signals.  We expect that
+        the phandles will reference pinctrl nodes.  These nodes will
+        have a nodelabel that matches the Atmel SoC HAL defines and
+        be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        In Quadrature Decoder mode TIOA0 & TIOB0 signals are expected
+
+        For example the TC0 on SAME7x would be
+           pinctrl-0 = <&pa0b_tc0_tioa0 &pa1b_tc0_tiob0>;

@@ -133,6 +133,7 @@ extern "C" {
 #define TID_WORK_SUBMIT (99u + TID_OFFSET)
 #define TID_WORK_SUBMIT_TO_QUEUE (100u + TID_OFFSET)
 #define TID_WORK_QUEUE_UNPLUG (101u + TID_OFFSET)
+#define TID_WORK_QUEUE_INIT (102u + TID_OFFSET)
 
 #define TID_FIFO_INIT (110u + TID_OFFSET)
 #define TID_FIFO_CANCEL_WAIT (111u + TID_OFFSET)
@@ -303,6 +304,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)                                    \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_WORK_CANCEL_SYNC, (uint32_t)ret)
+
+#define sys_port_trace_k_work_queue_init(queue)             \
+	SEGGER_SYSVIEW_RecordU32(TID_WORK_QUEUE_INIT,       \
+				 (uint32_t)(uintptr_t)queue)
 
 #define sys_port_trace_k_work_queue_start_enter(queue)                                             \
 	SEGGER_SYSVIEW_RecordU32(TID_WORK_QUEUE_START, (uint32_t)(uintptr_t)queue)

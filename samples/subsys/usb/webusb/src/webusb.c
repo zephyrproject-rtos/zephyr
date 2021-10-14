@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(webusb);
 
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
 #include "webusb.h"
@@ -40,7 +39,7 @@ uint8_t rx_buf[64];
 #define INITIALIZER_IF(num_ep, iface_class)				\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
-		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bDescriptorType = USB_DESC_INTERFACE,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
 		.bNumEndpoints = num_ep,				\
@@ -53,7 +52,7 @@ uint8_t rx_buf[64];
 #define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
 	{								\
 		.bLength = sizeof(struct usb_ep_descriptor),		\
-		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bDescriptorType = USB_DESC_ENDPOINT,			\
 		.bEndpointAddress = addr,				\
 		.bmAttributes = attr,					\
 		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
@@ -65,7 +64,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_out_ep;
 } __packed webusb_desc = {
-	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, CUSTOM_CLASS),
+	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, USB_BCC_VENDOR),
 	.if0_in_ep = INITIALIZER_IF_EP(AUTO_EP_IN, USB_DC_EP_BULK,
 				       WEBUSB_BULK_EP_MPS, 0),
 	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT, USB_DC_EP_BULK,

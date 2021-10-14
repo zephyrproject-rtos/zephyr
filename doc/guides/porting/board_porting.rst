@@ -55,7 +55,7 @@ not always used.
      - NXP Kinetis
      - Arm Cortex-M4
      - Arm
-   * - :ref:`stm32h474i_disco <stm32h747i_disco_board>`
+   * - :ref:`stm32h747i_disco <stm32h747i_disco_board>`
      - STM32H747XI
      - STM32H7
      - STMicro STM32

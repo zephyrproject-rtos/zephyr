@@ -105,6 +105,10 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -130,6 +134,8 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PC5
 - UART_2_TX : PA2
 - UART_2_RX : PA3
+- UART_4_TX : PC10
+- UART_4_RX : PC11
 - I2C1_SCL : PB6
 - I2C1_SDA : PB7
 - I2C2_SCL : PA9
@@ -157,6 +163,7 @@ Default Zephyr Peripheral Mapping:
 - LD10 : PE13
 - PWM : PA8
 - ADC1 : PA0
+- DAC1 : PA4
 
 System Clock
 ============

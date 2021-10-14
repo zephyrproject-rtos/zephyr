@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,48 @@ static void test_arm_min_q15(
 DEFINE_TEST_VARIANT3(arm_min_q15, 7, in_com1, 0, 7);
 DEFINE_TEST_VARIANT3(arm_min_q15, 16, in_com1, 1, 16);
 DEFINE_TEST_VARIANT3(arm_min_q15, 23, in_com1, 2, 23);
+
+static void test_arm_absmax_q15(
+	const q15_t *input1, int ref_index, size_t length)
+{
+	q15_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmax_q15(input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ref_absmax_val[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmax_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmax_q15, 7, in_absminmax, 0, 7);
+DEFINE_TEST_VARIANT3(arm_absmax_q15, 16, in_absminmax, 1, 16);
+DEFINE_TEST_VARIANT3(arm_absmax_q15, 23, in_absminmax, 2, 23);
+
+static void test_arm_absmin_q15(
+	const q15_t *input1, int ref_index, size_t length)
+{
+	q15_t val;
+	uint32_t index;
+
+	/* Run test function */
+	arm_absmin_q15(input1, length, &val, &index);
+
+	/* Validate output */
+	zassert_equal(val, ref_absmin_val[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	zassert_equal(index, ref_absmin_idx[ref_index],
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+}
+
+DEFINE_TEST_VARIANT3(arm_absmin_q15, 7, in_absminmax, 0, 7);
+DEFINE_TEST_VARIANT3(arm_absmin_q15, 16, in_absminmax, 1, 16);
+DEFINE_TEST_VARIANT3(arm_absmin_q15, 23, in_absminmax, 2, 23);
 
 static void test_arm_mean_q15(
 	const q15_t *input1, int ref_index, size_t length)
@@ -233,6 +275,12 @@ void test_statistics_q15(void)
 		ztest_unit_test(test_arm_min_q15_7),
 		ztest_unit_test(test_arm_min_q15_16),
 		ztest_unit_test(test_arm_min_q15_23),
+		ztest_unit_test(test_arm_absmax_q15_7),
+		ztest_unit_test(test_arm_absmax_q15_16),
+		ztest_unit_test(test_arm_absmax_q15_23),
+		ztest_unit_test(test_arm_absmin_q15_7),
+		ztest_unit_test(test_arm_absmin_q15_16),
+		ztest_unit_test(test_arm_absmin_q15_23),
 		ztest_unit_test(test_arm_mean_q15_7),
 		ztest_unit_test(test_arm_mean_q15_16),
 		ztest_unit_test(test_arm_mean_q15_23),

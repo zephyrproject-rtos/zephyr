@@ -19,7 +19,7 @@ properties:
     dma-channel-mask:
       type: int
       required: false
-      description: >
+      description: |
         Bitmask of available DMA channels in ascending order that are
         not reserved by firmware and are available to the
         kernel. i.e. first channel corresponds to LSB.

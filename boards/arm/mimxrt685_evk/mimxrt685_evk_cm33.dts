@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt6xx.dtsi>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP MIMXRT685-EVK board";
@@ -19,18 +20,22 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
+		/* For pwm test suites */
+		pwm-0 = &sc_timer;
+		pwm-led0 = &green_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
+		zephyr,flash-controller = &flexspi;
+		zephyr,flash = &mx25um51345g;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
-	};
-
-	flash0: flash@18000000 {
-		/* Octal flash MX25UM51345G */
-		reg = <0x18000000 DT_SIZE_K(65536)>;
 	};
 
 	gpio_keys {
@@ -58,6 +63,25 @@
 		red_led: led_3 {
 			gpios = <&gpio0 31 0>;
 			label = "User LED_RED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&sc_timer 0 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+			status = "okay";
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Blue PWM LED";
+			status = "okay";
+		};
+		red_pwm_led: red_pwm_led {
+			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
+			status = "disabled";
 		};
 	};
 
@@ -117,6 +141,10 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
@@ -137,6 +165,11 @@ arduino_i2c: &flexcomm2 {
 		int1-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+arduino_serial: &flexcomm4 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
 };
 
 arduino_spi: &flexcomm5 {
@@ -180,12 +213,30 @@ i2s1: &flexcomm3 {
 		spi-max-frequency = <200000000>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(24)>;
+			};
+			slot1_partition: partition@1810000 {
+				label = "image-1";
+				reg = <0x01810000 DT_SIZE_M(24)>;
+			};
+			scratch_partition: partition@3010000 {
+				label = "image-scratch";
+				reg = <0x03010000 DT_SIZE_K(8128)>;
+			};
 			storage_partition: partition@3f00000 {
 				label = "storage";
 				reg = <0x03f00000 DT_SIZE_M(1)>;
@@ -202,6 +253,10 @@ i2s1: &flexcomm3 {
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
 &dma0 {
 	/*
 	 * The total number of dma channels available is defined by
@@ -212,6 +267,10 @@ i2s1: &flexcomm3 {
 	 * memory.
 	 */
 	dma-channels = <20>;
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
 
@@ -232,5 +291,44 @@ i2s1: &flexcomm3 {
 };
 
 &red_led {
+	status = "okay";
+};
+
+&sc_timer {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
+	no-1-8-v;
+	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
 	status = "okay";
 };

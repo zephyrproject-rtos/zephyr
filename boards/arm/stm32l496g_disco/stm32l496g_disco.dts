@@ -120,6 +120,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	cs-gpios = <&gpioa 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -131,5 +132,10 @@
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = < &adc1_in2_pc1>;
 	status = "okay";
 };

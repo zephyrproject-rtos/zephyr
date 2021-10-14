@@ -3,7 +3,22 @@
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
 
+# If a pre-built static library containing kernel code exists in
+# this directory, libkernel.a, link it with the application code
+# instead of building from source.
+zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} libkernel_stem)
+set(libkernel ${CMAKE_CURRENT_SOURCE_DIR}/lib${libkernel_stem}${CMAKE_STATIC_LIBRARY_SUFFIX})
+unset(libkernel_stem)
+
+if(EXISTS ${libkernel})
+
+add_library(kernel INTERFACE)
+target_link_libraries(kernel INTERFACE ${libkernel})
+
+else()
+
 list(APPEND kernel_files
+  main_weak.c
   banner.c
   device.c
   errno.c
@@ -92,6 +107,10 @@ target_include_directories(kernel PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 
+target_link_libraries(kernel zephyr_interface)
+
+endif()
+
 add_dependencies(kernel zephyr_generated_headers)
 
-target_link_libraries(kernel zephyr_interface)
+unset(libkernel)

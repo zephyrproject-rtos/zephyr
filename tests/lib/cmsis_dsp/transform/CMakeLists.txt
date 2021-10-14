@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cmsis_dsp_transform)
 
@@ -26,6 +26,16 @@ target_sources_ifdef(
 target_sources_ifdef(
   CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ31
   app PRIVATE src/rq31.c
+  )
+
+target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF16
+  app PRIVATE src/cf16.c
+  )
+
+target_sources_ifdef(
+  CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF16
+  app PRIVATE src/rf16.c
   )
 
 target_sources_ifdef(

@@ -44,7 +44,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -87,7 +87,8 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
-static void iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
+static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+		struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 	iso_print_data(buf->data, buf->len);
@@ -124,11 +125,12 @@ static struct bt_iso_chan iso_chan = {
 	.qos = &iso_qos,
 };
 
-static int iso_accept(struct bt_conn *conn, struct bt_iso_chan **chan)
+static int iso_accept(const struct bt_iso_accept_info *info,
+		      struct bt_iso_chan **chan)
 {
-	printk("Incoming conn %p\n", conn);
+	printk("Incoming request from %p\n", (void *)info->acl);
 
-	if (iso_chan.conn) {
+	if (iso_chan.iso) {
 		printk("No channels available\n");
 		return -ENOMEM;
 	}
@@ -154,8 +156,6 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {

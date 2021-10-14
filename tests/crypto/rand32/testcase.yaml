@@ -6,8 +6,8 @@ tests:
     extra_args: CONF_FILE=prj_sw_random_systimer.conf
     tags: crypto random security
     min_ram: 16
-  crypto.rand32.random_hw_xoroshiro:
-    extra_args: CONF_FILE=prj_hw_random_xoroshiro.conf
+  crypto.rand32.random_hw_xoshiro:
+    extra_args: CONF_FILE=prj_hw_random_xoshiro.conf
     filter: CONFIG_ENTROPY_HAS_DRIVER
     tags: crypto entropy random security
     min_ram: 16

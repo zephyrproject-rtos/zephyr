@@ -20,6 +20,11 @@ for the GPIOTE interrupt. Button 1 is configured to create an event when pushed.
 This calls the ``button_handler()`` callback and triggers the LED 1 pin OUT task.
 LED is then toggled.
 
+Please note that no debouncing mechanism is used for the button, so it may
+happen that one press results in multiple events. And because the event-task
+connection is handled in hardware, for very fast coming events, toggling of
+the LED may sometimes be even unnoticeable.
+
 Requirements
 ************
 

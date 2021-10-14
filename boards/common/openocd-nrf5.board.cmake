@@ -27,7 +27,6 @@ set(pre_init_cmds
   "source [find interface/${OPENOCD_NRF5_INTERFACE}.cfg]"
   "transport select swd"
   "source [find target/${OPENOCD_NRF5_SUBFAMILY}.cfg]"
-  "$_TARGETNAME configure -rtos auto"
 )
 
 foreach(cmd ${pre_init_cmds})

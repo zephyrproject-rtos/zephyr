@@ -12,7 +12,7 @@
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */
-#define EVENT_OVERHEAD_END_US         40
+#define EVENT_OVERHEAD_END_US         100
 #define EVENT_JITTER_US               16
 /* Inter-Event Space (IES) */
 #define EVENT_TIES_US                 625
@@ -27,5 +27,10 @@
 #define EVENT_RX_TO_US(phy) ((((((phy)&0x03) + 4)<<3)/BIT((((phy)&0x3)>>1))) + \
 				  EVENT_RX_JITTER_US(phy))
 
-/* TODO - fix up numbers re. HW */
-#define EVENT_RX_TX_TURNAROUND(phy)  ((phy) == 1?100:((phy) == 2 ? 80:900))
+/* Turnaround time between RX and TX is based on CPU execution speed. It also
+ * includes radio ramp up time. The value must meet hard deadline of `150 us`
+ * imposed by BT Core spec for inter frame spacing (IFS). To include CPUs with
+ * slow clock, the conservative approach was taken to use IFS value for all
+ * cases.
+ */
+#define EVENT_RX_TX_TURNAROUND(phy)   150

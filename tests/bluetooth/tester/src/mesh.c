@@ -1,5 +1,3 @@
-/* mesh.c - Bluetooth Mesh Tester */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *
@@ -40,6 +38,8 @@ static uint32_t iv_index;
 static uint16_t addr;
 static uint8_t dev_key[16];
 static uint8_t input_size;
+static uint8_t pub_key[64];
+static uint8_t priv_key[32];
 
 /* Configured provisioning data */
 static uint8_t dev_uuid[16];
@@ -52,6 +52,11 @@ static uint16_t vnd_app_key_idx = 0x000f;
 
 /* Model send data */
 #define MODEL_BOUNDS_MAX 2
+
+/* Model Authentication Method */
+#define AUTH_METHOD_STATIC 0x01
+#define AUTH_METHOD_OUTPUT 0x02
+#define AUTH_METHOD_INPUT 0x03
 
 static struct model_data {
 	struct bt_mesh_model *model;
@@ -73,33 +78,81 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
 
 	net_buf_simple_init(buf, 0);
-
-	/* 1st octet */
-	(void)memset(net_buf_simple_add(buf, 1), 0, 1);
-	tester_set_bit(buf->data, MESH_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(buf->data, MESH_CONFIG_PROVISIONING);
-	tester_set_bit(buf->data, MESH_PROVISION_NODE);
-	tester_set_bit(buf->data, MESH_INIT);
-	tester_set_bit(buf->data, MESH_RESET);
-	tester_set_bit(buf->data, MESH_INPUT_NUMBER);
-	tester_set_bit(buf->data, MESH_INPUT_STRING);
-	/* 2nd octet */
-	tester_set_bit(buf->data, MESH_IVU_TEST_MODE);
-	tester_set_bit(buf->data, MESH_IVU_TOGGLE_STATE);
-	tester_set_bit(buf->data, MESH_NET_SEND);
-	tester_set_bit(buf->data, MESH_HEALTH_GENERATE_FAULTS);
-	tester_set_bit(buf->data, MESH_HEALTH_CLEAR_FAULTS);
-	tester_set_bit(buf->data, MESH_LPN);
-	tester_set_bit(buf->data, MESH_LPN_POLL);
-	tester_set_bit(buf->data, MESH_MODEL_SEND);
-	/* 3rd octet */
-	(void)memset(net_buf_simple_add(buf, 1), 0, 1);
+	net_buf_simple_add_u8(buf, MESH_READ_SUPPORTED_COMMANDS);
+	net_buf_simple_add_u8(buf, MESH_CONFIG_PROVISIONING);
+	net_buf_simple_add_u8(buf, MESH_PROVISION_NODE);
+	net_buf_simple_add_u8(buf, MESH_INIT);
+	net_buf_simple_add_u8(buf, MESH_RESET);
+	net_buf_simple_add_u8(buf, MESH_INPUT_NUMBER);
+	net_buf_simple_add_u8(buf, MESH_INPUT_STRING);
+	net_buf_simple_add_u8(buf, MESH_IVU_TEST_MODE);
+	net_buf_simple_add_u8(buf, MESH_IVU_TOGGLE_STATE);
+	net_buf_simple_add_u8(buf, MESH_NET_SEND);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_GENERATE_FAULTS);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_CLEAR_FAULTS);
+	net_buf_simple_add_u8(buf, MESH_LPN);
+	net_buf_simple_add_u8(buf, MESH_LPN_POLL);
+	net_buf_simple_add_u8(buf, MESH_MODEL_SEND);
 #if defined(CONFIG_BT_TESTING)
-	tester_set_bit(buf->data, MESH_LPN_SUBSCRIBE);
-	tester_set_bit(buf->data, MESH_LPN_UNSUBSCRIBE);
-	tester_set_bit(buf->data, MESH_RPL_CLEAR);
+	net_buf_simple_add_u8(buf, MESH_LPN_SUBSCRIBE);
+	net_buf_simple_add_u8(buf, MESH_LPN_UNSUBSCRIBE);
+	net_buf_simple_add_u8(buf, MESH_RPL_CLEAR);
 #endif /* CONFIG_BT_TESTING */
-	tester_set_bit(buf->data, MESH_PROXY_IDENTITY);
+	net_buf_simple_add_u8(buf, MESH_PROXY_IDENTITY);
+	net_buf_simple_add_u8(buf, MESH_COMP_DATA_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_BEACON_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_BEACON_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_DEFAULT_TTL_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_DEFAULT_TTL_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_GATT_PROXY_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_GATT_PROXY_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_FRIEND_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_FRIEND_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_RELAY_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_RELAY_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_PUB_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_PUB_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_ADD);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_DEL);
+	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_ADD);
+	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_DEL);
+	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_ADD);
+	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_DEL);
+	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_BIND);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_UNBIND);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_VND_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_PUB_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_PUB_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_SUB_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_HEARTBEAT_SUB_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_NET_TRANS_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_NET_TRANS_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_OVW);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_DEL_ALL);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_GET_VND);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_ADD);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_DEL);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_SUB_VA_OVW);
+	net_buf_simple_add_u8(buf, MESH_CFG_NETKEY_UPDATE);
+	net_buf_simple_add_u8(buf, MESH_CFG_APPKEY_UPDATE);
+	net_buf_simple_add_u8(buf, MESH_CFG_NODE_IDT_SET);
+	net_buf_simple_add_u8(buf, MESH_CFG_NODE_IDT_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_NODE_RESET);
+	net_buf_simple_add_u8(buf, MESH_CFG_LPN_TIMEOUT_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_BIND_VND);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_CLEAR);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_SET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_SET);
+	net_buf_simple_add_u8(buf, MESH_PROVISION_ADV);
+	net_buf_simple_add_u8(buf, MESH_CFG_KRP_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_KRP_SET);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -187,7 +240,7 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
-void show_faults(uint8_t test_id, uint16_t cid, uint8_t *faults, size_t fault_count)
+static void show_faults(uint8_t test_id, uint16_t cid, uint8_t *faults, size_t fault_count)
 {
 	size_t i;
 
@@ -390,6 +443,7 @@ static struct bt_mesh_prov prov = {
 static void config_prov(uint8_t *data, uint16_t len)
 {
 	const struct mesh_config_provisioning_cmd *cmd = (void *) data;
+	int err = 0;
 
 	LOG_DBG("");
 
@@ -401,13 +455,33 @@ static void config_prov(uint8_t *data, uint16_t len)
 	prov.input_size = cmd->in_size;
 	prov.input_actions = sys_le16_to_cpu(cmd->in_actions);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+	if (cmd->auth_method == AUTH_METHOD_OUTPUT) {
+		err = bt_mesh_auth_method_set_output(prov.output_actions, prov.output_size);
+	} else if (cmd->auth_method == AUTH_METHOD_INPUT) {
+		err = bt_mesh_auth_method_set_input(prov.input_actions, prov.input_size);
+	} else if (cmd->auth_method == AUTH_METHOD_STATIC) {
+		err = bt_mesh_auth_method_set_static(static_auth, sizeof(static_auth));
+	}
+
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->set_keys->pub_key, sizeof(cmd->set_keys->pub_key));
+		memcpy(priv_key, cmd->set_keys->priv_key, sizeof(cmd->set_keys->priv_key));
+		prov.public_key_be = pub_key;
+		prov.private_key_be = priv_key;
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CONFIG_PROVISIONING, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void provision_node(uint8_t *data, uint16_t len)
 {
-	const struct mesh_provision_node_cmd *cmd = (void *) data;
+	const struct mesh_provision_node_cmd *cmd = (void *)data;
+	int err;
 
 	LOG_DBG("");
 
@@ -419,8 +493,51 @@ static void provision_node(uint8_t *data, uint16_t len)
 	iv_index = sys_le32_to_cpu(cmd->iv_index);
 	net_key_idx = sys_le16_to_cpu(cmd->net_key_idx);
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+	if (len > sizeof(*cmd)) {
+		memcpy(pub_key, cmd->pub_key, sizeof(pub_key));
+
+		err = bt_mesh_prov_remote_pub_key_set(pub_key);
+		if (err) {
+			LOG_ERR("err %d", err);
+			goto fail;
+		}
+	}
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	err = bt_mesh_cdb_create(net_key);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+#endif
+	err = bt_mesh_provision(net_key, net_key_idx, flags, iv_index, addr,
+				dev_key);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void provision_adv(uint8_t *data, uint16_t len)
+{
+	const struct mesh_provision_adv_cmd *cmd = (void *)data;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_provision_adv(cmd->uuid, cmd->net_idx, cmd->address,
+				    cmd->attention_duration);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_ADV, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void init(uint8_t *data, uint16_t len)
@@ -759,6 +876,1488 @@ static void proxy_identity_enable(uint8_t *data, uint16_t len)
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
+static void composition_data_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_comp_data_get_cmd *cmd = (void *)data;
+	uint8_t page;
+	struct net_buf_simple *comp = NET_BUF_SIMPLE(128);
+	int err;
+
+	LOG_DBG("");
+
+	bt_mesh_cfg_cli_timeout_set(10 * MSEC_PER_SEC);
+
+	net_buf_simple_init(comp, 0);
+
+	err = bt_mesh_cfg_comp_data_get(cmd->net_idx, cmd->address, cmd->page,
+					&page, comp);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX,
+		    comp->data, comp->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_krp_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_krp_get_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t status;
+	uint8_t phase;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_krp_get(cmd->net_idx, cmd->address, cmd->key_net_idx, &status, &phase);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, phase);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_krp_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_krp_set_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t status;
+	uint8_t phase;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_krp_set(cmd->net_idx, cmd->address, cmd->key_net_idx, cmd->transition,
+				  &status, &phase);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, phase);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_beacon_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_beacon_get(cmd->net_idx, cmd->address, &status);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_beacon_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_beacon_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_beacon_set(cmd->net_idx, cmd->address, cmd->val,
+				     &status);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_BEACON_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_default_ttl_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_ttl_get(cmd->net_idx, cmd->address, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_default_ttl_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_default_ttl_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_ttl_set(cmd->net_idx, cmd->address, cmd->val,
+				  &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_DEFAULT_TTL_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_gatt_proxy_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_gatt_proxy_get(cmd->net_idx, cmd->address, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_gatt_proxy_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_gatt_proxy_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_gatt_proxy_set(cmd->net_idx, cmd->address, cmd->val,
+					 &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_GATT_PROXY_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_friend_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_friend_get(cmd->net_idx, cmd->address, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_friend_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_friend_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_friend_set(cmd->net_idx, cmd->address, cmd->val,
+				     &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_FRIEND_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_relay_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint8_t transmit;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_relay_get(cmd->net_idx, cmd->address, &status,
+				    &transmit);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_relay_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_relay_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint8_t transmit;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_relay_set(cmd->net_idx, cmd->address, cmd->new_relay,
+				    cmd->new_transmit, &status, &transmit);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_RELAY_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_mod_pub_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_pub_get_cmd *cmd = (void *)data;
+	struct bt_mesh_cfg_mod_pub pub;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+	err = bt_mesh_cfg_mod_pub_get(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->model_id, &pub,
+				      &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_pub_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_pub_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_mod_pub pub;
+	int err;
+
+	LOG_DBG("");
+
+	pub.addr = cmd->pub_addr;
+	pub.uuid = NULL;
+	pub.app_idx = cmd->app_idx;
+	pub.cred_flag = cmd->cred_flag;
+	pub.ttl = cmd->ttl;
+	pub.period = cmd->period;
+	pub.transmit = cmd->transmit;
+
+	err = bt_mesh_cfg_mod_pub_set(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->model_id, &pub,
+				      &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_pub_va_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_pub_va_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_mod_pub pub;
+	int err;
+
+	LOG_DBG("");
+
+	pub.uuid = cmd->uuid;
+	pub.app_idx = cmd->app_idx;
+	pub.cred_flag = cmd->cred_flag;
+	pub.ttl = cmd->ttl;
+	pub.period = cmd->period;
+	pub.transmit = cmd->transmit;
+
+	err = bt_mesh_cfg_mod_pub_set(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->model_id,
+				      &pub, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_PUB_VA_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_add(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_add(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->sub_addr,
+				      cmd->model_id, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_ADD, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_ovw(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_overwrite(cmd->net_idx, cmd->address,
+					    cmd->elem_address, cmd->sub_addr,
+					    cmd->model_id, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_OVW, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_del(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_del(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->sub_addr,
+				      cmd->model_id, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_del_all(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_del_all_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_del_all(cmd->net_idx, cmd->address,
+					  cmd->elem_address, cmd->model_id,
+					  &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_DEL_ALL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	int16_t subs;
+	size_t sub_cn;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_get(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->model_id, &status,
+				      &subs, &sub_cn);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_get_vnd(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_get_vnd_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t subs;
+	size_t sub_cn;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_get_vnd(cmd->net_idx, cmd->address,
+					  cmd->elem_address, cmd->model_id,
+					  cmd->cid, &status, &subs, &sub_cn);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_GET_VND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_va_add(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t virt_addr_rcv;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_va_add(cmd->net_idx, cmd->address,
+					 cmd->elem_address, cmd->uuid,
+					 cmd->model_id, &virt_addr_rcv,
+					 &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_ADD, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_va_del(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t virt_addr_rcv;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_va_del(cmd->net_idx, cmd->address,
+					 cmd->elem_address, cmd->uuid,
+					 cmd->model_id, &virt_addr_rcv,
+					 &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_DEL, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_mod_sub_va_ovw(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_sub_va_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t virt_addr_rcv;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_sub_va_overwrite(cmd->net_idx, cmd->address,
+					       cmd->elem_address,
+					       cmd->uuid, cmd->model_id,
+					       &virt_addr_rcv, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_SUB_VA_OVW, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_netkey_add(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_netkey_add_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_key_add(cmd->net_idx, cmd->address,
+				      cmd->net_key_idx, cmd->net_key, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_netkey_update(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_netkey_add_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_key_update(cmd->net_idx, cmd->address,
+					 cmd->net_key_idx, cmd->net_key,
+					 &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_UPDATE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_netkey_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint16_t keys;
+	size_t key_cnt;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_key_get(cmd->net_idx, cmd->address, &keys,
+				      &key_cnt);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX,
+		    (uint8_t *)&keys, key_cnt);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_netkey_del(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_netkey_del_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_key_del(cmd->net_idx, cmd->address,
+				      cmd->net_key_idx, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NETKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_appkey_add(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_appkey_add_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_app_key_add(cmd->net_idx, cmd->address,
+				      cmd->net_key_idx, cmd->app_key_idx,
+				      cmd->app_key, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_ADD, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_appkey_update(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_appkey_add_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_app_key_update(cmd->net_idx, cmd->address,
+					 cmd->net_key_idx, cmd->app_key_idx,
+					 cmd->app_key, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_UPDATE, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_appkey_del(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_appkey_del_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_app_key_del(cmd->net_idx, cmd->address,
+				      cmd->net_key_idx, cmd->app_key_idx,
+				      &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_DEL, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_appkey_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_appkey_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t keys;
+	size_t key_cnt;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_app_key_get(cmd->net_idx, cmd->address,
+				      cmd->net_key_idx, &status, &keys,
+				      &key_cnt);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX,
+		    &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_APPKEY_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_model_app_bind(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_app_bind(cmd->net_idx, cmd->address,
+				       cmd->elem_address, cmd->app_key_idx,
+				       cmd->mod_id, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_model_app_bind_vnd(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_app_bind_vnd_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_app_bind_vnd(cmd->net_idx, cmd->address,
+					   cmd->elem_address, cmd->app_key_idx,
+					   cmd->mod_id, cmd->cid, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_BIND_VND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_model_app_unbind(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_app_bind_cmd *cmd = (void *)data;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_app_unbind(cmd->net_idx, cmd->address,
+					 cmd->elem_address, cmd->app_key_idx,
+					 cmd->mod_id, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_UNBIND, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_model_app_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_app_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t apps;
+	size_t app_cnt;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_app_get(cmd->net_idx, cmd->address,
+				      cmd->elem_address, cmd->mod_id, &status,
+				      &apps, &app_cnt);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_model_app_vnd_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_model_app_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	uint16_t apps;
+	size_t app_cnt;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_mod_app_get_vnd(cmd->net_idx, cmd->address,
+					  cmd->elem_address, cmd->mod_id,
+					  cmd->cid, &status, &apps, &app_cnt);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_MODEL_APP_VND_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_hb_pub_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_heartbeat_pub_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_hb_pub pub;
+	int err;
+
+	LOG_DBG("");
+
+	pub.net_idx = cmd->net_key_idx;
+	pub.dst = cmd->destination;
+	pub.count = cmd->count_log;
+	pub.period = cmd->period_log;
+	pub.ttl = cmd->ttl;
+	pub.feat = cmd->features;
+
+	err = bt_mesh_cfg_hb_pub_set(cmd->net_idx, cmd->address, &pub, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_hb_pub_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_hb_pub pub;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_hb_pub_get(cmd->net_idx, cmd->address, &pub, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_PUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_hb_sub_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_heartbeat_sub_set_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_hb_sub sub;
+	int err;
+
+	LOG_DBG("");
+
+	sub.src = cmd->source;
+	sub.dst = cmd->destination;
+	sub.period = cmd->period_log;
+
+	err = bt_mesh_cfg_hb_sub_set(cmd->net_idx, cmd->address, &sub, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_hb_sub_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t status;
+	struct bt_mesh_cfg_hb_sub sub;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_hb_sub_get(cmd->net_idx, cmd->address, &sub, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET,
+		    CONTROLLER_INDEX, &status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_HEARTBEAT_SUB_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_net_trans_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_val_get_cmd *cmd = (void *)data;
+	uint8_t transmit;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_transmit_get(cmd->net_idx, cmd->address,
+					   &transmit);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET,
+		    CONTROLLER_INDEX, &transmit, sizeof(transmit));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_net_trans_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_net_trans_set_cmd *cmd = (void *)data;
+	uint8_t transmit;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_net_transmit_set(cmd->net_idx, cmd->address,
+					   cmd->transmit, &transmit);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET,
+		    CONTROLLER_INDEX, &transmit, sizeof(transmit));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NET_TRANS_SET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void config_node_identity_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_node_idt_set_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t identity;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_node_identity_set(cmd->net_idx, cmd->address,
+					    cmd->net_key_idx, cmd->new_identity,
+					    &status, &identity);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, identity);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET,
+		    CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_SET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_node_identity_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_node_idt_get_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t identity;
+	uint8_t status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_node_identity_get(cmd->net_idx, cmd->address,
+					    cmd->net_key_idx, &status,
+					    &identity);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, identity);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET,
+		    CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_IDT_GET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_node_reset(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_node_reset_cmd *cmd = (void *)data;
+	bool status;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_node_reset(cmd->net_idx, cmd->address, &status);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX,
+		    (uint8_t *)&status, sizeof(status));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_NODE_RESET, CONTROLLER_INDEX, BTP_STATUS_FAILED);
+}
+
+static void config_lpn_timeout_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_lpn_timeout_cmd *cmd = (void *)data;
+	int32_t polltimeout;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_lpn_timeout_get(cmd->net_idx, cmd->address,
+					  cmd->unicast_addr, &polltimeout);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET,
+		    CONTROLLER_INDEX, (uint8_t *)&polltimeout,
+		    sizeof(polltimeout));
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_LPN_TIMEOUT_GET, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void health_fault_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_get_cmd *cmd = (void *)data;
+	uint8_t test_id;
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_fault_get(cmd->address, cmd->app_idx, cmd->cid,
+				       &test_id, faults, &fault_count);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_GET, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_fault_clear(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_clear_cmd *cmd = (void *)data;
+	uint8_t test_id;
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
+						 cmd->cid, &test_id, faults,
+						 &fault_count);
+	} else {
+		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
+						 cmd->cid, NULL, faults,
+						 &fault_count);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+			    CONTROLLER_INDEX, &test_id, sizeof(test_id));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_fault_test(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_test_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(6);
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	uint8_t test_id;
+	uint16_t cid;
+	int err;
+
+	LOG_DBG("");
+
+	test_id = cmd->test_id;
+	cid = cmd->cid;
+
+	if (cmd->ack) {
+		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
+						cid, test_id, faults,
+						&fault_count);
+	} else {
+		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
+						cid, test_id, NULL,
+						&fault_count);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		net_buf_simple_init(buf, 0);
+		net_buf_simple_add_u8(buf, test_id);
+		net_buf_simple_add_le16(buf, cid);
+		net_buf_simple_add_mem(buf, faults, fault_count);
+
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+			    CONTROLLER_INDEX, buf->data, buf->len);
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_period_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_period_get_cmd *cmd = (void *)data;
+	uint8_t divisor;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_period_get(cmd->address, cmd->app_idx, &divisor);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_GET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_period_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_period_set_cmd *cmd = (void *)data;
+	uint8_t updated_divisor;
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
+						cmd->divisor, &updated_divisor);
+	} else {
+		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
+						cmd->divisor, NULL);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+			    CONTROLLER_INDEX, &updated_divisor,
+			    sizeof(updated_divisor));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_attention_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_attention_get_cmd *cmd = (void *)data;
+	uint8_t attention;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_attention_get(cmd->address, cmd->app_idx,
+					   &attention);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_GET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_attention_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_attention_set_cmd *cmd = (void *)data;
+	uint8_t updated_attention;
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
+						   cmd->attention,
+						   &updated_attention);
+	} else {
+		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
+						   cmd->attention, NULL);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+			    CONTROLLER_INDEX, &updated_attention,
+			    sizeof(updated_attention));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len)
 {
 	switch (opcode) {
@@ -806,6 +2405,174 @@ void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t l
 		break;
 	case MESH_MODEL_SEND:
 		model_send(data, len);
+		break;
+	case MESH_COMP_DATA_GET:
+		composition_data_get(data, len);
+		break;
+	case MESH_CFG_BEACON_GET:
+		config_beacon_get(data, len);
+		break;
+	case MESH_CFG_BEACON_SET:
+		config_beacon_set(data, len);
+		break;
+	case MESH_CFG_DEFAULT_TTL_GET:
+		config_default_ttl_get(data, len);
+		break;
+	case MESH_CFG_DEFAULT_TTL_SET:
+		config_default_ttl_set(data, len);
+		break;
+	case MESH_CFG_GATT_PROXY_GET:
+		config_gatt_proxy_get(data, len);
+		break;
+	case MESH_CFG_GATT_PROXY_SET:
+		config_gatt_proxy_set(data, len);
+		break;
+	case MESH_CFG_FRIEND_GET:
+		config_friend_get(data, len);
+		break;
+	case MESH_CFG_FRIEND_SET:
+		config_friend_set(data, len);
+		break;
+	case MESH_CFG_RELAY_GET:
+		config_relay_get(data, len);
+		break;
+	case MESH_CFG_RELAY_SET:
+		config_relay_set(data, len);
+		break;
+	case MESH_CFG_MODEL_PUB_GET:
+		config_mod_pub_get(data, len);
+		break;
+	case MESH_CFG_MODEL_PUB_SET:
+		config_mod_pub_set(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_ADD:
+		config_mod_sub_add(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_DEL:
+		config_mod_sub_del(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_OVW:
+		config_mod_sub_ovw(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_DEL_ALL:
+		config_mod_sub_del_all(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_GET:
+		config_mod_sub_get(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_GET_VND:
+		config_mod_sub_get_vnd(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_VA_ADD:
+		config_mod_sub_va_add(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_VA_DEL:
+		config_mod_sub_va_del(data, len);
+		break;
+	case MESH_CFG_MODEL_SUB_VA_OVW:
+		config_mod_sub_va_ovw(data, len);
+		break;
+	case MESH_CFG_NETKEY_ADD:
+		config_netkey_add(data, len);
+		break;
+	case MESH_CFG_NETKEY_GET:
+		config_netkey_get(data, len);
+		break;
+	case MESH_CFG_NETKEY_DEL:
+		config_netkey_del(data, len);
+		break;
+	case MESH_CFG_NETKEY_UPDATE:
+		config_netkey_update(data, len);
+		break;
+	case MESH_CFG_APPKEY_ADD:
+		config_appkey_add(data, len);
+		break;
+	case MESH_CFG_APPKEY_DEL:
+		config_appkey_del(data, len);
+		break;
+	case MESH_CFG_APPKEY_GET:
+		config_appkey_get(data, len);
+		break;
+	case MESH_CFG_APPKEY_UPDATE:
+		config_appkey_update(data, len);
+		break;
+	case MESH_CFG_MODEL_APP_BIND:
+		config_model_app_bind(data, len);
+		break;
+	case MESH_CFG_MODEL_APP_UNBIND:
+		config_model_app_unbind(data, len);
+		break;
+	case MESH_CFG_MODEL_APP_GET:
+		config_model_app_get(data, len);
+		break;
+	case MESH_CFG_MODEL_APP_VND_GET:
+		config_model_app_vnd_get(data, len);
+		break;
+	case MESH_CFG_HEARTBEAT_PUB_SET:
+		config_hb_pub_set(data, len);
+		break;
+	case MESH_CFG_HEARTBEAT_PUB_GET:
+		config_hb_pub_get(data, len);
+		break;
+	case MESH_CFG_HEARTBEAT_SUB_SET:
+		config_hb_sub_set(data, len);
+		break;
+	case MESH_CFG_HEARTBEAT_SUB_GET:
+		config_hb_sub_get(data, len);
+		break;
+	case MESH_CFG_NET_TRANS_GET:
+		config_net_trans_get(data, len);
+		break;
+	case MESH_CFG_NET_TRANS_SET:
+		config_net_trans_set(data, len);
+		break;
+	case MESH_CFG_NODE_IDT_SET:
+		config_node_identity_set(data, len);
+		break;
+	case MESH_CFG_NODE_IDT_GET:
+		config_node_identity_get(data, len);
+		break;
+	case MESH_CFG_NODE_RESET:
+		config_node_reset(data, len);
+		break;
+	case MESH_CFG_LPN_TIMEOUT_GET:
+		config_lpn_timeout_get(data, len);
+		break;
+	case MESH_CFG_MODEL_PUB_VA_SET:
+		config_mod_pub_va_set(data, len);
+		break;
+	case MESH_CFG_MODEL_APP_BIND_VND:
+		config_model_app_bind_vnd(data, len);
+		break;
+	case MESH_HEALTH_FAULT_GET:
+		health_fault_get(data, len);
+		break;
+	case MESH_HEALTH_FAULT_CLEAR:
+		health_fault_clear(data, len);
+		break;
+	case MESH_HEALTH_FAULT_TEST:
+		health_fault_test(data, len);
+		break;
+	case MESH_HEALTH_PERIOD_GET:
+		health_period_get(data, len);
+		break;
+	case MESH_HEALTH_PERIOD_SET:
+		health_period_set(data, len);
+		break;
+	case MESH_HEALTH_ATTENTION_GET:
+		health_attention_get(data, len);
+		break;
+	case MESH_HEALTH_ATTENTION_SET:
+		health_attention_set(data, len);
+		break;
+	case MESH_PROVISION_ADV:
+		provision_adv(data, len);
+		break;
+	case MESH_CFG_KRP_GET:
+		config_krp_get(data, len);
+		break;
+	case MESH_CFG_KRP_SET:
+		config_krp_set(data, len);
 		break;
 #if defined(CONFIG_BT_TESTING)
 	case MESH_LPN_SUBSCRIBE:

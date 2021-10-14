@@ -33,15 +33,13 @@ static struct zephyr_smp_transport smp_bt_transport;
  * {8D53DC1D-1DB7-4CD3-868B-8A527460AA84}
  */
 static struct bt_uuid_128 smp_bt_svc_uuid = BT_UUID_INIT_128(
-	0x84, 0xaa, 0x60, 0x74, 0x52, 0x8a, 0x8b, 0x86,
-	0xd3, 0x4c, 0xb7, 0x1d, 0x1d, 0xdc, 0x53, 0x8d);
+	BT_UUID_128_ENCODE(0x8d53dc1d, 0x1db7, 0x4cd3, 0x868b, 0x8a527460aa84));
 
 /* SMP characteristic; used for both requests and responses.
  * {DA2E7828-FBCE-4E01-AE9E-261174997C48}
  */
 static struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
-	0x48, 0x7c, 0x99, 0x74, 0x11, 0x26, 0x9e, 0xae,
-	0x01, 0x4e, 0xce, 0xfb, 0x28, 0x78, 0x2e, 0xda);
+	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
 
 /**
  * Write handler for the SMP characteristic; processes an incoming SMP request.
@@ -55,6 +53,9 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct net_buf *nb;
 
 	nb = mcumgr_buf_alloc();
+	if (!nb) {
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
 	net_buf_add_mem(nb, buf, len);
 
 	ud = net_buf_user_data(nb);

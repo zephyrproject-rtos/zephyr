@@ -11,6 +11,7 @@
 #include <drivers/gpio/gpio_emul.h>
 #include <errno.h>
 #include <zephyr.h>
+#include <pm/device.h>
 
 #include "gpio_utils.h"
 
@@ -662,6 +663,19 @@ static int gpio_emul_init(const struct device *dev)
 	return k_mutex_init(&drv_data->mu);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int gpio_emul_pm_device_ctrl(const struct device *dev,
+		enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return 0;
+}
+#else
+#define gpio_emul_pm_device_ctrl NULL
+#endif
+
 /*
  * Device Initialization
  */
@@ -696,7 +710,7 @@ static int gpio_emul_init(const struct device *dev)
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
-			    NULL,					\
+			    gpio_emul_pm_device_ctrl,			\
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

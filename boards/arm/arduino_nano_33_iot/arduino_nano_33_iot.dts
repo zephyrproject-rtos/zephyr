@@ -83,6 +83,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
+	pinctrl-0 = <&pa23c_sercom3_pad1 &pa22c_sercom3_pad0>;
+
 	nina_prog {
 		compatible = "espressif,esp-at";
 		label = "NINA_PROG";
@@ -116,6 +118,8 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <1>;
+
+	pinctrl-0 = <&pb23d_sercom5_pad3 &pb22d_sercom5_pad2>;
 };
 
 &tcc2 {
@@ -155,6 +159,6 @@
 	};
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };

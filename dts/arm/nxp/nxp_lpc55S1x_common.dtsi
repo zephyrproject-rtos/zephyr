@@ -93,6 +93,11 @@
 			status = "disabled";
 		};
 
+		uuid: flash@9fc70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x9fc70 0x10>;
+		};
+
 		boot_rom: flash@3000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x3000000 DT_SIZE_K(128)>;
@@ -122,6 +127,7 @@
 		label = "GPIO_0";
 		gpio-controller;
 		#gpio-cells = <2>;
+		port = <0>;
 	};
 
 	gpio1: gpio@1 {
@@ -131,6 +137,7 @@
 		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
+		port = <1>;
 	};
 
 	flexcomm0: flexcomm@86000 {

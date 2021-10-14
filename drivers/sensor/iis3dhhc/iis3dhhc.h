@@ -19,11 +19,6 @@
 #include <sys/util.h>
 #include "iis3dhhc_reg.h"
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
-
 struct iis3dhhc_config {
 	char *master_dev_name;
 	int (*bus_init)(const struct device *dev);

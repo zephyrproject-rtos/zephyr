@@ -139,6 +139,7 @@ config STACK_USAGE
 config STACK_SENTINEL
 	bool "Enable stack sentinel"
 	select THREAD_STACK_INFO
+	depends on MULTITHREADING
 	depends on !USERSPACE
 	help
 	  Store a magic value at the lowest addresses of a thread's stack.

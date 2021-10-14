@@ -38,7 +38,7 @@ static const struct led_rgb black = {
 
 struct led_rgb strip_colors[STRIP_NUM_LEDS];
 
-static const struct device *strip = DEVICE_DT_GET_ANY(colorway_lpd8806);
+static const struct device *strip = DEVICE_DT_GET_ANY(greeled_lpd8806);
 
 const struct led_rgb *color_at(size_t time, size_t i)
 {

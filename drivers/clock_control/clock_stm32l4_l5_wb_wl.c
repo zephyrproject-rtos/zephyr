@@ -48,6 +48,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
+#ifdef LL_APB1_GRP1_PERIPH_PWR
+	/* Enable the power interface clock */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif
+
 #if STM32_LSE_CLOCK
 	/* LSE belongs to the back-up domain, enable access.*/
 
@@ -56,11 +61,6 @@ void config_enable_default_clocks(void)
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-#ifdef LL_APB1_GRP1_PERIPH_PWR
-	/* Enable the power interface clock */
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-#endif
 
 	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
 	LL_PWR_EnableBkUpAccess();

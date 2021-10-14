@@ -17,6 +17,15 @@ properties:
     "#gpio-cells":
       const: 2
 
+    port:
+      type: int
+      required: true
+      description: The GPIO port this node describes
+      enum:
+        - 0
+        - 1
+        - 2
+
 gpio-cells:
   - pin
   - flags

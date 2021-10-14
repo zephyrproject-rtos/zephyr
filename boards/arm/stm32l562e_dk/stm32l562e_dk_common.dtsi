@@ -84,6 +84,12 @@
 	status = "okay";
 };
 
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
@@ -114,4 +120,34 @@
 		spi-max-frequency = <2000000>;
 		label = "SPBTLE-RF";
 	};
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
+	};
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in13_pc4>;
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_mosi_pb5 &spi3_miso_pb4>;
+	cs-gpios = <&gpioe 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
+	status = "okay";
 };

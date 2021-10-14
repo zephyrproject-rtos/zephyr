@@ -20,3 +20,9 @@ config BOARD_QEMU_X86_LAKEMONT
 	select QEMU_TARGET
 	select CPU_HAS_FPU
 	select HAS_COVERAGE_SUPPORT
+
+config BOARD_QEMU_X86_TINY
+	bool "QEMU x86 (tiny memory)"
+	depends on SOC_IA32
+	select QEMU_TARGET
+	select CPU_HAS_FPU

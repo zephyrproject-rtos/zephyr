@@ -3,7 +3,7 @@ tests:
     depends_on: watchdog
     tags: drivers watchdog
     filter: not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog"))
-    platform_exclude: mec15xxevb_assy6853
+    platform_exclude: mec15xxevb_assy6853 mimxrt685_evk_cm33
   drivers.watchdog.stm32wwdg:
     depends_on: watchdog
     tags: drivers watchdog

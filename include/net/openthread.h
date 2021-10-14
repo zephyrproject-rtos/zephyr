@@ -62,6 +62,12 @@ struct openthread_context {
 
 	/** A mutex to protect API calls from being preempted. */
 	struct k_mutex api_lock;
+
+	/** A work queue for all OpenThread activity */
+	struct k_work_q work_q;
+
+	/** Work object for OpenThread internal usage */
+	struct k_work api_work;
 };
 /**
  * INTERNAL_HIDDEN @endcond

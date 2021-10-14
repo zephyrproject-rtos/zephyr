@@ -430,6 +430,11 @@ static int spi_rx_every_4(const struct device *dev,
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		LOG_INF("Skip every 4");
+		return 0;
+	}
+
 	LOG_INF("Start every 4");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);

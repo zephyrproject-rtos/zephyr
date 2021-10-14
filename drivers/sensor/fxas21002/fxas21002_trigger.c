@@ -167,6 +167,7 @@ int fxas21002_trigger_init(const struct device *dev)
 	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->data;
 	uint8_t ctrl_reg2;
+	int ret;
 
 	data->dev = dev;
 
@@ -202,16 +203,25 @@ int fxas21002_trigger_init(const struct device *dev)
 
 	data->gpio_pin = config->gpio_pin;
 
-	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_INPUT | config->gpio_flags);
+	ret = gpio_pin_configure(data->gpio, config->gpio_pin,
+				 GPIO_INPUT | config->gpio_flags);
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback,
 			   BIT(config->gpio_pin));
 
-	gpio_add_callback(data->gpio, &data->gpio_cb);
+	ret = gpio_add_callback(data->gpio, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
 
-	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

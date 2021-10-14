@@ -62,6 +62,9 @@ Current supported displays
 | Good Display | HINK-E0154A07   | SSD1681 /    | waveshare_epaper_gdeh0154a07 |
 | GDEH0154D67  |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
+| Good Display | WFT0420CZ15     | UC8176 /     | waveshare_epaper_gdew042t2   |
+| GDEW042T2    |                 | gd7965       |                              |
++--------------+-----------------+--------------+------------------------------+
 
 
 Requirements

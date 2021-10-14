@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,9 @@
 
 #include "misc_q15.pat"
 
-#define SNR_ERROR_THRESH	((float32_t)70)
-#define ABS_ERROR_THRESH_Q15	((q15_t)10)
+#define SNR_ERROR_THRESH		((float32_t)70)
+#define ABS_ERROR_THRESH_Q15		((q15_t)10)
+#define ABS_ERROR_THRESH_FAST_Q15	((q15_t)20)
 
 static void test_arm_correlate_q15(
 	size_t in1_length, size_t in2_length, const q15_t *ref,
@@ -130,6 +131,218 @@ DEFINE_CONV_TEST(32, 17);
 DEFINE_CONV_TEST(32, 18);
 DEFINE_CONV_TEST(32, 33);
 
+#ifdef CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL
+static void test_arm_conv_partial_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	q15_t *output;
+	q15_t *temp;
+	arm_status status;
+
+	/* Allocate output buffer */
+	output = calloc(first + ref_length, sizeof(q15_t));
+	temp = calloc(ref_length, sizeof(q15_t));
+
+	/* Run test function */
+	status = arm_conv_partial_q15(
+			in_partial1, in1_length, in_partial2, in2_length,
+			output, first, ref_length);
+
+	zassert_equal(status, ARM_MATH_SUCCESS,
+		      ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	memcpy(temp, &output[first], ref_length * sizeof(q15_t));
+
+	/* Validate output */
+	zassert_true(
+		test_snr_error_q15(ref_length, ref, temp, SNR_ERROR_THRESH),
+		ASSERT_MSG_SNR_LIMIT_EXCEED);
+
+	zassert_true(
+		test_near_equal_q15(ref_length, ref, temp,
+			ABS_ERROR_THRESH_Q15),
+		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	/* Free output buffer */
+	free(output);
+	free(temp);
+}
+
+static void test_arm_conv_partial_fast_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	q15_t *output;
+	q15_t *temp;
+	arm_status status;
+
+	/* Allocate output buffer */
+	output = calloc(first + ref_length, sizeof(q15_t));
+	temp = calloc(ref_length, sizeof(q15_t));
+
+	/* Run test function */
+	status = arm_conv_partial_fast_q15(
+			in_partial1, in1_length, in_partial2, in2_length,
+			output, first, ref_length);
+
+	zassert_equal(status, ARM_MATH_SUCCESS,
+		      ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	memcpy(temp, &output[first], ref_length * sizeof(q15_t));
+
+	/* Validate output */
+	zassert_true(
+		test_snr_error_q15(ref_length, ref, temp, SNR_ERROR_THRESH),
+		ASSERT_MSG_SNR_LIMIT_EXCEED);
+
+	zassert_true(
+		test_near_equal_q15(ref_length, ref, temp,
+			ABS_ERROR_THRESH_FAST_Q15),
+		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	/* Free output buffer */
+	free(output);
+	free(temp);
+}
+
+static void test_arm_conv_partial_opt_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	q15_t *output;
+	q15_t *temp;
+	q15_t *scratch1, *scratch2;
+	arm_status status;
+
+	/* Allocate output buffer */
+	output = calloc(first + ref_length, sizeof(q15_t));
+	temp = calloc(ref_length, sizeof(q15_t));
+	scratch1 = calloc(24, sizeof(q15_t));
+	scratch2 = calloc(24, sizeof(q15_t));
+
+	/* Run test function */
+	status = arm_conv_partial_opt_q15(
+			in_partial1, in1_length, in_partial2, in2_length,
+			output, first, ref_length,
+			scratch1, scratch2);
+
+	zassert_equal(status, ARM_MATH_SUCCESS,
+		      ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	memcpy(temp, &output[first], ref_length * sizeof(q15_t));
+
+	/* Validate output */
+	zassert_true(
+		test_snr_error_q15(ref_length, ref, temp, SNR_ERROR_THRESH),
+		ASSERT_MSG_SNR_LIMIT_EXCEED);
+
+	zassert_true(
+		test_near_equal_q15(ref_length, ref, temp,
+			ABS_ERROR_THRESH_FAST_Q15),
+		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	/* Free output buffer */
+	free(output);
+	free(temp);
+	free(scratch1);
+	free(scratch2);
+}
+
+static void test_arm_conv_partial_fast_opt_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	q15_t *output;
+	q15_t *temp;
+	q15_t *scratch1, *scratch2;
+	arm_status status;
+
+	/* Allocate output buffer */
+	output = calloc(first + ref_length, sizeof(q15_t));
+	temp = calloc(ref_length, sizeof(q15_t));
+	scratch1 = calloc(24, sizeof(q15_t));
+	scratch2 = calloc(24, sizeof(q15_t));
+
+	/* Run test function */
+	status = arm_conv_partial_fast_opt_q15(
+			in_partial1, in1_length, in_partial2, in2_length,
+			output, first, ref_length,
+			scratch1, scratch2);
+
+	zassert_equal(status, ARM_MATH_SUCCESS,
+		      ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	memcpy(temp, &output[first], ref_length * sizeof(q15_t));
+
+	/* Validate output */
+	zassert_true(
+		test_snr_error_q15(ref_length, ref, temp, SNR_ERROR_THRESH),
+		ASSERT_MSG_SNR_LIMIT_EXCEED);
+
+	zassert_true(
+		test_near_equal_q15(ref_length, ref, temp,
+			ABS_ERROR_THRESH_FAST_Q15),
+		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	/* Free output buffer */
+	free(output);
+	free(temp);
+	free(scratch1);
+	free(scratch2);
+}
+#else
+static void test_arm_conv_partial_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+
+static void test_arm_conv_partial_fast_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+
+static void test_arm_conv_partial_opt_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+
+static void test_arm_conv_partial_fast_opt_q15(
+	size_t first, size_t in1_length, size_t in2_length, const q15_t *ref,
+	size_t ref_length)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_CMSIS_DSP_TEST_FILTERING_MISC_CONV_PARTIAL */
+
+#define DEFINE_CONV_PARTIAL_TEST(a, b, c) \
+	DEFINE_TEST_VARIANT5( \
+		arm_conv_partial_q15, a##_##b##_##c, a, b, c, \
+		ref_conv_partial_##a##_##b##_##c, \
+		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
+	DEFINE_TEST_VARIANT5( \
+		arm_conv_partial_fast_q15, a##_##b##_##c, a, b, c, \
+		ref_conv_partial_##a##_##b##_##c, \
+		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
+	DEFINE_TEST_VARIANT5( \
+		arm_conv_partial_opt_q15, a##_##b##_##c, a, b, c, \
+		ref_conv_partial_##a##_##b##_##c, \
+		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c)) \
+	DEFINE_TEST_VARIANT5( \
+		arm_conv_partial_fast_opt_q15, a##_##b##_##c, a, b, c, \
+		ref_conv_partial_##a##_##b##_##c, \
+		ARRAY_SIZE(ref_conv_partial_##a##_##b##_##c))
+
+DEFINE_CONV_PARTIAL_TEST(3, 6, 8);
+DEFINE_CONV_PARTIAL_TEST(9, 6, 8);
+DEFINE_CONV_PARTIAL_TEST(7, 6, 8);
+
 void test_filtering_misc_q15(void)
 {
 	ztest_test_suite(filtering_misc_q15,
@@ -182,7 +395,19 @@ void test_filtering_misc_q15(void)
 		ztest_unit_test(test_arm_conv_q15_32_16),
 		ztest_unit_test(test_arm_conv_q15_32_17),
 		ztest_unit_test(test_arm_conv_q15_32_18),
-		ztest_unit_test(test_arm_conv_q15_32_33)
+		ztest_unit_test(test_arm_conv_q15_32_33),
+		ztest_unit_test(test_arm_conv_partial_q15_3_6_8),
+		ztest_unit_test(test_arm_conv_partial_q15_9_6_8),
+		ztest_unit_test(test_arm_conv_partial_q15_7_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_q15_3_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_q15_9_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_q15_7_6_8),
+		ztest_unit_test(test_arm_conv_partial_opt_q15_3_6_8),
+		ztest_unit_test(test_arm_conv_partial_opt_q15_9_6_8),
+		ztest_unit_test(test_arm_conv_partial_opt_q15_7_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_3_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_9_6_8),
+		ztest_unit_test(test_arm_conv_partial_fast_opt_q15_7_6_8)
 		);
 
 	ztest_run_test_suite(filtering_misc_q15);

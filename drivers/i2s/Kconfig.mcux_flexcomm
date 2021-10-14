@@ -5,7 +5,6 @@ config I2S_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM I2S driver"
 	depends on HAS_MCUX_FLEXCOMM
 	select DMA
-	select INIT_AUDIO_PLL
 	help
 	  Enable support for mcux flexcomm i2s driver.
 

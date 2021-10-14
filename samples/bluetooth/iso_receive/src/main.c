@@ -209,7 +209,8 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 
 #define BIS_ISO_CHAN_COUNT 1
 
-static void iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
+static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+		struct net_buf *buf)
 {
 	char data_str[128];
 	size_t str_len;
@@ -262,7 +263,7 @@ static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
-	.bis_bitfield = (BIT(BIS_ISO_CHAN_COUNT) - 1),
+	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
 	.mse = 1,
 	.sync_timeout = 100, /* in 10 ms units */
 };

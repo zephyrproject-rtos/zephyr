@@ -111,7 +111,7 @@ struct _thread_arch {
 		uint32_t mode;
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
-		__packed struct {
+		struct {
 			uint8_t mode_bits;
 			uint8_t mode_exc_return;
 			uint16_t mode_reserved2;
@@ -121,6 +121,10 @@ struct _thread_arch {
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
+#if defined(CONFIG_CPU_CORTEX_R)
+	uint32_t priv_stack_end;
+	uint32_t sp_usr;
+#endif
 #endif
 #endif
 };

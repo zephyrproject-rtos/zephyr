@@ -23,7 +23,7 @@
  */
 #define NPCX_DT_PROP_ENUM_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
-		    (DT_ENUM_UPPER_TOKEN(node_id, prop)), (default_value))
+		    (DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
 
 /**
  * @brief Like DT_INST_PROP_OR(), but expand parameters with
@@ -122,37 +122,18 @@
 	}
 
 /**
- * @brief Get phandle from 'pinctrl-0' prop which type is 'phandles' at index
- *        'i'
- *
- * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @param i index of 'pinctrl-0' prop which type is 'phandles'
- * @return phandle from 'pinctrl-0' prop at index 'i'
- */
-#define NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i) \
-	DT_INST_PHANDLE_BY_IDX(inst, pinctrl_0, i)
-
-/**
  * @brief Construct a npcx_alt structure from 'pinctrl-0' property at index 'i'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @param i index of 'pinctrl-0' prop which type is 'phandles'
  * @return npcx_alt item from 'pinctrl-0' property at index 'i'
  */
-#define NPCX_DT_ALT_ITEM_BY_IDX(inst, i)                                       \
-	{                                                                      \
-	 .group = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, group),  \
-	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, bit),     \
-	  .inverted = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, inv),\
+#define NPCX_DT_ALT_ITEM_BY_IDX(inst, i)				   \
+	{								   \
+		.group = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, group),  \
+		.bit = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, bit),	   \
+		.inverted = DT_PHA(DT_INST_PINCTRL_0(inst, i), alts, inv), \
 	},
-
-/**
- * @brief Length of npcx_alt structures in 'pinctrl-0' property
- *
- * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @return length of 'pinctrl-0' property which type is 'phandles'
- */
-#define NPCX_DT_ALT_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
 
 /**
  * @brief Macro function to construct npcx_alt item in UTIL_LISTIFY extension.
@@ -181,10 +162,10 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_alt items.
  */
-#define NPCX_DT_ALT_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(NPCX_DT_ALT_ITEMS_LEN(inst),  \
-		     NPCX_DT_ALT_ITEMS_FUNC,       \
-		     inst)                         \
+#define NPCX_DT_ALT_ITEMS_LIST(inst) {				\
+	UTIL_LISTIFY(DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0),	\
+		     NPCX_DT_ALT_ITEMS_FUNC,			\
+		     inst)					\
 	}
 
 /**
@@ -221,7 +202,7 @@
  * @return phandle from 'pinctrl-0' prop at index 'i'
  */
 #define NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i) \
-	NPCX_DT_COMP_INST_PHANDLE_BY_IDX(io_comp, inst, pinctrl_0, i)
+	DT_PINCTRL_BY_IDX(NPCX_DT_COMP_INST(io_comp, inst), 0, i)
 
 /**
  * @brief Construct a npcx_alt structure from 'pinctrl-0' property at index 'i'
@@ -229,7 +210,7 @@
  *
  * @param io_comp compatible string in devicetree file for io-pads device
  * @param inst instance number for compatible defined in io_comp.
- * @param i index of 'pinctrl_0' prop which type is 'phandles'
+ * @param i index of 'pinctrl-0' prop which type is 'phandles'
  * @return npcx_alt item from 'pinctrl-0' property at index 'i'
  */
 #define NPCX_DT_IO_ALT_ITEM_BY_IDX(io_comp, inst, i)                           \
@@ -251,7 +232,7 @@
  * @return length of 'pinctrl-0' property which type is 'phandles'
  */
 #define NPCX_DT_IO_ALT_ITEMS_LEN(io_comp, inst) \
-			DT_PROP_LEN(NPCX_DT_COMP_INST(io_comp, inst), pinctrl_0)
+	DT_NUM_PINCTRLS_BY_IDX(NPCX_DT_COMP_INST(io_comp, inst), 0)
 
 /**
  * @brief Macro function to construct npcx_alt item with specific compatible
@@ -402,7 +383,7 @@
  * @param i index of npcx miwu devices
  * @return node identifier with that path.
  */
-#define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx7_miwus_int_map, \
+#define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx_miwus_int_map, \
 						map_miwu##i##_groups)
 /**
  * @brief Get the index prop from parent MIWU device node.
@@ -436,18 +417,18 @@
 	} while (0)
 
 /**
- * @brief Get a child node from path '/npcx7-espi-vws-map/name'.
+ * @brief Get a child node from path '/npcx-espi-vws-map/name'.
  *
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return child node identifier with that path.
  */
-#define NPCX_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx7_espi_vws_map),  \
+#define NPCX_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx_espi_vws_map),  \
 									name)
 
 /**
  * @brief Get phandle from vw-wui property of child node with that path.
  *
- * @param name path which name is /npcx7-espi-vws-map/'name'.
+ * @param name path which name is /npcx-espi-vws-map/'name'.
  * @return phandle from "vw-wui" prop of child node with that path.
  */
 #define NPCX_DT_PHANDLE_VW_WUI(name) DT_PHANDLE(NPCX_DT_NODE_FROM_VWTABLE(     \
@@ -457,7 +438,7 @@
  * @brief Construct a npcx_wui structure from vw-wui property of a child node
  * with that path.
  *
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_wui item with that path.
  */
 #define NPCX_DT_VW_WUI_ITEM(name)			                       \
@@ -473,7 +454,7 @@
  * a child node with that path.
  *
  * @signal vw input signal name.
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
 #define NPCX_DT_VW_IN_CONF(signal, name)                                       \
@@ -491,7 +472,7 @@
  * a child node with that path.
  *
  * @signal vw output signal name.
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
 #define NPCX_DT_VW_OUT_CONF(signal, name)                                      \
@@ -607,7 +588,7 @@
  * @return phandle from 'pinctrl-0' prop at index 'i'
  */
 #define NPCX_DT_PHANDLE_FROM_PSL_PINMUX_NODE(i) \
-	DT_PHANDLE(NPCX_DT_PHANDLE_FROM_PSL_IN_NODE(i), pinctrl_0)
+	DT_PINCTRL_0(NPCX_DT_PHANDLE_FROM_PSL_IN_NODE(i), 0)
 
 /**
  * @brief Get phandle from 'polarity-0' prop which type is 'phandles' at index
@@ -704,5 +685,15 @@
  */
 #define NPCX_DT_PSL_OUT_PIN(inst) DT_PROP(DT_INST(inst, nuvoton_npcx_psl_out), \
 							pin)
+
+/**
+ * @brief Check if the host interface type is automatically configured by
+ * booter.
+ *
+ * @return TRUE - if the host interface is configured by booter,
+ *         FALSE - otherwise.
+ */
+#define NPCX_BOOTER_IS_HIF_TYPE_SET() \
+	DT_PROP(DT_PATH(booter_variant), hif_type_auto)
 
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */

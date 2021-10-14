@@ -24,11 +24,10 @@ set(TOOLCHAIN_SIGNATURE ${CMAKE_C_COMPILER_MD5_SUM})
 string(MD5 COMPILER_SIGNATURE ${CMAKE_C_COMPILER}_${CMAKE_C_COMPILER_ID}_${CMAKE_C_COMPILER_VERSION})
 set(TOOLCHAIN_SIGNATURE ${TOOLCHAIN_SIGNATURE}_${COMPILER_SIGNATURE})
 
-# Custom targets for compiler and linker flags.
-add_custom_target(asm)
-add_custom_target(compiler)
-add_custom_target(compiler-cpp)
-add_custom_target(linker)
+# Load the compile features file which will provide compile features lists for
+# various C / CXX language dialects that can then be exported based on current
+# Zephyr Kconfig settings or the CSTD global property.
+include(${CMAKE_CURRENT_LIST_DIR}/compiler/compiler_features.cmake)
 
 # Loading of templates are strictly not needed as they does not set any
 # properties.

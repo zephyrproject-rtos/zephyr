@@ -83,6 +83,22 @@ features:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| WDT       | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| SDHC      | on-chip    | disk access                         |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| CTIMER    | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -129,6 +145,10 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO0_9  | I2S             | I2S DATAIN                 |
 +---------+-----------------+----------------------------+
+| PIO0_29 | USART           | USART TX                   |
++---------+-----------------+----------------------------+
+| PIO0_30 | USART           | USART RX                   |
++---------+-----------------+----------------------------+
 | PIO1_11 | FLEXSPI0B_DATA0 | OctalSPI Flash             |
 +---------+-----------------+----------------------------+
 | PIO1_12 | FLEXSPI0B_DATA1 | OctalSPI Flash             |
@@ -150,6 +170,26 @@ functionality of a pin.
 | PIO2_22 | FLEXSPI0B_DATA6 | OctalSPI Flash             |
 +---------+-----------------+----------------------------+
 | PIO2_23 | FLEXSPI0B_DATA7 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO0_27 | SCT0_OUT7       | PWM                        |
++---------+-----------------+----------------------------+
+| PIO1_30 | SD0_CLK         | SD card                    |
++---------+-----------------+----------------------------+
+| PIO1_31 | SD0_CMD         | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_0  | SD0_D0          | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_1  | SD0_D1          | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_2  | SD0_D2          | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_3  | SD0_D3          | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_4  | SD0_WR_PRT      | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_9  | SD0_CD          | SD card                    |
++---------+-----------------+----------------------------+
+| PIO2_10 | SD0_RST         | SD card                    |
 +---------+-----------------+----------------------------+
 
 System Clock
@@ -176,15 +216,28 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the LPC-Link2.
 
-:ref:`lpclink2-jlink-onboard-debug-probe`
------------------------------------------
+.. tabs::
 
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
+    .. group-tab:: LPCLink2 JLink Onboard
 
-Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program
-the J-Link firmware. Please make sure you have the latest firmware for this
-board.
+
+        1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+        2. To connect the SWD signals to onboard debug circuit, install jumpers JP17, JP18 and JP19,
+           if not already done (these jumpers are installed by default).
+        3. Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program the
+           J-Link firmware. Please make sure you have the latest firmware for this board.
+
+    .. group-tab:: JLink External
+
+
+        1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+
+        2. To disconnect the SWD signals from onboard debug circuit, **remove** jumpers J17, J18,
+           and J19 (these are installed by default).
+
+        3. Connect the J-Link probe to J2 10-pin header.
+
+        See :ref:`jlink-external-debug-probe` for more information.
 
 Configuring a Console
 =====================

@@ -8,7 +8,7 @@
 
 / {
 	pwm_loopback_0 {
-		compatible = "test,pwm_loopback";
+		compatible = "test-pwm-loopback";
 		pwms = <&ftm0 0 0 PWM_POLARITY_NORMAL>, /* PTC1, J1 pin 5 */
 		       <&ftm3 4 0 PWM_POLARITY_NORMAL>; /* PTC8, J1 pin 7 */
 	};

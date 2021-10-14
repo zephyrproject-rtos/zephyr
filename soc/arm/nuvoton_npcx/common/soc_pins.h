@@ -18,9 +18,10 @@ extern "C" {
  * pin-muxing and its polarity to enable alternative functionality.
  */
 struct npcx_alt {
-	uint8_t group:4;
+	uint8_t group;
 	uint8_t bit:3;
 	uint8_t inverted:1;
+	uint8_t reserved:4;
 };
 
 /**
@@ -166,6 +167,13 @@ void npcx_lvol_suspend_io_pads(void);
  * @return 1 means the low-voltage power supply is enabled, otherwise disabled.
  */
 bool npcx_lvol_is_enabled(int port, int pin);
+
+/**
+ * @brief Select the host interface type
+ *
+ * @param hif_type host interface type
+ */
+void npcx_host_interface_sel(enum npcx_hif_type hif_type);
 
 #ifdef __cplusplus
 }

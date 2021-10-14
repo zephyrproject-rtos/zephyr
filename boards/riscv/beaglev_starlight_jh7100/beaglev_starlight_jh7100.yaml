@@ -1,0 +1,9 @@
+identifier: beaglev_starlight_jh7100
+name: BeagleV Starlight JH7100 (NON-SMP)
+type: mcu
+arch: riscv64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - uart

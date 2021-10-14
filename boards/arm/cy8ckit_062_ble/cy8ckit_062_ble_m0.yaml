@@ -16,5 +16,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
+  - arduino_spi
   - gpio
   - spi

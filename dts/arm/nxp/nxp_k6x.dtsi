@@ -349,6 +349,10 @@
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
 			label = "SPI_0";
+			dmas = <&edma0 0 14>, <&edma0 0 15>;
+			dma-names = "rx", "tx";
+			rx-fifo-size = <4>;
+			tx-fifo-size = <4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -360,6 +364,11 @@
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
 			label = "SPI_1";
+			dmas = <&edma0 0 16>, <&edma0 0 16>;
+			dma-names = "rx", "tx";
+			rx-fifo-size = <1>;
+			tx-fifo-size = <1>;
+			nxp,rx-tx-chn-share;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -371,6 +380,11 @@
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
 			label = "SPI_2";
+			dmas = <&edma0 0 17>, <&edma0 0 17>;
+			dma-names = "rx", "tx";
+			rx-fifo-size = <1>;
+			tx-fifo-size = <1>;
+			nxp,rx-tx-chn-share;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;

@@ -219,6 +219,8 @@ struct bt_l2cap_ecred_reconf_req {
 #define BT_L2CAP_RECONF_SUCCESS         0x0000
 #define BT_L2CAP_RECONF_INVALID_MTU     0x0001
 #define BT_L2CAP_RECONF_INVALID_MPS     0x0002
+#define BT_L2CAP_RECONF_INVALID_CID     0x0003
+#define BT_L2CAP_RECONF_OTHER_UNACCEPT  0x0004
 
 #define BT_L2CAP_ECRED_RECONF_RSP       0x1a
 struct bt_l2cap_ecred_reconf_rsp {
@@ -232,7 +234,7 @@ struct bt_l2cap_fixed_chan {
 };
 
 #define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = {   \
 				.cid = _cid,                            \
 				.accept = _accept,                      \
 				.destroy = _destroy,                    \
@@ -245,7 +247,7 @@ struct bt_l2cap_br_fixed_chan {
 };
 
 #define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
+	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
 				.cid = _cid,			\
 				.accept = _accept,		\
 			}

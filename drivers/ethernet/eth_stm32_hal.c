@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
@@ -389,7 +389,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
-					   total_len, AF_UNSPEC, 0, K_NO_WAIT);
+					   total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
@@ -891,7 +891,21 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
+#else
+			.AutoNegotiation = ETH_AUTONEGOTIATION_DISABLE,
+#if defined(CONFIG_ETH_STM32_SPEED_10M)
+			.Speed = ETH_SPEED_10M,
+#else
+			.Speed = ETH_SPEED_100M,
+#endif
+#if defined(CONFIG_ETH_STM32_MODE_HALFDUPLEX)
+			.DuplexMode = ETH_MODE_HALFDUPLEX,
+#else
+			.DuplexMode = ETH_MODE_FULLDUPLEX,
+#endif
+#endif /* !CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE */
 			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,

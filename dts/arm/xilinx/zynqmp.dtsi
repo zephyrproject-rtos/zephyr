@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {
@@ -84,6 +85,118 @@
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			reg = <0xff140000 0x1000>;
 			label = "ttc3";
+		};
+
+		gem0: ethernet@ff0b0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0b0000 0x1000>,
+				<0xff5e0050 0x4>;
+			status = "disabled";
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 58 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			label = "gem0";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
+		};
+
+		gem1: ethernet@ff0c0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0c0000 0x1000>,
+				<0xff5e0054 0x4>;
+			status = "disabled";
+			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 60 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			label = "gem1";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
+		};
+
+		gem2: ethernet@ff0d0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0d0000 0x1000>,
+				<0xff5e0058 0x4>;
+			status = "disabled";
+			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 62 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			label = "gem2";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
+		};
+
+		gem3: ethernet@ff0e0000 {
+			compatible = "xlnx,gem";
+			reg = <0xff0e0000 0x1000>,
+				<0xff5e005c 0x4>;
+			status = "disabled";
+			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 64 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			label = "gem3";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
 		};
 	};
 };

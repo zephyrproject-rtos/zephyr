@@ -44,6 +44,14 @@ static void put(const struct log_backend *const backend,
 
 }
 
+static void process(const struct log_backend *const backend,
+		    union log_msg2_generic *msg)
+{
+	uint32_t flags = log_backend_std_get_flags();
+
+	log_output_msg2_process(&log_output_xsim, &msg->log, flags);
+}
+
 static void panic(struct log_backend const *const backend)
 {
 	log_backend_std_panic(&log_output_xsim);
@@ -73,10 +81,11 @@ static void sync_hexdump(const struct log_backend *const backend,
 }
 
 const struct log_backend_api log_backend_xtensa_sim_api = {
-	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : put,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,

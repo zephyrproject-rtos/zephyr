@@ -112,6 +112,8 @@
 			DT_ATMEL_GPIO(usart3, txd3, b, 10, a);
 			DT_ATMEL_GPIO(usart3, txd3, c, 10, b);
 			DT_ATMEL_GPIO(usart3, txd3, c, 29, a);
+			DT_ATMEL_GPIO(usbc, dm, a, 25, a);
+			DT_ATMEL_GPIO(usbc, dp, a, 26, a);
 		};
 	};
 };

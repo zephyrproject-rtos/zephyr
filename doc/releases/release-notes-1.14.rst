@@ -3,6 +3,56 @@
 .. _zephyr_1.14:
 .. _zephyr_1.14.1:
 
+Zephyr 1.14.3
+####################
+
+This is an LTS maintenance release with fixes.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* CVE-2020-10066
+* CVE-2020-10069
+* CVE-2020-13601
+* CVE-2020-13602
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 1.14.0 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`18334` - DNS resolution is broken for some addresses in master/2.0-pre
+* :github:`19917` - Bluetooth: Controller: Missing LL_ENC_RSP after HCI LTK Negative Reply
+* :github:`21107` - LL_ASSERT and 'Imprecise data bus error' in LL Controller
+* :github:`21257` - tests/net/net_pkt failed on mimxrt1050_evk board.
+* :github:`21299` - bluetooth: Controller does not release buffer on central side after peripheral reset
+* :github:`21601` - '!radio_is_ready()' failed
+* :github:`21756` - tests/kernel/obj_tracing failed on mec15xxevb_assy6853 board.
+* :github:`22968` - Bluetooth: controller: LEGACY: ASSERTION failure on invalid packet sequence
+* :github:`23069` - Bluetooth: controller: Assert in data length update procedure
+* :github:`23109` - LL.TS Test LL/CON/SLA/BV-129-C fails (split)
+* :github:`23805` - Bluetooth: controller: Switching to non conn adv fails for Mesh LPN
+* :github:`24601` - Bluetooth: Mesh: Config Client's net_key_status pulls two key indexes, should pull one.
+* :github:`25518` - settings_fcb: Fix storing the data
+* :github:`25519` - wrong debug function cause kinds of building error
+* :github:`26080` - gPTP time sync fails if having more than one port
+* :github:`28151` - gPTP should allow user setting of priority1 and priority2 fields used in BMCA
+* :github:`28177` - gPTP gptp_priority_vector struct field ordering is wrong
+* :github:`29386` - unexpected behavior when doing syscall with 7 or more arguments
+* :github:`29858` - Bluetooth: Mesh: RPL cleared on LPN disconnect
+* :github:`32430` - Bluetooth: thread crashes when configuring a non 0 Slave Latency
+* :github:`32898` - Bluetooth: controller: Control PDU buffer leak into Data PDU buffer pool
+
 Zephyr 1.14.2
 ####################
 
@@ -849,7 +899,7 @@ Bluetooth
 * New BLE split software Controller (experimental):
 
   - Split design with Upper Link Layer and Lower Link Layer
-  - Enabled with :option:`CONFIG_BT_LL_SW_SPLIT` (disabled by default)
+  - Enabled with :kconfig:`CONFIG_BT_LL_SW_SPLIT` (disabled by default)
   - Support for multiple BLE radio hardware architectures
   - Asynchronous handling of procedures in the ULL
   - Enhanced radio utilization (99% on continuous 100ms scan)
@@ -919,7 +969,7 @@ Libraries / Subsystems
   - Removed sys_log, which has been replaced by the new logging subsystem
     introduced in v1.13
   - Refactored log modules registration macros
-  - Improved synchronous operation (see :option:`CONFIG_LOG_IMMEDIATE`)
+  - Improved synchronous operation (see :kconfig:`CONFIG_LOG_IMMEDIATE`)
   - Added commands to control the logger using shell
   - Added :c:macro:`LOG_PANIC()` call to the fault handlers to ensure that
     logs are output on fault

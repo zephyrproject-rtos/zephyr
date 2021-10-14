@@ -22,7 +22,7 @@
 #include <devicetree.h>
 #include <arch/nios2/nios2.h>
 #include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
+#include <sys/sys_io.h>
 #include <arch/common/ffs.h>
 
 #define ARCH_STACK_PTR_ALIGN  4

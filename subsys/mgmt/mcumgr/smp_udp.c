@@ -121,6 +121,11 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 
 			/* store sender address in user data for reply */
 			nb = mcumgr_buf_alloc();
+			if (!nb) {
+				LOG_ERR("Failed to allocate mcumgr buffer");
+				/* No free space, drop smp frame */
+				continue;
+			}
 			net_buf_add_mem(nb, conf->recv_buffer, len);
 			ud = net_buf_user_data(nb);
 			net_ipaddr_copy(ud, &addr);

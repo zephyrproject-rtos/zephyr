@@ -31,10 +31,10 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 	lsm6dso_int2_ctrl_t int2_ctrl;
 
 	if (enable) {
-		union axis1bit16_t buf;
+		int16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_temperature_raw_get(ctx, buf.u8bit);
+		lsm6dso_temperature_raw_get(ctx, &buf);
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
@@ -57,10 +57,10 @@ static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	if (enable) {
-		union axis3bit16_t buf;
+		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_acceleration_raw_get(ctx, buf.u8bit);
+		lsm6dso_acceleration_raw_get(ctx, buf);
 	}
 
 	/* set interrupt */
@@ -93,10 +93,10 @@ static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	if (enable) {
-		union axis3bit16_t buf;
+		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_angular_rate_raw_get(ctx, buf.u8bit);
+		lsm6dso_angular_rate_raw_get(ctx, buf);
 	}
 
 	/* set interrupt */

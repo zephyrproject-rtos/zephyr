@@ -501,6 +501,16 @@ typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 
 typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
 
+/** @brief Bypass callback.
+ *
+ * @param shell Shell instance.
+ * @param data  Raw data from transport.
+ * @param len   Data length.
+ */
+typedef void (*shell_bypass_cb_t)(const struct shell *shell,
+				  uint8_t *data,
+				  size_t len);
+
 struct shell_transport;
 
 /**
@@ -605,31 +615,60 @@ struct shell_stats {
 #endif /* CONFIG_SHELL_STATS */
 
 /**
- * @internal @brief Flags for internal shell usage.
+ * @internal @brief Flags for shell backend configuration.
  */
-struct shell_flags {
-	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
-	uint32_t use_colors  :1; /*!< Controls colored syntax.*/
-	uint32_t echo        :1; /*!< Controls shell echo.*/
+struct shell_backend_config_flags {
+	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction */
+	uint32_t echo        :1; /*!< Controls shell echo */
 	uint32_t obscure     :1; /*!< If echo on, print asterisk instead */
-	uint32_t processing  :1; /*!< Shell is executing process function.*/
-	uint32_t tx_rdy      :1;
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
-	uint32_t history_exit:1; /*!< Request to exit history mode */
-	uint32_t last_nl     :8; /*!< Last received new line character */
-	uint32_t cmd_ctx     :1; /*!< Shell is executing command */
-	uint32_t print_noinit:1; /*!< Print request from not initialized shell*/
+	uint32_t use_colors  :1; /*!< Controls colored syntax */
+	uint32_t use_vt100   :1; /*!< Controls VT100 commands usage in shell */
 };
 
-BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),
+BUILD_ASSERT((sizeof(struct shell_backend_config_flags) == sizeof(uint32_t)),
+	     "Structure must fit in 4 bytes");
+
+/**
+ * @internal @brief Default backend configuration.
+ */
+#define SHELL_DEFAULT_BACKEND_CONFIG_FLAGS	\
+{						\
+	.insert_mode	= 0,			\
+	.echo		= 1,			\
+	.obscure	= 0,			\
+	.mode_delete	= 1,			\
+	.use_colors	= 1,			\
+	.use_vt100	= 1,			\
+};
+
+struct shell_backend_ctx_flags {
+	uint32_t processing   :1; /*!< Shell is executing process function */
+	uint32_t tx_rdy       :1;
+	uint32_t history_exit :1; /*!< Request to exit history mode */
+	uint32_t last_nl      :8; /*!< Last received new line character */
+	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
+	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
+	uint32_t panic_mode   :1; /*!< Shell in panic mode */
+};
+
+BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
 	     "Structure must fit in 4 bytes");
 
 /**
  * @internal @brief Union for internal shell usage.
  */
-union shell_internal {
+union shell_backend_cfg {
 	uint32_t value;
-	struct shell_flags flags;
+	struct shell_backend_config_flags flags;
+};
+
+/**
+ * @internal @brief Union for internal shell usage.
+ */
+union shell_backend_ctx {
+	uint32_t value;
+	struct shell_backend_ctx_flags flags;
 };
 
 enum shell_signal {
@@ -663,6 +702,9 @@ struct shell_ctx {
 	 */
 	shell_uninit_cb_t uninit_cb;
 
+	/*!< When bypass is set, all incoming data is passed to the callback. */
+	shell_bypass_cb_t bypass;
+
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
 	struct getopt_state getopt_state;
@@ -682,9 +724,14 @@ struct shell_ctx {
 	/*!< Printf buffer size.*/
 	char printf_buff[CONFIG_SHELL_PRINTF_BUFF_SIZE];
 
-	volatile union shell_internal internal; /*!< Internal shell data.*/
+	volatile union shell_backend_cfg cfg;
+	volatile union shell_backend_ctx ctx;
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
+
+	/*!< Events that should be used only internally by shell thread.
+	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
+	 */
 	struct k_poll_event events[SHELL_SIGNALS];
 
 	struct k_mutex wr_mtx;
@@ -758,7 +805,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 	Z_SHELL_STATS_DEFINE(_name);					      \
 	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
-	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
+	static const STRUCT_SECTION_ITERABLE(shell, _name) = {		      \
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \
@@ -779,7 +826,8 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  *
  * @param[in] shell		Pointer to shell instance.
  * @param[in] transport_config	Transport configuration during initialization.
- * @param[in] use_colors	Enables colored prints.
+ * @param[in] cfg_flags		Initial backend configuration flags.
+ *				Shell will copy this data.
  * @param[in] log_backend	If true, the console will be used as logger
  *				backend.
  * @param[in] init_log_level	Default severity level for the logger.
@@ -787,7 +835,8 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  * @return Standard error code.
  */
 int shell_init(const struct shell *shell, const void *transport_config,
-	       bool use_colors, bool log_backend, uint32_t init_log_level);
+	       struct shell_backend_config_flags cfg_flags,
+	       bool log_backend, uint32_t init_log_level);
 
 /**
  * @brief Uninitializes the transport layer and the internal shell state.
@@ -853,8 +902,9 @@ int shell_stop(const struct shell *shell);
  * @param[in] fmt	Format string.
  * @param[in] ...	List of parameters to print.
  */
-void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
-		   const char *fmt, ...);
+void __printf_like(3, 4) shell_fprintf(const struct shell *shell,
+				       enum shell_vt100_color color,
+				       const char *fmt, ...);
 
 /**
  * @brief vprintf-like function which sends formatted data stream to the shell.
@@ -1024,7 +1074,7 @@ struct getopt_state *shell_getopt_state_get(const struct shell *shell);
  *
  * @param[in] shell	Pointer to the shell instance.
  *			It can be NULL when the
- *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
+ *			@kconfig{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @return		Result of the execution
@@ -1043,6 +1093,16 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd);
  * @retval -EINVAL if invalid root command is provided.
  */
 int shell_set_root_cmd(const char *cmd);
+
+/** @brief Set bypass callback.
+ *
+ * Bypass callback is called whenever data is received. Shell is bypassed and
+ * data is passed directly to the callback. Use null to disable bypass functionality.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] bypass	Bypass callback or null to disable.
+ */
+void shell_set_bypass(const struct shell *shell, shell_bypass_cb_t bypass);
 
 /**
  * @brief Allow application to control text insert mode.

@@ -19,7 +19,7 @@ Licensing is very important to open source projects. It helps ensure the
 software continues to be available under the terms that the author desired.
 
 .. _Apache 2.0 license:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 
@@ -68,6 +68,18 @@ this contributing and review process for imported components.
       :maxdepth: 1
 
       ../LICENSING.rst
+
+.. _copyrights:
+
+Copyrights Notices
+*******************
+
+Please follow this `Community Best Practice`_ for Copyright Notices from the
+Linux Foundation.
+
+
+.. _Community Best Practice:
+   https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
 
 .. _DCO:
 
@@ -193,15 +205,16 @@ Pull Requests and Issues
 
 .. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
-.. _Zephyr Slack channel: https://zephyrproject.slack.com
+.. _Zephyr Discord Server: https://chat.zephyrproject.org
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Slack channel`_)
-to see what others think of your issue (and proposed solution).  You may find
-others that have encountered the issue you're finding, or that have similar
-ideas for changes or additions.  Send a message to the `Zephyr devel mailing list`_
-to introduce and discuss your idea with the development community.
+conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+Server`_) to see what others think of your issue (and proposed solution).  You
+may find others that have encountered the issue you're finding, or that have
+similar ideas for changes or additions.  Send a message to the `Zephyr devel
+mailing list`_ to introduce and discuss your idea with the development
+community.
 
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
@@ -366,14 +379,19 @@ issues, you can add option --no-verify to the git push command.
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
 
-
-Coding Guidelines
-*****************
+Other Guidelines
+****************
 
 Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
 submitted for inclusion, the project targets compliance with a series of
 coding guidelines. Refer to the :ref:`coding_guidelines` section of the
 documentation for additional details.
+
+.. toctree::
+   :maxdepth: 1
+
+   coding_guidelines/index.rst
+   documentation/index.rst
 
 .. _Contribution Tools:
 
@@ -428,14 +446,14 @@ workflow here:
      upstream https://github.com/zephyrproject-rtos/zephyr (fetch)
      upstream https://github.com/zephyrproject-rtos/zephyr (push)
 
-#. Create a topic branch (off of master) for your work (if you're addressing
+#. Create a topic branch (off of main) for your work (if you're addressing
    an issue, we suggest including the issue number in the branch name)::
 
-     git checkout master
+     git checkout main
      git checkout -b fix_comment_typo
 
    Some Zephyr subsystems do development work on a separate branch from
-   master so you may need to indicate this in your checkout::
+   main so you may need to indicate this in your checkout::
 
      git checkout -b fix_out_of_date_patch origin/net
 
@@ -477,9 +495,9 @@ workflow here:
    pull request for the appropriate branch. The title and message from your
    commit message should appear as well.
 
-#. If you're working on a subsystem branch that's not ``master``,
+#. If you're working on a subsystem branch that's not ``main``,
    you may need to change the intended branch for the pull request
-   here, for example, by changing the base branch from ``master`` to ``net``.
+   here, for example, by changing the base branch from ``main`` to ``net``.
 
 #. GitHub will assign one or more suggested reviewers (based on the
    CODEOWNERS file in the repo). If you are a project member, you can
@@ -491,9 +509,9 @@ workflow here:
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
-   new branch off of master and not the previous branch.)::
+   new branch off of main and not the previous branch.)::
 
-     git checkout master
+     git checkout main
      git checkout -b fix_another_issue
 
    and use the same process described above to work on this new topic branch.
@@ -502,7 +520,7 @@ workflow here:
    commit(s) to fix review issues.  In your development repo::
 
      git fetch --all
-     git rebase --ignore-whitespace upstream/master
+     git rebase --ignore-whitespace upstream/main
 
    The ``--ignore-whitespace`` option stops ``git apply`` (called by rebase)
    from changing any whitespace. Continuing::
@@ -586,7 +604,7 @@ The description body of the commit message must include:
 * **how** you know it works -- for example, which tests you ran.
 
 For examples of accepted commit messages, you can refer to the Zephyr GitHub
-`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/master>`__.
+`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/main>`__.
 
 Other Commit Expectations
 =========================

@@ -156,8 +156,10 @@
 	status = "okay";
 	tx-pin = <5>;
 	rx-pin = <3>;
+	rx-pull-up;
 	rts-pin = <40>;
 	cts-pin = <7>;
+	cts-pull-up;
 };
 
 &flash0 {

@@ -227,7 +227,7 @@ void test_v4_msg_waitall(void)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
 		.tv_sec = 0,
-		.tv_usec = 100000,
+		.tv_usec = 200000,
 	};
 
 	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
@@ -305,7 +305,7 @@ void test_v6_msg_waitall(void)
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
 		.tv_sec = 0,
-		.tv_usec = 100000,
+		.tv_usec = 200000,
 	};
 
 	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,

@@ -10,17 +10,18 @@ API Reference
    audio/index.rst
    misc/notify.rst
    bluetooth/index.rst
-   kconfig/index.rst
    crypto/index.rst
    devicetree/index.rst
    drivers/index.rst
    display/index.rst
    edac/index.rst
    file_system/index.rst
+   iterable_sections/index.rst
    misc/formatted_output.rst
    kernel/index.rst
    libc/index.rst
    logging/index.rst
+   memory_management/index.rst
    misc/index
    data_structures/index.rst
    modbus/index.rst

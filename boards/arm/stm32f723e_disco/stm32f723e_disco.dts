@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f7/stm32f723Xe.dtsi>
 #include <st/f7/stm32f723i(c-e)kx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
@@ -73,10 +74,6 @@
 	apb2-prescaler = <2>;
 };
 
-arduino_i2c: &i2c2 {};
-arduino_spi: &spi1 {};
-arduino_serial: &usart2 {};
-
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
@@ -109,7 +106,7 @@ arduino_serial: &usart2 {};
 	status = "okay";
 };
 
-&usbotg_fs {
+zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };

@@ -9,17 +9,20 @@ properties:
     num-bidir-endpoints:
       type: int
       required: true
-      description: Number of bi-directional endpoints supported by hardware
-                   (including EP0)
+      description: |
+        Number of bi-directional endpoints supported by hardware
+        (including EP0)
 
     num-in-endpoints:
       type: int
       required: false
-      description: Number of IN endpoints supported by hardware
-                   (including EP0 IN)
+      description: |
+        Number of IN endpoints supported by hardware
+        (including EP0 IN)
 
     num-out-endpoints:
       type: int
       required: false
-      description: Number of OUT endpoints supported by hardware
-                   (including EP0 OUT)
+      description: |
+        Number of OUT endpoints supported by hardware
+        (including EP0 OUT)

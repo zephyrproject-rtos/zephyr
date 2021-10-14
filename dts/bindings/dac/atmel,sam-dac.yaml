@@ -1,0 +1,34 @@
+# Copyright (c) 2021 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM family DAC
+
+compatible: "atmel,sam-dac"
+
+include: dac-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: |
+        peripheral ID
+
+    prescaler:
+      type: int
+      required: false
+      default: 15
+      description: |
+        Peripheral Clock to DAC Clock Ratio. Prescaler value is calcuated as
+        PRESCAL = (MCK / DACClock) - 2. Should be in range from 0 to 15. The
+        value will be written to DACC_MR.PRESCALER bit-field. The property is
+        applicable only to SAME70, SAMV71 series devices.
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - output

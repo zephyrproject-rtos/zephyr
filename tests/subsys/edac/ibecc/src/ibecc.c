@@ -52,19 +52,22 @@ static void callback(const struct device *d, void *data)
 
 static void test_ibecc_api(void)
 {
-	uint64_t ret;
+	uint64_t value;
+	int ret;
 
 	/* Error log API */
 
-	ret = edac_ecc_error_log_get(dev);
-	zassert_equal(ret, 0, "Error log not zero");
+	ret = edac_ecc_error_log_get(dev, &value);
+	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
 
-	edac_ecc_error_log_clear(dev);
+	ret = edac_ecc_error_log_clear(dev);
+	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
-	ret = edac_parity_error_log_get(dev);
-	zassert_equal(ret, 0, "Error log not zero");
+	ret = edac_parity_error_log_get(dev, &value);
+	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
 
-	edac_parity_error_log_clear(dev);
+	ret = edac_parity_error_log_clear(dev);
+	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");
 
 	/* Error stat API */
 
@@ -83,8 +86,25 @@ static void test_ibecc_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_ibecc_error_inject_api(void)
 {
+	uint32_t test_value;
 	uint64_t val;
 	int ret;
+
+	/* Verify default parameters */
+
+	ret = edac_inject_get_error_type(dev, &test_value);
+	zassert_equal(ret, 0, "Error getting error_type");
+	zassert_equal(test_value, 0, "Error type not zero");
+
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
+	zassert_equal(val, 0, "Error param1 is not zero");
+
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
+	zassert_equal(val, 0, "Error param2 is not zero");
+
+	/* Verify basic Injection API operations */
 
 	/* Set correct value of param1 */
 	ret = edac_inject_set_param1(dev, TEST_ADDRESS1);
@@ -94,7 +114,8 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param1(dev, UINT64_MAX);
 	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
-	val = edac_inject_get_param1(dev);
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
 	zassert_equal(val, TEST_ADDRESS1, "Read back value differs");
 
 	/* Set correct value of param2 */
@@ -105,7 +126,8 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param2(dev, UINT64_MAX);
 	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
-	val = edac_inject_get_param2(dev);
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
 	zassert_equal(val, TEST_ADDRESS_MASK, "Read back value differs");
 
 	/* Clearing parameters */
@@ -113,13 +135,15 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param1(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	val = edac_inject_get_param1(dev);
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
 	zassert_equal(val, 0, "Read back value differs");
 
 	ret = edac_inject_set_param2(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	val = edac_inject_get_param2(dev);
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
 	zassert_equal(val, 0, "Read back value differs");
 }
 #else
@@ -132,12 +156,22 @@ static void test_ibecc_error_inject_api(void)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 {
-
+	unsigned int errors_cor, errors_uc;
 	uint64_t test_addr;
 	uint32_t test_value;
 	int ret, num_int;
 
 	interrupt = 0;
+
+	/* Test error_trigger() for unset error type */
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
+
+	errors_cor = edac_errors_cor_get(dev);
+	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
+
+	errors_uc = edac_errors_uc_get(dev);
+	zassert_not_equal(errors_uc, -ENOSYS, "Not implemented error count");
 
 	ret = edac_inject_set_param1(dev, addr);
 	zassert_equal(ret, 0, "Error setting inject address");
@@ -149,9 +183,9 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	ret = edac_inject_set_error_type(dev, type);
 	zassert_equal(ret, 0, "Error setting inject error type");
 
-	test_value = edac_inject_get_error_type(dev);
-	zassert_equal(test_value, type,
-		      "Read back value differs");
+	ret = edac_inject_get_error_type(dev, &test_value);
+	zassert_equal(ret, 0, "Error getting error_type");
+	zassert_equal(test_value, type, "Read back value differs");
 
 	ret = edac_inject_error_trigger(dev);
 	zassert_equal(ret, 0, "Error setting ctrl");
@@ -182,9 +216,22 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 		      num_int);
 
 	TC_PRINT("Interrupt %d\n", num_int);
-	TC_PRINT("ECC Error Log 0x%llx\n", edac_ecc_error_log_get(dev));
 	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
 		 error_type, error_address, error_syndrome);
+
+	/* Check statistic information */
+
+	ret = edac_errors_cor_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_COR ?
+		      errors_cor + 1 : errors_cor,
+		      "Incorrect correctable count");
+	TC_PRINT("Correctable error count %d\n", ret);
+
+	ret = edac_errors_uc_get(dev);
+	zassert_equal(ret, type == EDAC_ERROR_TYPE_DRAM_UC ?
+		      errors_uc + 1 : errors_uc,
+		      "Incorrect uncorrectable count");
+	TC_PRINT("Uncorrectable error count %d\n", ret);
 }
 
 static int check_values(void *p1, void *p2, void *p3)
@@ -262,6 +309,20 @@ static void test_ibecc_error_inject_test_uc(void)
 }
 #endif
 
+/* Used only for code coverage */
+
+bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf);
+
+static void test_trigger_nmi_handler(void)
+{
+	bool ret;
+
+	ret = z_x86_do_kernel_nmi(NULL);
+	zassert_false(ret, "Test that NMI handling fails");
+}
+
+void test_edac_dummy_api(void);
+
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
@@ -269,8 +330,10 @@ void test_main(void)
 #endif
 
 	ztest_test_suite(ibecc,
+			 ztest_unit_test(test_trigger_nmi_handler),
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
+			 ztest_unit_test(test_edac_dummy_api),
 			 ztest_unit_test(test_ibecc_error_inject_api),
 			 ztest_unit_test(test_ibecc_error_inject_test_cor),
 			 ztest_unit_test(test_ibecc_error_inject_test_uc)

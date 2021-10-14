@@ -74,6 +74,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+#if defined(FLASH_OPTR_DBANK)
+	bool dcache_enabled = false;
+#endif /* FLASH_OPTR_DBANK */
 	uint32_t tmp;
 	int rc;
 
@@ -96,6 +99,17 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
+#if defined(FLASH_OPTR_DBANK)
+	/*
+	 * Disable the data cache to avoid the silicon errata ES0430 Rev 7 2.2.2:
+	 * "Data cache might be corrupted during Flash memory read-while-write operation"
+	 */
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		dcache_enabled = true;
+		regs->ACR &= (~FLASH_ACR_DCEN);
+	}
+#endif /* FLASH_OPTR_DBANK */
+
 	/* Set the PG bit */
 	regs->CR |= FLASH_CR_PG;
 
@@ -111,6 +125,15 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
+
+#if defined(FLASH_OPTR_DBANK)
+	/* Reset/enable the data cache if previously enabled */
+	if (dcache_enabled) {
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= (~FLASH_ACR_DCRST);
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+#endif /* FLASH_OPTR_DBANK */
 
 	return rc;
 }

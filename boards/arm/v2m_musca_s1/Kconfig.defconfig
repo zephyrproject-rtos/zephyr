@@ -5,7 +5,7 @@ if BOARD_MUSCA_S1
 
 config BOARD
 	default "musca_s1" if TRUSTED_EXECUTION_SECURE || !TRUSTED_EXECUTION_NONSECURE
-	default "musca_s1_nonsecure"
+	default "musca_s1_ns"
 
 if GPIO
 

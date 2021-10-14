@@ -68,9 +68,4 @@ void arch_busy_wait(uint32_t time_us)
 	nrfx_coredep_delay_us(time_us);
 }
 
-void z_platform_init(void)
-{
-	SystemInit();
-}
-
 SYS_INIT(nordicsemi_nrf51_init, PRE_KERNEL_1, 0);

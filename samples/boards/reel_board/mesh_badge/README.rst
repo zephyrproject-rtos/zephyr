@@ -6,7 +6,7 @@ Mesh Badge
 Overview
 ********
 
-This sample app for the reel board showcases Bluetooth Mesh
+This sample app for the reel board showcases Bluetooth mesh
 
 The app starts off as a regular Bluetooth GATT peripheral application.
 Install the the "nRF Connect" app on your phone (available both for
@@ -34,7 +34,7 @@ Steps to set up
    you're not happy with it you can try writing something else.
 #. When you're happy with the text, disconnect from the board (exit the app or
    go back to the device scan page)
-#. Once disconnected the board switches over to Bluetooth Mesh mode, and you
+#. Once disconnected the board switches over to Bluetooth mesh mode, and you
    can't connect to it anymore over GATT.
 
 If you configure multiple boards like this they can communicate with

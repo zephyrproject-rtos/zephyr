@@ -62,6 +62,13 @@ static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
 #define CMD_HANDLER	2
 #define CMD_MAX		3
 
+/*
+ * Flags for modem_send_cmd_ext.
+ */
+#define MODEM_NO_TX_LOCK	BIT(0)
+#define MODEM_NO_SET_CMDS	BIT(1)
+#define MODEM_NO_UNSET_CMDS	BIT(2)
+
 struct modem_cmd_handler_data;
 
 struct modem_cmd {
@@ -149,6 +156,28 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 				  bool reset_error_flag);
 
 /**
+ * @brief  send AT command to interface with behavior defined by flags
+ *
+ * This function is similar to @ref modem_cmd_send, but it allows to choose a
+ * specific behavior regarding acquiring tx_lock, setting and unsetting
+ * @a handler_cmds.
+ *
+ * @param  *iface: interface to use
+ * @param  *handler: command handler to use
+ * @param  *buf: NULL terminated send buffer
+ * @param  *sem: wait for response semaphore
+ * @param  timeout: timeout of command
+ * @param  flags: flags which influence behavior of command sending
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_send_ext(struct modem_iface *iface,
+		       struct modem_cmd_handler *handler,
+		       const struct modem_cmd *handler_cmds,
+		       size_t handler_cmds_len, const uint8_t *buf,
+		       struct k_sem *sem, k_timeout_t timeout, int flags);
+
+/**
  * @brief  send AT command to interface w/o locking TX
  *
  * @param  *iface: interface to use
@@ -159,12 +188,17 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  *
  * @retval 0 if ok, < 0 if error.
  */
-int modem_cmd_send_nolock(struct modem_iface *iface,
-			  struct modem_cmd_handler *handler,
-			  const struct modem_cmd *handler_cmds,
-			  size_t handler_cmds_len,
-			  const uint8_t *buf, struct k_sem *sem,
-			  k_timeout_t timeout);
+static inline int modem_cmd_send_nolock(struct modem_iface *iface,
+					struct modem_cmd_handler *handler,
+					const struct modem_cmd *handler_cmds,
+					size_t handler_cmds_len,
+					const uint8_t *buf, struct k_sem *sem,
+					k_timeout_t timeout)
+{
+	return modem_cmd_send_ext(iface, handler, handler_cmds,
+				  handler_cmds_len, buf, sem, timeout,
+				  MODEM_NO_TX_LOCK);
+}
 
 /**
  * @brief  send AT command to interface w/ a TX lock
@@ -177,11 +211,15 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
  *
  * @retval 0 if ok, < 0 if error.
  */
-int modem_cmd_send(struct modem_iface *iface,
-		   struct modem_cmd_handler *handler,
-		   const struct modem_cmd *handler_cmds,
-		   size_t handler_cmds_len, const uint8_t *buf,
-		   struct k_sem *sem, k_timeout_t timeout);
+static inline int modem_cmd_send(struct modem_iface *iface,
+				 struct modem_cmd_handler *handler,
+				 const struct modem_cmd *handler_cmds,
+				 size_t handler_cmds_len, const uint8_t *buf,
+				 struct k_sem *sem, k_timeout_t timeout)
+{
+	return modem_cmd_send_ext(iface, handler, handler_cmds,
+				  handler_cmds_len, buf, sem, timeout, 0);
+}
 
 /**
  * @brief  send a series of AT commands w/ a TX lock

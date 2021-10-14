@@ -11,7 +11,7 @@ tests:
   sample.filesystem.fat_fs.overlay:
     platform_allow: nrf52840_blip
   sample.filesystem.fat_fs.adafruit_2_8_tft_touch_v2:
-    depends_on: arduino_spi arduino_gpio
+    depends_on: arduino_spi arduino_gpio arduino_i2c
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
     harness: console

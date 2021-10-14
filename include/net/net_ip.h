@@ -390,6 +390,8 @@ extern const struct in6_addr in6addr_loopback;
 #define INADDR_ANY 0
 #define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
+#define INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
+
 /** @endcond */
 
 enum net_ip_mtu {
@@ -415,6 +417,8 @@ enum net_priority {
 	NET_PRIORITY_IC = 6, /**< Internetwork control               */
 	NET_PRIORITY_NC = 7  /**< Network control                    */
 } __packed;
+
+#define NET_MAX_PRIORITIES 8 /* How many priority values there are */
 
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
@@ -562,6 +566,10 @@ union net_proto_header {
 #define NET_IPV4UDPH_LEN   (NET_UDPH_LEN + NET_IPV4H_LEN) /* IPv4 + UDP */
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
+
+#define NET_IPV6H_LENGTH_OFFSET		0x04	/* Offset of the Length field in the IPv6 header */
+
+#define NET_IPV6_FRAGH_OFFSET_MASK	0xfff8	/* Mask for the 13-bit Fragment Offset field */
 
 /** @endcond */
 

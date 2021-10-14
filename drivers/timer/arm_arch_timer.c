@@ -16,7 +16,7 @@
 #define MIN_DELAY	(1000)
 
 static struct k_spinlock lock;
-static volatile uint64_t last_cycle;
+static uint64_t last_cycle;
 
 static void arm_arch_timer_compare_isr(const void *arg)
 {
@@ -43,7 +43,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
+	sys_clock_announce(delta_ticks);
 }
 
 int sys_clock_driver_init(const struct device *dev)

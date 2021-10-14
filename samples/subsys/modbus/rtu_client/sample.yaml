@@ -2,5 +2,6 @@ sample:
   name: Modbus RTU Client Sample
 tests:
   sample.modbus.rtu_client:
+    platform_allow: nrf52840dk_nrf52840 frdm_k64f
     tags: uart modbus
-    depends_on: gpio, arduino_serial
+    depends_on: gpio arduino_serial

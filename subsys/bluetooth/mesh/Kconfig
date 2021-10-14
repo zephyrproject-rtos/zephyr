@@ -1,17 +1,17 @@
-# Bluetooth Mesh configuration options
+# Bluetooth mesh configuration options
 
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_MESH
-	bool "Bluetooth Mesh support"
+	bool "Bluetooth mesh support"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
-	  This option enables Bluetooth Mesh support. The specific
+	  This option enables Bluetooth mesh support. The specific
 	  features that are available may depend on other features
 	  that have been enabled in the stack, such as GATT support.
 
@@ -27,6 +27,13 @@ config BT_MESH_PROV_DEVICE
 	default y
 	help
 	  Enable this option to allow the device to be provisioned into a mesh network.
+
+config BT_MESH_PROV_OOB_PUBLIC_KEY
+	bool "OOB Public key support"
+	select TINYCRYPT_ECC_DH
+	depends on BT_MESH_PROV_DEVICE
+	help
+	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
 
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
@@ -67,7 +74,7 @@ if BT_MESH_CDB
 
 config BT_MESH_CDB_NODE_COUNT
 	int "Maximum number of nodes in the database"
-	default 1
+	default 8
 	range 1 4096
 	help
 	  This option specifies how many nodes each network can at most
@@ -96,18 +103,40 @@ if BT_CONN
 # Virtual option enabled whenever any Proxy protocol is needed
 config BT_MESH_PROXY
 	bool
+
+config BT_MESH_GATT
+	bool
+
+config BT_MESH_PROXY_MSG_LEN
+	int
+	depends on BT_MESH_GATT
+	default 66 if BT_MESH_PB_GATT
+	default 33 if BT_MESH_GATT_PROXY
+
+config BT_MESH_GATT_SERVER
+	bool
+	select BT_MESH_GATT
 	select BT_GATT_DYNAMIC_DB
 
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
-	select BT_MESH_PROXY
+	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
 
+config BT_MESH_PB_GATT_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_PB_GATT
+	default y
+	help
+	  This option includes GAP device name in scan response when
+	  the PB-GATT is enabled.
+
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
+	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROXY
 	help
 	  This option enables support for the Mesh GATT Proxy Service,
@@ -134,16 +163,6 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-config BT_MESH_PROXY_FILTER_SIZE
-	int "Maximum number of filter entries per Proxy Client"
-	default 3 if BT_MESH_GATT_PROXY
-	default 1
-	range 1 32767
-	depends on BT_MESH_PROXY
-	help
-	  This option specifies how many Proxy Filter entries the local
-	  node supports.
-
 config BT_MESH_PROXY_USE_DEVICE_NAME
 	bool "Include Bluetooth device name in scan response"
 	depends on BT_MESH_GATT_PROXY
@@ -151,7 +170,23 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 	  This option includes GAP device name in scan response when
 	  the GATT Proxy feature is enabled.
 
+config BT_MESH_PROXY_FILTER_SIZE
+	int "Maximum number of filter entries per Proxy Client"
+	default 3
+	range 1 32767
+	depends on BT_MESH_GATT_PROXY
+	help
+	  This option specifies how many Proxy Filter entries the local
+	  node supports.
+
 endif # BT_CONN
+
+config BT_MESH_ACCESS_LAYER_MSG
+	bool "Enable direct Bluetooth message access layer messages"
+	help
+	  This option allows the applicaiton to directly access
+	  Bluetooth access layer messages without the need to
+	  instantiate Bluetooth mesh models.
 
 config BT_MESH_SELF_TEST
 	bool "Perform self-tests"
@@ -196,6 +231,13 @@ config BT_MESH_MODEL_GROUP_COUNT
 	help
 	  This option specifies how many group addresses each model can
 	  at most be subscribed to.
+
+config BT_MESH_MODEL_VND_MSG_CID_FORCE
+	bool "Force vendor model to use the corresponding CID field message"
+	default y
+	help
+	  This option forces vendor model to use messages for the
+	  corresponding CID field.
 
 config BT_MESH_LABEL_COUNT
 	int "Maximum number of Label UUIDs used for Virtual Addresses"
@@ -264,8 +306,27 @@ config BT_MESH_ADV_STACK_SIZE
 	default 1024 if BT_HOST_CRYPTO
 	default 768
 	help
+	  Size of bt mesh adv thread stack.
+
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
+
+config BT_MESH_ADV_PRIO
+	int "Mesh advertiser thread priority"
+	depends on BT_MESH_ADV_LEGACY
+	default 7
+	help
+	  Priority of bt mesh adv thread.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_MESH_IV_UPDATE_SEQ_LIMIT
+	hex "Sequence number limit to start iv update"
+	default 0x800000
+	range 0x000001 0xFFFFFE
+	help
+	  This option specifies the sequence number value to start iv update.
 
 config BT_MESH_IVU_DIVIDER
 	int "Divider for IV Update state refresh timer"
@@ -653,19 +714,19 @@ config BT_MESH_HEALTH_CLI
 	  Enable support for the health client model.
 
 config BT_MESH_SHELL
-	bool "Enable Bluetooth Mesh shell"
+	bool "Enable Bluetooth mesh shell"
 	select SHELL
 	depends on BT_MESH_CFG_CLI
 	depends on BT_MESH_HEALTH_CLI
 	help
-	  Activate shell module that provides Bluetooth Mesh commands to
+	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
 
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"
 	help
 	  Enable support for the model extension concept, allowing the Access
-	  layer to know about Mesh model relationships.
+	  layer to know about mesh model relationships.
 
 if BT_SETTINGS
 
@@ -695,20 +756,24 @@ config BT_MESH_SEQ_STORE_RATE
 	  one used before power off.
 
 config BT_MESH_RPL_STORE_TIMEOUT
-	int "Minimum frequency that the RPL gets updated in storage"
-	range 0 1000000
+	int "Minimum interval after which unsaved RPL entries are updated in storage"
+	range -1 1000000
 	default 5
 	help
-	  This value defines in seconds how soon the RPL gets written to
-	  persistent storage after a change occurs. If the node receives
-	  messages frequently it may make sense to have this set to a
-	  large value, whereas if the RPL gets updated infrequently a
-	  value as low as 0 (write immediately) may make sense. Note that
-	  if the node operates a security sensitive use case, and there's
-	  a risk of sudden power loss, it may be a security vulnerability
-	  to set this value to anything else than 0 (a power loss before
-	  writing to storage exposes the node to potential message
-	  replay attacks).
+	  This value defines in seconds how soon unsaved RPL entries
+	  gets written to the persistent storage. Setting this value
+	  to a large number may lead to security vulnerabilities if a node
+	  gets powered off before the timer is fired. When flash is used
+	  as the persistent storage setting this value to a low number
+	  may wear out flash sooner or later. However, if the RPL gets
+	  updated infrequently a value as low as 0 (write immediately)
+	  may make sense. Setting this value to -1 will disable this timer.
+	  In this case, a user is responsible to store pending RPL entries
+	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
+	  IV Index is updated, the outdated RPL entries will still be
+	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
+	  between this timeout and calling @ref bt_mesh_rpl_pending_store
+	  may reduce a risk of security vulnerability and flash wear out.
 
 endif # BT_SETTINGS
 
@@ -733,55 +798,61 @@ config BT_MESH_DEBUG_NET
 	bool "Network layer debug"
 	help
 	  Use this option to enable Network layer debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_RPL
 	bool "Replay protection list debug"
 	help
 	  Use this option to enable Replay protection list debug logs
-	  for the Bluetooth Mesh functionality.
+	  for the Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_TRANS
 	bool "Transport layer debug"
 	help
 	  Use this option to enable Transport layer debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_BEACON
 	bool "Beacon debug"
 	help
 	  Use this option to enable Beacon-related debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_CRYPTO
 	bool "Crypto debug"
 	help
 	  Use this option to enable cryptographic debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_KEYS
 	bool "Key management debug"
 	help
 	  Use this option to enable key management debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROV
 	bool "Provisioning debug"
 	help
 	  Use this option to enable Provisioning debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROVISIONER
 	bool "Provisioner debug"
 	help
 	  Use this option to enable Provisioner debug logs for the
+	  Bluetooth mesh functionality.
+
+config BT_MESH_DEBUG_PROV_DEVICE
+	bool "Provisioning device debug"
+	help
+	  Use this option to enable Provisioning device debug logs for the
 	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"
 	help
 	  Use this option to enable Access layer and device composition
-	  related debug logs for Bluetooth Mesh.
+	  related debug logs for Bluetooth mesh.
 
 config BT_MESH_DEBUG_MODEL
 	bool "Foundation model debug"
@@ -793,23 +864,23 @@ config BT_MESH_DEBUG_ADV
 	bool "Advertising debug"
 	help
 	  Use this option to enable advertising debug logs for
-	  the Bluetooth Mesh functionality.
+	  the Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_LOW_POWER
 	bool "Low Power debug"
 	help
 	  Use this option to enable Low Power debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_FRIEND
 	bool "Friend debug"
 	help
 	  Use this option to enable Friend debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROXY
 	bool "Proxy debug"
-	depends on BT_MESH_PROXY
+	depends on BT_MESH_GATT
 	help
 	  Use this option to enable Proxy protocol debug logs.
 
@@ -829,7 +900,7 @@ config BT_MESH_DEBUG_CFG
 	bool "Configuration debug"
 	help
 	  Use this option to enable node configuration debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 endif # BT_MESH_DEBUG
 

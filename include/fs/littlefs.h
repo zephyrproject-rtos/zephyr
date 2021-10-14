@@ -57,15 +57,15 @@ struct fs_littlefs {
  * values are consistent with littlefs requirements.
  *
  * @note If you use a non-default configuration for cache size, you
- * must also select @option{CONFIG_FS_LITTLEFS_FC_HEAP_SIZE} to relax
+ * must also select @kconfig{CONFIG_FS_LITTLEFS_FC_HEAP_SIZE} to relax
  * the size constraints on per-file cache allocations.
  *
  * @param name the name for the structure.  The defined object has
  * file scope.
- * @param read_sz see @option{CONFIG_FS_LITTLEFS_READ_SIZE}
- * @param prog_sz see @option{CONFIG_FS_LITTLEFS_PROG_SIZE}
- * @param cache_sz see @option{CONFIG_FS_LITTLEFS_CACHE_SIZE}
- * @param lookahead_sz see @option{CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE}
+ * @param read_sz see @kconfig{CONFIG_FS_LITTLEFS_READ_SIZE}
+ * @param prog_sz see @kconfig{CONFIG_FS_LITTLEFS_PROG_SIZE}
+ * @param cache_sz see @kconfig{CONFIG_FS_LITTLEFS_CACHE_SIZE}
+ * @param lookahead_sz see @kconfig{CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE}
  */
 #define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, read_sz, prog_sz, cache_sz, lookahead_sz) \
 	static uint8_t __aligned(4) name ## _read_buffer[cache_sz];			  \

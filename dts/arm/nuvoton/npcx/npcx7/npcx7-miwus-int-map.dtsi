@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common MIWU group-interrupt mapping configurations in npcx family */
+#include <nuvoton/npcx/npcx-miwus-int-map.dtsi>
+
+/* Specific MIWU group-interrupt mapping configurations in npcx7 series */
+/ {
+	/* Mapping between MIWU group and interrupts */
+	npcx-miwus-int-map {
+		map_miwu0_groups: map-miwu0-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu0>;
+
+			group_ad0: group-ad0-map {
+				irq        = <7>;
+				irq-prio   = <2>;
+				group-mask = <0x09>;
+			};
+			group_efgh0: group-efgh0-map {
+				irq        = <11>;
+				irq-prio   = <2>;
+				group-mask = <0xF0>;
+			};
+		};
+
+		map_miwu2_groups: map-miwu2-groups {
+			compatible = "nuvoton,npcx-miwu-int-map";
+			parent = <&miwu2>;
+
+			group_fg2: group-fg2-map {
+				irq        = <59>;
+				irq-prio   = <2>;
+				group-mask = <0x60>;
+			};
+		};
+	};
+};

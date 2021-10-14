@@ -163,7 +163,7 @@ __pinned_func
 static __used void df_handler_bottom(void)
 {
 	/* We're back in the main hardware task on the interrupt stack */
-	int reason = K_ERR_CPU_EXCEPTION;
+	unsigned int reason = K_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
 	_df_tss.esp = (uint32_t)(_df_stack + sizeof(_df_stack));
@@ -171,7 +171,14 @@ static __used void df_handler_bottom(void)
 
 	LOG_ERR("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
-	if (z_x86_check_stack_bounds(_df_esf.esp, 0, _df_esf.cs)) {
+	/* To comply with MISRA 13.2 rule necessary to exclude code that depends
+	 * on the order of evaluation of function arguments.
+	 * Create 2 variables to store volatile data from the structure _df_esf
+	 */
+	uint32_t df_esf_esp = _df_esf.esp;
+	uint16_t df_esf_cs = _df_esf.cs;
+
+	if (z_x86_check_stack_bounds(df_esf_esp, 0, df_esf_cs)) {
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
 #endif

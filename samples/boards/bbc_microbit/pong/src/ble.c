@@ -25,10 +25,10 @@
 
 #define APPEARANCE       0
 
-#define PONG_SVC_UUID	0x90, 0x6c, 0x55, 0x0f, 0xee, 0x6f, 0x4d, 0x0d, \
-			0xa1, 0x7e, 0x24, 0x4e, 0x38, 0xea, 0x4f, 0xf9
-#define PONG_CHR_UUID	0xdd, 0x94, 0xaf, 0xd7, 0xcd, 0x2c, 0x40, 0xc6, \
-			0xb5, 0x82, 0x6a, 0xc5, 0x1c, 0x8f, 0xbf, 0xab
+#define PONG_SVC_UUID \
+	BT_UUID_128_ENCODE(0xf94fea38, 0x4e24, 0x7ea1, 0x0d4d, 0x6fee0f556c90)
+#define PONG_CHR_UUID \
+	BT_UUID_128_ENCODE(0xabbf8f1c, 0xc56a, 0x82b5, 0xc640, 0x2ccdd7af94dd)
 
 static struct bt_uuid_128 pong_svc_uuid = BT_UUID_INIT_128(PONG_SVC_UUID);
 static struct bt_uuid_128 pong_chr_uuid = BT_UUID_INIT_128(PONG_CHR_UUID);
@@ -244,7 +244,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	bt_conn_get_info(conn, &info);
-	initiator = (info.role == BT_CONN_ROLE_MASTER);
+	initiator = (info.role == BT_CONN_ROLE_CENTRAL);
 	remote_ready = false;
 	remote_handle = 0U;
 
@@ -271,7 +271,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -533,8 +533,6 @@ void ble_init(void)
 	}
 
 	k_work_init_delayable(&ble_work, ble_timeout);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	local_attr = &pong_svc.attrs[1];
 }

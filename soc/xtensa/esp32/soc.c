@@ -8,6 +8,7 @@
 #include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
@@ -121,6 +122,7 @@ void __attribute__((section(".iram1"))) __start(void)
 #if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
+	esp_intr_initialize();
 	/* Start Zephyr */
 	z_cstart();
 

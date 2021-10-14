@@ -425,15 +425,15 @@ static int i2c_dw_transfer(const struct device *dev,
 	 * While waiting at device_sync_sem, kernel can switch to idle
 	 * task which in turn can call pm_system_suspend() hook of Power
 	 * Management App (PMA).
-	 * device_busy_set() call here, would indicate to PMA that it should not
-	 * execute PM policies that would turn off this ip block, causing an
+	 * pm_device_busy_set() call here, would indicate to PMA that it should
+	 * not execute PM policies that would turn off this ip block, causing an
 	 * ongoing hw transaction to be left in an inconsistent state.
 	 * Note : This is just a sample to show a possible use of the API, it is
 	 * upto the driver expert to see, if he actually needs it here, or
 	 * somewhere else, or not needed as the driver's suspend()/resume()
 	 * can handle everything
 	 */
-	device_busy_set(dev);
+	pm_device_busy_set(dev);
 
 		/* Process all the messages */
 	while (msg_left > 0) {
@@ -493,7 +493,7 @@ static int i2c_dw_transfer(const struct device *dev,
 		msg_left--;
 	}
 
-	device_busy_clear(dev);
+	pm_device_busy_clear(dev);
 
 	dw->state = I2C_DW_STATE_READY;
 
@@ -623,7 +623,7 @@ static int i2c_dw_initialize(const struct device *dev)
 			return -EINVAL;
 		}
 
-		pcie_get_mbar(rom->pcie_bdf, 0, &mbar);
+		pcie_probe_mbar(rom->pcie_bdf, 0, &mbar);
 		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,

@@ -8,6 +8,9 @@ tests:
     tags: samples display gui
   sample.display.adafruit_2_8_tft_touch_v2:
     depends_on: arduino_gpio arduino_i2c arduino_spi
+    # Default settings end up allocating an ~150KB sized buffer in lvgl.
+    # This adds a bit of buffer to that for other data.
+    min_ram: 175
     platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield

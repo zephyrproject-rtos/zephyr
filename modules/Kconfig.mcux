@@ -35,6 +35,12 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_CCM_REV2
+	bool
+	help
+	  Set if the revison 2 of clock control module (CCM) module is present in the SoC.
+	  This is present in SoC's such as RT1170
+
 config HAS_MCUX_SYSCON
 	bool
 	help
@@ -142,6 +148,11 @@ config HAS_MCUX_RTC
 	help
 	  Set if the real time clock (RTC) modules is present in the SoC.
 
+config HAS_MCUX_LPC_RTC
+	bool
+	help
+	  Set if the LPC real time clock (RTC) modules is present in the SoC.
+
 config HAS_MCUX_SCG
 	bool
 	help
@@ -160,6 +171,12 @@ config HAS_MCUX_SIM
 	  Set if the system integration module (SIM) module is present in the
 	  SoC.
 
+config HAS_MCUX_SRC
+	bool
+	help
+	  Set if the system reset controller (SRC) module is present in the
+	  SoC.
+
 config HAS_MCUX_TRNG
 	bool
 	help
@@ -170,6 +187,11 @@ config HAS_MCUX_USB_EHCI
 	bool
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
+
+config HAS_MCUX_USB_LPCIP3511
+	bool
+	help
+	  Set if the USB controller LPCIP3511 module is present in the SoC.
 
 config HAS_MCUX_USDHC1
 	bool
@@ -195,6 +217,11 @@ config HAS_MCUX_PWM
 	bool
 	help
 	  Set if the PWM  module is present in the SoC.
+
+config HAS_MCUX_SCTIMER
+	bool
+	help
+	  Set if the sctimer module is present in the SoC.
 
 config HAS_MCUX_SMC
 	bool
@@ -260,5 +287,16 @@ config HAS_MCUX_PWT
 	bool
 	help
 	  Set if the PWT module is present on the SoC.
+
+config HAS_MCUX_RCM
+	bool
+	help
+	  Set if the Reset Control Module (RCM) module is present in
+	  the SoC.
+
+config HAS_MCUX_CTIMER
+	bool
+	help
+	  Set if the CTIMER module is present in the SoC.
 
 endif # HAS_MCUX

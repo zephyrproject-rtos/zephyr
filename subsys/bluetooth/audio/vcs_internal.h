@@ -36,17 +36,75 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
-int bt_vcs_client_get(struct bt_conn *conn, struct bt_vcs *client);
-int bt_vcs_client_read_vol_state(struct bt_conn *conn);
-int bt_vcs_client_read_flags(struct bt_conn *conn);
-int bt_vcs_client_vol_down(struct bt_conn *conn);
-int bt_vcs_client_vol_up(struct bt_conn *conn);
-int bt_vcs_client_unmute_vol_down(struct bt_conn *conn);
-int bt_vcs_client_unmute_vol_up(struct bt_conn *conn);
-int bt_vcs_client_set_volume(struct bt_conn *conn, uint8_t volume);
-int bt_vcs_client_unmute(struct bt_conn *conn);
-int bt_vcs_client_mute(struct bt_conn *conn);
+#if defined(CONFIG_BT_VCS_CLIENT)
+struct bt_vcs_client {
+	struct vcs_state state;
+	uint8_t flags;
 
-bool bt_vcs_client_valid_vocs_inst(struct bt_conn *conn, struct bt_vocs *vocs);
-bool bt_vcs_client_valid_aics_inst(struct bt_conn *conn, struct bt_aics *aics);
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t state_handle;
+	uint16_t control_handle;
+	uint16_t flag_handle;
+	struct bt_gatt_subscribe_params state_sub_params;
+	struct bt_gatt_discover_params state_sub_disc_params;
+	struct bt_gatt_subscribe_params flag_sub_params;
+	struct bt_gatt_discover_params flag_sub_disc_params;
+	bool cp_retried;
+
+	bool busy;
+	struct vcs_control_vol cp_val;
+	struct bt_gatt_write_params write_params;
+	struct bt_gatt_read_params read_params;
+	struct bt_gatt_discover_params discover_params;
+	struct bt_uuid_16 uuid;
+	struct bt_conn *conn;
+
+	uint8_t vocs_inst_cnt;
+	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
+	uint8_t aics_inst_cnt;
+	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
+};
+#endif /* CONFIG_BT_VCS_CLIENT */
+
+#if defined(CONFIG_BT_VCS)
+struct bt_vcs_server {
+	struct vcs_state state;
+	uint8_t flags;
+	struct bt_vcs_cb *cb;
+	uint8_t volume_step;
+
+	struct bt_gatt_service *service_p;
+	struct bt_vocs *vocs_insts[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT];
+	struct bt_aics *aics_insts[CONFIG_BT_VCS_AICS_INSTANCE_COUNT];
+};
+#endif /* CONFIG_BT_VCS */
+
+/* Struct used as a common type for the api */
+struct bt_vcs {
+	bool client_instance;
+	union {
+#if defined(CONFIG_BT_VCS)
+		struct bt_vcs_server srv;
+#endif /* CONFIG_BT_VCS */
+#if defined(CONFIG_BT_VCS_CLIENT)
+		struct bt_vcs_client cli;
+#endif /* CONFIG_BT_VCS_CLIENT */
+	};
+};
+
+int bt_vcs_client_included_get(struct bt_vcs *vcs,
+			       struct bt_vcs_included *included);
+int bt_vcs_client_read_vol_state(struct bt_vcs *vcs);
+int bt_vcs_client_read_flags(struct bt_vcs *vcs);
+int bt_vcs_client_vol_down(struct bt_vcs *vcs);
+int bt_vcs_client_vol_up(struct bt_vcs *vcs);
+int bt_vcs_client_unmute_vol_down(struct bt_vcs *vcs);
+int bt_vcs_client_unmute_vol_up(struct bt_vcs *vcs);
+int bt_vcs_client_set_volume(struct bt_vcs *vcs, uint8_t volume);
+int bt_vcs_client_unmute(struct bt_vcs *vcs);
+int bt_vcs_client_mute(struct bt_vcs *vcs);
+
+bool bt_vcs_client_valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs);
+bool bt_vcs_client_valid_aics_inst(struct bt_vcs *vcs, struct bt_aics *aics);
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCS_INTERNAL_*/

@@ -14,6 +14,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -45,7 +46,7 @@
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "st,stm32-hse-clock";
+			compatible = "fixed-clock";
 			/* Expected clock-frequency on the whole series 32MHz */
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
@@ -105,11 +106,13 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <8>;
 				erase-block-size = <4096>;
+				/* maximum erase time(ms) for a 4K sector */
+				max-erase-time = <25>;
 			};
 		};
 
@@ -284,7 +287,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
@@ -320,7 +323,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_16";
 				#pwm-cells = <3>;
 			};
@@ -338,7 +341,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_17";
 				#pwm-cells = <3>;
 			};
@@ -366,7 +369,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <47 0>;
+			interrupts = <47 1>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";
@@ -374,7 +377,7 @@
 
 		dma1: dma@40020000 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
@@ -386,7 +389,7 @@
 
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
 			interrupts = <55 0 56 0 57 0 58 0 59 0 60 0 61 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
@@ -398,7 +401,7 @@
 
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020800 0x400>;
 			interrupts = <62 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
@@ -433,6 +436,14 @@
 			label = "QUADSPI";
 		};
 
+		rng: rng@58001000 {
+			compatible = "st,stm32-rng";
+			reg = <0x58001000 0x400>;
+			interrupts = <53 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00040000>;
+			status = "disabled";
+			label = "RNG";
+		};
 	};
 
 	usb_fs_phy: usbphy {

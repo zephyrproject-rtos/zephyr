@@ -415,7 +415,7 @@ static int mcux_adc16_init(const struct device *dev)
 #else
 	config->irq_config_func(dev);
 #endif
-	LOG_INF("adc init done");
+	LOG_DBG("adc init done");
 
 	adc_context_unlock_unconditionally(&data->ctx);
 

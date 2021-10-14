@@ -67,3 +67,13 @@ properties:
         - 460800
         - 921600
         - 1000000
+
+    rx-pull-up:
+      type: boolean
+      required: false
+      description: Enable pull-up resistor on the RX pin.
+
+    cts-pull-up:
+      type: boolean
+      required: false
+      description: Enable pull-up resistor on the CTS pin.

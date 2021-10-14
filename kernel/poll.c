@@ -230,6 +230,10 @@ static inline int register_events(struct k_poll_event *events,
 			register_event(&events[ii], poller);
 			events_registered += 1;
 		} else {
+			/* Event is not one of those identified in is_condition_met()
+			 * catching non-polling events, or is marked for just check,
+			 * or not marked for polling. No action needed.
+			 */
 			;
 		}
 		k_spin_unlock(&lock, key);
@@ -424,6 +428,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 		} else if (poller->mode == MODE_TRIGGERED) {
 			retcode = signal_triggered_work(event, state);
 		} else {
+			/* Poller is not poll or triggered mode. No action needed.*/
 			;
 		}
 
@@ -647,7 +652,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_work_poll, submit_to_queue, work_q, work, timeout);
 
-	/* Take overship of the work if it is possible. */
+	/* Take ownership of the work if it is possible. */
 	key = k_spin_lock(&lock);
 	if (work->workq != NULL) {
 		if (work->workq == work_q) {

@@ -15,6 +15,7 @@
 #include <stm32l5xx_ll_rcc.h>
 #include <stm32l5xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -27,7 +28,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", info.state);
@@ -73,7 +74,7 @@ void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power substate-id %u", info.state);

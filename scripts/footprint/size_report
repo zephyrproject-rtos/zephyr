@@ -7,6 +7,10 @@
 # Based on a script by:
 #       Chereau, Fabien <fabien.chereau@intel.com>
 
+"""
+Process an ELF file to generate size report on RAM and ROM.
+"""
+
 import argparse
 import os
 import sys
@@ -15,6 +19,11 @@ from pathlib import Path
 import json
 
 from distutils.version import LooseVersion
+
+from colorama import init, Fore
+
+from anytree import RenderTree, NodeMixin, findall_by_attr
+from anytree.exporter import DictExporter
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -28,11 +37,6 @@ from elftools.dwarf.locationlists import (
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
-from colorama import init, Fore
-
-from anytree import RenderTree, NodeMixin, findall_by_attr
-from anytree.exporter import DictExporter
-
 
 # ELF section flags
 SHF_WRITE = 0x1
@@ -43,18 +47,24 @@ SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
 
 DT_LOCATION = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)\)")
 
+SRC_FILE_EXT = ('.h', '.c', '.hpp', '.cpp', '.hxx', '.cxx', '.c++')
+
 
 def get_symbol_addr(sym):
+    """Get the address of a symbol"""
     return sym['st_value']
 
 
 def get_symbol_size(sym):
+    """Get the size of a symbol"""
     return sym['st_size']
 
 
-# Given a list of start/end addresses, test if the symbol
-# lies within any of these address ranges
 def is_symbol_in_ranges(sym, ranges):
+    """
+    Given a list of start/end addresses, test if the symbol
+    lies within any of these address ranges.
+    """
     for bound in ranges:
         if bound['start'] <= sym['st_value'] <= bound['end']:
             return True
@@ -62,8 +72,8 @@ def is_symbol_in_ranges(sym, ranges):
     return False
 
 
-# Get the bounding addresses from a DIE variable or subprogram
 def get_die_mapped_address(die, parser, dwarfinfo):
+    """Get the bounding addresses from a DIE variable or subprogram"""
     low = None
     high = None
 
@@ -95,10 +105,12 @@ def get_die_mapped_address(die, parser, dwarfinfo):
     return low, high
 
 
-# Find the symbol from a symbol list
-# where it matches the address in DIE variable,
-# or within the range of a DIE subprogram
 def match_symbol_address(symlist, die, parser, dwarfinfo):
+    """
+    Find the symbol from a symbol list
+    where it matches the address in DIE variable,
+    or within the range of a DIE subprogram.
+    """
     low, high = get_die_mapped_address(die, parser, dwarfinfo)
 
     if low is None:
@@ -111,9 +123,11 @@ def match_symbol_address(symlist, die, parser, dwarfinfo):
     return None
 
 
-# Fetch the symbols from the symbol table and put them
-# into ROM, RAM buckets
 def get_symbols(elf, addr_ranges):
+    """
+    Fetch the symbols from the symbol table and put them
+    into ROM, RAM buckets.
+    """
     rom_syms = dict()
     ram_syms = dict()
     unassigned_syms = dict()
@@ -156,9 +170,11 @@ def get_symbols(elf, addr_ranges):
     return ret
 
 
-# Parse ELF header to find out the address ranges of ROM or RAM sections
-# and their total sizes
 def get_section_ranges(elf):
+    """
+    Parse ELF header to find out the address ranges of ROM or RAM sections
+    and their total sizes.
+    """
     rom_addr_ranges = list()
     ram_addr_ranges = list()
     rom_size = 0
@@ -202,8 +218,7 @@ def get_section_ranges(elf):
 
 
 def get_die_filename(die, lineprog):
-    zephyrbase = os.path.normpath(args.zephyrbase)
-
+    """Get the source code filename associated with a DIE"""
     file_index = die.attributes['DW_AT_decl_file'].value
     file_entry = lineprog['file_entry'][file_index - 1]
 
@@ -225,23 +240,19 @@ def get_die_filename(die, lineprog):
     try:
         path = path.resolve()
     except OSError as e:
-        if '<built-in>' in str(path):
-            # This is expected, built-ins can't be resolved
-            return path
-        raise e
-    try:
-        new_path = path.relative_to(zephyrbase)
-        path = new_path
-    except ValueError:
-        pass
+        # built-ins can't be resolved, so it's not an issue
+        if '<built-in>' not in str(path):
+            raise e
 
     return path
 
 
-# Sequentially process DIEs in compiler units with direct file mappings
-# within the DIEs themselves, and do simply matching between DIE names
-# and symbol names.
 def do_simple_name_matching(elf, symbol_dict, processed):
+    """
+    Sequentially process DIEs in compiler units with direct file mappings
+    within the DIEs themselves, and do simply matching between DIE names
+    and symbol names.
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -328,11 +339,16 @@ def do_simple_name_matching(elf, symbol_dict, processed):
     processed['unmapped_dies'] = unmapped_dies
 
 
-# There are functions and variables which are aliases to
-# other functions/variables. So this marks them as mapped
-# so they will not get counted again when a tree is being
-# built for display.
 def mark_address_aliases(symbol_dict, processed):
+    """
+    Mark symbol aliases as already mapped to prevent
+    double counting.
+
+    There are functions and variables which are aliases to
+    other functions/variables. So this marks them as mapped
+    so they will not get counted again when a tree is being
+    built for display.
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -352,15 +368,19 @@ def mark_address_aliases(symbol_dict, processed):
     processed['unmapped_symbols'] = unmapped_symbols
 
 
-# This uses the address ranges of DIEs and map them to symbols
-# residing within those ranges, and works on DIEs that have not
-# been mapped in previous steps. This works on symbol names
-# that do not match the names in DIEs, e.g. "<func>" in DIE,
-# but "<func>.constprop.*" in symbol name list. This also
-# helps with mapping the mangled function names in C++,
-# since the names in DIE are actual function names in source
-# code and not mangled version of them.
 def do_address_range_matching(elf, symbol_dict, processed):
+    """
+    Match symbols indirectly using address ranges.
+
+    This uses the address ranges of DIEs and map them to symbols
+    residing within those ranges, and works on DIEs that have not
+    been mapped in previous steps. This works on symbol names
+    that do not match the names in DIEs, e.g. "<func>" in DIE,
+    but "<func>.constprop.*" in symbol name list. This also
+    helps with mapping the mangled function names in C++,
+    since the names in DIE are actual function names in source
+    code and not mangled version of them.
+    """
     if 'unmapped_dies' not in processed:
         return
 
@@ -456,10 +476,14 @@ def do_address_range_matching(elf, symbol_dict, processed):
     processed['unmapped_symbols'] = unmapped_symbols
 
 
-# Any unmapped symbols are added under the root node if those
-# symbols reside within the desired memory address ranges
-# (e.g. ROM or RAM).
 def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
+    """
+    Set root path for unmapped symbols.
+
+    Any unmapped symbols are added under the root node if those
+    symbols reside within the desired memory address ranges
+    (e.g. ROM or RAM).
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -484,9 +508,28 @@ def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
     processed['mapped_addr'] = mapped_addresses
     processed['unmapped_symbols'] = unmapped_symbols
 
+def find_common_path_prefix(symbol_dict):
+    """
+    Find the common path prefix of all mapped files.
+    Must be called before set_root_path_for_unmapped_symbols().
+    """
+    paths = list()
+
+    for _, sym in symbol_dict.items():
+        for symbol in sym:
+            for file in symbol['mapped_files']:
+                paths.append(file)
+
+    return os.path.commonpath(paths)
+
+
 class TreeNode(NodeMixin):
+    """
+    A symbol node.
+    """
+
     def __init__(self, name, identifier, size=0, parent=None, children=None):
-        super(TreeNode, self).__init__()
+        super().__init__()
         self.name = name
         self.size = size
         self.parent = parent
@@ -497,8 +540,42 @@ class TreeNode(NodeMixin):
     def __repr__(self):
         return self.name
 
-def generate_any_tree(symbol_dict):
-    root = TreeNode('root', ":")
+
+def sum_node_children_size(node):
+    """
+    Calculate the sum of symbol size of all direct children.
+    """
+    size = 0
+
+    for child in node.children:
+        size += child.size
+
+    return size
+
+
+def generate_any_tree(symbol_dict, total_size, path_prefix):
+    """
+    Generate a symbol tree for output.
+    """
+    root = TreeNode('Root', "root")
+    node_no_paths = TreeNode('(no paths)', ":", parent=root)
+
+    if Path(path_prefix) == Path(args.zephyrbase):
+        # All source files are under ZEPHYR_BASE so there is
+        # no need for another level.
+        node_zephyr_base = root
+        node_output_dir = root
+        node_workspace = root
+        node_others = root
+    else:
+        node_zephyr_base = TreeNode('ZEPHYR_BASE', args.zephyrbase)
+        node_output_dir = TreeNode('OUTPUT_DIR', args.output)
+        node_others = TreeNode("/", "/")
+
+        if args.workspace:
+            node_workspace = TreeNode('WORKSPACE', args.workspace)
+        else:
+            node_workspace = node_others
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
@@ -522,25 +599,84 @@ def generate_any_tree(symbol_dict):
                     parent = node
                 node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
 
+    # Mapping paths to tree nodes
+    path_node_map = [
+        [Path(args.zephyrbase), node_zephyr_base],
+        [Path(args.output), node_output_dir],
+    ]
+
+    if args.workspace:
+        path_node_map.append(
+            [Path(args.workspace), node_workspace]
+        )
+
     for name, sym in symbol_dict.items():
         for symbol in sym:
             size = get_symbol_size(symbol['symbol'])
             for file in symbol['mapped_files']:
                 path = Path(file, name)
                 if path.is_absolute():
-                    zb = Path(args.zephyrbase)
-                    if zb.parent in path.parents:
-                        path = path.relative_to(zb.parent)
+                    has_node = False
 
-                _insert_one_elem(root, path, size)
+                    for one_path in path_node_map:
+                        if one_path[0] in path.parents:
+                            path = path.relative_to(one_path[0])
+                            dest_node = one_path[1]
+                            has_node = True
+                            break
+
+                    if not has_node:
+                        dest_node = node_others
+                else:
+                    dest_node = node_no_paths
+
+                _insert_one_elem(dest_node, path, size)
+
+
+    if node_zephyr_base is not root:
+        # ZEPHYR_BASE and OUTPUT_DIR nodes don't have sum of symbol size
+        # so calculate them here.
+        node_zephyr_base.size = sum_node_children_size(node_zephyr_base)
+        node_output_dir.size = sum_node_children_size(node_output_dir)
+
+        # Find out which nodes need to be in the tree.
+        # "(no path)", ZEPHYR_BASE nodes are essential.
+        children = [node_no_paths, node_zephyr_base]
+        if node_output_dir.height != 0:
+            # OUTPUT_DIR may be under ZEPHYR_BASE.
+            children.append(node_output_dir)
+        if node_others.height != 0:
+            # Only include "others" node if there is something.
+            children.append(node_others)
+
+        if args.workspace:
+            node_workspace.size = sum_node_children_size(node_workspace)
+            if node_workspace.height != 0:
+                children.append(node_workspace)
+
+        root.children = children
+
+    root.size = total_size
+
+    # Need to account for code and data where there are not emitted
+    # symbols associated with them.
+    node_hidden_syms = TreeNode('(hidden)', "(hidden)", parent=root)
+    node_hidden_syms.size = root.size - sum_node_children_size(root)
 
     return root
 
+
 def node_sort(items):
+    """
+    Node sorting used with RenderTree.
+    """
     return sorted(items, key=lambda item: item.name)
 
-def print_any_tree(root, total_size, depth):
 
+def print_any_tree(root, total_size, depth):
+    """
+    Print the symbol tree.
+    """
     print('{:101s} {:7s} {:8s}'.format(
         Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
     print('=' * 110)
@@ -551,19 +687,22 @@ def print_any_tree(root, total_size, depth):
 
         cc = cr = ""
         if not row.node.children:
-            cc = Fore.CYAN
-            cr = Fore.RESET
-        elif row.node.name.endswith(".c") or row.node.name.endswith(".h"):
+            if row.node.name != "(hidden)":
+                cc = Fore.CYAN
+                cr = Fore.RESET
+        elif row.node.name.endswith(SRC_FILE_EXT):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node.name}{cr} {s} {Fore.BLUE}{percent:.2f}%{Fore.RESET}")
+        print(f"{row.pre}{cc}{row.node.name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}")
     print('=' * 110)
     print(f'{total_size:>101}')
 
 
-
 def parse_args():
+    """
+    Parse command line arguments.
+    """
     global args
 
     parser = argparse.ArgumentParser()
@@ -572,9 +711,13 @@ def parse_args():
                         help="Zephyr ELF binary")
     parser.add_argument("-z", "--zephyrbase", required=True,
                         help="Zephyr base path")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="Do not output anything on the screen.")
     parser.add_argument("-o", "--output", required=True,
                         help="Output path")
-    parser.add_argument("target", choices=['rom', 'ram'])
+    parser.add_argument("-w", "--workspace", default=None,
+                        help="Workspace path (Usually the same as WEST_TOPDIR)")
+    parser.add_argument("target", choices=['rom', 'ram', 'all'])
     parser.add_argument("-d", "--depth", dest="depth",
                         type=int, default=None,
                         help="How deep should we go into the tree",
@@ -586,60 +729,73 @@ def parse_args():
 
 
 def main():
+    """
+    Main program.
+    """
     parse_args()
 
     # Init colorama
     init()
 
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
+    if args.target == 'ram':
+        targets = ['ram']
+    elif args.target == 'rom':
+        targets = ['rom']
+    elif args.target == 'all':
+        targets = ['rom', 'ram']
 
-    elf = ELFFile(open(args.kernel, "rb"))
+    for t in targets:
 
-    assert elf.has_dwarf_info(), "ELF file has no DWARF information"
+        elf = ELFFile(open(args.kernel, "rb"))
 
-    set_global_machine_arch(elf.get_machine_arch())
+        assert elf.has_dwarf_info(), "ELF file has no DWARF information"
 
-    addr_ranges = get_section_ranges(elf)
+        set_global_machine_arch(elf.get_machine_arch())
 
-    symbols = get_symbols(elf, addr_ranges)
+        addr_ranges = get_section_ranges(elf)
 
-    for sym in symbols['unassigned'].values():
-        print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
+        symbols = get_symbols(elf, addr_ranges)
 
-    symbol_dict = None
-    if args.target == 'rom':
-        symbol_dict = symbols['rom']
-        symsize = addr_ranges['rom_total_size']
-        ranges = addr_ranges['rom']
-    elif args.target == 'ram':
-        symbol_dict = symbols['ram']
-        symsize = addr_ranges['ram_total_size']
-        ranges = addr_ranges['ram']
+        for sym in symbols['unassigned'].values():
+            print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
 
-    if symbol_dict is not None:
-        processed = {"mapped_symbols": set(),
-                     "mapped_addr": set(),
-                     "unmapped_symbols": set(symbol_dict.keys())}
-
-        do_simple_name_matching(elf, symbol_dict, processed)
-        mark_address_aliases(symbol_dict, processed)
-        do_address_range_matching(elf, symbol_dict, processed)
-        mark_address_aliases(symbol_dict, processed)
-        set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
-
-        if args.verbose:
-            for sym in processed['unmapped_symbols']:
-                print("INFO: Unmapped symbol: {0}".format(sym))
-
-        root = generate_any_tree(symbol_dict)
-        print_any_tree(root, symsize, args.depth)
+        symbol_dict = None
 
         if args.json:
+            jsonout = args.json
+        else:
+            jsonout = os.path.join(args.output, f'{t}.json')
+
+        symbol_dict = symbols[t]
+        symsize = addr_ranges[f'{t}_total_size']
+        ranges = addr_ranges[t]
+
+        if symbol_dict is not None:
+            processed = {"mapped_symbols": set(),
+                         "mapped_addr": set(),
+                         "unmapped_symbols": set(symbol_dict.keys())}
+
+            do_simple_name_matching(elf, symbol_dict, processed)
+            mark_address_aliases(symbol_dict, processed)
+            do_address_range_matching(elf, symbol_dict, processed)
+            mark_address_aliases(symbol_dict, processed)
+            common_path_prefix = find_common_path_prefix(symbol_dict)
+            set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
+
+            if args.verbose:
+                for sym in processed['unmapped_symbols']:
+                    print("INFO: Unmapped symbol: {0}".format(sym))
+
+            root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
+            if not args.quiet:
+                print_any_tree(root, symsize, args.depth)
+
             exporter = DictExporter()
             data = dict()
             data["symbols"] = exporter.export(root)
             data["total_size"] = symsize
-            with open(args.json, "w") as fp:
+            with open(jsonout, "w") as fp:
                 json.dump(data, fp, indent=4)
 
 

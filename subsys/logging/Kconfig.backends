@@ -19,7 +19,7 @@ config LOG_BACKEND_UART_OUTPUT_DICTIONARY
 	help
 	  UART backend is in dictionary-based logging output mode.
 
-choice
+choice LOG_BACKEND_UART_OUTPUT
 	prompt "UART Backend Output Mode"
 	default LOG_BACKEND_UART_OUTPUT_TEXT
 
@@ -56,7 +56,6 @@ endif # LOG_BACKEND_UART
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
-	depends on !LOG2
 	help
 	  When enabled, backend will use SWO for logging.
 
@@ -100,7 +99,7 @@ config LOG_BACKEND_RTT
 
 if LOG_BACKEND_RTT
 
-choice
+choice LOG_BACKEND_RTT_MODE
 	prompt "Logger behavior"
 	default LOG_BACKEND_RTT_MODE_BLOCK
 
@@ -121,6 +120,12 @@ config LOG_BACKEND_RTT_SYST_ENABLE
 	depends on LOG_MIPI_SYST_ENABLE
 	help
 	  When enabled backend is using RTT to output syst format logs.
+
+config LOG_BACKEND_RTT_MODE_OVERWRITE
+	bool "Overwrite messages if up-buffer full"
+	help
+	  If there is not enough space in up-buffer for a message overwrite
+	  oldest one.
 
 endchoice
 
@@ -188,9 +193,8 @@ endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
-	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
+	depends on !LOG_BACKEND_UART
 	depends on NET_L2_OPENTHREAD
-	depends on !LOG2
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
 	  This protocol is byte oriented and wrapps given messages into serial frames.
@@ -216,7 +220,6 @@ config LOG_BACKEND_NATIVE_POSIX
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
-	depends on !LOG2
 	help
 	  Enable backend in xtensa simulator
 
@@ -232,7 +235,6 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
-	depends on !LOG2
 	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
@@ -302,12 +304,40 @@ config LOG_BACKEND_ADSP
 	  family of audio processors
 
 config LOG_BACKEND_FS
-	bool "Enable LittleFS backend"
+	bool "Enable file system backend"
 	depends on FILE_SYSTEM
 	help
-	  When enabled backend is using LittleFS to output logs.
+	  When enabled, backend is using the configured file system to output logs.
+	  As the file system must be mounted for the logging to work, it must be
+	  either configured for auto-mount or manually mounted by the application.
+	  Log messages are discarded as long as the file system is not mounted.
 
 if LOG_BACKEND_FS
+
+config LOG_BACKEND_FS_OUTPUT_DICTIONARY
+	bool
+	depends on LOG2
+	select LOG_DICTIONARY_SUPPORT
+	help
+	  FS backend is in dictionary-based logging output mode.
+
+choice LOG_BACKEND_FS_OUTPUT
+	prompt "FS Backend Output Mode"
+	default LOG_BACKEND_FS_OUTPUT_TEXT
+
+config LOG_BACKEND_FS_OUTPUT_TEXT
+	bool "Text"
+	help
+	  Output in text.
+
+config LOG_BACKEND_FS_OUTPUT_DICTIONARY_BIN
+	bool "Dictionary (binary)"
+	depends on LOG2
+	select LOG_BACKEND_FS_OUTPUT_DICTIONARY
+	help
+	  Dictionary-based logging output in binary.
+
+endchoice
 
 config LOG_BACKEND_FS_OVERWRITE
 	bool "Enable old log files overwrite"
@@ -332,7 +362,7 @@ config LOG_BACKEND_FS_DIR
 config LOG_BACKEND_FS_FILE_SIZE
 	int "User defined log file size"
 	default 4096
-	range 128 16384
+	range 128 1073741824
 	help
 	  Max log file size (in bytes).
 

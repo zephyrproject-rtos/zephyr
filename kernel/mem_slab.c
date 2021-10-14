@@ -57,7 +57,7 @@ static int init_mem_slab_module(const struct device *dev)
 	int rc = 0;
 	ARG_UNUSED(dev);
 
-	Z_STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
+	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
 		rc = create_free_list(slab);
 		if (rc < 0) {
 			goto out;

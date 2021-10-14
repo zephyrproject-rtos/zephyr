@@ -114,8 +114,9 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 /* Must be called to regain ownership of the work item */
 int k_p4wq_wait(struct k_p4wq_work *work, k_timeout_t timeout)
 {
-	if (work->sync)
+	if (work->sync) {
 		return k_sem_take(&work->done_sem, timeout);
+	}
 
 	return k_sem_count_get(&work->done_sem) ? 0 : -EBUSY;
 }
@@ -142,14 +143,15 @@ static int static_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	Z_STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
+	STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
 		for (int i = 0; i < pp->num; i++) {
 			uintptr_t ssz = K_THREAD_STACK_LEN(pp->stack_size);
 			struct k_p4wq *q = pp->flags & K_P4WQ_QUEUE_PER_THREAD ?
 				pp->queue + i : pp->queue;
 
-			if (!i || (pp->flags & K_P4WQ_QUEUE_PER_THREAD))
+			if (!i || (pp->flags & K_P4WQ_QUEUE_PER_THREAD)) {
 				k_p4wq_init(q);
+			}
 
 			q->flags = pp->flags;
 
@@ -157,15 +159,17 @@ static int static_init(const struct device *dev)
 			 * If the user wants to specify CPU affinity, we have to
 			 * delay starting threads until that has been done
 			 */
-			if (q->flags & K_P4WQ_USER_CPU_MASK)
+			if (q->flags & K_P4WQ_USER_CPU_MASK) {
 				q->flags |= K_P4WQ_DELAYED_START;
+			}
 
 			k_p4wq_add_thread(q, &pp->threads[i],
 					  &pp->stacks[ssz * i],
 					  pp->stack_size);
 
-			if (pp->flags & K_P4WQ_DELAYED_START)
+			if (pp->flags & K_P4WQ_DELAYED_START) {
 				z_mark_thread_as_suspended(&pp->threads[i]);
+			}
 
 #ifdef CONFIG_SCHED_CPU_MASK
 			if (pp->flags & K_P4WQ_USER_CPU_MASK) {

@@ -167,9 +167,10 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PA10
 - UART_2_TX : PA2
 - UART_2_RX : PA3
-- I2C_1_SCL : PB6
+- I2C_1_SCL : PB8
 - I2C_1_SDA : PB7
 - PWM_2_CH1 : PA0
+- SPI_NSS : PB6
 - SPI_SCK : PA5
 - SPI_MISO : PA6
 - SPI_MOSI : PA7

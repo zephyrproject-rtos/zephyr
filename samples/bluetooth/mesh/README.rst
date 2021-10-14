@@ -6,8 +6,8 @@ Bluetooth: Mesh
 Overview
 ********
 
-This sample demonstrates Bluetooth Mesh functionality. It has several
-standard Mesh models, and supports provisioning over both the
+This sample demonstrates Bluetooth mesh functionality. It has several
+standard mesh models, and supports provisioning over both the
 Advertising and the GATT Provisioning Bearers (i.e. PB-ADV and PB-GATT).
 The application also needs a functioning serial console, since that's
 used for the Out-of-Band provisioning procedure.

@@ -20,7 +20,7 @@ typedef void (*gpio_config_irq_t)(const struct device *port);
 struct gpio_dw_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	uint32_t bits;
+	uint32_t ngpios;
 	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
 
@@ -41,9 +41,6 @@ struct gpio_dw_runtime {
 	const struct device *clock;
 #endif
 	sys_slist_t callbacks;
-#ifdef CONFIG_PM_DEVICE
-	uint32_t device_power_state;
-#endif
 };
 
 #ifdef __cplusplus

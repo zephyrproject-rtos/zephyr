@@ -127,6 +127,8 @@ config CBPRINTF_PACKAGE_LONGDOUBLE
 
 config CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
 	bool "Validate alignment of a static package buffer"
+	# To avoid self referential macro when printk is redirected to logging
+	depends on !LOG_PRINTK
 	help
 	  When enabled, CBPRINTF_STATIC_PACKAGE asserts when buffer is not
 	  properly aligned. If macro is widely used then assert may impact

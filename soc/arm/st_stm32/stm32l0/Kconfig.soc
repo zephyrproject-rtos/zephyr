@@ -1,6 +1,8 @@
 # ST Microelectronics STM32L0 MCU line
 
 # Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
+# Copyright (c) 2021 Nomono AS
+#
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -12,6 +14,10 @@ config SOC_STM32L011XX
 
 config SOC_STM32L031XX
 	bool "STM32L031XX"
+
+config SOC_STM32L051XX
+	bool "STM32L051XX"
+	select CPU_HAS_ARM_MPU
 
 config SOC_STM32L053XX
 	bool "STM32L053XX"

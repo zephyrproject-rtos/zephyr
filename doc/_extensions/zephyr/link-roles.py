@@ -7,8 +7,8 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
+import subprocess
 from docutils import nodes
-from local_util import run_cmd_get_output
 try:
     import west.manifest
     try:
@@ -20,25 +20,38 @@ except ImportError:
 
 
 def get_github_rev():
-    tag = run_cmd_get_output('git describe --exact-match')
-    if tag:
-        return tag.decode("utf-8")
-    else:
+    try:
+        output = subprocess.check_output('git describe --exact-match', shell=True)
+    except subprocess.CalledProcessError:
         return 'main'
+
+    return output.strip().decode('utf-8')
 
 
 def setup(app):
     rev = get_github_rev()
 
-    # try to get url from West; this adds compatibility with repos
-    # located elsewhere
+    # Try to get the zephyr repository's GitHub URL from the manifest.
+    #
+    # This allows building the docs in downstream Zephyr-based
+    # software with forks of the zephyr repository, and getting
+    # :zephyr_file: / :zephyr_raw: output that links to the fork,
+    # instead of mainline zephyr.
+    baseurl = None
     if west_manifest is not None:
-        baseurl = west_manifest.get_projects(['zephyr'])[0].url
-    else:
-        baseurl = None
+        try:
+            # This search tries to look up a project named 'zephyr'.
+            # If zephyr is the manifest repository, this raises
+            # ValueError, since there isn't any such project.
+            baseurl = west_manifest.get_projects(['zephyr'],
+                                                 allow_paths=False)[0].url
+            # Spot check that we have a non-empty URL.
+            assert baseurl
+        except ValueError:
+            pass
 
-    # or fallback to default
-    if baseurl is None or baseurl == '':
+    # If the search failed, fall back on the mainline URL.
+    if baseurl is None:
         baseurl = 'https://github.com/zephyrproject-rtos/zephyr'
 
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))

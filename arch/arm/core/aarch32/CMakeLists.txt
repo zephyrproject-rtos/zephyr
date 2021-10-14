@@ -2,21 +2,16 @@
 
 zephyr_library()
 
-if (CONFIG_COVERAGE)
-  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
-endif ()
-
 zephyr_library_sources(
-  swap.c
-  swap_helper.S
-  irq_manage.c
-  thread.c
   cpu_idle.S
   fatal.c
+  irq_manage.c
   nmi.c
   nmi_on_reset.S
   prep_c.c
+  swap.c
+  swap_helper.S
+  thread.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)

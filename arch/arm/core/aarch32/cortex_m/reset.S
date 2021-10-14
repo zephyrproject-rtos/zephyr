@@ -22,7 +22,7 @@ GTEXT(z_arm_reset)
 GTEXT(memset)
 GDATA(z_interrupt_stacks)
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-GTEXT(z_platform_init)
+GTEXT(z_arm_platform_init)
 #endif
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 GTEXT(z_arm_init_arch_hw_at_boot)
@@ -79,7 +79,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-    bl z_platform_init
+    bl z_arm_platform_init
 #endif
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)

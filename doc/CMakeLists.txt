@@ -1,139 +1,113 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(NO_BOILERPLATE TRUE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
 
-# Find west to (optionally) process modules for Kconfig
-find_program(
-  WEST
-  west
-  )
-if(${WEST} STREQUAL WEST-NOTFOUND)
-  unset(WEST)
+file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
+message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
+
+#-------------------------------------------------------------------------------
+# Options
+
+set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
+set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
+set(DOC_TAG "development" CACHE STRING "Documentation tag")
+set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
+
+separate_arguments(SPHINXOPTS)
+separate_arguments(LATEXMKOPTS)
+
+#-------------------------------------------------------------------------------
+# Dependencies
+
+find_package(Doxygen REQUIRED dot)
+
+find_program(SPHINXBUILD sphinx-build)
+if(NOT SPHINXBUILD)
+  message(FATAL_ERROR "The 'sphinx-build' command was not found")
 endif()
 
-file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
-
-message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
-if(DEFINED WEST)
-  execute_process(COMMAND west --version
-    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE WEST_VERSION)
-  message(STATUS "West: ${WEST} (west --version: \"${WEST_VERSION}\")")
-else()
-  message(STATUS "West: not found")
+find_package(LATEX COMPONENTS PDFLATEX)
+find_program(LATEXMK latexmk)
+if(NOT LATEX_PDFLATEX_FOUND OR NOT LATEXMK)
+  message(WARNING "LaTeX components not found. PDF build will not be available.")
 endif()
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
-set(DOXYGEN_SKIP_DOT True)
-find_package(Doxygen REQUIRED)
-find_package(LATEX)
 
-find_program(
-  SPHINXBUILD
-  NAMES sphinx-build-3 sphinx-build
-  )
-if(${SPHINXBUILD} STREQUAL SPHINXBUILD-NOTFOUND)
-  message(FATAL_ERROR "The 'sphinx-build' command was not found. Make sure you have Sphinx installed.")
-endif()
+# Find west to (optionally) process modules for Kconfig
+find_program(WEST west)
 
-# Include version info
-include(${ZEPHYR_BASE}/cmake/version.cmake)
-# Process modules
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-include(${ZEPHYR_BASE}/cmake/extensions.cmake)
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
+#-------------------------------------------------------------------------------
+# Environment & Paths
 
-# Note that this won't force fatal error if latexmk is not found.
-# Not having LaTeX tools should not prevent people from generating HTML docs.
-find_program(
-  LATEXMK
-  latexmk
-  )
-if(${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
-  message(WARNING "The 'latexmk' command was not found. Targets to build PDF will not be available.")
-endif()
+set(SPHINX_ENV
+  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+  DOT_EXECUTABLE=${DOXYGEN_DOT_EXECUTABLE}
+)
 
-if(NOT DEFINED SPHINXOPTS)
-  set(SPHINXOPTS -j auto)
-else()
-  separate_arguments(SPHINXOPTS)
-endif()
+set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
+set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
+set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 
-if(NOT DEFINED SPHINX_OUTPUT_DIR)
-  set(SPHINX_OUTPUT_DIR_HTML ${CMAKE_CURRENT_BINARY_DIR}/html)
-  set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
-  set(SPHINX_OUTPUT_DIR_PDF ${CMAKE_CURRENT_BINARY_DIR}/pdf)
-else()
-  # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
-  # outputs) are placed, so no /html, /latex, /pdf suffixes are needed.
-  set(SPHINX_OUTPUT_DIR_HTML ${SPHINX_OUTPUT_DIR})
-  set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
-  set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
-endif()
+#-------------------------------------------------------------------------------
+# Functions
 
-if(NOT DEFINED DOC_TAG)
-  set(DOC_TAG development)
-endif()
+# Create a custom doc target.
+#
+# This function has the same signature as `add_custom_target()`
+#
+# The function will create two targets for the doc build system.
+# - Target 1 named: `<name>`
+# - Target 2 named: `<name>-nodeps`
+#
+# Both targets will produce same result, but target 2 must have no dependencies.
+# This is useful to, e.g. re-run the Sphinx build without dependencies such as
+# devicetree or Kconfig generators.
+#
+function(add_doc_target name)
+  add_custom_target(${name} ${ARGN})
+  add_custom_target(${name}-nodeps ${ARGN})
+endfunction()
 
-# Internal variables.
-set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
+#-------------------------------------------------------------------------------
+# Doxygen (standalone)
 
-# the i18n builder cannot share the environment and doctrees with the others
-set(I18NSPHINXOPTS  ${SPHINXOPTS})
-
+set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
-set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
-set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
+set(ZEPHYR_VERSION "${Zephyr_VERSION}")
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
 add_custom_target(
   doxygen
-  COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running ${DOXYGEN_EXECUTABLE}"
+  COMMAND
+    ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
+  COMMENT "Running Doxygen..."
 )
 
-add_custom_target(
-  pristine
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
+set_target_properties(
+  doxygen
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
 )
 
-if(WIN32)
-  set(SEP $<SEMICOLON>)
-else()
-  set(SEP :)
-endif()
+#-------------------------------------------------------------------------------
+# kconfig
 
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
+set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 
-#
-# Generated Kconfig .rst documents
-#
-
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
-     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.defconfig\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield
-     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.shield\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/Kconfig\"\n"
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig\"\n"
-)
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 foreach(module_name ${ZEPHYR_MODULE_NAMES})
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
@@ -146,13 +120,21 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
     list(APPEND
          ZEPHYR_KCONFIG_MODULES
          "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
-  )
+    )
   endif()
 endforeach()
 
+if(WIN32)
+  set(SEP $<SEMICOLON>)
+else()
+  set(SEP :)
+endif()
+
+set(GEN_KCONFIG_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_kconfig_rest.py)
+
 add_custom_target(
   kconfig
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/reference/kconfig
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${DOCS_SRC_DIR}/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
@@ -161,12 +143,13 @@ add_custom_target(
   ARCH=*
   ARCH_DIR=arch
   SOC_DIR=soc
+  TOOLCHAIN_HAS_NEWLIB=y
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/
+    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT} ${DOCS_SRC_DIR}/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -177,184 +160,119 @@ add_custom_target(
                 "External Module,modules,${ZEPHYR_BASE}/modules"
 
   VERBATIM
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/"
+  COMMENT "Generating Kconfig documentation..."
 )
 
-#
-# Generated devicetree .rst documents
-#
-# The devicetree bindings discovered in ${DTS_ROOTS} are parsed and
-# documentation for them is generated in the directory
-# ${DTS_BINDINGS_RST_OUT}.
-#
-# The CMake variable GEN_DEVICETREE_REST_ZEPHYR_DOCSET will
-# be passed to the script in the environment. This allows separating
-# the bindings documentation into a standalone Sphinx docset that
-# nonetheless can link to Zephyr documentation using intersphinx.
-# If empty, the variable has no effect on the script.
-#
-# If not set, these are the default values for these variables:
-#
-# - DTS_ROOTS: ZEPHYR_BASE
-# - DTS_BINDINGS_RST_OUT: ${RST_OUT}/reference/devicetree
-#
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
+
+#-------------------------------------------------------------------------------
+# devicetree
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
-
-if(NOT DTS_ROOTS)
-  set(DTS_ROOTS ${ZEPHYR_BASE})
-endif()
 
 set(DTS_ROOT_ARGS)
 foreach(root ${DTS_ROOTS})
   list(APPEND DTS_ROOT_ARGS --dts-root ${root})
 endforeach()
 
-if(NOT DTS_BINDINGS_RST_OUT)
-  set(DTS_BINDINGS_RST_OUT ${RST_OUT}/reference/devicetree)
-endif()
-
 add_custom_target(
   devicetree
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
-  GEN_DEVICETREE_REST_ZEPHYR_DOCSET=${GEN_DEVICETREE_REST_ZEPHYR_DOCSET}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
-    ${DTS_ROOT_ARGS} ${DTS_BINDINGS_RST_OUT}
+    ${DTS_ROOT_ARGS}
+    ${DOCS_SRC_DIR}/reference/devicetree
   VERBATIM
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_devicetree_rest.py ${DTS_BINDINGS_RST_OUT}"
   USES_TERMINAL
+  COMMENT "Generating Devicetree bindings documentation..."
 )
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
 
-#
-# HTML section
-#
-set(SPHINX_BUILD_HTML_COMMAND
-  ${CMAKE_COMMAND} -E env
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -t ${DOC_TAG} -b html -c ${CMAKE_CURRENT_LIST_DIR} ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_HTML})
+#-------------------------------------------------------------------------------
+# html
 
-# The sphinx-html target is provided as a convenience for incremental
-# re-builds of content files without regenerating the entire docs
-# pipeline. It can be significantly faster than re-running the full
-# HTML build, but it has no idea if Doxygen, Kconfig, etc. need to be
-# regenerated. Use with caution.
-add_custom_target(
-  sphinx-html
-  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  COMMENT "Just re-generating HTML (USE WITH CAUTION)"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  USES_TERMINAL
-)
-
-add_custom_target(
+add_doc_target(
   html
-  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  ${SPHINXBUILD}
+    -b html
+    -c ${DOCS_CFG_DIR}
+    -d ${DOCS_DOCTREE_DIR}
+    -w ${DOCS_BUILD_DIR}/html.log
+    -t ${DOC_TAG}
+    ${SPHINXOPTS}
+    ${DOCS_SRC_DIR}
+    ${DOCS_HTML_DIR}
   USES_TERMINAL
+  COMMENT "Running Sphinx HTML build..."
 )
 
-#
-# LaTEX section
-#
-set(SPHINX_BUILD_LATEX_COMMAND
-  ${CMAKE_COMMAND} -E env
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -t ${DOC_TAG} -b latex -c ${CMAKE_CURRENT_LIST_DIR} -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_LATEX})
-
-# The sphinx-latex target works similarly to sphinx-html, and carries
-# the same warnings.
-add_custom_target(
-  sphinx-latex
-  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  COMMENT "Just re-generating LaTeX (USE WITH CAUTION)"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  USES_TERMINAL
+set_target_properties(
+  html html-nodeps
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
+add_dependencies(html devicetree kconfig)
 
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Generating LaTeX documentation"
-  USES_TERMINAL
-)
+#-------------------------------------------------------------------------------
+# pdf
 
-add_custom_target(
+add_doc_target(
   latex
-  DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  ${SPHINXBUILD}
+    -b latex
+    -c ${DOCS_CFG_DIR}
+    -d ${DOCS_DOCTREE_DIR}
+    -w ${DOCS_BUILD_DIR}/latex.log
+    -t ${DOC_TAG}
+    -t svgconvert
+    ${SPHINXOPTS}
+    ${DOCS_SRC_DIR}
+    ${DOCS_LATEX_DIR}
+  USES_TERMINAL
+  COMMENT "Running Sphinx LaTeX build..."
 )
 
-#
-# PDF section
-#
-if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
-
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
-  DEPENDS latexdocs ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  COMMAND ${CMAKE_COMMAND} -E env
-  LATEXOPTS="-halt-on-error -no-shell-escape"
-  ${LATEXMK} -quiet -pdf -dvi- -ps-
-  WORKING_DIRECTORY ${SPHINX_OUTPUT_DIR_LATEX}
-  COMMENT "Generating PDF documentation"
+set_target_properties(
+  latex latex-nodeps
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
-
-if(NOT DEFINED SPHINX_OUTPUT_DIR)
-# Although latexmk allows specifying output directory,
-# makeindex fails if one is specified.
-# Hence the need of this to copy the PDF file over.
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_OUTPUT_DIR_PDF}
-  COMMAND ${CMAKE_COMMAND} -E copy ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
-)
-endif()
-
-add_custom_target(
-  pdf
-  DEPENDS ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-)
-
-endif()
-
-#
-# Dependencies and final targets
-#
-add_dependencies(html kconfig devicetree)
-
-add_custom_target(
-  htmldocs
-)
-add_dependencies(htmldocs html)
 
 add_dependencies(latex kconfig devicetree)
 
-add_custom_target(
-  latexdocs
-)
-add_dependencies(latexdocs latex)
+if(LATEX_PDFLATEX_FOUND AND LATEXMK)
+  if(WIN32)
+    set(PDF_BUILD_COMMAND "make.bat")
+  else()
+    find_program(MAKE make)
+    if(NOT MAKE)
+      message(FATAL_ERROR "The 'make' command was not found")
+    endif()
+    set(PDF_BUILD_COMMAND ${MAKE})
+  endif()
 
-if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
+  add_custom_target(
+    pdf
+    COMMAND ${CMAKE_COMMAND} -E env LATEXMKOPTS="${LATEXMKOPTS}"
+    ${PDF_BUILD_COMMAND}
+    WORKING_DIRECTORY ${DOCS_LATEX_DIR}
+    COMMENT "Building PDF file..."
+    USES_TERMINAL
+  )
 
-add_custom_target(
-  pdfdocs
-  DEPENDS latexdocs pdf
-)
-add_dependencies(pdfdocs pdf)
-
+  add_dependencies(pdf latex)
 endif()
+
+#-------------------------------------------------------------------------------
+# others
+
+add_custom_target(
+  pristine
+  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
+)

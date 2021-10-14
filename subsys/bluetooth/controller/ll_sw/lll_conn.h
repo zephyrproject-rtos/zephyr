@@ -42,7 +42,7 @@ struct lll_conn {
 	uint16_t latency_event;
 	uint16_t event_counter;
 
-	uint8_t data_chan_map[5];
+	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
 	uint8_t data_chan_sel:1;
 	uint8_t role:1;
@@ -60,7 +60,7 @@ struct lll_conn {
 		struct {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
-		} master;
+		} central;
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  initiated:1;
@@ -73,7 +73,7 @@ struct lll_conn {
 			uint32_t window_widening_event_us;
 			uint32_t window_size_prepare_us;
 			uint32_t window_size_event_us;
-		} slave;
+		} periph;
 #endif /* CONFIG_BT_PERIPHERAL */
 	};
 
@@ -127,6 +127,10 @@ struct lll_conn {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	struct lll_df_conn_rx_params df_rx_params;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 };
 
 int lll_conn_init(void);

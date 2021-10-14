@@ -1,7 +1,0 @@
-sample:
-  name: TI INA219 power monitor
-tests:
-  sample.drivers.current_sensing:
-    tags: sensors
-    depends_on: i2c
-    harness: sensor

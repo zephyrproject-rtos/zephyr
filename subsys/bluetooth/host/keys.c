@@ -16,6 +16,7 @@
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
@@ -24,6 +25,7 @@
 #include "common/log.h"
 
 #include "common/rpa.h"
+#include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
 #include "smp.h"
@@ -37,6 +39,38 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys *last_keys_updated;
+
+struct key_data {
+	bool in_use;
+	uint8_t id;
+};
+
+static void find_key_in_use(struct bt_conn *conn, void *data)
+{
+	struct key_data *kdata = data;
+	struct bt_keys *key;
+
+	if (conn->state == BT_CONN_CONNECTED) {
+		key = bt_keys_find_addr(conn->id, bt_conn_get_dst(conn));
+		if (key == NULL) {
+			return;
+		}
+		if (bt_addr_cmp(&key->addr.a, &key_pool[kdata->id].addr.a) == 0) {
+			kdata->in_use = true;
+			BT_DBG("Connected device %s is using key_pool[%d]",
+			       bt_addr_le_str(bt_conn_get_dst(conn)), kdata->id);
+		}
+	}
+}
+
+static bool key_is_in_use(uint8_t id)
+{
+	struct key_data kdata = { false, id };
+
+	bt_conn_foreach(BT_CONN_TYPE_ALL, find_key_in_use, &kdata);
+
+	return kdata.in_use;
+}
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
@@ -53,7 +87,6 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		if (keys->id == id && !bt_addr_le_cmp(&keys->addr, addr)) {
 			return keys;
 		}
-
 		if (first_free_slot == ARRAY_SIZE(key_pool) &&
 		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = i;
@@ -62,15 +95,25 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (first_free_slot == ARRAY_SIZE(key_pool)) {
-		struct bt_keys *oldest = &key_pool[0];
+		struct bt_keys *oldest = NULL;
 		bt_addr_le_t oldest_addr;
 
-		for (i = 1; i < ARRAY_SIZE(key_pool); i++) {
+		for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
+			bool key_in_use = (CONFIG_BT_MAX_CONN > 1) && key_is_in_use(i);
 
-			if (current->aging_counter < oldest->aging_counter) {
+			if (key_in_use) {
+				continue;
+			}
+
+			if ((oldest == NULL) || (current->aging_counter < oldest->aging_counter)) {
 				oldest = current;
 			}
+		}
+
+		if (oldest == NULL) {
+			BT_DBG("unable to create keys for %s", bt_addr_le_str(addr));
+			return NULL;
 		}
 
 		/* Use a copy as bt_unpair will clear the oldest key. */
@@ -331,7 +374,14 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!next) {
 		id = BT_ID_DEFAULT;
 	} else {
-		id = strtol(next, NULL, 10);
+		unsigned long next_id = strtoul(next, NULL, 10);
+
+		if (next_id >= CONFIG_BT_ID_MAX) {
+			BT_ERR("Invalid local identity %lu", next_id);
+			return -EINVAL;
+		}
+
+		id = (uint8_t)next_id;
 	}
 
 	if (!len) {
@@ -353,24 +403,21 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		do {
+		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
+		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* Load shorter structure for compatibility with old
 			 * records format with no counter.
 			 */
-			if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
-			    len == BT_KEYS_STORAGE_LEN_COMPAT) {
-				BT_WARN("Keys for %s have no aging counter",
-					bt_addr_le_str(&addr));
-				memcpy(keys->storage_start, val, len);
-				continue;
-			}
-
+			BT_WARN("Keys for %s have no aging counter",
+				bt_addr_le_str(&addr));
+			memcpy(keys->storage_start, val, len);
+		} else {
 			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
 			return -EINVAL;
-		} while (0);
+		}
 	} else {
 		memcpy(keys->storage_start, val, len);
 	}
@@ -447,8 +494,8 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
 	}
 
-	if (keys->keys & BT_KEYS_SLAVE_LTK) {
-		sys_memcpy_swap(ltk, keys->slave_ltk.val, keys->enc_size);
+	if (keys->keys & BT_KEYS_PERIPH_LTK) {
+		sys_memcpy_swap(ltk, keys->periph_ltk.val, keys->enc_size);
 		BT_INFO("Legacy LTK: 0x%s (peripheral)",
 			bt_hex(ltk, keys->enc_size));
 	}

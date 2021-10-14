@@ -426,6 +426,11 @@ SECTIONS
   } >ram :ram_phdr
 #include <linker/common-ram.ld>
 
+  .tm_clone_table :
+  {
+    *(.tm_clone_table)
+  } >ram :ram_phdr
+
   .bss (NOLOAD) : ALIGN(8)
   {
     . = ALIGN (8);

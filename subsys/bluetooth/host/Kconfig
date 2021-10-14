@@ -173,19 +173,23 @@ config BT_SETTINGS_USE_PRINTK
 endif # BT_SETTINGS
 
 config BT_WHITELIST
-	bool "Enable whitelist support"
+	bool "DEPRECATED: Use BT_FILTER_ACCEPT_LIST instead"
+	select BT_FILTER_ACCEPT_LIST
+
+config BT_FILTER_ACCEPT_LIST
+	bool "Enable filter accept list support"
 	help
-	  This option enables the whitelist API. This takes advantage of the
-	  whitelisting feature of a BLE controller.
-	  The whitelist is a global list and the same whitelist is used
-	  by both scanner and advertiser. The whitelist cannot be modified while
+	  This option enables the filter accep list API. This takes advantage of the
+	  filtering feature of a BLE controller.
+	  The filter accept list is a global list and the same list is used
+	  by both scanner and advertiser. The filter accept list cannot be modified while
 	  it is in use.
 
-	  An Advertiser can whitelist which peers can connect or request scan
+	  An Advertiser can filter which peers can connect or request scan
 	  response data.
-	  A scanner can whitelist advertiser for which it will generate
+	  A scanner can filter advertisers for which it will generate
 	  advertising reports.
-	  Connections can be established automatically for whitelisted peers.
+	  Connections can be established automatically for accepted peers.
 
 	  This options deprecates the bt_le_set_auto_conn API in favor of the
 	  bt_conn_create_aute_le API.
@@ -351,10 +355,10 @@ config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	  This option enables support for USB HCI controllers that sometimes
 	  send out-of-order HCI events and ACL Data due to using different USB
 	  endpoints.
-	  Enabling this option will make the master role not require the
+	  Enabling this option will make the central role not require the
 	  encryption-change event to be received before accepting key-distribution
 	  data.
-	  It opens up for a potential vulnerability as the master cannot detect
+	  It opens up for a potential vulnerability as the central cannot detect
 	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY
@@ -421,11 +425,11 @@ config BT_OOB_DATA_FIXED
 	  Use of this feature in production is strongly discouraged.
 
 config BT_KEYS_OVERWRITE_OLDEST
-	bool "Overwrite oldest keys with new ones if key storage is full"
+	bool "Overwrite the oldest key if key storage is full"
 	help
-	  With this option enabled, if a pairing attempt occurs and the key storage
-	  is full, then the oldest keys in storage will be removed to free space
-	  for the new pairing keys.
+	  If a pairing attempt occurs and the key storage is full then the
+	  oldest key from the set of not currently in use keys will be selected
+	  and overwritten by the pairing device.
 
 config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	bool "Store aging counter every time a successful paring occurs"
@@ -446,8 +450,8 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 
 endif # BT_SMP
 
-source "subsys/bluetooth/host/Kconfig.l2cap"
-source "subsys/bluetooth/host/Kconfig.gatt"
+rsource "Kconfig.l2cap"
+rsource "Kconfig.gatt"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
@@ -539,7 +543,7 @@ config BT_DEVICE_APPEARANCE
 
 config BT_ID_MAX
 	int "Maximum number of local identities"
-	range 1 10
+	range 1 64
 	default 1
 	help
 	  Maximum number of supported local identity addresses. For most
@@ -558,6 +562,13 @@ config BT_DF_CONNECTIONLESS_CTE_RX
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
+
+config BT_DF_CONNECTION_CTE_RX
+	bool "Enable support for receive of CTE in connection mode"
+	depends on BT_DF
+	help
+	  Enable support for reception and sampling of Constant Tone Extension
+	  in connection mode.
 
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
@@ -613,7 +624,7 @@ config BT_DEBUG_HCI_CORE
 
 config BT_DEBUG_CONN
 	bool "Bluetooth connection debug"
-	depends on BT_CONN
+	depends on BT_CONN || BT_ISO
 	help
 	  This option enables debug support for Bluetooth
 	  connection handling.

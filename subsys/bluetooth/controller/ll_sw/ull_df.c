@@ -5,12 +5,13 @@
  */
 
 #include <stdint.h>
-
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -26,6 +27,7 @@
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
+#include "lll_conn.h"
 #include "lll_df.h"
 #include "lll/lll_df_internal.h"
 
@@ -33,6 +35,8 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_conn_types.h"
+#include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
 
@@ -81,6 +85,8 @@ static uint8_t mem_link_iq_report_quota_pdu;
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
+static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
+			      uint8_t *ter_idx, struct pdu_adv **first_pdu);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs common steps for initialization and reset
@@ -98,6 +104,9 @@ static int init_reset(void);
  * @return Pointer to lll_df_adv_cfg or NULL if there is no more free memory.
  */
 static struct lll_df_adv_cfg *df_adv_cfg_acquire(void);
+
+static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg, uint8_t *ter_idx,
+			    struct pdu_adv **first_pdu);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs ULL Direction Finding initialization
@@ -123,6 +132,21 @@ int ull_df_init(void)
 int ull_df_reset(void)
 {
 	int err;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv;
+	uint8_t handle;
+
+	/* Get the advertising set instance */
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		adv = ull_adv_is_created_get(handle);
+		if (!adv) {
+			continue;
+		}
+
+		adv->df_cfg = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 	err = init_reset();
 	if (err) {
@@ -261,6 +285,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 	struct ll_adv_sync_set *sync;
 	struct ll_adv_set *adv;
 	uint8_t err, ter_idx;
+	struct pdu_adv *pdu;
 
 	/* Get the advertising set instance */
 	adv = ull_adv_is_created_get(adv_handle);
@@ -295,56 +320,30 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		err = ull_adv_sync_pdu_set_clear(adv, 0,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 NULL, &ter_idx);
+		err = cte_info_clear(adv, df_cfg, &ter_idx, &pdu);
 		if (err) {
 			return err;
-		}
-
-		if (sync->is_started) {
-			/* If CTE is disabled when advertising is pending,
-			 * decrease advertising event length
-			 */
-			ull_adv_sync_update(sync, 0, df_cfg->cte_length);
-			/* ToDo decrease number of chain PDUs in pending
-			 * advertising if there are added empty chain PDUs
-			 * to sent requested number of CTEs in a chain
-			 */
 		}
 
 		df_cfg->is_enabled = 0U;
 	} else {
-		struct pdu_cte_info cte_info;
-		struct adv_pdu_field_data pdu_data;
-
 		if (df_cfg->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		cte_info.type = df_cfg->cte_type;
-		cte_info.time = df_cfg->cte_length;
-		pdu_data.field_data = (uint8_t *)&cte_info;
-		pdu_data.extra_data = df_cfg;
-		err = ull_adv_sync_pdu_set_clear(adv,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 0, &pdu_data, &ter_idx);
+		err = cte_info_set(adv, df_cfg, &ter_idx, &pdu);
 		if (err) {
 			return err;
 		}
 
-		if (sync->is_started) {
-			/* If CTE is enabled when advertising is pending,
-			 * increase advertising event length
-			 */
-			ull_adv_sync_update(sync, df_cfg->cte_length, 0);
-			/* ToDo increase number of chain PDUs in pending
-			 * advertising if requested more CTEs than available
-			 * PDU with advertising data.
-			 */
-		}
-
 		df_cfg->is_enabled = 1U;
+	}
+
+	if (sync->is_started) {
+		err = ull_adv_sync_time_update(sync, pdu);
+		if (err) {
+			return err;
+		}
 	}
 
 	lll_adv_sync_data_enqueue(adv->lll.sync, ter_idx);
@@ -352,75 +351,6 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-/* @brief Function sets CTE transmission parameters for a connection.
- *
- * @param[in]handle                     Connection handle.
- * @param[in]cte_types                  Bitfield holding information about
- *                                      allowed CTE types.
- * @param[in]switch_pattern_len         Number of antenna ids in switch pattern.
- * @param[in]ant_id                     Array of antenna identifiers.
- *
- * @return Status of command completion.
- */
-uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
-				     uint8_t switch_pattern_len,
-				     uint8_t *ant_id)
-{
-	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US ||
-	    cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
-
-		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
-		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX ||
-		    !ant_id) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-	}
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-/* @brief Function provides information about Direction Finding
- *        antennas switching and sampling related settings.
- *
- * @param[out]switch_sample_rates       Pointer to store available antennas
- *                                      switch-sampling configurations.
- * @param[out]num_ant                   Pointer to store number of available
- *                                      antennas.
- * @param[out]max_switch_pattern_len    Pointer to store maximum number of
- *                                      antennas ids in switch pattern.
- * @param[out]max_cte_len               Pointer to store maximum length of CTE
- *                                      in [8us] units.
- */
-void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
-			uint8_t *num_ant,
-			uint8_t *max_switch_pattern_len,
-			uint8_t *max_cte_len)
-{
-	*switch_sample_rates = 0;
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
-		*switch_sample_rates |= DF_AOD_1US_TX;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
-		*switch_sample_rates |= DF_AOD_1US_RX;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
-		*switch_sample_rates |= DF_AOA_1US;
-	}
-
-	*max_switch_pattern_len = BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
-	*num_ant = lll_df_ant_num_get();
-	*max_cte_len = LLL_DF_MAX_CTE_LEN;
-}
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 /* @brief Function sets IQ sampling enabled or disabled.
@@ -654,4 +584,566 @@ static struct lll_df_adv_cfg *df_adv_cfg_acquire(void)
 
 	return df_adv_cfg;
 }
+
+#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+/*
+ * @brief Function sets content of cte_info field in periodic advertising chain.
+ *
+ * The function allocates new PDU (or chain of PDUs) for periodic advertising to
+ * fill it with information about CTE, that is going to be transmitted with the PDU.
+ * If there is already allocated PDU, it will be updated to hold information about
+ * CTE.
+ *
+ * @param lll_sync       Pointer to periodic advertising sync object.
+ * @param pdu_prev       Pointer to a PDU that is already in use by LLL or was updated with new PDU
+ *                       payload.
+ * @param pdu            Pointer to a new head of periodic advertising chain. The pointer may have
+ *                       the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
+ *                       was already updated.
+ * @param cte_count      Number of CTEs that should be transmitted in periodic advertising chain.
+ * @param cte_into       Pointer to instence of cte_info stuctuct that is added to PDUs extended
+ *                       advertising header.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct pdu_adv *pdu_prev,
+					  struct pdu_adv *pdu, uint8_t cte_count,
+					  struct pdu_cte_info *cte_info)
+{
+	uint8_t pdu_add_field_flags;
+	struct pdu_adv *pdu_next;
+	uint8_t cte_index = 1;
+	bool new_chain;
+	uint8_t err;
+
+	new_chain = (pdu_prev == pdu ? false : true);
+
+	pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+	pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
+
+	/* Update PDUs in existing chain. Add cte_info to extended advertising header. */
+	while (pdu_prev) {
+		if (new_chain) {
+			pdu_next = lll_adv_pdu_alloc_pdu_adv();
+			lll_adv_pdu_linked_append(pdu_next, pdu);
+			pdu = pdu_next;
+		} else {
+			pdu = lll_adv_pdu_linked_next_get(pdu);
+		}
+
+		pdu_next = lll_adv_pdu_linked_next_get(pdu_prev);
+		/* If all CTEs were added to chain, remove CTE from flags */
+		if (cte_index >= cte_count) {
+			pdu_add_field_flags = 0;
+		} else {
+			++cte_index;
+			/* If it is last PDU in existing chain and there are CTE to be included
+			 * add aux_ptr to flags.
+			 */
+			if (!pdu_next && cte_index < cte_count) {
+				pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+			}
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
+						 cte_info);
+		if (err != BT_HCI_ERR_SUCCESS) {
+			/* TODO: implement gracefull error handling, cleanup of
+			 * changed PDUs and notify host abut issue during start of CTE
+			 * transmission.
+			 */
+			return err;
+		}
+		pdu_prev = pdu_next;
+	}
+
+	/* If there is missing only one CTE do not add aux_ptr to PDU */
+	if (cte_count - cte_index >= 2) {
+		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+	} else {
+		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	/* Add new PDUs if the number of PDUs in existing chain is lower than requested number
+	 * of CTEs.
+	 */
+	while (cte_index < cte_count) {
+		pdu_prev = pdu;
+		pdu = lll_adv_pdu_alloc_pdu_adv();
+		if (!pdu) {
+			/* TODO: implement graceful error handling, cleanup of
+			 * changed PDUs.
+			 */
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+		ull_adv_sync_pdu_init(pdu, pdu_add_field_flags);
+		ull_adv_sync_pdu_cte_info_set(pdu, cte_info);
+
+		/* Link PDU into a chain */
+		lll_adv_pdu_linked_append(pdu, pdu_prev);
+
+		++cte_index;
+		/* If next PDU in a chain is last PDU, then remove aux_ptr field flag from
+		 * extended advertising header.
+		 */
+		if (cte_index == cte_count - 1) {
+			pdu_add_field_flags &= (~ULL_ADV_PDU_HDR_FIELD_AUX_PTR);
+		}
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+/*
+ * @brief Function sets content of cte_info field for periodic advertising
+ *
+ * @param adv            Pointer to periodic advertising set.
+ * @param df_cfg         Pointer to direction finding configuration
+ * @param[out] ter_idx   Pointer used to return index of allocated or updated PDU.
+ *                       Index is required for scheduling the PDU for transmission in LLL.
+ * @param[out] first_pdu Pointer to return address of first PDU in a periodic advertising chain
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+static uint8_t cte_info_set(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg, uint8_t *ter_idx,
+			    struct pdu_adv **first_pdu)
+{
+	struct pdu_adv *pdu_prev, *pdu;
+	struct lll_adv_sync *lll_sync;
+	struct pdu_cte_info cte_info;
+	uint8_t pdu_add_field_flags;
+	void *extra_data;
+	uint8_t err;
+
+	lll_sync = adv->lll.sync;
+
+	cte_info.type = df_cfg->cte_type;
+	cte_info.time = df_cfg->cte_length;
+
+	/* Note: ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS is just information that extra_data
+	 * is required in case of this ull_adv_sync_pdu_alloc.
+	 */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS, &pdu_prev, &pdu,
+				     NULL, &extra_data, ter_idx);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	ull_adv_sync_extra_data_set_clear(NULL, extra_data, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0,
+					  df_cfg);
+
+#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	if (df_cfg->cte_count > 1) {
+		pdu_add_field_flags =
+			ULL_ADV_PDU_HDR_FIELD_CTE_INFO | ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+	} else
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+	{
+		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
+					 &cte_info);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	*first_pdu = pdu;
+#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	err = per_adv_chain_cte_info_set(lll_sync, pdu_prev, pdu, df_cfg->cte_count, &cte_info);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
+{
+	if (pdu->len != PDU_AC_PAYLOAD_SIZE_MIN) {
+		const struct pdu_adv_ext_hdr *ext_hdr;
+		uint8_t size_rem = 0;
+
+		if ((pdu->adv_ext_ind.ext_hdr_len + PDU_AC_EXT_HEADER_SIZE_MIN) != pdu->len) {
+			/* There are adv. data in PDU */
+			return false;
+		}
+
+		/* Check size of the ext. header without cte_info and aux_ptr. If that is minimum
+		 * extended PDU size then the PDU was allocated to transport CTE only.
+		 */
+		ext_hdr = &pdu->adv_ext_ind.ext_hdr;
+
+		if (ext_hdr->cte_info) {
+			size_rem += sizeof(struct pdu_cte_info);
+		}
+		if (ext_hdr->aux_ptr) {
+			size_rem += sizeof(struct pdu_adv_aux_ptr);
+		}
+
+		if ((pdu->adv_ext_ind.ext_hdr_len - size_rem) != PDU_AC_EXT_HEADER_SIZE_MIN) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/*
+ * @brief Function removes content of cte_info field in periodic advertising chain.
+ *
+ * The function removes cte_info from extended advertising header in all PDUs in periodic
+ * advertising chain. If particular PDU is empty (holds cte_info only) it will be removed from
+ * chain.
+ *
+ * @param[in] lll_sync     Pointer to periodic advertising sync object.
+ * @param[in-out] pdu_prev Pointer to a PDU that is already in use by LLL or was updated with new
+ *                         PDU payload. Points to last PDU in a previous chain after return.
+ * @param[in-out] pdu      Pointer to a new head of periodic advertising chain. The pointer may have
+ *                         the same value as @p pdu_prev, if payload of PDU pointerd by @p pdu_prev
+ *                         was already updated. Points to last PDU in a new chain after return.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+static uint8_t rem_cte_info_from_per_adv_chain(struct lll_adv_sync *lll_sync,
+					       struct pdu_adv **pdu_prev, struct pdu_adv **pdu)
+{
+	struct pdu_adv *pdu_new, *pdu_chained;
+	uint8_t pdu_rem_field_flags;
+	bool new_chain;
+	uint8_t err;
+
+	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+	/* It is possible that the function is called after e.g. advertising data were updated.
+	 * In such situation the function will run on already allocated chain. Do not allocate
+	 * new chain then. Reuse already allocated PDUs and allocate new ones only if the chain
+	 * was not updated yet.
+	 */
+	new_chain = (*pdu_prev == *pdu ? false : true);
+
+	/* Get next PDU in a chain. Alway use pdu_prev because it points to actual
+	 * former chain.
+	 */
+	pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
+
+	/* Go through existing chain and remove CTE info. */
+	while (pdu_chained) {
+		if (pdu_ext_adv_is_empty_without_cte(pdu_chained)) {
+			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
+			if (!new_chain) {
+				lll_adv_pdu_linked_release_all(pdu_chained);
+
+				/* Set new end of chain in PDUs linked list. If pdu differs from
+				 * prev_pdu then it is already end of a chain. If it doesn't differ,
+				 * then chain end is changed in right place by use of pdu_prev.
+				 * That makes sure there is no PDU released twice (here and when LLL
+				 * swaps PDU buffers).
+				 */
+				lll_adv_pdu_linked_append(NULL, *pdu_prev);
+			}
+			pdu_chained = NULL;
+		} else {
+			/* Update one before pdu_chained */
+			err = ull_adv_sync_pdu_set_clear(lll_sync, *pdu_prev, *pdu, 0,
+							 pdu_rem_field_flags, NULL);
+			if (err != BT_HCI_ERR_SUCCESS) {
+				/* TODO: return here leaves periodic advertising chain in
+				 * an inconsisten state. Add gracefull return or assert.
+				 */
+				return err;
+			}
+
+			/* Prepare for next iteration. Allocate new PDU or move to next one in
+			 * a chain.
+			 */
+			if (new_chain) {
+				pdu_new = lll_adv_pdu_alloc_pdu_adv();
+				lll_adv_pdu_linked_append(pdu_new, *pdu);
+				*pdu = pdu_new;
+			} else {
+				*pdu = lll_adv_pdu_linked_next_get(*pdu);
+			}
+
+			/* Move to next chained PDU (it moves through chain that is in use
+			 * by LLL or is new one with updated advertising payload).
+			 */
+			*pdu_prev = pdu_chained;
+			pdu_chained = lll_adv_pdu_linked_next_get(*pdu_prev);
+		}
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1) */
+
+/*
+ * @brief Function removes content of cte_info field from periodic advertising PDUs.
+ *
+ * @param adv            Pointer to periodic advertising set.
+ * @param df_cfg         Pointer to direction finding configuration
+ * @param[out] ter_idx   Pointer used to return index of allocated or updated PDU.
+ *                       Index is required for scheduling the PDU for transmission in LLL.
+ * @param[out] first_pdu Pointer to return address of first PDU in a chain
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
+			      uint8_t *ter_idx, struct pdu_adv **first_pdu)
+{
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
+	struct lll_adv_sync *lll_sync;
+	uint8_t pdu_rem_field_flags;
+	uint8_t err;
+
+	lll_sync = adv->lll.sync;
+
+	/* NOTE: ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER is just information that extra_data
+	 * should be removed in case of this call ull_adv_sync_pdu_alloc.
+	 */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER, &pdu_prev, &pdu,
+				     &extra_data_prev, &extra_data, ter_idx);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	if (extra_data) {
+		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data, 0,
+						  ULL_ADV_PDU_HDR_FIELD_CTE_INFO, NULL);
+	}
+
+	*first_pdu = pdu;
+
+	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+#if (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	err = rem_cte_info_from_per_adv_chain(lll_sync, &pdu_prev, &pdu);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	/* Update last PDU in a chain. It may not have aux_ptr.
+	 * NOTE: If there is no AuxPtr flag in the PDU, attempt to remove it does not harm.
+	 */
+	pdu_rem_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, pdu_rem_field_flags, NULL);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		/* TODO: return here leaves periodic advertising chain in an inconsisten state.
+		 * Add gracefull return or assert.
+		 */
+		return err;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+#if defined CONFIG_BT_CTLR_DF_CONN_CTE_RSP
+/* @brief Function sets CTE transmission parameters for a connection.
+ *
+ * @param handle             Connection handle.
+ * @param cte_types          Bitfield holding information about
+ *                           allowed CTE types.
+ * @param switch_pattern_len Number of antenna ids in switch pattern.
+ * @param ant_id             Array of antenna identifiers.
+ *
+ * @return Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t switch_pattern_len,
+				     uint8_t *ant_id)
+{
+	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US || cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
+		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !ant_id) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+	}
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/* @brief Function sets CTE reception parameters for a connection.
+ *
+ * @param handle             Connection handle.
+ * @param sampling_enable    Enable or disable CTE RX. When the parameter is set to false,
+ *                           @p slot_durations, @p switch_pattern_len and @ant_ids are ignored.
+ * @param slot_durations     Switching and samplig slot durations for AoA mode.
+ * @param switch_pattern_len Number of antenna ids in switch pattern.
+ * @param ant_ids            Array of antenna identifiers.
+ *
+ * @return HCI status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
+				     uint8_t slot_durations, uint8_t switch_pattern_len,
+				     const uint8_t *ant_ids)
+{
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	df_rx_params = &conn->lll.df_rx_params;
+
+	if (!sampling_enable) {
+		df_rx_params->state = DF_CTE_SAMPLING_DISABLED;
+	} else {
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)) {
+			if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+			       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+			      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
+			if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+			    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN || !ant_ids) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+		}
+
+
+		df_rx_params->state = DF_CTE_SAMPLING_ENABLED;
+		df_rx_params->slot_durations = slot_durations;
+		memcpy(df_rx_params->ant_ids, ant_ids, switch_pattern_len);
+		df_rx_params->ant_sw_len = switch_pattern_len;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+/* @brief Function enables or disables CTE request control procedure for a connection.
+ *
+ * The procedure may be enabled in two modes:
+ * - single-shot, it is autmatically disabled when the occurrence finishes.
+ * - periodic, it is executed periodically until disabled, connection is lost or PHY is changed
+ *   to the one that does not support CTE.
+ *
+ * @param handle               Connection handle.
+ * @param enable               Enable or disable CTE request. When the parameter is set to false
+ *                             @p cte_request_interval, @requested_cte_length and
+ *                             @p requested_cte_type are ignored.
+ * @param cte_request_interval Value zero enables single-shot mode. Other values enable periodic
+ *                             mode. In periodic mode, the value is a number of connection envets
+ *                             the procedure is executed. The value may not be lower than
+ *                             connection peer latency.
+ * @param requested_cte_length Minimum value of CTE length requested from peer.
+ * @param requested_cte_type   Type of CTE requested from peer.
+ *
+ * @return HCI Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
+				      uint8_t requested_cte_length, uint8_t requested_cte_type)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!enable) {
+		/* There is no parameter validation for disable operation. */
+
+		/* TODO: Add missing implementation of disable CTE reques.
+		 * Requires refactored LLCPs.
+		 */
+	} else {
+		if (conn->df_rx_params.state == DF_CTE_SAMPLING_UNINITIALIZED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		/* TODO: check if CTE_REQ LLCP is active. Add when merged with refactored LLCPs */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
+		 * case the mandatory PHY1M is used (that supports CTE).
+		 */
+		if (conn->lll.phy_tx == PHY_CODED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
+		    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
+		    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		/* If controller is aware of features supported by peer device then check
+		 * whether required features are enabled.
+		 */
+		if (conn->common.fex_valid &&
+		    (!(conn->llcp_feature.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
+		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
+		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
+		      !(conn->llcp_feature.features_peer &
+			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
+			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		}
+	}
+
+	/* TODO: implement disable of the CTE if PHY is changed to coded */
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+/* @brief Function provides information about Direction Finding
+ *        antennas switching and sampling related settings.
+ *
+ * @param[out]switch_sample_rates       Pointer to store available antennas
+ *                                      switch-sampling configurations.
+ * @param[out]num_ant                   Pointer to store number of available
+ *                                      antennas.
+ * @param[out]max_switch_pattern_len    Pointer to store maximum number of
+ *                                      antennas ids in switch pattern.
+ * @param[out]max_cte_len               Pointer to store maximum length of CTE
+ *                                      in [8us] units.
+ */
+void ll_df_read_ant_inf(uint8_t *switch_sample_rates, uint8_t *num_ant,
+			uint8_t *max_switch_pattern_len, uint8_t *max_cte_len)
+{
+	*switch_sample_rates = 0;
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_TX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_RX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOA_1US;
+	}
+
+	*max_switch_pattern_len = BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
+	*num_ant = lll_df_ant_num_get();
+	*max_cte_len = LLL_DF_MAX_CTE_LEN;
+}

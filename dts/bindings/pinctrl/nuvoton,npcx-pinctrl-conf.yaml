@@ -1,9 +1,10 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton NPCX7 Pin-Mux Configuration
-    Configuration map from Nuvoton NPCX GPIO to pinmux controller
-    (SCFG) driver instances.
+description: |
+  Nuvoton NPCX7 Pin-Mux Configuration
+  Configuration map from Nuvoton NPCX GPIO to pinmux controller
+  (SCFG) driver instances.
 
 compatible: "nuvoton,npcx-pinctrl-conf"
 child-binding:

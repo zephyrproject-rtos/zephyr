@@ -25,6 +25,19 @@ config SHELL_MINIMAL
 	  defaults which favor reduced flash or memory requirements over extra
 	  features.
 
+config SHELL_THREAD_PRIORITY_OVERRIDE
+	bool "Override default shell thread priority"
+	help
+	  Option to change the default value of shell thread priority.
+
+if SHELL_THREAD_PRIORITY_OVERRIDE
+config SHELL_THREAD_PRIORITY
+	int "Shell thread priority"
+	default 0
+	help
+	  Set thread priority of the shell
+endif
+
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
 	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
@@ -111,8 +124,15 @@ config SHELL_START_OBSCURED
 	  If enabled, don't echo actual character, but echo * instead.
 	  This is used for login prompts.
 
+config SHELL_VT100_COMMANDS
+	bool "Enable VT100 commands in shell"
+	default y
+	help
+	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
+
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"
+	depends on SHELL_VT100_COMMANDS
 	default y if !SHELL_MINIMAL
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
@@ -181,6 +201,7 @@ config SHELL_CMDS
 config SHELL_CMDS_RESIZE
 	bool "Enable resize command"
 	depends on SHELL_CMDS
+	depends on SHELL_VT100_COMMANDS
 	default y if !SHELL_MINIMAL
 	help
 	  By default shell assumes width of a terminal screen set to 80
@@ -195,9 +216,15 @@ config SHELL_CMDS_SELECT
 	  This option enables select command. It can be used to set new root
 	  command. Exit to main command tree is with alt+r.
 
+config SHELL_CMD_ROOT
+	string "Set a root command at init"
+	help
+	  This option sets a root command at shell init,
+	  and when exiting to main command tree with alt+r.
+
 config SHELL_LOG_BACKEND
 	bool "Enable shell log backend"
-	depends on !LOG_MINIMAL
+	depends on LOG && !LOG_MINIMAL
 	default y if LOG
 	help
 	  When enabled, backend will use the shell for logging.

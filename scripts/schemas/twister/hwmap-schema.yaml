@@ -30,6 +30,9 @@ sequence:
       "serial":
         type: str
         required: false
+      "baud":
+        type: int
+        required: false
       "post_script":
         type: str
         required: false

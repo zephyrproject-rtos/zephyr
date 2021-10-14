@@ -102,6 +102,10 @@
 #define PKG_ALIGN_OFFSET sizeof(void *)
 #endif
 
+#if (VIA_TWISTER & 0x2000) != 0
+#define PACKAGE_FLAGS CBPRINTF_PACKAGE_ADD_STRING_IDXS
+#endif
+
 #endif /* VIA_TWISTER */
 
 /* Can't use IS_ENABLED on symbols that don't start with CONFIG_
@@ -121,6 +125,10 @@
 
 #if AVOID_C_GENERIC
 #define Z_C_GENERIC 0
+#endif
+
+#ifndef PACKAGE_FLAGS
+#define PACKAGE_FLAGS 0
 #endif
 
 #include <sys/cbprintf.h>
@@ -231,7 +239,7 @@ static int prf(char *static_package_str, const char *format, ...)
 	rv = vsnprintf(buf, sizeof(buf), format, ap);
 #else
 #if USE_PACKAGED
-	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
+	rv = cbvprintf_package(packaged, sizeof(packaged), PACKAGE_FLAGS, format, ap);
 	if (rv >= 0) {
 		rv = cbpprintf(out, &outbuf, packaged);
 		if (rv == 0 && static_package_str) {
@@ -259,11 +267,11 @@ static int rawprf(const char *format, ...)
 	uint8_t *pkg_buf = &packaged[PKG_ALIGN_OFFSET];
 
 	va_copy(ap2, ap);
-	len = cbvprintf_package(NULL, PKG_ALIGN_OFFSET, format, ap2);
+	len = cbvprintf_package(NULL, PKG_ALIGN_OFFSET, PACKAGE_FLAGS, format, ap2);
 	va_end(ap2);
 
 	if (len >= 0) {
-		rv = cbvprintf_package(pkg_buf, len, format, ap);
+		rv = cbvprintf_package(pkg_buf, len, PACKAGE_FLAGS, format, ap);
 	} else {
 		rv = len;
 	}
@@ -293,17 +301,17 @@ static int rawprf(const char *format, ...)
 			.buf = _buf, .size = ARRAY_SIZE(_buf), .idx = 0 \
 		}; \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _len, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
 			package[_len + PKG_ALIGN_OFFSET]; \
 		int st_pkg_rv; \
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len - 1, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, -ENOSPC, NULL); \
 		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len, \
 					st_pkg_rv, PKG_ALIGN_OFFSET, \
-					_fmt, __VA_ARGS__); \
+					PACKAGE_FLAGS, _fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, _len, NULL); \
 		rv = cbpprintf(out, &package_buf, &package[PKG_ALIGN_OFFSET]); \
 		if (rv >= 0) { \
@@ -502,6 +510,7 @@ static void test_d_length(void)
 	int max = 1876543210;
 	long long svll = 123LL << 48;
 	long long svll2 = -2LL;
+	unsigned long long uvll = 4000000000LLU;
 	int rc;
 
 	TEST_PRF(&rc, "%d/%d", min, max);
@@ -518,22 +527,22 @@ static void test_d_length(void)
 		PRF_CHECK("46/-22", rc);
 	}
 
-	TEST_PRF(&rc, "%ld/%ld", (long)min, (long)max);
+	TEST_PRF(&rc, "%ld/%ld/%lu/", (long)min, (long)max, 4000000000UL);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(long) <= 4)
 	    || IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("-1234567890/1876543210", rc);
+		PRF_CHECK("-1234567890/1876543210/4000000000/", rc);
 	} else {
-		PRF_CHECK("%ld/%ld", rc);
+		PRF_CHECK("%ld/%ld/%lu/", rc);
 	}
 
-	TEST_PRF(&rc, "/%lld/%lld/%lld/", svll, -svll, svll2);
+	TEST_PRF(&rc, "/%lld/%lld/%lld/%llu/", svll, -svll, svll2, uvll);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
-		PRF_CHECK("/34621422135410688/-34621422135410688/-2/", rc);
+		PRF_CHECK("/34621422135410688/-34621422135410688/-2/4000000000/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
-		PRF_CHECK("/%lld/%lld/%lld/", rc);
+		PRF_CHECK("/%lld/%lld/%lld/%llu/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("/ERR/ERR/-2/", rc);
+		PRF_CHECK("/ERR/ERR/-2/4000000000/", rc);
 	} else {
 		zassert_true(false, "Missed case!");
 	}
@@ -1199,7 +1208,7 @@ static void test_cbprintf_package(void)
 	char fmt[] = "/%i/";	/* not const */
 
 	/* Verify we can calculate length without storing */
-	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, fmt, 3);
+	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, PACKAGE_FLAGS, fmt, 3);
 	zassert_true(rc > sizeof(int), NULL);
 
 	/* Capture the base package information for future tests. */
@@ -1210,13 +1219,153 @@ static void test_cbprintf_package(void)
 	/* Verify we get same length when storing. Pass buffer which may be
 	 * unaligned. Same alignment offset was used for space calculation.
 	 */
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, len, NULL);
 
 	/* Verify we get an error if can't store */
 	len -= 1;
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, -ENOSPC, NULL);
+}
+
+/* Test using @ref CBPRINTF_PACKAGE_ADD_STRING_IDXS flag.
+ * Note that only static packaging is tested here because ro string detection
+ * does not work on host testing.
+ */
+static void test_cbprintf_package_rw_string_indexes(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	if (!Z_C_GENERIC) {
+		/* runtime packaging will not detect ro strings. */
+		return;
+	}
+
+	int len0, len1;
+	static const char *test_str = "test %d %s";
+	static const char *test_str1 = "lorem ipsum";
+	uint8_t str_idx;
+	char *addr;
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len0, 0, 0, test_str, 100, test_str1);
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len1, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+	/* package with string indexes will contain two more bytes holding indexes
+	 * of string parameter locations.
+	 */
+	zassert_equal(len0 + 2, len1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package0[len0];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package1[len1];
+
+	CBPRINTF_STATIC_PACKAGE(package0, sizeof(package0), len0, 0, 0,
+				test_str, 100, test_str1);
+	CBPRINTF_STATIC_PACKAGE(package1, sizeof(package1), len1, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	struct z_cbprintf_desc *desc0 = (struct z_cbprintf_desc *)package0;
+	struct z_cbprintf_desc *desc1 = (struct z_cbprintf_desc *)package1;
+
+	/* Compare descriptor content. Second package has one ro string index. */
+	zassert_equal(desc0->ro_str_cnt, 0, NULL);
+	zassert_equal(desc1->ro_str_cnt, 2, NULL);
+	zassert_equal(len0 + 2, len1, NULL);
+
+	int *p = (int *)package1;
+
+	str_idx = package1[len0];
+	addr = *(char **)&p[str_idx];
+	zassert_equal(addr, test_str, NULL);
+
+	str_idx = package1[len0 + 1];
+	addr = *(char **)&p[str_idx];
+	zassert_equal(addr, test_str1, NULL);
+}
+
+static int fsc_package_cb(int c, void *ctx)
+{
+	char **p = ctx;
+
+	(*p)[0] = c;
+	*p = *p + 1;
+
+	return c;
+}
+
+/* Test for validating convesion to fully self-contained package. */
+static void test_cbprintf_fsc_package(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	if (!Z_C_GENERIC) {
+		/* runtime packaging will not detect ro strings. */
+		return;
+	}
+
+	char test_str[] = "test %d %s";
+	char *test_str1 = "lorem ipsum";
+	char exp_str0[256];
+	char exp_str1[256];
+	char out_str[256];
+	char *pout;
+	int len;
+	int fsc_len;
+	int err;
+
+	snprintf(exp_str0, sizeof(exp_str0), test_str, 100, test_str1);
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+
+	CBPRINTF_STATIC_PACKAGE(package, sizeof(package), len, 0,
+				CBPRINTF_PACKAGE_ADD_STRING_IDXS,
+				test_str, 100, test_str1);
+
+	/* Get length of fsc package. */
+	fsc_len = cbprintf_fsc_package(package, len, NULL, 0);
+
+	int exp_len = len + (int)strlen(test_str) + 1 + (int)strlen(test_str1) + 1;
+
+	zassert_equal(exp_len, fsc_len, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) fsc_package[fsc_len];
+
+	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len - 1);
+	zassert_equal(err, -ENOSPC, NULL);
+
+	err = cbprintf_fsc_package(package, len, fsc_package, fsc_len);
+	zassert_equal(err, fsc_len, NULL);
+
+	/* Now overwrite a char in original string, confirm that fsc package
+	 * contains string without that change because ro string is copied into
+	 * the package.
+	 */
+	test_str[0] = 'w';
+	snprintf(exp_str1, sizeof(exp_str1), test_str, 100, test_str1);
+
+	pout = out_str;
+	cbpprintf(fsc_package_cb, &pout, package);
+	*pout = '\0';
+
+	zassert_equal(strcmp(out_str, exp_str1), 0, NULL);
+	zassert_true(strcmp(exp_str0, exp_str1) != 0, NULL);
+
+	/* FSC package contains original content. */
+	pout = out_str;
+	cbpprintf(fsc_package_cb, &pout, fsc_package);
+	*pout = '\0';
+	zassert_equal(strcmp(out_str, exp_str0), 0, NULL);
 }
 
 static void test_cbpprintf(void)
@@ -1316,6 +1465,8 @@ void test_main(void)
 			 ztest_unit_test(test_libc_substs),
 			 ztest_unit_test(test_cbprintf_package),
 			 ztest_unit_test(test_cbpprintf),
+			 ztest_unit_test(test_cbprintf_package_rw_string_indexes),
+			 ztest_unit_test(test_cbprintf_fsc_package),
 			 ztest_unit_test(test_nop)
 			 );
 	ztest_run_test_suite(test_prf);

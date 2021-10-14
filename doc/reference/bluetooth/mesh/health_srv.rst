@@ -19,7 +19,7 @@ necessarily damaging to the device. Errors indicate conditions that are
 outside of the node's design limits, and may have caused invalid behavior or
 permanent damage to the device.
 
-Fault values ``0x01`` to ``0x7f`` are reserved for the Bluetooth Mesh
+Fault values ``0x01`` to ``0x7f`` are reserved for the Bluetooth mesh
 specification, and the full list of specification defined faults are available
 in :ref:`bluetooth_mesh_health_faults`. Fault values ``0x80`` to ``0xff`` are
 vendor specific. The list of faults are always reported with a company ID to
@@ -52,9 +52,9 @@ API reference
 
 .. _bluetooth_mesh_health_faults:
 
-Bluetooth Mesh Health Faults
-============================
+Health faults
+=============
 
-Fault values defined by the Bluetooth Mesh specification.
+Fault values defined by the Bluetooth mesh specification.
 
 .. doxygengroup:: bt_mesh_health_faults

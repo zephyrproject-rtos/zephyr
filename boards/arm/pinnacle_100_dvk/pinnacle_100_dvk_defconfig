@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Laird Connectivity
+# Copyright (c) 2020-2021 Laird Connectivity
 
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,15 +12,19 @@ CONFIG_ARM_MPU=y
 # Enable RTT
 CONFIG_USE_SEGGER_RTT=y
 
-# enable GPIO
+# Enable GPIO
 CONFIG_GPIO=y
 
-# enable uart driver
+# Enable uart driver
 CONFIG_SERIAL=y
 
-# enable console
+# Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# additional board options
+# Additional board options
 CONFIG_GPIO_AS_PINRESET=y
+
+# 32KHz clock source
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL=y
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_150PPM=y

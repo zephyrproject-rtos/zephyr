@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2020 Nordic Semiconductor ASA
@@ -11,17 +9,24 @@
 #include "net.h"
 #include "proxy.h"
 #include "adv.h"
+#include "host/ecc.h"
 #include "prov.h"
+#include "pb_gatt_srv.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #define LOG_MODULE_NAME bt_mesh_pb_gatt
 #include "common/log.h"
 
+struct prov_bearer_send_cb {
+	prov_bearer_send_complete_t cb;
+	void *cb_data;
+};
+
 struct prov_link {
 	struct bt_conn *conn;
 	const struct prov_bearer_cb *cb;
 	void *cb_data;
-	struct net_buf_simple *rx_buf;
+	struct prov_bearer_send_cb comp;
 	struct k_work_delayable prot_timer;
 };
 
@@ -36,8 +41,6 @@ static void reset_state(void)
 
 	/* If this fails, the protocol timeout handler will exit early. */
 	(void)k_work_cancel_delayable(&link.prot_timer);
-
-	link.rx_buf = bt_mesh_proxy_get_buf();
 }
 
 static void link_closed(enum prov_bearer_link_status status)
@@ -114,13 +117,20 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 
 static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 {
-	(void)bt_mesh_proxy_prov_enable();
+	(void)bt_mesh_pb_gatt_enable();
 	bt_mesh_adv_update();
 
 	link.cb = cb;
 	link.cb_data = cb_data;
 
 	return 0;
+}
+
+static void buf_send_end(struct bt_conn *conn, void *user_data)
+{
+	if (link.comp.cb) {
+		link.comp.cb(0, link.comp.cb_data);
+	}
 }
 
 static int buf_send(struct net_buf_simple *buf, prov_bearer_send_complete_t cb,
@@ -130,9 +140,12 @@ static int buf_send(struct net_buf_simple *buf, prov_bearer_send_complete_t cb,
 		return -ENOTCONN;
 	}
 
+	link.comp.cb = cb;
+	link.comp.cb_data = cb_data;
+
 	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	return bt_mesh_proxy_send(link.conn, BT_MESH_PROXY_PROV, buf);
+	return bt_mesh_pb_gatt_send(link.conn, buf, buf_send_end, NULL);
 }
 
 static void clear_tx(void)

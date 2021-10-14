@@ -282,7 +282,7 @@ This is implemented as part of the minimal C library available in Zephyr.
     setlocale(),
     snprintf(),+
     sprintf(),+
-    srand(),
+    srand(),+
     sscanf(),
     strcat(),+
     strchr(),+

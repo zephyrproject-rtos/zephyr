@@ -17,7 +17,7 @@ config BT_CTLR_CONN_PARAM_REQ_SUPPORT
 config BT_CTLR_EXT_REJ_IND_SUPPORT
 	bool
 
-config BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+config BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	bool
 
 config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
@@ -81,6 +81,12 @@ config BT_CTLR_CONN_RSSI_SUPPORT
 config BT_CTLR_ECDH_SUPPORT
 	bool
 
+config BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO_SUPPORT || \
+		   BT_CTLR_CENTRAL_ISO_SUPPORT || \
+		   BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -124,6 +130,17 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  setting this to a value different from an empty string, a space
 	  character is required at the beginning to separate it from the
 	  already included information.
+
+config BT_CTLR_AD_DATA_BACKUP
+	bool "Enable Legacy AD Data backup"
+	depends on BT_PERIPHERAL || BT_CTLR_ADV_EXT
+	default y
+	help
+	  Backup Legacy Advertising Data when switching to Legacy Directed or
+	  to Extended Advertising mode, and restore it when switching back to
+	  Legacy Non-Directed Advertising mode.
+	  Application can disable this feature if not using Directed
+	  Advertising or switch between Legacy and Extended Advertising.
 
 config BT_CTLR_HCI_ADV_HANDLE_MAPPING
 	bool "Enable advertising set handle mapping between HCI and LL"
@@ -297,12 +314,12 @@ config BT_CTLR_EXT_REJ_IND
 	  Enable support for Bluetooth v4.1 Extended Reject Indication feature
 	  in the Controller.
 
-config BT_CTLR_SLAVE_FEAT_REQ
-	bool "Slave-initiated Features Exchange"
-	depends on BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
+config BT_CTLR_PER_INIT_FEAT_XCHG
+	bool "Peripheral-initiated Features Exchange"
+	depends on BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	default y
 	help
-	  Enable support for Bluetooth v4.1 Slave-initiated Features Exchange
+	  Enable support for Bluetooth v4.1 Peripheral-initiated Features Exchange
 	  feature in the Controller.
 
 config BT_CTLR_LE_PING
@@ -357,30 +374,30 @@ config BT_CTLR_CHECK_SAME_PEER_CONN
 
 endif # BT_CONN
 
-config BT_CTLR_FILTER
-	bool "Device Whitelist Support"
+config BT_CTLR_FILTER_ACCEPT_LIST
+	bool "Filter Accept List Support"
 	default y
 	help
-	  Enable support for controller device whitelist feature
+	  Enable support for controller Filter Accept List feature
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	default y
-	select BT_CTLR_FILTER if BT_LL_SW_SPLIT
+	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
 	  in the Controller.
 
-config BT_CTLR_WL_SIZE
+config BT_CTLR_FAL_SIZE
 	int "LE Controller-based Privacy White List size"
-	depends on BT_CTLR_FILTER
+	depends on BT_CTLR_FILTER_ACCEPT_LIST
 	default 8
 	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
 	help
-	  Set the size of the White List for LE Controller-based Privacy.
+	  Set the size of the Filter Accept List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
 	  On OpenISA-based controllers, the hardware imposes a limit of 8 devices.
 
@@ -419,7 +436,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
@@ -451,9 +468,16 @@ config BT_CTLR_ADV_SET
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
 	range 31 1650
-	default 251
 	help
 	  Maximum Extended Advertising Data Length.
+
+config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
+	int "Maximum Advertising Extensions Receive PDU Length"
+	range 255 255 if BT_HCI_RAW
+	range 31 255
+	default 255
+	help
+	  Maximum Advertising Extensions Receive PDU Length.
 
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
@@ -478,6 +502,30 @@ config BT_CTLR_SYNC_PERIODIC
 
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	bool "LE Periodic Advertiser List support"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for LE Periodic Advertiser List support.
+
+config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
+	int "LE Periodic Advertiser List size"
+	depends on BT_CTLR_SYNC_PERIODIC_ADV_LIST
+	range 1 255
+	default 8
+	help
+	  Set Periodic Advertiser List size, this will be return in the HCI LE
+	  Read Periodic Advertiser List Command.
+
+config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
+	bool "LE Periodic Advertiser filtering by CTE type"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable filtering of periodic advertisements depending on type of
+	  Constant Tone Extension.
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
@@ -593,6 +641,13 @@ config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
 
+config BT_CTLR_READ_ISO_LINK_QUALITY
+	bool "LE Read ISO Link Quality"
+	depends on BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	help
+	  Enable support for LE Read ISO Link Quality command.
+
 config BT_CTLR_DTM
 	bool
 	help
@@ -629,8 +684,8 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 	  Enable HCI commands to read information about supported
 	  codecs, codec capabilities, and controller delay.
 
-source "subsys/bluetooth/controller/Kconfig.df"
-source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
+rsource "Kconfig.df"
+rsource "Kconfig.ll_sw_split"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"
@@ -640,6 +695,11 @@ config BT_CTLR_ASSERT_HANDLER
 	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
+
+config BT_CTLR_TEST
+	bool "Run in-system unit tests"
+	help
+	  Run in-system unit tests
 
 endif # BT_CTLR
 

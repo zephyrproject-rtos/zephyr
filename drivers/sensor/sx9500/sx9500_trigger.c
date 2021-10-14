@@ -131,6 +131,7 @@ int sx9500_setup_interrupt(const struct device *dev)
 {
 	struct sx9500_data *data = dev->data;
 	const struct device *gpio;
+	int ret;
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
@@ -147,16 +148,26 @@ int sx9500_setup_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
+	ret = gpio_pin_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
+				 GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
+	if (ret < 0) {
+		return ret;
+	}
 
 	gpio_init_callback(&data->gpio_cb,
 			   sx9500_gpio_cb,
 			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
 
-	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_interrupt_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_add_callback(gpio, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,

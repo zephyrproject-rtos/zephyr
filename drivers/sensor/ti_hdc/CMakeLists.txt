@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_TI_HDC ti_hdc.c)
+zephyr_library_sources(ti_hdc.c)

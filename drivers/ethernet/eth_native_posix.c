@@ -496,7 +496,7 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(const struct device *dev
 {
 	ARG_UNUSED(dev);
 
-	return 0
+	return ETHERNET_TXTIME
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif

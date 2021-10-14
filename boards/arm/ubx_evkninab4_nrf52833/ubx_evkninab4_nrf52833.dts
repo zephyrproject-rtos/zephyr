@@ -224,7 +224,7 @@ arduino_spi: &spi2 {
 	};
 };
 
-&usbd {
+zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };

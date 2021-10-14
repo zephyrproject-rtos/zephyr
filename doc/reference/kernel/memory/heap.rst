@@ -92,8 +92,45 @@ complete within 1-200 cycles.  One complexity is that the search of
 the minimum bucket size for an allocation (the set of free blocks that
 "might fit") has a compile-time upper bound of iterations to prevent
 unbounded list searches, at the expense of some fragmentation
-resistance.  This :c:option:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
+resistance.  This :c:kconfig:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
 chosen by the user at build time, and defaults to a value of 3.
+
+Multi-Heap Wrapper Utility
+**************************
+
+The ``sys_heap`` utility requires that all managed memory be in a
+single contiguous block.  It is common for complicated microcontroller
+applications to have more complicated memory setups that they still
+want to manage dynamically as a "heap".  For example, the memory might
+exist as separate discontiguous regions, different areas may have
+different cache, performance or power behavior, peripheral devices may
+only be able to perform DMA to certain regions, etc...
+
+For those situations, Zephyr provides a ``sys_multi_heap`` utility.
+Effectively this is a simple wrapper around a set of one or more
+``sys_heap`` objects.  It should be initialized after its child heaps
+via :c:func:`sys_multi_heap_init`, after which each heap can be added
+to the managed set via :c:func:`sys_multi_heap_add_heap`.  No
+destruction utility is provided; just as for ``sys_heap``,
+applications that want to destroy a multi heap should simply ensure
+all allocated blocks are freed (or at least will never be used again)
+and repurpose the underlying memory for another usage.
+
+It has a single pair of allocation entry points,
+:c:func:`sys_multi_heap_alloc` and
+:c:func:`sys_multi_heap_aligned_alloc`.  These behave identically to
+the ``sys_heap`` functions with similar names, except that they also
+accept an opaque "configuration" parameter.  This pointer is
+uninspected by the multi heap code itself; instead it is passed to a
+callback function provided at initialization time.  This
+application-provided callback is responsible for doing the underlying
+allocation from one of the managed heaps, and may use the
+configuration parameter in any way it likes to make that decision.
+
+When unused, a multi heap may be freed via
+:c:func:`sys_multi_heap_free`.  The application does not need to pass
+a configuration parameter.  Memory allocated from any of the managed
+``sys_heap`` objects may be freed with in the same way.
 
 System Heap
 ***********
@@ -121,7 +158,7 @@ Defining the Heap Memory Pool
 =============================
 
 The size of the heap memory pool is specified using the
-:option:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
+:kconfig:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
 
 By default, the heap memory pool size is zero bytes. This value instructs
 the kernel not to define the heap memory pool object. The maximum size is limited
@@ -175,7 +212,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_HEAP_MEM_POOL_SIZE`
+* :kconfig:`CONFIG_HEAP_MEM_POOL_SIZE`
 
 API Reference
 =============

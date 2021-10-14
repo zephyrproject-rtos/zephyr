@@ -64,7 +64,7 @@ static void timer_isr(const void *arg)
 	uint64_t now = mtime();
 	uint32_t dticks = (uint32_t)((now - last_count) / CYC_PER_TICK);
 
-	last_count += dticks * CYC_PER_TICK;
+	last_count = now;
 
 	if (!TICKLESS) {
 		uint64_t next = last_count + CYC_PER_TICK;

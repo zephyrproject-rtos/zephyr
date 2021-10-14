@@ -80,22 +80,24 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
-static void vnd_button_pressed(struct bt_mesh_model *model,
+static int vnd_button_pressed(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
 	printk("src 0x%04x\n", ctx->addr);
 
 	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
-		return;
+		return 0;
 	}
 
 	board_other_dev_pressed(ctx->addr);
 	board_play("100G200 100G");
+
+	return 0;
 }
 
 static const struct bt_mesh_model_op vnd_ops[] = {
-	{ OP_VENDOR_BUTTON, 0, vnd_button_pressed },
+	{ OP_VENDOR_BUTTON, BT_MESH_LEN_EXACT(0), vnd_button_pressed },
 	BT_MESH_MODEL_OP_END,
 };
 

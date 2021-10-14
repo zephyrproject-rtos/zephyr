@@ -190,7 +190,7 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 				 uint16_t res_inst_id, size_t *data_len)
 {
 	/* Last read temperature value, will use 25.5C if no sensor available */
-	static struct float32_value v = { 25, 500000 };
+	static double v = 25.5;
 	const struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
@@ -198,17 +198,21 @@ static void *temperature_get_buf(uint16_t obj_inst_id, uint16_t res_id,
 #endif
 
 	if (dev != NULL) {
+		struct sensor_value val;
+
 		if (sensor_sample_fetch(dev)) {
 			LOG_ERR("temperature data update failed");
 		}
 
-		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP,
-				  (struct sensor_value *) &v);
-		LOG_DBG("LWM2M temperature set to %d.%d", v.val1, v.val2);
+		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &val);
+
+		v = sensor_value_to_double(&val);
+
+		LOG_DBG("LWM2M temperature set to %f", v);
 	}
 
 	/* echo the value back through the engine to update min/max values */
-	lwm2m_engine_set_float32("3303/0/5700", &v);
+	lwm2m_engine_set_float("3303/0/5700", &v);
 	*data_len = sizeof(v);
 	return &v;
 }
@@ -445,7 +449,7 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
 		LOG_ERR("LwM2M engine reported a network erorr.");
-		lwm2m_rd_client_stop(client, rd_client_event);
+		lwm2m_rd_client_stop(client, rd_client_event, true);
 		break;
 	}
 }

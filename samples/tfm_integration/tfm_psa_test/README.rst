@@ -31,7 +31,7 @@ Following is an example based on ``west build``
 
    .. code-block:: bash
 
-      $ west build samples/tfm_integration/tfm_psa_test/ -p -b mps2_an521_nonsecure -t run -- -DCONFIG_TFM_PSA_TEST_STORAGE=y
+      $ west build samples/tfm_integration/tfm_psa_test/ -p -b mps2_an521_ns -t run -- -DCONFIG_TFM_PSA_TEST_STORAGE=y
 
 Sample Output
 =============

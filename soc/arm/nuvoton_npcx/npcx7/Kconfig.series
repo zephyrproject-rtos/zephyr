@@ -11,5 +11,6 @@ config SOC_SERIES_NPCX7
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NPCX
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	help
 	  Enable support for Nuvoton NPCX7 series

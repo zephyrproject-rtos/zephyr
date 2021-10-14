@@ -104,6 +104,12 @@
 	status = "okay";
 };
 
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
@@ -142,7 +148,7 @@
 	status = "okay";
 };
 
-&usb {
+zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	status = "okay";
 };
@@ -179,11 +185,22 @@
 	status = "okay";
 	pwm1: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pa8>;
 	};
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */
+	pinctrl-0 = <&dac_out1_pa4>;
+};
+
+&dma1 {
 	status = "okay";
 };

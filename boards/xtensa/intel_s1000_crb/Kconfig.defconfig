@@ -15,9 +15,6 @@ config CAVS_ICTL_2_OFFSET
 config CAVS_ICTL_3_OFFSET
 	default 16
 
-config DW_ICTL_OFFSET
-	default 7
-
 config 2ND_LVL_INTR_00_OFFSET
 	default CAVS_ICTL_0_OFFSET
 config 2ND_LVL_INTR_01_OFFSET
@@ -27,7 +24,7 @@ config 2ND_LVL_INTR_02_OFFSET
 config 2ND_LVL_INTR_03_OFFSET
 	default CAVS_ICTL_3_OFFSET
 config 3RD_LVL_INTR_00_OFFSET
-	default DW_ICTL_OFFSET
+	default 7
 
 config MAX_IRQ_PER_AGGREGATOR
 	default 32
@@ -49,7 +46,8 @@ config ROM_START_OFFSET
 	default 0x100
 	depends on BOOTLOADER_MCUBOOT
 
-if USB
+if USB_DEVICE_STACK
+
 config USB_DW
 	default y
 
@@ -64,9 +62,6 @@ config USB_REQUEST_BUFFER_SIZE
 	default 4096
 	depends on USB_DFU_CLASS
 
-config USB_DEVICE_STACK
-	default y
-
 config USB_DEVICE_VID
 	default "0x8087"
 
@@ -79,7 +74,7 @@ config USB_DEVICE_MANUFACTURER
 config USB_DEVICE_PRODUCT
 	default "Sue Creek (S1000) ASIC"
 
-endif # USB
+endif # USB_DEVICE_STACK
 
 if SERIAL
 

@@ -71,8 +71,6 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
@@ -82,10 +80,6 @@ Other hardware features are not currently enabled.
 
 The default configuration file
 ``boards/arm/lpcxpresso55s28/lpcxpresso55s28_defconfig``
-
-Currently available targets for this board are:
-
-- *lpcxpresso55s28* secure (S) address space
 
 Connections and IOs
 ===================

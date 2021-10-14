@@ -163,10 +163,6 @@ struct bmp388_data {
 	uint8_t osr_temp;
 	struct bmp388_cal_data cal;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	uint32_t device_power_state;
-#endif
-
 #if defined(CONFIG_BMP388_TRIGGER)
 	struct gpio_callback gpio_cb;
 #endif

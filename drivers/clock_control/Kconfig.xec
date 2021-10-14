@@ -1,0 +1,10 @@
+# Microchip XEC
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCHP_XEC
+	bool "MCHP XEC PCR clock control driver"
+	depends on SOC_SERIES_MEC172X
+	help
+	  Enable support for Microchip XEC PCR clock driver.

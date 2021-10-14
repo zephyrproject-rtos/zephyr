@@ -840,6 +840,10 @@ int nvs_clear(struct nvs_fs *fs)
 			return rc;
 		}
 	}
+
+	/* nvs needs to be reinitialized after clearing */
+	fs->ready = false;
+
 	return 0;
 }
 

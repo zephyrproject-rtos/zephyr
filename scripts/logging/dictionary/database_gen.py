@@ -18,8 +18,8 @@ import os
 import struct
 import sys
 
-import parser.log_database
-from parser.log_database import LogDatabase
+import dictionary_parser.log_database
+from dictionary_parser.log_database import LogDatabase
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -175,7 +175,7 @@ def process_kconfigs(elf, database):
     database.set_tgt_bits(64 if "CONFIG_64BIT" in kconfigs else 32)
 
     # Architecture
-    for name, arch in parser.log_database.ARCHS.items():
+    for name, arch in dictionary_parser.log_database.ARCHS.items():
         if arch['kconfig'] in kconfigs:
             database.set_arch(name)
             break
@@ -194,7 +194,7 @@ def extract_static_string_sections(elf, database):
 
     # Some architectures may put static strings into additional sections.
     # So need to extract them too.
-    arch_data = parser.log_database.ARCHS[database.get_arch()]
+    arch_data = dictionary_parser.log_database.ARCHS[database.get_arch()]
     if "extra_string_section" in arch_data:
         string_sections.extend(arch_data['extra_string_section'])
 

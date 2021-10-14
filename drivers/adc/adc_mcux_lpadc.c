@@ -13,7 +13,10 @@
 #include <errno.h>
 #include <drivers/adc.h>
 #include <fsl_lpadc.h>
+
+#if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 #include <fsl_power.h>
+#endif
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
@@ -31,6 +34,8 @@ struct mcux_lpadc_config {
 #if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS)\
 	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	lpadc_conversion_average_mode_t calibration_average;
+#else
+	uint32_t calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 	lpadc_power_level_mode_t power_level;
 	uint32_t offset_a;
@@ -106,7 +111,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 #else
 	/* If FSL_FEATURE_LPADC_HAS_CMDL_MODE is not defined
 	   only 12/13 bit resolution is supported. */
-	if (sequence->resolution != 12 || sequence->resolution != 13) {
+	if (sequence->resolution != 12 && sequence->resolution != 13) {
 		LOG_ERR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
@@ -267,11 +272,25 @@ static int mcux_lpadc_init(const struct device *dev)
 	ADC_Type *base = config->base;
 	lpadc_config_t adc_config;
 
+#if !defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+#if	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
+	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
+	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, config->clock_div);
+
+#else
+
 	CLOCK_SetClkDiv(kCLOCK_DivAdcAsyncClk, config->clock_div, true);
 	CLOCK_AttachClk(config->clock_source);
 
 	/* Power up the ADC */
 	POWER_DisablePD(kPDRUNCFG_PD_LDOGPADC);
+
+#endif
+#endif
 
 	LPADC_GetDefaultConfig(&adc_config);
 
@@ -350,12 +369,24 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define ASSERT_WITHIN_RANGE(val, min, max, str)	\
 	BUILD_ASSERT(val >= min && val <= max, str)
 
+#if defined(CONFIG_SOC_SERIES_IMX_RT11XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#define TO_LPADC_CLOCK_SOURCE(val) 0
+#else
 #define TO_LPADC_CLOCK_SOURCE(val) \
 	MUX_A(CM_ADCASYNCCLKSEL, val)
+#endif
+
 #define TO_LPADC_REFERENCE_VOLTAGE(val) \
 	_DO_CONCAT(kLPADC_ReferenceVoltageAlt, val)
+
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS)\
+	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 #define TO_LPADC_CALIBRATION_AVERAGE(val) \
 	_DO_CONCAT(kLPADC_ConversionAverage, val)
+#else
+#define TO_LPADC_CALIBRATION_AVERAGE(val) 0
+#endif
+
 #define TO_LPADC_POWER_LEVEL(val) \
 	_DO_CONCAT(kLPADC_PowerLevelAlt, val)
 

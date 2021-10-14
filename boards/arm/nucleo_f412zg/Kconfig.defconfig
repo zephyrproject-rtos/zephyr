@@ -10,9 +10,6 @@ config BOARD
 
 if NETWORKING
 
-config USB
-	default y
-
 config USB_DEVICE_STACK
 	default y
 

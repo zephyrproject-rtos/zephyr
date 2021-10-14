@@ -27,7 +27,7 @@ uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len)
 		uint8_t byte = data[i];
 
 		crc = (crc >> 4) ^ table[(crc ^ byte) & 0x0f];
-		crc = (crc >> 4) ^ table[(crc ^ (byte >> 4)) & 0x0f];
+		crc = (crc >> 4) ^ table[(crc ^ ((uint32_t)byte >> 4)) & 0x0f];
 	}
 
 	return (~crc);

@@ -52,6 +52,8 @@ struct i2c_sam0_msg {
 struct i2c_sam0_dev_data {
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
+	struct i2c_msg *msgs;
+	uint8_t num_msgs;
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -137,6 +139,18 @@ static void i2c_sam0_isr(const struct device *dev)
 		return;
 	}
 
+	/*
+	 * Directly send/receive next message if it is in the same direction and
+	 * the current message has no stop flag and the next message has no
+	 * restart flag.
+	 */
+	const bool continue_next = (data->msg.size == 1) && (data->num_msgs > 1) &&
+				   ((data->msgs[0].flags & I2C_MSG_RW_MASK) ==
+				    (data->msgs[1].flags & I2C_MSG_RW_MASK)) &&
+				   !(data->msgs[0].flags & I2C_MSG_STOP) &&
+				   !(data->msgs[1].flags & I2C_MSG_RESTART) &&
+				   ((status & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_SB)));
+
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
 		if (!data->msg.size) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
@@ -147,12 +161,8 @@ static void i2c_sam0_isr(const struct device *dev)
 		i2c->DATA.reg = *data->msg.buffer;
 		data->msg.buffer++;
 		data->msg.size--;
-
-		return;
-	}
-
-	if (status & SERCOM_I2CM_INTFLAG_SB) {
-		if (data->msg.size == 1) {
+	} else if (status & SERCOM_I2CM_INTFLAG_SB) {
+		if (!continue_next) {
 			/*
 			 * If this is the last byte, then prepare for an auto
 			 * NACK before doing the actual read.  This does not
@@ -165,12 +175,20 @@ static void i2c_sam0_isr(const struct device *dev)
 		data->msg.buffer++;
 		data->msg.size--;
 
-		if (!data->msg.size) {
+		if (!continue_next) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 			k_sem_give(&data->sem);
 			return;
 		}
-		return;
+	}
+
+	if (continue_next) {
+		data->msgs++;
+		data->num_msgs--;
+
+		data->msg.buffer = data->msgs->buf;
+		data->msg.size = data->msgs->len;
+		data->msg.status = 0;
 	}
 }
 
@@ -373,10 +391,12 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (!num_msgs) {
 		return 0;
 	}
+	data->num_msgs = num_msgs;
+	data->msgs = msgs;
 
-	for (; num_msgs > 0;) {
-		if (!msgs->len) {
-			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+	for (; data->num_msgs > 0;) {
+		if (!data->msgs->len) {
+			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 				return -EINVAL;
 			}
 		}
@@ -392,12 +412,12 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				  SERCOM_I2CM_STATUS_BUSERR;
 		wait_synchronization(i2c);
 
-		data->msg.buffer = msgs->buf;
-		data->msg.size = msgs->len;
+		data->msg.buffer = data->msgs->buf;
+		data->msg.size = data->msgs->len;
 		data->msg.status = 0;
 
 		addr_reg = addr << 1U;
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			addr_reg |= 1U;
 
 			/* Set to auto ACK */
@@ -405,7 +425,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			wait_synchronization(i2c);
 		}
 
-		if (msgs->flags & I2C_MSG_ADDR_10_BITS) {
+		if (data->msgs->flags & I2C_MSG_ADDR_10_BITS) {
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
@@ -432,7 +452,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		i2c->INTENSET.reg = SERCOM_I2CM_INTENSET_ERROR;
 #endif
 
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			/*
 			 * Always set MB even when reading, since that's how
 			 * some errors are indicated.
@@ -472,9 +492,9 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			return -EIO;
 		}
 
-		if (msgs->flags & I2C_MSG_STOP) {
+		if (data->msgs->flags & I2C_MSG_STOP) {
 			i2c->CTRLB.bit.CMD = 3;
-		} else if ((msgs->flags & I2C_MSG_RESTART) && num_msgs > 1) {
+		} else if ((data->msgs->flags & I2C_MSG_RESTART) && data->num_msgs > 1) {
 			/*
 			 * No action, since we do this automatically if we
 			 * don't send an explicit stop
@@ -487,8 +507,8 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			i2c->CTRLB.bit.CMD = 3;
 		}
 
-		num_msgs--;
-		msgs++;
+		data->num_msgs--;
+		data->msgs++;
 	}
 
 	return 0;

@@ -102,7 +102,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
+#define MDM_UART_DEV			DEVICE_DT_GET(DT_INST_BUS(0))
 
 #define MDM_BOOT_MODE_SPECIAL		0
 #define MDM_BOOT_MODE_NORMAL		1
@@ -1487,7 +1487,7 @@ static int wncm14a2a_init(const struct device *dev)
 	ictx.mdm_ctx.data_imei = ictx.mdm_imei;
 #endif
 
-	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV_NAME,
+	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV,
 				    mdm_recv_buf, sizeof(mdm_recv_buf));
 	if (ret < 0) {
 		LOG_ERR("Error registering modem receiver (%d)!", ret);

@@ -9,15 +9,7 @@ properties:
       type: phandle
       description: |
         Reference to TIMER or RTC instance for generating PWM output signals
-      required: false
-
-    timer-instance:
-      type: int
-      description: |
-        Timer instance to use for generating the PWM output signals. Deprecated
-        in favour of 'generator' property.
-      required: false
-      deprecated: true
+      required: true
 
     channel-count:
       type: int

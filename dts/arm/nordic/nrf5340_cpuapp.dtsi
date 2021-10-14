@@ -32,11 +32,19 @@
 	};
 
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+		ficr: ficr@ff0000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xff0000 0x1000>;
+			status = "okay";
 		};
 
-		sram1: memory@21000000 {
+		uicr: uicr@ff8000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xff8000 0x1000>;
+			status = "okay";
+		};
+
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
 
@@ -52,6 +60,27 @@
 		};
 
 		/* Additional Secure peripherals */
+
+		spu: spu@50003000 {
+			compatible = "nordic,nrf-spu";
+			reg = <0x50003000 0x1000>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		/*
+		 * GPIOTE0 is always accessible as a secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote0: gpiote@5000d000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x5000d000 0x1000>;
+			interrupts = <13 5>;
+			status = "disabled";
+			label = "GPIOTE_0";
+		};
+
 		cryptocell: crypto@50844000 {
 			compatible = "nordic,nrf-cc312";
 			reg = <0x50844000 0x1000>;
@@ -66,36 +95,16 @@
 				label = "CRYPTOCELL312";
 			};
 		};
-
-		gpiote: gpiote@5000d000 {
-			compatible = "nordic,nrf-gpiote";
-			reg = <0x5000d000 0x1000>;
-			interrupts = <13 5>;
-			status = "disabled";
-			label = "GPIOTE_0";
-		};
-
-		spu: spu@50003000 {
-			compatible = "nordic,nrf-spu";
-			reg = <0x50003000 0x1000>;
-			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
-		};
-
-		ficr: ficr@ff0000 {
-			compatible = "nordic,nrf-ficr";
-			reg = <0xff0000 0x1000>;
-			status = "okay";
-		};
-
-		uicr: uicr@ff8000 {
-			compatible = "nordic,nrf-uicr";
-			reg = <0xff8000 0x1000>;
-			status = "okay";
-		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+/*
+ * Include the non-secure peripherals file here since
+ * it expects to be at the root level. This provides
+ * a node for GPIOTE1.
+ */
+#include "nrf5340_cpuapp_peripherals_ns.dtsi"

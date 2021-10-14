@@ -63,7 +63,7 @@ config UART_MCUX
 
 config USB_KINETIS
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config WDT_MCUX_WDOG
 	default y

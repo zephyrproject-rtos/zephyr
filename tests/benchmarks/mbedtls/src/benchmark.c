@@ -19,7 +19,10 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#define MBEDTLS_ECDH_LEGACY_CONTEXT
+#if !defined(MBEDTLS_ALLOW_PRIVATE_ACCESS)
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+#endif	/* MBEDTLS_ALLOW_PRIVATE_ACCESS */
+
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -39,18 +42,17 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "mbedtls/ssl.h"
+#include "mbedtls/debug.h"
 #include "mbedtls/timing.h"
-#include "mbedtls/md4.h"
 #include "mbedtls/md5.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "mbedtls/arc4.h"
 #include "mbedtls/des.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/aria.h"
-#include "mbedtls/blowfish.h"
 #include "mbedtls/camellia.h"
 #include "mbedtls/chacha20.h"
 #include "mbedtls/gcm.h"
@@ -58,7 +60,6 @@
 #include "mbedtls/chachapoly.h"
 #include "mbedtls/cmac.h"
 #include "mbedtls/poly1305.h"
-#include "mbedtls/havege.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/hmac_drbg.h"
 #include "mbedtls/rsa.h"
@@ -66,7 +67,6 @@
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/error.h"
-#include "mbedtls/debug.h"
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
@@ -139,8 +139,8 @@ void mbedtls_set_alarm(int seconds)
 #define TITLE_LEN       25
 
 #define OPTIONS                                                    \
-	"md4, md5, ripemd160, sha1, sha256, sha512,\n"             \
-	"arc4, des3, des, camellia, blowfish, chacha20,\n"         \
+	"md5, ripemd160, sha1, sha256, sha512,\n"             \
+	"des3, des, camellia, chacha20,\n"         \
 	"aes_cbc, aes_gcm, aes_ccm, aes_ctx, chachapoly,\n"        \
 	"aes_cmac, des3_cmac, poly1305,\n"                         \
 	"havege, ctr_drbg, hmac_drbg,\n"                           \
@@ -270,7 +270,7 @@ static int myrand(void *rng_state, unsigned char *output, size_t len)
 /*
  * Clear some memory that was used to prepare the context
  */
-#if defined(MBEDTLS_ECP_C)
+#if defined(MBEDTLS_ECP_C) && defined(MBEDTLS_ALLOW_PRIVATE_ACCESS)
 void ecp_clear_precomputed(mbedtls_ecp_group *grp)
 {
 	if (grp->T != NULL) {
@@ -293,9 +293,9 @@ void ecp_clear_precomputed(mbedtls_ecp_group *grp)
 unsigned char buf[BUFSIZE];
 
 typedef struct {
-	char md4, md5, ripemd160, sha1, sha256, sha512, arc4, des3, des,
+	char md5, ripemd160, sha1, sha256, sha512, des3, des,
 	     aes_cbc, aes_gcm, aes_ccm, aes_xts, chachapoly, aes_cmac,
-	     des3_cmac, aria, camellia, blowfish, chacha20, poly1305,
+	     des3_cmac, aria, camellia, chacha20, poly1305,
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
 } todo_list;
 
@@ -321,55 +321,37 @@ void main(void)
 	memset(buf, 0xAA, sizeof(buf));
 	memset(tmp, 0xBB, sizeof(tmp));
 
-#if defined(MBEDTLS_MD4_C)
-	if (todo.md4) {
-		TIME_AND_TSC("MD4", mbedtls_md4_ret(buf, BUFSIZE, tmp));
-	}
-#endif
 
 #if defined(MBEDTLS_MD5_C)
 	if (todo.md5) {
-		TIME_AND_TSC("MD5", mbedtls_md5_ret(buf, BUFSIZE, tmp));
+		TIME_AND_TSC("MD5", mbedtls_md5(buf, BUFSIZE, tmp));
 	}
 #endif
 
 #if defined(MBEDTLS_RIPEMD160_C)
 	if (todo.ripemd160) {
 		TIME_AND_TSC("RIPEMD160",
-			     mbedtls_ripemd160_ret(buf, BUFSIZE, tmp));
+			     mbedtls_ripemd160(buf, BUFSIZE, tmp));
 	}
 #endif
 
 #if defined(MBEDTLS_SHA1_C)
 	if (todo.sha1) {
-		TIME_AND_TSC("SHA-1", mbedtls_sha1_ret(buf, BUFSIZE, tmp));
+		TIME_AND_TSC("SHA-1", mbedtls_sha1(buf, BUFSIZE, tmp));
 	}
 #endif
 
 #if defined(MBEDTLS_SHA256_C)
 	if (todo.sha256) {
-		TIME_AND_TSC("SHA-256", mbedtls_sha256_ret(buf,
-							   BUFSIZE, tmp, 0));
+		TIME_AND_TSC("SHA-256", mbedtls_sha256(buf,
+						   BUFSIZE, tmp, 0));
 	}
 #endif
 
 #if defined(MBEDTLS_SHA512_C)
 	if (todo.sha512) {
-		TIME_AND_TSC("SHA-512", mbedtls_sha512_ret(buf,
-							   BUFSIZE, tmp, 0));
-	}
-#endif
-
-#if defined(MBEDTLS_ARC4_C)
-	if (todo.arc4) {
-		mbedtls_arc4_context arc4;
-
-		mbedtls_arc4_init(&arc4);
-		mbedtls_arc4_setup(&arc4, tmp, 32);
-
-		TIME_AND_TSC("ARC4", mbedtls_arc4_crypt(
-						&arc4, BUFSIZE, buf, buf));
-		mbedtls_arc4_free(&arc4);
+		TIME_AND_TSC("SHA-512", mbedtls_sha512(buf,
+						   BUFSIZE, tmp, 0));
 	}
 #endif
 
@@ -645,34 +627,6 @@ void main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_BLOWFISH_C) && defined(MBEDTLS_CIPHER_MODE_CBC)
-	if (todo.blowfish) {
-		int keysize;
-
-		mbedtls_blowfish_context blowfish;
-
-		mbedtls_blowfish_init(&blowfish);
-
-		for (keysize = 128; keysize <= 256; keysize += 64) {
-			snprintk(title, sizeof(title),
-				 "BLOWFISH-CBC-%d", keysize);
-
-			memset(buf, 0, sizeof(buf));
-			memset(tmp, 0, sizeof(tmp));
-
-			mbedtls_blowfish_setkey(&blowfish, tmp, keysize);
-
-			TIME_AND_TSC(title,
-				     mbedtls_blowfish_crypt_cbc(&blowfish,
-						MBEDTLS_BLOWFISH_ENCRYPT,
-						BUFSIZE, tmp, buf, buf));
-		}
-
-		mbedtls_blowfish_free(&blowfish);
-
-	}
-#endif
-
 #if defined(MBEDTLS_HAVEGE_C)
 	if (todo.havege) {
 		mbedtls_havege_state hs;
@@ -789,7 +743,7 @@ void main(void)
 			snprintk(title, sizeof(title), "RSA-%d",
 				 keysize);
 
-			mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PKCS_V15, 0);
+			mbedtls_rsa_init(&rsa);
 			mbedtls_rsa_gen_key(&rsa, myrand, NULL, keysize,
 					    65537);
 
@@ -827,6 +781,7 @@ void main(void)
 					      sizeof(dhm_G_3072) };
 		mbedtls_dhm_context dhm;
 		size_t olen;
+		size_t n;
 
 		for (i = 0; i < ARRAY_SIZE(dhm_sizes); i++) {
 			mbedtls_dhm_init(&dhm);
@@ -838,9 +793,9 @@ void main(void)
 				mbedtls_exit(1);
 			}
 
-			dhm.len = mbedtls_mpi_size(&dhm.P);
-			mbedtls_dhm_make_public(&dhm, (int)dhm.len, buf,
-						dhm.len, myrand, NULL);
+			n = mbedtls_mpi_size(&dhm.P);
+			mbedtls_dhm_make_public(&dhm, (int)n, buf,
+						n, myrand, NULL);
 			if (mbedtls_mpi_copy(&dhm.GY, &dhm.GX) != 0) {
 				mbedtls_exit(1);
 			}
@@ -849,7 +804,7 @@ void main(void)
 
 			TIME_PUBLIC(title, "handshake",
 				    ret |= mbedtls_dhm_make_public(&dhm,
-						(int)dhm.len, buf, dhm.len,
+						(int)n, buf, n,
 						myrand, NULL);
 				    ret |= mbedtls_dhm_calc_secret(&dhm, buf,
 						sizeof(buf), &olen, myrand,
@@ -894,7 +849,8 @@ void main(void)
 				    ret = mbedtls_ecdsa_write_signature(
 						&ecdsa, MBEDTLS_MD_SHA256,
 						buf, curve_info->bit_size,
-						tmp, &sig_len, myrand, NULL));
+						tmp, sizeof(tmp), &sig_len,
+						myrand, NULL));
 
 			mbedtls_ecdsa_free(&ecdsa);
 		}
@@ -909,7 +865,8 @@ void main(void)
 			    mbedtls_ecdsa_write_signature(&ecdsa,
 						MBEDTLS_MD_SHA256, buf,
 						curve_info->bit_size,
-						tmp, &sig_len, myrand,
+						tmp, sizeof(tmp),
+						&sig_len, myrand,
 						NULL) != 0) {
 				mbedtls_exit(1);
 			}
@@ -929,7 +886,7 @@ void main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_ECDH_C)
+#if defined(MBEDTLS_ECDH_C) && defined(MBEDTLS_ECDH_LEGACY_CONTEXT)
 	if (todo.ecdh) {
 		mbedtls_ecdh_context ecdh;
 		mbedtls_mpi z;

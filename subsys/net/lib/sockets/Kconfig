@@ -10,6 +10,16 @@ menuconfig NET_SOCKETS
 
 if NET_SOCKETS
 
+config NET_SOCKETS_PRIORITY_DEFAULT
+	int "Default processing priority for sockets"
+	default 50
+	help
+	  Default processing priority for socket implementations. This defines
+	  the order of processing of particular socket implementations when
+	  creating a new socket, lower value indicate earlier processing. This
+	  allows to for instance prioritize offloaded socket processing during
+	  socket creation over the native one, or vice versa.
+
 config NET_SOCKETS_POSIX_NAMES
 	bool "POSIX names for Sockets API (without full POSIX API)"
 	default y if !POSIX_API
@@ -61,6 +71,13 @@ config NET_SOCKETS_SOCKOPT_TLS
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
+
+config NET_SOCKETS_TLS_PRIORITY
+	int "Default processing priority for TLS sockets"
+	default 45
+	help
+	  Processing priority for TLS sockets. Should be lower than
+	  NET_SOCKETS_PRIORITY_DEFAULT in order to be processed correctly.
 
 config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	bool "Set Maximum Fragment Length (MFL)"

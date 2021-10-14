@@ -16,7 +16,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_I2S`
+* :kconfig:`CONFIG_I2S`
 
 API Reference
 *************

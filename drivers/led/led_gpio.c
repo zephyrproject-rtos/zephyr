@@ -36,7 +36,7 @@ static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8
 
 	led_gpio = &config->led[led];
 
-	return gpio_pin_set(led_gpio->port, led_gpio->pin, value > 0);
+	return gpio_pin_set_dt(led_gpio, value > 0);
 }
 
 static int led_gpio_on(const struct device *dev, uint32_t led)

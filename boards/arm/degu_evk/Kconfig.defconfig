@@ -8,13 +8,7 @@ if BOARD_DEGU_EVK
 config BOARD
 	default "degu_evk"
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
+if USB_DEVICE_STACK
 
 config USB_DEVICE_PRODUCT
 	default "Degu Evaluation Kit"
@@ -28,13 +22,7 @@ config UART_INTERRUPT_DRIVEN
 config UART_LINE_CTRL
 	default y
 
-config UART_CONSOLE_ON_DEV_NAME
-	default "CDC_ACM_0"
-
-config UART_SHELL_ON_DEV_NAME
-	default "CDC_ACM_0"
-
-endif # USB
+endif # USB_DEVICE_STACK
 
 if DISK_DRIVER_FLASH
 

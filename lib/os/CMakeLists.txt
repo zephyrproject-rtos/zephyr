@@ -23,6 +23,7 @@ zephyr_sources(
   heap.c
   heap-validate.c
   bitarray.c
+  multi_heap.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
@@ -41,6 +42,8 @@ zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 zephyr_sources_ifdef(CONFIG_SCHED_DEADLINE p4wq.c)
 
 zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+
+zephyr_sources_ifdef(CONFIG_SHARED_MULTI_HEAP shared_multi_heap.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

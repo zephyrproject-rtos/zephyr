@@ -1,0 +1,142 @@
+/*
+ * Copyright (c) 2021 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT telink_b91_pwm
+
+#include "pwm.h"
+#include "clock.h"
+#include <drivers/pwm.h>
+#include <drivers/pinmux.h>
+#include <dt-bindings/pinctrl/b91-pinctrl.h>
+
+
+#define PWM_PCLK_SPEED      DT_INST_PROP(0, clock_frequency)
+#define NUM_OF_CHANNELS     DT_INST_PROP(0, channels)
+
+static const uint32_t pwm_pins[] = B91_PINMUX_DT_INST_GET_ARRAY(0, 0);
+
+/* API implementation: init */
+static int pwm_b91_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	uint8_t clk_32k_en = 0;
+	uint32_t pwm_clk_div = 0;
+	const struct device *pinmux;
+
+	/* Calculate and check PWM clock divider */
+	pwm_clk_div = sys_clk.pclk * 1000 * 1000 / PWM_PCLK_SPEED - 1;
+	if (pwm_clk_div > 255) {
+		return -EINVAL;
+	}
+
+	/* Set PWM Peripheral clock */
+	pwm_set_clk((unsigned char) (pwm_clk_div & 0xFF));
+
+	/* Set PWM 32k Channel clock if enabled */
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch0_enable) ? PWM_CLOCK_32K_CHN_PWM0 : 0;
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch1_enable) ? PWM_CLOCK_32K_CHN_PWM1 : 0;
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch2_enable) ? PWM_CLOCK_32K_CHN_PWM2 : 0;
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch3_enable) ? PWM_CLOCK_32K_CHN_PWM3 : 0;
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch4_enable) ? PWM_CLOCK_32K_CHN_PWM4 : 0;
+	clk_32k_en |= DT_INST_PROP(0, clk32k_ch5_enable) ? PWM_CLOCK_32K_CHN_PWM5 : 0;
+	pwm_32k_chn_en(clk_32k_en);
+
+	/* Get PinMux driver */
+	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
+	if (!device_is_ready(pinmux)) {
+		return -ENODEV;
+	}
+
+	/* Config PWM pins */
+	for (int i = 0; i < ARRAY_SIZE(pwm_pins); i++) {
+		pinmux_pin_set(pinmux, B91_PINMUX_GET_PIN(pwm_pins[i]),
+			       B91_PINMUX_GET_FUNC(pwm_pins[i]));
+	}
+
+	return 0;
+}
+
+/* API implementation: pin_set */
+static int pwm_b91_pin_set(const struct device *dev, uint32_t pwm,
+			   uint32_t period_cycles, uint32_t pulse_cycles,
+			   pwm_flags_t flags)
+{
+	ARG_UNUSED(dev);
+
+	/* check pwm channel */
+	if (pwm >= NUM_OF_CHANNELS) {
+		return -EINVAL;
+	}
+
+	/* check size of pulse and period (2 bytes) */
+	if ((period_cycles > 0xFFFFu) ||
+	    (pulse_cycles  > 0xFFFFu)) {
+		return -EINVAL;
+	}
+
+	/* set polarity */
+	if (flags & PWM_POLARITY_INVERTED) {
+		pwm_invert_en(pwm);
+	} else {
+		pwm_invert_dis(pwm);
+	}
+
+	/* set pulse and period */
+	pwm_set_tcmp(pwm, pulse_cycles);
+	pwm_set_tmax(pwm, period_cycles);
+
+	/* start pwm */
+	pwm_start(pwm);
+
+	return 0;
+}
+
+/* API implementation: get_cycles_per_sec */
+static int pwm_b91_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
+				      uint64_t *cycles)
+{
+	ARG_UNUSED(dev);
+
+	/* check pwm channel */
+	if (pwm >= NUM_OF_CHANNELS) {
+		return -EINVAL;
+	}
+
+	if (
+		((pwm == 0u) && DT_INST_PROP(0, clk32k_ch0_enable)) ||
+		((pwm == 1u) && DT_INST_PROP(0, clk32k_ch1_enable)) ||
+		((pwm == 2u) && DT_INST_PROP(0, clk32k_ch2_enable)) ||
+		((pwm == 3u) && DT_INST_PROP(0, clk32k_ch3_enable)) ||
+		((pwm == 4u) && DT_INST_PROP(0, clk32k_ch4_enable)) ||
+		((pwm == 5u) && DT_INST_PROP(0, clk32k_ch5_enable))
+		) {
+		*cycles = 32000u;
+	} else {
+		*cycles = sys_clk.pclk * 1000 * 1000 / (reg_pwm_clkdiv + 1);
+	}
+
+	return 0;
+}
+
+/* PWM driver APIs structure */
+static const struct pwm_driver_api pwm_b91_driver_api = {
+	.pin_set = pwm_b91_pin_set,
+	.get_cycles_per_sec = pwm_b91_get_cycles_per_sec,
+};
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
+	     "unsupported PWM instance");
+
+/* PWM driver registration */
+#define PWM_B91_INIT(n)							       \
+									       \
+	DEVICE_DT_INST_DEFINE(n, pwm_b91_init,				       \
+			      NULL, NULL, NULL,				       \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &pwm_b91_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(PWM_B91_INIT)

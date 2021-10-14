@@ -148,10 +148,10 @@ struct net_pkt {
 				     * the driver yet.
 				     * Used only if defined(CONFIG_NET_TCP)
 				     */
-		uint8_t gptp_pkt: 1; /* For outgoing packet: is this packet
-				   * a GPTP packet.
-				   * Used only if defined (CONFIG_NET_GPTP)
-				   */
+		uint8_t ptp_pkt: 1; /* For outgoing packet: is this packet
+				     * a L2 PTP packet.
+				     * Used only if defined (CONFIG_NET_L2_PTP)
+				     */
 	};
 
 	uint8_t forwarding : 1;	/* Are we forwarding this pkt
@@ -181,9 +181,16 @@ struct net_pkt {
 					* segment.
 					*/
 #endif
+
 	uint8_t captured : 1; /* Set to 1 if this packet is already being
 			       * captured
 			       */
+
+	uint8_t l2_bridged : 1; /* set to 1 if this packet comes from a bridge
+				 * and already contains its L2 header to be
+				 * preserved. Useful only if
+				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
+				 */
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -225,7 +232,7 @@ struct net_pkt {
 	uint16_t ipv6_prev_hdr_start;
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
 	uint32_t ipv6_fragment_id;	/* Fragment id */
 	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
@@ -239,6 +246,15 @@ struct net_pkt {
 	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
 	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
 	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
+	uint8_t ieee802154_frame_secured : 1; /* Frame is authenticated and
+					       * encrypted according to its
+					       * Auxiliary Security Header
+					       */
+	uint8_t ieee802154_mac_hdr_rdy : 1; /* Indicates if frame's MAC header
+					     * is ready to be transmitted or if
+					     * it requires further modifications,
+					     * e.g. Frame Counter injection.
+					     */
 #if defined(CONFIG_IEEE802154_2015)
 	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
 	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
@@ -320,14 +336,14 @@ static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 	pkt->family = family;
 }
 
-static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
+static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
 {
-	return !!(pkt->gptp_pkt);
+	return !!(pkt->ptp_pkt);
 }
 
-static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
+static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
 {
-	pkt->gptp_pkt = is_gptp;
+	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_captured(struct net_pkt *pkt)
@@ -338,6 +354,18 @@ static inline bool net_pkt_is_captured(struct net_pkt *pkt)
 static inline void net_pkt_set_captured(struct net_pkt *pkt, bool is_captured)
 {
 	pkt->captured = is_captured;
+}
+
+static inline bool net_pkt_is_l2_bridged(struct net_pkt *pkt)
+{
+	return IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) ? !!(pkt->l2_bridged) : 0;
+}
+
+static inline void net_pkt_set_l2_bridged(struct net_pkt *pkt, bool is_l2_bridged)
+{
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE)) {
+		pkt->l2_bridged = is_l2_bridged;
+	}
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
@@ -621,13 +649,17 @@ static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_offset;
+	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+}
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv6_fragment_flags & 0x01) != 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
 {
-	pkt->ipv6_fragment_offset = offset;
+	pkt->ipv6_fragment_flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
@@ -662,11 +694,18 @@ static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 	return 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(offset);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
@@ -1005,6 +1044,28 @@ static inline void net_pkt_set_ieee802154_ack_fpb(struct net_pkt *pkt,
 						  bool fpb)
 {
 	pkt->ieee802154_ack_fpb = fpb;
+}
+
+static inline bool net_pkt_ieee802154_frame_secured(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_frame_secured;
+}
+
+static inline void net_pkt_set_ieee802154_frame_secured(struct net_pkt *pkt,
+							bool secured)
+{
+	pkt->ieee802154_frame_secured = secured;
+}
+
+static inline bool net_pkt_ieee802154_mac_hdr_rdy(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_mac_hdr_rdy;
+}
+
+static inline void net_pkt_set_ieee802154_mac_hdr_rdy(struct net_pkt *pkt,
+						      bool rdy)
+{
+	pkt->ieee802154_mac_hdr_rdy = rdy;
 }
 
 #if defined(CONFIG_IEEE802154_2015)
@@ -1692,6 +1753,22 @@ size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
  * @param pkt The net_pkt which buffer will be trimmed
  */
 void net_pkt_trim_buffer(struct net_pkt *pkt);
+
+/**
+ * @brief Remove @a length bytes from tail of packet
+ *
+ * @details This function does not take packet cursor into account. It is a
+ *          helper to remove unneeded bytes from tail of packet (like appended
+ *          CRC). It takes care of buffer deallocation if removed bytes span
+ *          whole buffer(s).
+ *
+ * @param pkt    Network packet
+ * @param length Number of bytes to be removed
+ *
+ * @retval 0       On success.
+ * @retval -EINVAL If packet length is shorter than @a length.
+ */
+int net_pkt_remove_tail(struct net_pkt *pkt, size_t length);
 
 /**
  * @brief Initialize net_pkt cursor

@@ -11,7 +11,7 @@
 	defined(CONFIG_COVERAGE)
 #define STACK_SIZE 4096
 #else
-#define STACK_SIZE 1024
+#define STACK_SIZE 2048
 #endif
 
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -97,3 +97,12 @@ static inline bool is_tunnel(struct net_if *iface)
 	return false;
 }
 #endif /* CONFIG_NET_L2_IPIP */
+
+#if defined(CONFIG_USB_DEVICE_STACK)
+int init_usb(void);
+#else
+static inline int init_usb(void)
+{
+	return 0;
+}
+#endif /* CONFIG_USB_DEVICE_STACK */

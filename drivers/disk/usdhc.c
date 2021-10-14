@@ -2256,7 +2256,6 @@ static void usdhc_host_reset(struct usdhc_priv *priv)
 	usdhc_enable_ddr_mode(base, false, 0);
 	usdhc_tuning(base, SDHC_STANDARD_TUNING_START, SDHC_TUINIG_STEP, false);
 #if FSL_FEATURE_USDHC_HAS_HS400_MODE
-#error Not implemented!
 	/* Disable HS400 mode */
 	/* Disable DLL */
 #endif
@@ -2600,8 +2599,9 @@ static K_MUTEX_DEFINE(z_usdhc_init_lock);
 static int usdhc_board_access_init(struct usdhc_priv *priv)
 {
 	const struct usdhc_config *config = priv->config;
-	int ret;
+	int ret = 0;
 	uint32_t gpio_level;
+	USDHC_Type *base = config->base;
 
 	if (config->pwr_name) {
 		priv->pwr_gpio = device_get_binding(config->pwr_name);
@@ -2634,34 +2634,40 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 	}
 
 	if (!priv->detect_gpio) {
-		LOG_INF("USDHC detection other than GPIO not implemented!");
-		return 0;
+		LOG_INF("USDHC detection other than GPIO");
+		/* DATA3 does not monitor card insertion */
+		base->PROT_CTRL &= ~USDHC_PROT_CTRL_D3CD_MASK;
+		if ((base->PRES_STATE & USDHC_PRES_STATE_CINST_MASK) != 0) {
+			priv->inserted = true;
+		} else {
+			priv->inserted = false;
+			return -ENODEV;
+		}
+	} else {
+		ret = usdhc_cd_gpio_init(priv->detect_gpio,
+				config->detect_pin,
+				config->detect_flags,
+				&priv->detect_cb);
+		if (ret) {
+			return ret;
+		}
+		ret = gpio_pin_get(priv->detect_gpio, config->detect_pin);
+		if (ret < 0) {
+			return ret;
+		}
+
+		gpio_level = ret;
+
+		if (gpio_level == 0) {
+			priv->inserted = false;
+			LOG_ERR("NO SD inserted!");
+
+			return -ENODEV;
+		}
+
+		priv->inserted = true;
+		LOG_INF("SD inserted!");
 	}
-
-	ret = usdhc_cd_gpio_init(priv->detect_gpio,
-			config->detect_pin,
-			config->detect_flags,
-			&priv->detect_cb);
-	if (ret) {
-		return ret;
-	}
-	ret = gpio_pin_get(priv->detect_gpio, config->detect_pin);
-	if (ret < 0) {
-		return ret;
-	}
-
-	gpio_level = ret;
-
-	if (gpio_level == 0) {
-		priv->inserted = false;
-		LOG_ERR("NO SD inserted!");
-
-		return -ENODEV;
-	}
-
-	priv->inserted = true;
-	LOG_INF("SD inserted!");
-
 	return 0;
 }
 

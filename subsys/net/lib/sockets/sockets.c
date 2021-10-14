@@ -147,7 +147,8 @@ static void zsock_flush_queue(struct net_context *ctx)
 	k_fifo_cancel_wait(&ctx->recv_q);
 }
 
-int zsock_socket_internal(int family, int type, int proto)
+#if defined(CONFIG_NET_NATIVE)
+static int zsock_socket_internal(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	struct net_context *ctx;
@@ -205,10 +206,11 @@ int zsock_socket_internal(int family, int type, int proto)
 
 	return fd;
 }
+#endif /* CONFIG_NET_NATIVE */
 
 int z_impl_zsock_socket(int family, int type, int proto)
 {
-	Z_STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
+	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
 		if (sock_family->family != family &&
 		    sock_family->family != AF_UNSPEC) {
 			continue;
@@ -221,10 +223,6 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		}
 
 		return sock_family->handler(family, type, proto);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_NATIVE)) {
-		return zsock_socket_internal(family, type, proto);
 	}
 
 	errno = EAFNOSUPPORT;
@@ -279,11 +277,11 @@ int z_impl_zsock_close(int sock)
 
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
-	z_free_fd(sock);
-
 	ret = vtable->fd_vtable.close(ctx);
 
 	k_mutex_unlock(lock);
+
+	z_free_fd(sock);
 
 	return ret;
 }
@@ -962,7 +960,7 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 	}
 }
 
-static int wait_data(struct net_context *ctx, k_timeout_t *timeout)
+int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 {
 	if (ctx->cond.lock == NULL) {
 		/* For some reason the lock pointer is not set properly
@@ -1003,7 +1001,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 
-		ret = wait_data(ctx, &timeout);
+		ret = zsock_wait_data(ctx, &timeout);
 		if (ret < 0) {
 			errno = -ret;
 			return -1;
@@ -1142,7 +1140,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-			res = wait_data(ctx, &timeout);
+			res = zsock_wait_data(ctx, &timeout);
 			if (res < 0) {
 				errno = -res;
 				return -1;
@@ -1376,7 +1374,7 @@ static inline int time_left(uint32_t start, uint32_t timeout)
 	return timeout - elapsed;
 }
 
-int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 {
 	bool retry;
 	int ret = 0;
@@ -1387,18 +1385,10 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
 	struct k_mutex *lock;
-	k_timeout_t timeout;
 	uint64_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
 	void *offl_ctx = NULL;
-
-	if (poll_timeout < 0) {
-		timeout = K_FOREVER;
-		poll_timeout = SYS_FOREVER_MS;
-	} else {
-		timeout = K_MSEC(poll_timeout);
-	}
 
 	end = sys_clock_timeout_end_calc(timeout);
 
@@ -1460,6 +1450,14 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	}
 
 	if (offload) {
+		int poll_timeout;
+
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			poll_timeout = SYS_FOREVER_MS;
+		} else {
+			poll_timeout = k_ticks_to_ms_floor32(timeout.ticks);
+		}
+
 		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,
 					    ZFD_IOCTL_POLL_OFFLOAD,
 					    fds, nfds, poll_timeout);
@@ -1550,6 +1548,19 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	} while (retry);
 
 	return ret;
+}
+
+int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+{
+	k_timeout_t timeout;
+
+	if (poll_timeout < 0) {
+		timeout = K_FOREVER;
+	} else {
+		timeout = K_MSEC(poll_timeout);
+	}
+
+	return zsock_poll_internal(fds, nfds, timeout);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -2195,3 +2206,17 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.setsockopt = sock_setsockopt_vmeth,
 	.getsockname = sock_getsockname_vmeth,
 };
+
+#if defined(CONFIG_NET_NATIVE)
+static bool inet_is_supported(int family, int type, int proto)
+{
+	if (family != AF_INET && family != AF_INET6) {
+		return false;
+	}
+
+	return true;
+}
+
+NET_SOCKET_REGISTER(af_inet46, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    inet_is_supported, zsock_socket_internal);
+#endif /* CONFIG_NET_NATIVE */

@@ -751,7 +751,7 @@ config NET_PKT_TIMESTAMP
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
-	default y if NET_GPTP
+	default y if NET_L2_PTP
 	depends on NET_PKT_TIMESTAMP
 	help
 	  Create a TX timestamp thread that will pass the timestamped network
@@ -841,6 +841,12 @@ module-str = Log level for promiscuous mode
 module-help = Enables promiscuous mode to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_PROMISCUOUS_MODE
+
+config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE
+	bool "Disable destination unreachable ICMP errors"
+	help
+	  Suppress the generation of ICMP destination unreachable errors
+	  when ports that are not in a listening state receive packets.
 
 source "subsys/net/ip/Kconfig.stack"
 

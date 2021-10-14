@@ -12,8 +12,11 @@ import textwrap
 from west import log
 from west.commands import WestCommand
 
+from zephyr_ext_common import ZEPHYR_BASE
+
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import list_boards
+import zephyr_module
 
 class Boards(WestCommand):
 
@@ -67,6 +70,15 @@ class Boards(WestCommand):
             name_re = re.compile(args.name_re)
         else:
             name_re = None
+
+        modules_board_roots = []
+
+        for module in zephyr_module.parse_modules(ZEPHYR_BASE):
+            board_root = module.meta.get('build', {}).get('settings', {}).get('board_root')
+            if board_root is not None:
+                modules_board_roots.append(Path(module.project) / board_root)
+
+        args.board_roots += modules_board_roots
 
         for board in list_boards.find_boards(args):
             if name_re is not None and not name_re.search(board.name):

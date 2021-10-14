@@ -70,7 +70,7 @@ config SPI_MCUX_DSPI
 
 config USB_KINETIS
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config WDT_MCUX_WDOG
 	default y

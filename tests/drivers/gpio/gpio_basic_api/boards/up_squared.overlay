@@ -18,7 +18,7 @@
 
 / {
 	resources {
-		compatible = "test,gpio_basic_api";
+		compatible = "test-gpio-basic-api";
 
 		out-gpios = <&gpio_w 19 0>; /* HAT Pin 40 */
 		in-gpios  = <&gpio_w 18 0>; /* HAT Pin 38 */

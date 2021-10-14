@@ -60,11 +60,6 @@ config DEVICE_POWER_MANAGEMENT
 	help
 	  This option is deprecated, please use CONFIG_PM_DEVICE instead.
 
-config PM_MAX_DEVICES
-	int "Max number of devices support power management"
-	depends on PM_DEVICE
-	default 15
-
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
 	depends on PM_DEVICE

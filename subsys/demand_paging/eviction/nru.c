@@ -40,11 +40,12 @@ static void nru_periodic_update(struct k_timer *timer)
 	irq_unlock(key);
 }
 
-struct z_page_frame *z_eviction_select(bool *dirty_ptr)
+struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 {
 	unsigned int last_prec = 4U;
 	struct z_page_frame *last_pf = NULL, *pf;
 	bool accessed;
+	bool last_dirty = false;
 	bool dirty = false;
 	uintptr_t flags, phys;
 
@@ -71,25 +72,27 @@ struct z_page_frame *z_eviction_select(bool *dirty_ptr)
 		if (prec == 0) {
 			/* If we find a not accessed, clean page we're done */
 			last_pf = pf;
+			last_dirty = dirty;
 			break;
 		}
 
 		if (prec < last_prec) {
 			last_prec = prec;
 			last_pf = pf;
+			last_dirty = dirty;
 		}
 	}
 	/* Shouldn't ever happen unless every page is pinned */
 	__ASSERT(last_pf != NULL, "no page to evict");
 
-	*dirty_ptr = dirty;
+	*dirty_ptr = last_dirty;
 
 	return last_pf;
 }
 
 static K_TIMER_DEFINE(nru_timer, nru_periodic_update, NULL);
 
-void z_eviction_init(void)
+void k_mem_paging_eviction_init(void)
 {
 	k_timer_start(&nru_timer, K_NO_WAIT,
 		      K_MSEC(CONFIG_EVICTION_NRU_PERIOD));

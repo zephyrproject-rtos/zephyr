@@ -859,8 +859,7 @@ static int i2c_ctrl_init(const struct device *dev)
 {
 	const struct i2c_ctrl_config *const config = DRV_CONFIG(dev);
 	struct i2c_ctrl_data *const data = DRV_DATA(dev);
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t i2c_rate;
 
 	/* Turn on device clock first and get source clock freq. */

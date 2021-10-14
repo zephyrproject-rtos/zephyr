@@ -63,21 +63,6 @@ def test_get_all_testcases(class_testsuite, all_testcases_dict):
     assert len(class_testsuite.get_all_tests()) == 19
     assert sorted(class_testsuite.get_all_tests()) == sorted(expected_tests)
 
-def test_get_toolchain(class_testsuite, monkeypatch, capsys):
-    """ Testing get_toolchain function of TestSuite class in Twister
-    Test 1 : Test toolchain returned by get_toolchain function is same as in the environment.
-    Test 2 : Monkeypatch to delete the  ZEPHYR_TOOLCHAIN_VARIANT env var
-    and check if appropriate error is raised"""
-    monkeypatch.setenv("ZEPHYR_TOOLCHAIN_VARIANT", "zephyr")
-    toolchain = class_testsuite.get_toolchain()
-    assert toolchain in ["zephyr"]
-
-    monkeypatch.delenv("ZEPHYR_TOOLCHAIN_VARIANT", raising=False)
-    with pytest.raises(SystemExit):
-        class_testsuite.get_toolchain()
-    out, _ = capsys.readouterr()
-    assert out == "E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined\n"
-
 def test_get_platforms(class_testsuite, platforms_list):
     """ Testing get_platforms function of TestSuite class in Twister """
     class_testsuite.platforms = platforms_list

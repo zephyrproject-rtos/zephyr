@@ -222,8 +222,8 @@ struct pm_state_info {
  *	};
  *
  * Example usage: *
- *    const enum pm_state states[] =
- *		PM_STATE_DT_INFO_ITEMS_LIST(DT_NODELABEL(cpu0));
+ *    const struct pm_state_info states[] =
+ *		PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
  *
  * @param node_id A node identifier with compatible zephyr,power-state
  * @return an array of struct pm_state_info.

@@ -328,8 +328,8 @@ static const struct uart_driver_api usart_sam_driver_api = {
 		.regs = (Usart *)DT_INST_REG_ADDR(n),			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 									\
-		.pin_rx = ATMEL_SAM_DT_PIN(n, 0),			\
-		.pin_tx = ATMEL_SAM_DT_PIN(n, 1),			\
+		.pin_rx = ATMEL_SAM_DT_INST_PIN(n, 0),			\
+		.pin_tx = ATMEL_SAM_DT_INST_PIN(n, 1),			\
 									\
 		IRQ_FUNC_INIT						\
 	}

@@ -1,0 +1,10 @@
+# MCUXpresso SDK CTIMER
+
+# Copyright (c) 2021 Toby firth
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_CTIMER
+	bool "MCUX CTIMER driver"
+	depends on HAS_MCUX_CTIMER
+	help
+	  Enable support for MCUX CTIMER driver.

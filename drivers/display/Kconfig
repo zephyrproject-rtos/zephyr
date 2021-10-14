@@ -10,6 +10,12 @@ menuconfig DISPLAY
 
 if DISPLAY
 
+config DISPLAY_INIT_PRIORITY
+	int "Display devices init priority"
+	default 85
+	help
+	  Display devices initialization priority.
+
 module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"

@@ -65,6 +65,7 @@
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
+typedef void (*lwm2m_notify_timeout_cb_t)(void);
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -77,8 +78,8 @@ struct lwm2m_ctx {
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
-	struct k_work_delayable retransmit_work;
-	struct sys_mutex send_lock;
+	sys_slist_t pending_sends;
+	sys_slist_t observer;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
@@ -124,6 +125,11 @@ struct lwm2m_ctx {
 	 *  callback in case of socket errors on receive.
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
+
+	/** Notify Timeout Callback. LwM2M processing thread will call this
+	 *  callback in case of notify timeout.
+	 */
+	lwm2m_notify_timeout_cb_t notify_timeout_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -352,40 +358,6 @@ struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
 
 /**
- * @brief Data structure used to represent the LwM2M float type:
- * val1 is the whole number portion of the decimal
- * val2 is the decimal portion *1000000 for 32bit, *1000000000 for 64bit
- * Example: 123.456 == val1: 123, val2:456000
- * Example: 123.000456 = val1: 123, val2:456
- */
-
-/**
- * @brief Maximum precision value for 32-bit LwM2M float val2
- */
-#define LWM2M_FLOAT32_DEC_MAX 1000000
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float32_value {
-	int32_t val1;
-	int32_t val2;
-} float32_value_t;
-
-/**
- * @brief Maximum precision value for 64-bit LwM2M float val2
- */
-#define LWM2M_FLOAT64_DEC_MAX 1000000000LL
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float64_value {
-	int64_t val1;
-	int64_t val2;
-} float64_value_t;
-
-/**
  * @brief Maximum value for ObjLnk resource fields
  */
 #define LWM2M_OBJLNK_MAX_ID USHRT_MAX
@@ -564,24 +536,14 @@ int lwm2m_engine_set_s64(char *pathstr, int64_t value);
 int lwm2m_engine_set_bool(char *pathstr, bool value);
 
 /**
- * @brief Set resource (instance) value (32-bit float structure)
+ * @brief Set resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 32-bit float value
+ * @param[in] value double value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
-
-/**
- * @brief Set resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 64-bit float value
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
+int lwm2m_engine_set_float(char *pathstr, double *value);
 
 /**
  * @brief Set resource (instance) value (ObjLnk)
@@ -706,24 +668,14 @@ int lwm2m_engine_get_s64(char *pathstr, int64_t *value);
 int lwm2m_engine_get_bool(char *pathstr, bool *value);
 
 /**
- * @brief Get resource (instance) value (32-bit float structure)
+ * @brief Get resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 32-bit float buffer to copy data into
+ * @param[out] buf double buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
-
-/**
- * @brief Get resource (instance) value (64-bit float structure)
- *
- * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 64-bit float buffer to copy data into
- *
- * @return 0 for success or negative in case of error.
- */
-int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf);
+int lwm2m_engine_get_float(char *pathstr, double *buf);
 
 /**
  * @brief Get resource (instance) value (ObjLnk)
@@ -1022,9 +974,16 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  *
  * @param[in] client_ctx LwM2M context
  * @param[in] event_cb Client event callback function
+ * @param[in] deregister True to deregister the client if registered.
+ *                       False to force close the connection.
  */
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
-			  lwm2m_ctx_event_cb_t event_cb);
+			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
+
+/**
+ * @brief Trigger a Registration Update of the LwM2M RD Client
+ */
+void lwm2m_rd_client_update(void);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

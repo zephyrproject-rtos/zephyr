@@ -20,6 +20,12 @@ extern "C" {
  */
 #define SYS_FOREVER_MS (-1)
 
+/** @brief System-wide macro to denote "forever" in microseconds
+ *
+ * See @ref SYS_FOREVER_MS.
+ */
+#define SYS_FOREVER_US (-1)
+
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
 #define SYS_TIMEOUT_MS(ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
@@ -112,13 +118,13 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 		if (result32 && (t < BIT64(32))) {
 			return ((uint32_t)t) / (from_hz / to_hz);
 		} else {
-			return t / (from_hz / to_hz);
+			return t / ((uint64_t)from_hz / to_hz);
 		}
 	} else if (mul_ratio) {
 		if (result32) {
 			return ((uint32_t)t) * (to_hz / from_hz);
 		} else {
-			return t * (to_hz / from_hz);
+			return t * ((uint64_t)to_hz / from_hz);
 		}
 	} else {
 		if (result32) {

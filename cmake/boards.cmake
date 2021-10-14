@@ -27,7 +27,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND NOT CMAKE_PARENT_LIST_FILE)
 # BOARD_ROOT: Semi-colon separated board roots
 # FILE_OUT: Set to a file path to save the boards to a file. If not defined the
 #           the contents will be printed to stdout
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(NO_BOILERPLATE TRUE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})

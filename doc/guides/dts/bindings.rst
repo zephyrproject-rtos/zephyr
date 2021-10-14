@@ -142,8 +142,9 @@ subdirectories of the following places:
 - any :ref:`module <modules>` that defines a ``dts_root`` in its
   :ref:`modules_build_settings`
 
-The build system will consider any YAML file in any of these, including
-in any subdirectories, when matching nodes to bindings.
+The build system will consider any YAML file in any of these, including in any
+subdirectories, when matching nodes to bindings. A file is considered YAML if
+its name ends with ``.yaml`` or ``.yml``.
 
 .. warning::
 
@@ -806,6 +807,9 @@ Because other property names are derived from the name of the property by
 removing the final ``s``, the property name must end in ``s``. An error is
 raised if it doesn't.
 
+An alternative is using a ``specifier-space`` property to indicate the base
+property name for ``*-names`` and ``*-cells``.
+
 ``*-gpios`` properties are special-cased so that e.g. ``foo-gpios`` resolves to
 ``#gpio-cells`` rather than ``#foo-gpio-cells``.
 
@@ -1012,6 +1016,8 @@ gpio_dt_spec``, then use it like this:
 .. code-block:: C
 
    #include <drivers/gpio.h>
+
+   #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 
    const struct gpio_dt_spec signal =
            GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, signal_gpios);

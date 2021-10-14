@@ -124,3 +124,4 @@ These pages cover other kernel services.
    other/cxx_support.rst
    other/version.rst
    other/fatal.rst
+   other/thread_local_storage.rst

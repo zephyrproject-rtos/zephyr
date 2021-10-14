@@ -37,11 +37,11 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
 static void thread_print_cb(struct thread_analyzer_info *info)
 {
-	unsigned int pcnt = (info->stack_used * 100U) / info->stack_size;
+	size_t pcnt = (info->stack_used * 100U) / info->stack_size;
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
-			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %zu %%"),
+			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %u %%"),
 		THREAD_ANALYZER_VSTR(info->name),
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt,

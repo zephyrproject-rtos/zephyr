@@ -9,6 +9,9 @@
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/pwm/it8xxx2_pwm.h>
+#include "it8xxx2-alts-map.dtsi"
 
 / {
 	#address-cells = <1>;
@@ -29,9 +32,17 @@
 		#size-cells = <1>;
 		ranges;
 
-		flashctrl: flash-controller@80000000 {
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0xc0>;
+			label = "BBRAM";
+		};
+		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
-			reg = <0x80000000 0x100>;
+			reg = <0x00f01000 0x100>;
 			label = "fspi";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -55,6 +66,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxb: pinmux@f01618 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -68,6 +80,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC 0xf016f1>;
 			func4_en_mask = <0        0        0       0
 					 0        0        0       0x40    >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxc: pinmux@f01620 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -81,6 +94,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC 0xf016f6>;
 			func4_en_mask = <0       0        0       0
 					 0       0        0       0x80    >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxd: pinmux@f01628 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -94,6 +108,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0        0       0
 					 0       0        0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxe: pinmux@f01630 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -107,6 +122,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC >;
 			func4_en_mask = <0x01     0        0       0
 					 0        0        0       0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxf: pinmux@f01638 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -120,6 +136,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0       0       0x20     0x20
 					 0       0       0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxg: pinmux@f01640 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -133,6 +150,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxh: pinmux@f01648 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -146,6 +164,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0       0x04     0x08     0
 					 0       0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxi: pinmux@f01650 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -159,6 +178,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0       0        0        0
 					 0       0        0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxj: pinmux@f01658 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -172,6 +192,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxk: pinmux@f01690 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -185,6 +206,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxl: pinmux@f01698 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -198,6 +220,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxm: pinmux@f016a0 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -211,10 +234,11 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
-		sram0: memory@80100000 {
+		sram0: memory@80101000 {
 			compatible = "mmio-sram";
-			reg = <0x80100000 DT_SIZE_K(60)>;
+			reg = <0x80101000 DT_SIZE_K(56)>;
 		};
 		intc: interrupt-controller@f03f00 {
 			#interrupt-cells = <2>;
@@ -242,19 +266,26 @@
 			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 		};
-		timer: timer@f01f00 {
-			compatible = "ite,it8xxx2-timer";
+
+		twd0: watchdog@f01f00 {
+			compatible = "ite,it8xxx2-watchdog";
 			reg = <0x00f01f00 0x0062>;
-			label = "sys_clock";
-			interrupts = <0 IRQ_TYPE_NONE
-				30 IRQ_TYPE_EDGE_RISING
-				58 IRQ_TYPE_EDGE_RISING
-				155 IRQ_TYPE_EDGE_FALLING
-				156 IRQ_TYPE_EDGE_FALLING
-				157 IRQ_TYPE_EDGE_FALLING
-				158 IRQ_TYPE_EDGE_FALLING
-				159 IRQ_TYPE_EDGE_FALLING
-				80 IRQ_TYPE_EDGE_RISING>;
+			label = "TWD_0";
+			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
+				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
+			interrupt-parent = <&intc>;
+		};
+
+		timer: timer@f01f10 {
+			compatible = "ite,it8xxx2-timer";
+			reg = <0x00f01f10 0x0052>;
+			label = "TIMER";
+			interrupts = <IT8XXX2_IRQ_TIMER3 IRQ_TYPE_EDGE_RISING   /* Event timer */
+				      IT8XXX2_IRQ_TIMER4 IRQ_TYPE_EDGE_RISING   /* Free run timer */
+				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 		};
 
@@ -559,6 +590,14 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
+			pinctrl-0 = <&pinctrl_adc0   /* ADC0*/
+				     &pinctrl_adc1   /* ADC1*/
+				     &pinctrl_adc2   /* ADC2*/
+				     &pinctrl_adc3   /* ADC3*/
+				     &pinctrl_adc4   /* ADC4*/
+				     &pinctrl_adc5   /* ADC5*/
+				     &pinctrl_adc6   /* ADC6*/
+				     &pinctrl_adc7>; /* ADC7*/
 		};
 		i2c0: i2c@f01c40 {
 			compatible = "ite,it8xxx2-i2c";
@@ -570,6 +609,9 @@
 			status = "disabled";
 			label = "I2C_0";
 			port-num = <0>;
+			gpio-dev = <&gpiob>;
+			pinctrl-0 = <&pinctrl_i2c_clk0    /* GPB3 */
+				     &pinctrl_i2c_data0>; /* GPB4 */
 		};
 		i2c1: i2c@f01c80 {
 			compatible = "ite,it8xxx2-i2c";
@@ -581,6 +623,9 @@
 			status = "disabled";
 			label = "I2C_1";
 			port-num = <1>;
+			gpio-dev = <&gpioc>;
+			pinctrl-0 = <&pinctrl_i2c_clk1    /* GPC1 */
+				     &pinctrl_i2c_data1>; /* GPC2 */
 		};
 		i2c2: i2c@f01cc0 {
 			compatible = "ite,it8xxx2-i2c";
@@ -592,6 +637,9 @@
 			status = "disabled";
 			label = "I2C_2";
 			port-num = <2>;
+			gpio-dev = <&gpiof>;
+			pinctrl-0 = <&pinctrl_i2c_clk2    /* GPF6 */
+				     &pinctrl_i2c_data2>; /* GPF7 */
 		};
 		i2c3: i2c@f03680 {
 			compatible = "ite,it8xxx2-i2c";
@@ -603,6 +651,9 @@
 			status = "disabled";
 			label = "I2C_3";
 			port-num = <3>;
+			gpio-dev = <&gpioh>;
+			pinctrl-0 = <&pinctrl_i2c_clk3    /* GPH1 */
+				     &pinctrl_i2c_data3>; /* GPH2 */
 		};
 		i2c4: i2c@f03500 {
 			compatible = "ite,it8xxx2-i2c";
@@ -614,6 +665,9 @@
 			status = "disabled";
 			label = "I2C_4";
 			port-num = <4>;
+			gpio-dev = <&gpioe>;
+			pinctrl-0 = <&pinctrl_i2c_clk4    /* GPE0 */
+				     &pinctrl_i2c_data4>; /* GPE7 */
 		};
 		i2c5: i2c@f03580 {
 			compatible = "ite,it8xxx2-i2c";
@@ -625,6 +679,146 @@
 			status = "disabled";
 			label = "I2C_5";
 			port-num = <5>;
+			gpio-dev = <&gpioa>;
+			pinctrl-0 = <&pinctrl_i2c_clk5    /* GPA4 */
+				     &pinctrl_i2c_data5>; /* GPA5 */
+		};
+
+		ecpm: clock-controller@f01e00 {
+			compatible = "ite,it8xxx2-ecpm";
+			reg = <0x00f01e00 0x11>;
+			reg-names = "ecpm";
+			label = "EC_PM";
+		};
+		prs: pwmprs@f01800 {
+			compatible = "ite,it8xxx2-pwmprs";
+			reg = <0x00f01800 1>;
+			label = "prescaler";
+		};
+		pwm0: pwm@f01802 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01802 1   /* DCR */
+			       0x00f0180c 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_0>;
+			label = "pwm_0";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm0>; /* GPA0 */
+			#pwm-cells = <2>;
+		};
+		pwm1: pwm@f01803 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01803 1   /* DCR */
+			       0x00f0180c 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_1>;
+			label = "pwm_1";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm1>; /* GPA1 */
+			#pwm-cells = <2>;
+		};
+		pwm2: pwm@f01804 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01804 1   /* DCR */
+			       0x00f0180c 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_2>;
+			label = "pwm_2";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm2>; /* GPA2 */
+			#pwm-cells = <2>;
+		};
+		pwm3: pwm@f01805 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01805 1   /* DCR */
+			       0x00f0180c 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_3>;
+			label = "pwm_3";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm3>; /* GPA3 */
+			#pwm-cells = <2>;
+		};
+		pwm4: pwm@f01806 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01806 1   /* DCR */
+			       0x00f0180d 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_4>;
+			label = "pwm_4";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm4>; /* GPA4 */
+			#pwm-cells = <2>;
+		};
+		pwm5: pwm@f01807 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01807 1   /* DCR */
+			       0x00f0180d 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_5>;
+			label = "pwm_5";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm5>; /* GPA5 */
+			#pwm-cells = <2>;
+		};
+		pwm6: pwm@f01808 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01808 1   /* DCR */
+			       0x00f0180d 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_6>;
+			label = "pwm_6";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm6>; /* GPA6 */
+			#pwm-cells = <2>;
+		};
+		pwm7: pwm@f01809 {
+			compatible = "ite,it8xxx2-pwm";
+			reg = <0x00f01809 1   /* DCR */
+			       0x00f0180d 1   /* PCSSG */
+			       0x00f0180f 1   /* PCSG */
+			       0x00f0180a 1>; /* PWMPOL */
+			channel = <PWM_CHANNEL_7>;
+			label = "pwm_7";
+			status = "disabled";
+			pwmctrl = <&prs>;
+			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
+			#pwm-cells = <2>;
+		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it8xxx2-gctrl";
+			reg = <0x00f02000 0x100>;
+			label = "GCTRL";
+		};
+
+		kscan0: kscan@f01d00 {
+			compatible = "ite,it8xxx2-kscan";
+			reg = <0x00f01d00 0x29
+			       0x00f01b02 0x01   /* WUEMR3 */
+			       0x00f01b06 0x01   /* WUESR3 */
+			       0x00f01b0a 0x01>; /* WUENR3 */
+			label = "KSCAN";
+			interrupt-parent = <&intc>;
+			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+			gpio-dev = <&gpioc>;
+			pinctrl-0 = <&pinctrl_kso16   /* GPC3 */
+				     &pinctrl_kso17>; /* GPC5 */
 		};
 	};
 };

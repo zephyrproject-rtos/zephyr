@@ -71,7 +71,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_6";
 				#pwm-cells = <3>;
 			};
@@ -89,7 +89,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_7";
 				#pwm-cells = <3>;
 			};
@@ -161,15 +161,15 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_8";
 				#pwm-cells = <3>;
 			};
 		};
 
 		dma2: dma@40020400 {
-			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			interrupts = < 56 0 57 0 58 0 59 0 60 0>;

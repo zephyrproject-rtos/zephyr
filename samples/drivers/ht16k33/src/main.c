@@ -4,90 +4,69 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
 #include <drivers/led.h>
-#include <drivers/gpio.h>
-#include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <drivers/kscan.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(main);
 
-#define LED_DEV_NAME DT_LABEL(DT_INST(0, holtek_ht16k33))
-#define KS0_DEV_NAME DT_LABEL(DT_INST(0, holtek_ht16k33_keyscan))
-#define KS1_DEV_NAME DT_LABEL(DT_INST(1, holtek_ht16k33_keyscan))
-#define KS2_DEV_NAME DT_LABEL(DT_INST(2, holtek_ht16k33_keyscan))
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define KEYSCAN_DEVICES 3
+#define LED_NODE DT_INST(0, holtek_ht16k33)
+#define KEY_NODE DT_INST(0, holtek_ht16k33_keyscan)
 
-const struct device *led_dev;
-const struct device *ks_dev[KEYSCAN_DEVICES];
-static struct gpio_callback ks_cb[KEYSCAN_DEVICES];
-
-static void keyscan_callback(const struct device *gpiob,
-			     struct gpio_callback *cb, uint32_t pins)
+static void keyscan_callback(const struct device *dev, uint32_t row,
+			     uint32_t column, bool pressed)
 {
-	LOG_INF("%s: 0x%08x", gpiob->name, pins);
+	LOG_INF("Row %d, column %d %s", row, column,
+		pressed ? "pressed" : "released");
 }
 
 void main(void)
 {
+	const struct device *led = DEVICE_DT_GET(LED_NODE);
+	const struct device *key = DEVICE_DT_GET(KEY_NODE);
 	int err;
 	int i;
 
-	/* LED device binding */
-	led_dev = device_get_binding(LED_DEV_NAME);
-	if (!led_dev) {
-		LOG_ERR("LED device %s not found", LED_DEV_NAME);
+	if (!device_is_ready(led)) {
+		LOG_ERR("LED device not ready");
 		return;
 	}
 
-	/* Keyscan device bindings */
-	ks_dev[0] = device_get_binding(KS0_DEV_NAME);
-	ks_dev[1] = device_get_binding(KS1_DEV_NAME);
-	ks_dev[2] = device_get_binding(KS2_DEV_NAME);
-	for (i = 0; i < ARRAY_SIZE(ks_dev); i++) {
-		if (!ks_dev[i]) {
-			LOG_ERR("KS%d device not found", i);
-			return;
-		}
+	if (!device_is_ready(key)) {
+		LOG_ERR("Keyscan device not ready");
+		return;
+	}
 
-		gpio_init_callback(&ks_cb[i], &keyscan_callback,
-				   GENMASK(12, 0));
-
-		err = gpio_add_callback(ks_dev[i], &ks_cb[i]);
-		if (err) {
-			LOG_ERR("Failed to add KS%d GPIO callback (err %d)", i,
-				err);
-			return;
-		}
+	err = kscan_config(key, keyscan_callback);
+	if (err) {
+		LOG_ERR("Failed to add keyscan callback (err %d)", err);
 	}
 
 	while (1) {
 		LOG_INF("Iterating through all LEDs, turning them on "
 			"one-by-one");
 		for (i = 0; i < 128; i++) {
-			led_on(led_dev, i);
+			led_on(led, i);
 			k_sleep(K_MSEC(100));
 		}
 
 		for (i = 500; i <= 2000; i *= 2) {
 			LOG_INF("Blinking LEDs with a period of %d ms", i);
-			led_blink(led_dev, 0, i / 2, i / 2);
+			led_blink(led, 0, i / 2, i / 2);
 			k_msleep(10 * i);
 		}
-		led_blink(led_dev, 0, 0, 0);
+		led_blink(led, 0, 0, 0);
 
 		for (i = 100; i >= 0; i -= 10) {
 			LOG_INF("Setting LED brightness to %d%%", i);
-			led_set_brightness(led_dev, 0, i);
+			led_set_brightness(led, 0, i);
 			k_sleep(K_MSEC(1000));
 		}
 
 		LOG_INF("Turning all LEDs off and restoring 100%% brightness");
 		for (i = 0; i < 128; i++) {
-			led_off(led_dev, i);
+			led_off(led, i);
 		}
-		led_set_brightness(led_dev, 0, 100);
+		led_set_brightness(led, 0, 100);
 	}
 }

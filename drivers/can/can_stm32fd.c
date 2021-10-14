@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include "can_stm32fd.h"
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);

@@ -211,8 +211,7 @@ static void lfclk_start(void)
 
 static void lfclk_stop(void)
 {
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
-	    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 		z_nrf_clock_calibration_lfclk_stopped();
 	}
 
@@ -599,15 +598,13 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		break;
 #endif
 	case NRFX_CLOCK_EVT_LFCLK_STARTED:
-		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
-		    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_lfclk_started();
 		}
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 		break;
 	case NRFX_CLOCK_EVT_CAL_DONE:
-		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
-		    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_done_handler();
 		} else {
 			/* Should not happen when calibration is disabled. */
@@ -618,6 +615,26 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		__ASSERT_NO_MSG(0);
 		break;
 	}
+}
+
+static void hfclkaudio_init(void)
+{
+#if DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency)
+	const uint32_t frequency =
+		DT_PROP(DT_NODELABEL(clock), hfclkaudio_frequency);
+	/* As specified in the nRF5340 PS:
+	 *
+	 * FREQ_VALUE = 2^16 * ((12 * f_out / 32M) - 4)
+	 */
+	const uint32_t freq_value =
+		(uint32_t)((384ULL * frequency) / 15625) - 262144;
+
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+	nrf_clock_hfclkaudio_config_set(NRF_CLOCK, freq_value);
+#else
+#error "hfclkaudio-frequency specified but HFCLKAUDIO clock is not present."
+#endif /* NRF_CLOCK_HAS_HFCLKAUDIO */
+#endif
 }
 
 static int clk_init(const struct device *dev)
@@ -638,8 +655,9 @@ static int clk_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
-	    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
+	hfclkaudio_init();
+
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 		struct nrf_clock_control_data *data = dev->data;
 
 		z_nrf_clock_calibration_init(data->mgr);

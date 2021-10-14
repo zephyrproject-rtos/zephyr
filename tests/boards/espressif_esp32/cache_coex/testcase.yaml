@@ -1,0 +1,4 @@
+tests:
+  boards.esp32.cache_coex:
+    platform_allow: esp32
+    tags: spiram spiflash cache

@@ -5,4 +5,4 @@
 
 config BOARD_96B_ARGONKEY
 	bool "96Boards Argonkey"
-	depends on SOC_STM32F412CG
+	depends on SOC_STM32F412CX

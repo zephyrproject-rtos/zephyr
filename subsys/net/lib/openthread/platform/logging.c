@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static inline int log_translate(otLogLevel aLogLevel)
 {
 	switch (aLogLevel) {
+	case OT_LOG_LEVEL_NONE:
 	case OT_LOG_LEVEL_CRIT:
 		return LOG_LEVEL_ERR;
 	case OT_LOG_LEVEL_WARN:

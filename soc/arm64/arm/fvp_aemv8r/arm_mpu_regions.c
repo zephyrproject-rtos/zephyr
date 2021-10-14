@@ -5,7 +5,7 @@
 
 #include <sys/slist.h>
 #include <linker/linker-defs.h>
-#include <arch/arm64/cortex_r/mpu/arm_mpu.h>
+#include <arch/arm64/cortex_r/arm_mpu.h>
 
 
 #define DEVICE_REGION_START 0x80000000UL
@@ -21,19 +21,23 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/* Region 1 zephyr text */
 	MPU_REGION_ENTRY("SRAM_0",
-			 (uintptr_t)_image_text_start,
-			 (uintptr_t)_image_text_end,
+			 (uintptr_t)__text_region_start,
+			 (uintptr_t)__text_region_end,
 			 REGION_RAM_TEXT_ATTR),
 
 	/* Region 2 zephyr rodata */
 	MPU_REGION_ENTRY("SRAM_1",
-			 (uintptr_t)_image_rodata_start,
-			 (uintptr_t)_image_rodata_end,
+			 (uintptr_t)__rodata_region_start,
+			 (uintptr_t)__rodata_region_end,
 			 REGION_RAM_RO_ATTR),
 
 	/* Region 3 zephyr data */
 	MPU_REGION_ENTRY("SRAM_2",
+#ifdef CONFIG_USERSPACE
+			 (uintptr_t)_app_smem_start,
+#else
 			 (uintptr_t)__kernel_ram_start,
+#endif
 			 (uintptr_t)__kernel_ram_end,
 			 REGION_RAM_ATTR),
 

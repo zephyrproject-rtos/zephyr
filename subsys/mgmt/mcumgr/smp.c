@@ -117,6 +117,9 @@ zephyr_smp_split_frag(struct net_buf **nb, void *arg, uint16_t mtu)
 		frag = src;
 	} else {
 		frag = zephyr_smp_alloc_rsp(src, arg);
+		if (!frag) {
+			return NULL;
+		}
 
 		/* Copy fragment payload into new buffer. */
 		net_buf_add_mem(frag, src->data, mtu);
@@ -184,6 +187,7 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 	while (nb != NULL) {
 		frag = zephyr_smp_split_frag(&nb, zst, mtu);
 		if (frag == NULL) {
+			zephyr_smp_free_buf(nb, zst);
 			return MGMT_ERR_ENOMEM;
 		}
 

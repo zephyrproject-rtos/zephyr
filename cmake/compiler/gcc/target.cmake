@@ -61,23 +61,21 @@ elseif("${ARCH}" STREQUAL "sparc")
   include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
 endif()
 
-if(NOT no_libgcc)
-  # This libgcc code is partially duplicated in compiler/*/target.cmake
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-    OUTPUT_VARIABLE LIBGCC_FILE_NAME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+# This libgcc code is partially duplicated in compiler/*/target.cmake
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+  OUTPUT_VARIABLE LIBGCC_FILE_NAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
-  assert_exists(LIBGCC_FILE_NAME)
+assert_exists(LIBGCC_FILE_NAME)
 
-  get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
-  assert_exists(LIBGCC_DIR)
+assert_exists(LIBGCC_DIR)
 
-  LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-  LIST(APPEND TOOLCHAIN_LIBS gcc)
-endif()
+LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+LIST(APPEND TOOLCHAIN_LIBS gcc)
 
 if(SYSROOT_DIR)
   # The toolchain has specified a sysroot dir that we can use to set

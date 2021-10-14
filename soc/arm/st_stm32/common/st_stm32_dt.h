@@ -32,7 +32,7 @@
  * @return elements's node identifier
  */
 #define ST_STM32_DT_INST_NODE_ID_FROM_PINCTRL(inst, x, i) \
-	DT_INST_PHANDLE_BY_IDX(inst, pinctrl_##x, i)
+	DT_INST_PINCTRL_BY_IDX(inst, x, i)
 
 /**
  * @brief Internal: Get a node indentifier for an element in a
@@ -44,7 +44,7 @@
  * @return elements's node identifier
  */
 #define ST_STM32_DT_NODE_ID_FROM_PINCTRL(name, x, i) \
-	DT_PHANDLE_BY_IDX(DT_NODELABEL(name), pinctrl_##x, i)
+	DT_PINCTRL_BY_IDX(DT_NODELABEL(name), x, i)
 
 /**
  * @brief Internal: Get pinmux property of a node indentifier for an element
@@ -238,7 +238,7 @@
  * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
  * @return number of element in property
  */
-#define ST_STM32_DT_INST_NUM_PINS(inst, x) DT_INST_PROP_LEN(inst, pinctrl_##x)
+#define ST_STM32_DT_INST_NUM_PINS(inst, x) DT_INST_NUM_PINCTRLS_BY_IDX(inst, x)
 
 /**
  * @brief Internal: Return the number of elements of a pinctrl-x property
@@ -252,7 +252,7 @@
  * @return number of element in property
  */
 #define ST_STM32_DT_NUM_PINS(name, x) \
-				DT_PROP_LEN(DT_NODELABEL(name), pinctrl_##x)
+				DT_NUM_PINCTRLS_BY_IDX(DT_NODELABEL(name), x)
 
 /**
  * @brief Construct a soc_gpio_pinctrl array of a specific pcintrl property
@@ -266,7 +266,7 @@
  * @return array of soc_gpio_pinctrl
  */
 #define ST_STM32_DT_INST_PINCTRL(inst, x)				\
-	{ COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinctrl_##x),		\
+	{ COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(inst, x),			\
 		      (UTIL_LISTIFY(ST_STM32_DT_INST_NUM_PINS(inst, x),	\
 				   ST_STM32_DT_INST_PIN_ELEM,		\
 				   x,					\
@@ -287,7 +287,7 @@
  * @return array of soc_gpio_pinctrl
  */
 #define ST_STM32_DT_PINCTRL(name, x)					\
-	{ COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(name), pinctrl_##x),\
+	{ COND_CODE_1(DT_PINCTRL_HAS_IDX(DT_NODELABEL(name), x),	\
 		      (UTIL_LISTIFY(ST_STM32_DT_NUM_PINS(name, x),	\
 				   ST_STM32_DT_PIN_ELEM,		\
 				   x,					\

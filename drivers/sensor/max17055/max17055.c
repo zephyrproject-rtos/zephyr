@@ -42,7 +42,7 @@ static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
 }
 
 static int max17055_reg_write(struct max17055_data *priv, int reg_addr,
-			      int16_t val)
+			      uint16_t val)
 {
 	uint8_t i2c_data[2];
 

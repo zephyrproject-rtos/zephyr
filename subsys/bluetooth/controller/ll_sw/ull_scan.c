@@ -29,6 +29,7 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
 
@@ -49,8 +50,9 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-		      uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static uint8_t disable(uint8_t handle);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -62,7 +64,8 @@ static uint8_t duration_period_setup(struct ll_scan_set *scan,
 				     struct node_rx_pdu **node_rx_scan_term);
 static uint8_t duration_period_update(struct ll_scan_set *scan,
 				      uint8_t is_update);
-static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ticker_stop_ext_op_cb(uint32_t status, void *param);
+static void ext_disable(void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -185,7 +188,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 	if ((is_coded_phy && (own_addr_type & 0x1)) ||
 	    (!is_coded_phy && (scan->own_addr_type & 0x1))) {
-		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
+		if (!mem_nz(ll_addr_get(BT_ADDR_LE_RANDOM), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
@@ -359,7 +362,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	uint32_t ret;
 
 	lll->init_addr_type = scan->own_addr_type;
-	ll_addr_get(lll->init_addr_type, lll->init_addr);
+	(void)ll_addr_read(lll->init_addr_type, lll->init_addr);
 	lll->chan = 0U;
 	lll->is_stop = 0U;
 
@@ -413,7 +416,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 					      &ticks_ref, &offset_us);
 
 		/* Use the ticks_ref as scanner's anchor if a free time space
-		 * after any master role is available (indicated by a non-zero
+		 * after any central role is available (indicated by a non-zero
 		 * offset_us value).
 		 */
 		if (offset_us) {
@@ -514,7 +517,7 @@ void ull_scan_done(struct node_rx_event_done *done)
 	rx_hdr->handle = handle;
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_SCAN_BASE + handle), ticker_op_ext_stop_cb,
+			  (TICKER_ID_SCAN_BASE + handle), ticker_stop_ext_op_cb,
 			  scan);
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
@@ -617,18 +620,23 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 
 	scan = ull_scan_is_enabled_get(handle);
 	if (!scan) {
-		return 0;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		scan = ull_scan_set_get(handle);
+
+		return scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U;
+#else
+		return 0U;
+#endif
 	}
 
-	/* NOTE: BIT(0) - passive scanning enabled
-	 *       BIT(1) - active scanning enabled
-	 *       BIT(2) - initiator enabled
-	 */
 	return (((uint32_t)scan->is_enabled << scan->lll.type) |
 #if defined(CONFIG_BT_CENTRAL)
-		(scan->lll.conn ? BIT(2) : 0) |
+		(scan->lll.conn ? ULL_SCAN_IS_INITIATOR : 0U) |
 #endif
-		0);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		(scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U) |
+#endif
+		0U);
 }
 
 uint32_t ull_scan_filter_pol_get(uint8_t handle)
@@ -653,8 +661,9 @@ static int init_reset(void)
 	return 0;
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_scan_prepare};
@@ -668,6 +677,24 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 
 	scan = param;
 	lll = &scan->lll;
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&scan->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = lll;
+	p.force = force;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+	LL_ASSERT(!ret);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (lll->duration_expire) {
 		uint16_t elapsed;
@@ -713,23 +740,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			  (ret == TICKER_STATUS_BUSY));
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-	/* Increment prepare reference count */
-	ref = ull_ref_inc(&scan->ull);
-	LL_ASSERT(ref);
-
-	/* Append timing parameters */
-	p.ticks_at_expire = ticks_at_expire;
-	p.remainder = remainder;
-	p.lazy = lazy;
-	p.param = lll;
-	p.force = force;
-	mfy.param = &p;
-
-	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &mfy);
-	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
@@ -835,12 +845,11 @@ static uint8_t duration_period_update(struct ll_scan_set *scan,
 	return 0;
 }
 
-static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+static void ticker_stop_ext_op_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
-	struct ll_scan_set *scan;
-	struct ull_hdr *hdr;
+	static struct mayfly mfy = {0, 0, &link, NULL, ext_disable};
+	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -849,34 +858,42 @@ static void ticker_op_ext_stop_cb(uint32_t status, void *param)
 		return;
 	}
 
-	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
-	 *       As we are in the callback after successful stop of the
-	 *       ticker, the ULL reference count will not be modified
-	 *       further hence it is safe to check and act on either the need
-	 *       to call lll_disable or not.
-	 */
+	/* Check if any pending LLL events that need to be aborted */
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
+static void ext_disable(void *param)
+{
+	struct ll_scan_set *scan;
+	struct ull_hdr *hdr;
+
+	/* Check ref count to determine if any pending LLL events in pipeline */
 	scan = param;
 	hdr = &scan->ull;
-	mfy.param = &scan->lll;
 	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 		uint32_t ret;
 
-		LL_ASSERT(!hdr->disabled_cb);
+		mfy.param = &scan->lll;
 
+		/* Setup disabled callback to be called when ref count
+		 * returns to zero.
+		 */
+		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = ext_disabled_cb;
 
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+		/* Trigger LLL disable */
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 	} else {
-		uint32_t ret;
-
-		mfy.fp = ext_disabled_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
+		/* No pending LLL events */
+		ext_disabled_cb(&scan->lll);
 	}
 }
 

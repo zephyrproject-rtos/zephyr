@@ -3,8 +3,8 @@
 Heartbeat
 #########
 
-The Bluetooth Mesh Heartbeat feature provides functionality for monitoring mesh
-nodes and determining the distance between nodes.
+The Heartbeat feature provides functionality for monitoring Bluetooth mesh nodes
+and determining the distance between nodes.
 
 The Heartbeat feature is configured through the :ref:`bluetooth_mesh_models_cfg_srv` model.
 

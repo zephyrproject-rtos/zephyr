@@ -609,11 +609,11 @@ do {									\
 			    &adc_sam0_api);				\
 	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, resrdy, irq),	\
+			    DT_INST_IRQ_BY_NAME(n, resrdy, priority),	\
 			    adc_sam0_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, resrdy, irq));	\
 		ADC_SAM0_CONFIGURE(n);					\
 	}
 

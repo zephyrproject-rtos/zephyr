@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ublox_sara_r4
+#define DT_DRV_COMPAT u_blox_sara_r4
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <drivers/gpio.h>
 #include <device.h>
 #include <init.h>
+#include <fcntl.h>
 
 #include <net/net_if.h>
 #include <net/net_offload.h>
@@ -72,8 +73,8 @@ static struct modem_pin modem_pins[] = {
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
-#define MDM_UART_NODE			DT_BUS(DT_DRV_INST(0))
+#define MDM_UART_NODE			DT_INST_BUS(0)
+#define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
 #define MDM_POWER_ENABLE		1
 #define MDM_POWER_DISABLE		0
@@ -357,10 +358,18 @@ static ssize_t send_socket_data(void *obj,
 	mdata.sock_written = 0;
 
 	if (sock->ip_proto == IPPROTO_UDP) {
+		char ip_str[NET_IPV6_ADDR_LEN];
+
+		ret = modem_context_sprint_ip_addr(dst_addr, ip_str, sizeof(ip_str));
+		if (ret != 0) {
+			LOG_ERR("Error formatting IP string %d", ret);
+			goto exit;
+		}
+
 		ret = modem_context_get_addr_port(dst_addr, &dst_port);
 		snprintk(send_buf, sizeof(send_buf),
 			 "AT+USOST=%d,\"%s\",%u,%zu", sock->id,
-			 modem_context_sprint_ip_addr(dst_addr),
+			 ip_str,
 			 dst_port, buf_len);
 	} else {
 		snprintk(send_buf, sizeof(send_buf), "AT+USOWR=%d,%zu",
@@ -685,6 +694,54 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 }
 #endif
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+static int unquoted_atoi(const char *s, int base)
+{
+	if (*s == '"') {
+		s++;
+	}
+
+	return strtol(s, NULL, base);
+}
+
+/*
+ * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
+{
+	if (argc >= 3) {
+		mctx.data_operator = unquoted_atoi(argv[2], 10);
+		LOG_INF("operator: %u",
+			mctx.data_operator);
+	}
+
+	return 0;
+}
+
+/*
+ * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
+{
+	if (argc >= 4) {
+		mctx.data_lac = unquoted_atoi(argv[2], 16);
+		mctx.data_cellid = unquoted_atoi(argv[3], 16);
+		LOG_INF("lac: %u, cellid: %u",
+			mctx.data_lac,
+			mctx.data_cellid);
+	}
+
+	return 0;
+}
+
+static const struct setup_cmd query_cellinfo_cmds[] = {
+	SETUP_CMD_NOHANDLE("AT+CEREG=2"),
+	SETUP_CMD("AT+CEREG?", "", on_cmd_atcmdinfo_cereg, 5U, ","),
+	SETUP_CMD_NOHANDLE("AT+COPS=3,2"),
+	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
+};
+#endif /* CONFIG_MODEM_CELL_INFO */
+
 /*
  * Modem Socket Command Handlers
  */
@@ -1007,6 +1064,19 @@ static void modem_rssi_query_work(struct k_work *work)
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
 	if (work) {
@@ -1036,6 +1106,19 @@ static void modem_rssi_query_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
+
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
@@ -1163,7 +1246,7 @@ restart:
 	/* autodetect APN from IMSI */
 	char cmd[sizeof("AT+CGDCONT=1,\"IP\",\"\"")+MDM_APN_LENGTH];
 
-	snprintf(cmd, sizeof(cmd), "AT+CGDCONT=1,\"IP\",\"%s\"", mdata.mdm_apn);
+	snprintk(cmd, sizeof(cmd), "AT+CGDCONT=1,\"IP\",\"%s\"", mdata.mdm_apn);
 
 	/* setup PDP context definition */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
@@ -1262,7 +1345,7 @@ restart:
 		/* setup PDP context definition */
 		char cmd[sizeof("AT+UPSD=0,1,\"%s\"")+MDM_APN_LENGTH];
 
-		snprintf(cmd, sizeof(cmd), "AT+UPSD=0,1,\"%s\"", mdata.mdm_apn);
+		snprintk(cmd, sizeof(cmd), "AT+UPSD=0,1,\"%s\"", mdata.mdm_apn);
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			NULL, 0,
 			(const char *)cmd,
@@ -1463,6 +1546,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	int ret;
 	char buf[sizeof("AT+USOCO=#,!###.###.###.###!,#####,#\r")];
 	uint16_t dst_port = 0U;
+	char ip_str[NET_IPV6_ADDR_LEN];
 
 	if (!addr) {
 		errno = EINVAL;
@@ -1499,8 +1583,15 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		return 0;
 	}
 
+	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
+	if (ret != 0) {
+		errno = -ret;
+		LOG_ERR("Error formatting IP string %d", ret);
+		return -1;
+	}
+
 	snprintk(buf, sizeof(buf), "AT+USOCO=%d,\"%s\",%d", sock->id,
-		 modem_context_sprint_ip_addr(addr), dst_port);
+		ip_str, dst_port);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 			     NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
@@ -1670,6 +1761,9 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 
 		return offload_poll(fds, nfds, timeout);
 	}
+
+	case F_GETFL:
+		return 0;
 
 	default:
 		errno = EINVAL;
@@ -1878,8 +1972,8 @@ static bool offload_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(ublox_sara_r4, AF_UNSPEC, offload_is_supported,
-		    offload_socket);
+NET_SOCKET_REGISTER(ublox_sara_r4, NET_SOCKET_DEFAULT_PRIO, AF_UNSPEC,
+		    offload_is_supported, offload_socket);
 
 #if defined(CONFIG_DNS_RESOLVER)
 /* TODO: This is a bare-bones implementation of DNS handling
@@ -2091,7 +2185,7 @@ static int modem_init(const struct device *dev)
 	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
 	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
 	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
-				    MDM_UART_DEV_NAME);
+				    MDM_UART_DEV);
 	if (ret < 0) {
 		goto error;
 	}

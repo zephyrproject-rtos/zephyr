@@ -6,14 +6,17 @@
 
 /*
  * This file contains standard handlers for the SPARC V8 window overflow and
- * underflow traps.
+ * underflow traps. It also implements the handler for SPARC-ABI
+ * "Flush windows" which is used for example by longjmp() and C++ exceptions.
  */
 
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <arch/sparc/sparc.h>
 
 GTEXT(__sparc_trap_window_overflow)
 GTEXT(__sparc_trap_window_underflow)
+GTEXT(__sparc_trap_flush_windows)
 
 SECTION_FUNC(TEXT, __sparc_trap_window_overflow)
 	/* Enter the window to be stored. */
@@ -73,3 +76,67 @@ SECTION_FUNC(TEXT, __sparc_trap_window_underflow)
 	/* Re-execute restore. */
 	jmp	%l1
 	 rett	%l2
+
+/*
+ * Handler for SPARC trap 0x83: trap_instruction, defined as "Flush windows" by
+ * SPARC-ABI:
+ *   "By executing a type 3 trap, a process asks the system to flush all its
+ *   register windows to the stack."
+ *
+ * This implementation uses the window overflow trap handler to perform the
+ * actual window flush.
+ *
+ * On entry:
+ * %l0: psr
+ * %l1: pc
+ * %l2: npc
+ */
+SECTION_FUNC(TEXT, __sparc_trap_flush_windows)
+	/* push a few registers which are needed later to the stack */
+	sub	%sp, 0x10, %sp
+	std	%l0, [%sp + 0x40 + 0x00]
+	st	%l2, [%sp + 0x40 + 0x08]
+	st	%g2, [%sp + 0x40 + 0x0c]
+
+	restore
+	/* In window where we trapped from. This window will not be flushed. */
+
+	/* Set highest processor interrupt level and enable traps. */
+	rd	%psr, %g2
+	or	%g2, PSR_PIL, %g2
+	wr	%g2, PSR_ET, %psr
+	nop
+	nop
+
+	/* Execute "save" NWINDOWS-1 times. */
+	set     CONFIG_SPARC_NWIN-2, %g2
+1:
+	save
+	cmp	%g2, %g0
+	bne	1b
+	 sub	%g2, 1, %g2
+
+	/* Execute "restore" NWINDOWS-1 times. */
+	set     CONFIG_SPARC_NWIN-2, %g2
+2:
+	restore
+	cmp	%g2, %g0
+	bne	2b
+	 sub	%g2, 1, %g2
+
+	save
+
+	/* pop registers from stack which are used for the trap return */
+	ldd	[%sp + 0x40 + 0x00], %l0
+	ld	[%sp + 0x40 + 0x08], %l2
+	ld	[%sp + 0x40 + 0x0c], %g2
+	add	%sp, 0x10, %sp
+
+	/* Restore %psr as it was on trap entry. */
+	wr	%l0, %psr
+	nop
+	nop
+	nop
+
+	jmp	%l2
+	 rett	%l2 + 4

@@ -25,10 +25,11 @@
 #include "hal/debug.h"
 
 #include "lll_conn_iso.h"
-#include "ull_conn_iso_internal.h"
 #include "ull_conn_iso_types.h"
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
 /* Allocate data path pools for RX/TX directions for each stream */
@@ -49,7 +50,7 @@ static struct {
 } mem_iso_tx;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
-/* must be implemented by vendor */
+/* Must be implemented by vendor */
 __weak bool ll_data_path_configured(uint8_t data_path_dir,
 				    uint8_t data_path_id)
 {
@@ -82,6 +83,21 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 	ARG_UNUSED(offset);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+/* Must be implemented by vendor */
+__weak bool ll_data_path_sink_create(struct ll_iso_datapath *datapath,
+				     isoal_sink_sdu_alloc_cb *sdu_alloc,
+				     isoal_sink_sdu_emit_cb *sdu_emit,
+				     isoal_sink_sdu_write_cb *sdu_write)
+{
+	ARG_UNUSED(datapath);
+
+	*sdu_alloc = NULL;
+	*sdu_emit  = NULL;
+	*sdu_write = NULL;
+
+	return false;
 }
 
 static inline bool path_is_vendor_specific(uint8_t path_id)
@@ -179,12 +195,24 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	}
 
 	if (path_id == BT_HCI_DATAPATH_ID_HCI) {
-		/* Not vendor specific, thus alloc and emit functions known */
+		/* Set up HCI data path */
 		err = isoal_sink_create(&sink_hdl, handle, burst_number, sdu_interval,
 					cig->iso_interval, sink_sdu_alloc_hci,
 					sink_sdu_emit_hci, sink_sdu_write_hci);
 	} else {
-		/* TBD call vendor specific function to set up ISO path */
+		/* Set up vendor specific data path */
+		isoal_sink_sdu_alloc_cb sdu_alloc;
+		isoal_sink_sdu_emit_cb  sdu_emit;
+		isoal_sink_sdu_write_cb sdu_write;
+
+		/* Request vendor sink callbacks for path */
+		if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
+			err = isoal_sink_create(&sink_hdl, handle, burst_number,
+						sdu_interval, cig->iso_interval,
+						sdu_alloc, sdu_emit, sdu_write);
+		} else {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	if (!err) {
@@ -200,12 +228,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 	/* TBD: If the Host issues this command with a Connection_Handle that does not exist
 	 * or is not for a CIS or a BIS, the Controller shall return the error code Unknown
 	 * Connection Identifier (0x02).
 	 */
-	struct ll_iso_datapath *dp;
+	struct ll_iso_datapath *dp = NULL;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 		dp = cis->datapath_in;
@@ -223,6 +253,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		/* Reserved for future use */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 	if (!dp) {
 		/* Datapath was not previously set up */
@@ -233,29 +264,11 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type)
 {
 	ARG_UNUSED(handle);
 	ARG_UNUSED(payload_type);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(payload_type);
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
-}
-
-uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
-			uint32_t *missed_cnt, uint32_t *failed_cnt)
-{
-	ARG_UNUSED(handle);
-	ARG_UNUSED(received_cnt);
-	ARG_UNUSED(missed_cnt);
-	ARG_UNUSED(failed_cnt);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
@@ -272,6 +285,7 @@ uint8_t ll_iso_read_test_counters(uint16_t handle, uint32_t *received_cnt,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
+#if defined(CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY)
 uint8_t ll_read_iso_link_quality(uint16_t  handle,
 				 uint32_t *tx_unacked_packets,
 				 uint32_t *tx_flushed_packets,
@@ -289,6 +303,30 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 	ARG_UNUSED(crc_error_packets);
 	ARG_UNUSED(rx_unreceived_packets);
 	ARG_UNUSED(duplicate_packets);
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_READ_ISO_LINK_QUALITY */
+
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(payload_type);
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
+			uint32_t *missed_cnt, uint32_t *failed_cnt)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(received_cnt);
+	ARG_UNUSED(missed_cnt);
+	ARG_UNUSED(failed_cnt);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }

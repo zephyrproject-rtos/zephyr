@@ -22,6 +22,7 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <drivers/emul.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,9 @@ struct i2c_emul_api;
 /** Node in a linked list of emulators for I2C devices */
 struct i2c_emul {
 	sys_snode_t node;
+
+	/** Parent emulator */
+	const struct emul *parent;
 
 	/* API provided for this device */
 	const struct i2c_emul_api *api;

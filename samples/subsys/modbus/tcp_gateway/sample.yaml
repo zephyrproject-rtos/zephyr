@@ -2,7 +2,8 @@ sample:
   name: Modbus TCP to serial line gateway sample
 tests:
   sample.modbus.tcp_gateway:
+    platform_allow: frdm_k64f
     tags: modbus
-    depends_on: gpio, netif, arduino_serial
+    depends_on: gpio netif arduino_serial
     integration_platforms:
       - frdm_k64f

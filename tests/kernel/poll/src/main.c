@@ -16,6 +16,7 @@ extern void test_poll_grant_access(void);
 extern void test_poll_fail_grant_access(void);
 extern void test_poll_lower_prio(void);
 extern void test_condition_met_type_err(void);
+extern void test_detect_is_polling(void);
 #ifdef CONFIG_USERSPACE
 extern void test_k_poll_user_num_err(void);
 extern void test_k_poll_user_mem_err(void);
@@ -75,6 +76,7 @@ void test_main(void)
 			 ztest_unit_test(test_poll_multi),
 			 ztest_1cpu_unit_test(test_poll_lower_prio),
 			 ztest_1cpu_unit_test(test_poll_threadstate),
+			 ztest_1cpu_unit_test(test_detect_is_polling),
 			 ztest_1cpu_unit_test(test_condition_met_type_err),
 			 ztest_user_unit_test(test_k_poll_user_num_err),
 			 ztest_user_unit_test(test_k_poll_user_mem_err),

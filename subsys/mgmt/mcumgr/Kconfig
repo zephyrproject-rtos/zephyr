@@ -156,6 +156,17 @@ config IMG_MGMT_UL_CHUNK_SIZE
 	  this size gets allocated on the stack during handling of a image upload
 	  command.
 
+config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+	int "Number of supported images"
+	default UPDATEABLE_IMAGE_NUMBER
+	range 1 2
+	help
+	  Sets how many application images are supported (pairs of secondary and primary slots).
+	  Setting this to 2 requires MCUMGR_BUF_SIZE to be at least 512b.
+	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+	  needs to be set to the same value; this is due to the fact that the mcumgr uses
+	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
+	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
@@ -167,6 +178,18 @@ config IMG_MGMT_DUMMY_HDR
 	help
 	  Returns dummy image header data for imgr functions,
 	  useful when there are no images present, Eg: unit tests.
+
+config IMG_MGMT_DIRECT_IMAGE_UPLOAD
+	bool "Allow direct image upload"
+	help
+	  Enables directly uploading image to selected image partition.
+	  This changes how "image" is understood by mcumgr: normally the mcumgr allows to upload
+	  to first slot of the only image it knows, where image is understood as two slots
+	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
+	  target for upload, and more than two may be used (4 at this time).
+	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
+	  behaviour is, when image is not selected, to upload to image that represents secndary
+	  slot in normal operation.
 
 config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	bool "Reject Direct-XIP applications with mismatched address"
@@ -221,6 +244,25 @@ config STAT_MGMT_MAX_NAME_LEN
 	  A buffer of this size gets allocated on the stack during handling of all
 	  stat read commands.  If a stat group's name exceeds this limit, it will
 	  be impossible to retrieve its values with a stat show command.
+
+
+menuconfig MCUMGR_GRP_ZEPHYR_BASIC
+	bool "Enable Zephyr specific basic group of commands"
+	help
+	  Enables mcumgr to processing of Zephyr specific groups.
+
+if MCUMGR_GRP_ZEPHYR_BASIC
+config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
+	bool "Enables storage erase command"
+	help
+	  Enables command that allows to erase storage partition.
+
+module=MGMT_SETTINGS
+module-dep=LOG
+module-str=SETTINGS
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif
 
 endmenu
 
@@ -278,6 +320,33 @@ config MCUMGR_SMP_UART
 	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
 	  commands to be received over UART without requiring an additional
 	  thread.
+
+if UART_ASYNC_API && MCUMGR_SMP_UART
+
+menuconfig MCUMGR_SMP_UART_ASYNC
+	bool "Use async UART API when available"
+	help
+	  The option enables use of UART async API when available for selected mcumgr uart port.
+
+if MCUMGR_SMP_UART_ASYNC
+config MCUMGR_SMP_UART_ASYNC_BUFS
+	int "Number of async RX UART buffers"
+	range 2 8
+	default 2
+	help
+	  The asynchronous UART API requires registering RX buffers for received data; when the RX
+	  reaches the end of a buffer, it will send event requesting next buffer, to be able to
+	  receive data without stopping due to running out of buffer space.  At least two buffers
+	  area required for smooth RX operation.
+
+config MCUMGR_SMP_UART_ASYNC_BUF_SIZE
+	int "Size of single async RX UART buffer"
+	default 64
+	help
+	  The size of single buffer for asynchronous RX.
+
+endif # MCUMGR_SMP_UART_ASYNC
+endif # UART_ASYNC_API
 
 config MCUMGR_SMP_UART_MTU
 	int "UART SMP MTU"

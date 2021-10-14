@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017,2021 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -19,6 +19,7 @@ struct mcux_lpuart_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
+	uint8_t flow_ctrl;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -319,6 +320,7 @@ static int mcux_lpuart_configure_init(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int mcux_lpuart_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct mcux_lpuart_data *data = dev->data;
@@ -344,6 +346,7 @@ static int mcux_lpuart_configure(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int mcux_lpuart_init(const struct device *dev)
 {
@@ -355,7 +358,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	uart_api_config->parity = UART_CFG_PARITY_NONE;
 	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
 	uart_api_config->data_bits = UART_CFG_DATA_BITS_8;
-	uart_api_config->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	uart_api_config->flow_ctrl = config->flow_ctrl;
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
@@ -371,8 +374,10 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 	.poll_in = mcux_lpuart_poll_in,
 	.poll_out = mcux_lpuart_poll_out,
 	.err_check = mcux_lpuart_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = mcux_lpuart_configure,
 	.config_get = mcux_lpuart_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = mcux_lpuart_fifo_fill,
 	.fifo_read = mcux_lpuart_fifo_read,
@@ -426,6 +431,8 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
+	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?	\
+		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,\
 	IRQ_FUNC_INIT							\
 }
 

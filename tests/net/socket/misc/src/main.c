@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
+#include <sys/sem.h>
 
 #include <net/socket.h>
 #include <net/dummy.h>
@@ -79,8 +80,8 @@ static struct dummy_context dummy_data2 = {
 	.ipv4_addr = &my_ipv4_addr2
 };
 
-const struct device *current_dev;
-K_SEM_DEFINE(send_sem, 0, 1);
+static ZTEST_BMEM const struct device *current_dev;
+static ZTEST_BMEM struct sys_sem send_sem;
 
 static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -95,7 +96,7 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 
 	current_dev = dev;
 
-	k_sem_give(&send_sem);
+	sys_sem_give(&send_sem);
 
 	/* Report it back to the interface. */
 	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);
@@ -175,7 +176,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	/* Bind server socket with interface 2. */
 
-	strcpy(ifreq.ifr_name, dev2->name);
+	strcpy(ifreq.ifr_name, DEV2_NAME);
 	ret = setsockopt(sock_s, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
 			 sizeof(ifreq));
 	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
@@ -183,9 +184,9 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	/* Bind client socket with interface 1 and send a packet. */
 
 	current_dev = NULL;
-	k_sem_reset(&send_sem);
-	strcpy(ifreq.ifr_name, dev1->name);
-	strcpy(send_buf, dev1->name);
+	sys_sem_init(&send_sem, 0, 1);
+	strcpy(ifreq.ifr_name, DEV1_NAME);
+	strcpy(send_buf, DEV1_NAME);
 
 	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
 			 sizeof(ifreq));
@@ -195,19 +196,20 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 		     peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
-	ret = k_sem_take(&send_sem, K_MSEC(100));
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
-	zassert_equal_ptr(dev1, current_dev, "invalid interface used");
+	zassert_equal_ptr(dev1, current_dev, "invalid interface used (%p vs %p)",
+			  dev1, current_dev);
 
 	k_msleep(10);
 
 	/* Bind client socket with interface 2 and send a packet. */
 
 	current_dev = NULL;
-	k_sem_reset(&send_sem);
-	strcpy(ifreq.ifr_name, dev2->name);
-	strcpy(send_buf, dev2->name);
+	sys_sem_init(&send_sem, 0, 1);
+	strcpy(ifreq.ifr_name, DEV2_NAME);
+	strcpy(send_buf, DEV2_NAME);
 
 	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
 			 sizeof(ifreq));
@@ -217,10 +219,11 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 		     peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
-	ret = k_sem_take(&send_sem, K_MSEC(100));
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
-	zassert_equal_ptr(dev2, current_dev, "invalid interface used");
+	zassert_equal_ptr(dev2, current_dev, "invalid interface used (%p vs %p)",
+			  dev2, current_dev);
 
 	/* Server socket should only receive data from the bound interface. */
 
@@ -228,7 +231,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	ret = recv(sock_s, recv_buf, sizeof(recv_buf), MSG_DONTWAIT);
 	zassert_true(ret > 0, "recv failed, %d", errno);
-	zassert_mem_equal(recv_buf, dev2->name, strlen(dev2->name),
+	zassert_mem_equal(recv_buf, DEV2_NAME, strlen(DEV2_NAME),
 			 "received datagram from invalid interface");
 
 	/* Remove the binding from the server socket. */
@@ -240,9 +243,9 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	/* Bind client socket with interface 1 again. */
 
-	k_sem_reset(&send_sem);
-	strcpy(ifreq.ifr_name, dev1->name);
-	strcpy(send_buf, dev1->name);
+	sys_sem_init(&send_sem, 0, 1);
+	strcpy(ifreq.ifr_name, DEV1_NAME);
+	strcpy(send_buf, DEV1_NAME);
 
 	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
 			 sizeof(ifreq));
@@ -252,7 +255,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 		     peer_addr, peer_addrlen);
 	zassert_equal(ret, strlen(send_buf) + 1, "sendto failed, %d", errno);
 
-	ret = k_sem_take(&send_sem, K_MSEC(100));
+	ret = sys_sem_take(&send_sem, K_MSEC(100));
 	zassert_equal(ret, 0, "iface did not receive packet");
 
 	zassert_equal_ptr(dev1, current_dev, "invalid interface used");
@@ -263,7 +266,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	ret = recv(sock_s, recv_buf, sizeof(recv_buf), MSG_DONTWAIT);
 	zassert_true(ret > 0, "recv failed, %d", errno);
-	zassert_mem_equal(recv_buf, dev1->name, strlen(dev1->name),
+	zassert_mem_equal(recv_buf, DEV1_NAME, strlen(DEV1_NAME),
 			 "received datagram from invalid interface");
 
 	ret = close(sock_c);
@@ -335,8 +338,8 @@ void test_main(void)
 	ztest_test_suite(socket_misc,
 			 ztest_user_unit_test(test_gethostname),
 			 ztest_user_unit_test(test_inet_pton),
-			 ztest_unit_test(test_ipv4_so_bindtodevice),
-			 ztest_unit_test(test_ipv6_so_bindtodevice));
+			 ztest_user_unit_test(test_ipv4_so_bindtodevice),
+			 ztest_user_unit_test(test_ipv6_so_bindtodevice));
 
 	ztest_run_test_suite(socket_misc);
 }

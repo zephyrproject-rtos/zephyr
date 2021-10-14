@@ -9,6 +9,8 @@
 #include <wait_q.h>
 #include <posix/pthread.h>
 
+struct k_spinlock z_pthread_spinlock;
+
 int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
 #define MUTEX_MAX_REC_LOCK 32767
@@ -22,13 +24,14 @@ static const pthread_mutexattr_t def_attr = {
 
 static int acquire_mutex(pthread_mutex_t *m, k_timeout_t timeout)
 {
-	int rc = 0, key = irq_lock();
+	int rc = 0;
+	k_spinlock_key_t key = k_spin_lock(&z_pthread_spinlock);
 
 	if (m->lock_count == 0U && m->owner == NULL) {
 		m->lock_count++;
 		m->owner = pthread_self();
 
-		irq_unlock(key);
+		k_spin_unlock(&z_pthread_spinlock, key);
 		return 0;
 	} else if (m->owner == pthread_self()) {
 		if (m->type == PTHREAD_MUTEX_RECURSIVE &&
@@ -41,16 +44,16 @@ static int acquire_mutex(pthread_mutex_t *m, k_timeout_t timeout)
 			rc = EINVAL;
 		}
 
-		irq_unlock(key);
+		k_spin_unlock(&z_pthread_spinlock, key);
 		return rc;
 	}
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		irq_unlock(key);
+		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
-	rc = z_pend_curr_irqlock(key, &m->wait_q, timeout);
+	rc = z_pend_curr(&z_pthread_spinlock, key, &m->wait_q, timeout);
 	if (rc != 0) {
 		rc = ETIMEDOUT;
 	}
@@ -121,17 +124,17 @@ int pthread_mutex_lock(pthread_mutex_t *m)
  */
 int pthread_mutex_unlock(pthread_mutex_t *m)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&z_pthread_spinlock);
 
 	k_tid_t thread;
 
 	if (m->owner != pthread_self()) {
-		irq_unlock(key);
+		k_spin_unlock(&z_pthread_spinlock, key);
 		return EPERM;
 	}
 
 	if (m->lock_count == 0U) {
-		irq_unlock(key);
+		k_spin_unlock(&z_pthread_spinlock, key);
 		return EINVAL;
 	}
 
@@ -144,13 +147,13 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 			m->lock_count++;
 			arch_thread_return_value_set(thread, 0);
 			z_ready_thread(thread);
-			z_reschedule_irqlock(key);
+			z_reschedule(&z_pthread_spinlock, key);
 			return 0;
 		}
 		m->owner = NULL;
 
 	}
-	irq_unlock(key);
+	k_spin_unlock(&z_pthread_spinlock, key);
 	return 0;
 }
 

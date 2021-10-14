@@ -46,11 +46,6 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
-config PRINTK64
-	bool "Enable 64 bit printk conversions (DEPRECATED)"
-	help
-	  Replace with CBPRINTF_FULL_INTEGRAL.
-
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1
@@ -67,6 +62,14 @@ config MPSC_PBUF
 	  Enable usage of mpsc packet buffer. Packet buffer is capable of
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
+
+config SHARED_MULTI_HEAP
+	bool "Shared multi-heap manager"
+	help
+	  Enable support for a shared multi-heap manager that uses the
+	  multi-heap allocator to manage a set of reserved memory regions with
+	  different capabilities / attributes (cacheable, non-cacheable,
+	  etc...) defined in the DT.
 
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED

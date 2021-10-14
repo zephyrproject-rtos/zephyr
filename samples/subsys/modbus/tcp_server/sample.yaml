@@ -2,8 +2,9 @@ sample:
   name: Modbus TCP Server Sample
 tests:
   sample.modbus.tcp_server:
+    platform_allow: frdm_k64f
     tags: modbus
-    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
-            dt_compat_enabled_with_alias("gpio-leds", "led1") and
-            dt_compat_enabled_with_alias("gpio-leds", "led2")
-    depends_on: gpio, netif
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
+            dt_enabled_alias_with_parent_compat("led1", "gpio-leds") and
+            dt_enabled_alias_with_parent_compat("led2", "gpio-leds")
+    depends_on: gpio netif

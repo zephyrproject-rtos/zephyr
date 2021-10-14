@@ -15,12 +15,17 @@
 /**
  * @brief Generate a linker memory region from a devicetree node
  *
+ * If @p node_id refers to a node with status "okay", then this declares
+ * a linker memory region named @p name with attributes from @p attr.
+ *
+ * Otherwise, it doesn't expand to anything.
+ *
  * @param name name of the generated memory region
  * @param attr region attributes to use (rx, rw, ...)
- * @param node devicetree node with a \<reg\> property defining region location
- *             and size.
+ * @param node_id devicetree node identifier with a \<reg\> property
+ *                defining region location and size.
  */
-#define DT_REGION_FROM_NODE_STATUS_OKAY(name, attr, node) \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node, okay),	  \
-		    (_REGION_DECLARE(name, attr, node)),  \
+#define LINKER_DT_REGION_FROM_NODE(name, attr, node_id)		\
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),		\
+		    (_REGION_DECLARE(name, attr, node_id)),	\
 		    ())

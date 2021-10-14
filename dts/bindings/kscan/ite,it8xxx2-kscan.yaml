@@ -1,0 +1,25 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it8xxx2 keyboard matrix controller
+
+compatible: "ite,it8xxx2-kscan"
+
+include: kscan.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    gpio-dev:
+        type: phandle
+        required: true
+        description: configure GPIO controller
+
+    pinctrl-0:
+        type: phandles
+        required: true
+        description: configure KSO pinmux controller

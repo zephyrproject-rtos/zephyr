@@ -88,7 +88,7 @@ static void compare_isr(const void *arg)
 	curr = count();
 
 #ifdef CONFIG_SMP
-	/* If it has been too long since last_count,
+	/* If we are too soon since last_count,
 	 * this interrupt is likely the same interrupt
 	 * event but being processed by another CPU.
 	 * Since it has already been processed and
@@ -121,6 +121,7 @@ static void compare_isr(const void *arg)
 	sys_clock_announce(dticks);
 }
 
+/* Runs on core 0 only */
 int sys_clock_driver_init(const struct device *dev)
 {
 	uint64_t curr = count();
@@ -181,7 +182,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return count32();
 }
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+/* Runs on secondary cores */
 void smp_timer_init(void)
 {
 	/* This enables the Timer 0 (or 1) interrupt for CPU n.
@@ -195,4 +196,3 @@ void smp_timer_init(void)
 		    22 + TIMER);
 	irq_enable(TIMER_IRQ);
 }
-#endif

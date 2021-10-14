@@ -17,6 +17,7 @@ config SOC_OPENISA_RV32M1_RISCV32
 	select CLOCK_CONTROL
 	select HAS_RV32M1_FTFX
 	select HAS_FLASH_LOAD_OFFSET
+	select BUILD_OUTPUT_HEX
 	help
 	  Enable support for OpenISA RV32M1 RISC-V processors. Choose
 	  this option to target the RI5CY or ZERO-RISCY core. This

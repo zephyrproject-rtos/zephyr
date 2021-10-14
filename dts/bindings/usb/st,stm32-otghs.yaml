@@ -17,8 +17,9 @@ properties:
     ram-size:
       type: int
       required: true
-      description: Size of USB dedicated RAM. STM32 SOC's reference
-                   manual defines a shared FIFO size.
+      description: |
+        Size of USB dedicated RAM. STM32 SOC's reference
+        manual defines a shared FIFO size.
 
     phys:
       type: phandle

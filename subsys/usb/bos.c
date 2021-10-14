@@ -11,7 +11,6 @@ LOG_MODULE_REGISTER(usb_bos);
 #include <zephyr.h>
 
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 
 #include <usb/bos.h>
 
@@ -20,7 +19,7 @@ extern const uint8_t __usb_bos_desc_end[];
 
 USB_DEVICE_BOS_DESC_DEFINE_HDR struct usb_bos_descriptor bos_hdr = {
 	.bLength = sizeof(struct usb_bos_descriptor),
-	.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
+	.bDescriptorType = USB_DESC_BOS,
 	.wTotalLength = 0, /* should be corrected with register */
 	.bNumDeviceCaps = 0, /* should be set with register */
 };
@@ -51,7 +50,7 @@ void usb_bos_register_cap(struct usb_bos_platform_descriptor *desc)
 int usb_handle_bos(struct usb_setup_packet *setup,
 		   int32_t *len, uint8_t **data)
 {
-	if (GET_DESC_TYPE(setup->wValue) == DESCRIPTOR_TYPE_BOS) {
+	if (USB_GET_DESCRIPTOR_TYPE(setup->wValue) == USB_DESC_BOS) {
 		LOG_DBG("Read BOS descriptor");
 		*data = (uint8_t *)usb_bos_get_header();
 		*len = usb_bos_get_length();

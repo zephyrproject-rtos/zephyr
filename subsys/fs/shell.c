@@ -307,7 +307,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%08X  ", offset);
+		shell_fprintf(shell, SHELL_NORMAL, "%08X  ", (uint32_t)offset);
 
 		for (i = 0; i < read; i++) {
 			shell_fprintf(shell, SHELL_NORMAL, "%02X ", buf[i]);
@@ -536,7 +536,7 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 	int rc = fs_mount(&littlefs_mnt);
 
 	if (rc != 0) {
-		shell_error(shell, "Error mounting %u as littlefs: %d", rc);
+		shell_error(shell, "Error mounting as littlefs: %d", rc);
 		return -ENOEXEC;
 	}
 

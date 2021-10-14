@@ -100,14 +100,14 @@
 
 	/* TianYiHeXin HRS3300 PPG Hear Rate Sensor (800KHz) */
 	hrs3300: hrs3300@44 {
-		compatible = "tian-yi-he-xin,hrs3300";
+		compatible = "tian-yi-he-xin-hrs3300";
 		reg = <0x44>;
 		label = "HRS3300";
 	};
 
 	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
 	cst816s: cst816s@15 {
-		compatible = "hynitron,cst816s";
+		compatible = "hynitron-cst816s";
 		reg = <0x15>;
 		label = "CST816S";
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
@@ -126,7 +126,7 @@
 
 	/* Macronix MX25L CMOS Flash Memory */
 	mx25l: mx25l@0 {
-		compatible = "macronix,cmos-mx25l";
+		compatible = "mxicy,cmos-mx25l";
 		reg = <0>;
 		spi-max-frequency = <8000000>; /* 8MHz */
 		label = "CMOS MX25L";

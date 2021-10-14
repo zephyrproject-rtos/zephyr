@@ -95,7 +95,7 @@
 		gpio0: gpio@f0002000 {
 			compatible = "snps,designware-gpio";
 			reg = <0xf0002000 0xc>;
-			bits = <32>;
+			ngpios = <32>;
 			label = "GPIO_0";
 			interrupt-parent = <&intc>;
 
@@ -106,7 +106,7 @@
 		gpio1: gpio@f000200c {
 			compatible = "snps,designware-gpio";
 			reg = <0xf000200c 0xc>;
-			bits = <9>;
+			ngpios = <9>;
 			label = "GPIO_1";
 			interrupt-parent = <&intc>;
 
@@ -117,7 +117,7 @@
 		gpio2: gpio@f0002018 {
 			compatible = "snps,designware-gpio";
 			reg = <0xF0002018 0xc>;
-			bits = <32>;
+			ngpios = <32>;
 			label = "GPIO_2";
 
 			interrupt-parent = <&intc>;
@@ -129,7 +129,7 @@
 		gpio3: gpio@f0002024 {
 			compatible = "snps,designware-gpio";
 			reg = <0xF0002024 0xc>;
-			bits = <12>;
+			ngpios = <12>;
 			label = "GPIO_3";
 
 			interrupt-parent = <&intc>;

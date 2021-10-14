@@ -43,9 +43,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* resource state */
 struct ipso_switch_data {
 	uint64_t trigger_offset;
-	uint64_t on_time_sec;
-	uint64_t off_time_sec;
-	uint64_t counter;
+	int64_t on_time_sec;
+	int64_t off_time_sec;
+	int64_t counter;
 	uint16_t obj_inst_id;
 	bool last_state;
 	bool state;
@@ -56,13 +56,13 @@ static struct ipso_switch_data switch_data[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_obj onoff_switch;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
-	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, U64),
-	OBJ_FIELD_DATA(ON_TIME_RID, RW_OPT, U64),
-	OBJ_FIELD_DATA(OFF_TIME_RID, RW_OPT, U64),
+	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, S64),
+	OBJ_FIELD_DATA(ON_TIME_RID, RW_OPT, S64),
+	OBJ_FIELD_DATA(OFF_TIME_RID, RW_OPT, S64),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 #if defined(CONFIG_LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1)
 	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
-	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT),
 #endif
 };
 
@@ -101,14 +101,17 @@ static int state_post_write_cb(uint16_t obj_inst_id,
 
 	if (switch_data[i].state) {
 		/* reset off time */
-		switch_data[i].off_time_sec = 0U;
+		switch_data[i].off_time_sec = 0;
 		if (!switch_data[i].last_state) {
 			/* off to on transition */
 			switch_data[i].counter++;
+			if (switch_data[i].counter < 0) {
+				switch_data[i].counter = 0;
+			}
 		}
 	} else {
 		/* reset on time */
-		switch_data[i].on_time_sec = 0U;
+		switch_data[i].on_time_sec = 0;
 	}
 
 	switch_data[i].last_state = switch_data[i].state;
@@ -128,7 +131,7 @@ static void *on_time_read_cb(uint16_t obj_inst_id,
 
 	if (switch_data[i].state) {
 		switch_data[i].on_time_sec =
-			(k_uptime_get() - switch_data[i].trigger_offset) / 1000;
+			(int64_t)((k_uptime_get() - switch_data[i].trigger_offset) / 1000);
 	}
 
 	*data_len = sizeof(switch_data[i].on_time_sec);
@@ -147,7 +150,7 @@ static void *off_time_read_cb(uint16_t obj_inst_id,
 
 	if (!switch_data[i].state) {
 		switch_data[i].off_time_sec =
-			(k_uptime_get() - switch_data[i].trigger_offset) / 1000;
+			(int64_t)((k_uptime_get() - switch_data[i].trigger_offset) / 1000);
 	}
 
 	*data_len = sizeof(switch_data[i].off_time_sec);

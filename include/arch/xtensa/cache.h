@@ -26,8 +26,9 @@ static inline void z_xtensa_cache_flush(void *addr, size_t bytes)
 	size_t step = XCHAL_DCACHE_LINESIZE;
 	size_t first = ROUND_DOWN(addr, step);
 	size_t last = ROUND_UP(((long)addr) + bytes, step);
+	size_t line;
 
-	for (size_t line = first; bytes && line < last; line += step) {
+	for (line = first; bytes && line < last; line += step) {
 		__asm__ volatile("dhwb %0, 0" :: "r"(line));
 	}
 #endif
@@ -39,8 +40,9 @@ static inline void z_xtensa_cache_flush_inv(void *addr, size_t bytes)
 	size_t step = XCHAL_DCACHE_LINESIZE;
 	size_t first = ROUND_DOWN(addr, step);
 	size_t last = ROUND_UP(((long)addr) + bytes, step);
+	size_t line;
 
-	for (size_t line = first; bytes && line < last; line += step) {
+	for (line = first; bytes && line < last; line += step) {
 		__asm__ volatile("dhwbi %0, 0" :: "r"(line));
 	}
 #endif
@@ -52,8 +54,9 @@ static inline void z_xtensa_cache_inv(void *addr, size_t bytes)
 	size_t step = XCHAL_DCACHE_LINESIZE;
 	size_t first = ROUND_DOWN(addr, step);
 	size_t last = ROUND_UP(((long)addr) + bytes, step);
+	size_t line;
 
-	for (size_t line = first; bytes && line < last; line += step) {
+	for (line = first; bytes && line < last; line += step) {
 		__asm__ volatile("dhi %0, 0" :: "r"(line));
 	}
 #endif

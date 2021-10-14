@@ -18,14 +18,13 @@
 #include <bluetooth/iso.h>
 #include <sys/byteorder.h>
 
-#define MAX_ISO_APP_DATA (CONFIG_BT_ISO_TX_MTU - BT_ISO_CHAN_SEND_RESERVE)
-
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  NULL);
 
 /**
  * @brief Send ISO data on timeout
@@ -43,7 +42,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
 static void iso_timer_timeout(struct k_work *work)
 {
 	int ret;
-	static uint8_t buf_data[MAX_ISO_APP_DATA];
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
 	struct net_buf *buf;
 	static size_t len_to_send = 1;
@@ -145,8 +144,6 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx = {
-	.interval = 10 * USEC_PER_MSEC, /* us */
-	.latency = 10,
 	.sdu = CONFIG_BT_ISO_TX_MTU,
 	.phy = BT_GAP_LE_PHY_2M,
 	.rtn = 1,
@@ -154,9 +151,6 @@ static struct bt_iso_chan_io_qos iso_tx = {
 };
 
 static struct bt_iso_chan_qos iso_qos = {
-	.sca = BT_GAP_SCA_UNKNOWN,
-	.packing = 0,
-	.framing = 0,
 	.tx = &iso_tx,
 	.rx = NULL,
 };
@@ -165,8 +159,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int iso_err;
-	struct bt_conn *conns[1];
-	struct bt_iso_chan *channels[1];
+	struct bt_iso_connect_param connect_param;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -186,17 +179,10 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 
-	conns[0] = default_conn;
-	channels[0] = &iso_chan;
+	connect_param.acl = conn;
+	connect_param.iso_chan = &iso_chan;
 
-	iso_err = bt_iso_chan_bind(conns, ARRAY_SIZE(conns), channels);
-
-	if (iso_err) {
-		printk("Failed to bind iso to connection (%d)\n", iso_err);
-		return;
-	}
-
-	iso_err = bt_iso_chan_connect(channels, ARRAY_SIZE(channels));
+	iso_err = bt_iso_chan_connect(&connect_param, 1);
 
 	if (iso_err) {
 		printk("Failed to connect iso (%d)\n", iso_err);
@@ -222,7 +208,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	start_scan();
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -230,6 +216,9 @@ static struct bt_conn_cb conn_callbacks = {
 void main(void)
 {
 	int err;
+	static struct bt_iso_chan *channels[1];
+	struct bt_iso_cig_create_param param;
+	struct bt_iso_cig *cig;
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -239,10 +228,24 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
-	bt_conn_cb_register(&conn_callbacks);
-
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
+
+	channels[0] = &iso_chan;
+	param.cis_channels = channels;
+	param.num_cis = ARRAY_SIZE(channels);
+	param.sca = BT_GAP_SCA_UNKNOWN;
+	param.packing = 0;
+	param.framing = 0;
+	param.latency = 10; /* ms */
+	param.interval = 10 * USEC_PER_MSEC; /* us */
+
+	err = bt_iso_cig_create(&param, &cig);
+
+	if (err != 0) {
+		printk("Failed to create CIG (%d)\n", err);
+		return;
+	}
 
 	start_scan();
 

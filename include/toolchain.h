@@ -33,19 +33,23 @@
 #define HAS_BUILTIN(x) HAS_BUILTIN_##x
 #endif
 
-#if defined(__XCC__)
+#if defined(__TOOLCHAIN_CUSTOM__)
+/* This include line exists for off-tree definitions of compilers,
+ * and therefore this header is not meant to exist in-tree
+ */
+#include <toolchain/other.h>
+#elif defined(__XCC__)
 #include <toolchain/xcc.h>
 #elif defined(__CCAC__)
 #include <toolchain/mwdt.h>
+#elif defined(__ARMCOMPILER_VERSION)
+#include <toolchain/armclang.h>
 #elif defined(__llvm__)
 #include <toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <toolchain/gcc.h>
 #else
-/* This include line exists for off-tree definitions of compilers,
- * and therefore this header is not meant to exist in-tree
- */
-#include <toolchain/other.h>
+#error "Invalid/unknown toolchain configuration"
 #endif
 
 /*

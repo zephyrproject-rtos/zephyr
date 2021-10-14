@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <sys/byteorder.h>
 #include <bluetooth/bluetooth.h>
 
@@ -47,8 +48,9 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 				  uint32_t ticks_anchor);
 static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle);
 static int init_reset(void);
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param);
 static void tx_lll_flush(void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
 
@@ -58,11 +60,16 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint8_t packing, uint8_t framing, uint8_t encryption,
 		      uint8_t *bcode)
 {
+	uint8_t hdr_data[1 + sizeof(uint8_t *)];
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct node_rx_pdu *node_rx;
 	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
+	uint8_t ter_idx;
+	uint8_t *acad;
+	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
@@ -130,6 +137,28 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	if (num_bis != 1) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
+
+	/* Allocate next PDU */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
+				     NULL, NULL, &ter_idx);
+	if (err) {
+		return err;
+	}
+
+	/* Add ACAD to AUX_SYNC_IND */
+	hdr_data[0] = sizeof(struct pdu_big_info) + 2;
+	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu, ULL_ADV_PDU_HDR_FIELD_ACAD,
+					 0U, hdr_data);
+	if (err) {
+		return err;
+	}
+
+	memcpy(&acad, &hdr_data[1], sizeof(acad));
+	acad[0] = sizeof(struct pdu_big_info) + 1;
+	acad[1] = BT_DATA_BIG_INFO;
+
+	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
+
 	/* TODO: For now we can just use the unique BIG handle as the BIS
 	 * handle until we support multiple BIS
 	 */
@@ -145,8 +174,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	adv_iso->framing = framing;
 	adv_iso->encryption = encryption;
 	memcpy(adv_iso->bcode, bcode, sizeof(adv_iso->bcode));
-
-	/* TODO: Add ACAD to AUX_SYNC_IND */
 
 	/* TODO: start sending BIS empty data packet for each BIS */
 	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
@@ -200,10 +227,14 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 {
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct node_rx_pdu *node_rx;
 	struct ll_adv_iso *adv_iso;
 	struct lll_adv *lll_adv;
+	struct ll_adv_set *adv;
+	uint8_t ter_idx;
 	uint32_t ret;
+	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 	if (!adv_iso) {
@@ -217,6 +248,23 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	}
 
 	lll_adv_sync = lll_adv->sync;
+	adv = HDR_LLL2ULL(lll_adv);
+
+	/* Allocate next PDU */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
+				     NULL, NULL, &ter_idx);
+	if (err) {
+		return err;
+	}
+
+	/* Remove ACAD to AUX_SYNC_IND */
+	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
+					 0U, ULL_ADV_PDU_HDR_FIELD_ACAD, NULL);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
 	/* TODO: Terminate all BIS data paths */
 
@@ -378,8 +426,9 @@ static int init_reset(void)
 }
 
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	/* TODO: LLL support for ADV ISO */
 #if 0

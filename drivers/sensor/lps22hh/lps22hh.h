@@ -20,16 +20,6 @@
 #include <sys/util.h>
 #include "lps22hh_reg.h"
 
-union axis1bit32_t {
-	int32_t i32bit;
-	uint8_t u8bit[4];
-};
-
-union axis1bit16_t {
-	int16_t i16bit;
-	uint8_t u8bit[2];
-};
-
 struct lps22hh_config {
 	char *master_dev_name;
 	int (*bus_init)(const struct device *dev);

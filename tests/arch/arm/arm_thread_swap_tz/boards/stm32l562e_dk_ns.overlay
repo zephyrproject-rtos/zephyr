@@ -8,10 +8,11 @@
   * - TEST_S=OFF (NO REGRESSION)
   *
   * In this configuration, TFM binary does not include tests.
-  * The partition sizes are compatible with TF-M platform flash_layout.h.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
   */
 
-/ {
+  / {
 	chosen {
 		zephyr,code-partition = &slot1_partition;
 	};
@@ -30,20 +31,20 @@
 			read-only;
 		};
 		/* Secure image primary slot */
-		slot0_partition: partition@00019000 {
+		slot0_partition: partition@19000 {
 			label = "image-0";
-			reg = <0x00019000 0x00038000>;
+			reg = <0x00019000 0x0003C000>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@00051000 {
+		slot1_partition: partition@55000 {
 			label = "image-1";
-			reg = <0x00051000 0x0002A000>;
+			reg = <0x00055000 0x0002A000>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at
 		 * 0x80000 is reserved for the application.
 		 */
-		storage_partition: partition@7F000 {
+		storage_partition: partition@7f000 {
 			label = "storage";
 			reg = <0x0007F000 0x00001000>;
 		};

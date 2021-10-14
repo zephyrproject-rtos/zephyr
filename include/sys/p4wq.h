@@ -100,8 +100,8 @@ struct k_p4wq_initparam {
 					   n_threads, stack_sz);	\
 	static struct k_thread _p4threads_##name[n_threads];		\
 	static struct k_p4wq name;					\
-	static const Z_STRUCT_SECTION_ITERABLE(k_p4wq_initparam,	\
-					       _init_##name) = {	\
+	static const STRUCT_SECTION_ITERABLE(k_p4wq_initparam,		\
+					     _init_##name) = {		\
 		.num = n_threads,					\
 		.stack_size = stack_sz,					\
 		.threads = _p4threads_##name,				\
@@ -127,8 +127,8 @@ struct k_p4wq_initparam {
 					   n_threads, stack_sz);	\
 	static struct k_thread _p4threads_##name[n_threads];		\
 	static struct k_p4wq name[n_threads];				\
-	static const Z_STRUCT_SECTION_ITERABLE(k_p4wq_initparam,	\
-					       _init_##name) = {	\
+	static const STRUCT_SECTION_ITERABLE(k_p4wq_initparam,		\
+					     _init_##name) = {		\
 		.num = n_threads,					\
 		.stack_size = stack_sz,					\
 		.threads = _p4threads_##name,				\

@@ -259,6 +259,8 @@ struct can_bus_err_cnt {
 	uint8_t rx_err_cnt;
 };
 
+/** SWJ value to indicate that the SJW should not be changed */
+#define CAN_SJW_NO_CHANGE 0
 
 /**
  * @brief canbus timings
@@ -727,6 +729,8 @@ static inline int z_impl_can_set_mode(const struct device *dev,
 /**
  * @brief Configure timing of a host controller.
  *
+ * If the sjw equals CAN_SJW_NO_CHANGE, the sjw parameter is not changed.
+ *
  * The second parameter timing_data is only relevant for CAN-FD.
  * If the controller does not support CAN-FD or the FD mode is not enabled,
  * this parameter is ignored.
@@ -783,11 +787,15 @@ static inline int can_set_bitrate(const struct device *dev,
 		return -EINVAL;
 	}
 
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
 #ifdef CONFIG_CAN_FD_MODE
 	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
 	if (ret < 0) {
 		return -EINVAL;
 	}
+
+	timing_data.sjw = CAN_SJW_NO_CHANGE;
 
 	return can_set_timing(dev, &timing, &timing_data);
 #else

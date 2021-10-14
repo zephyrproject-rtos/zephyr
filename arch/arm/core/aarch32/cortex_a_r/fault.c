@@ -7,6 +7,7 @@
 
 #include <kernel.h>
 #include <kernel_internal.h>
+#include <exc_handle.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -129,6 +130,35 @@ bool z_arm_fault_prefetch(z_arch_esf_t *esf)
 	return true;
 }
 
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_arm_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_arm_user_string_nlen)
+};
+
+/* Perform an assessment whether an MPU fault shall be
+ * treated as recoverable.
+ *
+ * @return true if error is recoverable, otherwise return false.
+ */
+static bool memory_fault_recoverable(z_arch_esf_t *esf)
+{
+	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		/* Mask out instruction mode */
+		uint32_t start = (uint32_t)exceptions[i].start & ~0x1U;
+		uint32_t end = (uint32_t)exceptions[i].end & ~0x1U;
+
+		if (esf->basic.pc >= start && esf->basic.pc < end) {
+			esf->basic.pc = (uint32_t)(exceptions[i].fixup);
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
+
 /**
  * @brief Data abort fault handler
  *
@@ -142,6 +172,15 @@ bool z_arm_fault_data(z_arch_esf_t *esf)
 
 	/* Read Data Fault Address Register (DFAR) */
 	uint32_t dfar = __get_DFAR();
+
+#if defined(CONFIG_USERSPACE)
+	if ((fs == FSR_FS_BACKGROUND_FAULT)
+			|| (fs == FSR_FS_PERMISSION_FAULT)) {
+		if (memory_fault_recoverable(esf)) {
+			return false;
+		}
+	}
+#endif
 
 	/* Print fault information*/
 	LOG_ERR("***** DATA ABORT *****");

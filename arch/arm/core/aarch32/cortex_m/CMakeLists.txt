@@ -3,20 +3,22 @@
 zephyr_library()
 
 zephyr_library_sources(
-  vector_table.S
-  reset.S
-  fault_s.S
-  fault.c
   exc_exit.S
-  scb.c
+  fault.c
+  fault_s.S
+  fpu.c
   irq_init.c
+  reset.S
+  scb.c
   thread_abort.c
+  vector_table.S
   )
 
+zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 
-if(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
   zephyr_library_sources(debug.c)
 endif()
 

@@ -87,3 +87,4 @@ the following documents:
    sm-pics.rst
    rfcomm-pics.rst
    mesh-pics.rst
+   dis-pics.rst

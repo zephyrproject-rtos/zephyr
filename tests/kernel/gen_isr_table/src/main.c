@@ -52,13 +52,13 @@ extern uint32_t _irq_vector_table[];
  * the board.
  */
 #define TEST_NUM_IRQS	26
-#elif defined(CONFIG_SOC_SERIES_NPCX7)
-/* In NPCX7 series, it uses some the IRQs at the end of the vector table, for
- * example, the irq 60 and 61 used for Multi-Input Wake-Up Unit (MIWU) device
- * by default, and conflicts with isr used for testing. Move IRQs for this
+#elif defined(CONFIG_SOC_SERIES_NPCX7) || defined(CONFIG_SOC_SERIES_NPCX9)
+/* Both NPCX7 and NPCX9 series use the IRQs at the end of the vector table, for
+ * example, the IRQ 60 and 61 used for Multi-Input Wake-Up Unit (MIWU) devices
+ * by default, and conflicts with ISR used for testing. Move IRQs for this
  * test suite to solve the issue.
  */
-#define TEST_NUM_IRQS	46
+#define TEST_NUM_IRQS	44
 #elif defined(CONFIG_SOC_LPC55S16)
 /* IRQ 57 is reserved in the NXP LPC55S16 SoC. Thus, limit the number
  * of interrupts reported to the test, so that it does not try to use

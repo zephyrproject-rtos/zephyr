@@ -17,6 +17,38 @@ config NUM_IRQS
 config PM
 	select CODE_DATA_RELOCATION_SRAM
 
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/peripheral@50000000/spi@134000,1,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/peripheral@50000000/spi@134000,1)
+
+config ENTROPY_MCUX_TRNG
+	default y if HAS_MCUX_TRNG
+	depends on ENTROPY_GENERATOR
+
+config ADC_MCUX_LPADC
+	default y if HAS_MCUX_LPADC
+	depends on ADC
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+config MBEDTLS
+#config TINYCRYPT
+	default y if CSPRING_ENABLED
+	depends on ENTROPY_GENERATOR
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACKSIZE
+	int
+	default 1024
+endif # MBEDTLS
+
 source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
 
 endif # SOC_SERIES_MIMXRT6XX

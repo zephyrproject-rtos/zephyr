@@ -9,7 +9,7 @@
 	/* This is an example number of antennas that may be available
 	 * on antenna matrix board.
 	 */
-	dfe-antenna-num = < 10 >;
+	dfe-antenna-num = <10>;
 	/* This is an example switch pattern that will be used to set an
 	 * antenna for Tx PDU (period before start of Tx CTE).
 	 */

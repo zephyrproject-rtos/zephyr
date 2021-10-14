@@ -32,10 +32,10 @@ static inline bool ptr_in_rodata(const char *addr)
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
 	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_NIOS2)
-	extern char _image_rodata_start[];
-	extern char _image_rodata_end[];
-#define RO_START _image_rodata_start
-#define RO_END _image_rodata_end
+	extern char __rodata_region_start[];
+	extern char __rodata_region_end[];
+#define RO_START __rodata_region_start
+#define RO_END __rodata_region_end
 #elif defined(CONFIG_XTENSA)
 	extern char _rodata_start[];
 	extern char _rodata_end[];
@@ -185,11 +185,18 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 
 #endif
 
-int cbvprintf_package(void *packaged, size_t len,
+int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		      const char *fmt, va_list ap)
 {
+/* Internally, byte is used to store location of a string argument within a
+ * package. MSB bit is set if string is read-only so effectively 7 bits are
+ * used for index, which should be enough.
+ */
+#define CBPRINTF_STR_POS_RO_FLAG BIT(7)
+#define CBPRINTF_STR_POS_MASK BIT_MASK(7)
+
 	char *buf = packaged, *buf0 = buf;
-	unsigned int align, size, i, s_idx = 0;
+	unsigned int align, size, i, s_idx = 0, s_rw_cnt = 0, s_ro_cnt = 0;
 	uint8_t str_ptr_pos[16];
 	const char *s;
 	bool parsing = false;
@@ -395,9 +402,18 @@ process_string:
 			if (buf0) {
 				*(const char **)buf = s;
 			}
-			if (ptr_in_rodata(s)) {
+
+			/* Bother about read only strings only if storing
+			 * string indexes is requested.
+			 */
+			bool is_ro = ptr_in_rodata(s);
+			bool str_idxs = flags & CBPRINTF_PACKAGE_ADD_STRING_IDXS;
+			bool need_ro = is_ro && str_idxs;
+
+			if (ptr_in_rodata(s) && !str_idxs) {
 				/* do nothing special */
 			} else if (buf0) {
+
 				/*
 				 * Remember string pointer location.
 				 * We will append it later.
@@ -406,14 +422,39 @@ process_string:
 					__ASSERT(false, "str_ptr_pos[] too small");
 					return -EINVAL;
 				}
+
+				if ((buf - buf0) > CBPRINTF_STR_POS_MASK) {
+					__ASSERT(false, "String with too many arguments");
+					return -EINVAL;
+				}
+
+				/* Add marking to identify if read only string. */
+				uint8_t ro_flag = need_ro ?
+						  CBPRINTF_STR_POS_RO_FLAG : 0;
+
+				if (ro_flag) {
+					s_ro_cnt++;
+				} else {
+					s_rw_cnt++;
+				}
+
 				/* Use same multiple as the arg list size. */
-				str_ptr_pos[s_idx++] = (buf - buf0) / sizeof(int);
+				str_ptr_pos[s_idx++] = ro_flag |
+						       (buf - buf0) / sizeof(int);
 			} else {
-				/*
-				 * Add the string length, the final '\0'
-				 * and size of the pointer position prefix.
-				 */
-				len += strlen(s) + 1 + 1;
+				if (!is_ro) {
+					/*
+					 * Add the string length, the final '\0'
+					 * and size of the pointer position prefix.
+					 */
+					len += strlen(s) + 1 + 1;
+				} else if (need_ro) {
+					/*
+					 * Add only pointer position prefix for
+					 * read only string is requested.
+					 */
+					len += 1;
+				}
 			}
 			buf += sizeof(char *);
 		} else if (size == sizeof(int)) {
@@ -471,10 +512,34 @@ process_string:
 
 	/* Record end of argument list and number of appended strings. */
 	buf0[0] = (buf - buf0) / sizeof(int);
-	buf0[1] = s_idx;
+	buf0[1] = s_rw_cnt;
+	buf0[2] = s_ro_cnt;
+
+	/* Store strings pointer locations of read only strings. */
+	if (s_ro_cnt) {
+		for (i = 0; i < s_idx; i++) {
+			if (!(str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG)) {
+				continue;
+			}
+
+			uint8_t pos = str_ptr_pos[i] & CBPRINTF_STR_POS_MASK;
+
+			/* make sure it fits */
+			if (buf - buf0 + 1 > len) {
+				return -ENOSPC;
+			}
+			/* store the pointer position prefix */
+			*buf++ = pos;
+		}
+	}
 
 	/* Store strings prefixed by their pointer location. */
 	for (i = 0; i < s_idx; i++) {
+		/* Process only RW strings. */
+		if (str_ptr_pos[i] & CBPRINTF_STR_POS_RO_FLAG) {
+			continue;
+		}
+
 		/* retrieve the string pointer */
 		s = *(char **)(buf0 + str_ptr_pos[i] * sizeof(int));
 		/* clear the in-buffer pointer (less entropy if compressed) */
@@ -498,15 +563,19 @@ process_string:
 	 */
 
 	return buf - buf0;
+
+#undef CBPRINTF_STR_POS_RO_FLAG
+#undef CBPRINTF_STR_POS_MASK
 }
 
-int cbprintf_package(void *packaged, size_t len, const char *format, ...)
+int cbprintf_package(void *packaged, size_t len, uint32_t flags,
+		     const char *format, ...)
 {
 	va_list ap;
 	int ret;
 
 	va_start(ap, format);
-	ret = cbvprintf_package(packaged, len, format, ap);
+	ret = cbvprintf_package(packaged, len, flags, format, ap);
 	va_end(ap);
 	return ret;
 }
@@ -514,7 +583,7 @@ int cbprintf_package(void *packaged, size_t len, const char *format, ...)
 int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 {
 	char *buf = packaged, *fmt, *s, **ps;
-	unsigned int i, args_size, s_nbr, s_idx;
+	unsigned int i, args_size, s_nbr, ros_nbr, s_idx;
 
 	if (!buf) {
 		return -EINVAL;
@@ -523,9 +592,10 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 	/* Retrieve the size of the arg list and number of strings. */
 	args_size = ((uint8_t *)buf)[0] * sizeof(int);
 	s_nbr     = ((uint8_t *)buf)[1];
+	ros_nbr   = ((uint8_t *)buf)[2];
 
 	/* Locate the string table */
-	s = buf + args_size;
+	s = buf + args_size + ros_nbr;
 
 	/*
 	 * Patch in string pointers.
@@ -548,4 +618,66 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 
 	/* Turn this into a va_list and  print it */
 	return cbprintf_via_va_list(out, ctx, fmt, buf);
+}
+
+int cbprintf_fsc_package(void *in_packaged,
+			 size_t in_len,
+			 void *packaged,
+			 size_t len)
+{
+	uint8_t *buf = in_packaged, *out = packaged;
+	char **ps;
+	unsigned int args_size, s_nbr, ros_nbr, s_idx;
+	size_t out_len;
+	size_t slen;
+
+	if (!buf) {
+		return -EINVAL;
+	}
+
+	if (packaged && (len < in_len)) {
+		return -ENOSPC;
+	}
+
+	/* Retrieve the size of the arg list and number of strings. */
+	args_size = buf[0] * sizeof(int);
+	s_nbr     = buf[1];
+	ros_nbr   = buf[2];
+
+	out_len = in_len;
+
+	if (packaged) {
+		unsigned int rw_strs_len = in_len - (args_size + ros_nbr);
+
+		memcpy(out, buf, args_size);
+		out[1] = s_nbr + ros_nbr;
+		out[2] = 0;
+		out += args_size;
+
+		/* Append all strings that were already part of the package. */
+		memcpy(out, &buf[args_size + ros_nbr], rw_strs_len);
+		out += rw_strs_len;
+	}
+
+	for (unsigned int i = 0; i < ros_nbr; i++) {
+		/* Get string address location */
+		s_idx = buf[args_size + i];
+		ps = (char **)(buf + s_idx * sizeof(int));
+
+		/* Get string length */
+		slen = strlen(*ps) + 1;
+		out_len += slen;
+
+		/* Copy string into the buffer (if provided) and enough space. */
+		if (packaged) {
+			if (out_len > len) {
+				return -ENOSPC;
+			}
+			*out++ = s_idx;
+			memcpy(out, *ps, slen);
+			out += slen;
+		}
+	}
+
+	return out_len;
 }

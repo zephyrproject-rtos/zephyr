@@ -1,0 +1,8 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX30101 heart rate sensor
+
+compatible: "maxim,max30101"
+
+include: i2c-device.yaml

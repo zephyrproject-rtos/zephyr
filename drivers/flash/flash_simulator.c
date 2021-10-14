@@ -62,6 +62,7 @@
 #define STATS_SECT_DIRTYR(N, _) STATS_SECT_ENTRY32(dirty_read_unit##N)
 #define STATS_NAME_DIRTYR(N, _) STATS_NAME(flash_sim_stats, dirty_read_unit##N)
 
+#ifdef CONFIG_FLASH_SIMULATOR_STATS
 /* increment a unit erase cycles counter */
 #define ERASE_CYCLES_INC(U)						     \
 	do {								     \
@@ -70,8 +71,7 @@
 		}							     \
 	} while (0)
 
-#if (defined(CONFIG_STATS) && \
-     (CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT > STATS_PAGE_COUNT_THRESHOLD))
+#if (CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT > STATS_PAGE_COUNT_THRESHOLD)
        /* Limitation above is caused by used UTIL_REPEAT                    */
        /* Using FLASH_SIMULATOR_FLASH_PAGE_COUNT allows to avoid terrible   */
        /* error logg at the output and work with the stats module partially */
@@ -127,6 +127,22 @@ STATS_NAME(flash_sim_thresholds, max_erase_calls)
 STATS_NAME(flash_sim_thresholds, max_len)
 STATS_NAME_END(flash_sim_thresholds);
 
+#define FLASH_SIM_STATS_INC(group__, var__) STATS_INC(group__, var__)
+#define FLASH_SIM_STATS_INCN(group__, var__, n__) STATS_INCN(group__, var__, n__)
+#define FLASH_SIM_STATS_INIT_AND_REG(group__, size__, name__) \
+	STATS_INIT_AND_REG(group__, size__, name__)
+
+
+#else
+
+#define ERASE_CYCLES_INC(U) do {} while (0)
+#define FLASH_SIM_STATS_INC(group__, var__)
+#define FLASH_SIM_STATS_INCN(group__, var__, n__)
+#define FLASH_SIM_STATS_INIT_AND_REG(group__, size__, name__)
+
+#endif /* CONFIG_FLASH_SIMULATOR_STATS */
+
+
 #ifdef CONFIG_ARCH_POSIX
 static uint8_t *mock_flash;
 static int flash_fd = -1;
@@ -173,14 +189,14 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 		}
 	}
 
-	STATS_INC(flash_sim_stats, flash_read_calls);
+	FLASH_SIM_STATS_INC(flash_sim_stats, flash_read_calls);
 
 	memcpy(data, MOCK_FLASH(offset), len);
-	STATS_INCN(flash_sim_stats, bytes_read, len);
+	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_read, len);
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
 	k_busy_wait(CONFIG_FLASH_SIMULATOR_MIN_READ_TIME_US);
-	STATS_INCN(flash_sim_stats, flash_read_time_us,
+	FLASH_SIM_STATS_INCN(flash_sim_stats, flash_read_time_us,
 		   CONFIG_FLASH_SIMULATOR_MIN_READ_TIME_US);
 #endif
 
@@ -202,19 +218,20 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		return -EINVAL;
 	}
 
-	STATS_INC(flash_sim_stats, flash_write_calls);
+	FLASH_SIM_STATS_INC(flash_sim_stats, flash_write_calls);
 
 	/* check if any unit has been already programmed */
 	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
-			STATS_INC(flash_sim_stats, double_writes);
+			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
 			return -EIO;
 #endif
 		}
 	}
 
+#ifdef CONFIG_FLASH_SIMULATOR_STATS
 	bool data_part_ignored = false;
 
 	if (flash_sim_thresholds.max_write_calls != 0) {
@@ -230,13 +247,16 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 			data_part_ignored = true;
 		}
 	}
+#endif
 
 	for (uint32_t i = 0; i < len; i++) {
+#ifdef CONFIG_FLASH_SIMULATOR_STATS
 		if (data_part_ignored) {
 			if (i >= flash_sim_thresholds.max_len) {
 				return 0;
 			}
 		}
+#endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
 		/* only pull bits to zero */
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
@@ -246,12 +266,12 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif
 	}
 
-	STATS_INCN(flash_sim_stats, bytes_written, len);
+	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_written, len);
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
 	/* wait before returning */
 	k_busy_wait(CONFIG_FLASH_SIMULATOR_MIN_WRITE_TIME_US);
-	STATS_INCN(flash_sim_stats, flash_write_time_us,
+	FLASH_SIM_STATS_INCN(flash_sim_stats, flash_write_time_us,
 		   CONFIG_FLASH_SIMULATOR_MIN_WRITE_TIME_US);
 #endif
 
@@ -283,14 +303,15 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 		return -EINVAL;
 	}
 
-	STATS_INC(flash_sim_stats, flash_erase_calls);
+	FLASH_SIM_STATS_INC(flash_sim_stats, flash_erase_calls);
 
+#ifdef CONFIG_FLASH_SIMULATOR_STATS
 	if ((flash_sim_thresholds.max_erase_calls != 0) &&
 	    (flash_sim_stats.flash_erase_calls >=
 		flash_sim_thresholds.max_erase_calls)){
 		return 0;
 	}
-
+#endif
 	/* the first unit to be erased */
 	uint32_t unit_start = (offset - FLASH_SIMULATOR_BASE_OFFSET) /
 			   FLASH_SIMULATOR_ERASE_UNIT;
@@ -304,7 +325,7 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
 	/* wait before returning */
 	k_busy_wait(CONFIG_FLASH_SIMULATOR_MIN_ERASE_TIME_US);
-	STATS_INCN(flash_sim_stats, flash_erase_time_us,
+	FLASH_SIM_STATS_INCN(flash_sim_stats, flash_erase_time_us,
 		   CONFIG_FLASH_SIMULATOR_MIN_ERASE_TIME_US);
 #endif
 
@@ -408,8 +429,8 @@ static int flash_mock_init(const struct device *dev)
 
 static int flash_init(const struct device *dev)
 {
-	STATS_INIT_AND_REG(flash_sim_stats, STATS_SIZE_32, "flash_sim_stats");
-	STATS_INIT_AND_REG(flash_sim_thresholds, STATS_SIZE_32,
+	FLASH_SIM_STATS_INIT_AND_REG(flash_sim_stats, STATS_SIZE_32, "flash_sim_stats");
+	FLASH_SIM_STATS_INIT_AND_REG(flash_sim_thresholds, STATS_SIZE_32,
 			   "flash_sim_thresholds");
 	return flash_mock_init(dev);
 }
@@ -454,3 +475,29 @@ NATIVE_TASK(flash_native_posix_options, PRE_BOOT_1, 1);
 NATIVE_TASK(flash_native_posix_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
+
+/* Extension to generic flash driver API */
+void *z_impl_flash_simulator_get_memory(const struct device *dev,
+					size_t *mock_size)
+{
+	ARG_UNUSED(dev);
+
+	*mock_size = FLASH_SIMULATOR_FLASH_SIZE;
+	return mock_flash;
+}
+
+#ifdef CONFIG_USERSPACE
+
+#include <syscall_handler.h>
+
+void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
+				      size_t *mock_size)
+{
+	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+
+	return z_impl_flash_simulator_get_memory(dev, mock_size);
+}
+
+#include <syscalls/flash_simulator_get_memory_mrsh.c>
+
+#endif /* CONFIG_USERSPACE */

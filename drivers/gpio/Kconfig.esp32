@@ -5,23 +5,11 @@
 
 menuconfig GPIO_ESP32
 	bool "ESP32 GPIO"
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enables the ESP32 GPIO driver
 
 if GPIO_ESP32
-
-config GPIO_ESP32_IRQ
-	int "IRQ line for ESP32 GPIO pins"
-	default 10
-	help
-	  Select the IRQ line to be used for GPIO interrupts.
-
-	  Edge-triggered interrupts are supported on lines: 10, 22,
-	  28, 30.
-
-	  Level-triggered interrupts are supported on lines: 0-5, 8,
-	  9, 12, 13, 17-21, 23-27, 31.
 
 config GPIO_ESP32_0
 	bool "ESP32 GPIO (pins 0-31)"
@@ -29,10 +17,14 @@ config GPIO_ESP32_0
 	help
 	  Include support for GPIO pins 0-31 on the ESP32.
 
+if !SOC_ESP32C3
+
 config GPIO_ESP32_1
 	bool "ESP32 GPIO (pins 32-39)"
 	default y
 	help
 	  Include support for GPIO pins 32-39 on the ESP32.
+
+endif # SOC_ESP32C3
 
 endif # GPIO_ESP32

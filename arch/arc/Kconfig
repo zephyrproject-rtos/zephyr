@@ -136,6 +136,7 @@ config NUM_IRQS
 config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
 	depends on ARC_FIRQ
+	depends on NUM_IRQ_PRIO_LEVELS > 1
 	range 1 2
 	default 2
 	help
@@ -145,10 +146,15 @@ config RGF_NUM_BANKS
 	  If fast interrupts are supported but there is only 1
 	  register bank, the fast interrupt handler must save
 	  and restore general purpose registers.
+	  NOTE: it's required to have more than one interrupt priority level
+	  to use second register bank - otherwise all interrupts will use
+	  same register bank. Such configuration isn't supported in software
+	  and it is not beneficial from the performance point of view.
 
 config ARC_FIRQ
 	bool "FIRQ enable"
 	depends on ISA_ARCV2
+	depends on NUM_IRQ_PRIO_LEVELS > 1
 	default y
 	help
 	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
@@ -156,6 +162,10 @@ config ARC_FIRQ
 	  other regs will be saved according to the number of register bank;
 	  If FIRQ is disabled, the handle of interrupts with highest priority
 	  will be same with other interrupts.
+	  NOTE: we don't allow the configuration with FIRQ enabled and only one
+	  interrupt priority level (so all interrupts are FIRQ). Such
+	  configuration isn't supported in software and it is not beneficial
+	  from the performance point of view.
 
 config ARC_FIRQ_STACK
 	bool "Enable separate firq stack"
@@ -252,6 +262,7 @@ config CODE_DENSITY
 
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
+	default y if CPU_HS3X
 	default y if FPU
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
@@ -329,7 +340,8 @@ config DCACHE_LINE_SIZE
 
 config ARC_EXCEPTION_STACK_SIZE
 	int "ARC exception handling stack size"
-	default 768
+	default 768 if !64BIT
+	default 2048 if 64BIT
 	help
 	  Size in bytes of exception handling stack which is at the top of
 	  interrupt stack to get smaller memory footprint because exception
@@ -352,11 +364,26 @@ endmenu
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
 
-config TEST_EXTRA_STACKSIZE
+config ISR_STACK_SIZE
+	default 4096 if 64BIT
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if 64BIT
+
+config IDLE_STACK_SIZE
 	default 1024 if 64BIT
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if 64BIT
+
+config TEST_EXTRA_STACKSIZE
+	default 2048 if 64BIT
 
 config CMSIS_THREAD_MAX_STACK_SIZE
-	default 1024 if 64BIT
+	default 2048 if 64BIT
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
-	default 1024 if 64BIT
+	default 2048 if 64BIT
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 2048 if 64BIT

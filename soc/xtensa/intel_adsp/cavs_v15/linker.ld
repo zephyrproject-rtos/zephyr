@@ -42,9 +42,11 @@ PROVIDE(_MemErrorHandler = 0x00000000);
  * the output tooling ignores it, but it will cause the linker to emit
  * 512MB of unused data into the output file!)
  *
+ * (Note clumsy syntax because XCC doesn't understand the "~" operator)
+ *
  */
 #define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
-#define SEGSTART_UNCACHED (ALIGN(64) & ~0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & 0xdfffffff) /* == ~0x20000000 */
 
 MEMORY
 {
@@ -472,6 +474,11 @@ SECTIONS
   .cached SEGSTART_CACHED :
   {
     *(.cached .cached.*)
+  } >ram :ram_phdr
+
+  .tm_clone_table SEGSTART_UNCACHED :
+  {
+    *(.tm_clone_table)
   } >ram :ram_phdr
 
   . = ALIGN(4096);

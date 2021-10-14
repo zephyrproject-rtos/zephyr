@@ -9,7 +9,6 @@
 
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
-#include <usb/usb_common.h>
 #include <os_desc.h>
 
 #define MSOS_STRING_LENGTH	18
@@ -21,7 +20,7 @@ static struct string_desc {
 	uint8_t bPad;
 } __packed msosv1_string_descriptor = {
 	.bLength = MSOS_STRING_LENGTH,
-	.bDescriptorType = USB_STRING_DESC,
+	.bDescriptorType = USB_DESC_STRING,
 	/* Signature MSFT100 */
 	.bString = {
 		'M', 0x00, 'S', 0x00, 'F', 0x00, 'T', 0x00,
@@ -94,7 +93,7 @@ static void test_handle_os_desc(void)
 	uint8_t *data = NULL;
 	int ret;
 
-	setup.wValue = (USB_STRING_DESC & 0xFF) << 8;
+	setup.wValue = (USB_DESC_STRING & 0xFF) << 8;
 	setup.wValue |= USB_OSDESC_STRING_DESC_INDEX;
 
 	ret = usb_handle_os_desc(&setup, &len, &data);

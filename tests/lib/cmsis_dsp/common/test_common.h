@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,9 @@
 #include <zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+#include <arm_math_f16.h>
+#endif
 
 #include "math_helper.h"
 
@@ -95,6 +98,22 @@ static inline bool test_equal_f32(
 
 	return true;
 }
+
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline bool test_equal_f16(
+	size_t length, const float16_t *a, const float16_t *b)
+{
+	size_t index;
+
+	for (index = 0; index < length; index++) {
+		if (a[index] != b[index]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
 
 static inline bool test_equal_q63(
 	size_t length, const q63_t *a, const q63_t *b)
@@ -181,6 +200,23 @@ static inline bool test_near_equal_f32(
 
 	return true;
 }
+
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline bool test_near_equal_f16(
+	size_t length, const float16_t *a, const float16_t *b,
+	float16_t threshold)
+{
+	size_t index;
+
+	for (index = 0; index < length; index++) {
+		if (fabs(a[index] - b[index]) > threshold) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
 
 static inline bool test_near_equal_q63(
 	size_t length, const q63_t *a, const q63_t *b, q63_t threshold)
@@ -284,6 +320,31 @@ static inline bool test_rel_error_f32(
 	return true;
 }
 
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline bool test_rel_error_f16(
+	size_t length, const float16_t *a, const float16_t *b,
+	float16_t threshold)
+{
+	size_t index;
+	float32_t rel, delta, average;
+
+	for (index = 0; index < length; index++) {
+		delta = fabs(a[index] - b[index]);
+		average = (fabs(a[index]) + fabs(b[index])) / 2.0f;
+
+		if (average != 0) {
+			rel = delta / average;
+
+			if (rel > threshold) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
+
 static inline bool test_close_error_f64(
 	size_t length, const float64_t *ref, const float64_t *val,
 	float64_t abs_threshold, float64_t rel_threshold)
@@ -316,6 +377,24 @@ static inline bool test_close_error_f32(
 	return true;
 }
 
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline bool test_close_error_f16(
+	size_t length, const float16_t *ref, const float16_t *val,
+	float32_t abs_threshold, float32_t rel_threshold)
+{
+	size_t index;
+
+	for (index = 0; index < length; index++) {
+		if (fabs(val[index] - ref[index]) >
+			(abs_threshold + rel_threshold * fabs(ref[index]))) {
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
+
 static inline bool test_snr_error_f64(
 	size_t length, const float64_t *a, const float64_t *b,
 	float64_t threshold)
@@ -335,6 +414,18 @@ static inline bool test_snr_error_f32(
 	snr = arm_snr_f32(a, b, length);
 	return (snr >= threshold);
 }
+
+#ifdef CONFIG_CMSIS_DSP_FLOAT16
+static inline bool test_snr_error_f16(
+	size_t length, const float16_t *a, const float16_t *b,
+	float32_t threshold)
+{
+	float32_t snr;
+
+	snr = arm_snr_f16(a, b, length);
+	return (snr >= threshold);
+}
+#endif /* CONFIG_CMSIS_DSP_FLOAT16 */
 
 static inline bool test_snr_error_q63(
 	size_t length, const q63_t *a, const q63_t *b, float32_t threshold)

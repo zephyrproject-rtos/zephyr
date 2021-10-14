@@ -16,8 +16,8 @@ import binascii
 import logging
 import sys
 
-import parser
-from parser.log_database import LogDatabase
+import dictionary_parser
+from dictionary_parser.log_database import LogDatabase
 
 
 LOGGER_FORMAT = "%(message)s"
@@ -63,7 +63,7 @@ def main():
     if args.hex:
         if args.rawhex:
             # Simply log file with only hexadecimal data
-            logdata = parser.utils.convert_hex_file_to_bin(args.logfile)
+            logdata = dictionary_parser.utils.convert_hex_file_to_bin(args.logfile)
         else:
             hexdata = ''
 
@@ -109,7 +109,7 @@ def main():
 
         logfile.close()
 
-    log_parser = parser.get_parser(database)
+    log_parser = dictionary_parser.get_parser(database)
     if log_parser is not None:
         logger.debug("# Build ID: %s", database.get_build_id())
         logger.debug("# Target: %s, %d-bit", database.get_arch(), database.get_tgt_bits())

@@ -9,4 +9,13 @@
 	{
 	*(.gcc_except_table .gcc_except_table.*)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif
+
+#if defined (CONFIG_EXCEPTIONS)
+    SECTION_PROLOGUE(.tm_clone_table,,)
+	{
+	KEEP (*(SORT_NONE(EXCLUDE_FILE (*crtend.o) .tm_clone_table)))
+	KEEP (*(SORT_NONE(.tm_clone_table)))
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_EXCEPTIONS */
+
+#endif /* CONFIG_CPLUSPLUS */

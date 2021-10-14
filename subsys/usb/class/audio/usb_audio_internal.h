@@ -319,10 +319,10 @@ struct dev##_feature_unit_descriptor_##i {	\
 #define INIT_IAD(iface_subclass, if_cnt)			\
 {								\
 	.bLength = sizeof(struct usb_association_descriptor),	\
-	.bDescriptorType = USB_ASSOCIATION_DESC,		\
+	.bDescriptorType = USB_DESC_INTERFACE_ASSOC,		\
 	.bFirstInterface = 0,					\
 	.bInterfaceCount = if_cnt,				\
-	.bFunctionClass = AUDIO_CLASS,				\
+	.bFunctionClass = USB_BCC_AUDIO,			\
 	.bFunctionSubClass = iface_subclass,			\
 	.bFunctionProtocol = 0,					\
 	.iFunction = 0,						\
@@ -385,11 +385,11 @@ struct dev##_descriptor_##i {						\
 #define INIT_STD_IF(iface_subclass, iface_num, alt_setting, eps_num)	\
 {									\
 	.bLength = sizeof(struct usb_if_descriptor),			\
-	.bDescriptorType = USB_INTERFACE_DESC,				\
+	.bDescriptorType = USB_DESC_INTERFACE,				\
 	.bInterfaceNumber = iface_num,					\
 	.bAlternateSetting = alt_setting,				\
 	.bNumEndpoints = eps_num,					\
-	.bInterfaceClass = AUDIO_CLASS,					\
+	.bInterfaceClass = USB_BCC_AUDIO,				\
 	.bInterfaceSubClass = iface_subclass,				\
 	.bInterfaceProtocol = 0,					\
 	.iInterface = 0,						\
@@ -398,7 +398,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_CS_AC_IF(dev, i, ifaces)					\
 {									\
 	.bLength = sizeof(struct dev##_cs_ac_if_descriptor_##i),	\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,			\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 	.bDescriptorSubtype = USB_AUDIO_HEADER,				\
 	.bcdADC = sys_cpu_to_le16(0x0100),				\
 	.wTotalLength = sys_cpu_to_le16(				\
@@ -413,7 +413,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_CS_AC_IF_BIDIR(dev, i, ifaces)				\
 {									\
 	.bLength = sizeof(struct dev##_cs_ac_if_descriptor_##i),	\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,			\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 	.bDescriptorSubtype = USB_AUDIO_HEADER,				\
 	.bcdADC = sys_cpu_to_le16(0x0100),				\
 	.wTotalLength = sys_cpu_to_le16(				\
@@ -429,7 +429,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_IN_TERMINAL(dev, i, terminal_id, type)		\
 {								\
 	.bLength = INPUT_TERMINAL_DESC_SIZE,			\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,		\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,		\
 	.bDescriptorSubtype = USB_AUDIO_INPUT_TERMINAL,		\
 	.bTerminalID = terminal_id,				\
 	.wTerminalType = sys_cpu_to_le16(type),			\
@@ -443,7 +443,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_OUT_TERMINAL(terminal_id, source_id, type)	\
 {							\
 	.bLength = OUTPUT_TERMINAL_DESC_SIZE,		\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,	\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,	\
 	.bDescriptorSubtype = USB_AUDIO_OUTPUT_TERMINAL,\
 	.bTerminalID = terminal_id,			\
 	.wTerminalType = sys_cpu_to_le16(type),		\
@@ -457,7 +457,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_FEATURE_UNIT(dev, i, unit_id, source_id)			\
 {									\
 	.bLength = sizeof(struct dev##_feature_unit_descriptor_##i),	\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,			\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 	.bDescriptorSubtype = USB_AUDIO_FEATURE_UNIT,			\
 	.bUnitID = unit_id,						\
 	.bSourceID = source_id,						\
@@ -470,7 +470,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_AS_GENERAL(link)				\
 {							\
 	.bLength = USB_AC_CS_IF_DESC_SIZE,		\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,	\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,	\
 	.bDescriptorSubtype = USB_AUDIO_AS_GENERAL,	\
 	.bTerminalLink = link,				\
 	.bDelay = 0,					\
@@ -484,7 +484,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_AS_FORMAT_I(ch_cnt, res)				\
 {								\
 	.bLength = sizeof(struct format_type_i_descriptor),	\
-	.bDescriptorType = USB_CS_INTERFACE_DESC,		\
+	.bDescriptorType = USB_DESC_CS_INTERFACE,		\
 	.bDescriptorSubtype = USB_AUDIO_FORMAT_TYPE,		\
 	.bFormatType = 0x01,					\
 	.bNrChannels = MAX(1, ch_cnt),				\
@@ -497,7 +497,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_STD_AS_AD_EP(dev, i, addr)					\
 {									\
 	.bLength = sizeof(struct std_as_ad_endpoint_descriptor),	\
-	.bDescriptorType = USB_ENDPOINT_DESC,				\
+	.bDescriptorType = USB_DESC_ENDPOINT,				\
 	.bEndpointAddress = addr,					\
 	.bmAttributes = (USB_DC_EP_ISOCHRONOUS | SYNC_TYPE(dev, i)),	\
 	.wMaxPacketSize = sys_cpu_to_le16(EP_SIZE(dev, i)),		\
@@ -509,7 +509,7 @@ struct dev##_descriptor_##i {						\
 #define INIT_CS_AS_AD_EP					\
 {								\
 	.bLength = sizeof(struct cs_as_ad_ep_descriptor),	\
-	.bDescriptorType = USB_CS_ENDPOINT_DESC,		\
+	.bDescriptorType = USB_DESC_CS_ENDPOINT,		\
 	.bDescriptorSubtype = 0x01,				\
 	.bmAttributes = 0x00,					\
 	.bLockDelayUnits = 0x00,				\

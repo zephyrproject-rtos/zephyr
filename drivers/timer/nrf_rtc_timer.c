@@ -262,11 +262,23 @@ void rtc_nrf_isr(const void *arg)
 		if (nrf_rtc_int_enable_check(RTC, RTC_CHANNEL_INT_MASK(chan)) &&
 		    nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan))) {
 			uint32_t cc_val;
+			uint32_t now;
 			z_nrf_rtc_timer_compare_handler_t handler;
 
 			event_clear(chan);
 			event_disable(chan);
 			cc_val = get_comparator(chan);
+			now = counter();
+
+			/* Higher priority interrupt may already changed cc_val
+			 * which now points to the future. In that case return
+			 * current counter value. It is less precise than
+			 * returning exact CC value but this one is already lost.
+			 */
+			if (counter_sub(now, cc_val) > COUNTER_HALF_SPAN) {
+				cc_val = now;
+			}
+
 			handler = cc_data[chan].callback;
 			cc_data[chan].callback = NULL;
 			if (handler) {

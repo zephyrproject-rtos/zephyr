@@ -11,10 +11,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 10000000
 
-config UART_CONSOLE_ON_DEV_NAME
-	string
-	default "UART_0"
-
 config RGF_NUM_BANKS
 	default 1
 

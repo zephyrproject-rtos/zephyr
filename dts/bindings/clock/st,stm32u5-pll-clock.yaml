@@ -1,0 +1,67 @@
+# Copyright (c) 2021, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32U5 devices
+
+  It can be used to describe 3 different PLLs: PLL1, PLL2 and PLL3.
+  Only main PLL (PLL1) is supported for now.
+
+  These PLLs could take one of clk_hse, clk_hsi or clk_msis as input clock, with
+  an input frequency from 4 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  Each PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP
+    f(PLL_Q) = f(VCO clock) / PLLQ
+    f(PLL_R) = f(VCO clock) / PLLR
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  Note: To reduce the power consumption, it is recommended to configure the VCOx
+        clock output to the lowest frequency.
+
+  The PLL output frequency must not exceed 160 MHz.
+
+compatible: "st,stm32u5-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    div-m:
+      type: int
+      required: true
+      description: |
+          Prescaler for PLLx
+          input clock
+          Valid range: 1 - 16
+
+    mul-n:
+      type: int
+      required: true
+      description: |
+          PLLx multiplication factor for VCO
+          Valid range: 4 - 512
+
+    div-q:
+      type: int
+      required: false
+      description: |
+          PLLx DIVQ division factor
+          Valid range: 2 - 128
+
+    div-r:
+      type: int
+      required: true
+      description: |
+          PLLx DIVR division factor
+          Valid range: 2 - 128

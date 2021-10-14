@@ -1,0 +1,14 @@
+# ST STM32H723X MCU configuration options
+
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H735XX
+
+config SOC
+	default "stm32h735xx"
+
+config NUM_IRQS
+	default 163
+
+endif # SOC_STM32H735XX

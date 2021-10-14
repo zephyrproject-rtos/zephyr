@@ -23,6 +23,10 @@
 #include <bluetooth/hci.h>
 #include <sys/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Possible types of buffers passed around the Bluetooth stack */
 enum bt_buf_type {
 	/** HCI command */
@@ -63,6 +67,11 @@ struct bt_buf_data {
 
 /** Helper to calculate needed buffer size for HCI Command packets. */
 #define BT_BUF_CMD_SIZE(size) BT_BUF_SIZE(BT_HCI_CMD_HDR_SIZE + (size))
+
+/** Helper to calculate needed buffer size for HCI ISO packets. */
+#define BT_BUF_ISO_SIZE(size) BT_BUF_SIZE(BT_HCI_ISO_HDR_SIZE + \
+					  BT_HCI_ISO_DATA_HDR_SIZE + \
+					  (size))
 
 /** Data size needed for HCI ACL RX buffers */
 #define BT_BUF_ACL_RX_SIZE BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE)
@@ -154,5 +163,9 @@ static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_BUF_H_ */

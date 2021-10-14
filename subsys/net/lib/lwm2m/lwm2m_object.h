@@ -109,29 +109,29 @@
 #define LWM2M_RES_TYPE_NONE	0
 #define LWM2M_RES_TYPE_OPAQUE	1
 #define LWM2M_RES_TYPE_STRING	2
-#define LWM2M_RES_TYPE_UINT64	3
-#define LWM2M_RES_TYPE_U64	3
-#define LWM2M_RES_TYPE_UINT	4
-#define LWM2M_RES_TYPE_U32	4
-#define LWM2M_RES_TYPE_U16	5
-#define LWM2M_RES_TYPE_U8	6
-#define LWM2M_RES_TYPE_INT64	7
-#define LWM2M_RES_TYPE_S64	7
-#define LWM2M_RES_TYPE_INT	8
-#define LWM2M_RES_TYPE_S32	8
-#define LWM2M_RES_TYPE_S16	9
-#define LWM2M_RES_TYPE_S8	10
-#define LWM2M_RES_TYPE_BOOL	11
-#define LWM2M_RES_TYPE_TIME	12
-#define LWM2M_RES_TYPE_FLOAT32	13
-#define LWM2M_RES_TYPE_FLOAT64	14
-#define LWM2M_RES_TYPE_OBJLNK	15
+#define LWM2M_RES_TYPE_UINT	3
+#define LWM2M_RES_TYPE_U32	3
+#define LWM2M_RES_TYPE_U16	4
+#define LWM2M_RES_TYPE_U8	5
+#define LWM2M_RES_TYPE_INT64	6
+#define LWM2M_RES_TYPE_S64	6
+#define LWM2M_RES_TYPE_INT	7
+#define LWM2M_RES_TYPE_S32	7
+#define LWM2M_RES_TYPE_S16	8
+#define LWM2M_RES_TYPE_S8	9
+#define LWM2M_RES_TYPE_BOOL	10
+#define LWM2M_RES_TYPE_TIME	11
+#define LWM2M_RES_TYPE_FLOAT	12
+#define LWM2M_RES_TYPE_OBJLNK	13
 
 /* remember that we have already output a value - can be between two block's */
 #define WRITER_OUTPUT_VALUE      1
 #define WRITER_RESOURCE_INSTANCE 2
 
-#define MAX_PACKET_SIZE		(CONFIG_LWM2M_COAP_BLOCK_SIZE + \
+BUILD_ASSERT(CONFIG_LWM2M_COAP_BLOCK_SIZE <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE,
+	     "CoAP block size can't exceed maximum message size");
+
+#define MAX_PACKET_SIZE		(CONFIG_LWM2M_COAP_MAX_MSG_SIZE + \
 				 CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE)
 
 /* buffer util macros */
@@ -347,7 +347,7 @@ struct lwm2m_attr {
 
 	/* values */
 	union {
-		float32_value_t float_val;
+		double float_val;
 		int32_t int_val;
 	};
 
@@ -444,6 +444,8 @@ typedef void (*lwm2m_message_timeout_cb_t)(struct lwm2m_message *msg);
 
 /* Internal LwM2M message structure to track in-flight messages. */
 struct lwm2m_message {
+	sys_snode_t node;
+
 	/** LwM2M context related to this message */
 	struct lwm2m_ctx *ctx;
 
@@ -475,9 +477,6 @@ struct lwm2m_message {
 
 	/** Incoming message action */
 	uint8_t operation;
-
-	/** Counter for message re-send / abort handling */
-	uint8_t send_attempts;
 
 	/* Information whether the message was acknowledged. */
 	bool acknowledged : 1;
@@ -516,12 +515,9 @@ struct lwm2m_writer {
 	size_t (*put_string)(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     char *buf, size_t buflen);
-	size_t (*put_float32fix)(struct lwm2m_output_context *out,
-				 struct lwm2m_obj_path *path,
-				 float32_value_t *value);
-	size_t (*put_float64fix)(struct lwm2m_output_context *out,
-				 struct lwm2m_obj_path *path,
-				 float64_value_t *value);
+	size_t (*put_float)(struct lwm2m_output_context *out,
+			    struct lwm2m_obj_path *path,
+			    double *value);
 	size_t (*put_bool)(struct lwm2m_output_context *out,
 			   struct lwm2m_obj_path *path,
 			   bool value);
@@ -542,10 +538,8 @@ struct lwm2m_reader {
 			  int64_t *value);
 	size_t (*get_string)(struct lwm2m_input_context *in,
 			     uint8_t *buf, size_t buflen);
-	size_t (*get_float32fix)(struct lwm2m_input_context *in,
-				 float32_value_t *value);
-	size_t (*get_float64fix)(struct lwm2m_input_context *in,
-				 float64_value_t *value);
+	size_t (*get_float)(struct lwm2m_input_context *in,
+			    double *value);
 	size_t (*get_bool)(struct lwm2m_input_context *in,
 			   bool *value);
 	size_t (*get_opaque)(struct lwm2m_input_context *in,
@@ -709,18 +703,11 @@ static inline size_t engine_put_string(struct lwm2m_output_context *out,
 	return out->writer->put_string(out, path, buf, buflen);
 }
 
-static inline size_t engine_put_float32fix(struct lwm2m_output_context *out,
-					   struct lwm2m_obj_path *path,
-					   float32_value_t *value)
+static inline size_t engine_put_float(struct lwm2m_output_context *out,
+				      struct lwm2m_obj_path *path,
+				      double *value)
 {
-	return out->writer->put_float32fix(out, path, value);
-}
-
-static inline size_t engine_put_float64fix(struct lwm2m_output_context *out,
-					   struct lwm2m_obj_path *path,
-					   float64_value_t *value)
-{
-	return out->writer->put_float64fix(out, path, value);
+	return out->writer->put_float(out, path, value);
 }
 
 static inline size_t engine_put_bool(struct lwm2m_output_context *out,
@@ -776,16 +763,10 @@ static inline size_t engine_get_string(struct lwm2m_input_context *in,
 	return in->reader->get_string(in, buf, buflen);
 }
 
-static inline size_t engine_get_float32fix(struct lwm2m_input_context *in,
-					   float32_value_t *value)
+static inline size_t engine_get_float(struct lwm2m_input_context *in,
+				      double *value)
 {
-	return in->reader->get_float32fix(in, value);
-}
-
-static inline size_t engine_get_float64fix(struct lwm2m_input_context *in,
-					   float64_value_t *value)
-{
-	return in->reader->get_float64fix(in, value);
+	return in->reader->get_float(in, value);
 }
 
 static inline size_t engine_get_bool(struct lwm2m_input_context *in,

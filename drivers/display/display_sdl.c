@@ -417,7 +417,7 @@ static const struct display_driver_api sdl_display_api = {
 
 DEVICE_DEFINE(sdl_display, CONFIG_SDL_DISPLAY_DEV_NAME, &sdl_display_init,
 		NULL, &sdl_display_data, NULL, APPLICATION,
-		CONFIG_APPLICATION_INIT_PRIORITY, &sdl_display_api);
+		CONFIG_DISPLAY_INIT_PRIORITY, &sdl_display_api);
 
 
 NATIVE_TASK(sdl_display_cleanup, ON_EXIT, 1);

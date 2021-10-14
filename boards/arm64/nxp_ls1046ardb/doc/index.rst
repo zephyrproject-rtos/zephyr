@@ -92,7 +92,7 @@ kernel tests on LS1046A RDB board. For example, with the :ref:`synchronization_s
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: nxp_ls1046ardb
-   :goals: run
+   :goals: build
 
 This will build an image with the synchronization sample app.
 
@@ -124,7 +124,7 @@ It will display the following console output:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: nxp_ls1046ardb_smp_4cores
-   :goals: run
+   :goals: build
 
 This will build an image with the synchronization sample app.
 
@@ -152,7 +152,7 @@ It will display the following console output:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: nxp_ls1046ardb_smp_2cores
-   :goals: run
+   :goals: build
 
 This will build an image with the synchronization sample app.
 

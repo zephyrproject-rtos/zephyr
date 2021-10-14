@@ -8,7 +8,7 @@ Introduction
 
 The zephyr Git repository has three types of branches:
 
-master
+main
   Which contains the latest state of development
 
 topic-\*

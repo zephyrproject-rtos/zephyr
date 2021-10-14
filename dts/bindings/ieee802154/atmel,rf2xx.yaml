@@ -19,8 +19,9 @@ properties:
     slptr-gpios:
       type: phandle-array
       required: true
-      description: Multi-functional pin that controls sleep, deep sleep,
-        transmit start and receive states
+      description: |
+        Multi-functional pin that controls sleep, deep sleep, transmit
+        start and receive states
 
     dig2-gpios:
       type: phandle-array
@@ -34,5 +35,6 @@ properties:
 
     local-mac-address:
       type: uint8-array
-      description:
-        Specifies the MAC address that was assigned to the network device
+      description: |
+        Specifies the MAC address that was assigned to the network
+        device

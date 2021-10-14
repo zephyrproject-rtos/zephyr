@@ -23,3 +23,14 @@
 
 	pinctrl-0 = <&p9_0_uart2_rx &p9_1_uart2_tx>;
 };
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+
+	interrupt-parent = <&intmux_ch22>;
+
+	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
+};
+
+arduino_serial: &uart5 {};

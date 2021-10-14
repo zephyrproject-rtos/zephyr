@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "connection.h"
 #include "net_stats.h"
 #include "net_private.h"
-#include "tcp2_priv.h"
+#include "tcp_internal.h"
 
 #define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
@@ -619,9 +619,9 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 	for ( ; options && len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
 
-		if (opt == TCPOPT_END) {
+		if (opt == NET_TCP_END_OPT) {
 			break;
-		} else if (opt == TCPOPT_NOP) {
+		} else if (opt == NET_TCP_NOP_OPT) {
 			opt_len = 1;
 			continue;
 		} else {
@@ -641,7 +641,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 		}
 
 		switch (opt) {
-		case TCPOPT_MAXSEG:
+		case NET_TCP_MSS_OPT:
 			if (opt_len != 4) {
 				result = false;
 				goto end;
@@ -652,7 +652,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			recv_options->mss_found = true;
 			NET_DBG("MSS=%hu", recv_options->mss);
 			break;
-		case TCPOPT_WINDOW:
+		case NET_TCP_WINDOW_SCALE_OPT:
 			if (opt_len != 3) {
 				result = false;
 				goto end;
@@ -771,6 +771,11 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 	UNALIGNED_PUT(conn->src.sin.sin_port, &th->th_sport);
 	UNALIGNED_PUT(conn->dst.sin.sin_port, &th->th_dport);
 	th->th_off = 5;
+
+	if (conn->send_options.mss_found) {
+		th->th_off++;
+	}
+
 	UNALIGNED_PUT(flags, &th->th_flags);
 	UNALIGNED_PUT(htons(conn->recv_win), &th->th_win);
 	UNALIGNED_PUT(htonl(seq), &th->th_seq);
@@ -799,13 +804,40 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
+static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
+{
+	struct mss_option {
+		uint32_t option;
+	};
+	NET_PKT_DATA_ACCESS_DEFINE(mss_option, struct mss_option);
+	struct mss_option *mss;
+	uint32_t recv_mss;
+
+	mss = net_pkt_get_data(pkt, &mss_option);
+	if (!mss) {
+		return -ENOBUFS;
+	}
+
+	recv_mss = net_tcp_get_recv_mss(conn);
+	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
+
+	UNALIGNED_PUT(htonl(recv_mss), (uint32_t *)mss);
+
+	return net_pkt_set_data(pkt, &mss_option);
+}
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
+	size_t alloc_len = sizeof(struct tcphdr);
 	struct net_pkt *pkt;
 	int ret = 0;
 
-	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
+	if (conn->send_options.mss_found) {
+		alloc_len += sizeof(uint32_t);
+	}
+
+	pkt = tcp_pkt_alloc(conn, alloc_len);
 	if (!pkt) {
 		ret = -ENOBUFS;
 		goto out;
@@ -827,6 +859,14 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
 		goto out;
+	}
+
+	if (conn->send_options.mss_found) {
+		ret = net_tcp_set_mss_opt(conn, pkt);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			goto out;
+		}
 	}
 
 	ret = tcp_finalize_pkt(pkt);
@@ -925,6 +965,11 @@ static int tcp_send_data(struct tcp *conn)
 	len = MIN3(conn->send_data_total - conn->unacked_len,
 		   conn->send_win - conn->unacked_len,
 		   conn_mss(conn));
+	if (len == 0) {
+		NET_DBG("conn: %p no data to send", conn);
+		ret = -ENODATA;
+		goto out;
+	}
 
 	pkt = tcp_pkt_alloc(conn, len);
 	if (!pkt) {
@@ -1070,6 +1115,9 @@ static void tcp_resend_data(struct k_work *work)
 
 			goto out;
 		}
+	} else if (ret == -ENODATA) {
+		conn->data_mode = TCP_DATA_MODE_SEND;
+		goto out;
 	}
 
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
@@ -1326,7 +1374,7 @@ static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
 #if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
@@ -1361,7 +1409,7 @@ static uint32_t tcpv4_init_isn(struct in_addr *saddr,
 	memcpy(buf.key, unique_key, sizeof(unique_key));
 
 #if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
-	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+	mbedtls_md5((const unsigned char *)&buf, sizeof(buf), hash);
 #endif
 
 	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
@@ -1702,8 +1750,11 @@ next_state:
 	switch (conn->state) {
 	case TCP_LISTEN:
 		if (FL(&fl, ==, SYN)) {
+			/* Make sure our MSS is also sent in the ACK */
+			conn->send_options.mss_found = true;
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
+			conn->send_options.mss_found = false;
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 
@@ -1713,7 +1764,9 @@ next_state:
 						    &conn->establish_timer,
 						    ACK_TIMEOUT);
 		} else {
+			conn->send_options.mss_found = true;
 			tcp_out(conn, SYN);
+			conn->send_options.mss_found = false;
 			conn_seq(conn, + 1);
 			next = TCP_SYN_SENT;
 		}
@@ -1827,7 +1880,11 @@ next_state:
 			}
 
 			conn->send_data_total -= len_acked;
-			conn->unacked_len -= len_acked;
+			if (conn->unacked_len < len_acked) {
+				conn->unacked_len = 0;
+			} else {
+				conn->unacked_len -= len_acked;
+			}
 			conn_seq(conn, + len_acked);
 			net_stats_update_tcp_seg_recv(conn->iface);
 
@@ -1913,7 +1970,8 @@ next_state:
 		break;
 	case TCP_FIN_WAIT_2:
 		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
-			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack))) {
+			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack) ||
+			   FL(&fl, ==, FIN | PSH | ACK, th_seq(th) == conn->ack))) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
 			k_work_cancel_delayable(&conn->fin_timer);
 

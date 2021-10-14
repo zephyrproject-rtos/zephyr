@@ -18,6 +18,16 @@ config BACKING_STORE_RAM
 	  This implements a backing store using physical RAM pages that the
 	  Zephyr kernel is otherwise unaware of. It is intended for
 	  demonstration and testing of the demand paging feature.
+
+config BACKING_STORE_QEMU_X86_TINY_FLASH
+	bool "Flash-based backing store on qemu_x86_tiny"
+	depends on BOARD_QEMU_X86_TINY
+	help
+	  This uses the "flash" memory area (in DTS) as the backing store
+	  for demand paging. The qemu_x86_tiny.ld linker script puts
+	  the symbols outside of boot and pinned sections into the flash
+	  area, allowing testing of the demand paging mechanism on
+	  code and data.
 endchoice
 
 if BACKING_STORE_RAM

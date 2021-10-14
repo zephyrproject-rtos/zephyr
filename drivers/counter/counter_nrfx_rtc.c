@@ -655,14 +655,30 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 #define RTC(idx)		DT_NODELABEL(rtc##idx)
 #define RTC_PROP(idx, prop)	DT_PROP(RTC(idx), prop)
 
+#define RTC_IRQ_CONNECT(idx)						       \
+	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI,			       \
+		(IRQ_DIRECT_CONNECT(DT_IRQN(RTC(idx)),			       \
+				    DT_IRQ(RTC(idx), priority),		       \
+				    counter_rtc##idx##_isr_wrapper,	       \
+				    IRQ_ZERO_LATENCY)),			       \
+		(IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),    \
+			    irq_handler, DEVICE_DT_GET(RTC(idx)), 0))	       \
+	)
+
 #define COUNTER_NRF_RTC_DEVICE(idx)					       \
 	BUILD_ASSERT((RTC_PROP(idx, prescaler) - 1) <=			       \
 		     RTC_PRESCALER_PRESCALER_Msk,			       \
 		     "RTC prescaler out of range");			       \
+	COND_CODE_1(CONFIG_COUNTER_RTC##idx##_ZLI, (			       \
+		ISR_DIRECT_DECLARE(counter_rtc##idx##_isr_wrapper)	       \
+		{							       \
+			irq_handler(DEVICE_DT_GET(RTC(idx)));		       \
+			/* No rescheduling, it shall not access zephyr primitives. */ \
+			return 0;					       \
+		}), ())							       \
 	static int counter_##idx##_init(const struct device *dev)	       \
 	{								       \
-		IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),     \
-			    irq_handler, DEVICE_DT_GET(RTC(idx)), 0);	       \
+		RTC_IRQ_CONNECT(idx);					       \
 		return init_rtc(dev, RTC_PROP(idx, prescaler) - 1);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \

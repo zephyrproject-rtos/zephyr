@@ -85,5 +85,34 @@
 		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
 		/delete-node/ gpio@401c0000;
 		/delete-node/ gpio@401c4000;
+
+		/* Fixup LPSPI1 and LPSPI2, they have different base addr on RT1010 */
+		/delete-node/ spi@40394000;
+		/delete-node/ spi@40398000;
+		lpspi1: spi@40194000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40194000 0x4000>;
+			interrupts = <32 3>;
+			label = "SPI_1";
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi2: spi@40198000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x40198000 0x4000>;
+			interrupts = <33 3>;
+			label = "SPI_2";
+			status = "disabled";
+			clocks = <&ccm IMX_CCM_LPSPI_CLK 0x6c 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
+
+/* RT1015 only has two LPSPI blocks */
+/delete-node/ &lpspi3;
+/delete-node/ &lpspi4;

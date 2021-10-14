@@ -26,6 +26,24 @@ properties:
     reg:
       required: true
 
+    remap-pa11:
+      type: boolean
+      required: false
+      description: Remaps the PA11 pin to operate as PA9 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa12:
+      type: boolean
+      required: false
+      description: Remaps the PA12 pin to operate as PA10 pin.
+        Use of this property is restricted to STM32G0 SoCs.
+
+    remap-pa11-pa12:
+      type: boolean
+      required: false
+      description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
+        Use of this property is restricted to STM32F070x SoCs.
+
 child-binding:
     description: |
         This binding gives a base representation of the STM32 pins configration
@@ -70,6 +88,7 @@ child-binding:
           - "medium-speed"
           - "high-speed"
           - "very-high-speed"
-          description: Pin speed. Default to low-speed. For few pins (PA11 and
+          description: |
+            Pin speed. Default to low-speed. For few pins (PA11 and
             PB3 depending on SoCs)hardware reset value could differ
             (very-high-speed). Carefully check reference manual for these pins.

@@ -10,5 +10,14 @@ supported:
   - i2c
   - lsm6dso
   - lptim
+  - pwm
+  - watchdog
+  - dac
+  - adc
+  - spi
+  - dma
+  - usart
+  - arduino_spi
+  - usb
 ram: 192
 flash: 512

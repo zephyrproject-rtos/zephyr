@@ -1,0 +1,8 @@
+# Copyright 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MCUX_SCTIMER
+	bool "MCUX SCTimer PWM driver"
+	depends on HAS_MCUX_SCTIMER
+	help
+	  Enable sctimer based pwm driver.

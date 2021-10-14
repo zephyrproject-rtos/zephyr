@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,24 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_FS_FS_H_
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
-#ifdef CONFIG_ARCH_POSIX
-#ifndef __ssize_t_defined
-typedef __SIZE_TYPE__ ssize_t;
-#define __ssize_t_defined
-#endif
-
-#ifndef __off_t_defined
-#ifndef __USE_FILE_OFFSET64
-typedef long int off_t;
-#else
-typedef long long int off_t;
-#endif
-#define __off_t_defined
-#endif
-
-#else
 #include <sys/types.h>
-#endif
 
 #include <sys/dlist.h>
 #include <fs/fs_interface.h>

@@ -30,6 +30,8 @@ source "drivers/clock_control/Kconfig.lpc11u6x"
 
 source "drivers/clock_control/Kconfig.mcux_ccm"
 
+source "drivers/clock_control/Kconfig.mcux_ccm_rev2"
+
 source "drivers/clock_control/Kconfig.mcux_mcg"
 
 source "drivers/clock_control/Kconfig.mcux_pcc"
@@ -46,8 +48,12 @@ source "drivers/clock_control/Kconfig.rv32m1"
 
 source "drivers/clock_control/Kconfig.esp32"
 
+source "drivers/clock_control/Kconfig.esp32s2"
+
 source "drivers/clock_control/Kconfig.litex"
 
 source "drivers/clock_control/Kconfig.rcar"
+
+source "drivers/clock_control/Kconfig.xec"
 
 endif # CLOCK_CONTROL

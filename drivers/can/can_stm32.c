@@ -6,7 +6,7 @@
 
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <sys/util.h>
 #include <string.h>
 #include <kernel.h>
@@ -371,14 +371,15 @@ int can_stm32_set_timing(const struct device *dev,
 		goto done;
 	}
 
-	can->BTR &= ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk |
-		      CAN_BTR_TS2_Msk | CAN_BTR_SJW_Msk);
-
-	can->BTR |=
+	can->BTR = (can->BTR & ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
 	     (((timing->phase_seg1 - 1) << CAN_BTR_TS1_Pos) & CAN_BTR_TS1_Msk) |
 	     (((timing->phase_seg2 - 1) << CAN_BTR_TS2_Pos) & CAN_BTR_TS2_Msk) |
-	     (((timing->sjw        - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk) |
 	     (((timing->prescaler  - 1) << CAN_BTR_BRP_Pos) & CAN_BTR_BRP_Msk);
+
+	if (timing->sjw != CAN_SJW_NO_CHANGE) {
+		can->BTR = (can->BTR & ~CAN_BTR_SJW_Msk) |
+			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
+	}
 
 	ret = can_leave_init_mode(can);
 	if (ret) {
@@ -472,8 +473,8 @@ static int can_stm32_init(const struct device *dev)
 
 	/* Set TX priority to chronological order */
 	can->MCR |= CAN_MCR_TXFP;
-	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_TTCM & ~CAN_MCR_ABOM &
-		    ~CAN_MCR_AWUM & ~CAN_MCR_NART & ~CAN_MCR_RFLM;
+	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
+		    ~CAN_MCR_NART & ~CAN_MCR_RFLM;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	can->MCR |= CAN_MCR_TTCM;
 #endif
@@ -510,9 +511,6 @@ static int can_stm32_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-
-	/* Leave sleep mode after reset*/
-	can->MCR &= ~CAN_MCR_SLEEP;
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
@@ -665,7 +663,7 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 	mb->callback_arg = callback_arg;
 	k_sem_reset(&mb->tx_int_sem);
 
-	/* mailbix identifier register setup */
+	/* mailbox identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
 	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {

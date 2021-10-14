@@ -26,6 +26,10 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32L4X_PAGE_SHIFT	12
 #endif
 
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
+#define CONTROL_DCACHE
+#endif
+
 /* offset and len must be aligned on 8 for write
  * , positive and not beyond end of flash */
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
@@ -34,6 +38,30 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 {
 	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
 		flash_stm32_range_exists(dev, offset, len);
+}
+
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
 }
 
 /*
@@ -50,9 +78,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
+#ifdef CONTROL_DCACHE
 	bool dcache_enabled = false;
-#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
+#endif /* CONTROL_DCACHE */
 	uint32_t tmp;
 	int rc;
 
@@ -73,7 +101,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
-#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
+#ifdef CONTROL_DCACHE
 	/*
 	 * Disable the data cache to avoid the silicon errata 2.2.3:
 	 * "Data cache might be corrupted during Flash memory read-while-write operation"
@@ -82,7 +110,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		dcache_enabled = true;
 		regs->ACR &= (~FLASH_ACR_DCEN);
 	}
-#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
+#endif /* CONTROL_DCACHE */
 
 	/* Set the PG bit */
 	regs->CR |= FLASH_CR_PG;
@@ -100,14 +128,14 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
 
-#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
+#ifdef CONTROL_DCACHE
 	/* Reset/enable the data cache if previously enabled */
 	if (dcache_enabled) {
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= (~FLASH_ACR_DCRST);
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
-#endif /* FLASH_OPTR_DUALBANK || FLASH_OPTR_DBANK */
+#endif /* CONTROL_DCACHE */
 
 	return rc;
 }
@@ -158,6 +186,8 @@ static int erase_page(const struct device *dev, unsigned int page)
 	if (rc < 0) {
 		return rc;
 	}
+
+	flush_cache(regs);
 
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;

@@ -6,7 +6,7 @@ Bluetooth: Mesh Demo
 Overview
 ********
 
-This sample is a Bluetooth Mesh application intended for demonstration
+This sample is a Bluetooth mesh application intended for demonstration
 purposes only. The application provisions and configures itself (i.e. no
 external provisioner needed) with hard-coded network and application key
 values. The local unicast address can be set using a NODE_ADDR build
@@ -14,7 +14,7 @@ variable (e.g. NODE_ADDR=0x0001 for unicast address 0x0001), or by
 manually editing the value in the ``board.h`` file.
 
 Because of the hard-coded values, the application is not suitable for
-production use, but is quite convenient for quick demonstrations of Mesh
+production use, but is quite convenient for quick demonstrations of mesh
 functionality.
 
 The application has some features especially designed for the BBC

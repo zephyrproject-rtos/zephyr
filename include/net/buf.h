@@ -984,6 +984,9 @@ struct net_buf_pool {
 	/** LIFO to place the buffer into when free */
 	struct k_lifo free;
 
+	/* to prevent concurrent access/modifications */
+	struct k_spinlock lock;
+
 	/** Number of buffers in pool */
 	const uint16_t buf_count;
 
@@ -1016,6 +1019,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
 	{                                                                    \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
+		.lock = { },                                                 \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = ATOMIC_INIT(_count),                          \
@@ -1028,6 +1032,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \
 	{                                                                    \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                      \
+		.lock = { },                                                 \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.destroy = _destroy,                                         \
@@ -1376,8 +1381,7 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
  * @brief Get a buffer from a list.
  *
  * If the buffer had any fragments, these will automatically be recovered from
- * the list as well and be placed to the buffer's fragment list. This function
- * is NOT thread-safe when recovering fragments.
+ * the list as well and be placed to the buffer's fragment list.
  *
  * @param list Which list to take the buffer from.
  *
@@ -1904,7 +1908,7 @@ static inline void net_buf_push_le16(struct net_buf *buf, uint16_t val)
 /**
  * @brief Push 16-bit value to the beginning of the buffer
  *
- * Adds 16-bit value in little endian format to the beginning of the
+ * Adds 16-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1932,7 +1936,7 @@ static inline void net_buf_push_le24(struct net_buf *buf, uint32_t val)
 /**
  * @brief Push 24-bit value to the beginning of the buffer
  *
- * Adds 24-bit value in little endian format to the beginning of the
+ * Adds 24-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1960,7 +1964,7 @@ static inline void net_buf_push_le32(struct net_buf *buf, uint32_t val)
 /**
  * @brief Push 32-bit value to the beginning of the buffer
  *
- * Adds 32-bit value in little endian format to the beginning of the
+ * Adds 32-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -1988,7 +1992,7 @@ static inline void net_buf_push_le48(struct net_buf *buf, uint64_t val)
 /**
  * @brief Push 48-bit value to the beginning of the buffer
  *
- * Adds 48-bit value in little endian format to the beginning of the
+ * Adds 48-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.
@@ -2016,7 +2020,7 @@ static inline void net_buf_push_le64(struct net_buf *buf, uint64_t val)
 /**
  * @brief Push 64-bit value to the beginning of the buffer
  *
- * Adds 64-bit value in little endian format to the beginning of the
+ * Adds 64-bit value in big endian format to the beginning of the
  * buffer.
  *
  * @param buf Buffer to update.

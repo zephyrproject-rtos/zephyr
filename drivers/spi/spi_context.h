@@ -112,13 +112,25 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
+	uint32_t timeout_ms;
+
+	timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
+		     ctx->config->frequency;
+	timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
+
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
-		k_sem_take(&ctx->sync, K_FOREVER);
+		if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+			LOG_ERR("Timeout waiting for transfer complete");
+			return -ETIMEDOUT;
+		}
 		status = ctx->sync_status;
 	}
 #else
-	k_sem_take(&ctx->sync, K_FOREVER);
+	if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+		LOG_ERR("Timeout waiting for transfer complete");
+		return -ETIMEDOUT;
+	}
 	status = ctx->sync_status;
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -171,29 +183,34 @@ gpio_dt_flags_t spi_context_cs_active_level(struct spi_context *ctx)
 	return GPIO_ACTIVE_LOW;
 }
 
-static inline void spi_context_cs_configure(struct spi_context *ctx)
+static inline int spi_context_cs_configure(struct spi_context *ctx)
 {
-	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
+	int ret;
+
+	if (ctx->config->cs && ctx->config->cs->gpio.port) {
 		/* Validate CS active levels are equivalent */
 		__ASSERT(spi_context_cs_active_level(ctx) ==
-			 (ctx->config->cs->gpio_dt_flags & GPIO_ACTIVE_LOW),
+			 (ctx->config->cs->gpio.dt_flags & GPIO_ACTIVE_LOW),
 			 "Devicetree and spi_context CS levels are not equal");
-		gpio_pin_configure(ctx->config->cs->gpio_dev,
-				   ctx->config->cs->gpio_pin,
-				   ctx->config->cs->gpio_dt_flags |
-				   GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&ctx->config->cs->gpio,
+				      GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure 'cs' gpio: %d", ret);
+			return ret;
+		}
 	} else {
 		LOG_INF("CS control inhibited (no GPIO device)");
 	}
+
+	return 0;
 }
 
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
 {
-	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio_dev) {
+	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio.port) {
 		if (on) {
-			gpio_pin_set(ctx->config->cs->gpio_dev,
-				     ctx->config->cs->gpio_pin, 1);
+			gpio_pin_set_dt(&ctx->config->cs->gpio, 1);
 			k_busy_wait(ctx->config->cs->delay);
 		} else {
 			if (!force_off &&
@@ -202,8 +219,7 @@ static inline void _spi_context_cs_control(struct spi_context *ctx,
 			}
 
 			k_busy_wait(ctx->config->cs->delay);
-			gpio_pin_set(ctx->config->cs->gpio_dev,
-				     ctx->config->cs->gpio_pin, 0);
+			gpio_pin_set_dt(&ctx->config->cs->gpio, 0);
 		}
 	}
 }

@@ -133,8 +133,8 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 #endif /* CONFIG_NET_L2_CANBUS */
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
-	const Z_STRUCT_SECTION_ITERABLE(net_l2,				\
-					NET_L2_GET_NAME(_name)) = {	\
+	const STRUCT_SECTION_ITERABLE(net_l2,				\
+				      NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\

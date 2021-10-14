@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/types.h>
+
 #ifdef CONFIG_NEWLIB_LIBC
 #include <time.h>
 #endif
@@ -57,6 +59,38 @@ struct mdm_hl7800_apn {
 #define MDM_HL7800_LTE_BAND_STR_SIZE 21
 #define MDM_HL7800_LTE_BAND_STRLEN (MDM_HL7800_LTE_BAND_STR_SIZE - 1)
 
+#define MDM_HL7800_OPERATOR_INDEX_SIZE 3
+#define MDM_HL7800_OPERATOR_INDEX_STRLEN (MDM_HL7800_OPERATOR_INDEX_SIZE - 1)
+
+#define MDM_HL7800_IMSI_MIN_STR_SIZE 15
+#define MDM_HL7800_IMSI_MAX_STR_SIZE 16
+#define MDM_HL7800_IMSI_MAX_STRLEN (MDM_HL7800_IMSI_MAX_STR_SIZE - 1)
+
+#define MDM_HL7800_MODEM_FUNCTIONALITY_SIZE 2
+#define MDM_HL7800_MODEM_FUNCTIONALITY_STRLEN                                  \
+	(MDM_HL7800_MODEM_FUNCTIONALITY_SIZE - 1)
+
+#define MDM_HL7800_MAX_GPS_STR_SIZE 33
+
+#define MDM_HL7800_MAX_POLTE_USER_ID_SIZE 16
+#define MDM_HL7800_MAX_POLTE_PASSWORD_SIZE 16
+#define MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE 33
+
+/* Assign the server error code (location response) to a value
+ * that isn't used by locate response so that a single status
+ * callback can be used.
+ */
+#define MDM_HL7800_POLTE_SERVER_ERROR 10
+
+#define MDM_HL7800_SET_POLTE_USER_AND_PASSWORD_FMT_STR "AT%%POLTECMD=\"SERVERAUTH\",\"%s\",\"%s\""
+
+struct mdm_hl7800_site_survey {
+	uint32_t earfcn; /* EUTRA Absolute Radio Frequency Channel Number */
+	uint32_t cell_id;
+	int rsrp;
+	int rsrq;
+};
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -72,7 +106,13 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_ACTIVE_BANDS,
 	HL7800_EVENT_FOTA_STATE,
 	HL7800_EVENT_FOTA_COUNT,
-	HL7800_EVENT_REVISION
+	HL7800_EVENT_REVISION,
+	HL7800_EVENT_GPS,
+	HL7800_EVENT_GPS_POSITION_STATUS,
+	HL7800_EVENT_POLTE_REGISTRATION,
+	HL7800_EVENT_POLTE_LOCATE_STATUS,
+	HL7800_EVENT_POLTE,
+	HL7800_EVENT_SITE_SURVEY,
 };
 
 enum mdm_hl7800_startup_state {
@@ -115,10 +155,74 @@ enum mdm_hl7800_fota_state {
 	HL7800_FOTA_COMPLETE,
 };
 
-/* The modem reports state values as an enumeration and a string */
+enum mdm_hl7800_functionality {
+	HL7800_FUNCTIONALITY_MINIMUM = 0,
+	HL7800_FUNCTIONALITY_FULL = 1,
+	HL7800_FUNCTIONALITY_AIRPLANE = 4
+};
+
+/* The modem reports state values as an enumeration and a string.
+ * GPS values are reported with a type of value and string.
+ */
 struct mdm_hl7800_compound_event {
 	uint8_t code;
 	char *string;
+};
+
+enum mdm_hl7800_gnss_event {
+	HL7800_GNSS_EVENT_INVALID = -1,
+	HL7800_GNSS_EVENT_INIT,
+	HL7800_GNSS_EVENT_START,
+	HL7800_GNSS_EVENT_STOP,
+	HL7800_GNSS_EVENT_POSITION,
+};
+
+enum mdm_hl7800_gnss_status {
+	HL7800_GNSS_STATUS_INVALID = -1,
+	HL7800_GNSS_STATUS_FAILURE,
+	HL7800_GNSS_STATUS_SUCCESS,
+};
+
+enum mdm_hl7800_gnss_position_event {
+	HL7800_GNSS_POSITION_EVENT_INVALID = -1,
+	HL7800_GNSS_POSITION_EVENT_LOST_OR_NOT_AVAILABLE_YET,
+	HL7800_GNSS_POSITION_EVENT_PREDICTION_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_2D_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_3D_AVAILABLE,
+	HL7800_GNSS_POSITION_EVENT_FIXED_TO_INVALID,
+};
+
+enum mdm_hl7800_gps_string_types {
+	HL7800_GPS_STR_LATITUDE,
+	HL7800_GPS_STR_LONGITUDE,
+	HL7800_GPS_STR_GPS_TIME,
+	HL7800_GPS_STR_FIX_TYPE,
+	HL7800_GPS_STR_HEPE,
+	HL7800_GPS_STR_ALTITUDE,
+	HL7800_GPS_STR_ALT_UNC,
+	HL7800_GPS_STR_DIRECTION,
+	HL7800_GPS_STR_HOR_SPEED,
+	HL7800_GPS_STR_VER_SPEED
+};
+
+/* status: negative errno, 0 on success
+ * user and password aren't valid if status is non-zero.
+ */
+struct mdm_hl7800_polte_registration_event_data {
+	int status;
+	char *user;
+	char *password;
+};
+
+/* status: negative errno, 0 on success, non-zero error code
+ * Data is not valid if status is non-zero.
+ */
+struct mdm_hl7800_polte_location_data {
+	uint32_t timestamp;
+	int status;
+	char latitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char longitude[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
+	char confidence_in_meters[MDM_HL7800_MAX_POLTE_LOCATION_STR_SIZE];
 };
 
 /**
@@ -136,6 +240,12 @@ struct mdm_hl7800_compound_event {
  * HL7800_EVENT_FOTA_STATE - compound event
  * HL7800_EVENT_FOTA_COUNT - uint32_t
  * HL7800_EVENT_REVISION - string
+ * HL7800_EVENT_GPS - compound event
+ * HL7800_EVENT_GPS_POSITION_STATUS int
+ * HL7800_EVENT_POLTE_REGISTRATION mdm_hl7800_polte_registration_event_data
+ * HL7800_EVENT_POLTE mdm_hl7800_polte_location_data
+ * HL7800_EVENT_POLTE_LOCATE_STATUS int
+ * HL7800_EVENT_SITE_SURVEY mdm_hl7800_site_survey
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
@@ -148,7 +258,7 @@ typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 int32_t mdm_hl7800_power_off(void);
 
 /**
- * @brief Reset the HL7800
+ * @brief Reset the HL7800 (and allow it to reconfigure).
  *
  * @return int32_t 0 for success
  */
@@ -204,6 +314,12 @@ char *mdm_hl7800_get_imei(void);
  *
  */
 char *mdm_hl7800_get_fw_version(void);
+
+/**
+ * @brief Get the IMSI
+ *
+ */
+char *mdm_hl7800_get_imsi(void);
 
 /**
  * @brief Update the Access Point Name in the modem.
@@ -262,6 +378,87 @@ int32_t mdm_hl7800_get_local_time(struct tm *tm, int32_t *offset);
  */
 int32_t mdm_hl7800_update_fw(char *file_path);
 #endif
+
+/**
+ * @brief Read the operator index from the modem.
+ *
+ * @retval negative error code, 0 on success
+ */
+int32_t mdm_hl7800_get_operator_index(void);
+
+/**
+ * @brief Get modem functionality
+ *
+ * @return int32_t negative errno on failure, else mdm_hl7800_functionality
+ */
+int32_t mdm_hl7800_get_functionality(void);
+
+/**
+ * @brief Set airplane, normal, or reduced functionality mode.
+ * Airplane mode persists when reset.
+ *
+ * @note Boot functionality is also controlled by Kconfig
+ * MODEM_HL7800_BOOT_IN_AIRPLANE_MODE.
+ *
+ * @param mode
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
+
+/**
+ * @brief When rate is non-zero: Put modem into Airplane mode. Enable GPS and
+ * generate HL7800_EVENT_GPS events.
+ * When zero: Disable GPS and put modem into normal mode.
+ *
+ * @note Airplane mode isn't cleared when the modem is reset.
+ *
+ * @param rate in seconds to query location
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_set_gps_rate(uint32_t rate);
+
+/**
+ * @brief Register modem/SIM with polte.io
+ *
+ * @note It takes around 30 seconds for HL7800_EVENT_POLTE_REGISTRATION to
+ * be generated.  If the applications saves the user and password
+ * information into non-volatile memory, then this command
+ * only needs to be run once.
+ *
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_register(void);
+
+/**
+ * @brief Enable PoLTE.
+ *
+ * @param user from polte.io or register command callback
+ * @param password from polte.io register command callback
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_enable(char *user, char *password);
+
+/**
+ * @brief Locate device using PoLTE.
+ *
+ * @note The first HL7800_EVENT_POLTE_LOCATE_STATUS event indicates
+ * the status of issuing the locate command. The second event
+ * requires 20-120 seconds to be generated and it contains the
+ * location information (or indicates server failure).
+ *
+ * @return int32_t negative errno, 0 on success
+ */
+int32_t mdm_hl7800_polte_locate(void);
+
+/**
+ * @brief Perform a site survey.  This command may return different values
+ * each time it is run (depending on what is in range).
+ *
+ * HL7800_EVENT_SITE_SURVEY is generated for each response received from modem.
+ *
+ * @retval negative error code, 0 on success
+ */
+int32_t mdm_hl7800_perform_site_survey(void);
 
 #ifdef __cplusplus
 }

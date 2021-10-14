@@ -796,9 +796,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 
-	if ((REQTYPE_GET_DIR(usbd_setup->bmRequestType)
-	     == REQTYPE_DIR_TO_DEVICE)
-	    && (usbd_setup->wLength)) {
+	if (usb_reqtype_is_to_device(usbd_setup) && usbd_setup->wLength) {
 		ctx->ctrl_read_len = usbd_setup->wLength;
 		/* Allow data chunk on EP0 OUT */
 		nrfx_usbd_setup_data_clear();
@@ -894,6 +892,12 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			LOG_DBG("ctrl write complete");
 			usbd_evt_put(ev);
 			usbd_work_schedule();
+		}
+		break;
+
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
 		}
 		break;
 
@@ -1127,9 +1131,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		nrfx_usbd_setup_t drv_setup;
 
 		nrfx_usbd_setup_get(&drv_setup);
-		if ((drv_setup.bRequest != REQ_SET_ADDRESS)
-		    || (REQTYPE_GET_TYPE(drv_setup.bmRequestType)
-			!= REQTYPE_TYPE_STANDARD)) {
+		if ((drv_setup.bRequest != USB_SREQ_SET_ADDRESS)
+		    || (USB_REQTYPE_GET_TYPE(drv_setup.bmRequestType)
+			!= USB_REQTYPE_TYPE_STANDARD)) {
 			/* SetAddress is habdled by USBD hardware.
 			 * No software action required.
 			 */

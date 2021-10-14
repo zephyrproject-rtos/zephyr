@@ -61,14 +61,6 @@ static void ibecc_write_reg32(const struct device *dev,
 }
 #endif
 
-static uint32_t ibecc_read_reg32(const struct device *dev, uint16_t reg)
-{
-	struct ibecc_data *data = dev->data;
-	mem_addr_t reg_addr = data->mchbar + reg;
-
-	return sys_read32(reg_addr);
-}
-
 static bool ibecc_enabled(const pcie_bdf_t bdf)
 {
 	return !!(pcie_conf_read(bdf, CAPID0_C_REG) & CAPID0_C_IBECC_ENABLED);
@@ -95,82 +87,11 @@ static void ibecc_errsts_clear(const pcie_bdf_t bdf)
 
 	errsts = pcie_conf_read(bdf, ERRSTS_REG);
 
-	if (!(errsts & (ERRSTS_IBECC_COR | ERRSTS_IBECC_UC))) {
+	if ((errsts & (ERRSTS_IBECC_COR | ERRSTS_IBECC_UC)) == 0) {
 		return;
 	}
 
 	pcie_conf_write(bdf, ERRSTS_REG, errsts);
-}
-
-static const char *get_ddr_type(uint8_t type)
-{
-	switch (type) {
-	case 0:
-		return "DDR4";
-	case 3:
-		return "LPDDR4";
-	default:
-		return "Unknown";
-	}
-}
-
-static const char *get_dimm_width(uint8_t type)
-{
-	switch (type) {
-	case 0:
-		return "X8";
-	case 1:
-		return "X16";
-	case 2:
-		return "X32";
-	default:
-		return "Unknown";
-	}
-}
-
-static void mchbar_regs_dump(const struct device *dev)
-{
-	uint32_t mad_inter_chan, chan_hash;
-
-	/* Memory configuration */
-
-	chan_hash = ibecc_read_reg32(dev, CHANNEL_HASH);
-	LOG_DBG("Channel hash %x", chan_hash);
-
-	mad_inter_chan = ibecc_read_reg32(dev, MAD_INTER_CHAN);
-	LOG_DBG("DDR memory type %s",
-	       get_ddr_type(INTER_CHAN_DDR_TYPE(mad_inter_chan)));
-
-	for (int ch = 0; ch < DRAM_MAX_CHANNELS; ch++) {
-		uint32_t intra_ch = ibecc_read_reg32(dev, MAD_INTRA_CH(ch));
-		uint32_t dimm_ch = ibecc_read_reg32(dev, MAD_DIMM_CH(ch));
-		uint64_t l_size = DIMM_L_SIZE(dimm_ch);
-		uint64_t s_size = DIMM_S_SIZE(dimm_ch);
-		uint8_t l_map = DIMM_L_MAP(intra_ch);
-
-		LOG_DBG("channel %d: l_size 0x%llx s_size 0x%llx l_map %d\n",
-			ch, l_size, s_size, l_map);
-
-		for (int d = 0; d < DRAM_MAX_DIMMS; d++) {
-			uint64_t size;
-			const char *type;
-
-			if (d ^ l_map) {
-				type = get_dimm_width(DIMM_S_WIDTH(dimm_ch));
-				size = s_size;
-			} else {
-				type = get_dimm_width(DIMM_L_WIDTH(dimm_ch));
-				size = l_size;
-			}
-
-			if (!size) {
-				continue;
-			}
-
-			LOG_DBG("Channel %d DIMM %d size %llu GiB width %s",
-				ch, d, size >> 30, type);
-		}
-	}
 }
 
 static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
@@ -178,7 +99,7 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 {
 	struct ibecc_data *data = dev->data;
 
-	if (!ecclog) {
+	if (ecclog == 0) {
 		return;
 	}
 
@@ -186,11 +107,11 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 	error_data->address = ECC_ERROR_ERRADD(ecclog);
 	error_data->syndrome = ECC_ERROR_ERRSYND(ecclog);
 
-	if (ecclog & ECC_ERROR_MERRSTS) {
+	if ((ecclog & ECC_ERROR_MERRSTS) != 0) {
 		data->errors_uc++;
 	}
 
-	if (ecclog & ECC_ERROR_CERRSTS) {
+	if ((ecclog & ECC_ERROR_CERRSTS) != 0) {
 		data->errors_cor++;
 	}
 }
@@ -198,7 +119,7 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static int inject_set_param1(const struct device *dev, uint64_t addr)
 {
-	if (addr & ~INJ_ADDR_BASE_MASK) {
+	if ((addr & ~INJ_ADDR_BASE_MASK) != 0) {
 		return -EINVAL;
 	}
 
@@ -207,14 +128,16 @@ static int inject_set_param1(const struct device *dev, uint64_t addr)
 	return 0;
 }
 
-static uint64_t inject_get_param1(const struct device *dev)
+static int inject_get_param1(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_BASE);
+	*value = ibecc_read_reg64(dev, IBECC_INJ_ADDR_BASE);
+
+	return 0;
 }
 
 static int inject_set_param2(const struct device *dev, uint64_t mask)
 {
-	if (mask & ~INJ_ADDR_BASE_MASK_MASK) {
+	if ((mask & ~INJ_ADDR_BASE_MASK_MASK) != 0) {
 		return -EINVAL;
 	}
 
@@ -223,9 +146,11 @@ static int inject_set_param2(const struct device *dev, uint64_t mask)
 	return 0;
 }
 
-static uint64_t inject_get_param2(const struct device *dev)
+static int inject_get_param2(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_MASK);
+	*value = ibecc_read_reg64(dev, IBECC_INJ_ADDR_MASK);
+
+	return 0;
 }
 
 static int inject_set_error_type(const struct device *dev,
@@ -238,11 +163,14 @@ static int inject_set_error_type(const struct device *dev,
 	return 0;
 }
 
-static uint32_t inject_get_error_type(const struct device *dev)
+static int inject_get_error_type(const struct device *dev,
+				      uint32_t *error_type)
 {
 	struct ibecc_data *data = dev->data;
 
-	return data->error_type;
+	*error_type = data->error_type;
+
+	return 0;
 }
 
 static int inject_error_trigger(const struct device *dev)
@@ -268,36 +196,44 @@ static int inject_error_trigger(const struct device *dev)
 }
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
-static uint64_t ecc_error_log_get(const struct device *dev)
+static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+	*value = ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+
+	return 0;
 }
 
-static void ecc_error_log_clear(const struct device *dev)
+static int ecc_error_log_clear(const struct device *dev)
 {
 	/* Clear all error bits */
 	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG,
 			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
+
+	return 0;
 }
 
-static uint64_t parity_error_log_get(const struct device *dev)
+static int parity_error_log_get(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+	*value = ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+
+	return 0;
 }
 
-static void parity_error_log_clear(const struct device *dev)
+static int parity_error_log_clear(const struct device *dev)
 {
 	ibecc_write_reg64(dev, IBECC_PARITY_ERROR_LOG, PARITY_ERROR_ERRSTS);
+
+	return 0;
 }
 
-static unsigned int errors_cor_get(const struct device *dev)
+static int errors_cor_get(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
 	return data->errors_cor;
 }
 
-static unsigned int errors_uc_get(const struct device *dev)
+static int errors_uc_get(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -342,31 +278,32 @@ static const struct edac_driver_api api = {
 	.notify_cb_set = notify_callback_set,
 };
 
-int edac_ibecc_init(const struct device *dev)
+static int edac_ibecc_init(const struct device *dev)
 {
 	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
-	uint32_t tolud;
-	uint64_t touud, tom, mchbar;
+	uint64_t mchbar;
+	uint32_t conf_data;
 
-	LOG_INF("EDAC IBECC initialization");
-
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU5)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU6)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU7)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU8)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU9)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU10)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU11)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU12))) {
+	conf_data = pcie_conf_read(bdf, PCIE_CONF_ID);
+	switch (conf_data) {
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU5):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU6):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU7):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU8):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU9):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU10):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU11):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
+		break;
+	default:
 		LOG_ERR("PCI Probe failed");
 		return -ENODEV;
 	}
@@ -380,33 +317,14 @@ int edac_ibecc_init(const struct device *dev)
 	mchbar |= (uint64_t)pcie_conf_read(bdf, MCHBAR_REG + 1) << 32;
 
 	/* Check that MCHBAR is enabled */
-	if (!(mchbar & MCHBAR_ENABLE)) {
+	if ((mchbar & MCHBAR_ENABLE) == 0) {
 		LOG_ERR("MCHBAR is not enabled");
 		return -ENODEV;
 	}
 
 	mchbar &= MCHBAR_MASK;
 
-	/* workaround for 32 bit read */
-	touud = pcie_conf_read(bdf, TOUUD_REG);
-	touud |= (uint64_t)pcie_conf_read(bdf, TOUUD_REG + 1) << 32;
-	touud &= TOUUD_MASK;
-
-	/* workaround for 32 bit read */
-	tom = pcie_conf_read(bdf, TOM_REG);
-	tom |= (uint64_t)pcie_conf_read(bdf, TOM_REG + 1) << 32;
-	tom &= TOM_MASK;
-
-	tolud = pcie_conf_read(bdf, TOLUD_REG) & TOLUD_MASK;
-
 	device_map(&data->mchbar, mchbar, MCH_SIZE, K_MEM_CACHE_NONE);
-
-	LOG_DBG("MCHBAR\t%llx", mchbar);
-	LOG_DBG("TOUUD\t%llx", touud);
-	LOG_DBG("TOM\t%llx", tom);
-	LOG_DBG("TOLUD\t%x", tolud);
-
-	mchbar_regs_dump(dev);
 
 	/* Enable Host Bridge generated SERR event */
 	ibecc_errcmd_setup(bdf, true);
@@ -438,20 +356,14 @@ static bool handle_nmi(void)
 	uint8_t status;
 
 	status = sys_in8(NMI_STS_CNT_REG);
-
-	if (!(status & NMI_STS_SRC_SERR)) {
-		LOG_DBG("Skip NMI, NMI_STS_CNT: 0x%x", status);
-		/**
-		 * We should be able to find that this NMI we
-		 * should not handle and return false. However this
-		 * does not work for some older SKUs
+	if ((status & NMI_STS_SRC_SERR) == 0) {
+		/* For other NMI sources return false to handle it by
+		 * Zephyr exception handler
 		 */
-		return true;
+		return false;
 	}
 
-	LOG_DBG("core: %d status 0x%x", arch_curr_cpu()->id, status);
-
-	/* Re-enable */
+	/* Re-enable SERR# NMI sources */
 
 	status = (status & NMI_STS_MASK_EN) | NMI_STS_SERR_EN;
 	sys_out8(status, NMI_STS_CNT_REG);
@@ -473,22 +385,25 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 
 	key = k_spin_lock(&nmi_lock);
 
+	/* Skip the same NMI handling for other cores and return handled */
+	if (arch_curr_cpu()->id != 0) {
+		ret = true;
+		goto out;
+	}
+
 	if (!handle_nmi()) {
 		/* Indicate that we do not handle this NMI */
 		ret = false;
 		goto out;
 	}
 
-	/* Skip the same NMI handling for other cores and return handled */
-	if (arch_curr_cpu()->id) {
-		ret = true;
+	if (edac_ecc_error_log_get(dev, &ecclog) != 0) {
 		goto out;
 	}
 
-	ecclog = edac_ecc_error_log_get(dev);
 	parse_ecclog(dev, ecclog, &error_data);
 
-	if (data->cb) {
+	if (data->cb != NULL) {
 		data->cb(dev, &error_data);
 	}
 

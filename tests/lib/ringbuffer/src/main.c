@@ -27,9 +27,12 @@ LOG_MODULE_REGISTER(test);
 #undef RING_BUFFER_MAX_SIZE
 #define RING_BUFFER_MAX_SIZE 0x00000200
 
+/* Use global variable that can be modified by the test. */
+uint32_t test_rewind_threshold = RING_BUFFER_MAX_SIZE;
+
 uint32_t ring_buf_get_rewind_threshold(void)
 {
-	return RING_BUFFER_MAX_SIZE;
+	return test_rewind_threshold;
 }
 
 /**
@@ -50,6 +53,12 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define DATA_MAX_SIZE 3
 #define POW 2
 extern void test_ringbuffer_concurrent(void);
+extern void test_ringbuffer_shpsc(void);
+extern void test_ringbuffer_spshc(void);
+extern void test_ringbuffer_cpy_shpsc(void);
+extern void test_ringbuffer_cpy_spshc(void);
+extern void test_ringbuffer_item_shpsc(void);
+extern void test_ringbuffer_item_spshc(void);
 /**
  * @brief Test APIs of ring buffer
  *
@@ -676,6 +685,81 @@ void test_capacity(void)
 			"Unexpected capacity");
 }
 
+void test_size(void)
+{
+	uint32_t size;
+	static uint8_t buf[RINGBUFFER_SIZE];
+
+	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buf.buf8);
+
+	/* Test 0 */
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(0, size, "wrong size: exp: %u act: %u", 0, size);
+
+	/* Test 1 */
+	ring_buf_put(&ringbuf_raw, "x", 1);
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(1, size, "wrong size: exp: %u act: %u", 1, size);
+
+	/* Test N */
+	ring_buf_reset(&ringbuf_raw);
+	ring_buf_put(&ringbuf_raw, buf, sizeof(buf));
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(sizeof(buf), size, "wrong size: exp: %u: actual: %u", sizeof(buf), size);
+
+	/* Test N - 2 with wrap-around */
+	ring_buf_put(&ringbuf_raw, buf, sizeof(buf));
+	ring_buf_get(&ringbuf_raw, NULL, 3);
+	ring_buf_put(&ringbuf_raw, "x", 1);
+
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(sizeof(buf) - 2, size, "wrong size: exp: %u: actual: %u", sizeof(buf) - 2,
+		      size);
+}
+
+void test_peek(void)
+{
+	uint32_t size;
+	uint8_t byte = 0x42;
+	static uint8_t buf[RINGBUFFER_SIZE];
+
+	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buf.buf8);
+
+	/* Test 0 */
+	size = ring_buf_peek(&ringbuf_raw, (uint8_t *)0x1, 42424242);
+	zassert_equal(0, size, "wrong peek size: exp: %u: actual: %u", 0, size);
+
+	/* Test 1 */
+	ring_buf_put(&ringbuf_raw, "*", 1);
+	size = ring_buf_peek(&ringbuf_raw, &byte, 1);
+	zassert_equal(1, size, "wrong peek size: exp: %u: actual: %u", 1, size);
+	zassert_equal('*', byte, "wrong buffer contents: exp: %u: actual: %u", '*', byte);
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(1, size, "wrong buffer size: exp: %u: actual: %u", 1, size);
+
+	/* Test N */
+	ring_buf_reset(&ringbuf_raw);
+	for (size = 0; size < sizeof(buf); ++size) {
+		buf[size] = 'A' + (size % ('Z' - 'A' + 1));
+	}
+
+	ring_buf_put(&ringbuf_raw, buf, sizeof(buf));
+	memset(buf, '*', sizeof(buf)); /* fill with pattern */
+
+	size = ring_buf_peek(&ringbuf_raw, buf, sizeof(buf));
+	zassert_equal(sizeof(buf), size, "wrong peek size: exp: %u: actual: %u", sizeof(buf), size);
+	size = ring_buf_size_get(&ringbuf_raw);
+	zassert_equal(sizeof(buf), size, "wrong buffer size: exp: %u: actual: %u", sizeof(buf),
+		      size);
+
+	for (size = 0; size < sizeof(buf); ++size) {
+		ringbuf_raw.buf.buf8[size] = 'A' + (size % ('Z' - 'A' + 1));
+	}
+
+	zassert_equal(0, memcmp(buf, ringbuf_raw.buf.buf8, sizeof(buf)),
+		      "content validation failed");
+}
+
 void test_reset(void)
 {
 	uint8_t indata[] = {1, 2, 3, 4, 5};
@@ -969,9 +1053,17 @@ void test_main(void)
 		       ztest_unit_test(test_byte_put_free),
 		       ztest_unit_test(test_ringbuffer_equal_bufs),
 		       ztest_unit_test(test_capacity),
+		       ztest_unit_test(test_size),
+		       ztest_unit_test(test_peek),
 		       ztest_unit_test(test_reset),
 		       ztest_unit_test(test_ringbuffer_performance),
-		       ztest_unit_test(test_ringbuffer_concurrent)
+		       ztest_unit_test(test_ringbuffer_concurrent),
+		       ztest_unit_test(test_ringbuffer_shpsc),
+		       ztest_unit_test(test_ringbuffer_spshc),
+		       ztest_unit_test(test_ringbuffer_cpy_shpsc),
+		       ztest_unit_test(test_ringbuffer_cpy_spshc),
+		       ztest_unit_test(test_ringbuffer_item_shpsc),
+		       ztest_unit_test(test_ringbuffer_item_spshc)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }

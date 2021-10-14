@@ -12,6 +12,7 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 #include "bluetooth/addr.h"
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"
@@ -95,7 +96,7 @@ static void stm32wb_start_ble(void)
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
-	    CFG_BLE_LL_ONLY,
+	    CFG_BLE_OPTIONS,
 	    0 }
 	};
 

@@ -7,7 +7,7 @@ description: |
   Worldsemi WS2812 (and compatible) LED controller
 
   Driver bindings for daisy chains of WS2812 (and compatible devices
-  like SK6812) LED controllers.
+  like SK6812, or Everlight B1414) LED controllers.
 
   The PWM protocol is described here:
   https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
@@ -20,6 +20,20 @@ description: |
   worldsemi,ws2812-gpio.yaml bindings instead of this file after
   making your choice.
 
+  Everlight B1414:
+
+  The specification of the Everlight B1414 LED controller is slightly different.
+  For the control signal (waveform) each bit is described with a 1.2 us pulse:
+
+    0 bit: 300 ns high and 900 ns low.
+    1 bit: 900 ns high and 300 ns low.
+
+  There is a a +/- 80 ns tolerance for each timing.
+
+  The latch/reset delay is 250 us and it must be set using the reset-delay
+  property. The pixel order depends on the model and it can be configured
+  using the color-mapping property.
+
 properties:
   chain-length:
     type: int
@@ -27,9 +41,26 @@ properties:
     description: |
       The number of devices in the daisy-chain.
 
-  has-white-channel:
-    type: boolean
+  color-mapping:
+    type: array
+    required: true
     description: |
-      If true, the device has a white channel. This is not supported
-      by the led_strip.h API, so the white data on the wire will be
-      zero if set.
+      Channel to color mapping (or pixel order).
+
+      For example a GRB channel to color mapping would be
+
+         color-mapping = <LED_COLOR_ID_GREEN
+                          LED_COLOR_ID_RED
+                          LED_COLOR_ID_BLUE>;
+
+  reset-delay:
+    type: int
+    required: false
+    default: 8
+    description: |
+      Minimum delay to wait (in microseconds) to make sure that the strip has
+      latched the signal. If omitted, a default value of 8 microseconds is used.
+      This default is good for the WS2812 controllers. Note that despite the
+      WS2812 datasheet states that a 50 microseconds delay is required, it seems
+      6 microseconds is enough. The default is set to 8 microseconds just to be
+      safe.

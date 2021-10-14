@@ -1,6 +1,6 @@
 # i.MX RT series
 
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017-2021, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX_RT
@@ -18,6 +18,10 @@ config CAN_MCUX_FLEXCAN
 
 config CLOCK_CONTROL_MCUX_CCM
 	default y if HAS_MCUX_CCM
+	depends on CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM_REV2
+	default y if HAS_MCUX_CCM_REV2
 	depends on CLOCK_CONTROL
 
 config DISPLAY_MCUX_ELCDIF
@@ -59,6 +63,10 @@ config SPI_MCUX_LPSPI
 	default y if HAS_MCUX_LPSPI
 	depends on SPI
 
+config ADC_MCUX_LPADC
+	default y if HAS_MCUX_LPADC
+	depends on ADC
+
 config WDT_MCUX_IMX_WDOG
 	default y
 	depends on WATCHDOG
@@ -76,36 +84,57 @@ endif # CODE_SEMC
 if CODE_ITCM
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K)
+	default $(dt_node_reg_size_int,/soc/flexram@40028000/itcm@0,0,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0)
+	default $(dt_node_reg_addr_hex,/soc/flexram@40028000/itcm@0) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_ITCM
+
+if CODE_SRAM0
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/memory@1ffe0000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/memory@1ffe0000)
+
+endif # CODE_SRAM0
+
 
 if CODE_FLEXSPI
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@400cc000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@400cc000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI
 
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@4000d000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@4000d000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI2
 
-config USB_DC_NXP_EHCI
+config USB_MCUX
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
+
+choice USB_MCUX_CONTROLLER_TYPE
+	default USB_DC_NXP_EHCI
+endchoice
 
 config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI
@@ -115,15 +144,35 @@ config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
 
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+
 choice SEGGER_RTT_SECTION
-	default SEGGER_RTT_SECTION_DTCM if HAS_MCUX_SEMC
+	default SEGGER_RTT_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	depends on USE_SEGGER_RTT
 endchoice
 
 choice SEGGER_SYSVIEW_SECTION
-	default SEGGER_SYSVIEW_SECTION_DTCM if HAS_MCUX_SEMC
+	default SEGGER_SYSVIEW_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	depends on SEGGER_SYSTEMVIEW
 endchoice
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+config MBEDTLS
+#config TINYCRYPT
+	default y if CSPRING_ENABLED
+	depends on ENTROPY_GENERATOR
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACKSIZE
+	int
+	default 1024
+endif # MBEDTLS
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

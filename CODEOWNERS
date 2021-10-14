@@ -39,10 +39,10 @@
 /soc/arm/cypress/                         @nandojve
 /soc/arm/bcm*/                            @sbranden
 /soc/arm/infineon_xmc/                    @parthitce
-/soc/arm/nxp*/                            @MaureenHelm @mmahadevan108 @dleach02
+/soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @ioannisg
-/soc/arm/nuvoton/                         @ssekar15
 /soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
+/soc/arm/nuvoton_numicro/                 @ssekar15
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
@@ -62,13 +62,15 @@
 /soc/arm64/xenvm/                         @lorc
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
+/submanifests/*                           @mbolivar-nordic
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
-/soc/riscv/openisa*/                      @MaureenHelm
+/soc/riscv/openisa*/                      @dleach02
+/soc/riscv/riscv-privilege/andes_v5/      @cwshu @Teng-Shih-Wei
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
@@ -94,17 +96,18 @@
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/efm32pg_stk3401a/             @rdmeneze
 /boards/arm/faze/                         @mbittan @simonguinot
-/boards/arm/frdm*/                        @MaureenHelm @mmahadevan108 @dleach02
-/boards/arm/frdm*/doc/                    @MaureenHelm @MeganHansen
+/boards/arm/frdm*/                        @mmahadevan108 @dleach02
+/boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
 /boards/arm/google_*/                     @jackrosenthal
-/boards/arm/hexiwear*/                    @MaureenHelm @mmahadevan108 @dleach02
-/boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
+/boards/arm/hexiwear*/                    @mmahadevan108 @dleach02
+/boards/arm/hexiwear*/doc/                @dleach02 @MeganHansen
 /boards/arm/ip_k66f/                      @parthitce @lmajewski
-/boards/arm/lpcxpresso*/                  @MaureenHelm @mmahadevan108 @dleach02
-/boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
+/boards/arm/legend/                       @mbittan @simonguinot
+/boards/arm/lpcxpresso*/                  @mmahadevan108 @dleach02
+/boards/arm/lpcxpresso*/doc/              @dleach02 @MeganHansen
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
-/boards/arm/mimxrt*/                      @MaureenHelm @mmahadevan108 @dleach02
-/boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
+/boards/arm/mimxrt*/                      @mmahadevan108 @dleach02
+/boards/arm/mimxrt*/doc/                  @dleach02 @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 /boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
@@ -142,15 +145,19 @@
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
-/boards/riscv/rv32m1_vega/                @MaureenHelm
+/boards/riscv/rv32m1_vega/                @dleach02
+/boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
+/boards/riscv/adp_xc7k_ae350/             @cwshu @Teng-Shih-Wei
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
 /boards/shields/inventek_eswifi/          @nandojve
 /boards/x86/                              @dcpleung @nashif @jenmwms @aasthagr
+/boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
+/boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
 /boards/sparc/                            @martin-aberg
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
@@ -158,6 +165,7 @@
 /boards/arm64/xenvm/                      @lorc
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
+/boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
@@ -176,26 +184,31 @@
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
-/drivers/*/*mcux*                         @MaureenHelm @mmahadevan108 @dleach02
+/drivers/*/*mcux*                         @mmahadevan108 @dleach02
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
+/drivers/*/*andes*                        @cwshu @Teng-Shih-Wei
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
+/drivers/audio/*nrfx*                     @anangl
+/drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/cache/                           @carlocaione
+/drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
+/drivers/can/*rcar*                       @julien-massot
+/drivers/clock_control/*agilex*           @siclim
 /drivers/clock_control/*nrf*              @nordic-krch
-/drivers/clock_control/*esp32*            @extremegtx
+/drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
 /drivers/clock_control/*rcar*             @julien-massot
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/counter/counter_cmos.c           @dcpleung
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
-/drivers/console/*mux*                    @jukkar
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @dcpleung
 /drivers/dac/                             @martinjaeger
@@ -208,23 +221,29 @@
 /drivers/edac/                            @finikorg
 /drivers/eeprom/                          @henrikbrixandersen
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
-/drivers/entropy/*rv32m1*                 @MaureenHelm
+/drivers/entropy/*b91*                    @yurvyn
+/drivers/entropy/*rv32m1*                 @dleach02
 /drivers/entropy/*gecko*                  @chrta
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
-/drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
+/drivers/ethernet/                        @tbursztyka @pfalcon
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/ethernet/*w5500*                 @parthitce
+/drivers/ethernet/*xlnx_gem*              @ibirnbaum
+/drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf
+/drivers/mdio/                            @rlubos @tbursztyka @arvinf
 /drivers/flash/                           @nashif @nvlsianpu
+/drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
+/drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
-/drivers/gpio/*ht16k33*                   @henrikbrixandersen
+/drivers/gpio/*b91*                       @yurvyn
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
 /drivers/gpio/*rcar*                      @julien-massot
+/drivers/gpio/*esp32*                     @glaubermaroto
 /drivers/hwinfo/                          @alexanderwachter
-/drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_ite_it8xxx2.c            @GTLin08
@@ -234,12 +253,17 @@
 /drivers/i2c/slave/*eeprom*               @henrikbrixandersen
 /drivers/i2c/Kconfig.test                 @mbolivar-nordic
 /drivers/i2c/i2c_test.c                   @mbolivar-nordic
+/drivers/i2c/*rcar*                       @aaillet
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
-/drivers/ieee802154/                      @jukkar @tbursztyka
-/drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve
+/drivers/i2s/i2s_ll_stm32*                @avisconti
+/drivers/i2s/*nrfx*                       @anangl
+/drivers/ieee802154/                      @rlubos @tbursztyka
+/drivers/ieee802154/*b91*                 @yurvyn
+/drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @dcpleung @nashif
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
+/drivers/interrupt_controller/*esp32*     @glaubermaroto
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
@@ -248,22 +272,30 @@
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
-/drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
+/drivers/ipm/ipm_stm32_hsem.c             @cameled
+/drivers/kscan/                           @VenkatKotakonda @franciscomunoz @scottwcpg
+/drivers/kscan/*xec*                      @franciscomunoz @scottwcpg
+/drivers/kscan/*ft5336*                   @MaureenHelm
+/drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/memc/                            @gmarull
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
-/drivers/modem/*gsm*                      @jukkar
-/drivers/modem/hl7800.c                   @rerickson1
-/drivers/modem/Kconfig.hl7800             @rerickson1
+/drivers/modem/hl7800.c                   @LairdCP/zephyr
+/drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
+/drivers/pinmux/*esp32*                   @glaubermaroto
 /drivers/pm_cpu_ops/                      @carlocaione
-/drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
+/drivers/ps2/                             @franciscomunoz @scottwcpg
+/drivers/ps2/*xec*                        @franciscomunoz @scottwcpg
+/drivers/ps2/*npcx*                       @MulinChao @WealianLiao @ChiHuaL
+/drivers/pwm/*b91*                        @yurvyn
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
@@ -271,6 +303,7 @@
 /drivers/pwm/pwm_capture.c                @henrikbrixandersen
 /drivers/pwm/pwm_shell.c                  @henrikbrixandersen
 /drivers/pwm/*gecko*                      @sun681
+/drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
@@ -280,6 +313,7 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
+/drivers/serial/*b91*                     @yurvyn
 /drivers/serial/uart_altera_jtag_hal.c    @nashif
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
@@ -292,18 +326,24 @@
 /drivers/serial/uart_xlnx_ps.c            @wjliang
 /drivers/serial/uart_xlnx_uartlite.c      @henrikbrixandersen
 /drivers/serial/*xmc4xxx*                 @parthitce
-/drivers/serial/*nuvoton*                 @ssekar15
+/drivers/serial/*numicro*                 @ssekar15
 /drivers/serial/*apbuart*                 @martin-aberg
 /drivers/serial/*rcar*                    @aaillet
+/drivers/serial/Kconfig.test              @str4t0m
+/drivers/serial/serial_test.c             @str4t0m
+/drivers/serial/*esp32c3*                 @uLipe
+/drivers/serial/*esp32s2*                 @glaubermaroto
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
 /drivers/disk/usdhc.c                     @JunYangNXP
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
-/drivers/net/                             @jukkar @tbursztyka
-/drivers/ptp_clock/                       @jukkar
+/drivers/net/                             @rlubos @tbursztyka
+/drivers/ptp_clock/                       @tbursztyka
 /drivers/spi/                             @tbursztyka
+/drivers/spi/*b91*                        @yurvyn
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
+/drivers/spi/*esp32*                      @glaubermaroto
 /drivers/timer/apic_timer.c               @dcpleung @nashif
 /drivers/timer/apic_tsc.c                 @andyross
 /drivers/timer/arm_arch_timer.c           @carlocaione
@@ -317,19 +357,24 @@
 /drivers/timer/stm32_lptim_timer.c        @FRASTM
 /drivers/timer/leon_gptimer.c             @martin-aberg
 /drivers/timer/rcar_cmt_timer.c           @julien-massot
+/drivers/timer/esp32c3_sys_timer.c        @uLipe
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
+/drivers/i2c/*b91*                        @yurvyn
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
 /drivers/i2c/i2c_dw*                      @dcpleung
+/drivers/i2c/*tca9546a*                   @kurddt
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
 /drivers/watchdog/*cc32xx*                @pavlohamov
-/drivers/wifi/                            @jukkar @tbursztyka @pfalcon
+/drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
+/drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
+/drivers/wifi/                            @rlubos @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
@@ -350,14 +395,14 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/nxp/                           @JiafeiPan
 /dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
+/dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @ioannisg @carlescufi
-/dts/arm/nuvoton/                         @ssekar15
-/dts/arm/nuvoton/npcx/                    @MulinChao @WealianLiao @ChiHuaL
-/dts/arm/nxp/                             @MaureenHelm @mmahadevan108 @dleach02
+/dts/arm/nuvoton/                         @ssekar15 @MulinChao @WealianLiao @ChiHuaL
+/dts/arm/nxp/                             @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
@@ -372,8 +417,10 @@
 /dts/riscv/                               @kgugala @pgielda
 /dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
-/dts/riscv/rv32m1*                        @MaureenHelm
+/dts/riscv/rv32m1*                        @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
+/dts/riscv/starfive/                      @rajnesh-kanwal
+/dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
@@ -381,25 +428,29 @@
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
+/dts/xtensa/espressif/                    @glaubermaroto
+/dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
-/dts/bindings/modem/*hl7800.yaml          @rerickson1
+/dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
-/dts/bindings/*/nxp*                      @MaureenHelm @mmahadevan108 @dleach02
-/dts/bindings/*/openisa*                  @MaureenHelm
+/dts/bindings/*/nxp*                      @mmahadevan108 @dleach02
+/dts/bindings/*/openisa*                  @dleach02
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
+/dts/bindings/*/andes*                    @cwshu @Teng-Shih-Wei
 /dts/bindings/pm_cpu_ops/*                @carlocaione
+/dts/bindings/ethernet/*gem.yaml          @ibirnbaum
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
@@ -418,7 +469,7 @@
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @dcpleung @nashif
 /include/drivers/interrupt_controller/gic.h @stephanosio
-/include/drivers/modem/hl7800.h           @rerickson1
+/include/drivers/modem/hl7800.h           @LairdCP/zephyr
 /include/drivers/pcie/                    @dcpleung
 /include/drivers/hwinfo.h                 @alexanderwachter
 /include/drivers/led.h                    @Mani-Sadhasivam
@@ -460,8 +511,9 @@
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
-/include/dt-bindings/dma/stm32_dma.h      @cybertale
+/include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/dt-bindings/pcie/                @dcpleung
+/include/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/dt-bindings/usb/usb.h            @galak
 /include/drivers/emul.h                   @sjg20
 /include/fs/                              @nashif @nvlsianpu @de-nordic
@@ -475,14 +527,14 @@
 /include/logging/                         @nordic-krch
 /include/lorawan/lorawan.h                @Mani-Sadhasivam
 /include/mgmt/osdp.h                      @sidcha
-/include/net/                             @jukkar @tbursztyka @pfalcon
-/include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
-/include/net/coap*.h                      @jukkar @rlubos
-/include/net/lwm2m*.h                     @jukkar @rlubos
-/include/net/mqtt.h                       @jukkar @rlubos
+/include/net/                             @rlubos @tbursztyka @pfalcon
+/include/net/buf.h                        @jhedberg @tbursztyka @pfalcon @rlubos
+/include/net/coap*.h                      @rlubos
+/include/net/lwm2m*.h                     @rlubos
+/include/net/mqtt.h                       @rlubos
 /include/posix/                           @pfalcon
 /include/pm/pm.h                          @nashif @ceolin
-/include/drivers/ptp_clock.h              @jukkar
+/include/drivers/ptp_clock.h              @tbursztyka
 /include/shared_irq.h                     @dcpleung @nashif @andyross
 /include/shell/                           @jakub-uC @nordic-krch
 /include/sw_isr_table.h                   @dcpleung @nashif @andyross
@@ -493,6 +545,7 @@
 /include/toolchain/                       @dcpleung @nashif @andyross
 /include/zephyr.h                         @dcpleung @nashif @andyross
 /kernel/                                  @dcpleung @nashif @andyross
+/lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
 /lib/util/getopt/                         @jakub-uC
@@ -503,6 +556,7 @@
 /lib/posix/                               @pfalcon
 /subsys/portability/                      @nashif
 /lib/libc/                                @nashif
+/lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
 /modules/                                 @nashif
 /modules/trusted-firmware-m/              @ioannisg @microbuilder
 /kernel/device.c                          @andyross @nashif
@@ -513,19 +567,21 @@
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/subsys/display/                  @vanwinkeljan
+/samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
 /samples/drivers/display/                 @vanwinkeljan
+/samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
-/samples/net/                             @jukkar @tbursztyka @pfalcon
+/samples/net/                             @rlubos @tbursztyka @pfalcon
 /samples/net/cloud/tagoio_http_post/      @nandojve
-/samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
+/samples/net/dns_resolve/                 @rlubos @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @rlubos
-/samples/net/mqtt_publisher/              @jukkar @tbursztyka
+/samples/net/mqtt_publisher/              @rlubos
 /samples/net/sockets/coap_*/              @rlubos
-/samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
+/samples/net/sockets/                     @rlubos @tbursztyka @pfalcon
 /samples/net/*civetweb*                   @Nukersson
 /samples/sensor/                          @MaureenHelm
 /samples/shields/                         @avisconti
@@ -538,9 +594,11 @@
 /samples/subsys/pm/                       @nashif @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
 /samples/userspace/                       @dcpleung @nashif
+/scripts/release/bug_bash.py              @cfriedt
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/coredump/                        @dcpleung
+/scripts/footprint/                       @nashif
 /scripts/kconfig/                         @ulfalizer
 /scripts/logging/dictionary/              @dcpleung
 /scripts/pylib/twister/expr_parser.py     @nashif
@@ -556,7 +614,6 @@
 /scripts/gen_kobject_placeholders.py      @dcpleung
 /scripts/gen_syscalls.py                  @dcpleung @nashif
 /scripts/list_boards.py                   @mbolivar-nordic
-/scripts/net/                             @jukkar
 /scripts/process_gperf.py                 @dcpleung @nashif
 /scripts/gen_relocate_app.py              @dcpleung
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
@@ -597,7 +654,7 @@
 /subsys/fs/nvs/                           @Laczen
 /subsys/ipc/                              @ioannisg
 /subsys/logging/                          @nordic-krch
-/subsys/logging/log_backend_net.c         @nordic-krch @jukkar
+/subsys/logging/log_backend_net.c         @nordic-krch @rlubos
 /subsys/lorawan/                          @Mani-Sadhasivam
 /subsys/mgmt/ec_host_cmd/                 @jettr
 /subsys/mgmt/mcumgr/                      @carlescufi @nvlsianpu
@@ -606,19 +663,19 @@
 /subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no
-/subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
-/subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon @cfriedt
+/subsys/net/buf.c                         @jhedberg @tbursztyka @pfalcon @rlubos
+/subsys/net/ip/                           @rlubos @tbursztyka @pfalcon
+/subsys/net/lib/                          @rlubos @tbursztyka @pfalcon
+/subsys/net/lib/dns/                      @rlubos @tbursztyka @pfalcon @cfriedt
 /subsys/net/lib/lwm2m/                    @rlubos
-/subsys/net/lib/config/                   @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/mqtt/                     @jukkar @tbursztyka @rlubos
+/subsys/net/lib/config/                   @rlubos @tbursztyka @pfalcon
+/subsys/net/lib/mqtt/                     @rlubos
 /subsys/net/lib/coap/                     @rlubos
 /subsys/net/lib/sockets/socketpair.c      @cfriedt
-/subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
+/subsys/net/lib/sockets/                  @rlubos @tbursztyka @pfalcon
 /subsys/net/lib/tls_credentials/          @rlubos
-/subsys/net/l2/                           @jukkar @tbursztyka
-/subsys/net/l2/canbus/                    @alexanderwachter @jukkar
+/subsys/net/l2/                           @rlubos @tbursztyka
+/subsys/net/l2/canbus/                    @alexanderwachter
 /subsys/net/*/openthread/                 @rlubos
 /subsys/pm/                               @nashif @ceolin
 /subsys/random/                           @dleach02
@@ -638,6 +695,8 @@
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
 /tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
+/tests/bluetooth/bsim_bt/bsim_test_audio/ @joerchan @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
+/tests/bluetooth/tester/                  @joerchan @jhedberg @Vudentz @sjanc
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
@@ -652,14 +711,14 @@
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif
 /tests/lib/cmsis_dsp/                     @stephanosio
-/tests/net/                               @jukkar @tbursztyka @pfalcon
-/tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
-/tests/net/lib/                           @jukkar @tbursztyka @pfalcon
-/tests/net/lib/http_header_fields/        @jukkar @tbursztyka
-/tests/net/lib/mqtt_packet/               @jukkar @tbursztyka
+/tests/net/                               @rlubos @tbursztyka @pfalcon
+/tests/net/buf/                           @jhedberg @tbursztyka @pfalcon
+/tests/net/lib/                           @rlubos @tbursztyka @pfalcon
+/tests/net/lib/http_header_fields/        @rlubos @tbursztyka
+/tests/net/lib/mqtt_packet/               @rlubos
 /tests/net/lib/coap/                      @rlubos
 /tests/net/socket/socketpair/             @cfriedt
-/tests/net/socket/                        @jukkar @tbursztyka @pfalcon
+/tests/net/socket/                        @rlubos @tbursztyka @pfalcon
 /tests/subsys/debug/coredump/             @dcpleung
 /tests/subsys/fs/                         @nashif @nvlsianpu @de-nordic
 /tests/subsys/settings/                   @nvlsianpu

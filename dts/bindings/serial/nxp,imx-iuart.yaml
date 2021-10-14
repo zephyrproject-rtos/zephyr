@@ -1,4 +1,4 @@
-description: >
+description: |
     This binding gives a base representation of the NXP iMX IUART
 
 compatible: "nxp,imx-iuart"

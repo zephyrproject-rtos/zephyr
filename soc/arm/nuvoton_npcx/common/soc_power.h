@@ -36,6 +36,16 @@ void npcx_power_console_is_in_use_refresh(void);
  */
 void npcx_power_set_console_in_use_timeout(int64_t timeout);
 
+/**
+ * @brief Disable UART RX wake-up interrupt.
+ */
+void npcx_uart_disable_access_interrupt(void);
+
+/**
+ * @brief Enable UART RX wake-up interrupt.
+ */
+void npcx_uart_enable_access_interrupt(void);
+
 #ifdef __cplusplus
 }
 #endif

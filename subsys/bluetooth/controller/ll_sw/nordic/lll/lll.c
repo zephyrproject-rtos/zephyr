@@ -69,12 +69,12 @@ static struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
-static void ticker_stop_op_cb(uint32_t status, void *param);
-static void ticker_start_op_cb(uint32_t status, void *param);
-static uint32_t preempt_ticker_start(struct lll_event *event,
-				     ticker_op_func op_cb);
-static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			      uint16_t lazy, uint8_t force, void *param);
+static uint32_t preempt_ticker_start(struct lll_event *prev,
+				     struct lll_event *next);
+static uint32_t preempt_ticker_stop(void);
+static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			      uint32_t remainder, uint16_t lazy, uint8_t force,
+			      void *param);
 static void preempt(void *param);
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
@@ -345,7 +345,19 @@ int lll_done(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	lll_done_score(param, 0, 0); /* TODO */
+	struct event_done_extra *extra;
+	uint8_t result;
+
+	/* TODO: Pass from calling function */
+	result = DONE_COMPLETED;
+
+	lll_done_score(param, result);
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	/* Set result in done extra data - type was set by the role */
+	extra->result = result;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Let ULL know about LLL event done */
@@ -641,9 +653,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		/* Start the preempt timeout */
 		uint32_t ret;
 
-		ret  = preempt_ticker_start(next, ticker_start_op_cb);
+		ret  = preempt_ticker_start(p, next);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_FAILURE) ||
 			  (ret == TICKER_STATUS_BUSY));
 
 #else /* CONFIG_BT_CTLR_LOW_LAT */
@@ -693,12 +704,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	uint32_t ret;
 
 	/* Stop any scheduled preempt ticker */
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-			  TICKER_USER_ID_LLL,
-			  TICKER_ID_LLL_PREEMPT,
-			  ticker_stop_op_cb, NULL);
+	ret = preempt_ticker_stop();
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_FAILURE) ||
 		  (ret == TICKER_STATUS_BUSY));
 
 	/* Find next prepare needing preempt timeout to be setup */
@@ -710,9 +717,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	} while (p->is_aborted || p->is_resume);
 
 	/* Start the preempt timeout */
-	ret = preempt_ticker_start(p, ticker_start_op_cb);
+	ret = preempt_ticker_start(NULL, p);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_FAILURE) ||
 		  (ret == TICKER_STATUS_BUSY));
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
@@ -737,31 +743,41 @@ static void isr_race(void *param)
 }
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
+static uint8_t volatile preempt_start_req;
+static uint8_t preempt_start_ack;
+static uint8_t volatile preempt_stop_req;
+static uint8_t preempt_stop_ack;
+static uint8_t preempt_req;
+static uint8_t volatile preempt_ack;
+
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
-	/* NOTE: this callback is present only for addition of debug messages
-	 * when needed, else can be dispensed with.
-	 */
 	ARG_UNUSED(param);
+	ARG_UNUSED(status);
 
-	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
-		  (status == TICKER_STATUS_FAILURE));
+	LL_ASSERT(preempt_stop_req != preempt_stop_ack);
+	preempt_stop_ack++;
+
+	preempt_req = preempt_ack;
 }
 
 static void ticker_start_op_cb(uint32_t status, void *param)
 {
-	/* NOTE: this callback is present only for addition of debug messages
-	 * when needed, else can be dispensed with.
-	 */
 	ARG_UNUSED(param);
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
-		  (status == TICKER_STATUS_FAILURE));
+	LL_ASSERT(preempt_start_req != preempt_start_ack);
+	preempt_start_ack++;
+
+	LL_ASSERT(preempt_req == preempt_ack);
+	preempt_req++;
 }
 
-static uint32_t preempt_ticker_start(struct lll_event *event,
-				     ticker_op_func op_cb)
+static uint32_t preempt_ticker_start(struct lll_event *prev,
+				     struct lll_event *next)
 {
+	static uint32_t ticks_at_preempt;
+	uint32_t ticks_at_preempt_new;
 	struct lll_prepare_param *p;
 	uint32_t preempt_anchor;
 	struct ull_hdr *ull;
@@ -769,12 +785,38 @@ static uint32_t preempt_ticker_start(struct lll_event *event,
 	uint32_t ret;
 
 	/* Calc the preempt timeout */
-	p = &event->prepare_param;
+	p = &next->prepare_param;
 	ull = HDR_LLL2ULL(p->param);
 	preempt_anchor = p->ticks_at_expire;
 	preempt_to = MAX(ull->ticks_active_to_start,
 			 ull->ticks_prepare_to_start) -
 		     ull->ticks_preempt_to_start;
+
+	ticks_at_preempt_new = preempt_anchor + preempt_to;
+
+	/* Do not request to start preempt timeout if already requested */
+	if ((preempt_start_req != preempt_start_ack) ||
+	    (preempt_req != preempt_ack)) {
+		uint32_t diff;
+
+		/* Check for short preempt timeouts */
+		diff = ticks_at_preempt_new - ticks_at_preempt;
+		if (!prev || prev->is_aborted ||
+		    ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			return TICKER_STATUS_SUCCESS;
+		}
+
+		preempt_ticker_stop();
+
+		ticks_at_preempt = ticks_at_preempt_new;
+
+		prev->is_aborted = 1U;
+		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
+	}
+
+	preempt_start_req++;
+
+	ticks_at_preempt = ticks_at_preempt_new;
 
 	/* Setup pre empt timeout */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
@@ -786,18 +828,46 @@ static uint32_t preempt_ticker_start(struct lll_event *event,
 			   TICKER_NULL_REMAINDER,
 			   TICKER_NULL_LAZY,
 			   TICKER_NULL_SLOT,
-			   preempt_ticker_cb, event,
-			   op_cb, event);
+			   preempt_ticker_cb, next,
+			   ticker_start_op_cb, next);
 
 	return ret;
 }
 
-static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			       uint16_t lazy, uint8_t force, void *param)
+static uint32_t preempt_ticker_stop(void)
+{
+	uint32_t ret;
+
+	/* Do not request to stop preempt timeout if already requested or
+	 * has expired
+	 */
+	if ((preempt_stop_req != preempt_stop_ack) ||
+	    (preempt_req == preempt_ack)) {
+		return TICKER_STATUS_SUCCESS;
+	}
+
+	preempt_stop_req++;
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+			  TICKER_USER_ID_LLL,
+			  TICKER_ID_LLL_PREEMPT,
+			  ticker_stop_op_cb, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+
+	return ret;
+}
+
+static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			      uint32_t remainder, uint16_t lazy, uint8_t force,
+			      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, preempt};
 	uint32_t ret;
+
+	LL_ASSERT(preempt_ack != preempt_req);
+	preempt_ack++;
 
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
@@ -839,9 +909,8 @@ static void preempt(void *param)
 		uint32_t ret;
 
 		/* Start the preempt timeout */
-		ret = preempt_ticker_start(next, ticker_start_op_cb);
+		ret = preempt_ticker_start(NULL, next);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_FAILURE) ||
 			  (ret == TICKER_STATUS_BUSY));
 
 		return;
@@ -872,7 +941,8 @@ static void preempt(void *param)
 		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
 			if (!iter->is_aborted &&
-			    event.curr.param == iter->prepare_param.param) {
+			    (event.curr.param == iter->prepare_param.param) &&
+			    iter->is_resume) {
 				iter->is_aborted = 1;
 				iter->abort_cb(&iter->prepare_param,
 					       iter->prepare_param.param);
@@ -882,7 +952,7 @@ static void preempt(void *param)
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				idx = UINT8_MAX;
+				iter_idx = UINT8_MAX;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 			}
 

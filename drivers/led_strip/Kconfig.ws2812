@@ -11,8 +11,8 @@ menuconfig WS2812_STRIP
 	bool "Enable WS2812 (and compatible) LED strip driver"
 	select LED_STRIP_RGB_SCRATCH
 	help
-	  Enable LED strip driver for daisy chains of WS2812-ish
-	  (or WS2812B, WS2813, SK6812, or compatible) devices.
+	  Enable LED strip driver for daisy chains of WS2812-ish (or WS2812B,
+	  WS2813, SK6812, Everlight B1414, or compatible) devices.
 
 choice WS2812_STRIP_DRIVER
 	prompt "Driver backend"
@@ -34,5 +34,8 @@ config WS2812_STRIP_GPIO
 	help
 	  The GPIO driver does bit-banging with inline assembly,
 	  and is not available on all SoCs.
+
+	  Note that this driver is not compatible with the Everlight B1414
+	  controller.
 
 endchoice

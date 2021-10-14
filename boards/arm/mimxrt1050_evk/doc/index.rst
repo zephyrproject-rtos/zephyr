@@ -131,9 +131,9 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | Name          | Function        | Usage                     |
 +===============+=================+===========================+
-| GPIO_AD_B0_00 | LPSPI3_SCK      | SPI                       |
+| GPIO_AD_B0_00 | LPSPI1_SCK      | SPI                       |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_01 | LPSPI3_SDO      | SPI                       |
+| GPIO_AD_B0_01 | LPSPI1_SDO      | SPI                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_02 | LPSPI3_SDI/LCD_RST| SPI/LCD Display         |
 +---------------+-----------------+---------------------------+
@@ -231,18 +231,22 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_10 | ENET_INT        | Ethernet                  |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_00 | USDHC1_CMD      | SD Card                   |
+| GPIO_SD_B0_00 | USDHC1_CMD/LPSPI1_SCK | SD Card/SPI         |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_01 | USDHC1_CLK      | SD Card                   |
+| GPIO_SD_B0_01 | USDHC1_CLK/LPSPI1_PCS0 | SD Card/SPI        |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_02 | USDHC1_DATA0    | SD Card                   |
+| GPIO_SD_B0_02 | USDHC1_DATA0/LPSPI1_SDO | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_03 | USDHC1_DATA1    | SD Card                   |
+| GPIO_SD_B0_03 | USDHC1_DATA1/LPSPI1_SDI | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_04 | USDHC1_DATA2    | SD Card                   |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_05 | USDHC1_DATA3    | SD Card                   |
 +---------------+-----------------+---------------------------+
+
+.. note::
+        In order to use the SPI peripheral on this board, resistors R278,
+        R279, R280, and R281 must be populated with zero ohm resistors
 
 System Clock
 ============
@@ -359,7 +363,7 @@ Troubleshooting
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in HyperFlash is invalid or corrupted. The boot header is
-configured by :option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 

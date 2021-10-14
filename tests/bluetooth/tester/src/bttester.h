@@ -367,6 +367,12 @@ struct gap_pairing_consent_req_ev {
 	uint8_t address[6];
 } __packed;
 
+#define GAP_EV_BOND_LOST	0x8b
+struct gap_bond_lost_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
 /* GATT Service */
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
@@ -740,6 +746,7 @@ struct l2cap_connect_cmd {
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
+	uint8_t ecfc;
 } __packed;
 struct l2cap_connect_rp {
 	uint8_t num;
@@ -761,6 +768,11 @@ struct l2cap_send_data_cmd {
 #define L2CAP_TRANSPORT_BREDR		0x00
 #define L2CAP_TRANSPORT_LE		0x01
 
+#define L2CAP_CONNECTION_RESPONSE_SUCCESS		0x00
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHEN		0x01
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_AUTHOR		0x02
+#define L2CAP_CONNECTION_RESPONSE_INSUFF_ENC_KEY		0x03
+
 #define L2CAP_LISTEN			0x05
 struct l2cap_listen_cmd {
 	uint16_t psm;
@@ -773,6 +785,27 @@ struct l2cap_listen_cmd {
 struct l2cap_accept_connection_cmd {
 	uint8_t chan_id;
 	uint16_t result;
+} __packed;
+
+#define L2CAP_RECONFIGURE		0x07
+struct l2cap_reconfigure_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint16_t mtu;
+	uint8_t num;
+	uint8_t chan_id[];
+} __packed;
+
+#define L2CAP_CREDITS		0x08
+struct l2cap_credits_cmd {
+	uint8_t chan_id;
+} __packed;
+
+#define L2CAP_DISCONNECT_EATT_CHANS		0x09
+struct l2cap_disconnect_eatt_chans_cmd {
+	uint8_t address_type;
+	uint8_t address[6];
+	uint8_t count;
 } __packed;
 
 /* events */
@@ -812,6 +845,15 @@ struct l2cap_data_received_ev {
 	uint8_t data[];
 } __packed;
 
+#define L2CAP_EV_RECONFIGURED		0x84
+struct l2cap_reconfigured_ev {
+	uint8_t chan_id;
+	uint16_t mtu_remote;
+	uint16_t mps_remote;
+	uint16_t mtu_local;
+	uint16_t mps_local;
+} __packed;
+
 /* MESH Service */
 /* commands */
 #define MESH_READ_SUPPORTED_COMMANDS	0x01
@@ -831,6 +873,12 @@ struct mesh_read_supported_commands_rp {
 #define MESH_IN_ENTER_STRING		BIT(3)
 
 #define MESH_CONFIG_PROVISIONING	0x02
+
+struct set_keys {
+	uint8_t pub_key[64];
+	uint8_t priv_key[32];
+} __packed;
+
 struct mesh_config_provisioning_cmd {
 	uint8_t uuid[16];
 	uint8_t static_auth[16];
@@ -838,6 +886,8 @@ struct mesh_config_provisioning_cmd {
 	uint16_t out_actions;
 	uint8_t in_size;
 	uint16_t in_actions;
+	uint8_t auth_method;
+	struct set_keys set_keys[0];
 } __packed;
 
 #define MESH_PROVISION_NODE		0x03
@@ -849,6 +899,7 @@ struct mesh_provision_node_cmd {
 	uint32_t seq_num;
 	uint16_t addr;
 	uint8_t dev_key[16];
+	uint8_t pub_key[0];
 } __packed;
 
 #define MESH_INIT			0x04
@@ -918,6 +969,348 @@ struct mesh_lpn_unsubscribe_cmd {
 
 #define MESH_RPL_CLEAR			0x12
 #define MESH_PROXY_IDENTITY		0x13
+#define MESH_COMP_DATA_GET		0x14
+struct mesh_comp_data_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t page;
+} __packed;
+
+#define MESH_CFG_BEACON_GET		0x15
+struct mesh_cfg_val_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+} __packed;
+
+#define MESH_CFG_BEACON_SET		0x16
+struct mesh_cfg_beacon_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t val;
+} __packed;
+
+#define MESH_CFG_DEFAULT_TTL_GET		0x18
+#define MESH_CFG_DEFAULT_TTL_SET		0x19
+struct mesh_cfg_default_ttl_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t val;
+} __packed;
+
+#define MESH_CFG_GATT_PROXY_GET		0x1a
+#define MESH_CFG_GATT_PROXY_SET		0x1b
+struct mesh_cfg_gatt_proxy_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t val;
+} __packed;
+
+#define MESH_CFG_FRIEND_GET		0x1c
+#define MESH_CFG_FRIEND_SET		0x1d
+struct mesh_cfg_friend_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t val;
+} __packed;
+
+#define MESH_CFG_RELAY_GET		0x1e
+#define MESH_CFG_RELAY_SET		0x1f
+struct mesh_cfg_relay_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t new_relay;
+	uint8_t new_transmit;
+} __packed;
+
+#define MESH_CFG_MODEL_PUB_GET		0x20
+struct mesh_cfg_model_pub_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+} __packed;
+
+#define MESH_CFG_MODEL_PUB_SET		0x21
+struct mesh_cfg_model_pub_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+	uint16_t pub_addr;
+	uint16_t app_idx;
+	uint8_t cred_flag;
+	uint8_t ttl;
+	uint8_t period;
+	uint8_t transmit;
+} __packed;
+
+#define MESH_CFG_MODEL_SUB_ADD		0x22
+#define MESH_CFG_MODEL_SUB_DEL		0x23
+struct mesh_cfg_model_sub_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t sub_addr;
+	uint16_t model_id;
+} __packed;
+
+#define MESH_CFG_NETKEY_ADD		0x24
+struct mesh_cfg_netkey_add_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t net_key[16];
+	uint16_t net_key_idx;
+} __packed;
+
+#define MESH_CFG_NETKEY_GET		0x25
+#define MESH_CFG_NETKEY_DEL		0x26
+struct mesh_cfg_netkey_del_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+} __packed;
+
+#define MESH_CFG_APPKEY_ADD		0x27
+struct mesh_cfg_appkey_add_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+	uint8_t app_key[16];
+	uint16_t app_key_idx;
+} __packed;
+
+#define MESH_CFG_APPKEY_DEL		0x28
+struct mesh_cfg_appkey_del_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+	uint16_t app_key_idx;
+} __packed;
+
+#define MESH_CFG_APPKEY_GET		0x29
+struct mesh_cfg_appkey_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+} __packed;
+
+#define MESH_CFG_MODEL_APP_BIND		0x2A
+#define MESH_CFG_MODEL_APP_UNBIND		0x2B
+struct mesh_cfg_model_app_bind_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t app_key_idx;
+	uint16_t mod_id;
+} __packed;
+
+#define MESH_CFG_MODEL_APP_GET		0x2C
+#define MESH_CFG_MODEL_APP_VND_GET		0x2D
+struct mesh_cfg_model_app_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t mod_id;
+	uint16_t cid;
+} __packed;
+
+#define MESH_CFG_HEARTBEAT_PUB_SET		0x2E
+struct mesh_cfg_heartbeat_pub_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+	uint16_t destination;
+	uint8_t count_log;
+	uint8_t period_log;
+	uint8_t ttl;
+	uint16_t features;
+} __packed;
+
+#define MESH_CFG_HEARTBEAT_PUB_GET		0x2F
+#define MESH_CFG_HEARTBEAT_SUB_SET		0x30
+struct mesh_cfg_heartbeat_sub_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t source;
+	uint16_t destination;
+	uint8_t period_log;
+} __packed;
+
+#define MESH_CFG_HEARTBEAT_SUB_GET		0x31
+#define MESH_CFG_NET_TRANS_GET		0x32
+#define MESH_CFG_NET_TRANS_SET		0x33
+struct mesh_cfg_net_trans_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t transmit;
+} __packed;
+
+#define MESH_CFG_MODEL_SUB_OVW		0x34
+#define MESH_CFG_MODEL_SUB_DEL_ALL		0x35
+struct mesh_cfg_model_sub_del_all_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+} __packed;
+
+#define MESH_CFG_MODEL_SUB_GET		0x36
+struct mesh_cfg_model_sub_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+} __packed;
+
+#define MESH_CFG_MODEL_SUB_GET_VND		0x37
+struct mesh_cfg_model_sub_get_vnd_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+	uint16_t cid;
+} __packed;
+
+#define MESH_CFG_MODEL_SUB_VA_ADD		0x38
+#define MESH_CFG_MODEL_SUB_VA_DEL		0x39
+#define MESH_CFG_MODEL_SUB_VA_OVW		0x3A
+struct mesh_cfg_model_sub_va_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+	uint8_t uuid[16];
+} __packed;
+
+#define MESH_CFG_NETKEY_UPDATE		0x3B
+#define MESH_CFG_APPKEY_UPDATE		0x3C
+#define MESH_CFG_NODE_IDT_SET		0x3D
+struct mesh_cfg_node_idt_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+	uint8_t new_identity;
+} __packed;
+
+#define MESH_CFG_NODE_IDT_GET		0x3E
+struct mesh_cfg_node_idt_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t net_key_idx;
+} __packed;
+
+#define MESH_CFG_NODE_RESET		0x3F
+struct mesh_cfg_node_reset_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+} __packed;
+
+#define MESH_CFG_LPN_TIMEOUT_GET		0x40
+struct mesh_cfg_lpn_timeout_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t unicast_addr;
+} __packed;
+
+#define MESH_CFG_MODEL_PUB_VA_SET		0x41
+struct mesh_cfg_model_pub_va_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t model_id;
+	uint16_t app_idx;
+	uint8_t cred_flag;
+	uint8_t ttl;
+	uint8_t period;
+	uint8_t transmit;
+	uint8_t uuid[16];
+} __packed;
+
+#define MESH_CFG_MODEL_APP_BIND_VND		0x42
+struct mesh_cfg_model_app_bind_vnd_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t elem_address;
+	uint16_t app_key_idx;
+	uint16_t mod_id;
+	uint16_t cid;
+} __packed;
+
+#define MESH_HEALTH_FAULT_GET		0x43
+struct mesh_health_fault_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+} __packed;
+
+#define MESH_HEALTH_FAULT_CLEAR		0x44
+struct mesh_health_fault_clear_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_FAULT_TEST		0x45
+struct mesh_health_fault_test_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+	uint8_t test_id;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_PERIOD_GET		0x46
+struct mesh_health_period_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+} __packed;
+
+#define MESH_HEALTH_PERIOD_SET		0x47
+struct mesh_health_period_set_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint8_t divisor;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_ATTENTION_GET		0x48
+struct mesh_health_attention_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+} __packed;
+
+#define MESH_HEALTH_ATTENTION_SET		0x49
+struct mesh_health_attention_set_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint8_t attention;
+	uint8_t ack;
+} __packed;
+
+#define MESH_PROVISION_ADV		0x4A
+struct mesh_provision_adv_cmd {
+	uint8_t uuid[16];
+	uint16_t net_idx;
+	uint16_t address;
+	uint8_t attention_duration;
+	uint8_t net_key[16];
+} __packed;
+
+#define MESH_CFG_KRP_GET		0x4B
+struct mesh_cfg_krp_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t key_net_idx;
+} __packed;
+
+#define MESH_CFG_KRP_SET		0x4C
+struct mesh_cfg_krp_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t key_net_idx;
+	uint8_t transition;
+} __packed;
 
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80

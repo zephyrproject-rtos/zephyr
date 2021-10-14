@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COUNTER_MICROCHIP_MCP7940N
+	bool "Microchip MCP7940N RTC"
+	select I2C
+	help
+	  Enable RTC driver based on Microchip MCP7940N I2C device.
+
+config COUNTER_MICROCHIP_MCP7940N_INIT_PRIORITY
+	int "Init priority"
+	depends on COUNTER_MICROCHIP_MCP7940N
+	default 65
+	help
+	  MCP7940N device driver initialization priority.

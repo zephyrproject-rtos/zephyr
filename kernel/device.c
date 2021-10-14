@@ -25,17 +25,6 @@ extern const struct device __device_end[];
 
 extern uint32_t __device_init_status_start[];
 
-static inline void device_pm_state_init(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	*dev->pm = (struct pm_device){
-		.usage = ATOMIC_INIT(0),
-		.lock = {},
-		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
-	};
-#endif /* CONFIG_PM_DEVICE */
-}
-
 /**
  * @brief Initialize state for all static devices.
  *
@@ -47,7 +36,6 @@ void z_device_state_init(void)
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
-		device_pm_state_init(dev);
 		z_object_init(dev);
 		++dev;
 	}
@@ -194,51 +182,4 @@ int device_required_foreach(const struct device *dev,
 	}
 
 	return handle_count;
-}
-
-#ifdef CONFIG_PM_DEVICE
-int device_any_busy_check(void)
-{
-	const struct device *dev = __device_start;
-
-	while (dev < __device_end) {
-		if (atomic_test_bit(&dev->pm->atomic_flags,
-				    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
-			return -EBUSY;
-		}
-		++dev;
-	}
-
-	return 0;
-}
-
-int device_busy_check(const struct device *dev)
-{
-	if (atomic_test_bit(&dev->pm->atomic_flags,
-			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
-		return -EBUSY;
-	}
-	return 0;
-}
-
-#endif
-
-void device_busy_set(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	atomic_set_bit(&dev->pm->atomic_flags,
-		       PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
-#else
-	ARG_UNUSED(dev);
-#endif
-}
-
-void device_busy_clear(const struct device *dev)
-{
-#ifdef CONFIG_PM_DEVICE
-	atomic_clear_bit(&dev->pm->atomic_flags,
-			 PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
-#else
-	ARG_UNUSED(dev);
-#endif
 }

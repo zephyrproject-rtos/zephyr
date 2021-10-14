@@ -254,8 +254,6 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	 * extra space for link addresses so that we can set the lladdr
 	 * pointers in net_pkt.
 	 */
-	net_pkt_set_overwrite(pkt, true);
-
 	ret = net_pkt_write(pkt, net_pkt_lladdr_src(orig)->addr,
 			    net_pkt_lladdr_src(orig)->len);
 	if (ret < 0) {
@@ -280,9 +278,6 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 
 	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
-
-	net_pkt_set_overwrite(pkt, false);
-	net_pkt_cursor_init(pkt);
 
 	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),

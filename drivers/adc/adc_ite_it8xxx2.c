@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include <drivers/adc.h>
 #include <drivers/pinmux.h>
 #include <soc.h>
+#include <soc_dt.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -20,6 +21,8 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #include "adc_context.h"
 
 #define DEV_DATA(dev) ((struct adc_it8xxx2_data * const)(dev)->data)
+
+#define DEV_CFG(dev) ((struct adc_it8xxx2_cfg * const)(dev)->config)
 
 /* ADC internal reference voltage (Unit:mV) */
 #define IT8XXX2_ADC_VREF_VOL 3000
@@ -52,14 +55,26 @@ struct adc_it8xxx2_data {
 	uint16_t *repeat_buffer;
 };
 
+/*
+ * Strcture adc_it8xxx2_cfg is about the setting of adc
+ * this config will be used at initial time
+ */
+struct adc_it8xxx2_cfg {
+	/* Pinmux control group */
+	const struct device *pinctrls;
+	/* GPIO pin */
+	uint8_t pin;
+	/* Alternate function */
+	uint8_t alt_fun;
+};
+
 #define ADC_IT8XXX2_REG_BASE	\
 	((struct adc_it8xxx2_regs *)(DT_INST_REG_ADDR(0)))
 
 static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
-	ARG_UNUSED(dev);
-	const struct device *porti = DEVICE_DT_GET(DT_NODELABEL(pinmuxi));
+	struct adc_it8xxx2_cfg *config = DEV_CFG(dev);
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		LOG_ERR("Selected ADC acquisition time is not valid");
@@ -82,7 +97,9 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	}
 
 	/* The channel is set to ADC alternate function */
-	pinmux_pin_set(porti, channel_cfg->channel_id, IT8XXX2_PINMUX_FUNC_1);
+	pinmux_pin_set(config[channel_cfg->channel_id].pinctrls,
+		config[channel_cfg->channel_id].pin,
+		config[channel_cfg->channel_id].alt_fun);
 	LOG_DBG("Channel setup succeeded!");
 	return 0;
 }
@@ -310,9 +327,13 @@ static struct adc_it8xxx2_data adc_it8xxx2_data_0 = {
 		ADC_CONTEXT_INIT_LOCK(adc_it8xxx2_data_0, ctx),
 		ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
 };
+
+static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0[CHIP_ADC_COUNT] =
+	IT8XXX2_DT_ALT_ITEMS_LIST(0);
+
 DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
 		      NULL,
 		      &adc_it8xxx2_data_0,
-		      NULL, PRE_KERNEL_1,
+		      &adc_it8xxx2_cfg_0, PRE_KERNEL_1,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &api_it8xxx2_driver_api);

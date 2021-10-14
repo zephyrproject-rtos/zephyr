@@ -26,16 +26,18 @@
  *    large to hold clean copies of all mapped memory.
  *
  * This backing store is an example of the latter case. However, locations
- * are freed as soon as pages are paged in, in z_backing_store_page_finalize().
+ * are freed as soon as pages are paged in, in
+ * k_mem_paging_backing_store_page_finalize().
  * This implies that all data pages are treated as dirty as
  * Z_PAGE_FRAME_BACKED is never set, even if the data page was paged out before
  * and not modified since then.
  *
  * An optimization a real backing store will want is have
- * z_backing_store_page_finalize() note the storage location of a paged-in
- * data page in a custom field of its associated z_page_frame, and set the
- * Z_PAGE_FRAME_BACKED bit. Invocations of z_backing_store_location_get() will
- * have logic to return the previous clean page location instead of allocating
+ * k_mem_paging_backing_store_page_finalize() note the storage location of
+ * a paged-in data page in a custom field of its associated z_page_frame, and
+ * set the Z_PAGE_FRAME_BACKED bit. Invocations of
+ * k_mem_paging_backing_store_location_get() will have logic to return
+ * the previous clean page location instead of allocating
  * a new one if Z_PAGE_FRAME_BACKED is set.
  *
  * This will, however, require the implementation of a clean page
@@ -79,8 +81,9 @@ static uintptr_t slab_to_location(void *slab)
 	return offset;
 }
 
-int z_backing_store_location_get(struct z_page_frame *pf, uintptr_t *location,
-				 bool page_fault)
+int k_mem_paging_backing_store_location_get(struct z_page_frame *pf,
+					    uintptr_t *location,
+					    bool page_fault)
 {
 	int ret;
 	void *slab;
@@ -98,7 +101,7 @@ int z_backing_store_location_get(struct z_page_frame *pf, uintptr_t *location,
 	return 0;
 }
 
-void z_backing_store_location_free(uintptr_t location)
+void k_mem_paging_backing_store_location_free(uintptr_t location)
 {
 	void *slab = location_to_slab(location);
 
@@ -106,24 +109,25 @@ void z_backing_store_location_free(uintptr_t location)
 	free_slabs++;
 }
 
-void z_backing_store_page_out(uintptr_t location)
+void k_mem_paging_backing_store_page_out(uintptr_t location)
 {
 	(void)memcpy(location_to_slab(location), Z_SCRATCH_PAGE,
 		     CONFIG_MMU_PAGE_SIZE);
 }
 
-void z_backing_store_page_in(uintptr_t location)
+void k_mem_paging_backing_store_page_in(uintptr_t location)
 {
 	(void)memcpy(Z_SCRATCH_PAGE, location_to_slab(location),
 		     CONFIG_MMU_PAGE_SIZE);
 }
 
-void z_backing_store_page_finalize(struct z_page_frame *pf, uintptr_t location)
+void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
+					      uintptr_t location)
 {
-	z_backing_store_location_free(location);
+	k_mem_paging_backing_store_location_free(location);
 }
 
-void z_backing_store_init(void)
+void k_mem_paging_backing_store_init(void)
 {
 	k_mem_slab_init(&backing_slabs, backing_store, CONFIG_MMU_PAGE_SIZE,
 			CONFIG_BACKING_STORE_RAM_PAGES);

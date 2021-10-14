@@ -28,6 +28,8 @@
 #include "common/log.h"
 
 #include "hci_ecc.h"
+#include "ecc.h"
+
 #ifdef CONFIG_BT_HCI_RAW
 #include <bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
@@ -39,7 +41,7 @@ static struct k_thread ecc_thread_data;
 static K_KERNEL_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
-static const uint8_t debug_private_key_be[32] = {
+static const uint8_t debug_private_key_be[BT_PRIV_KEY_LEN] = {
 	0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,
 	0x74, 0xc9, 0xb3, 0xe3, 0xd2, 0x10, 0x3f, 0x50,
 	0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
@@ -61,11 +63,11 @@ static ATOMIC_DEFINE(flags, NUM_FLAGS);
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
 static struct {
-	uint8_t private_key_be[32];
+	uint8_t private_key_be[BT_PRIV_KEY_LEN];
 
 	union {
-		uint8_t public_key_be[64];
-		uint8_t dhkey_be[32];
+		uint8_t public_key_be[BT_PUB_KEY_LEN];
+		uint8_t dhkey_be[BT_DH_KEY_LEN];
 	};
 } ecc;
 
@@ -109,10 +111,10 @@ static uint8_t generate_keys(void)
 		}
 
 	/* make sure generated key isn't debug key */
-	} while (memcmp(ecc.private_key_be, debug_private_key_be, 32) == 0);
+	} while (memcmp(ecc.private_key_be, debug_private_key_be, BT_PRIV_KEY_LEN) == 0);
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		BT_INFO("SC private key 0x%s", bt_hex(ecc.private_key_be, 32));
+		BT_INFO("SC private key 0x%s", bt_hex(ecc.private_key_be, BT_PRIV_KEY_LEN));
 	}
 
 	return 0;
@@ -148,8 +150,9 @@ static void emulate_le_p256_public_key_cmd(void)
 		/* Convert X and Y coordinates from big-endian (provided
 		 * by crypto API) to little endian HCI.
 		 */
-		sys_memcpy_swap(evt->key, ecc.public_key_be, 32);
-		sys_memcpy_swap(&evt->key[32], &ecc.public_key_be[32], 32);
+		sys_memcpy_swap(evt->key, ecc.public_key_be, BT_PUB_KEY_COORD_LEN);
+		sys_memcpy_swap(&evt->key[BT_PUB_KEY_COORD_LEN],
+				&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
 	}
 
 	atomic_clear_bit(flags, PENDING_PUB_KEY);
@@ -251,8 +254,9 @@ static uint8_t le_gen_dhkey(uint8_t *key, uint8_t key_type)
 	/* Convert X and Y coordinates from little-endian HCI to
 	 * big-endian (expected by the crypto API).
 	 */
-	sys_memcpy_swap(ecc.public_key_be, key, 32);
-	sys_memcpy_swap(&ecc.public_key_be[32], &key[32], 32);
+	sys_memcpy_swap(ecc.public_key_be, key, BT_PUB_KEY_COORD_LEN);
+	sys_memcpy_swap(&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], &key[BT_PUB_KEY_COORD_LEN],
+			BT_PUB_KEY_COORD_LEN);
 
 	atomic_set_bit_to(flags, USE_DEBUG_KEY,
 			  key_type == BT_HCI_LE_KEY_TYPE_DEBUG);

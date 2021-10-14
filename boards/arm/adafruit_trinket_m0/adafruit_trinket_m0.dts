@@ -52,6 +52,8 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <1>;
+
+	pinctrl-0 = <&pa7d_sercom0_pad3 &pa6d_sercom0_pad2>;
 };
 
 &sercom2 {
@@ -60,6 +62,8 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pa9d_sercom2_pad1 &pa8d_sercom2_pad0>;
 };
 
 /* Drives the on-board DotStar LED */
@@ -118,6 +122,6 @@
 	};
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };

@@ -16,6 +16,7 @@
 
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
+#define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
 #define HEXDUMP_BYTES_IN_LINE 16
@@ -38,7 +39,7 @@ static const char *const colors[] = {
 	NULL,
 	LOG_COLOR_CODE_RED,     /* err */
 	LOG_COLOR_CODE_YELLOW,  /* warn */
-	NULL,                   /* info */
+	IS_ENABLED(CONFIG_LOG_INFO_COLOR_GREEN) ? LOG_COLOR_CODE_GREEN : NULL,   /* info */
 	NULL                    /* dbg */
 };
 
@@ -206,16 +207,16 @@ static int timestamp_print(const struct log_output *output,
 
 			strftime(time_str, sizeof(time_str), "%FT%T", tm);
 
-			length = print_formatted(output, "%s.%06dZ ",
+			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
 #else
 			length = print_formatted(output,
-					"1970-01-01T%02d:%02d:%02d.%06dZ ",
+					"1970-01-01T%02u:%02u:%02u.%06uZ ",
 					hours, mins, seconds, ms * 1000U + us);
 #endif
 		} else {
 			length = print_formatted(output,
-						 "[%02d:%02d:%02d.%03d,%03d] ",
+						 "[%02u:%02u:%02u.%03u,%03u] ",
 						 hours, mins, seconds, ms, us);
 		}
 	} else {

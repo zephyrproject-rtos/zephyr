@@ -14,4 +14,5 @@ See :ref:`devicetree` for reference material.
    bindings.rst
    api-usage.rst
    howtos.rst
+   troubleshooting.rst
    dt-vs-kconfig.rst

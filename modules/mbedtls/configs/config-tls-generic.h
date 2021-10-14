@@ -23,8 +23,7 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-/* If we build with POSIX API, automatically use time(), etc. */
-#if defined(CONFIG_POSIX_API)
+#if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
 #define MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME_DATE
 #endif
@@ -242,6 +241,7 @@
 #endif
 
 #if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED)
+#define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -407,7 +407,8 @@
 #define MBEDTLS_PK_C
 #endif
 
-#define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
+#define MBEDTLS_SSL_IN_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
+#define MBEDTLS_SSL_OUT_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 /* Enable OpenThread optimizations. */
 #if defined(CONFIG_MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED)

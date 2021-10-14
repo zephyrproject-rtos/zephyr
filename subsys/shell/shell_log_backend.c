@@ -157,7 +157,7 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 			(const struct shell *)backend->backend->cb->ctx;
 	uint32_t dropped;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			shell->ctx->internal.flags.use_colors;
+			z_flag_use_colors_get(shell);
 
 	dropped = atomic_set(&backend->control_block->dropped_cnt, 0);
 	if (dropped) {
@@ -193,7 +193,7 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			shell->ctx->internal.flags.use_colors;
+			z_flag_use_colors_get(shell);
 	struct k_poll_signal *signal;
 
 	log_msg_get(msg);
@@ -289,6 +289,7 @@ static void panic(const struct log_backend *const backend)
 	if (err == 0) {
 		shell->log_backend->control_block->state =
 						SHELL_LOG_BACKEND_PANIC;
+		z_flag_panic_mode_set(shell, true);
 
 		/* Move to the start of next line. */
 		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
@@ -387,7 +388,7 @@ static bool process_msg2_from_buffer(const struct shell *shell)
 	const struct log_output *log_output = log_backend->log_output;
 	union log_msg2_generic *msg;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			shell->ctx->internal.flags.use_colors;
+			z_flag_use_colors_get(shell);
 
 	msg = (union log_msg2_generic *)mpsc_pbuf_claim(mpsc_buffer);
 	if (!msg) {
@@ -409,7 +410,7 @@ static void log2_process(const struct log_backend *const backend,
 	struct mpsc_pbuf_buffer *mpsc_buffer = log_backend->mpsc_buffer;
 	const struct log_output *log_output = log_backend->log_output;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			shell->ctx->internal.flags.use_colors;
+			z_flag_use_colors_get(shell);
 	struct k_poll_signal *signal;
 
 	switch (shell->log_backend->control_block->state) {

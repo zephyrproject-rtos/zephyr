@@ -78,10 +78,12 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "st,stm32-nv-flash", "soc-nv-flash";
 				label = "FLASH_STM32";
 
 				write-block-size = <1>;
+				/* maximum erase time (ms) for a 128K sector */
+				max-erase-time = <4000>;
 			};
 		};
 
@@ -147,6 +149,24 @@
 				reg = <0x40021000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000010>;
 				label = "GPIOE";
+			};
+
+			gpiof: gpio@40021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@40021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
+				label = "GPIOG";
 			};
 
 			gpioh: gpio@40021c00 {
@@ -278,7 +298,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_1";
 				#pwm-cells = <3>;
 			};
@@ -314,7 +334,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_3";
 				#pwm-cells = <3>;
 			};
@@ -332,7 +352,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
@@ -368,7 +388,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_9";
 				#pwm-cells = <3>;
 			};
@@ -386,7 +406,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_10";
 				#pwm-cells = <3>;
 			};
@@ -404,7 +424,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_11";
 				#pwm-cells = <3>;
 			};

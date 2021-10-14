@@ -1,5 +1,3 @@
-/*  Bluetooth Mesh */
-
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
  *
@@ -65,6 +63,10 @@ int bt_mesh_msg_ack_ctx_wait(struct bt_mesh_msg_ack_ctx *ack, k_timeout_t timeou
 
 	err = k_sem_take(&ack->sem, timeout);
 	bt_mesh_msg_ack_ctx_clear(ack);
+
+	if (err == -EAGAIN) {
+		return -ETIMEDOUT;
+	}
 
 	return err;
 }

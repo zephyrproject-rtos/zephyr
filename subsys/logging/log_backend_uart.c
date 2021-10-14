@@ -75,8 +75,8 @@ static void process(const struct log_backend *const backend,
 
 static void log_backend_uart_init(struct log_backend const *const backend)
 {
-	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	__ASSERT_NO_MSG((void *)uart_dev);
+	uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	__ASSERT_NO_MSG(device_is_ready(uart_dev));
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {
 		/* Print a separator so the output can be fed into

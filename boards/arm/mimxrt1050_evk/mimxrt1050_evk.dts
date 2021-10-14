@@ -17,7 +17,6 @@
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
 		watchdog0 = &wdog0;
-		usbd0 = &usb1;
 	};
 
 	chosen {
@@ -142,6 +141,10 @@ arduino_serial: &lpuart3 {};
 	current-speed = <115200>;
 };
 
+&lpspi1 {
+	status = "okay";
+};
+
 &lpspi3 {
 	status = "okay";
 };
@@ -153,12 +156,13 @@ arduino_serial: &lpuart3 {};
 	};
 };
 
-&usb1 {
+zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
 &usdhc1 {
 	status = "okay";
+	no-1-8-v;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };

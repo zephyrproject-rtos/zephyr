@@ -44,8 +44,8 @@ GTEXT(__start)
  * @return N/A
  */
 
-SECTION_FUNC(TEXT,__reset)
-SECTION_FUNC(TEXT,__start)
+SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__reset)
+SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__start)
 	/* lock interrupts: will get unlocked when switch to main task
 	 * also make sure the processor in the correct status
 	 */
@@ -159,7 +159,7 @@ _slave_core_wait:
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _slave_core_wait
 
-	ld sp, [arc_cpu_sp]
+	LDR sp, arc_cpu_sp
 	/* signal master core that slave core runs */
 	st 0, [arc_cpu_wake_flag]
 

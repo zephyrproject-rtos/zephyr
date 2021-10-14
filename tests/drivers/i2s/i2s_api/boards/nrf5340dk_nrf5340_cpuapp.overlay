@@ -1,0 +1,11 @@
+&uart1 {
+	status = "disabled";
+};
+
+&i2s0 {
+	status = "okay";
+	sck-pin = <37>;
+	lrck-pin = <36>;
+	sdout-pin = <33>;
+	sdin-pin = <32>;
+};

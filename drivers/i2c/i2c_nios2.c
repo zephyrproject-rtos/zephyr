@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nios2_i2c
+#define DT_DRV_COMPAT altr_nios2_i2c
 
 #include <errno.h>
 #include <drivers/i2c.h>

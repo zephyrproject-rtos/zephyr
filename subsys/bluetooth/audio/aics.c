@@ -29,6 +29,18 @@
 #define AICS_CP_LEN                 0x02
 #define AICS_CP_SET_GAIN_LEN        0x03
 
+
+static ssize_t write_description(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset,
+				 uint8_t flags);
+
+static ssize_t write_aics_control(struct bt_conn *conn,
+				  const struct bt_gatt_attr *attr,
+				  const void *buf, uint16_t len,
+				  uint16_t offset, uint8_t flags);
+
+#if defined(CONFIG_BT_AICS)
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value);
 static ssize_t read_aics_state(struct bt_conn *conn,
@@ -45,21 +57,12 @@ static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
 static ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
 				 void *buf, uint16_t len, uint16_t offset);
-static ssize_t write_aics_control(struct bt_conn *conn,
-				  const struct bt_gatt_attr *attr,
-				  const void *buf, uint16_t len,
-				  uint16_t offset, uint8_t flags);
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value);
-static ssize_t write_description(struct bt_conn *conn,
-				 const struct bt_gatt_attr *attr,
-				 const void *buf, uint16_t len, uint16_t offset,
-				 uint8_t flags);
 static ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset);
 
-#if defined(CONFIG_BT_AICS)
 #define BT_AICS_SERVICE_DEFINITION(_aics) {                                    \
 	BT_GATT_SECONDARY_SERVICE(BT_UUID_AICS),                               \
 	BT_GATT_CHARACTERISTIC(BT_UUID_AICS_STATE,                             \
@@ -95,7 +98,7 @@ static ssize_t read_description(struct bt_conn *conn,
 	}
 
 
-static struct bt_aics_server aics_insts[CONFIG_BT_AICS_MAX_INSTANCE_COUNT];
+static struct bt_aics aics_insts[CONFIG_BT_AICS_MAX_INSTANCE_COUNT];
 static uint32_t instance_cnt;
 BT_GATT_SERVICE_INSTANCE_DEFINE(aics_service_list, aics_insts,
 				CONFIG_BT_AICS_MAX_INSTANCE_COUNT,
@@ -111,40 +114,40 @@ static ssize_t read_aics_state(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
 	BT_DBG("gain %d, mute %u, gain_mode %u, counter %u",
-	       inst->state.gain, inst->state.mute,
-	       inst->state.gain_mode, inst->state.change_counter);
+	       inst->srv.state.gain, inst->srv.state.mute,
+	       inst->srv.state.gain_mode, inst->srv.state.change_counter);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->state,
-				 sizeof(inst->state));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
+				 sizeof(inst->srv.state));
 }
 
 static ssize_t read_aics_gain_settings(struct bt_conn *conn,
 				       const struct bt_gatt_attr *attr,
 				       void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
 	BT_DBG("units %u, min %d, max %d",
-	       inst->gain_settings.units, inst->gain_settings.minimum,
-	       inst->gain_settings.maximum);
+	       inst->srv.gain_settings.units, inst->srv.gain_settings.minimum,
+	       inst->srv.gain_settings.maximum);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->gain_settings,
-				 sizeof(inst->gain_settings));
+				 &inst->srv.gain_settings,
+				 sizeof(inst->srv.gain_settings));
 }
 
 static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
-	BT_DBG("%u", inst->type);
+	BT_DBG("%u", inst->srv.type);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->type,
-				 sizeof(inst->type));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.type,
+				 sizeof(inst->srv.type));
 }
 
 static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
@@ -157,12 +160,12 @@ static ssize_t read_input_status(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
-	BT_DBG("%u", inst->status);
+	BT_DBG("%u", inst->srv.status);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->status,
-				 sizeof(inst->status));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.status,
+				 sizeof(inst->srv.status));
 }
 
 #endif /* CONFIG_BT_AICS */
@@ -172,7 +175,7 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 				  const void *buf, uint16_t len,
 				  uint16_t offset, uint8_t flags)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 	const struct bt_aics_gain_control *cp = buf;
 	bool notify = false;
 
@@ -197,60 +200,60 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 	}
 
 	BT_DBG("Opcode %u, counter %u", cp->cp.opcode, cp->cp.counter);
-	if (cp->cp.counter != inst->state.change_counter) {
+	if (cp->cp.counter != inst->srv.state.change_counter) {
 		return BT_GATT_ERR(BT_AICS_ERR_INVALID_COUNTER);
 	}
 
 	switch (cp->cp.opcode) {
 	case BT_AICS_OPCODE_SET_GAIN:
 		BT_DBG("Set gain %d", cp->gain_setting);
-		if (cp->gain_setting < inst->gain_settings.minimum ||
-		    cp->gain_setting > inst->gain_settings.maximum) {
+		if (cp->gain_setting < inst->srv.gain_settings.minimum ||
+		    cp->gain_setting > inst->srv.gain_settings.maximum) {
 			return BT_GATT_ERR(BT_AICS_ERR_OUT_OF_RANGE);
 		}
-		if (BT_AICS_INPUT_MODE_SETTABLE(inst->state.gain_mode) &&
-		    inst->state.gain != cp->gain_setting) {
-			inst->state.gain = cp->gain_setting;
+		if (BT_AICS_INPUT_MODE_SETTABLE(inst->srv.state.gain_mode) &&
+		    inst->srv.state.gain != cp->gain_setting) {
+			inst->srv.state.gain = cp->gain_setting;
 			notify = true;
 		}
 		break;
 	case BT_AICS_OPCODE_UNMUTE:
 		BT_DBG("Unmute");
-		if (inst->state.mute == BT_AICS_STATE_MUTE_DISABLED) {
+		if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
 			return BT_GATT_ERR(BT_AICS_ERR_MUTE_DISABLED);
 		}
-		if (inst->state.mute != BT_AICS_STATE_UNMUTED) {
-			inst->state.mute = BT_AICS_STATE_UNMUTED;
+		if (inst->srv.state.mute != BT_AICS_STATE_UNMUTED) {
+			inst->srv.state.mute = BT_AICS_STATE_UNMUTED;
 			notify = true;
 		}
 		break;
 	case BT_AICS_OPCODE_MUTE:
 		BT_DBG("Mute");
-		if (inst->state.mute == BT_AICS_STATE_MUTE_DISABLED) {
+		if (inst->srv.state.mute == BT_AICS_STATE_MUTE_DISABLED) {
 			return BT_GATT_ERR(BT_AICS_ERR_MUTE_DISABLED);
 		}
-		if (inst->state.mute != BT_AICS_STATE_MUTED) {
-			inst->state.mute = BT_AICS_STATE_MUTED;
+		if (inst->srv.state.mute != BT_AICS_STATE_MUTED) {
+			inst->srv.state.mute = BT_AICS_STATE_MUTED;
 			notify = true;
 		}
 		break;
 	case BT_AICS_OPCODE_SET_MANUAL:
 		BT_DBG("Set manual mode");
-		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->state.gain_mode)) {
+		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
 			return BT_GATT_ERR(BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED);
 		}
-		if (inst->state.gain_mode != BT_AICS_MODE_MANUAL) {
-			inst->state.gain_mode = BT_AICS_MODE_MANUAL;
+		if (inst->srv.state.gain_mode != BT_AICS_MODE_MANUAL) {
+			inst->srv.state.gain_mode = BT_AICS_MODE_MANUAL;
 			notify = true;
 		}
 		break;
 	case BT_AICS_OPCODE_SET_AUTO:
 		BT_DBG("Set automatic mode");
-		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->state.gain_mode)) {
+		if (BT_AICS_INPUT_MODE_IMMUTABLE(inst->srv.state.gain_mode)) {
 			return BT_GATT_ERR(BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED);
 		}
-		if (inst->state.gain_mode != BT_AICS_MODE_AUTO) {
-			inst->state.gain_mode = BT_AICS_MODE_AUTO;
+		if (inst->srv.state.gain_mode != BT_AICS_MODE_AUTO) {
+			inst->srv.state.gain_mode = BT_AICS_MODE_AUTO;
 			notify = true;
 		}
 		break;
@@ -259,20 +262,20 @@ static ssize_t write_aics_control(struct bt_conn *conn,
 	}
 
 	if (notify) {
-		inst->state.change_counter++;
+		inst->srv.state.change_counter++;
 
 		BT_DBG("New state: gain %d, mute %u, gain_mode %u, counter %u",
-		       inst->state.gain, inst->state.mute,
-		       inst->state.gain_mode, inst->state.change_counter);
+		       inst->srv.state.gain, inst->srv.state.mute,
+		       inst->srv.state.gain_mode, inst->srv.state.change_counter);
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_STATE,
-				    inst->service_p->attrs, &inst->state,
-				    sizeof(inst->state));
+				    inst->srv.service_p->attrs, &inst->srv.state,
+				    sizeof(inst->srv.state));
 
-		if (inst->cb && inst->cb->state) {
-			inst->cb->state(NULL, (struct bt_aics *)inst, 0,
-					inst->state.gain, inst->state.mute,
-					inst->state.gain_mode);
+		if (inst->srv.cb && inst->srv.cb->state) {
+			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
+					inst->srv.state.mute,
+					inst->srv.state.gain_mode);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
@@ -294,32 +297,32 @@ static ssize_t write_description(struct bt_conn *conn,
 				 const void *buf, uint16_t len, uint16_t offset,
 				 uint8_t flags)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
-	if (len >= sizeof(inst->description)) {
+	if (len >= sizeof(inst->srv.description)) {
 		BT_DBG("Output desc was clipped from length %u to %zu",
-		       len, sizeof(inst->description) - 1);
+		       len, sizeof(inst->srv.description) - 1);
 		/* We just clip the string value if it's too long */
-		len = (uint16_t)sizeof(inst->description) - 1;
+		len = (uint16_t)sizeof(inst->srv.description) - 1;
 	}
 
-	if (memcmp(buf, inst->description, len)) {
-		memcpy(inst->description, buf, len);
-		inst->description[len] = '\0';
+	if (memcmp(buf, inst->srv.description, len)) {
+		memcpy(inst->srv.description, buf, len);
+		inst->srv.description[len] = '\0';
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_AICS_DESCRIPTION,
-				    inst->service_p->attrs, &inst->description,
-				    strlen(inst->description));
+				    inst->srv.service_p->attrs, &inst->srv.description,
+				    strlen(inst->srv.description));
 
-		if (inst->cb && inst->cb->description) {
-			inst->cb->description(NULL, (struct bt_aics *)inst, 0,
-					      inst->description);
+		if (inst->srv.cb && inst->srv.cb->description) {
+			inst->srv.cb->description(inst, 0,
+						  inst->srv.description);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
 	}
 
-	BT_DBG("%s", log_strdup(inst->description));
+	BT_DBG("%s", log_strdup(inst->srv.description));
 
 	return len;
 }
@@ -329,12 +332,12 @@ static ssize_t read_description(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	struct bt_aics_server *inst = attr->user_data;
+	struct bt_aics *inst = attr->user_data;
 
-	BT_DBG("%s", log_strdup(inst->description));
+	BT_DBG("%s", log_strdup(inst->srv.description));
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->description, strlen(inst->description));
+				 &inst->srv.description, strlen(inst->srv.description));
 }
 
 /************************ PUBLIC API ************************/
@@ -351,7 +354,7 @@ void *bt_aics_svc_decl_get(struct bt_aics *aics)
 static void prepare_aics_instances(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(aics_insts); i++) {
-		aics_insts[i].service_p = &aics_service_list[i];
+		aics_insts[i].srv.service_p = &aics_service_list[i];
 	}
 }
 
@@ -499,7 +502,7 @@ int bt_aics_deactivate(struct bt_aics *inst)
 				    sizeof(inst->srv.status));
 
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(NULL, inst, 0, inst->srv.status);
+			inst->srv.cb->status(inst, 0, inst->srv.status);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
@@ -525,7 +528,7 @@ int bt_aics_activate(struct bt_aics *inst)
 				    sizeof(inst->srv.status));
 
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(NULL, inst, 0, inst->srv.status);
+			inst->srv.cb->status(inst, 0, inst->srv.status);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
@@ -536,18 +539,18 @@ int bt_aics_activate(struct bt_aics *inst)
 
 #endif /* CONFIG_BT_AICS */
 
-int bt_aics_state_get(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_state_get(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_state_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_state_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->state) {
-			inst->srv.cb->state(NULL, inst, 0, inst->srv.state.gain,
+			inst->srv.cb->state(inst, 0, inst->srv.state.gain,
 					    inst->srv.state.mute,
 					    inst->srv.state.gain_mode);
 		} else {
@@ -559,18 +562,18 @@ int bt_aics_state_get(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_gain_setting_get(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_gain_setting_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_gain_setting_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->gain_setting) {
-			inst->srv.cb->gain_setting(NULL, inst, 0,
+			inst->srv.cb->gain_setting(inst, 0,
 						   inst->srv.gain_settings.units,
 						   inst->srv.gain_settings.minimum,
 						   inst->srv.gain_settings.maximum);
@@ -583,18 +586,18 @@ int bt_aics_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_type_get(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_type_get(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_type_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_type_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->type) {
-			inst->srv.cb->type(NULL, inst, 0, inst->srv.type);
+			inst->srv.cb->type(inst, 0, inst->srv.type);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
@@ -604,18 +607,18 @@ int bt_aics_type_get(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_status_get(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_status_get(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_status_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_status_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->status) {
-			inst->srv.cb->status(NULL, inst, 0, inst->srv.status);
+			inst->srv.cb->status(inst, 0, inst->srv.status);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
 		}
@@ -625,16 +628,16 @@ int bt_aics_status_get(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_unmute(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_unmute(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_unmute(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_unmute(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -652,16 +655,16 @@ int bt_aics_unmute(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_mute(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_mute(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_mute(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_mute(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -679,16 +682,16 @@ int bt_aics_mute(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_manual_gain_set(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_manual_gain_set(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_manual_gain_set(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -706,16 +709,16 @@ int bt_aics_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_automatic_gain_set(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_automatic_gain_set(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_automatic_gain_set(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_automatic_gain_set(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_control cp;
 		int err;
@@ -733,16 +736,16 @@ int bt_aics_automatic_gain_set(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t gain)
+int bt_aics_gain_set(struct bt_aics *inst, int8_t gain)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_gain_set(conn, inst, gain);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_gain_set(inst, gain);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_aics_gain_control cp;
 		int err;
@@ -761,18 +764,18 @@ int bt_aics_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t gain)
 	return -ENOTSUP;
 }
 
-int bt_aics_description_get(struct bt_conn *conn, struct bt_aics *inst)
+int bt_aics_description_get(struct bt_aics *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_description_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_description_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->description) {
-			inst->srv.cb->description(NULL, inst, 0,
+			inst->srv.cb->description(inst, 0,
 						  inst->srv.description);
 		} else {
 			BT_DBG("Callback not registered for instance %p", inst);
@@ -783,8 +786,7 @@ int bt_aics_description_get(struct bt_conn *conn, struct bt_aics *inst)
 	return -ENOTSUP;
 }
 
-int bt_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
-			    const char *description)
+int bt_aics_description_set(struct bt_aics *inst, const char *description)
 {
 	CHECKIF(!inst) {
 		BT_DBG("NULL instance");
@@ -796,9 +798,9 @@ int bt_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && conn) {
-		return bt_aics_client_description_set(conn, inst, description);
-	} else if (IS_ENABLED(CONFIG_BT_AICS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
+		return bt_aics_client_description_set(inst, description);
+	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 

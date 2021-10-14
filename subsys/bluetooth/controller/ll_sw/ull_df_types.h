@@ -27,8 +27,8 @@ enum df_switch_sample_support {
  * - for LLL -> ULL
  * - for ULL -> LL(HCI).
  */
-#if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
-#define IQ_REPORT_CNT (CONFIG_BT_PER_ADV_SYNC_MAX * 2)
+#if defined(CONFIG_BT_PER_ADV_SYNC_MAX) && defined(CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX)
+#define IQ_REPORT_CNT (CONFIG_BT_PER_ADV_SYNC_MAX * CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
 #else
 #define IQ_REPORT_CNT 0
 #endif

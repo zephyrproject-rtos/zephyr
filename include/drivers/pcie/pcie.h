@@ -88,7 +88,18 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
- * @brief Get the nth MMIO address assigned to an endpoint.
+ * @brief Get the MBAR at a specific BAR index
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param mbar Pointer to struct pcie_mbar
+ * @return true if the mbar was found and is valid, false otherwise
+ */
+extern bool pcie_get_mbar(pcie_bdf_t bdf,
+			  unsigned int bar_index,
+			  struct pcie_mbar *mbar);
+
+/**
+ * @brief Probe the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
  * @param mbar Pointer to struct pcie_mbar
@@ -100,9 +111,9 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
  */
-extern bool pcie_get_mbar(pcie_bdf_t bdf,
-			  unsigned int index,
-			  struct pcie_mbar *mbar);
+extern bool pcie_probe_mbar(pcie_bdf_t bdf,
+			    unsigned int index,
+			    struct pcie_mbar *mbar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
@@ -156,6 +167,15 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
  */
 extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
+/**
+ * @brief Find an Extended PCI(e) capability in an endpoint's configuration space.
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param cap_id the capability ID of interest
+ * @return the index of the configuration word, or 0 if no capability.
+ */
+extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
@@ -170,6 +190,21 @@ extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
 #define PCIE_CONF_CAP_ID(w)		((w) & 0xFFU)
 #define PCIE_CONF_CAP_NEXT(w)		(((w) >> 10) & 0x3FU)
+
+/*
+ * The extended PCI Express capabilies lies at the end of the PCI configuration space
+ */
+
+#define PCIE_CONF_EXT_CAPPTR	64U
+
+/*
+ * The first word of every capability contains an extended capability identifier,
+ * and a link to the next capability (or 0) in the extended configuration space.
+ */
+
+#define PCIE_CONF_EXT_CAP_ID(w)		((w) & 0xFFFFU)
+#define PCIE_CONF_EXT_CAP_VER(w)	(((w) >> 16) & 0xFU)
+#define PCIE_CONF_EXT_CAP_NEXT(w)	(((w) >> 20) & 0xFFFU)
 
 /*
  * Configuration word 0 aligns directly with pcie_id_t.

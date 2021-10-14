@@ -10,6 +10,8 @@ config CMSIS_DSP_BASICMATH
 	  This option enables the Basic Math Functions, which support the
 	  following operations:
 
+	  * Elementwise Clipping
+	  * Vector Absolute Value
 	  * Vector Addition
 	  * Vector Subtraction
 	  * Vector Multiplication
@@ -63,12 +65,15 @@ config CMSIS_DSP_FASTMATH
 	  This option enables the Fast Math Functions, which support the
 	  following operations:
 
+	  * Fixed-Point Division
 	  * Sine
 	  * Cosine
 	  * Square Root
 
 config CMSIS_DSP_FILTERING
 	bool "Filtering Functions"
+	imply CMSIS_DSP_FASTMATH
+	imply CMSIS_DSP_SUPPORT
 	help
 	  This option enables the Filtering Functions, which support the
 	  following operations:
@@ -76,6 +81,7 @@ config CMSIS_DSP_FILTERING
 	  * Convolution
 	  * Partial Convolution
 	  * Correlation
+	  * Levinson-Durbin Algorithm
 
 	  The following filter types are supported:
 
@@ -91,6 +97,16 @@ config CMSIS_DSP_FILTERING
 	  * LMS (least mean square) Filter
 	  * Normalized LMS Filter
 
+config CMSIS_DSP_INTERPOLATION
+	bool "Interpolation Functions"
+	help
+	  This option enables the Interpolation Functions, which support the
+	  following operations:
+
+	  * Bilinear Interpolation
+	  * Linear Interpolation
+	  * Cubic Spline Interpolation
+
 config CMSIS_DSP_MATRIX
 	bool "Matrix Functions"
 	help
@@ -102,9 +118,25 @@ config CMSIS_DSP_MATRIX
 	  * Matrix Subtraction
 	  * Matrix Multiplication
 	  * Complex Matrix Multiplication
+	  * Matrix Vector Multiplication
 	  * Matrix Inverse
 	  * Matrix Scale
 	  * Matrix Transpose
+	  * Complex Matrix Transpose
+	  * Cholesky and LDLT Decompositions
+
+config CMSIS_DSP_QUATERNIONMATH
+	bool "Quaternion Math Functions"
+	help
+	  This option enables the Quaternion Math Functions, which support the
+	  following operations:
+
+	  * Quaternion Conversions
+	  * Quaternion Conjugate
+	  * Quaternion Inverse
+	  * Quaternion Norm
+	  * Quaternion Normalization
+	  * Quaternion Product
 
 config CMSIS_DSP_STATISTICS
 	bool "Statistics Functions"
@@ -115,12 +147,17 @@ config CMSIS_DSP_STATISTICS
 	  following operations:
 
 	  * Minimum
+	  * Absolute Minimum
 	  * Maximum
+	  * Absolute Maximum
 	  * Mean
 	  * Root Mean Square (RMS)
 	  * Variance
 	  * Standard Deviation
 	  * Power
+	  * Entropy
+	  * Kullback-Leibler Divergence
+	  * LogSumExp (LSE)
 
 config CMSIS_DSP_SUPPORT
 	bool "Support Functions"
@@ -131,11 +168,13 @@ config CMSIS_DSP_SUPPORT
 	  * Vector 8-bit Integer Value Conversion
 	  * Vector 16-bit Integer Value Conversion
 	  * Vector 32-bit Integer Value Conversion
+	  * Vector 16-bit Floating-Point Value Conversion
 	  * Vector 32-bit Floating-Point Value Conversion
 	  * Vector Copy
 	  * Vector Fill
 	  * Vector Sorting
-	  * Cubic Spline Interpolation
+	  * Weighted Sum
+	  * Barycenter
 
 config CMSIS_DSP_TRANSFORM
 	bool "Transform Functions"
@@ -239,6 +278,15 @@ config CMSIS_DSP_TABLES_ALL_FFT
 	select CMSIS_DSP_TABLES_CFFT_F32_1024
 	select CMSIS_DSP_TABLES_CFFT_F32_2048
 	select CMSIS_DSP_TABLES_CFFT_F32_4096
+	select CMSIS_DSP_TABLES_CFFT_F16_16
+	select CMSIS_DSP_TABLES_CFFT_F16_32
+	select CMSIS_DSP_TABLES_CFFT_F16_64
+	select CMSIS_DSP_TABLES_CFFT_F16_128
+	select CMSIS_DSP_TABLES_CFFT_F16_256
+	select CMSIS_DSP_TABLES_CFFT_F16_512
+	select CMSIS_DSP_TABLES_CFFT_F16_1024
+	select CMSIS_DSP_TABLES_CFFT_F16_2048
+	select CMSIS_DSP_TABLES_CFFT_F16_4096
 	select CMSIS_DSP_TABLES_CFFT_Q31_16
 	select CMSIS_DSP_TABLES_CFFT_Q31_32
 	select CMSIS_DSP_TABLES_CFFT_Q31_64
@@ -273,14 +321,22 @@ config CMSIS_DSP_TABLES_ALL_FFT
 	select CMSIS_DSP_TABLES_RFFT_FAST_F32_1024
 	select CMSIS_DSP_TABLES_RFFT_FAST_F32_2048
 	select CMSIS_DSP_TABLES_RFFT_FAST_F32_4096
-	select CMSIS_DSP_TABLES_RFFT_F64_128
-	select CMSIS_DSP_TABLES_RFFT_F64_512
-	select CMSIS_DSP_TABLES_RFFT_F64_2048
-	select CMSIS_DSP_TABLES_RFFT_F64_8192
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_32
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_64
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_128
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_256
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_512
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_1024
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_2048
+	select CMSIS_DSP_TABLES_RFFT_FAST_F16_4096
 	select CMSIS_DSP_TABLES_RFFT_F32_128
 	select CMSIS_DSP_TABLES_RFFT_F32_512
 	select CMSIS_DSP_TABLES_RFFT_F32_2048
 	select CMSIS_DSP_TABLES_RFFT_F32_8192
+	select CMSIS_DSP_TABLES_RFFT_F16_128
+	select CMSIS_DSP_TABLES_RFFT_F16_512
+	select CMSIS_DSP_TABLES_RFFT_F16_2048
+	select CMSIS_DSP_TABLES_RFFT_F16_8192
 	select CMSIS_DSP_TABLES_RFFT_Q31_32
 	select CMSIS_DSP_TABLES_RFFT_Q31_64
 	select CMSIS_DSP_TABLES_RFFT_Q31_128
@@ -406,6 +462,33 @@ config CMSIS_DSP_TABLES_CFFT_F32_2048
 config CMSIS_DSP_TABLES_CFFT_F32_4096
 	bool "cfft f32 4096"
 
+config CMSIS_DSP_TABLES_CFFT_F16_16
+	bool "cfft f16 16"
+
+config CMSIS_DSP_TABLES_CFFT_F16_32
+	bool "cfft f16 32"
+
+config CMSIS_DSP_TABLES_CFFT_F16_64
+	bool "cfft f16 64"
+
+config CMSIS_DSP_TABLES_CFFT_F16_128
+	bool "cfft f16 128"
+
+config CMSIS_DSP_TABLES_CFFT_F16_256
+	bool "cfft f16 256"
+
+config CMSIS_DSP_TABLES_CFFT_F16_512
+	bool "cfft f16 512"
+
+config CMSIS_DSP_TABLES_CFFT_F16_1024
+	bool "cfft f16 1024"
+
+config CMSIS_DSP_TABLES_CFFT_F16_2048
+	bool "cfft f16 2048"
+
+config CMSIS_DSP_TABLES_CFFT_F16_4096
+	bool "cfft f16 4096"
+
 config CMSIS_DSP_TABLES_CFFT_Q31_16
 	bool "cfft q31 16"
 
@@ -460,6 +543,18 @@ config CMSIS_DSP_TABLES_CFFT_Q15_2048
 config CMSIS_DSP_TABLES_CFFT_Q15_4096
 	bool "cfft q15 4096"
 
+config CMSIS_DSP_TABLES_CFFT_RADIX4_Q31
+	bool "cfft radix4 q31 (deprecated)"
+
+config CMSIS_DSP_TABLES_CFFT_RADIX4_Q15
+	bool "cfft radix4 q15 (deprecated)"
+
+config CMSIS_DSP_TABLES_CFFT_RADIX2_Q31
+	bool "cfft radix2 q31 (deprecated)"
+
+config CMSIS_DSP_TABLES_CFFT_RADIX2_Q15
+	bool "cfft radix2 q15 (deprecated)"
+
 config CMSIS_DSP_TABLES_RFFT_FAST_F64_32
 	bool "rfft fast f64 32"
 
@@ -508,17 +603,29 @@ config CMSIS_DSP_TABLES_RFFT_FAST_F32_2048
 config CMSIS_DSP_TABLES_RFFT_FAST_F32_4096
 	bool "rfft fast f32 4096"
 
-config CMSIS_DSP_TABLES_RFFT_F64_128
-	bool "rfft f64 128"
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_32
+	bool "rfft fast f16 32"
 
-config CMSIS_DSP_TABLES_RFFT_F64_512
-	bool "rfft f64 512"
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_64
+	bool "rfft fast f16 64"
 
-config CMSIS_DSP_TABLES_RFFT_F64_2048
-	bool "rfft f64 2048"
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_128
+	bool "rfft fast f16 128"
 
-config CMSIS_DSP_TABLES_RFFT_F64_8192
-	bool "rfft f64 8192"
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_256
+	bool "rfft fast f16 256"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_512
+	bool "rfft fast f16 512"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_1024
+	bool "rfft fast f16 1024"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_2048
+	bool "rfft fast f16 2048"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F16_4096
+	bool "rfft fast f16 4096"
 
 config CMSIS_DSP_TABLES_RFFT_F32_128
 	bool "rfft f32 128"
@@ -531,6 +638,18 @@ config CMSIS_DSP_TABLES_RFFT_F32_2048
 
 config CMSIS_DSP_TABLES_RFFT_F32_8192
 	bool "rfft f32 8192"
+
+config CMSIS_DSP_TABLES_RFFT_F16_128
+	bool "rfft f16 128"
+
+config CMSIS_DSP_TABLES_RFFT_F16_512
+	bool "rfft f16 512"
+
+config CMSIS_DSP_TABLES_RFFT_F16_2048
+	bool "rfft f16 2048"
+
+config CMSIS_DSP_TABLES_RFFT_F16_8192
+	bool "rfft f16 8192"
 
 config CMSIS_DSP_TABLES_RFFT_Q31_32
 	bool "rfft q31 32"
@@ -636,32 +755,6 @@ config CMSIS_DSP_NEON
 	  This option enables the NEON Advanced SIMD instruction set, which is
 	  available on most Cortex-A and some Cortex-R processors.
 
-# TODO: Activate Helium instruction set once Cortex-M55 support is in place.
-# config CMSIS_DSP_HELIUM
-#	bool "Helium Instruction Set"
-#	depends on CPU_CORTEX_M
-#	select CMSIS_DSP_MVEF
-#	select CMSIS_DSP_MVEI
-#	help
-#	  This option enables the Helium M-Profile Vector Extension (MVE).
-#
-#	  Note that selecting this option implies the support for both MVE
-#	  floating-point and integer instruction sets.
-
-# config CMSIS_DSP_MVEF
-#	bool "MVE-F Instructions"
-#	depends on CPU_CORTEX_M
-#	help
-#	  This option enables the ARMv8.1-M M-Profile Vector Extension (MVE)
-#	  floating-point instruction set.
-
-# config CMSIS_DSP_MVEI
-#	bool "MVE-I Instructions"
-#	depends on CPU_CORTEX_M
-#	help
-#	  This option enables the ARMv8.1-M M-Profile Vector Extension (MVE)
-#	  integer instruction set.
-
 comment "Features"
 
 config CMSIS_DSP_LOOPUNROLL
@@ -685,3 +778,11 @@ config CMSIS_DSP_AUTOVECTORIZE
 	help
 	  This option prefers autovectorizable code to one using C intrinsics
 	  in the DSP functions.
+
+config CMSIS_DSP_FLOAT16
+	bool "Half-Precision (16-bit Float) Support"
+	default y
+	depends on FP16
+	help
+	  This option enables the half-precision (16-bit) floating-point
+	  operations support.

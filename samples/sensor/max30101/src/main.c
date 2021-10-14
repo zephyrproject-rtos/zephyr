@@ -11,7 +11,7 @@
 void main(void)
 {
 	struct sensor_value green;
-	const struct device *dev = DEVICE_DT_GET_ANY(max_max30101);
+	const struct device *dev = DEVICE_DT_GET_ANY(maxim_max30101);
 
 	if (dev == NULL) {
 		printf("Could not get max30101 device\n");

@@ -383,17 +383,25 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	int res = -ENOTSUP;
 #if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	FATFS *fs;
+	DWORD f_bfree = 0;
 
-	res = f_getfree(&mountp->mnt_point[1], &stat->f_bfree, &fs);
+	res = f_getfree(&mountp->mnt_point[1], &f_bfree, &fs);
 	if (res != FR_OK) {
 		return -EIO;
 	}
 
+	stat->f_bfree = f_bfree;
+
 	/*
-	 * _MIN_SS holds the sector size. It is one of the configuration
-	 * constants used by the FS module
+	 * If FF_MIN_SS and FF_MAX_SS differ, variable sector size support is
+	 * enabled and the file system object structure contains the actual sector
+	 * size, otherwise it is configured to a fixed value give by FF_MIN_SS.
 	 */
-	stat->f_bsize = _MIN_SS;
+#if FF_MAX_SS != FF_MIN_SS
+	stat->f_bsize = fs->ssize;
+#else
+	stat->f_bsize = FF_MIN_SS;
+#endif
 	stat->f_frsize = fs->csize * stat->f_bsize;
 	stat->f_blocks = (fs->n_fatent - 2);
 
@@ -416,10 +424,16 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM &&
 	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
-		uint8_t work[_MAX_SS];
+		uint8_t work[FF_MAX_SS];
+		MKFS_PARM mkfs_opt = {
+			.fmt = FM_FAT | FM_SFD,	/* Any suitable FAT */
+			.n_fat = 1,		/* One FAT fs table */
+			.align = 0,		/* Get sector size via diskio query */
+			.n_root = 512,		/* Max 512 root directory entries */
+			.au_size = 0		/* Auto calculate cluster size */
+		};
 
-		res = f_mkfs(&mountp->mnt_point[1],
-				(FM_FAT | FM_SFD), 0, work, sizeof(work));
+		res = f_mkfs(&mountp->mnt_point[1], &mkfs_opt, work, sizeof(work));
 		if (res == FR_OK) {
 			res = f_mount((FATFS *)mountp->fs_data,
 					&mountp->mnt_point[1], 1);
@@ -435,7 +449,7 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 {
 	FRESULT res;
 
-	res = f_mount(NULL, &mountp->mnt_point[1], 1);
+	res = f_mount(NULL, &mountp->mnt_point[1], 0);
 
 	return translate_error(res);
 }

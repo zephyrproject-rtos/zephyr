@@ -11,10 +11,10 @@ static const char *poll_data = "This is a POLL test.\r\n";
 static int test_poll_in(void)
 {
 	unsigned char recv_char;
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-	if (!uart_dev) {
-		TC_PRINT("Cannot get UART device\n");
+	if (!device_is_ready(uart_dev)) {
+		TC_PRINT("UART device not ready\n");
 		return TC_FAIL;
 	}
 
@@ -23,6 +23,8 @@ static int test_poll_in(void)
 	/* Verify uart_poll_in() */
 	while (1) {
 		while (uart_poll_in(uart_dev, &recv_char) < 0) {
+			/* Allow other thread/workqueue to work. */
+			k_yield();
 		}
 
 		TC_PRINT("%c", recv_char);
@@ -38,10 +40,10 @@ static int test_poll_in(void)
 static int test_poll_out(void)
 {
 	int i;
-	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+	const struct device *uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
-	if (!uart_dev) {
-		TC_PRINT("Cannot get UART device\n");
+	if (!device_is_ready(uart_dev)) {
+		TC_PRINT("UART device not ready\n");
 		return TC_FAIL;
 	}
 

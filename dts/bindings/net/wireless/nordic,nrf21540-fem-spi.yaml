@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-description: >
+description: |
     This is a SPI device interface to the nRF21540 Radio Front-End module
 
 compatible: "nordic,nrf21540-fem-spi"

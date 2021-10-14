@@ -6,98 +6,150 @@
 
 #include <stdint.h>
 #include <errno.h>
+#include <soc.h>
 #include <devicetree.h>
 #include <sys/util_macro.h>
 #include <hal/nrf_radio.h>
 #include <hal/nrf_gpio.h>
+#include <hal/ccm.h>
 
 #include "radio_nrf5.h"
+#include "radio.h"
 #include "radio_df.h"
+#include "radio_internal.h"
 
-/* @brief Minimum antennas number required if antenna switching is enabled */
-#define DF_ANT_NUM_MIN 2
-/* @brief Value that used to check if PDU antenna pattern is not set */
-#define DF_PDU_ANT_NOT_SET 0xFF
-/* @brief Value to set antenna GPIO pin as not connected */
-#define DF_GPIO_PIN_NOT_SET 0xFF
-/* @brief Number of PSEL_DFEGPIO registers in Radio peripheral */
-#define DF_PSEL_GPIO_NUM 8
-/* @brief Maximum index number related with count of PSEL_DFEGPIO registers in
- *        Radio peripheral. It is used in macros only e.g. UTIL_LISTIFY that
- *        evaluate indices in an inclusive way.
+/* Devicetree node identifier for the radio node. */
+#define RADIO_NODE DT_NODELABEL(radio)
+
+/* Value to set for unconnected antenna GPIO pins. */
+#define DFE_PSEL_NOT_SET 0xFF
+/* Number of PSEL_DFEGPIO[n] registers in the radio peripheral. */
+#define MAX_DFE_GPIO 8
+/* Run a macro 'fn' on each available DFE GPIO index, from 0 to
+ * MAX_DFE_GPIO-1, with the given parenthesized separator.
  */
-#define DF_PSEL_GPIO_NUM_MAX_IDX 7
+#define FOR_EACH_DFE_GPIO(fn, sep) \
+	FOR_EACH(fn, sep, 0, 1, 2, 3, 4, 5, 6, 7)
 
-/* @brief Direction Finding antenna matrix configuration */
+/* Direction Finding antenna matrix configuration */
 struct df_ant_cfg {
 	uint8_t ant_num;
 	/* Selection of GPIOs to be used to switch antennas by Radio */
-	uint8_t dfe_gpio[DF_PSEL_GPIO_NUM];
+	uint8_t dfe_gpio[MAX_DFE_GPIO];
 };
 
-#define RADIO DT_NODELABEL(radio)
-#define DFE_GPIO_PSEL(idx)                                                \
-	COND_CODE_1(DT_NODE_HAS_PROP(RADIO, dfegpio##idx##_gpios),        \
-		   (NRF_DT_GPIOS_TO_PSEL(RADIO, dfegpio##idx##_gpios)),   \
-		   (DF_GPIO_PIN_NOT_SET))
+#define DFE_GPIO_PSEL(idx)					  \
+	NRF_DT_GPIOS_TO_PSEL_OR(RADIO_NODE, dfegpio##idx##_gpios, \
+				DFE_PSEL_NOT_SET)
 
 #define DFE_GPIO_PIN_DISCONNECT (RADIO_PSEL_DFEGPIO_CONNECT_Disconnected << \
 				 RADIO_PSEL_DFEGPIO_CONNECT_Pos)
 
-#define COUNT_GPIO(idx, _) + DT_NODE_HAS_PROP(RADIO, dfegpio##idx##_gpios)
-#define DFE_GPIO_NUM        (UTIL_LISTIFY(DF_PSEL_GPIO_NUM, COUNT_GPIO, _))
+#define HAS_DFE_GPIO(idx) DT_NODE_HAS_PROP(RADIO_NODE, dfegpio##idx##_gpios)
 
-/* DFE_GPIO_NUM_IS_ZERO is required to correctly compile COND_CODE_1 in
- * DFE_GPIO_ALLOWED_ANT_NUM macro. DFE_GPIO_NUM does not expand to literal 1
- * So it is not possible to use it as a conditional in COND_CODE_1 argument.
+/* The number of dfegpio[n]-gpios properties which are set. */
+#define DFE_GPIO_NUM (FOR_EACH_DFE_GPIO(HAS_DFE_GPIO, (+)))
+
+/* The minimum number of antennas required to enable antenna switching. */
+#define MIN_ANTENNA_NUM 2
+
+/* The maximum number of antennas supported by the number of
+ * dfegpio[n]-gpios properties which are set.
  */
 #if (DFE_GPIO_NUM > 0)
-#define DFE_GPIO_NUM_IS_ZERO 1
+#define MAX_ANTENNA_NUM BIT(DFE_GPIO_NUM)
 #else
-#define DFE_GPIO_NUM_IS_ZERO EMPTY
+#define MAX_ANTENNA_NUM 0
 #endif
 
-#define DFE_GPIO_ALLOWED_ANT_NUM COND_CODE_1(DFE_GPIO_NUM_IS_ZERO,       \
-					     (BIT(DFE_GPIO_NUM)), (0))
+/* PDU_ANTENNA is defined outside of the #if block below because
+ * radio_df_pdu_antenna_switch_pattern_get() can get called even when
+ * the preprocessor condition being tested is 0. In this case, we use
+ * the default value of 0.
+ */
+#define PDU_ANTENNA DT_PROP_OR(RADIO_NODE, dfe_pdu_antenna, 0)
+
+uint8_t radio_df_pdu_antenna_switch_pattern_get(void)
+{
+	return PDU_ANTENNA;
+}
 
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
 	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 
-/* Check if there is enough pins configured to represent each pattern
- * for given antennas number.
+/*
+ * Check that we have an antenna switch pattern for the DFE idle
+ * state. (In DFE idle state, the radio peripheral transmits or
+ * receives PDUs.)
  */
-BUILD_ASSERT((DT_PROP(RADIO, dfe_antenna_num) <= DFE_GPIO_ALLOWED_ANT_NUM), "Insufficient "
-	     "number of GPIO pins configured.");
-BUILD_ASSERT((DT_PROP(RADIO, dfe_antenna_num) >= DF_ANT_NUM_MIN), "Insufficient "
-	     "number of antennas provided.");
-BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CTLR_DF_INIT_ANT_SEL_GPIOS) ||
-	     (DT_PROP(RADIO, dfe_pdu_antenna) != DF_PDU_ANT_NOT_SET), "Missing "
-	     "antenna pattern used to select antenna for PDU Tx.");
 
-/* Check if dfegpio#-gios property has flag cell set to zero */
-#define DFE_GPIO_PIN_FLAGS(idx) (DT_GPIO_FLAGS(RADIO, dfegpio##idx##_gpios))
-#define DFE_GPIO_PIN_IS_FLAG_ZERO(idx)                                       \
-	COND_CODE_1(DT_NODE_HAS_PROP(RADIO, dfegpio##idx##_gpios),           \
-		    (BUILD_ASSERT((DFE_GPIO_PIN_FLAGS(idx) == 0),            \
-				  "Flags value of GPIO pin property must be" \
-				  "zero.")),                                 \
-		    (EMPTY))
+#define HAS_PDU_ANTENNA DT_NODE_HAS_PROP(RADIO_NODE, dfe_pdu_antenna)
 
-#define DFE_GPIO_PIN_LIST(idx, _) idx,
-FOR_EACH(DFE_GPIO_PIN_IS_FLAG_ZERO, (;),
-	UTIL_LISTIFY(DF_PSEL_GPIO_NUM_MAX_IDX, DFE_GPIO_PIN_LIST))
+BUILD_ASSERT(HAS_PDU_ANTENNA,
+	     "Missing antenna pattern used to select antenna for PDU Tx "
+	     "during the DFE Idle state. "
+	     "Set the dfe-pdu-antenna devicetree property.");
 
-#if DT_NODE_HAS_STATUS(RADIO, okay)
-const static struct df_ant_cfg ant_cfg = {
-	.ant_num = DT_PROP(RADIO, dfe_antenna_num),
-	.dfe_gpio = {
-		FOR_EACH(DFE_GPIO_PSEL, (,),
-			 UTIL_LISTIFY(DF_PSEL_GPIO_NUM_MAX_IDX, DFE_GPIO_PIN_LIST))
+void radio_df_ant_switch_pattern_set(const uint8_t *patterns, uint8_t len)
+{
+	/* SWITCHPATTERN is like a moving pointer to an underlying buffer.
+	 * Each write stores a value and moves the pointer to new free position.
+	 * When read it returns number of stored elements since last write to
+	 * CLEARPATTERN. There is no need to use a subscript operator.
+	 *
+	 * Some storage entries in the buffer has special purpose for DFE
+	 * extension in radio:
+	 * - SWITCHPATTERN[0] for idle period (PDU Tx/Rx),
+	 * - SWITCHPATTERN[1] for guard and reference period,
+	 * - SWITCHPATTERN[2] and following for switch-sampling slots.
+	 * Due to that in SWITCHPATTER[0] there is stored a pattern provided by
+	 * DTS property dfe_pdu_antenna. This limits number of supported antenna
+	 * switch patterns by one.
+	 */
+	NRF_RADIO->SWITCHPATTERN = PDU_ANTENNA;
+	for (uint8_t idx = 0; idx < len; ++idx) {
+		NRF_RADIO->SWITCHPATTERN = patterns[idx];
 	}
+}
+
+/*
+ * Check that the number of antennas has been set, and that enough
+ * pins are configured to represent each pattern for the given number
+ * of antennas.
+ */
+
+#define HAS_ANTENNA_NUM DT_NODE_HAS_PROP(RADIO_NODE, dfe_antenna_num)
+
+BUILD_ASSERT(HAS_ANTENNA_NUM,
+	     "You must set the dfe-antenna-num property in the radio node "
+	     "to enable antenna switching.");
+
+#define ANTENNA_NUM DT_PROP_OR(RADIO_NODE, dfe_antenna_num, 0)
+
+BUILD_ASSERT(!HAS_ANTENNA_NUM || (ANTENNA_NUM <= MAX_ANTENNA_NUM),
+	     "Insufficient number of GPIO pins configured. "
+	     "Set more dfegpio[n]-gpios properties.");
+BUILD_ASSERT(!HAS_ANTENNA_NUM || (ANTENNA_NUM >= MIN_ANTENNA_NUM),
+	     "Insufficient number of antennas provided. "
+	     "Increase the dfe-antenna-num property.");
+
+/*
+ * Check that each dfegpio[n]-gpios property has a zero flags cell.
+ */
+
+#define ASSERT_DFE_GPIO_FLAGS_ARE_ZERO(idx)				   \
+	BUILD_ASSERT(DT_GPIO_FLAGS(RADIO_NODE, dfegpio##idx##_gpios) == 0, \
+		     "The flags cell in each dfegpio[n]-gpios "		   \
+		     "property must be zero.")
+
+FOR_EACH_DFE_GPIO(ASSERT_DFE_GPIO_FLAGS_ARE_ZERO, (;));
+
+/* Stores the dfegpio[n]-gpios property values.
+ */
+const static struct df_ant_cfg ant_cfg = {
+	.ant_num = ANTENNA_NUM,
+	.dfe_gpio = { FOR_EACH_DFE_GPIO(DFE_GPIO_PSEL, (,)) }
 };
-#else
-#error "DF antenna switching feature requires dfe_antenna_num to be enabled in DTS"
-#endif
 
 /* @brief Function configures Radio with information about GPIO pins that may be
  *        used to drive antenna switching during CTE Tx/RX.
@@ -110,10 +162,10 @@ void radio_df_ant_switching_pin_sel_cfg(void)
 {
 	uint8_t pin_sel;
 
-	for (uint8_t idx = 0; idx < DF_PSEL_GPIO_NUM; ++idx) {
+	for (uint8_t idx = 0; idx < MAX_DFE_GPIO; ++idx) {
 		pin_sel = ant_cfg.dfe_gpio[idx];
 
-		if (pin_sel != DF_GPIO_PIN_NOT_SET) {
+		if (pin_sel != DFE_PSEL_NOT_SET) {
 			nrf_radio_dfe_pattern_pin_set(NRF_RADIO,
 						      pin_sel,
 						      idx);
@@ -140,12 +192,12 @@ void radio_df_ant_switching_gpios_cfg(void)
 {
 	uint8_t pin_sel;
 
-	for (uint8_t idx = 0; idx < DF_PSEL_GPIO_NUM; ++idx) {
+	for (uint8_t idx = 0; idx < MAX_DFE_GPIO; ++idx) {
 		pin_sel = ant_cfg.dfe_gpio[idx];
-		if (pin_sel != DF_GPIO_PIN_NOT_SET) {
+		if (pin_sel != DFE_PSEL_NOT_SET) {
 			nrf_gpio_cfg_output(pin_sel);
 
-			if (BIT(idx) & DT_PROP(RADIO, dfe_pdu_antenna)) {
+			if (BIT(idx) & PDU_ANTENNA) {
 				nrf_gpio_pin_set(pin_sel);
 			} else {
 				nrf_gpio_pin_clear(pin_sel);
@@ -189,39 +241,6 @@ void radio_df_mode_set_aod(void)
 	radio_df_mode_set(NRF_RADIO_DFE_OP_MODE_AOD);
 }
 
-/* @brief Function configures CTE inline register to start sampling of CTE
- *        according to information parsed from CTEInfo filed of received PDU.
- *
- * @param[in] cte_info_in_s1    Informs where to expect CTEInfo filed in PDU:
- *                              in S1 for data pdu, not in S1 for adv. PDU
- */
-void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
-{
-	const nrf_radio_cteinline_conf_t inline_conf = {
-		.enable = true,
-		/* Indicates whether CTEInfo is in S1 byte or not. */
-		.info_in_s1 = cte_info_in_s1,
-		/* Enable or disable switching and sampling when CRC is not OK. */
-#if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-		.err_handling = true,
-#else
-		.err_handling = false,
-#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
-		/* Maximum range of CTE time. 20 * 8us according to BT spec.*/
-		.time_range = NRF_RADIO_CTEINLINE_TIME_RANGE_20,
-		/* Spacing between samples for 1us AoD or AoA is set to 2us. */
-		.rx1us = NRF_RADIO_CTEINLINE_RX_MODE_2US,
-		/* Spacing between samples for 2us AoD or AoA is set to 4us. */
-		.rx2us = NRF_RADIO_CTEINLINE_RX_MODE_4US,
-		/**< S0 bit pattern to match all types of adv. PDUs */
-		.s0_pattern = 0x0,
-		/**< S0 bit mask set to don't match any bit in SO octet */
-		.s0_mask = 0x0
-	};
-
-	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
-}
-
 static void radio_df_cte_inline_set_disabled(void)
 {
 	NRF_RADIO->CTEINLINECONF &= ~RADIO_CTEINLINECONF_CTEINLINECTRLEN_Msk;
@@ -259,33 +278,33 @@ void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
 {
 	/* Sample spacing does not matter for AoD Tx. It is set to value
 	 * that is in DFECTRL1 register after reset. That is done instead of
-	 * adding conditions on the value and and masking of the field before
+	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 {
 	/* Switch and sample spacing does not matter for AoA Tx. It is set to
 	 * value that is in DFECTRL1 register after reset. That is done instead
-	 * of adding conditions on the value and and masking of the field before
+	 * of adding conditions on the value and masking of the field before
 	 * storing configuration in the register.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
 void radio_df_cte_rx_2us_switching(void)
@@ -295,7 +314,7 @@ void radio_df_cte_rx_2us_switching(void)
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 	radio_df_cte_inline_set_enabled(false);
 }
 
@@ -306,40 +325,13 @@ void radio_df_cte_rx_4us_switching(void)
 	 * CTE duation is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
-			  RADIO_DFECTRL1_TSAMPLESPACINGREF_4us);
+			  RADIO_DFECTRL1_TSAMPLESPACING_4us);
 	radio_df_cte_inline_set_enabled(false);
 }
 
 void radio_df_ant_switch_pattern_clear(void)
 {
 	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
-}
-
-void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len)
-{
-	/* SWITCHPATTERN is like a moving pointer to underlying buffer.
-	 * Each write stores a value and moves the pointer to new free position.
-	 * When read it returns number of stored elements since last write to
-	 * CLEARPATTERN. There is no need to use subscript operator.
-	 *
-	 * Some storage entries in the buffer has special purpose for DFE
-	 * extension in radio:
-	 * - SWITCHPATTERN[0] for idle period (PDU Tx/Rx),
-	 * - SWITCHPATTERN[1] for guard and reference period,
-	 * - SWITCHPATTERN[2] and following for switch-sampling slots.
-	 * Due to that in SWITCHPATTER[0] there is stored a pattern provided by
-	 * DTS property dfe_pdu_antenna. This limits number of supported antenna
-	 * switch patterns by one.
-	 */
-	NRF_RADIO->SWITCHPATTERN = DT_PROP(RADIO, dfe_pdu_antenna);
-	for (uint8_t idx = 0; idx < len; ++idx) {
-		NRF_RADIO->SWITCHPATTERN = patterns[idx];
-	}
-}
-
-uint8_t radio_df_pdu_antenna_switch_pattern_get(void)
-{
-	return DT_PROP(RADIO, dfe_pdu_antenna);
 }
 
 void radio_df_reset(void)
@@ -356,6 +348,18 @@ void radio_switch_complete_and_phy_end_disable(void)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_disable();
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+					      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_TXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk;
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 

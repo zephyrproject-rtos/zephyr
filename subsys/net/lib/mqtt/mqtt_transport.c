@@ -47,6 +47,15 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	},
 #endif /* CONFIG_MQTT_LIB_TLS */
 #endif /* CONFIG_MQTT_LIB_WEBSOCKET */
+#if defined(CONFIG_MQTT_LIB_CUSTOM_TRANSPORT)
+	{
+		mqtt_client_custom_transport_connect,
+		mqtt_client_custom_transport_write,
+		mqtt_client_custom_transport_write_msg,
+		mqtt_client_custom_transport_read,
+		mqtt_client_custom_transport_disconnect,
+	},
+#endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 };
 
 int mqtt_transport_connect(struct mqtt_client *client)

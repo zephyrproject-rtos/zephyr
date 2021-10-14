@@ -1,0 +1,14 @@
+# ST Microelectronics STM32U575XX MCU
+
+# Copyright (c) 2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U575XX
+
+config SOC
+	default "stm32u575xx"
+
+config NUM_IRQS
+	default 125
+
+endif # SOC_STM32U575XX

@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_TACH_NPCX tach_nuvoton_npcx.c)
+zephyr_library_sources(tach_nuvoton_npcx.c)

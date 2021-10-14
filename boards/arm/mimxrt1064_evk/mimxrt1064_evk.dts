@@ -17,7 +17,7 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
-		usbd0 = &usb1;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
@@ -198,6 +198,10 @@ arduino_i2c: &lpi2c1 {};
 	current-speed = <115200>;
 };
 
+arduino_serial: &lpuart3 {
+	current-speed = <115200>;
+};
+
 &enet {
 	status = "okay";
 	ptp {
@@ -205,7 +209,7 @@ arduino_i2c: &lpi2c1 {};
 	};
 };
 
-&usb1 {
+zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
@@ -226,11 +230,28 @@ arduino_i2c: &lpi2c1 {};
 
 &usdhc1 {
 	status = "okay";
+	no-1-8-v;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};
+
+&edma0 {
+	status = "okay";
 };
 
 &flexcan2 {
 	status = "okay";
 	bus-speed = <125000>;
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&lpspi1 {
+	status = "okay";
+};
+
+&lpspi3 {
+	status = "okay";
 };

@@ -47,8 +47,7 @@ struct tracing_backend {
  * @param _api  Tracing backend API.
  */
 #define TRACING_BACKEND_DEFINE(_name, _api)                              \
-	static const Z_STRUCT_SECTION_ITERABLE(tracing_backend, _name) = \
-	{                                                                \
+	static const STRUCT_SECTION_ITERABLE(tracing_backend, _name) = { \
 		.name = STRINGIFY(_name),                                \
 		.api = &_api                                             \
 	}
@@ -92,7 +91,7 @@ static inline void tracing_backend_output(
  */
 static inline struct tracing_backend *tracing_backend_get(char *name)
 {
-	Z_STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
 		if (strcmp(backend->name, name) == 0) {
 			return backend;
 		}

@@ -23,5 +23,14 @@
 				reg = <0x08000000 DT_SIZE_K(64)>;
 			};
 		};
+
+		dac2: dac@40009800 {
+			compatible = "st,stm32-dac";
+			reg = <0x40009800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			status = "disabled";
+			label = "DAC_2";
+			#io-channel-cells = <1>;
+		};
 	};
 };

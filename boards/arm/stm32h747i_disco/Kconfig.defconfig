@@ -19,4 +19,7 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
 endif # BOARD_STM32H747I_DISCO_M7

@@ -18,16 +18,6 @@
 #include <sys/util.h>
 #include "ism330dhcx_reg.h"
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
-
-union axis1bit16_t {
-	int16_t i16bit;
-	uint8_t u8bit[2];
-};
-
 #define ISM330DHCX_EN_BIT					0x01
 #define ISM330DHCX_DIS_BIT					0x00
 

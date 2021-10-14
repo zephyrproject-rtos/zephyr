@@ -15,6 +15,7 @@
 		ranges;
 
 		nvic: interrupt-controller@e000e100  {
+			#address-cells = <1>;
 			compatible = "arm,v8.1m-nvic";
 			reg = <0xe000e100 0xc00>;
 			interrupt-controller;

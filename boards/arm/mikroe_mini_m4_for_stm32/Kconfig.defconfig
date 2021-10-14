@@ -12,8 +12,4 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-config USB_DC_STM32
-	default y
-	depends on USB
-
 endif # BOARD_MIKROE_MINI_M4_FOR_STM32

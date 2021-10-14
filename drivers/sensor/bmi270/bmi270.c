@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(bmi270, CONFIG_SENSOR_LOG_LEVEL);
 #define BMI270_WR_LEN                           256
 #define BMI270_CONFIG_FILE_RETRIES              15
 #define BMI270_CONFIG_FILE_POLL_PERIOD_US       10000
-#define BMI270_INTER_WRITE_DELAY_US             450
+#define BMI270_INTER_WRITE_DELAY_US             1000
 
 static int reg_read(uint8_t reg, uint8_t *data, uint16_t length,
 		    struct bmi270_data *dev)
@@ -33,6 +33,18 @@ static int reg_write(uint8_t reg, const uint8_t *data, uint16_t length,
 		     struct bmi270_data *dev)
 {
 	return i2c_burst_write(dev->i2c, dev->i2c_addr, reg, data, length);
+}
+
+static int reg_write_with_delay(uint8_t reg, const uint8_t *data, uint16_t length,
+		     struct bmi270_data *dev, uint32_t delay_us)
+{
+	int ret = 0;
+
+	ret = reg_write(reg, data, length, dev);
+	if (ret == 0) {
+		k_usleep(delay_us);
+	}
+	return ret;
 }
 
 static void channel_accel_convert(struct sensor_value *val, int64_t raw_val,
@@ -215,10 +227,8 @@ static int set_accel_odr_osr(const struct sensor_value *odr,
 		k_usleep(BMI270_TRANSC_DELAY_SUSPEND);
 
 		pwr_ctrl &= BMI270_PWR_CTRL_MSK;
-		ret = reg_write(BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, dev);
-		if (ret != 0) {
-			return ret;
-		}
+		ret = reg_write_with_delay(BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, dev,
+			BMI270_INTER_WRITE_DELAY_US);
 	}
 
 	return ret;
@@ -259,8 +269,8 @@ static int set_accel_range(const struct sensor_value *range,
 
 	acc_range = BMI270_SET_BITS_POS_0(acc_range, BMI270_ACC_RANGE,
 					  reg);
-
-	ret = reg_write(BMI270_REG_ACC_RANGE, &acc_range, 1, dev);
+	ret = reg_write_with_delay(BMI270_REG_ACC_RANGE, &acc_range, 1, dev,
+		BMI270_INTER_WRITE_DELAY_US);
 
 	return ret;
 }
@@ -374,10 +384,8 @@ static int set_gyro_odr_osr(const struct sensor_value *odr,
 		k_usleep(BMI270_TRANSC_DELAY_SUSPEND);
 
 		pwr_ctrl &= BMI270_PWR_CTRL_MSK;
-		ret = reg_write(BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, dev);
-		if (ret != 0) {
-			return ret;
-		}
+		ret = reg_write_with_delay(BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, dev,
+			BMI270_INTER_WRITE_DELAY_US);
 	}
 
 	return ret;
@@ -421,8 +429,8 @@ static int set_gyro_range(const struct sensor_value *range,
 	}
 
 	gyr_range = BMI270_SET_BITS_POS_0(gyr_range, BMI270_GYR_RANGE, reg);
-
-	ret = reg_write(BMI270_REG_GYR_RANGE, &gyr_range, 1, dev);
+	ret = reg_write_with_delay(BMI270_REG_GYR_RANGE, &gyr_range, 1, dev,
+		BMI270_INTER_WRITE_DELAY_US);
 
 	return ret;
 }
@@ -442,15 +450,13 @@ static int8_t write_config_file(struct bmi270_data *dev)
 		/* Store 4 to 11 bits of address in the second byte */
 		addr_array[1] = (uint8_t)((index / 2) >> 4);
 
-		ret = reg_write(BMI270_REG_INIT_ADDR_0, addr_array, 2, dev);
-
-		k_usleep(BMI270_INTER_WRITE_DELAY_US);
+		ret = reg_write_with_delay(BMI270_REG_INIT_ADDR_0, addr_array, 2, dev,
+			BMI270_INTER_WRITE_DELAY_US);
 
 		if (ret == 0) {
-			ret = reg_write(BMI270_REG_INIT_DATA,
-					(bmi270_config_file + index),
-					BMI270_WR_LEN, dev);
-			k_usleep(BMI270_INTER_WRITE_DELAY_US);
+			ret = reg_write_with_delay(BMI270_REG_INIT_DATA,
+				(bmi270_config_file + index),
+				BMI270_WR_LEN, dev, BMI270_INTER_WRITE_DELAY_US);
 		}
 	}
 
@@ -674,10 +680,8 @@ static int bmi270_init(const struct device *dev)
 	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE_EN);
-	ret = reg_write(BMI270_REG_PWR_CONF, &adv_pwr_save, 1, drv_dev);
-	if (ret != 0) {
-		return ret;
-	}
+	ret = reg_write_with_delay(BMI270_REG_PWR_CONF, &adv_pwr_save, 1, drv_dev,
+		BMI270_INTER_WRITE_DELAY_US);
 
 	return ret;
 }

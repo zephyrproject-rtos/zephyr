@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,12 +112,55 @@ static void test_arm_sqrt_q15(void)
 	free(output);
 }
 
+static void test_arm_divide_q15(void)
+{
+	size_t index;
+	size_t length = ARRAY_SIZE(ref_divide);
+	arm_status status;
+	q15_t *output;
+	uint16_t *shift;
+
+	/* Allocate output buffer */
+	output = malloc(length * sizeof(q15_t));
+	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
+	shift = malloc(length * sizeof(uint16_t));
+	zassert_not_null(shift, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
+	/* Run test function */
+	for (index = 0; index < length; index++) {
+		status = arm_divide_q15(
+				in_divide_num[index], in_divide_den[index],
+				&output[index], &shift[index]);
+	}
+
+	/* Validate output */
+	zassert_true(
+		test_snr_error_q15(length, output, ref_divide, SNR_ERROR_THRESH),
+		ASSERT_MSG_SNR_LIMIT_EXCEED);
+
+	zassert_true(
+		test_near_equal_q15(length, output, ref_divide,
+			ABS_ERROR_THRESH),
+		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	zassert_true(
+		memcmp(shift, ref_divide_shift,
+		       length * sizeof(uint16_t)) == 0,
+		ASSERT_MSG_INCORRECT_COMP_RESULT);
+
+	/* Free output buffer */
+	free(output);
+	free(shift);
+}
+
 void test_fastmath_q15(void)
 {
 	ztest_test_suite(fastmath_q15,
 		ztest_unit_test(test_arm_cos_q15),
 		ztest_unit_test(test_arm_sin_q15),
-		ztest_unit_test(test_arm_sqrt_q15)
+		ztest_unit_test(test_arm_sqrt_q15),
+		ztest_unit_test(test_arm_divide_q15)
 		);
 
 	ztest_run_test_suite(fastmath_q15);

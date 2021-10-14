@@ -35,3 +35,19 @@ void HAL_Delay(__IO uint32_t Delay)
 {
 	k_msleep(Delay);
 }
+
+#ifdef CONFIG_USE_STM32_ASSERT
+/**
+ * @brief Generates an assert on STM32Cube HAL/LL assert trigger.
+ * @param file: specifies the file name where assert expression failed.
+ * @param line: specifies the line number where assert expression failed.
+ * @return None
+ */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+	/* Assert condition have been verified at Cube level, force
+	 * generation here.
+	 */
+	__ASSERT(false, "Invalid value line %d @ %s\n", line, file);
+}
+#endif /* CONFIG_USE_STM32_ASSERT */

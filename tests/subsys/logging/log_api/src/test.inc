@@ -402,38 +402,59 @@ static void test_log_overflow(void)
  * Log messages with supported number of messages are called. Test backend
  * validates number of arguments and values.
  */
+#define MOCK_LOG_BACKEND_RECORD(str) mock_log_backend_record( \
+	&backend1, LOG_CURRENT_MODULE_ID(), \
+	CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF, \
+	exp_timestamp++, \
+	str);
+
 static void test_log_arguments(void)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
 	log_setup(false);
 
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++, "test");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7 8 9 10 11");
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++,
-				"test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
+	MOCK_LOG_BACKEND_RECORD("test");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13");
+	MOCK_LOG_BACKEND_RECORD("test 1 2 3 4 5 6 7 8 9 10 11 12 13 14");
+
 	LOG_INF("test");
 	LOG_INF("test %d %d %d", 1, 2, 3);
+	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
+	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
 	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
+	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7,8, 9);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7,8, 9, 10);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d",
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+	while (LOG_PROCESS()) {
+	}
+
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 	while (LOG_PROCESS()) {
 	}
 
@@ -501,11 +522,23 @@ static void test_log_from_declared_module(void)
 	mock_log_backend_validate(&backend1, false);
 }
 
-static size_t get_short_msg_capacity(void)
+/** Calculate how many messages will fit in the buffer. Also calculate if
+ * remaining free space is size of message or not. This impacts how many messages
+ * are dropped. If free space is equal to message size then when buffer is full,
+ * adding new message will lead to one message drop, otherwise 2 message will
+ * be dropped.
+ */
+static size_t get_short_msg_capacity(bool *remainder)
 {
 	if (IS_ENABLED(CONFIG_LOG2)) {
-		return (CONFIG_LOG_BUFFER_SIZE / LOG2_SIMPLE_MSG_LEN) - 1;
+		*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG2_SIMPLE_MSG_LEN) ?
+				true : false;
+
+		return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG2_SIMPLE_MSG_LEN;
 	}
+
+	*remainder = (CONFIG_LOG_BUFFER_SIZE % sizeof(struct log_msg)) ?
+			true : false;
 
 	return CONFIG_LOG_BUFFER_SIZE / sizeof(struct log_msg);
 }
@@ -552,13 +585,14 @@ static void test_log_msg_dropped_notification(void)
 		ztest_test_skip();
 	}
 
-	uint32_t capacity = get_short_msg_capacity();
+	bool remainder;
+	uint32_t capacity = get_short_msg_capacity(&remainder);
 
 	log_n_messages(capacity, 0);
 
 	/* Expect messages dropped when logger more than buffer capacity. */
-	log_n_messages(capacity + 1, 1);
-	log_n_messages(capacity + 2, 2);
+	log_n_messages(capacity + 1, 1 + (remainder ? 1 : 0));
+	log_n_messages(capacity + 2, 2 + (remainder ? 1 : 0));
 }
 
 /* Test checks if panic is correctly executed. On panic logger should flush all

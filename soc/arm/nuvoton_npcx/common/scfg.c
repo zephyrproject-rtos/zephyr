@@ -209,18 +209,24 @@ void npcx_pinctrl_psl_input_configure(void)
 	}
 }
 
+void npcx_host_interface_sel(enum npcx_hif_type hif_type)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	SET_FIELD(inst_scfg->DEVCNT, NPCX_DEVCNT_HIF_TYP_SEL_FIELD, hif_type);
+}
+
 /* Pin-control driver registration */
 static int npcx_scfg_init(const struct device *dev)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
-#if defined(CONFIG_SOC_SERIES_NPCX7)
 	/*
 	 * Set bit 7 of DEVCNT again for npcx7 series. Please see Errata
 	 * for more information. It will be fixed in next chip.
 	 */
-	inst_scfg->DEVCNT |= BIT(7);
-#endif
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7))
+		inst_scfg->DEVCNT |= BIT(7);
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);

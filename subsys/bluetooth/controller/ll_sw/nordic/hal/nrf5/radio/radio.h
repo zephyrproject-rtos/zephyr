@@ -52,6 +52,8 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 
+uint8_t radio_phy_flags_rx_get(void);
+
 void radio_rssi_measure(void);
 uint32_t radio_rssi_get(void);
 void radio_rssi_status_reset(void);
@@ -109,3 +111,8 @@ uint32_t radio_ar_match_get(void);
 void radio_ar_status_reset(void);
 uint32_t radio_ar_has_match(void);
 void radio_ar_resolve(uint8_t *addr);
+
+/* Enables CTE inline configuration to automatically setup sampling and
+ * switching according to CTEInfo in received PDU.
+ */
+void radio_df_cte_inline_set_enabled(bool cte_info_in_s1);

@@ -387,14 +387,30 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 #define TIMER(idx)		DT_NODELABEL(timer##idx)
 #define TIMER_PROP(idx, prop)	DT_PROP(TIMER(idx), prop)
 
+#define TIMER_IRQ_CONNECT(idx)						       \
+	COND_CODE_1(CONFIG_COUNTER_TIMER##idx##_ZLI,			       \
+		(IRQ_DIRECT_CONNECT(DT_IRQN(TIMER(idx)),		       \
+				    DT_IRQ(TIMER(idx), priority),	       \
+				    counter_timer##idx##_isr_wrapper,	       \
+				    IRQ_ZERO_LATENCY)),			       \
+		(IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority),\
+			    irq_handler, DEVICE_DT_GET(TIMER(idx)), 0))	       \
+	)
+
 #define COUNTER_NRFX_TIMER_DEVICE(idx)					       \
 	BUILD_ASSERT(TIMER_PROP(idx, prescaler) <=			       \
 			TIMER_PRESCALER_PRESCALER_Msk,			       \
 		     "TIMER prescaler out of range");			       \
-	static int counter_##idx##_init(const struct device *dev)		       \
+	COND_CODE_1(CONFIG_COUNTER_TIMER##idx##_ZLI, (			       \
+		ISR_DIRECT_DECLARE(counter_timer##idx##_isr_wrapper)	       \
+		{							       \
+			irq_handler(DEVICE_DT_GET(TIMER(idx)));		       \
+			/* No rescheduling, it shall not access zephyr primitives. */ \
+			return 0;					       \
+		}), ())							       \
+	static int counter_##idx##_init(const struct device *dev)	       \
 	{								       \
-		IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority), \
-			    irq_handler, DEVICE_DT_GET(TIMER(idx)), 0);	       \
+		TIMER_IRQ_CONNECT(idx);					       \
 		static const struct counter_timer_config config = {	       \
 			.freq = TIMER_PROP(idx, prescaler),		       \
 			.mode = NRF_TIMER_MODE_TIMER,			       \

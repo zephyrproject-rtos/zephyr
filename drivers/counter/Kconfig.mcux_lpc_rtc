@@ -1,0 +1,8 @@
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_LPC_RTC
+	bool "MCUX LPC RTC driver"
+	depends on HAS_MCUX_LPC_RTC
+	help
+	  Enable support for LPC rtc driver.

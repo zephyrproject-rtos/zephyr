@@ -15,23 +15,23 @@
  * @brief Pin modes
  */
 
-#define AF0     0x0
-#define AF1     0x1
-#define AF2     0x2
-#define AF3     0x3
-#define AF4     0x4
-#define AF5     0x5
-#define AF6     0x6
-#define AF7     0x7
-#define AF8     0x8
-#define AF9     0x9
-#define AF10    0xa
-#define AF11    0xb
-#define AF12    0xc
-#define AF13    0xd
-#define AF14    0xe
-#define AF15    0xf
-#define ANALOG  0x10
+#define STM32_AF0     0x0
+#define STM32_AF1     0x1
+#define STM32_AF2     0x2
+#define STM32_AF3     0x3
+#define STM32_AF4     0x4
+#define STM32_AF5     0x5
+#define STM32_AF6     0x6
+#define STM32_AF7     0x7
+#define STM32_AF8     0x8
+#define STM32_AF9     0x9
+#define STM32_AF10    0xa
+#define STM32_AF11    0xb
+#define STM32_AF12    0xc
+#define STM32_AF13    0xd
+#define STM32_AF14    0xe
+#define STM32_AF15    0xf
+#define STM32_ANALOG  0x10
 
 /**
  * @brief Macro to generate pinmux int using port, pin number and mode arguments
@@ -39,7 +39,7 @@
  */
 
 #define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
-#define STM32_PINMUX(port, line, mode) (((PIN_NO(port, line)) << 8) | (mode))
+#define STM32_PINMUX(port, line, mode) (((PIN_NO(port, line)) << 8) | (STM32_ ## mode))
 
 /**
  * @brief PIN configuration bitfield

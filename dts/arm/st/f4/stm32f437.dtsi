@@ -5,6 +5,7 @@
  */
 
 #include <st/f4/stm32f407.dtsi>
+#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
 	soc {
@@ -82,6 +83,22 @@
 			interrupts = <86 5>;
 			status = "disabled";
 			label = "SPI_6";
+		};
+
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			label = "STM32_FMC";
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				label = "STM32_FMC_SDRAM";
+				status = "disabled";
+			};
 		};
 
 		cryp: cryp@50060000 {

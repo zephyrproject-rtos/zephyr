@@ -31,6 +31,14 @@ properties:
       description: chip select pin
       required: true
 
+    use-iomux:
+      type: boolean
+      required: false
+      description: |
+        Support IO muxing for the target SPI peripheral pins
+
+        Some SPI interfaces are not allowed to mux its pins
+
     half-duplex:
       type: boolean
       required: false

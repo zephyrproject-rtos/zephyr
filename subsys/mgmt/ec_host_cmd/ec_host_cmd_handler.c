@@ -116,7 +116,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 
 		const struct ec_host_cmd_handler *found_handler = NULL;
 
-		Z_STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler)
+		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler)
 		{
 			if (handler->id == rx_header->cmd_id) {
 				found_handler = handler;

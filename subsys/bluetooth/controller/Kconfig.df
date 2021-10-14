@@ -26,6 +26,9 @@ config BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 config BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 	bool
 
+config BT_CTLR_CTEINLINE_SUPPORT
+	bool
+
 menuconfig BT_CTLR_DF
 	bool "LE Direction Finding [Experimental]"
 	depends on BT_CTLR_DF_SUPPORT
@@ -89,6 +92,13 @@ config BT_CTLR_DF_CTE_RX
 	help
 	  Enable support for reception of Constant Tone Extension in controller.
 
+config BT_CTLR_DF_CONN_CTE_REQ
+	bool "Enable Connection CTE Request feature"
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Request feature
+	  in controller.
+
 config BT_CTLR_DF_CONN_CTE_RSP
 	bool "Enable Connection CTE Response feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CONN
@@ -145,6 +155,26 @@ config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
 	  not initialize GPIOs pins selected to drive antenna switching.
 	  In such case application is responsible for appropriate GPIOs
 	  initialization.
+
+config BT_CTLR_DF_PER_ADV_CTE_NUM_MAX
+	int "Maximum number of transmitted PDUs with Constant Tone Extension in connectionless mode"
+	depends on BT_CTLR_DF_ADV_CTE_TX && BT_CTLR_ADV_PDU_LINK
+	range 1 16
+	default 1
+	help
+	  Maximum supported number of PDUs, that have Constant Tone Extension, transmitted in single
+	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
+	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
+
+config BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX
+	int "Maximum number of received PDUs with Constant Tone Extension in connectionless mode"
+	depends on BT_CTLR_DF_SCAN_CTE_RX
+	range 1 16
+	default 16
+	help
+	  Maximum supported number of PDUs, that have Constant Tone Extension, received in single
+	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
+	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
 
 config BT_CTLR_DF_DEBUG_ENABLE
 	bool "Bluetooth Direction Finding debug support enable"

@@ -8,7 +8,7 @@ Overview
 
 This sample application demonstrates basic usage of the WS2812 LED
 strip driver, for controlling LED strips using WS2812, WS2812b,
-SK6812, and compatible driver chips.
+SK6812, Everlight B1414 and compatible driver chips.
 
 Requirements
 ************
@@ -44,8 +44,8 @@ This sample's source directory is :zephyr_file:`samples/drivers/led_ws2812/`.
 To make sure the sample is set up properly for building, you must:
 
 - select the correct WS2812 driver backend for your SoC. This currently should
-  be :option:`CONFIG_WS2812_STRIP_SPI` unless you are using an nRF51 SoC, in
-  which case it will be :option:`CONFIG_WS2812_STRIP_GPIO`.
+  be :kconfig:`CONFIG_WS2812_STRIP_SPI` unless you are using an nRF51 SoC, in
+  which case it will be :kconfig:`CONFIG_WS2812_STRIP_GPIO`.
 
 - create a ``led-strip`` :ref:`devicetree alias <dt-alias-chosen>`, which
   refers to a node in your :ref:`devicetree <dt-guide>` with a

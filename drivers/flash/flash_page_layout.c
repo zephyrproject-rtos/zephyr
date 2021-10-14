@@ -7,62 +7,50 @@
 #include <drivers/flash.h>
 
 static int flash_get_page_info(const struct device *dev, off_t offs,
-				   bool use_addr, struct flash_pages_info *info)
+			       uint32_t index, struct flash_pages_info *info)
 {
 	const struct flash_driver_api *api = dev->api;
 	const struct flash_pages_layout *layout;
-	size_t page_count = 0;
-	off_t group_offs = 0;
-	uint32_t num_in_group;
-	off_t end = 0;
 	size_t layout_size;
+	uint32_t index_jmp;
+
+	info->start_offset = 0;
+	info->index = 0U;
 
 	api->page_layout(dev, &layout, &layout_size);
 
 	while (layout_size--) {
-		if (use_addr) {
-			end += layout->pages_count * layout->pages_size;
+		info->size = layout->pages_size;
+		if (offs == 0) {
+			index_jmp = index - info->index;
 		} else {
-			end += layout->pages_count;
+			index_jmp = (offs - info->start_offset) / info->size;
 		}
 
-		if (offs < end) {
-			info->size = layout->pages_size;
-
-			if (use_addr) {
-				num_in_group = (offs - group_offs) /
-					       layout->pages_size;
-			} else {
-				num_in_group = offs - page_count;
-			}
-
-			info->start_offset = group_offs +
-					     num_in_group * layout->pages_size;
-			info->index = page_count + num_in_group;
-
+		index_jmp = MIN(index_jmp, layout->pages_count);
+		info->start_offset += (index_jmp * info->size);
+		info->index += index_jmp;
+		if (index_jmp < layout->pages_count) {
 			return 0;
 		}
-
-		group_offs += layout->pages_count * layout->pages_size;
-		page_count += layout->pages_count;
 
 		layout++;
 	}
 
-	return -EINVAL; /* page of the index doesn't exist */
+	return -EINVAL; /* page at offs or idx doesn't exist */
 }
 
 int z_impl_flash_get_page_info_by_offs(const struct device *dev, off_t offs,
 				       struct flash_pages_info *info)
 {
-	return flash_get_page_info(dev, offs, true, info);
+	return flash_get_page_info(dev, offs, 0U, info);
 }
 
 int z_impl_flash_get_page_info_by_idx(const struct device *dev,
 				      uint32_t page_index,
 				      struct flash_pages_info *info)
 {
-	return flash_get_page_info(dev, page_index, false, info);
+	return flash_get_page_info(dev, 0, page_index, info);
 }
 
 size_t z_impl_flash_get_page_count(const struct device *dev)

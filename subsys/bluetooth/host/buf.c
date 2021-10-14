@@ -17,16 +17,26 @@
 #include "common/log.h"
 
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_ISO)
+#define MAX_EVENT_COUNT CONFIG_BT_MAX_CONN + CONFIG_BT_ISO_MAX_CHAN
+#else
+#define MAX_EVENT_COUNT CONFIG_BT_MAX_CONN
+#endif /* CONFIG_BT_ISO */
+#elif defined(CONFIG_BT_ISO)
+#define MAX_EVENT_COUNT CONFIG_BT_ISO_MAX_CHAN
+#endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 #define NUM_COMLETE_EVENT_SIZE BT_BUF_EVT_SIZE(                        \
 	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
-	CONFIG_BT_MAX_CONN * sizeof(struct bt_hci_handle_count))
+	MAX_EVENT_COUNT * sizeof(struct bt_hci_handle_count))
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
  * consumed synchronously by bt_recv_prio() so a single buffer is enough.
  * Having a dedicated pool for it ensures that exhaustion of the RX pool
  * cannot block the delivery of this priority event.
  */
 NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, NULL);
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 
 #if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
@@ -81,16 +91,10 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
 {
 	struct net_buf *buf;
-	unsigned int key;
 
-	key = irq_lock();
-	buf = bt_dev.sent_cmd;
-	bt_dev.sent_cmd = NULL;
-	irq_unlock(key);
+	if (bt_dev.sent_cmd) {
+		buf = net_buf_ref(bt_dev.sent_cmd);
 
-	BT_DBG("sent_cmd %p", buf);
-
-	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
 		buf->len = 0U;
 		net_buf_reserve(buf, BT_BUF_RESERVE);
@@ -105,7 +109,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 			       k_timeout_t timeout)
 {
 	switch (evt) {
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 		{
 			struct net_buf *buf;
@@ -118,7 +122,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 
 			return buf;
 		}
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 		return bt_buf_get_cmd_complete(timeout);

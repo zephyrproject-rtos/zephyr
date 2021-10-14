@@ -44,7 +44,7 @@ static struct k_spinlock z_thread_monitor_lock;
 #endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
-	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
+	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
 
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
@@ -267,27 +267,24 @@ const char *k_thread_state_str(k_tid_t thread_id)
 	switch (thread_id->base.thread_state) {
 	case 0:
 		return "";
-		break;
 	case _THREAD_DUMMY:
 		return "dummy";
-		break;
 	case _THREAD_PENDING:
 		return "pending";
-		break;
 	case _THREAD_PRESTART:
 		return "prestart";
-		break;
 	case _THREAD_DEAD:
 		return "dead";
-		break;
 	case _THREAD_SUSPENDED:
 		return "suspended";
-		break;
 	case _THREAD_ABORTING:
 		return "aborting";
-		break;
 	case _THREAD_QUEUED:
 		return "queued";
+	default:
+	/* Add a break, some day when another case gets added at the end,
+	 * this bit of defensive programming will be useful
+	 */
 		break;
 	}
 	return "unknown";
@@ -328,6 +325,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 #endif /* CONFIG_USERSPACE */
 
 
+#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_STACK_SENTINEL
 /* Check that the stack sentinel is still present
  *
@@ -359,9 +357,8 @@ void z_check_stack_sentinel(void)
 		z_except_reason(K_ERR_STACK_CHK_FAIL);
 	}
 }
-#endif
+#endif /* CONFIG_STACK_SENTINEL */
 
-#ifdef CONFIG_MULTITHREADING
 void z_impl_k_thread_start(struct k_thread *thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
@@ -585,7 +582,11 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif
 #ifdef CONFIG_SCHED_CPU_MASK
-	new_thread->base.cpu_mask = -1;
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
+	} else {
+		new_thread->base.cpu_mask = -1; /* allow all cpus */
+	}
 #endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
@@ -714,7 +715,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 static void grant_static_access(void)
 {
-	Z_STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
+	STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
 		for (int i = 0; pos->objects[i] != NULL; i++) {
 			k_object_access_grant(pos->objects[i],
 					      pos->thread);
@@ -1053,7 +1054,7 @@ void z_thread_mark_switched_out(void)
 	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
 #else
 	now = k_cycle_get_32();
-	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
+	diff = (uint64_t)(now - thread->rt_stats.last_switched_in);
 	thread->rt_stats.last_switched_in = 0;
 #endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
 

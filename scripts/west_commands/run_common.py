@@ -356,8 +356,8 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
 
         return None
 
-    def config(attr):
-        return getattr(args, attr, None) or yaml_config.get(attr)
+    def config(attr, default=None):
+        return getattr(args, attr, None) or yaml_config.get(attr, default)
 
     return RunnerConfig(build_dir,
                         yaml_config['board_dir'],
@@ -366,7 +366,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('bin'),
                         config('gdb'),
                         config('openocd'),
-                        config('openocd_search'))
+                        config('openocd_search', []))
 
 def dump_traceback():
     # Save the current exception to a file and return its path.

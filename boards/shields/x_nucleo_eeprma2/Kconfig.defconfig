@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_EEPRMA2
+
+if EEPROM
+
+config SPI
+	default y
+
+config EEPROM_AT25
+	default y
+
+config I2C
+	default y
+
+config EEPROM_AT24
+	default y
+
+endif # EEPROM
+
+endif # SHIELD_X_NUCLEO_EEPRMA2

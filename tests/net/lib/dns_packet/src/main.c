@@ -339,12 +339,13 @@ static int eval_response1(struct dns_response_test *resp, bool unpack_answer)
 	if (unpack_answer) {
 		uint32_t ttl;
 		struct dns_msg_t msg;
+		enum dns_rr_type answer_type;
 
 		msg.msg = resp->res;
 		msg.msg_size = resp->res_len;
 		msg.answer_offset = offset;
 
-		if (dns_unpack_answer(&msg, DNS_ANSWER_MIN_SIZE, &ttl) < 0) {
+		if (dns_unpack_answer(&msg, DNS_ANSWER_MIN_SIZE, &ttl, &answer_type) < 0) {
 			rc = __LINE__;
 			goto lb_exit;
 		}

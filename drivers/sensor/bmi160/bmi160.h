@@ -8,6 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
+#include <drivers/i2c.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
 #include <drivers/spi.h>
@@ -402,37 +403,32 @@ struct bmi160_range {
 #define BMI160_BUS_SPI		DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define BMI160_BUS_I2C		DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-struct bmi160_bus_cfg {
-	union {
+union bmi160_bus {
 #if BMI160_BUS_SPI
-		const struct spi_config *spi_cfg;
+	struct spi_dt_spec spi;
 #endif
 #if BMI160_BUS_I2C
-		uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 #endif
-	};
 };
 
-typedef int (*bmi160_reg_read_fn)(const struct device *bus,
-				  const struct bmi160_bus_cfg *bus_cfg,
+typedef bool (*bmi160_bus_ready_fn)(const struct device *dev);
+typedef int (*bmi160_reg_read_fn)(const struct device *dev,
 				  uint8_t reg_addr, void *data, uint8_t len);
-typedef int (*bmi160_reg_write_fn)(const struct device *bus,
-				   const struct bmi160_bus_cfg *bus_cfg,
+typedef int (*bmi160_reg_write_fn)(const struct device *dev,
 				   uint8_t reg_addr, void *data, uint8_t len);
 
-struct bmi160_reg_io {
+struct bmi160_bus_io {
+	bmi160_bus_ready_fn ready;
 	bmi160_reg_read_fn read;
 	bmi160_reg_write_fn write;
 };
 
 struct bmi160_cfg {
-	struct bmi160_bus_cfg bus_cfg;
-	const struct bmi160_reg_io *reg_io;
-	const char *bus_label;
+	union bmi160_bus bus;
+	const struct bmi160_bus_io *bus_io;
 #if defined(CONFIG_BMI160_TRIGGER)
-	const char *gpio_port;
-	gpio_pin_t int_pin;
-	gpio_dt_flags_t int_flags;
+	struct gpio_dt_spec interrupt;
 #endif
 };
 

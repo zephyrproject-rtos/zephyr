@@ -107,7 +107,7 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @param user_cb Pointer to the user callback function.
  * @param user_data Pointer to user data.
  *
- * @note @option{CONFIG_THREAD_MONITOR} must be set for this function
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
  * to be effective.
  * @note This API uses @ref k_spin_lock to protect the _kernel.threads
  * list which means creation of new threads and terminations of existing
@@ -126,7 +126,7 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * @param user_cb Pointer to the user callback function.
  * @param user_data Pointer to user data.
  *
- * @note @option{CONFIG_THREAD_MONITOR} must be set for this function
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
  * to be effective.
  * @note This API uses @ref k_spin_lock only when accessing the _kernel.threads
  * queue elements. It unlocks it during user callback function processing.
@@ -176,7 +176,7 @@ extern void k_thread_foreach_unlocked(
  * This option indicates that the thread uses the CPU's floating point
  * registers. This instructs the kernel to take additional steps to save
  * and restore the contents of these registers when scheduling the thread.
- * No effect if @option{CONFIG_FPU_SHARING} is not enabled.
+ * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
 #define K_FP_REGS (BIT(1))
 #endif
@@ -195,7 +195,7 @@ extern void k_thread_foreach_unlocked(
  * @details
  * Indicates that the thread being created should inherit all kernel object
  * permissions from the thread that created it. No effect if
- * @option{CONFIG_USERSPACE} is not enabled.
+ * @kconfig{CONFIG_USERSPACE} is not enabled.
  */
 #define K_INHERIT_PERMS (BIT(3))
 
@@ -214,7 +214,15 @@ extern void k_thread_foreach_unlocked(
 /* x86 Bitmask definitions for threads user options */
 
 #if defined(CONFIG_FPU_SHARING) && defined(CONFIG_X86_SSE)
-/* thread uses SSEx (and also FP) registers */
+/**
+ * @brief FP and SSE registers are managed by context switch on x86
+ *
+ * @details
+ * This option indicates that the thread uses the x86 CPU's floating point
+ * and SSE registers. This instructs the kernel to take additional steps to
+ * save and restore the contents of these registers when scheduling
+ * the thread. No effect if @kconfig{CONFIG_X86_SSE} is not enabled.
+ */
 #define K_SSE_REGS (BIT(7))
 #endif
 #endif
@@ -346,7 +354,7 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  *
  * Some hardware may prevent inspection of a stack buffer currently in use.
  * If this API is called from supervisor mode, on the currently running thread,
- * on a platform which selects @option{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
  * error will be generated.
  *
  * @param thread Thread to inspect stack information
@@ -435,7 +443,7 @@ static inline int32_t k_msleep(int32_t ms)
  *
  * This function is unlikely to work as expected without kernel tuning.
  * In particular, because the lower bound on the duration of a sleep is
- * the duration of a tick, @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
+ * the duration of a tick, @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
  * adjusted to achieve the resolution desired. The implications of doing
  * this must be understood before attempting to use k_usleep(). Use with
  * caution.
@@ -490,10 +498,33 @@ __syscall void k_wakeup(k_tid_t thread);
 /**
  * @brief Get thread ID of the current thread.
  *
+ * This unconditionally queries the kernel via a system call.
+ *
+ * @return ID of current thread.
+ */
+__attribute_const__
+__syscall k_tid_t z_current_get(void);
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/* Thread-local cache of current thread ID, set in z_thread_entry() */
+extern __thread k_tid_t z_tls_current;
+#endif
+
+/**
+ * @brief Get thread ID of the current thread.
+ *
  * @return ID of current thread.
  *
  */
-__syscall k_tid_t k_current_get(void) __attribute_const__;
+__attribute_const__
+static inline k_tid_t k_current_get(void)
+{
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	return z_tls_current;
+#else
+	return z_current_get();
+#endif
+}
 
 /**
  * @brief Abort a thread.
@@ -649,7 +680,7 @@ struct _static_thread_data {
 			prio, options, delay)                            \
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
 	struct k_thread _k_thread_obj_##name;				 \
-	Z_STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) =\
+	STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
@@ -712,7 +743,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * integers.  The number of cycles between the "first" deadline in the
  * scheduler queue and the "last" deadline must be less than 2^31 (i.e
  * a signed non-negative quantity).  Failure to adhere to this rule
- * may result in scheduled threads running in an incorrect dealine
+ * may result in scheduled threads running in an incorrect deadline
  * order.
  *
  * @note Despite the API naming, the scheduler makes no guarantees the
@@ -723,7 +754,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread A thread on which to set the deadline
@@ -740,7 +771,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * After this returns, the thread will no longer be schedulable on any
  * CPUs.  The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -754,7 +785,7 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  * After this returns, the thread will be schedulable on any CPU.  The
  * thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -767,7 +798,7 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -781,7 +812,7 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -978,7 +1009,7 @@ __syscall void *k_thread_custom_data_get(void);
 /**
  * @brief Set current thread name
  *
- * Set the name of the thread to be used when @option{CONFIG_THREAD_MONITOR}
+ * Set the name of the thread to be used when @kconfig{CONFIG_THREAD_MONITOR}
  * is enabled for tracing and debugging.
  *
  * @param thread Thread to set name, or NULL to set the current thread
@@ -1330,7 +1361,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param stop_fn   Function to invoke if the timer is stopped while running.
  */
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
-	Z_STRUCT_SECTION_ITERABLE(k_timer, name) = \
+	STRUCT_SECTION_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
@@ -1515,6 +1546,7 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 
 /**
  * @addtogroup clock_apis
+ * @ingroup kernel_apis
  * @{
  */
 
@@ -1522,7 +1554,7 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
  * @brief Get system uptime, in system ticks.
  *
  * This routine returns the elapsed time since the system booted, in
- * ticks (c.f. @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC}), which is the
+ * ticks (c.f. @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC}), which is the
  * fundamental unit of resolution of kernel timekeeping.
  *
  * @return Current uptime in ticks.
@@ -1538,7 +1570,7 @@ __syscall int64_t k_uptime_ticks(void);
  * @note
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option.
+ *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option.
  *
  * @return Current uptime in milliseconds.
  */
@@ -1562,7 +1594,7 @@ static inline int64_t k_uptime_get(void)
  * @note
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option
+ *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option
  *
  * @return The low 32 bits of the current uptime, in milliseconds.
  */
@@ -1898,7 +1930,7 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  * @param name Name of the queue.
  */
 #define K_QUEUE_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_queue, name) = \
+	STRUCT_SECTION_ITERABLE(k_queue, name) = \
 		Z_QUEUE_INITIALIZER(name)
 
 /** @} */
@@ -2220,7 +2252,7 @@ struct k_fifo {
  * @param name Name of the FIFO queue.
  */
 #define K_FIFO_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_fifo, name) = \
+	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_fifo, name) = \
 		Z_FIFO_INITIALIZER(name)
 
 /** @} */
@@ -2344,7 +2376,7 @@ struct k_lifo {
  * @param name Name of the fifo.
  */
 #define K_LIFO_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_lifo, name) = \
+	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_lifo, name) = \
 		Z_LIFO_INITIALIZER(name)
 
 /** @} */
@@ -2478,7 +2510,7 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	stack_data_t __noinit                                  \
 		_k_stack_buf_##name[stack_num_entries];        \
-	Z_STRUCT_SECTION_ITERABLE(k_stack, name) = \
+	STRUCT_SECTION_ITERABLE(k_stack, name) =               \
 		Z_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
@@ -2546,7 +2578,7 @@ struct k_mutex {
  * @param name Name of the mutex.
  */
 #define K_MUTEX_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_mutex, name) = \
+	STRUCT_SECTION_ITERABLE(k_mutex, name) = \
 		Z_MUTEX_INITIALIZER(name)
 
 /**
@@ -2685,7 +2717,7 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
  * @param name Name of the condition variable.
  */
 #define K_CONDVAR_DEFINE(name)                                                 \
-	Z_STRUCT_SECTION_ITERABLE(k_condvar, name) =                           \
+	STRUCT_SECTION_ITERABLE(k_condvar, name) =                             \
 		Z_CONDVAR_INITIALIZER(name)
 /**
  * @}
@@ -2828,7 +2860,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @param count_limit Maximum permitted semaphore count.
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
-	Z_STRUCT_SECTION_ITERABLE(k_sem, name) = \
+	STRUCT_SECTION_ITERABLE(k_sem, name) = \
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
 		     ((initial_count) <= (count_limit)) && \
@@ -3021,12 +3053,25 @@ int k_work_cancel(struct k_work *work);
  */
 bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
 
+/** @brief Initialize a work queue structure.
+ *
+ * This must be invoked before starting a work queue structure for the first time.
+ * It need not be invoked again on the same work queue structure.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param queue the queue structure to be initialized.
+ */
+void k_work_queue_init(struct k_work_q *queue);
+
 /** @brief Initialize a work queue.
  *
  * This configures the work queue thread and starts it running.  The function
  * should not be re-invoked on a queue.
  *
- * @param queue pointer to the queue structure.
+ * @param queue pointer to the queue structure. It must be initialized
+ *        in zeroed/bss memory or with @ref k_work_queue_init before
+ *        use.
  *
  * @param stack pointer to the work thread stack area.
  *
@@ -3812,7 +3857,9 @@ struct k_work_user {
 
 #define Z_WORK_USER_INITIALIZER(work_handler) \
 	{ \
+	._reserved = NULL, \
 	.handler = work_handler, \
+	.flags = 0 \
 	}
 
 /**
@@ -4189,7 +4236,7 @@ struct k_msgq_attrs {
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)		\
 	static char __noinit __aligned(q_align)				\
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
-	Z_STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
+	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  q_msg_size, q_max_msgs)
 
@@ -4441,7 +4488,7 @@ struct k_mbox {
  * @param name Name of the mailbox.
  */
 #define K_MBOX_DEFINE(name) \
-	Z_STRUCT_SECTION_ITERABLE(k_mbox, name) = \
+	STRUCT_SECTION_ITERABLE(k_mbox, name) = \
 		Z_MBOX_INITIALIZER(name) \
 
 /**
@@ -4595,9 +4642,9 @@ struct k_pipe {
  *
  */
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
-	static unsigned char __noinit __aligned(pipe_align)	\
+	static unsigned char __noinit __aligned(pipe_align)		\
 		_k_pipe_buf_##name[pipe_buffer_size];			\
-	Z_STRUCT_SECTION_ITERABLE(k_pipe, name) = \
+	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
 		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
@@ -4733,8 +4780,8 @@ struct k_mem_slab {
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
 			       slab_num_blocks) \
 	{ \
-	.lock = {}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+	.lock = {}, \
 	.num_blocks = slab_num_blocks, \
 	.block_size = slab_block_size, \
 	.buffer = slab_buffer, \
@@ -4773,9 +4820,10 @@ struct k_mem_slab {
  * @param slab_align Alignment of the memory slab's buffer (power of 2).
  */
 #define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
-	char __noinit __aligned(WB_UP(slab_align)) \
+	char __noinit_named(k_mem_slab_buf_##name) \
+	   __aligned(WB_UP(slab_align)) \
 	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
-	Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
+	STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
 		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 					WB_UP(slab_block_size), slab_num_blocks)
 
@@ -4984,6 +5032,33 @@ void k_heap_free(struct k_heap *h, void *mem);
 #define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
 
 /**
+ * @brief Define a static k_heap in the specified linker section
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in the specified linker section.
+ * After kernel start, &name can be used as if k_heap_init() had
+ * been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ * @param in_section __attribute__((section(name))
+ */
+#define Z_HEAP_DEFINE_IN_SECT(name, bytes, in_section)		\
+	char in_section						\
+	     __aligned(8) /* CHUNK_UNIT */			\
+	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
+	STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
+		.heap = {					\
+			.init_mem = kheap_##name,		\
+			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
+		 },						\
+	}
+
+/**
  * @brief Define a static k_heap
  *
  * This macro defines and initializes a static memory region and
@@ -4998,14 +5073,25 @@ void k_heap_free(struct k_heap *h, void *mem);
  * @param bytes Size of memory region, in bytes
  */
 #define K_HEAP_DEFINE(name, bytes)				\
-	char __aligned(8) /* CHUNK_UNIT */			\
-	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
-	Z_STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
-		.heap = {					\
-			.init_mem = kheap_##name,		\
-			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
-		 },						\
-	}
+	Z_HEAP_DEFINE_IN_SECT(name, bytes,			\
+			      __noinit_named(kheap_buf_##name))
+
+/**
+ * @brief Define a static k_heap in uncached memory
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in uncache memory.  After kernel
+ * start, &name can be used as if k_heap_init() had been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ */
+#define K_HEAP_DEFINE_NOCACHE(name, bytes)			\
+	Z_HEAP_DEFINE_IN_SECT(name, bytes, __nocache)
 
 /**
  * @}

@@ -124,22 +124,28 @@ extern "C" {
  * This can be used to control a CS line via a GPIO line, instead of
  * using the controller inner CS logic.
  *
- * @param gpio_dev is a valid pointer to an actual GPIO device. A NULL pointer
- *        can be provided to full inhibit CS control if necessary.
- * @param gpio_pin is a number representing the gpio PIN that will be used
- *    to act as a CS line
- * @param delay is a delay in microseconds to wait before starting the
- *    transmission and before releasing the CS line
- * @param gpio_dt_flags is the devicetree flags corresponding to how the CS
- *    line should be driven. GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
- *    equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
- *    spi_config.
  */
 struct spi_cs_control {
-	const struct device	*gpio_dev;
-	uint32_t		delay;
-	gpio_pin_t		gpio_pin;
-	gpio_dt_flags_t		gpio_dt_flags;
+	/**
+	 * GPIO devicetree specification of CS GPIO.
+	 * The device pointer can be set to NULL to fully inhibit CS control if
+	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
+	 * spi_config.
+	 */
+	union {
+		struct gpio_dt_spec gpio;
+		struct {
+			const struct device *gpio_dev;
+			gpio_pin_t gpio_pin;
+			gpio_dt_flags_t gpio_dt_flags;
+		};
+	};
+	/**
+	 * Delay in microseconds to wait before starting the
+	 * transmission and before releasing the CS line.
+	 */
+	uint32_t delay;
 };
 
 #ifndef __cplusplus
@@ -187,13 +193,10 @@ struct spi_cs_control {
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)				\
-	(&(struct spi_cs_control) {						\
-		.gpio_dev = DEVICE_DT_GET(				\
-			DT_SPI_DEV_CS_GPIOS_CTLR(node_id)),		\
-		.delay = (delay_),					\
-		.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(node_id),		\
-		.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(node_id),	\
+#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
+	(&(struct spi_cs_control) {				  \
+		.gpio = DT_SPI_DEV_CS_GPIOS_DT_SPEC_GET(node_id), \
+		.delay = (delay_),				  \
 	})
 
 /**
@@ -298,6 +301,60 @@ struct spi_config {
 #endif
 
 /**
+ * @brief Complete SPI DT information
+ *
+ * @param bus is the SPI bus
+ * @param config is the slave specific configuration
+ */
+struct spi_dt_spec {
+	const struct device *bus;
+	struct spi_config config;
+};
+
+#ifndef __cplusplus
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
+ * data from the devicetree.
+ *
+ * Important: multiple fields are automatically constructed by this macro
+ * which must be checked before use. @ref spi_is_ready performs the required
+ * @ref device_is_ready checks.
+ *
+ * This macro is not available in C++.
+ *
+ * @param node_id Devicetree node identifier for the SPI device whose
+ *                struct spi_dt_spec to create an initializer for
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
+	{							     \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
+		.config = SPI_CONFIG_DT(node_id, operation_, delay_) \
+	}
+
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ *
+ * This macro is not available in C++.
+ *
+ * @param inst Devicetree instance number
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
+	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+#endif
+
+/**
  * @brief SPI buffer structure
  *
  * @param buf is a valid pointer on a data buffer, or NULL otherwise.
@@ -364,9 +421,31 @@ __subsystem struct spi_driver_api {
 };
 
 /**
+ * @brief Validate that SPI bus is ready.
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus is not ready for use.
+ */
+static inline bool spi_is_ready(const struct spi_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	if (!device_is_ready(spec->bus)) {
+		return false;
+	}
+	/* Validate CS gpio port is ready, if it is used */
+	if (spec->config.cs &&
+	    !device_is_ready(spec->config.cs->gpio.port)) {
+		return false;
+	}
+	return true;
+}
+
+/**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
- * Note: This function is synchronous.
+ * @note This function is synchronous.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -377,9 +456,9 @@ __subsystem struct spi_driver_api {
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
  *
- * @retval 0 If successful, negative errno code otherwise. In case of slave
- *         transaction: if successful it will return the amount of frames
- *         received, negative errno code otherwise.
+ * @retval frames Positive number of frames received in slave mode.
+ * @retval 0 If successful in master mode.
+ * @retval -errno Negative errno code on failure.
  */
 __syscall int spi_transceive(const struct device *dev,
 			     const struct spi_config *config,
@@ -398,9 +477,33 @@ static inline int z_impl_spi_transceive(const struct device *dev,
 }
 
 /**
+ * @brief Read/write data from an SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @return a value from spi_transceive().
+ */
+static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+}
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
- * Note: This function is synchronous.
+ * @note This function is synchronous.
+ *
+ * @note This function is an helper function calling spi_transceive.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -408,9 +511,8 @@ static inline int z_impl_spi_transceive(const struct device *dev,
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
- * @retval 0 If successful, negative errno code otherwise.
- *
- * @note This function is an helper function calling spi_transceive.
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read(const struct device *dev,
 			   const struct spi_config *config,
@@ -420,9 +522,29 @@ static inline int spi_read(const struct device *dev,
 }
 
 /**
+ * @brief Read data from a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_read(spec->bus, &spec->config, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ *
+ * @return a value from spi_read().
+ */
+static inline int spi_read_dt(const struct spi_dt_spec *spec,
+			      const struct spi_buf_set *rx_bufs)
+{
+	return spi_read(spec->bus, &spec->config, rx_bufs);
+}
+
+/**
  * @brief Write the specified amount of data from the SPI driver.
  *
- * Note: This function is synchronous.
+ * @note This function is synchronous.
+ *
+ * @note This function is an helper function calling spi_transceive.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -430,15 +552,32 @@ static inline int spi_read(const struct device *dev,
  *        previous operations.
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
- * @retval 0 If successful, negative errno code otherwise.
- *
- * @note This function is an helper function calling spi_transceive.
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write(const struct device *dev,
 			    const struct spi_config *config,
 			    const struct spi_buf_set *tx_bufs)
 {
 	return spi_transceive(dev, config, tx_bufs, NULL);
+}
+
+/**
+ * @brief Write data to a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_write(spec->bus, &spec->config, tx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ *
+ * @return a value from spi_write().
+ */
+static inline int spi_write_dt(const struct spi_dt_spec *spec,
+			       const struct spi_buf_set *tx_bufs)
+{
+	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 
 /* Doxygen defines this so documentation is generated. */
@@ -449,7 +588,7 @@ static inline int spi_write(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -465,9 +604,9 @@ static inline int spi_write(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval 0 If successful, negative errno code otherwise. In case of slave
- *         transaction: if successful it will return the amount of frames
- *         received, negative errno code otherwise.
+ * @retval frames Positive number of frames received in slave mode.
+ * @retval 0 If successful in master mode.
+ * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_async(const struct device *dev,
 				       const struct spi_config *config,
@@ -486,7 +625,9 @@ static inline int spi_transceive_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is an helper function calling spi_transceive_async.
+ *
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -499,9 +640,8 @@ static inline int spi_transceive_async(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval 0 If successful, negative errno code otherwise.
- *
- * @note This function is an helper function calling spi_transceive_async.
+ * @retval 0 If successful
+ * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read_async(const struct device *dev,
 				 const struct spi_config *config,
@@ -516,7 +656,9 @@ static inline int spi_read_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is an helper function calling spi_transceive_async.
+ *
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -529,9 +671,8 @@ static inline int spi_read_async(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval 0 If successful, negative errno code otherwise.
- *
- * @note This function is an helper function calling spi_transceive_async.
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write_async(const struct device *dev,
 				  const struct spi_config *config,
@@ -556,6 +697,9 @@ static inline int spi_write_async(const struct device *dev,
  * @param config Pointer to a valid spi_config structure instance.
  *        Pointer-comparison may be used to detect changes from
  *        previous operations.
+ *
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
  */
 __syscall int spi_release(const struct device *dev,
 			  const struct spi_config *config);
@@ -567,6 +711,22 @@ static inline int z_impl_spi_release(const struct device *dev,
 		(const struct spi_driver_api *)dev->api;
 
 	return api->release(dev, config);
+}
+
+/**
+ * @brief Release the SPI device specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_release(spec->bus, &spec->config);
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @return a value from spi_release().
+ */
+static inline int spi_release_dt(const struct spi_dt_spec *spec)
+{
+	return spi_release(spec->bus, &spec->config);
 }
 
 #ifdef __cplusplus

@@ -21,11 +21,9 @@ config SOC_LPC55S16
 config SOC_LPC55S28
 	bool "SOC_LPC55S28 M33"
 	select CPU_CORTEX_M33
-	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select ARM_TRUSTZONE_M
 	select CLOCK_CONTROL
 	select HAS_MCUX_IAP
 	select HAS_MCUX_LPADC
@@ -43,6 +41,9 @@ config SOC_LPC55S69_CPU0
 	select HAS_MCUX_IAP
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_USB_LPCIP3511
+	select USB_DEDICATED_MEMORY if USB_DEVICE_DRIVER
+	select HAS_MCUX_CTIMER
 
 config SOC_LPC55S69_CPU1
 	bool "SOC_LPC55S69 M33 [CPU 1]"
@@ -76,6 +77,9 @@ config SOC_PART_NUMBER_LPC55XXX
 	  option that you should not set directly. The part number selection
 	  choice defines the default value for this string.
 
+config INIT_PLL0
+	bool "Initialize PLL0"
+
 config SECOND_CORE_MCUX
 	bool "Enable LPC55xxx's second core"
 	depends on HAS_MCUX
@@ -88,6 +92,9 @@ config SECOND_IMAGE_MCUX
 	help
 	  This points to the image file for the the binary code that will be
 	  used by the second core.
+
+config USB_DEDICATED_MEMORY
+	bool "Dedicated memory for USB transfer buffer and controller operation buffers"
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition

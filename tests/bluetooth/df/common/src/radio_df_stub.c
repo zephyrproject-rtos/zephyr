@@ -38,6 +38,11 @@ void radio_switch_complete_and_phy_end_disable(void)
 {
 }
 
+void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+					      uint8_t phy_next, uint8_t flags_next)
+{
+}
+
 void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 {
 }

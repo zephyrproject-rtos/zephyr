@@ -53,8 +53,15 @@ void soc_deep_sleep_enable(void)
 	PCR_REGS->SYS_SLP_CTRL = MCHP_PCR_SYS_SLP_HEAVY;
 }
 
+/*
+ * Clear PCR Sleep control sleep all causing HW to de-assert all peripheral
+ * SLP_EN signals. HW will does this automatically only if it vectors to an
+ * ISR after wake. We are masking ISR's from running until we restore
+ * peripheral state therefore we force HW to de-assert the SLP_EN signals.
+ */
 void soc_deep_sleep_disable(void)
 {
+	PCR_REGS->SYS_SLP_CTRL = 0U;
 	SCB->SCR &= ~(1ul << 2); /* disable Cortex-M4 SLEEPDEEP */
 }
 

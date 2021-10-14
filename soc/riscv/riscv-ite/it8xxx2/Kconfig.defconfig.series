@@ -13,8 +13,21 @@ config ITE_IT8XXX2_INTC
 	select FLASH_HAS_DRIVER_ENABLED
 	select HAS_FLASH_LOAD_OFFSET
 
+config RISCV_GP
+	default y
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 660000
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
+	default y
+	depends on UART_NS16550
+
+config RISCV_HAS_CPU_IDLE
+	default y
 
 if ITE_IT8XXX2_INTC
 config NUM_IRQS

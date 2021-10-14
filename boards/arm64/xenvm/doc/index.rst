@@ -144,7 +144,7 @@ You will see Zephyr output:
    thread_b: Hello World from cpu 0 on xenvm!
    thread_a: Hello World from cpu 0 on xenvm!
 
-Exit xen virtual console by pressing :kbd:`CTRL+[`
+Exit xen virtual console by pressing :kbd:`CTRL+]`
 
 Updating configuration
 **********************

@@ -17,37 +17,10 @@
 #elif defined CONFIG_TRACING_TEST
 #include "tracing_test.h"
 
+#elif defined CONFIG_TRACING_USER
+#include "tracing_user.h"
+
 #else
-
-/**
- * @brief Tracing APIs
- * @defgroup tracing_apis Tracing APIs
- * @{
- */
-
-/**
- * @brief Called when entering an ISR
- */
-#define sys_trace_isr_enter()
-
-/**
- * @brief Called when exiting an ISR
- */
-#define sys_trace_isr_exit()
-
-/**
- * @brief Called when exiting an ISR and switching to scheduler
- */
-#define sys_trace_isr_exit_to_scheduler()
-
-/**
- * @brief Called when the cpu enters the idle state
- */
-#define sys_trace_idle()
-/**
- * @}
- */
-
 
 /**
  * @brief Thread Tracing APIs
@@ -184,22 +157,50 @@
 #define sys_port_trace_k_thread_abort(thread)
 
 /**
+ * @brief Called when a thread enters the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_enter(thread)
+
+/**
+ * @brief Called when a thread exits the k_thread_abort routine
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_abort_exit(thread)
+
+/**
  * @brief Called when setting priority of a thread
  * @param thread Thread object
  */
 #define sys_port_trace_k_thread_priority_set(thread)
 
 /**
- * @brief Called when a thread is being suspended
+ * @brief Called when a thread enters the k_thread_suspend
+ * function.
  * @param thread Thread object
  */
-#define sys_port_trace_k_thread_suspend(thread)
+#define sys_port_trace_k_thread_suspend_enter(thread)
 
 /**
- * @brief Called when a thread is being resumed from suspension
+ * @brief Called when a thread exits the k_thread_suspend
+ * function.
  * @param thread Thread object
  */
-#define sys_port_trace_k_thread_resume(thread)
+#define sys_port_trace_k_thread_suspend_exit(thread)
+
+/**
+ * @brief Called when a thread enters the resume from suspension
+ * function.
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_resume_enter(thread)
+
+/**
+ * @brief Called when a thread exits the resumed from suspension
+ * function.
+ * @param thread Thread object
+ */
+#define sys_port_trace_k_thread_resume_exit(thread)
 
 /**
  * @brief Called when the thread scheduler is locked
@@ -405,6 +406,12 @@
  * @ingroup tracing_apis
  * @{
  */
+
+/**
+ * @brief Trace initialisation of a Work Queue structure
+ * @param queue Work Queue structure
+ */
+#define sys_port_trace_k_work_queue_init(queue)
 
 /**
  * @brief Trace start of a Work Queue call entry
@@ -1067,7 +1074,7 @@
  * @param queue Queue object
  * @param ret Return value
  */
-#define sys_port_trace_queue_remove_exit(queue, ret)
+#define sys_port_trace_k_queue_remove_exit(queue, ret)
 
 /**
  * @brief Trace Queue unique append enter
@@ -1936,7 +1943,38 @@
 
 #if defined CONFIG_PERCEPIO_TRACERECORDER
 #include "tracing_tracerecorder.h"
+#else
+/**
+ * @brief Tracing APIs
+ * @defgroup tracing_apis Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Called when entering an ISR
+ */
+void sys_trace_isr_enter(void);
+
+/**
+ * @brief Called when exiting an ISR
+ */
+void sys_trace_isr_exit(void);
+
+/**
+ * @brief Called when exiting an ISR and switching to scheduler
+ */
+void sys_trace_isr_exit_to_scheduler(void);
+
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+void sys_trace_idle(void);
+
+/**
+ * @}
+ */
 #endif
+
 
 #endif
 #endif

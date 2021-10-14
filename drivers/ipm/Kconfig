@@ -112,6 +112,21 @@ config IPM_INTEL_ADSP
 	help
 	  Driver for the Host-DSP Mailbox Communication channel.
 
+config IPM_STM32_HSEM
+	bool "STM32 HSEM controller"
+	depends on STM32H7_DUAL_CORE
+	help
+	  Driver for stm32 HSEM mailbox
+
+config IPM_STM32_HSEM_CPU
+	int "HSEM CPU ID"
+	default 1 if "$(dt_nodelabel_enabled,cpu0)"
+	default 2 if "$(dt_nodelabel_enabled,cpu1)"
+	range 1 2
+	depends on IPM_STM32_HSEM
+	help
+	  use to define the CPU ID used by HSEM
+
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"

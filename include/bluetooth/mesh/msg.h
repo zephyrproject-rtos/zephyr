@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Message APIs.
+ *  @brief Message APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MSG_H_
 
 /**
- * @brief Bluetooth Mesh Message API
- * @defgroup bt_mesh_msg Bluetooth Mesh Message API
+ * @brief Message
+ * @defgroup bt_mesh_msg Message
  * @ingroup bt_mesh
  * @{
  */

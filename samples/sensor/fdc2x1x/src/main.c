@@ -34,24 +34,20 @@ static void trigger_handler(const struct device *dev,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static void pm_cb(const struct device *dev,
-		  int status,
-		  void *context,
-		  void *arg)
+static void pm_info(enum pm_device_state state, int status)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(arg);
-
-	switch (*(uint32_t *)context) {
+	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		printk("Enter LOW_POWER_STATE ");
+	case PM_DEVICE_STATE_SUSPENDED:
+		printk("Enter SUSPEND_STATE ");
 		break;
 	case PM_DEVICE_STATE_OFF:
 		printk("Enter OFF_STATE ");
 		break;
+	default:
+		printk("Unknown power state");
 	}
 
 	if (status) {
@@ -95,16 +91,20 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Testing the power modes */
-	uint32_t p_state;
+	enum pm_device_state p_state;
+	int ret;
 
-	p_state = PM_DEVICE_STATE_LOW_POWER;
-	pm_device_state_set(dev, p_state, pm_cb, NULL);
+	p_state = PM_DEVICE_STATE_SUSPENDED;
+	ret = pm_device_state_set(dev, p_state);
+	pm_info(p_state, ret);
 
 	p_state = PM_DEVICE_STATE_OFF;
-	pm_device_state_set(dev, p_state, pm_cb, NULL);
+	ret = pm_device_state_set(dev, p_state);
+	pm_info(p_state, ret);
 
 	p_state = PM_DEVICE_STATE_ACTIVE;
-	pm_device_state_set(dev, p_state, pm_cb, NULL);
+	ret = pm_device_state_set(dev, p_state);
+	pm_info(p_state, ret);
 #endif
 
 	while (1) {
@@ -133,10 +133,12 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 		p_state = PM_DEVICE_STATE_OFF;
-		pm_device_state_set(dev, p_state, pm_cb, NULL);
+		ret = pm_device_state_set(dev, p_state);
+		pm_info(p_state, ret);
 		k_sleep(K_MSEC(2000));
 		p_state = PM_DEVICE_STATE_ACTIVE;
-		pm_device_state_set(dev, p_state, pm_cb, NULL);
+		ret = pm_device_state_set(dev, p_state);
+		pm_info(p_state, ret);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif

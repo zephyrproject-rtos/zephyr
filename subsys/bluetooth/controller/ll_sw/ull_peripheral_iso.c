@@ -24,11 +24,11 @@
 #include "lll_conn_iso.h"
 
 #include "ull_conn_types.h"
-#include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
-#include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 #include "lll_peripheral_iso.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -55,7 +55,7 @@ uint8_t ll_cis_accept(uint16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (acl_conn->lll.role == BT_CONN_ROLE_MASTER) {
+	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
 		BT_ERR("Not allowed for central");
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -106,12 +106,6 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		cig->lll.handle = 0xFFFF;
 		cig->lll.role = acl->lll.role;
 
-		for (int i = 0; i < CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP;
-		     i++) {
-			cig->cis_handles[i] = 0xFFFF;
-			cig->lll.cis_handles[cig->lll.num_cis] = 0xFFFF;
-		}
-
 		ull_hdr_init(&cig->ull);
 		lll_hdr_init(&cig->lll, cig);
 	}
@@ -135,6 +129,8 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->cis_id = req->cis_id;
 	cis->established = 0;
 	cis->group = cig;
+	cis->teardown = 0;
+	cis->released_cb = NULL;
 
 	cis->lll.handle = 0xFFFF;
 	cis->lll.acl_handle = acl->lll.handle;
@@ -155,10 +151,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->lll.tx.flush_timeout = req->p_ft;
 	cis->lll.tx.max_octets = sys_le16_to_cpu(req->p_max_pdu);
 
-
 	*cis_handle = ll_conn_iso_stream_handle_get(cis);
-	cig->lll.cis_handles[cig->lll.num_cis] = *cis_handle;
-	cig->cis_handles[cig->lll.num_cis] = *cis_handle;
 	cig->lll.num_cis++;
 
 	return 0;
@@ -179,16 +172,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
 	cig->sync_delay = sys_get_le24(ind->cig_sync_delay);
 
-	/* Find CIS in CIG. NOTE: We could look up via handle, but we want to
-	 * sanity check the CIG/CIS link.
-	 */
-	for (int i = 0; i < CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP; i++) {
-		if (cig->cis_handles[i] == cis_handle) {
-			cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
-			break;
-		}
-	}
-
+	cis = ll_conn_iso_stream_get(cis_handle);
 	if (!cis) {
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
@@ -201,8 +185,9 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	return 0;
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, uint8_t force, void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+		      uint32_t remainder, uint16_t lazy, uint8_t force,
+		      void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = { 0, 0, &link, NULL,
@@ -210,6 +195,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	static struct lll_prepare_param p;
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint16_t handle_iter;
 	uint32_t err;
 	uint8_t ref;
 
@@ -221,9 +207,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		return;
 	}
 
+	handle_iter = UINT16_MAX;
+
 	/* Increment CIS event counters */
 	for (int i = 0; i < cig->lll.num_cis; i++)  {
-		cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(cis);
 
 		/* New CIS may become available by creation prior to the CIG
 		 * event in which it has event_count == 0. Don't increment
@@ -270,6 +259,7 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	uint32_t ticks_interval;
 	uint32_t ticker_status;
 	int32_t cig_offset_us;
+	uint16_t handle_iter;
 	uint16_t cis_handle;
 	uint8_t ticker_id;
 
@@ -279,23 +269,29 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 	cis = ll_conn_iso_stream_get(cis_handle);
 
 	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
-
-	for (int i = 0; i < cig->lll.num_cis; i++) {
-		uint16_t handle = cig->cis_handles[i];
-
-		/* Find valid CIS handle, but exclude incoming */
-		if ((handle != 0xFFFF) && (handle != cis_handle)) {
-			/* Ticker already started - just set the offset and
-			 * assign LLL handle (now valid).
-			 */
-			cis->lll.offset = cis_offs_to_cig_ref;
-			cis->lll.handle = cis_handle;
-			return;
-		}
-	}
+	handle_iter = UINT16_MAX;
 
 	cis->lll.offset = cis_offs_to_cig_ref;
 	cis->lll.handle = cis_handle;
+
+	/* Check if another CIS was already started and CIG ticker is
+	 * running. If so, we just return with updated offset and
+	 * validated handle.
+	 */
+	for (int i = 0; i < cig->lll.num_cis; i++) {
+		struct ll_conn_iso_stream *other_cis;
+
+		other_cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(other_cis);
+
+		if (other_cis == cis || other_cis->lll.handle == 0xFFFF) {
+			/* Same CIS or not valid - skip */
+			continue;
+		}
+
+		/* We're done */
+		return;
+	}
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE +
 		    ll_conn_iso_group_handle_get(cig);

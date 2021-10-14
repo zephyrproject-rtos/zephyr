@@ -1,19 +1,27 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC2520 ieee802154_cc2520.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_KW41Z ieee802154_kw41z.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_MCR20A ieee802154_mcr20a.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_NRF5 ieee802154_nrf5.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC1200 ieee802154_cc1200.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX ieee802154_cc13xx_cc26xx.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ ieee802154_cc13xx_cc26xx_subg.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx_iface.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_DW1000 ieee802154_dw1000.c)
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_UPIPE		ieee802154_uart_pipe.c)
+
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC1200		ieee802154_cc1200.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX
+  ieee802154_cc13xx_cc26xx.c
+)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ
+  ieee802154_cc13xx_cc26xx_subg.c
+)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC2520		ieee802154_cc2520.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_DW1000		ieee802154_dw1000.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_KW41Z		ieee802154_kw41z.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_MCR20A		ieee802154_mcr20a.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_NRF5		ieee802154_nrf5.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx_iface.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_TELINK_B91	ieee802154_b91.c)
 
 if(CONFIG_SOC_CC1352R)
-     target_compile_definitions(zephyr PRIVATE "DeviceFamily_CC13X2")
+     zephyr_library_compile_definitions("DeviceFamily_CC13X2")
 elseif(CONFIG_SOC_CC2652R)
-     target_compile_definitions(zephyr PRIVATE "DeviceFamily_CC26X2")
+     zephyr_library_compile_definitions("DeviceFamily_CC26X2")
 endif()

@@ -36,7 +36,7 @@ struct multiboot_info {
 
 extern struct multiboot_info multiboot_info;
 
-extern void z_multiboot_init(struct multiboot_info *);
+extern void z_multiboot_init(struct multiboot_info *info_pa);
 
 /*
  * the mmap_addr field points to a series of entries of the following form.

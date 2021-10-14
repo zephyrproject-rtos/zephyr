@@ -122,10 +122,10 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 #if CONFIG_TIMESLICING
 			/*
 			 * This is not ideal, since it does not
-			 * account the time elapsed since the the
+			 * account the time elapsed since the
 			 * last announcement, and slice_ticks is based
-			 * on that. It means the that time remaining for
-			 * the next announcement can be lesser than
+			 * on that. It means that the time remaining for
+			 * the next announcement can be less than
 			 * slice_ticks.
 			 */
 			int32_t next_time = next_timeout();

@@ -122,13 +122,15 @@ minicom with flow control disabled, 115200-8N1 settings.
 JTAG UART
 ---------
 
-You can also have it send its console output to the JTAG UART. Set these in your
-project configuration:
+You can also have it send its console output to the JTAG UART.
+Enable ``jtag_uart`` node in :file:`altera_max10.dts` or overlay file:
 
-.. code-block:: console
+.. code-block:: devicetree
 
-   CONFIG_UART_ALTERA_JTAG=y
-   CONFIG_UART_CONSOLE_ON_DEV_NAME="jtag_uart0"
+   &jtag_uart {
+       status = "okay";
+       current-speed = <115200>;
+   };
 
 To view these messages on your local workstation, run the terminal application
 in the SDK:
@@ -235,7 +237,7 @@ You will see output similar to the following:
    63      GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(struct _isr_list));
    (gdb) b _PrepC
    Breakpoint 1 at 0xdf0: file /projects/zephyr/arch/nios2/core/prep_c.c, line 36.
-   (gdb) b _Cstart
+   (gdb) b z_cstart
    Breakpoint 2 at 0x1254: file /projects/zephyr/kernel/init.c, line 348.
    (gdb) c
    Continuing.

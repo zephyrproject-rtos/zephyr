@@ -92,11 +92,15 @@ source "drivers/sensor/grove/Kconfig"
 
 source "drivers/sensor/ti_hdc/Kconfig"
 
+source "drivers/sensor/ti_hdc20xx/Kconfig"
+
 source "drivers/sensor/hmc5883l/Kconfig"
 
 source "drivers/sensor/hp206c/Kconfig"
 
 source "drivers/sensor/hts221/Kconfig"
+
+source "drivers/sensor/i3g4250d/Kconfig"
 
 source "drivers/sensor/icm42605/Kconfig"
 
@@ -110,7 +114,11 @@ source "drivers/sensor/iis2mdc/Kconfig"
 
 source "drivers/sensor/iis3dhhc/Kconfig"
 
+source "drivers/sensor/ina23x/Kconfig"
+
 source "drivers/sensor/isl29035/Kconfig"
+
+source "drivers/sensor/ina219/Kconfig"
 
 source "drivers/sensor/ism330dhcx/Kconfig"
 
@@ -123,6 +131,10 @@ source "drivers/sensor/lis2dw12/Kconfig"
 source "drivers/sensor/lis2mdl/Kconfig"
 
 source "drivers/sensor/lis3mdl/Kconfig"
+
+source "drivers/sensor/lm75/Kconfig"
+
+source "drivers/sensor/lm77/Kconfig"
 
 source "drivers/sensor/lps22hb/Kconfig"
 
@@ -176,13 +188,21 @@ source "drivers/sensor/qdec_sam/Kconfig"
 
 source "drivers/sensor/sbs_gauge/Kconfig"
 
+source "drivers/sensor/sgp40/Kconfig"
+
+source "drivers/sensor/shtcx/Kconfig"
+
 source "drivers/sensor/sht3xd/Kconfig"
+
+source "drivers/sensor/sht4x/Kconfig"
 
 source "drivers/sensor/si7006/Kconfig"
 
 source "drivers/sensor/si7055/Kconfig"
 
 source "drivers/sensor/si7060/Kconfig"
+
+source "drivers/sensor/si7210/Kconfig"
 
 source "drivers/sensor/sm351lt/Kconfig"
 

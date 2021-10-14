@@ -147,7 +147,7 @@
 	phase-seg2 = <6>;
 };
 
-&usb {
+zephyr_udc0: &usb {
 	/*
 	 * make sure CAN and USB are not enabled at the same time
 	 * because they share interrupts 19, 20 (stm32f103Xb.dtsi)

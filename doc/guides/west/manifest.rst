@@ -151,6 +151,8 @@ bases are respectively ``https://git.example.com/base1`` and
 example, you might use ``git@example.com:base1`` if ``remote1`` supported Git
 over SSH as well. Anything acceptable to Git will work.
 
+.. _west-manifests-projects:
+
 Projects
 ========
 

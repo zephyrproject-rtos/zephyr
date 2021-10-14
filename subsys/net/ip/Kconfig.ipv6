@@ -24,6 +24,7 @@ config NET_IF_MAX_IPV6_COUNT
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
 	default 6 if NET_L2_OPENTHREAD
+	default 3 if NET_LOOPBACK
 	default 2
 
 config NET_IF_MCAST_IPV6_ADDR_COUNT
@@ -67,6 +68,23 @@ config NET_IPV6_FRAGMENT_MAX_COUNT
 	  simultaneously. Each fragment count might use up to 1280 bytes
 	  of memory so you need to plan this and increase the network buffer
 	  count.
+
+config NET_IPV6_FRAGMENT_MAX_PKT
+	int "How many fragments can be handled to reassemble a packet"
+	default 2
+	depends on NET_IPV6_FRAGMENT
+	help
+	  Incoming fragments are stored in per-packet queue before being
+	  reassembled. This value defines the number of fragments that
+	  can be handled at the same time to reassemble a single packet.
+
+	  We do not have to accept IPv6 packets larger than 1500 bytes
+	  (RFC 2460 ch 5). This means that we should receive everything
+	  within the first two fragments. The first one being 1280 bytes and
+	  the second one 220 bytes.
+
+	  You can increase this value if you expect packets with more
+	  than two fragments.
 
 config NET_IPV6_FRAGMENT_TIMEOUT
 	int "How long to wait the fragments to receive"

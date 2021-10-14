@@ -88,7 +88,8 @@
 #endif
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), ahb_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), ahb_prescaler)
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), ahb_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), ahb_prescaler)
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #else
 #define STM32_AHB_PRESCALER	CONFIG_CLOCK_STM32_AHB_PRESCALER
@@ -96,6 +97,7 @@
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb1_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), apb1_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb1_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb1_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb1_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
@@ -104,12 +106,17 @@
 #endif
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb2_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb2_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb2_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb2_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay)
 	/* This should not be defined in F0 binding case */
 #define STM32_APB2_PRESCALER	CONFIG_CLOCK_STM32_APB2_PRESCALER
+#endif
+
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32u5_rcc), apb3_prescaler)
+#define STM32_APB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb3_prescaler)
 #endif
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), ahb3_prescaler)
@@ -161,6 +168,7 @@
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g0_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g4_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u5_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32h7_pll_clock, okay)
 #define STM32_PLL_M_DIVISOR	DT_PROP(DT_NODELABEL(pll), div_m)
@@ -223,6 +231,7 @@
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32_rcc, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32h7_rcc, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32u5_rcc, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wb_rcc, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wl_rcc, okay)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
@@ -252,10 +261,12 @@
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32h7_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l0_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32u5_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
 #define DT_PLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(pll))
 #define STM32_PLL_SRC_MSI	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
+#define STM32_PLL_SRC_MSIS	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
 #define STM32_PLL_SRC_HSI	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
 #define STM32_PLL_SRC_HSE	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
 #define STM32_PLL_SRC_PLL2	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(pll2))
@@ -275,14 +286,19 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32l0_msi_clock, okay)
 #define STM32_MSI_RANGE		DT_PROP(DT_NODELABEL(clk_msi), msi_range)
-#else
+#elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay)
 #define STM32_MSI_RANGE		CONFIG_CLOCK_STM32_MSI_RANGE
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay)
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
-#else
+#elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay)
 #define STM32_MSI_PLL_MODE	CONFIG_CLOCK_STM32_MSI_PLL_MODE
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay)
+#define STM32_MSIS_RANGE	DT_PROP(DT_NODELABEL(clk_msis), msi_range)
+#define STM32_MSIS_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msis), msi_pll_mode)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hsi), st_stm32h7_hsi_clock, okay)
@@ -293,8 +309,13 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32_hse_clock, okay)
 #define STM32_HSE_BYPASS	DT_PROP(DT_NODELABEL(clk_hse), hse_bypass)
-#else
+#elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
 #define STM32_HSE_BYPASS	CONFIG_CLOCK_STM32_HSE_BYPASS
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
+#define STM32_HSE_TCXO	DT_PROP(DT_NODELABEL(clk_hse), hse_tcxo)
+#define STM32_HSE_DIV2	DT_PROP(DT_NODELABEL(clk_hse), hse_div2)
 #endif
 
 struct stm32_pclken {

@@ -1,0 +1,46 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KSCAN_ITE_IT8XXX2
+	bool "ITE KSCAN driver"
+	depends on SOC_IT8XXX2 && KSCAN
+	select MULTITHREADING
+	help
+	  This option enables the ITE keyboard scan driver.
+
+if KSCAN_ITE_IT8XXX2
+
+config KSCAN_ITE_IT8XXX2_COLUMN_SIZE
+	int "KSCAN_ITE_IT8XXX2_COLUMN_SIZE"
+	range 16 18
+	default 16
+	help
+	  Adjust the value to your keyboard columns. The maximum
+	  column size for the ITE family is 18.
+
+config KSCAN_ITE_IT8XXX2_ROW_SIZE
+	int "KSCAN_ITE_IT8XXX2_ROW_SIZE"
+	default 8
+	help
+	  Adjust the value to your keyboard rows. The maximum
+	  row size for the ITE family is 8.
+
+config KSCAN_ITE_IT8XXX2_DEBOUNCE_DOWN
+	int "KSCAN_ITE_IT8XXX2_DEBOUNCE_DOWN"
+	default 9
+	help
+	  Determines the time in msecs for debouncing a key press.
+
+config KSCAN_ITE_IT8XXX2_DEBOUNCE_UP
+	int "KSCAN_ITE_IT8XXX2_DEBOUNCE_UP"
+	default 30
+	help
+	  Determines the time in msecs for debouncing a key release.
+
+config KSCAN_ITE_IT8XXX2_POLL_PERIOD
+	int "KSCAN_ITE_IT8XXX2_POLL_PERIOD"
+	default 3
+	help
+	  Defines the poll period in msecs between matrix scans.
+
+endif # KSCAN_ITE_IT8XXX2

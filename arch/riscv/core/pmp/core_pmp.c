@@ -229,11 +229,11 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 {
 	unsigned char index;
 	unsigned char *uchar_pmpcfg;
-	ulong_t rom_start = (ulong_t) _image_rom_start;
+	ulong_t rom_start = (ulong_t) __rom_region_start;
 #if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-	ulong_t rom_size = (ulong_t) _image_rom_size;
+	ulong_t rom_size = (ulong_t) __rom_region_size;
 #else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	ulong_t rom_end = (ulong_t) _image_rom_end;
+	ulong_t rom_end = (ulong_t) __rom_region_end;
 #endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 	index = 0U;
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;

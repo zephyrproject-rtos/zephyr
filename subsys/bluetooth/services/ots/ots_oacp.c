@@ -24,6 +24,27 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #define OACP_PROC_TYPE_SIZE	1
 #define OACP_RES_MAX_SIZE	3
 
+#if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
+static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn, struct net_buf *buf);
+
+static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn)
+{
+	struct bt_ots *ots;
+
+	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
+
+	if (!ots->cur_obj) {
+		return;
+	}
+
+	ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	l2cap_ctx->rx_done = NULL;
+	l2cap_ctx->tx_done = NULL;
+}
+#endif
+
 static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 	struct bt_conn *conn,
 	struct bt_ots *ots,
@@ -65,6 +86,74 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 	return BT_GATT_OTS_OACP_RES_SUCCESS;
 }
 
+#if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
+static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
+	struct bt_conn *conn,
+	struct bt_ots *ots,
+	struct bt_gatt_ots_oacp_proc *proc)
+{
+	struct bt_gatt_ots_oacp_write_params *params = &proc->write_params;
+
+	LOG_DBG("Validating Write procedure with offset: 0x%08X and "
+		"length: 0x%08X", params->offset, params->len);
+
+	if (!ots->cur_obj) {
+		return BT_GATT_OTS_OACP_RES_INV_OBJ;
+	}
+
+	if (!BT_OTS_OBJ_GET_PROP_WRITE(ots->cur_obj->metadata.props)) {
+		return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
+	}
+
+	/* patching is attempted */
+	if (params->offset < ots->cur_obj->metadata.size.cur) {
+		if (!BT_OTS_OACP_GET_FEAT_PATCH(ots->features.oacp)) {
+			return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
+		}
+		if (!BT_OTS_OBJ_GET_PROP_PATCH(ots->cur_obj->metadata.props)) {
+			return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
+		}
+	}
+
+	/* truncation is not supported */
+	if (BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_TRUNC(params->mode)) {
+		return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
+	}
+
+	if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn)) {
+		return BT_GATT_OTS_OACP_RES_CHAN_UNAVAIL;
+	}
+
+	if (BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_RFU(params->mode)) {
+		return BT_GATT_OTS_OACP_RES_INV_PARAM;
+	}
+
+	if (params->offset > ots->cur_obj->metadata.size.cur) {
+		return BT_GATT_OTS_OACP_RES_INV_PARAM;
+	}
+
+	/* append is not supported */
+	if ((params->offset + (uint64_t) params->len) > ots->cur_obj->metadata.size.alloc) {
+		return BT_GATT_OTS_OACP_RES_INV_PARAM;
+	}
+
+	if (ots->cur_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+		return BT_GATT_OTS_OACP_RES_OBJ_LOCKED;
+	}
+
+	ots->l2cap.rx_done = oacp_write_proc_cb;
+	ots->l2cap.closed = oacp_l2cap_closed;
+	ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_WRITE_OP_STATE;
+	ots->cur_obj->state.write_op.recv_len = 0;
+	memcpy(&ots->cur_obj->state.write_op.oacp_params, params,
+		sizeof(ots->cur_obj->state.write_op.oacp_params));
+
+	LOG_DBG("Write procedure is accepted");
+
+	return BT_GATT_OTS_OACP_RES_SUCCESS;
+}
+#endif
+
 static enum bt_gatt_ots_oacp_res_code oacp_proc_validate(
 	struct bt_conn *conn,
 	struct bt_ots *ots,
@@ -73,11 +162,14 @@ static enum bt_gatt_ots_oacp_res_code oacp_proc_validate(
 	switch (proc->type) {
 	case BT_GATT_OTS_OACP_PROC_READ:
 		return oacp_read_proc_validate(conn, ots, proc);
+	case BT_GATT_OTS_OACP_PROC_WRITE:
+#if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
+		return oacp_write_proc_validate(conn, ots, proc);
+#endif
 	case BT_GATT_OTS_OACP_PROC_CREATE:
 	case BT_GATT_OTS_OACP_PROC_DELETE:
 	case BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC:
 	case BT_GATT_OTS_OACP_PROC_EXECUTE:
-	case BT_GATT_OTS_OACP_PROC_WRITE:
 	case BT_GATT_OTS_OACP_PROC_ABORT:
 	default:
 		return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
@@ -117,13 +209,17 @@ static enum bt_gatt_ots_oacp_res_code oacp_command_decode(
 			net_buf_simple_pull_le32(&net_buf);
 		return BT_GATT_OTS_OACP_RES_SUCCESS;
 	case BT_GATT_OTS_OACP_PROC_WRITE:
+#if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
 		proc->write_params.offset =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->write_params.len =
 			net_buf_simple_pull_le32(&net_buf);
 		proc->write_params.mode =
 			net_buf_simple_pull_u8(&net_buf);
+		return BT_GATT_OTS_OACP_RES_SUCCESS;
+#else
 		break;
+#endif
 	case BT_GATT_OTS_OACP_PROC_ABORT:
 	default:
 		break;
@@ -141,31 +237,34 @@ static bool oacp_command_len_verify(struct bt_gatt_ots_oacp_proc *proc,
 	switch (proc->type) {
 	case BT_GATT_OTS_OACP_PROC_CREATE:
 	{
-		struct bt_ots_obj_type *type;
+		struct bt_ots_obj_type *type = &proc->create_params.type;
 
-		ref_len += sizeof(proc->create_params.size);
-
-		type = &proc->create_params.type;
-		if (type->uuid.type == BT_UUID_TYPE_16) {
-			ref_len += sizeof(type->uuid_16.val);
-		} else if (type->uuid.type == BT_UUID_TYPE_128) {
-			ref_len += sizeof(type->uuid_128.val);
-		} else {
-			return true;
+		switch (type->uuid.type) {
+		case BT_UUID_TYPE_16:
+			ref_len += BT_GATT_OTS_OACP_CREATE_UUID16_PARAMS_SIZE;
+			break;
+		case BT_UUID_TYPE_32:
+			ref_len += BT_GATT_OTS_OACP_CREATE_UUID32_PARAMS_SIZE;
+			break;
+		case BT_UUID_TYPE_128:
+			ref_len += BT_GATT_OTS_OACP_CREATE_UUID128_PARAMS_SIZE;
+			break;
+		default:
+			return false;
 		}
 	} break;
 	case BT_GATT_OTS_OACP_PROC_DELETE:
 		break;
 	case BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC:
-		ref_len += sizeof(proc->cs_calc_params);
+		ref_len += BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE;
 		break;
 	case BT_GATT_OTS_OACP_PROC_EXECUTE:
 		break;
 	case BT_GATT_OTS_OACP_PROC_READ:
-		ref_len += sizeof(proc->read_params);
+		ref_len += BT_GATT_OTS_OACP_READ_PARAMS_SIZE;
 		break;
 	case BT_GATT_OTS_OACP_PROC_WRITE:
-		ref_len += sizeof(proc->write_params);
+		ref_len += BT_GATT_OTS_OACP_WRITE_PARAMS_SIZE;
 		break;
 	case BT_GATT_OTS_OACP_PROC_ABORT:
 		break;
@@ -180,9 +279,9 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			      struct bt_conn *conn)
 {
 	int err;
-	uint8_t *obj_chunk;
-	uint32_t offset;
-	uint32_t len;
+	void *obj_chunk;
+	off_t offset;
+	ssize_t len;
 	struct bt_ots *ots;
 	struct bt_gatt_ots_object_read_op *read_op;
 
@@ -216,6 +315,15 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	} else {
 		len = ots->cb->obj_read(ots, conn, ots->cur_obj->id, &obj_chunk,
 					len, offset);
+	}
+
+	if (len < 0) {
+		LOG_ERR("OCAP Read Op failed with error: %zd", len);
+
+		bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+
+		return;
 	}
 
 	ots->l2cap.tx_done = oacp_read_proc_cb;
@@ -255,6 +363,78 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
 	}
 }
 
+#if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)
+static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_gatt_ots_object_write_op *write_op;
+	struct bt_ots *ots;
+	off_t offset;
+	size_t rem;
+	size_t len;
+	ssize_t rc;
+
+	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
+
+	if (!ots->cur_obj) {
+		LOG_ERR("Invalid Current Object on OACP Write procedure");
+		return -ENODEV;
+	}
+
+	if (!ots->cb->obj_write) {
+		LOG_ERR("OTS Write operation failed: "
+			"there is no OTS Write callback");
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		return -ENODEV;
+	}
+
+	write_op = &ots->cur_obj->state.write_op;
+	offset = write_op->oacp_params.offset + write_op->recv_len;
+	len = buf->len;
+	if (write_op->recv_len + len > write_op->oacp_params.len) {
+		LOG_WRN("More bytes received than the client indicated");
+		len = write_op->oacp_params.len - write_op->recv_len;
+	}
+	rem = write_op->oacp_params.len - (write_op->recv_len + len);
+
+	rc = ots->cb->obj_write(ots, conn, ots->cur_obj->id, buf->data, len,
+				  offset, rem);
+
+	if (rc < 0) {
+		len = 0;
+
+		/*
+		 * Returning an EINPROGRESS return code results in the write buffer not being
+		 * released by the l2cap layer. This is an unsupported use case at the moment.
+		 */
+		if (rc == -EINPROGRESS) {
+			LOG_ERR("Unsupported error code %zd returned by object write callback", rc);
+		}
+
+		LOG_ERR("OTS Write operation failed with error: %zd", rc);
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	} else {
+		/* Return -EIO as an error if all of data was not written */
+		if (rc != len) {
+			len = rc;
+			rc = -EIO;
+		}
+	}
+
+	write_op->recv_len += len;
+	if (write_op->recv_len == write_op->oacp_params.len) {
+		LOG_DBG("OACP Write Op over L2CAP is completed");
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	}
+
+	if (offset + len > ots->cur_obj->metadata.size.cur) {
+		ots->cur_obj->metadata.size.cur = offset + len;
+	}
+
+	return rc;
+}
+#endif
+
 static void oacp_ind_cb(struct bt_conn *conn,
 			struct bt_gatt_indicate_params *params,
 			uint8_t err)
@@ -266,6 +446,9 @@ static void oacp_ind_cb(struct bt_conn *conn,
 	switch (ots->cur_obj->state.type) {
 	case BT_GATT_OTS_OBJECT_READ_OP_STATE:
 		oacp_read_proc_execute(ots, conn);
+		break;
+	case BT_GATT_OTS_OBJECT_WRITE_OP_STATE:
+		/* procedure execution is driven by L2CAP socket receive */
 		break;
 	default:
 		LOG_ERR("Unsupported OTS state: %d", ots->cur_obj->state.type);

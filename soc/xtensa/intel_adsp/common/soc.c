@@ -10,6 +10,8 @@
 #include <xtensa/hal.h>
 #include <init.h>
 
+#include <soc/shim.h>
+#include <cavs-idc.h>
 #include "soc.h"
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
@@ -195,39 +197,97 @@ static inline void soc_set_power_and_clock(void)
 	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
 		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/*
+	 * HP domain clocked by PLL
+	 * LP domain clocked by PLL
 	 * DSP Core 0 PLL Clock Select divide by 1
 	 * DSP Core 1 PLL Clock Select divide by 1
-	 * Low Power Domain Clock Select depends on LMPCS bit
-	 * High Power Domain Clock Select depands on HMPCS bit
-	 * Low Power Domain PLL Clock Select device by 4
 	 * High Power Domain PLL Clock Select device by 2
-	 * Tensilica Core Prevent Audio PLL Shutdown (TCPAPLLS)
-	 * Tensilica Core Prevent Local Clock Gating (Core 0)
-	 * Tensilica Core Prevent Local Clock Gating (Core 1)
+	 * Low Power Domain PLL Clock Select device by 4
+	 * Disable Tensilica Core Prevent Audio PLL Shutdown (TCPAPLLS)
+	 * Disable Tensilica Core Prevent Local Clock Gating (Core 0)
+	 * Disable Tensilica Core Prevent Local Clock Gating (Core 1)
+	 *   - Disabling "prevent clock gating" means allowing clock gating
 	 */
 	dsp_shim_regs->clkctl =
-		SOC_CLKCTL_DPCS_DIV1(0) |
-		SOC_CLKCTL_DPCS_DIV1(1) |
-		SOC_CLKCTL_LDCS_LMPCS |
-		SOC_CLKCTL_HDCS_HMPCS |
-		SOC_CLKCTL_LPMEM_PLL_CLK_SEL_DIV4 |
-		SOC_CLKCTL_HPMEM_PLL_CLK_SEL_DIV2 |
-		SOC_CLKCTL_TCPAPLLS |
-		SOC_CLKCTL_TCPLCG_DIS(0) |
-		SOC_CLKCTL_TCPLCG_DIS(1);
-
-	/* Disable power gating for both cores */
-	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
-		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
+		SHIM_CLKCTL_HDCS_PLL |
+		SHIM_CLKCTL_LDCS_PLL |
+		SHIM_CLKCTL_DPCS_DIV1(0) |
+		SHIM_CLKCTL_DPCS_DIV1(1) |
+		SHIM_CLKCTL_HPMPCS_DIV2 |
+		SHIM_CLKCTL_LPMPCS_DIV4 |
+		SHIM_CLKCTL_TCPAPLLS_DIS |
+		SHIM_CLKCTL_TCPLCG_DIS(0) |
+		SHIM_CLKCTL_TCPLCG_DIS(1);
 
 	/* Rewrite the low power sequencing control bits */
 	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
+#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V15 */
+
+#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18) || \
+	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20) || \
+	defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
+
+	/*
+	 * Request HP ring oscillator and
+	 * wait for status to indicate it's ready.
+	 */
+	dsp_shim_regs->clkctl |= SHIM_CLKCTL_RHROSCC;
+	while ((dsp_shim_regs->clkctl & SHIM_CLKCTL_RHROSCC) !=
+	       SHIM_CLKCTL_RHROSCC) {
+		k_busy_wait(10);
+	}
+
+	/*
+	 * Request HP Ring Oscillator
+	 * Select HP Ring Oscillator
+	 * High Power Domain PLL Clock Select device by 2
+	 * Low Power Domain PLL Clock Select device by 4
+	 * Disable Tensilica Core(s) Prevent Local Clock Gating
+	 *   - Disabling "prevent clock gating" means allowing clock gating
+	 */
+	dsp_shim_regs->clkctl =
+		SHIM_CLKCTL_RHROSCC |
+		SHIM_CLKCTL_OCS_HP_RING |
+		SHIM_CLKCTL_HMCS_DIV2 |
+		SHIM_CLKCTL_LMCS_DIV4 |
+		SHIM_CLKCTL_TCPLCG_DIS_ALL;
+
+	/* Prevent LP GPDMA 0 & 1 clock gating */
+	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(0));
+	sys_write32(SHIM_CLKCTL_LPGPDMAFDCGB, SHIM_GPDMA_CLKCTL(1));
+
+	/* Disable power gating for first cores */
+	dsp_shim_regs->pwrctl |= SHIM_PWRCTL_TCPDSPPG(0);
+
+#endif /* CONFIG_SOC_SERIES_INTEL_CAVS_V18 ||
+	* CONFIG_SOC_SERIES_INTEL_CAVS_V20 ||
+	* CONFIG_SOC_SERIES_INTEL_CAVS_V25
+	*/
 }
 
 static int soc_init(const struct device *dev)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	/* On cAVS 1.8+, we must demand ownership of the timestamping
+	 * and clock generator registers.  Lacking the former will
+	 * prevent wall clock timer interrupts from arriving, even
+	 * though the device itself is operational.
+	 */
+	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
+		    DSP_INIT_LPGPDMA(0));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
+		    DSP_INIT_LPGPDMA(1));
+#endif
+
 	soc_set_power_and_clock();
+
+#if CONFIG_MP_NUM_CPUS > 1
+	soc_idc_init();
+#endif
+
 	return 0;
 }
 

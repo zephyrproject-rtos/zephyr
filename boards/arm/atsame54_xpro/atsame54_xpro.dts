@@ -66,6 +66,8 @@
 	txpo = <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&pb25d_sercom2_pad1 &pb24d_sercom2_pad0>;
 };
 
 &sercom4 {
@@ -95,11 +97,22 @@
 	status = "okay";
 };
 
-&usb0 {
+zephyr_udc0: &usb0 {
 	status = "okay";
 };
 
 &gmac {
 	status = "okay";
 	zephyr,random-mac-address;
+
+	phy: phy {
+		compatible = "ethernet-phy";
+		status = "okay";
+		address = <0>;
+		mdio = <&mdio>;
+	};
+};
+
+&mdio {
+	status = "okay";
 };

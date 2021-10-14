@@ -89,7 +89,7 @@ static int accept_conn(const bt_addr_t *bdaddr)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->role = BT_HCI_ROLE_SLAVE;
+	cp->role = BT_HCI_ROLE_PERIPHERAL;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
 	if (err) {
@@ -117,7 +117,7 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 		return;
 	}
 
-	sco_conn->role = BT_HCI_ROLE_SLAVE;
+	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
 	bt_conn_unref(sco_conn);
 }
@@ -142,7 +142,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 	}
 
 	accept_conn(&evt->bdaddr);
-	conn->role = BT_HCI_ROLE_SLAVE;
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
 	bt_conn_unref(conn);
 }
@@ -697,9 +697,9 @@ void bt_hci_role_change(struct net_buf *buf)
 	}
 
 	if (evt->role) {
-		conn->role = BT_CONN_ROLE_SLAVE;
+		conn->role = BT_CONN_ROLE_PERIPHERAL;
 	} else {
-		conn->role = BT_CONN_ROLE_MASTER;
+		conn->role = BT_CONN_ROLE_CENTRAL;
 	}
 
 	bt_conn_unref(conn);

@@ -1,0 +1,15 @@
+# Copyright (c) 2021, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 RNG
+
+compatible: "telink,b91-trng"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

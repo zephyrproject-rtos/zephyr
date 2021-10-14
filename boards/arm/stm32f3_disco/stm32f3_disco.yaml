@@ -19,3 +19,5 @@ supported:
   - can
   - pwm
   - adc
+  - dac
+  - dma

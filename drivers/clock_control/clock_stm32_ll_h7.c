@@ -106,7 +106,8 @@
 #define SYSCLK_FREQ_MAX		480000000UL
 #define AHB_FREQ_MAX		240000000UL
 #define APBx_FREQ_MAX		120000000UL
-#elif defined(CONFIG_SOC_STM32H723XX)
+#elif defined(CONFIG_SOC_STM32H723XX) ||\
+	  defined(CONFIG_SOC_STM32H735XX)
 /* All h7 SoC with maximum 550MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		550000000UL
 #define AHB_FREQ_MAX		275000000UL
@@ -326,7 +327,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
-	/* Both cores can access bansk by following LL API */
+	/* Both cores can access banks by following LL API */
 	/* Using "_Cn_" LL API would restrict access to one or the other */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	switch (pclken->bus) {
@@ -375,7 +376,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
-	/* Both cores can access bansk by following LL API */
+	/* Both cores can access banks by following LL API */
 	/* Using "_Cn_" LL API would restrict access to one or the other */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	switch (pclken->bus) {

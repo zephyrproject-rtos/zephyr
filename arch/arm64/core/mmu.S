@@ -24,13 +24,13 @@ SECTION_FUNC(TEXT, z_arm64_set_ttbr0)
 	msr	sctlr_el1, x1
 	isb
 
+	/* Switch the TTBR0 */
+	msr	ttbr0_el1, x0
+	isb
+
 	/* Invalidate the TLBs */
 	tlbi	vmalle1
 	dsb	sy
-	isb
-
-	/* Switch the TTBR0 */
-	msr	ttbr0_el1, x0
 	isb
 
 	/* Restore the saved SCTLR_EL1 */
