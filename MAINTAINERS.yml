@@ -381,6 +381,7 @@ Display drivers:
         - vanwinkeljan
     collaborators:
         - jfischer-no
+        - gmarull
     files:
         - drivers/display/
         - dts/bindings/display/
@@ -401,6 +402,7 @@ Documentation:
         - nashif
         - utzig
         - mbolivar-nordic
+        - gmarull
     files:
         - doc/
         - doc/_static/
@@ -678,6 +680,7 @@ Documentation:
       - albertofloyd
     collaborators:
       - VenkatKotakonda
+      - gmarull
     files:
         - drivers/kscan/
         - include/drivers/kscan.h
@@ -774,6 +777,8 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - gmarull
     files:
         - doc/reference/peripherals/pinmux.rst
         - drivers/pinmux/
@@ -809,6 +814,7 @@ Documentation:
         - anangl
     collaborators:
         - henrikbrixandersen
+        - gmarull
     files:
         - drivers/pwm/
         - dts/bindings/pwm/
@@ -836,6 +842,7 @@ Documentation:
         - MaureenHelm
     collaborators:
         - avisconti
+        - gmarull
     files:
         - drivers/sensor/
         - include/drivers/sensor.h
@@ -1233,6 +1240,7 @@ Power management:
     collaborators:
         - nashif
         - mengxianglinx
+        - gmarull
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
@@ -1472,6 +1480,7 @@ STM32 Platforms:
     collaborators:
         - ABOSTM
         - FRASTM
+        - gmarull
     files:
         - boards/arm/nucleo_*/
         - boards/arm/stm32*_disco/
