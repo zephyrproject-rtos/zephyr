@@ -1997,7 +1997,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
+		      CONFIG_SERIAL_INIT_PRIORITY,			       \
 		      &uart_nrfx_uarte_driver_api)
 
 #define UARTE_CONFIG(idx)						       \
