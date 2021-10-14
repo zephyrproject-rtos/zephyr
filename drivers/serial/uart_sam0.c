@@ -1256,7 +1256,7 @@ UART_SAM0_CONFIG_DEFN(n);						\
 DEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL,				\
 		    &uart_sam0_data_##n,				\
 		    &uart_sam0_config_##n, PRE_KERNEL_1,		\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		    CONFIG_SERIAL_INIT_PRIORITY,			\
 		    &uart_sam0_driver_api);				\
 UART_SAM0_IRQ_HANDLER(n)
 

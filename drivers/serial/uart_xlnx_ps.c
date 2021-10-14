@@ -1214,7 +1214,7 @@ DEVICE_DT_INST_DEFINE(port, \
 	NULL, \
 	&uart_xlnx_ps_dev_data_##port, \
 	&uart_xlnx_ps_dev_cfg_##port, \
-	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+	PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 	&uart_xlnx_ps_driver_api)
 
 #define UART_XLNX_INSTANTIATE(inst)		\

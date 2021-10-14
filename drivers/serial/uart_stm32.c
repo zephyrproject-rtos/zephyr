@@ -1605,7 +1605,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
 		    NULL,						\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		    &uart_stm32_driver_api);				\
 									\
 STM32_UART_IRQ_HANDLER(index)

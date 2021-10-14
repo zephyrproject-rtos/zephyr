@@ -443,7 +443,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    NULL,
 		    &pl011_data_port_0,
 		    &pl011_cfg_port_0, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &pl011_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -506,7 +506,7 @@ DEVICE_DT_INST_DEFINE(1,
 		    NULL,
 		    &pl011_data_port_1,
 		    &pl011_cfg_port_1, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &pl011_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -571,7 +571,7 @@ DEVICE_DT_INST_DEFINE(0,
 		      NULL,
 		      &pl011_data_sbsa,
 		      &pl011_cfg_sbsa, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      CONFIG_SERIAL_INIT_PRIORITY,
 		      &pl011_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
