@@ -1379,6 +1379,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
+#if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
+	for (i = 0; i < ARRAY_SIZE(broadcast_sink_chans); i++) {
+		bt_audio_chan_cb_register(&broadcast_sink_chans[i], &chan_ops);
+	}
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 	return 0;
 }
 
