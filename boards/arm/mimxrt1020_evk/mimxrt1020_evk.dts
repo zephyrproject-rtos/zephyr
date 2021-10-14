@@ -169,3 +169,10 @@ zephyr_udc0: &usb1 {
 &edma0 {
 	status = "okay";
 };
+
+/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
+ * to use systick, change this node from "gpt_hw_timer" to "systick"
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
