@@ -47,6 +47,7 @@
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
+#include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_conn_iso_types.h"
@@ -2685,7 +2686,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 {
 	struct bt_hci_evt_le_connectionless_iq_report *sep;
 	struct node_rx_iq_report *iq_report;
-
+	struct ll_sync_set *sync;
 	struct lll_sync *lll;
 	uint8_t samples_cnt;
 	int16_t iq_tmp;
@@ -2723,7 +2724,12 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 
 	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->hdr.rx_ftr.rssi);
 
-	sep->sync_handle = sys_cpu_to_le16(iq_report->hdr.handle);
+	/* Get the sync handle corresponding to the LLL context passed in the
+	 * node rx footer field.
+	 */
+	sync = HDR_LLL2ULL(lll);
+
+	sep->sync_handle = sys_cpu_to_le16(ull_sync_handle_get(sync));
 	sep->rssi = sys_cpu_to_le16(rssi);
 	sep->rssi_ant_id = iq_report->rssi_ant_id;
 	sep->cte_type = iq_report->cte_info.type;
