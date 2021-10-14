@@ -161,6 +161,7 @@ Stop and release a broadcast sink stream:
 
 .. code-block:: console
 
+   uart:~$ bap stop_broadcast_sink
    uart:~$ bap term_broadcast_sink
 
 Init

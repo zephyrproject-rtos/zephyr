@@ -1311,6 +1311,25 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_stop_broadcast_sink(const struct shell *sh, size_t argc,
+				   char *argv[])
+{
+	int err;
+
+	if (default_sink == NULL) {
+		shell_error(sh, "No sink available");
+		return -ENOEXEC;
+	}
+
+	err = bt_audio_broadcast_sink_stop(default_sink);
+	if (err != 0) {
+		shell_error(sh, "Failed to stop sink: %d", err);
+		return err;
+	}
+
+	return err;
+}
+
 static int cmd_term_broadcast_sink(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
@@ -1436,6 +1455,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      cmd_accept_broadcast, 2, 0),
 	SHELL_CMD_ARG(sync_broadcast, NULL, "0x<bis_bitfield>",
 		      cmd_sync_broadcast, 2, 0),
+	SHELL_CMD_ARG(stop_broadcast_sink, NULL, "Stops broadcast sink",
+		      cmd_stop_broadcast_sink, 1, 0),
 	SHELL_CMD_ARG(term_broadcast_sink, NULL, "",
 		      cmd_term_broadcast_sink, 1, 0),
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
