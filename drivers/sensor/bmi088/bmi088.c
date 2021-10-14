@@ -19,16 +19,16 @@
 
 #include "bmi088.h"
 
-LOG_MODULE_REGISTER(BMI088, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "BMI088 driver enabled without any devices"
 #endif
 
-#if BMI088_BUS_SPI
 static int bmi088_transceive(const struct device *dev, uint8_t reg,
 			     bool write, void *buf, size_t length)
 {
+    return 0;
 	const struct bmi088_cfg *cfg = to_config(dev);
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -51,15 +51,15 @@ static int bmi088_transceive(const struct device *dev, uint8_t reg,
 			.count = 2
 		};
 
-		return spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
+		return spi_transceive_dt(&cfg->bus, &tx, &rx);
 	}
 
-	return spi_write_dt(&cfg->bus.spi, &tx);
+	return spi_write_dt(&cfg->bus, &tx);
 }
 
 bool bmi088_bus_ready_spi(const struct device *dev)
 {
-	return spi_is_ready(&to_config(dev)->bus.spi);
+	return spi_is_ready(&to_config(dev)->bus);
 }
 
 int bmi088_read_spi(const struct device *dev,
@@ -77,15 +77,13 @@ int bmi088_write_spi(const struct device *dev,
 }
 
 
-#endif /* BMI088_BUS_SPI */
-
 
 int bmi088_read(const struct device *dev, uint8_t reg_addr, void *buf,
 		uint8_t len)
 {
 	const struct bmi088_cfg *cfg = to_config(dev);
 
-	return cfg->bus_io->read(dev, reg_addr, buf, len);
+	return bmi088_read_spi(dev, reg_addr, buf, len);
 }
 
 int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
@@ -113,7 +111,7 @@ int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf,
 {
 	const struct bmi088_cfg *cfg = to_config(dev);
 
-	return cfg->bus_io->write(dev, reg_addr, buf, len);
+	return bmi088_write_spi(dev, reg_addr, buf, len);
 }
 
 int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
@@ -146,6 +144,7 @@ int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr,
 				 (old_val & ~mask) | ((val << pos) & mask));
 }
 
+/*
 static int bmi088_do_calibration(const struct device *dev, uint8_t foc_conf)
 {
 	if (bmi088_byte_write(dev, BMI088_REG_FOC_CONF, foc_conf) < 0) {
@@ -156,11 +155,11 @@ static int bmi088_do_calibration(const struct device *dev, uint8_t foc_conf)
 		return -EIO;
 	}
 
-	k_busy_wait(250000); /* calibration takes a maximum of 250ms */
+	k_busy_wait(250000); // calibration takes a maximum of 250ms
 
 	return 0;
 }
-
+*/
 static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -171,7 +170,7 @@ static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan,
 static int bmi088_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct bmi088_data *data = to_data(dev);
+	/*struct bmi088_data *data = to_data(dev);
 	uint8_t status;
 	size_t i;
 
@@ -185,19 +184,19 @@ static int bmi088_sample_fetch(const struct device *dev,
 		}
 	}
 
-	if (bmi088_read(dev, BMI088_SAMPLE_BURST_READ_ADDR, data->sample.raw,
+	if (bmi088_read(dev, BMI088_SAMPLE_BURST_READ_ADDR, data->sample.gyr,
 			BMI088_BUF_SIZE) < 0) {
 		return -EIO;
 	}
 
-	/* convert samples to cpu endianness */
+	// convert samples to cpu endianness
 	for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
 		uint16_t *sample =
-			(uint16_t *) &data->sample.raw[i];
+			(uint16_t *) &data->sample.gyr[i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
-
+*/
 	return 0;
 }
 
@@ -245,7 +244,6 @@ static void bmi088_channel_convert(enum sensor_channel chan,
 	}
 }
 
-#if !defined(CONFIG_BMI088_GYRO_PMU_SUSPEND)
 static inline void bmi088_gyr_channel_get(const struct device *dev,
 					  enum sensor_channel chan,
 					  struct sensor_value *val)
@@ -255,7 +253,7 @@ static inline void bmi088_gyr_channel_get(const struct device *dev,
 	bmi088_channel_convert(chan, data->scale.gyr,
 			       data->sample.gyr, val);
 }
-#endif
+
 
 
 static int bmi088_channel_get(const struct device *dev,
@@ -263,14 +261,13 @@ static int bmi088_channel_get(const struct device *dev,
 			      struct sensor_value *val)
 {
 	switch (chan) {
-#if !defined(CONFIG_BMI088_GYRO_PMU_SUSPEND)
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ:
 		bmi088_gyr_channel_get(dev, chan, val);
 		return 0;
-#endif
+
 
 	default:
 		LOG_DBG("Channel not supported.");
@@ -288,31 +285,26 @@ static const struct sensor_driver_api bmi088_api = {
 
 int bmi088_init(const struct device *dev)
 {
+
+    LOG_DBG("First LOG %p" ,dev);
 	const struct bmi088_cfg *cfg = to_config(dev);
 	struct bmi088_data *data = to_data(dev);
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
 
-	if (!cfg->bus_io->ready(dev)) {
+	if (!bmi088_bus_ready_spi(dev)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	/* reboot the chip */
+/*
+	// reboot the chip        //TODO: Insert Softreset 0x14
 	if (bmi088_byte_write(dev, BMI088_REG_CMD, BMI088_CMD_SOFT_RESET) < 0) {
 		LOG_DBG("Cannot reboot chip.");
 		return -EIO;
 	}
-
+*/
 	k_busy_wait(1000);
-
-	/* do a dummy read from 0x7F to activate SPI */
-	if (bmi088_byte_read(dev, BMI088_SPI_START, &val) < 0) {
-		LOG_DBG("Cannot read from 0x7F..");
-		return -EIO;
-	}
-
-	k_busy_wait(100);
 
 	if (bmi088_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
 		LOG_DBG("Failed to read chip id.");
@@ -323,33 +315,25 @@ int bmi088_init(const struct device *dev)
 		LOG_DBG("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
-
-	/* set gyro default range */
+    LOG_DBG("Chip successfully detected");
+/*
+	// set gyro default range         //TODO: Always use largest range
 	if (bmi088_byte_write(dev, BMI088_REG_GYR_RANGE,
 			      BMI088_DEFAULT_RANGE_GYR) < 0) {
 		LOG_DBG("Cannot set default range for gyroscope.");
 		return -EIO;
 	}
 
-	gyr_range = bmi088_gyr_reg_val_to_range(BMI088_DEFAULT_RANGE_GYR);
-
 	data->scale.gyr = BMI088_GYR_SCALE(gyr_range);
 
-	if (bmi088_reg_field_update(dev, BMI088_REG_ACC_CONF,
-				    BMI088_ACC_CONF_ODR_POS,
-				    BMI088_ACC_CONF_ODR_MASK,
-				    BMI088_DEFAULT_ODR_ACC) < 0) {
-		LOG_DBG("Failed to set accel's default ODR.");
-		return -EIO;
-	}
-
+        //TODO: Set ODR to 0x04, 200Hz, 23 Filter bandwidth (siehe 5.5.6)
 	if (bmi088_reg_field_update(dev, BMI088_REG_GYR_CONF,
 				    BMI088_GYR_CONF_ODR_POS,
 				    BMI088_GYR_CONF_ODR_MASK,
 				    BMI088_DEFAULT_ODR_GYR) < 0) {
 		LOG_DBG("Failed to set gyro's default ODR.");
 		return -EIO;
-	}
+	}       */
 	return 0;
 }
 
@@ -363,7 +347,7 @@ int bmi088_init(const struct device *dev)
 #define BMI088_DEFINE_SPI(inst)						   \
 	static struct bmi088_data bmi088_data_##inst;			   \
 	static const struct bmi088_cfg bmi088_cfg_##inst = {		   \
-		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
 	};								   \
 	BMI088_DEVICE_INIT(inst)
 
@@ -372,7 +356,6 @@ int bmi088_init(const struct device *dev)
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
-#define BMI088_DEFINE(inst)						\
-		    (BMI088_DEFINE_SPI(inst))			\
 
-DT_INST_FOREACH_STATUS_OKAY(BMI088_DEFINE)
+
+DT_INST_FOREACH_STATUS_OKAY(BMI088_DEFINE_SPI)

@@ -18,7 +18,7 @@
 /* gyro register */
 
 /* read-only */
-#define GYRO_CHIP_ID    0x00
+#define BMI088_REG_CHIPID    0x00
 #define RATE_X_LSB      0x02
 #define RATE_X_MSB      0x03
 #define RATE_Y_LSB      0x04
@@ -57,6 +57,12 @@
 #define GYRO_FIFO_EN    BIT(6)
 #define GYRO_DATA_EN    BIT(7)
 
+/* Indicates a read operation; bit 7 is clear on write s*/
+#define BMI088_REG_READ			BIT(7)
+#define BMI088_REG_MASK			0x7f
+
+#define BMI088_CHIP_ID          0x0F
+
 /* end of default settings */
 
 struct bmi088_range {
@@ -72,25 +78,22 @@ typedef int (*bmi088_reg_read_fn)(const struct device *dev,
 				  uint8_t reg_addr, void *data, uint8_t len);
 typedef int (*bmi088_reg_write_fn)(const struct device *dev,
 				   uint8_t reg_addr, void *data, uint8_t len);
-
+/*
 struct bmi088_bus_io {
 	bmi088_bus_ready_fn ready;
 	bmi088_reg_read_fn read;
 	bmi088_reg_write_fn write;
 };
-
+*/
 struct bmi088_cfg {
     struct spi_dt_spec bus;
-	const struct bmi088_bus_io *bus_io;
+	//const struct bmi088_bus_io *bus_io;
 };
 
 
 /* Each sample has X, Y and Z */
 #define BMI088_AXES             3
 struct bmi088_gyro_sample {
-	uint16_t rate_x;
-    uint16_t rate_y;
-    uint16_t rate_z;
     uint16_t gyr[BMI088_AXES];
 };
 
