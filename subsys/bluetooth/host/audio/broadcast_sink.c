@@ -929,6 +929,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 	}
 
 	sink->big = NULL;
+	sink->chan_count = 0;
 	/* Channel states will be updated in the ep_iso_disconnected function */
 
 	return 0;
@@ -946,17 +947,9 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 
 	chan = &sink->chans[0];
 
-	if (chan != NULL) {
-		if (chan->ep == NULL) {
-			BT_DBG("chan->ep is NULL");
-			return -EINVAL;
-		}
-
-		if (chan->ep->status.state != BT_AUDIO_EP_STATE_IDLE) {
-			BT_DBG("Broadcast sink chan %p invalid state: %u",
-			chan, chan->ep->status.state);
-			return -EBADMSG;
-		}
+	if (chan != NULL && chan->ep != NULL) {
+		BT_DBG("Sink is not stopped");
+		return -EBADMSG;
 	}
 
 	if (sink->pa_sync == NULL) {

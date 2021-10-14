@@ -95,7 +95,8 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
-	struct bt_audio_chan_ops *ops = ep->chan->ops;
+	struct bt_audio_chan *audio_chan = ep->chan;
+	struct bt_audio_chan_ops *ops = audio_chan->ops;
 	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 
 	BT_DBG("chan %p ep %p reason 0x%02x", chan, ep, reason);
@@ -110,7 +111,7 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	}
 
 	if (ops != NULL && ops->disconnected != NULL) {
-		ops->disconnected(ep->chan, reason);
+		ops->disconnected(audio_chan, reason);
 	}
 
 	if (is_broadcast) {
@@ -127,11 +128,11 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		/* noop */
 		break;
 	case BT_AUDIO_EP_STATE_DISABLING:
-		bt_audio_chan_stop(ep->chan);
+		bt_audio_chan_stop(audio_chan);
 		break;
 	case BT_AUDIO_EP_STATE_ENABLING:
 	case BT_AUDIO_EP_STATE_STREAMING:
-		bt_audio_chan_disable(ep->chan);
+		bt_audio_chan_disable(audio_chan);
 		break;
 	}
 }
