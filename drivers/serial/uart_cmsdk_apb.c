@@ -508,7 +508,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -573,7 +573,7 @@ DEVICE_DT_INST_DEFINE(1,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_1,
 		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -638,7 +638,7 @@ DEVICE_DT_INST_DEFINE(2,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_2,
 		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -703,7 +703,7 @@ DEVICE_DT_INST_DEFINE(3,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_3,
 		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -768,7 +768,7 @@ DEVICE_DT_INST_DEFINE(4,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_4,
 		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    CONFIG_SERIAL_INIT_PRIORITY,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

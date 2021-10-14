@@ -447,7 +447,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx),				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \
+		    CONFIG_SERIAL_INIT_PRIORITY,			       \
 		    &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
