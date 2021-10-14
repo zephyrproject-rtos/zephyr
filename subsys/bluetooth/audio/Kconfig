@@ -35,7 +35,8 @@ config BT_AUDIO_UNICAST
 # TODO: Make BT_AUDIO_BROADCAST not depend on BT_CONN
 config BT_AUDIO_BROADCAST
 	bool "Bluetooth Broadcast Audio Support"
-	select BT_ISO_BROADCAST
+	select BT_ISO_BROADCASTER
+	select BT_ISO_SYNC_RECEIVER
 	help
 	  This option enables support for Bluetooth Broadcast Audio using
 	  Isochronous channels.

@@ -336,6 +336,7 @@ static int cmd_disconnect(const struct shell *sh, size_t argc,
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
 #define BIS_ISO_CHAN_COUNT 1
+static struct bt_iso_big *big;
 
 static struct bt_iso_chan_qos bis_iso_qos;
 
@@ -346,8 +347,7 @@ static struct bt_iso_chan bis_iso_chan = {
 
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 
-static struct bt_iso_big *big;
-
+#if defined(CONFIG_BT_ISO_BROADCASTER)
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
@@ -443,7 +443,9 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_BROADCASTER */
 
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -503,6 +505,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 
 static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -518,7 +521,7 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BT_ISO_BROADCAST */
+#endif /* CONFIG_BT_ISO_BROADCAST*/
 
 SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
@@ -532,14 +535,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel",
 		      cmd_disconnect, 1, 0),
 #endif /* CONFIG_BT_ISO_UNICAST */
-#if defined(CONFIG_BT_ISO_BROADCAST)
+#if defined(CONFIG_BT_ISO_BROADCASTER)
 	SHELL_CMD_ARG(create-big, NULL, "Create a BIG as a broadcaster [enc <broadcast code>]",
 		      cmd_big_create, 1, 2),
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	SHELL_CMD_ARG(sync-big, NULL, "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
 		      "[timeout] [enc <broadcast code>]", cmd_big_sync, 2, 4),
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
+#if defined(CONFIG_BT_ISO_BROADCAST)
 	SHELL_CMD_ARG(term-big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),
-	SHELL_CMD_ARG(broadcast, NULL, "Broadcast on ISO channels", cmd_broadcast, 1, 1),
 #endif /* CONFIG_BT_ISO_BROADCAST */
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+	SHELL_CMD_ARG(broadcast, NULL, "Broadcast on ISO channels", cmd_broadcast, 1, 1),
+#endif /* CONFIG_BT_ISO_BROADCASTER */
 	SHELL_SUBCMD_SET_END
 );
 
