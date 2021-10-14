@@ -71,6 +71,7 @@
 /arch/riscv/                              @kgugala @pgielda
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
+/soc/riscv/bouffalolab/                   @nandojve
 /soc/riscv/openisa*/                      @dleach02
 /soc/riscv/riscv-privilege/andes_v5/      @cwshu @Teng-Shih-Wei
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
@@ -149,6 +150,7 @@
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
+/boards/riscv/dt_bl10_devkit/             @nandojve
 /boards/riscv/rv32m1_vega/                @dleach02
 /boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
 /boards/riscv/adp_xc7k_ae350/             @cwshu @Teng-Shih-Wei
@@ -188,6 +190,7 @@
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
+/drivers/*/*bflb*                         @nandojve
 /drivers/*/*gd32*                         @nandojve
 /drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
 /drivers/*/*mcux*                         @mmahadevan108 @dleach02
@@ -298,6 +301,7 @@
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinctrl/                         @gmarull
+/drivers/pinctrl/*bflb*                   @nandojve
 /drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
@@ -429,6 +433,7 @@
 /dts/arm/silabs/efr32mg21*                @l-alfred
 /dts/arm/silabs/efr32fg13*                @yonsch
 /dts/riscv/                               @kgugala @pgielda
+/dts/riscv/bouffalolab/                   @nandojve
 /dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @dleach02
@@ -453,6 +458,7 @@
 /dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
+/dts/bindings/*/*bflb*                    @nandojve
 /dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
@@ -530,6 +536,7 @@
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/dt-bindings/pcie/                @dcpleung
+/include/dt-bindings/pinctrl/*bflb*       @nandojve
 /include/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/dt-bindings/usb/usb.h            @galak
 /include/drivers/emul.h                   @sjg20
@@ -576,6 +583,7 @@
 /lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
 /modules/                                 @nashif
 /modules/canopennode/                     @henrikbrixandersen
+/modules/hal_bouffalolab/                 @nandojve
 /modules/mbedtls/                         @ceolin @d3zd3z
 /modules/hal_gigadevice/                  @nandojve
 /modules/trusted-firmware-m/              @ioannisg @microbuilder
