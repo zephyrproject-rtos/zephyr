@@ -344,8 +344,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 * Format: g
 		 */
 		case 'g':
-			pkt_len = bin2hex((const uint8_t *)&(ctx->registers),
-				  sizeof(ctx->registers), buf, sizeof(buf));
+			pkt_len = arch_gdb_reg_readall(ctx, buf, sizeof(buf));
 			CHECK_FAILURE(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
@@ -355,9 +354,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 * Fromat: G XX...
 		 */
 		case 'G':
-			pkt_len = hex2bin(ptr, pkt_len - 1,
-					 (uint8_t *)&(ctx->registers),
-					 sizeof(ctx->registers));
+			pkt_len = arch_gdb_reg_writeall(ctx, ptr, pkt_len - 1);
 			CHECK_FAILURE(pkt_len == 0);
 			gdb_send_packet("OK", 2);
 			break;
@@ -368,13 +365,9 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 */
 		case 'p':
 			CHECK_INT(addr);
-			CHECK_FAILURE(addr >= ARCH_GDB_NUM_REGISTERS);
 
 			/* Read Register */
-			pkt_len = bin2hex(
-				(const uint8_t *)&(ctx->registers[addr]),
-				sizeof(ctx->registers[addr]),
-				buf, sizeof(buf));
+			pkt_len = arch_gdb_reg_readone(ctx, buf, sizeof(buf), addr);
 			CHECK_FAILURE(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
@@ -393,12 +386,8 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			 * return "E01" gdb will stop.  So, we just
 			 * send "OK" and ignore it.
 			 */
-			if (addr < ARCH_GDB_NUM_REGISTERS) {
-				pkt_len = hex2bin(ptr, strlen(ptr),
-					  (uint8_t *)&(ctx->registers[addr]),
-					  sizeof(ctx->registers[addr]));
-				CHECK_FAILURE(pkt_len == 0);
-			}
+			pkt_len = arch_gdb_reg_writeone(ctx, ptr, strlen(ptr), addr);
+			CHECK_FAILURE(pkt_len == 0);
 			gdb_send_packet("OK", 2);
 			break;
 
