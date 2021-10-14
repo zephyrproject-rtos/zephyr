@@ -222,7 +222,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 	enum loop_state {
 		RECEIVING,
 		CONTINUE,
-		FAILED
+		ERROR,
 	} state;
 
 	state = RECEIVING;
@@ -231,24 +231,24 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		gdb_send_exception(buf, sizeof(buf), ctx->exception);
 	}
 
-#define CHECK_FAILURE(condition)		\
+#define CHECK_ERROR(condition)			\
 	{					\
 		if ((condition)) {		\
-			state = FAILED;	\
+			state = ERROR;		\
 			break;			\
 		}				\
 	}
 
 #define CHECK_SYMBOL(c)					\
 	{							\
-		CHECK_FAILURE(ptr == NULL || *ptr != (c));	\
+		CHECK_ERROR(ptr == NULL || *ptr != (c));	\
 		ptr++;						\
 	}
 
 #define CHECK_INT(arg)							\
 	{								\
 		arg = strtol((const char *)ptr, (char **)&ptr, 16);	\
-		CHECK_FAILURE(ptr == NULL);				\
+		CHECK_ERROR(ptr == NULL);				\
 	}
 
 	while (state == RECEIVING) {
@@ -258,12 +258,16 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		int ret;
 
 		ret = gdb_get_packet(buf, sizeof(buf), &pkt_len);
-		if (ret == -2) {
-			/* Packet too big. Send error and wait for next packet. */
+		if ((ret == -1) || (ret == -2)) {
+			/*
+			 * Send error and wait for next packet.
+			 *
+			 * -1: Checksum error.
+			 * -2: Packet too big.
+			 */
 			gdb_send_packet(GDB_ERROR_GENERAL, 3);
 			continue;
 		}
-		CHECK_FAILURE(ret == -1);
 
 		if (pkt_len == 0) {
 			continue;
@@ -296,7 +300,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 				break;
 			}
 			ret = gdb_mem_read(buf, sizeof(buf), addr, data_len);
-			CHECK_FAILURE(ret == -1);
+			CHECK_ERROR(ret == -1);
 			gdb_send_packet(buf, ret);
 			break;
 
@@ -317,7 +321,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 
 			/* Write Memory */
 			pkt_len = gdb_mem_write(ptr, addr, data_len);
-			CHECK_FAILURE(pkt_len == -1);
+			CHECK_ERROR(pkt_len == -1);
 			gdb_send_packet("OK", 2);
 			break;
 
@@ -345,7 +349,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 */
 		case 'g':
 			pkt_len = arch_gdb_reg_readall(ctx, buf, sizeof(buf));
-			CHECK_FAILURE(pkt_len == 0);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
 
@@ -355,7 +359,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 		 */
 		case 'G':
 			pkt_len = arch_gdb_reg_writeall(ctx, ptr, pkt_len - 1);
-			CHECK_FAILURE(pkt_len == 0);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet("OK", 2);
 			break;
 
@@ -368,7 +372,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 
 			/* Read Register */
 			pkt_len = arch_gdb_reg_readone(ctx, buf, sizeof(buf), addr);
-			CHECK_FAILURE(pkt_len == 0);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet(buf, pkt_len);
 			break;
 
@@ -380,14 +384,8 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			CHECK_INT(addr);
 			CHECK_SYMBOL('=');
 
-			/*
-			 * GDB requires orig_eax that seems to be
-			 * Linux specific. Unfortunately if we just
-			 * return "E01" gdb will stop.  So, we just
-			 * send "OK" and ignore it.
-			 */
 			pkt_len = arch_gdb_reg_writeone(ctx, ptr, strlen(ptr), addr);
-			CHECK_FAILURE(pkt_len == 0);
+			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet("OK", 2);
 			break;
 
@@ -405,14 +403,18 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 			gdb_send_packet(NULL, 0);
 			break;
 		}
+
+		/*
+		 * If this is an recoverable error, send an error message to
+		 * GDB and continue the debugging session.
+		 */
+		if (state == ERROR) {
+			gdb_send_packet(GDB_ERROR_GENERAL, 3);
+			state = RECEIVING;
+		}
 	}
 
-	if (state == FAILED) {
-		gdb_send_packet(GDB_ERROR_GENERAL, 3);
-		return -1;
-	}
-
-#undef CHECK_FAILURE
+#undef CHECK_ERROR
 #undef CHECK_INT
 #undef CHECK_SYMBOL
 
