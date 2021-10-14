@@ -1274,7 +1274,7 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	int ret;
 
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_RX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
-	sx1280_setRx((TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 1000 });
+	sx1280_setRx(RX_TX_CONTINUOUS);
 
 	ret = k_sem_take(&recv_sem, K_FOREVER);
 	if (ret < 0) {
