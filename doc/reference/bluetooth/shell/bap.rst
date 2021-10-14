@@ -125,6 +125,44 @@ Stop and release a broadcast source stream:
    uart:~$ bap stop_broadcast
    uart:~$ bap delete_broadcast
 
+
+Example Broadcast Sink
+************************
+
+Scan for and establish a broadcast sink stream:
+
+.. code-block:: console
+
+   uart:~$ bap init
+   uart:~$ bap broadcast_scan on
+   Found broadcaster with ID 0xB91CD4
+   uart:~$ bap accept_broadcast 0xB91CD4
+   PA syncing to broadcaster
+   Broadcast scan was terminated: 0
+   PA synced to broadcaster with ID 0xB91CD4 as sink 0x2000d09c
+   Sink 0x2000d09c is set as default
+   Sink 0x2000d09c is ready to sync without encryption
+   Received BASE from sink 0x2000d09c:
+   Subgroup[0]:
+   codec 0x06 cid 0x0000 vid 0x0000 count 4
+   data #0: type 0x01 len 1
+   data #1: type 0x02 len 1
+   data #2: type 0x03 len 4
+   00000000: 00 00 00                                         |...              |
+   data #3: type 0x04 len 2
+   00000000: 28                                               |(                |
+   meta #0: type 0x02 len 2
+   BIS[0] index 0x01
+   [0]: 0x01
+   Possible indexes: 0x01
+   bap sync_broadcast 0x01
+
+Stop and release a broadcast sink stream:
+
+.. code-block:: console
+
+   uart:~$ bap term_broadcast_sink
+
 Init
 ****
 
