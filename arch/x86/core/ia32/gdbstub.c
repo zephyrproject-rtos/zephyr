@@ -133,6 +133,91 @@ void arch_gdb_step(void)
 	ctx.registers[GDB_EFLAGS] |= BIT(8);
 }
 
+size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen)
+{
+	size_t ret;
+
+	if (buflen < (sizeof(ctx->registers) * 2)) {
+		ret = 0;
+	} else {
+		ret = bin2hex((const uint8_t *)&(ctx->registers),
+			      sizeof(ctx->registers), buf, buflen);
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_writeall(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen)
+{
+	size_t ret;
+
+	if (hexlen != (sizeof(ctx->registers) * 2)) {
+		ret = 0;
+	} else {
+		ret = hex2bin(hex, hexlen,
+			      (uint8_t *)&(ctx->registers),
+			      sizeof(ctx->registers));
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
+			    uint32_t regno)
+{
+	size_t ret;
+
+	if (buflen < (sizeof(unsigned int) * 2)) {
+		/* Make sure there is enough space to write hex string */
+		ret = 0;
+	} else if (regno >= GDB_STUB_NUM_REGISTERS) {
+		/* Return hex string "xx" to tell GDB that this register
+		 * is not available. So GDB will continue probing other
+		 * registers instead of stopping in the middle of
+		 * "info registers all".
+		 */
+		if (buflen >= 2) {
+			strncpy(buf, "xx", 2);
+			ret = 2;
+		} else {
+			ret = 0;
+		}
+	} else {
+		ret = bin2hex((const uint8_t *)&(ctx->registers[regno]),
+			      sizeof(ctx->registers[regno]),
+			      buf, buflen);
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
+			     uint32_t regno)
+{
+	size_t ret;
+
+	if (regno == GDB_ORIG_EAX) {
+		/* GDB requires orig_eax that seems to be
+		 * Linux specific. Unfortunely if we just
+		 * return error, GDB will stop working.
+		 * So just fake an OK response by saying
+		 * that we have processed the hex string.
+		 */
+		ret = hexlen;
+	} else if (regno >= GDB_STUB_NUM_REGISTERS) {
+		ret = 0;
+	} else if (hexlen != (sizeof(unsigned int) * 2)) {
+		/* Make sure the input hex string matches register size */
+		ret = 0;
+	} else {
+		ret = hex2bin(hex, hexlen,
+			      (uint8_t *)&(ctx->registers[regno]),
+			      sizeof(ctx->registers[regno]));
+	}
+
+	return ret;
+}
+
 static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
 {
 	z_gdb_interrupt(IV_DEBUG, esf);
