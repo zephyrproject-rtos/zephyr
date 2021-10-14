@@ -819,14 +819,9 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
  * @{
  */
 
-/**
- * @def ARCH_GDB_NUM_REGISTERS
- *
- * ARCH_GDB_NUM_REGISTERS is architecure specific and
- * this symbol must be defined in architecure specific header
- */
-
 #ifdef CONFIG_GDBSTUB
+struct gdb_ctx;
+
 /**
  * @brief Architecture layer debug start
  *
@@ -847,6 +842,70 @@ void arch_gdb_continue(void);
  * Continue software execution until reaches the next statement.
  */
 void arch_gdb_step(void);
+
+/**
+ * @brief Read all registers, and outputs as hexadecimal string.
+ *
+ * This reads all CPU registers and outputs as hexadecimal string.
+ * The output string must be parsable by GDB.
+ *
+ * @param ctx    GDB context
+ * @param buf    Buffer to output hexadecimal string.
+ * @param buflen Length of buffer.
+ *
+ * @return Length of hexadecimal string written.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen);
+
+/**
+ * @brief Take a hexadecimal string and update all registers.
+ *
+ * This takes in a hexadecimal string as presented from GDB,
+ * and updates all CPU registers with new values.
+ *
+ * @param ctx    GDB context
+ * @param hex    Input hexadecimal string.
+ * @param hexlen Length of hexadecimal string.
+ *
+ * @return Length of hexadecimal string parsed.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_writeall(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen);
+
+/**
+ * @brief Read one register, and outputs as hexadecimal string.
+ *
+ * This reads one CPU register and outputs as hexadecimal string.
+ * The output string must be parsable by GDB.
+ *
+ * @param ctx    GDB context
+ * @param buf    Buffer to output hexadecimal string.
+ * @param buflen Length of buffer.
+ * @param regno  Register number
+ *
+ * @return Length of hexadecimal string written.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
+			    uint32_t regno);
+
+/**
+ * @brief Take a hexadecimal string and update one register.
+ *
+ * This takes in a hexadecimal string as presented from GDB,
+ * and updates one CPU registers with new value.
+ *
+ * @param ctx    GDB context
+ * @param hex    Input hexadecimal string.
+ * @param hexlen Length of hexadecimal string.
+ * @param regno  Register number
+ *
+ * @return Length of hexadecimal string parsed.
+ *         Return 0 if error or not supported.
+ */
+size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
+			     uint32_t regno);
 
 #endif
 /** @} */
