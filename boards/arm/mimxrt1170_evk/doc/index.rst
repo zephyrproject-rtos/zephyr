@@ -113,6 +113,8 @@ features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1170_evk/mimxrt1170_evk_cm7_defconfig``
@@ -162,8 +164,8 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1170 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 1 GHz core clock.
+The MIMXRT1170 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========
