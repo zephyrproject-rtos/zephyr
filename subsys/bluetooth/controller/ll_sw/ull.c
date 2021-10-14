@@ -2368,9 +2368,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC_REPORT:
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
@@ -2401,6 +2398,14 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_established_report(link, rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT: {
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
