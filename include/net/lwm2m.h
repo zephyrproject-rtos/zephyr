@@ -63,6 +63,7 @@
 #define IPSO_OBJECT_TIMER_ID                3340
 #define IPSO_OBJECT_ONOFF_SWITCH_ID         3342
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
+#define IPSO_OBJECT_FILLING_LEVEL_SENSOR_ID 3435
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);

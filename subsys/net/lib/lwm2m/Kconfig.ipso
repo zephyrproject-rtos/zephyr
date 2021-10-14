@@ -318,4 +318,18 @@ config LWM2M_IPSO_CURRENT_SENSOR_VERSION_1_1
 
 endchoice
 
+config LWM2M_IPSO_FILLING_SENSOR
+	bool "IPSO Filling sensor Support"
+	help
+	  This IPSO object can be used with an ultrasonic sensor to
+	  report how full a container is.
+
+config LWM2M_IPSO_FILLING_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO filling sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_FILLING_SENSOR
+	help
+	  This setting establishes the total count of IPSO filling
+	  sensor instances available to the LwM2M client.
+
 endif # LWM2M_LWM2M_IPSO_SUPPORT
