@@ -893,7 +893,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 		}
 	}
 }
-#endif /* defined(CONFIG_BT_ISO_BROADCAST) */
+#endif /* CONFIG_BT_ISO_BROADCAST */
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf)
 {
