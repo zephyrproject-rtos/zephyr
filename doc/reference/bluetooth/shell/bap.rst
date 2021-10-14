@@ -116,14 +116,14 @@ Create and establish a broadcast source stream:
 
    uart:~$ bap init
    uart:~$ bap create_broadcast
-   uart:~$ bap start
+   uart:~$ bap start_broadcast
 
 Stop and release a broadcast source stream:
 
 .. code-block:: console
 
-   uart:~$ bap stop
-   uart:~$ bap release
+   uart:~$ bap stop_broadcast
+   uart:~$ bap delete_broadcast
 
 Init
 ****
