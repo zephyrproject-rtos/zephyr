@@ -62,7 +62,7 @@ static int bq35100_bus_access(const struct device *dev, uint8_t reg,
  */
 static int bq35100_reg_read(const struct device *dev,
 			    uint8_t reg_addr,
-			    uint8_t *reg_data,
+			    uint32_t *reg_data,
 			    size_t length)
 {
 	uint8_t buf[length];
@@ -76,11 +76,11 @@ static int bq35100_reg_read(const struct device *dev,
 		*reg_data = buf[0];
 		break;
 	case 2:
-		*reg_data = ((uint16_t)buf[1] << 8) | buf[0];
+		*reg_data = ((uint16_t)buf[1] << 8) | (uint16_t)buf[0];
 		break;
 	case 4:
 		*reg_data = ((uint32_t)buf[3] << 24) | ((uint32_t)buf[2] << 16) |
-			    ((uint32_t)buf[2] << 8) | buf[0];
+			    ((uint32_t)buf[1] << 8) | (uint32_t)buf[0];
 		break;
 	default:
 		return -ENOTSUP;
@@ -149,6 +149,64 @@ static int bq35100_control_reg_read(const struct device *dev,
 
 	/* Little Endian */
 	*data = ((uint16_t)buf[1] << 8) | buf[0];
+	
+	return ret;
+}
+
+/**
+ * Enables End-Of-Service (EOS) Mode. 
+ * This function follows the steps in bq35100.pdf section of 8.2.2.2.1.2
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_enable_EOS_mode(const struct device *dev)
+{
+	int status;
+
+	/* Assumed steps 1 & 2 have already done */
+	status = bq35100_gauge_start(dev); //Step 3.
+	if (status < 0) {
+		LOG_ERR("Unable to start gauge");
+		return -EIO;
+	}
+
+	status = bq35100_gauge_stop(dev);  //Step 4.
+	if (status < 0) {
+		LOG_ERR("Unable to stop gauge");
+		return -EIO;
+	}
+
+
+	return 0;
+}
+
+ /**
+  * Triggers the device to enter ACTIVE mode.
+  * @param dev - The device structure.
+  * @return 0 in case of success, negative error code otherwise. 
+  */
+int bq35100_gauge_start(const struct device *dev)
+{
+	int ret;
+
+	ret = bq35100_control_reg_write(dev,
+				     BQ35100_CTRL_GAUGE_START);
+
+	return ret;
+}
+
+/**
+  * Triggers the device to stop gauging and complete all
+	outstanding tasks.
+  * @param dev - The device structure.
+  * @return 0 in case of success, negative error code otherwise. 
+  */
+int bq35100_gauge_stop(const struct device *dev)
+{
+	int ret;
+
+	ret = bq35100_control_reg_write(dev,
+				     BQ35100_CTRL_GAUGE_STOP);
 
 	return ret;
 }
@@ -163,7 +221,7 @@ static int bq35100_get_temp(const struct device *dev)
 	struct bq35100_data *data = dev->data;
 
 	return bq35100_reg_read(dev, BQ35100_CMD_TEMPERATURE,
-				(uint8_t *)&data->temperature, 2);
+				(uint16_t *)&data->temperature, 2);
 }
 
 /**
@@ -176,7 +234,7 @@ static int bq35100_get_voltage(const struct device *dev)
 	struct bq35100_data *data = dev->data;
 
 	return bq35100_reg_read(dev, BQ35100_CMD_VOLTAGE,
-				(uint8_t *)&data->voltage, 2);
+				(uint16_t *)&data->voltage, 2);
 }
 
 /**
@@ -189,7 +247,7 @@ static int bq35100_get_avg_current(const struct device *dev)
 	struct bq35100_data *data = dev->data;
 
 	return bq35100_reg_read(dev, BQ35100_CMD_CURRENT,
-				(uint8_t *)&data->avg_current, 2);
+				(int16_t *)&data->avg_current, 2);
 }
 
 /**
@@ -203,6 +261,32 @@ static int bq35100_get_state_of_health(const struct device *dev)
 
 	return bq35100_reg_read(dev, BQ35100_CMD_SOH,
 				(uint8_t *)&data->state_of_health, 1);
+}
+
+/**
+ * Get the accumulated capacity register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_acc_capacity(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	int status;
+
+	status = bq35100_control_reg_write(dev, BQ35100_CTRL_CONTROL_STATUS);
+	if (status < 0) {
+		LOG_ERR("Unable to set [GA] pin");
+		return -EIO;
+	}
+
+	status = bq35100_gauge_stop(dev);
+	if (status < 0) {
+		LOG_ERR("Unable to write Accumulated Capacity");
+		return -EIO;
+	}
+
+	return bq35100_reg_read(dev, BQ35100_CMD_ACCUMULATED_CAPACITY,
+				(uint32_t *)&data->acc_capacity, 4);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -296,6 +380,7 @@ static int bq35100_get_sensor_data(const struct device *dev)
 	bq35100_get_voltage(dev);
 	bq35100_get_avg_current(dev);
 	bq35100_get_state_of_health(dev);
+	bq35100_get_acc_capacity(dev);
 
 	return 0;
 }
@@ -339,12 +424,12 @@ static int bq35100_channel_get(const struct device *dev,
 
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_GAUGE_TEMP:
-		val->val1 = (uint16_t)(data->temperature) / 10 - 273;
-		val->val2 = ((uint16_t)((data->temperature) - 2731) % 10);
+		val->val1 = ((uint16_t)(data->temperature) - 2731) / 10;
+		val->val2 = ((uint16_t)((data->temperature) - 2731) % 10 * 100000);
 		break;
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = (uint16_t)data->voltage / 1000;
-		val->val2 = ((uint16_t)data->voltage % 1000);
+		val->val2 = ((uint16_t)data->voltage % 1000 * 1000);
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
 		val->val1 = (int16_t)data->avg_current;
@@ -352,6 +437,10 @@ static int bq35100_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
 		val->val1 = (uint8_t)data->state_of_health;
+		val->val2 = 0;
+		break;
+	case SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY:
+		val->val1 = (uint32_t)data->acc_capacity;
 		val->val2 = 0;
 		break;
 	default:
@@ -385,6 +474,7 @@ static int bq35100_probe(const struct device *dev)
 		return -EIO;
 	}
 
+	k_sleep(K_MSEC(100));
 	status = bq35100_control_reg_read(dev, &device_type);
 	if (status < 0) {
 		LOG_ERR("Unable to read register");

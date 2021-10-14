@@ -247,8 +247,7 @@
 #define BQ35100_FLASH_FULL_UNSEAL_STEP1                0x41D0
 #define BQ35100_FLASH_FULL_UNSEAL_STEP2                0x41D2
 
-/* could also be 0x100 as in the reference manual. In the datasheet it says 0x40 */
-#define BQ35100_DEVICE_TYPE_ID                         0x40 
+#define BQ35100_DEVICE_TYPE_ID                         0x100 
 
 /*
  * I2C helper bit masks
@@ -262,8 +261,8 @@
 struct bq35100_data {
 	uint16_t temperature;
 	uint16_t voltage;
-	int16_t avg_current;
-	uint8_t state_of_health;
+	uint16_t avg_current;
+	uint16_t state_of_charge;
 };
 
 struct bq35100_config {

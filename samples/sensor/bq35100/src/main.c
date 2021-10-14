@@ -68,16 +68,19 @@ void main(void)
 		}
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_TEMP, &val);
-		printf("Temperature:   %f  C\n", sensor_value_to_double(&val));
+		printf("Temperature:   %i.%i  C\n", val.val1, val.val2);
 		
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_VOLTAGE, &val);
-		printf("Voltage:       %f V\n", sensor_value_to_double(&val));
+		printf("Voltage:       %i.%i V\n", val.val1, val.val2);
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_AVG_CURRENT, &val);
 		printf("Current:       %i     A\n", val.val1);
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, &val);
-		printk("StateOfHealth: %i     %%\n\n", val.val1);
+		printf("StateOfHealth: %i     %%\n\n", val.val1);
+
+		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
+		printk("Acc Capacity : %i     uAh\n\n", val.val1);
 
 		k_sleep(K_MSEC(3000));
 	}
