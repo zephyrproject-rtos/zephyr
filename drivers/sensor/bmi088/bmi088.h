@@ -1,19 +1,12 @@
 /* Bosch BMI088 inertial measurement unit header
- *
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_
 
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
 #include <drivers/sensor.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
-
 
 /* gyro register */
 
@@ -58,86 +51,84 @@
 #define GYRO_DATA_EN    BIT(7)
 
 /* Indicates a read operation; bit 7 is clear on write s*/
-#define BMI088_REG_READ			BIT(7)
-#define BMI088_REG_MASK			0x7f
+#define BMI088_REG_READ BIT(7)
+#define BMI088_REG_MASK 0x7f // Mask lower 7 bits for register addresses
 
-#define BMI088_CHIP_ID          0x0F
+#define BMI088_CHIP_ID 0x0F
 
 /* end of default settings */
 
-struct bmi088_range {
-	uint16_t range;
-	uint8_t reg_val;
-};
-
-#define BMI088_BUS_SPI		DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-
-
-typedef bool (*bmi088_bus_ready_fn)(const struct device *dev);
-typedef int (*bmi088_reg_read_fn)(const struct device *dev,
-				  uint8_t reg_addr, void *data, uint8_t len);
-typedef int (*bmi088_reg_write_fn)(const struct device *dev,
-				   uint8_t reg_addr, void *data, uint8_t len);
-/*
-struct bmi088_bus_io {
-	bmi088_bus_ready_fn ready;
-	bmi088_reg_read_fn read;
-	bmi088_reg_write_fn write;
-};
-*/
 struct bmi088_cfg {
     struct spi_dt_spec bus;
-	//const struct bmi088_bus_io *bus_io;
 };
 
 
 /* Each sample has X, Y and Z */
-#define BMI088_AXES             3
+#define BMI088_AXES 3
 struct bmi088_gyro_sample {
     uint16_t gyr[BMI088_AXES];
 };
 
 struct bmi088_scale {
-	uint16_t gyr; /* micro radians/s/lsb */
+    uint16_t gyr; /* micro radians/s/lsb */
 };
 
 struct bmi088_data {
-	const struct device *bus;
-	struct bmi088_gyro_sample sample;
-	struct bmi088_scale scale;
+    const struct device *bus;
+    struct bmi088_gyro_sample sample;
+    struct bmi088_scale scale;
 };
 
-static inline struct bmi088_data *to_data(const struct device *dev)
-{
-	return dev->data;
+static inline struct bmi088_data *to_data(const struct device *dev) {
+    return dev->data;
 }
 
-static inline const struct bmi088_cfg *to_config(const struct device *dev)
-{
-	return dev->config;
+static inline const struct bmi088_cfg *to_config(const struct device *dev) {
+    return dev->config;
 }
 
-int bmi088_read(const struct device *dev, uint8_t reg_addr,
-		void *data, uint8_t len);
-int bmi088_byte_read(const struct device *dev, uint8_t reg_addr,
-		     uint8_t *byte);
-int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
-		      uint8_t byte);
-int bmi088_word_write(const struct device *dev, uint8_t reg_addr,
-		      uint16_t word);
-int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr,
-			    uint8_t pos, uint8_t mask, uint8_t val);
-static inline int bmi088_reg_update(const struct device *dev,
-				    uint8_t reg_addr,
-				    uint8_t mask, uint8_t val)
-{
-	return bmi088_reg_field_update(dev, reg_addr, 0, mask, val);
-}
+/**
+ * Read multiple bytes from the BMI088
+ *
+ * @param dev Sensor device pointer
+ * @param reg_addr Register address
+ * @param [out] data Destination address
+ * @param len Number of bytes to read
+ * @return 0 on success
+ */
+int bmi088_read(const struct device *dev, uint8_t reg_addr, void *data, uint8_t len);
 
-int bmi088_acc_slope_config(const struct device *dev,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val);
-int32_t bmi088_acc_reg_val_to_range(uint8_t reg_val);
-int32_t bmi088_gyr_reg_val_to_range(uint8_t reg_val);
+int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte);
+
+int bmi088_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word);
+
+/**
+ * Write multiple bytes to the BMI088
+ *
+ * @param dev Sensor device pointer
+ * @param reg_addr Register address
+ * @param [out] buf Data to write to the BMI088
+ * @param len Number of bytes to write
+ * @return 0 on success
+ */
+int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len);
+
+int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
+
+int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word);
+
+/**
+ * Update some bits in a BMI088 register without changing the other bits.
+ * Pos and Mask are rather redundant, but make calculation easier.
+ * It does not make sense to have a mask that is not a contiguous sequence of ones, offset by pos.
+ *
+ * @param dev Sensor device pointer
+ * @param reg_addr Register address
+ * @param pos Offset from the least-significant bit for the value
+ * @param mask Mask that specifies which bits are allowed to change
+ * @param val Value to set the bits to
+ * @return
+ */
+int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */

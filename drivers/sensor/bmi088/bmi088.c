@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Datasheet:
- * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI088-DS000-07.pdf
+ * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi088-ds001.pdf
  */
 
 #define DT_DRV_COMPAT bosch_bmi088
@@ -16,346 +16,277 @@
 #include <kernel.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
+#include <devicetree.h>
 
 #include "bmi088.h"
 
 LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "BMI088 driver enabled without any devices"
+#error "BMI088 driver enabled without any devices"
 #endif
 
-static int bmi088_transceive(const struct device *dev, uint8_t reg,
-			     bool write, void *buf, size_t length)
-{
+/**
+ * Send/receive data to/from the BMI088
+ *
+ * @param dev Sensor device pointer
+ * @param reg (Start) register address, for writing the MSb should be 0, for reading 1
+ * @param write True for write-only, False for read-only
+ * @param buf Out-parameter if reading, In-parameter if writing
+ * @param length Length of buf
+ * @return 0 on success
+ */
+static int bmi088_transceive(const struct device *dev, uint8_t reg, bool write, void *buf, size_t length) {
+    const struct bmi088_cfg *cfg = to_config(dev);
+    const struct spi_buf tx_buf[2] = {
+            {
+                    // Always send register address first
+                    .buf = &reg,
+                    .len = 1
+            },
+            {
+                    // Then send whatever data there is to send
+                    .buf = buf,
+                    .len = length
+            }
+    };
+    const struct spi_buf_set tx = {
+            .buffers = tx_buf,
+            // If the buffer is a null pointer, only use the first TX (register address)
+            .count = buf ? 2 : 1
+    };
+
+
+    if (write) {
+        // Write-only: No RX buffer necessary
+        return spi_write_dt(&cfg->bus, &tx);
+    } else {
+        // If we want to read, use the same buffers for that purpose.
+        // No useful data will be written to reg, as we dont receive anything while we still send the address
+        // Whatever data is in the buffer will be sent out. The sensor will ignore that data if the address was a
+        // read-request
+        const struct spi_buf_set rx = {
+                .buffers = tx_buf,
+                .count = 2
+        };
+
+        return spi_transceive_dt(&cfg->bus, &tx, &rx);
+    }
+}
+
+bool bmi088_bus_ready_spi(const struct device *dev) {
+    return spi_is_ready(&to_config(dev)->bus);
+}
+
+int bmi088_read(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len) {
+    return bmi088_transceive(dev, reg_addr | BMI088_REG_READ, false, buf, len);
+}
+
+int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte) {
+    return bmi088_read(dev, reg_addr, byte, 1);
+}
+
+int bmi088_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word) {
+    int rc = bmi088_read(dev, reg_addr, word, 2);
+    if (rc != 0) {
+        return rc;
+    }
+
+    *word = sys_le16_to_cpu(*word);
+
     return 0;
-	const struct bmi088_cfg *cfg = to_config(dev);
-	const struct spi_buf tx_buf[2] = {
-		{
-			.buf = &reg,
-			.len = 1
-		},
-		{
-			.buf = buf,
-			.len = length
-		}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = buf ? 2 : 1
-	};
-
-	if (!write) {
-		const struct spi_buf_set rx = {
-			.buffers = tx_buf,
-			.count = 2
-		};
-
-		return spi_transceive_dt(&cfg->bus, &tx, &rx);
-	}
-
-	return spi_write_dt(&cfg->bus, &tx);
 }
 
-bool bmi088_bus_ready_spi(const struct device *dev)
-{
-	return spi_is_ready(&to_config(dev)->bus);
-}
+int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len) {
 
-int bmi088_read_spi(const struct device *dev,
-		    uint8_t reg_addr, void *buf, uint8_t len)
-{
-	return bmi088_transceive(dev, reg_addr | BMI088_REG_READ, false,
-				 buf, len);
-}
-
-int bmi088_write_spi(const struct device *dev,
-		     uint8_t reg_addr, void *buf, uint8_t len)
-{
-	return bmi088_transceive(dev, reg_addr & BMI088_REG_MASK, true,
-				 buf, len);
-}
-
-
-
-int bmi088_read(const struct device *dev, uint8_t reg_addr, void *buf,
-		uint8_t len)
-{
-	const struct bmi088_cfg *cfg = to_config(dev);
-
-	return bmi088_read_spi(dev, reg_addr, buf, len);
-}
-
-int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
-{
-	return bmi088_read(dev, reg_addr, byte, 1);
-}
-
-static int bmi088_word_read(const struct device *dev, uint8_t reg_addr,
-			    uint16_t *word)
-{
-	int rc;
-
-	rc = bmi088_read(dev, reg_addr, word, 2);
-	if (rc != 0) {
-		return rc;
-	}
-
-	*word = sys_le16_to_cpu(*word);
-
-	return 0;
-}
-
-int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf,
-		 uint8_t len)
-{
-	const struct bmi088_cfg *cfg = to_config(dev);
-
-	return bmi088_write_spi(dev, reg_addr, buf, len);
+    return bmi088_transceive(dev, reg_addr & BMI088_REG_MASK, true, buf, len);
 }
 
 int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
-		      uint8_t byte)
-{
-	return bmi088_write(dev, reg_addr & BMI088_REG_MASK, &byte, 1);
+                      uint8_t byte) {
+    return bmi088_write(dev, reg_addr & BMI088_REG_MASK, &byte, 1);
 }
 
-int bmi088_word_write(const struct device *dev, uint8_t reg_addr,
-		      uint16_t word)
-{
-	uint8_t tx_word[2] = {
-		(uint8_t)(word & 0xff),
-		(uint8_t)(word >> 8)
-	};
+int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word) {
+    uint8_t tx_word[2] = {
+            (uint8_t) (word & 0xff),
+            (uint8_t) (word >> 8)
+    };
 
-	return bmi088_write(dev, reg_addr & BMI088_REG_MASK, tx_word, 2);
+    return bmi088_write(dev, reg_addr & BMI088_REG_MASK, tx_word, 2);
 }
 
-int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr,
-			    uint8_t pos, uint8_t mask, uint8_t val)
-{
-	uint8_t old_val;
+int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val) {
+    uint8_t old_val;
 
-	if (bmi088_byte_read(dev, reg_addr, &old_val) < 0) {
-		return -EIO;
-	}
+    if (bmi088_byte_read(dev, reg_addr, &old_val) < 0) {
+        return -EIO;
+    }
 
-	return bmi088_byte_write(dev, reg_addr,
-				 (old_val & ~mask) | ((val << pos) & mask));
+    return bmi088_byte_write(dev, reg_addr, (old_val & ~mask) | ((val << pos) & mask));
 }
 
-/*
-static int bmi088_do_calibration(const struct device *dev, uint8_t foc_conf)
-{
-	if (bmi088_byte_write(dev, BMI088_REG_FOC_CONF, foc_conf) < 0) {
-		return -EIO;
-	}
-
-	if (bmi088_byte_write(dev, BMI088_REG_CMD, BMI088_CMD_START_FOC) < 0) {
-		return -EIO;
-	}
-
-	k_busy_wait(250000); // calibration takes a maximum of 250ms
-
-	return 0;
+static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
+    int32_t converted_val;
+    // TODO: Conversion factor/scale/conversion
+    /*
+     * maximum converted value we can get is: max(raw_val) * max(scale)
+     *	max(raw_val) = +/- 2^15
+     *	max(scale) = 4785
+     *	max(converted_val) = 156794880 which is less than 2^31
+     */
+    converted_val = raw_val * scale;
+    val->val1 = converted_val / 1000000;
+    val->val2 = converted_val % 1000000;
 }
+
+static void
+bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
+    int i;
+    uint8_t ofs_start, ofs_stop;
+    // TODO: Dont do this
+    switch (chan) {
+        case SENSOR_CHAN_GYRO_X:
+            ofs_start = ofs_stop = 0U;
+            break;
+        case SENSOR_CHAN_GYRO_Y:
+            ofs_start = ofs_stop = 1U;
+            break;
+        case SENSOR_CHAN_GYRO_Z:
+            ofs_start = ofs_stop = 2U;
+            break;
+        default:
+            ofs_start = 0U;
+            ofs_stop = 2U;
+            break;
+    }
+
+    for (i = ofs_start; i <= ofs_stop; i++, val++) {
+        bmi088_to_fixed_point(raw_xyz[i], scale, val);
+    }
+}
+
+static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
+                           const struct sensor_value *val) {
+    return -ENOTSUP;
+}
+
+/**
+ * API function to retrieve a measurement from the sensor.
+ *
+ * @param dev Sensor device pointer
+ * @param chan Channel to fetch. Only SENSOR_CHAN_ALL is supported.
+ * @return 0 on success
+ */
+static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel chan) {
+    /*struct bmi088_data *data = to_data(dev);
+    uint8_t status;
+    size_t i;
+
+    __ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+    status = 0;
+    while ((status & BMI088_DATA_READY_BIT_MASK) == 0) {
+
+        if (bmi088_byte_read(dev, BMI088_REG_STATUS, &status) < 0) {
+            return -EIO;
+        }
+    }
+
+    if (bmi088_read(dev, BMI088_SAMPLE_BURST_READ_ADDR, data->sample.gyr,
+            BMI088_BUF_SIZE) < 0) {
+        return -EIO;
+    }
+
+    // convert samples to cpu endianness
+    for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
+        uint16_t *sample =
+            (uint16_t *) &data->sample.gyr[i];
+
+        *sample = sys_le16_to_cpu(*sample);
+    }
 */
-static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
-{
-	return -ENOTSUP;
+    return 0;
 }
 
-static int bmi088_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
-{
-	/*struct bmi088_data *data = to_data(dev);
-	uint8_t status;
-	size_t i;
+/**
+ * API function to get a cached sensor value that was previously fetched from the sensor
+ *
+ * @param dev Sensor device pointer
+ * @param chan Channel to read. Implemented: Gyro X, Y, Z or all three
+ * @param [out] val Sensor value
+ * @return 0 on success, -ENOTSUP on unsupported channel
+ */
+static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
+    switch (chan) {
+        case SENSOR_CHAN_GYRO_X:
+        case SENSOR_CHAN_GYRO_Y:
+        case SENSOR_CHAN_GYRO_Z:
+        case SENSOR_CHAN_GYRO_XYZ: {
+            struct bmi088_data *data = to_data(dev);
+            bmi088_channel_convert(chan, data->scale.gyr, data->sample.gyr, val);
+            return 0;
+        }
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-	status = 0;
-	while ((status & BMI088_DATA_READY_BIT_MASK) == 0) {
-
-		if (bmi088_byte_read(dev, BMI088_REG_STATUS, &status) < 0) {
-			return -EIO;
-		}
-	}
-
-	if (bmi088_read(dev, BMI088_SAMPLE_BURST_READ_ADDR, data->sample.gyr,
-			BMI088_BUF_SIZE) < 0) {
-		return -EIO;
-	}
-
-	// convert samples to cpu endianness
-	for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
-		uint16_t *sample =
-			(uint16_t *) &data->sample.gyr[i];
-
-		*sample = sys_le16_to_cpu(*sample);
-	}
-*/
-	return 0;
+        default:
+            LOG_DBG("Channel not supported.");
+            return -ENOTSUP;
+    }
 }
 
-static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale,
-				  struct sensor_value *val)
-{
-	int32_t converted_val;
+/**
+ * Sensor device initialization
+ *
+ * @param dev Sensor device pointer
+ * @return 0 on success
+ */
+static int bmi088_init(const struct device *dev) {
+    LOG_DBG("Initializing BMI088 device at %p", dev);
 
-	/*
-	 * maximum converted value we can get is: max(raw_val) * max(scale)
-	 *	max(raw_val) = +/- 2^15
-	 *	max(scale) = 4785
-	 *	max(converted_val) = 156794880 which is less than 2^31
-	 */
-	converted_val = raw_val * scale;
-	val->val1 = converted_val / 1000000;
-	val->val2 = converted_val % 1000000;
-}
+    if (!bmi088_bus_ready_spi(dev)) {
+        LOG_ERR("Bus not ready");
+        return -EINVAL;
+    }
 
-static void bmi088_channel_convert(enum sensor_channel chan,
-				   uint16_t scale,
-				   uint16_t *raw_xyz,
-				   struct sensor_value *val)
-{
-	int i;
-	uint8_t ofs_start, ofs_stop;
+    // TODO: reboot the chip: Softreset 0x14
 
-	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
-		ofs_start = ofs_stop = 0U;
-		break;
-	case SENSOR_CHAN_GYRO_Y:
-		ofs_start = ofs_stop = 1U;
-		break;
-	case SENSOR_CHAN_GYRO_Z:
-		ofs_start = ofs_stop = 2U;
-		break;
-	default:
-		ofs_start = 0U; ofs_stop = 2U;
-		break;
-	}
+    k_busy_wait(1000);
 
-	for (i = ofs_start; i <= ofs_stop ; i++, val++) {
-		bmi088_to_fixed_point(raw_xyz[i], scale, val);
-	}
-}
+    uint8_t val = 0U;
+    if (bmi088_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
+        LOG_DBG("Failed to read chip id.");
+        return -EIO;
+    }
 
-static inline void bmi088_gyr_channel_get(const struct device *dev,
-					  enum sensor_channel chan,
-					  struct sensor_value *val)
-{
-	struct bmi088_data *data = to_data(dev);
+    if (val != BMI088_CHIP_ID) {
+        LOG_DBG("Unsupported chip detected (0x%x)!", val);
+        return -ENODEV;
+    }
+    LOG_DBG("Chip successfully detected");
 
-	bmi088_channel_convert(chan, data->scale.gyr,
-			       data->sample.gyr, val);
-}
+    // TODO: Set default gyro range, For now: always use largest range
 
+    // TODO: Set ODR to 0x04, 200Hz, 23 Filter bandwidth (siehe 5.5.6)
 
-
-static int bmi088_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
-{
-	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
-	case SENSOR_CHAN_GYRO_Y:
-	case SENSOR_CHAN_GYRO_Z:
-	case SENSOR_CHAN_GYRO_XYZ:
-		bmi088_gyr_channel_get(dev, chan, val);
-		return 0;
-
-
-	default:
-		LOG_DBG("Channel not supported.");
-		return -ENOTSUP;
-	}
-
-	return 0;
+    return 0;
 }
 
 static const struct sensor_driver_api bmi088_api = {
-	.attr_set = bmi088_attr_set,
-	.sample_fetch = bmi088_sample_fetch,
-	.channel_get = bmi088_channel_get,
+        .attr_set = bmi088_attr_set,
+        .sample_fetch = bmi088_sample_fetch,
+        .channel_get = bmi088_channel_get,
 };
 
-int bmi088_init(const struct device *dev)
-{
 
-    LOG_DBG("First LOG %p" ,dev);
-	const struct bmi088_cfg *cfg = to_config(dev);
-	struct bmi088_data *data = to_data(dev);
-	uint8_t val = 0U;
-	int32_t acc_range, gyr_range;
-
-	if (!bmi088_bus_ready_spi(dev)) {
-		LOG_ERR("Bus not ready");
-		return -EINVAL;
-	}
-
-/*
-	// reboot the chip        //TODO: Insert Softreset 0x14
-	if (bmi088_byte_write(dev, BMI088_REG_CMD, BMI088_CMD_SOFT_RESET) < 0) {
-		LOG_DBG("Cannot reboot chip.");
-		return -EIO;
-	}
-*/
-	k_busy_wait(1000);
-
-	if (bmi088_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
-		LOG_DBG("Failed to read chip id.");
-		return -EIO;
-	}
-
-	if (val != BMI088_CHIP_ID) {
-		LOG_DBG("Unsupported chip detected (0x%x)!", val);
-		return -ENODEV;
-	}
-    LOG_DBG("Chip successfully detected");
-/*
-	// set gyro default range         //TODO: Always use largest range
-	if (bmi088_byte_write(dev, BMI088_REG_GYR_RANGE,
-			      BMI088_DEFAULT_RANGE_GYR) < 0) {
-		LOG_DBG("Cannot set default range for gyroscope.");
-		return -EIO;
-	}
-
-	data->scale.gyr = BMI088_GYR_SCALE(gyr_range);
-
-        //TODO: Set ODR to 0x04, 200Hz, 23 Filter bandwidth (siehe 5.5.6)
-	if (bmi088_reg_field_update(dev, BMI088_REG_GYR_CONF,
-				    BMI088_GYR_CONF_ODR_POS,
-				    BMI088_GYR_CONF_ODR_MASK,
-				    BMI088_DEFAULT_ODR_GYR) < 0) {
-		LOG_DBG("Failed to set gyro's default ODR.");
-		return -EIO;
-	}       */
-	return 0;
-}
-
-#define BMI088_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst, bmi088_init, NULL,			\
-			      &bmi088_data_##inst, &bmi088_cfg_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &bmi088_api);
-
-/* Instantiation macros used when a device is on a SPI bus */
-#define BMI088_DEFINE_SPI(inst)						   \
-	static struct bmi088_data bmi088_data_##inst;			   \
-	static const struct bmi088_cfg bmi088_cfg_##inst = {		   \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
-	};								   \
-	BMI088_DEVICE_INIT(inst)
+#define BMI088_DEVICE_INIT(inst) \
+    static struct bmi088_data bmi088_data_##inst;               \
+    static const struct bmi088_cfg bmi088_cfg_##inst = {           \
+        .bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+    };                                   \
+    DEVICE_DT_INST_DEFINE(inst, bmi088_init, NULL,            \
+                  &bmi088_data_##inst, &bmi088_cfg_##inst,    \
+                  POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,    \
+                  &bmi088_api);
 
 
-/*
- * Main instantiation macro. Use of COND_CODE_1() selects the right
- * bus-specific macro at preprocessor time.
- */
-
-
-DT_INST_FOREACH_STATUS_OKAY(BMI088_DEFINE_SPI)
+DT_INST_FOREACH_STATUS_OKAY(BMI088_DEVICE_INIT)
