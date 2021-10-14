@@ -1150,6 +1150,8 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
+    collaborators:
+        - pdgendt
     files:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
