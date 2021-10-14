@@ -7,7 +7,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
 	)
 
   target_include_directories(mbedTLS INTERFACE
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/include
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
     configs
 	)
 
@@ -15,7 +15,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
 
   file(GLOB
     mbedtls_sources # This is an output parameter
-      ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/*.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/*.c
     )
 
   zephyr_library_sources(
