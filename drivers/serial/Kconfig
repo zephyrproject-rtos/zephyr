@@ -31,6 +31,12 @@ config SERIAL_SUPPORT_INTERRUPT
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
+config SERIAL_INIT_PRIORITY
+	int "Serial init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Serial driver device initialization priority.
+
 config UART_USE_RUNTIME_CONFIGURE
 	bool "Enable runtime configuration for UART controllers"
 	default y

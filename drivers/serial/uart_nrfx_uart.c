@@ -1188,5 +1188,5 @@ DEVICE_DT_INST_DEFINE(0,
 	      NULL,
 	      /* Initialize UART device before UART console. */
 	      PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      CONFIG_SERIAL_INIT_PRIORITY,
 	      &uart_nrfx_uart_driver_api);

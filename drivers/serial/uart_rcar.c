@@ -583,7 +583,7 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 			      NULL,						\
 			      &uart_rcar_data_##n,				\
 			      &uart_rcar_cfg_##n,				\
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
 			      &uart_rcar_driver_api);				\
 										\
 	UART_RCAR_CONFIG_FUNC(n)						\
