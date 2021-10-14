@@ -73,5 +73,8 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_PUSH_BUTTON
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_CURRENT_SENSOR
     ipso_current_sensor.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_FILLING_SENSOR
+    ipso_filling_sensor.c
+    )
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
