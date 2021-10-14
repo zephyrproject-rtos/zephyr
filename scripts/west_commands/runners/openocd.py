@@ -285,7 +285,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target remote :{}'.format(self.gdb_port),
+                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
