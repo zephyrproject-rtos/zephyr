@@ -1178,6 +1178,20 @@ Networking:
     labels:
         - "area: Networking"
 
+"Networking: OpenThread":
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - pdgendt
+    files:
+        - subsys/net/l2/openthread/
+        - subsys/net/lib/openthread/
+        - samples/net/openthread/
+    labels:
+        - "area: Networking"
+        - "area: OpenThread"
+
 NIOS-2 arch:
     status: maintained
     maintainers:
