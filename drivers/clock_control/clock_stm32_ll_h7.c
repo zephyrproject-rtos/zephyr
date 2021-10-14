@@ -57,11 +57,11 @@
 #define CSI_FREQ 4000000UL	/* CSI_VALUE ((uint32_t)4000000) */
 
 /* Choose PLL SRC */
-#if STM32_PLL_SRC_HSI
+#if defined(STM32_PLL_SRC_HSI)
 #define PLLSRC_FREQ  ((HSI_FREQ)/(STM32_HSI_DIVISOR))
-#elif STM32_PLL_SRC_CSI
+#elif defined(STM32_PLL_SRC_CSI)
 #define PLLSRC_FREQ  CSI_FREQ
-#elif STM32_PLL_SRC_HSE
+#elif defined(STM32_PLL_SRC_HSE)
 #define PLLSRC_FREQ  HSE_FREQ
 #else
 #define PLLSRC_FREQ 0
@@ -79,13 +79,13 @@
 				STM32_PLL_P_DIVISOR)
 
 /* SYSCLKSRC before the D1CPRE prescaler */
-#if STM32_SYSCLK_SRC_PLL
+#if defined(STM32_SYSCLK_SRC_PLL)
 #define SYSCLKSRC_FREQ	PLLP_VALUE
-#elif STM32_SYSCLK_SRC_HSI
+#elif defined(STM32_SYSCLK_SRC_HSI)
 #define SYSCLKSRC_FREQ	((HSI_FREQ)/(STM32_HSI_DIVISOR))
-#elif STM32_SYSCLK_SRC_CSI
+#elif defined(STM32_SYSCLK_SRC_CSI)
 #define SYSCLKSRC_FREQ	CSI_FREQ
-#elif STM32_SYSCLK_SRC_HSE
+#elif defined(STM32_SYSCLK_SRC_HSE)
 #define SYSCLKSRC_FREQ	HSE_FREQ
 #endif
 
@@ -326,11 +326,7 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	return 0;
 }
 
-#if STM32_PLL_SRC_HSE || \
-	STM32_PLL_SRC_HSI || \
-	STM32_PLL_SRC_CSI || \
-	STM32_PLL3_ENABLE
-
+__unused
 static int get_vco_input_range(uint32_t m_div, uint32_t *range)
 {
 	uint32_t vco_freq;
@@ -352,6 +348,7 @@ static int get_vco_input_range(uint32_t m_div, uint32_t *range)
 	return 0;
 }
 
+__unused
 static uint32_t get_vco_output_range(uint32_t vco_input_range)
 {
 	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
@@ -360,7 +357,6 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 
 	return LL_RCC_PLLVCORANGE_WIDE;
 }
-#endif /* STM32_PLL_SRC_* */
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
@@ -517,107 +513,97 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
-static int stm32_clock_control_init(const struct device *dev)
+__unused
+static int set_up_pll3(void)
 {
-
-#if !defined(CONFIG_CPU_CORTEX_M4)
-	uint32_t old_hclk_freq = 0;
-	uint32_t new_hclk_freq = 0;
-
-#if STM32_PLL_SRC_HSE || \
-	STM32_PLL_SRC_HSI || \
-	STM32_PLL_SRC_CSI || \
-	STM32_PLL3_ENABLE
-
+#if defined(STM32_PLL3_ENABLE)
 	int r;
 	uint32_t vco_input_range;
 	uint32_t vco_output_range;
-#endif /* STM32_PLL_SRC_* */
 
-#endif /* ! CONFIG_CPU_CORTEX_M4 */
-
-	ARG_UNUSED(dev);
-
-#if !defined(CONFIG_CPU_CORTEX_M4)
-
-	/* HW semaphore Clock enable */
-#if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||\
-	  defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
-#else
-	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
-
-#endif
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
-
-	/* Current hclk value */
-	old_hclk_freq = get_hclk_frequency();
-	/* AHB is HCLK clock to configure */
-	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-				      STM32_HPRE);
-
-	/* Set flash latency */
-	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
-	/* If freq increases, set flash latency before any clock setting */
-	if (new_hclk_freq > old_hclk_freq) {
-		LL_SetFlashLatency(new_hclk_freq);
+	/* Initialize PLL 3 */
+	r = get_vco_input_range(STM32_PLL3_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
 	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL3FRACN_Disable();
+
+	LL_RCC_PLL3_SetM(STM32_PLL3_M_DIVISOR);
+	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
+
+	LL_RCC_PLL3_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL3_SetVCOOutputRange(vco_output_range);
+
+	if (IS_ENABLED(STM32_PLL3_P_ENABLE)) {
+		LL_RCC_PLL3P_Enable();
+		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
+	}
+
+	if (IS_ENABLED(STM32_PLL3_Q_ENABLE)) {
+		LL_RCC_PLL3Q_Enable();
+		LL_RCC_PLL3_SetQ(STM32_PLL3_Q_DIVISOR);
+	}
+
+	if (IS_ENABLED(STM32_PLL3_R_ENABLE)) {
+		LL_RCC_PLL3R_Enable();
+		LL_RCC_PLL3_SetR(STM32_PLL3_R_DIVISOR);
+	}
+
+	LL_RCC_PLL3_Enable();
+	while (LL_RCC_PLL3_IsReady() != 1U) {
+	}
+#endif /* STM32_PLL3_ENABLE */
+
+	return 0;
+}
+
+__unused
+static int config_src_sysclk_pll(void)
+{
+#if defined(STM32_SYSCLK_SRC_PLL)
+	int r;
+	uint32_t vco_input_range;
+	uint32_t vco_output_range;
 
 	/* Configure PLL source */
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
-#if STM32_PLL_SRC_HSE
+	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		if (IS_ENABLED(STM32_HSE_BYPASS)) {
+			LL_RCC_HSE_EnableBypass();
+		} else {
+			LL_RCC_HSE_DisableBypass();
+		}
 
-#if STM32_HSE_BYPASS
-	LL_RCC_HSE_EnableBypass();
-#else
-	LL_RCC_HSE_DisableBypass();
-#endif
+		/* Enable HSE oscillator */
+		LL_RCC_HSE_Enable();
+		while (LL_RCC_HSE_IsReady() != 1) {
+		}
 
-	/* Enable HSE oscillator */
-	LL_RCC_HSE_Enable();
-	while (LL_RCC_HSE_IsReady() != 1) {
+		/* Main PLL configuration and activation */
+		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
+	} else if (IS_ENABLED(STM32_PLL_SRC_CSI)) {
+		/* Support for CSI oscillator */
+		LL_RCC_CSI_Enable();
+		while (LL_RCC_CSI_IsReady() != 1) {
+		}
+
+		/* Main PLL configuration and activation */
+		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		/* Enable HSI oscillator */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		}
+
+		/* HSI divider configuration */
+		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
+
+		/* Main PLL configuration and activation */
+		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
 	}
-
-	/* Main PLL configuration and activation */
-	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
-
-#elif STM32_PLL_SRC_CSI
-	/* Support for CSI oscillator */
-
-	LL_RCC_CSI_Enable();
-	while (LL_RCC_CSI_IsReady() != 1) {
-	}
-
-	/* Main PLL configuration and activation */
-	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
-
-#elif STM32_PLL_SRC_HSI
-	/* By default choose HSI as PLL clock source */
-
-	/* Enable HSI oscillator */
-	LL_RCC_HSI_Enable();
-	while (LL_RCC_HSI_IsReady() != 1) {
-	}
-
-	/* HSI divider configuration */
-	LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
-
-	/* Main PLL configuration and activation */
-	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
-
-#else
-
-	/* No clock source selected for PLL, by default, disable the PLL */
-	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_NONE);
-#endif
-
-	/* Configure the PLL dividers/multipliers only if PLL source is configured */
-#if STM32_PLL_SRC_HSE || \
-	STM32_PLL_SRC_HSI || \
-	STM32_PLL_SRC_CSI
 
 	r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range);
 	if (r < 0) {
@@ -649,25 +635,6 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_PLL1_SetQ(STM32_PLL_Q_DIVISOR);
 	LL_RCC_PLL1_SetR(STM32_PLL_R_DIVISOR);
 
-
-#else
-	/* PLL will stay in reset state configuration */
-#endif /* STM32_PLL_SRC_* */
-
-
-	/* Preset the prescalers prior to chosing SYSCLK */
-	/* Prevents APB clock to go over limits */
-	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
-	LL_RCC_SetSysPrescaler(sysclk_prescaler(STM32_D1CPRE));
-	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_HPRE));
-	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_D2PPRE1));
-	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_D2PPRE2));
-	LL_RCC_SetAPB3Prescaler(apb3_prescaler(STM32_D1PPRE));
-	LL_RCC_SetAPB4Prescaler(apb4_prescaler(STM32_D3PPRE));
-
-
-#if STM32_SYSCLK_SRC_PLL
-
 	/* Enable PLL*/
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1) {
@@ -677,10 +644,16 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
 	}
+#endif /* STM32_SYSCLK_SRC_PLL */
 
-#elif STM32_SYSCLK_SRC_HSE
+	return 0;
+}
 
-	/* Enable HSI oscillator */
+__unused
+static void config_src_sysclk_hse(void)
+{
+#ifdef STM32_SYSCLK_SRC_HSE
+	/* Enable HSE oscillator */
 	LL_RCC_HSE_Enable();
 	while (LL_RCC_HSE_IsReady() != 1) {
 	}
@@ -689,9 +662,13 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
+#endif /* STM32_SYSCLK_SRC_HSE */
+}
 
-#elif STM32_SYSCLK_SRC_HSI
-
+__unused
+static void config_src_sysclk_hsi(void)
+{
+#ifdef STM32_SYSCLK_SRC_HSI
 	/* Enable HSI oscillator */
 	LL_RCC_HSI_Enable();
 	while (LL_RCC_HSI_IsReady() != 1) {
@@ -704,9 +681,13 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
+#endif /* STM32_SYSCLK_SRC_HSI */
+}
 
-#elif STM32_SYSCLK_SRC_CSI
-
+__unused
+static void config_src_sysclk_csi(void)
+{
+#ifdef STM32_SYSCLK_SRC_CSI
 	/* Enable CSI oscillator */
 	LL_RCC_CSI_Enable();
 	while (LL_RCC_CSI_IsReady() != 1) {
@@ -716,8 +697,71 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
 	}
+#endif /* STM32_SYSCLK_SRC_CSI */
+}
 
-#endif /* STM32_SYSCLK_SRC */
+static int stm32_clock_control_init(const struct device *dev)
+{
+#if defined(STM32_SYSCLK_SRC_PLL) || defined(STM32_PLL3_ENABLE)
+
+#endif
+
+	ARG_UNUSED(dev);
+
+#if !defined(CONFIG_CPU_CORTEX_M4)
+
+	uint32_t old_hclk_freq = 0;
+	uint32_t new_hclk_freq = 0;
+
+	/* HW semaphore Clock enable */
+#if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
+	defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
+#else
+	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
+#endif
+
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	/* Configure Voltage scale to comply with the desired system frequency */
+	prepare_regulator_voltage_scale();
+
+	/* Current hclk value */
+	old_hclk_freq = get_hclk_frequency();
+	/* AHB is HCLK clock to configure */
+	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				      STM32_HPRE);
+
+	/* Set flash latency */
+	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
+	/* If freq increases, set flash latency before any clock setting */
+	if (new_hclk_freq > old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
+
+	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Prevents APB clock to go over limits */
+	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
+	LL_RCC_SetSysPrescaler(sysclk_prescaler(STM32_D1CPRE));
+	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_HPRE));
+	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_D2PPRE1));
+	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_D2PPRE2));
+	LL_RCC_SetAPB3Prescaler(apb3_prescaler(STM32_D1PPRE));
+	LL_RCC_SetAPB4Prescaler(apb4_prescaler(STM32_D3PPRE));
+
+	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
+		int r = config_src_sysclk_pll();
+
+		if (r < 0) {
+			return r;
+		}
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
+		config_src_sysclk_hse();
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
+		config_src_sysclk_hsi();
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_CSI)) {
+		config_src_sysclk_csi();
+	}
 
 	/* Set FLASH latency */
 	/* AHB/AXI/HCLK clock is SYSCLK / HPRE */
@@ -730,48 +774,30 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-#endif /* CONFIG_CPU_CORTEX_M4 */
+	if (IS_ENABLED(STM32_PLL3_ENABLE)) {
+		int r = set_up_pll3();
 
-#if STM32_PLL3_ENABLE
-	/* Initialize PLL 3 */
-	r = get_vco_input_range(STM32_PLL3_M_DIVISOR, &vco_input_range);
-	if (r < 0) {
-		return r;
+		if (r < 0) {
+			return r;
+		}
 	}
-
-	vco_output_range = get_vco_output_range(vco_input_range);
-
-	LL_RCC_PLL3FRACN_Disable();
-
-	LL_RCC_PLL3_SetM(STM32_PLL3_M_DIVISOR);
-	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
-
-	LL_RCC_PLL3_SetVCOInputRange(vco_input_range);
-	LL_RCC_PLL3_SetVCOOutputRange(vco_output_range);
-
-#if STM32_PLL3_P_ENABLE
-	LL_RCC_PLL3P_Enable();
-	LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
-#endif /* STM32_PLL3_P_ENABLE */
-#if STM32_PLL3_Q_ENABLE
-	LL_RCC_PLL3Q_Enable();
-	LL_RCC_PLL3_SetQ(STM32_PLL3_Q_DIVISOR);
-#endif /* STM32_PLL3_Q_ENABLE */
-#if STM32_PLL3_R_ENABLE
-	LL_RCC_PLL3R_Enable();
-	LL_RCC_PLL3_SetR(STM32_PLL3_R_DIVISOR);
-#endif /* STM32_PLL3_R_ENABLE */
-
-	LL_RCC_PLL3_Enable();
-	while (LL_RCC_PLL3_IsReady() != 1U) {
-	}
-#endif /* STM32_PLL3_ENABLE */
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	return 0;
 }
+#else
+static int stm32_clock_control_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Update CMSIS variable */
+	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+	return 0;
+}
+#endif /* !CONFIG_CPU_CORTEX_M4 */
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
