@@ -364,7 +364,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &uart_sam_init, 			\
 			    NULL, &uart##n##_sam_data,			\
 			    &uart##n##_sam_config, PRE_KERNEL_1,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &uart_sam_driver_api);			\
 									\
 	UART_SAM_CONFIG_FUNC(n)						\

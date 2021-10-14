@@ -321,7 +321,7 @@ DEVICE_DT_INST_DEFINE(0,
 		uart_liteuart_init,
 		NULL,
 		&uart_liteuart_data_0, &uart_liteuart_dev_cfg_0,
-		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
 		(void *)&uart_liteuart_driver_api);
 
 static int uart_liteuart_init(const struct device *dev)

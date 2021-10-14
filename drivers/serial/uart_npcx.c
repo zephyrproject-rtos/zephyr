@@ -506,7 +506,7 @@ static inline int uart_npcx_pm_control(const struct device *dev,
 			&uart_npcx_init,                                       \
 			uart_npcx_pm_control,				       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
+			PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	       \
 			&uart_npcx_driver_api);                                \
 									       \
 NPCX_UART_IRQ_CONFIG_FUNC(inst)

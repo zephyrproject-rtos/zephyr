@@ -61,7 +61,7 @@ static int serial_vnd_init(const struct device *dev)
 #define VND_SERIAL_INIT(n)						\
 	DEVICE_DT_INST_DEFINE(n, &serial_vnd_init, NULL,		\
 			      NULL, NULL, POST_KERNEL,			\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_SERIAL_INIT_PRIORITY,		\
 			      &serial_vnd_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SERIAL_INIT)

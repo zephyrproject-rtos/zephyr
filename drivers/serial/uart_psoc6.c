@@ -361,7 +361,7 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL,			\
 			      CY_PSOC6_UART_DECL_DATA_PTR(n),			\
 			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,		\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      CONFIG_SERIAL_INIT_PRIORITY,			\
 			      &uart_psoc6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CY_PSOC6_UART_INIT)
