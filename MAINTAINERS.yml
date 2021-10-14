@@ -1226,8 +1226,13 @@ Power management:
         - "area: Power Management"
 
 RISCV arch:
-    status: orphaned
+    status: maintained
+    maintainers:
+        - kgugala
+        - pgielda
+        - tgorochowik
     collaborators:
+        - fkokosinski
         - mgielda
         - katsuster
         - henrikbrixandersen
