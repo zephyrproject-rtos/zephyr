@@ -289,10 +289,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
-
-        for i in self.gdb_init:
-            gdb_cmd.append("-ex")
-            gdb_cmd.append(i)
+        if self.gdb_init is not None:
+            for i in self.gdb_init:
+                gdb_cmd.append("-ex")
+                gdb_cmd.append(i)
 
         self.require(gdb_cmd[0])
         self.print_gdbserver_message()
