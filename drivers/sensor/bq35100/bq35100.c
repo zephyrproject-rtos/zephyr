@@ -153,12 +153,111 @@ static int bq35100_control_reg_read(const struct device *dev,
 	return ret;
 }
 
+bool BQ35100::setSecurityMode(bq35100_security_t new_security) {
+    bool success = false;
+    char data[4];
+
+    if (new_security == _security_mode) {
+        return true; // We are already in this mode
+    }
+
+    if (new_security == SECURITY_UNKNOWN) {
+        tr_error("Invalid access mode");
+        return false;
+    }
+
+    // For reasons that aren't clear, the BQ35100 sometimes refuses
+    // to change security mode if a previous security mode change
+    // happend only a few seconds ago, hence the retry here
+
+	//seal & unseal-gauge start & stop
+    for (auto x = 0; (x < MBED_CONF_BQ35100_RETRY) && !success; x++) {
+        data[0] = CMD_MAC;
+
+        switch (new_security) {
+            case SECURITY_SEALED:
+                tr_debug("Setting security to SEALED");
+                sendCntl(CNTL_SEAL);
+                break;
+
+            case SECURITY_FULL_ACCESS: {//**
+                // Unseal first if in Sealed mode
+                if (_security_mode == SECURITY_SEALED && !setSecurityMode(SECURITY_UNSEALED)) {
+                    return false;
+                }
+
+                if (!readExtendedData(0X41D0, data, sizeof(data)/*4*/)) {//**cntrl_reg_read
+                    tr_error("Could not get full access codes");
+                    return false;
+                }
+
+                uint32_t full_access_codes = (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
+
+                tr_debug("Setting security to FULL ACCESS");
+
+                // Send the full access code with endianness conversion
+                // in TWO writes
+                data[2] = (full_access_codes >> 24) & 0xFF;
+                data[1] = (full_access_codes >> 16) & 0xFF;
+
+                if (write(data, 3)) {
+                    data[2] = (full_access_codes >> 8) & 0xFF;
+                    data[1] = full_access_codes & 0xFF;
+                    write(data, 3);
+                }
+            }
+            break;
+
+            case SECURITY_UNSEALED: {
+                // Seal first if in Full Access mode
+                if (_security_mode == SECURITY_FULL_ACCESS && !setSecurityMode(SECURITY_SEALED)) {
+                    return false;
+                }
+
+                tr_debug("Setting security to UNSEALED");
+
+                data[2] = (_seal_codes >> 24) & 0xFF;
+                data[1] = (_seal_codes >> 16) & 0xFF;
+
+                if (write(data, 3)) {
+                    data[2] = (_seal_codes >> 8) & 0xFF;
+                    data[1] = _seal_codes & 0xFF;
+
+                    write(data, 3);
+                }
+            }
+            break;
+
+            case SECURITY_UNKNOWN:
+            default:
+                MBED_ASSERT(false);
+
+                break;
+        }
+
+        ThisThread::sleep_for(40ms); // always wait after writing codes
+        _security_mode = getSecurityMode();
+
+        if (_security_mode == new_security) {
+            success = true;
+            tr_info("Security mode set");
+
+        } else {
+            tr_error("Security mode set failed (wanted 0x%02X, got 0x%02X), will retry", new_security, _security_mode);
+            ThisThread::sleep_for(40ms);
+        }
+    }
+
+    return success;
+}
 /**
  * Enables End-Of-Service (EOS) Mode. 
  * This function follows the steps in bq35100.pdf section of 8.2.2.2.1.2
  * @param dev - The device structure.
  * @return 0 in case of success, negative error code otherwise.
  */
+
+
 static int bq35100_enable_EOS_mode(const struct device *dev)
 {
 	int status;
@@ -190,7 +289,7 @@ int bq35100_gauge_start(const struct device *dev)
 	int ret;
 
 	ret = bq35100_control_reg_write(dev,
-				     BQ35100_CTRL_GAUGE_START);
+				     BQ35100_CTRL_GAUGE_START);//reg_control_reg_read to check
 
 	return ret;
 }

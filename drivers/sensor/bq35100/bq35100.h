@@ -257,6 +257,19 @@
 #define BQ35100_REG_WRITE(x)            ((x & 0xFF) << 1)
 #define BQ35100_TO_I2C_REG(x)           ((x) >> 1)
 
+enum bq35100_gauge_mode{
+    BQ35100_ACCUMULATOR_MODE = 0b00,
+    BQ35100_SOH_MODE = 0b01, // for LiMnO2
+    BQ35100_EOS_MODE = 0b10, // for LiSOCl2
+    BQ35100_UNKNOWN_MODE = 0b11 // invalid
+};
+
+enum bq35100_security{
+    BQ35100_SECURITY_UNKNOWN = 0x00,
+    BQ35100_SECURITY_FULL_ACCESS = 0x01, // Allows writes to all of memory
+    BQ35100_SECURITY_UNSEALED = 0x02, // Allows writes to all of memory apart from the security codes area
+    BQ35100_SECURITY_SEALED = 0x03 // Normal operating mode, prevents accidental writes
+};
 
 struct bq35100_data {
 	uint16_t temperature;
