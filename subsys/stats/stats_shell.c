@@ -33,7 +33,7 @@ static int stats_group_cb(struct stats_hdr *hdr, void *arg)
 {
 	struct shell *sh = arg;
 
-	shell_print(sh, "Stats Group %s (hdr addr: %x)", hdr->s_name, (void *)hdr);
+	shell_print(sh, "Stats Group %s (hdr addr: %p)", hdr->s_name, (void *)hdr);
 	return stats_walk(hdr, stats_cb, arg);
 }
 
