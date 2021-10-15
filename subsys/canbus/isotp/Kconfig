@@ -7,6 +7,7 @@ menuconfig ISOTP
 	bool "ISO-TP Transport [EXPERIMENTAL]"
 	select NET_BUF
 	select POLL
+	select EXPERIMENTAL
 	help
 	  Enable ISO TP support for CAN
 
