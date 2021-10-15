@@ -21,7 +21,6 @@
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)
-#define PCI_HOST_BRIDGE PCIE_BDF(0, 0, 0)
 
 struct ibecc_data {
 	mem_addr_t mchbar;
