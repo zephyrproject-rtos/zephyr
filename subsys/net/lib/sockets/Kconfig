@@ -68,6 +68,7 @@ config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
+	select EXPERIMENTAL
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
@@ -99,6 +100,7 @@ config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_DTLS if NET_NATIVE
+	select EXPERIMENTAL
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -152,6 +154,7 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enables direct offloading of socket operations to dedicated TCP/IP
 	  hardware.
@@ -196,6 +199,7 @@ config NET_SOCKETS_PACKET_DGRAM
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
+	select EXPERIMENTAL
 	help
 	  The value depends on your network needs.
 
@@ -209,6 +213,7 @@ config NET_SOCKETS_CAN_RECEIVERS
 
 config NET_SOCKETPAIR
 	bool "Support for the socketpair syscall [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	depends on HEAP_MEM_POOL_SIZE != 0
 	help
 	  Choose y here if you would like to use the socketpair(2)
@@ -226,6 +231,7 @@ config NET_SOCKETS_NET_MGMT
 	bool "Enable network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
+	select EXPERIMENTAL
 	help
 	  Select this if you want to use socket API to get network
 	  managements events to your application.

@@ -115,6 +115,7 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
 	  confidentiality and authenticity.
