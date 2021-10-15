@@ -37,6 +37,7 @@
 #include <devicetree.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <drivers/mbox.h>
 
 #define TEST_CHILDREN	DT_PATH(test, test_children)
 #define TEST_DEADBEEF	DT_PATH(test, gpio_deadbeef)
@@ -2078,6 +2079,38 @@ static void test_pinctrl(void)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
+static void test_mbox(void)
+{
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+
+	const struct mbox_channel channel_tx = MBOX_DT_CHANNEL_GET(TEST_TEMP, tx);
+	const struct mbox_channel channel_rx = MBOX_DT_CHANNEL_GET(TEST_TEMP, rx);
+
+	zassert_equal(channel_tx.id, 1, "");
+	zassert_equal(channel_rx.id, 2, "");
+
+	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+
+	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, tx),
+				  DT_NODELABEL(test_mbox)), "");
+	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, rx),
+				  DT_NODELABEL(test_mbox)), "");
+
+	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+
+	const struct mbox_channel channel_zero = MBOX_DT_CHANNEL_GET(TEST_TEMP, zero);
+
+	zassert_equal(channel_zero.id, 0, "");
+
+	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, zero), 0, "");
+
+	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, zero),
+				  DT_NODELABEL(test_mbox_zero_cell)), "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2120,7 +2153,8 @@ void test_main(void)
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
 			 ztest_unit_test(test_same_node),
-			 ztest_unit_test(test_pinctrl)
+			 ztest_unit_test(test_pinctrl),
+			 ztest_unit_test(test_mbox)
 		);
 	ztest_run_test_suite(devicetree_api);
 }
