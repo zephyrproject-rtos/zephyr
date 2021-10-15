@@ -221,6 +221,20 @@
 			};
 		};
 
+		test_mbox: mbox {
+			label = "TEST_MBOX";
+			compatible = "vnd,mbox";
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		test_mbox_zero_cell: mbox_zero_cell {
+			label = "TEST_MBOX_ZERO_CELL";
+			compatible = "vnd,mbox-zero-cell";
+			#mbox-cells = <0>;
+			status = "okay";
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
@@ -324,6 +338,8 @@
 			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
 			pinctrl-2 = <&test_pincfg_d>;
 			pinctrl-names = "default", "sleep", "f.o.o2";
+			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
+			mbox-names = "tx", "rx", "zero";
 		};
 
 		/* there should only be one of these */
