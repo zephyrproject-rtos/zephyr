@@ -931,9 +931,9 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
-#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
-#endif
+
 #if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
@@ -951,11 +951,6 @@ static void esp_init_work(struct k_work *work)
 			ESP_CMD_CWLAPOPT(ESP_CMD_CWLAPOPT_ORDERED, ESP_CMD_CWLAPOPT_MASK)),
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWLAP),
 
-#if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
-		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
-		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
-		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
-#endif
 #if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
 #endif
