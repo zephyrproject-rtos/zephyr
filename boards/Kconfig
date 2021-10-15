@@ -54,6 +54,17 @@ config QEMU_ICOUNT_SHIFT
 	  The virtual CPU will execute one instruction every 2^N nanoseconds
 	  of virtual time, where N is the value provided here.
 
+config QEMU_ICOUNT_SLEEP
+	bool "QEMU icount sleep mode enable"
+	depends on QEMU_ICOUNT
+	help
+	  When the virtual CPU is sleeping, the virtual time will advance
+	  at default speed unless this option is set. With this option set,
+	  the virtual time will jump to the next timer deadline instantly
+	  whenever the virtual CPU goes to sleep mode and will not advance
+	  if no timer is enabled. This behavior gives deterministic execution
+	  times from the guest point of view.
+
 config QEMU_IVSHMEM_PLAIN_MEM_SIZE
 	int "QEMU ivshmem-plain shared memory size in mega-bytes"
 	default 1
