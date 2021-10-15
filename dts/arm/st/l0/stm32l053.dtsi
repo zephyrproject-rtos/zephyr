@@ -19,7 +19,16 @@
 			phys = <&otgfs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			status = "disabled";
-			label= "USB";
+			label = "USB";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
 		};
 
 		otgfs_phy: otgfs_phy {
