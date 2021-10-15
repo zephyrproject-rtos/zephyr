@@ -108,6 +108,8 @@ struct bt_iso_chan {
 	struct bt_iso_chan_qos		*qos;
 	uint8_t				state;
 	bt_security_t			required_sec_level;
+	/** Node used internally by the stack */
+	sys_snode_t node;
 };
 
 /** @brief ISO Channel IO QoS structure. */
@@ -198,10 +200,7 @@ struct bt_iso_recv_info {
 struct bt_iso_cig;
 
 struct bt_iso_cig_create_param {
-	/** @brief Array of pointers to CIS channels
-	 *
-	 * This array shall remain valid for the duration of the CIG.
-	 */
+	/** @brief Array of pointers to CIS channels */
 	struct bt_iso_chan **cis_channels;
 
 	/** @brief Number channels in @p cis_channels
@@ -258,10 +257,7 @@ struct bt_iso_connect_param {
 struct bt_iso_big;
 
 struct bt_iso_big_create_param {
-	/** Array of pointers to BIS channels
-	 *
-	 * This array shall remain valid for the duration of the BIG.
-	 */
+	/** Array of pointers to BIS channels */
 	struct bt_iso_chan **bis_channels;
 
 	/** @brief Number channels in @p bis_channels

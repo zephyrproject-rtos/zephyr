@@ -1078,6 +1078,7 @@ static struct bt_iso_cig *get_free_cig(void)
 		if (!cigs[i].initialized) {
 			cigs[i].initialized = true;
 			cigs[i].id = i;
+			sys_slist_init(&cigs[i].cis);
 			return &cigs[i];
 		}
 	}
@@ -1087,10 +1088,10 @@ static struct bt_iso_cig *get_free_cig(void)
 	return NULL;
 }
 
-static int cig_init_cis(struct bt_iso_cig *cig)
+static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_create_param *param)
 {
-	for (int i = 0; i < cig->num_cis; i++) {
-		struct bt_iso_chan *cis = cig->cis[i];
+	for (uint8_t i = 0; i < param->num_cis; i++) {
+		struct bt_iso_chan *cis = param->cis_channels[i];
 
 		CHECKIF(cis == NULL) {
 			BT_DBG("CIS was NULL");
@@ -1118,6 +1119,8 @@ static int cig_init_cis(struct bt_iso_cig *cig)
 		cis->iso->iso.cis_id = i;
 
 		bt_iso_chan_add(cis->iso, cis);
+
+		sys_slist_append(&cig->cis, &cis->node);
 	}
 
 	return 0;
@@ -1125,13 +1128,15 @@ static int cig_init_cis(struct bt_iso_cig *cig)
 
 static void cleanup_cig(struct bt_iso_cig *cig)
 {
-	for (int i = 0; i < cig->num_cis; i++) {
-		struct bt_iso_chan *cis = cig->cis[i];
+	struct bt_iso_chan *cis, *tmp;
 
-		if (cis != NULL && cis->iso != NULL) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis, cis, tmp, node) {
+		if (cis->iso != NULL) {
 			bt_conn_unref(cis->iso);
 			cis->iso = NULL;
 		}
+
+		sys_slist_remove(&cig->cis, NULL, &cis->node);
 	}
 
 	memset(cig, 0, sizeof(*cig));
@@ -1144,6 +1149,8 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 	struct net_buf *rsp;
 	struct bt_iso_cig *cig;
 	struct bt_hci_rp_le_set_cig_params *cig_rsp;
+	struct bt_iso_chan *cis;
+	int i;
 
 	CHECKIF(out_cig == NULL) {
 		BT_DBG("out_cig is NULL");
@@ -1211,15 +1218,13 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 		return -ENOMEM;
 	}
 
-	cig->cis = param->cis_channels;
-	cig->num_cis = param->num_cis;
-
-	err = cig_init_cis(cig);
+	err = cig_init_cis(cig, param);
 	if (err) {
 		BT_DBG("Could not init CIS %d", err);
 		cleanup_cig(cig);
 		return err;
 	}
+	cig->num_cis = param->num_cis;
 
 	rsp = hci_le_set_cig_params(cig, param);
 	if (rsp == NULL) {
@@ -1240,13 +1245,10 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 		return err;
 	}
 
-	for (int i = 0; i < cig_rsp->num_handles; i++) {
-		struct bt_iso_chan *chan;
-
-		chan = param->cis_channels[i];
-
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis, cis, node) {
 		/* Assign the connection handle */
-		chan->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i]);
+		cis->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i++]);
 	}
 
 	net_buf_unref(rsp);
@@ -1258,6 +1260,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 
 int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 {
+	struct bt_iso_chan *cis;
 	int err;
 
 	CHECKIF(cig == NULL) {
@@ -1265,9 +1268,9 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < cig->num_cis; i++) {
-		if (cig->cis[i]->state != BT_ISO_DISCONNECTED) {
-			BT_DBG("[%d]: Channel is not disconnected", i);
+	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis, cis, node) {
+		if (cis->state != BT_ISO_DISCONNECTED) {
+			BT_DBG("Channel %p is not disconnected", cis);
 			return -EINVAL;
 		}
 	}
@@ -1450,6 +1453,7 @@ static struct bt_iso_big *get_free_big(void)
 	for (int i = 0; i < ARRAY_SIZE(bigs); i++) {
 		if (!atomic_test_and_set_bit(bigs[i].flags, BT_BIG_INITIALIZED)) {
 			bigs[i].handle = i;
+			sys_slist_init(&bigs[i].bis);
 			return &bigs[i];
 		}
 	}
@@ -1474,13 +1478,15 @@ static struct bt_iso_big *big_lookup_flag(int bit)
 
 static void cleanup_big(struct bt_iso_big *big)
 {
-	for (int i = 0; i < big->num_bis; i++) {
-		struct bt_iso_chan *bis = big->bis[i];
+	struct bt_iso_chan *bis, *tmp;
 
-		if (bis != NULL && bis->iso != NULL) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis, bis, tmp, node) {
+		if (bis->iso != NULL) {
 			bt_conn_unref(bis->iso);
 			bis->iso = NULL;
 		}
+
+		sys_slist_remove(&big->bis, NULL, &bis->node);
 	}
 
 	memset(big, 0, sizeof(*big));
@@ -1488,17 +1494,22 @@ static void cleanup_big(struct bt_iso_big *big)
 
 static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 {
-	for (int i = 0; i < big->num_bis; i++) {
-		big->bis[i]->iso->err = reason;
+	struct bt_iso_chan *bis;
 
-		bt_iso_disconnected(big->bis[i]->iso);
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+		bis->iso->err = reason;
+
+		bt_iso_disconnected(bis->iso);
 	}
 }
 
-static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
+static int big_init_bis(struct bt_iso_big *big,
+			struct bt_iso_chan **bis_channels,
+			uint8_t num_bis,
+			bool broadcaster)
 {
-	for (int i = 0; i < big->num_bis; i++) {
-		struct bt_iso_chan *bis = big->bis[i];
+	for (uint8_t i = 0; i < num_bis; i++) {
+		struct bt_iso_chan *bis = bis_channels[i];
 
 		if (!bis) {
 			BT_DBG("BIS was NULL");
@@ -1540,6 +1551,8 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 		bis->iso->iso.bis_id = bt_conn_index(bis->iso);
 
 		bt_iso_chan_add(bis->iso, bis);
+
+		sys_slist_append(&big->bis, &bis->node);
 	}
 
 	return 0;
@@ -1554,6 +1567,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	struct net_buf *buf;
 	int err;
 	static struct bt_iso_chan_qos *qos;
+	struct bt_iso_chan *bis;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_BIG, sizeof(*req));
 
@@ -1561,8 +1575,11 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 		return -ENOBUFS;
 	}
 
+	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis, bis, node);
+	__ASSERT(bis != NULL, "bis was NULL");
+
 	/* All BIS will share the same QOS */
-	qos = big->bis[0]->qos;
+	qos = bis->qos;
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->big_handle = big->handle;
@@ -1589,9 +1606,10 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 		return err;
 	}
 
-	for (int i = 0; i < big->num_bis; i++) {
-		bt_iso_chan_set_state(big->bis[i], BT_ISO_CONNECT);
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
 	}
+
 	return err;
 }
 
@@ -1660,15 +1678,13 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		return -ENOMEM;
 	}
 
-	big->bis = param->bis_channels;
-	big->num_bis = param->num_bis;
-
-	err = big_init_bis(big, true);
+	err = big_init_bis(big, param->bis_channels, param->num_bis, true);
 	if (err) {
 		BT_DBG("Could not init BIG %d", err);
 		cleanup_big(big);
 		return err;
 	}
+	big->num_bis = param->num_bis;
 
 	err = hci_le_create_big(padv, big, param);
 	if (err) {
@@ -1685,7 +1701,9 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 void hci_le_big_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_complete *evt = (void *)buf->data;
+	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
+	int i;
 
 	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
 		BT_WARN("Invalid BIG handle");
@@ -1714,10 +1732,9 @@ void hci_le_big_complete(struct net_buf *buf)
 		return;
 	}
 
-	for (int i = 0; i < big->num_bis; i++) {
-		struct bt_iso_chan *bis = big->bis[i];
-
-		bis->iso->handle = sys_le16_to_cpu(evt->handle[i]);
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+		bis->iso->handle = sys_le16_to_cpu(evt->handle[i++]);
 		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
 	}
 }
@@ -1790,23 +1807,20 @@ static int hci_le_big_sync_term(struct bt_iso_big *big)
 
 int bt_iso_big_terminate(struct bt_iso_big *big)
 {
+	struct bt_iso_chan *bis;
 	int err;
 	bool broadcaster;
 
-	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis || !big->bis) {
+	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis) {
 		BT_DBG("BIG not initialized");
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < big->num_bis; i++) {
-		if (!big->bis[i]) {
-			BT_DBG("BIG BIS[%d] not initialized", i);
-			return -EINVAL;
-		}
-	}
+	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis, bis, node);
+	__ASSERT(bis != NULL, "bis was NULL");
 
 	/* They all have the same QOS dir so we can just check the first */
-	broadcaster = big->bis[0]->qos->tx ? true : false;
+	broadcaster = bis->qos->tx ? true : false;
 
 	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && broadcaster) {
 		err = hci_le_terminate_big(big);
@@ -1815,8 +1829,8 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		 * the BIG in hci_le_big_terminate
 		 */
 		if (!err) {
-			for (int i = 0; i < big->num_bis; i++) {
-				bt_iso_chan_set_state(big->bis[i], BT_ISO_DISCONNECT);
+			SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+				bt_iso_chan_set_state(bis, BT_ISO_DISCONNECT);
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
@@ -1841,7 +1855,9 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 void hci_le_big_sync_established(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_established *evt = (void *)buf->data;
+	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
+	int i;
 
 	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
 		BT_WARN("Invalid BIG handle");
@@ -1869,12 +1885,9 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		return;
 	}
 
-	for (int i = 0; i < big->num_bis; i++) {
-		struct bt_iso_chan *bis = big->bis[i];
-		uint16_t bis_handle = sys_le16_to_cpu(evt->handle[i]);
-
-		bis->iso->handle = bis_handle;
-
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+		bis->iso->handle = sys_le16_to_cpu(evt->handle[i++]);
 		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
 	}
 
@@ -1954,6 +1967,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		    struct bt_iso_big **out_big)
 {
 	int err;
+	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
 
 	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
@@ -2000,15 +2014,13 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -ENOMEM;
 	}
 
-	big->bis = param->bis_channels;
-	big->num_bis = param->num_bis;
-
-	err = big_init_bis(big, false);
+	err = big_init_bis(big, param->bis_channels, param->num_bis, false);
 	if (err) {
 		BT_DBG("Could not init BIG %d", err);
 		cleanup_big(big);
 		return err;
 	}
+	big->num_bis = param->num_bis;
 
 	err = hci_le_big_create_sync(sync, big, param);
 	if (err) {
@@ -2017,8 +2029,9 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return err;
 	}
 
-	for (int i = 0; i < big->num_bis; i++) {
-		bt_iso_chan_set_state(big->bis[i], BT_ISO_CONNECT);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
 	}
 
 	*out_big = big;
