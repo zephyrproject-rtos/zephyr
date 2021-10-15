@@ -8,9 +8,9 @@
 #include <drivers/spi.h>
 #include <sys/util.h>
 
-/* gyro register */
+// gyro register
 
-/* read-only */
+// read-only
 #define BMI088_REG_CHIPID    0x00
 #define RATE_X_LSB      0x02
 #define RATE_X_MSB      0x03
@@ -22,10 +22,10 @@
 #define FIFO_STATUS     0x0E
 #define FIFO_DATA       0x3F
 
-/* write-only */
-#define GYRO_SOFTRESET  0x14
+// write-only
+#define BMI088_SOFTRESET  0x14
 
-/* read/write */
+// read/write
 #define GYRO_RANGE      0x0F
 #define GYRO_BANDWIDTH  0x10
 #define GYRO_LPM1       0x11
@@ -38,39 +38,48 @@
 #define G_FIFO_CONF_1   0x3E
 #define GYRO_SELFTEST   0x3C
 
-/* bit-fields */
+// bit-fields
 
-/* GYRO_INT_STAT_1 */
+// GYRO_INT_STAT_1
 #define GYRO_FIFO_INT   BIT(4)
 #define GYRO_DRDY       BIT(7)
-/* FIFO_STATUS */
+// FIFO_STATUS
 #define FIFO_FRAMECOUNT
 #define FIFO_OVERRUN    BIT(7)
-/* GYRO_INT_CTRL */
+// GYRO_INT_CTRL
 #define GYRO_FIFO_EN    BIT(6)
 #define GYRO_DATA_EN    BIT(7)
 
-/* Indicates a read operation; bit 7 is clear on write s*/
+//other
+
+// Indicates a read operation; bit 7 is clear on write s
 #define BMI088_REG_READ BIT(7)
 #define BMI088_REG_MASK 0x7f // Mask lower 7 bits for register addresses
 
-#define BMI088_CHIP_ID 0x0F
+#define BMI088_CHIP_ID 0x0F  // Reset value of BMI088_REG_CHIPID
 
-/* end of default settings */
+#define BMI088_SR_VAL   0xB6    // Value for triggering a Soft-Reset
+
+#define BMI088_DEFAULT_RANGE    0x00    // Largest possible range for gyro
+
+#define BMI088_GYR_SCALE(range_dps)\
+				((2 * range_dps * SENSOR_PI) / 180LL / 65536LL) // Gyro scale
+
+// end of default settings
 
 struct bmi088_cfg {
     struct spi_dt_spec bus;
 };
 
 
-/* Each sample has X, Y and Z */
+// Each sample has X, Y and Z
 #define BMI088_AXES 3
 struct bmi088_gyro_sample {
     uint16_t gyr[BMI088_AXES];
 };
 
 struct bmi088_scale {
-    uint16_t gyr; /* micro radians/s/lsb */
+    uint16_t gyr; // micro radians/s/lsb
 };
 
 struct bmi088_data {

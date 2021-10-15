@@ -140,30 +140,22 @@ static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor
     val->val2 = converted_val % 1000000;
 }
 
-static void
-bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
-    int i;
-    uint8_t ofs_start, ofs_stop;
-    // TODO: Dont do this
+static void bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
-            ofs_start = ofs_stop = 0U;
-            break;
+            bmi088_to_fixed_point(raw_xyz[1], scale, val);
+
         case SENSOR_CHAN_GYRO_Y:
-            ofs_start = ofs_stop = 1U;
-            break;
+            bmi088_to_fixed_point(raw_xyz[2], scale, val);
+
         case SENSOR_CHAN_GYRO_Z:
-            ofs_start = ofs_stop = 2U;
-            break;
+            bmi088_to_fixed_point(raw_xyz[3], scale, val);
+
         default:
-            ofs_start = 0U;
-            ofs_stop = 2U;
             break;
     }
 
-    for (i = ofs_start; i <= ofs_stop; i++, val++) {
-        bmi088_to_fixed_point(raw_xyz[i], scale, val);
-    }
+
 }
 
 static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
@@ -241,6 +233,10 @@ static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan
  * @return 0 on success
  */
 static int bmi088_init(const struct device *dev) {
+
+    const struct bmi160_cfg *cfg = to_config(dev);
+    struct bmi160_data *data = to_data(dev);
+
     LOG_DBG("Initializing BMI088 device at %p", dev);
 
     if (!bmi088_bus_ready_spi(dev)) {
@@ -248,9 +244,13 @@ static int bmi088_init(const struct device *dev) {
         return -EINVAL;
     }
 
-    // TODO: reboot the chip: Softreset 0x14
+    // reboot the chip: Softreset 0x14
+    if(bmi088_byte_write(dev,BMI088_SOFTRESET,BMI088_SR_VAL) < 0)   {
+        LOG_DBG("Cannot reboot chip.");
+        return -EIO;
+    }
 
-    k_busy_wait(1000);
+    k_busy_wait(30000);
 
     uint8_t val = 0U;
     if (bmi088_byte_read(dev, BMI088_REG_CHIPID, &val) < 0) {
@@ -265,8 +265,16 @@ static int bmi088_init(const struct device *dev) {
     LOG_DBG("Chip successfully detected");
 
     // TODO: Set default gyro range, For now: always use largest range
+    if(bmi088_byte_write(dev,GYRO_RANGE,BMI088_DEFAULT_RANGE) < 0)   {
+        LOG_DBG("Cannot set default range for gyroscope.");
+        return -EIO;
+    }
+    // TODO: Replace Macro with function
+    data->scale.gyr = BMI160_GYR_SCALE(gyr_range);
+
 
     // TODO: Set ODR to 0x04, 200Hz, 23 Filter bandwidth (siehe 5.5.6)
+
 
     return 0;
 }
