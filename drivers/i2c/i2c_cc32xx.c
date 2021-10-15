@@ -166,6 +166,7 @@ static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 	/* Acquire the driver mutex */
 	k_sem_take(&data->mutex, K_FOREVER);
+	k_sem_reset(&data->transfer_complete);
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
@@ -173,8 +174,13 @@ static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Begin the transfer */
 		i2c_cc32xx_prime_transfer(dev, msgs, addr);
 
+		/* 1ms for one byte is more than enough */
+		int tout = 50 + msgs->len;
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->transfer_complete, K_FOREVER);
+		if (k_sem_take(&data->transfer_complete, K_MSEC(tout))) {
+			retval = -EIO;
+			break;
+		}
 
 		/* Return an error if the transfer didn't complete */
 		if (data->state == I2C_CC32XX_ERROR) {
