@@ -137,7 +137,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct bt_iso_cig_create_param param;
-	static struct bt_iso_chan *chans[CIS_ISO_CHAN_COUNT];
+	struct bt_iso_chan *chans[CIS_ISO_CHAN_COUNT];
 
 	if (cig != NULL) {
 		shell_error(sh, "Already created");
