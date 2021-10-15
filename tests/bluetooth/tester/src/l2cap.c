@@ -35,6 +35,7 @@ static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
 	struct bt_l2cap_le_chan le;
 	bool in_use;
+	bool hold_credit;
 	struct net_buf *pending_credit;
 } channels[CHANNELS];
 
@@ -60,7 +61,7 @@ static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
 
-	if (!chan->pending_credit) {
+	if (chan->hold_credit && !chan->pending_credit) {
 		/* no need for extra ref, as when returning EINPROGRESS user
 		 * becomes owner of the netbuf
 		 */
@@ -195,9 +196,10 @@ static void connect(uint8_t *data, uint16_t len)
 	uint16_t mtu = sys_le16_to_cpu(cmd->mtu);
 	uint8_t buf[sizeof(*rp) + CHANNELS];
 	uint8_t i = 0;
+	bool ecfc = cmd->options & L2CAP_CONNECT_OPT_ECFC;
 	int err;
 
-	if (cmd->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
+	if (cmd->num == 0 || cmd->num > CHANNELS || mtu > DATA_MTU_INITIAL) {
 		goto fail;
 	}
 
@@ -217,20 +219,24 @@ static void connect(uint8_t *data, uint16_t len)
 		chan->le.rx.mtu = mtu;
 		rp->chan_id[i] = chan->chan_id;
 		allocated_channels[i] = &chan->le.chan;
+
+		chan->hold_credit = cmd->options & L2CAP_CONNECT_OPT_HOLD_CREDIT;
 	}
 
-	if (cmd->num == 1 && cmd->ecfc == 0) {
+	if (cmd->num == 1 && !ecfc) {
 		err = bt_l2cap_chan_connect(conn, &chan->le.chan, cmd->psm);
 		if (err < 0) {
 			goto fail;
 		}
-	} else if (cmd->ecfc == 1) {
+	} else if (ecfc) {
 #if defined(CONFIG_BT_L2CAP_ECRED)
 		err = bt_l2cap_ecred_chan_connect(conn, allocated_channels,
 							cmd->psm);
 		if (err < 0) {
 			goto fail;
 		}
+#else
+		goto fail;
 #endif
 	} else {
 		LOG_ERR("Invalid 'num' parameter value");
@@ -456,6 +462,10 @@ static void listen(uint8_t *data, uint16_t len)
 	/* TODO: Handle cmd->transport flag */
 
 	if (!is_free_psm(cmd->psm)) {
+		goto fail;
+	}
+
+	if (cmd->psm == 0) {
 		goto fail;
 	}
 
