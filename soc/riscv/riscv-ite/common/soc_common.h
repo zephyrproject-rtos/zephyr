@@ -53,6 +53,7 @@ void timer_5ms_one_shot(void);
 #endif
 
 void chip_pll_ctrl(enum chip_pll_mode mode);
+void riscv_idle(enum chip_pll_mode mode, unsigned int key);
 
 #endif /* !_ASMLANGUAGE */
 
