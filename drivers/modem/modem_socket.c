@@ -243,6 +243,7 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	memset(&sock->packet_sizes, 0, sizeof(sock->packet_sizes));
 	sock->packet_count = 0;
 	k_sem_reset(&sock->sem_data_ready);
+	k_poll_signal_reset(&sock->sem_poll);
 
 	k_sem_give(&cfg->sem_lock);
 }
@@ -252,8 +253,8 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
  */
 
 /*
- * FIXME: The design here makes the poll function non-reentrant. If two
- * different threads poll on two different sockets we'll end up with unexpected
+ * FIXME: The design here makes the poll function non-reentrant for same sockets.
+ * If two different threads poll on two identical sockets we'll end up with unexpected
  * behavior - the higher priority thread will be unblocked, regardless on which
  * socket it polled. I think we could live with such limitation though in the
  * initial implementation, but this should be improved in the future.
@@ -265,11 +266,11 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 	int ret, i;
 	uint8_t found_count = 0;
 
-	if (!cfg) {
+	if (!cfg || nfds > CONFIG_NET_SOCKETS_POLL_MAX) {
 		return -EINVAL;
 	}
-
-	k_sem_reset(&cfg->sem_poll);
+	struct k_poll_event events[nfds];
+	int eventcount = 0;
 
 	for (i = 0; i < nfds; i++) {
 		sock = modem_socket_from_fd(cfg, fds[i].fd);
@@ -282,17 +283,12 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 				found_count++;
 				break;
 			} else if (fds[i].events & ZSOCK_POLLIN) {
+				k_sem_take(&cfg->sem_lock, K_FOREVER);
 				sock->is_polled = true;
-
-				/*
-				 * Handle check done after data reception on
-				 * the socket. In this case that was received
-				 * but as the socket wasn't polled, no sem_poll
-				 * semaphore was given at that time. Therefore
-				 * if there is a polled socket with data,
-				 * increment found_count to escape the
-				 * k_sem_take().
-				 */
+				k_poll_signal_reset(&sock->sem_poll);
+				k_poll_event_init(&events[eventcount++], K_POLL_TYPE_SIGNAL,
+						  K_POLL_MODE_NOTIFY_ONLY, &sock->sem_poll);
+				k_sem_give(&cfg->sem_lock);
 				if (sock->packet_sizes[0] > 0U) {
 					found_count++;
 					break;
@@ -304,7 +300,12 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 	/* Avoid waiting on semaphore if we have already found an event */
 	ret = 0;
 	if (!found_count) {
-		ret = k_sem_take(&cfg->sem_poll, K_MSEC(msecs));
+		k_timeout_t timeout = K_FOREVER;
+
+		if (msecs >= 0) {
+			timeout = K_MSEC(msecs);
+		}
+		ret = k_poll(events, eventcount, timeout);
 	}
 	/* Reset counter as we reiterate on all polled sockets */
 	found_count = 0;
@@ -322,8 +323,7 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 		if (fds[i].events & ZSOCK_POLLOUT) {
 			fds[i].revents |= ZSOCK_POLLOUT;
 			found_count++;
-		} else if ((fds[i].events & ZSOCK_POLLIN) &&
-			   (sock->packet_sizes[0] > 0U)) {
+		} else if ((fds[i].events & ZSOCK_POLLIN) && (sock->packet_sizes[0] > 0U)) {
 			fds[i].revents |= ZSOCK_POLLIN;
 			found_count++;
 		}
@@ -364,7 +364,7 @@ void modem_socket_data_ready(struct modem_socket_config *cfg,
 
 	if (sock->is_polled) {
 		/* unblock poll() */
-		k_sem_give(&cfg->sem_poll);
+		k_poll_signal_raise(&sock->sem_poll, 0);
 	}
 
 	k_sem_give(&cfg->sem_lock);
@@ -375,10 +375,10 @@ int modem_socket_init(struct modem_socket_config *cfg,
 {
 	int i;
 
-	k_sem_init(&cfg->sem_poll, 0, 1);
 	k_sem_init(&cfg->sem_lock, 1, 1);
 	for (i = 0; i < cfg->sockets_len; i++) {
 		k_sem_init(&cfg->sockets[i].sem_data_ready, 0, 1);
+		k_poll_signal_init(&cfg->sockets[i].sem_poll);
 		cfg->sockets[i].id = cfg->base_socket_num - 1;
 	}
 

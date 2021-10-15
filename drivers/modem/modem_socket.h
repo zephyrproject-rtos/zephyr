@@ -38,6 +38,8 @@ __net_socket struct modem_socket {
 
 	/** data ready semaphore */
 	struct k_sem sem_data_ready;
+	/** data ready poll signal */
+	struct k_poll_signal sem_poll;
 
 	/** socket state */
 	bool is_connected;
@@ -54,7 +56,6 @@ struct modem_socket_config {
 
 	/* beginning socket id (modems can set this to 0 or 1 as needed) */
 	int base_socket_num;
-	struct k_sem sem_poll;
 	struct k_sem sem_lock;
 
 	const struct socket_op_vtable *vtable;
