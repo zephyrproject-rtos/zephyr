@@ -739,6 +739,9 @@ struct l2cap_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
+#define L2CAP_CONNECT_OPT_ECFC		0x01
+#define L2CAP_CONNECT_OPT_HOLD_CREDIT	0x02
+
 #define L2CAP_CONNECT			0x02
 struct l2cap_connect_cmd {
 	uint8_t address_type;
@@ -746,7 +749,7 @@ struct l2cap_connect_cmd {
 	uint16_t psm;
 	uint16_t mtu;
 	uint8_t num;
-	uint8_t ecfc;
+	uint8_t options;
 } __packed;
 struct l2cap_connect_rp {
 	uint8_t num;
