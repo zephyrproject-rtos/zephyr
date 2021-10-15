@@ -247,7 +247,9 @@
 #define BQ35100_FLASH_FULL_UNSEAL_STEP1                0x41D0
 #define BQ35100_FLASH_FULL_UNSEAL_STEP2                0x41D2
 
-#define BQ35100_DEVICE_TYPE_ID                         0x100 
+#define BQ35100_DEVICE_TYPE_ID                         0x100
+
+#define BQ35100_DEFAULT_SEAL_CODES                     0x04143672
 
 /*
  * I2C helper bit masks
@@ -271,11 +273,14 @@ enum bq35100_security{
     BQ35100_SECURITY_SEALED = 0x03 // Normal operating mode, prevents accidental writes
 };
 
+enum bq35100_security bq35100_current_security_mode;
+
 struct bq35100_data {
 	uint16_t temperature;
 	uint16_t voltage;
 	uint16_t avg_current;
 	uint16_t state_of_charge;
+	uint32_t acc_capacity;
 };
 
 struct bq35100_config {
