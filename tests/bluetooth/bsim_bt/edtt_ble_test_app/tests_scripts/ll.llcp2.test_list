@@ -6,10 +6,10 @@ LL/CON/SLA/BV-33-C
 LL/CON/SLA/BV-34-C
 LL/CON/SLA/BV-40-C
 LL/CON/SLA/BV-42-C
-#LL/CON/SLA/BV-77-C #currently failing, to be investigated
-#LL/CON/SLA/BV-78-C #currently failing, to be investigated
-#LL/CON/SLA/BV-80-C #currently failing, to be investigated
-#LL/CON/SLA/BV-81-C #currently failing, to be investigated
+#LL/CON/SLA/BV-77-C # requires update in EDTT due to change in DLE algorithm
+#LL/CON/SLA/BV-78-C # requires update in EDTT due to change in DLE algorithm
+#LL/CON/SLA/BV-80-C # requires update in EDTT due to change in DLE algorithm
+#LL/CON/SLA/BV-81-C # requires update in EDTT due to change in DLE algorithm
 LL/DDI/ADV/BV-01-C
 LL/DDI/ADV/BV-02-C
 LL/DDI/ADV/BV-03-C
