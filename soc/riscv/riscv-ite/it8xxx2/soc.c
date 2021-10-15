@@ -141,14 +141,14 @@ SYS_INIT(chip_change_pll, POST_KERNEL, 0);
 
 extern volatile int wait_interrupt_fired;
 
-static ALWAYS_INLINE void riscv_idle(unsigned int key)
+void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 {
 	/* Disable M-mode external interrupt */
 	csr_clear(mie, MIP_MEIP);
 
 	sys_trace_idle();
 	/* Chip doze after wfi instruction */
-	chip_pll_ctrl(CHIP_PLL_DOZE);
+	chip_pll_ctrl(mode);
 	/* Set flag before entering low power mode. */
 	wait_interrupt_fired = 1;
 	/* unlock interrupts */
@@ -173,12 +173,12 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
 
 void arch_cpu_idle(void)
 {
-	riscv_idle(MSTATUS_IEN);
+	riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	riscv_idle(key);
+	riscv_idle(CHIP_PLL_DOZE, key);
 }
 
 static int ite_it8xxx2_init(const struct device *arg)
