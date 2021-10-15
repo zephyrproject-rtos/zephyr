@@ -433,9 +433,14 @@ Drivers and Sensors
 
 * IPM
 
-  * STM32: Add HSEM based IPM driver for STM32H7 series
+  * Added STM32 HSEM IPM driver.
 
 * Interrupt Controller
+
+
+* IPM
+
+  * STM32: Add HSEM based IPM driver for STM32H7 series
 
 * LED
 
