@@ -2,12 +2,76 @@
 
 .. _zephyr_2.7:
 
-Zephyr 2.7.0 (Working draft)
-############################
+Zephyr 2.7.0
+############
 
-We are pleased to announce the release of Zephyr RTOS version 2.7.0.
+We are pleased to announce the release of Zephyr RTOS version 2.7.0 (LTS2).
 
+Major enhancements since v2.6.0 include:
 
+* Bluetooth Audio, Direction Finding, and Mesh improvements
+* Support for Bluetooth Advertisement PDU Chaining
+* Added support for armclang / armlinker toolchain
+* Added support for MWDT C / C++ toolchain
+* Update to CMSIS v5.8.0 (Core v5.5.0, DSP v1.9.0)
+* Support for M-Profile Vector Extensions (MVE) on ARMv8.1-M
+* Improved thread safety for Newlib and C++ on SMP-capable systems
+* IEEE 802.15.4 Software Address Filtering
+* New Action-based Power Management API
+* USB Device Framework now includes all Chapter 9 defines and structures
+* Generic System Controller (``syscon``) driver and emulator
+* Linker Support for Tightly-Coupled Memory in RISC-V
+* Additional Blocking API calls for LoRa
+* Support for extended PCI / PCIe capabilities, improved MIS-X support
+* Added Support for Service Type Enumeration (STE) with mDNS / DNS Service Discovery
+* Added Zephyr Thread Awareness for OpenOCD to West
+* EEPROM now can be emulated in flash
+* Added both Ethernet MDIO and Ethernet generic PHY drivers
+
+Additional Major enhancements since v1.14.0 (LTS1) include:
+
+* The kernel now supports both 32- and 64-bit architectures
+* We added support for SOCKS5 proxy
+* Introduced support for 6LoCAN, a 6Lo adaption layer for Controller Area Networks
+* We added support for Point-to-Point Protocol (PPP)
+* We added support for UpdateHub, an end-to-end solution for over-the-air device updates
+* We added support for ARM Cortex-R Architecture
+* Normalized APIs across all architectures
+* Expanded support for ARMv6-M architecture
+* Added support for numerous new boards and shields
+* Added numerous new drivers and sensors
+* Added BLE support on Vega platform
+* Memory size improvements to Bluetooth host stack
+* We added initial support for 64-bit ARMv8-A architecture
+* CANopen protocol support through 3rd party CANopenNode stack
+* LoRa support was added along with the SX1276 LoRa modem driver
+* A new Zephyr CMake package has been introduced
+* A new Devicetree API which provides access to virtually all DT nodes and properties
+* The kernel timeout API has been overhauled
+* A new k_heap/sys_heap allocator, with improved performance
+* Zephyr now integrates with the TF-M (Trusted Firmware M) PSA-compliant framework
+* The Bluetooth Low Energy Host now supports LE Advertising Extensions
+* The CMSIS-DSP library is now included and integrated
+* Introduced initial support for virtual memory management
+* Added Bluetooth host support for periodic advertisement and isochronous channels.
+* Added a new TCP stack which improves network protocol testability
+* Introduced a new toolchain abstraction with initial support for GCC and LLVM/Clang
+* Moved to using C99 integer types and deprecate Zephyr integer types
+* Introduced support for the SPARC architecture and the LEON implementation
+* Added Thread Local Storage (TLS) support
+* Added support for per thread runtime statistics
+* Added support for building with LLVM on X86
+* Added new synchronization mechanisms using Condition Variables
+* Add support for demand paging, initial support on X86
+* Logging subsystem overhauled
+* Added support for 64-bit ARCv3
+* Split ARM32 and ARM64, ARM64 is now a top-level architecture
+* Added initial support for Arm v8.1-m and Cortex-M55
+* Removed legacy TCP stack support which was deprecated in 2.4
+* Tracing subsystem overhaul / added support for Percepio Tracealyzer
+* Device runtime power management (PM) completely overhauled
+* Automatic SPDX SBOM generation has been added to West
+* Added an example standalone Zephyr application
 
 The following sections provide detailed lists of changes by component.
 
