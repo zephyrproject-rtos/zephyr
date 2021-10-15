@@ -27,6 +27,7 @@ config BT_ATT_PREPARE_COUNT
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
+	select EXPERIMENTAL
 	help
 	  This option enables support for Enhanced ATT bearers support. When
 	  enabled additional L2CAP channels can be connected as bearers enabling
