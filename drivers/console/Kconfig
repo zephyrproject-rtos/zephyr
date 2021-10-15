@@ -328,6 +328,7 @@ config UART_MUX
 	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
 	select UART_INTERRUPT_DRIVEN
+	select EXPERIMENTAL
 	help
 	  Enable this option to create UART muxer that run over a physical
 	  UART. The GSM 07.10 muxing protocol is used to separate the data

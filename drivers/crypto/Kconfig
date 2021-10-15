@@ -8,6 +8,7 @@
 #
 menuconfig CRYPTO
 	bool "Crypto Drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 if CRYPTO
 
@@ -29,6 +30,7 @@ config CRYPTO_TINYCRYPT_SHIM
 	select TINYCRYPT_AES_CTR
 	select TINYCRYPT_AES_CCM
 	select TINYCRYPT_AES_CMAC
+	select EXPERIMENTAL
 	help
 	  Enable TinyCrypt shim layer compliant with crypto APIs.
 
@@ -51,6 +53,7 @@ config CRYPTO_MBEDTLS_SHIM
 	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
+	select EXPERIMENTAL
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
 	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
