@@ -12,6 +12,7 @@ config BT_ISO_UNICAST
 	bool "Bluetooth Isochronous Channel Unicast Support [EXPERIMENTAL]"
 	depends on BT_CONN
 	select BT_ISO
+	select EXPERIMENTAL
 	help
 	  This option enables support for Bluetooth Broadcast
 	  Isochronous channels.
@@ -34,6 +35,7 @@ config BT_ISO_SYNC_RECEIVER
 	select BT_ISO_BROADCAST
 	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
+	select EXPERIMENTAL
 	help
 	  This option enables support for the Bluetooth Isochronous
 	  Synchronized Receiver.
