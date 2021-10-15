@@ -38,7 +38,7 @@ static int bq35100_bus_access(const struct device *dev, uint8_t reg,
 				      BQ35100_TO_I2C_REG(reg),
 				      data, length);
 	} else {
-		if (length != 2) {
+		if (length != 2 || length != 3) {
 			return -EINVAL;
 		}
 
@@ -102,13 +102,14 @@ static int bq35100_reg_write(const struct device *dev,
 {
 	LOG_DBG("[0x%x] = 0x%x", reg_addr, reg_data);
 
-	uint8_t buf[2];
+	uint8_t buf[3];
 
 	/* Little Endian */
 	buf[0] = (uint8_t)reg_data;
 	buf[1] = (uint8_t)(reg_data >> 8);
+	buf[2] = (uint8_t)(reg_data >> 16);
 
-	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf, 2);
+	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf, 3);
 }
 
 /**
@@ -136,6 +137,7 @@ static int bq35100_control_reg_write(const struct device *dev,
  * Read the response data of the previous subcommand from the device.
  * @param dev - The device structure.
  * @param data - The data response from the previous subcommand
+ * @param length - Number of bytes being read
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_control_reg_read(const struct device *dev,
@@ -153,129 +155,101 @@ static int bq35100_control_reg_read(const struct device *dev,
 	return ret;
 }
 
-bool BQ35100::setSecurityMode(bq35100_security_t new_security) {
-    bool success = false;
-    char data[4];
-
-    if (new_security == _security_mode) {
-        return true; // We are already in this mode
-    }
-
-    if (new_security == SECURITY_UNKNOWN) {
-        tr_error("Invalid access mode");
-        return false;
-    }
-
-    // For reasons that aren't clear, the BQ35100 sometimes refuses
-    // to change security mode if a previous security mode change
-    // happend only a few seconds ago, hence the retry here
-
-	//seal & unseal-gauge start & stop
-    for (auto x = 0; (x < MBED_CONF_BQ35100_RETRY) && !success; x++) {
-        data[0] = CMD_MAC;
-
-        switch (new_security) {
-            case SECURITY_SEALED:
-                tr_debug("Setting security to SEALED");
-                sendCntl(CNTL_SEAL);
-                break;
-
-            case SECURITY_FULL_ACCESS: {//**
-                // Unseal first if in Sealed mode
-                if (_security_mode == SECURITY_SEALED && !setSecurityMode(SECURITY_UNSEALED)) {
-                    return false;
-                }
-
-                if (!readExtendedData(0X41D0, data, sizeof(data)/*4*/)) {//**cntrl_reg_read
-                    tr_error("Could not get full access codes");
-                    return false;
-                }
-
-                uint32_t full_access_codes = (data[0] << 24) + (data[1] << 16) + (data[2] << 8) + data[3];
-
-                tr_debug("Setting security to FULL ACCESS");
-
-                // Send the full access code with endianness conversion
-                // in TWO writes
-                data[2] = (full_access_codes >> 24) & 0xFF;
-                data[1] = (full_access_codes >> 16) & 0xFF;
-
-                if (write(data, 3)) {
-                    data[2] = (full_access_codes >> 8) & 0xFF;
-                    data[1] = full_access_codes & 0xFF;
-                    write(data, 3);
-                }
-            }
-            break;
-
-            case SECURITY_UNSEALED: {
-                // Seal first if in Full Access mode
-                if (_security_mode == SECURITY_FULL_ACCESS && !setSecurityMode(SECURITY_SEALED)) {
-                    return false;
-                }
-
-                tr_debug("Setting security to UNSEALED");
-
-                data[2] = (_seal_codes >> 24) & 0xFF;
-                data[1] = (_seal_codes >> 16) & 0xFF;
-
-                if (write(data, 3)) {
-                    data[2] = (_seal_codes >> 8) & 0xFF;
-                    data[1] = _seal_codes & 0xFF;
-
-                    write(data, 3);
-                }
-            }
-            break;
-
-            case SECURITY_UNKNOWN:
-            default:
-                MBED_ASSERT(false);
-
-                break;
-        }
-
-        ThisThread::sleep_for(40ms); // always wait after writing codes
-        _security_mode = getSecurityMode();
-
-        if (_security_mode == new_security) {
-            success = true;
-            tr_info("Security mode set");
-
-        } else {
-            tr_error("Security mode set failed (wanted 0x%02X, got 0x%02X), will retry", new_security, _security_mode);
-            ThisThread::sleep_for(40ms);
-        }
-    }
-
-    return success;
-}
 /**
- * Enables End-Of-Service (EOS) Mode. 
- * This function follows the steps in bq35100.pdf section of 8.2.2.2.1.2
+ * Change the security mode.
  * @param dev - The device structure.
+ * @param security_mode - The security mode wanted to be set.
  * @return 0 in case of success, negative error code otherwise.
  */
+static int bq35100_set_security_mode(const struct device *dev, enum bq35100_security security_mode)
+{
+	const struct bq35100_config *cfg = dev->config;
+	uint8_t buf[4];
+	buf[0] = BQ35100_CMD_MAC_CONTROL;
 
+	switch (security_mode) {
+	case BQ35100_SECURITY_UNKNOWN:
+		LOG_ERR("Unkown mode");
+			return -EIO;
+		bq35100_current_security_mode = BQ35100_SECURITY_UNKNOWN;
+		break;
 
-static int bq35100_enable_EOS_mode(const struct device *dev)
+	case  BQ35100_SECURITY_FULL_ACCESS:
+		if (security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+			LOG_ERR("Unseal first if in Sealed mode");
+			return -EIO;
+		}
+
+		uint32_t full_access_codes = bq35100_reg_read(dev, BQ35100_FLASH_FULL_UNSEAL_STEP1, buf, 4);
+			
+		if (full_access_codes < 0){
+			LOG_ERR("Unable to read from DataFlash");
+			return -EIO;
+		}
+
+		full_access_codes = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
+			
+		buf[2] = (full_access_codes >> 24) & 0xFF;
+        buf[1] = (full_access_codes >> 16) & 0xFF;
+
+		if (/*?*/) {
+			buf[2] = (full_access_codes >> 8) & 0xFF;
+			buf[1] = full_access_codes & 0xFF;
+			bq35100_reg_write(dev, cfg->i2c_addr, buf);
+		}
+		bq35100_current_security_mode = BQ35100_SECURITY_FULL_ACCESS;
+		break;
+
+	case BQ35100_SECURITY_UNSEALED:
+		if (security_mode == BQ35100_SECURITY_FULL_ACCESS && !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)){
+			LOG_ERR("Seal first if in Full Access mode");
+			return -EIO;
+		}
+
+		buf[2] = (BQ35100_DEFAULT_SEAL_CODES >> 24) & 0xFF;
+		buf[1] = (BQ35100_DEFAULT_SEAL_CODES >> 16) & 0xFF;
+
+		if (/*?*/) {
+			buf[2] = (BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF;
+			buf[1] = BQ35100_DEFAULT_SEAL_CODES & 0xFF;
+			bq35100_reg_write(dev, cfg->i2c_addr, buf);
+		}
+		bq35100_current_security_mode = BQ35100_SECURITY_UNSEALED;
+		break;
+	case BQ35100_SECURITY_SEALED:
+
+		bq35100_current_security_mode = BQ35100_SECURITY_SEALED;
+		break;
+	default:
+		LOG_ERR("Unkown mode");
+			return -EIO;
+		break;
+	}
+	k_sleep(K_MSEC(100));
+	return 0;
+}
+	
+
+/**
+ * Set Gauge Mode. 
+ * This function follows the steps in bq35100.pdf section of 8.2.2.2.1.2
+ * @param dev - The device structure.
+ * @param gauge_mode - The Gauge mode wanted to be set
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_set_gauge_mode(const struct device *dev, enum bq35100_gauge_mode gauge_mode)
 {
 	int status;
+	uint8_t buf[1];
 
-	/* Assumed steps 1 & 2 have already done */
-	status = bq35100_gauge_start(dev); //Step 3.
-	if (status < 0) {
-		LOG_ERR("Unable to start gauge");
-		return -EIO;
+	if (bq35100_current_security_mode == BQ35100_UNKNOWN_MODE || bq35100_current_security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+		LOG_ERR("Wrong Sealing Mode");
+			return -EIO;
 	}
 
-	status = bq35100_gauge_stop(dev);  //Step 4.
-	if (status < 0) {
-		LOG_ERR("Unable to stop gauge");
-		return -EIO;
-	}
+	
 
-
+	k_sleep(K_MSEC(100));
 	return 0;
 }
 
