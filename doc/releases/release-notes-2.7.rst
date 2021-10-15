@@ -557,10 +557,6 @@ Networking
     address info entries, when multiple IP addresses were obtained from the
     server.
 
-* DNS-SD:
-
-  * Added Service Type Enumeration support (`_services._dns_sd._udp.local`)
-
 * HTTP:
 
   * Switched the library to use ``zsock_*`` API, to improve compatibility with
