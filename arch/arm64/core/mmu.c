@@ -668,6 +668,14 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .start = __rodata_region_start,
 	  .end   = __rodata_region_end,
 	  .attrs = MT_NORMAL | MT_P_RO_U_RO | MT_DEFAULT_SECURE_STATE },
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	/* Mark nocache segment noncachable, read-write and execute-never */
+	{ .name  = "nocache_data",
+	  .start = _nocache_ram_start,
+	  .end   = _nocache_ram_end,
+	  .attrs = MT_NORMAL_NC | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
+#endif
 };
 
 static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
