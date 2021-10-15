@@ -188,6 +188,18 @@ static int simplelink_mgmt_disconnect(const struct device *dev)
 	return ret ? -EIO : ret;
 }
 
+static int simplelink_mgmt_ap(const struct device *dev,
+	struct wifi_connect_req_params *params)
+{
+	return z_simplelink_ap(params);
+}
+
+static int simplelink_mgmt_ap_stop(const struct device *dev)
+{
+	LOG_ERR("stop");
+	return z_simplelink_ap_stop();
+}
+
 static int simplelink_dummy_get(sa_family_t family,
 				enum net_sock_type type,
 				enum net_ip_protocol ip_proto,
@@ -267,6 +279,8 @@ static const struct net_wifi_mgmt_offload simplelink_api = {
 	.scan		= simplelink_mgmt_scan,
 	.connect	= simplelink_mgmt_connect,
 	.disconnect	= simplelink_mgmt_disconnect,
+	.ap_enable	= simplelink_mgmt_ap,
+	.ap_disable	= simplelink_mgmt_ap_stop,
 };
 
 static int simplelink_init(const struct device *dev)

@@ -47,4 +47,49 @@ config WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT
 	  timeout, the SimpleLink driver will fail to initialize,
 	  and LOG an error.
 
+config WIFI_SIMPLELINK_AP_COUNTRY_CODE
+	string "AP country code"
+	default "US"
+
+config WIFI_SIMPLELINK_AP_IP_ADDR
+	string "AP IPv4 address"
+	default "192.0.2.1"
+	help
+	  Static IP used in AP mode
+
+config WIFI_SIMPLELINK_AP_IP_GW
+	string "AP IPv4 gateway"
+	default "192.0.2.1"
+	help
+	  Static gateway used in AP mode
+
+config WIFI_SIMPLELINK_AP_IP_NETMASK
+	string "AP IPv4 netmask"
+	default "255.255.255.0"
+	help
+	  Static netmask used in AP mode
+
+config WIFI_SIMPLELINK_AP_DHCP
+	bool "Use DHCP server in AP mode"
+	help
+	  Enable DHCP server
+
+config WIFI_SIMPLELINK_AP_DHCP_LEASE_TIME
+	int "DHCP lease time"
+	default 5000
+	range 1 9999
+	depends on WIFI_SIMPLELINK_AP_DHCP
+	help
+	  DHCP server lease time, seconds
+
+config WIFI_SIMPLELINK_AP_DHCP_BEGIN
+	string "First IP used by DHCP"
+	default "192.0.2.10"
+	depends on WIFI_SIMPLELINK_AP_DHCP
+
+config WIFI_SIMPLELINK_AP_DHCP_END
+	string "Last IP used by DHCP"
+	default "192.0.2.16"
+	depends on WIFI_SIMPLELINK_AP_DHCP
+
 endif # WIFI_SIMPLELINK

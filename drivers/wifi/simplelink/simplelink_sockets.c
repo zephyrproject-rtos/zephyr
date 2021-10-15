@@ -963,8 +963,31 @@ exit:
 static ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg,
 				  int flags)
 {
-	errno = -ENOTSUP;
-	return -1;
+	if (!msg)
+		return 0;
+	ssize_t len = 0;
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		struct iovec *vec = msg->msg_iov + i;
+		size_t sent = 0;
+
+		while (sent < vec->iov_len) {
+			uint8_t *ptr = (uint8_t *)vec->iov_base + sent;
+			size_t left = vec->iov_len - sent;
+
+			left = MIN(left, 1460); /* 1460 - cc32xx MTU */
+
+			ssize_t ret = simplelink_sendto(obj, ptr, left,  flags,
+					msg->msg_name, msg->msg_namelen);
+			if (ret < 0)
+				return ret;
+			else if (ret == 0)
+				ret = left;
+			sent += ret;
+		}
+		len += sent;
+	}
+	return len;
 }
 
 /* Adds address info entry to a list */
@@ -1083,8 +1106,8 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 		service, &sl_hints, &sl_res);
 
 	if (retval < 0) {
-		LOG_ERR("Could not resolve name: %s, retval: %d",
-			    node, retval);
+		LOG_DBG("Could not resolve name: %s, retval: %d",
+			    log_strdup(node), retval);
 		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
@@ -1174,6 +1197,9 @@ static int simplelink_ioctl(void *obj, unsigned int request, va_list args)
 
 		return simplelink_poll(fds, nfds, timeout);
 	}
+
+	case ZFD_IOCTL_SET_LOCK:
+		return -EOPNOTSUPP;
 
 	/* Otherwise, just forward to offloaded fcntl()
 	 * In Zephyr, fcntl() is just an alias of ioctl().

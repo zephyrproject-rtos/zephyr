@@ -44,6 +44,8 @@ extern void z_simplelink_get_mac(unsigned char *mac);
 extern int z_simplelink_init(simplelink_wifi_cb_t wifi_cb);
 extern int z_simplelink_connect(struct wifi_connect_req_params *params);
 extern int z_simplelink_disconnect(void);
+extern int z_simplelink_ap(struct wifi_connect_req_params *params);
+extern int z_simplelink_ap_stop(void);
 
 #ifdef __cplusplus
 }
