@@ -1832,7 +1832,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
 		BT_DBG("Object ID invalid");
 		return -EINVAL;
 	}
@@ -1895,7 +1895,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
 		BT_DBG("Object ID invalid");
 		return -EINVAL;
 	}
@@ -1985,7 +1985,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t obj_id)
 		return -EINVAL;
 	}
 
-	if (obj_id < 0x100) { /* TODO: Add limit define to ots.h, replace magic constant here */
+	CHECKIF(obj_id < BT_OTS_OBJ_ID_MIN || obj_id > BT_OTS_OBJ_ID_MAX) {
 		BT_DBG("Object ID invalid");
 		return -EINVAL;
 	}
