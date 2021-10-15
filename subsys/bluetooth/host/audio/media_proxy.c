@@ -11,6 +11,7 @@
 #include "media_proxy.h"
 #include "media_proxy_internal.h"
 #include <bluetooth/mcc.h>
+#include <bluetooth/services/ots.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MEDIA_PROXY)
 #define LOG_MODULE_NAME media_proxy
@@ -611,6 +612,11 @@ static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_
 
 int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 {
+	CHECKIF(ctrl_cbs == NULL) {
+		BT_DBG("NULL callback pointer");
+		return -EINVAL;
+	}
+
 	mprx.ctrlr.cbs = ctrl_cbs;
 
 	if (mprx.local_player.registered) {
@@ -627,6 +633,11 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 {
 	int err;
+
+	CHECKIF(!conn) {
+		BT_DBG("NUll conn pointer");
+		return -EINVAL;
+	}
 
 	/* Initialize MCC */
 	mcc_cbs.discover_mcs                  = mcc_discover_mcs_cb;
@@ -1076,6 +1087,11 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
 		return -EINVAL;
 	}
 
+	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
+		BT_DBG("Object ID invalid");
+		return -EINVAL;
+	}
+
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->set_current_track_id) {
 			mprx.local_player.calls->set_current_track_id(id);
@@ -1138,6 +1154,11 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
+		BT_DBG("Object ID invalid");
 		return -EINVAL;
 	}
 
@@ -1235,6 +1256,11 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
 {
 	CHECKIF(player == NULL) {
 		BT_DBG("player is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(id < BT_OTS_OBJ_ID_MIN || id > BT_OTS_OBJ_ID_MAX) {
+		BT_DBG("Object ID invalid");
 		return -EINVAL;
 	}
 
