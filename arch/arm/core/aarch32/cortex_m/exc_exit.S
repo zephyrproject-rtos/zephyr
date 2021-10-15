@@ -84,6 +84,8 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 _ExcExitWithGdbStub:
 
 _EXIT_EXC:
+	dsb
+	isb
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_STACK_SENTINEL
