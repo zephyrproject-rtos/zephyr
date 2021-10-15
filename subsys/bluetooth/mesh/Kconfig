@@ -69,6 +69,7 @@ config BT_MESH_PROVISIONER
 config BT_MESH_CDB
 	bool "Mesh Configuration Database [EXPERIMENTAL]"
 	default y if BT_MESH_PROVISIONER
+	select EXPERIMENTAL
 
 if BT_MESH_CDB
 
