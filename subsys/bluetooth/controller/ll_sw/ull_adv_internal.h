@@ -125,12 +125,14 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 #define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(9)
 
 /* helper defined for field offsets in the hdr_set_clear interfaces */
-#define ULL_ADV_HDR_DATA_LEN_OFFSET      0
-#define ULL_ADV_HDR_DATA_LEN_SIZE        1
-#define ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET 1
-#define ULL_ADV_HDR_DATA_ACAD_PTR_SIZE   (sizeof(uint8_t *))
-#define ULL_ADV_HDR_DATA_DATA_PTR_OFFSET 1
-#define ULL_ADV_HDR_DATA_DATA_PTR_SIZE   (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_LEN_OFFSET         0
+#define ULL_ADV_HDR_DATA_LEN_SIZE           1
+#define ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET 1
+#define ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE   (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET    1
+#define ULL_ADV_HDR_DATA_ACAD_PTR_SIZE      (sizeof(uint8_t *))
+#define ULL_ADV_HDR_DATA_DATA_PTR_OFFSET    1
+#define ULL_ADV_HDR_DATA_DATA_PTR_SIZE      (sizeof(uint8_t *))
 
 /* helper function to set/clear common extended header format fields */
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
