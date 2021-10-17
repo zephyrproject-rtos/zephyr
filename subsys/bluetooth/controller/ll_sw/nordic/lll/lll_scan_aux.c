@@ -402,13 +402,13 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+	struct lll_scan_aux *lll_aux;
 	struct node_rx_pdu *node_rx;
-	struct lll_scan *scan_lll;
-	struct lll_scan_aux *lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
-	struct ull_hdr *ull;
 	uint32_t remainder_us;
+	struct lll_scan *lll;
+	struct ull_hdr *ull;
 	uint8_t is_lll_scan;
 	uint32_t remainder;
 	uint32_t hcto;
@@ -416,11 +416,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_O(1);
 
-	lll = p->param;
-	scan_lll = ull_scan_aux_lll_parent_get(lll, &is_lll_scan);
+	lll_aux = p->param;
+	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
 
 	/* Initialize scanning state */
-	lll->state = 0U;
+	lll_aux->state = 0U;
 
 	/* Reset Tx/rx count */
 	trx_cnt = 0U;
@@ -428,9 +428,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Check if this aux scan is for periodic advertising train */
 	if (!is_lll_scan) {
-		lll_sync_aux_prepare_cb((void *) scan_lll, lll);
+		lll_sync_aux_prepare_cb((void *)lll, lll_aux);
 
-		scan_lll = NULL;
+		lll = NULL;
 
 		goto sync_aux_prepare_done;
 	}
@@ -440,11 +440,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on connection establishment race between
 	 * LL and ULL.
 	 */
-	if (unlikely(scan_lll->is_stop ||
-		     (scan_lll->conn &&
-		      (scan_lll->conn->central.initiated ||
-		       scan_lll->conn->central.cancelled)))) {
-		radio_isr_set(isr_early_abort, lll);
+	if (unlikely(lll->is_stop ||
+		     (lll->conn &&
+		      (lll->conn->central.initiated ||
+		       lll->conn->central.cancelled)))) {
+		radio_isr_set(isr_early_abort, lll_aux);
 		radio_disable();
 
 		return 0;
@@ -455,13 +455,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	radio_tx_power_set(lll->tx_pwr_lvl);
+	radio_tx_power_set(lll_aux->tx_pwr_lvl);
 #else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
-	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
+	radio_phy_set(lll_aux->phy, 1);
+	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll_aux->phy << 1));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -473,14 +473,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
 
-	lll_chan_set(lll->chan);
+	lll_chan_set(lll_aux->chan);
 
-	radio_isr_set(isr_rx_ull_schedule, lll);
+	radio_isr_set(isr_rx_ull_schedule, lll_aux);
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(lll->phy, 0, lll->phy, 1);
+	radio_switch_complete_and_tx(lll_aux->phy, 0, lll_aux->phy, 1);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
@@ -488,17 +488,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	} else if (ull_filter_lll_rl_enabled()) {
 		struct lll_filter *filter = ull_filter_lll_get(
-			!!(scan_lll->filter_policy & 0x1));
+			!!(lll->filter_policy & 0x1));
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(filter->enable_bitmask,
 				       filter->addr_type_bitmask,
 				       (uint8_t *) filter->bdaddr);
 
-		radio_ar_configure(count, irks, (lll->phy << 2) | BIT(1));
+		radio_ar_configure(count, irks, (lll_aux->phy << 2) | BIT(1));
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
-		   scan_lll->filter_policy) {
+		   lll->filter_policy) {
 		/* Setup Radio Filter */
 		struct lll_filter *fal = ull_filter_lll_get(true);
 
@@ -512,7 +512,7 @@ sync_aux_prepare_done:
 #endif
 	/* Calculate event timings, coarse and fine */
 	ticks_at_event = p->ticks_at_expire;
-	ull = HDR_LLL2ULL(lll);
+	ull = HDR_LLL2ULL(lll_aux);
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
@@ -521,10 +521,10 @@ sync_aux_prepare_done:
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	hcto = remainder_us + lll->window_size_us;
-	hcto += radio_rx_ready_delay_get(lll->phy, 1);
-	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, 1);
+	hcto = remainder_us + lll_aux->window_size_us;
+	hcto += radio_rx_ready_delay_get(lll_aux->phy, 1);
+	hcto += addr_us_get(lll_aux->phy);
+	hcto += radio_rx_chain_delay_get(lll_aux->phy, 1);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
@@ -539,7 +539,7 @@ sync_aux_prepare_done:
 	radio_gpio_lna_setup();
 
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(lll->phy, 1) -
+				 radio_rx_ready_delay_get(lll_aux->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
@@ -547,9 +547,9 @@ sync_aux_prepare_done:
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
 	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_AUX_BASE +
-				   ull_scan_aux_lll_handle_get(lll)),
+				   ull_scan_aux_lll_handle_get(lll_aux)),
 				   ticks_at_event)) {
-		radio_isr_set(isr_done, lll);
+		radio_isr_set(isr_done, lll_aux);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -560,7 +560,7 @@ sync_aux_prepare_done:
 		/* calc end of group in us for the anchor where next connection
 		 * event to be placed.
 		 */
-		if (scan_lll && scan_lll->conn) {
+		if (lll && lll->conn) {
 			static memq_link_t link;
 			static struct mayfly mfy_after_mstr_offset_get = {
 				0, 0, &link, NULL,
@@ -569,7 +569,7 @@ sync_aux_prepare_done:
 			/* NOTE: LLL scan instance passed, as done when
 			 *       establishing legacy connections.
 			 */
-			p->param = scan_lll;
+			p->param = lll;
 			mfy_after_mstr_offset_get.param = p;
 
 			ret = mayfly_enqueue(TICKER_USER_ID_LLL,
@@ -579,7 +579,7 @@ sync_aux_prepare_done:
 		}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-		ret = lll_prepare_done(lll);
+		ret = lll_prepare_done(lll_aux);
 		LL_ASSERT(!ret);
 	}
 
