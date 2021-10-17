@@ -132,7 +132,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_rem_fields,
 				  void *value,
 				  struct pdu_adv_adi *adi,
-				  uint8_t *pri_idx);
+				  uint8_t *pri_idx, uint8_t *sec_idx);
 
 /* helper to initialize extended advertising PDU */
 void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags);
@@ -185,6 +185,16 @@ void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
 /* helper function to handle adv aux done events */
 void ull_adv_aux_done(struct node_rx_event_done *done);
 
+void ull_adv_aux_chain_pdu_append(struct pdu_adv *pdu,
+				  struct pdu_adv_aux_ptr *aux_ptr,
+				  uint8_t phy_s, uint8_t phy_flags,
+				  uint32_t mafs_us, uint8_t chain_count);
+
+void ull_adv_aux_chain_pdu_duplicate(struct pdu_adv *pdu_prev,
+				     struct pdu_adv *pdu,
+				     struct pdu_adv_aux_ptr *aux_ptr,
+				     uint8_t phy_s, uint8_t phy_flags,
+				     uint32_t mafs_us);
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);
