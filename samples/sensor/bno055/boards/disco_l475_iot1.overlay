@@ -1,0 +1,13 @@
+&i2c3 {
+        pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
+
+        status = "okay";
+
+        bno055: bno055@28 {
+                compatible = "bosch,bno055";
+
+                reg = <0x28>;
+
+                label = "BNO055";
+        };
+};

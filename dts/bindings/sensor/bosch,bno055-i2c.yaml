@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: BNO055 accelerometer, gyroscope, magnetometer and orientation sensor
+
+compatible: "bosch,bno055"
+
+include: i2c-device.yaml

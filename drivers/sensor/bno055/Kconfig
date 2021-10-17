@@ -1,0 +1,47 @@
+# BNO055 accelerometer, gyroscope, magnetometer and orientation sensor
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BNO055
+	bool "BNO055 sensor"
+	depends on I2C
+	help
+	  Enable driver for BNO055 I2C-based accelerometer, gyroscope, magnetometer and orientation.
+
+if BNO055
+
+choice
+	prompt "BNO055 operation Mode"
+	default BNO055_OPERATION_MODE_NDOF
+	help
+	   Operation mode settings for the BNO055 sensor.
+
+config BNO055_OPERATION_MODE_IMUPLUS
+	bool "IMU Mode"
+	help
+	  Inertial measurement unit. Reads accel,gyro and fusion data.
+
+config BNO055_OPERATION_MODE_COMPASS
+	bool "COMPASS Mode"
+	help
+	  Reads accel, mag data and fusion data.
+
+config BNO055_OPERATION_MODE_M4G
+	bool "M4G Mode"
+	help
+	  Reads accel, mag data and fusion data.
+
+config BNO055_OPERATION_MODE_NDOF_FMC_OFF
+	bool "NODF FMC OFF Mode"
+	help
+	  Nine degrees of freedom with fast magnetic calibration off.
+	  Reads accel,mag, gyro and fusion data.
+
+config BNO055_OPERATION_MODE_NDOF
+	bool "NDOF MODE"
+	help
+	  Nine degrees of freedom.
+	  Reads accel,mag, gyro and fusion data.
+
+endchoice
+
+endif # BNO055

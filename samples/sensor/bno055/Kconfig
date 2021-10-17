@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+config I2C
+	default y
+
+source "Kconfig.zephyr"
