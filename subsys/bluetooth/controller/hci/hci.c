@@ -5130,6 +5130,77 @@ static uint8_t ext_adv_direct_addr_type(struct lll_scan *lll,
 	}
 }
 
+static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
+				uint8_t *const sec_phy, uint8_t **const data)
+{
+	struct pdu_adv *adv = (void *)node_rx_data->pdu;
+	struct pdu_adv_com_ext_adv *p;
+	struct pdu_adv_ext_hdr *h;
+	uint8_t hdr_buf_len;
+	uint8_t hdr_len;
+	uint8_t *ptr;
+
+	p = (void *)&adv->adv_ext_ind;
+	h = (void *)p->ext_hdr_adv_data;
+	ptr = (void *)h;
+
+	if (!p->ext_hdr_len) {
+		hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
+
+		goto no_ext_hdr;
+	}
+
+	ptr = h->data;
+
+	if (h->adv_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->tgt_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->adi) {
+		ptr += sizeof(struct pdu_adv_adi);
+	}
+
+	if (h->aux_ptr) {
+		struct pdu_adv_aux_ptr *aux_ptr;
+
+		aux_ptr = (void *)ptr;
+		ptr += sizeof(*aux_ptr);
+
+		*sec_phy = aux_ptr->phy + 1;
+	}
+
+	if (h->sync_info) {
+		ptr += sizeof(struct pdu_adv_sync_info);
+	}
+
+	if (h->tx_pwr) {
+		ptr++;
+	}
+
+	hdr_len = ptr - (uint8_t *)p;
+	hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
+	if (hdr_len < hdr_buf_len) {
+		/* ACAD */
+		uint8_t len = hdr_buf_len - hdr_len;
+
+		ptr += len;
+		hdr_len += len;
+	}
+
+no_ext_hdr:
+	if (hdr_len < adv->len) {
+		*data = ptr;
+
+		return adv->len - hdr_len;
+	}
+
+	return 0;
+}
+
 static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
 {
 	while (node_rx_extra) {
@@ -5204,34 +5275,91 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	(void)memcpy(adv_info->data, data, data_len);
 }
 
+static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
+			     uint8_t adv_addr_type, uint8_t *adv_addr,
+			     uint8_t direct_addr_type, uint8_t *direct_addr,
+			     uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
+			     uint16_t interval_le16, struct pdu_adv_adi *adi,
+			     uint8_t data_len_max, uint8_t *data_len_total,
+			     uint8_t *data_len, uint8_t **data,
+			     struct net_buf *buf, struct net_buf **evt_buf)
+{
+	uint8_t data_len_frag;
+
+	data_len_frag = MIN(*data_len, data_len_max);
+	do {
+		ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type,
+				  adv_addr, direct_addr_type, direct_addr,
+				  rl_idx, tx_pwr, rssi, interval_le16, adi,
+				  data_len_frag, *data, *evt_buf);
+
+		*data += data_len_frag;
+		*data_len -= data_len_frag;
+		*data_len_total -= data_len_frag;
+
+		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+		net_buf_frag_add(buf, *evt_buf);
+	} while (*data_len > data_len_max);
+}
+
+static void ext_adv_data_frag(struct node_rx_pdu *node_rx_data,
+			      uint8_t evt_type, uint8_t phy, uint8_t *sec_phy,
+			      uint8_t adv_addr_type, uint8_t *adv_addr,
+			      uint8_t direct_addr_type, uint8_t *direct_addr,
+			      uint8_t rl_idx, int8_t tx_pwr, int8_t rssi,
+			      uint16_t interval_le16, struct pdu_adv_adi *adi,
+			      uint8_t data_len_max, uint8_t data_len_total,
+			      uint8_t *data_len, uint8_t **data,
+			      struct net_buf *buf, struct net_buf **evt_buf)
+{
+	evt_type |= (BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL << 5);
+
+	do {
+		ext_adv_pdu_frag(evt_type, phy, *sec_phy, adv_addr_type,
+				 adv_addr, direct_addr_type, direct_addr,
+				 rl_idx, tx_pwr, rssi, interval_le16, adi,
+				 data_len_max, &data_len_total, data_len,
+				 data, buf, evt_buf);
+
+		node_rx_data = node_rx_data->hdr.rx_ftr.extra;
+		if (node_rx_data) {
+			*data_len = ext_adv_data_get(node_rx_data, sec_phy,
+						     data);
+		}
+	} while ((*data_len < data_len_total) || (*data_len > data_len_max));
+}
+
 static void le_ext_adv_report(struct pdu_data *pdu_data,
 			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, uint8_t phy)
 {
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-	struct pdu_adv *adv = (void *)pdu_data;
+	struct node_rx_pdu *node_rx_scan_data = NULL;
+	struct node_rx_pdu *node_rx_data = NULL;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
-	uint8_t total_scan_data_len = 0U;
+	uint8_t scan_data_len_total = 0U;
 	struct pdu_adv_adi *adi = NULL;
 	uint8_t scan_data_status = 0U;
 	uint8_t direct_addr_type = 0U;
-	struct net_buf *scan_evt_buf;
 	uint16_t data_len_total = 0U;
 	uint8_t *direct_addr = NULL;
 	uint16_t interval_le16 = 0U;
 	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
+	uint8_t sec_phy_scan = 0U;
 	uint8_t *scan_data = NULL;
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
+	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
 	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
-	uint8_t data_max_len;
+	uint8_t data_len_max;
 	uint8_t rl_idx = 0U;
 	bool direct = false;
+	struct pdu_adv *adv;
 	int8_t rssi;
 
 	/* NOTE: This function uses a lot of initializers before the check and
@@ -5249,6 +5377,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	rl_idx = ll_rl_size_get();
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+	adv = (void *)pdu_data;
 	node_rx_curr = node_rx;
 	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 	do {
@@ -5436,10 +5565,11 @@ no_ext_hdr:
 			direct_addr = direct_addr_curr;
 			adi = adi_curr;
 			sec_phy = sec_phy_curr;
+			node_rx_data = node_rx_curr;
 			data_len = data_len_curr;
 			data_len_total = data_len;
-			total_scan_data_len = 0U;
 			data = data_curr;
+			scan_data_len_total = 0U;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -5451,6 +5581,8 @@ no_ext_hdr:
 
 			/* Detect the scan response in the list of node_rx */
 			if (node_rx_curr->hdr.rx_ftr.scan_rsp) {
+				node_rx_scan_data = node_rx_curr;
+				sec_phy_scan = sec_phy_curr;
 				scan_data_len = data_len_curr;
 				scan_data = data_curr;
 			}
@@ -5466,21 +5598,14 @@ no_ext_hdr:
 			}
 
 			if (scan_data) {
-				total_scan_data_len += data_len_curr;
-
-				/* TODO: construct new HCI event for this
-				 * fragment.
-				 */
+				scan_data_len_total += data_len_curr;
 			} else if (!data) {
+				node_rx_data = node_rx_curr;
 				data_len = data_len_curr;
 				data_len_total = data_len;
 				data = data_curr;
 			} else {
 				data_len_total += data_len_curr;
-
-				/* TODO: construct new HCI event for this
-				 * fragment.
-				 */
 			}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -5527,34 +5652,8 @@ no_ext_hdr:
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
-	/* FIXME: move most of below into above loop to dispatch fragments of
-	 * data in HCI event.
-	 */
-	data_max_len = ADV_REPORT_EVT_MAX_LEN -
-		       sizeof(struct bt_hci_evt_le_meta_event) -
-		       sizeof(struct bt_hci_evt_le_ext_advertising_report) -
-		       sizeof(struct bt_hci_evt_le_ext_advertising_info);
-
-	/* If data complete */
-	if (!data_status) {
-		if (data_len > data_max_len) {
-			/* Only copy data that fit the event buffer size,
-			 * mark it as partial
-			 */
-			data_len = data_max_len;
-			data_status =
-				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		} else if (data_len < data_len_total) {
-			/* HCI Extended Advertising Report for received
-			 * AUX_CHAIN_IND is not implemented, hence set data
-			 * status to incomplete.
-			 */
-			data_status =
-				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
-		}
-
-	/* else, data incomplete */
-	} else {
+	/* If data incomplete */
+	if (data_status) {
 		/* Data incomplete and no more to come */
 		if (!(adv_addr ||
 		      (adi && ((tx_pwr != BT_HCI_LE_ADV_TX_POWER_NO_PREF) ||
@@ -5569,16 +5668,27 @@ no_ext_hdr:
 			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 			return;
 		}
-
-		/* Only copy data that fit the event buffer size */
-		if (data_len > data_max_len) {
-			data_len = data_max_len;
-		}
 	}
 
 	/* Set directed advertising bit */
 	if (direct_addr) {
 		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
+	}
+
+	/* HCI fragment */
+	evt_buf = buf;
+	data_len_max = ADV_REPORT_EVT_MAX_LEN -
+		       sizeof(struct bt_hci_evt_le_meta_event) -
+		       sizeof(struct bt_hci_evt_le_ext_advertising_report) -
+		       sizeof(struct bt_hci_evt_le_ext_advertising_info);
+
+	if ((data_len < data_len_total) || (data_len > data_len_max)) {
+		ext_adv_data_frag(node_rx_data, evt_type, phy, &sec_phy,
+				  adv_addr_type, adv_addr, direct_addr_type,
+				  direct_addr, rl_idx, tx_pwr, rssi,
+				  interval_le16, adi, data_len_max,
+				  data_len_total, &data_len, &data, buf,
+				  &evt_buf);
 	}
 
 	/* Set data status bits */
@@ -5587,7 +5697,7 @@ no_ext_hdr:
 	/* Start constructing the adv event */
 	ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type, adv_addr,
 			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
-			  interval_le16, adi, data_len, data, buf);
+			  interval_le16, adi, data_len, data, evt_buf);
 
 	/* If scan response event to be constructed */
 	if (!scan_data) {
@@ -5596,43 +5706,36 @@ no_ext_hdr:
 		return;
 	}
 
-	/* Allocate, append as buf fragement and construct the scan response
-	 * event.
-	 */
-	scan_evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-	net_buf_frag_add(buf, scan_evt_buf);
-
-	/* If scan data complete */
-	if (!scan_data_status) {
-		/* Only copy data that fit the event buffer size,
-		 * mark it as incomplete
-		 */
-		if (scan_data_len > data_max_len) {
-			scan_data_len = data_max_len;
-			scan_data_status =
-				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		}
-
-	/* else, data incomplete */
-	} else {
-		/* Only copy data that fit the event buffer size */
-		if (scan_data_len > data_max_len) {
-			scan_data_len = data_max_len;
-		}
-	}
-
 	/* Set scan response bit */
 	evt_type |= BT_HCI_LE_ADV_EVT_TYPE_SCAN_RSP;
 
-	/* set scan data status bits */
+	/* Clear the data status bits */
 	evt_type &= ~(BIT_MASK(2) << 5);
+
+	/* Allocate, append as buf fragement and construct the scan response
+	 * event.
+	 */
+	evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	net_buf_frag_add(buf, evt_buf);
+
+	if ((scan_data_len < scan_data_len_total) ||
+	    (scan_data_len > data_len_max)) {
+		ext_adv_data_frag(node_rx_scan_data, evt_type, phy,
+				  &sec_phy_scan, adv_addr_type, adv_addr,
+				  direct_addr_type, direct_addr, rl_idx, tx_pwr,
+				  rssi, interval_le16, adi, data_len_max,
+				  scan_data_len_total, &scan_data_len,
+				  &scan_data, buf, &evt_buf);
+	}
+
+	/* set scan data status bits */
 	evt_type |= (scan_data_status << 5);
 
 	/* Start constructing the event */
-	ext_adv_info_fill(evt_type, phy, sec_phy, adv_addr_type, adv_addr,
+	ext_adv_info_fill(evt_type, phy, sec_phy_scan, adv_addr_type, adv_addr,
 			  direct_addr_type, direct_addr, rl_idx, tx_pwr, rssi,
 			  interval_le16, adi, scan_data_len, scan_data,
-			  scan_evt_buf);
+			  evt_buf);
 
 	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
@@ -5734,7 +5837,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
 	uint8_t *data = NULL;
-	uint8_t data_max_len;
+	uint8_t data_len_max;
 	uint8_t hdr_buf_len;
 	uint8_t hdr_len;
 	uint8_t *ptr;
@@ -5864,7 +5967,7 @@ no_ext_hdr:
 
 	adv = (void *)node_rx->pdu;
 
-	data_max_len = ADV_REPORT_EVT_MAX_LEN -
+	data_len_max = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
 		       sizeof(*sep);
 
@@ -5873,7 +5976,7 @@ no_ext_hdr:
 	do {
 		uint8_t data_len_frag;
 
-		data_len_frag = MIN(data_len, data_max_len);
+		data_len_frag = MIN(data_len, data_len_max);
 
 		/* Start constructing periodic advertising report */
 		sep = meta_evt(evt_buf,
