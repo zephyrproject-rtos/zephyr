@@ -131,7 +131,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL,
-			      "Injection address base: 0x%lx\n", addr);
+			      "Injection address base: 0x%llx\n", addr);
 	} else {
 		unsigned long value = strtoul(argv[1], NULL, 16);
 
@@ -177,12 +177,12 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL,
-			      "Injection address mask: 0x%lx\n", mask);
+			      "Injection address mask: 0x%llx\n", mask);
 	} else {
 		uint64_t value = strtoul(argv[1], NULL, 16);
 
 		shell_fprintf(shell, SHELL_NORMAL,
-			      "Set injection address mask to %lx\n", value);
+			      "Set injection address mask to %llx\n", value);
 
 		err = edac_inject_set_param2(dev, value);
 		if (err != 0) {
@@ -354,7 +354,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 		return err;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "ECC Error: 0x%lx\n", error);
+	shell_fprintf(shell, SHELL_NORMAL, "ECC Error: 0x%llx\n", error);
 
 	if (error != 0) {
 		decode_ecc_error(shell, error);
@@ -413,7 +413,7 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 		return err;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Parity Error: 0x%lx\n", error);
+	shell_fprintf(shell, SHELL_NORMAL, "Parity Error: 0x%llx\n", error);
 
 	return 0;
 }

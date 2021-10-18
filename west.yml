@@ -62,7 +62,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 051266aafbd966825bad1d9b5ab98e8bed45b918
+      revision: 2308568ea25817f1fa61cc218b3693cc87949c57
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 78efc4ba7c1057c1cf2bf06e3e27ed7cc33e1da7
+      revision: 2b3396864d2c60512038446f487c6dade6da6e04
       path: modules/hal/nxp
       groups:
         - hal
@@ -191,7 +191,7 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: 76feb11d1b8f425021b5691668af2250fee444ac
+      revision: b039018d0adcfe347119094ac29f0fc12b671187
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6

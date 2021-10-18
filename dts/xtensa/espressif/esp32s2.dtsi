@@ -65,10 +65,27 @@
 		};
 
 		uart0: uart@3f400000 {
-			compatible = "espressif,esp32s2-uart";
+			compatible = "espressif,esp32-uart";
 			reg = <0x3f400000 0x400>;
 			label = "UART_0";
+			interrupts = <UART0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART0_MODULE>;
+			current-speed = <115200>;
+			status = "okay";
+			tx-pin = <43>;
+			rx-pin = <44>;
+		};
+
+		uart1: uart@3f410000 {
+			compatible = "espressif,esp32-uart";
+			reg = <0x3f410000 0x400>;
+			label = "UART_1";
 			status = "disabled";
+			interrupts = <UART1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_UART1_MODULE>;
+			current-speed = <115200>;
 		};
 
 		pinmux: pinmux@3f409000 {
@@ -137,6 +154,45 @@
 			compatible = "espressif,esp32-trng";
 			reg = <0x3f435110 0x4>;
 			label = "TRNG_0";
+			status = "disabled";
+		};
+
+		spi2: spi@3f424000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3f424000 DT_SIZE_K(4)>;
+			interrupts = <SPI2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "SPI_2";
+			clocks = <&rtc ESP32_FSPI_MODULE>;
+			status = "disabled";
+			use-iomux;
+		};
+
+		spi3: spi@3f425000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3f425000 DT_SIZE_K(4)>;
+			interrupts = <SPI3_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "SPI_3";
+			clocks = <&rtc ESP32_HSPI_MODULE>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@3f41f048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x3f41f048 0x20>;
+			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_0";
+			status = "disabled";
+		};
+
+		wdt1: watchdog@3f42f048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x3f42f048 0x20>;
+			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_1";
 			status = "disabled";
 		};
 	};

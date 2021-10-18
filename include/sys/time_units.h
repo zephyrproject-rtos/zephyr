@@ -20,6 +20,12 @@ extern "C" {
  */
 #define SYS_FOREVER_MS (-1)
 
+/** @brief System-wide macro to denote "forever" in microseconds
+ *
+ * See @ref SYS_FOREVER_MS.
+ */
+#define SYS_FOREVER_US (-1)
+
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
 #define SYS_TIMEOUT_MS(ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))

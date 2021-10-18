@@ -135,7 +135,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 
 static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 {
-	uint64_t value;
+	uint32_t value;
 	int err = 0;
 
 	switch (width) {
@@ -155,7 +155,7 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 	}
 
 	if (err == 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%lx\n", value);
+		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%x\n", value);
 	}
 
 	return err;
@@ -223,7 +223,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 
 	value = strtoul(argv[3], NULL, 16);
 
-	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%lx\n", value);
+	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%x\n", value);
 
 	return memory_write(sh, addr, width, value);
 }

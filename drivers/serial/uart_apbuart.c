@@ -538,7 +538,7 @@ static const struct uart_driver_api apbuart_driver_api = {
 			    &apbuart##index##_data,			\
 			    &apbuart##index##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &apbuart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APBUART_INIT)

@@ -808,10 +808,10 @@ static inline void async_evt_rx_buf_release(struct uart_stm32_data *data)
 static inline void async_timer_start(struct k_work_delayable *work,
 				     int32_t timeout)
 {
-	if ((timeout != SYS_FOREVER_MS) && (timeout != 0)) {
+	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
 		/* start timer */
-		LOG_DBG("async timer started for %d ms", timeout);
-		k_work_reschedule(work, K_MSEC(timeout));
+		LOG_DBG("async timer started for %d us", timeout);
+		k_work_reschedule(work, K_USEC(timeout));
 	}
 }
 
@@ -1608,7 +1608,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
 		    NULL,						\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		    &uart_stm32_driver_api);				\
 									\
 STM32_UART_IRQ_HANDLER(index)

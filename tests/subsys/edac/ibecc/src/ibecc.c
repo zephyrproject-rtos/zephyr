@@ -163,6 +163,10 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 
 	interrupt = 0;
 
+	/* Test error_trigger() for unset error type */
+	ret = edac_inject_error_trigger(dev);
+	zassert_equal(ret, 0, "Error setting ctrl");
+
 	errors_cor = edac_errors_cor_get(dev);
 	zassert_not_equal(errors_cor, -ENOSYS, "Not implemented error count");
 
@@ -305,6 +309,18 @@ static void test_ibecc_error_inject_test_uc(void)
 }
 #endif
 
+/* Used only for code coverage */
+
+bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf);
+
+static void test_trigger_nmi_handler(void)
+{
+	bool ret;
+
+	ret = z_x86_do_kernel_nmi(NULL);
+	zassert_false(ret, "Test that NMI handling fails");
+}
+
 void test_edac_dummy_api(void);
 
 void test_main(void)
@@ -314,6 +330,7 @@ void test_main(void)
 #endif
 
 	ztest_test_suite(ibecc,
+			 ztest_unit_test(test_trigger_nmi_handler),
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
 			 ztest_unit_test(test_edac_dummy_api),

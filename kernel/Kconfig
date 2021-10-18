@@ -523,6 +523,16 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config EVENTS
+	bool "Enable event objects"
+	help
+	  This option enables event objects. Threads may wait on event
+	  objects for specific events, but both threads and ISRs may deliver
+	  events to event objects.
+
+	  Note that setting this option slightly increases the size of the
+	  thread structure.
+
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
 	default y

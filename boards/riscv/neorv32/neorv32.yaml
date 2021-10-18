@@ -1,0 +1,11 @@
+identifier: neorv32
+name: NEORV32 Processor (SoC)
+type: mcu
+arch: riscv32
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 64
+supported:
+  - gpio

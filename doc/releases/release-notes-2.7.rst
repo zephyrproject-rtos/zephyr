@@ -2,12 +2,76 @@
 
 .. _zephyr_2.7:
 
-Zephyr 2.7.0 (Working draft)
-############################
+Zephyr 2.7.0
+############
 
-We are pleased to announce the release of Zephyr RTOS version 2.7.0.
+We are pleased to announce the release of Zephyr RTOS version 2.7.0 (LTS2).
 
+Major enhancements since v2.6.0 include:
 
+* Bluetooth Audio, Direction Finding, and Mesh improvements
+* Support for Bluetooth Advertisement PDU Chaining
+* Added support for armclang / armlinker toolchain
+* Added support for MWDT C / C++ toolchain
+* Update to CMSIS v5.8.0 (Core v5.5.0, DSP v1.9.0)
+* Support for M-Profile Vector Extensions (MVE) on ARMv8.1-M
+* Improved thread safety for Newlib and C++ on SMP-capable systems
+* IEEE 802.15.4 Software Address Filtering
+* New Action-based Power Management API
+* USB Device Framework now includes all Chapter 9 defines and structures
+* Generic System Controller (``syscon``) driver and emulator
+* Linker Support for Tightly-Coupled Memory in RISC-V
+* Additional Blocking API calls for LoRa
+* Support for extended PCI / PCIe capabilities, improved MIS-X support
+* Added Support for Service Type Enumeration (STE) with mDNS / DNS Service Discovery
+* Added Zephyr Thread Awareness for OpenOCD to West
+* EEPROM now can be emulated in flash
+* Added both Ethernet MDIO and Ethernet generic PHY drivers
+
+Additional Major enhancements since v1.14.0 (LTS1) include:
+
+* The kernel now supports both 32- and 64-bit architectures
+* We added support for SOCKS5 proxy
+* Introduced support for 6LoCAN, a 6Lo adaption layer for Controller Area Networks
+* We added support for Point-to-Point Protocol (PPP)
+* We added support for UpdateHub, an end-to-end solution for over-the-air device updates
+* We added support for ARM Cortex-R Architecture
+* Normalized APIs across all architectures
+* Expanded support for ARMv6-M architecture
+* Added support for numerous new boards and shields
+* Added numerous new drivers and sensors
+* Added BLE support on Vega platform
+* Memory size improvements to Bluetooth host stack
+* We added initial support for 64-bit ARMv8-A architecture
+* CANopen protocol support through 3rd party CANopenNode stack
+* LoRa support was added along with the SX1276 LoRa modem driver
+* A new Zephyr CMake package has been introduced
+* A new Devicetree API which provides access to virtually all DT nodes and properties
+* The kernel timeout API has been overhauled
+* A new k_heap/sys_heap allocator, with improved performance
+* Zephyr now integrates with the TF-M (Trusted Firmware M) PSA-compliant framework
+* The Bluetooth Low Energy Host now supports LE Advertising Extensions
+* The CMSIS-DSP library is now included and integrated
+* Introduced initial support for virtual memory management
+* Added Bluetooth host support for periodic advertisement and isochronous channels.
+* Added a new TCP stack which improves network protocol testability
+* Introduced a new toolchain abstraction with initial support for GCC and LLVM/Clang
+* Moved to using C99 integer types and deprecate Zephyr integer types
+* Introduced support for the SPARC architecture and the LEON implementation
+* Added Thread Local Storage (TLS) support
+* Added support for per thread runtime statistics
+* Added support for building with LLVM on X86
+* Added new synchronization mechanisms using Condition Variables
+* Add support for demand paging, initial support on X86
+* Logging subsystem overhauled
+* Added support for 64-bit ARCv3
+* Split ARM32 and ARM64, ARM64 is now a top-level architecture
+* Added initial support for Arm v8.1-m and Cortex-M55
+* Removed legacy TCP stack support which was deprecated in 2.4
+* Tracing subsystem overhaul / added support for Percepio Tracealyzer
+* Device runtime power management (PM) completely overhauled
+* Automatic SPDX SBOM generation has been added to West
+* Added an example standalone Zephyr application
 
 The following sections provide detailed lists of changes by component.
 
@@ -162,6 +226,7 @@ Architectures
      * Updated CMSIS version to 5.8.0
      * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
        tests in CI with FPU and FPU_SHARING options enabled.
+     * Added MPU support for Cortex-R
 
 
   * AARCH64
@@ -255,6 +320,27 @@ Boards & SoC Support
   * Added low power support to STM32L0, STM32G0 and STM32WL series
   * STM32: Enabled ART Flash accelerator by default when available (F2, F4, F7, H7, L5)
   * STM32: Added Kconfig option to enable STM32Cube asserts (CONFIG_USE_STM32_ASSERT)
+  * NXP FRDM-K82F: Added arduino_i2c and arduino_spi aliases
+  * NXP i.MX RT series: Added support for flash controller with XIP
+  * NXP i.MX RT series: Added TRNG support
+  * NXP i.MX RT1170: Added LPSPI driver support
+  * NXP i.MX RT1170: Added ADC driver support
+  * NXP i.MX RT1170: Enabled Segger RTT/SystemView
+  * NXP i.MX RT1170: Added MCUX FlexCan support
+  * NXP i.MX RT1064: Added watchdog driver support
+  * NXP i.MX RT1064: Added DMA driver support
+  * NXP i.MX RT600: Added arduino serial port
+  * NXP i.MX RT600: Add mcuboot flash partitions
+  * NXP i.MX RT600: Added counter support
+  * NXP i.MX RT600: Added PWM support
+  * NXP i.MX RT600: Added disk driver support
+  * NXP i.MX RT600: Added USB driver support
+  * NXP i.MX RT600: Added LPADC driver support
+  * NXP i.MX RT600: Added CTimer Counter support
+  * NXP KE1xF: Added SoC Power Management support
+  * NXP LPC55s69: Added USB driver support
+  * NXP LPC55s69: Added ctimer driver support
+  * NXP LPC55s69: Added I2S driver support
 
 
 * Changes for ARC boards:
@@ -276,6 +362,7 @@ Boards & SoC Support
   * ST Nucleo F446ZE
   * ST Nucleo U575ZI Q
   * ST STM32H735G Discovery
+  * PJRC Teensy 4 Board
 
 * Added support for these ARM64 boards:
 
@@ -316,11 +403,18 @@ Drivers and Sensors
 
   * Added STM32WL ADC driver
   * STM32: Added support for oversampling
+  * Added driver for Microchip MEC172x
+
+* Audio
+
+  * Added DMIC driver for nRF PDM peripherals
 
 * Bluetooth
 
 
 * CAN
+
+  * Renesas R-Car driver added
 
 
 * Clock Control
@@ -399,20 +493,16 @@ Drivers and Sensors
 * I2S
 
   * Added Atmel SAM I2S driver support to XDMAC reload
-
+  * Added driver for nRF I2S peripherals
 
 * IEEE 802.15.4
 
 * IPM
 
-  * Added STM32 HSEM IPM driver.
+  * STM32: Add HSEM based IPM driver for STM32H7 series
 
 * Interrupt Controller
 
-
-* IPM
-
-  * STM32: Add HSEM based IPM driver for STM32H7 series
 
 * LED
 
@@ -448,7 +538,9 @@ Drivers and Sensors
 * PWM
 
   * Property "st,prescaler" of binding "st,stm32-pwm" now defaults to "0".
-
+  * Added driver for ITE IT8XXX2 series
+  * Added driver for NXP LPC devices
+  * Added driver for Telink B91
 
 * Sensor
 
@@ -531,6 +623,10 @@ Networking
   * Fixed a bug, where the same IP address was used to populate the result
     address info entries, when multiple IP addresses were obtained from the
     server.
+
+* DNS-SD:
+
+  * Added Service Type Enumeration support (``_services._dns_sd._udp.local``)
 
 * HTTP:
 

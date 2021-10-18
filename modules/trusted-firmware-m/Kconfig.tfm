@@ -265,4 +265,23 @@ config TFM_FLASH_MERGED_BINARY
 		(if building with TFM_BL2 is enabled), and the
 		Non-Secure application firmware.
 
+choice TFM_SPM_LOG_LEVEL
+	prompt "TF-M SPM Log Level"
+	default TFM_SPM_LOG_LEVEL_INFO
+config TFM_SPM_LOG_LEVEL_DEBUG
+	bool "Debug"
+config TFM_SPM_LOG_LEVEL_INFO
+	bool "Info"
+config TFM_SPM_LOG_LEVEL_ERROR
+	bool "Error"
+config TFM_SPM_LOG_LEVEL_SILENCE
+	bool "Off"
+endchoice
+
+config TFM_EXCEPTION_INFO_DUMP
+	bool "TF-M exception info dump"
+	help
+	  On fatal errors in the secure firmware, capture info about the exception.
+	  Print the info if the SPM log level is sufficient.
+
 endif # BUILD_WITH_TFM

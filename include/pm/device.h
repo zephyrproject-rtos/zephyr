@@ -83,6 +83,19 @@ enum pm_device_action {
 };
 
 /**
+ * @brief Device PM action callback.
+ *
+ * @param dev Device instance.
+ * @param action Requested action.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If the requested action is not supported.
+ * @retval Errno Other negative errno on failure.
+ */
+typedef int (*pm_device_action_cb_t)(const struct device *dev,
+				     enum pm_device_action action);
+
+/**
  * @brief Device PM info
  */
 struct pm_device {
@@ -105,6 +118,8 @@ struct pm_device {
 	atomic_t flags;
 	/** Device power state */
 	enum pm_device_state state;
+	/** Device PM action callback */
+	pm_device_action_cb_t action_cb;
 };
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
@@ -124,29 +139,18 @@ struct pm_device {
  *
  * @param obj Name of the #pm_device structure being initialized.
  * @param node_id Devicetree node for the initialized device (can be invalid).
+ * @param pm_action_cb Device PM control callback function.
  */
-#define Z_PM_DEVICE_INIT(obj, node_id)					\
+#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)			\
 	{								\
 		INIT_PM_DEVICE_RUNTIME(obj)				\
+		.action_cb = pm_action_cb,				\
 		.state = PM_DEVICE_STATE_ACTIVE,			\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
 				(0)) << PM_DEVICE_FLAGS_WS_CAPABLE),	\
 	}
-
-/**
- * @brief Device power management control function callback.
- *
- * @param dev Device instance.
- * @param action Requested action.
- *
- * @retval 0 If successful.
- * @retval -ENOTSUP If the requested action is not supported.
- * @retval Errno Other negative errno on failure.
- */
-typedef int (*pm_device_control_callback_t)(const struct device *dev,
-					    enum pm_device_action action);
 
 /**
  * @brief Get name of device PM state

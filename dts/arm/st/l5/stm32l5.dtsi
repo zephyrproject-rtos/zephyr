@@ -564,6 +564,26 @@
 			label = "ADC_2";
 			#io-channel-cells = <1>;
 		};
+
+		usb: usb@4000d400 {
+			compatible = "st,stm32-usb";
+			reg = <0x4000d400 0x400>;
+			interrupts = <73 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			status = "disabled";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00200000>;
+			phys = <&usb_fs_phy>;
+			label = "USB";
+		};
+
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };
 

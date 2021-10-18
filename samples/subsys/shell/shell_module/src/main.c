@@ -89,6 +89,16 @@ static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, CONFIG_BOARD);
+
+	return 0;
+}
+
 #if defined CONFIG_SHELL_GETOPT
 static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 {
@@ -310,6 +320,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
+	SHELL_CMD(board, NULL, "Show board name command.", cmd_demo_board),
 #if defined CONFIG_SHELL_GETOPT
 	SHELL_CMD(getopt, NULL,	"Cammand using getopt, looking for: \"abhc:\".",
 		  cmd_demo_getopt),

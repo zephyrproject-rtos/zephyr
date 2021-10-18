@@ -29,6 +29,13 @@ API Changes
 
 Changes in this release
 
+* Following functions in UART Asynchronous API are using microseconds to represent
+  timeout instead of milliseconds:
+  * :c:func:`uart_tx`
+  * :c:func:`uart_rx_enable`
+
+* Replaced custom LwM2M :c:struct:`float32_value` type with a native double type.
+
 ==========================
 
 Removed APIs in this release
