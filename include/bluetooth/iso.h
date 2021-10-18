@@ -199,7 +199,7 @@ struct bt_iso_recv_info {
 /** Opaque type representing an Connected Isochronous Group (CIG). */
 struct bt_iso_cig;
 
-struct bt_iso_cig_create_param {
+struct bt_iso_cig_param {
 	/** @brief Array of pointers to CIS channels */
 	struct bt_iso_chan **cis_channels;
 
@@ -515,7 +515,7 @@ int bt_iso_server_register(struct bt_iso_server *server);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
+int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		      struct bt_iso_cig **out_cig);
 
 /** @brief Terminates a CIG as a central
