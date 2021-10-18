@@ -19,6 +19,7 @@
 #include <devicetree.h>
 
 #include "bmi088.h"
+
 #define M_PI   3.14159265358979323846264338327950288
 
 LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
@@ -128,24 +129,26 @@ int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t 
 }
 
 static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
-    int32_t converted_val;
+    int32_t converted_val = raw_val * scale;
 
-    converted_val = raw_val * scale;
+    LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
+
     val->val1 = converted_val / 1000000;
     val->val2 = converted_val % 1000000;
 }
 
-static void bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
+static void
+bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
-            bmi088_to_fixed_point(raw_xyz[1], scale, val);
-
+            bmi088_to_fixed_point(raw_xyz[0], scale, val);
+            break;
         case SENSOR_CHAN_GYRO_Y:
-            bmi088_to_fixed_point(raw_xyz[2], scale, val);
-
+            bmi088_to_fixed_point(raw_xyz[1], scale, val);
+            break;
         case SENSOR_CHAN_GYRO_Z:
-            bmi088_to_fixed_point(raw_xyz[3], scale, val);
-
+            bmi088_to_fixed_point(raw_xyz[2], scale, val);
+            break;
         default:
             break;
     }
@@ -192,10 +195,12 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
     // convert samples to cpu endianness
     for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
         uint16_t *sample =
-            (uint16_t *) &data->sample.gyr[i];
+                (uint16_t *) &data->sample.gyr[i];
 
         *sample = sys_le16_to_cpu(*sample);
     }
+
+    LOG_INF("Fetched %d %d %d", data->sample.gyr[0], data->sample.gyr[1], data->sample.gyr[2]);
 
     return 0;
 }
@@ -209,12 +214,11 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-    const uint16_t scale = (61*1000*2*M_PI/360);
+    const uint16_t scale = (61 * 1000 * 2 * M_PI / 360);
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
         case SENSOR_CHAN_GYRO_Y:
-        case SENSOR_CHAN_GYRO_Z:
-        case SENSOR_CHAN_GYRO_XYZ: {
+        case SENSOR_CHAN_GYRO_Z: {
             struct bmi088_data *data = to_data(dev);
             bmi088_channel_convert(chan, scale, data->sample.gyr, val);
             return 0;
@@ -245,7 +249,7 @@ static int bmi088_init(const struct device *dev) {
     }
 
     // reboot the chip: Softreset 0x14
-    if(bmi088_byte_write(dev,BMI088_SOFTRESET,BMI088_SR_VAL) < 0)   {
+    if (bmi088_byte_write(dev, BMI088_SOFTRESET, BMI088_SR_VAL) < 0) {
         LOG_DBG("Cannot reboot chip.");
         return -EIO;
     }
@@ -265,7 +269,7 @@ static int bmi088_init(const struct device *dev) {
     LOG_DBG("Chip successfully detected");
 
     // Set default gyro range, For now: always use largest range
-    if(bmi088_byte_write(dev,GYRO_RANGE,BMI088_DEFAULT_RANGE) < 0)   {
+    if (bmi088_byte_write(dev, GYRO_RANGE, BMI088_DEFAULT_RANGE) < 0) {
         LOG_DBG("Cannot set default range for gyroscope.");
         return -EIO;
     }
@@ -284,7 +288,7 @@ static int bmi088_init(const struct device *dev) {
     return 0;
 }
 
-uint16_t bmi088_gyr_scale(int32_t range_dps){
+uint16_t bmi088_gyr_scale(int32_t range_dps) {
     return (2 * range_dps * SENSOR_PI) / 180LL / 65536LL;
 }
 

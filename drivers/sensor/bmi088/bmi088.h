@@ -78,7 +78,7 @@ struct bmi088_cfg {
 
 // Each sample has X, Y and Z
 struct bmi088_gyro_sample {
-    uint16_t gyr[BMI088_AXES];
+    int16_t gyr[BMI088_AXES];
 };
 
 struct bmi088_data {
