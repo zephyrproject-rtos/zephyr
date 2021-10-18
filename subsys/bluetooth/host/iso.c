@@ -993,7 +993,7 @@ struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 }
 
 static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
-					     const struct bt_iso_cig_create_param *param)
+					     const struct bt_iso_cig_param *param)
 {
 	struct bt_hci_cp_le_set_cig_params *req;
 	struct bt_hci_cis_params *cis_param;
@@ -1088,7 +1088,8 @@ static struct bt_iso_cig *get_free_cig(void)
 	return NULL;
 }
 
-static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_create_param *param)
+static int cig_init_cis(struct bt_iso_cig *cig,
+			const struct bt_iso_cig_param *param)
 {
 	for (uint8_t i = 0; i < param->num_cis; i++) {
 		struct bt_iso_chan *cis = param->cis_channels[i];
@@ -1127,7 +1128,7 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	memset(cig, 0, sizeof(*cig));
 }
 
-int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
+int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		      struct bt_iso_cig **out_cig)
 {
 	int err;
