@@ -50,7 +50,7 @@
 #define GYRO_FIFO_EN    BIT(6)
 #define GYRO_DATA_EN    BIT(7)
 
-//other
+//other defines
 
 // Indicates a read operation; bit 7 is clear on write s
 #define BMI088_REG_READ BIT(7)
@@ -60,10 +60,14 @@
 
 #define BMI088_SR_VAL   0xB6    // Value for triggering a Soft-Reset
 
-#define BMI088_DEFAULT_RANGE    0x00    // Largest possible range for gyro
+#define BMI088_DEFAULT_RANGE    0x00    // Largest possible range for gyro (2000dps)
+#define BMI088_DEFAULT_BW       0x04    // ODR: 200Hz, Filter bw: 23Hz
 
-#define BMI088_GYR_SCALE(range_dps)\
-				((2 * range_dps * SENSOR_PI) / 180LL / 65536LL) // Gyro scale
+#define FULL_MASK   0xFF    // Mask with only Ones
+
+#define BMI088_AXES 3   // Number of Axes
+
+#define BMI088_SAMPLE_SIZE  (BMI088_AXES * sizeof(uint16_t))    // Size of Samples with x,y,z
 
 // end of default settings
 
@@ -73,19 +77,13 @@ struct bmi088_cfg {
 
 
 // Each sample has X, Y and Z
-#define BMI088_AXES 3
 struct bmi088_gyro_sample {
     uint16_t gyr[BMI088_AXES];
-};
-
-struct bmi088_scale {
-    uint16_t gyr; // micro radians/s/lsb
 };
 
 struct bmi088_data {
     const struct device *bus;
     struct bmi088_gyro_sample sample;
-    struct bmi088_scale scale;
 };
 
 static inline struct bmi088_data *to_data(const struct device *dev) {
@@ -139,5 +137,7 @@ int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word)
  * @return
  */
 int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
+
+uint16_t bmi088_gyr_scale(int32_t range_dps);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */

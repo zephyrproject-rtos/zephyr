@@ -19,6 +19,7 @@
 #include <devicetree.h>
 
 #include "bmi088.h"
+#define M_PI   3.14159265358979323846264338327950288
 
 LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
 
@@ -128,13 +129,7 @@ int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t 
 
 static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
     int32_t converted_val;
-    // TODO: Conversion factor/scale/conversion
-    /*
-     * maximum converted value we can get is: max(raw_val) * max(scale)
-     *	max(raw_val) = +/- 2^15
-     *	max(scale) = 4785
-     *	max(converted_val) = 156794880 which is less than 2^31
-     */
+
     converted_val = raw_val * scale;
     val->val1 = converted_val / 1000000;
     val->val2 = converted_val % 1000000;
@@ -165,18 +160,21 @@ static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, e
 
 /**
  * API function to retrieve a measurement from the sensor.
+ * It is assumed that the data is ready
  *
  * @param dev Sensor device pointer
  * @param chan Channel to fetch. Only SENSOR_CHAN_ALL is supported.
  * @return 0 on success
  */
+
 static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel chan) {
-    /*struct bmi088_data *data = to_data(dev);
+    struct bmi088_data *data = to_data(dev);
     uint8_t status;
     size_t i;
 
     __ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
+    /*
     status = 0;
     while ((status & BMI088_DATA_READY_BIT_MASK) == 0) {
 
@@ -184,9 +182,10 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
             return -EIO;
         }
     }
+     */
 
-    if (bmi088_read(dev, BMI088_SAMPLE_BURST_READ_ADDR, data->sample.gyr,
-            BMI088_BUF_SIZE) < 0) {
+    if (bmi088_read(dev, RATE_X_LSB, data->sample.gyr,
+                    BMI088_SAMPLE_SIZE) < 0) {
         return -EIO;
     }
 
@@ -197,7 +196,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
 
         *sample = sys_le16_to_cpu(*sample);
     }
-*/
+
     return 0;
 }
 
@@ -210,13 +209,14 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
+    const uint16_t scale = (61*1000*2*M_PI/360);
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
         case SENSOR_CHAN_GYRO_Y:
         case SENSOR_CHAN_GYRO_Z:
         case SENSOR_CHAN_GYRO_XYZ: {
             struct bmi088_data *data = to_data(dev);
-            bmi088_channel_convert(chan, data->scale.gyr, data->sample.gyr, val);
+            bmi088_channel_convert(chan, scale, data->sample.gyr, val);
             return 0;
         }
 
@@ -234,8 +234,8 @@ static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan
  */
 static int bmi088_init(const struct device *dev) {
 
-    const struct bmi160_cfg *cfg = to_config(dev);
-    struct bmi160_data *data = to_data(dev);
+    const struct bmi088_cfg *cfg = to_config(dev);
+    struct bmi088_data *data = to_data(dev);
 
     LOG_DBG("Initializing BMI088 device at %p", dev);
 
@@ -264,19 +264,28 @@ static int bmi088_init(const struct device *dev) {
     }
     LOG_DBG("Chip successfully detected");
 
-    // TODO: Set default gyro range, For now: always use largest range
+    // Set default gyro range, For now: always use largest range
     if(bmi088_byte_write(dev,GYRO_RANGE,BMI088_DEFAULT_RANGE) < 0)   {
         LOG_DBG("Cannot set default range for gyroscope.");
         return -EIO;
     }
-    // TODO: Replace Macro with function
-    data->scale.gyr = BMI160_GYR_SCALE(gyr_range);
 
 
-    // TODO: Set ODR to 0x04, 200Hz, 23 Filter bandwidth (siehe 5.5.6)
+    // Set Bandwidth to 0x04: ODR 200Hz, Filter bandwidth 23Hz
+    if (bmi088_reg_field_update(dev, GYRO_BANDWIDTH,
+                                0,
+                                FULL_MASK,
+                                BMI088_DEFAULT_BW) < 0) {
+        LOG_DBG("Failed to set gyro's default ODR.");
+        return -EIO;
+    }
 
 
     return 0;
+}
+
+uint16_t bmi088_gyr_scale(int32_t range_dps){
+    return (2 * range_dps * SENSOR_PI) / 180LL / 65536LL;
 }
 
 static const struct sensor_driver_api bmi088_api = {
