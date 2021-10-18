@@ -518,6 +518,28 @@ int bt_iso_server_register(struct bt_iso_server *server);
 int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		      struct bt_iso_cig **out_cig);
 
+/** @brief Reconfigure a CIG as a central
+ *
+ *  This function can be used to update a CIG. It will update the group specific
+ *  parameters, and, if supplied, change the QoS parameters of the individual
+ *  CIS. If the cis_channels in @p param contains CIS that was not originally
+ *  in the call to bt_iso_cig_create(), these will be added to the group.
+ *  It is not possible to remove any CIS from the group after creation.
+ *
+ *  This can be called at any time before connecting an ISO to a remote device.
+ *  Once any CIS in the group has connected, the group cannot be changed.
+ *
+ *  Once a CIG is created, the channels supplied in the @p param can be
+ *  connected using bt_iso_chan_connect.
+ *
+ *  @param cig       Connected Isochronous Group object.
+ *  @param param     The parameters used to reconfigure the CIG.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
+			   const struct bt_iso_cig_param *param);
+
 /** @brief Terminates a CIG as a central
  *
  *  All the CIS in the CIG shall be disconnected first.
