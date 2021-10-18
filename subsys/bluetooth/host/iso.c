@@ -1078,7 +1078,7 @@ static struct bt_iso_cig *get_free_cig(void)
 		if (!cigs[i].initialized) {
 			cigs[i].initialized = true;
 			cigs[i].id = i;
-			sys_slist_init(&cigs[i].cis);
+			sys_slist_init(&cigs[i].cis_channels);
 			return &cigs[i];
 		}
 	}
@@ -1120,7 +1120,7 @@ static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_create_p
 
 		bt_iso_chan_add(cis->iso, cis);
 
-		sys_slist_append(&cig->cis, &cis->node);
+		sys_slist_append(&cig->cis_channels, &cis->node);
 	}
 
 	return 0;
@@ -1130,13 +1130,13 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 {
 	struct bt_iso_chan *cis, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis, cis, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
 		if (cis->iso != NULL) {
 			bt_conn_unref(cis->iso);
 			cis->iso = NULL;
 		}
 
-		sys_slist_remove(&cig->cis, NULL, &cis->node);
+		sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 	}
 
 	memset(cig, 0, sizeof(*cig));
@@ -1246,7 +1246,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 	}
 
 	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis, cis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
 		/* Assign the connection handle */
 		cis->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i++]);
 	}
@@ -1268,7 +1268,7 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis, cis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
 		if (cis->state != BT_ISO_DISCONNECTED) {
 			BT_DBG("Channel %p is not disconnected", cis);
 			return -EINVAL;
@@ -1453,7 +1453,7 @@ static struct bt_iso_big *get_free_big(void)
 	for (int i = 0; i < ARRAY_SIZE(bigs); i++) {
 		if (!atomic_test_and_set_bit(bigs[i].flags, BT_BIG_INITIALIZED)) {
 			bigs[i].handle = i;
-			sys_slist_init(&bigs[i].bis);
+			sys_slist_init(&bigs[i].bis_channels);
 			return &bigs[i];
 		}
 	}
@@ -1480,13 +1480,13 @@ static void cleanup_big(struct bt_iso_big *big)
 {
 	struct bt_iso_chan *bis, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis, bis, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
 		if (bis->iso != NULL) {
 			bt_conn_unref(bis->iso);
 			bis->iso = NULL;
 		}
 
-		sys_slist_remove(&big->bis, NULL, &bis->node);
+		sys_slist_remove(&big->bis_channels, NULL, &bis->node);
 	}
 
 	memset(big, 0, sizeof(*big));
@@ -1496,7 +1496,7 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 {
 	struct bt_iso_chan *bis;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->err = reason;
 
 		bt_iso_disconnected(bis->iso);
@@ -1552,7 +1552,7 @@ static int big_init_bis(struct bt_iso_big *big,
 
 		bt_iso_chan_add(bis->iso, bis);
 
-		sys_slist_append(&big->bis, &bis->node);
+		sys_slist_append(&big->bis_channels, &bis->node);
 	}
 
 	return 0;
@@ -1575,7 +1575,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 		return -ENOBUFS;
 	}
 
-	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis, bis, node);
+	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
 	__ASSERT(bis != NULL, "bis was NULL");
 
 	/* All BIS will share the same QOS */
@@ -1606,7 +1606,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 		return err;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
 	}
 
@@ -1733,7 +1733,7 @@ void hci_le_big_complete(struct net_buf *buf)
 	}
 
 	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->handle = sys_le16_to_cpu(evt->handle[i++]);
 		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
 	}
@@ -1816,7 +1816,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		return -EINVAL;
 	}
 
-	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis, bis, node);
+	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
 	__ASSERT(bis != NULL, "bis was NULL");
 
 	/* They all have the same QOS dir so we can just check the first */
@@ -1829,7 +1829,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		 * the BIG in hci_le_big_terminate
 		 */
 		if (!err) {
-			SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+			SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 				bt_iso_chan_set_state(bis, BT_ISO_DISCONNECT);
 			}
 		}
@@ -1886,7 +1886,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	}
 
 	i = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->handle = sys_le16_to_cpu(evt->handle[i++]);
 		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
 	}
@@ -2030,7 +2030,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	}
 
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis, bis, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
 	}
 
