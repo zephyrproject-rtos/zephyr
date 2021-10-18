@@ -16,3 +16,8 @@ tests:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     tags: crypto entropy random security
     min_ram: 16
+  crypto.rand32.user:
+    tags: crypto random security userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    min_ram: 16
