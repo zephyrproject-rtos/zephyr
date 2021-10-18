@@ -21,4 +21,8 @@ config RISCV_GP
 config SYSCON
 	default y
 
+config SERIAL_INIT_PRIORITY
+	default 55
+	depends on SERIAL
+
 endif # SOC_SERIES_NEORV32
