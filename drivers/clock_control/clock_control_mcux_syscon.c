@@ -121,7 +121,7 @@ DEVICE_DT_INST_DEFINE(n, \
 		    &mcux_lpc_syscon_clock_control_init, \
 		    NULL, \
 		    NULL, NULL, \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \
 		    &mcux_lpc_syscon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPC_CLOCK_INIT)

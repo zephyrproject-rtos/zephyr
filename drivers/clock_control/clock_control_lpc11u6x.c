@@ -397,5 +397,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &lpc11u6x_syscon_init,
 		    NULL,
 		    &syscon_data, &syscon_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &lpc11u6x_clock_control_api);
