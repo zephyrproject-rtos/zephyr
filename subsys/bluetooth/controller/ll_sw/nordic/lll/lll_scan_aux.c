@@ -1253,6 +1253,11 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, 1);
 	radio_tmr_hcto_configure(hcto);
 
+	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
+	 * channel chaining.
+	 */
+	radio_tmr_end_capture();
+
 	/* scanner always measures RSSI */
 	radio_rssi_measure();
 
