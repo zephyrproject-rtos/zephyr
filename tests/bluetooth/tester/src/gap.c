@@ -825,6 +825,19 @@ enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
 	return BT_SECURITY_ERR_SUCCESS;
 }
 
+void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+	struct gap_bond_pairing_failed_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
+	ev.address_type = addr->type;
+	ev.reason = reason;
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_PAIRING_FAILED, CONTROLLER_INDEX,
+		    (uint8_t *)&ev, sizeof(ev));
+}
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
@@ -862,6 +875,7 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 	}
 
 	cb.pairing_accept = auth_pairing_accept;
+	cb.pairing_failed = auth_pairing_failed;
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;
