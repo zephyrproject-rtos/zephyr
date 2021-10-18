@@ -53,5 +53,5 @@ static const struct clock_control_driver_api clk_api = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clk_api);

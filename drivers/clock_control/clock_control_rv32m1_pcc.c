@@ -72,7 +72,7 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 			    NULL,					\
 			    NULL, &rv32m1_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	\
+			    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		\
 			    &rv32m1_pcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RV32M1_PCC_INIT)
