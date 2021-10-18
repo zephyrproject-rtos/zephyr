@@ -705,7 +705,6 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 
 	return bt_conn_send_cb(chan->iso, buf, bt_iso_send_cb, NULL);
 }
-#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			      bool is_tx)
@@ -726,6 +725,7 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 
 	return true;
 }
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
@@ -1128,6 +1128,65 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	memset(cig, 0, sizeof(*cig));
 }
 
+static bool valid_cig_param(const struct bt_iso_cig_param *param)
+{
+	if (param == NULL) {
+		return false;
+	}
+
+	for (uint8_t i = 0; i < param->num_cis; i++) {
+		struct bt_iso_chan *cis = param->cis_channels[i];
+
+		if (cis == NULL) {
+			BT_DBG("cis_channels[%d]: NULL channel", i);
+			return false;
+		}
+
+		if (!valid_chan_qos(cis->qos)) {
+			BT_DBG("cis_channels[%d]: Invalid QOS", i);
+			return false;
+		}
+
+		if (cis->iso != NULL) {
+			BT_DBG("cis_channels[%d]: already allocated", i);
+			return false;
+		}
+	}
+
+	if (param->framing != BT_ISO_FRAMING_UNFRAMED &&
+	    param->framing != BT_ISO_FRAMING_FRAMED) {
+		BT_DBG("Invalid framing parameter: %u", param->framing);
+		return false;
+	}
+
+	if (param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+	    param->packing != BT_ISO_PACKING_INTERLEAVED) {
+		BT_DBG("Invalid packing parameter: %u", param->packing);
+		return false;
+	}
+
+	if (param->num_cis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+	    param->num_cis > CONFIG_BT_ISO_MAX_CHAN) {
+		BT_DBG("num_cis (%u) shall be lower than: %u", param->num_cis,
+		       MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
+		return false;
+	}
+
+	if (param->interval < BT_ISO_INTERVAL_MIN ||
+	    param->interval > BT_ISO_INTERVAL_MAX) {
+		BT_DBG("Invalid interval: %u", param->interval);
+		return false;
+	}
+
+	if (param->latency < BT_ISO_LATENCY_MIN ||
+	    param->latency > BT_ISO_LATENCY_MAX) {
+		BT_DBG("Invalid latency: %u", param->latency);
+		return false;
+	}
+
+	return true;
+}
+
 int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		      struct bt_iso_cig **out_cig)
 {
@@ -1160,53 +1219,8 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < param->num_cis; i++) {
-		struct bt_iso_chan *cis = param->cis_channels[i];
-
-		CHECKIF(cis == NULL) {
-			BT_DBG("bis_channels[%d]: NULL channel", i);
-			return -EINVAL;
-		}
-
-		CHECKIF(!valid_chan_qos(cis->qos)) {
-			BT_DBG("bis_channels[%d]: Invalid QOS", i);
-			return -EINVAL;
-		}
-
-		if (cis->iso != NULL) {
-			BT_DBG("bis_channels[%d]: already allocated", i);
-			return -EALREADY;
-		}
-	}
-
-	CHECKIF(param->framing != BT_ISO_FRAMING_UNFRAMED &&
-		param->framing != BT_ISO_FRAMING_FRAMED) {
-		BT_DBG("Invalid framing parameter: %u", param->framing);
-		return -EINVAL;
-	}
-
-	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
-		param->packing != BT_ISO_PACKING_INTERLEAVED) {
-		BT_DBG("Invalid packing parameter: %u", param->packing);
-		return -EINVAL;
-	}
-
-	CHECKIF(param->num_cis > BT_ISO_MAX_GROUP_ISO_COUNT ||
-		param->num_cis > CONFIG_BT_ISO_MAX_CHAN) {
-		BT_DBG("num_cis (%u) shall be lower than: %u", param->num_cis,
-		       MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
-		return -EINVAL;
-	}
-
-	CHECKIF(param->interval < BT_ISO_INTERVAL_MIN ||
-		param->interval > BT_ISO_INTERVAL_MAX) {
-		BT_DBG("Invalid interval: %u", param->interval);
-		return -EINVAL;
-	}
-
-	CHECKIF(param->latency < BT_ISO_LATENCY_MIN ||
-		param->latency > BT_ISO_LATENCY_MAX) {
-		BT_DBG("Invalid latency: %u", param->latency);
+	CHECKIF(!valid_cig_param(param)) {
+		BT_DBG("Invalid CIG params");
 		return -EINVAL;
 	}
 
