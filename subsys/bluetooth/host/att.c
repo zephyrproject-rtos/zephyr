@@ -251,6 +251,7 @@ static int chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req)
 	if (err) {
 		/* We still have the ownership of the buffer */
 		req->buf = buf;
+		chan->req = NULL;
 	}
 
 	return err;
