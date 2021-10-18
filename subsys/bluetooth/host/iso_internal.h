@@ -26,7 +26,7 @@ struct iso_data {
 
 struct bt_iso_cig {
 	/** List of ISO channels to setup as CIS (the CIG). */
-	sys_slist_t cis;
+	sys_slist_t cis_channels;
 
 	/** Total number of CISes in the CIG. */
 	uint8_t  num_cis;
@@ -50,7 +50,7 @@ enum {
 
 struct bt_iso_big {
 	/** List of ISO channels to setup as BIS (the BIG). */
-	sys_slist_t bis;
+	sys_slist_t bis_channels;
 
 	/** Total number of BISes in the BIG. */
 	uint8_t  num_bis;
