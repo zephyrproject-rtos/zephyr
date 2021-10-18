@@ -650,6 +650,13 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
 
+config BT_CTRL_CONN_TEST_WIN
+	bool "Enable transmit window configuration"
+	help
+	  This option enable the configuration of the connection transmit
+	  window size and to skip connection packet. To use it you must
+	  declare the struct conn_win_test
+
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"
 	help

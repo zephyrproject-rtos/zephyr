@@ -63,6 +63,7 @@ app=tests/bluetooth/bsim_bt/bsim_test_multiple compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
+app=tests/bluetooth/bsim_bt/bsim_test_conn_win compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_dut.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \

@@ -35,6 +35,7 @@
 #include "lll_conn.h"
 #include "lll_central.h"
 #include "lll_filter.h"
+#include "lll_test.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -921,6 +922,14 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		    TICKER_ID_SCAN_STOP, NULL, NULL);
 
 	/* Start central */
+	uint16_t conn_latency = TICKER_NULL_LAZY;
+
+#if defined(CONFIG_BT_CTRL_CONN_TEST_WIN)
+	conn_offset_us += conn_win_test.pkt_conn_delay_us + \
+	conn_win_test.tr_win_offset *1250;
+	conn_latency = conn_win_test.skip_pkt;
+#endif
+
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -929,7 +938,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
-				     TICKER_NULL_LAZY,
+				     conn_latency,
 				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_central_ticker_cb, conn, ticker_op_cb,

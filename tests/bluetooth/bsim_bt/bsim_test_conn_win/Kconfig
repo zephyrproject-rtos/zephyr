@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTRL_CONN_TEST_WIN
+	bool "Enable transmit window configuration"
+	depends on BT_CTLR_TICKER_TEST
+	help
+	  This option enable the configuration of the connection transmit
+	  window size and to skip connection packet. To use it you must
+	  declare the struct conn_win_test
+
+config BT_CTLR_TICKER_TEST
+	bool "Enable ticker configuration to skip event"
+
+# Include Zephyr's Kconfig.
+source "Kconfig"

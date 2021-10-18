@@ -36,6 +36,7 @@
 #include "lll_chan.h"
 #include "lll_filter.h"
 #include "lll_sched.h"
+#include "lll_test.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -275,6 +276,11 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 					CONN_INT_UNIT_US);
 		pdu_tx->connect_ind.win_size++;
 	}
+
+#if defined(CONFIG_BT_CTRL_CONN_TEST_WIN)
+	pdu_tx->connect_ind.win_size = conn_win_test.win_size;
+	pdu_tx->connect_ind.win_offset = conn_win_test.tr_win_offset;
+#endif
 
 	pdu_tx->connect_ind.interval = sys_cpu_to_le16(lll_conn->interval);
 	pdu_tx->connect_ind.latency = sys_cpu_to_le16(lll_conn->latency);

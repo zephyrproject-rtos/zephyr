@@ -1732,9 +1732,22 @@ static inline void ticker_job_op_start(struct ticker_node *ticker,
 	ticker->context = start->context;
 	ticker->ticks_to_expire = start->ticks_first;
 	ticker->ticks_to_expire_minus = 0U;
+#if defined(CONFIG_BT_CTLR_TICKER_TEST)
+	ticker->remainder_current = 0U;
+	ticker->lazy_current = ticker->lazy_periodic;
+
+	uint16_t count = ticker->lazy_periodic;
+	while (count--) {
+		ticker->ticks_to_expire += ticker->ticks_periodic;
+		ticker->ticks_to_expire += ticker_remainder_inc(ticker);
+	}
+	ticks_to_expire_prep(ticker, ticks_current, start->ticks_at_start);
+#else
 	ticks_to_expire_prep(ticker, ticks_current, start->ticks_at_start);
 	ticker->remainder_current = 0U;
 	ticker->lazy_current = 0U;
+#endif /* CONFIG_BT_CTLR_TICKER_TEST */
+
 	ticker->force = 1U;
 }
 
