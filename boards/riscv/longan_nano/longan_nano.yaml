@@ -1,0 +1,9 @@
+identifier: longan_nano
+name: Sipeed Longan Nano
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+  - xtools
+flash: 128
+ram: 32
