@@ -1088,25 +1088,33 @@ static struct bt_iso_cig *get_free_cig(void)
 	return NULL;
 }
 
+static bool cis_is_in_cig(const struct bt_iso_cig *cig,
+			  const struct bt_iso_chan *cis)
+{
+	return cig->id == cis->iso->iso.cig_id;
+}
+
 static int cig_init_cis(struct bt_iso_cig *cig,
 			const struct bt_iso_cig_param *param)
 {
 	for (uint8_t i = 0; i < param->num_cis; i++) {
 		struct bt_iso_chan *cis = param->cis_channels[i];
 
-		cis->iso = iso_new();
 		if (cis->iso == NULL) {
-			BT_ERR("Unable to allocate CIS connection");
-			return -ENOMEM;
-		}
+			cis->iso = iso_new();
+			if (cis->iso == NULL) {
+				BT_ERR("Unable to allocate CIS connection");
+				return -ENOMEM;
+			}
 
-		cis->iso->iso.cig_id = cig->id;
-		cis->iso->iso.is_bis = false;
-		cis->iso->iso.cis_id = i;
+			cis->iso->iso.cig_id = cig->id;
+			cis->iso->iso.is_bis = false;
+			cis->iso->iso.cis_id = cig->num_cis++;
 
-		bt_iso_chan_add(cis->iso, cis);
+			bt_iso_chan_add(cis->iso, cis);
 
-		sys_slist_append(&cig->cis_channels, &cis->node);
+			sys_slist_append(&cig->cis_channels, &cis->node);
+		} /* else already initialized */
 	}
 
 	return 0;
@@ -1144,11 +1152,6 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param)
 
 		if (!valid_chan_qos(cis->qos)) {
 			BT_DBG("cis_channels[%d]: Invalid QOS", i);
-			return false;
-		}
-
-		if (cis->iso != NULL) {
-			BT_DBG("cis_channels[%d]: already allocated", i);
 			return false;
 		}
 	}
@@ -1209,6 +1212,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		return -ENOTSUP;
 	}
 
+	/* TBD: Should we allow creating empty CIGs? */
 	CHECKIF(param->cis_channels == NULL) {
 		BT_DBG("NULL CIS channels");
 		return -EINVAL;
@@ -1224,6 +1228,15 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		return -EINVAL;
 	}
 
+	for (uint8_t i = 0; i < param->num_cis; i++) {
+		struct bt_iso_chan *cis = param->cis_channels[i];
+
+		if (cis->iso != NULL) {
+			BT_DBG("cis_channels[%d]: already allocated", i);
+			return false;
+		}
+	}
+
 	cig = get_free_cig();
 
 	if (!cig) {
@@ -1236,7 +1249,6 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 		cleanup_cig(cig);
 		return err;
 	}
-	cig->num_cis = param->num_cis;
 
 	rsp = hci_le_set_cig_params(cig, param);
 	if (rsp == NULL) {
@@ -1266,6 +1278,98 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 	net_buf_unref(rsp);
 
 	*out_cig = cig;
+
+	return err;
+}
+
+static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
+{
+	struct bt_iso_chan *cis, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
+		/* Remove all newly added by comparing the cis_id to the number
+		 * of CIS that was previously added before
+		 * bt_iso_cig_reconfigure was called
+		 */
+		if (cis->iso != NULL &&
+		    cis->iso->iso.cis_id >= existing_num_cis) {
+			bt_conn_unref(cis->iso);
+			cis->iso = NULL;
+
+			sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
+			cig->num_cis--;
+		}
+	}
+}
+
+
+int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
+			   const struct bt_iso_cig_param *param)
+{
+	struct bt_hci_rp_le_set_cig_params *cig_rsp;
+	uint8_t existing_num_cis;
+	struct bt_iso_chan *cis;
+	struct net_buf *rsp;
+	int err;
+	int i;
+
+	CHECKIF(cig == NULL) {
+		BT_DBG("cig is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(!valid_cig_param(param)) {
+		BT_DBG("Invalid CIG params");
+		return -EINVAL;
+	}
+
+	for (uint8_t i = 0; i < param->num_cis; i++) {
+		struct bt_iso_chan *cis = param->cis_channels[i];
+
+		if (cis->iso != NULL && !cis_is_in_cig(cig, cis)) {
+			BT_DBG("Cannot reconfigure other CIG's (id 0x%02X) CIS "
+			       "with this CIG (id 0x%02X)",
+			       cis->iso->iso.cig_id, cig->id);
+			return -EINVAL;
+		}
+	}
+
+	/* Used to restore CIG in case of error */
+	existing_num_cis = cig->num_cis;
+
+	err = cig_init_cis(cig, param);
+	if (err != 0) {
+		BT_DBG("Could not init CIS %d", err);
+		restore_cig(cig, existing_num_cis);
+		return err;
+	}
+
+	rsp = hci_le_set_cig_params(cig, param);
+	if (rsp == NULL) {
+		BT_WARN("Unexpected response to hci_le_set_cig_params");
+		err = -EIO;
+		restore_cig(cig, existing_num_cis);
+		return err;
+	}
+
+	cig_rsp = (void *)rsp->data;
+
+	if (rsp->len < sizeof(cig_rsp) ||
+	    cig_rsp->num_handles != param->num_cis) {
+		BT_WARN("Unexpected response to hci_le_set_cig_params");
+		err = -EIO;
+		net_buf_unref(rsp);
+		restore_cig(cig, existing_num_cis);
+		return err;
+	}
+
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
+		/* Assign the connection handle */
+		cis->iso->handle = sys_le16_to_cpu(cig_rsp->handle[i++]);
+	}
+
+	net_buf_unref(rsp);
 
 	return err;
 }
