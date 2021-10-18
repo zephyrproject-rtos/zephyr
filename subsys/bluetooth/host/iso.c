@@ -794,7 +794,7 @@ void bt_iso_cleanup_acl(struct bt_conn *iso)
 	}
 }
 
-void hci_le_cis_estabilished(struct net_buf *buf)
+void hci_le_cis_established(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cis_established *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
