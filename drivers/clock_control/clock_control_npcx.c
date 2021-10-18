@@ -237,5 +237,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    NULL,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &npcx_clock_control_api);

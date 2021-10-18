@@ -221,7 +221,7 @@ static const struct clock_control_driver_api rcar_cpg_mssr_api = {
 			      NULL,				    \
 			      NULL, &rcar_mssr##inst##_config,	    \
 			      PRE_KERNEL_1,			    \
-			      CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,  \
+			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,   \
 			      &rcar_cpg_mssr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RCAR_MSSR_INIT)
