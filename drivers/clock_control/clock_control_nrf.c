@@ -722,7 +722,7 @@ static const struct nrf_clock_control_config config = {
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL,
 		 &data, &config,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_api);
 
 static int cmd_status(const struct shell *shell, size_t argc, char **argv)
