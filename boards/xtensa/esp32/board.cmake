@@ -7,6 +7,9 @@ board_runner_args(openocd  --cmd-pre-init "set ESP32_ONLYCPU 1")
 board_runner_args(openocd  --config "interface/ftdi/esp32_devkitj_v1.cfg")
 board_runner_args(openocd  --config "target/esp32.cfg")
 
+# Don't use default reset/halt commands
+board_runner_args(openocd  --no-cmd-reset-halt)
+
 set (ESPRESSIF_OPENOCD_TOOL ${ESPRESSIF_TOOLCHAIN_PATH}/openocd-esp32/bin/openocd)
 set (ESPRESSIF_OPENOCD_SCRIPTS ${ESPRESSIF_TOOLCHAIN_PATH}/openocd-esp32/share/openocd/scripts)
 
