@@ -50,6 +50,8 @@ struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 #if defined(CONFIG_BT_ISO_UNICAST)
 struct bt_iso_cig cigs[CONFIG_BT_ISO_MAX_CIG];
 static struct bt_iso_server *iso_server;
+
+static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan);
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
@@ -437,6 +439,28 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			 */
 			bt_iso_remove_data_path(chan->iso);
 		}
+
+#if defined(CONFIG_BT_ISO_UNICAST)
+		bool is_chan_connected;
+		struct bt_iso_cig *cig;
+
+		/* Update CIG state */
+		cig = get_cig(chan);
+		__ASSERT(cig != NULL, "CIG was NULL");
+
+		is_chan_connected = false;
+		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, chan, node) {
+			if (chan->state == BT_ISO_CONNECTED ||
+			    chan->state == BT_ISO_CONNECT) {
+				is_chan_connected = true;
+				break;
+			}
+		}
+
+		if (!is_chan_connected) {
+			cig->state = BT_ISO_CIG_STATE_INACTIVE;
+		}
+#endif /* CONFIG_BT_ISO_UNICAST */
 	}
 
 	if (chan->ops->disconnected) {
@@ -1070,13 +1094,25 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	return rsp;
 }
 
+static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
+{
+	if (iso_chan->iso == NULL) {
+		return NULL;
+	}
+
+	__ASSERT(iso_chan->iso->iso.cig_id < ARRAY_SIZE(cigs),
+		 "Invalid cig_id %u", iso_chan->iso->iso.cig_id);
+
+	return &cigs[iso_chan->iso->iso.cig_id];
+}
+
 static struct bt_iso_cig *get_free_cig(void)
 {
 	/* We can use the index in the `cigs` array as CIG ID */
 
 	for (int i = 0; i < ARRAY_SIZE(cigs); i++) {
-		if (!cigs[i].initialized) {
-			cigs[i].initialized = true;
+		if (cigs[i].state == BT_ISO_CIG_STATE_IDLE) {
+			cigs[i].state = BT_ISO_CIG_STATE_CONFIGURED;
 			cigs[i].id = i;
 			sys_slist_init(&cigs[i].cis_channels);
 			return &cigs[i];
@@ -1318,6 +1354,11 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 		return -EINVAL;
 	}
 
+	if (cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("Invalid CIG state: %u", cig->state);
+		return -EINVAL;
+	}
+
 	CHECKIF(!valid_cig_param(param)) {
 		BT_DBG("Invalid CIG params");
 		return -EINVAL;
@@ -1376,7 +1417,6 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig,
 
 int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 {
-	struct bt_iso_chan *cis;
 	int err;
 
 	CHECKIF(cig == NULL) {
@@ -1384,11 +1424,10 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig)
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
-		if (cis->state != BT_ISO_DISCONNECTED) {
-			BT_DBG("Channel %p is not disconnected", cis);
-			return -EINVAL;
-		}
+	if (cig->state != BT_ISO_CIG_STATE_INACTIVE &&
+	    cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("Invalid CIG state: %u", cig->state);
+		return -EINVAL;
 	}
 
 	err = hci_le_remove_cig(cig->id);
@@ -1491,9 +1530,16 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 
 	/* Set connection states */
 	for (int i = 0; i < count; i++) {
-		param[i].iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
-		bt_conn_set_state(param[i].iso_chan->iso, BT_CONN_CONNECT);
-		bt_iso_chan_set_state(param[i].iso_chan, BT_ISO_CONNECT);
+		struct bt_iso_chan *iso_chan = param[i].iso_chan;
+		struct bt_iso_cig *cig;
+
+		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECT);
+		bt_iso_chan_set_state(iso_chan, BT_ISO_CONNECT);
+
+		cig = get_cig(iso_chan);
+		__ASSERT(cig != NULL, "CIG was NULL");
+		cig->state = BT_ISO_CIG_STATE_ACTIVE;
 	}
 
 	return 0;

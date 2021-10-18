@@ -24,6 +24,13 @@ struct iso_data {
 	uint16_t handle;
 };
 
+enum bt_iso_cig_state {
+	BT_ISO_CIG_STATE_IDLE,
+	BT_ISO_CIG_STATE_CONFIGURED,
+	BT_ISO_CIG_STATE_ACTIVE,
+	BT_ISO_CIG_STATE_INACTIVE
+};
+
 struct bt_iso_cig {
 	/** List of ISO channels to setup as CIS (the CIG). */
 	sys_slist_t cis_channels;
@@ -34,7 +41,11 @@ struct bt_iso_cig {
 	/** The CIG ID */
 	uint8_t id;
 
-	bool initialized;
+	/** The CIG state
+	 *
+	 * Refer to BT Core Spec 5.3, Vol 6, Part 6, Figure 4.63
+	 */
+	enum bt_iso_cig_state state;
 };
 
 enum {
