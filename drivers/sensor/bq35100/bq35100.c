@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(BQ35100, CONFIG_SENSOR_LOG_LEVEL);
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_bus_access(const struct device *dev, uint8_t reg,
-			      uint8_t *data, size_t length)
+			      uint8_t *data)
 {
 	const struct bq35100_config *cfg = dev->config;
 
@@ -38,7 +38,7 @@ static int bq35100_bus_access(const struct device *dev, uint8_t reg,
 				      BQ35100_TO_I2C_REG(reg),
 				      data, length);
 	} else {
-		if (length != 2 || length != 3) {
+		if (length != 2) {
 			return -EINVAL;
 		}
 
@@ -102,14 +102,13 @@ static int bq35100_reg_write(const struct device *dev,
 {
 	LOG_DBG("[0x%x] = 0x%x", reg_addr, reg_data);
 
-	uint8_t buf[3];
+	uint8_t buf[2];
 
 	/* Little Endian */
 	buf[0] = (uint8_t)reg_data;
 	buf[1] = (uint8_t)(reg_data >> 8);
-	buf[2] = (uint8_t)(reg_data >> 16);
 
-	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf, 3);
+	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf);
 }
 
 /**
@@ -164,25 +163,23 @@ static int bq35100_control_reg_read(const struct device *dev,
 static int bq35100_set_security_mode(const struct device *dev, enum bq35100_security security_mode)
 {
 	const struct bq35100_config *cfg = dev->config;
-	uint8_t buf[4];
+	uint8_t buf[4], status;
 	buf[0] = BQ35100_CMD_MAC_CONTROL;
 
 	switch (security_mode) {
 	case BQ35100_SECURITY_UNKNOWN:
 		LOG_ERR("Unkown mode");
-			return -EIO;
 		bq35100_current_security_mode = BQ35100_SECURITY_UNKNOWN;
+			return -EIO;
 		break;
-
 	case  BQ35100_SECURITY_FULL_ACCESS:
-		if (security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+		if ( security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED) ) {
 			LOG_ERR("Unseal first if in Sealed mode");
 			return -EIO;
 		}
 
 		uint32_t full_access_codes = bq35100_reg_read(dev, BQ35100_FLASH_FULL_UNSEAL_STEP1, buf, 4);
-			
-		if (full_access_codes < 0){
+		if ( full_access_codes < 0 ) {
 			LOG_ERR("Unable to read from DataFlash");
 			return -EIO;
 		}
@@ -192,16 +189,17 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 		buf[2] = (full_access_codes >> 24) & 0xFF;
         buf[1] = (full_access_codes >> 16) & 0xFF;
 
-		if (/*?*/) {
+		status = bq35100_reg_write(dev, cfg->i2c_addr, buf);
+		if ( !(status < 0) ) {
 			buf[2] = (full_access_codes >> 8) & 0xFF;
 			buf[1] = full_access_codes & 0xFF;
 			bq35100_reg_write(dev, cfg->i2c_addr, buf);
 		}
+
 		bq35100_current_security_mode = BQ35100_SECURITY_FULL_ACCESS;
 		break;
-
 	case BQ35100_SECURITY_UNSEALED:
-		if (security_mode == BQ35100_SECURITY_FULL_ACCESS && !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)){
+		if ( security_mode == BQ35100_SECURITY_FULL_ACCESS && !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED) ){
 			LOG_ERR("Seal first if in Full Access mode");
 			return -EIO;
 		}
@@ -209,7 +207,8 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 		buf[2] = (BQ35100_DEFAULT_SEAL_CODES >> 24) & 0xFF;
 		buf[1] = (BQ35100_DEFAULT_SEAL_CODES >> 16) & 0xFF;
 
-		if (/*?*/) {
+		status = bq35100_reg_write(dev, cfg->i2c_addr, buf);
+		if ( !(status < 0) ) {
 			buf[2] = (BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF;
 			buf[1] = BQ35100_DEFAULT_SEAL_CODES & 0xFF;
 			bq35100_reg_write(dev, cfg->i2c_addr, buf);
@@ -217,22 +216,22 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 		bq35100_current_security_mode = BQ35100_SECURITY_UNSEALED;
 		break;
 	case BQ35100_SECURITY_SEALED:
-
+		buf[1] = 0x20; // First byte of SEALED sub-command (0x20)
+		buf[2] = 0x00;  // Second byte of SEALED sub-command (0x00) (register address will auto-increment)
+		bq35100_reg_write(dev, cfg->i2c_addr, buf);
 		bq35100_current_security_mode = BQ35100_SECURITY_SEALED;
 		break;
 	default:
-		LOG_ERR("Unkown mode");
+		LOG_ERR("Invalid mode");
 			return -EIO;
 		break;
 	}
 	k_sleep(K_MSEC(100));
 	return 0;
 }
-	
 
 /**
- * Set Gauge Mode. 
- * This function follows the steps in bq35100.pdf section of 8.2.2.2.1.2
+ * Set Gauge Mode.
  * @param dev - The device structure.
  * @param gauge_mode - The Gauge mode wanted to be set
  * @return 0 in case of success, negative error code otherwise.
@@ -240,16 +239,35 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 static int bq35100_set_gauge_mode(const struct device *dev, enum bq35100_gauge_mode gauge_mode)
 {
 	int status;
-	uint8_t buf[1];
+	uint8_t buf[1], data[34];
 
-	if (bq35100_current_security_mode == BQ35100_UNKNOWN_MODE || bq35100_current_security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
-		LOG_ERR("Wrong Sealing Mode");
+	if ( bq35100_current_security_mode == BQ35100_UNKNOWN_MODE || bq35100_current_security_mode == BQ35100_SECURITY_SEALED 
+														&& !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED) ) {
+		LOG_ERR("Wrong Security Mode");
 			return -EIO;
 	}
 
-	
+	 //Operation Config A
+	 //read extend data?
+	status = bq35100_reg_read(dev, BQ35100_FLASH_OPERATION_CFG_A, buf, 1);
+	if ( status < 0 ) {
+		LOG_ERR("Unable to read Operation Config A");
+			return -EIO;
+	}
 
-	k_sleep(K_MSEC(100));
+	if ( (bq35100_gauge_mode)(buf[0] & 0b11) != gauge_mode ) { //GMSEL 1:0
+		buf[0] = buf[0] & ~0b11;
+		buf[0] = buf[0] | (uint8_t)gauge_mode;
+
+		k_sleep(K_MSEC(100));
+
+		status = bq35100_reg_write(dev, BQ35100_FLASH_OPERATION_CFG_A, buf);
+		if ( status < 0 ) {
+			LOG_ERR("Unable to write Operation Config A");
+			return -EIO;
+		}
+	}
+
 	return 0;
 }
 
@@ -260,26 +278,37 @@ static int bq35100_set_gauge_mode(const struct device *dev, enum bq35100_gauge_m
   */
 int bq35100_gauge_start(const struct device *dev)
 {
-	int ret;
+	int ret, status;
 
-	ret = bq35100_control_reg_write(dev,
-				     BQ35100_CTRL_GAUGE_START);//reg_control_reg_read to check
+	ret = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_START);
+
+	status = bq35100_control_reg_read(dev, BQ35100_CTRL_GAUGE_START);
+
+	if ( status < 0) {
+		LOG_ERR("Unable to start gauge");
+		return -EIO;
+	}
 
 	return ret;
 }
 
 /**
-  * Triggers the device to stop gauging and complete all
-	outstanding tasks.
+  * Triggers the device to stop gauging and complete all outstanding tasks.
   * @param dev - The device structure.
   * @return 0 in case of success, negative error code otherwise. 
   */
 int bq35100_gauge_stop(const struct device *dev)
 {
-	int ret;
+	int ret, status;
 
-	ret = bq35100_control_reg_write(dev,
-				     BQ35100_CTRL_GAUGE_STOP);
+	ret = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_STOP);
+
+	status = bq35100_control_reg_read(dev, BQ35100_CTRL_GAUGE_STOP);
+
+	if ( status < 0) {
+		LOG_ERR("Unable to stop gauge");
+		return -EIO;
+	}
 
 	return ret;
 }
