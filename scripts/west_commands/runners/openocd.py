@@ -73,6 +73,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.use_elf = use_elf
         self.gdb_init = gdb_init
         self.load_arg = [] if no_load else ['-ex', 'load']
+        self.reset_halt_arg = ['-c', reset_halt_cmd] if reset_halt_cmd else []
 
     @classmethod
     def name(cls):
@@ -91,9 +92,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-pre-init', action='append',
                             help='''Command to run before calling init;
                             may be given multiple times''')
-        parser.add_argument('--cmd-reset-halt', default=DEFAULT_OPENOCD_RESET_HALT_CMD,
-                            help=f'''Command to run for resetting and halting the target,
-                            defaults to "{DEFAULT_OPENOCD_RESET_HALT_CMD}"''')
+
+        cmd_reset_halt_grp = parser.add_mutually_exclusive_group()
+        cmd_reset_halt_grp.add_argument('--cmd-reset-halt', default=DEFAULT_OPENOCD_RESET_HALT_CMD,
+                                        help=f'''Command to run for resetting and halting the target,
+                                        defaults to "{DEFAULT_OPENOCD_RESET_HALT_CMD}"''')
+        cmd_reset_halt_grp.add_argument('--no-cmd-reset-halt', action='store_true', default=False)
+
         parser.add_argument('--cmd-pre-load', action='append',
                             help='''Command to run before flashing;
                             may be given multiple times''')
@@ -129,9 +134,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
+        if args.no_cmd_reset_halt:
+            reset_halt_cmd = None
+        else:
+            reset_halt_cmd = args.cmd_reset_halt
+
         return OpenOcdBinaryRunner(
             cfg,
-            pre_init=args.cmd_pre_init, reset_halt_cmd=args.cmd_reset_halt,
+            pre_init=args.cmd_pre_init, reset_halt_cmd=reset_halt_cmd,
             pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             tui=args.tui, config=args.config, serial=args.serial,
@@ -232,9 +242,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               pre_load_cmd + ['-c', self.reset_halt_cmd,
-                               '-c', self.load_cmd + ' ' + hex_name,
-                               '-c', self.reset_halt_cmd] +
+               pre_load_cmd + self.reset_halt_arg +
+                              ['-c', self.load_cmd + ' ' + hex_name] +
+                              self.reset_halt_arg +
                ['-c', self.verify_cmd + ' ' + hex_name] +
                post_verify_cmd +
                ['-c', 'reset run',
@@ -257,8 +267,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               ['-c', self.reset_halt_cmd,
-                '-c', 'load_image ' + self.elf_name,
+               self.reset_halt_arg +
+               ['-c', 'load_image ' + self.elf_name,
                 '-c', 'resume ' + ep_addr,
                 '-c', 'shutdown'])
         self.check_call(cmd)
@@ -309,6 +319,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 '-c', 'telnet_port {}'.format(self.telnet_port),
                 '-c', 'gdb_port {}'.format(self.gdb_port)] +
                pre_init_cmd + self.init_arg + self.targets_arg +
-               ['-c', self.reset_halt_cmd])
+               self.reset_halt_arg)
         self.print_gdbserver_message()
         self.check_call(cmd)
