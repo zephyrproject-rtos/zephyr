@@ -751,6 +751,9 @@ enum bt_security_err {
 	/** Invalid parameters. */
 	BT_SECURITY_ERR_INVALID_PARAM,
 
+	/** Distributed Key Rejected */
+	BT_SECURITY_ERR_KEY_REJECTED,
+
 	/** Pairing failed but the exact reason could not be specified. */
 	BT_SECURITY_ERR_UNSPECIFIED,
 };
