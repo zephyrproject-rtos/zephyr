@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define IS_ACL_HANDLE(_handle) ((_handle) < CONFIG_BT_MAX_CONN)
+
 enum llcp {
 	LLCP_NONE,
 	LLCP_CONN_UPD,
