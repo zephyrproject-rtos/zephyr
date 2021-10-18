@@ -154,9 +154,9 @@ static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %d", argc);
+	shell_print(shell, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
+		shell_print(shell, "  argv[%zd] = %s", cnt, argv[cnt]);
 	}
 
 	return 0;
@@ -164,9 +164,9 @@ static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_demo_hexdump(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "argc = %d", argc);
+	shell_print(shell, "argc = %zd", argc);
 	for (size_t cnt = 0; cnt < argc; cnt++) {
-		shell_print(shell, "argv[%d]", cnt);
+		shell_print(shell, "argv[%zd]", cnt);
 		shell_hexdump(shell, argv[cnt], strlen(argv[cnt]));
 	}
 
