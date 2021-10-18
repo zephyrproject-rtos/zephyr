@@ -1093,21 +1093,6 @@ static int cig_init_cis(struct bt_iso_cig *cig, const struct bt_iso_cig_create_p
 	for (uint8_t i = 0; i < param->num_cis; i++) {
 		struct bt_iso_chan *cis = param->cis_channels[i];
 
-		CHECKIF(cis == NULL) {
-			BT_DBG("CIS was NULL");
-			return -EINVAL;
-		}
-
-		CHECKIF(!valid_chan_qos(cis->qos)) {
-			BT_DBG("Invalid QOS");
-			return -EINVAL;
-		}
-
-		if (cis->iso != NULL) {
-			BT_DBG("CIS conn was already allocated");
-			return -EALREADY;
-		}
-
 		cis->iso = iso_new();
 		if (cis->iso == NULL) {
 			BT_ERR("Unable to allocate CIS connection");
@@ -1175,9 +1160,21 @@ int bt_iso_cig_create(const struct bt_iso_cig_create_param *param,
 	}
 
 	for (int i = 0; i < param->num_cis; i++) {
-		CHECKIF(param->cis_channels[i] == NULL) {
-			BT_DBG("NULL channel in cis_channels[%d]", i);
+		struct bt_iso_chan *cis = param->cis_channels[i];
+
+		CHECKIF(cis == NULL) {
+			BT_DBG("bis_channels[%d]: NULL channel", i);
 			return -EINVAL;
+		}
+
+		CHECKIF(!valid_chan_qos(cis->qos)) {
+			BT_DBG("bis_channels[%d]: Invalid QOS", i);
+			return -EINVAL;
+		}
+
+		if (cis->iso != NULL) {
+			BT_DBG("bis_channels[%d]: already allocated", i);
+			return -EALREADY;
 		}
 	}
 
@@ -1511,34 +1508,6 @@ static int big_init_bis(struct bt_iso_big *big,
 	for (uint8_t i = 0; i < num_bis; i++) {
 		struct bt_iso_chan *bis = bis_channels[i];
 
-		if (!bis) {
-			BT_DBG("BIS was NULL");
-			return -EINVAL;
-		}
-
-		if (bis->iso) {
-			BT_DBG("BIS conn was already allocated");
-			return -EALREADY;
-		}
-
-		CHECKIF(bis->qos == NULL) {
-			BT_DBG("BIS QOS is NULL");
-			return -EINVAL;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && broadcaster) {
-			CHECKIF(bis->qos->tx == NULL ||
-				!valid_chan_io_qos(bis->qos->tx, true)) {
-				BT_DBG("Invalid BIS QOS");
-				return -EINVAL;
-			}
-		} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
-			CHECKIF(bis->qos->rx == NULL) {
-				BT_DBG("Invalid BIS QOS");
-				return -EINVAL;
-			}
-		}
-
 		bis->iso = iso_new();
 
 		if (!bis->iso) {
@@ -1635,8 +1604,26 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 	}
 
 	for (int i = 0; i < param->num_bis; i++) {
-		CHECKIF(param->bis_channels[i] == NULL) {
-			BT_DBG("NULL channel in bis_channels[%d]", i);
+		struct bt_iso_chan *bis = param->bis_channels[i];
+
+		CHECKIF(bis == NULL) {
+			BT_DBG("bis_channels[%d]: NULL channel", i);
+			return -EINVAL;
+		}
+
+		if (bis->iso) {
+			BT_DBG("bis_channels[%d]: already allocated", i);
+			return -EALREADY;
+		}
+
+		CHECKIF(bis->qos == NULL) {
+			BT_DBG("bis_channels[%d]: qos is NULL", i);
+			return -EINVAL;
+		}
+
+		CHECKIF(bis->qos->tx == NULL ||
+			!valid_chan_io_qos(bis->qos->tx, true)) {
+			BT_DBG("bis_channels[%d]: Invalid QOS", i);
 			return -EINVAL;
 		}
 	}
@@ -2002,8 +1989,25 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	}
 
 	for (int i = 0; i < param->num_bis; i++) {
-		if (param->bis_channels[i] == NULL) {
-			BT_DBG("NULL channel in bis_channels[%d]", i);
+		struct bt_iso_chan *bis = param->bis_channels[i];
+
+		CHECKIF(bis == NULL) {
+			BT_DBG("bis_channels[%d]: NULL channel", i);
+			return -EINVAL;
+		}
+
+		if (bis->iso) {
+			BT_DBG("bis_channels[%d]: already allocated", i);
+			return -EALREADY;
+		}
+
+		CHECKIF(bis->qos == NULL) {
+			BT_DBG("bis_channels[%d]: qos is NULL", i);
+			return -EINVAL;
+		}
+
+		CHECKIF(bis->qos->rx == NULL) {
+			BT_DBG("bis_channels[%d]: qos->rx is NULL", i);
 			return -EINVAL;
 		}
 	}
