@@ -11,7 +11,6 @@ jobs:
     - name: clone repo
       run: |
         git clone -b ${{ env.branch }} git@github.com:phytec-labs/${{ env.repository_name }}.git zephyr
-        git clone git@github.com:phytec-labs/${{ env.repository_name }}-samples.git ${{ env.repository_name }}-samples
       env:
         repository_name: elements-zephyr
         branch: stable-next
@@ -25,45 +24,6 @@ jobs:
         cd ../
       env:
         repository_name: zephyr
-
-  build:
-    runs-on: self-hosted
-    needs: [prepare]
-    strategy:
-      matrix:
-        application:
-        - "demo/leds"
-        - "startup/gpio"
-        - "startup/i2c"
-        - "startup/mtimer"
-        - "startup/spi"
-        - "startup/uart"
-    steps:
-    - name: set-up Zephyr
-      run: |
-        virtualenv -p python3 venv
-        . venv/bin/activate
-        pip3 install west
-        pip3 install -r ${{ env.repository_name }}/scripts/requirements.txt
-        west init -l zephyr
-      env:
-        repository_name: zephyr
-
-    - name: compile Zephyr
-      run: |
-        . venv/bin/activate
-        export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        export ZEPHYR_SDK_INSTALL_DIR=/home/inspection/ci/tools/zephyr-sdk/0.12.0
-        west build -p always -b th283 -d ./build ${{ env.repository_name }}-samples/${{ matrix.application }}
-      env:
-        repository_name: elements-zephyr
-
-    - name: post cleanup
-      if: always()
-      run: |
-        rm -rf .west build venv
-      env:
-        repository_name: elements-zephyr
 
   deploy:
     runs-on: self-hosted
@@ -85,7 +45,6 @@ jobs:
     steps:
     - name: post cleanup
       run: |
-        rm -rf zephyr ${{ env.repository_name}}-samples
         rm -rf .west build venv
       env:
         repository_name: elements-zephyr
