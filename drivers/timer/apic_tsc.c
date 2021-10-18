@@ -28,7 +28,11 @@ static union { uint32_t val; struct apic_timer_lvt lvt; } lvt_reg;
 static ALWAYS_INLINE uint64_t rdtsc(void)
 {
 	uint32_t hi, lo;
-
+	/*
+	 * The RDTSC instruction is not serializing or ordered with other
+	 * instructions. This fence here used to prevent reordering
+	 */
+	__asm__ volatile("mfence" ::: "memory");
 	__asm__ volatile("rdtsc" : "=d"(hi), "=a"(lo));
 	return lo + (((uint64_t)hi) << 32);
 }
@@ -48,11 +52,17 @@ static void isr(const void *arg)
 	}
 }
 
-static inline void wrmsr(int32_t msr, uint64_t val)
+static ALWAYS_INLINE void wrmsr(int32_t msr, uint64_t val)
 {
 	uint32_t hi = (uint32_t) (val >> 32);
 	uint32_t lo = (uint32_t) val;
 
+	/* Per the SDM, the TSC_DEADLINE MSR is not serializing, so
+	 * this fence is needed to be sure that an upcoming MSR write
+	 * (i.e. a timeout we're about to set) cannot possibly be reordered
+	 * around.
+	 */
+	__asm__ volatile("mfence" ::: "memory");
 	__asm__ volatile("wrmsr" :: "d"(hi), "a"(lo), "c"(msr));
 }
 
@@ -132,12 +142,9 @@ void smp_timer_init(void)
 {
 	/* Copy the LVT configuration from CPU0, because IRQ_CONNECT()
 	 * doesn't know how to manage LVT interrupts for anything
-	 * other than the calling/initial CPU.  Same fence needed to
-	 * prevent later MSR writes from reordering before the APIC
-	 * configuration write.
+	 * other than the calling/initial CPU.
 	 */
 	x86_write_loapic(LOAPIC_TIMER, lvt_reg.val);
-	__asm__ volatile("mfence" ::: "memory");
 	clear_tsc_adjust();
 	irq_enable(timer_irq());
 }
@@ -178,13 +185,6 @@ int sys_clock_driver_init(const struct device *dev)
 	lvt_reg.lvt.mode = TSC_DEADLINE;
 	lvt_reg.lvt.masked = 0;
 	x86_write_loapic(LOAPIC_TIMER, lvt_reg.val);
-
-	/* Per the SDM, the TSC_DEADLINE MSR is not serializing, so
-	 * this fence is needed to be sure that an upcoming MSR write
-	 * (i.e. a timeout we're about to set) cannot possibly reorder
-	 * around the initialization we just did.
-	 */
-	__asm__ volatile("mfence" ::: "memory");
 
 	last_announce = rdtsc();
 	irq_enable(timer_irq());
