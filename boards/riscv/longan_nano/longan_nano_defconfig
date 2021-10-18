@@ -1,0 +1,13 @@
+# Sipeed longan nano Development Board Configuration
+#
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_SOC_SERIES_GD32VF103=y
+CONFIG_SOC_GD32VF103=y
+CONFIG_GD32_HXTAL_8MHZ=y
+
+# enable machine timer
+CONFIG_RISCV_MACHINE_TIMER=y
