@@ -129,6 +129,17 @@
 			label = "TRNG_0";
 			status = "disabled";
 		};
+
+		spi2: spi@60024000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x60024000 DT_SIZE_K(4)>;
+			interrupts = <SPI2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "SPI_2";
+			clocks = <&rtc ESP32_SPI2_MODULE>;
+			status = "disabled";
+			use-iomux;
+		};
 	};
 
 };
