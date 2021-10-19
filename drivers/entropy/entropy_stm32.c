@@ -520,5 +520,5 @@ static const struct entropy_driver_api entropy_stm32_rng_api = {
 DEVICE_DT_INST_DEFINE(0,
 		    entropy_stm32_rng_init, NULL,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_stm32_rng_api);
