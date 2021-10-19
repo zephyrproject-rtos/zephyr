@@ -26,8 +26,6 @@
 #define RAM_SIZE \
 	(L2_SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
 
-#define LPSRAM_MASK(x)		0x00000003
-
 /* Location for the intList section which is later used to construct the
  * Interrupt Descriptor Table (IDT). This is a bogus address as this
  * section will be stripped off in the final image.
@@ -136,9 +134,6 @@
 #define SOF_TEXT_BASE	SOF_TEXT_START
 
 #define SRAM_REG_FW_END		0x14
-
-/* Host page size */
-#define HOST_PAGE_SIZE		4096
 
 /* low power ram where DMA buffers are typically placed */
 #define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))

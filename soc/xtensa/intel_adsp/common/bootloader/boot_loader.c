@@ -20,6 +20,10 @@
 #include "platform.h"
 #include "manifest.h"
 
+#define LPSRAM_MASK(x) 0x00000003
+#define SRAM_BANK_SIZE (64 * 1024)
+#define HOST_PAGE_SIZE 4096
+
 #if CONFIG_SOC_INTEL_S1000
 #define MANIFEST_BASE	BOOT_LDR_MANIFEST_BASE
 #else
