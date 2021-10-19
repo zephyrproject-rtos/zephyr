@@ -19,8 +19,7 @@
  * Packet Size Support Functions
  */
 
-uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
-				    struct modem_socket *sock)
+uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg, struct modem_socket *sock)
 {
 	uint16_t total = 0U;
 
@@ -63,16 +62,15 @@ static int modem_socket_packet_drop_first(struct modem_socket *sock)
 
 	sock->packet_count--;
 	for (i = 0; i < sock->packet_count; i++) {
-		sock->packet_sizes[i] =
-			sock->packet_sizes[i + 1];
+		sock->packet_sizes[i] = sock->packet_sizes[i + 1];
 	}
 
 	sock->packet_sizes[sock->packet_count] = 0U;
 	return 0;
 }
 
-int modem_socket_packet_size_update(struct modem_socket_config *cfg,
-				    struct modem_socket *sock, int new_total)
+int modem_socket_packet_size_update(struct modem_socket_config *cfg, struct modem_socket *sock,
+				    int new_total)
 {
 	uint16_t old_total = 0U;
 
@@ -139,8 +137,7 @@ data_ready:
  * Socket Support Functions
  */
 
-int modem_socket_get(struct modem_socket_config *cfg,
-		     int family, int type, int proto)
+int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int proto)
 {
 	int i;
 
@@ -176,8 +173,7 @@ int modem_socket_get(struct modem_socket_config *cfg,
 	return cfg->sockets[i].sock_fd;
 }
 
-struct modem_socket *modem_socket_from_fd(struct modem_socket_config *cfg,
-					  int sock_fd)
+struct modem_socket *modem_socket_from_fd(struct modem_socket_config *cfg, int sock_fd)
 {
 	int i;
 
@@ -195,8 +191,7 @@ struct modem_socket *modem_socket_from_fd(struct modem_socket_config *cfg,
 	return NULL;
 }
 
-struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg,
-					  int id)
+struct modem_socket *modem_socket_from_id(struct modem_socket_config *cfg, int id)
 {
 	int i;
 
@@ -259,8 +254,8 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
  * socket it polled. I think we could live with such limitation though in the
  * initial implementation, but this should be improved in the future.
  */
-int modem_socket_poll(struct modem_socket_config *cfg,
-		      struct zsock_pollfd *fds, int nfds, int msecs)
+int modem_socket_poll(struct modem_socket_config *cfg, struct zsock_pollfd *fds, int nfds,
+		      int msecs)
 {
 	struct modem_socket *sock;
 	int ret, i;
@@ -341,8 +336,7 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 	return found_count;
 }
 
-void modem_socket_wait_data(struct modem_socket_config *cfg,
-			    struct modem_socket *sock)
+void modem_socket_wait_data(struct modem_socket_config *cfg, struct modem_socket *sock)
 {
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 	sock->is_waiting = true;
@@ -351,8 +345,7 @@ void modem_socket_wait_data(struct modem_socket_config *cfg,
 	k_sem_take(&sock->sem_data_ready, K_FOREVER);
 }
 
-void modem_socket_data_ready(struct modem_socket_config *cfg,
-			     struct modem_socket *sock)
+void modem_socket_data_ready(struct modem_socket_config *cfg, struct modem_socket *sock)
 {
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
@@ -370,8 +363,7 @@ void modem_socket_data_ready(struct modem_socket_config *cfg,
 	k_sem_give(&cfg->sem_lock);
 }
 
-int modem_socket_init(struct modem_socket_config *cfg,
-		      const struct socket_op_vtable *vtable)
+int modem_socket_init(struct modem_socket_config *cfg, const struct socket_op_vtable *vtable)
 {
 	int i;
 
