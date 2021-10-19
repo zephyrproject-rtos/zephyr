@@ -458,7 +458,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	while (thread != NULL) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
-					  data + num_bytes_written,
+					  (uint8_t *)data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
 
 		num_bytes_written   += bytes_copied;
@@ -478,7 +478,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	if (reader != NULL) {
 		desc = (struct k_pipe_desc *)reader->base.swap_data;
 		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
-					  data + num_bytes_written,
+					 (uint8_t *)data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
 
 		num_bytes_written   += bytes_copied;
@@ -492,7 +492,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	 */
 
 	num_bytes_written +=
-		pipe_buffer_put(pipe, data + num_bytes_written,
+		pipe_buffer_put(pipe, (uint8_t *)data + num_bytes_written,
 				 bytes_to_write - num_bytes_written);
 
 	if (num_bytes_written == bytes_to_write) {
@@ -519,7 +519,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	struct k_pipe_desc  pipe_desc;
 
-	pipe_desc.buffer         = data + num_bytes_written;
+	pipe_desc.buffer         = (uint8_t *)data + num_bytes_written;
 	pipe_desc.bytes_to_xfer  = bytes_to_write - num_bytes_written;
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
