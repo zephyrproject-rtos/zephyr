@@ -72,6 +72,10 @@ config PWM_ITE_IT8XXX2
 	default y
 	depends on PWM
 
+config TACH_IT8XXX2
+	default y
+	depends on SENSOR
+
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
 	default 185

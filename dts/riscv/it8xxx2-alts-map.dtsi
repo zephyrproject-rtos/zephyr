@@ -62,6 +62,20 @@
 			pinctrls = <&pinmuxa 7 IT8XXX2_PINMUX_FUNC_1>;
 		};
 
+		/* Tachometer alternate function */
+		pinctrl_tach0a: tach0a {
+			pinctrls = <&pinmuxd 6 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_tach0b: tach0b {
+			pinctrls = <&pinmuxj 2 IT8XXX2_PINMUX_FUNC_3>;
+		};
+		pinctrl_tach1a: tach1a {
+			pinctrls = <&pinmuxd 7 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_tach1b: tach1b {
+			pinctrls = <&pinmuxj 3 IT8XXX2_PINMUX_FUNC_3>;
+		};
+
 		/* I2C alternate function */
 		pinctrl_i2c_clk0: i2c_clk0 {
 			pinctrls = <&pinmuxb 3 IT8XXX2_PINMUX_FUNC_1>;
