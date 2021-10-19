@@ -11,6 +11,7 @@
 #include <drivers/can.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
@@ -179,6 +180,7 @@ struct can_rcar_cfg {
 	uint8_t phase_seg1;
 	uint8_t phase_seg2;
 	uint16_t sample_point;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct can_rcar_tx_cb {
@@ -868,6 +870,12 @@ static int can_rcar_init(const struct device *dev)
 	data->state_change_cb = NULL;
 	data->state_change_cb_data = NULL;
 
+	/* Configure dt provided device signals when available */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
 				(clock_control_subsys_t *)&config->mod_clk);
@@ -1024,6 +1032,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 
 /* Device Instantiation */
 #define CAN_RCAR_INIT(n)							\
+	PINCTRL_DT_INST_DEFINE(n);						\
 	static void can_rcar_##n##_init(const struct device *dev);		\
 	static const struct can_rcar_cfg can_rcar_cfg_##n = {			\
 		.reg_addr = DT_INST_REG_ADDR(n),				\
@@ -1045,6 +1054,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 		.phase_seg1 = DT_INST_PROP_OR(n, phase_seg1, 0),		\
 		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
 		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 	static struct can_rcar_data can_rcar_data_##n;				\
 										\
