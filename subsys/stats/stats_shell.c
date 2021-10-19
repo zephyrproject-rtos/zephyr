@@ -25,7 +25,7 @@ static int stats_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t
 		val = *(uint64_t *)(addr);
 		break;
 	}
-	shell_print(sh, "\t%s (offset: %u, addr: %p): %llu", name, off, addr, val);
+	shell_print(sh, "\t%s (offset: %u, addr: %p): %" PRIu64, name, off, addr, val);
 	return 0;
 }
 
