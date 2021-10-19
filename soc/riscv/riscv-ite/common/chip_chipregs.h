@@ -44,6 +44,13 @@
 #define REG_BASE_ADDR				EC_REG_BASE_ADDR
 #endif
 
+/* Common definition */
+/*
+ * EC clock frequency (PWM and tachometer driver need it to reply
+ * to api or calculate RPM)
+ */
+#define EC_FREQ			MHZ(8)
+
 /**
  * (10XXh) Shared Memory Flash Interface Bridge (SMFI)
  */
@@ -640,6 +647,11 @@ struct pwm_it8xxx2_regs {
 /* PWM register fields */
 /* 0x023: PWM Clock Control */
 #define IT8XXX2_PWM_PCCE		BIT(1)
+/* 0x048: Tachometer Switch Control */
+#define IT8XXX2_PWM_T0DVS		BIT(3)
+#define IT8XXX2_PWM_T0CHSEL		BIT(2)
+#define IT8XXX2_PWM_T1DVS		BIT(1)
+#define IT8XXX2_PWM_T1CHSEL		BIT(0)
 
 /**
  *

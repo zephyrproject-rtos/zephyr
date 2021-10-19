@@ -66,6 +66,7 @@
 &ite_uart2_wrapper {
 	status = "okay";
 };
+/* pwm for test */
 &pwm0 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C6>;
@@ -75,10 +76,17 @@
 	 */
 	pwm-output-frequency = <324>;
 };
+/* pwm for fan */
 &pwm7 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pwm-output-frequency = <30000>;
+};
+/* fan tachometer sensor */
+&tach0 {
+	status = "okay";
+	channel = <IT8XXX2_TACH_CHANNEL_A>;
+	pulses-per-round = <2>;
 };
 &kscan0 {
 	status = "okay";

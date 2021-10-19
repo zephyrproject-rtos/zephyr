@@ -1,0 +1,40 @@
+# Copyright (c) 2021 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it8xxx2 Tachometer node
+
+compatible: "ite,it8xxx2-tach"
+
+include: tach.yaml
+
+properties:
+    reg:
+        required: true
+
+    dvs-bit:
+        type: int
+        required: true
+        description: tachometer data valid bit of tswctlr register
+
+    chsel-bit:
+        type: int
+        required: true
+        description: tachometer data valid status bit of tswctlr register
+
+    pinctrl-0:
+        type: phandles
+        required: true
+        description: configuration of tachometer pinmux controller
+
+    channel:
+        type: int
+        required: true
+        enum:
+              - 0
+              - 1
+        description: 0 = TACH_CHANNEL_A, 1 = TACH_CHANNEL_B
+
+    pulses-per-round:
+        type: int
+        required: true
+        description: number of pulses per round of tachometer's input
