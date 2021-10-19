@@ -15,6 +15,9 @@ config SOC
 	string
 	default "intel_apl_adsp" if SOC_INTEL_CAVS_V15
 
+config HP_SRAM_RESERVE
+	default 32768
+
 config SMP
 	default y
 
