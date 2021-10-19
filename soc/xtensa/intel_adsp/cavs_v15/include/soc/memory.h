@@ -6,25 +6,7 @@
 #ifndef __INC_MEMORY_H
 #define __INC_MEMORY_H
 
-#include <cavs-vectors.h>
 #include <cavs-mem.h>
-
-/* L2 HP SRAM */
-#define HP_RAM_RESERVE_HEADER_SPACE	(HP_SRAM_WIN0_SIZE + \
-					 SRAM_INBOX_SIZE + \
-					 SRAM_STREAM_SIZE + \
-					 SRAM_EXCEPT_SIZE + \
-					 SRAM_DEBUG_SIZE + \
-					 SRAM_TRACE_SIZE)
-
-/* text and data share the same L2 HP SRAM.
- * So, they lie next to each other.
- */
-#define RAM_BASE \
-	(L2_SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE + VECTOR_TBL_SIZE)
-
-#define RAM_SIZE \
-	(L2_SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
 
 /* boot loader in IMR */
 #define IMR_BOOT_LDR_TEXT_ENTRY_BASE	0xB000A000

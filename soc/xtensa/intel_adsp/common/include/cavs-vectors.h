@@ -18,7 +18,7 @@
 
 /* This is the base address of all the vectors defined in SRAM */
 #define XCHAL_VECBASE_RESET_PADDR_SRAM \
-	(L2_SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE)
+	(L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE)
 
 #define MEM_VECBASE_LIT_SIZE                   0x178
 

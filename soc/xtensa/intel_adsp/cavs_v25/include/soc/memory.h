@@ -9,18 +9,6 @@
 #include <cavs/cpu.h>
 #include <cavs-mem.h>
 
-/* L2 HP SRAM */
-#define HP_RAM_RESERVE_HEADER_SPACE	0x00010000
-
-/* text and data share the same L2 HP SRAM.
- * So, they lie next to each other.
- */
-#define RAM_BASE \
-	(L2_SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE + VECTOR_TBL_SIZE)
-
-#define RAM_SIZE \
-	(L2_SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
-
 /* boot loader in IMR */
 #define IMR_BOOT_LDR_TEXT_ENTRY_BASE	0xB0038000
 #define IMR_BOOT_LDR_TEXT_ENTRY_SIZE	0x120

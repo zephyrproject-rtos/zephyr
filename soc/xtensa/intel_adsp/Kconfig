@@ -12,6 +12,15 @@ config SOC_FAMILY
 	string
 	default "intel_adsp"
 
+config HP_SRAM_RESERVE
+	int "Bytes to reserve at start of HP-SRAM"
+	default 65536
+	help
+	  Bytes to reserve at the start of HP-SRAM.  Zephyr will not
+	  place any symbols here, though the host windows have
+	  addresses here.  The SOF application also makes direct use
+	  of this region, so be very careful changing this value.
+
 # Select SoC Part No. and configuration options
 source "soc/xtensa/intel_adsp/*/Kconfig.soc"
 
