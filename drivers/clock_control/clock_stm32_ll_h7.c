@@ -260,7 +260,11 @@ static uint32_t get_hclk_frequency(void)
 static int32_t prepare_regulator_voltage_scale(void)
 {
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
+#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS)
+	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
+#endif
 	/* Highest voltage is SCALE0 */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	return 0;
@@ -276,7 +280,11 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	/* LL_PWR_REGULATOR_SCALE3 is lowest power consumption */
 	/* Must be done in accordance to the Maximum allowed frequency vs VOS*/
 	/* See RM0433 page 352 for more details */
+#if defined(SMPS) && defined(CONFIG_POWER_SUPPLY_SMPS)
+	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
+#endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	return 0;
 }
