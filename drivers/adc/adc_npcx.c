@@ -325,7 +325,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    adc_npcx_init, NULL,
 		    &adc_npcx_data_0, &adc_npcx_cfg_0,
 		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    CONFIG_ADC_INIT_PRIORITY,
 		    &adc_npcx_driver_api);
 
 static int adc_npcx_init(const struct device *dev)
