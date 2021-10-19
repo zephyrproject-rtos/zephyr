@@ -436,7 +436,7 @@
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
-/dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
+/dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
