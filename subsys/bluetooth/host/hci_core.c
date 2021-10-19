@@ -3291,6 +3291,12 @@ static int hci_init(void)
 		BT_ERR("Non-BR/EDR controller detected");
 		return -EIO;
 	}
+#if defined(CONFIG_BT_CONN)
+	else if (!bt_dev.le.acl_mtu) {
+		BT_ERR("ACL BR/EDR buffers not initialized");
+		return -EIO;
+	}
+#endif
 
 	err = set_event_mask();
 	if (err) {
