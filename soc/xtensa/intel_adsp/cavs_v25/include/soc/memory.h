@@ -7,24 +7,19 @@
 #define __INC_MEMORY_H
 
 #include <cavs/cpu.h>
+#include <cavs-mem.h>
 
 /* L2 HP SRAM */
 #define HP_RAM_RESERVE_HEADER_SPACE	0x00010000
-
-#define L2_SRAM_BASE			(DT_REG_ADDR(DT_NODELABEL(sram0)))
-#define L2_SRAM_SIZE			(DT_REG_SIZE(DT_NODELABEL(sram0)))
-
-#define SRAM_BASE (L2_SRAM_BASE)
-#define SRAM_SIZE (L2_SRAM_SIZE)
 
 /* text and data share the same L2 HP SRAM.
  * So, they lie next to each other.
  */
 #define RAM_BASE \
-	(SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE + VECTOR_TBL_SIZE)
+	(L2_SRAM_BASE + HP_RAM_RESERVE_HEADER_SPACE + VECTOR_TBL_SIZE)
 
 #define RAM_SIZE \
-	(SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
+	(L2_SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
 
 #define LPSRAM_MASK(x)		0x00000003
 
@@ -38,12 +33,6 @@
 #define IDT_SIZE				0x2000
 
 #define SRAM_BANK_SIZE	(64 * 1024)
-
-/* bootloader */
-
-#define HP_SRAM_BASE	0xbe000000
-#define HP_SRAM_SIZE	(30 * SRAM_BANK_SIZE)
-#define SOF_STACK_BASE	(HP_SRAM_BASE + HP_SRAM_SIZE)
 
 /* boot loader in IMR */
 #define IMR_BOOT_LDR_TEXT_ENTRY_BASE	0xB0038000
@@ -63,7 +52,7 @@
 #define IMR_BOOT_LDR_BSS_BASE	0xb0100000
 #define IMR_BOOT_LDR_BSS_SIZE	0x1000
 
-#define BOOT_LDR_STACK_BASE		(HP_SRAM_BASE + HP_SRAM_SIZE - \
+#define BOOT_LDR_STACK_BASE		(L2_SRAM_BASE + L2_SRAM_SIZE - \
 					BOOT_LDR_STACK_SIZE)
 #define BOOT_LDR_STACK_SIZE		(4 * 0x1000)
 
@@ -106,7 +95,7 @@
 /* HP SRAM windows */
 
 /* window 0 */
-#define SRAM_SW_REG_BASE	(HP_SRAM_BASE + 0x4000)
+#define SRAM_SW_REG_BASE	(L2_SRAM_BASE + 0x4000)
 #define SRAM_SW_REG_SIZE	0x1000
 
 #define SRAM_OUTBOX_BASE	(SRAM_SW_REG_BASE + SRAM_SW_REG_SIZE)
