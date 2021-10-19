@@ -279,7 +279,7 @@ struct bq35100_data {
 	uint16_t temperature;
 	uint16_t voltage;
 	uint16_t avg_current;
-	uint16_t state_of_charge;
+	uint16_t state_of_health;
 	uint32_t acc_capacity;
 };
 
