@@ -6,11 +6,13 @@
  */
 
 #include <mem.h>
+#include <dt-bindings/dt-util.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
+#include <dt-bindings/sensor/it8xxx2_tach.h>
 #include "it8xxx2-alts-map.dtsi"
 
 / {
@@ -849,6 +851,30 @@
 			pwmctrl = <&prs>;
 			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
 			#pwm-cells = <2>;
+		};
+		tach0: tach@f0181e {
+			compatible = "ite,it8xxx2-tach";
+			reg = <0x00f0181e 1   /* F1TLRR */
+			       0x00f0181f 1   /* F1TMRR */
+			       0x00f01848 1>; /* TSWCTLR */
+			dvs-bit = <BIT(3)>;
+			chsel-bit = <BIT(2)>;
+			label = "TACH_0";
+			status = "disabled";
+			pinctrl-0 = <&pinctrl_tach0a   /* GPD6 */
+				     &pinctrl_tach0b>; /* GPJ2 */
+		};
+		tach1: tach@f01820 {
+			compatible = "ite,it8xxx2-tach";
+			reg = <0x00f01820 1   /* F2TLRR */
+			       0x00f01821 1   /* F2TMRR */
+			       0x00f01848 1>; /* TSWCTLR */
+			dvs-bit = <BIT(1)>;
+			chsel-bit = <BIT(0)>;
+			label = "TACH_1";
+			status = "disabled";
+			pinctrl-0 = <&pinctrl_tach1a   /* GPD7 */
+				     &pinctrl_tach1b>; /* GPJ3 */
 		};
 
 		gctrl: general-control@f02000 {
