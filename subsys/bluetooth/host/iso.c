@@ -113,7 +113,7 @@ void hci_iso(struct net_buf *buf)
 	bt_conn_unref(iso);
 }
 
-struct bt_conn *iso_new(void)
+static struct bt_conn *iso_new(void)
 {
 	struct bt_conn *iso = bt_conn_new(iso_conns, ARRAY_SIZE(iso_conns));
 
