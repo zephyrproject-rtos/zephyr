@@ -21,15 +21,6 @@
 #define RAM_SIZE \
 	(L2_SRAM_SIZE - HP_RAM_RESERVE_HEADER_SPACE - VECTOR_TBL_SIZE)
 
-/* Location for the intList section which is later used to construct the
- * Interrupt Descriptor Table (IDT). This is a bogus address as this
- * section will be stripped off in the final image.
- */
-#define IDT_BASE				(RAM_BASE + RAM_SIZE)
-
-/* size of the Interrupt Descriptor Table (IDT) */
-#define IDT_SIZE				0x2000
-
 /* boot loader in IMR */
 #define IMR_BOOT_LDR_TEXT_ENTRY_BASE	0xB0038000
 #define IMR_BOOT_LDR_TEXT_ENTRY_SIZE	0x120
@@ -57,16 +48,6 @@
 
 /* Manifest size (seems unused). */
 #define IMR_BOOT_LDR_MANIFEST_SIZE	0x6000
-
-
-#define UUID_ENTRY_ELF_BASE	0x1FFFA000
-#define UUID_ENTRY_ELF_SIZE	0x6000
-
-#define LOG_ENTRY_ELF_BASE	0x20000000
-#define LOG_ENTRY_ELF_SIZE	0x2000000
-
-#define EXT_MANIFEST_ELF_BASE	(LOG_ENTRY_ELF_BASE + LOG_ENTRY_ELF_SIZE)
-#define EXT_MANIFEST_ELF_SIZE	0x2000000
 
 #define SRAM_ALIAS_BASE		0x9E000000
 #define SRAM_ALIAS_MASK		0xFF000000
