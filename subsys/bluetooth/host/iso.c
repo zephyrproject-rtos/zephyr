@@ -376,7 +376,7 @@ void bt_iso_connected(struct bt_conn *iso)
 	}
 }
 
-void bt_iso_remove_data_path(struct bt_conn *iso)
+static void bt_iso_remove_data_path(struct bt_conn *iso)
 {
 	BT_DBG("%p", iso);
 
