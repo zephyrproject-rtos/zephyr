@@ -66,7 +66,7 @@ The following code has the same effect as the code segment above.
 
 .. code-block:: c
 
-    K_EVENT_DEFINE(my_event, 0, 1);
+    K_EVENT_DEFINE(my_event);
 
 Setting Events
 ==============
