@@ -57,9 +57,6 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-/* Prototype */
-int hci_le_remove_cig(uint8_t cig_id);
-
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
 static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
 {
@@ -940,7 +937,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	}
 }
 
-int hci_le_remove_cig(uint8_t cig_id)
+static int hci_le_remove_cig(uint8_t cig_id)
 {
 	struct bt_hci_cp_le_remove_cig *req;
 	struct net_buf *buf;
