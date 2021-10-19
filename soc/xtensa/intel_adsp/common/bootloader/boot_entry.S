@@ -52,7 +52,7 @@ l2_cache_pref:
 #endif
 
 sof_stack_base:
-	.word SOF_STACK_BASE
+	.word L2_SRAM_BASE + L2_SRAM_SIZE
 
 wnd0_base:
 	.word DMWBA(0)

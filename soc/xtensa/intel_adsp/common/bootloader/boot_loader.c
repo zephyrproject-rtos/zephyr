@@ -150,7 +150,7 @@ static uint32_t get_fw_size_in_use(void)
 			if (mod->segment[i].flags.r.type
 				== SOF_MAN_SEGMENT_BSS) {
 				fw_size_in_use = mod->segment[i].v_base_addr
-				- HP_SRAM_BASE
+				- L2_SRAM_BASE
 				+ (mod->segment[i].flags.r.length
 				* HOST_PAGE_SIZE);
 			}
@@ -274,7 +274,7 @@ static int32_t hp_sram_power_off_unused_banks(uint32_t memory_size)
 
 static int32_t hp_sram_init(void)
 {
-	return hp_sram_power_on_memory(HP_SRAM_SIZE);
+	return hp_sram_power_on_memory(L2_SRAM_SIZE);
 }
 
 #else
