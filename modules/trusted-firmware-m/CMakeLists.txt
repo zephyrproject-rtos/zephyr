@@ -188,15 +188,15 @@ if (CONFIG_BUILD_WITH_TFM)
   # TODO: Add support for cross-compile toolchain variant
   # TODO: Enforce GCC version check against TF-M compiler requirements
   if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
-    set(TFM_TOOLCHAIN_FILE "trusted-firmware-m/toolchain_GNUARM.cmake")
+    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
     set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin)
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
-    set(TFM_TOOLCHAIN_FILE "trusted-firmware-m/toolchain_GNUARM.cmake")
+    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
     set(TFM_TOOLCHAIN_PATH ${GNUARMEMB_TOOLCHAIN_PATH}/bin)
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xtools")
-    set(TFM_TOOLCHAIN_FILE "trusted-firmware-m/toolchain_GNUARM.cmake")
+    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
     set(TFM_TOOLCHAIN_PATH ${XTOOLS_TOOLCHAIN_PATH}/arm-zephyr-eabi/bin)
   else()
@@ -205,7 +205,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   if(CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
     # Supply path to NXP HAL sources used for TF-M build
-    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/platform/ext/target/nxp/)
+    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
   endif()
 
@@ -230,10 +230,10 @@ if (CONFIG_BUILD_WITH_TFM)
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
+      -DTFM_TEST_REPO_PATH=${ZEPHYR_TF_M_TESTS_MODULE_DIR}
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
-      -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
-      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
+      -DPSA_ARCH_TESTS_PATH=${ZEPHYR_PSA_ARCH_TESTS_MODULE_DIR}
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
     COMMAND_EXPAND_LISTS
   )
@@ -255,7 +255,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   ExternalProject_Add(
     tfm
-    SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
+    SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     BINARY_DIR ${TFM_BINARY_DIR}
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ${CMAKE_COMMAND} --build . ${PARALLEL_JOBS}
@@ -304,7 +304,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   target_include_directories(tfm_api PRIVATE
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
+    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
     )
 
   zephyr_library_link_libraries(
@@ -331,7 +331,7 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_BL2)
     set(PREPROCESSED_FILE_S "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
     set(PREPROCESSED_FILE_NS "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
-    set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/bl2/ext/mcuboot")
+    set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
 
   # Configure which format (full or hash) to include the public key in
