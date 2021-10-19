@@ -15,7 +15,11 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
 #include <drivers/spi.h>
+#ifndef CONFIG_SOC_ESP32C3
 #include <drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#endif
 #include <drivers/gpio/gpio_esp32.h>
 #include <drivers/clock_control.h>
 #include "spi_context.h"
@@ -40,6 +44,17 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #define SCLK_IDX_3 SPI3_CLK_OUT_MUX_IDX
 #define CSEL_IDX_2 FSPICS0_OUT_IDX
 #define CSEL_IDX_3 SPI3_CS0_OUT_IDX
+#elif defined(CONFIG_SOC_ESP32C3)
+#define MISO_IDX_2 FSPIQ_IN_IDX
+#define MOSI_IDX_2 FSPID_OUT_IDX
+#define SCLK_IDX_2 FSPICLK_OUT_IDX
+#define CSEL_IDX_2 FSPICS0_OUT_IDX
+#endif
+
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
 #endif
 
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
@@ -124,7 +139,11 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
-	data->irq_line = esp_intr_alloc(cfg->irq_source, 0, spi_esp32_isr, (void *)dev, NULL);
+	data->irq_line = esp_intr_alloc(cfg->irq_source,
+			0,
+			(ISR_HANDLER)spi_esp32_isr,
+			(void *)dev,
+			NULL);
 #endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
