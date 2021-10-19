@@ -250,6 +250,7 @@
 #define BQ35100_DEVICE_TYPE_ID                         0x100
 
 #define BQ35100_DEFAULT_SEAL_CODES                     0x04143672
+#define BQ35100_FLASHF_BIT_MASK                        0b1000000000000000
 
 /*
  * I2C helper bit masks
@@ -259,28 +260,28 @@
 #define BQ35100_REG_WRITE(x)            ((x & 0xFF) << 1)
 #define BQ35100_TO_I2C_REG(x)           ((x) >> 1)
 
-enum bq35100_gauge_mode{
-    BQ35100_ACCUMULATOR_MODE = 0b00,
-    BQ35100_SOH_MODE = 0b01, // for LiMnO2
-    BQ35100_EOS_MODE = 0b10, // for LiSOCl2
-    BQ35100_UNKNOWN_MODE = 0b11 // invalid
-};
+typedef enum {
+	BQ35100_ACCUMULATOR_MODE,
+	BQ35100_SOH_MODE,       // for LiMnO2
+	BQ35100_EOS_MODE,       // for LiSOCl2
+	BQ35100_UNKNOWN_MODE    // invalid
+} bq35100_gauge_mode_t;
 
-enum bq35100_security{
-    BQ35100_SECURITY_UNKNOWN = 0x00,
-    BQ35100_SECURITY_FULL_ACCESS = 0x01, // Allows writes to all of memory
-    BQ35100_SECURITY_UNSEALED = 0x02, // Allows writes to all of memory apart from the security codes area
-    BQ35100_SECURITY_SEALED = 0x03 // Normal operating mode, prevents accidental writes
-};
-
-enum bq35100_security bq35100_current_security_mode;
+typedef enum {
+	BQ35100_SECURITY_UNKNOWN,
+	BQ35100_SECURITY_FULL_ACCESS,   // Allows writes to all of memory
+	BQ35100_SECURITY_UNSEALED,      // Allows writes to all of memory apart from the security codes area
+	BQ35100_SECURITY_SEALED         // Normal operating mode, prevents accidental writes
+} bq35100_security_mode_t;
 
 struct bq35100_data {
 	uint16_t temperature;
 	uint16_t voltage;
 	uint16_t avg_current;
-	uint16_t state_of_health;
+	uint8_t state_of_health;
 	uint32_t acc_capacity;
+
+	bq35100_security_mode_t security_mode;
 };
 
 struct bq35100_config {
