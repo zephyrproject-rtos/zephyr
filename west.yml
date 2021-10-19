@@ -72,6 +72,11 @@ manifest:
       west-commands: west/west-commands.yml
       groups:
         - hal
+    - name: hal_gigadevice
+      revision: ce323de9655972a545cbdddda813c1576d85d5d1
+      path: modules/hal/gigadevice
+      groups:
+        - hal
     - name: hal_infineon
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
