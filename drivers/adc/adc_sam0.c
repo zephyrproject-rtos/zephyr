@@ -605,7 +605,7 @@ do {									\
 	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,			\
 			    &adc_sam_data_##n,				\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_sam0_api);				\
 	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\

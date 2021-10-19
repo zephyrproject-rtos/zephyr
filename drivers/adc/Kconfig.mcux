@@ -61,12 +61,6 @@ config ADC_MCUX_ADC16_ENABLE_EDMA
 
 if ADC_MCUX_ADC16_ENABLE_EDMA
 
-config ADC_MCUX_ADC16_INIT_PRIORITY
-	int "Init priority"
-	default 70
-	help
-	  Device driver initialization priority.
-
 config ADC_MCUX_ADC16_HW_TRIGGER
 	bool "ADC HW TRIGGER"
 	default y

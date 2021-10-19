@@ -1008,7 +1008,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &adc_stm32_init, NULL,				\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);				\
 									\
 static void adc_stm32_cfg_func_##index(void)				\
