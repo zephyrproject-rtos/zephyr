@@ -15,12 +15,6 @@ config ADC_LMP90XXX
 
 if ADC_LMP90XXX
 
-config ADC_LMP90XXX_INIT_PRIORITY
-	int "Init priority"
-	default 80
-	help
-	  LMP90xxx ADC device driver initialization priority.
-
 config ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE
 	int "Stack size for the ADC data acquisition thread"
 	default 400
