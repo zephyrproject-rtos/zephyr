@@ -747,19 +747,28 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 #endif
 	.register_state_change_isr = mcux_flexcan_register_state_change_isr,
 	.get_core_clock = mcux_flexcan_get_core_clock,
+	/*
+	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
+	 * descriptions" table in the SoC reference manual.
+	 *
+	 * Note that the values here are the "physical" timing limits, whereas
+	 * the register field limits are physical values minus 1 (which is
+	 * handled by the flexcan_config_t field assignments elsewhere in this
+	 * driver).
+	 */
 	.timing_min = {
-		.sjw = 0x1,
+		.sjw = 0x01,
 		.prop_seg = 0x01,
 		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
+		.phase_seg2 = 0x02,
 		.prescaler = 0x01
 	},
 	.timing_max = {
-		.sjw = 0x03,
-		.prop_seg = 0x07,
-		.phase_seg1 = 0x07,
-		.phase_seg2 = 0x07,
-		.prescaler = 0xFF
+		.sjw = 0x04,
+		.prop_seg = 0x08,
+		.phase_seg1 = 0x08,
+		.phase_seg2 = 0x08,
+		.prescaler = 0x100
 	}
 };
 
