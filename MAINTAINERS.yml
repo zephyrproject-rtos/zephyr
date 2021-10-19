@@ -1051,6 +1051,19 @@ MAINTAINERS file:
     description: >-
         Zephyr Maintainers File
 
+Mbed TLS:
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - ceolin
+    files:
+        - modules/mbedtls/
+        - tests/crypto/mbedtls/
+    labels:
+        - "area: Crypto / RNG"
+    description: >-
+        Mbed TLS module implementing the PSA Crypto API and TLS.
+
 MCU Manager:
     status: maintained
     maintainers:
