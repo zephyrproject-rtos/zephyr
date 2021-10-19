@@ -73,9 +73,6 @@ void hci_iso(struct net_buf *buf);
 /* Allocates RX buffer */
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout);
 
-/* Create new ISO connecting */
-struct bt_conn *iso_new(void);
-
 /* Process CIS Estabilished event */
 void hci_le_cis_estabilished(struct net_buf *buf);
 
