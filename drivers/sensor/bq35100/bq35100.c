@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(BQ35100, CONFIG_SENSOR_LOG_LEVEL);
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_bus_access(const struct device *dev, uint8_t reg,
-			      uint8_t *data)
+			      uint8_t *data, size_t length)
 {
 	const struct bq35100_config *cfg = dev->config;
 
@@ -108,7 +108,7 @@ static int bq35100_reg_write(const struct device *dev,
 	buf[0] = (uint8_t)reg_data;
 	buf[1] = (uint8_t)(reg_data >> 8);
 
-	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf);
+	return bq35100_bus_access(dev, BQ35100_REG_WRITE(reg_addr), buf, 2);
 }
 
 /**
@@ -136,7 +136,6 @@ static int bq35100_control_reg_write(const struct device *dev,
  * Read the response data of the previous subcommand from the device.
  * @param dev - The device structure.
  * @param data - The data response from the previous subcommand
- * @param length - Number of bytes being read
  * @return 0 in case of success, negative error code otherwise.
  */
 static int bq35100_control_reg_read(const struct device *dev,
@@ -155,15 +154,208 @@ static int bq35100_control_reg_read(const struct device *dev,
 }
 
 /**
+ * Read data of given length from a given address.
+ * @param dev - The device structure.
+ * @param address - The address is going to be read.
+ * @param buf 
+ * @param length - Number of bytes to be read.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bq35100_read_extended_data(const struct device *dev, uint16_t address, char *buf, size_t length)
+{
+	size_t length_read;
+	char data[32 + 2 +2]; // 32 bytes of data, 2 bytes of address,
+                    	  // 1 byte of MACDataSum and 1 byte of MACDataLen
+
+	bool success = false;
+	enum bq35100_security previous_security_mode = BQ35100_SECURITY_UNKNOWN;
+
+	if ( bq35100_current_security_mode == BQ35100_SECURITY_UNKNOWN ) {
+		LOG_ERR("Unkown Security Mode");
+			return -EIO;
+	}
+
+	if ( address < 0x4000 || address > 0x43FF || !buf ) {
+        LOG_ERR("Invalid address or data");
+			return -EIO;
+    }
+
+	if ( bq35100_current_security_mode == BQ35100_SECURITY_SEALED 
+				&& !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED) ) {
+		LOG_ERR("Current mode is Sealed, Unseal it first");
+			return -EIO;
+	}
+
+	if ( !(bq35100_control_reg_write(dev, address) < 0) ) {
+		k_sleep(K_MSEC(100));
+		data[0] = bq35100_control_reg_read(dev, &address) & 0xFF;
+		k_sleep(K_MSEC(100));
+		data[1] = bq35100_control_reg_read(dev, &address) >> 8;
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	if ( bq35100_reg_read(dev, BQ35100_CMD_MAC_CONTROL, data, 2) < 0 ) {
+		LOG_ERR("Unable to read from MAC");
+			return -EIO;
+	}
+
+	data[0] = BQ35100_CMD_MAC_CONTROL;
+
+	if ( bq35100_reg_write(dev, address, data) < 0 || bq35100_reg_read(dev, address, data, 2) < 0 ) {
+		LOG_ERR("Unable to write to MAC");
+			return -EIO;
+	}
+
+	// Address match check
+	if (data[0] != (char)address || data[1] != (char)(address >> 8)) {
+        LOG_ERR("Address didn't match (expected 0x%04X, received 0x%02X%02X)", address, data[1], data[0]);
+			return -EIO;
+    }
+
+	if ( data[34] != bq35100_checksum(data, data[35] - 2) ) {
+        LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
+        return -EIO;
+    }
+
+	length_read = data[35] - 4; // Subtracting addresses
+	if (length_read > length) {
+        length_read = length;
+    }
+
+	memcpy(buf, data + 2, length_read);
+	success = true;
+
+	// Change back the security mode if it was changed
+	if ( previous_security_mode != bq35100_current_security_mode ) {
+		success = bq35100_set_security_mode(dev, previous_security_mode);
+	}
+
+	return success;
+}
+
+/**
+ * Write data of given length from a given address.
+ * @param dev - The device structure.
+ * @param address - The address is going to be written.
+ * @param data - The data is going to be written.
+ * @param length - Number of bytes to be written.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bq35100_write_extended_data(const struct device *dev, uint16_t address, const char *data, size_t length)
+{
+	int status;
+	char d[32 + 3]; // Max data len + header
+
+	int success = false;
+	bq35100_security_mode previous_security_mode = BQ35100_SECURITY_UNKNOWN;
+
+	if ( bq35100_current_security_mode == BQ35100_SECURITY_UNKNOWN ) {
+		LOG_ERR("Unkown Security Mode");
+			return -EIO;
+	}
+
+	if (address < 0x4000 || address > 0x43FF || length < 1 || length > 32 || !data) {
+        LOG_ERR("Invalid address or data");
+			return -EIO;
+    }
+
+	if ( bq35100_current_security_mode == BQ35100_SECURITY_SEALED && !bq35100_set_security_mode(BQ35100_SECURITY_UNSEALED)) {
+        LOG_ERR("Current mode is Sealed, Unseal it first");
+		return false;
+	}
+
+	d[0] = BQ35100_CMD_MAC_CONTROL;
+
+	if ( !(bq35100_control_reg_write(dev, address) < 0) ) {
+		k_sleep(K_MSEC(100));
+		d[1] = bq35100_control_reg_read(dev, &address) & 0xFF;
+		k_sleep(K_MSEC(100));
+		d[2] = bq35100_control_reg_read(dev, &address) >> 8;
+	}
+
+	memcpy(d + 3, data, length); // Remaining bytes are the d bytes we wish to write
+	k_sleep(K_MSEC(1000));
+
+	if ( bq35100_reg_write(dev, d, data) < 0 ) { //??
+		LOG_ERR("Unable to write to MAC");
+		return -EIO;
+	}
+
+	d[0] = BQ35100_CMD_MAC_DATA_SUM;
+	d[1] = bq35100_checksum(d+1, length+2);
+
+	if ( bq35100_reg_write(dev, d, data) < 0 ) { //??
+		LOG_ERR("Unable to write to MAC Data Sum");
+		return -EIO;
+	}
+
+	// Write 4 + 4 length to MAC Data Length 
+	d[0] = BQ35100_CMD_MAC_DATA_LEN;
+	d[1] = length + 4;
+
+	if ( bq35100_reg_write(dev, d, data) < 0 ) { //??
+		LOG_ERR("Unable to write to MAC Data Sum");
+		return -EIO;
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	if ( bq35100_reg_read(dev, BQ35100_CMD_CONTROL, status, 2) ) {
+		LOG_ERR("Unable to read CMD_CONTROL");
+		return -EIO;
+	}
+
+	if ( status & 0b1000000000000000 ) { // Flash bit mask
+		LOG_ERR("Writing failed"); // fail detected
+		return -EIO;
+	}
+
+	success = true;
+
+	// Change back the security mode if it was changed
+	if ( previous_security_mode != bq35100_current_security_mode ) {
+		success = bq35100_set_security_mode(dev, previous_security_mode);
+	}
+
+	return success;
+}
+
+/**
+ * Compute Checksum
+ * @param data - 
+ * @param length - Number of bytes being read.
+ * @return checksum
+ */
+int bq35100_checksum(const char *data, size_t length) {
+	uint8_t checksum = 0;
+    uint8_t x = 0;
+
+    if (data) {
+        for (x = 1; x <= length; x++) {
+            checksum += *data;
+            data++;
+        }
+
+        checksum = 0xFF - checksum;
+    }
+
+    printk("Checksum is 0x%02X", checksum);
+
+	return checksum;
+}
+
+/**
  * Change the security mode.
  * @param dev - The device structure.
  * @param security_mode - The security mode wanted to be set.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int bq35100_set_security_mode(const struct device *dev, enum bq35100_security security_mode)
+int bq35100_set_security_mode(const struct device *dev, enum bq35100_security security_mode)
 {
 	const struct bq35100_config *cfg = dev->config;
-	uint8_t buf[4], status;
+	int status;
+	uint8_t buf[4];
 	buf[0] = BQ35100_CMD_MAC_CONTROL;
 
 	switch (security_mode) {
@@ -178,13 +370,13 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 			return -EIO;
 		}
 
-		uint32_t full_access_codes = bq35100_reg_read(dev, BQ35100_FLASH_FULL_UNSEAL_STEP1, buf, 4);
-		if ( full_access_codes < 0 ) {
+		status = bq35100_read_extended_data(dev, BQ35100_FLASH_FULL_UNSEAL_STEP1, buf, 4);
+		if ( status < 0 ) {
 			LOG_ERR("Unable to read from DataFlash");
 			return -EIO;
 		}
 
-		full_access_codes = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
+		uint32_t full_access_codes = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
 			
 		buf[2] = (full_access_codes >> 24) & 0xFF;
         buf[1] = (full_access_codes >> 16) & 0xFF;
@@ -199,7 +391,7 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
 		bq35100_current_security_mode = BQ35100_SECURITY_FULL_ACCESS;
 		break;
 	case BQ35100_SECURITY_UNSEALED:
-		if ( security_mode == BQ35100_SECURITY_FULL_ACCESS && !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED) ){
+		if ( bq35100_current_security_mode == BQ35100_SECURITY_FULL_ACCESS && !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED) ){
 			LOG_ERR("Seal first if in Full Access mode");
 			return -EIO;
 		}
@@ -238,31 +430,27 @@ static int bq35100_set_security_mode(const struct device *dev, enum bq35100_secu
  */
 static int bq35100_set_gauge_mode(const struct device *dev, enum bq35100_gauge_mode gauge_mode)
 {
+	char buf[1];
 	int status;
-	uint8_t buf[1], data[34];
 
-	if ( bq35100_current_security_mode == BQ35100_UNKNOWN_MODE || bq35100_current_security_mode == BQ35100_SECURITY_SEALED 
-														&& !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED) ) {
-		LOG_ERR("Wrong Security Mode");
+	if ( gauge_mode == BQ35100_SECURITY_UNKNOWN) {
+		LOG_ERR("Unkown mode");
 			return -EIO;
 	}
-
 	 //Operation Config A
-	 //read extend data?
-	status = bq35100_reg_read(dev, BQ35100_FLASH_OPERATION_CFG_A, buf, 1);
-	if ( status < 0 ) {
+	if ( !(bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A, buf, 1))){
 		LOG_ERR("Unable to read Operation Config A");
 			return -EIO;
 	}
 
-	if ( (bq35100_gauge_mode)(buf[0] & 0b11) != gauge_mode ) { //GMSEL 1:0
+	if ( (enum bq35100_gauge_mode)(buf[0] & 0b11) != gauge_mode ){ //GMSEL 1:0
 		buf[0] = buf[0] & ~0b11;
-		buf[0] = buf[0] | (uint8_t)gauge_mode;
+		buf[0] = buf[0] | (char)gauge_mode;
 
 		k_sleep(K_MSEC(100));
 
-		status = bq35100_reg_write(dev, BQ35100_FLASH_OPERATION_CFG_A, buf);
-		if ( status < 0 ) {
+		status = bq35100_write_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A, buf, 1);
+		if ( status < 0 ){
 			LOG_ERR("Unable to write Operation Config A");
 			return -EIO;
 		}
@@ -276,20 +464,27 @@ static int bq35100_set_gauge_mode(const struct device *dev, enum bq35100_gauge_m
   * @param dev - The device structure.
   * @return 0 in case of success, negative error code otherwise. 
   */
-int bq35100_gauge_start(const struct device *dev)
+static int bq35100_gauge_start(const struct device *dev)
 {
-	int ret, status;
+	int status;
+	uint8_t buf[1];
+	uint16_t bitGA;
 
-	ret = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_START);
-
-	status = bq35100_control_reg_read(dev, BQ35100_CTRL_GAUGE_START);
-
-	if ( status < 0) {
-		LOG_ERR("Unable to start gauge");
+	status = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_START);
+	if ( status < 0 ) {
+		LOG_ERR("Unable to write control register");
 		return -EIO;
 	}
 
-	return ret;
+	k_sleep(K_MSEC(100));
+
+	status = bq35100_reg_read(dev, BQ35100_CMD_CONTROL, buf, 2);
+	if ( (status & 0x01) != 1 ) {
+		LOG_ERR("Unable to start the gauge");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /**
@@ -297,20 +492,27 @@ int bq35100_gauge_start(const struct device *dev)
   * @param dev - The device structure.
   * @return 0 in case of success, negative error code otherwise. 
   */
-int bq35100_gauge_stop(const struct device *dev)
+static int bq35100_gauge_stop(const struct device *dev)
 {
-	int ret, status;
+	int status;
+	uint8_t buf[1];
+	uint16_t bitGA;
 
-	ret = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_STOP);
-
-	status = bq35100_control_reg_read(dev, BQ35100_CTRL_GAUGE_STOP);
-
-	if ( status < 0) {
-		LOG_ERR("Unable to stop gauge");
+	status = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_STOP);
+	if ( status < 0 ) {
+		LOG_ERR("Unable to write control register");
 		return -EIO;
 	}
 
-	return ret;
+	k_sleep(K_MSEC(100));
+
+	status = bq35100_reg_read(dev, BQ35100_CMD_CONTROL, buf, 2);
+	if ( (status & 0x01) != 0 ) {
+		LOG_ERR("Unable to stop the gauge");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /**
@@ -537,7 +739,7 @@ static int bq35100_channel_get(const struct device *dev,
 		val->val1 = (int16_t)data->avg_current;
 		val->val2 = 0;
 		break;
-	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
+	case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
 		val->val1 = (uint8_t)data->state_of_health;
 		val->val2 = 0;
 		break;
