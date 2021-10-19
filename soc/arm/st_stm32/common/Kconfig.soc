@@ -21,3 +21,9 @@ config USE_STM32_ASSERT
 	bool "STM32Cube HAL and LL drivers asserts"
 	help
 	  Enable asserts in STM32Cube HAL and LL drivers.
+
+config POWER_SUPPLY_SMPS
+	bool "Enable STM32 internal SMPS"
+	depends on SOC_SERIES_STM32H7X
+	help
+	  Enable SMPS Power Supply.
