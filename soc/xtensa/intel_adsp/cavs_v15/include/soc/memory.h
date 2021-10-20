@@ -52,10 +52,6 @@
 #define IPC_DSP_SIZE		0x00000080
 #define IPC_DSP_BASE(x)		(0x00001200 + x * IPC_DSP_SIZE)
 
-/* SRAM window for HOST */
-#define HOST_WIN_SIZE		0x00000008
-#define HOST_WIN_BASE(x)	(0x00001580 + x * HOST_WIN_SIZE)
-
 /* HP SRAM windows */
 
 /* window 3 */
