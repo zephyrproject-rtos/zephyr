@@ -367,9 +367,12 @@ endif()
 # TODO: Archiver arguments
 # ar_option(D)
 
+# Generate app_smem when enabling CONFIG_USERSPACE
+set(LINK_APP_SMEM ${CONFIG_USERSPACE})
+
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
-if(CONFIG_USERSPACE)
+if(LINK_APP_SMEM)
   add_custom_target(app_smem)
   set(APP_SMEM_ALIGNED_DEP app_smem_aligned_linker)
   set(APP_SMEM_UNALIGNED_DEP app_smem_unaligned_linker)
@@ -992,32 +995,60 @@ set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
 
-if(CONFIG_USERSPACE)
+if(LINK_APP_SMEM)
   set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
   set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
 
-  if(CONFIG_LINKER_USE_PINNED_SECTION)
-    set(APP_SMEM_PINNED_ALIGNED_LD
-         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
-    set(APP_SMEM_PINNED_UNALIGNED_LD
-         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+  if(CONFIG_USERSPACE)
+    if(CONFIG_LINKER_USE_PINNED_SECTION)
+      set(APP_SMEM_PINNED_ALIGNED_LD
+          "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+      set(APP_SMEM_PINNED_UNALIGNED_LD
+          "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
 
-    if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-      # The libc partition may hold symbols that are required during boot process,
-      # for example, stack guard (if enabled). So the libc partition must be pinned
-      # if not sections are in physical memory at boot, as the paging mechanism is
-      # only initialized post-kernel.
-      set_property(TARGET app_smem APPEND PROPERTY pinned_partitions "z_libc_partition")
+      if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
+        # The libc partition may hold symbols that are required during boot process,
+        # for example, stack guard (if enabled). So the libc partition must be pinned
+        # if not sections are in physical memory at boot, as the paging mechanism is
+        # only initialized post-kernel.
+        set_property(TARGET app_smem APPEND PROPERTY pinned_partitions "z_libc_partition")
+      endif()
+
+      get_property(APP_SMEM_PINNED_PARTITION_LIST TARGET app_smem PROPERTY pinned_partitions)
+      if(APP_SMEM_PINNED_PARTITION_LIST)
+        list(JOIN APP_SMEM_PINNED_PARTITION_LIST "," APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL)
+        set(APP_SMEM_PINNED_PARTITION_LIST_ARG "--pinpartitions=${APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL}")
+      endif()
     endif()
 
-    get_property(APP_SMEM_PINNED_PARTITION_LIST TARGET app_smem PROPERTY pinned_partitions)
-    if(APP_SMEM_PINNED_PARTITION_LIST)
-      list(JOIN APP_SMEM_PINNED_PARTITION_LIST "," APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL)
-      set(APP_SMEM_PINNED_PARTITION_LIST_ARG "--pinpartitions=${APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL}")
+    set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
+
+    if(CONFIG_NEWLIB_LIBC)
+      set(NEWLIB_PART -l libc.a z_libc_partition)
     endif()
+    if(CONFIG_NEWLIB_LIBC_NANO)
+      set(NEWLIB_PART -l libc_nano.a z_libc_partition)
+    endif()
+
+    add_custom_command(
+      OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
+      COMMAND ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+      -d ${OBJ_FILE_DIR}
+      -o ${APP_SMEM_UNALIGNED_LD}
+      $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
+      ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
+      ${NEWLIB_PART}
+      $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
+      $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+      DEPENDS
+      kernel
+      ${ZEPHYR_LIBS_PROPERTY}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+      COMMAND_EXPAND_LISTS
+      COMMENT "Generating app_smem_unaligned linker section"
+      )
   endif()
-
-  set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   add_custom_target(
     ${APP_SMEM_ALIGNED_DEP}
@@ -1031,32 +1062,6 @@ if(CONFIG_USERSPACE)
     DEPENDS
     ${APP_SMEM_UNALIGNED_LD}
     ${APP_SMEM_PINNED_UNALIGNED_LD}
-    )
-
-  if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_libc_partition)
-  endif()
-  if(CONFIG_NEWLIB_LIBC_NANO)
-    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
-  endif()
-
-  add_custom_command(
-    OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
-    -d ${OBJ_FILE_DIR}
-    -o ${APP_SMEM_UNALIGNED_LD}
-    $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
-    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
-    ${NEWLIB_PART}
-    $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    kernel
-    ${ZEPHYR_LIBS_PROPERTY}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
-    COMMAND_EXPAND_LISTS
-    COMMENT "Generating app_smem_unaligned linker section"
     )
 
   configure_linker_script(
@@ -1097,25 +1102,27 @@ if(CONFIG_USERSPACE)
   set_property(TARGET   app_smem_unaligned_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd)
   add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
 
-  add_custom_command(
-    OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
-    -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
-    -o ${APP_SMEM_ALIGNED_LD}
-    $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
-    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
-    ${NEWLIB_PART}
-    $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    kernel
-    ${ZEPHYR_LIBS_PROPERTY}
-    app_smem_unaligned_prebuilt
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
-    COMMAND_EXPAND_LISTS
-    COMMENT "Generating app_smem_aligned linker section"
-    )
+  if (CONFIG_USERSPACE)
+    add_custom_command(
+      OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
+      COMMAND ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+      -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
+      -o ${APP_SMEM_ALIGNED_LD}
+      $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
+      ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
+      ${NEWLIB_PART}
+      $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
+      $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+      DEPENDS
+      kernel
+      ${ZEPHYR_LIBS_PROPERTY}
+      app_smem_unaligned_prebuilt
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+      COMMAND_EXPAND_LISTS
+      COMMENT "Generating app_smem_aligned linker section"
+      )
+  endif()
 endif()
 
 if(CONFIG_USERSPACE)
