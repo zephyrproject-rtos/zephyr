@@ -390,7 +390,7 @@ static struct counter_sam_dev_data counter_##n##_sam_data;	\
 								\
 DEVICE_DT_INST_DEFINE(n, counter_sam_initialize, NULL, \
 		&counter_##n##_sam_data, &counter_##n##_sam_config, \
-		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	\
 		&counter_sam_driver_api);			\
 								\
 static void counter_##n##_sam_config_func(const struct device *dev) \
