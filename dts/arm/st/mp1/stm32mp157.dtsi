@@ -41,11 +41,11 @@
 			#clock-cells = <2>;
 		};
 
-		exti: interrupt-controller@5000D000 {
+		exti: interrupt-controller@5000d000 {
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			reg = <0x5000D000 0x400>;
+			reg = <0x5000d000 0x400>;
 		};
 
 		pinctrl: pin-controller@50002000 {
