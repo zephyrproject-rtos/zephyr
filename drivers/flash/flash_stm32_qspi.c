@@ -536,6 +536,17 @@ void HAL_QSPI_TimeOutCallback(QSPI_HandleTypeDef *hqspi)
 	k_sem_give(&dev_data->sync);
 }
 
+/*
+ * Status FifoThreshold callback.
+ */
+void HAL_QSPI_FifoThresholdCallback(QSPI_HandleTypeDef *hqspi)
+{
+	struct flash_stm32_qspi_data *dev_data =
+		CONTAINER_OF(hqspi, struct flash_stm32_qspi_data, hqspi);
+
+	k_sem_give(&dev_data->sync);
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_stm32_qspi_pages_layout(const struct device *dev,
 				const struct flash_pages_layout **layout,
