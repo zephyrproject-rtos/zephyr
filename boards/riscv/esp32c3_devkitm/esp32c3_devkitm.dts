@@ -21,6 +21,7 @@
 
 	aliases {
 		sw0 = &user_button1;
+		i2c-0 = &i2c0;
 	};
 
 	gpio_keys {
@@ -41,6 +42,13 @@
 	current-speed = <115200>;
 	tx-pin = <2>;
 	rx-pin = <3>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-pin = <2>;
+	scl-pin = <3>;
 };
 
 &trng0 {

@@ -23,3 +23,13 @@ properties:
       type: int
       description: SCL pin
       required: true
+
+    tx-lsb:
+      type: boolean
+      required: false
+      description: Set I2C TX data as LSB
+
+    rx-lsb:
+      type: boolean
+      required: false
+      description: Set I2C RX data as LSB
