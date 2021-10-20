@@ -55,13 +55,13 @@ sof_stack_base:
 	.word L2_SRAM_BASE + L2_SRAM_SIZE
 
 wnd0_base:
-	.word DMWBA(0)
+	.word DT_REG_ADDR(DT_NODELABEL(win))
 
 wnd0_size:
-	.word DMWLO(0)
+	.word DT_REG_ADDR(DT_NODELABEL(win)) + 4
 
 wnd0_base_val:
-	.word HP_SRAM_WIN0_BASE | DMWBA_READONLY | DMWBA_ENABLE
+	.word HP_SRAM_WIN0_BASE | CAVS_DMWBA_READONLY | CAVS_DMWBA_ENABLE
 
 wnd0_size_val:
 	.word HP_SRAM_WIN0_SIZE | 0x7

@@ -44,11 +44,4 @@
 #define GENO_MDIVOSEL		BIT(1)
 #define GENO_DIOPTOSEL		BIT(2)
 
-/* host windows */
-#define DMWBA(x)		(HOST_WIN_BASE(x) + 0x0)
-#define DMWLO(x)		(HOST_WIN_BASE(x) + 0x4)
-
-#define DMWBA_ENABLE		BIT(0)
-#define DMWBA_READONLY		BIT(1)
-
 #endif /* __PLATFORM_LIB_SHIM_H__ */

@@ -64,6 +64,15 @@ struct cavs_shim {
 	uint32_t svcfg;
 	uint32_t _unused9[2];
 };
+
+/* Host memory window control.  Not strictly part of the shim block. */
+struct cavs_win {
+	uint32_t dmwba;
+	uint32_t dmwlo;
+};
+
+#define CAVS_WIN ((volatile struct cavs_win *)DT_REG_ADDR(DT_NODELABEL(win)))
+
 #endif /* _ASMLANGUAGE */
 
 #define CAVS_SHIM (*((volatile struct cavs_shim *)DT_REG_ADDR(DT_NODELABEL(shim))))
@@ -108,5 +117,8 @@ struct cavs_shim {
 #endif
 #define SHIM_LDOCTL_LPSRAM_LDO_ON     (3 << 2)
 #define SHIM_LDOCTL_LPSRAM_LDO_BYPASS BIT(2)
+
+#define CAVS_DMWBA_ENABLE   BIT(0)
+#define CAVS_DMWBA_READONLY BIT(1)
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_CAVS_SHIM_H_ */
