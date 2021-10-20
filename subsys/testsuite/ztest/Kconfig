@@ -10,6 +10,12 @@ config ZTEST
 
 if ZTEST
 
+config ZTEST_NEW_API
+	bool "Use the new Ztest API"
+	help
+	  Enables the new Ztest APIs for creating suites and unit tests in
+	  separate compilational units as well as the new 'rules' API.
+
 config ZTEST_STACKSIZE
 	int "Test function thread stack size"
 	default 2048 if COVERAGE_GCOV
@@ -72,6 +78,20 @@ config ZTEST_ASSERT_HOOK
 	  do actions in your test case, this option often enabled when doing
 	  error test case. Remember to add ignore_fault tag in yaml file when
 	  using twister to run testing.
+
+if ZTEST_NEW_API
+
+menu "ztest provided rules"
+
+config ZTEST_RULE_1CPU
+	bool "Run all the tests on a single CPU"
+	help
+	  This rule will call z_test_1cpu_start before each unit test and
+	  ztest_1cpu_stop after each test.
+
+endmenu
+
+endif # ZTEST_NEW_API
 
 endif # ZTEST
 

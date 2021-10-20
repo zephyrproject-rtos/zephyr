@@ -627,20 +627,15 @@ static void test_log_panic(void)
 	mock_log_backend_validate(&backend1, true);
 }
 
-/* Disable backends because same suite may be excuted again but compiled by C++ */
-static void log_api_suite_teardown(void)
+/* Disable backends because same suite may be executed again but compiled by C++ */
+static void log_api_suite_teardown(void *data)
 {
+	ARG_UNUSED(data);
 	log_backend_disable(&backend1);
 	log_backend_disable(&backend2);
 }
 
-/*test case main entry*/
-#if __cplusplus
-extern "C" void test_cxx(void);
-void test_cxx(void)
-#else
-void test_cc(void)
-#endif
+static void *log_api_suite_setup(void)
 {
 	PRINT("Configuration:\n");
 	PRINT("\t Mode: %s\n",
@@ -654,17 +649,35 @@ void test_cc(void)
 #if __cplusplus
 	PRINT("\t C++: yes\n");
 #endif
-
-	ztest_test_suite(test_log_api,
-			 ztest_unit_test(test_log_various_messages),
-			 ztest_unit_test(test_log_backend_runtime_filtering),
-			 ztest_unit_test(test_log_overflow),
-			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_from_declared_module),
-			 ztest_unit_test(test_log_msg_dropped_notification),
-			 ztest_unit_test(test_log_panic)
-			);
-	ztest_run_test_suite(test_log_api);
-
-	log_api_suite_teardown();
+	return NULL;
 }
+
+static void log_api_suite_before(void *data)
+{
+	ARG_UNUSED(data);
+	while(LOG_PROCESS()) {
+	}
+}
+
+#define WRAP_TEST(test_name, suffix)                       \
+	ZTEST(test_log_api_##suffix, test_name##_##suffix) \
+	{                                                  \
+		test_name();                               \
+	}
+
+#if __cplusplus
+#define TEST_SUFFIX cxx
+#else
+#define TEST_SUFFIX cc
+#endif
+#define TEST_SUITE_NAME test_log_api_ ## TEST_SUFFIX
+
+ZTEST_SUITE(TEST_SUITE_NAME, NULL, log_api_suite_setup,
+	    log_api_suite_before, NULL, log_api_suite_teardown);
+WRAP_TEST(test_log_various_messages, TEST_SUFFIX)
+WRAP_TEST(test_log_backend_runtime_filtering, TEST_SUFFIX)
+WRAP_TEST(test_log_overflow, TEST_SUFFIX)
+WRAP_TEST(test_log_arguments, TEST_SUFFIX)
+WRAP_TEST(test_log_from_declared_module, TEST_SUFFIX)
+WRAP_TEST(test_log_msg_dropped_notification, TEST_SUFFIX)
+WRAP_TEST(test_log_panic, TEST_SUFFIX)
