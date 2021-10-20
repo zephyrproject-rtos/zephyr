@@ -94,8 +94,6 @@
 
 #define SOF_TEXT_BASE	SOF_TEXT_START
 
-#define SRAM_REG_FW_END		0x14
-
 /* low power ram where DMA buffers are typically placed */
 #define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
