@@ -24,18 +24,6 @@
 /* LP GPDMA Force Dynamic Clock Gating bits, 0--enable */
 #define SHIM_CLKCTL_LPGPDMAFDCGB	BIT(0)
 
-#define HSPGCTL0		0x71D10
-#define HSRMCTL0		0x71D14
-#define HSPGISTS0		0x71D18
-
-#define HSPGCTL1		0x71D20
-#define HSRMCTL1		0x71D24
-#define HSPGISTS1		0x71D28
-
-#define LSPGCTL			0x71D50
-#define LSRMCTL			0x71D54
-#define LSPGISTS		0x71D58
-
 #define DSP_INIT_LPGPDMA(x)	(0x71A60 + (2*x))
 #define LPGPDMA_CTLOSEL_FLAG	BIT(15)
 #define LPGPDMA_CHOSEL_FLAG	0xFF
