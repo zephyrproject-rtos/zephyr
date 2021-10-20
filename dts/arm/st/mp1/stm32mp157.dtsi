@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/stm32_clock.h>
@@ -35,7 +36,7 @@
 
 	soc {
 		rcc: rcc@50000000 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32mp1-rcc";
 			reg = <0x50000000 0x1000>;
 			#clock-cells = <2>;
 		};
