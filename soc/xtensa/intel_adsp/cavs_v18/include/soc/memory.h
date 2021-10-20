@@ -86,8 +86,4 @@
 #define HP_SRAM_WIN3_BASE       SRAM_TRACE_BASE
 #define HP_SRAM_WIN3_SIZE       SRAM_TRACE_SIZE
 
-/* low power ram where DMA buffers are typically placed */
-#define LP_SRAM_BASE			(DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LP_SRAM_SIZE			(DT_REG_SIZE(DT_NODELABEL(sram1)))
-
 #endif /* __INC_MEMORY_H */
