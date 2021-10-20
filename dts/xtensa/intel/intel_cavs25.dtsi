@@ -61,6 +61,11 @@
 			reg = <0x71a00 0x20>;
 		};
 
+		l2lm: l2lm@71d00 {
+			compatible = "intel,cavs-l2lm";
+			reg = <0x71d00 0x20>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;

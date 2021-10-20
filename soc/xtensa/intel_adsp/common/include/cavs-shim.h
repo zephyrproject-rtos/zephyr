@@ -65,6 +65,26 @@ struct cavs_shim {
 	uint32_t _unused9[2];
 };
 
+/* L2 Local Memory control (cAVS 1.8+) */
+struct cavs_l2lm {
+	uint32_t l2lmcap;
+	uint32_t l2lmpat;
+	uint32_t _unused0[2];
+	uint32_t hspgctl0;
+	uint32_t hsrmctl0;
+	uint32_t hspgists0;
+	uint32_t _unused1;
+	uint32_t hspgctl1;
+	uint32_t hsrmctl1;
+	uint32_t hspgists1;
+	uint32_t _unused2[9];
+	uint32_t lspgctl;
+	uint32_t lsrmctl;
+	uint32_t lspgists;
+};
+
+#define CAVS_L2LM (*((volatile struct cavs_l2lm *)DT_REG_ADDR(DT_NODELABEL(l2lm))))
+
 /* Host memory window control.  Not strictly part of the shim block. */
 struct cavs_win {
 	uint32_t dmwba;

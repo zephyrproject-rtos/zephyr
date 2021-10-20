@@ -234,26 +234,26 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 	}
 
 	/* HSPGCTL, HSRMCTL use reverse logic - 0 means EBB is power gated */
-	io_reg_write(HSPGCTL0, (~ebb_mask0) & ebb_avail_mask0);
-	io_reg_write(HSRMCTL0, (~ebb_mask0) & ebb_avail_mask0);
-	io_reg_write(HSPGCTL1, (~ebb_mask1) & ebb_avail_mask1);
-	io_reg_write(HSRMCTL1, (~ebb_mask1) & ebb_avail_mask1);
+	CAVS_L2LM.hspgctl0 = (~ebb_mask0) & ebb_avail_mask0;
+	CAVS_L2LM.hsrmctl0 = (~ebb_mask0) & ebb_avail_mask0;
+	CAVS_L2LM.hspgctl1 = (~ebb_mask1) & ebb_avail_mask1;
+	CAVS_L2LM.hsrmctl1 = (~ebb_mask1) & ebb_avail_mask1;
 
 	/* query the power status of first part of HP memory */
 	/* to check whether it has been powered up. A few    */
 	/* cycles are needed for it to be powered up         */
-	status = io_reg_read(HSPGISTS0);
+	status = CAVS_L2LM.hspgists0;
 	while (status != ((~ebb_mask0) & ebb_avail_mask0)) {
 		idelay(delay_count);
-		status = io_reg_read(HSPGISTS0);
+		status = CAVS_L2LM.hspgists0;
 	}
 	/* query the power status of second part of HP memory */
 	/* and do as above code                               */
 
-	status = io_reg_read(HSPGISTS1);
+	status = CAVS_L2LM.hspgists1;
 	while (status != ((~ebb_mask1) & ebb_avail_mask1)) {
 		idelay(delay_count);
-		status = io_reg_read(HSPGISTS1);
+		status = CAVS_L2LM.hspgists1;
 	}
 	/* add some delay before touch power register */
 	idelay(delay_count);

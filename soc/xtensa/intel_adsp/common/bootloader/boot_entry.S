@@ -27,6 +27,13 @@
 #define SHIM_L2_MECS (SHIM_ADDR + 0xd0)
 #define SHIM_L2_PREF_CFG (SHIM_ADDR + 0x508)
 
+#define HSPGCTL0  DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x10
+#define HSRMCTL0  DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x14
+#define HSPGISTS0 DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x18
+#define HSPGCTL1  DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x20
+#define HSRMCTL1  DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x24
+#define HSPGISTS1 DT_REG_ADDR(DT_NODELABEL(l2lm)) + 0x28
+
 	.type   boot_master_core, @function
 
 	.begin	literal_prefix	.boot_entry
