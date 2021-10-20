@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_mosi_pb5 &spi3_miso_pb4>;
+	cs-gpios = <&gpioe 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+
+	mx31lf1ge4bc: spi_nand_flash@0 {
+		compatible = "st,stm32-spi-nand";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+		label = "MX31LF1GE4BC";
+		size = <4194304>;
+		block-size = <2048>;
+		page-size = <2048>;
+                id = [c2 22];
+		status = "okay";
+	};
+};

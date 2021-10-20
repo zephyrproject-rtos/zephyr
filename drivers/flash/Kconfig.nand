@@ -1,0 +1,38 @@
+# Copyright (c) 2018 Savoir-Faire Linux.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NAND
+	bool "SPI NAND Flash"
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	depends on SPI
+
+if SPI_NAND
+
+config SPI_NAND_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_NAND_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+	help
+	  This is the wait delay (in us) to allow for CS switching to take effect
+
+config SPI_NAND_IDLE_IN_DPD
+	bool "Use Deep Power-Down mode when flash is not being accessed."
+	help
+	  Where supported deep power-down mode can reduce current draw
+	  to as little as 0.1% of standby current.  However it takes
+	  some milliseconds to enter and exit from this mode.
+
+	  Select this option for applications where device power
+	  management is not enabled, the flash remains inactive for
+	  long periods, and when used the impact of waiting for mode
+	  enter and exit delays is acceptable.
+
+endif # SPI_NAND
