@@ -10,8 +10,13 @@ properties:
 
     st,prescaler:
       type: int
-      required: true
-      description: Clock prescaler at the input of the timer
+      required: false
+      deprecated: true
+      description: |
+        Clock prescaler at the input of the timer
+        Note: This property is obsolete and was replaced by "st,prescaler"
+        binding of parent timer node. It is kept temporarily for compatibility
+        reasons.
 
     pinctrl-0:
       type: phandles
