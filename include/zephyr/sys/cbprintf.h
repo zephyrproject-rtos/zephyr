@@ -684,11 +684,15 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *format,
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
+#ifdef CONFIG_PICOLIBC
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+#else
 static inline
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 {
 	return z_cbvprintf_impl(out, ctx, format, ap, 0);
 }
+#endif
 
 /** @brief varargs-aware *printf-like output through a callback with tagged arguments.
  *
@@ -760,6 +764,17 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 }
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+
+#ifdef CONFIG_PICOLIBC
+
+#define fprintfcb(stream, ...) fprintf(stream, __VA_ARGS__)
+#define vfprintfcb(stream, format, ap) (stream, format, ap)
+#define printfcb(format, ...) printf(format, __VA_ARGS__)
+#define vprintfcb(format, ap) vfprintf(format, ap)
+#define snprintfcb(str, size, ...) snprintf(str, size, __VA_ARGS__)
+#define vsnprintfcb(str, size, format, ap) vsnprintf(str, size, format, ap)
+
+#else
 
 /** @brief fprintf using Zephyrs cbprintf infrastructure.
  *
@@ -887,6 +902,7 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  */
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap);
 
+#endif /* CONFIG_PICOLIBC */
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /**
