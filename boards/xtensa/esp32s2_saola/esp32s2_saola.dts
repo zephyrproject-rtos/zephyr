@@ -17,10 +17,27 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	aliases {
+		watchdog = &wdt0;
+		sw0 = &btn1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		btn1: button_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "Test Button";
+		};
+	};
 };
 
 &cpu0 {
 	clock-frequency = <ESP32_CLK_CPU_240M>;
+};
+
+&wdt0 {
+	status = "okay";
 };
 
 &uart0 {
