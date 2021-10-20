@@ -339,6 +339,119 @@
 			label = "I2C_4";
 			status = "disabled";
 		};
+
+		pwm1: pwm@42080000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42080000 0x4000>;
+			interrupts = <83 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_1";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@42084000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42084000 0x4000>;
+			interrupts = <84 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_2";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@42088000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42088000 0x4000>;
+			interrupts = <85 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_3";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@4208c000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x4208c000 0x4000>;
+			interrupts = <86 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_4";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+
+		pwm5: pwm@422a4000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a4000 0x4000>;
+			interrupts = <83 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_5";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@422a8000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a8000 0x4000>;
+			interrupts = <84 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_6";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@422ac000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ac000 0x4000>;
+			interrupts = <85 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_7";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm8: pwm@422ab000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ab000 0x4000>;
+			interrupts = <86 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_8";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
