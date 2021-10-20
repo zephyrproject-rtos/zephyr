@@ -10,7 +10,6 @@
 #include <xtensa/hal.h>
 #include <init.h>
 
-#include <soc/shim.h>
 #include <cavs-shim.h>
 #include <cavs-idc.h>
 #include "soc.h"

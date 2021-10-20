@@ -5,7 +5,7 @@
  */
 #include <zephyr.h>
 #include <adsp/cache.h>
-#include <soc/shim.h>
+#include <cavs-mem.h>
 
 /* Simple output driver for the trace window of an ADSP device used
  * for communication with the host processor as a shared memory

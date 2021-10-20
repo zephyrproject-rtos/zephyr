@@ -17,8 +17,6 @@
 #include <stdint.h>
 #include <cavs/version.h>
 
-#include <soc/memory.h>
-#include <soc/shim.h>
 #include <adsp/io.h>
 #include <soc.h>
 #include <arch/xtensa/cache.h>
