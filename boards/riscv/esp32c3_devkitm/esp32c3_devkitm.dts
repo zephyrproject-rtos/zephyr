@@ -44,3 +44,17 @@
 &gpio0 {
 	status = "okay";
 };
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@9000 {
+			label = "storage";
+			reg = <0x00009000 0x00006000>;
+		};
+	};
+};
