@@ -149,6 +149,28 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 	return nbytes;
 }
 
+static FILE __console = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
+
+void __printk_hook_install(int (*fn)(int))
+{
+	__console.put = (int(*)(char, FILE *)) fn;
+	__console.flags |= _FDEV_SETUP_WRITE;
+}
+
+void vprintk(const char *fmt, va_list ap)
+{
+	vfprintf(&__console, fmt, ap);
+}
+
+void printk(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vfprintf(&__console, fmt, ap);
+	va_end(ap);
+}
+
 #ifndef CONFIG_POSIX_API
 int _read(int fd, char *buf, int nbytes)
 {
