@@ -11,7 +11,7 @@
 #
 # PROJECT CONFIGURATION
 # ---------------------
-#     PRJ_CONF:   Default bsim device configuration [prj_conf]
+#     PRJ_CONF:   Default bsim device configuration [prj_dut_conf]
 #     PRJ_CONF_1: bsim device 1 configuration [PRJ_CONF]
 #     PRJ_CONF_2: bsim device 2 configuration [PRJ_CONF]
 #
@@ -71,7 +71,7 @@ function Execute(){
 BOARD="${BOARD:-nrf52_bsim}"
 
 #Give a default value to PRJ_CONF_x if it does not have one yet:
-PRJ_CONF="${PRJ_CONF:-prj_conf}"
+PRJ_CONF="${PRJ_CONF:-prj_dut_conf}"
 PRJ_CONF_1="${PRJ_CONF_1:-${PRJ_CONF}}"
 PRJ_CONF_2="${PRJ_CONF_2:-${PRJ_CONF}}"
 
