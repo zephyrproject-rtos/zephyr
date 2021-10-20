@@ -1,9 +1,14 @@
 # Copyright (c) 2018, Diego Sueiro <diego.sueiro@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: i.MX7D PWM
+description: |
+    This driver supports both i.MX6SX and i.MX7D PWM.
+    The compatible string is named "imx27" because the hardware module is the
+    same module present starting from imx27 CPUs and this driver can potentially
+    support other CPUs with imx27 module. This is also the same string used
+    in the Linux kernel.
 
-compatible: "fsl,imx7d-pwm"
+compatible: "fsl,imx27-pwm"
 
 include: [pwm-controller.yaml, base.yaml]
 
