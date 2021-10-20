@@ -20,8 +20,6 @@
 /**
  * @brief Number of register used by gdbstub in IA-32
  */
-#define ARCH_GDB_NUM_REGISTERS 16
-
 #define GDB_STUB_NUM_REGISTERS 16
 
 /**
