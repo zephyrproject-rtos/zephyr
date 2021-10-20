@@ -18,6 +18,12 @@ config SOC
 config HP_SRAM_RESERVE
 	default 32768
 
+config ADSP_WIN0_OFFSET
+	default 24576
+
+config ADSP_WIN3_OFFSET
+	default 0
+
 config SMP
 	default y
 
