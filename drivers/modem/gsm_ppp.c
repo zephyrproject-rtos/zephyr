@@ -584,9 +584,11 @@ static void rssi_handler(struct k_work *work)
 
 }
 
-static void gsm_finalize_connection(struct gsm_modem *gsm)
+static void gsm_finalize_connection(struct k_work *work)
 {
 	int ret = 0;
+	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+					     gsm_configure_work);
 
 	/* If already attached, jump right to RSSI readout */
 	if (gsm->gsm_state == GSM_PPP_STATE_ATTACHED) {
@@ -927,7 +929,8 @@ static void mux_setup(struct k_work *work)
 		LOG_INF("PPP channel %d connected to %s",
 			DLCI_PPP, gsm->ppp_dev->name);
 
-		gsm_finalize_connection(gsm);
+		k_work_init_delayable(&gsm->gsm_configure_work, gsm_finalize_connection);
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 		break;
 	default:
 		LOG_ERR("%s while gsm in state: %d", __func__, gsm->gsm_state);
@@ -996,7 +999,8 @@ static void gsm_configure(struct k_work *work)
 		return;
 	}
 
-	gsm_finalize_connection(gsm);
+	k_work_init_delayable(&gsm->gsm_configure_work, gsm_finalize_connection);
+	(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
 int gsm_ppp_start(const struct device *dev)
