@@ -356,6 +356,20 @@ config RUNTIME_ERROR_CHECKS
 
 endchoice
 
+config NOINIT
+	bool "Do not zero-fill regions marked __noinit"
+	default y
+	help
+	  On many systems, there is a noticeable speedup at initialization
+	  when static objects or uninitialized global variables have the
+	  __noinit attribute. Additionally, __noinit allows for the contents
+	  of some memory regions (e.g. SRAM) to be preserved across soft
+	  reboots. However, this can be problematic for some systems such as
+	  those with ECC memory (a fault is triggered when reading from
+	  uninitialized memory).
+
+	  To always zero-initialize such memory regions, select 'n' here.
+
 menu "Build Options"
 
 config KERNEL_BIN_NAME

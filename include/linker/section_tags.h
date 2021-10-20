@@ -13,10 +13,16 @@
 
 #if !defined(_ASMLANGUAGE)
 
-#define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
-#define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
-#define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
-#define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
+#if defined(CONFIG_NOINIT)
+#define __noinit __in_section_unique(_NOINIT_SECTION_NAME)
+#define __noinit_named(name) __in_section_unique_named(_NOINIT_SECTION_NAME, name)
+#else
+#define __noinit
+#define __noinit_named(name)
+#endif
+
+#define __irq_vector_table     Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
+#define __sw_isr_table         Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
 
 #if defined(CONFIG_ARM)
 #define __kinetis_flash_config_section __in_section_unique(_KINETIS_FLASH_CONFIG_SECTION_NAME)
