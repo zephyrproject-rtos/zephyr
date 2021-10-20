@@ -173,6 +173,7 @@ void z_arm_configure_static_mpu_regions(void)
  */
 void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 {
+#if MAX_DYNAMIC_MPU_REGIONS_NUM > 0
 	/* Define an array of z_arm_mpu_partition objects to hold the configuration
 	 * of the respective dynamic MPU regions to be programmed for
 	 * the given thread. The array of partitions (along with its
@@ -306,6 +307,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	/* Configure the dynamic MPU regions */
 	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
 						   region_num);
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)
