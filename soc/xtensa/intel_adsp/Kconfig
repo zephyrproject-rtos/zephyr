@@ -37,6 +37,22 @@ config ADSP_WIN3_OFFSET
 	  printk/log output) within the reserved region at the start
 	  of HP-SRAM.
 
+config IMR_MANIFEST_ADDR
+	hex "Address of boot manifest struct within IMR memory"
+	default 0xb0032000
+	help
+	  Address where the rimage manifest struct is placed upon
+	  boot.  Must be synchronized between Zephyr's linkage, the
+	  hardware, ROM and rimage configuration.  Don't touch except
+	  with great care.
+
+config IMR_DATA_ADDR
+	hex "Address of bootloader .data section within IMR memory"
+	default 0xb0039000
+	help
+	  Location to place .data contents in IMR memory during
+	  bootloader linkage.
+
 # Select SoC Part No. and configuration options
 source "soc/xtensa/intel_adsp/*/Kconfig.soc"
 
