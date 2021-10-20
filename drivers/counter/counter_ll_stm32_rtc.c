@@ -421,7 +421,7 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL,
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_stm32_driver_api);
+		    CONFIG_COUNTER_INIT_PRIORITY, &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(const struct device *dev)
 {
