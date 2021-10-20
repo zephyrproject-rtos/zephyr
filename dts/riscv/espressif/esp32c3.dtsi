@@ -5,12 +5,14 @@
  */
 #include <mem.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 #include <dt-bindings/clock/esp32c3_clock.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	chosen {
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
@@ -96,6 +98,18 @@
 			interrupt-parent = <&intc>;
 			label = "GPIO_0";
 			ngpios = <32>;   /* 0..31 */
+		};
+
+		i2c0: i2c@60013000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60013000 0x1000>;
+			interrupts = <I2C_EXT0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "I2C_0";
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
 		};
 
 		uart0: uart@60000000 {

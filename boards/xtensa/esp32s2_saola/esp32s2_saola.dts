@@ -12,6 +12,10 @@
 	model = "esp32s2_saola";
 	compatible = "espressif,esp32s2";
 
+	aliases {
+		i2c-0 = &i2c0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
@@ -53,6 +57,19 @@
 
 &timer3 {
 	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-pin = <8>;
+	scl-pin = <9>;
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-pin = <3>;
+	scl-pin = <4>;
 };
 
 &trng0 {
