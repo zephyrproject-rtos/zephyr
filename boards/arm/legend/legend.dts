@@ -147,33 +147,34 @@
 };
 
 &timers3 {
+	/*
+	 * The maximum period needed on Legend devices for activity LED
+	 * hardware blinking is 250ms (i.e. "error" fast blink at 4 Hz).
+	 *
+	 * We can use the following equation to compute the
+	 * corresponding prescaler value:
+	 *
+	 * period_max = counter_size / cycles_per_second
+	 *
+	 * With:
+	 *
+	 * cycles_per_second = 48 MHz / (prescaler + 1)
+	 * counter_size = 2^16
+	 * period_max = 0.25
+	 *
+	 * Which gives:
+	 *
+	 * prescaler = 48 MHz * 0.25 / 2^16 + 1 = 182
+	 *
+	 * So any prescaler value above 182 is good for a 4 Hz hardware
+	 * blinking. In addition the PWM frequency must be as high as
+	 * possible to fool eyes and cameras with steady brightness
+	 * levels.
+	 */
+	st,prescaler = <200>;
+
 	pwm3: pwm {
 		pinctrl-0 = <&tim3_ch3_pb0>;
-		/*
-		 * The maximum period needed on Legend devices for activity LED
-		 * hardware blinking is 250ms (i.e. "error" fast blink at 4 Hz).
-		 *
-		 * We can use the following equation to compute the
-		 * corresponding prescaler value:
-		 *
-		 * period_max = counter_size / cycles_per_second
-		 *
-		 * With:
-		 *
-		 * cycles_per_second = 48 MHz / (prescaler + 1)
-		 * counter_size = 2^16
-		 * period_max = 0.25
-		 *
-		 * Which gives:
-		 *
-		 * prescaler = 48 MHz * 0.25 / 2^16 + 1 = 182
-		 *
-		 * So any prescaler value above 182 is good for a 4 Hz hardware
-		 * blinking. In addition the PWM frequency must be as high as
-		 * possible to fool eyes and cameras with steady brightness
-		 * levels.
-		 */
-		st,prescaler = <200>;
 		status = "disabled";
 	};
 };

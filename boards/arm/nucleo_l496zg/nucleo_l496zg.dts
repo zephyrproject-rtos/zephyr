@@ -101,11 +101,11 @@
 };
 
 &timers1 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim1_ch1_pe9
 			     &tim1_ch2_pe11
 			     &tim1_ch3_pe13>;
@@ -122,11 +122,11 @@
 };
 
 &timers15 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm15: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };

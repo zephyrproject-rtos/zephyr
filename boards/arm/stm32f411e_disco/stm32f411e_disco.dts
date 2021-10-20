@@ -99,11 +99,11 @@
 };
 
 &timers4 {
+	st,prescaler = <10000>;
 	status = "okay";
 
 	pwm4: pwm {
 		status = "okay";
-		st,prescaler = <10000>;
 		pinctrl-0 = <&tim4_ch1_pd12
 			     &tim4_ch2_pd13
 			     &tim4_ch3_pd14
