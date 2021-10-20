@@ -306,21 +306,8 @@ def main():
                 hdls.append(DEVICE_HANDLE_SEP)
                 hdls.extend(hs.ext_deps)
 
-            # When CONFIG_USERSPACE is enabled the pre-built elf is
-            # also used to get hashes that identify kernel objects by
-            # address. We can't allow the size of any object in the
-            # final elf to change. We also must make sure at least one
-            # DEVICE_HANDLE_ENDS is inserted.
-            padding = len(hs.handles) - len(hdls)
-            assert padding > 0, \
-                (f"device {dev.sym.name}: "
-                 "linker pass 1 left no room to insert DEVICE_HANDLE_ENDS. "
-                 "To work around, increase CONFIG_DEVICE_HANDLE_PADDING by " +
-                 str(1 + (-padding)))
-            while padding > 0:
-                hdls.append(DEVICE_HANDLE_ENDS)
-                padding -= 1
-            assert len(hdls) == len(hs.handles), "%s handle overflow" % (dev.sym.name,)
+            # Terminate the array with the end symbol
+            hdls.append(DEVICE_HANDLE_ENDS)
 
             lines = [
                 '',
