@@ -1340,7 +1340,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	case PDU_DATA_LLID_DATA_START:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->pause_rx_data) {
-			/* Data PDU recieved during data pause */
+			/* Data PDU received during data pause */
 			conn->terminate.reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
@@ -1353,7 +1353,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	default:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->pause_rx_data) {
-			/* Data PDU recieved during data pause */
+			/* Data PDU received during data pause */
 			conn->terminate.reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -1499,7 +1499,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 			/*
 			 * EGON TODO to be verified
-			*/
+			 */
 			if (!ull_tx_q_peek(&conn->tx_q)) {
 				ull_conn_tx_demux(UINT8_MAX);
 			}
@@ -1664,7 +1664,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 	/*
 	 * EGON TODO: verify what we need to do here
-	*/
+	 */
 
 	/* break latency based on ctrl procedure pending */
 	/*
@@ -1675,7 +1675,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	 *	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
 	 *		lll->latency_event = 0U;
 	 *	}
-	*/
+	 */
 
 	/* check if latency needs update */
 	lazy = 0U;

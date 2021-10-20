@@ -56,13 +56,13 @@ enum {
 	/* Procedure run */
 	LP_COMMON_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_COMMON_EVT_RESPONSE,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_COMMON_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_COMMON_EVT_UNKNOWN,
 
 	/* Instant collision detected */
@@ -88,7 +88,7 @@ enum {
 	/* Ack received */
 	RP_COMMON_EVT_ACK,
 
-	/* Request recieved */
+	/* Request received */
 	RP_COMMON_EVT_REQUEST,
 };
 
@@ -864,7 +864,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		} else {
 			/* Protocol Error.
 			 *
-			 * A procedure already sent a LL_VERSION_IND and recieved a LL_VERSION_IND.
+			 * A procedure already sent a LL_VERSION_IND and received a LL_VERSION_IND.
 			 */
 			/* TODO */
 			LL_ASSERT(0);

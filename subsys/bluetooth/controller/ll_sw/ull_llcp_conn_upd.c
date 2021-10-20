@@ -63,16 +63,16 @@ enum {
 	/* Procedure run */
 	LP_CU_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_CU_EVT_CONN_PARAM_RSP,
 
-	/* Indication recieved */
+	/* Indication received */
 	LP_CU_EVT_CONN_UPDATE_IND,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_CU_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_CU_EVT_UNKNOWN,
 };
 
@@ -97,10 +97,10 @@ enum {
 	/* Procedure run */
 	RP_CU_EVT_RUN,
 
-	/* Request recieved */
+	/* Request received */
 	RP_CU_EVT_CONN_PARAM_REQ,
 
-	/* Indication recieved */
+	/* Indication received */
 	RP_CU_EVT_CONN_UPDATE_IND,
 
 	/* CONN_PARAM_REQ reply */

@@ -59,19 +59,19 @@ enum {
 	/* Procedure run */
 	LP_PU_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_PU_EVT_PHY_RSP,
 
-	/* Indication recieved */
+	/* Indication received */
 	LP_PU_EVT_PHY_UPDATE_IND,
 
 	/* Ack received */
 	LP_PU_EVT_ACK,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_PU_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_PU_EVT_UNKNOWN,
 };
 
@@ -93,13 +93,13 @@ enum {
 	/* Procedure run */
 	RP_PU_EVT_RUN,
 
-	/* Request recieved */
+	/* Request received */
 	RP_PU_EVT_PHY_REQ,
 
 	/* Ack received */
 	RP_PU_EVT_ACK,
 
-	/* Indication recieved */
+	/* Indication received */
 	RP_PU_EVT_PHY_UPDATE_IND,
 };
 
@@ -613,6 +613,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_proc = pu_check_update_ind(conn, ctx);
+
 		if (!end_proc) {
 			if (ctx->data.pu.p_to_c_phy) {
 				/* If periph to central phy changes apply tx timing restriction */
@@ -984,6 +985,7 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	case RP_PU_EVT_PHY_UPDATE_IND:
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_proc = pu_check_update_ind(conn, ctx);
+
 		if (!end_proc) {
 			/* Since at least one phy will change, we clear procedure response timeout */
 			ull_conn_prt_clear(conn);

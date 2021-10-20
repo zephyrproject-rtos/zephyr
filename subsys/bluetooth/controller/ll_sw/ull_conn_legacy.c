@@ -1703,8 +1703,6 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 	}
 
 	ll_tx_ack_put(handle, tx);
-
-	return;
 }
 
 uint8_t ull_conn_llcp_req(void *conn)

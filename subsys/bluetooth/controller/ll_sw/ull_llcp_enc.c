@@ -63,22 +63,22 @@ enum {
 	/* Procedure prepared */
 	LP_ENC_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_ENC_EVT_ENC_RSP,
 
-	/* Request recieved */
+	/* Request received */
 	LP_ENC_EVT_START_ENC_REQ,
 
-	/* Response recieved */
+	/* Response received */
 	LP_ENC_EVT_START_ENC_RSP,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_ENC_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_ENC_EVT_UNKNOWN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_ENC_EVT_PAUSE_ENC_RSP,
 };
 #endif /* CONFIG_BT_CENTRAL */
@@ -109,10 +109,10 @@ enum {
 	/* Procedure prepared */
 	RP_ENC_EVT_RUN,
 
-	/* Request recieved */
+	/* Request received */
 	RP_ENC_EVT_ENC_REQ,
 
-	/* Response recieved */
+	/* Response received */
 	RP_ENC_EVT_START_ENC_RSP,
 
 	/* LTK request reply */
@@ -121,16 +121,16 @@ enum {
 	/* LTK request negative reply */
 	RP_ENC_EVT_LTK_REQ_NEG_REPLY,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	RP_ENC_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	RP_ENC_EVT_UNKNOWN,
 
-	/* Request recieved */
+	/* Request received */
 	RP_ENC_EVT_PAUSE_ENC_REQ,
 
-	/* Response recieved */
+	/* Response received */
 	RP_ENC_EVT_PAUSE_ENC_RSP,
 };
 #endif /* CONFIG_BT_PERIPHERAL */
