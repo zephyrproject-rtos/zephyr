@@ -5,8 +5,10 @@
 # HCI regression tests based on the EDTTool
 CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 
-export SIMULATION_ID="edtt_hci_llcp"
-export TEST_FILE=${CWD}"/hci.llcp.test_list"
+export SIMULATION_ID="edtt_hci"
+export TEST_FILE=${CWD}"/hci.legacy.test_list"
 export TEST_MODULE="hci_verification"
+export PRJ_CONF_1="prj_dut_legacy_conf"
+export PRJ_CONF_2="prj_tst_legacy_conf"
 
 ${CWD}/_controller_tests_inner.sh

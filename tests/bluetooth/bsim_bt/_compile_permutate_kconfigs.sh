@@ -63,7 +63,7 @@ perm_compile() {
 	cat $3
     fi
     local app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app
-    local conf_file=prj.conf
+    local conf_file=prj_dut.conf
     local conf_overlay=$3
     compile
     if [ ! -f ${executable_name} ]; then
