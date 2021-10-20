@@ -47,13 +47,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_22";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_22";
 				#pwm-cells = <3>;
 			};
@@ -65,6 +65,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
 			interrupts = <17 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
 		};

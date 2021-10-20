@@ -43,13 +43,13 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
 			interrupts = <16 0>;
 			interrupt-names = "global";
+			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_4";
 
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <0>;
 				label = "PWM_4";
 				#pwm-cells = <3>;
 			};
