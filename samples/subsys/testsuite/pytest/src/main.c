@@ -4,16 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-void test_pytest(void)
+
+ZTEST_SUITE(test_pytest, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_pytest, test_pytest)
 {
 	TC_PRINT("Hello world\n");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_pytest,
-			 ztest_unit_test(test_pytest)
-			 );
-
-	ztest_run_test_suite(test_pytest);
 }
