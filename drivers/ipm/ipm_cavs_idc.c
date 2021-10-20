@@ -13,9 +13,11 @@
 #include <arch/common/sys_io.h>
 
 #include <soc.h>
-#include <soc/shim.h>
+
 #ifndef CONFIG_SOC_INTEL_S1000
 #include <adsp/io.h>
+#else
+#include <soc/shim.h>
 #endif
 
 #include "ipm_cavs_idc.h"

@@ -21,9 +21,8 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <soc.h>
 #include <arch/xtensa/cache.h>
 #include <adsp/io.h>
-
-#include <soc/shim.h>
 #include <cavs-shim.h>
+#include <cavs-mem.h>
 
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>

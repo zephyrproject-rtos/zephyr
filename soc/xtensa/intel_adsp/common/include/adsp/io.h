@@ -10,7 +10,6 @@
 #define __INCLUDE_IO__
 
 #include <stdint.h>
-#include <soc/memory.h>
 #include <sys/sys_io.h>
 #include <arch/common/sys_io.h>
 
