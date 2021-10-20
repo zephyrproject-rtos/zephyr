@@ -22,6 +22,9 @@
  * 0xBxxxxxxx.
  */
 
+#define SRAM_TRACE_BASE HP_SRAM_WIN3_BASE
+#define SRAM_TRACE_SIZE HP_SRAM_WIN3_SIZE
+
 #define SLOT_SIZE 64
 #define SLOT_MAGIC 0x55aa
 

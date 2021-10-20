@@ -17,6 +17,12 @@
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)
 #define RAM_SIZE (L2_SRAM_SIZE - CONFIG_HP_SRAM_RESERVE - VECTOR_TBL_SIZE)
 
+/* Host shared memory windows */
+#define HP_SRAM_WIN0_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN0_OFFSET)
+#define HP_SRAM_WIN0_SIZE 0x2000
+#define HP_SRAM_WIN3_BASE (L2_SRAM_BASE + CONFIG_ADSP_WIN3_OFFSET)
+#define HP_SRAM_WIN3_SIZE 0x2000
+
 /* These are fake section addresses used only in the linker scripts */
 #define IDT_BASE		(L2_SRAM_BASE + L2_SRAM_SIZE)
 #define IDT_SIZE		0x2000
