@@ -367,8 +367,9 @@ endif()
 # TODO: Archiver arguments
 # ar_option(D)
 
-# Generate app_smem when enabling CONFIG_USERSPACE
-set(LINK_APP_SMEM ${CONFIG_USERSPACE})
+# Generate app_smem when scripts need to process an initial .elf
+# file, whose results will end up changing the size of variables.
+set(LINK_APP_SMEM ${CONFIG_USERSPACE} OR ${CONFIG_HAS_DTS})
 
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
@@ -795,7 +796,7 @@ if(CONFIG_GEN_ISR_TABLES)
 endif()
 
 if(CONFIG_HAS_DTS)
-  # dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
+  # dev_handles.c is generated from app_smem_unaligned_prebuilt by
   # gen_handles.py
   add_custom_command(
     OUTPUT dev_handles.c
@@ -803,12 +804,12 @@ if(CONFIG_HAS_DTS)
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_handles.py
     --output-source dev_handles.c
-    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+    --kernel $<TARGET_FILE:app_smem_unaligned_prebuilt>
     --zephyr-base ${ZEPHYR_BASE}
     --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    DEPENDS app_smem_unaligned_prebuilt
     )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES dev_handles.c)
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
