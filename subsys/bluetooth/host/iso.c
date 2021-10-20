@@ -815,6 +815,28 @@ void hci_le_cis_established(struct net_buf *buf)
 	}
 
 	if (!evt->status) {
+		if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
+			struct bt_iso_chan *chan = iso->iso.chan;
+			struct bt_iso_chan_io_qos *rx;
+			struct bt_iso_chan_io_qos *tx;
+
+			__ASSERT(chan != NULL && chan->qos != NULL,
+				 "Invalid ISO chan");
+
+			rx = chan->qos->rx;
+			tx = chan->qos->tx;
+
+			if (rx != NULL) {
+				rx->phy = evt->c_phy;
+				rx->sdu = evt->c_max_pdu;
+			}
+
+			if (tx != NULL) {
+				tx->phy = evt->p_phy;
+				tx->sdu = evt->p_max_pdu;
+			}
+		} /* values are already set for central */
+
 		/* TODO: Add CIG sync delay */
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 		bt_conn_unref(iso);

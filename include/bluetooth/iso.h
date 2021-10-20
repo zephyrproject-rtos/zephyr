@@ -405,6 +405,10 @@ struct bt_iso_chan_ops {
 	 *  If this callback is provided it will be called whenever the
 	 *  connection completes.
 	 *
+	 *  For a peripheral, the QoS values (see @ref bt_iso_chan_io_qos)
+	 *  are set when this is called. The peripheral does not have any
+	 *  information about the RTN though.
+	 *
 	 *  @param chan The channel that has been connected
 	 */
 	void (*connected)(struct bt_iso_chan *chan);
