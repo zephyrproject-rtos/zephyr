@@ -26,7 +26,6 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 	};
 
@@ -60,7 +59,6 @@
 			reg = <0x3f408000 0x0D8>;
 			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
-			xtal-div = <0>;
 			#clock-cells = <1>;
 			status = "ok";
 		};
