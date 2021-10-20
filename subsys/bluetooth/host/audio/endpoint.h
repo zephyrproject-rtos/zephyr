@@ -7,7 +7,7 @@
  */
 
 #include "ascs_internal.h"
-#include "chan.h"
+#include "stream.h"
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST)
 #define UNICAST_GROUP_CNT CONFIG_BT_BAP_UNICAST_GROUP_COUNT
@@ -49,7 +49,7 @@ struct bt_audio_ep {
 	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
 	struct bt_audio_capability *cap;
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
 	/* TODO: Remove iso from this struct. The reason is that a ASE
@@ -77,11 +77,11 @@ struct bt_audio_unicast_group {
 	struct bt_iso_cig *cig;
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
-	sys_slist_t chans;
+	sys_slist_t streams;
 };
 
 struct bt_audio_broadcast_source {
-	uint8_t chan_count;
+	uint8_t stream_count;
 	uint8_t subgroup_count;
 	uint32_t pd; /** QoS Presentation Delay */
 	uint32_t broadcast_id; /* 24 bit */
@@ -90,13 +90,13 @@ struct bt_audio_broadcast_source {
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
 	struct bt_codec_qos *qos;
-	/* The channels used to create the broadcast source */
-	struct bt_audio_chan *chans;
+	/* The streams used to create the broadcast source */
+	struct bt_audio_stream *streams;
 };
 
 struct bt_audio_broadcast_sink {
 	uint8_t index; /* index of broadcast_snks array */
-	uint8_t chan_count;
+	uint8_t stream_count;
 	uint8_t subgroup_count;
 	uint16_t pa_interval;
 	uint16_t iso_interval;
@@ -109,8 +109,8 @@ struct bt_audio_broadcast_sink {
 	struct bt_audio_capability *cap; /* Capability that accepted the PA sync */
 	struct bt_iso_big *big;
 	struct bt_iso_chan *bis[BROADCAST_SNK_STREAM_CNT];
-	/* The channels used to create the broadcast sink */
-	struct bt_audio_chan *chans;
+	/* The streams used to create the broadcast sink */
+	struct bt_audio_stream *streams;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
@@ -140,7 +140,7 @@ void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
 
 struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle);
 
-struct bt_audio_ep *bt_audio_ep_find_by_chan(struct bt_audio_chan *chan);
+struct bt_audio_ep *bt_audio_ep_find_by_stream(struct bt_audio_stream *stream);
 
 struct bt_audio_ep *bt_audio_ep_alloc(struct bt_conn *conn, uint16_t handle);
 
@@ -161,10 +161,8 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle);
 
 void bt_audio_ep_reset(struct bt_conn *conn);
 
-void bt_audio_ep_attach(struct bt_audio_ep *ep,
-			      struct bt_audio_chan *chan);
-void bt_audio_ep_detach(struct bt_audio_ep *ep,
-			      struct bt_audio_chan *chan);
+void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_stream *stream);
+void bt_audio_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream *stream);
 
 struct net_buf_simple *bt_audio_ep_create_pdu(uint8_t op);
 
