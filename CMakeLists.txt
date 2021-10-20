@@ -955,6 +955,7 @@ if(CONFIG_USERSPACE)
 endif()
 
 # Read global variables into local variables
+get_property(GASF GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES)
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
@@ -1226,7 +1227,7 @@ set_property(TARGET
   )
 
 # FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
+add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c ${GASF})
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
@@ -1275,7 +1276,7 @@ else()
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
-  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
+  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GASF} ${GKSF})
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map

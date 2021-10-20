@@ -50,6 +50,14 @@ define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
 zephyr_interface_library_named() appends libs to this list.")
 set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
 
+define_property(GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES
+  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+Source files that are generated after Zephyr has been linked once.\
+May include dev_handles.c etc."
+  )
+set_property(GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES "")
+
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
   BRIEF_DOCS "Object files that are generated after symbol addresses are fixed."
   FULL_DOCS "\
