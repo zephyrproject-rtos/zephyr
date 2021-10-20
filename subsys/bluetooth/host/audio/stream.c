@@ -214,7 +214,7 @@ int bt_audio_stream_iso_listen(struct bt_audio_stream *stream)
 {
 	static bool server;
 	int err, i;
-	struct bt_audio_stream **free = NULL;
+	struct bt_audio_stream **free_stream = NULL;
 
 	BT_DBG("stream %p conn %p", stream, stream->conn);
 
@@ -236,13 +236,13 @@ done:
 			return 0;
 		}
 
-		if (!enabling[i] && !free) {
-			free = &enabling[i];
+		if (enabling[i] == NULL && free_stream == NULL) {
+			free_stream = &enabling[i];
 		}
 	}
 
-	if (free) {
-		*free = stream;
+	if (free_stream != NULL) {
+		*free_stream = stream;
 		return 0;
 	}
 
