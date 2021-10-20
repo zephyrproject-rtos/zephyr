@@ -287,7 +287,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
  */
 #ifdef __CCAC__
 #define IS_BUILTIN_MWDT(val) __builtin_constant_p((uintptr_t)(val))
-#if CONFIG_ARC_MPU_VER == 2
+#if CONFIG_ARC_MPU_VER == 2 || CONFIG_ARC_MPU_VER == 3 || CONFIG_ARC_MPU_VER == 6
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
 	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? !((size) & ((size) - 1)) : 1,			\
 		"partition size must be power of 2");						\
@@ -306,7 +306,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 		"partition start address must align with " STRINGIFY(Z_ARC_MPU_ALIGN))
 #endif
 #else /* __CCAC__ */
-#if CONFIG_ARC_MPU_VER == 2
+#if CONFIG_ARC_MPU_VER == 2 || CONFIG_ARC_MPU_VER == 3 || CONFIG_ARC_MPU_VER == 6
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
 	BUILD_ASSERT(!((size) & ((size) - 1)),							\
 		"partition size must be power of 2");						\
