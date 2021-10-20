@@ -19,7 +19,7 @@ static void start_scan(void);
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
-static struct bt_audio_chan audio_channel;
+static struct bt_audio_stream audio_stream;
 static struct bt_audio_unicast_group *unicast_group;
 static struct bt_audio_capability *remote_capabilities[CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
@@ -31,9 +31,9 @@ static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16
 static K_SEM_DEFINE(sem_connected, 0, 1);
 static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
 static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
-static K_SEM_DEFINE(sem_chan_configured, 0, 1);
-static K_SEM_DEFINE(sem_chan_qos, 0, 1);
-static K_SEM_DEFINE(sem_chan_enabled, 0, 1);
+static K_SEM_DEFINE(sem_stream_configured, 0, 1);
+static K_SEM_DEFINE(sem_stream_qos, 0, 1);
+static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -112,7 +112,7 @@ static void audio_timer_timeout(struct k_work *work)
 
 	net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_audio_chan_send(&audio_channel, buf);
+	ret = bt_audio_stream_send(&audio_stream, buf);
 	if (ret < 0) {
 		printk("Failed to send audio data (%d)\n", ret);
 		net_buf_unref(buf);
@@ -128,7 +128,7 @@ static void audio_timer_timeout(struct k_work *work)
 	}
 }
 
-static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
+static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
@@ -137,81 +137,81 @@ static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 
 	print_codec(codec);
 
-	if (audio_channel.conn == NULL) {
-		return &audio_channel;
+	if (audio_stream.conn == NULL) {
+		return &audio_stream;
 	}
 
-	printk("No channels available\n");
+	printk("No streams available\n");
 
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_chan *chan,
+static int lc3_reconfig(struct bt_audio_stream *stream,
 			struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
-	printk("ASE Codec Reconfig: chan %p cap %p\n", chan, cap);
+	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
 
 	print_codec(codec);
 
-	k_sem_give(&sem_chan_configured);
+	k_sem_give(&sem_stream_configured);
 
 	return 0;
 }
 
-static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 {
-	printk("QoS: chan %p qos %p\n", chan, qos);
+	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
 
-	k_sem_give(&sem_chan_qos);
+	k_sem_give(&sem_stream_qos);
 
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta)
 {
-	printk("Enable: chan %p meta_count %u\n", chan, meta_count);
+	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
-	k_sem_give(&sem_chan_enabled);
+	k_sem_give(&sem_stream_enabled);
 
 	return 0;
 }
 
-static int lc3_start(struct bt_audio_chan *chan)
+static int lc3_start(struct bt_audio_stream *stream)
 {
-	printk("Start: chan %p\n", chan);
+	printk("Start: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
 			struct bt_codec_data *meta)
 {
-	printk("Metadata: chan %p meta_count %u\n", chan, meta_count);
+	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
 
 	return 0;
 }
 
-static int lc3_disable(struct bt_audio_chan *chan)
+static int lc3_disable(struct bt_audio_stream *stream)
 {
-	printk("Disable: chan %p\n", chan);
+	printk("Disable: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_stop(struct bt_audio_chan *chan)
+static int lc3_stop(struct bt_audio_stream *stream)
 {
-	printk("Stop: chan %p\n", chan);
+	printk("Stop: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_release(struct bt_audio_chan *chan)
+static int lc3_release(struct bt_audio_stream *stream)
 {
-	printk("Release: chan %p\n", chan);
+	printk("Release: stream %p\n", stream);
 
 	return 0;
 }
@@ -329,23 +329,24 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
-static void chan_connected(struct bt_audio_chan *chan)
+static void stream_connected(struct bt_audio_stream *stream)
 {
-	printk("Audio Channel %p connected, start sending\n", chan);
+	printk("Audio Stream %p connected, start sending\n", stream);
 
 	/* Start send timer */
 	k_work_schedule(&audio_send_work, K_MSEC(0));
 }
 
-static void chan_disconnected(struct bt_audio_chan *chan, uint8_t reason)
+static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Audio Channel %p disconnected (reason 0x%02x)\n", chan, reason);
+	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
+	       stream, reason);
 	k_work_cancel_delayable(&audio_send_work);
 }
 
-static struct bt_audio_chan_ops chan_ops = {
-	.connected	= chan_connected,
-	.disconnected	= chan_disconnected,
+static struct bt_audio_stream_ops stream_ops = {
+	.connected	= stream_connected,
+	.disconnected	= stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
@@ -478,7 +479,7 @@ static int init(void)
 		}
 	}
 
-	audio_channel.ops = &chan_ops;
+	audio_stream.ops = &stream_ops;
 
 	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
 
@@ -545,32 +546,32 @@ static int discover_sink(void)
 	return 0;
 }
 
-static int configure_chan(struct bt_audio_chan **chan)
+static int configure_stream(struct bt_audio_stream **stream)
 {
 	int err;
 
-	*chan = bt_audio_chan_config(default_conn, sinks[0],
-				     remote_capabilities[0],
-				     &preset_16_2_1.codec);
-	if (*chan == NULL) {
-		printk("Could not configure channel\n");
+	*stream = bt_audio_stream_config(default_conn, sinks[0],
+					 remote_capabilities[0],
+					 &preset_16_2_1.codec);
+	if (*stream == NULL) {
+		printk("Could not configure stream\n");
 		return -ENOENT;
 	}
 
-	err = k_sem_take(&sem_chan_configured, K_FOREVER);
+	err = k_sem_take(&sem_stream_configured, K_FOREVER);
 	if (err != 0) {
-		printk("failed to take sem_chan_configured (err %d)\n", err);
+		printk("failed to take sem_stream_configured (err %d)\n", err);
 		return err;
 	}
 
 	return 0;
 }
 
-static int create_group(struct bt_audio_chan *chan)
+static int create_group(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_unicast_group_create(chan, 1, &unicast_group);
+	err = bt_audio_unicast_group_create(stream, 1, &unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
 		return err;
@@ -579,40 +580,40 @@ static int create_group(struct bt_audio_chan *chan)
 	return 0;
 }
 
-static int set_chan_qos(void)
+static int set_stream_qos(void)
 {
 	int err;
 
-	err = bt_audio_chan_qos(default_conn, unicast_group,
+	err = bt_audio_stream_qos(default_conn, unicast_group,
 				&preset_16_2_1.qos);
 	if (err != 0) {
 		printk("Unable to setup QoS: %d", err);
 		return err;
 	}
 
-	err = k_sem_take(&sem_chan_qos, K_FOREVER);
+	err = k_sem_take(&sem_stream_qos, K_FOREVER);
 	if (err != 0) {
-		printk("failed to take sem_chan_qos (err %d)\n", err);
+		printk("failed to take sem_stream_qos (err %d)\n", err);
 		return err;
 	}
 
 	return 0;
 }
 
-static int enable_chan(struct bt_audio_chan *chan)
+static int enable_stream(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_chan_enable(chan, preset_16_2_1.codec.meta_count,
-				   preset_16_2_1.codec.meta);
+	err = bt_audio_stream_enable(stream, preset_16_2_1.codec.meta_count,
+				     preset_16_2_1.codec.meta);
 	if (err != 0) {
-		printk("Unable to enable channel: %d", err);
+		printk("Unable to enable stream: %d", err);
 		return err;
 	}
 
-	err = k_sem_take(&sem_chan_enabled, K_FOREVER);
+	err = k_sem_take(&sem_stream_enabled, K_FOREVER);
 	if (err != 0) {
-		printk("failed to take sem_chan_enabled (err %d)\n", err);
+		printk("failed to take sem_stream_enabled (err %d)\n", err);
 		return err;
 	}
 
@@ -621,7 +622,7 @@ static int enable_chan(struct bt_audio_chan *chan)
 
 void main(void)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	printk("Initializing\n");
@@ -652,29 +653,29 @@ void main(void)
 	}
 	printk("Sink discovered\n");
 
-	printk("Configuring channel\n");
-	err = configure_chan(&chan);
+	printk("Configuring stream\n");
+	err = configure_stream(&stream);
 	if (err != 0) {
 		return;
 	}
 	printk("Channel configured\n");
 
 	printk("Creating unicast group\n");
-	err = create_group(chan);
+	err = create_group(stream);
 	if (err != 0) {
 		return;
 	}
 	printk("Unicast group created\n");
 
-	printk("Setting channel QoS\n");
-	err = set_chan_qos();
+	printk("Setting stream QoS\n");
+	err = set_stream_qos();
 	if (err != 0) {
 		return;
 	}
 	printk("Channel QoS Set\n");
 
-	printk("Enabling channel\n");
-	err = enable_chan(chan);
+	printk("Enabling stream\n");
+	err = enable_stream(stream);
 	if (err != 0) {
 		return;
 	}

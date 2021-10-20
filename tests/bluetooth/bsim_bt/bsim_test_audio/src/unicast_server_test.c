@@ -16,7 +16,7 @@ extern enum bst_result_t bst_result;
 /* Mandatory support preset by both client and server */
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
-static struct bt_audio_chan channels[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 /* TODO: Expand with BAP data */
 static const struct bt_data unicast_server_ad[] = {
@@ -25,9 +25,9 @@ static const struct bt_data unicast_server_ad[] = {
 };
 
 CREATE_FLAG(flag_connected);
-CREATE_FLAG(flag_chan_configured);
+CREATE_FLAG(flag_stream_configured);
 
-static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
+static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
@@ -36,26 +36,26 @@ static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 
 	print_codec(codec);
 
-	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-		struct bt_audio_chan *chan = &channels[i];
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		struct bt_audio_stream *stream = &streams[i];
 
-		if (chan->conn == NULL) {
-			printk("ASE Codec Config chan %p\n", chan);
-			SET_FLAG(flag_chan_configured);
-			return chan;
+		if (stream->conn == NULL) {
+			printk("ASE Codec Config stream %p\n", stream);
+			SET_FLAG(flag_stream_configured);
+			return stream;
 		}
 	}
 
-	FAIL("No channels available\n");
+	FAIL("No streams available\n");
 
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_chan *chan,
+static int lc3_reconfig(struct bt_audio_stream *stream,
 			struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
-	printk("ASE Codec Reconfig: chan %p cap %p\n", chan, cap);
+	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
 
 	print_codec(codec);
 
@@ -63,55 +63,55 @@ static int lc3_reconfig(struct bt_audio_chan *chan,
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 {
-	printk("QoS: chan %p qos %p\n", chan, qos);
+	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
 
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta)
 {
-	printk("Enable: chan %p meta_count %u\n", chan, meta_count);
+	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
 	return 0;
 }
 
-static int lc3_start(struct bt_audio_chan *chan)
+static int lc3_start(struct bt_audio_stream *stream)
 {
-	printk("Start: chan %p\n", chan);
+	printk("Start: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
 			struct bt_codec_data *meta)
 {
-	printk("Metadata: chan %p meta_count %u\n", chan, meta_count);
+	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
 
 	return 0;
 }
 
-static int lc3_disable(struct bt_audio_chan *chan)
+static int lc3_disable(struct bt_audio_stream *stream)
 {
-	printk("Disable: chan %p\n", chan);
+	printk("Disable: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_stop(struct bt_audio_chan *chan)
+static int lc3_stop(struct bt_audio_stream *stream)
 {
-	printk("Stop: chan %p\n", chan);
+	printk("Stop: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_release(struct bt_audio_chan *chan)
+static int lc3_release(struct bt_audio_stream *stream)
 {
-	printk("Release: chan %p\n", chan);
+	printk("Release: stream %p\n", stream);
 
 	return 0;
 }
@@ -128,25 +128,26 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
-static void chan_connected(struct bt_audio_chan *chan)
+static void stream_connected(struct bt_audio_stream *stream)
 {
-	printk("Audio Channel %p connected\n", chan);
+	printk("Audio Stream %p connected\n", stream);
 }
 
-static void chan_disconnected(struct bt_audio_chan *chan, uint8_t reason)
+static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Audio Channel %p disconnected (reason 0x%02x)\n", chan, reason);
+	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
+	       stream, reason);
 }
 
-static void chan_recv(struct bt_audio_chan *chan, struct net_buf *buf)
+static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
 {
-	printk("Incoming audio on channel %p len %u\n", chan, buf->len);
+	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
-static struct bt_audio_chan_ops chan_ops = {
-	.connected = chan_connected,
-	.disconnected = chan_disconnected,
-	.recv = chan_recv
+static struct bt_audio_stream_ops stream_ops = {
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
+	.recv = stream_recv
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -195,8 +196,8 @@ static void init(void)
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(channels); i++) {
-		bt_audio_chan_cb_register(&channels[i], &chan_ops);
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
 
 
@@ -215,7 +216,7 @@ static void test_main(void)
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 
 	WAIT_FOR_FLAG(flag_connected);
-	WAIT_FOR_FLAG(flag_chan_configured);
+	WAIT_FOR_FLAG(flag_stream_configured);
 	PASS("Unicast server passed\n");
 }
 
