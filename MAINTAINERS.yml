@@ -843,6 +843,7 @@ Documentation:
     collaborators:
         - avisconti
         - gmarull
+        - teburd
     files:
         - drivers/sensor/
         - include/drivers/sensor.h
@@ -1254,6 +1255,7 @@ Power management:
         - nashif
         - mengxianglinx
         - gmarull
+        - teburd
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
@@ -1582,6 +1584,8 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - teburd
     files:
         - subsys/tracing/
         - include/tracing/
