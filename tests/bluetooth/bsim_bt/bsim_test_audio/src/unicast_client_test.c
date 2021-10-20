@@ -13,7 +13,7 @@
 
 extern enum bst_result_t bst_result;
 
-static struct bt_audio_chan g_channels[CONFIG_BT_BAP_ASE_SNK_COUNT];
+static struct bt_audio_stream g_streams[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_capability *g_remote_capabilities[CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *g_sinks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_conn *g_conn;
@@ -24,11 +24,11 @@ static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16
 CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
-CREATE_FLAG(flag_chan_configured);
-CREATE_FLAG(flag_chan_qos);
-CREATE_FLAG(flag_chan_enabled);
+CREATE_FLAG(flag_stream_configured);
+CREATE_FLAG(flag_stream_qos);
+CREATE_FLAG(flag_stream_enabled);
 
-static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
+static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
@@ -37,84 +37,84 @@ static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 
 	print_codec(codec);
 
-	for (size_t i = 0; i < ARRAY_SIZE(g_channels); i++) {
-		/* If the connection is NULL, the channel is free */
-		if (g_channels[i].conn == NULL) {
-			return &g_channels[i];
+	for (size_t i = 0; i < ARRAY_SIZE(g_streams); i++) {
+		/* If the connection is NULL, the stream is free */
+		if (g_streams[i].conn == NULL) {
+			return &g_streams[i];
 		}
 	}
 
-	FAIL("No channels available\n");
+	FAIL("No streams available\n");
 
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_chan *chan,
+static int lc3_reconfig(struct bt_audio_stream *stream,
 			struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
-	printk("ASE Codec Reconfig: chan %p cap %p\n", chan, cap);
+	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
 
 	print_codec(codec);
 
-	SET_FLAG(flag_chan_configured);
+	SET_FLAG(flag_stream_configured);
 
 	return 0;
 }
 
-static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 {
-	printk("QoS: chan %p qos %p\n", chan, qos);
+	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
 
-	SET_FLAG(flag_chan_qos);
+	SET_FLAG(flag_stream_qos);
 
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta)
 {
-	printk("Enable: chan %p meta_count %u\n", chan, meta_count);
+	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
-	SET_FLAG(flag_chan_enabled);
+	SET_FLAG(flag_stream_enabled);
 
 	return 0;
 }
 
-static int lc3_start(struct bt_audio_chan *chan)
+static int lc3_start(struct bt_audio_stream *stream)
 {
-	printk("Start: chan %p\n", chan);
+	printk("Start: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_chan *chan, uint8_t meta_count,
+static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
 			struct bt_codec_data *meta)
 {
-	printk("Metadata: chan %p meta_count %u\n", chan, meta_count);
+	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
 
 	return 0;
 }
 
-static int lc3_disable(struct bt_audio_chan *chan)
+static int lc3_disable(struct bt_audio_stream *stream)
 {
-	printk("Disable: chan %p\n", chan);
+	printk("Disable: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_stop(struct bt_audio_chan *chan)
+static int lc3_stop(struct bt_audio_stream *stream)
 {
-	printk("Stop: chan %p\n", chan);
+	printk("Stop: stream %p\n", stream);
 
 	return 0;
 }
 
-static int lc3_release(struct bt_audio_chan *chan)
+static int lc3_release(struct bt_audio_stream *stream)
 {
-	printk("Release: chan %p\n", chan);
+	printk("Release: stream %p\n", stream);
 
 	return 0;
 }
@@ -142,19 +142,20 @@ static struct bt_audio_capability caps[] = {
 	}
 };
 
-static void chan_connected(struct bt_audio_chan *chan)
+static void stream_connected(struct bt_audio_stream *stream)
 {
-	printk("Audio Channel %p connected\n", chan);
+	printk("Audio Stream %p connected\n", stream);
 }
 
-static void chan_disconnected(struct bt_audio_chan *chan, uint8_t reason)
+static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 {
-	printk("Audio Channel %p disconnected (reason 0x%02x)\n", chan, reason);
+	printk("Audio Stream %p disconnected (reason 0x%02x)\n",
+	       stream, reason);
 }
 
-static struct bt_audio_chan_ops chan_ops = {
-	.connected	= chan_connected,
-	.disconnected	= chan_disconnected,
+static struct bt_audio_stream_ops stream_ops = {
+	.connected	= stream_connected,
+	.disconnected	= stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
@@ -274,8 +275,8 @@ static void init(void)
 		}
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(g_channels); i++) {
-		g_channels[i].ops = &chan_ops;
+	for (size_t i = 0; i < ARRAY_SIZE(g_streams); i++) {
+		g_streams[i].ops = &stream_ops;
 	}
 }
 
@@ -326,29 +327,29 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
-static struct bt_audio_chan *configure_chan(struct bt_audio_ep *ep)
+static struct bt_audio_stream *configure_stream(struct bt_audio_ep *ep)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 
-	UNSET_FLAG(flag_chan_configured);
+	UNSET_FLAG(flag_stream_configured);
 
-	chan = bt_audio_chan_config(g_conn, ep, g_remote_capabilities[0],
-				    &preset_16_2_1.codec);
-	if (chan == NULL) {
-		FAIL("Could not configure channel\n");
+	stream = bt_audio_stream_config(g_conn, ep, g_remote_capabilities[0],
+					&preset_16_2_1.codec);
+	if (stream == NULL) {
+		FAIL("Could not configure stream\n");
 		return NULL;
 	}
 
-	WAIT_FOR_FLAG(flag_chan_configured);
+	WAIT_FOR_FLAG(flag_stream_configured);
 
-	return chan;
+	return stream;
 }
 
 static void test_main(void)
 {
-	struct bt_audio_chan *configured_chans[CONFIG_BT_BAP_ASE_SNK_COUNT];
+	struct bt_audio_stream *configured_streams[CONFIG_BT_BAP_ASE_SNK_COUNT];
 	struct bt_audio_unicast_group *unicast_group;
-	uint8_t chan_cnt;
+	uint8_t stream_cnt;
 	int err;
 
 	init();
@@ -359,23 +360,23 @@ static void test_main(void)
 
 	discover_sink();
 
-	printk("Configuring channels\n");
-	memset(configured_chans, 0, sizeof(configured_chans));
-	for (chan_cnt = 0; chan_cnt < ARRAY_SIZE(g_sinks); chan_cnt++) {
-		if (g_sinks[chan_cnt] == NULL) {
+	printk("Configuring streams\n");
+	memset(configured_streams, 0, sizeof(configured_streams));
+	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
+		if (g_sinks[stream_cnt] == NULL) {
 			break;
 		}
 
-		configured_chans[chan_cnt] = configure_chan(g_sinks[chan_cnt]);
+		configured_streams[stream_cnt] = configure_stream(g_sinks[stream_cnt]);
 	}
 
-	if (configured_chans[0] == NULL) {
-		FAIL("No channels configured");
+	if (configured_streams[0] == NULL) {
+		FAIL("No streams configured");
 		return;
 	}
 
 	printk("Creating unicast group\n");
-	err = bt_audio_unicast_group_create(g_channels, chan_cnt,
+	err = bt_audio_unicast_group_create(g_streams, stream_cnt,
 					    &unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
@@ -394,7 +395,7 @@ static void test_main(void)
 
 	/* Recreate unicast group to verify that it's possible */
 	printk("Recreating unicast group\n");
-	err = bt_audio_unicast_group_create(g_channels, chan_cnt,
+	err = bt_audio_unicast_group_create(g_streams, stream_cnt,
 					    &unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);

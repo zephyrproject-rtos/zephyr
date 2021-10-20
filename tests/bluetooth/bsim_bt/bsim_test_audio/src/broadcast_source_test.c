@@ -18,7 +18,7 @@ static void test_main(void)
 	int err;
 	struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
 	struct bt_audio_lc3_preset preset_16_2_2 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_2;
-	struct bt_audio_chan broadcast_source_chans[BROADCAST_STREAM_CNT];
+	struct bt_audio_stream broadcast_source_streams[BROADCAST_STREAM_CNT];
 	struct bt_audio_broadcast_source *source;
 
 	err = bt_enable(NULL);
@@ -29,11 +29,12 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	(void)memset(broadcast_source_chans, 0, sizeof(broadcast_source_chans));
+	(void)memset(broadcast_source_streams, 0,
+		     sizeof(broadcast_source_streams));
 
 	printk("Creating broadcast source\n");
-	err = bt_audio_broadcast_source_create(broadcast_source_chans,
-					       ARRAY_SIZE(broadcast_source_chans),
+	err = bt_audio_broadcast_source_create(broadcast_source_streams,
+					       ARRAY_SIZE(broadcast_source_streams),
 					       &preset_16_2_1.codec,
 					       &preset_16_2_1.qos,
 					       &source);
@@ -62,8 +63,8 @@ static void test_main(void)
 
 	/* Recreate broadcast source to verify that it's possible */
 	printk("Recreating broadcast source\n");
-	err = bt_audio_broadcast_source_create(broadcast_source_chans,
-					       ARRAY_SIZE(broadcast_source_chans),
+	err = bt_audio_broadcast_source_create(broadcast_source_streams,
+					       ARRAY_SIZE(broadcast_source_streams),
 					       &preset_16_2_1.codec,
 					       &preset_16_2_1.qos,
 					       &source);
