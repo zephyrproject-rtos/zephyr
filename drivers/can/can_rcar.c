@@ -1040,7 +1040,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 			      &can_rcar_data_##n,				\
 			      &can_rcar_cfg_##n,				\
 			      POST_KERNEL,					\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			      CONFIG_CAN_INIT_PRIORITY,				\
 			      &can_rcar_driver_api				\
 			      );						\
 	static void can_rcar_##n##_init(const struct device *dev)		\

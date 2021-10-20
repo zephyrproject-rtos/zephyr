@@ -11,6 +11,9 @@ config SPI
 config CAN_MCP2515
 	default y
 
+config CAN_INIT_PRIORITY
+	default 80
+
 endif # CAN
 
 endif # SHIELD_DFROBOT_CAN_BUS_V2_0
