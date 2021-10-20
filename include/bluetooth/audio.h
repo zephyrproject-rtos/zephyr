@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-struct bt_audio_chan;
+struct bt_audio_stream;
 struct bt_audio_cap;
 
 #define BT_AUDIO_ERR(_err)  (-(_err))
@@ -67,7 +67,7 @@ struct bt_codec_data {
  *
  *  This macro is mainly for creating an array of struct bt_codec_data
  *  elements inside bt_codec which is then passed to the likes of
- *  bt_audio_chan_config or bt_audio_chan_reconfig.
+ *  bt_audio_stream_config or bt_audio_stream_reconfig.
  *
  *  @param _type Type of advertising data field
  *  @param _bytes Variable number of single-byte parameters
@@ -802,16 +802,16 @@ struct bt_audio_lc3_preset {
 		BT_CODEC_LC3_QOS_10_OUT_UNFRAMED(155u, 4u, 65u, 40000u) \
 	)
 
-/** @brief Audio channel structure.
+/** @brief Audio stream structure.
  *
- *  Audio Channels represents a stream configuration of a Remote Endpoint and
+ *  Audio Streams represents a stream configuration of a Remote Endpoint and
  *  a Local Capability.
  *
- *  @note Audio channels are unidirectional although its QoS can be configured
- *  to be bidirectional if channel are linked, in which case the QoS must be
+ *  @note Audio streams are unidirectional although its QoS can be configured
+ *  to be bidirectional if stream are linked, in which case the QoS must be
  *  symmetric in both directions.
  */
-struct bt_audio_chan {
+struct bt_audio_stream {
 	/** Connection reference */
 	struct bt_conn *conn;
 	/** Endpoint reference */
@@ -824,8 +824,8 @@ struct bt_audio_chan {
 	struct bt_codec_qos *qos;
 	/** ISO channel reference */
 	struct bt_iso_chan *iso;
-	/** Audio channel operations */
-	struct bt_audio_chan_ops *ops;
+	/** Audio stream operations */
+	struct bt_audio_stream_ops *ops;
 	sys_snode_t node;
 
 	union {
@@ -838,12 +838,12 @@ struct bt_audio_chan {
 
 /** @brief Capability operations structure.
  *
- *  These are only used for unicast channels and broadcast sink channels.
+ *  These are only used for unicast streams and broadcast sink streams.
  */
 struct bt_audio_capability_ops {
 	/** @brief Capability config callback
 	 *
-	 *  Config callback is called whenever a new Audio Channel needs to be
+	 *  Config callback is called whenever a new Audio Stream needs to be
 	 *  allocated.
 	 *
 	 *  @param conn Connection object
@@ -851,111 +851,111 @@ struct bt_audio_capability_ops {
 	 *  @param cap Local Audio Capability being configured
 	 *  @param codec Codec configuration
 	 *
-	 *  @return Allocated Audio Channel object or NULL in case of error.
+	 *  @return Allocated Audio Stream object or NULL in case of error.
 	 */
-	struct bt_audio_chan *(*config)(struct bt_conn *conn,
-					struct bt_audio_ep *ep,
-					struct bt_audio_capability *cap,
-					struct bt_codec *codec);
+	struct bt_audio_stream *(*config)(struct bt_conn *conn,
+					  struct bt_audio_ep *ep,
+					  struct bt_audio_capability *cap,
+					  struct bt_codec *codec);
 
 	/** @brief Capability reconfig callback
 	 *
-	 *  Reconfig callback is called whenever an Audio Channel needs to be
+	 *  Reconfig callback is called whenever an Audio Stream needs to be
 	 *  reconfigured with different codec configuration.
 	 *
-	 *  @param chan Channel object being reconfigured.
+	 *  @param stream Stream object being reconfigured.
 	 *  @param cap Local Audio Capability being reconfigured
 	 *  @param codec Codec configuration
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*reconfig)(struct bt_audio_chan *chan,
+	int (*reconfig)(struct bt_audio_stream *stream,
 			struct bt_audio_capability *cap,
 			struct bt_codec *codec);
 
 	/** @brief Capability QoS callback
 	 *
-	 *  QoS callback is called whenever an Audio Channel Quality of
+	 *  QoS callback is called whenever an Audio Stream Quality of
 	 *  Service needs to be configured.
 	 *
-	 *  @param chan Channel object being reconfigured.
+	 *  @param stream Stream object being reconfigured.
 	 *  @param QoS Quality of Service configuration
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*qos)(struct bt_audio_chan *chan, struct bt_codec_qos *qos);
+	int (*qos)(struct bt_audio_stream *stream, struct bt_codec_qos *qos);
 
 	/** @brief Capability Enable callback
 	 *
-	 *  Enable callback is called whenever an Audio Channel is about to be
+	 *  Enable callback is called whenever an Audio Stream is about to be
 	 *  enabled to stream.
 	 *
-	 *  @param chan Channel object being enabled.
+	 *  @param stream Stream object being enabled.
 	 *  @param meta_count Number of metadata entries
 	 *  @param meta Metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*enable)(struct bt_audio_chan *chan, uint8_t meta_count,
+	int (*enable)(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta);
 
 	/** @brief Capability Start callback
 	 *
-	 *  Start callback is called whenever an Audio Channel is about to be
+	 *  Start callback is called whenever an Audio Stream is about to be
 	 *  start streaming.
 	 *
-	 *  @param chan Channel object.
+	 *  @param stream Stream object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*start)(struct bt_audio_chan *chan);
+	int (*start)(struct bt_audio_stream *stream);
 
 	/** @brief Capability Metadata callback
 	 *
-	 *  Metadata callback is called whenever an Audio Channel is needs to
+	 *  Metadata callback is called whenever an Audio Stream is needs to
 	 *  update its metadata.
 	 *
-	 *  @param chan Channel object.
+	 *  @param stream Stream object.
 	 *  @param meta_count Number of metadata entries
 	 *  @param meta Metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*metadata)(struct bt_audio_chan *chan, uint8_t meta_count,
+	int (*metadata)(struct bt_audio_stream *stream, uint8_t meta_count,
 			struct bt_codec_data *meta);
 
 	/** @brief Capability Disable callback
 	 *
-	 *  Disable callback is called whenever an Audio Channel is about to be
+	 *  Disable callback is called whenever an Audio Stream is about to be
 	 *  disabled to stream.
 	 *
-	 *  @param chan Channel object being disabled.
+	 *  @param stream Stream object being disabled.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*disable)(struct bt_audio_chan *chan);
+	int (*disable)(struct bt_audio_stream *stream);
 
 	/** @brief Capability Stop callback
 	 *
-	 *  Stop callback is called whenever an Audio Channel is about to be
+	 *  Stop callback is called whenever an Audio Stream is about to be
 	 *  stop streaming.
 	 *
-	 *  @param chan Channel object.
+	 *  @param stream Stream object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*stop)(struct bt_audio_chan *chan);
+	int (*stop)(struct bt_audio_stream *stream);
 
 	/** @brief Capability release callback
 	 *
-	 *  Release callback is called whenever a new Audio Channel needs to be
+	 *  Release callback is called whenever a new Audio Stream needs to be
 	 *  deallocated.
 	 *
-	 *  @param chan Channel object.
+	 *  @param stream Stream object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*release)(struct bt_audio_chan *chan);
+	int (*release)(struct bt_audio_stream *stream);
 
 	/** @brief Scan receive callback
 	 *
@@ -1039,35 +1039,35 @@ struct bt_audio_capability_ops {
 };
 
 /** @brief Channel operation. */
-struct bt_audio_chan_ops {
+struct bt_audio_stream_ops {
 	/** @brief Channel connected callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  connection completes.
 	 *
-	 *  @param chan The channel that has been connected
+	 *  @param stream The stream that has been connected
 	 */
-	void (*connected)(struct bt_audio_chan *chan);
+	void (*connected)(struct bt_audio_stream *stream);
 
 	/** @brief Channel disconnected callback
 	 *
 	 *  If this callback is provided it will be called whenever the
-	 *  channel is disconnected, including when a connection gets
+	 *  stream is disconnected, including when a connection gets
 	 *  rejected.
 	 *
-	 *  @param chan   The channel that has been Disconnected
+	 *  @param stream The stream that has been Disconnected
 	 *  @param reason HCI reason for the disconnection.
 	 */
-	void (*disconnected)(struct bt_audio_chan *chan, uint8_t reason);
+	void (*disconnected)(struct bt_audio_stream *stream, uint8_t reason);
 
 	/** @brief Channel audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
 	 *
-	 *  @param chan Channel object.
+	 *  @param stream Stream object.
 	 *  @param buf  Buffer containing incoming audio data.
 	 */
-	void (*recv)(struct bt_audio_chan *chan, struct net_buf *buf);
+	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
 };
 
 /** @brief Audio Capability type */
@@ -1195,16 +1195,17 @@ int bt_audio_capability_register(struct bt_audio_capability *cap);
  */
 int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
-/** @brief Register Audio callbacks for a channel.
+/** @brief Register Audio callbacks for a stream.
  *
- *  Register Audio callbacks for a channel.
+ *  Register Audio callbacks for a stream.
  *
- *  @param chan Channel object.
+ *  @param stream Stream object.
  *  @param ops  Channel operations structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_ops *ops);
+void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
+				 struct bt_audio_stream_ops *ops);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
@@ -1254,9 +1255,9 @@ struct bt_audio_discover_params {
 int bt_audio_discover(struct bt_conn *conn,
 		      struct bt_audio_discover_params *params);
 
-/** @brief Configure Audio Channel
+/** @brief Configure Audio Stream
  *
- *  This procedure is used by a client to configure a new channel using the
+ *  This procedure is used by a client to configure a new stream using the
  *  remote endpoint, local capability and codec configuration.
  *
  *  @param conn Connection object
@@ -1264,36 +1265,36 @@ int bt_audio_discover(struct bt_conn *conn,
  *  @param cap Local Audio Capability being configured
  *  @param codec Codec configuration
  *
- *  @return Allocated Audio Channel object or NULL in case of error.
+ *  @return Allocated Audio Stream object or NULL in case of error.
  */
-struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
-					   struct bt_audio_ep *ep,
-					   struct bt_audio_capability *cap,
-					   struct bt_codec *codec);
+struct bt_audio_stream *bt_audio_stream_config(struct bt_conn *conn,
+					       struct bt_audio_ep *ep,
+					       struct bt_audio_capability *cap,
+					       struct bt_codec *codec);
 
-/** @brief Reconfigure Audio Channel
+/** @brief Reconfigure Audio Stream
  *
- *  This procedure is used by a client to reconfigure a channel using the
+ *  This procedure is used by a client to reconfigure a stream using the
  *  a different local capability and/or codec configuration.
  *
- *  This can only be done for unicast channels.
+ *  This can only be done for unicast streams.
  *
- *  @param chan Channel object being reconfigured
+ *  @param stream Stream object being reconfigured
  *  @param cap Local Audio Capability being reconfigured
  *  @param codec Codec configuration
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
-			   struct bt_audio_capability *cap,
-			   struct bt_codec *codec);
+int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
+			     struct bt_audio_capability *cap,
+			     struct bt_codec *codec);
 
-/** @brief Configure Audio Channel QoS
+/** @brief Configure Audio Stream QoS
  *
  *  This procedure is used by a client to configure the Quality of Service of
- *  channels in a unicast group. All channels in the group for the specified
+ *  streams in a unicast group. All streams in the group for the specified
  *  @p conn will have the Quality of Service configured.
- *  This shall only be used to configure unicast channels.
+ *  This shall only be used to configure unicast streams.
  *
  *  @param conn  Connection object
  *  @param group Unicast group object
@@ -1301,131 +1302,131 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_qos(struct bt_conn *conn,
-		      struct bt_audio_unicast_group *group,
-		      struct bt_codec_qos *qos);
+int bt_audio_stream_qos(struct bt_conn *conn,
+			struct bt_audio_unicast_group *group,
+			struct bt_codec_qos *qos);
 
-/** @brief Enable Audio Channel
+/** @brief Enable Audio Stream
  *
- *  This procedure is used by a client to enable a channel.
+ *  This procedure is used by a client to enable a stream.
  *
- *  This shall only be called for unicast channels, as broadcast channels will
+ *  This shall only be called for unicast streams, as broadcast streams will
  *  always be enabled once created.
  *
- *  @param chan Channel object
+ *  @param stream Stream object
  *  @param meta_count Number of metadata entries
  *  @param meta Metadata entries
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_enable(struct bt_audio_chan *chan,
-			 uint8_t meta_count, struct bt_codec_data *meta);
-
-/** @brief Change Audio Channel Metadata
- *
- *  This procedure is used by a client to change the metadata of a channel.
- *
- *  @param chan Channel object
- *  @param meta_count Number of metadata entries
- *  @param meta Metadata entries
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_chan_metadata(struct bt_audio_chan *chan,
+int bt_audio_stream_enable(struct bt_audio_stream *stream,
 			   uint8_t meta_count, struct bt_codec_data *meta);
 
-/** @brief Disable Audio Channel
+/** @brief Change Audio Stream Metadata
  *
- *  This procedure is used by a client to disable a channel.
+ *  This procedure is used by a client to change the metadata of a stream.
  *
- *  This shall only be called for unicast channels, as broadcast channels will
+ *  @param stream Stream object
+ *  @param meta_count Number of metadata entries
+ *  @param meta Metadata entries
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_stream_metadata(struct bt_audio_stream *stream,
+			     uint8_t meta_count, struct bt_codec_data *meta);
+
+/** @brief Disable Audio Stream
+ *
+ *  This procedure is used by a client to disable a stream.
+ *
+ *  This shall only be called for unicast streams, as broadcast streams will
  *  always be enabled once created.
  *
- *  @param chan Channel object
+ *  @param stream Stream object
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_disable(struct bt_audio_chan *chan);
+int bt_audio_stream_disable(struct bt_audio_stream *stream);
 
-/** @brief Start Audio Channel
+/** @brief Start Audio Stream
  *
- *  This procedure is used by a client to make a channel start streaming.
+ *  This procedure is used by a client to make a stream start streaming.
  *
- *  This shall only be called for unicast channels.
+ *  This shall only be called for unicast streams.
  *  Broadcast sinks will always be started once synchronized, and broadcast
- *  source channels shall be started with bt_audio_broadcast_source_start().
+ *  source streams shall be started with bt_audio_broadcast_source_start().
  *
- *  @param chan Channel object
+ *  @param stream Stream object
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_start(struct bt_audio_chan *chan);
+int bt_audio_stream_start(struct bt_audio_stream *stream);
 
-/** @brief Stop Audio Channel
+/** @brief Stop Audio Stream
  *
- *  This procedure is used by a client to make a channel stop streaming.
+ *  This procedure is used by a client to make a stream stop streaming.
  *
- *  This shall only be called for unicast channels.
+ *  This shall only be called for unicast streams.
  *  Broadcast sinks cannot be stopped.
  *  Broadcast sources shall be stopped with bt_audio_broadcast_source_stop().
  *
- *  @param chan Channel object
+ *  @param stream Stream object
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_stop(struct bt_audio_chan *chan);
+int bt_audio_stream_stop(struct bt_audio_stream *stream);
 
-/** @brief Release Audio Channel
+/** @brief Release Audio Stream
  *
  *  This procedure is used by a client to release a unicast or broadcast
- *  source channel.
+ *  source stream.
  *
- *  Broadcast sink channels cannot be released, but can be deleted by
+ *  Broadcast sink streams cannot be released, but can be deleted by
  *  bt_audio_broadcast_sink_delete().
- *  Broadcast source channels cannot be released, but can be deleted by
+ *  Broadcast source streams cannot be released, but can be deleted by
  *  bt_audio_broadcast_source_delete().
  *
- *  @param chan Channel object
+ *  @param stream Stream object
  *  @param cache True to cache the codec configuration or false to forget it
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache);
+int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache);
 
-/** @brief Send data to Audio channel
+/** @brief Send data to Audio stream
  *
- *  Send data from buffer to the channel.
+ *  Send data from buffer to the stream.
  *
- *  @note Data will not be sent to linked channels since linking is only
+ *  @note Data will not be sent to linked streams since linking is only
  *  consider for procedures affecting the state machine.
  *
- *  @param chan Channel object.
+ *  @param stream Stream object.
  *  @param buf Buffer containing data to be sent.
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */
-int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
+int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf);
 
 /** @brief Create audio unicast group.
  *
- *  Create a new audio unicast group with one or more audio channels as a
+ *  Create a new audio unicast group with one or more audio streams as a
  *  central. Channels in a unicast group shall share the same interval, framing
  *  and latency (see @ref bt_codec_qos).
  *
- *  @param[in]  chans          Array of channel objects being used for the
+ *  @param[in]  streams        Array of stream objects being used for the
  *                             group.
- *  @param[in]  num_chan       Number of channels in @p chans.
+ *  @param[in]  num_stream     Number of streams in @p streams.
  *  @param[out] unicast_group  Pointer to the unicast group created
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_unicast_group_create(struct bt_audio_chan *chans,
-				  uint8_t num_chan,
+int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
+				  uint8_t num_stream,
 				  struct bt_audio_unicast_group **unicast_group);
 
 /** @brief Delete audio unicast group.
  *
- *  Delete a audio unicast group as a central. All channels in the group shall
+ *  Delete a audio unicast group as a central. All streams in the group shall
  *  be in the idle or configured state.
  *
  *  @param unicast_group  Pointer to the unicast group to delete
@@ -1436,7 +1437,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 
 /** @brief Create audio broadcast source.
  *
- *  Create a new audio broadcast source with one or more audio channels.
+ *  Create a new audio broadcast source with one or more audio streams.
  *
  *  The broadcast source will be visible for scanners once this has been called,
  *  and the device will advertise audio announcements.
@@ -1445,18 +1446,18 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
  *  called and no audio information (BIGInfo) will be visible to scanners
  *  (see bt_le_per_adv_sync_cb).
  *
- *  @param[in]  chans       Array of channel objects being used for the
+ *  @param[in]  streams     Array of stream objects being used for the
  *                          broadcaster. This array shall remain valid for the
  *                          duration of the broadcast source.
- *  @param[in]  num_chan    Number of channels in @p chans.
+ *  @param[in]  num_stream  Number of streams in @p streams.
  *  @param[in]  codec       Codec configuration.
  *  @param[in]  qos         Quality of Service configuration
  *  @param[out] source      Pointer to the broadcast source created
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
-				     uint8_t num_chan,
+int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
+				     uint8_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **source);
@@ -1478,7 +1479,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 
 /** @brief Start audio broadcast source.
  *
- *  Start an audio broadcast source with one or more audio channels.
+ *  Start an audio broadcast source with one or more audio streams.
  *  The broadcast source will start advertising BIGInfo, and audio data can
  *  be streamed.
  *
@@ -1542,9 +1543,9 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
  *                            e.g. BIS index 1 and 2, this should have the value
  *                            of BIT(1) | BIT(2).
- *  @param chans              Channel objects to be used for the receiver. If
+ *  @param streams            Channel objects to be used for the receiver. If
  *                            multiple BIS indexes shall be synchronized,
- *                            multiple channels shall be provided.
+ *                            multiple streams shall be provided.
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
  *                            the broadcast is encrypted (see the syncable
  *                            callback).
@@ -1553,7 +1554,7 @@ int bt_audio_broadcast_sink_scan_stop(void);
  */
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
-				 struct bt_audio_chan *chans,
+				 struct bt_audio_stream *streams,
 				 const uint8_t broadcast_code[16]);
 
 /** @brief Stop audio broadcast sink.
@@ -1572,8 +1573,8 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink);
  *
  *  Once a broadcast sink has been allocated after the pa_synced callback,
  *  it can be deleted using this function. If the sink has synchronized to any
- *  broadcast audio channels, these must first be stopped using
- *  bt_audio_chan_stop.
+ *  broadcast audio streams, these must first be stopped using
+ *  bt_audio_stream_stop.
  *
  *  @param sink Pointer to the sink object to delete.
  *

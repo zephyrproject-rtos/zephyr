@@ -63,16 +63,16 @@ static struct bt_audio_broadcast_source broadcast_sources[BROADCAST_SRC_CNT];
 static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 			     struct bt_codec *codec);
 
-static int bt_audio_broadcast_source_setup_chan(uint8_t index,
-						struct bt_audio_chan *chan,
+static int bt_audio_broadcast_source_setup_stream(uint8_t index,
+						struct bt_audio_stream *stream,
 						struct bt_codec *codec,
 						struct bt_codec_qos *qos)
 {
 	struct bt_audio_ep *ep;
 	int err;
 
-	if (chan->group != NULL) {
-		BT_DBG("Channel %p already in group %p", chan, chan->group);
+	if (stream->group != NULL) {
+		BT_DBG("Channel %p already in group %p", stream, stream->group);
 		return -EALREADY;
 	}
 
@@ -82,9 +82,9 @@ static int bt_audio_broadcast_source_setup_chan(uint8_t index,
 		return -ENOMEM;
 	}
 
-	bt_audio_chan_attach(NULL, chan, ep, NULL, codec);
-	chan->qos = qos;
-	err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos, qos);
+	bt_audio_stream_attach(NULL, stream, ep, NULL, codec);
+	stream->qos = qos;
+	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;
@@ -110,7 +110,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 	/* TODO: The following encoding should be done for each subgroup once
 	 * supported
 	 */
-	net_buf_simple_add_u8(buf, source->chan_count);
+	net_buf_simple_add_u8(buf, source->stream_count);
 	net_buf_simple_add_u8(buf, codec->id);
 	net_buf_simple_add_le16(buf, codec->cid);
 	net_buf_simple_add_le16(buf, codec->vid);
@@ -150,7 +150,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 
 	/* Create BIS index bitfield */
 	bis_index = 0;
-	for (int i = 0; i < source->chan_count; i++) {
+	for (int i = 0; i < source->stream_count; i++) {
 		bis_index++;
 		net_buf_simple_add_u8(buf, bis_index);
 		net_buf_simple_add_u8(buf, 0); /* unused length field */
@@ -218,22 +218,22 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 
 static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 {
-	for (size_t i = 0; i < source->chan_count; i++) {
-		struct bt_audio_chan *chan = &source->chans[i];
+	for (size_t i = 0; i < source->stream_count; i++) {
+		struct bt_audio_stream *stream = &source->streams[i];
 
-		chan->ep->chan = NULL;
-		chan->ep = NULL;
-		chan->codec = NULL;
-		chan->qos = NULL;
-		chan->iso = NULL;
-		chan->group = NULL;
+		stream->ep->stream = NULL;
+		stream->ep = NULL;
+		stream->codec = NULL;
+		stream->qos = NULL;
+		stream->iso = NULL;
+		stream->group = NULL;
 	}
 
 	(void)memset(source, 0, sizeof(*source));
 }
 
-int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
-				     uint8_t num_chan,
+int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
+				     uint8_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
 				     struct bt_audio_broadcast_source **out_source)
@@ -248,7 +248,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 
 	/* TODO: Validate codec and qos values */
 
-	/* TODO: The API currently only requires a bt_audio_chan object from
+	/* TODO: The API currently only requires a bt_audio_stream object from
 	 * the user. We could modify the API such that the extended (and
 	 * periodic advertising enabled) advertiser was provided by the user as
 	 * well (similar to the ISO API), or even provide the BIG.
@@ -267,8 +267,8 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 	/* Set out_source to NULL until the source has actually been created */
 	*out_source = NULL;
 
-	CHECKIF(chans == NULL) {
-		BT_DBG("chans is NULL");
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
 		return -EINVAL;
 	}
 
@@ -277,9 +277,9 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 		return -EINVAL;
 	}
 
-	CHECKIF(num_chan > BROADCAST_STREAM_CNT) {
-		BT_DBG("Too many channels provided: %u/%u",
-		       num_chan, BROADCAST_STREAM_CNT);
+	CHECKIF(num_stream > BROADCAST_STREAM_CNT) {
+		BT_DBG("Too many streams provided: %u/%u",
+		       num_stream, BROADCAST_STREAM_CNT);
 		return -EINVAL;
 	}
 
@@ -296,19 +296,20 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 		return -ENOMEM;
 	}
 
-	source->chans = chans;
-	source->chan_count = num_chan;
-	for (size_t i = 0; i < num_chan; i++) {
-		struct bt_audio_chan *chan = &chans[i];
+	source->streams = streams;
+	source->stream_count = num_stream;
+	for (size_t i = 0; i < num_stream; i++) {
+		struct bt_audio_stream *stream = &streams[i];
 
-		err = bt_audio_broadcast_source_setup_chan(index, chan, codec, qos);
+		err = bt_audio_broadcast_source_setup_stream(index, stream,
+							     codec, qos);
 		if (err != 0) {
-			BT_DBG("Failed to setup chans[%zu]: %d", i, err);
+			BT_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_source_cleanup(source);
 			return err;
 		}
 
-		source->bis[i] = &chan->ep->iso;
+		source->bis[i] = &stream->ep->iso;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
@@ -378,8 +379,8 @@ int bt_audio_broadcast_source_create(struct bt_audio_chan *chans,
 		return err;
 	}
 
-	for (size_t i = 0; i < source->chan_count; i++) {
-		struct bt_audio_ep *ep = chans[i].ep;
+	for (size_t i = 0; i < source->stream_count; i++) {
+		struct bt_audio_ep *ep = streams[i].ep;
 
 		ep->broadcast_source = source;
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
@@ -398,7 +399,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 				       struct bt_codec *codec,
 				       struct bt_codec_qos *qos)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	CHECKIF(source == NULL) {
@@ -406,28 +407,28 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 		return -EINVAL;
 	}
 
-	chan = &source->chans[0];
+	stream = &source->streams[0];
 
-	if (chan == NULL) {
-		BT_DBG("chan is NULL");
+	if (stream == NULL) {
+		BT_DBG("stream is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep == NULL) {
-		BT_DBG("chan->ep is NULL");
+	if (stream->ep == NULL) {
+		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Broadcast source chan %p invalid state: %u",
-		       chan, chan->ep->status.state);
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast source stream %p invalid state: %u",
+		       stream, stream->ep->status.state);
 		return -EBADMSG;
 	}
 
-	for (size_t i = 0; i < source->chan_count; i++) {
-		chan = &source->chans[i];
+	for (size_t i = 0; i < source->stream_count; i++) {
+		stream = &source->streams[i];
 
-		bt_audio_chan_attach(NULL, chan, chan->ep, NULL, codec);
+		bt_audio_stream_attach(NULL, stream, stream->ep, NULL, codec);
 	}
 
 	err = bt_audio_set_base(source, codec);
@@ -444,7 +445,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 {
 	struct bt_iso_big_create_param param = { 0 };
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	CHECKIF(source == NULL) {
@@ -452,26 +453,26 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = &source->chans[0];
+	stream = &source->streams[0];
 
-	if (chan == NULL) {
-		BT_DBG("chan is NULL");
+	if (stream == NULL) {
+		BT_DBG("stream is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep == NULL) {
-		BT_DBG("chan->ep is NULL");
+	if (stream->ep == NULL) {
+		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Broadcast source chan %p invalid state: %u",
-		       chan, chan->ep->status.state);
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast source stream %p invalid state: %u",
+		       stream, stream->ep->status.state);
 		return -EBADMSG;
 	}
 
 	/* Create BIG */
-	param.num_bis = source->chan_count;
+	param.num_bis = source->stream_count;
 	param.bis_channels = source->bis;
 	param.framing = source->qos->framing;
 	param.packing = 0; /*  TODO: Add to QoS struct */
@@ -489,7 +490,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 
 int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	CHECKIF(source == NULL) {
@@ -497,21 +498,21 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = &source->chans[0];
+	stream = &source->streams[0];
 
-	if (chan == NULL) {
-		BT_DBG("chan is NULL");
+	if (stream == NULL) {
+		BT_DBG("stream is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep == NULL) {
-		BT_DBG("chan->ep is NULL");
+	if (stream->ep == NULL) {
+		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
-		BT_DBG("Broadcast source chan %p invalid state: %u",
-		       chan, chan->ep->status.state);
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+		BT_DBG("Broadcast source stream %p invalid state: %u",
+		       stream, stream->ep->status.state);
 		return -EBADMSG;
 	}
 
@@ -533,7 +534,7 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 
 int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -542,17 +543,17 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	chan = &source->chans[0];
+	stream = &source->streams[0];
 
-	if (chan != NULL) {
-		if (chan->ep == NULL) {
-			BT_DBG("chan->ep is NULL");
+	if (stream != NULL) {
+		if (stream->ep == NULL) {
+			BT_DBG("stream->ep is NULL");
 			return -EINVAL;
 		}
 
-		if (chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-			BT_DBG("Broadcast source chan %p invalid state: %u",
-			chan, chan->ep->status.state);
+		if (stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+			BT_DBG("Broadcast source stream %p invalid state: %u",
+			stream, stream->ep->status.state);
 			return -EBADMSG;
 		}
 	}

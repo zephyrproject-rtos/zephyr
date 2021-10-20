@@ -1,7 +1,8 @@
 /* @file
- * @brief Internal APIs for Audio Channel handling
+ * @brief Internal APIs for Audio Stream handling
 
  * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,29 +39,29 @@ enum bt_audio_state {
 };
 
 /* Unbind ISO channel */
-int bt_audio_cig_terminate(struct bt_audio_chan *chan);
+int bt_audio_cig_terminate(struct bt_audio_stream *stream);
 
 /* Connect ISO channel */
-int bt_audio_chan_connect(struct bt_audio_chan *chan);
+int bt_audio_stream_connect(struct bt_audio_stream *stream);
 
 /* Disconnect ISO channel */
-int bt_audio_chan_disconnect(struct bt_audio_chan *chan);
+int bt_audio_stream_disconnect(struct bt_audio_stream *stream);
 
-void bt_audio_chan_reset(struct bt_audio_chan *chan);
+void bt_audio_stream_reset(struct bt_audio_stream *stream);
 
-void bt_audio_chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
+void bt_audio_stream_attach(struct bt_conn *conn, struct bt_audio_stream *stream,
 			  struct bt_audio_ep *ep,
 			  struct bt_audio_capability *cap,
 			  struct bt_codec *codec);
 
-int bt_audio_chan_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-				       struct bt_codec_qos *codec);
+int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
+				  struct bt_codec_qos *codec);
 
-void bt_audio_chan_detach(struct bt_audio_chan *chan);
+void bt_audio_stream_detach(struct bt_audio_stream *stream);
 
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos);
 
-bool bt_audio_valid_chan_qos(const struct bt_audio_chan *chan,
+bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 			     const struct bt_codec_qos *qos);
 
-int bt_audio_chan_iso_listen(struct bt_audio_chan *chan);
+int bt_audio_stream_iso_listen(struct bt_audio_stream *stream);

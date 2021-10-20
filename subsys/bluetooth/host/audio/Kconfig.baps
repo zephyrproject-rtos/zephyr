@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config BT_AUDIO_CHAN
+config BT_AUDIO_STREAM
 	# Virtual/hidden option
 	bool
 	default y if BT_ASCS || BT_BAP || BT_AUDIO_BROADCAST_SINK || BT_AUDIO_BROADCAST_SOURCE

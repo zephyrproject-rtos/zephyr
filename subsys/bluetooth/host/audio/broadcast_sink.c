@@ -109,7 +109,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 	}
 
 	/* TODO: Wait for an parse PA data and use the capability ops to
-	 * get audio channels from the upper layer
+	 * get audio streams from the upper layer
 	 * TBD: What if sync to a bad broadcast source that does not send
 	 * properly formatted (or any) BASE?
 	 */
@@ -732,17 +732,17 @@ int bt_audio_broadcast_sink_scan_stop(void)
 	return err;
 }
 
-static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
-					      struct bt_audio_chan *chan,
-					      struct bt_codec *codec)
+static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
+						struct bt_audio_stream *stream,
+						struct bt_codec *codec)
 {
 	static struct bt_iso_chan_io_qos sink_chan_io_qos;
 	static struct bt_codec_qos codec_qos;
 	struct bt_audio_ep *ep;
 	int err;
 
-	if (chan->group != NULL) {
-		BT_DBG("Channel %p already in group %p", chan, chan->group);
+	if (stream->group != NULL) {
+		BT_DBG("Stream %p already in group %p", stream, stream->group);
 		return -EALREADY;
 	}
 
@@ -752,15 +752,15 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 		return -ENOMEM;
 	}
 
-	bt_audio_chan_attach(NULL, chan, ep, NULL, codec);
+	bt_audio_stream_attach(NULL, stream, ep, NULL, codec);
 	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
-	chan->iso->qos->rx = &sink_chan_io_qos;
-	chan->iso->qos->tx = NULL;
+	stream->iso->qos->rx = &sink_chan_io_qos;
+	stream->iso->qos->tx = NULL;
 	codec_qos.dir = BT_CODEC_QOS_IN;
-	chan->qos = &codec_qos;
-	err = bt_audio_chan_codec_qos_to_iso_qos(chan->iso->qos, &codec_qos);
+	stream->qos = &codec_qos;
+	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, &codec_qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;
@@ -769,35 +769,35 @@ static int bt_audio_broadcast_sink_setup_chan(uint8_t index,
 	return 0;
 }
 
-static void broadcast_sink_cleanup_chans(struct bt_audio_broadcast_sink *sink)
+static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 {
-	for (size_t i = 0; i < sink->chan_count; i++) {
-		struct bt_audio_chan *chan;
+	for (size_t i = 0; i < sink->stream_count; i++) {
+		struct bt_audio_stream *stream;
 
-		chan = &sink->chans[i];
+		stream = &sink->streams[i];
 
-		chan->ep->chan = NULL;
-		chan->ep = NULL;
-		chan->qos = NULL;
-		chan->codec = NULL;
-		chan->iso = NULL;
-		chan->group = NULL;
+		stream->ep->stream = NULL;
+		stream->ep = NULL;
+		stream->qos = NULL;
+		stream->codec = NULL;
+		stream->iso = NULL;
+		stream->group = NULL;
 	}
 }
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 {
-	broadcast_sink_cleanup_chans(sink);
+	broadcast_sink_cleanup_streams(sink);
 	(void)memset(sink, 0, sizeof(*sink));
 }
 
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
-				 struct bt_audio_chan *chans,
+				 struct bt_audio_stream *streams,
 				 const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
-	uint8_t chan_count;
+	uint8_t stream_count;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -815,8 +815,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		return -EINVAL;
 	}
 
-	CHECKIF(chans == NULL) {
-		BT_DBG("chans is NULL");
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
 		return -EINVAL;
 	}
 
@@ -839,34 +839,34 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		return -EINVAL;
 	}
 
-	/* Validate that number of bits set is less than number of channels */
-	chan_count = 0;
+	/* Validate that number of bits set is less than number of streams */
+	stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((indexes_bitfield & BIT(i)) != 0) {
-			chan_count++;
+			stream_count++;
 		}
 	}
 
-	sink->chan_count = chan_count;
-	sink->chans = chans;
-	for (size_t i = 0; i < chan_count; i++) {
-		struct bt_audio_chan *chan;
+	sink->stream_count = stream_count;
+	sink->streams = streams;
+	for (size_t i = 0; i < stream_count; i++) {
+		struct bt_audio_stream *stream;
 
-		chan = &chans[i];
+		stream = &streams[i];
 
-		err = bt_audio_broadcast_sink_setup_chan(sink->index, chan,
+		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
 							 sink->cap->codec);
 		if (err != 0) {
-			BT_DBG("Failed to setup chans[%zu]: %d", i, err);
-			broadcast_sink_cleanup_chans(sink);
+			BT_DBG("Failed to setup streams[%zu]: %d", i, err);
+			broadcast_sink_cleanup_streams(sink);
 			return err;
 		}
 
-		sink->bis[i] = &chan->ep->iso;
+		sink->bis[i] = &stream->ep->iso;
 	}
 
 	param.bis_channels = sink->bis;
-	param.num_bis = sink->chan_count;
+	param.num_bis = sink->stream_count;
 	param.bis_bitfield = indexes_bitfield;
 	param.mse = 0; /* Let controller decide */
 	param.sync_timeout = interval_to_sync_timeout(sink->iso_interval);
@@ -879,12 +879,12 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 	err = bt_iso_big_sync(sink->pa_sync, &param, &sink->big);
 	if (err != 0) {
-		broadcast_sink_cleanup_chans(sink);
+		broadcast_sink_cleanup_streams(sink);
 		return err;
 	}
 
-	for (size_t i = 0; i < chan_count; i++) {
-		struct bt_audio_ep *ep = chans[i].ep;
+	for (size_t i = 0; i < stream_count; i++) {
+		struct bt_audio_ep *ep = streams[i].ep;
 
 		ep->broadcast_sink = sink;
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
@@ -895,7 +895,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -903,22 +903,22 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	chan = &sink->chans[0];
+	stream = &sink->streams[0];
 
-	if (chan == NULL) {
-		BT_DBG("chan is NULL");
+	if (stream == NULL) {
+		BT_DBG("stream is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep == NULL) {
-		BT_DBG("chan->ep is NULL");
+	if (stream->ep == NULL) {
+		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
 	}
 
-	if (chan->ep->status.state != BT_AUDIO_EP_STATE_STREAMING &&
-	    chan->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
-		BT_DBG("Broadcast sink chan %p invalid state: %u",
-		       chan, chan->ep->status.state);
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING &&
+	    stream->ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		BT_DBG("Broadcast sink stream %p invalid state: %u",
+		       stream, stream->ep->status.state);
 		return -EBADMSG;
 	}
 
@@ -929,7 +929,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 	}
 
 	sink->big = NULL;
-	sink->chan_count = 0;
+	sink->stream_count = 0;
 	/* Channel states will be updated in the ep_iso_disconnected function */
 
 	return 0;
@@ -937,7 +937,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -945,9 +945,9 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	chan = &sink->chans[0];
+	stream = &sink->streams[0];
 
-	if (chan != NULL && chan->ep != NULL) {
+	if (stream != NULL && stream->ep != NULL) {
 		BT_DBG("Sink is not stopped");
 		return -EBADMSG;
 	}

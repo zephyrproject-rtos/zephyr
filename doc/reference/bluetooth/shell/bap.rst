@@ -29,11 +29,11 @@ Commands
      stop      :
      release   :
      list      :
-     select    :<chan>
-     link      :<chan1> <chan2>
-     unlink    :<chan1> <chan2>
+     select    :<stream>
+     link      :<stream1> <stream2>
+     unlink    :<stream1> <stream2>
      connect   :<direction: sink, source> <index> [codec] [preset]
-     send      :Send to Audio Channel [data]
+     send      :Send to Audio Stream [data]
 
 .. csv-table:: State Machine Transitions
    :header: "Command", "Depends", "Allowed States", "Next States"
@@ -272,7 +272,7 @@ omitted the default preset is used.
    00000000: 28 00                                          |(.               |
    meta #0: type 0x02 len 2
    00000000: 02 00                                          |..               |
-   ASE Codec Config chan 0x8179e60
+   ASE Codec Config stream 0x8179e60
    Default ase: 1
    ASE config: preset 16_2_1
 
@@ -405,14 +405,14 @@ This command set a stream as default.
 
    uart:~$ bap select <ase>
    uart:~$ bap select 0x01
-   Default channel: 1
+   Default stream: 1
 
-To select a broadcast channel:
+To select a broadcast stream:
 
 .. code-block:: console
 
    uart:~$ bap select 0x01 broadcast
-   Default channel: 1 (broadcast)
+   Default stream: 1 (broadcast)
 
 Link
 ****
@@ -475,10 +475,10 @@ to quickly configure and enable a stream.
    00000000: 28 00                                            |(.               |
    meta #0: type 0x02 len 2
    00000000: 02 00                                            |..               |
-   ASE Codec Config chan 0x1851c0
+   ASE Codec Config stream 0x1851c0
    Default ase: 1
    ASE config: preset 16_2_1
-   ASE Codec Reconfig: chan 0x1851c0 cap 0x19f6a0
+   ASE Codec Reconfig: stream 0x1851c0 cap 0x19f6a0
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
    00000000: 02                                               |.                |
@@ -488,14 +488,14 @@ to quickly configure and enable a stream.
    00000000: 28 00                                            |(.               |
    meta #0: type 0x02 len 2
    00000000: 02 00                                            |..               |
-   QoS: chan 0x1851c0
+   QoS: stream 0x1851c0
    QoS: dir 0x02 interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
-   Start: chan 0x1851c0
+   Start: stream 0x1851c0
 
 Send
 ****
 
-This command sends data over Audio channel.
+This command sends data over Audio Stream.
 
 .. csv-table:: State Machine Transitions
    :header: "Depends", "Allowed States", "Next States"

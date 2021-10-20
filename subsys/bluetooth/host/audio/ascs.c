@@ -61,17 +61,17 @@ static void ascs_ase_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static void ase_chan_del(struct bt_ascs_ase *ase)
+static void ase_stream_del(struct bt_ascs_ase *ase)
 {
-	struct bt_audio_chan *chan = ase->ep.chan;
+	struct bt_audio_stream *stream = ase->ep.stream;
 
-	if (!chan) {
+	if (stream == NULL) {
 		return;
 	}
 
-	BT_DBG("ase %p chan %p", ase, chan);
+	BT_DBG("ase %p stream %p", ase, stream);
 
-	bt_audio_chan_reset(chan);
+	bt_audio_stream_reset(stream);
 }
 
 NET_BUF_SIMPLE_DEFINE_STATIC(rsp_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -203,7 +203,7 @@ static void ase_release(struct bt_ascs_ase *ase, bool cache)
 
 	BT_DBG("ase %p", ase);
 
-	err = bt_audio_chan_release(ase->ep.chan, cache);
+	err = bt_audio_stream_release(ase->ep.stream, cache);
 	if (err) {
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_RELEASE_OP, err,
 				      BT_ASCS_REASON_NONE);
@@ -240,7 +240,7 @@ static void ase_disable(struct bt_ascs_ase *ase)
 
 	BT_DBG("ase %p", ase);
 
-	err = bt_audio_chan_disable(ase->ep.chan);
+	err = bt_audio_stream_disable(ase->ep.stream);
 	if (err) {
 		BT_ERR("Disable failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_DISABLE_OP,
@@ -343,12 +343,12 @@ static struct bt_ascs *ascs_new(struct bt_conn *conn)
 	return NULL;
 }
 
-static void ase_chan_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
-			 struct bt_audio_chan *chan)
+static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
+			   struct bt_audio_stream *stream)
 {
-	BT_DBG("ase %p chan %p", ase, chan);
-	ase->ep.chan = chan;
-	chan->conn = ascs->conn;
+	BT_DBG("ase %p stream %p", ase, stream);
+	ase->ep.stream = stream;
+	stream->conn = ascs->conn;
 }
 
 static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
@@ -362,9 +362,9 @@ static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
 	/* TODO: Load the ASEs from the settings? */
 
 	for (i = 0; i < ASE_COUNT; i++) {
-		if (ascs->ases[i].ep.chan) {
-			ase_chan_add(ascs, &ascs->ases[i],
-				     ascs->ases[i].ep.chan);
+		if (ascs->ases[i].ep.stream) {
+			ase_stream_add(ascs, &ascs->ases[i],
+				       ascs->ases[i].ep.stream);
 		}
 	}
 }
@@ -418,7 +418,7 @@ static void ase_process(struct k_work *work)
 	bt_gatt_notify(ase->ascs->conn, &attr, ase_buf.data, ase_buf.len);
 
 	if (ase->ep.status.state == BT_AUDIO_EP_STATE_RELEASING &&
-	    !ase->ep.chan) {
+	    ase->ep.stream == NULL) {
 		bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 	}
 
@@ -455,7 +455,7 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 
 	if (state == BT_AUDIO_EP_STATE_RELEASING ||
 	    state == BT_AUDIO_EP_STATE_IDLE) {
-		ase_chan_del(ase);
+		ase_stream_del(ase);
 	}
 
 	if (!ase->ascs->conn || ase->ascs->conn->state != BT_CONN_CONNECTED) {
@@ -570,7 +570,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 {
 	sys_slist_t *lst;
 	struct bt_audio_capability *cap;
-	struct bt_audio_chan *chan;
+	struct bt_audio_stream *stream;
 	int err;
 
 	BT_DBG("ase %p latency 0x%02x phy 0x%02x codec 0x%02x "
@@ -639,9 +639,9 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			return 0;
 		}
 
-		if (ase->ep.chan) {
-			err = bt_audio_chan_reconfig(ase->ep.chan, cap,
-						     &ase->ep.codec);
+		if (ase->ep.stream != NULL) {
+			err = bt_audio_stream_reconfig(ase->ep.stream, cap,
+						       &ase->ep.codec);
 			if (err) {
 				uint8_t reason = BT_ASCS_REASON_CODEC_DATA;
 
@@ -653,11 +653,11 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 						      err, reason);
 				return 0;
 			}
-			chan = ase->ep.chan;
+			stream = ase->ep.stream;
 		} else {
-			chan = bt_audio_chan_config(ascs->conn, &ase->ep, cap,
-						    &ase->ep.codec);
-			if (!chan) {
+			stream = bt_audio_stream_config(ascs->conn, &ase->ep,
+							cap, &ase->ep.codec);
+			if (stream == NULL) {
 				BT_ERR("Config failed");
 
 				memcpy(&ase->ep.codec, &codec, sizeof(codec));
@@ -666,7 +666,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 						BT_ASCS_REASON_CODEC_DATA);
 				return 0;
 			}
-			ase_chan_add(ascs, ase, chan);
+			ase_stream_add(ascs, ase, stream);
 		}
 
 		ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
@@ -743,16 +743,16 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	return buf->size;
 }
 
-static int ase_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
+static int ase_stream_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 {
-	BT_DBG("chan %p qos %p", chan, qos);
+	BT_DBG("stream %p qos %p", stream, qos);
 
-	if (chan == NULL || chan->ep == NULL || chan->cap == NULL ||
-	    chan->cap->ops == NULL || qos == NULL) {
+	if (stream == NULL || stream->ep == NULL || stream->cap == NULL ||
+	    stream->cap->ops == NULL || qos == NULL) {
 		return -EINVAL;
 	}
 
-	switch (chan->ep->status.state) {
+	switch (stream->ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
 	/* or 0x02 (QoS Configured) */
@@ -760,7 +760,7 @@ static int ase_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
-		bt_audio_ep_state_str(chan->ep->status.state));
+		bt_audio_ep_state_str(stream->ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -768,25 +768,25 @@ static int ase_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 		return -EINVAL;
 	}
 
-	if (!bt_audio_valid_chan_qos(chan, qos)) {
+	if (!bt_audio_valid_stream_qos(stream, qos)) {
 		return -EINVAL;
 	}
 
-	if (chan->cap->ops->qos != NULL) {
+	if (stream->cap->ops->qos != NULL) {
 		int err;
 
-		err = chan->cap->ops->qos(chan, qos);
+		err = stream->cap->ops->qos(stream, qos);
 		if (err != 0) {
 			return err;
 		}
 	}
 
-	chan->qos = qos;
+	stream->qos = qos;
 
-	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_audio_ep_set_state(chan->ep,
+	if (stream->ep->type == BT_AUDIO_EP_LOCAL) {
+		bt_audio_ep_set_state(stream->ep,
 				      BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-		bt_audio_chan_iso_listen(chan);
+		bt_audio_stream_iso_listen(stream);
 	}
 
 	return 0;
@@ -794,7 +794,7 @@ static int ase_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 
 static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 {
-	struct bt_audio_chan *chan = ase->ep.chan;
+	struct bt_audio_stream *stream = ase->ep.stream;
 	struct bt_codec_qos *cqos = &ase->ep.qos;
 	int err;
 
@@ -811,7 +811,7 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 	       qos->cis, cqos->interval, cqos->framing, cqos->phy, cqos->sdu,
 	       cqos->rtn, cqos->latency, cqos->pd);
 
-	err = ase_chan_qos(chan, cqos);
+	err = ase_stream_qos(stream, cqos);
 	if (err) {
 		uint8_t reason = BT_ASCS_REASON_NONE;
 
@@ -911,8 +911,8 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		return 0;
 	}
 
-	err = bt_audio_chan_metadata(ase->ep.chan, ase->ep.codec.meta_count,
-				     ase->ep.codec.meta);
+	err = bt_audio_stream_metadata(ase->ep.stream, ase->ep.codec.meta_count,
+				       ase->ep.codec.meta);
 	if (err) {
 		BT_ERR("Metadata failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), op, err,
@@ -946,8 +946,8 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		return 0;
 	}
 
-	err = bt_audio_chan_enable(ase->ep.chan, ase->ep.codec.meta_count,
-				   ase->ep.codec.meta);
+	err = bt_audio_stream_enable(ase->ep.stream, ase->ep.codec.meta_count,
+				     ase->ep.codec.meta);
 	if (err) {
 		BT_ERR("Enable rejected: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_ENABLE_OP, err,
@@ -1026,7 +1026,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	err = bt_audio_chan_start(ase->ep.chan);
+	err = bt_audio_stream_start(ase->ep.stream);
 	if (err) {
 		BT_ERR("Start failed: %d", err);
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
@@ -1138,7 +1138,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	err = bt_audio_chan_stop(ase->ep.chan);
+	err = bt_audio_stream_stop(ase->ep.stream);
 	if (err) {
 		BT_ERR("Stop failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_STOP_OP, err,
