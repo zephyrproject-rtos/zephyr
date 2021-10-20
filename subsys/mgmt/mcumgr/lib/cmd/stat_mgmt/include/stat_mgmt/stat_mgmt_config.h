@@ -20,22 +20,6 @@
 #ifndef H_STAT_MGMT_CONFIG_
 #define H_STAT_MGMT_CONFIG_
 
-#if defined MYNEWT
-
-#include "syscfg/syscfg.h"
-
-#define STAT_MGMT_MAX_NAME_LEN  MYNEWT_VAL(STAT_MGMT_MAX_NAME_LEN)
-
-#elif defined __ZEPHYR__
-
 #define STAT_MGMT_MAX_NAME_LEN  CONFIG_STAT_MGMT_MAX_NAME_LEN
-
-#else
-
-/* No direct support for this OS.  The application needs to define the above
- * settings itself.
- */
-
-#endif
 
 #endif
