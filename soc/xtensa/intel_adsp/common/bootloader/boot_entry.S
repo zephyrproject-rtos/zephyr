@@ -13,10 +13,10 @@
  * 2) Stack is in first HPSRAM bank.
  */
 
+#include <autoconf.h> /* not built by zephyr */
 #include <devicetree.h>
-#include <soc/shim.h>
 #include <cavs-shim.h>
-#include <soc/memory.h>
+#include <cavs-mem.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
 #include "platform.h"

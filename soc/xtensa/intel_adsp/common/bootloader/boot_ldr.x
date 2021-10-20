@@ -1,7 +1,6 @@
 OUTPUT_ARCH(xtensa)
 
 #include <autoconf.h> /* Not a "zephyr" file, need this explicitly */
-#include <soc/memory.h>
 #include <cavs-mem.h>
 
 PROVIDE(__memctl_default = 0x00000000);

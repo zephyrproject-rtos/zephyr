@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(sof);
 
 #include <ipc.h>
 #include <cavs-shim.h>
+#include <cavs-mem.h>
 #include <adsp/io.h>
 
 /* This record was set up by the ROM/bootloader, don't touch to
