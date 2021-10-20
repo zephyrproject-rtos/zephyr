@@ -3,6 +3,7 @@
 
 choice CBPRINTF_IMPLEMENTATION
 	prompt "Capabilities of cbprintf implementation"
+	depends on !PICOLIBC
 	default CBPRINTF_COMPLETE
 
 config CBPRINTF_COMPLETE
@@ -26,6 +27,7 @@ endchoice # CBPRINTF_IMPLEMENTATION
 
 choice CBPRINTF_INTEGRAL_CONV
 	prompt "Control range of convertible integer values"
+	depends on !PICOLIBC
 	default CBPRINTF_FULL_INTEGRAL
 
 # 01: 0% / 0 B (01 / 00)
@@ -85,6 +87,7 @@ config CBPRINTF_FP_A_SUPPORT
 # 40: -15% / -508 B (46 / 06)
 config CBPRINTF_FP_ALWAYS_A
 	bool "Select %a format for all floating point specifications"
+	depends on !PICOLIBC
 	select CBPRINTF_FP_A_SUPPORT
 	help
 	  The %a format for floats requires significantly less code than the
@@ -107,6 +110,7 @@ config CBPRINTF_N_SPECIFIER
 # 180: 18% / 138 B (180 / 80) [NANO]
 config CBPRINTF_LIBC_SUBSTS
 	bool "Generate C-library compatible functions using cbprintf"
+	depends on !PICOLIBC
 	help
 	  If selected wrappers are generated for various C library functions
 	  using the cbprintf formatter underneath.  The wrappers use the C
