@@ -85,11 +85,6 @@
 #define HP_SRAM_WIN0_BASE	SRAM_SW_REG_BASE
 #define HP_SRAM_WIN0_SIZE	(SRAM_SW_REG_SIZE + SRAM_OUTBOX_SIZE)
 
-#define SOF_TEXT_START		(HP_SRAM_WIN0_BASE +  HP_SRAM_WIN0_SIZE + \
-				 VECTOR_TBL_SIZE)
-
-#define SOF_TEXT_BASE	SOF_TEXT_START
-
 /* low power ram where DMA buffers are typically placed */
 #define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))

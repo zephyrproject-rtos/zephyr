@@ -86,10 +86,6 @@
 #define HP_SRAM_WIN3_BASE	SRAM_TRACE_BASE
 #define HP_SRAM_WIN3_SIZE	SRAM_TRACE_SIZE
 
-#define SOF_TEXT_START	0xbe010400
-
-#define SOF_TEXT_BASE	SOF_TEXT_START
-
 /* low power RAM where DMA buffers are typically placed, used by linker.ld */
 #define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
