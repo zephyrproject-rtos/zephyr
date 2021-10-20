@@ -52,8 +52,8 @@
 
 //other defines
 
-// Indicates a read operation; bit 7 is clear on write s
-#define BMI088_REG_READ BIT(7)
+
+#define BMI088_REG_READ BIT(7)  // Indicates a read operation; bit 7 is clear on write s
 #define BMI088_REG_MASK 0x7f // Mask lower 7 bits for register addresses
 
 #define BMI088_CHIP_ID 0x0F  // Reset value of BMI088_REG_CHIPID
@@ -67,7 +67,7 @@
 
 #define BMI088_AXES 3   // Number of Axes
 
-#define BMI088_SAMPLE_SIZE  (BMI088_AXES * sizeof(uint16_t))    // Size of Samples with x,y,z
+#define BMI088_SAMPLE_SIZE  (BMI088_AXES * sizeof(uint16_t))    // Size of Samples with 2 bytes per axis = 6 bytes
 
 // end of default settings
 

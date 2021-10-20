@@ -1,6 +1,5 @@
-# Bosch BMI160 inertial measurement configuration options
+# Bosch BMI088 inertial measurement configuration options
 
-# Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BMI088

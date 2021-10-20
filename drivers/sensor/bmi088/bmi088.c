@@ -1,7 +1,5 @@
 /* Bosch BMI088 inertial measurement unit driver
  *
- * Copyright (c) 2016 Intel Corporation
- *
  * SPDX-License-Identifier: Apache-2.0
  *
  * Datasheet:
@@ -19,7 +17,6 @@
 #include <devicetree.h>
 
 #include "bmi088.h"
-
 #define M_PI   3.14159265358979323846264338327950288
 
 LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
@@ -175,17 +172,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
     uint8_t status;
     size_t i;
 
-    __ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-    /*
-    status = 0;
-    while ((status & BMI088_DATA_READY_BIT_MASK) == 0) {
-
-        if (bmi088_byte_read(dev, BMI088_REG_STATUS, &status) < 0) {
-            return -EIO;
-        }
-    }
-     */
+    __ASSERT(chan == SENSOR_CHAN_ALL, "channel is not valid");
 
     if (bmi088_read(dev, RATE_X_LSB, data->sample.gyr,
                     BMI088_SAMPLE_SIZE) < 0) {
@@ -194,8 +181,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
 
     // convert samples to cpu endianness
     for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
-        uint16_t *sample =
-                (uint16_t *) &data->sample.gyr[i];
+        uint16_t *sample = (uint16_t *) &data->sample.gyr[i];
 
         *sample = sys_le16_to_cpu(*sample);
     }
@@ -209,7 +195,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * API function to get a cached sensor value that was previously fetched from the sensor
  *
  * @param dev Sensor device pointer
- * @param chan Channel to read. Implemented: Gyro X, Y, Z or all three
+ * @param chan Channel to read. Implemented: Gyro X, Y, Z
  * @param [out] val Sensor value
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
