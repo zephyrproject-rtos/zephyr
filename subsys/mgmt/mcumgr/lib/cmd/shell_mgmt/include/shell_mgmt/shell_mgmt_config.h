@@ -20,24 +20,7 @@
 #ifndef H_SHELL_MGMT_CONFIG_
 #define H_SHELL_MGMT_CONFIG_
 
-#if defined MYNEWT
-
-#include "syscfg/syscfg.h"
-
-#define SHELL_MGMT_MAX_LINE_LEN     MYNEWT_VAL(SHELL_BRIDGE_MAX_IN_LEN)
-#define SHELL_MGMT_MAX_ARGC         MYNEWT_VAL(SHELL_CMD_ARGC_MAX)
-
-#elif defined __ZEPHYR__
-
 #define SHELL_MGMT_MAX_LINE_LEN     CONFIG_SHELL_CMD_BUFF_SIZE
 #define SHELL_MGMT_MAX_ARGC         CONFIG_SHELL_ARGC_MAX
-
-#else
-
-/* No direct support for this OS.  The application needs to define the above
- * settings itself.
- */
-
-#endif
 
 #endif
