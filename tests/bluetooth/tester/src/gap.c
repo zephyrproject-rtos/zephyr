@@ -106,11 +106,41 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
+static void le_security_changed(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err err)
+{
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	struct gap_sec_level_changed_ev sec_ev;
+	struct gap_bond_lost_ev bond_ev;
+
+	switch (err) {
+	case BT_SECURITY_ERR_SUCCESS:
+		memcpy(sec_ev.address, addr->a.val, sizeof(sec_ev.address));
+		sec_ev.address_type = addr->type;
+		/* enum matches BTP values */
+		sec_ev.sec_level = level;
+
+		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_SEC_LEVEL_CHANGED,
+			    CONTROLLER_INDEX, (uint8_t *) &sec_ev, sizeof(sec_ev));
+		break;
+	case BT_SECURITY_ERR_PIN_OR_KEY_MISSING:
+		memcpy(bond_ev.address, addr->a.val, sizeof(bond_ev.address));
+		bond_ev.address_type = addr->type;
+
+		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_BOND_LOST,
+			    CONTROLLER_INDEX, (uint8_t *) &bond_ev, sizeof(bond_ev));
+		break;
+	default:
+		break;
+	}
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = le_connected,
 	.disconnected = le_disconnected,
 	.identity_resolved = le_identity_resolved,
 	.le_param_updated = le_param_updated,
+	.security_changed = le_security_changed,
 };
 
 static void supported_commands(uint8_t *data, uint16_t len)
