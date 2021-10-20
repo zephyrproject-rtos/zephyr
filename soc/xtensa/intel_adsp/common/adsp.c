@@ -17,6 +17,13 @@ LOG_MODULE_REGISTER(sof);
 #include <soc/shim.h>
 #include <adsp/io.h>
 
+/* This record was set up by the ROM/bootloader, don't touch to
+ * prevent races (though... nothing in our config layer actually
+ * ensures that the new window is at the same location as the old
+ * one...)
+ */
+#define SRAM_REG_FW_END (0x10 + (CONFIG_MP_NUM_CPUS * 4))
+
 /*
  * Sets up the host windows so that the host can see the memory
  * content on the DSP SRAM.
