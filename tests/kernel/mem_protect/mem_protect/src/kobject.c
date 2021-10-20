@@ -1366,3 +1366,32 @@ void test_kobject_perm_error(void)
 		k_thread_join(tid, K_FOREVER);
 	}
 }
+
+extern const char *otype_to_str(enum k_objects otype);
+
+/**
+ * @brief Test get all kernel object list
+ *
+ * @details Get all of the kernel object in kobject list.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_all_kobjects_str(void)
+{
+	enum k_objects otype = K_OBJ_ANY;
+	const char *c;
+	int  cmp;
+
+	do {
+		c = otype_to_str(otype);
+		cmp = strcmp(c, "?");
+		if (otype != K_OBJ_LAST) {
+			zassert_true(cmp != 0,
+				"otype %d unexpectedly maps to last entry \"?\"", otype);
+		} else {
+			zassert_true(cmp == 0,
+				"otype %d does not map to last entry \"?\"", otype);
+		}
+		otype++;
+	} while (otype <= K_OBJ_LAST);
+}
