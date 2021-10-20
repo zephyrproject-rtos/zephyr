@@ -17,6 +17,12 @@ module = CAN
 module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
+config CAN_INIT_PRIORITY
+	int "CAN init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  CAN driver device initialization priority.
+
 config CAN_SHELL
 	bool "Enable CAN Shell"
 	default y
