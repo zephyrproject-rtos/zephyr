@@ -49,6 +49,11 @@ uint32_t soc_intr_get_next_source(void);
 extern void esp_rom_Cache_Resume_ICache(uint32_t autoload);
 extern int esp_rom_Cache_Invalidate_Addr(uint32_t addr, uint32_t size);
 extern spiflash_legacy_data_t esp_rom_spiflash_legacy_data;
+extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index,
+				    bool inverted);
+extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
+				     bool out_inverted,
+				     bool out_enabled_inverted);
 
 #endif /* _ASMLANGUAGE */
 
