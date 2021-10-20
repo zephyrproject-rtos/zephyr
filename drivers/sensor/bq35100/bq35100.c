@@ -124,7 +124,7 @@ static int bq35100_reg_write(const struct device *dev,
 static int bq35100_control_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
-	LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
+	//LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
 
 	uint8_t buf[2];
 
@@ -193,18 +193,22 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(1000));
-
-	if (!(bq35100_control_reg_write(dev, address) < 0)) {
-		LOG_ERR("Unable to write to ManufacturerAccessControl");
+	if ((bq35100_control_reg_write(dev, address) < 0)) {
+		LOG_ERR("Unable to write to ManufacturerAccessControl in readExtended");
 		return -EIO;
 	}
 
 	if (i2c_burst_read(cfg->bus, cfg->i2c_addr, BQ35100_CMD_MAC_CONTROL,
 			   data, sizeof(data)) < 0) {
-		LOG_ERR("Unable to read from MAC");
+		LOG_ERR("Unable to read from ManufacturerAccessControl");
 		return -EIO;
 	}
+
+	//LOG_DBG("Address before conversion: 0x%02X%02X", address, data[1], data[0]);
+    data[0] = address & UCHAR_MAX;
+    data[1] = address >> 8;
+	
+	k_sleep(K_MSEC(1000));
 
 	// Address match check
 	if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
@@ -268,8 +272,8 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 		return false;
 	}
 
-	if (!(bq35100_control_reg_write(dev, address) < 0)) {
-		LOG_ERR("Unable to write to ManufacturerAccessControl");
+	if ((bq35100_control_reg_write(dev, address) < 0)) {
+		LOG_ERR("Unable to write to ManufacturerAccessControl in writeExtended");
 		return -EIO;
 	}
 
@@ -283,7 +287,7 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 	memcpy(d + 3, data, length); // Remaining bytes are the d bytes we wish to write
 	k_sleep(K_MSEC(1000));
 
-	if (i2c_write(cfg->bus, d, 3 + length, cfg->i2c_addr) < 0) { // ??
+	if (i2c_write(cfg->bus, d, 3 + length, cfg->i2c_addr) < 0) {
 		LOG_ERR("Unable to write to MAC");
 		return -EIO;
 	}
@@ -291,16 +295,16 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 	d[0] = BQ35100_CMD_MAC_DATA_SUM;
 	d[1] = bq35100_compute_checksum(d + 1, length + 2);
 
-	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) {   // ??
+	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) { 
 		LOG_ERR("Unable to write to MAC Data Sum");
 		return -EIO;
 	}
 
-	// Write 4 + 4 length to MAC Data Length
+	// Write 4 + length to MAC Data Length
 	d[0] = BQ35100_CMD_MAC_DATA_LEN;
 	d[1] = length + 4;
 
-	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) {   // ??
+	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) {
 		LOG_ERR("Unable to write to MAC Data Sum");
 		return -EIO;
 	}
@@ -464,8 +468,8 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 		return -1;
 	}
 	// Operation Config A
-	if (!(bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A,
-					 &buf, 1))) {
+	if ((bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A,
+					 &buf, 1)) < 0) {
 		LOG_ERR("Unable to read Operation Config A");
 		return -EIO;
 	}
@@ -609,7 +613,7 @@ static int bq35100_get_acc_capacity(const struct device *dev)
 		return -EIO;
 	}
 
-	status = bq35100_gauge_stop(dev);
+	//status = bq35100_gauge_stop(dev);
 	if (status < 0) {
 		LOG_ERR("Unable to write Accumulated Capacity");
 		return -EIO;
@@ -633,6 +637,19 @@ static int bq35100_get_status(const struct device *dev, uint16_t *status)
 }
 
 /**
+ * Get the gauge mode from the device.
+ * @param dev - The device structure.
+ * @return 0 in case of successi negative error code otherwise.
+ */
+static int bq35100_get_gauge_mode(const struct device *dev)
+{
+	struct bq35100_data *dev_data = dev->data;
+
+
+
+	return 0;
+}
+/**
  * Get the security status from the device.
  * @param dev - The device structure.
  * @return 0 in case of success, negative error code otherwise.
@@ -642,7 +659,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 	struct bq35100_data *dev_data = dev->data;
 	uint16_t data;
 
-	if (!bq35100_get_status(dev, &data)) {
+	if (bq35100_get_status(dev, &data) < 0) {
 		return -EIO;
 	}
 
@@ -666,7 +683,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 
 	dev_data->security_mode = (data >> 13) & 0b011;
 
-	return 1;
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -901,7 +918,7 @@ static int bq35100_init(const struct device *dev)
 
 	// struct bq35100_data *data = dev->data;
 
-	// uint16_t status;
+	int status, temp;
 
 	if (cfg->ge_gpio->name) {
 		if (bq35100_init_ge_pin(dev) < 0) {
@@ -919,9 +936,17 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/*if(bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)){
+		return EIO;
+	}*/
+
 	if (bq35100_get_security_mode(dev) < 0) {
 		return EIO;
 	}
+
+	/*if(bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)){
+		return EIO;
+	}*/
 
 	return 0;
 }
