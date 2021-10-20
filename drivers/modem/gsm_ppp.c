@@ -940,10 +940,8 @@ static void mux_setup(struct k_work *work)
 	return;
 
 fail:
-	/* FIXME: If something fails and ended up here, currently there is nothing being done to
-	 * recover the modem
-	 */
-	gsm->gsm_state = GSM_PPP_STATE_INIT;
+	/* FIXME: The driver can potentially stuck here retrying forever */
+	(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 }
 
 static void gsm_configure(struct k_work *work)
