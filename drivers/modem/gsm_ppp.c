@@ -85,6 +85,7 @@ static struct gsm_modem {
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
 	bool attached : 1;
+	bool modem_info_queried : 1;
 
 	void *user_data;
 
@@ -98,6 +99,7 @@ K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 
 struct k_thread gsm_rx_thread;
 static struct k_work_delayable rssi_work_handle;
+static struct gsm_ppp_modem_info minfo;
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 	/* helper macro to keep readability */
@@ -194,27 +196,6 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 
 	return 0;
 }
-
-#if defined(CONFIG_MODEM_SHELL)
-#define MDM_MANUFACTURER_LENGTH  10
-#define MDM_MODEL_LENGTH         16
-#define MDM_REVISION_LENGTH      64
-#define MDM_IMEI_LENGTH          16
-#define MDM_IMSI_LENGTH          16
-#define MDM_ICCID_LENGTH         32
-
-struct modem_info {
-	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
-	char mdm_model[MDM_MODEL_LENGTH];
-	char mdm_revision[MDM_REVISION_LENGTH];
-	char mdm_imei[MDM_IMEI_LENGTH];
-#if defined(CONFIG_MODEM_SIM_NUMBERS)
-	char mdm_imsi[MDM_IMSI_LENGTH];
-	char mdm_iccid[MDM_ICCID_LENGTH];
-#endif
-};
-
-static struct modem_info minfo;
 
 /*
  * Provide modem info if modem shell is enabled. This can be shown with
@@ -358,7 +339,6 @@ static int gsm_query_cellinfo(struct gsm_modem *gsm)
 	return ret;
 }
 #endif /* CONFIG_MODEM_CELL_INFO */
-#endif /* CONFIG_MODEM_SHELL */
 
 #if defined(CONFIG_MODEM_GSM_ENABLE_CESQ_RSSI)
 /*
@@ -420,6 +400,18 @@ static const struct modem_cmd read_rssi_cmd =
 	MODEM_CMD("+CSQ:", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
 #endif
 
+static const struct setup_cmd setup_modem_info_cmds[] = {
+	/* query modem info */
+	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
+	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
+	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
+	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
+	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
+#endif
+};
+
 static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
@@ -427,18 +419,6 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATH"),
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
-
-#if defined(CONFIG_MODEM_SHELL)
-	/* query modem info */
-	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
-	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
-	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
-# if defined(CONFIG_MODEM_SIM_NUMBERS)
-	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
-	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
-# endif
-	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
-#endif
 
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
@@ -474,6 +454,30 @@ static const struct setup_cmd connect_cmds[] = {
 	/* connect to network */
 	SETUP_CMD_NOHANDLE("ATD*99#"),
 };
+
+static int gsm_query_modem_info(struct gsm_modem *gsm)
+{
+	int ret;
+
+	if (gsm->modem_info_queried) {
+		return 0;
+	}
+
+	ret =  modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+						  &gsm->context.cmd_handler,
+						  setup_modem_info_cmds,
+						  ARRAY_SIZE(setup_modem_info_cmds),
+						  &gsm->sem_response,
+						  GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	gsm->modem_info_queried = true;
+
+	return 0;
+}
 
 static int gsm_setup_mccmno(struct gsm_modem *gsm)
 {
@@ -641,6 +645,13 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	if (ret < 0) {
 		LOG_DBG("modem setup returned %d, %s",
 			ret, "retrying...");
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		return;
+	}
+
+	ret = gsm_query_modem_info(gsm);
+	if (ret < 0) {
+		LOG_DBG("Unable to query modem information %d", ret);
 		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
@@ -1057,6 +1068,13 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
 	gsm->modem_off_cb = modem_off;
 
 	gsm->user_data = user_data;
+}
+
+const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &minfo;
 }
 
 static int gsm_init(const struct device *dev)
