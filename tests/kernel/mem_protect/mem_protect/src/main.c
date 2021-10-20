@@ -86,7 +86,8 @@ void test_main(void)
 		ztest_unit_test(test_thread_alloc_out_of_idx),
 		ztest_unit_test(test_kobj_create_out_of_memory),
 		ztest_unit_test(test_kobject_perm_error),
-		ztest_unit_test(test_kobject_free_error)
+		ztest_unit_test(test_kobject_free_error),
+		ztest_unit_test(test_all_kobjects_str)
 		);
 
 	ztest_run_test_suite(memory_protection_test_suite);
