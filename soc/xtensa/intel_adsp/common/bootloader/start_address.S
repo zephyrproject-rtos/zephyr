@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc/memory.h>
+#include <cavs-mem.h>
 
 	.global	_start
-	.equ    _start, SOF_TEXT_BASE
+	.equ    _start, RAM_BASE
 
 #ifndef CONFIG_RESET_VECTOR_IN_BOOTLOADER
 	.begin	literal_prefix	.ResetVector
