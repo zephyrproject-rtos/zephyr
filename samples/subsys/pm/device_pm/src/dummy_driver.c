@@ -24,8 +24,6 @@ static int dummy_open(const struct device *dev)
 		return ret;
 	}
 
-	(void) pm_device_wait(dev, K_FOREVER);
-
 	(void)pm_device_state_get(dev, &state);
 	if (state == PM_DEVICE_STATE_ACTIVE) {
 		printk("Dummy device resumed\n");
