@@ -5,7 +5,7 @@ Code And Data Relocation
 
 Overview
 ********
-This feature will allow relocating .text, .rodata, .data, and .bss sections from
+This feature will allow relocating .text, .rodata, .data, .bss and .noinit sections from
 required files and place them in the required memory region. The memory region
 and file are given to the :ref:`gen_relocate_app.py` script in the form
 of a string. This script is always invoked from inside cmake.
@@ -79,7 +79,7 @@ This section shows additional configuration options that can be set in
      zephyr_code_relocate(src/file1.c SRAM2)
      zephyr_code_relocate(src/file2.c.c SRAM)
 
-* if the memory type is appended with _DATA, _TEXT, _RODATA or _BSS, only the
+* if the memory type is appended with _DATA, _TEXT, _RODATA, _BSS or _NOINIT, only the
   selected memory is placed in the required memory region.
   for example:
 
