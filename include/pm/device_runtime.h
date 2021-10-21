@@ -53,24 +53,6 @@ void pm_device_enable(const struct device *dev);
 void pm_device_disable(const struct device *dev);
 
 /**
- * @brief Call device resume asynchronously based on usage count
- *
- * Called by a device driver to mark the device as being used.
- * This API will asynchronously bring the device to resume state
- * if it not already in active state.
- *
- * @funcprops \isr_ok, \pre_kernel_ok
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successfully queued the Async request. If queued,
- * the caller need to wait on the poll event linked to device
- * pm signal mechanism to know the completion of resume operation.
- * @retval Errno Negative errno code if failure.
- */
-int pm_device_get_async(const struct device *dev);
-
-/**
  * @brief Call device resume synchronously based on usage count
  *
  * Called by a device driver to mark the device as being used. It
