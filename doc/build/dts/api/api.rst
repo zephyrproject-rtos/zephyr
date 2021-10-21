@@ -435,7 +435,7 @@ device.
    * - zephyr,uart-mcumgr
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
-     - Sets default :kconfig:option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - Sets UART device used by serial pipe driver
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS

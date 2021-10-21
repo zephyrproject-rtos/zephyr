@@ -100,7 +100,7 @@ void uart_pipe_register(uint8_t *buf, size_t len, uart_pipe_recv_cb cb)
 	recv_buf_len = len;
 	app_cb = cb;
 
-	uart_pipe_dev = device_get_binding(CONFIG_UART_PIPE_ON_DEV_NAME);
+	uart_pipe_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_pipe));
 
 	if (uart_pipe_dev != NULL) {
 		uart_pipe_setup(uart_pipe_dev);
