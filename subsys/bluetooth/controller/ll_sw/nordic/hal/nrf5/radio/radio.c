@@ -460,6 +460,10 @@ void radio_status_reset(void)
 	 */
 	NRF_RADIO->EVENTS_READY = 0;
 	NRF_RADIO->EVENTS_END = 0;
+#if defined(CONFIG_BT_CTLR_DF_SUPPORT)
+	/* Clear it only for SoCs supporting DF extension */
+	NRF_RADIO->EVENTS_PHYEND = 0;
+#endif /* CONFIG_BT_CTLR_DF_SUPPORT */
 	NRF_RADIO->EVENTS_DISABLED = 0;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -494,7 +498,7 @@ uint32_t radio_is_done(void)
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 uint32_t radio_is_done(void)
 {
-	return (NRF_RADIO->EVENTS_END != 0);
+	return (NRF_RADIO->NRF_RADIO_TXRX_END_EVENT != 0);
 }
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
@@ -708,8 +712,7 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
@@ -728,8 +731,7 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -743,8 +745,7 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    RADIO_SHORTS_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
-			    RADIO_SHORTS_END_DISABLE_Msk;
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -752,10 +753,10 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 
 void radio_switch_complete_and_disable(void)
 {
-	NRF_RADIO->SHORTS =
-	    (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
-
-#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk);
+#else /* CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE);
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
