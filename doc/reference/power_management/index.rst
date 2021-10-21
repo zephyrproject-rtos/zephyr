@@ -474,9 +474,6 @@ Releases a device. This API asynchronously puts the device to suspend
 state if not already in suspend state if the usage count of this device
 reaches 0.
 
-Device drivers can monitor this operation to finish calling
-:c:func:`pm_device_wait`.
-
 Suspend Device synchronously API
 --------------------------------
 

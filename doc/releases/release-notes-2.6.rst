@@ -910,7 +910,7 @@ Libraries / Subsystems
 
     * Multiple threads can wait an operation (``pm_device_get_async`` and
       :c:func:`pm_device_put_async`) to finish.
-    * A new API :c:func:`pm_device_wait` was added so that drivers can easily
+    * A new API ``pm_device_wait`` was added so that drivers can easily
       wait for an async request to finish.
     * The API can be used in  :ref:`pre-kernel <api_term_pre-kernel-ok>` stages.
     * Several concurrence issues related with atomics access and the usage
