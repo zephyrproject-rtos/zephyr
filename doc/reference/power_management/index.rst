@@ -451,21 +451,6 @@ Disable Device Runtime Power Management of a Device API
 
 Disables Runtime Power Management of the device.
 
-Resume Device asynchronously API
---------------------------------
-
-.. code-block:: c
-
-   int pm_device_get_async(const struct device *dev);
-
-Marks the device as being used. This API will asynchronously
-bring the device to resume state if it was suspended. If the device
-was already active, it just increments the device usage count.
-The API returns 0 on success.
-
-Device drivers can monitor this operation to finish calling
-:c:func:`pm_device_wait`.
-
 Resume Device synchronously API
 -------------------------------
 

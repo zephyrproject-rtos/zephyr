@@ -908,7 +908,7 @@ Libraries / Subsystems
   * Device runtime power management (PM), former IDLE runtime, was
     completely overhauled.
 
-    * Multiple threads can wait an operation (:c:func:`pm_device_get_async` and
+    * Multiple threads can wait an operation (``pm_device_get_async`` and
       :c:func:`pm_device_put_async`) to finish.
     * A new API :c:func:`pm_device_wait` was added so that drivers can easily
       wait for an async request to finish.

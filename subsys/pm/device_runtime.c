@@ -156,11 +156,6 @@ int pm_device_get(const struct device *dev)
 	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, 0);
 }
 
-int pm_device_get_async(const struct device *dev)
-{
-	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, PM_DEVICE_ASYNC);
-}
-
 int pm_device_put(const struct device *dev)
 {
 	return pm_device_request(dev, PM_DEVICE_STATE_SUSPENDED, 0);
