@@ -48,9 +48,11 @@ extern "C" {
 #define BT_ATT_MAX_ATTRIBUTE_LEN		512
 
 /* Handle 0x0000 is reserved for future use */
-#define BT_ATT_FIRST_ATTTRIBUTE_HANDLE          0x0001
+#define BT_ATT_FIRST_ATTRIBUTE_HANDLE           0x0001
+#define BT_ATT_FIRST_ATTTRIBUTE_HANDLE __DEPRECATED_MACRO BT_ATT_FIRST_ATTRIBUTE_HANDLE
 /* 0xffff is defined as the maximum, and thus last, valid attribute handle */
-#define BT_ATT_LAST_ATTTRIBUTE_HANDLE           0xffff
+#define BT_ATT_LAST_ATTRIBUTE_HANDLE            0xffff
+#define BT_ATT_LAST_ATTTRIBUTE_HANDLE __DEPRECATED_MACRO BT_ATT_LAST_ATTRIBUTE_HANDLE
 
 #if defined(CONFIG_BT_TESTING)
 int bt_eatt_disconnect_one(struct bt_conn *conn);
