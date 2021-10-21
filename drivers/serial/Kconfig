@@ -117,6 +117,8 @@ source "drivers/serial/Kconfig.miv"
 
 source "drivers/serial/Kconfig.imx"
 
+source "drivers/serial/Kconfig.it8xxx2"
+
 source "drivers/serial/Kconfig.stellaris"
 
 source "drivers/serial/Kconfig.native_posix"

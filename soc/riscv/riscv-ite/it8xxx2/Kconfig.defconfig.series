@@ -33,6 +33,10 @@ config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
 	default y
 	depends on UART_NS16550
 
+config UART_ITE_IT8XXX2
+	default y
+	depends on UART_NS16550
+
 config RISCV_HAS_CPU_IDLE
 	default y
 
