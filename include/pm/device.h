@@ -35,6 +35,8 @@ enum pm_device_state {
 	 *     Device context may be lost.
 	 */
 	PM_DEVICE_STATE_SUSPENDED,
+	/** Device is being suspended. */
+	PM_DEVICE_STATE_SUSPENDING,
 	/**
 	 * Device is turned off (power removed).
 	 *
@@ -55,8 +57,6 @@ enum pm_device_flag {
 	PM_DEVICE_FLAGS_WS_CAPABLE,
 	/** Indicates if the device is being used as wakeup source. */
 	PM_DEVICE_FLAGS_WS_ENABLED,
-	/** Indicates that the device is changing its state */
-	PM_DEVICE_FLAG_TRANSITIONING,
 	/** Number of flags (internal use only). */
 	PM_DEVICE_FLAG_COUNT
 };
