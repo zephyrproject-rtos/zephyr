@@ -416,8 +416,8 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 	mics_inst->cli.discover_params.func = primary_discover_func;
 	mics_inst->cli.discover_params.uuid = mics_uuid;
 	mics_inst->cli.discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	mics_inst->cli.discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	mics_inst->cli.discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	mics_inst->cli.discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	mics_inst->cli.discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	initialized = true;
 
