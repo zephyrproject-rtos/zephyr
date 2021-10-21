@@ -1835,7 +1835,8 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 				 enum pm_device_action action)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-#if defined(CONFIG_UART_ASYNC_API) || defined(UARTE_INTERRUPT_DRIVEN)
+#if (defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_ASSERT)) ||              \
+	defined(UARTE_INTERRUPT_DRIVEN)
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 #endif
 
