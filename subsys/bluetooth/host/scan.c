@@ -73,7 +73,7 @@ static bool frag_advertiser_timed_out(const struct fragmented_advertiser *frag_a
  * fragmented advertisers. Returns a pointer to the list node representing the fragmented advertiser.
  * Returns NULL if allocation fails.
  */
-static sys_dnode_t *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
+static struct fragmented_advertiser *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
 {
 	struct fragmented_advertiser *frag_adv = k_malloc(sizeof(struct fragmented_advertiser));
 	if (!frag_adv) {
@@ -85,13 +85,13 @@ static sys_dnode_t *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
 	bt_addr_le_copy(&frag_adv->addr, addr);
 	frag_adv->sid = sid;
 	frag_adv->should_keep_reports = false;
-	return &frag_adv->node;
+	return frag_adv;
 }
 
 /* Returns a pointer to the list node representing the fragmented advertiser that has the given address and
  * adv set id. Returns NULL if such an fragmented advertiser does not exist.
  */
-static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t sid)
+static struct fragmented_advertiser *find_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
 {
 	sys_dnode_t *dnode_ptr;
 
@@ -100,7 +100,7 @@ static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t 
 			CONTAINER_OF(dnode_ptr, struct fragmented_advertiser, node);
 
 		if (frag_advertisers_equal(frag_adv, addr, sid)) {
-			return dnode_ptr;
+			return frag_adv;
 		}
 	}
 	return NULL;
@@ -109,7 +109,7 @@ static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t 
 /* Returns a pointer to the list node representing the advertiser whose reports are currently
  * being recombined. Returns NULL if no such advertiser exists.
  */
-static sys_dnode_t *get_active_fragmented_advertiser(void)
+static struct fragmented_advertiser *get_active_fragmented_advertiser(void)
 {
 	sys_dnode_t *dnode_ptr;
 
@@ -117,7 +117,7 @@ static sys_dnode_t *get_active_fragmented_advertiser(void)
 		struct fragmented_advertiser *frag_adv =
 			CONTAINER_OF(dnode_ptr, struct fragmented_advertiser, node);
 		if (frag_adv->should_keep_reports) {
-			return dnode_ptr;
+			return frag_adv;
 		}
 	}
 	return NULL;
@@ -125,11 +125,11 @@ static sys_dnode_t *get_active_fragmented_advertiser(void)
 
 /* Removes the node from the list of fragmented advertisers and frees the memory.
  */
-static void remove_frag_advertiser_node(sys_dnode_t *to_remove)
+static void remove_frag_advertiser_node(struct fragmented_advertiser *to_remove)
 {
 	if (to_remove) {
-		sys_dlist_remove(to_remove);
-		k_free(CONTAINER_OF(to_remove, struct fragmented_advertiser, node));
+		sys_dlist_remove(&to_remove->node);
+		k_free(to_remove);
 	}
 }
 
@@ -682,7 +682,8 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			continue;
 		}
 
-		sys_dnode_t *current_advertiser = find_frag_advertiser_node(&evt->addr, evt->sid);
+		struct fragmented_advertiser *current_advertiser =
+			find_frag_advertiser(&evt->addr, evt->sid);
 		const bool new_advertiser = (current_advertiser == NULL);
 
 		if (new_advertiser && is_complete) {
@@ -704,23 +705,20 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			}
 		}
 
-		sys_dnode_t *active_advertiser = get_active_fragmented_advertiser();
+		struct fragmented_advertiser *active_advertiser =
+			get_active_fragmented_advertiser();
 
 		if (active_advertiser) {
-			if (frag_advertiser_timed_out(CONTAINER_OF(
-				    active_advertiser, struct fragmented_advertiser, node))) {
+			if (frag_advertiser_timed_out(active_advertiser)) {
 				/* Do not keep reports from timed out advertiser */
-				CONTAINER_OF(active_advertiser, struct fragmented_advertiser, node)
-					->should_keep_reports = false;
+				active_advertiser->should_keep_reports = false;
 				/* Already recombined data must be discarded */
 				net_buf_reset(ext_scan_buf);
 				if (new_advertiser) {
 					/* If this is the first report from this advertiser,
 					 * we can start combining the reports from it.
 					 */
-					CONTAINER_OF(current_advertiser,
-						     struct fragmented_advertiser, node)
-						->should_keep_reports = true;
+					current_advertiser->should_keep_reports = true;
 				}
 			}
 
@@ -733,12 +731,10 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* There is no active advertiser and this is the first report from the current advertiser.
 			 * Make the current advertiser active.
 			 */
-			CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
-				->should_keep_reports = true;
+			current_advertiser->should_keep_reports = true;
 		}
 
-		if (!CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
-			     ->should_keep_reports) {
+		if (!current_advertiser->should_keep_reports) {
 			/* Discard report */
 			net_buf_pull_mem(buf, evt->length);
 			if (!more_to_come) {
@@ -786,8 +782,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* We have truncated the data and the controller will provide more data.
 			 * Therefore we must discard the remaining part of the advertisement.
 			 */
-			CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
-				->should_keep_reports = false;
+			current_advertiser->should_keep_reports = false;
 		} else {
 			/* No more data will come. We do no longer need to keep track of this advertiser */
 			remove_frag_advertiser_node(current_advertiser);
