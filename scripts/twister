@@ -1178,11 +1178,13 @@ def main():
 
         sliced_instances = islice(to_run.items(), start, end)
         skipped = {k : v for k,v in suite.instances.items() if v.status == 'skipped'}
+        errors = {k : v for k,v in suite.instances.items() if v.status == 'error'}
         suite.instances = OrderedDict(sliced_instances)
         if subset == 1:
-            # add all pre-filtered tests that are skipped to the first set to
-            # allow for better distribution among all sets.
+            # add all pre-filtered tests that are skipped or got error status
+            # to the first set to allow for better distribution among all sets.
             suite.instances.update(skipped)
+            suite.instances.update(errors)
 
     if options.save_tests:
         suite.csv_report(options.save_tests)

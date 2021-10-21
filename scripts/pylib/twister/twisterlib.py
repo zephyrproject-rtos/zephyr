@@ -3285,6 +3285,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.discards = discards
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
+        remove_from_discards = [] # configurations to be removed from discards.
         for instance in self.discards:
             instance.reason = self.discards[instance]
             # If integration mode is on all skips on integration_platforms are treated as errors.
@@ -3294,12 +3295,18 @@ class TestSuite(DisablePyTestCollectionMixin):
                 instance.reason += " but is one of the integration platforms"
                 instance.fill_results_by_status()
                 self.instances[instance.name] = instance
+                # Such configuration has to be removed from discards to make sure it won't get skipped
+                remove_from_discards.append(instance)
             else:
                 instance.status = "skipped"
                 instance.fill_results_by_status()
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
+
+        # Remove from discards configururations that must not be discarded (e.g. integration_platforms when --integration was used)
+        for instance in remove_from_discards:
+            del self.discards[instance]
 
         return discards
 
