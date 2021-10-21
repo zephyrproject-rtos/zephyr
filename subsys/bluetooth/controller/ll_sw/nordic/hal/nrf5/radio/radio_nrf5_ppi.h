@@ -265,7 +265,8 @@ static inline void hal_fem_ppi_setup(void)
 #if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 
 /* Clear SW-switch timer on packet end:
- * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
+ * wire the RADIO EVENTS_END or EVENTS_PHYEND event to SW_SWITCH_TIMER
+ * TASKS_CLEAR task.
  *
  * Note: this PPI is not needed if we use a single TIMER instance in radio.c
  */
@@ -275,7 +276,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_SW_SWITCH_TIMER_CLEAR_PPI,
-		(uint32_t)&(NRF_RADIO->EVENTS_END),
+		(uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT),
 		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
 }
 
@@ -335,11 +336,12 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(index) \
 	((uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].DIS))
 
-/* Wire the RADIO EVENTS_END event to one of the PPI GROUP TASK ENABLE task.
- * 2 adjacent PPI groups are used for this wiring. 'index' must be 0 or 1.
+/* Wire the RADIO EVENTS_END or EVENTS_PHYEND event to one of the PPI GROUP
+ * TASK ENABLE task. 2 adjacent PPI groups are used for this wiring.
+ * 'index' must be 0 or 1.
  */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
-	((uint32_t)&(NRF_RADIO->EVENTS_END))
+	((uint32_t)&(NRF_RADIO->NRF_RADIO_TXRX_END_EVENT))
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(index) \
 	((uint32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].EN))
 
