@@ -261,10 +261,10 @@
 #define BQ35100_TO_I2C_REG(x)           ((x) >> 1)
 
 typedef enum {
-	BQ35100_ACCUMULATOR_MODE,
-	BQ35100_SOH_MODE,       // for LiMnO2
-	BQ35100_EOS_MODE,       // for LiSOCl2
-	BQ35100_UNKNOWN_MODE    // invalid
+	BQ35100_ACCUMULATOR_MODE, // chemistry-independent
+	BQ35100_SOH_MODE,         // for LiMnO2
+	BQ35100_EOS_MODE,         // for LiSOCl2
+	BQ35100_UNKNOWN_MODE      // invalid
 } bq35100_gauge_mode_t;
 
 typedef enum {
@@ -282,6 +282,7 @@ struct bq35100_data {
 	uint32_t acc_capacity;
 
 	bq35100_security_mode_t security_mode;
+	bq35100_gauge_mode_t gauge_mode;
 };
 
 struct bq35100_config {
