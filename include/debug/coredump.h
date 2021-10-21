@@ -78,6 +78,7 @@ enum coredump_tgt_code {
 	COREDUMP_TGT_X86_64,
 	COREDUMP_TGT_ARM_CORTEX_M,
 	COREDUMP_TGT_RISC_V,
+	COREDUMP_TGT_XTENSA,
 };
 
 /* Coredump header */
