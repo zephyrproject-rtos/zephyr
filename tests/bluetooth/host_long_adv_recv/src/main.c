@@ -1,7 +1,7 @@
 /* main.c - Host long advertising receive */
 
 /*
- * Copyright (c) Nordic Semiconductor ASA
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -319,7 +319,7 @@ static uint8_t *get_expected_data(void)
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
-	(void)info;
+	ARG_UNUSED(info);
 
 	const uint16_t expected_length = get_expected_length();
 	const uint8_t *expected_data = get_expected_data();
@@ -391,16 +391,18 @@ static void test_host_long_adv_recv(void)
 	generate_sequence(&report_b_combined.data[0], report_b_combined.length, 'a', 'z');
 	generate_sequence(&report_c.data[0], report_c.length, '0', '9');
 
-	memcpy(&report_a_1.data[0], &report_a_combined.data[0], report_a_1.length);
-	memcpy(&report_a_2.data[0], &report_a_combined.data[report_a_1.length], report_a_2.length);
+	(void)memcpy(&report_a_1.data[0], &report_a_combined.data[0], report_a_1.length);
+	(void)memcpy(&report_a_2.data[0], &report_a_combined.data[report_a_1.length],
+		     report_a_2.length);
 
 	for (int i = 0; i < report_a_1_repeated.length; i += report_a_1.length) {
 		memcpy(&report_a_1_repeated.data[i], &report_a_1.data[0],
 		       MIN(report_a_1.length, (report_a_1_repeated.length - i)));
 	}
 
-	memcpy(&report_b_1.data[0], &report_b_combined.data[0], report_b_1.length);
-	memcpy(&report_b_2.data[0], &report_b_combined.data[report_b_1.length], report_b_2.length);
+	(void)memcpy(&report_b_1.data[0], &report_b_combined.data[0], report_b_1.length);
+	(void)memcpy(&report_b_2.data[0], &report_b_combined.data[report_b_1.length],
+		     report_b_2.length);
 
 	// Check that non-interleaved fragmented adv reports work
 	ztest_returns_value(get_expected_data, &report_a_combined.data[0]);

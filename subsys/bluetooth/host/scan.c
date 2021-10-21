@@ -9,6 +9,7 @@
 #include <sys/byteorder.h>
 #include <sys/check.h>
 #include <sys/dlist.h>
+#include <sys/util.h>
 
 #include <kernel.h>
 
@@ -40,16 +41,13 @@ struct fragmented_advertiser {
 	sys_dnode_t node;
 	bt_addr_le_t addr;
 	uint8_t sid;
-	/* If true, reports are added to the remcombination buffer
+	/* If true, reports are added to the reassembly buffer
 	 * if false, reports are discarded
 	*/
 	bool should_keep_reports;
 	int64_t time_added_ms;
 };
 
-/* Get a pointer to the fragmented advertiser the dnode pointer points to */
-#define FRAG_ADVERTISER_FROM_DNODE(dnode_ptr)                                                      \
-	((struct fragmented_advertiser *)((dnode_ptr)-offsetof(struct fragmented_advertiser, node)))
 #define FRAGMENTED_ADVERTISER_TIMEOUT_MS 10000
 
 static sys_dlist_t fragmented_advertisers;
@@ -96,8 +94,11 @@ static sys_dnode_t *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
 static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t sid)
 {
 	sys_dnode_t *dnode_ptr;
+
 	SYS_DLIST_FOR_EACH_NODE (&fragmented_advertisers, dnode_ptr) {
-		struct fragmented_advertiser *frag_adv = FRAG_ADVERTISER_FROM_DNODE(dnode_ptr);
+		struct fragmented_advertiser *frag_adv =
+			CONTAINER_OF(dnode_ptr, struct fragmented_advertiser, node);
+
 		if (frag_advertisers_equal(frag_adv, addr, sid)) {
 			return dnode_ptr;
 		}
@@ -111,8 +112,10 @@ static sys_dnode_t *find_frag_advertiser_node(const bt_addr_le_t *addr, uint8_t 
 static sys_dnode_t *get_active_fragmented_advertiser(void)
 {
 	sys_dnode_t *dnode_ptr;
+
 	SYS_DLIST_FOR_EACH_NODE (&fragmented_advertisers, dnode_ptr) {
-		struct fragmented_advertiser *frag_adv = FRAG_ADVERTISER_FROM_DNODE(dnode_ptr);
+		struct fragmented_advertiser *frag_adv =
+			CONTAINER_OF(dnode_ptr, struct fragmented_advertiser, node);
 		if (frag_adv->should_keep_reports) {
 			return dnode_ptr;
 		}
@@ -126,7 +129,7 @@ static void remove_frag_advertiser_node(sys_dnode_t *to_remove)
 {
 	if (to_remove) {
 		sys_dlist_remove(to_remove);
-		k_free(FRAG_ADVERTISER_FROM_DNODE(to_remove));
+		k_free(CONTAINER_OF(to_remove, struct fragmented_advertiser, node));
 	}
 }
 
@@ -631,6 +634,7 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 	adv_info->adv_type = get_adv_type(evt->evt_type);
 	/* Convert "Legacy" property to Extended property. */
 	adv_info->adv_props = evt->evt_type ^ BT_HCI_LE_ADV_PROP_LEGACY;
+	adv_info->adv_props &= BIT_MASK(5);
 }
 
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
@@ -644,6 +648,11 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		struct bt_le_scan_recv_info adv_info;
 		uint8_t size_to_copy;
 		bool truncate;
+		bool legacy_pdu_used;
+		uint16_t data_status;
+		bool is_complete;
+		bool more_to_come;
+		bool ctrl_truncated;
 
 		if (buf->len < sizeof(*evt)) {
 			BT_ERR("Unexpected end of buffer");
@@ -651,12 +660,11 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		}
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
-		const bool legacy_pdu_used = evt->evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY;
-		const uint16_t data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type);
-		const bool is_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
-		const bool more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		const bool ctrl_truncated =
-			data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+		legacy_pdu_used = evt->evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY;
+		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt->evt_type);
+		is_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+		more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+		ctrl_truncated = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 
 		BT_DBG("Evt: length: %d, type: %X", evt->length, evt->evt_type);
 		BT_DBG("data_status: %d", data_status);
@@ -699,18 +707,19 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		sys_dnode_t *active_advertiser = get_active_fragmented_advertiser();
 
 		if (active_advertiser) {
-			if (frag_advertiser_timed_out(
-				    FRAG_ADVERTISER_FROM_DNODE(active_advertiser))) {
+			if (frag_advertiser_timed_out(CONTAINER_OF(
+				    active_advertiser, struct fragmented_advertiser, node))) {
 				/* Do not keep reports from timed out advertiser */
-				FRAG_ADVERTISER_FROM_DNODE(active_advertiser)->should_keep_reports =
-					false;
+				CONTAINER_OF(active_advertiser, struct fragmented_advertiser, node)
+					->should_keep_reports = false;
 				/* Already recombined data must be discarded */
 				net_buf_reset(ext_scan_buf);
 				if (new_advertiser) {
 					/* If this is the first report from this advertiser,
 					 * we can start combining the reports from it.
 					 */
-					FRAG_ADVERTISER_FROM_DNODE(current_advertiser)
+					CONTAINER_OF(current_advertiser,
+						     struct fragmented_advertiser, node)
 						->should_keep_reports = true;
 				}
 			}
@@ -724,10 +733,12 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* There is no active advertiser and this is the first report from the current advertiser.
 			 * Make the current advertiser active.
 			 */
-			FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports = true;
+			CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
+				->should_keep_reports = true;
 		}
 
-		if (!FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports) {
+		if (!CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
+			     ->should_keep_reports) {
 			/* Discard report */
 			net_buf_pull_mem(buf, evt->length);
 			if (!more_to_come) {
@@ -761,7 +772,6 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		 * Create event.
 		 */
 		create_ext_adv_info(evt, &adv_info);
-		adv_info.adv_props &= BIT_MASK(5);
 
 		if (truncate || ctrl_truncated) {
 			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_TRUNCATED;
@@ -776,7 +786,8 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* We have truncated the data and the controller will provide more data.
 			 * Therefore we must discard the remaining part of the advertisement.
 			 */
-			FRAG_ADVERTISER_FROM_DNODE(current_advertiser)->should_keep_reports = false;
+			CONTAINER_OF(current_advertiser, struct fragmented_advertiser, node)
+				->should_keep_reports = false;
 		} else {
 			/* No more data will come. We do no longer need to keep track of this advertiser */
 			remove_frag_advertiser_node(current_advertiser);
