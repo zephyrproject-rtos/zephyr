@@ -210,8 +210,8 @@ struct dma_status {
  *
  */
 struct dma_context {
-	int32_t magic;
-	int dma_channels;
+	uint32_t magic;
+	uint32_t dma_channels;
 	atomic_t *atomic;
 };
 
@@ -386,7 +386,7 @@ __syscall int dma_request_channel(const struct device *dev,
 static inline int z_impl_dma_request_channel(const struct device *dev,
 					     void *filter_param)
 {
-	int i = 0;
+	uint32_t i = 0;
 	int channel = -EINVAL;
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
