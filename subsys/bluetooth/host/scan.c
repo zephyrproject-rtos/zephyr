@@ -41,10 +41,7 @@ struct fragmented_advertiser {
 	sys_dnode_t node;
 	bt_addr_le_t addr;
 	uint8_t sid;
-	/* If true, reports are added to the reassembly buffer
-	 * if false, reports are discarded
-	*/
-	bool should_keep_reports;
+	struct net_buf *reassembly_buffer;
 	int64_t time_added_ms;
 };
 
@@ -84,7 +81,7 @@ static struct fragmented_advertiser *add_frag_advertiser(const bt_addr_le_t *add
 	frag_adv->time_added_ms = k_uptime_get();
 	bt_addr_le_copy(&frag_adv->addr, addr);
 	frag_adv->sid = sid;
-	frag_adv->should_keep_reports = false;
+	frag_adv->reassembly_buffer = NULL;
 	return frag_adv;
 }
 
@@ -116,7 +113,7 @@ static struct fragmented_advertiser *get_active_fragmented_advertiser(void)
 	SYS_DLIST_FOR_EACH_NODE (&fragmented_advertisers, dnode_ptr) {
 		struct fragmented_advertiser *frag_adv =
 			CONTAINER_OF(dnode_ptr, struct fragmented_advertiser, node);
-		if (frag_adv->should_keep_reports) {
+		if (frag_adv->reassembly_buffer) {
 			return frag_adv;
 		}
 	}
@@ -711,14 +708,14 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		if (active_advertiser) {
 			if (frag_advertiser_timed_out(active_advertiser)) {
 				/* Do not keep reports from timed out advertiser */
-				active_advertiser->should_keep_reports = false;
-				/* Already recombined data must be discarded */
 				net_buf_reset(ext_scan_buf);
+				active_advertiser->reassembly_buffer = NULL;
+				/* Already recombined data must be discarded */
 				if (new_advertiser) {
 					/* If this is the first report from this advertiser,
 					 * we can start combining the reports from it.
 					 */
-					current_advertiser->should_keep_reports = true;
+					current_advertiser->reassembly_buffer = ext_scan_buf;
 				}
 			}
 
@@ -731,10 +728,10 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* There is no active advertiser and this is the first report from the current advertiser.
 			 * Make the current advertiser active.
 			 */
-			current_advertiser->should_keep_reports = true;
+			current_advertiser->reassembly_buffer = ext_scan_buf;
 		}
 
-		if (!current_advertiser->should_keep_reports) {
+		if (!current_advertiser->reassembly_buffer) {
 			/* Discard report */
 			net_buf_pull_mem(buf, evt->length);
 			if (!more_to_come) {
@@ -782,7 +779,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* We have truncated the data and the controller will provide more data.
 			 * Therefore we must discard the remaining part of the advertisement.
 			 */
-			current_advertiser->should_keep_reports = false;
+			current_advertiser->reassembly_buffer = NULL;
 		} else {
 			/* No more data will come. We do no longer need to keep track of this advertiser */
 			remove_frag_advertiser_node(current_advertiser);
