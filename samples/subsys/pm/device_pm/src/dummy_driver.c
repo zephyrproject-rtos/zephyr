@@ -24,13 +24,6 @@ static int dummy_open(const struct device *dev)
 		return ret;
 	}
 
-	ret = pm_device_get_async(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	printk("Async wakeup request queued\n");
-
 	(void) pm_device_wait(dev, K_FOREVER);
 
 	(void)pm_device_state_get(dev, &state);
