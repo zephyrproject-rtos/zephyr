@@ -28,7 +28,7 @@
 #include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -712,7 +712,7 @@ void test_int_remote_pending_requests(void)
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	peek_ctx = llcp_rr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);

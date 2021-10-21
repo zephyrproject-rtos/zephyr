@@ -30,7 +30,7 @@
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
@@ -421,7 +421,7 @@ void ull_cp_init(void)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 }
 
-void ll_conn_init(struct ll_conn *conn)
+void ull_llcp_init(struct ll_conn *conn)
 {
 	/* Reset local request fsm */
 	llcp_lr_init(conn);
@@ -1036,7 +1036,7 @@ void test_int_mem_tx(void)
 	struct proc_ctx *ctx;
 
 	ull_cp_init();
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
 

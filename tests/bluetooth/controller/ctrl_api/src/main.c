@@ -48,7 +48,7 @@ void test_api_init(void)
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	zassert_true(lr_is_disconnected(&conn), NULL);
 	zassert_true(rr_is_disconnected(&conn), NULL);
@@ -64,7 +64,7 @@ void test_api_connect(void)
 {
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	zassert_true(lr_is_idle(&conn), NULL);
@@ -75,7 +75,7 @@ void test_api_disconnect(void)
 {
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 	zassert_true(lr_is_disconnected(&conn), NULL);

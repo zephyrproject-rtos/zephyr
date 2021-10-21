@@ -4242,7 +4242,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	hci_vendor_read_key_hierarchy_roots(rp->ir, rp->er);
 }
 #if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 static void vs_set_min_used_chans(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_vs_set_min_num_used_chans *cmd = (void *)buf->data;
@@ -4253,8 +4253,8 @@ static void vs_set_min_used_chans(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_complete_status(status);
 }
-#endif
-#endif
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4510,12 +4510,12 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case BT_OCF(BT_HCI_OP_VS_SET_MIN_NUM_USED_CHANS):
 		vs_set_min_used_chans(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-#endif
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 	default:
 		return -EINVAL;

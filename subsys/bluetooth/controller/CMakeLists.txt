@@ -68,10 +68,10 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
   if(CONFIG_BT_CONN)
+    zephyr_library_sources(
+      ll_sw/ull_conn.c
+      )
     if(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
-      zephyr_library_sources(
-        ll_sw/ull_conn.c
-        )
     else()
       zephyr_library_sources_ifdef(
         CONFIG_BT_PHY_UPDATE
@@ -90,8 +90,6 @@ if(CONFIG_BT_LL_SW_SPLIT)
         ll_sw/ull_llcp_conn_upd.c
         ll_sw/ull_llcp_chmu.c
         ll_sw/ull_llcp_remote.c
-        ll_sw/ull_connections.c
-        ll_sw/ull_llcp_hci.c
         )
     endif()
     if(CONFIG_BT_PERIPHERAL)
