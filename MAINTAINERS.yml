@@ -1069,6 +1069,8 @@ MCU Manager:
     status: maintained
     maintainers:
         - de-nordic
+    collaborators:
+        - @LairdCP/zephyr
     files:
         - subsys/mgmt/mcumgr/
         - include/mgmt/mcumgr/
