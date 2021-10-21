@@ -25,3 +25,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
 
 zephyr_library_link_libraries(subsys__bluetooth)
+
+zephyr_library_sources_ifdef(CONFIG_BT_CSIS csis.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CSIS csis_crypto.c)

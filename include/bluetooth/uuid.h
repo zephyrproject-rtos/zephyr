@@ -446,6 +446,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_VAL)
+/** @def BT_UUID_CSIS_VAL
+ *  @brief Coordinated Set Identification Service value
+ */
+#define BT_UUID_CSIS_VAL 0x1846
+/** @def BT_UUID_CSIS
+ *  @brief Coordinated Set Identification Service
+ */
+#define BT_UUID_CSIS \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_VAL)
 /** @def BT_UUID_MICS_VAL
  *  @brief Microphone Input Control Service value
  */
@@ -1484,6 +1493,42 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS_DESCRIPTION \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_DESCRIPTION_VAL)
+/** @def BT_UUID_CSIS_SET_SIRK_VAL
+ *  @brief Set Identity Resolving Key value
+ */
+#define BT_UUID_CSIS_SET_SIRK_VAL 0x2B84
+/** @def BT_UUID_CSIS_SET_SIRK
+ *  @brief Set Identity Resolving Key
+ */
+#define BT_UUID_CSIS_SET_SIRK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
+/** @def BT_UUID_CSIS_SET_SIZE_VAL
+ *  @brief Set size value
+ */
+#define BT_UUID_CSIS_SET_SIZE_VAL 0x2B85
+/** @def BT_UUID_CSIS_SET_SIZE
+ *  @brief Set size
+ */
+#define BT_UUID_CSIS_SET_SIZE \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIZE_VAL)
+/** @def BT_UUID_CSIS_SET_LOCK_VAL
+ *  @brief Set lock value
+ */
+#define BT_UUID_CSIS_SET_LOCK_VAL 0x2B86
+/** @def BT_UUID_CSIS_SET_LOCK
+ *  @brief Set lock
+ */
+#define BT_UUID_CSIS_SET_LOCK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_LOCK_VAL)
+/** @def BT_UUID_CSIS_RANK_VAL
+ *  @brief Rank value
+ */
+#define BT_UUID_CSIS_RANK_VAL 0x2B87
+/** @def BT_UUID_CSIS_RANK
+ *  @brief Rank
+ */
+#define BT_UUID_CSIS_RANK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
 /** @def BT_UUID_CCID_VAL
  *  @brief Content Control ID value
  */
