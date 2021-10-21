@@ -35,7 +35,7 @@
 		reg = <0x80400000 DT_SRAM_SIZE>;
 	};
 
-	ns16550_uart: uart@f0000000 {
+	ns16550_uart0: uart@f0000000 {
 		compatible = "ns16550";
 		clock-frequency = <10000000>;
 		reg = <0xf0000000 0x400>;
@@ -46,7 +46,7 @@
 		reg-shift = <2>;
 	};
 
-	uart@f0002000 {
+	ns16550_uart1: uart@f0002000 {
 		compatible = "ns16550";
 		clock-frequency = <10000000>;
 		reg = <0xf0002000 0x400>;
@@ -60,7 +60,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &ns16550_uart;
-		zephyr,shell-uart = &ns16550_uart;
+		zephyr,console = &ns16550_uart0;
+		zephyr,shell-uart = &ns16550_uart0;
+		zephyr,uart-pipe = &ns16550_uart1;
 	};
 };
