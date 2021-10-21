@@ -273,10 +273,9 @@ out:
 }
 
 /**
- * @brief Process the stored coredump in flash partition.
+ * @brief Erase the stored coredump from flash partition.
  *
- * This reads the stored coredump data and processes it via
- * the callback function.
+ * This erases the stored coredump data from the flash partition.
  *
  * @return 0 if successful; error otherwise
  */
