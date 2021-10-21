@@ -215,6 +215,11 @@ manifest:
       revision: c74be3890c9d975976fde1b1a3b2f5742bec34c0
       groups:
         - tee
+    - name: wasm-micro-runtime
+      revision: 32242988ed558274d40b2cb7be207b1993bfe9fb
+      path: modules/lib/wasm-micro-runtime
+      groups:
+        - tee
 
   self:
     path: zephyr
