@@ -636,55 +636,31 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
-/* Func: offload_poll
- * Desc: This function polls on a given socket object.
- */
-static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
-{
-	int i;
-	void *obj;
-
-	/* Only accept modem sockets. */
-	for (i = 0; i < nfds; i++) {
-		if (fds[i].fd < 0) {
-			continue;
-		}
-
-		/* If vtable matches, then it's modem socket. */
-		obj = z_get_fd_obj(fds[i].fd,
-				   (const struct fd_op_vtable *) &offload_socket_fd_op_vtable,
-				   EINVAL);
-		if (obj == NULL) {
-			return -1;
-		}
-	}
-
-	return modem_socket_poll(&mdata.socket_config, fds, nfds, msecs);
-}
-
 /* Func: offload_ioctl
  * Desc: Function call to handle various misc requests.
  */
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
+	case ZFD_IOCTL_POLL_PREPARE: {
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+		struct k_poll_event *pev_end;
 
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		pev_end = va_arg(args, struct k_poll_event *);
 
-	case ZFD_IOCTL_POLL_OFFLOAD:
-	{
-		/* Poll on the given socket. */
-		struct zsock_pollfd *fds;
-		int nfds, timeout;
+		return modem_socket_poll_prepare(&mdata.socket_config, obj, pfd, pev, pev_end);
+	}
+	case ZFD_IOCTL_POLL_UPDATE: {
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
 
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
 
-		return offload_poll(fds, nfds, timeout);
+		return modem_socket_poll_update(obj, pfd, pev);
 	}
 
 	default:

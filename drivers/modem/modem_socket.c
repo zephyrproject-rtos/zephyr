@@ -88,6 +88,7 @@ int modem_socket_packet_size_update(struct modem_socket_config *cfg, struct mode
 		/* reset outstanding value here */
 		sock->packet_count = 0U;
 		sock->packet_sizes[0] = 0U;
+		k_poll_signal_reset(&sock->sig_data_ready);
 		k_sem_give(&cfg->sem_lock);
 		return 0;
 	}
@@ -129,6 +130,11 @@ int modem_socket_packet_size_update(struct modem_socket_config *cfg, struct mode
 	}
 
 data_ready:
+	if (sock->packet_sizes[0]) {
+		k_poll_signal_raise(&sock->sig_data_ready, 0);
+	} else {
+		k_poll_signal_reset(&sock->sig_data_ready);
+	}
 	k_sem_give(&cfg->sem_lock);
 	return new_total;
 }
@@ -231,14 +237,13 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	sock->id = cfg->base_socket_num - 1;
 	sock->sock_fd = -1;
 	sock->is_waiting = false;
-	sock->is_polled = false;
 	sock->is_connected = false;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
 	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
 	memset(&sock->packet_sizes, 0, sizeof(sock->packet_sizes));
 	sock->packet_count = 0;
 	k_sem_reset(&sock->sem_data_ready);
-	k_poll_signal_reset(&sock->sem_poll);
+	k_poll_signal_reset(&sock->sig_data_ready);
 
 	k_sem_give(&cfg->sem_lock);
 }
@@ -278,12 +283,8 @@ int modem_socket_poll(struct modem_socket_config *cfg, struct zsock_pollfd *fds,
 				found_count++;
 				break;
 			} else if (fds[i].events & ZSOCK_POLLIN) {
-				k_sem_take(&cfg->sem_lock, K_FOREVER);
-				sock->is_polled = true;
-				k_poll_signal_reset(&sock->sem_poll);
 				k_poll_event_init(&events[eventcount++], K_POLL_TYPE_SIGNAL,
-						  K_POLL_MODE_NOTIFY_ONLY, &sock->sem_poll);
-				k_sem_give(&cfg->sem_lock);
+						  K_POLL_MODE_NOTIFY_ONLY, &sock->sig_data_ready);
 				if (sock->packet_sizes[0] > 0U) {
 					found_count++;
 					break;
@@ -322,8 +323,6 @@ int modem_socket_poll(struct modem_socket_config *cfg, struct zsock_pollfd *fds,
 			fds[i].revents |= ZSOCK_POLLIN;
 			found_count++;
 		}
-
-		sock->is_polled = false;
 	}
 
 	/* EBUSY, EAGAIN and ETIMEDOUT aren't true errors */
@@ -334,6 +333,57 @@ int modem_socket_poll(struct modem_socket_config *cfg, struct zsock_pollfd *fds,
 
 	errno = 0;
 	return found_count;
+}
+
+int modem_socket_poll_prepare(struct modem_socket_config *cfg, struct modem_socket *sock,
+			      struct zsock_pollfd *pfd, struct k_poll_event **pev,
+			      struct k_poll_event *pev_end)
+{
+	if (pfd->events & ZSOCK_POLLIN) {
+		if (*pev == pev_end) {
+			errno = ENOMEM;
+			return -1;
+		}
+
+		k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+				  &sock->sig_data_ready);
+		(*pev)++;
+	}
+
+	if (pfd->events & ZSOCK_POLLOUT) {
+		if (*pev == pev_end) {
+			errno = ENOMEM;
+			return -1;
+		}
+		/* Not Implemented */
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	return 0;
+}
+
+int modem_socket_poll_update(struct modem_socket *sock, struct zsock_pollfd *pfd,
+			     struct k_poll_event **pev)
+{
+	ARG_UNUSED(sock);
+
+	if (pfd->events & ZSOCK_POLLIN) {
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+			pfd->revents |= ZSOCK_POLLIN;
+		}
+		(*pev)++;
+	}
+
+	if (pfd->events & ZSOCK_POLLOUT) {
+		/* Not implemented, but the modem socket is always ready to transmit,
+		 * so set the revents
+		 */
+		pfd->revents |= ZSOCK_POLLOUT;
+		(*pev)++;
+	}
+
+	return 0;
 }
 
 void modem_socket_wait_data(struct modem_socket_config *cfg, struct modem_socket *sock)
@@ -355,11 +405,6 @@ void modem_socket_data_ready(struct modem_socket_config *cfg, struct modem_socke
 		k_sem_give(&sock->sem_data_ready);
 	}
 
-	if (sock->is_polled) {
-		/* unblock poll() */
-		k_poll_signal_raise(&sock->sem_poll, 0);
-	}
-
 	k_sem_give(&cfg->sem_lock);
 }
 
@@ -370,7 +415,7 @@ int modem_socket_init(struct modem_socket_config *cfg, const struct socket_op_vt
 	k_sem_init(&cfg->sem_lock, 1, 1);
 	for (i = 0; i < cfg->sockets_len; i++) {
 		k_sem_init(&cfg->sockets[i].sem_data_ready, 0, 1);
-		k_poll_signal_init(&cfg->sockets[i].sem_poll);
+		k_poll_signal_init(&cfg->sockets[i].sig_data_ready);
 		cfg->sockets[i].id = cfg->base_socket_num - 1;
 	}
 
