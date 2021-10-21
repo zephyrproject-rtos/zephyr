@@ -1,7 +1,7 @@
-.. _wasm-micro-runtime-simple:
+.. _wasm-micro-runtime-wasm_app_manager:
 
-WebAssembly Micro Runtime Simple
-################################
+WebAssembly Micro Runtime Application Manager
+##################################################
 
 Overview
 ********
@@ -14,7 +14,7 @@ Directory structure
 
 .. code-block:: console
 
-    simple/
+    wasm_app_manager
     ├── build.sh
     ├── CMakeLists.txt
     ├── prj.conf
@@ -32,7 +32,7 @@ Directory structure
 - build.sh
   The script to build all binaries.
 - CMakeLists.txt
-  CMake file used to build the simple application.
+  CMake file used to build the wasm_app_manager zephyr project.
 - prj.conf
   Zephy project configuration file.
 - README.md

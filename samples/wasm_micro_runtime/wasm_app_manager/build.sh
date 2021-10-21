@@ -26,12 +26,12 @@ cd ${WAMR_DIR}/wamr-sdk
 [ $? -eq 0 ] || exit $?
 echo "##################### build wamr sdk done"
 
-echo "##################### build simple project"
+echo "##################### build app manager project"
 cd ${OUT_DIR}/zephyr-build
 source ../../../../../zephyr-env.sh
 cmake -GNinja -DBOARD=${BOARD} ../..
 ninja
-echo "##################### build simple project done"
+echo "##################### build app manager project done"
 
 echo "##################### build host-tool"
 cd ${WAMR_DIR}/test-tools/host-tool

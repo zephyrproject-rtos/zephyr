@@ -1,4 +1,4 @@
-.. _wasm-micro-runtime-hello-world:
+.. _wasm-micro-runtime-wasm_hello_world:
 
 WebAssembly Micro Runtime Hello World
 #####################################
