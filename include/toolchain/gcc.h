@@ -154,10 +154,14 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
-#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#ifndef Z_UNIQUE_FILE_ID
+#define Z_UNIQUE_FILE_ID __FILE__
+#endif
+
+#define __in_section_unique(seg) ___in_section(seg, Z_UNIQUE_FILE_ID, __COUNTER__)
 
 #define __in_section_unique_named(seg, name) \
-	___in_section(seg, __FILE__, name)
+	___in_section(seg, Z_UNIQUE_FILE_ID, name)
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
