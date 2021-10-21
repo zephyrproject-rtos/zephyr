@@ -47,6 +47,9 @@ struct fragmented_advertiser {
 
 #define FRAGMENTED_ADVERTISER_TIMEOUT_MS 10000
 
+/* Heap on which the list of fragmented advertisers will be allocated */
+K_HEAP_DEFINE(fragmented_advertiser_heap,
+	      CONFIG_BT_EXT_SCAN_MAX_FRAGMENTED_ADVERTISERS * sizeof(struct fragmented_advertiser));
 static sys_dlist_t fragmented_advertisers;
 
 static void init_fragmented_advertisers(void)
@@ -72,7 +75,8 @@ static bool frag_advertiser_timed_out(const struct fragmented_advertiser *frag_a
  */
 static struct fragmented_advertiser *add_frag_advertiser(const bt_addr_le_t *addr, uint8_t sid)
 {
-	struct fragmented_advertiser *frag_adv = k_malloc(sizeof(struct fragmented_advertiser));
+	struct fragmented_advertiser *frag_adv = k_heap_alloc(
+		&fragmented_advertiser_heap, sizeof(struct fragmented_advertiser), K_NO_WAIT);
 	if (!frag_adv) {
 		BT_ERR("Could not allocate memory for a fragmented_advertiser");
 		return NULL;
@@ -126,7 +130,7 @@ static void remove_frag_advertiser_node(struct fragmented_advertiser *to_remove)
 {
 	if (to_remove) {
 		sys_dlist_remove(&to_remove->node);
-		k_free(to_remove);
+		k_heap_free(&fragmented_advertiser_heap, to_remove);
 	}
 }
 

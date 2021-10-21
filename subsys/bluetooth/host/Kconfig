@@ -506,7 +506,17 @@ config BT_EXT_SCAN_BUF_SIZE
 	  Maximum size of an advertisement report. If the advertisement
 	  provided by the controller is larger than this buffer size,
 	  the remaining data will be discarded.
+
+config BT_EXT_SCAN_MAX_FRAGMENTED_ADVERTISERS
+	int "Maximum number of fragmented advertisers to keep track of"
+	default 10
+	help
+	  Maximum number of fragmented advertisers to keep track of. If more
+	  unique advertiser sets/devices than this config are seen before
+	  all advertising data is seen, advertising reports may become incomplete.
+
 endif # BT_EXT_ADV
+
 
 endif # BT_OBSERVER
 
