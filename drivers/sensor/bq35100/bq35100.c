@@ -205,9 +205,9 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 	}
 
 	//LOG_DBG("Address before conversion: 0x%02X%02X", address, data[1], data[0]);
-    data[0] = address & UCHAR_MAX;
+	data[0] = address & UCHAR_MAX;
     data[1] = address >> 8;
-	
+
 	k_sleep(K_MSEC(1000));
 
 	// Address match check
@@ -216,10 +216,11 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -1;
 	}
 
-	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
+	LOG_DBG("data[35] = 0x%02x", data[35]-2);
+	/*if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
 		return -EIO;
-	}
+	}*/
 
 	length_read = data[35] - 4; // Subtracting addresses
 
@@ -459,8 +460,8 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
  */
 static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t gauge_mode)
 {
+	struct bq35100_data *dev_data = dev->data;
 	uint8_t buf;
-
 	int status;
 
 	if (gauge_mode == BQ35100_UNKNOWN_MODE) {
@@ -487,6 +488,8 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 			return -EIO;
 		}
 	}
+
+	dev_data->gauge_mode = buf & 0b11;
 
 	return 0;
 }
@@ -644,8 +647,29 @@ static int bq35100_get_status(const struct device *dev, uint16_t *status)
 static int bq35100_get_gauge_mode(const struct device *dev)
 {
 	struct bq35100_data *dev_data = dev->data;
+	uint8_t gauge = dev_data->gauge_mode;
+	
+	switch (gauge) {
+	case BQ35100_ACCUMULATOR_MODE:
+		LOG_DBG("Device is in Accumulator Mode");
+		break;
 
+	case BQ35100_SOH_MODE:
+		LOG_DBG("Device is in SOH Mode");
+		break;
 
+	case BQ35100_EOS_MODE:
+		LOG_DBG("Device is in EOS Mode");
+		break;
+
+	case BQ35100_UNKNOWN_MODE:
+		LOG_DBG("Device is in Unkown Mode");
+		break;
+
+	default:
+		LOG_ERR("Invalid Gauge Mode");
+		break;
+	}
 
 	return 0;
 }
@@ -918,7 +942,7 @@ static int bq35100_init(const struct device *dev)
 
 	// struct bq35100_data *data = dev->data;
 
-	int status, temp;
+	//int status, temp;
 
 	if (cfg->ge_gpio->name) {
 		if (bq35100_init_ge_pin(dev) < 0) {
@@ -936,16 +960,28 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*if(bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)){
+	if(bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)){
 		return EIO;
-	}*/
+	}
 
 	if (bq35100_get_security_mode(dev) < 0) {
 		return EIO;
 	}
 
-	/*if(bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)){
+	if(bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)){
 		return EIO;
+	}
+
+	if(bq35100_get_gauge_mode(dev) < 0){
+		return -EIO;
+	}
+
+	if(bq35100_gauge_start(dev) < 0){
+		return -EIO;
+	}
+
+	/*if(bq35100_gauge_stop(dev) < 0){
+		return -EIO;
 	}*/
 
 	return 0;
