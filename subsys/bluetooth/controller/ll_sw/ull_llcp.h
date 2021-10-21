@@ -18,7 +18,7 @@ void ull_cp_init(void);
 /**
  * @brief Initialize the LL Control Procedure connection data.
  */
-void ll_conn_init(struct ll_conn *conn);
+void ull_llcp_init(struct ll_conn *conn);
 
 /**
  * @brief XXX
