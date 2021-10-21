@@ -890,7 +890,7 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 			    &uart_mux_dev_data_##x,			  \
 			    &uart_mux_config_##x,			  \
 			    POST_KERNEL,				  \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
+			    CONFIG_CONSOLE_INIT_PRIORITY,		  \
 			    &uart_mux_driver_api);
 
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
@@ -909,4 +909,4 @@ static int init_uart_mux(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(init_uart_mux, POST_KERNEL, CONFIG_UART_MUX_INIT_PRIORITY);
+SYS_INIT(init_uart_mux, POST_KERNEL, CONFIG_CONSOLE_INIT_PRIORITY);
