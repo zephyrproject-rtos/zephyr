@@ -6,3 +6,13 @@ description: TE Connectivity MS5837 digital pressure sensor
 compatible: "meas,ms5837"
 
 include: i2c-device.yaml
+
+properties:
+  hardware-type:
+    type: string
+    required: false
+    default: "30BA"
+    description: Sensor hardware type - MS5837-XXX
+    enum:
+      - "30BA"
+      - "02BA"

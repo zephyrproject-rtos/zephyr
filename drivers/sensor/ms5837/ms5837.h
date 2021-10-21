@@ -70,9 +70,15 @@ struct ms5837_data {
 
 };
 
+enum hardware_type {
+	MS5837_30BA,
+	MS5837_02BA,
+};
+
 struct ms5837_config {
 	const char *i2c_name;
 	uint8_t i2c_address;
+	enum hardware_type hw_type;
 };
 
 #endif /* __SENSOR_MS5837_H__ */
