@@ -65,6 +65,27 @@
 #  zephyr_compile_options()     --->  target_compile_options()
 #
 
+# override the target_sources function to inject a unique ID definition for each source file
+function(target_sources target_name)
+  foreach(src ${ARGN})
+    if(NOT src STREQUAL "PRIVATE" AND
+       NOT src STREQUAL "PUBLIC" AND
+       NOT src STREQUAL "INTERFACE"
+    )
+      # convert to an absolute path to be unique
+      cmake_path(ABSOLUTE_PATH src NORMALIZE)
+      # replace special characters with an underscore
+      string(REGEX REPLACE "[\\\/\.]" "_" unique_id ${src})
+      # add the definition
+      set_property(SOURCE ${src}
+        APPEND PROPERTY COMPILE_DEFINITIONS
+        "Z_UNIQUE_FILE_ID=${unique_id}")
+    endif()
+  endforeach()
+
+  # Call the original function
+  _target_sources(${target_name} ${ARGN})
+endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
