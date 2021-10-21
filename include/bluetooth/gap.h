@@ -56,6 +56,7 @@ extern "C" {
 #define BT_DATA_MESH_BEACON             0x2b /* Mesh Beacon */
 #define BT_DATA_BIG_INFO                0x2c /* BIGInfo */
 #define BT_DATA_BROADCAST_CODE          0x2d /* Broadcast Code */
+#define BT_DATA_CSIS_RSI                0x2e /* CSIS Random Set ID type */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff /* Manufacturer Specific Data */
 
