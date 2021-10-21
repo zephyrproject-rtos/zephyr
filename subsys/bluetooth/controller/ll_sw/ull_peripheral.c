@@ -551,7 +551,6 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_S(1);
 }
 
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 			    uint8_t const *const ltk)
@@ -563,6 +562,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	if (error_code) {
 		if (conn->llcp_enc.refresh == 0U) {
 			if ((conn->llcp_req == conn->llcp_ack) ||
@@ -594,11 +594,29 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 	}
+#else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+	/*
+	 * EGON TODO: add info to the conn-structure
+	 * - refresh
+	 * - no procedure in progress
+	 * - procedure type
+	 * and use that info to decide if the cmd is allowed
+	 * or if we should terminate the connection
+	 * see BT 5.2 Vol. 6 part B chapter 5.1.3
+	 * see also ull_periph.c line 395-439
+	 *
+	 * EGON TODO: the ull_cp_ltx_req* functions should return success/fail status
+	 */
+	if (error_code) {
+		ull_cp_ltk_req_neq_reply(conn);
+	} else {
+		ull_cp_ltk_req_reply(conn, ltk);
+	}
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 			    memq_link_t *link, struct node_rx_hdr *rx)
@@ -659,3 +677,24 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 
 	conn->periph.latency_cancel = 0U;
 }
+
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
+			      uint8_t const min_used_chans)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!conn->lll.role) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return ull_cp_min_used_chans(conn, phys, min_used_chans);
+}
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */

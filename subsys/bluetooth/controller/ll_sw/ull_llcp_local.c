@@ -30,7 +30,7 @@
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_local
@@ -459,7 +459,7 @@ void test_int_local_pending_requests(void)
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	peek_ctx = llcp_lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);

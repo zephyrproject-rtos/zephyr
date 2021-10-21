@@ -29,7 +29,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"

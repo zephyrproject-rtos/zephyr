@@ -118,7 +118,7 @@ void test_version_exchange_mas_loc_2(void)
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ll_conn_init(&conn);
+	ull_llcp_init(&conn);
 
 	err = ull_cp_version_exchange(&conn);
 

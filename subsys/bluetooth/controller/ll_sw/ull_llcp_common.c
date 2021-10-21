@@ -31,7 +31,7 @@
 #include "ull_conn_types.h"
 #include "ull_chan_internal.h"
 #include "ull_llcp.h"
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_internal.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
@@ -314,7 +314,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		ctx->state = LP_COMMON_STATE_IDLE;
 
 		/* Mark the connection for termination */
-		conn->terminate.reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
@@ -898,7 +898,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		ctx->state = RP_COMMON_STATE_IDLE;
 
 		/* Mark the connection for termination */
-		conn->terminate.reason = ctx->data.term.error_code;
+		conn->llcp_terminate.reason_final = ctx->data.term.error_code;
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:

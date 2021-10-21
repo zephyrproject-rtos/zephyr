@@ -31,7 +31,7 @@
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 
-#include "ull_conn_llcp_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_llcp_internal.h"
 #include "ull_llcp.h"
 
@@ -212,7 +212,7 @@ void test_setup(struct ll_conn *conn)
 	ull_tx_q_init(&conn->tx_q);
 
 	/* Initialize the connection object */
-	ll_conn_init(conn);
+	ull_llcp_init(conn);
 
 	ll_reset();
 	conn->lll.event_counter = 0;

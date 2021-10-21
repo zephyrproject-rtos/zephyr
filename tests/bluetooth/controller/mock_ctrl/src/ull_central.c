@@ -24,3 +24,15 @@ void ull_central_setup(memq_link_t *link, struct node_rx_hdr *rx, struct node_rx
 void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy, void *param)
 {
 }
+
+
+uint8_t ull_central_chm_update(void)
+{
+	return 0;
+}
+
+
+int ull_central_reset(void)
+{
+	return 0;
+}
