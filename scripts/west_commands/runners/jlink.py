@@ -314,4 +314,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             kwargs = {}
             if not self.logger.isEnabledFor(logging.DEBUG):
                 kwargs['stdout'] = subprocess.DEVNULL
-            self.check_call(cmd, **kwargs)
+
+            try:
+                self.check_call(cmd, **kwargs)
+                # Workaround to detect if programmer is connected
+                output = self.check_output(cmd)
+                if 'Cannot connect to J-Link' in str(output):
+                    raise RuntimeError('Connecting to J-Link failed')
+            except subprocess.CalledProcessError as error:
+                print('Flashing error {}'.format(error))
