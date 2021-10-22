@@ -21,6 +21,7 @@ struct busy_sim_data {
 	struct k_work work;
 	struct ring_buf rnd_rbuf;
 	uint8_t rnd_buf[BUFFER_SIZE];
+	busy_sim_cb_t cb;
 };
 
 struct busy_sim_config {
@@ -110,6 +111,10 @@ static void counter_alarm_callback(const struct device *dev,
 	}
 
 	/* Busy loop */
+	if (data->cb) {
+		data->cb();
+	}
+
 	k_busy_wait(get_timeout(false) / data->us_tick);
 
 	if (config->pin_spec.port) {
@@ -123,12 +128,13 @@ static void counter_alarm_callback(const struct device *dev,
 }
 
 void busy_sim_start(uint32_t active_avg, uint32_t active_delta,
-		    uint32_t idle_avg, uint32_t idle_delta)
+		    uint32_t idle_avg, uint32_t idle_delta, busy_sim_cb_t cb)
 {
 	int err;
 	const struct busy_sim_config *config = get_dev_config(busy_sim_dev);
 	struct busy_sim_data *data = get_dev_data(busy_sim_dev);
 
+	data->cb = cb;
 	data->active_avg = active_avg;
 	data->active_delta = active_delta;
 	data->idle_avg = idle_avg;
