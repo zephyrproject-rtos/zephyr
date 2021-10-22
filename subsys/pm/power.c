@@ -272,7 +272,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	uint8_t id = _current_cpu->id;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
-	z_power_states[id] = pm_policy_next_state(ticks);
+	z_power_states[id] = pm_policy_next_state(id, ticks);
 	if (z_power_states[id].state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,

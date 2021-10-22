@@ -57,9 +57,11 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(int ticks)
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 {
 	struct pm_state_info info = {};
+
+	ARG_UNUSED(cpu);
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
