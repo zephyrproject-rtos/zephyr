@@ -208,7 +208,7 @@ Frames are only received when they match a filter.
 The following code snippets show how to receive frames by attaching filters.
 
 Here we have an example for a receiving callback.
-It is used for `can_attach_isr` or `can_attach_workq`.
+It is used for :c:func:`can_attach_isr` or :c:func:`can_attach_workq`.
 The argument arg is passed when the filter is attached.
 
 .. code-block:: C
@@ -246,7 +246,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
   }
 
 This example shows how to attach a callback from a work-queue.
-In contrast to the `can_attach_isr` function, here the callback is called from the
+In contrast to the :c:func:`can_attach_isr` function, here the callback is called from the
 work-queue provided. In this case, it is the system work queue. Blocking is
 generally allowed in the callback but could result in a frame backlog when it is
 not limited. For the reason of a backlog, a ring-buffer is applied for every
@@ -277,8 +277,8 @@ The filter for this example is configured to match a filter range from
     LOG_ERR("Unable to attach isr [%d]", filter_id);
   }
 
-Here an example for `can_attach_msgq` is shown. With this function, it is
-possible to receive frames synchronously. This function can be called from
+Here an example for :c:func:`can_attach_msgq` is shown. With this function, it
+is possible to receive frames synchronously. This function can be called from
 userspace context.
 The size of the message queue should be as big as the expected backlog.
 
@@ -312,7 +312,7 @@ The filter for this example is configured to match the extended identifier
     ... do something with the frame ...
   }
 
-`can_detach` removes the given filter.
+:c:func:`can_detach` removes the given filter.
 
 .. code-block:: C
 
@@ -322,13 +322,14 @@ Setting the bitrate
 *******************
 
 The bitrate and sampling point is initially set at runtime. To change it from
-the application, one can use the `can_set_timing` API. This function takes three
-arguments. The first timing parameter sets the timing for classic CAN and
-arbitration phase for CAN-FD. The second parameter sets the timing of the data
-phase for CAN-FD. For classic CAN, you can use only the first parameter and put
-NULL to the second one. The `can_calc_timing` function can calculate timing from
-a bitrate and sampling point in permille. The following example sets the bitrate
-to 250k baud with the sampling point at 87.5%.
+the application, one can use the :c:func:`can_set_timing` API. This function
+takes three arguments. The first timing parameter sets the timing for classic
+CAN and arbitration phase for CAN-FD. The second parameter sets the timing of
+the data phase for CAN-FD. For classic CAN, you can use only the first
+parameter and put NULL to the second one. The :c:func:`can_calc_timing`
+function can calculate timing from a bitrate and sampling point in permille.
+The following example sets the bitrate to 250k baud with the sampling point at
+87.5%.
 
 .. code-block:: C
 
