@@ -73,6 +73,7 @@ enum coap_method {
 	COAP_METHOD_POST = 2,
 	COAP_METHOD_PUT = 3,
 	COAP_METHOD_DELETE = 4,
+	COAP_METHOD_FETCH = 5,
 };
 
 #define COAP_REQUEST_MASK 0x07
@@ -139,6 +140,7 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = coap_make_response_code(4, 13),
 	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
 						coap_make_response_code(4, 15),
+	COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY = coap_make_response_code(4, 22),
 	COAP_RESPONSE_CODE_INTERNAL_ERROR = coap_make_response_code(5, 0),
 	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = coap_make_response_code(5, 1),
 	COAP_RESPONSE_CODE_BAD_GATEWAY = coap_make_response_code(5, 2),
@@ -203,7 +205,7 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
  */
 struct coap_resource {
 	/** Which function to be called for each CoAP method */
-	coap_method_t get, post, put, del;
+	coap_method_t get, post, put, del, fetch;
 	coap_notify_t notify;
 	const char * const *path;
 	void *user_data;
