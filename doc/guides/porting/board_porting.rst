@@ -160,7 +160,8 @@ The mandatory files are:
 
 The optional files are:
 
-- :file:`board.cmake`: used for :ref:`flash-and-debug-support`
+- :file:`board.cmake`: used for :ref:`flash-and-debug-support`. This file can
+  alternatively be named after your board, e.g. :file:`plank.cmake`.
 - :file:`CMakeLists.txt`: if you need to add additional source files to
   your build.
 

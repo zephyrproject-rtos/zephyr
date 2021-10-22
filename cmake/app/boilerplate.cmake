@@ -612,6 +612,7 @@ set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
+include(${BOARD_DIR}/${BOARD}.cmake OPTIONAL)
 
 # If we are using a suitable ethernet driver inside qemu, then these options
 # must be set, otherwise a zephyr instance cannot receive any network packets.
