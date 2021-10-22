@@ -53,10 +53,10 @@ config UART_USE_RUNTIME_CONFIGURE
 	  applications that do not require runtime UART configuration.
 
 config UART_ASYNC_API
-	bool "Enable new asynchronous UART API [EXPERIMENTAL]"
+	bool "Enable asynchronous UART API"
 	depends on SERIAL_SUPPORT_ASYNC
 	help
-	  This option enables new asynchronous UART API.
+	  This option enables asynchronous UART API.
 
 config UART_INTERRUPT_DRIVEN
 	bool "Enable UART Interrupt support"
