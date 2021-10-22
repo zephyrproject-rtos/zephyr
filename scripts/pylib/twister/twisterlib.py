@@ -2124,6 +2124,13 @@ class CMake():
         cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
+
+        for variant in self.platform.supported_toolchains:
+            if variant in self.toolchain_variants and \
+                (variant not in self.scenario.toolchain_exclude or \
+                variant in self.scenario.toolchain_whitelist):
+                args += ["-DZEPHYR_TOOLCHAIN_VARIANT=%s" %variant]
+                break
         cmake_args.extend(args)
 
         cmake_opts = ['-DBOARD={}'.format(self.platform.name)]
@@ -2304,6 +2311,7 @@ class ProjectBuilder(FilterBuilder):
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
+        self.toolchain_variants = kwargs.get('toolchain_variants', [])
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -3024,6 +3032,7 @@ class TestRunner(DisablePyTestCollectionMixin):
         self.warnings_as_errors = True
         self.overflow_as_errors = False
         self.quarantine_verify = False
+        self.toolchain_variants = []
 
         # Keep track of which test cases we've filtered out and why
         self.quarantine = {}
@@ -3479,6 +3488,14 @@ class TestRunner(DisablePyTestCollectionMixin):
 
     def apply_filters(self, **kwargs):
 
+        def common_member(a, b):
+            a_set = set(a)
+            b_set = set(b)
+            if (a_set & b_set):
+                return True
+            else:
+                return False
+
         toolchain = self.get_toolchain()
 
         discards = {}
@@ -3493,6 +3510,10 @@ class TestRunner(DisablePyTestCollectionMixin):
         force_toolchain = kwargs.get('force_toolchain')
         force_platform = kwargs.get('force_platform')
         emu_filter = kwargs.get('emulation_only')
+        toolchain_variants = kwargs.get('toolchain_variants')
+
+        if toolchain and toolchain not in toolchain_variants:
+            toolchain_variants.append(toolchain)
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -3617,7 +3638,7 @@ class TestRunner(DisablePyTestCollectionMixin):
                         discards[instance] = discards.get(instance, "Command line platform filter")
 
                     if not force_toolchain \
-                            and toolchain and (toolchain not in plat.supported_toolchains) \
+                            and not (common_member(toolchain_variants, plat.supported_toolchains)) \
                             and "host" not in plat.supported_toolchains \
                             and scenario.type != 'unit':
                         discards[instance] = discards.get(instance, "Not supported by the toolchain")
@@ -3781,7 +3802,8 @@ class TestRunner(DisablePyTestCollectionMixin):
                                     generator_cmd=self.generator_cmd,
                                     verbose=self.verbose,
                                     warnings_as_errors=self.warnings_as_errors,
-                                    overflow_as_errors=self.overflow_as_errors
+                                    overflow_as_errors=self.overflow_as_errors,
+                                    toolchain_variants=self.toolchain_variants
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 

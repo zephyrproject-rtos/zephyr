@@ -271,6 +271,10 @@ Artificially long but functional example:
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
+
+    parser.add_argument("--toolchain-variant", action="append", default=[],
+            help="Set list of variants to support, multiple variants possible")
+
     parser.add_argument(
         "-p", "--platform", action="append",
         help="Platform filter for testing. This option may be used multiple "
@@ -869,10 +873,10 @@ def main():
 
     # Check version of zephyr repo
     runner.check_zephyr_version()
-
     # Set test runner options from command line.
     runner.build_only = options.build_only
     runner.cmake_only = options.cmake_only
+    runner.toolchain_variants = options.toolchain_variant
     runner.cleanup = options.runtime_artifact_cleanup
     runner.test_only = options.test_only
     runner.enable_slow = options.enable_slow
@@ -1090,7 +1094,8 @@ def main():
             emulation_only=options.emulation_only,
             run_individual_tests=run_individual_tests,
             runnable=(options.device_testing or options.filter == 'runnable'),
-            force_platform=options.force_platform
+            force_platform=options.force_platform,
+            toolchain_variants=options.toolchain_variant
 
         )
 
