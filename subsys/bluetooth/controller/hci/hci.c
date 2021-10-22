@@ -4884,7 +4884,7 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	uint8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	uint8_t direct;
+	uint8_t direct_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 	int8_t *prssi;
 
@@ -4893,7 +4893,7 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct = node_rx->hdr.rx_ftr.direct;
+	direct_report = node_rx->hdr.rx_ftr.direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -4904,7 +4904,7 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	if (direct) {
+	if (direct_report) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		le_dir_adv_report(adv, buf, rssi, rl_idx);
 #else
@@ -5010,7 +5010,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	uint8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	uint8_t direct;
+	uint8_t direct_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
@@ -5026,7 +5026,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct = node_rx->hdr.rx_ftr.direct;
+	direct_report = node_rx->hdr.rx_ftr.direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -5082,7 +5082,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 
 	adv_info->direct_addr.type = adv->rx_addr;
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	if (direct) {
+	if (direct_report) {
 		memcpy(&adv_info->direct_addr.a.val[0],
 		       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
 	} else
@@ -5096,37 +5096,47 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 }
 
 static uint8_t ext_adv_direct_addr_type(struct lll_scan *lll,
-					bool resolved, bool direct,
+					bool peer_resolved, bool direct_report,
 					uint8_t rx_addr_type,
 					const uint8_t *const rx_addr)
 {
+	/* The directed address is resolvable private address, but Controller
+	 * could not resolve it.
+	 */
+	if (direct_report) {
+		return BT_ADDR_LE_UNRESOLVED;
+	}
+
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	} else if (resolved) {
-		if (!direct) {
-			struct ll_scan_set *scan;
+	/* Peer directed advertiser's address was resolved */
+	} else if (peer_resolved) {
+		struct ll_scan_set *scan;
 
-			scan = HDR_LLL2ULL(lll);
-			if ((rx_addr_type == lll->init_addr_type) &&
-			    !memcmp(lll->init_addr, rx_addr, BDADDR_SIZE)) {
-				return scan->own_addr_type;
-			} else {
-				return scan->own_addr_type | BIT(1);
-			}
-		} else {
-			return BT_ADDR_LE_UNRESOLVED;
+		scan = HDR_LLL2ULL(lll);
+		if ((rx_addr_type == lll->init_addr_type) &&
+		    !memcmp(lll->init_addr, rx_addr, BDADDR_SIZE)) {
+			/* Peer directed advertiser used local scanner's
+			 * initiator address.
+			 */
+			return scan->own_addr_type;
 		}
+
+		/* Peer directed advertiser used directed resolvable
+		 * private address generated from the local scanner's
+		 * Identity Resolution Key.
+		 */
+		return scan->own_addr_type | BIT(1);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	} else {
-		if (!direct) {
-			struct ll_scan_set *scan;
+		struct ll_scan_set *scan;
 
-			scan = HDR_LLL2ULL(lll);
+		scan = HDR_LLL2ULL(lll);
 
-			return scan->own_addr_type;
-		} else {
-			return BT_ADDR_LE_UNRESOLVED;
-		}
+		/* Peer directed advertiser used local scanner's
+		 * initiator address.
+		 */
+		return scan->own_addr_type;
 	}
 }
 
@@ -5347,6 +5357,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint16_t interval_le16 = 0U;
 	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
+	bool direct_report = false;
 	uint8_t sec_phy_scan = 0U;
 	uint8_t *scan_data = NULL;
 	uint8_t *adv_addr = NULL;
@@ -5358,7 +5369,6 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t sec_phy = 0U;
 	uint8_t data_len_max;
 	uint8_t rl_idx = 0U;
-	bool direct = false;
 	struct pdu_adv *adv;
 	int8_t rssi;
 
@@ -5398,7 +5408,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		uint8_t *ptr;
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-		bool direct_curr = node_rx_curr->hdr.rx_ftr.direct;
+		bool direct_report_curr = node_rx_curr->hdr.rx_ftr.direct;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -5452,7 +5462,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			direct_addr_type_curr =
 				ext_adv_direct_addr_type(lll,
 							 direct_resolved_curr,
-							 direct_curr,
+							 direct_report_curr,
 							 adv->rx_addr, ptr);
 			direct_addr_curr = ptr;
 			ptr += BDADDR_SIZE;
@@ -5574,7 +5584,7 @@ no_ext_hdr:
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-			direct = direct_curr;
+			direct_report = direct_report_curr;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 		} else {
 			/* TODO: Validate current value with previous */
@@ -5615,8 +5625,8 @@ no_ext_hdr:
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-			if (!direct) {
-				direct = direct_curr;
+			if (!direct_report) {
+				direct_report = direct_report_curr;
 			}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 		}
