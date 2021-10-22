@@ -667,13 +667,6 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		more_to_come = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 		ctrl_truncated = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 
-		BT_DBG("Evt: length: %d, type: %X", evt->length, evt->evt_type);
-		BT_DBG("data_status: %d", data_status);
-		BT_DBG("legacy_pdu_used: %d", legacy_pdu_used);
-		BT_DBG("is_complete: %d", is_complete);
-		BT_DBG("more_to_come: %d", more_to_come);
-		BT_DBG("ctrl_truncated: %d", ctrl_truncated);
-
 		if (legacy_pdu_used) {
 			/* Complete advertising report.
 			 * Does not need reassembly, create event immediately
@@ -755,13 +748,10 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			size_to_copy = evt->length;
 			truncate = false;
 		}
-		BT_DBG("truncate: %d", truncate);
 
 		net_buf_add_mem(ext_scan_buf, buf->data, size_to_copy);
-		BT_HEXDUMP_DBG(buf->data, size_to_copy, "Added to ext_scan_buf");
 		if (!truncate && more_to_come) {
 			/* More data to come. */
-			BT_DBG("Current len: %d. More data to come", ext_scan_buf->len);
 			continue;
 		}
 
@@ -774,8 +764,6 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			adv_info.adv_props |= BT_GAP_ADV_PROP_REPORT_TRUNCATED;
 		}
 
-		BT_DBG("le_adv_recv len: %d", ext_scan_buf->len);
-		BT_HEXDUMP_DBG(ext_scan_buf->data, ext_scan_buf->len, "ext_scan_buf");
 		le_adv_recv(&evt->addr, &adv_info, ext_scan_buf, ext_scan_buf->len);
 		net_buf_reset(ext_scan_buf);
 
