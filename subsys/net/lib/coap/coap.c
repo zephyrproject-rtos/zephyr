@@ -1077,15 +1077,20 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 	return update_descriptive_block(ctx, block2, size2 == -ENOENT ? 0 : size2);
 }
 
-size_t coap_next_block(const struct coap_packet *cpkt,
-		       struct coap_block_context *ctx)
+int coap_next_block_for_option(const struct coap_packet *cpkt,
+			       struct coap_block_context *ctx,
+			       enum coap_option_num option)
 {
 	int block;
 
-	if (is_request(cpkt)) {
-		block = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
-	} else {
-		block = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
+		return -EINVAL;
+	}
+
+	block = coap_get_option_int(cpkt, option);
+
+	if (block < 0) {
+		return block;
 	}
 
 	if (!GET_MORE(block)) {
@@ -1094,7 +1099,19 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 
 	ctx->current += coap_block_size_to_bytes(ctx->block_size);
 
-	return ctx->current;
+	return (int)ctx->current;
+}
+
+size_t coap_next_block(const struct coap_packet *cpkt,
+		       struct coap_block_context *ctx)
+{
+	enum coap_option_num option;
+	int ret;
+
+	option = is_request(cpkt) ? COAP_OPTION_BLOCK1 : COAP_OPTION_BLOCK2;
+	ret = coap_next_block_for_option(cpkt, ctx, option);
+
+	return MAX(ret, 0);
 }
 
 int coap_pending_init(struct coap_pending *pending,
