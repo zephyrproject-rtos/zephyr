@@ -1,0 +1,35 @@
+# Bluetooth Audio - Object transfer configuration options
+
+#
+# Copyright (c) 2020 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+#### Object Transfer Service Client ################################
+
+config BT_OTC
+	bool "Object Transfer Service Client Support"
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	default n
+	help
+	  This option enables support for the Object Transfer Service Client.
+
+if BT_OTC
+
+config BT_DEBUG_OTC
+	bool "Object Transfer Client debug"
+# TODO: Remove dependency on BT_AUDIO_DEBUG when moved out of the audio directory
+	depends on BT_AUDIO_DEBUG
+	depends on BT_OTC
+	help
+	  Use this option to enable Object Transfer Client debug logs for the
+	  Bluetooth Audio functionality.
+
+endif # BTC
+
+endif # BT_AUDIO
