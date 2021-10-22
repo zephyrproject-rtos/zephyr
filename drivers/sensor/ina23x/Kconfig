@@ -10,8 +10,21 @@ config INA23X
 
 if INA23X
 
+choice
+	prompt "VARIANT"
+	default INA23X_VARIANT_230
+
+config INA23X_VARIANT_230
+	bool "INA230"
+
+config INA23X_VARIANT_237
+	bool "INA237"
+
+endchoice
+
 config INA23X_TRIGGER
 	bool "Trigger mode"
+	depends on !INA23X_VARIANT_237
 	help
 	  Set to enable trigger mode using gpio interrupt, where
 	  interrupts are configured to line ALERT PIN.

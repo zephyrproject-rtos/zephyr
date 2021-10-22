@@ -29,15 +29,20 @@ LOG_MODULE_REGISTER(INA23X, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * @brief Macro for creating the INA23X calibration value
- *        CALIB = (5120 / (current_lsb * rshunt))
- *        NOTE: The 5120 value is a fixed value internal to the
- *              INA23X that is used to ensure scaling is properly
+ *        CALIB = (5120 / (current_lsb * rshunt)) for INA230/INA231
+ *        CALIB = ((8192 * current_lsb * rshunt) / 100) for INA237
+ *        NOTE: The 5120 and 8192 values are the fixed values internal to the
+ *              INA23X that are used to ensure scaling is properly
  *              maintained.
  *
  * @param current_lsb Value of the Current register LSB in milliamps
  * @param rshunt Shunt resistor value in milliohms
  */
- #define INA23X_CALIB(current_lsb, rshunt) (5120 / ((current_lsb) * (rshunt)))
+#ifdef CONFIG_INA23X_VARIANT_230
+	#define INA23X_CALIB(current_lsb, rshunt) (5120 / ((current_lsb) * (rshunt)))
+#else
+	#define INA23X_CALIB(current_lsb, rshunt) ((8192 * current_lsb * rshunt) / 100)
+#endif
 
 /**
  * @brief Macro to convert raw Bus voltage to millivolts when current_lsb is
@@ -46,7 +51,11 @@ LOG_MODULE_REGISTER(INA23X, CONFIG_SENSOR_LOG_LEVEL);
  * reg value read from bus voltage register
  * clsb value of current_lsb
  */
-#define INA23X_BUS_MV(reg) ((reg) * 125 / 100)
+#ifdef CONFIG_INA23X_VARIANT_230
+	#define INA23X_BUS_MV(reg) ((reg) * 125  / 100)
+#else
+	#define INA23X_BUS_MV(reg) ((reg * 3125) / 1000)
+#endif
 
 /**
  * @brief Macro to convert raw power value to milliwatts when current_lsb is
@@ -55,7 +64,29 @@ LOG_MODULE_REGISTER(INA23X, CONFIG_SENSOR_LOG_LEVEL);
  * reg value read from power register
  * clsb value of current_lsb
  */
-#define INA23X_POW_MW(reg) ((reg) * 25)
+#ifdef CONFIG_INA23X_VARIANT_230
+	#define INA23X_POW_MW(reg, current_lsb) ((reg) * 25)
+#else
+	#define INA23X_POW_MW(reg, current_lsb) ((2 * reg * current_lsb) / 10)
+#endif
+
+#ifdef CONFIG_INA23X_VARIANT_237
+static int ina23x_reg_read_24(const struct device *dev, uint8_t reg, uint32_t *val)
+{
+	const struct ina23x_config *const config = dev->config;
+	uint8_t data[3];
+	int ret;
+
+	ret = i2c_burst_read(config->bus, config->i2c_slv_addr, reg, data, 3);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*val = sys_get_be24(data);
+
+	return ret;
+}
+#endif
 
 static int ina23x_reg_read(const struct device *dev, uint8_t reg, int16_t *val)
 {
@@ -117,12 +148,21 @@ static int ina23x_channel_get(const struct device *dev,
 			 */
 			if (ina23x->current & CURRENT_SIGN_BIT) {
 				uint16_t current_mag = (~ina23x->current + 1);
-
+#ifdef CONFIG_INA23X_VARIANT_230
 				val->val1 = -(current_mag / 1000U);
 				val->val2 = -(current_mag % 1000) * 1000;
+#else
+				val->val1 = -(current_mag / 10000U);
+				val->val2 = -(current_mag % 10000) * 100;
+#endif
 			} else {
+#ifdef CONFIG_INA23X_VARIANT_230
 				val->val1 = ina23x->current / 1000U;
 				val->val2 = (ina23x->current % 1000) * 1000;
+#else
+				val->val1 = ina23x->current / 10000U;
+				val->val2 = (ina23x->current % 10000) * 100;
+#endif
 			}
 		} else {
 			val->val1 = ina23x->current;
@@ -132,8 +172,15 @@ static int ina23x_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_POWER:
 		if (config->current_lsb == CURRENT_LSB_1MA) {
-			val->val1 = INA23X_POW_MW(ina23x->power) / 1000U;
-			val->val2 = (INA23X_POW_MW(ina23x->power) % 1000) * 1000;
+#ifdef CONFIG_INA23X_VARIANT_230
+			val->val1 = INA23X_POW_MW(ina23x->power, config->current_lsb) / 1000U;
+			val->val2 = (INA23X_POW_MW(ina23x->power,
+						   config->current_lsb) % 1000) * 1000;
+#else
+			val->val1 = INA23X_POW_MW(ina23x->power, config->current_lsb) / 10000U;
+			val->val2 = (INA23X_POW_MW(ina23x->power,
+						   config->current_lsb) % 10000) * 100;
+#endif
 		} else {
 			val->val1 = ina23x->power;
 			val->val2 = 0;
@@ -183,7 +230,11 @@ static int ina23x_sample_fetch(const struct device *dev,
 	}
 
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_POWER)) {
+#ifdef CONFIG_INA23X_VARIANT_230
 		ret = ina23x_reg_read(dev, INA23X_REG_POWER, &ina23x->power);
+#else
+		ret = ina23x_reg_read_24(dev, INA23X_REG_POWER, &ina23x->power);
+#endif
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
 			return ret;
@@ -294,8 +345,15 @@ static int ina23x_init(const struct device *dev)
 		return ret;
 	}
 
-	cal = INA23X_CALIB(config->current_lsb, config->rshunt);
+#ifdef CONFIG_INA23X_VARIANT_237
+	ret = ina23x_reg_write(dev, INA23X_ADC_CONFIG, config->adc_config);
+	if (ret < 0) {
+		LOG_ERR("Failed to write ADC configuration register!");
+		return ret;
+	}
+#endif
 
+	cal = INA23X_CALIB(config->current_lsb, config->rshunt);
 	ret = ina23x_reg_write(dev, INA23X_REG_CALIB, cal);
 	if (ret < 0) {
 		LOG_ERR("Failed to write calibration register!");
@@ -357,6 +415,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	    \
 		.i2c_slv_addr = DT_INST_REG_ADDR(inst),		    \
 		.config = DT_INST_PROP(inst, config),		    \
+		.adc_config = DT_INST_PROP_OR(inst, adc_config, 0), \
 		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
 		.rshunt = DT_INST_PROP(inst, rshunt),		    \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios), \
