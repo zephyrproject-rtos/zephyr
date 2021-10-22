@@ -1008,7 +1008,10 @@ static int update_control_block1(struct coap_block_context *ctx,
 	}
 
 	ctx->block_size = GET_BLOCK_SIZE(block);
-	ctx->total_size = size;
+
+	if (size >= 0) {
+		ctx->total_size = size;
+	}
 
 	return 0;
 }
@@ -1046,16 +1049,13 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
 	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
 
-	size1 = size1 == -ENOENT ? 0 : size1;
-	size2 = size2 == -ENOENT ? 0 : size2;
-
 	if (is_request(cpkt)) {
 		r = update_control_block2(ctx, block2, size2);
 		if (r) {
 			return r;
 		}
 
-		return update_descriptive_block(ctx, block1, size1);
+		return update_descriptive_block(ctx, block1, size1 == -ENOENT ? 0 : size1);
 	}
 
 	r = update_control_block1(ctx, block1, size1);
@@ -1063,7 +1063,7 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 		return r;
 	}
 
-	return update_descriptive_block(ctx, block2, size2);
+	return update_descriptive_block(ctx, block2, size2 == -ENOENT ? 0 : size2);
 }
 
 size_t coap_next_block(const struct coap_packet *cpkt,
