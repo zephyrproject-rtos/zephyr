@@ -378,7 +378,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (read < 0) {
-			shell_error(shell, "Failed to read from file %s (err: %d)",
+			shell_error(shell, "Failed to read from file %s (err: %zd)",
 				path, read);
 		}
 
