@@ -353,16 +353,16 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 	rxlev = ATOI(argv[0], 0, "rxlev");
 
 	if (rsrp >= 0 && rsrp <= 97) {
-		gsm.context.data_rssi = -140 + (rsrp - 1);
-		LOG_INF("RSRP: %d", gsm.context.data_rssi);
+		minfo.mdm_rssi = -140 + (rsrp - 1);
+		LOG_INF("RSRP: %d", minfo.mdm_rssi);
 	} else if (rscp >= 0 && rscp <= 96) {
-		gsm.context.data_rssi = -120 + (rscp - 1);
-		LOG_INF("RSCP: %d", gsm.context.data_rssi);
+		minfo.mdm_rssi = -120 + (rscp - 1);
+		LOG_INF("RSCP: %d", minfo.mdm_rssi);
 	} else if (rxlev >= 0 && rxlev <= 63) {
-		gsm.context.data_rssi = -110 + (rxlev - 1);
-		LOG_INF("RSSI: %d", gsm.context.data_rssi);
+		minfo.mdm_rssi = -110 + (rxlev - 1);
+		LOG_INF("RSSI: %d", minfo.mdm_rssi);
 	} else {
-		gsm.context.data_rssi = GSM_RSSI_INVALID;
+		minfo.mdm_rssi = GSM_RSSI_INVALID;
 		LOG_INF("RSRP/RSCP/RSSI not known");
 	}
 
@@ -382,7 +382,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 			rssi = GSM_RSSI_INVALID;
 		}
 
-		gsm.context.data_rssi = rssi;
+		minfo.mdm_rssi = rssi;
 		LOG_INF("RSSI: %d", rssi);
 	}
 
@@ -697,8 +697,8 @@ attaching:
 		/* Read connection quality (RSSI) before PPP carrier is ON */
 		rssi_handler(NULL);
 
-		if (!(gsm->context.data_rssi && gsm->context.data_rssi != GSM_RSSI_INVALID &&
-			gsm->context.data_rssi < GSM_RSSI_MAXVAL)) {
+		if (!(minfo.mdm_rssi && minfo.mdm_rssi != GSM_RSSI_INVALID &&
+			minfo.mdm_rssi < GSM_RSSI_MAXVAL)) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
 			if (gsm->rssi_retries-- > 0) {
@@ -1113,6 +1113,7 @@ static int gsm_init(const struct device *dev)
 	gsm->context.data_imsi = minfo.mdm_imsi;
 	gsm->context.data_iccid = minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
+	gsm->context.data_rssi = minfo.mdm_rssi;
 #endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->context.is_automatic_oper = false;

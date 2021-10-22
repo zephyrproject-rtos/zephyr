@@ -23,6 +23,7 @@ struct gsm_ppp_modem_info {
 	char mdm_imsi[GSM_PPP_MDM_IMSI_LENGTH];
 	char mdm_iccid[GSM_PPP_MDM_ICCID_LENGTH];
 #endif
+	int  mdm_rssi;
 };
 
 /** @cond INTERNAL_HIDDEN */
