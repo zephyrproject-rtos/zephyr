@@ -216,11 +216,11 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -1;
 	}
 
-	LOG_DBG("data[35] = 0x%02x", data[35]-2);
-	/*if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
+	//LOG_DBG("data[35] = 0x%02x", data[35]-2);
+	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
 		return -EIO;
-	}*/
+	}
 
 	length_read = data[35] - 4; // Subtracting addresses
 
