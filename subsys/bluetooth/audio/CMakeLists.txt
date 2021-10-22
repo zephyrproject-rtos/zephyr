@@ -35,3 +35,5 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)
