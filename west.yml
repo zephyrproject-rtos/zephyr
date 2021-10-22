@@ -216,7 +216,7 @@ manifest:
       groups:
         - tee
     - name: wasm-micro-runtime
-      revision: 32242988ed558274d40b2cb7be207b1993bfe9fb
+      revision: 6b3a93937083d4c2bf3871d469b1df251248efa3
       path: modules/lib/wasm-micro-runtime
       groups:
         - tee

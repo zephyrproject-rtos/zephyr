@@ -15,7 +15,6 @@ Directory structure
 .. code-block:: console
 
     wasm_app_manager
-    ├── build.sh
     ├── CMakeLists.txt
     ├── prj.conf
     ├── README.md
@@ -29,10 +28,8 @@ Directory structure
         └── timer.c
 
 
-- build.sh
-  The script to build all binaries.
 - CMakeLists.txt
-  CMake file used to build the wasm_app_manager zephyr project.
+  CMake file used to build the zephyr project, host tool, and wasm app binaries.
 - prj.conf
   Zephy project configuration file.
 - README.md
@@ -80,20 +77,19 @@ Since you may install multiple wasm applications, it is recommended that RAM SIZ
 
 Build all binaries
 ******************
-Execute the build.sh script then all binaries including wasm application files would be generated in 'out' directory.
 
 .. code-block:: console
 
-    ./build.sh
-    By default the board nucleo_f767zi is used. If you want to build Zephyr for other boards, please run:
-    ./build.sh <your_board_name>
+    cd <zephyr_root>
+    west build -p auto -b nucleo_f767zi samples/wasm_micro_runtime/wasm_app_manager
+    By default the board nucleo_f767zi is supported. If you want to build Zephyr for other boards, please config the host_interface in src/main.c.
 
 Out directory structure
 ***********************
 
 .. code-block:: console
 
-    out/
+    build/
     ├── host_tool
     ├── zephyr-build/zephyr
     │   └── zephyr.elf
@@ -141,13 +137,15 @@ Run the scenario
 
 .. code-block:: console
 
-    $ cd ./out/zephyr-build/
+    $ cd <zephyr_root>
 
 
 - Startup the board and falsh zephyr image and you would see "App Manager started." on board's terminal.
 
 .. code-block:: console
 
+    $ west build -t run
+    or
     $ ninja flash
 
 
