@@ -235,6 +235,9 @@ manifest:
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: zscilib
+      path: modules/lib/zscilib
+      revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34
 
   group-filter:
     - -ci
