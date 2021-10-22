@@ -16,9 +16,11 @@ LOG_MODULE_DECLARE(power);
 static const struct pm_state_info pm_min_residency[] =
 	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	int i;
+
+	ARG_UNUSED(cpu);
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
 		uint32_t min_residency, exit_latency;
