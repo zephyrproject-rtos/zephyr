@@ -21,8 +21,8 @@
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
 static bool post_ops_done = true;
-static struct pm_state_info z_power_state;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
+static struct pm_state_info z_power_states[CONFIG_MP_NUM_CPUS];
 static struct k_spinlock pm_notifier_lock;
 
 #ifdef CONFIG_PM_STATS
@@ -202,7 +202,7 @@ static inline void pm_state_notify(bool entering_state)
 		}
 
 		if (callback) {
-			callback(z_power_state.state);
+			callback(z_power_states[_current_cpu->id].state);
 		}
 	}
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
@@ -227,7 +227,7 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = true;
-		exit_pos_ops(z_power_state);
+		exit_pos_ops(z_power_states[_current_cpu->id]);
 		pm_state_notify(false);
 	}
 }
@@ -242,14 +242,14 @@ void pm_power_state_force(struct pm_state_info info)
 	}
 
 	(void)arch_irq_lock();
-	z_power_state = info;
-	apost_ops_done = false;
+	z_power_states[_current_cpu->id] = info;
+	post_ops_done = false;
 	pm_state_notify(true);
 
 	k_sched_lock();
 	pm_start_timer();
 	/* Enter power state */
-	pm_state_set(z_power_state);
+	pm_state_set(info);
 	pm_stop_timer();
 
 	pm_system_resume();
@@ -262,19 +262,22 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 	LOG_DBG("Some devices didn't enter suspend state!");
 	pm_resume_devices();
 
-	z_power_state.state = PM_STATE_ACTIVE;
+	z_power_states[_current_cpu->id].state = PM_STATE_ACTIVE;
 	return PM_STATE_ACTIVE;
 }
 #endif
 
 enum pm_state pm_system_suspend(int32_t ticks)
 {
+	uint8_t id = _current_cpu->id;
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
-	z_power_state = pm_policy_next_state(ticks);
-	if (z_power_state.state == PM_STATE_ACTIVE) {
+	z_power_states[id] = pm_policy_next_state(ticks);
+	if (z_power_states[id].state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
-		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, z_power_state.state);
-		return z_power_state.state;
+		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
+				   z_power_states[id].state);
+		return false;
 	}
 	post_ops_done = false;
 
@@ -283,8 +286,8 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		 * Just a sanity check in case the policy manager does not
 		 * handle this error condition properly.
 		 */
-		__ASSERT(z_power_state.min_residency_us >=
-			z_power_state.exit_latency_us,
+		__ASSERT(z_power_states[id].min_residency_us >=
+			z_power_states[id].exit_latency_us,
 			"min_residency_us < exit_latency_us");
 
 		/*
@@ -292,17 +295,19 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
 		z_set_timeout_expiry(ticks -
-		     k_us_to_ticks_ceil32(z_power_state.exit_latency_us), true);
+		     k_us_to_ticks_ceil32(
+			     z_power_states[id].exit_latency_us),
+				     true);
 	}
 
 #if CONFIG_PM_DEVICE
 	bool should_resume_devices = false;
 
-	if (z_power_state.state != PM_STATE_RUNTIME_IDLE) {
+	if (z_power_states[id].state != PM_STATE_RUNTIME_IDLE) {
 		if (pm_suspend_devices()) {
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
-				ticks, _handle_device_abort(z_power_state));
-			return _handle_device_abort(z_power_state);
+				ticks, _handle_device_abort(z_power_states[id]));
+			return _handle_device_abort(z_power_states[id]);
 		}
 		should_resume_devices = true;
 	}
@@ -320,7 +325,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	pm_start_timer();
 	/* Enter power state */
 	pm_state_notify(true);
-	pm_state_set(z_power_state);
+	pm_state_set(z_power_states[id]);
 	pm_stop_timer();
 
 	/* Wake up sequence starts here */
@@ -330,11 +335,12 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		pm_resume_devices();
 	}
 #endif
-	pm_stats_update(z_power_state.state);
+	pm_stats_update(z_power_states[id].state);
 	pm_system_resume();
 	k_sched_unlock();
-	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, z_power_state.state);
-	return z_power_state.state;
+	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
+				   z_power_states[id].state);
+	return z_power_states[id].state;
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)
@@ -361,5 +367,5 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 
 const struct pm_state_info pm_power_state_next_get(void)
 {
-	return z_power_state;
+	return z_power_states[_current_cpu->id];
 }
