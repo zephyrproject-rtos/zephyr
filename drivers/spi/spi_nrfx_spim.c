@@ -42,8 +42,9 @@ struct spi_nrfx_data {
 	size_t  chunk_len;
 	bool    busy;
 	bool    initialized;
-#if SPI_BUFFER_IN_RAM
-	uint8_t *buffer;
+#ifdef SPI_BUFFER_IN_RAM
+	uint8_t *tx_buffer;
+	uint8_t *rx_buffer;
 #endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool    anomaly_58_workaround_active;
@@ -312,27 +313,40 @@ static void transfer_next_chunk(const struct device *dev)
 		nrfx_spim_xfer_desc_t xfer;
 		nrfx_err_t result;
 		const uint8_t *tx_buf = ctx->tx_buf;
+		uint8_t *rx_buf = ctx->rx_buf;
 
 		if (chunk_len > dev_config->max_chunk_len) {
 			chunk_len = dev_config->max_chunk_len;
 		}
 
-#if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
+#ifdef SPI_BUFFER_IN_RAM
 		if (spi_context_tx_buf_on(ctx) &&
 		    !nrf_dma_accessible_check(&dev_config->spim.p_reg, tx_buf)) {
+
 			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
 				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
 			}
 
-			memcpy(dev_data->buffer, tx_buf, chunk_len);
-			tx_buf = dev_data->buffer;
+			memcpy(dev_data->tx_buffer, tx_buf, chunk_len);
+			tx_buf = dev_data->tx_buffer;
+		}
+
+		if (spi_context_rx_buf_on(ctx) &&
+		    !nrf_dma_accessible_check(&dev_config->spim.p_reg, rx_buf)) {
+
+			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
+				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
+			}
+
+			rx_buf = dev_data->rx_buffer;
 		}
 #endif
+
 		dev_data->chunk_len = chunk_len;
 
 		xfer.p_tx_buffer = tx_buf;
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
-		xfer.p_rx_buffer = ctx->rx_buf;
+		xfer.p_rx_buffer = rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
@@ -376,6 +390,15 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 		anomaly_58_workaround_clear(dev_data);
+#endif
+#ifdef SPI_BUFFER_IN_RAM
+		if (spi_context_rx_buf_on(&dev_data->ctx) &&
+		    p_event->xfer_desc.p_rx_buffer != NULL &&
+		    p_event->xfer_desc.p_rx_buffer != dev_data->ctx.rx_buf) {
+			(void)memcpy(dev_data->ctx.rx_buf,
+				     dev_data->rx_buffer,
+				     dev_data->chunk_len);
+		}
 #endif
 		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
 		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
@@ -603,7 +626,10 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
 	}								       \
 	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
-		(static uint8_t spim_##idx##_buffer			       \
+		(static uint8_t spim_##idx##_tx_buffer			       \
+			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
+			SPIM_MEMORY_SECTION(idx);			       \
+		 static uint8_t spim_##idx##_rx_buffer			       \
 			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
 			SPIM_MEMORY_SECTION(idx);))			       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
@@ -611,7 +637,8 @@ static int spi_nrfx_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
 		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
-			(.buffer = spim_##idx##_buffer,))		       \
+			(.tx_buffer = spim_##idx##_tx_buffer,		       \
+			 .rx_buffer = spim_##idx##_rx_buffer,))		       \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
@@ -639,7 +666,7 @@ static int spi_nrfx_init(const struct device *dev)
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPIM(idx), wake_gpios,     \
 						    WAKE_PIN_NOT_USED),	       \
 	};								       \
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIM(idx), wake_gpios) ||	       \
+	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
