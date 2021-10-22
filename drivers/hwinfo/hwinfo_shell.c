@@ -22,11 +22,11 @@ static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv
 		shell_error(shell, "Not supported by hardware");
 		return -ENOTSUP;
 	} else if (length < 0) {
-		shell_error(shell, "Error: %d", length);
+		shell_error(shell, "Error: %zd", length);
 		return length;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Length: %d\n", length);
+	shell_fprintf(shell, SHELL_NORMAL, "Length: %zd\n", length);
 	shell_fprintf(shell, SHELL_NORMAL, "ID: 0x");
 
 	for (i = 0 ; i < length ; i++) {

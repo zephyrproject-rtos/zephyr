@@ -50,6 +50,7 @@ static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 		gpio_ll_pullup_dis(&GPIO, pin);
 		break;
 	case PINMUX_PULLUP_ENABLE:
+		gpio_ll_pulldown_dis(&GPIO, pin);
 		gpio_ll_pullup_en(&GPIO, pin);
 		break;
 	default:

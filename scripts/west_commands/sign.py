@@ -400,9 +400,11 @@ class RimageSigner(Signer):
             return 'icl'
         if 'intel_adsp_cavs25' in board:
             return 'tgl'
-        if 'nxp_adsp_imx8' in board:
-            return 'imx8'
+        if 'nxp_adsp_imx8m' in board:
+            return 'imx8m'
         if 'nxp_adsp_imx8x' in board:
+            return 'imx8'
+        if 'nxp_adsp_imx8' in board:
             return 'imx8'
 
         log.die('Signing not supported for board ' + board)
@@ -433,7 +435,7 @@ class RimageSigner(Signer):
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
 
-        if 'imx8' in target:
+        if target in ('imx8', 'imx8m'):
             kernel = str(b / 'zephyr' / 'zephyr.elf')
             out_bin = str(b / 'zephyr' / 'zephyr.ri')
             out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
@@ -466,14 +468,11 @@ class RimageSigner(Signer):
         else:
             extra_ri_args = ['-i', '3', '-e']
 
-        if 'imx8' in target:
-            sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
-                         [kernel])
-        else:
-            sign_base = ([tool_path] + args.tool_args +
-                         ['-o', out_bin] + conf_path_cmd + extra_ri_args +
-                         [bootloader, kernel])
+        components = [ ] if (target in ('imx8', 'imx8m')) else [ bootloader ]
+        components += [ kernel ]
+        sign_base = ([tool_path] + args.tool_args +
+                     ['-o', out_bin] + conf_path_cmd + extra_ri_args +
+                     components)
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))

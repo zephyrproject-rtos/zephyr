@@ -454,6 +454,7 @@ config BT_CTLR_ADV_EXT
 
 config BT_CTLR_ADV_EXT
 	prompt "LE Advertising Extensions [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 if BT_CTLR_ADV_EXT
 
@@ -490,6 +491,7 @@ config BT_CTLR_ADV_PERIODIC
 
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
@@ -502,6 +504,7 @@ config BT_CTLR_SYNC_PERIODIC
 
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 	bool "LE Periodic Advertiser List support"
@@ -538,6 +541,7 @@ config BT_CTLR_ADV_ISO
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
@@ -550,6 +554,7 @@ config BT_CTLR_SYNC_ISO
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_BROADCAST_ISO
 	bool
@@ -584,6 +589,7 @@ endif # BT_CTLR_ADV_EXT
 
 config BT_CTLR_SET_HOST_FEATURE
 	bool "LE Set Host Feature Command [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enables optional LE Set Host Feature Command
 
@@ -597,6 +603,7 @@ config BT_CTLR_CENTRAL_ISO
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select BT_CTLR_SET_HOST_FEATURE
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
@@ -608,6 +615,7 @@ config BT_CTLR_PERIPHERAL_ISO
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select BT_CTLR_SET_HOST_FEATURE
+	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
 config BT_CTLR_CONN_ISO
 	bool

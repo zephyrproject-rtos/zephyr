@@ -843,6 +843,7 @@ Documentation:
     collaborators:
         - avisconti
         - gmarull
+        - teburd
     files:
         - drivers/sensor/
         - include/drivers/sensor.h
@@ -1051,6 +1052,19 @@ MAINTAINERS file:
     description: >-
         Zephyr Maintainers File
 
+Mbed TLS:
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - ceolin
+    files:
+        - modules/mbedtls/
+        - tests/crypto/mbedtls/
+    labels:
+        - "area: Crypto / RNG"
+    description: >-
+        Mbed TLS module implementing the PSA Crypto API and TLS.
+
 MCU Manager:
     status: maintained
     maintainers:
@@ -1241,6 +1255,7 @@ Power management:
         - nashif
         - mengxianglinx
         - gmarull
+        - teburd
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
@@ -1569,6 +1584,8 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - teburd
     files:
         - subsys/tracing/
         - include/tracing/

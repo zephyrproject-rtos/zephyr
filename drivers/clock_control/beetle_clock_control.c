@@ -247,5 +247,5 @@ DEVICE_DEFINE(clock_control_beetle, CONFIG_ARM_CLOCK_CONTROL_DEV_NAME,
 		    NULL,
 		    NULL, &beetle_cc_cfg,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_BEETLE_DEVICE_INIT_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &beetle_clock_control_api);

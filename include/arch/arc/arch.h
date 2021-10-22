@@ -279,22 +279,51 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
 	((attr) & (AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE))
 
-#if CONFIG_ARC_MPU_VER == 2
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT(!(((size) & ((size) - 1))) && (size) >= Z_ARC_MPU_ALIGN \
-		 && !((uint32_t)(start) & ((size) - 1)), \
-		"the size of the partition must be power of 2" \
-		" and greater than or equal to the mpu adddress alignment." \
-		"start address of the partition must align with size.")
+/*
+ * BUILD_ASSERT in case of MWDT is a bit more picky in performing compile-time check.
+ * For example it can't evaluate variable address at build time like GCC toolchain can do.
+ * That's why we provide custom _ARCH_MEM_PARTITION_ALIGN_CHECK implementation for MWDT toolchain
+ * with additional check for arguments availability in compile time.
+ */
+#ifdef __CCAC__
+#define IS_BUILTIN_MWDT(val) __builtin_constant_p((uintptr_t)(val))
+#if CONFIG_ARC_MPU_VER == 2 || CONFIG_ARC_MPU_VER == 3 || CONFIG_ARC_MPU_VER == 6
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? !((size) & ((size) - 1)) : 1,			\
+		"partition size must be power of 2");						\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? (size) >= Z_ARC_MPU_ALIGN : 1,			\
+		"partition size must be >= mpu address alignment.");				\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? IS_BUILTIN_MWDT(start) ?				\
+		!((uintptr_t)(start) & ((size) - 1)) : 1 : 1,					\
+		"partition start address must align with size.")
 #elif CONFIG_ARC_MPU_VER == 4
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT((size) % Z_ARC_MPU_ALIGN == 0 && \
-		     (size) >= Z_ARC_MPU_ALIGN && \
-		     (uint32_t)(start) % Z_ARC_MPU_ALIGN == 0, \
-		     "the size of the partition must align with 32" \
-		     " and greater than or equal to 32." \
-		     "start address of the partition must align with 32.")
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? (size) % Z_ARC_MPU_ALIGN == 0 : 1,			\
+		"partition size must align with " STRINGIFY(Z_ARC_MPU_ALIGN));			\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(size) ? (size) >= Z_ARC_MPU_ALIGN : 1,			\
+		"partition size must be >= " STRINGIFY(Z_ARC_MPU_ALIGN));			\
+	BUILD_ASSERT(IS_BUILTIN_MWDT(start) ? (uintptr_t)(start) % Z_ARC_MPU_ALIGN == 0 : 1,	\
+		"partition start address must align with " STRINGIFY(Z_ARC_MPU_ALIGN))
 #endif
+#else /* __CCAC__ */
+#if CONFIG_ARC_MPU_VER == 2 || CONFIG_ARC_MPU_VER == 3 || CONFIG_ARC_MPU_VER == 6
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
+	BUILD_ASSERT(!((size) & ((size) - 1)),							\
+		"partition size must be power of 2");						\
+	BUILD_ASSERT((size) >= Z_ARC_MPU_ALIGN,							\
+		"partition size must be >= mpu address alignment.");				\
+	BUILD_ASSERT(!((uintptr_t)(start) & ((size) - 1)),					\
+		"partition start address must align with size.")
+#elif CONFIG_ARC_MPU_VER == 4
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)						\
+	BUILD_ASSERT((size) % Z_ARC_MPU_ALIGN == 0,						\
+		"partition size must align with " STRINGIFY(Z_ARC_MPU_ALIGN));			\
+	BUILD_ASSERT((size) >= Z_ARC_MPU_ALIGN,							\
+		"partition size must be >= " STRINGIFY(Z_ARC_MPU_ALIGN));			\
+	BUILD_ASSERT((uintptr_t)(start) % Z_ARC_MPU_ALIGN == 0,					\
+		"partition start address must align with " STRINGIFY(Z_ARC_MPU_ALIGN))
+#endif
+#endif /* __CCAC__ */
 #endif /* CONFIG_ARC_MPU*/
 
 /* Typedef for the k_mem_partition attribute*/

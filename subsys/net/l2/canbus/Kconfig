@@ -5,6 +5,7 @@ config NET_L2_CANBUS
 	bool "Enable CANBUS L2 layer [EXPERIMENTAL]"
 	depends on CAN_NET
 	select NET_6LO
+	select EXPERIMENTAL
 	help
 	  Add a CANBUS L2 layer driver. This is the layer for IPv6 over CAN
 	  (6loCAN). It uses IPHC to compress the IP header and ISO-TP for

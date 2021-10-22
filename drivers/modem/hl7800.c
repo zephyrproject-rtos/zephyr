@@ -313,6 +313,8 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #else
 #define MODEM_HL7800_ADDRESS_FAMILY "IPV6"
 #endif
+#define MDM_HL7800_SOCKET_AF_IPV4 0
+#define MDM_HL7800_SOCKET_AF_IPV6 1
 
 #define SET_RAT_M1_CMD_LEGACY "AT+KSRAT=0"
 #define SET_RAT_NB1_CMD_LEGACY "AT+KSRAT=1"
@@ -5116,26 +5118,23 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 	int ret;
 	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"" IPV6_ADDR_FORMAT "\",#####")];
 	int dst_port = -1;
+	int af;
 
-#if defined(CONFIG_NET_IPV6)
 	if (sock->dst.sa_family == AF_INET6) {
+		af = MDM_HL7800_SOCKET_AF_IPV6;
 		dst_port = net_sin6(&sock->dst)->sin6_port;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (sock->dst.sa_family == AF_INET) {
+	} else if (sock->dst.sa_family == AF_INET) {
+		af = MDM_HL7800_SOCKET_AF_IPV4;
 		dst_port = net_sin(&sock->dst)->sin_port;
-	} else
-#endif
-	{
+	} else {
 		return -EINVAL;
 	}
 
 	/* socket # needs assigning */
 	sock->socket_id = MDM_MAX_SOCKETS + 1;
 
-	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u", 1, 0,
-		 hl7800_sprint_ip_addr(&sock->dst), dst_port);
+	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d", 1, 0,
+		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af);
 	ret = send_at_cmd(sock, cmd_cfg, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KTCPCFG ret:%d", ret);
@@ -5158,12 +5157,22 @@ done:
 static int configure_UDP_socket(struct hl7800_socket *sock)
 {
 	int ret = 0;
+	char cmd[sizeof("AT+KUDPCFG=1,0,,,,,0")];
+	int af;
 
 	/* socket # needs assigning */
 	sock->socket_id = MDM_MAX_SOCKETS + 1;
 
-	ret = send_at_cmd(sock, "AT+KUDPCFG=1,0", MDM_CMD_SEND_TIMEOUT, 0,
-			  false);
+	if (sock->family == AF_INET) {
+		af = MDM_HL7800_SOCKET_AF_IPV4;
+	} else if (sock->family == AF_INET6) {
+		af = MDM_HL7800_SOCKET_AF_IPV6;
+	} else {
+		return -EINVAL;
+	}
+
+	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d", af);
+	ret = send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KUDPCFG ret:%d", ret);
 		goto done;

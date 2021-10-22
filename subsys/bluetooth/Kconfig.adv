@@ -16,6 +16,7 @@ config BT_LIM_ADV_TIMEOUT
 
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Select this to enable Extended Advertising API support.
 	  This enables support for advertising with multiple advertising sets,
@@ -45,6 +46,7 @@ config BT_EXT_ADV_MAX_ADV_SET
 
 config BT_PER_ADV
 	bool "Periodic Advertising and Scanning support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Select this to enable Periodic Advertising API support. This allows
 	  the device to send advertising data periodically at deterministic
@@ -54,6 +56,7 @@ config BT_PER_ADV
 config BT_PER_ADV_SYNC
 	bool "Periodic advertising sync support [EXPERIMENTAL]"
 	depends on BT_OBSERVER
+	select EXPERIMENTAL
 	help
 	  Select this to enable Periodic Advertising Sync API support.
 	  Syncing with a periodic advertiser allows the device to periodically

@@ -12,6 +12,7 @@
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <soc/ledc_reg.h>
+#include <drivers/gpio/gpio_esp32.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -88,23 +89,6 @@ static inline void set_mask32(uint32_t v, uint32_t mem_addr)
 static inline void clear_mask32(uint32_t v, uint32_t mem_addr)
 {
 	sys_write32(sys_read32(mem_addr) & ~v, mem_addr);
-}
-
-static const char *esp32_get_gpio_for_pin(int pin)
-{
-	if (pin < 32) {
-#if defined(CONFIG_GPIO_ESP32_0)
-		return DT_INST_LABEL(0);
-#else
-		return NULL;
-#endif /* CONFIG_GPIO_ESP32_0 */
-	}
-
-#if defined(CONFIG_GPIO_ESP32_1)
-	return DT_INST_LABEL(1);
-#else
-	return NULL;
-#endif /* CONFIG_GPIO_ESP32_1 */
 }
 /* end Remove after PR 5113 */
 
@@ -225,7 +209,7 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 	pwm_led_esp32_bind_channel_timer(speed_mode, channel, timer);
 
 	/* Set pin */
-	device_name = esp32_get_gpio_for_pin(pin);
+	device_name = gpio_esp32_get_gpio_for_pin(pin);
 	if (!device_name) {
 		return -EINVAL;
 	}

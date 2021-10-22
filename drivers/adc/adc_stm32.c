@@ -1071,7 +1071,15 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &adc_stm32_init, NULL,				\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-		    &api_stm32_driver_api);
+		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
+		    &api_stm32_driver_api);				\
+									\
+static void adc_stm32_cfg_func_##index(void)				\
+{									\
+	IRQ_CONNECT(DT_INST_IRQN(index),				\
+		    DT_INST_IRQ(index, priority),			\
+		    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
+	irq_enable(DT_INST_IRQN(index));				\
+}
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)

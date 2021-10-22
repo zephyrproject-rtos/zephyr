@@ -28,6 +28,14 @@
 	current-speed = <115200>;
 };
 
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
 &timer0 {
 	status = "okay";
 };
