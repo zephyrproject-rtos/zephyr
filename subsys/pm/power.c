@@ -20,7 +20,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
-static int post_ops_done = 1;
+static bool post_ops_done = true;
 static struct pm_state_info z_power_state;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 static struct k_spinlock pm_notifier_lock;
@@ -226,7 +226,7 @@ void pm_system_resume(void)
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
-		post_ops_done = 1;
+		post_ops_done = true;
 		exit_pos_ops(z_power_state);
 		pm_state_notify(false);
 	}
@@ -243,7 +243,7 @@ void pm_power_state_force(struct pm_state_info info)
 
 	(void)arch_irq_lock();
 	z_power_state = info;
-	post_ops_done = 0;
+	apost_ops_done = false;
 	pm_state_notify(true);
 
 	k_sched_lock();
@@ -276,7 +276,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, z_power_state.state);
 		return z_power_state.state;
 	}
-	post_ops_done = 0;
+	post_ops_done = false;
 
 	if (ticks != K_TICKS_FOREVER) {
 		/*
