@@ -13,3 +13,4 @@ supported:
   - arduino_spi
   - hts221
   - spi
+  - dac
