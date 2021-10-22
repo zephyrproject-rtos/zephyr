@@ -74,6 +74,8 @@ enum coap_method {
 	COAP_METHOD_PUT = 3,
 	COAP_METHOD_DELETE = 4,
 	COAP_METHOD_FETCH = 5,
+	COAP_METHOD_PATCH = 6,
+	COAP_METHOD_IPATCH = 7,
 };
 
 #define COAP_REQUEST_MASK 0x07
@@ -136,6 +138,7 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_NOT_ALLOWED = coap_make_response_code(4, 5),
 	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = coap_make_response_code(4, 6),
 	COAP_RESPONSE_CODE_INCOMPLETE = coap_make_response_code(4, 8),
+	COAP_RESPONSE_CODE_CONFLICT = coap_make_response_code(4, 9),
 	COAP_RESPONSE_CODE_PRECONDITION_FAILED = coap_make_response_code(4, 12),
 	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = coap_make_response_code(4, 13),
 	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
@@ -166,6 +169,8 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,
 	COAP_CONTENT_FORMAT_APP_EXI = 47,
 	COAP_CONTENT_FORMAT_APP_JSON = 50,
+	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,
+	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,
 	COAP_CONTENT_FORMAT_APP_CBOR = 60,
 };
 
@@ -205,7 +210,7 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
  */
 struct coap_resource {
 	/** Which function to be called for each CoAP method */
-	coap_method_t get, post, put, del, fetch;
+	coap_method_t get, post, put, del, fetch, patch, ipatch;
 	coap_notify_t notify;
 	const char * const *path;
 	void *user_data;
