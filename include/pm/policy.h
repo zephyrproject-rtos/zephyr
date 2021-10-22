@@ -22,11 +22,12 @@ extern "C" {
  * idle and returns the most appropriate state based on the number of
  * ticks to the next event.
  *
+ * @param cpu CPU index.
  * @param ticks The number of ticks to the next scheduled event.
  *
- * @return The power state the system should use.
+ * @return The power state the system should use for the given cpu.
  */
-struct pm_state_info pm_policy_next_state(int32_t ticks);
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
 /** @endcond */
 
