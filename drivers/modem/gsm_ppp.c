@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include <sys/ring_buffer.h>
 #include <sys/util.h>
 #include <net/ppp.h>
-#include <drivers/gsm_ppp.h>
+#include <drivers/modem/gsm_ppp.h>
 #include <drivers/uart.h>
 #include <drivers/console/uart_mux.h>
 
