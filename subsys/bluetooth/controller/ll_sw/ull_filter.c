@@ -655,10 +655,9 @@ struct lll_filter *ull_filter_lll_get(bool filter)
 #endif
 }
 
-uint32_t ull_filter_lll_fal_match(const struct lll_filter *const filter,
-				  uint8_t addr_type,
-				  const uint8_t *const addr,
-				  uint8_t *devmatch_id)
+uint8_t ull_filter_lll_fal_match(const struct lll_filter *const filter,
+				 uint8_t addr_type, const uint8_t *const addr,
+				 uint8_t *devmatch_id)
 {
 	*devmatch_id = filter_find(filter, addr_type, addr);
 

@@ -263,7 +263,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	}
 
 	/* Calculate the aux offset from start of the scan window */
-	aux_offset_us = (uint32_t) aux_ptr->offs * window_size_us;
+	aux_offset_us = (uint32_t)aux_ptr->offs * window_size_us;
 
 	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
@@ -276,7 +276,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	trx_cnt = 0U;
 
 	/* Setup radio for auxiliary PDU scan */
-	radio_phy_set(phy_aux, 1);
+	radio_phy_set(phy_aux, PHY_FLAGS_S8);
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (phy_aux << 1));
 	lll_chan_set(aux_ptr->chan_idx);
 
@@ -298,13 +298,13 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	} else if (ull_filter_lll_rl_enabled()) {
-		struct lll_filter *filter = ull_filter_lll_get(
+		struct lll_filter *fal = ull_filter_lll_get(
 			!!(lll->filter_policy & 0x1));
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
-		radio_filter_configure(filter->enable_bitmask,
-				       filter->addr_type_bitmask,
-				       (uint8_t *) filter->bdaddr);
+		radio_filter_configure(fal->enable_bitmask,
+				       fal->addr_type_bitmask,
+				       (uint8_t *)fal->bdaddr);
 
 		radio_ar_configure(count, irks, (phy_aux << 2) | BIT(1));
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -314,14 +314,14 @@ void lll_scan_aux_isr_aux_setup(void *param)
 
 		radio_filter_configure(fal->enable_bitmask,
 				       fal->addr_type_bitmask,
-				       (uint8_t *) fal->bdaddr);
+				       (uint8_t *)fal->bdaddr);
 	}
 
 	/* Setup radio rx on micro second offset. Note that radio_end_us stores
 	 * PDU start time in this case.
 	 */
 	aux_start_us = ftr->radio_end_us + aux_offset_us;
-	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, 1);
+	aux_start_us -= lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 	radio_tmr_start_us(0, aux_start_us);
@@ -376,7 +376,7 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 		if (!*devmatch_ok && pdu->tx_addr) {
 			uint8_t count;
 
-			ull_filter_lll_irks_get(&count);
+			(void)ull_filter_lll_irks_get(&count);
 			if (count) {
 				radio_ar_resolve(adva);
 				*irkmatch_ok = radio_ar_has_match();
@@ -460,7 +460,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
-	radio_phy_set(lll_aux->phy, 1);
+	radio_phy_set(lll_aux->phy, PHY_FLAGS_S8);
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll_aux->phy << 1));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
