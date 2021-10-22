@@ -62,3 +62,8 @@
 		label = "HTS221";
 	};
 };
+
+&dac1 {
+	pinctrl-0 = <&dac1_out1_pa4>;
+	status = "okay";
+};
