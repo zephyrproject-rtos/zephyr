@@ -638,8 +638,8 @@ class ZephyrBinaryRunner(abc.ABC):
         '''
         self._log_cmd(cmd)
         if _DRY_RUN:
-            return
-        subprocess.check_call(cmd, **kwargs)
+            return None
+        return subprocess.check_call(cmd, **kwargs)
 
     def check_output(self, cmd: List[str], **kwargs) -> bytes:
         '''Subclass subprocess.check_output() wrapper.
