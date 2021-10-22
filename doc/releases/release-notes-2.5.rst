@@ -49,9 +49,9 @@ API Changes
   for instance enable bootstrap procedure in the curent session.
 
 * LwM2M execute now supports arguments. The execute callback
-  `lwm2m_engine_execute_cb_t` is extended with an ``args`` parameter which points
-  to the CoAP payload that comprises the arguments, and an ``args_len`` parameter
-  to indicate the length of the ``args`` data.
+  :c:type:`lwm2m_engine_execute_cb_t` is extended with an ``args`` parameter
+  which points to the CoAP payload that comprises the arguments, and an
+  ``args_len`` parameter to indicate the length of the ``args`` data.
 
 * Changed vcnl4040 dts binding default for property 'proximity-trigger'.
   Changed the default to match the HW POR state for this property.
@@ -817,11 +817,11 @@ Libraries / Subsystems
 
   * API
 
-    * Added c:func:`fs_file_t_init` function for initialization of
-      c:type:`fs_file_t` objects.
+    * Added :c:func:`fs_file_t_init` function for initialization of
+      :c:type:`fs_file_t` objects.
 
-    * Added c:func:`fs_dir_t_init` function for initialization of
-      c:type:`fs_dir_t` objects.
+    * Added :c:func:`fs_dir_t_init` function for initialization of
+      :c:type:`fs_dir_t` objects.
 
   * ``CONFIG_FS_LITTLEFS_FC_MEM_POOL`` has been deprecated and
     should be replaced by :kconfig:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
