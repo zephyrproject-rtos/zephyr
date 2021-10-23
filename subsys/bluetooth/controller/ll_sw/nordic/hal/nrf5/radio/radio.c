@@ -107,7 +107,7 @@ void radio_setup(void)
 {
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	NRF_GPIO_PA->DIRSET = BIT(NRF_GPIO_PA_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+#if defined(HAL_RADIO_GPIO_PA_POL_INV)
 	NRF_GPIO_PA->OUTSET = BIT(NRF_GPIO_PA_PIN);
 #else
 	NRF_GPIO_PA->OUTCLR = BIT(NRF_GPIO_PA_PIN);
@@ -122,7 +122,7 @@ void radio_setup(void)
 
 #if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
 	NRF_GPIO_PDN->DIRSET = BIT(NRF_GPIO_PDN_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_PDN_POL_INV)
 	NRF_GPIO_PDN->OUTSET = BIT(NRF_GPIO_PDN_PIN);
 #else
 	NRF_GPIO_PDN->OUTCLR = BIT(NRF_GPIO_PDN_PIN);
@@ -131,7 +131,7 @@ void radio_setup(void)
 
 #if defined(CONFIG_BT_CTLR_GPIO_CSN_PIN)
 	NRF_GPIO_CSN->DIRSET = BIT(NRF_GPIO_CSN_PIN);
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_CSN_POL_INV)
 	NRF_GPIO_CSN->OUTSET = BIT(NRF_GPIO_CSN_PIN);
 #else
 	NRF_GPIO_CSN->OUTCLR = BIT(NRF_GPIO_CSN_PIN);
@@ -1136,7 +1136,7 @@ void radio_gpio_pa_setup(void)
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+#if defined(HAL_RADIO_GPIO_PA_POL_INV)
 		(GPIOTE_CONFIG_OUTINIT_High <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
 #else
@@ -1166,7 +1166,7 @@ void radio_gpio_lna_setup(void)
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+#if defined(HAL_RADIO_GPIO_LNA_POL_INV)
 		(GPIOTE_CONFIG_OUTINIT_High <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
 #else
@@ -1195,7 +1195,7 @@ void radio_gpio_pdn_setup(void)
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_PDN_POL_INV)
 		(GPIOTE_CONFIG_OUTINIT_High <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
 #else
@@ -1219,7 +1219,7 @@ void radio_gpio_csn_setup(void)
 		 GPIOTE_CONFIG_PSEL_Pos) |
 		(GPIOTE_CONFIG_POLARITY_Toggle <<
 		 GPIOTE_CONFIG_POLARITY_Pos) |
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_CSN_POL_INV)
 		(GPIOTE_CONFIG_OUTINIT_High <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
 #else
@@ -1231,7 +1231,7 @@ void radio_gpio_csn_setup(void)
 
 void radio_gpio_lna_on(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+#if defined(HAL_RADIO_GPIO_LNA_POL_INV)
 	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
 #else
 	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
@@ -1240,7 +1240,7 @@ void radio_gpio_lna_on(void)
 
 void radio_gpio_lna_off(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+#if defined(HAL_RADIO_GPIO_LNA_POL_INV)
 	NRF_GPIO_LNA->OUTSET = BIT(NRF_GPIO_LNA_PIN);
 #else
 	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
