@@ -6,7 +6,13 @@ if(CONFIG_HAS_GD32_HAL)
 string(TOUPPER ${CONFIG_SOC} gd32_soc_uc)
 
 set(gd32_soc_dir     ${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/${CONFIG_SOC_SERIES})
-set(gd32_cmsis_dir   ${gd32_soc_dir}/cmsis/gd/${CONFIG_SOC_SERIES})
+if(CONFIG_SOC_FAMILY_GD32_ARM)
+  set(gd32_soc_sys_dir   ${gd32_soc_dir}/cmsis/gd/${CONFIG_SOC_SERIES})
+elseif(CONFIG_SOC_SERIES_GD32VF103)
+  set(gd32_soc_sys_dir   ${gd32_soc_dir}/riscv)
+  zephyr_include_directories(${gd32_soc_dir}/riscv/drivers)
+endif()
+
 set(gd32_std_dir     ${gd32_soc_dir}/standard_peripheral)
 set(gd32_std_src_dir ${gd32_std_dir}/source)
 
@@ -14,12 +20,22 @@ zephyr_library_named(hal_gigadevice)
 
 zephyr_compile_definitions(${gd32_soc_uc})
 
+# The header files of GigaDevice firmware are reference HXTAL_VALUE.
+# The HXTAL_VALUE has the possibility of being referenced from any files
+# via that header files.
+# Therefore, we need to define HXTAL_VALUE for all compilations.
+if(${CONFIG_GD32_HXTAL_8MHZ})
+  zephyr_compile_definitions(HXTAL_VALUE=8000000 HXTAL_VALUE_25M=8000000)
+elseif(${CONFIG_GD32_HXTAL_25MHZ})
+  zephyr_compile_definitions(HXTAL_VALUE=25000000 HXTAL_VALUE_8M=25000000)
+endif()
+
 # Global includes to be used outside hal_gigadevice
-zephyr_include_directories(${gd32_cmsis_dir}/include)
+zephyr_include_directories(${gd32_soc_sys_dir}/include)
 zephyr_include_directories(${gd32_std_dir}/include)
 zephyr_include_directories(${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/include)
 
-zephyr_library_sources(${gd32_cmsis_dir}/source/system_${CONFIG_SOC_SERIES}.c)
+zephyr_library_sources(${gd32_soc_sys_dir}/source/system_${CONFIG_SOC_SERIES}.c)
 
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_ADC    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_adc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_BKP    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_bkp.c)
