@@ -1006,6 +1006,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 {
 	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
 	struct pdu_adv_ext_hdr ter_hdr = { 0 }, ter_hdr_prev = { 0 };
+	struct pdu_adv_aux_ptr *aux_ptr, *aux_ptr_prev;
 	uint8_t *ter_dptr, *ter_dptr_prev;
 	uint8_t acad_len_prev;
 	uint8_t ter_len_prev;
@@ -1083,16 +1084,34 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	}
 
 	/* AuxPtr - will be added if AUX_CHAIN_IND is required */
-	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) ||
-	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) &&
-	     ter_hdr_prev.aux_ptr)) {
+	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
 		ter_hdr.aux_ptr = 1;
-	}
-	if (ter_hdr.aux_ptr) {
-		ter_dptr += sizeof(struct pdu_adv_aux_ptr);
+		aux_ptr_prev = NULL;
+		aux_ptr = (void *)ter_dptr;
+
+		/* return the size of aux pointer structure */
+		*(uint8_t *)hdr_data = sizeof(struct pdu_adv_aux_ptr);
+		hdr_data = (uint8_t *)hdr_data + sizeof(uint8_t);
+
+		/* return the pointer to aux pointer struct inside the PDU
+		 * buffer
+		 */
+		(void)memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
+		hdr_data = (uint8_t *)hdr_data + sizeof(ter_dptr);
+	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) &&
+		   ter_hdr_prev.aux_ptr) {
+		ter_hdr.aux_ptr = 1;
+		aux_ptr_prev = (void *)ter_dptr_prev;
+		aux_ptr = (void *)ter_dptr;
+	} else {
+		aux_ptr_prev = NULL;
+		aux_ptr = NULL;
 	}
 	if (ter_hdr_prev.aux_ptr) {
 		ter_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (ter_hdr.aux_ptr) {
+		ter_dptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
 	/* No SyncInfo in AUX_SYNC_IND */
@@ -1236,18 +1255,15 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	/* No SyncInfo in AUX_SYNC_IND */
 
 	/* AuxPtr */
+	if (ter_hdr_prev.aux_ptr) {
+		ter_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+	}
 	if (ter_hdr.aux_ptr) {
-		/* ToDo Update setup of aux_ptr - check documentation */
-		if (ter_hdr_prev.aux_ptr) {
-			ter_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
-			ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
-			(void)memmove(ter_dptr, ter_dptr_prev,
-				      sizeof(struct pdu_adv_aux_ptr));
-		} else {
-			ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
-			ull_adv_aux_ptr_fill((void *)ter_dptr, 0U,
-					     lll_sync->adv->phy_s);
-		}
+		ter_dptr -= sizeof(struct pdu_adv_aux_ptr);
+	}
+
+	if (aux_ptr_prev) {
+		(void)memmove(ter_dptr, aux_ptr_prev, sizeof(*aux_ptr_prev));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
