@@ -199,34 +199,34 @@ static inline void hal_pa_ppi_setup(void)
 {
 	nrf_gpiote_task_t task;
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+#if defined(HAL_RADIO_GPIO_PA_POL_INV)
 	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
 	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#else /* !CONFIG_BT_CTLR_GPIO_PA_POL_INV */
+#else /* !HAL_RADIO_GPIO_PA_POL_INV */
 	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
 	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_POL_INV */
+#endif /* !HAL_RADIO_GPIO_PA_POL_INV */
 }
 
 static inline void hal_lna_ppi_setup(void)
 {
 	nrf_gpiote_task_t task;
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+#if defined(HAL_RADIO_GPIO_LNA_POL_INV)
 	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
 	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#else /* !CONFIG_BT_CTLR_GPIO_LNA_POL_INV */
+#else /* !HAL_RADIO_GPIO_LNA_POL_INV */
 	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
 	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#endif /* !CONFIG_BT_CTLR_GPIO_LNA_POL_INV */
+#endif /* !HAL_RADIO_GPIO_LNA_POL_INV */
 }
 
 #define HAL_ENABLE_FEM_PPI 3
@@ -241,29 +241,29 @@ static inline void hal_fem_ppi_setup(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
 			      HAL_DISABLE_FEM_PPI);
 
-#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_PDN_POL_INV)
 	task = nrf_gpiote_clr_task_get(HAL_PDN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
 	task = nrf_gpiote_set_task_get(HAL_PDN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#else /* !CONFIG_BT_CTLR_GPIO_PDN_POL_INV */
+#else /* !HAL_RADIO_GPIO_NRF21540_PDN_POL_INV */
 	task = nrf_gpiote_set_task_get(HAL_PDN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
 	task = nrf_gpiote_clr_task_get(HAL_PDN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#endif /* !CONFIG_BT_CTLR_GPIO_PDN_POL_INV */
+#endif /* !HAL_RADIO_GPIO_NRF21540_PDN_POL_INV */
 
-#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
+#if defined(HAL_RADIO_GPIO_NRF21540_CSN_POL_INV)
 	task = nrf_gpiote_clr_task_get(HAL_CSN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
 	task = nrf_gpiote_set_task_get(HAL_CSN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#else /* !CONFIG_BT_CTLR_GPIO_CSN_POL_INV */
+#else /* !HAL_RADIO_GPIO_NRF21540_CSN_POL_INV */
 	task = nrf_gpiote_set_task_get(HAL_CSN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
 	task = nrf_gpiote_clr_task_get(HAL_CSN_GPIOTE_CHAN);
 	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#endif /* !CONFIG_BT_CTLR_GPIO_CSN_POL_INV */
+#endif /* !HAL_RADIO_GPIO_NRF21540_CSN_POL_INV */
 }
 
 #endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
