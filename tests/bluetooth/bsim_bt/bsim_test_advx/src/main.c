@@ -577,7 +577,7 @@ static void test_advx_main(void)
 		goto exit;
 	}
 
-	printk("enabling...");
+	printk("Enabling Extended Advertising...");
 	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
@@ -685,7 +685,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	printk("Enabling extended...");
+	printk("Enabling Extended Advertising...");
 	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
@@ -700,7 +700,7 @@ static void test_advx_main(void)
 		goto exit;
 	}
 
-	printk("enabling periodic...");
+	printk("Enabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 1);
 	if (err) {
 		goto exit;
@@ -769,7 +769,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(400));
 
-	printk("Disabling...");
+	printk("Disabling Extended Advertising...");
 	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
@@ -785,7 +785,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(400));
 
-	printk("Disabling periodic...");
+	printk("Disabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 0);
 	if (err) {
 		goto exit;
@@ -794,14 +794,14 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("enabling periodic...");
+	printk("Enabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 1);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	printk("Enabling extended...");
+	printk("Enabling Extended Advertising...");
 	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
@@ -820,7 +820,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Disabling periodic...");
+	printk("Disabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 0);
 	if (err) {
 		goto exit;
@@ -829,7 +829,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(400));
 
-	printk("Disabling...");
+	printk("Disabling Extended Advertising...");
 	err = ll_adv_enable(handle, 0, 0, 0);
 	if (err) {
 		goto exit;
@@ -971,7 +971,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	printk("enabling periodic...");
+	printk("Enabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 1);
 	if (err) {
 		goto exit;
@@ -985,7 +985,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	printk("Disabling periodic...");
+	printk("Disabling Periodic Advertising...");
 	err = ll_adv_sync_enable(handle, 0);
 	if (err) {
 		goto exit;
@@ -1636,7 +1636,8 @@ static void test_scanx_main(void)
 	printk("done.\n");
 
 	if (sync_report_len != 0) {
-		FAIL("Incorrect Periodic Advertising Report data.");
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, 0);
 	}
 
 	printk("Waiting for Periodic Advertising Report of %u bytes...",
@@ -1650,7 +1651,8 @@ static void test_scanx_main(void)
 
 	if ((sync_report_len != sizeof(per_adv_data1)) ||
 	    memcmp(sync_report_data, per_adv_data1, sizeof(per_adv_data1))) {
-		FAIL("Incorrect Periodic Advertising Report data.");
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, sizeof(per_adv_data1));
 	}
 
 	printk("Waiting for Periodic Advertising Report of %u bytes...",
@@ -1664,7 +1666,8 @@ static void test_scanx_main(void)
 
 	if ((sync_report_len != sizeof(per_adv_data2)) ||
 	    memcmp(sync_report_data, per_adv_data2, sizeof(per_adv_data2))) {
-		FAIL("Incorrect Periodic Advertising Report data.");
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, sizeof(per_adv_data2));
 	}
 
 	printk("Waiting for Periodic Advertising Report of %u bytes...",
@@ -1678,7 +1681,8 @@ static void test_scanx_main(void)
 
 	if ((sync_report_len != sizeof(per_adv_data3)) ||
 	    memcmp(sync_report_data, per_adv_data3, sizeof(per_adv_data3))) {
-		FAIL("Incorrect Periodic Advertising Report data.");
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, sizeof(per_adv_data3));
 	}
 
 	printk("Waiting for Periodic Advertising Report of %u bytes...",
@@ -1692,7 +1696,8 @@ static void test_scanx_main(void)
 
 	if ((sync_report_len != sizeof(per_adv_data2)) ||
 	    memcmp(sync_report_data, per_adv_data2, sizeof(per_adv_data2))) {
-		FAIL("Incorrect Periodic Advertising Report data.");
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, sizeof(per_adv_data2));
 	}
 
 	printk("Waiting for sync loss...");
@@ -1724,7 +1729,7 @@ static void test_scanx_main(void)
 	}
 	printk("success.\n");
 
-	printk("Add device to periodic advertising list...");
+	printk("Add device to Periodic Advertising List...");
 	err = bt_le_per_adv_list_add(&peer_id_addr, per_sid);
 	if (err) {
 		goto exit;
