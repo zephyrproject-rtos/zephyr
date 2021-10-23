@@ -261,33 +261,6 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 	return 0;
 }
 
-/* Note: Function made global because it is temporarily not used and causes compilation warning.
- * It will be used when fragmentation of periodic advertising PDU is implemented.
- */
-uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu, const uint8_t *data, uint8_t len)
-{
-	struct pdu_adv_com_ext_adv *com_hdr;
-	uint8_t len_max;
-	uint8_t *dptr;
-
-	com_hdr = &pdu->adv_ext_ind;
-
-	dptr = &com_hdr->ext_hdr_adv_data[com_hdr->ext_hdr_len];
-
-	len_max = PDU_AC_PAYLOAD_SIZE_MAX - (dptr - pdu->payload);
-	/* TODO: we should allow partial copy and let caller refragment data */
-	if (len > len_max) {
-		return BT_HCI_ERR_PACKET_TOO_LONG;
-	}
-
-	(void)memcpy(dptr, data, len);
-	dptr += len;
-
-	pdu->len = dptr - pdu->payload;
-
-	return 0;
-}
-
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
