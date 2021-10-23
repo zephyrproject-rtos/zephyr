@@ -144,7 +144,7 @@ static void reconfigured_cb(struct bt_l2cap_chan *l2cap_chan)
 	struct l2cap_reconfigured_ev ev;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 
-	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
+	(void)memset(&ev, 0, sizeof(ev));
 
 	ev.chan_id = chan->chan_id;
 	ev.mtu_remote = sys_cpu_to_le16(chan->le.tx.mtu);
