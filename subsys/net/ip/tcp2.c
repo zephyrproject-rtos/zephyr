@@ -39,7 +39,7 @@ static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
 static K_MUTEX_DEFINE(tcp_lock);
 
-static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
+K_MEM_SLAB_DEFINE_STATIC(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
 static struct k_work_q tcp_work_q;
