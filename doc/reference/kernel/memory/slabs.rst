@@ -90,6 +90,12 @@ that the macro defines both the memory slab and its buffer.
 
     K_MEM_SLAB_DEFINE(my_slab, 400, 6, 4);
 
+Similarly, you can define a memory slab in private scope:
+
+.. code-block:: c
+
+    K_MEM_SLAB_DEFINE_STATIC(my_slab, 400, 6, 4);
+
 Allocating a Memory Block
 =========================
 
