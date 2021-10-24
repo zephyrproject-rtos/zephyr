@@ -60,6 +60,14 @@ void main(void)
 	pm_info(p_state, ret);
 #endif
 
+	/* example of how you can call function in the driver from main.
+	If you need to pass parameters use val1 and val2.
+	SENSOR_ATTR_BQ35100_EXAMPLE1 is just as an example. You could create
+	e.g. SENSOR_ATTR_BQ35100_GAUGE_START to start the gauge and so on. */
+	val.val1 = 1;
+	val.val2 = 2;
+	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_BQ35100_EXAMPLE1, &val);
+
 
 	while (1) {
 		if (sensor_sample_fetch(dev) < 0) {

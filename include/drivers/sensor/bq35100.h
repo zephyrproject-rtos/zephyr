@@ -34,8 +34,8 @@ enum sensor_channel_bq35100 {
 enum sensor_attribute_bq35100 {
 	/** Example attribute 1 **/
 	SENSOR_ATTR_BQ35100_EXAMPLE1 = SENSOR_CHAN_PRIV_START,
-	/** Example attribute 2 **/
-	SENSOR_ATTR_BQ35100_EXAMPLE2,
+	/** Gauge Start **/
+	SENSOR_ATTR_BQ35100_GAUGE_START,
 };
 
 #ifdef __cplusplus

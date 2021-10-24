@@ -252,6 +252,14 @@
 #define BQ35100_DEFAULT_SEAL_CODES                     0x04143672
 #define BQ35100_FLASHF_BIT_MASK                        0b1000000000000000
 
+#define BQ35100_GA_BIT_MASK                            0b0000000000000001
+#define BQ35100_G_DONE_BIT_MASK                        0b0000000001000000
+#define BQ35100_INITCOMP_BIT_MASK                      0b0000000010000000
+#define BQ35100_CCA_BIT_MASK                           0b0000010000000000
+#define BQ35100_BCA_BIT_MASK                           0b0000100000000000
+#define BQ35100_CAL_MODE_BIT_MASK                      0b0001000000000000
+#define BQ35100_FLASHF_BIT_MASK                        0b1000000000000000
+
 /*
  * I2C helper bit masks
  */
@@ -261,10 +269,10 @@
 #define BQ35100_TO_I2C_REG(x)           ((x) >> 1)
 
 typedef enum {
-	BQ35100_ACCUMULATOR_MODE, // chemistry-independent
-	BQ35100_SOH_MODE,         // for LiMnO2
-	BQ35100_EOS_MODE,         // for LiSOCl2
-	BQ35100_UNKNOWN_MODE      // invalid
+	BQ35100_ACCUMULATOR_MODE,       // chemistry-independent
+	BQ35100_SOH_MODE,               // for LiMnO2
+	BQ35100_EOS_MODE,               // for LiSOCl2
+	BQ35100_UNKNOWN_MODE            // invalid
 } bq35100_gauge_mode_t;
 
 typedef enum {
@@ -280,6 +288,8 @@ struct bq35100_data {
 	uint16_t avg_current;
 	uint8_t state_of_health;
 	uint32_t acc_capacity;
+
+	bool gauge_enabled;
 
 	bq35100_security_mode_t security_mode;
 	bq35100_gauge_mode_t gauge_mode;

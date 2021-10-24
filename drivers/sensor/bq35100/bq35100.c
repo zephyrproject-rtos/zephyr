@@ -124,7 +124,7 @@ static int bq35100_reg_write(const struct device *dev,
 static int bq35100_control_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
-	//LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
+	// LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
 
 	uint8_t buf[2];
 
@@ -198,17 +198,23 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -EIO;
 	}
 
+	k_sleep(K_MSEC(200));
+
+
 	if (i2c_burst_read(cfg->bus, cfg->i2c_addr, BQ35100_CMD_MAC_CONTROL,
 			   data, sizeof(data)) < 0) {
 		LOG_ERR("Unable to read from ManufacturerAccessControl");
 		return -EIO;
 	}
 
-	//LOG_DBG("Address before conversion: 0x%02X%02X", address, data[1], data[0]);
-	data[0] = address & UCHAR_MAX;
-    data[1] = address >> 8;
+	// LOG_DBG("Address before conversion: 0x%02X%02X", address, data[1], data[0]);
 
-	k_sleep(K_MSEC(1000));
+	/* this is wrong. Why you wanna do this? You write address to MAC_CONTROL,
+	   then you read the register again to check if it has the same value as address. This
+	   is to check if address/subcommand was written correctly. Read the reference
+	   manual to understand these steps. */
+	/*data[0] = address & UCHAR_MAX; */
+	/*data[1] = address >> 8; */
 
 	// Address match check
 	if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
@@ -216,13 +222,14 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -1;
 	}
 
-	//LOG_DBG("data[35] = 0x%02x", data[35]-2);
+	LOG_DBG("MACDataSum/Checksum = 0x%02x", data[34]);
+	LOG_DBG("MACDataLen = 0x%02x", data[35]);
 	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
 		return -EIO;
 	}
 
-	length_read = data[35] - 4; // Subtracting addresses
+	length_read = data[35] - 4; // Subtracting addresses, MACDataSum and MACDataLen
 
 	if (length_read > length) {
 		length_read = length;
@@ -296,7 +303,7 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 	d[0] = BQ35100_CMD_MAC_DATA_SUM;
 	d[1] = bq35100_compute_checksum(d + 1, length + 2);
 
-	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) { 
+	if (i2c_write(cfg->bus, d, 2, cfg->i2c_addr) < 0) {
 		LOG_ERR("Unable to write to MAC Data Sum");
 		return -EIO;
 	}
@@ -453,6 +460,39 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 }
 
 /**
+ * Waiting for the CONTROL_STATUS register to change after a state change
+ * @param dev - The device structure.
+ * @param expected - result bit mask to be matched
+ * @param mask - bit mask to be matched
+ * @param wait_ms - how long to wait before repeat in milliseconds
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_wait_for_status(const struct device *dev, uint16_t expected,
+				   uint16_t mask, uint16_t wait_ms)
+{
+	uint16_t status;
+	uint8_t i;
+
+	for (i = 0; i < 5; i++) {
+		if (bq35100_get_status(dev, &status) < 0) {
+			LOG_DBG("Getting status failed");
+			return -1;
+		}
+
+		if ((status & mask) == expected) {
+			LOG_DBG("Status match");
+			return 0;
+
+		} else {
+			LOG_ERR("Status not yet in requested state read: %04X expected: %04X", status, expected);
+			k_sleep(K_MSEC(wait_ms));
+		}
+	}
+
+	return -1;
+}
+
+/**
  * Set Gauge Mode.
  * @param dev - The device structure.
  * @param gauge_mode - The Gauge mode wanted to be set
@@ -470,7 +510,7 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 	}
 	// Operation Config A
 	if ((bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A,
-					 &buf, 1)) < 0) {
+					&buf, 1)) < 0) {
 		LOG_ERR("Unable to read Operation Config A");
 		return -EIO;
 	}
@@ -482,7 +522,7 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 		k_sleep(K_MSEC(100));
 
 		status = bq35100_write_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A,
-						    &buf, 1);
+						     &buf, 1);
 		if (status < 0) {
 			LOG_ERR("Unable to write Operation Config A");
 			return -EIO;
@@ -502,7 +542,12 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 static int bq35100_gauge_start(const struct device *dev)
 {
 	int status;
-	uint16_t buf;
+	struct bq35100_data *dev_data = dev->data;
+
+	if (dev_data->gauge_enabled) {
+		LOG_WRN("Gauge already enabled");
+		return 0;
+	}
 
 	status = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_START);
 	if (status < 0) {
@@ -510,15 +555,16 @@ static int bq35100_gauge_start(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(100));
+	status = bq35100_wait_for_status(dev, BQ35100_GA_BIT_MASK,
+					 BQ35100_GA_BIT_MASK, 100);
 
-	status = bq35100_reg_read(dev, BQ35100_CMD_CONTROL, &buf, 2);
-	if ((status) < 0) {
-		LOG_ERR("Unable to start the gauge");
-		return -EIO;
+	if (status) {
+		LOG_DBG("Gauge enabled");
+		dev_data->gauge_enabled = true;
+	} else {
+		LOG_ERR("Gauge not enabled");
+		dev_data->gauge_enabled = false;
 	}
-
-	LOG_DBG("Control register content: %x", buf);
 
 	return 0;
 }
@@ -531,7 +577,12 @@ static int bq35100_gauge_start(const struct device *dev)
 static int bq35100_gauge_stop(const struct device *dev)
 {
 	int status;
-	uint8_t buf;
+	struct bq35100_data *dev_data = dev->data;
+
+	if (!dev_data->gauge_enabled) {
+		LOG_WRN("Gauge already disabled");
+		return 0;
+	}
 
 	status = bq35100_control_reg_write(dev, BQ35100_CTRL_GAUGE_STOP);
 	if (status < 0) {
@@ -539,15 +590,13 @@ static int bq35100_gauge_stop(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(100));
-
-	status = bq35100_reg_read(dev, BQ35100_CMD_CONTROL, &buf, 2);
-	if ((status) != 0) {
-		LOG_ERR("Unable to stop the gauge");
-		return -EIO;
+	// Stopping takes a lot of time
+	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500)) {
+		LOG_DBG("Gauge stopped");
+		dev_data->gauge_enabled = false;
+	} else {
+		LOG_ERR("Gauge not stopped");
 	}
-
-	LOG_DBG("Control register content: %x", buf);
 
 	return 0;
 }
@@ -616,7 +665,7 @@ static int bq35100_get_acc_capacity(const struct device *dev)
 		return -EIO;
 	}
 
-	//status = bq35100_gauge_stop(dev);
+	// status = bq35100_gauge_stop(dev);
 	if (status < 0) {
 		LOG_ERR("Unable to write Accumulated Capacity");
 		return -EIO;
@@ -648,7 +697,7 @@ static int bq35100_get_gauge_mode(const struct device *dev)
 {
 	struct bq35100_data *dev_data = dev->data;
 	uint8_t gauge = dev_data->gauge_mode;
-	
+
 	switch (gauge) {
 	case BQ35100_ACCUMULATOR_MODE:
 		LOG_DBG("Device is in Accumulator Mode");
@@ -783,10 +832,17 @@ static int bq35100_attr_set(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	/* here you could set parameters at runtime through main. See
-	   other drivers as example. Add new attributes in
-	   enum sensor_attribute_bq35100 */
-	return -ENOTSUP;
+	ARG_UNUSED(chan);
+	/* here you could set parameters at runtime through main. You can ignore
+	   chan for now. */
+
+	switch ((int16_t)attr) {
+	case SENSOR_ATTR_BQ35100_EXAMPLE1:
+		LOG_DBG("Example function call from main. Parameters are 1. %x, 2. %x", val->val1, val->val2);
+	default:
+		LOG_DBG("Attribute not supported");
+		return -ENOTSUP;
+	}
 }
 
 /**
@@ -939,10 +995,9 @@ static int bq35100_init_ge_pin(const struct device *dev)
 static int bq35100_init(const struct device *dev)
 {
 	const struct bq35100_config *cfg = dev->config;
+	struct bq35100_data *data = dev->data;
 
-	// struct bq35100_data *data = dev->data;
-
-	//int status, temp;
+	// int status, temp;
 
 	if (cfg->ge_gpio->name) {
 		if (bq35100_init_ge_pin(dev) < 0) {
@@ -960,7 +1015,9 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if(bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)){
+	data->gauge_enabled = false;
+
+	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 		return EIO;
 	}
 
@@ -968,21 +1025,21 @@ static int bq35100_init(const struct device *dev)
 		return EIO;
 	}
 
-	if(bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)){
+	if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
 		return EIO;
 	}
 
-	if(bq35100_get_gauge_mode(dev) < 0){
+	if (bq35100_get_gauge_mode(dev) < 0) {
 		return -EIO;
 	}
 
-	if(bq35100_gauge_start(dev) < 0){
+	if (bq35100_gauge_start(dev) < 0) {
 		return -EIO;
 	}
 
 	/*if(bq35100_gauge_stop(dev) < 0){
-		return -EIO;
-	}*/
+	        return -EIO;
+	   }*/
 
 	return 0;
 }
