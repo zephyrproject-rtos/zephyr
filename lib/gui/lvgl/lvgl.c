@@ -327,6 +327,12 @@ static int lvgl_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	err = display_blanking_off(display_dev);
+	if (err) {
+		LOG_ERR("display blanking off error: %d", err);
+		return err;
+	}
+
 #if CONFIG_LVGL_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
