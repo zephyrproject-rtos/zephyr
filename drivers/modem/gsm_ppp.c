@@ -57,11 +57,17 @@ enum setup_state {
 	STATE_DONE
 };
 
+struct custom_setup_cmds {
+	const struct setup_cmd *data;
+	size_t len;
+};
+
 static struct gsm_modem {
 	const struct device *dev;
 	struct modem_context context;
 
 	struct modem_cmd_handler_data cmd_handler_data;
+	struct custom_setup_cmds custom_setup_cmds;
 	uint8_t cmd_match_buf[GSM_CMD_READ_BUF];
 	struct k_sem sem_response;
 
@@ -412,7 +418,7 @@ static const struct setup_cmd setup_modem_info_cmds[] = {
 #endif
 };
 
-static const struct setup_cmd setup_cmds[] = {
+static const struct setup_cmd default_setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* hang up */
@@ -638,8 +644,12 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
-						  setup_cmds,
-						  ARRAY_SIZE(setup_cmds),
+						  gsm->custom_setup_cmds.data ?
+						  gsm->custom_setup_cmds.data :
+						  default_setup_cmds,
+						  gsm->custom_setup_cmds.data ?
+						  gsm->custom_setup_cmds.len :
+						  ARRAY_SIZE(default_setup_cmds),
 						  &gsm->sem_response,
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
@@ -1076,6 +1086,17 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 
 	return &minfo;
 }
+
+void gsm_ppp_set_custom_setup_cmds(const struct device *dev,
+				   const struct setup_cmd *data,
+				   size_t len)
+{
+	struct gsm_modem *gsm = dev->data;
+
+	gsm->custom_setup_cmds.data = data;
+	gsm->custom_setup_cmds.len = len;
+}
+
 
 static int gsm_init(const struct device *dev)
 {

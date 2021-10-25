@@ -28,6 +28,7 @@ struct gsm_ppp_modem_info {
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
+struct setup_cmd;
 typedef void (*gsm_modem_power_cb)(const struct device *, void *);
 
 void gsm_ppp_start(const struct device *dev);
@@ -59,5 +60,18 @@ void gsm_ppp_register_modem_power_callback(const struct device *dev,
  * @retval struct gsm_ppp_modem_info * pointer to modem information structure.
  */
 const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev);
+
+/**
+ * @brief Set custom modem setup commands.
+ *
+ * @param dev: gsm modem device.
+ * @param data: custom modem setup commands array.
+ * @param len: length of custom modem setup commands array.
+ *
+ * @retval None.
+ */
+void gsm_ppp_set_custom_setup_cmds(const struct device *dev,
+				   const struct setup_cmd *data,
+				   size_t len);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_GSM_PPP_H_ */
