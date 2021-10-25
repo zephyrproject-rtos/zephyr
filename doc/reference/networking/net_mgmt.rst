@@ -170,4 +170,4 @@ for example :zephyr_file:`include/net/ieee802154_mgmt.h` would be the right plac
 API Reference
 *************
 
-.. doxygengroup:: net_mgmt
+

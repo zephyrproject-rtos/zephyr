@@ -299,7 +299,7 @@ API reference
 Running tests
 =============
 
-.. doxygengroup:: ztest_test
+
 
 Assertions
 ==========
@@ -318,7 +318,7 @@ Example output for a failed macro from
     Assertion failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)
     Aborted at unit test function
 
-.. doxygengroup:: ztest_assert
+
 
 Mocking
 =======
@@ -337,7 +337,7 @@ expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
    :language: c
    :linenos:
 
-.. doxygengroup:: ztest_mock
+
 
 Customizing Test Output
 ***********************

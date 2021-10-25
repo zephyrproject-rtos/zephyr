@@ -549,4 +549,4 @@ Related configuration options:
 API Reference
 **************
 
-.. doxygengroup:: workqueue_apis
+

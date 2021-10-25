@@ -145,4 +145,4 @@ High level API
   not have to implement endpoint callback and should set this callback to the
   generic usb_transfer_ep_callback.
 
-.. doxygengroup:: _usb_device_core_api
+

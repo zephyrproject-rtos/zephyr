@@ -221,4 +221,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: msgq_apis
+

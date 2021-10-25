@@ -217,4 +217,4 @@ Related configuration options:
 API Reference
 =============
 
-.. doxygengroup:: heap_apis
+

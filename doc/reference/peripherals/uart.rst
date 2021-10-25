@@ -9,4 +9,4 @@ Overview
 API Reference
 *************
 
-.. doxygengroup:: uart_interface
+

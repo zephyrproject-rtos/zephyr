@@ -141,7 +141,7 @@ Secure Sockets options
 
 Secure sockets offer the following options for socket management:
 
-.. doxygengroup:: secure_sockets_options
+
 
 API Reference
 *************
@@ -149,9 +149,9 @@ API Reference
 BSD Sockets
 ===========
 
-.. doxygengroup:: bsd_sockets
+
 
 TLS Credentials
 ===============
 
-.. doxygengroup:: tls_credentials
+

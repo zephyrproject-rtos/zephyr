@@ -375,4 +375,4 @@ We have two ready-to-build samples demonstrating use of the Zephyr CAN API
 API Reference
 *************
 
-.. doxygengroup:: can_interface
+

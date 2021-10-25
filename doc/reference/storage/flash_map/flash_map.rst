@@ -94,4 +94,4 @@ with a devicetree label like ``"image-0"``, use something like this:
 API Reference
 *************
 
-.. doxygengroup:: flash_area_api
+

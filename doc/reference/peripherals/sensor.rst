@@ -120,4 +120,4 @@ by the driver's configuration.
 API Reference
 **************
 
-.. doxygengroup:: sensor_interface
+

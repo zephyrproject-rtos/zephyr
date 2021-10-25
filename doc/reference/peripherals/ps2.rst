@@ -24,4 +24,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: ps2_interface
+

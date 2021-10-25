@@ -40,4 +40,4 @@ See :ref:`DNS resolve sample application <dns-resolve-sample>` for details.
 API Reference
 *************
 
-.. doxygengroup:: dns_resolve
+

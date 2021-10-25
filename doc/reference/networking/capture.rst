@@ -25,4 +25,4 @@ See :ref:`Network capture sample application <net-capture-sample>` and
 API Reference
 *************
 
-.. doxygengroup:: net_capture
+

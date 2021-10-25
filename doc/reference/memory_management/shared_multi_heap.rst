@@ -80,5 +80,5 @@ Currently only two memory attributes are supported: ``cacheable`` and
 1. Add the new ``enum`` for the attribute in the :c:enum:`smh_reg_attr`
 2. Add the corresponding attribute name in :file:`shared-multi-heap.yaml`
 
-.. doxygengroup:: shared_multi_heap
+
    :project: Zephyr

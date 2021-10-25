@@ -15,4 +15,4 @@ Miscellaneous defines and helper functions for IP addresses and IP protocols.
 API Reference
 *************
 
-.. doxygengroup:: ip_4_6
+

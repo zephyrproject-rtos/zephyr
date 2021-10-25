@@ -55,7 +55,7 @@ aligned.
 Below is a list of the error number definitions. For the actual numeric values
 please refer to `errno.h`_.
 
-.. doxygengroup:: system_errno
+
 
 .. _`POSIX errno.h specification`: https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
 .. _`errno.h`: https://github.com/zephyrproject-rtos/zephyr/blob/main/lib/libc/minimal/include/errno.h

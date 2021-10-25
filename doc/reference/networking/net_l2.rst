@@ -153,4 +153,4 @@ Each IEEE 802.15.4 device driver, in the end, will need to call
 API Reference
 *************
 
-.. doxygengroup:: net_l2
+

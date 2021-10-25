@@ -22,4 +22,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: eeprom_interface
+

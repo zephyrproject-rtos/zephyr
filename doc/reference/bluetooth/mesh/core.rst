@@ -55,4 +55,4 @@ volnurability and flash wear out.
 API reference
 **************
 
-.. doxygengroup:: bt_mesh
+

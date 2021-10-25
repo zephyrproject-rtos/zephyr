@@ -7,4 +7,4 @@ Cryptography
 API Reference
 *************
 
-.. doxygengroup:: bt_crypto
+

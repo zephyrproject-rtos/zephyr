@@ -10,4 +10,4 @@ Overview
 API Reference
 *************
 
-.. doxygengroup:: ec_host_cmd_periph_interface
+

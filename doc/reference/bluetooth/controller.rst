@@ -7,4 +7,4 @@ Bluetooth Controller
 API Reference
 *************
 
-.. doxygengroup:: bt_ctrl
+

@@ -10,4 +10,4 @@ Overview
 API Reference
 *************
 
-.. doxygengroup:: watchdog_interface
+

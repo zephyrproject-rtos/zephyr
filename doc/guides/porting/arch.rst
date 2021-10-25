@@ -841,41 +841,41 @@ API Reference
 Timing
 ======
 
-.. doxygengroup:: arch-timing
+
 
 Threads
 =======
 
-.. doxygengroup:: arch-threads
 
-.. doxygengroup:: arch-tls
+
+
 
 Power Management
 ================
 
-.. doxygengroup:: arch-pm
+
 
 Symmetric Multi-Processing
 ==========================
 
-.. doxygengroup:: arch-smp
+
 
 Interrupts
 ==========
 
-.. doxygengroup:: arch-irq
+
 
 Userspace
 =========
 
-.. doxygengroup:: arch-userspace
+
 
 Memory Management
 =================
 
-.. doxygengroup:: arch-mmu
+
 
 Miscellaneous Architecture APIs
 ===============================
 
-.. doxygengroup:: arch-misc
+

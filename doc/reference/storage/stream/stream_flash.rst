@@ -31,4 +31,4 @@ module. The API can be enabled using :kconfig:`CONFIG_STREAM_FLASH_PROGRESS`.
 API Reference
 *************
 
-.. doxygengroup:: stream_flash
+

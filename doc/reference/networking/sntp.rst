@@ -19,4 +19,4 @@ SNTP provides a way to synchronize clocks in computer networks.
 API Reference
 *************
 
-.. doxygengroup:: sntp
+

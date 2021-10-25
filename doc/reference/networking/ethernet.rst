@@ -42,6 +42,6 @@ currently supported Ethernet features.
 API Reference
 *************
 
-.. doxygengroup:: ethernet
 
-.. doxygengroup:: ethernet_mii
+
+

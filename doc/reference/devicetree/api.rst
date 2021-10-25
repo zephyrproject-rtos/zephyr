@@ -38,7 +38,7 @@ child node, respectively.
 
 The following macros create or operate on node identifiers.
 
-.. doxygengroup:: devicetree-generic-id
+
 
 .. _devicetree-property-access:
 
@@ -52,7 +52,7 @@ and :ref:`devicetree-interrupts-property`.
 Property values can be read using these macros even if the node is disabled,
 as long as it has a matching binding.
 
-.. doxygengroup:: devicetree-generic-prop
+
 
 .. _devicetree-reg-property:
 
@@ -64,7 +64,7 @@ Use these APIs instead of :ref:`devicetree-property-access` to access the
 devicetree specification, these macros can be used even for nodes without
 matching bindings.
 
-.. doxygengroup:: devicetree-reg-prop
+
 
 .. _devicetree-interrupts-property:
 
@@ -78,7 +78,7 @@ Because this property's semantics are defined by the devicetree specification,
 some of these macros can be used even for nodes without matching bindings. This
 does not apply to macros which take cell names as arguments.
 
-.. doxygengroup:: devicetree-interrupts-prop
+
 
 For-each macros
 ===============
@@ -91,7 +91,7 @@ There are special-purpose for-each macros, like
 :c:func:`DT_INST_FOREACH_STATUS_OKAY`, but these require ``DT_DRV_COMPAT`` to
 be defined before use.
 
-.. doxygengroup:: devicetree-generic-foreach
+
 
 Existence checks
 ================
@@ -102,7 +102,7 @@ properties, etc. Some macros used for special purposes (such as
 :c:func:`DT_IRQ_HAS_IDX` and all macros which require ``DT_DRV_COMPAT``) are
 documented elsewhere on this page.
 
-.. doxygengroup:: devicetree-generic-exist
+
 
 .. _devicetree-dep-ord:
 
@@ -139,7 +139,7 @@ cause errors, so it's safe to assume there are none when using these macros.
 There are instance number-based conveniences as well; see
 :c:func:`DT_INST_DEP_ORD` and subsequent documentation.
 
-.. doxygengroup:: devicetree-dep-ord
+
 
 Bus helpers
 ===========
@@ -149,7 +149,7 @@ bindings to declare that nodes with a given compatible describe system buses.
 In this case, child nodes are considered to be on a bus of the given type, and
 the following APIs may be used.
 
-.. doxygengroup:: devicetree-generic-bus
+
 
 .. _devicetree-inst-apis:
 
@@ -198,7 +198,7 @@ to use any of these without that macro defined.
 Note that there are also helpers available for
 specific hardware; these are documented in :ref:`devicetree-hw-api`.
 
-.. doxygengroup:: devicetree-inst
+
 
 .. _devicetree-hw-api:
 
@@ -214,7 +214,7 @@ Clocks
 These conveniences may be used for nodes which describe clock sources, and
 properties related to them.
 
-.. doxygengroup:: devicetree-clocks
+
 
 DMA
 ===
@@ -222,7 +222,7 @@ DMA
 These conveniences may be used for nodes which describe direct memory access
 controllers or channels, and properties related to them.
 
-.. doxygengroup:: devicetree-dmas
+
 
 .. _devicetree-flash-api:
 
@@ -234,7 +234,7 @@ compatible used to encode information about flash memory partitions in the
 device tree. See :zephyr_file:`dts/bindings/mtd/partition.yaml` for this
 compatible's binding.
 
-.. doxygengroup:: devicetree-fixed-partition
+
 
 .. _devicetree-gpio-api:
 
@@ -244,7 +244,7 @@ GPIO
 These conveniences may be used for nodes which describe GPIO controllers/pins,
 and properties related to them.
 
-.. doxygengroup:: devicetree-gpio
+
 
 IO channels
 ===========
@@ -252,7 +252,7 @@ IO channels
 These are commonly used by device drivers which need to use IO
 channels (e.g. ADC or DAC channels) for conversion.
 
-.. doxygengroup:: devicetree-io-channels
+
 
 .. _devicetree-pinctrl-api:
 
@@ -282,7 +282,7 @@ Above, ``pinctrl-0`` has name ``"default"``, and ``pinctrl-1`` has name
 ``&foo``, ``&bar``, etc. phandles within the properties point to nodes whose
 contents vary by platform, and which describe a pin configuration for the node.
 
-.. doxygengroup:: devicetree-pinctrl
+
 
 PWM
 ===
@@ -290,7 +290,7 @@ PWM
 These conveniences may be used for nodes which describe PWM controllers and
 properties related to them.
 
-.. doxygengroup:: devicetree-pwms
+
 
 SPI
 ===
@@ -298,7 +298,7 @@ SPI
 These conveniences may be used for nodes which describe either SPI controllers
 or devices, depending on the case.
 
-.. doxygengroup:: devicetree-spi
+
 
 .. _devicetree-chosen-nodes:
 
@@ -309,13 +309,13 @@ The special ``/chosen`` node contains properties whose values describe
 system-wide settings. The :c:func:`DT_CHOSEN()` macro can be used to get a node
 identifier for a chosen node.
 
-.. doxygengroup:: devicetree-generic-chosen
+
    :project: Zephyr
 
 There are also conveniences for commonly used zephyr-specific properties of the
 ``/chosen`` node.
 
-.. doxygengroup:: devicetree-zephyr
+
    :project: Zephyr
 
 The following table documents some commonly used Zephyr-specific chosen nodes.

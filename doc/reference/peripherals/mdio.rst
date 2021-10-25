@@ -16,5 +16,5 @@ used by user firmware.
 API Reference
 *************
 
-.. doxygengroup:: mdio_interface
+
    :project: Zephyr

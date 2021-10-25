@@ -74,4 +74,4 @@ When done, the Websocket transport socket must be closed.
 API Reference
 *************
 
-.. doxygengroup:: websocket
+

@@ -269,4 +269,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: usermode_apis
+

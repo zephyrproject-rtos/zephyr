@@ -14,4 +14,4 @@ instance at runtime.
 API reference
 *************
 
-.. doxygengroup:: _usb_device_controller_api
+

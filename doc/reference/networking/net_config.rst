@@ -71,4 +71,4 @@ starts.
 API Reference
 *************
 
-.. doxygengroup:: net_config
+

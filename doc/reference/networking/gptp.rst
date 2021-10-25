@@ -72,4 +72,4 @@ source distribution can be used for testing.
 API Reference
 *************
 
-.. doxygengroup:: gptp
+

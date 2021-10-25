@@ -93,19 +93,19 @@ The list of available power states is defined by :c:enum:`pm_state`. In
 general power states with higher indexes will offer greater power savings and
 have higher wake latencies. Following is a thorough list of available states:
 
-.. doxygenenumvalue:: PM_STATE_ACTIVE
 
-.. doxygenenumvalue:: PM_STATE_RUNTIME_IDLE
 
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_IDLE
 
-.. doxygenenumvalue:: PM_STATE_STANDBY
 
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_RAM
 
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_DISK
 
-.. doxygenenumvalue:: PM_STATE_SOFT_OFF
+
+
+
+
+
+
+
 
 .. _pm_constraints:
 
@@ -119,11 +119,11 @@ tasks in background to avoid the system to go to a specific state where it would
 lose context. Constraints can be set, released and checked using the
 follow APIs:
 
-.. doxygenfunction:: pm_constraint_set
 
-.. doxygenfunction:: pm_constraint_release
 
-.. doxygenfunction:: pm_constraint_get
+
+
+
 
 Power Management Policies
 =========================
@@ -533,14 +533,14 @@ API Reference
 Power Management Hook Interface
 ===============================
 
-.. doxygengroup:: power_management_hook_interface
+
 
 System Power Management APIs
 ============================
 
-.. doxygengroup:: system_power_management_api
+
 
 Device Power Management APIs
 ============================
 
-.. doxygengroup:: device_power_management_api
+

@@ -12,4 +12,4 @@ can be set with :c:member:`bt_mesh_cfg_srv.gatt_proxy`.
 API reference
 *************
 
-.. doxygengroup:: bt_mesh_proxy
+

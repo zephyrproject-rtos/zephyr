@@ -41,4 +41,4 @@ enabling :kconfig:`CONFIG_IVSHMEM_SHELL`.
 API Reference
 *************
 
-.. doxygengroup:: ivshmem
+

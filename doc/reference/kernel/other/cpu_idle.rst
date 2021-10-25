@@ -138,4 +138,4 @@ i.e. not doing any real work, like in this example below.
 API Reference
 *************
 
-.. doxygengroup:: cpu_idle_apis
+

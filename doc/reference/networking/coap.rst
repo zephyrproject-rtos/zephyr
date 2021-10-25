@@ -203,4 +203,4 @@ Sample output of ttcn3 tests looks like this.
 API Reference
 *************
 
-.. doxygengroup:: coap
+

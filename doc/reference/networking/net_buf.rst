@@ -136,4 +136,4 @@ automatically placed back to the free buffers pool.
 API Reference
 *************
 
-.. doxygengroup:: net_buf
+

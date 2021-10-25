@@ -77,4 +77,4 @@ This shows an example on how to use the timing functions:
 API documentation
 *****************
 
-.. doxygengroup:: timing_api
+

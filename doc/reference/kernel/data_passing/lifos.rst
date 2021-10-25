@@ -147,4 +147,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: lifo_apis
+

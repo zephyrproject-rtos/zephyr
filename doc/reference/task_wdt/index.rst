@@ -51,4 +51,4 @@ Related configuration options can be found under
 API Reference
 *************
 
-.. doxygengroup:: task_wdt_api
+

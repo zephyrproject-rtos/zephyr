@@ -95,14 +95,14 @@ being triggered for the same attribute. Subscriptions can be removed with use of
 API Reference
 *************
 
-.. doxygengroup:: bt_gatt
+
 
 GATT Server
 ===========
 
-.. doxygengroup:: bt_gatt_server
+
 
 GATT Client
 ===========
 
-.. doxygengroup:: bt_gatt_client
+

@@ -242,4 +242,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: timer_apis
+

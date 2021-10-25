@@ -76,4 +76,4 @@ See :ref:`net-promiscuous-mode-sample` for a more comprehensive example.
 API Reference
 *************
 
-.. doxygengroup:: promiscuous
+

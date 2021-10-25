@@ -129,4 +129,4 @@ formatting since address changes whenever package is copied.
 API Reference
 *************
 
-.. doxygengroup:: cbprintf_apis
+

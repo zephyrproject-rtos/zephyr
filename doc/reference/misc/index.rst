@@ -5,8 +5,8 @@ Miscellaneous APIs
 
 .. comment
    not documenting
-   .. doxygengroup:: checksum
-   .. doxygengroup:: structured_data
+   
+   
 
 Checksum APIs
 *************
@@ -14,7 +14,7 @@ Checksum APIs
 CRC
 =====
 
-.. doxygengroup:: crc
+
 
 Structured Data APIs
 ********************
@@ -22,7 +22,7 @@ Structured Data APIs
 JSON
 ====
 
-.. doxygengroup:: json
+
 
 JWT
 ===
@@ -33,4 +33,4 @@ claims securely between two parties.  Although JWT is fairly flexible,
 this API is limited to creating the simplistic tokens needed to
 authenticate with the Google Core IoT infrastructure.
 
-.. doxygengroup:: jwt
+

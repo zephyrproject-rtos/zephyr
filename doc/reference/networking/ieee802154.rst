@@ -28,9 +28,9 @@ API Reference
 IEEE 802.15.4
 =============
 
-.. doxygengroup:: ieee802154
+
 
 IEEE 802.15.4 Management
 ========================
 
-.. doxygengroup:: ieee802154_mgmt
+

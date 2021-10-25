@@ -28,4 +28,4 @@ See :ref:`dhcpv4-client-sample` for details.
 API Reference
 *************
 
-.. doxygengroup:: dhcpv4
+

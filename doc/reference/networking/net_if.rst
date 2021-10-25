@@ -58,4 +58,4 @@ See :ref:`promiscuous_interface` API for more details.
 API Reference
 *************
 
-.. doxygengroup:: net_if
+

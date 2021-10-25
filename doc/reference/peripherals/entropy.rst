@@ -14,4 +14,4 @@ suitable to be used as random number generation functions.
 API Reference
 *************
 
-.. doxygengroup:: entropy_interface
+

@@ -62,4 +62,4 @@ When the Heartbeat subscription period ends, the
 API reference
 **************
 
-.. doxygengroup:: bt_mesh_heartbeat
+

@@ -89,4 +89,4 @@ to make the initialization of the CTR-DRBG as unique as possible.
 API Reference
 *************
 
-.. doxygengroup:: random_api
+

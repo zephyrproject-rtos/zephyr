@@ -18,4 +18,4 @@ layer address length is 8 bytes.
 API Reference
 *************
 
-.. doxygengroup:: net_linkaddr
+

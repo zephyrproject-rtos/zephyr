@@ -18,4 +18,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: dac_interface
+

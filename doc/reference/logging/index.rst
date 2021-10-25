@@ -798,24 +798,24 @@ API Reference
 Logger API
 ==========
 
-.. doxygengroup:: log_api
+
 
 Logger control
 ==============
 
-.. doxygengroup:: log_ctrl
+
 
 Log message
 ===========
 
-.. doxygengroup:: log_msg
+
 
 Logger backend interface
 ========================
 
-.. doxygengroup:: log_backend
+
 
 Logger output formatting
 ========================
 
-.. doxygengroup:: log_output
+

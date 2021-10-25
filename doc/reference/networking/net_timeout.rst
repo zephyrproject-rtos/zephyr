@@ -58,4 +58,4 @@ remaining time.
 API Reference
 *************
 
-.. doxygengroup:: net_timeout
+

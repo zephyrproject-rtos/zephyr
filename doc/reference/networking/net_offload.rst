@@ -21,7 +21,7 @@ HAL instead of the Zephyr network stack.
 API Reference
 *************
 
-.. doxygengroup:: net_offload
+
 
 .. _net_socket_offloading:
 

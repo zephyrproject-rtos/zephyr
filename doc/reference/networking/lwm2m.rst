@@ -415,7 +415,7 @@ For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 API Reference
 *************
 
-.. doxygengroup:: lwm2m_api
+
 
 .. _LwM2M:
    https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/

@@ -51,4 +51,4 @@ See the `IEEE 802.1Q spec`_ for more information about ethernet VLANs.
 API Reference
 *************
 
-.. doxygengroup:: vlan_api
+

@@ -8,4 +8,4 @@ Serial Port Emulation (RFCOMM)
 API Reference
 *************
 
-.. doxygengroup:: bt_rfcomm
+

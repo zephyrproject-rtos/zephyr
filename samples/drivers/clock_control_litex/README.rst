@@ -40,9 +40,6 @@ Driver Usage
 
 The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` function ``clock_control_on()`` and a LiteX driver specific structure:
 
-.. doxygenstruct:: litex_clk_setup
-   :project: Zephyr
-
 | To change clock parameter it is needed to cast a pointer to structure ``litex_clk_setup`` onto ``clock_control_subsys_t`` and use it with ``clock_control_on()``.
 | This code will try to set on ``clk0`` frequency 50MHz, 90 degrees of phase offset and 75% duty cycle.
 

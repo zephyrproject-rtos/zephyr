@@ -13,4 +13,4 @@ device-specific API for counters with real-time support.
 API Reference
 *************
 
-.. doxygengroup:: rtc_interface
+

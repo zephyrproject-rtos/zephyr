@@ -34,4 +34,4 @@ API that uses :c:struct:`k_poll_signal` for notification.
 API Reference
 *************
 
-.. doxygengroup:: sys_notify_apis
+

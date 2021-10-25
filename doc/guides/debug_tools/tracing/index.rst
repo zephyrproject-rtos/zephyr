@@ -351,85 +351,85 @@ API
 Common
 ======
 
-.. doxygengroup:: tracing_apis
+
 
 Threads
 =======
 
-.. doxygengroup:: thread_tracing_apis
+
 
 
 Work Queues
 ===========
 
-.. doxygengroup:: work_tracing_apis
+
 
 
 Poll
 ====
 
-.. doxygengroup:: poll_tracing_apis
+
 
 Semaphore
 =========
 
-.. doxygengroup:: sem_tracing_apis
+
 
 Mutex
 =====
 
-.. doxygengroup:: mutex_tracing_apis
+
 
 Condition Variables
 ===================
 
-.. doxygengroup:: condvar_tracing_apis
+
 
 Queues
 ======
 
-.. doxygengroup:: queue_tracing_apis
+
 
 FIFO
 ====
 
-.. doxygengroup:: fifo_tracing_apis
+
 
 LIFO
 ====
-.. doxygengroup:: lifo_tracing_apis
+
 
 Stacks
 ======
 
-.. doxygengroup:: stack_tracing_apis
+
 
 Message Queues
 ==============
 
-.. doxygengroup:: msgq_tracing_apis
+
 
 Mailbox
 =======
 
-.. doxygengroup:: mbox_tracing_apis
+
 
 Pipes
 ======
 
-.. doxygengroup:: pipe_tracing_apis
+
 
 Heaps
 =====
 
-.. doxygengroup:: heap_tracing_apis
+
 
 Memory Slabs
 ============
 
-.. doxygengroup:: mslab_tracing_apis
+
 
 Timers
 ======
 
-.. doxygengroup:: timer_tracing_apis
+

@@ -23,4 +23,4 @@ first element if it is present in the composition data.
 API reference
 *************
 
-.. doxygengroup:: bt_mesh_cfg_cli
+

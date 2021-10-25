@@ -19,4 +19,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: gna_interface
+

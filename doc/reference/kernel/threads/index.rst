@@ -577,6 +577,6 @@ Related configuration options:
 API Reference
 **************
 
-.. doxygengroup:: thread_apis
 
-.. doxygengroup:: thread_stack_api
+
+

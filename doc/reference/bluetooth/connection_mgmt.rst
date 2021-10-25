@@ -27,4 +27,4 @@ also get hold of the connection object through the return value of the
 API Reference
 *************
 
-.. doxygengroup:: bt_conn
+

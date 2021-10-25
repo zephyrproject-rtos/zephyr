@@ -38,12 +38,12 @@ Example of a HID Report Descriptor:
 HID items reference
 *******************
 
-.. doxygengroup:: usb_hid_items
+
 
 HID types reference
 *******************
 
-.. doxygengroup:: usb_hid_types
+
 
 HID Mouse and Keyboard report descriptors
 *****************************************
@@ -51,11 +51,11 @@ HID Mouse and Keyboard report descriptors
 The pre-defined Mouse and Keyboard report descriptors can be used by
 a HID device implementation or simply as examples.
 
-.. doxygengroup:: usb_hid_mk_report_desc
+
 
 HID Class Device API reference
 ******************************
 
 USB HID devices like mouse, keyboard, or any other specific device use this API.
 
-.. doxygengroup:: usb_hid_device_api
+

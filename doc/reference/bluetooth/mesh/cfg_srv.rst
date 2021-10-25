@@ -20,4 +20,4 @@ should be instantiated in the first element.
 API reference
 *************
 
-.. doxygengroup:: bt_mesh_cfg_srv
+

@@ -351,4 +351,4 @@ support for SSEx instructions.
 API Reference
 *************
 
-.. doxygengroup:: float_apis
+

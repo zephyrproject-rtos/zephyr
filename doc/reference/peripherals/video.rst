@@ -53,6 +53,6 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: video_interface
 
-.. doxygengroup:: video_controls
+
+

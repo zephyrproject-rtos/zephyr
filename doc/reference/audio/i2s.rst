@@ -21,4 +21,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: i2s_interface
+

@@ -164,7 +164,7 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: mutex_apis
+
 
 Futex API Reference
 *******************
@@ -175,7 +175,7 @@ to shared memory. k_futex are tracked as kernel objects and can live in
 user memory so that any access bypasses the kernel object permission
 management mechanism.
 
-.. doxygengroup:: futex_apis
+
 
 User Mode Mutex API Reference
 *****************************
@@ -184,4 +184,4 @@ sys_mutex behaves almost exactly like k_mutex, with the added advantage
 that a sys_mutex instance can reside in user memory. When user mode isn't
 enabled, sys_mutex behaves like k_mutex.
 
-.. doxygengroup:: user_mutex_apis
+

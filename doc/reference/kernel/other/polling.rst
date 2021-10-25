@@ -282,4 +282,4 @@ Related configuration options:
 API Reference
 *************
 
-.. doxygengroup:: poll_apis
+
