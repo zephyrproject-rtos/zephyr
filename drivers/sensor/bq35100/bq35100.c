@@ -207,23 +207,12 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -EIO;
 	}
 
-	// LOG_DBG("Address before conversion: 0x%02X%02X", address, data[1], data[0]);
-
-	/* this is wrong. Why you wanna do this? You write address to MAC_CONTROL,
-	   then you read the register again to check if it has the same value as address. This
-	   is to check if address/subcommand was written correctly. Read the reference
-	   manual to understand these steps. */
-	/*data[0] = address & UCHAR_MAX; */
-	/*data[1] = address >> 8; */
-
 	// Address match check
 	if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
 		LOG_ERR("Address didn't match (expected 0x%04X, received 0x%02X%02X)", address, data[1], data[0]);
 		return -1;
 	}
 
-	LOG_DBG("MACDataSum/Checksum = 0x%02x", data[34]);
-	LOG_DBG("MACDataLen = 0x%02x", data[35]);
 	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
 		return -EIO;
@@ -360,7 +349,7 @@ static int bq35100_compute_checksum(const char *data, size_t length)
 		checksum = 0xFF - checksum;
 	}
 
-	LOG_DBG("Checksum is 0x%02X", checksum);
+	//LOG_DBG("Checksum is 0x%02X", checksum);
 
 	return checksum;
 }
@@ -558,12 +547,12 @@ static int bq35100_gauge_start(const struct device *dev)
 	status = bq35100_wait_for_status(dev, BQ35100_GA_BIT_MASK,
 					 BQ35100_GA_BIT_MASK, 100);
 
-	if (status) {
-		LOG_DBG("Gauge enabled");
-		dev_data->gauge_enabled = true;
-	} else {
+	if (status < 0) {
 		LOG_ERR("Gauge not enabled");
 		dev_data->gauge_enabled = false;
+	} else {
+		LOG_DBG("Gauge enabled");
+		dev_data->gauge_enabled = true;
 	}
 
 	return 0;
@@ -591,11 +580,13 @@ static int bq35100_gauge_stop(const struct device *dev)
 	}
 
 	// Stopping takes a lot of time
-	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500)) {
+	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500) < 0) {
+		LOG_ERR("Gauge not stopped");
+		dev_data->gauge_enabled = true;
+		
+	} else {
 		LOG_DBG("Gauge stopped");
 		dev_data->gauge_enabled = false;
-	} else {
-		LOG_ERR("Gauge not stopped");
 	}
 
 	return 0;
@@ -997,8 +988,6 @@ static int bq35100_init(const struct device *dev)
 	const struct bq35100_config *cfg = dev->config;
 	struct bq35100_data *data = dev->data;
 
-	// int status, temp;
-
 	if (cfg->ge_gpio->name) {
 		if (bq35100_init_ge_pin(dev) < 0) {
 			return -ENODEV;
@@ -1022,7 +1011,7 @@ static int bq35100_init(const struct device *dev)
 	}
 
 	if (bq35100_get_security_mode(dev) < 0) {
-		return EIO;
+		return -EIO;
 	}
 
 	if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
@@ -1033,13 +1022,13 @@ static int bq35100_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (bq35100_gauge_start(dev) < 0) {
+	/*if (bq35100_gauge_start(dev) < 0) {
 		return -EIO;
-	}
+	}*/
 
-	/*if(bq35100_gauge_stop(dev) < 0){
+	/*if(bq35100_gauge_stop(dev) < 0) {
 	        return -EIO;
-	   }*/
+	}*/
 
 	return 0;
 }
