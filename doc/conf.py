@@ -73,7 +73,6 @@ with open(ZEPHYR_BASE / "SDK_VERSION") as f:
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "breathe",
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
@@ -248,33 +247,6 @@ doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
 doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
 doxyrunner_outdir_var = "DOXY_OUT"
-
-# -- Options for Breathe plugin -------------------------------------------
-
-breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
-breathe_default_project = "Zephyr"
-breathe_domain_by_extension = {
-    "h": "c",
-    "c": "c",
-}
-breathe_show_enumvalue_initializer = True
-breathe_default_members = ("members", )
-
-cpp_id_attributes = [
-    "__syscall",
-    "__syscall_always_inline",
-    "__deprecated",
-    "__may_alias",
-    "__used",
-    "__unused",
-    "__weak",
-    "__attribute_const__",
-    "__DEPRECATED_MACRO",
-    "FUNC_NORETURN",
-    "__subsystem",
-    "ALWAYS_INLINE",
-]
-c_id_attributes = cpp_id_attributes
 
 # -- Options for html_redirect plugin -------------------------------------
 
