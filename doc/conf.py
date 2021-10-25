@@ -79,6 +79,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "zephyr.doxybridge",
     "notfound.extension",
     "zephyr.external_content",
 ]
@@ -181,6 +182,10 @@ doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
 doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
 doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
+
+# -- Options for zephyr.doxybridge plugin ---------------------------------
+
+doxybridge_dir = doxyrunner_outdir
 
 # -- Options for html_redirect plugin -------------------------------------
 
