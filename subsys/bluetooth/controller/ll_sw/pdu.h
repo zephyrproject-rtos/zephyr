@@ -99,8 +99,10 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
-/* Controller defined back to back transmit MAFS */
+/* Controller defined back to back transmit MAFS for extended advertising */
 #define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_PDU_BACK2BACK_AFS)
+/* Controller defined back to back transmit MAFS for periodic advertising */
+#define EVENT_SYNC_B2B_MAFS_US  (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
