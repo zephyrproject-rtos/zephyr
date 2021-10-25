@@ -219,6 +219,8 @@ static int ina219_channel_get(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE
 static int ina219_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
+	uint16_t reg_val;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		return ina219_init(dev);
