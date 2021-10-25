@@ -11,4 +11,14 @@ config BOARD
 config BT_CTLR
 	default BT
 
+if DAC
+
+config DAC_MCP4725
+	default y
+
+config I2C
+	default y
+
+endif # DAC
+
 endif # BOARD_BL654_DVK
