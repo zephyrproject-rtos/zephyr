@@ -1022,13 +1022,13 @@ static int bq35100_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/*if (bq35100_gauge_start(dev) < 0) {
+	if (bq35100_gauge_start(dev) < 0) {
 		return -EIO;
-	}*/
+	}
 
-	/*if(bq35100_gauge_stop(dev) < 0) {
+	if(bq35100_gauge_stop(dev) < 0) {
 	        return -EIO;
-	}*/
+	}
 
 	return 0;
 }
