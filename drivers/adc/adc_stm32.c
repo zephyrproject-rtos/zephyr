@@ -325,6 +325,7 @@ static void adc_stm32_calib(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 
@@ -367,6 +368,14 @@ static void adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio, uint32_t shi
 #endif /* ADC_VER_V5_V90*/
 	MODIFY_REG(adc->CFGR2, (ADC_CFGR2_OVSS | ADC_CFGR2_OVSR),
 		(shift | (((1UL << ratio) - 1) << ADC_CFGR2_OVSR_Pos)));
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (adc == ADC1) {
+		/* the LL function expects a value from 1 to 1024 */
+		LL_ADC_ConfigOverSamplingRatioShift(adc, (1 << ratio), shift);
+	} else {
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
+	}
 #else /* CONFIG_SOC_SERIES_STM32H7X */
 	LL_ADC_ConfigOverSamplingRatioShift(adc, stm32_adc_ratio_table[ratio], shift);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
