@@ -189,6 +189,8 @@ const struct pm_state_info pm_power_state_next_get(void);
  * be needed to be done after sleep state exits. Currently it enables
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
+ *
+ * @param info Power state that the given cpu is leaving.
  */
 void pm_power_state_exit_post_ops(struct pm_state_info info);
 
