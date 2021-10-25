@@ -48,7 +48,6 @@ Roles
 """
 from typing import Any, Dict, Iterator, List, Tuple
 
-from breathe.directives.content_block import DoxygenGroupDirective
 from docutils import nodes
 from docutils.nodes import Node
 from docutils.parsers.rst import Directive, directives
@@ -59,6 +58,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.nodes import NodeMatcher, make_refnode
+from zephyr.doxybridge import DoxygenGroupDirective
 from zephyr.gh_utils import gh_link_get_url
 
 import json
@@ -323,7 +323,7 @@ def setup(app):
     app.add_transform(ConvertCodeSampleNode)
     app.add_post_transform(ProcessRelatedCodeSamplesNode)
 
-    # monkey-patching of Breathe's DoxygenGroupDirective
+    # monkey-patching of the DoxygenGroupDirective
     app.add_directive("doxygengroup", CustomDoxygenGroupDirective, override=True)
 
     return {
