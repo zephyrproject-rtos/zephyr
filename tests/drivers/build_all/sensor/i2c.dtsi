@@ -563,6 +563,7 @@ test_i2c_bq274xx: bq27xx@47 {
 	design-capacity = <1800>;
 	taper-current = <45>;
 	terminate-voltage = <3000>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_mpr: mpr@18 {
