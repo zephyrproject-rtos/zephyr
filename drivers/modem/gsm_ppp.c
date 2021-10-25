@@ -587,7 +587,8 @@ static void rssi_handler(struct k_work *work)
 static void gsm_finalize_connection(struct k_work *work)
 {
 	int ret = 0;
-	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem,
 					     gsm_configure_work);
 
 	/* If already attached, jump right to RSSI readout */
@@ -840,7 +841,8 @@ static int mux_attach(const struct device *mux, const struct device *uart,
 
 static void mux_setup(struct k_work *work)
 {
-	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem,
 					     gsm_configure_work);
 	const struct device *uart = DEVICE_DT_GET(GSM_UART_NODE);
 	int ret;
@@ -946,7 +948,8 @@ fail:
 
 static void gsm_configure(struct k_work *work)
 {
-	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct gsm_modem *gsm = CONTAINER_OF(dwork, struct gsm_modem,
 					     gsm_configure_work);
 	int ret = -1;
 
