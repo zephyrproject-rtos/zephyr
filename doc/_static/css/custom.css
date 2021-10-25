@@ -953,3 +953,15 @@ dark-mode-toggle::part(toggleLabel){
   #search-se-menu ul li.selected .fa-check {
     display: inline;
   }
+
+.doxygroup::after {
+    content: 'Doxygen';
+    display: inline-block;
+    background-color: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-size: 0.875em;
+    font-weight: bold;
+}
