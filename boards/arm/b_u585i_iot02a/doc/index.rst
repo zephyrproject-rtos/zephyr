@@ -139,6 +139,7 @@ They operate at a frequency of up to 160 MHz.
 
 - CRC calculation unit
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- True Random Number Generator (RNG)
 
 - Graphic features
 
@@ -175,6 +176,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-------------+------------+-----------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
