@@ -49,7 +49,7 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
-static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			     struct pdu_adv *pdu_scan);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
@@ -1189,13 +1189,19 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
-static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+static uint32_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			     struct pdu_adv *pdu_scan)
 {
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
 	uint16_t time_us;
 
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
 	lll_aux = &aux->lll;
 	lll = lll_aux->adv;
 	time_us = PDU_AC_US(pdu->len, lll->phy_s, lll->phy_flags) +
@@ -1231,7 +1237,7 @@ static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	uint32_t ticks_minus;
 	uint32_t ticks_plus;
 	uint32_t time_ticks;
-	uint16_t time_us;
+	uint32_t time_us;
 	uint32_t ret;
 
 	time_us = aux_time_get(aux, pdu, pdu_scan);
