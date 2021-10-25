@@ -19,9 +19,13 @@ config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
 	  Without this override, the SPI Master is only available
 	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not. Use this
-	  option ONLY if you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
+	  use EasyDMA, while the 'SPI' driver does not.
+	  When used in conjunction with nRF SPIM Devicetree property
+	  'anomaly-58-workaround' a workaround can be enabled per SPIM
+	  instance.  If you are certain that transactions with
+	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed
+	  then nRF52832 PPI and GPIOTE resources can be saved by not
+	  enabling 'anomaly-58-workaround' via the Devicetree.
 
 # Workaround for not being able to have commas in macro arguments
 DT_COMPAT_NORDIC_NRF_SPI  := nordic,nrf-spi
