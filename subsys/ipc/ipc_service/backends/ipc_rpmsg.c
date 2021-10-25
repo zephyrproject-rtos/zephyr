@@ -16,7 +16,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 {
 	struct rpmsg_virtio_device *p_rvdev;
 	struct ipc_rpmsg_instance *instance;
-	struct ipc_ept *ept;
+	struct ipc_rpmsg_ept *ept;
 	int err;
 
 	p_rvdev = CONTAINER_OF(rdev, struct rpmsg_virtio_device, rdev);
@@ -41,7 +41,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 }
 
 int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int role,
-			   struct ipc_ept *ept)
+			   struct ipc_rpmsg_ept *ept)
 {
 	struct rpmsg_device *rdev;
 
