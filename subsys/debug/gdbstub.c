@@ -33,6 +33,24 @@ LOG_MODULE_REGISTER(gdbstub);
 #define GDB_ERROR_MEMORY    "E14"
 #define GDB_ERROR_OVERFLOW  "E22"
 
+size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
+{
+	if ((hexlen + 1) < buflen * 2) {
+		return 0;
+	}
+
+	for (size_t i = 0; i < buflen; i++) {
+		if (hex2char(buf[i] >> 4, &hex[2 * i]) < 0) {
+			return 0;
+		}
+		if (hex2char(buf[i] & 0xf, &hex[2 * i + 1]) < 0) {
+			return 0;
+		}
+	}
+
+	return 2 * buflen;
+}
+
 /**
  * Add preamble and termination to the given data.
  *
@@ -55,7 +73,7 @@ static int gdb_send_packet(const uint8_t *data, size_t len)
 	/* Send the checksum */
 	z_gdb_putchar('#');
 
-	if (bin2hex(&checksum, 1, buf, sizeof(buf)) == 0) {
+	if (gdb_bin2hex(&checksum, 1, buf, sizeof(buf)) == 0) {
 		return -1;
 	}
 
@@ -156,7 +174,7 @@ static int gdb_mem_read(uint8_t *buf, size_t buf_len,
 	/* Read from system memory */
 	for (pos = 0; pos < len; pos++) {
 		data = *(uint8_t *)(addr + pos);
-		count += bin2hex(&data, 1, buf + count, buf_len - count);
+		count += gdb_bin2hex(&data, 1, buf + count, buf_len - count);
 	}
 
 	return count;
@@ -197,7 +215,7 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 	size_t size;
 
 	*buf = 'T';
-	size = bin2hex(&exception, 1, buf + 1, len - 1);
+	size = gdb_bin2hex(&exception, 1, buf + 1, len - 1);
 	if (size == 0) {
 		return -1;
 	}
