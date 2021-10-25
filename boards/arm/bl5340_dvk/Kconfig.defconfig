@@ -20,6 +20,16 @@ if BOARD_BL5340_DVK_CPUAPP
 config NORDIC_QSPI_NOR
 	default y
 
+if DAC
+
+config DAC_MCP4725
+	default y
+
+config I2C
+	default y
+
+endif # DAC
+
 endif # BOARD_BL5340_DVK_CPUAPP
 
 # By default, if we build for a Non-Secure version of the board,
