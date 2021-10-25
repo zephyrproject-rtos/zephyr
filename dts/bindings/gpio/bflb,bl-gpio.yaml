@@ -1,0 +1,40 @@
+# Copyright (c) 2021, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab GPIO node
+
+compatible: "bflb,bl-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 0
+
+    "#bflb,pin-cells":
+      type: int
+      required: true
+      const: 2
+      description: Number of items to expect in a bflb,pins specifier
+
+    "#bflb,signal-cells":
+      type: int
+      required: false
+      const: 1
+      description: Number of items to expect in a bflb,signals specifier
+
+bflb,pin-cells:
+  - fun
+  - pin
+
+bflb,signal-cells:
+  - flags
