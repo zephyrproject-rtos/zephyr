@@ -262,26 +262,12 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	}
 }
 
-/**
- * Read data from a given memory address and length.
- *
- * @return Number of bytes read from memory, otherwise -1
- */
-static int gdb_mem_read(uint8_t *buf, size_t buf_len,
-			uintptr_t addr, size_t len)
+/* Read memory byte-by-byte */
+static inline int gdb_mem_read_unaligned(uint8_t *buf, size_t buf_len,
+					 uintptr_t addr, size_t len)
 {
-	uint8_t data, align;
+	uint8_t data;
 	size_t pos, count = 0;
-
-	if (len > buf_len) {
-		count = -1;
-		goto out;
-	}
-
-	if (!gdb_mem_can_read(addr, len, &align)) {
-		count = -1;
-		goto out;
-	}
 
 	/* Read from system memory */
 	for (pos = 0; pos < len; pos++) {
@@ -289,42 +275,263 @@ static int gdb_mem_read(uint8_t *buf, size_t buf_len,
 		count += gdb_bin2hex(&data, 1, buf + count, buf_len - count);
 	}
 
-out:
 	return count;
 }
 
-/**
- * Write data to a given memory address and length.
- *
- * @return 0 if successful, otherwise -1
- */
-static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
-			 size_t len)
+/* Read memory with alignment constraint */
+static inline int gdb_mem_read_aligned(uint8_t *buf, size_t buf_len,
+				       uintptr_t addr, size_t len,
+				       uint8_t align)
 {
-	uint8_t data, align;
-	int ret = 0;
+	/*
+	 * Memory bus cannot do byte-by-byte access and
+	 * each access must be aligned.
+	 */
+	size_t read_sz, pos;
+	size_t remaining = len;
+	uint8_t *mem_ptr;
+	size_t count = 0;
+	int ret;
 
-	if (!gdb_mem_can_write(addr, len, &align)) {
+	union {
+		uint32_t u32;
+		uint8_t b8[4];
+	} data;
+
+	/* Max alignment */
+	if (align > 4) {
 		ret = -1;
 		goto out;
 	}
 
-	while (len > 0) {
-		size_t ret = hex2bin(buf, 2, &data, sizeof(data));
+	/* Round down according to alignment. */
+	mem_ptr = UINT_TO_POINTER(ROUND_DOWN(addr, align));
 
-		if (ret == 0) {
+	/*
+	 * Figure out how many bytes to skip (pos) and how many
+	 * bytes to read at the beginning of aligned memory access.
+	 */
+	pos = addr & (align - 1);
+	read_sz = MIN(len, align - pos);
+
+	/* Loop till there is nothing more to read. */
+	while (remaining > 0) {
+		data.u32 = *(uint32_t *)mem_ptr;
+
+		/*
+		 * Read read_sz bytes from memory and
+		 * convert the binary data into hexadecimal.
+		 */
+		count += gdb_bin2hex(&data.b8[pos], read_sz,
+				     buf + count, buf_len - count);
+
+		remaining -= read_sz;
+		if (remaining > align) {
+			read_sz = align;
+		} else {
+			read_sz = remaining;
+		}
+
+		/* Read the next aligned datum. */
+		mem_ptr += align;
+
+		/*
+		 * Any memory accesses after the first one are
+		 * aligned by design. So there is no need to skip
+		 * any bytes.
+		 */
+		pos = 0;
+	};
+
+	ret = count;
+
+out:
+	return ret;
+}
+
+/**
+ * Read data from a given memory address and length.
+ *
+ * @return Number of bytes read from memory, or -1 if error
+ */
+static int gdb_mem_read(uint8_t *buf, size_t buf_len,
+			uintptr_t addr, size_t len)
+{
+	uint8_t align;
+	int ret;
+
+	/*
+	 * Make sure there is enough space in the output
+	 * buffer for hexadecimal representation.
+	 */
+	if ((len * 2) > buf_len) {
+		ret = -1;
+		goto out;
+	}
+
+	if (!gdb_mem_can_read(addr, len, &align)) {
+		ret = -1;
+		goto out;
+	}
+
+	if (align > 1) {
+		ret = gdb_mem_read_aligned(buf, buf_len,
+					   addr, len,
+					   align);
+	} else {
+		ret = gdb_mem_read_unaligned(buf, buf_len,
+					     addr, len);
+	}
+
+out:
+	return ret;
+}
+
+/* Write memory byte-by-byte */
+static int gdb_mem_write_unaligned(const uint8_t *buf, uintptr_t addr,
+				   size_t len)
+{
+	uint8_t data;
+	int ret;
+	size_t count = 0;
+
+	while (len > 0) {
+		size_t cnt = hex2bin(buf, 2, &data, sizeof(data));
+
+		if (cnt == 0) {
 			ret = -1;
 			goto out;
 		}
 
 		*(uint8_t *)addr = data;
 
+		count += cnt;
 		addr++;
 		buf += 2;
 		len--;
 	}
 
-	ret = 0;
+	ret = count;
+
+out:
+	return ret;
+}
+
+/* Write memory with alignment constraint */
+static int gdb_mem_write_aligned(const uint8_t *buf, uintptr_t addr,
+				 size_t len, uint8_t align)
+{
+	size_t pos, write_sz;
+	uint8_t *mem_ptr;
+	size_t count = 0;
+	int ret;
+
+	/*
+	 * Incoming buf is of hexadecimal characters,
+	 * so binary data size is half of that.
+	 */
+	size_t remaining = len;
+
+	union {
+		uint32_t u32;
+		uint8_t b8[4];
+	} data;
+
+	/* Max alignment */
+	if (align > 4) {
+		ret = -1;
+		goto out;
+	}
+
+	/*
+	 * Round down according to alignment.
+	 * Read the data (of aligned size) first
+	 * as we need to do read-modify-write.
+	 */
+	mem_ptr = UINT_TO_POINTER(ROUND_DOWN(addr, align));
+	data.u32 = *(uint32_t *)mem_ptr;
+
+	/*
+	 * Figure out how many bytes to skip (pos) and how many
+	 * bytes to write at the beginning of aligned memory access.
+	 */
+	pos = addr & (align - 1);
+	write_sz = MIN(len, align - pos);
+
+	/* Loop till there is nothing more to write. */
+	while (remaining > 0) {
+		/*
+		 * Write write_sz bytes from memory and
+		 * convert the binary data into hexadecimal.
+		 */
+		size_t cnt = hex2bin(buf, write_sz * 2,
+				     &data.b8[pos], write_sz);
+
+		if (cnt == 0) {
+			ret = -1;
+			goto out;
+		}
+
+		count += cnt;
+		buf += write_sz * 2;
+
+		remaining -= write_sz;
+		if (remaining > align) {
+			write_sz = align;
+		} else {
+			write_sz = remaining;
+		}
+
+		/* Write data to memory */
+		*(uint32_t *)mem_ptr = data.u32;
+
+		/* Point to the next aligned datum. */
+		mem_ptr += align;
+
+		if (write_sz != align) {
+			/*
+			 * Since we are not writing a full aligned datum,
+			 * we need to do read-modify-write. Hence reading
+			 * it here before the next hex2bin() call.
+			 */
+			data.u32 = *(uint32_t *)mem_ptr;
+		}
+
+		/*
+		 * Any memory accesses after the first one are
+		 * aligned by design. So there is no need to skip
+		 * any bytes.
+		 */
+		pos = 0;
+	};
+
+	ret = count;
+
+out:
+	return ret;
+}
+
+/**
+ * Write data to a given memory address and length.
+ *
+ * @return Number of bytes written to memory, or -1 if error
+ */
+static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
+			 size_t len)
+{
+	uint8_t align;
+	int ret;
+
+	if (!gdb_mem_can_write(addr, len, &align)) {
+		ret = -1;
+		goto out;
+	}
+
+	if (align > 1) {
+		ret = gdb_mem_write_aligned(buf, addr, len, align);
+	} else {
+		ret = gdb_mem_write_unaligned(buf, addr, len);
+	}
 
 out:
 	return ret;
