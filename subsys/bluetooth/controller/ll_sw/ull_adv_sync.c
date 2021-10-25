@@ -51,7 +51,7 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
-static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
+static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
 			      struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
@@ -766,7 +766,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t ticks_minus;
 	uint32_t ticks_plus;
 	uint32_t time_ticks;
-	uint16_t time_us;
+	uint32_t time_us;
 	uint32_t ret;
 
 	time_us = sync_time_get(sync, pdu);
@@ -1468,12 +1468,19 @@ static uint8_t sync_chm_update(uint8_t handle)
 	return 0;
 }
 
-static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
+static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
 			      struct pdu_adv *pdu)
 {
 	struct lll_adv_sync *lll_sync;
 	struct lll_adv *lll;
 	uint32_t time_us;
+
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
 
 	lll_sync = &sync->lll;
 	lll = lll_sync->adv;

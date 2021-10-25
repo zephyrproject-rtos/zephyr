@@ -2045,6 +2045,11 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 {
 	uint16_t time_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
+	/* NOTE: 16-bit value is sufficient to calculate the maximum radio
+	 *       event time reservation for PDUs on primary advertising
+	 *       channels (37, 38, and 39 channel indices of 1M and Coded PHY).
+	 */
+
 	/* Calculate the PDU Tx Time and hence the radio event length */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
