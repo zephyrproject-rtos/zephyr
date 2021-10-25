@@ -12,6 +12,10 @@
 #include <freq.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -318,6 +322,15 @@
 			interrupt-names = "wakeup";
 			status = "disabled";
 			label = "LPTIM_1";
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			interrupts = <94 0>;
+			status = "disabled";
+			label = "RNG";
 		};
 
 		dac1: dac@46021800 {
