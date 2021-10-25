@@ -71,3 +71,7 @@
 	pinctrl-0 = <&dac1_out1_pa4>;
 	status = "okay";
 };
+
+&iwdg1 {
+	status = "okay";
+};
