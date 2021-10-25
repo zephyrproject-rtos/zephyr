@@ -25,16 +25,6 @@ LOG_MODULE_REGISTER(ssd16xx);
  * SSD1673, SSD1608, SSD1681, ILI3897 compatible EPD controller driver.
  */
 
-#define SSD16XX_DC_PIN DT_INST_GPIO_PIN(0, dc_gpios)
-#define SSD16XX_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
-#define SSD16XX_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
-#define SSD16XX_BUSY_PIN DT_INST_GPIO_PIN(0, busy_gpios)
-#define SSD16XX_BUSY_CNTRL DT_INST_GPIO_LABEL(0, busy_gpios)
-#define SSD16XX_BUSY_FLAGS DT_INST_GPIO_FLAGS(0, busy_gpios)
-#define SSD16XX_RESET_PIN DT_INST_GPIO_PIN(0, reset_gpios)
-#define SSD16XX_RESET_CNTRL DT_INST_GPIO_LABEL(0, reset_gpios)
-#define SSD16XX_RESET_FLAGS DT_INST_GPIO_FLAGS(0, reset_gpios)
-
 #define EPD_PANEL_WIDTH			DT_INST_PROP(0, width)
 #define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define EPD_PANEL_NUMOF_COLUMS		EPD_PANEL_WIDTH
@@ -52,15 +42,14 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_TR_SCALE_FACTOR		256U
 
 struct ssd16xx_data {
-	const struct device *reset;
-	const struct device *dc;
-	const struct device *busy;
-	const struct ssd16xx_config *config;
 	uint8_t scan_mode;
 	uint8_t update_cmd;
 };
 
 struct ssd16xx_config {
+	struct gpio_dt_spec reset;
+	struct gpio_dt_spec dc;
+	struct gpio_dt_spec busy;
 	struct spi_dt_spec bus;
 };
 
@@ -79,13 +68,13 @@ static uint8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
 static inline int ssd16xx_write_cmd(const struct device *dev,
 				    uint8_t cmd, uint8_t *data, size_t len)
 {
-	struct ssd16xx_data *driver = dev->data;
+	const struct ssd16xx_config *config = dev->config;
 	int err;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
-	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 1);
-	err = spi_write_dt(&driver->config->bus, &buf_set);
+	gpio_pin_set_dt(&config->dc, 1);
+	err = spi_write_dt(&config->bus, &buf_set);
 	if (err < 0) {
 		return err;
 	}
@@ -93,8 +82,8 @@ static inline int ssd16xx_write_cmd(const struct device *dev,
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 0);
-		err = spi_write_dt(&driver->config->bus, &buf_set);
+		gpio_pin_set_dt(&config->dc, 0);
+		err = spi_write_dt(&config->bus, &buf_set);
 		if (err < 0) {
 			return err;
 		}
@@ -105,13 +94,13 @@ static inline int ssd16xx_write_cmd(const struct device *dev,
 
 static inline void ssd16xx_busy_wait(const struct device *dev)
 {
-	struct ssd16xx_data *driver = dev->data;
-	int pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
+	const struct ssd16xx_config *config = dev->config;
+	int pin = gpio_pin_get_dt(&config->busy);
 
 	while (pin > 0) {
 		__ASSERT(pin >= 0, "Failed to get pin level");
 		k_msleep(SSD16XX_BUSY_DELAY);
-		pin = gpio_pin_get(driver->busy, SSD16XX_BUSY_PIN);
+		pin = gpio_pin_get_dt(&config->busy);
 	}
 }
 
@@ -529,16 +518,17 @@ static int ssd16xx_load_ws_default(const struct device *dev)
 
 static int ssd16xx_controller_init(const struct device *dev)
 {
+	const struct ssd16xx_config *config = dev->config;
+	struct ssd16xx_data *driver = dev->data;
 	int err;
 	uint8_t tmp[3];
 	size_t len;
-	struct ssd16xx_data *driver = dev->data;
 
 	LOG_DBG("");
 
-	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 1);
+	gpio_pin_set_dt(&config->reset, 1);
 	k_msleep(SSD16XX_RESET_DELAY);
-	gpio_pin_set(driver->reset, SSD16XX_RESET_PIN, 0);
+	gpio_pin_set_dt(&config->reset, 0);
 	k_msleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(dev);
 
@@ -634,8 +624,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 static int ssd16xx_init(const struct device *dev)
 {
-	struct ssd16xx_data *driver = dev->data;
-	const struct ssd16xx_config *config = driver->config;
+	const struct ssd16xx_config *config = dev->config;
 
 	LOG_DBG("");
 
@@ -644,44 +633,48 @@ static int ssd16xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	driver->reset = device_get_binding(SSD16XX_RESET_CNTRL);
-	if (driver->reset == NULL) {
-		LOG_ERR("Could not get GPIO port for SSD16XX reset");
+	if (!device_is_ready(config->reset.port)) {
+		LOG_ERR("GPIO port for SSD16XX reset is not ready");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->reset, SSD16XX_RESET_PIN,
-			   GPIO_OUTPUT_INACTIVE | SSD16XX_RESET_FLAGS);
-
-	driver->dc = device_get_binding(SSD16XX_DC_CNTRL);
-	if (driver->dc == NULL) {
-		LOG_ERR("Could not get GPIO port for SSD16XX DC signal");
+	if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE)) {
+		LOG_ERR("Failed to configure reset GPIO");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->dc, SSD16XX_DC_PIN,
-			   GPIO_OUTPUT_INACTIVE | SSD16XX_DC_FLAGS);
-
-	driver->busy = device_get_binding(SSD16XX_BUSY_CNTRL);
-	if (driver->busy == NULL) {
-		LOG_ERR("Could not get GPIO port for SSD16XX busy signal");
+	if (!device_is_ready(config->dc.port)) {
+		LOG_ERR("GPIO port for SSD16XX DC signal is not ready");
 		return -EIO;
 	}
 
-	gpio_pin_configure(driver->busy, SSD16XX_BUSY_PIN,
-			   GPIO_INPUT | SSD16XX_BUSY_FLAGS);
+	if (gpio_pin_configure_dt(&config->dc, GPIO_OUTPUT_INACTIVE)) {
+		LOG_ERR("Failed to configure DC GPIO");
+		return -EIO;
+	}
+
+	if (!device_is_ready(config->busy.port)) {
+		LOG_ERR("GPIO port for SSD16XX busy signal is not ready");
+		return -EIO;
+	}
+
+	if (gpio_pin_configure_dt(&config->busy, GPIO_INPUT)) {
+		LOG_ERR("Failed to configure busy GPIO");
+		return -EIO;
+	}
 
 	return ssd16xx_controller_init(dev);
 }
 
 static const struct ssd16xx_config ssd16xx_config = {
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
+		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+	.dc = GPIO_DT_SPEC_INST_GET(0, dc_gpios),
+	.busy = GPIO_DT_SPEC_INST_GET(0, busy_gpios),
 };
 
-static struct ssd16xx_data ssd16xx_driver = {
-	.config = &ssd16xx_config
-};
+static struct ssd16xx_data ssd16xx_driver;
 
 static struct display_driver_api ssd16xx_driver_api = {
 	.blanking_on = ssd16xx_blanking_on,
@@ -698,6 +691,6 @@ static struct display_driver_api ssd16xx_driver_api = {
 
 
 DEVICE_DT_INST_DEFINE(0, ssd16xx_init, NULL,
-		    &ssd16xx_driver, NULL,
+		    &ssd16xx_driver, &ssd16xx_config,
 		    POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
 		    &ssd16xx_driver_api);
