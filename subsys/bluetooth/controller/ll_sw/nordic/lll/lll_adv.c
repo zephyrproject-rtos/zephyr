@@ -671,15 +671,16 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 			    uint8_t devmatch_ok, uint8_t *rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return ((((lll->filter_policy & 0x01) == 0) &&
+	return ((((lll->filter_policy & BT_LE_ADV_FP_FILTER_SCAN_REQ) == 0) &&
 		 ull_filter_lll_rl_addr_allowed(sr->tx_addr,
 						sr->scan_req.scan_addr,
 						rl_idx)) ||
-		(((lll->filter_policy & 0x01) != 0) &&
+		(((lll->filter_policy & BT_LE_ADV_FP_FILTER_SCAN_REQ) != 0) &&
 		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 		isr_rx_sr_adva_check(tx_addr, addr, sr);
 #else
-	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
+	return (((lll->filter_policy & BT_LE_ADV_FP_FILTER_SCAN_REQ) == 0U) ||
+		 devmatch_ok) &&
 		isr_rx_sr_adva_check(tx_addr, addr, sr);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
@@ -733,15 +734,15 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return ((((lll->filter_policy & 0x02) == 0) &&
+	return ((((lll->filter_policy & BT_LE_ADV_FP_FILTER_CONN_IND) == 0) &&
 		 ull_filter_lll_rl_addr_allowed(ci->tx_addr,
 						ci->connect_ind.init_addr,
 						rl_idx)) ||
-		(((lll->filter_policy & 0x02) != 0) &&
+		(((lll->filter_policy & BT_LE_ADV_FP_FILTER_CONN_IND) != 0) &&
 		 (devmatch_ok || ull_filter_lll_irk_in_fal(*rl_idx)))) &&
 	       isr_rx_ci_adva_check(tx_addr, addr, ci);
 #else
-	return (((lll->filter_policy & 0x02) == 0) ||
+	return (((lll->filter_policy & BT_LE_ADV_FP_FILTER_CONN_IND) == 0) ||
 		(devmatch_ok)) &&
 	       isr_rx_ci_adva_check(tx_addr, addr, ci);
 #endif /* CONFIG_BT_CTLR_PRIVACY */

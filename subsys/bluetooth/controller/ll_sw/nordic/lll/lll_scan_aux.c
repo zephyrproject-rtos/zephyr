@@ -298,8 +298,9 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	} else if (ull_filter_lll_rl_enabled()) {
-		struct lll_filter *fal = ull_filter_lll_get(
-			!!(lll->filter_policy & 0x1));
+		struct lll_filter *fal =
+			ull_filter_lll_get((lll->filter_policy &
+					    SCAN_FP_FILTER) != 0U);
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(fal->enable_bitmask,
@@ -368,7 +369,8 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && ull_filter_lll_rl_enabled()) {
 		struct lll_filter *fal =
-			ull_filter_lll_get(!!(lll->filter_policy & 0x1));
+			ull_filter_lll_get((lll->filter_policy &
+					    SCAN_FP_FILTER) != 0);
 		const uint8_t *adva = &ext_hdr->data[ADVA_OFFSET];
 
 		*devmatch_ok = ull_filter_lll_fal_match(fal, pdu->tx_addr, adva,
@@ -487,8 +489,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	} else if (ull_filter_lll_rl_enabled()) {
-		struct lll_filter *filter = ull_filter_lll_get(
-			!!(lll->filter_policy & 0x1));
+		struct lll_filter *filter =
+			ull_filter_lll_get((lll->filter_policy &
+					    SCAN_FP_FILTER) != 0);
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(filter->enable_bitmask,
@@ -729,7 +732,8 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = devmatch_ok ?
-		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
+		 ull_filter_lll_rl_idx(((lll->filter_policy &
+					 SCAN_FP_FILTER) != 0U),
 				       devmatch_id) :
 		 irkmatch_ok ? ull_filter_lll_rl_irk_idx(irkmatch_id) :
 		 FILTER_IDX_NONE;
