@@ -7,12 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "csis.h"
-
-struct bt_csis_set_sirk {
-	uint8_t type;
-	uint8_t value[BT_CSIS_SET_SIRK_SIZE];
-} __packed;
+#include <bluetooth/audio/csis.h>
 
 struct csis_pending_notifications {
 	bt_addr_le_t addr;

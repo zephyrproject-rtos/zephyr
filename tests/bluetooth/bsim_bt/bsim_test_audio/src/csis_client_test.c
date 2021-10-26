@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifdef CONFIG_BT_CSIS_CLIENT
-#include "../../../../../subsys/bluetooth/audio/csis_client.h"
+#include <bluetooth/audio/csis.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
