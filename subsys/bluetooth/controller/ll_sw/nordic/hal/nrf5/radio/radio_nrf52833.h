@@ -349,7 +349,6 @@
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE2
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#define SW_SWITCH_TIMER NRF_TIMER1
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #define SW_SWITCH_TIMER_EVTS_COMP_S2_BASE 2
 
@@ -372,6 +371,19 @@
  */
 #undef NRF_RADIO_SHORTS_PDU_END_DISABLE
 #define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_PHYEND_DISABLE_Msk
+
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/* Use NRF_TIMER3 for PHYEND delay compensation because it has 6 channels available.
+ * In other cases NRF_TIMER1 with its 4 channels is enough.
+ */
+#define SW_SWITCH_TIMER NRF_TIMER3
+/* Allocate 2 adjacent channels for PHYEND delay compensation. Channels 4 and 5 will be used for it.
+ * It must be two channels because Radio TX/RX mode SW SWITCH uses two channels.
+ */
+#define SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE 4
+#else /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+#define SW_SWITCH_TIMER NRF_TIMER1
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
