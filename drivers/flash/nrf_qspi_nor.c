@@ -1034,6 +1034,110 @@ static const struct flash_driver_api qspi_nor_api = {
 #endif /* CONFIG_FLASH_JESD216_API */
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int enter_dpd(const struct device *const dev)
+{
+	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
+		struct qspi_cmd cmd = {
+			.op_code = SPI_NOR_CMD_DPD,
+		};
+		uint32_t t_enter_dpd = DT_INST_PROP_OR(0, t_enter_dpd, 0);
+		int ret;
+
+		ret = qspi_send_cmd(dev, &cmd, false);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (t_enter_dpd) {
+			uint32_t t_enter_dpd_us =
+				ceiling_fraction(t_enter_dpd, NSEC_PER_USEC);
+
+			k_busy_wait(t_enter_dpd_us);
+		}
+	}
+
+	return 0;
+}
+
+static int exit_dpd(const struct device *const dev)
+{
+	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
+		struct qspi_cmd cmd = {
+			.op_code = SPI_NOR_CMD_RDPD,
+		};
+		uint32_t t_exit_dpd = DT_INST_PROP_OR(0, t_exit_dpd, 0);
+		int ret;
+
+		ret = qspi_send_cmd(dev, &cmd, false);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (t_exit_dpd) {
+			uint32_t t_exit_dpd_us =
+				ceiling_fraction(t_exit_dpd, NSEC_PER_USEC);
+
+			k_busy_wait(t_exit_dpd_us);
+		}
+	}
+
+	return 0;
+}
+
+static int qspi_nor_pm_action(const struct device *dev,
+			      enum pm_device_action action)
+{
+	struct qspi_nor_data *dev_data = dev->data;
+	const struct qspi_nor_config *dev_config = dev->config;
+	int ret;
+	nrfx_err_t err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = ANOMALY_122_INIT(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
+			return -EBUSY;
+		}
+
+		ret = enter_dpd(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		nrfx_qspi_uninit();
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		err = nrfx_qspi_init(&dev_config->nrfx_cfg,
+				     qspi_handler,
+				     dev_data);
+		if (err != NRFX_SUCCESS) {
+			return -EIO;
+		}
+
+		ret = exit_dpd(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ANOMALY_122_UNINIT(dev);
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#else
+#define qspi_nor_pm_action NULL
+#endif /* CONFIG_PM_DEVICE */
+
 static struct qspi_nor_data qspi_nor_dev_data = {
 #ifdef CONFIG_MULTITHREADING
 	.trans = Z_SEM_INITIALIZER(qspi_nor_dev_data.trans, 1, 1),
@@ -1087,7 +1191,7 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 	.id = DT_INST_PROP(0, jedec_id),
 };
 
-DEVICE_DT_INST_DEFINE(0, qspi_nor_init, NULL,
+DEVICE_DT_INST_DEFINE(0, qspi_nor_init, qspi_nor_pm_action,
 		      &qspi_nor_dev_data, &qspi_nor_dev_config,
 		      POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		      &qspi_nor_api);
