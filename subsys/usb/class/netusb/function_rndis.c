@@ -457,7 +457,7 @@ static void rndis_notify_rsp(void)
 	};
 	int ret;
 
-	LOG_DBG("count %u", atomic_get(&rndis.notify_count));
+	LOG_DBG("count %lu", atomic_get(&rndis.notify_count));
 
 	if (atomic_get(&rndis.notify_count)) {
 		LOG_WRN("Notification is already sent");

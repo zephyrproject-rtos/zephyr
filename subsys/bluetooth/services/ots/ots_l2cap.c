@@ -122,7 +122,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
-	LOG_DBG("Channel %p status %u", chan, *status);
+	LOG_DBG("Channel %p status %lu", chan, atomic_get(status));
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
