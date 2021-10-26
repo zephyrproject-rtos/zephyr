@@ -20,4 +20,13 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 config LOG_DETECT_MISSED_STRDUP
 	default n
 
+if GDBSTUB
+
+# ESP32 GDB expects 420 bytes G-packet.
+# So double for hexadecimal digits.
+config GDBSTUB_BUF_SZ
+	default 840 if GDBSTUB
+
+endif
+
 endif
