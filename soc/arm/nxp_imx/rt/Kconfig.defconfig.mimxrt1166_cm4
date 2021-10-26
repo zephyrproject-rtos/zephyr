@@ -1,0 +1,17 @@
+# i.MX RT1160 CM4
+
+# Copyright (c) 2021, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1166_CM4
+
+config SOC
+	default "mimxrt1166_cm4"
+
+config NUM_IRQS
+	default 218
+
+config GPIO
+	default y
+
+endif # SOC_MIMXRT1166_CM4
