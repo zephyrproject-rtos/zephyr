@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
-#include "../audio/csis.h"
+#include <bluetooth/audio/csis.h>
 #include "bt.h"
 
 extern const struct shell *ctx_shell;

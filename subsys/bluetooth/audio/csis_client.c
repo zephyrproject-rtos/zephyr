@@ -30,7 +30,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/buf.h>
 #include <sys/byteorder.h>
-#include "csis_client.h"
+#include <bluetooth/audio/csis.h>
 #include "csis_crypto.h"
 #include "../host/conn_internal.h"
 #include "../host/keys.h"
