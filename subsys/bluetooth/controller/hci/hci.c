@@ -135,6 +135,11 @@ static uint32_t cis_pending_count;
 #define ADV_REPORT_EVT_MAX_LEN CONFIG_BT_BUF_EVT_RX_SIZE
 #endif
 
+/* In HCI event PHY indices start at 1 compare to 0 indexed in aux_ptr field in
+ * the Common Extended Payload Format in the PDUs.
+ */
+#define HCI_AUX_PHY_TO_HCI_PHY(aux_phy) (aux_phy + 1)
+
 #define DEFAULT_EVENT_MASK           0x1fffffffffff
 #define DEFAULT_EVENT_MASK_PAGE_2    0x0
 #define DEFAULT_LE_EVENT_MASK 0x1f
@@ -5181,7 +5186,7 @@ static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
 		aux_ptr = (void *)ptr;
 		ptr += sizeof(*aux_ptr);
 
-		*sec_phy = aux_ptr->phy + 1;
+		*sec_phy = HCI_AUX_PHY_TO_HCI_PHY(aux_ptr->phy);
 	}
 
 	if (h->sync_info) {
@@ -5506,7 +5511,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 			ptr += sizeof(*aux_ptr);
 
-			sec_phy_curr = aux_ptr->phy + 1;
+			sec_phy_curr = HCI_AUX_PHY_TO_HCI_PHY(aux_ptr->phy);
 
 			aux_phy = BIT(aux_ptr->phy);
 
