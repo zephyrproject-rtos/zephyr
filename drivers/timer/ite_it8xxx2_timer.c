@@ -101,7 +101,7 @@ void timer_5ms_one_shot(void)
 			ONE_SHOT_TIMER_FLAG);
 
 	/* Set rising edge triggered of one shot timer */
-	ite_intc_irq_priority_set(ONE_SHOT_TIMER_IRQ, 0, ONE_SHOT_TIMER_FLAG);
+	ite_intc_irq_polarity_set(ONE_SHOT_TIMER_IRQ, ONE_SHOT_TIMER_FLAG);
 
 	/* Clear interrupt status of one shot timer */
 	ite_intc_isr_clear(ONE_SHOT_TIMER_IRQ);
@@ -306,7 +306,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	}
 
 	/* Set rising edge triggered of external timer x */
-	ite_intc_irq_priority_set(irq_num, 0, irq_flag);
+	ite_intc_irq_polarity_set(irq_num, irq_flag);
 
 	/* Clear interrupt status of external timer x */
 	ite_intc_isr_clear(irq_num);

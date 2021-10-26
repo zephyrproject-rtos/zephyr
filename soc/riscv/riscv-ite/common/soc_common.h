@@ -43,8 +43,7 @@ extern void ite_intc_irq_enable(unsigned int irq);
 extern void ite_intc_irq_disable(unsigned int irq);
 extern uint8_t ite_intc_get_irq_num(void);
 extern int ite_intc_irq_is_enable(unsigned int irq);
-extern void ite_intc_irq_priority_set(unsigned int irq,
-			unsigned int prio, unsigned int flags);
+extern void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags);
 extern void ite_intc_isr_clear(unsigned int irq);
 #endif /* CONFIG_ITE_IT8XXX2_INTC */
 
