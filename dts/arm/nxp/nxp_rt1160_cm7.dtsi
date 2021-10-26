@@ -39,7 +39,7 @@
 
 		/*
 		 * M7 uses different addresses from the M4 core for GPIO2 and
-		 * GPIO3, see pg. 1460 of RT1170 ref manual for example
+		 * GPIO3, see pg. 1460 of RT1160 ref manual for example
 		 */
 		gpio2: gpio@42008000 {
 			compatible = "nxp,imx-gpio";

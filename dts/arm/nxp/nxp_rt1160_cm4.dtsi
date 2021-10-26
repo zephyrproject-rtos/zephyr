@@ -32,7 +32,7 @@
 
 		/*
 		 * M4 uses different addresses from the M7 core for GPIO2 and
-		 * GPIO3, see pg. 1410 of RT1170 ref manual for example
+		 * GPIO3, see pg. 1364 of RT1160 ref manual for example
 		 */
 		gpio2: gpio@40130000 {
 			compatible = "nxp,imx-gpio";
@@ -70,8 +70,11 @@
 				<12 0>, <13 0>, <14 0>, <15 0>,
 				<16 0>;
 		};
+
 	};
+
 };
+
 
 &gpio9 {
 	interrupts = <99 0>;
