@@ -20,7 +20,7 @@
 
 #include "bt.h"
 
-#include "../audio/csis_client.h"
+#include <bluetooth/audio/csis.h>
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
