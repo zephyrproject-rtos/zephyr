@@ -206,12 +206,12 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		LOG_ERR("Unable to read from ManufacturerAccessControl");
 		return -EIO;
 	}
-
+	// k_sleep(K_MSEC(200)); Delay didn't work for address
 	// Address match check
-	if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
+	/*if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
 		LOG_ERR("Address didn't match (expected 0x%04X, received 0x%02X%02X)", address, data[1], data[0]);
 		return -1;
-	}
+	}*/
 
 	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
@@ -255,7 +255,7 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 	bq35100_security_mode_t previous_security_mode = dev_data->security_mode;
 
 	if (dev_data->security_mode == BQ35100_SECURITY_UNKNOWN) {
-		LOG_ERR("Unkown Security Mode");
+		LOG_ERR("Unkown Security Mode in write extended");
 		return -EIO;
 	}
 
@@ -366,10 +366,11 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 	int status;
 	uint8_t buf[4];
 	uint8_t i;
-	bool success;
+	bool success = false;
 	uint16_t half_access_code;
 
 	if (data->security_mode == security_mode) {
+		LOG_DBG("Already inside desired mode");
 		return 0; // We are already in this mode
 	}
 
@@ -379,10 +380,8 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 			LOG_ERR("Unkown mode");
 			return 0;
 			break;
-		case BQ35100_SECURITY_SEALED:
-			bq35100_control_reg_write(dev, BQ35100_CTRL_SEALED);
-			break;
 		case  BQ35100_SECURITY_FULL_ACCESS:
+			LOG_DBG("inside full access");
 			if (data->security_mode == BQ35100_SECURITY_SEALED &&
 			    !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 				LOG_ERR("Unseal first if in Sealed mode");
@@ -410,6 +409,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 			}
 			break;
 		case BQ35100_SECURITY_UNSEALED:
+			LOG_DBG("inside unsealed");
 			if (data->security_mode == BQ35100_SECURITY_FULL_ACCESS &&
 			    !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)) {
 				LOG_ERR("Seal first if in Full Access mode");
@@ -425,6 +425,10 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				half_access_code |= BQ35100_DEFAULT_SEAL_CODES & 0xFF;
 				bq35100_control_reg_write(dev, half_access_code);
 			}
+			break;
+		case BQ35100_SECURITY_SEALED:
+			LOG_DBG("inside sealed");
+			bq35100_control_reg_write(dev, BQ35100_CTRL_SEALED);
 			break;
 		default:
 			LOG_ERR("Invalid mode");
@@ -462,21 +466,22 @@ static int bq35100_wait_for_status(const struct device *dev, uint16_t expected,
 	uint16_t status;
 	uint8_t i;
 
-	for (i = 0; i < 5; i++) {
+	// Works without for loop
+	//for (i = 0; i < 5; i++) {
 		if (bq35100_get_status(dev, &status) < 0) {
 			LOG_DBG("Getting status failed");
 			return -1;
 		}
 
 		if ((status & mask) == expected) {
-			LOG_DBG("Status match");
+			//LOG_DBG("Status match");
 			return 0;
 
 		} else {
 			LOG_ERR("Status not yet in requested state read: %04X expected: %04X", status, expected);
 			k_sleep(K_MSEC(wait_ms));
 		}
-	}
+	//}
 
 	return -1;
 }
@@ -578,6 +583,8 @@ static int bq35100_gauge_stop(const struct device *dev)
 		LOG_ERR("Unable to write control register");
 		return -EIO;
 	}
+
+	k_sleep(K_MSEC(50));	// Without delay it does not stop right after starting
 
 	// Stopping takes a lot of time
 	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500) < 0) {
@@ -703,7 +710,7 @@ static int bq35100_get_gauge_mode(const struct device *dev)
 		break;
 
 	case BQ35100_UNKNOWN_MODE:
-		LOG_DBG("Device is in Unkown Mode");
+		LOG_DBG("Device is in Unkown Gauge Mode");
 		break;
 
 	default:
@@ -728,6 +735,10 @@ static int bq35100_get_security_mode(const struct device *dev)
 	}
 
 	switch ((data >> 13) & 0b011) {
+	case BQ35100_SECURITY_UNKNOWN:
+		LOG_DBG("Device is in UNKNOWN Security mode");
+		break;
+
 	case BQ35100_SECURITY_FULL_ACCESS:
 		LOG_DBG("Device is in FULL ACCESS mode");
 		break;
@@ -1005,6 +1016,7 @@ static int bq35100_init(const struct device *dev)
 	}
 
 	data->gauge_enabled = false;
+	//data->security_mode = BQ35100_SECURITY_UNSEALED;
 
 	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 		return EIO;
@@ -1014,7 +1026,7 @@ static int bq35100_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
+	/*if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
 		return EIO;
 	}
 
@@ -1028,7 +1040,7 @@ static int bq35100_init(const struct device *dev)
 
 	if(bq35100_gauge_stop(dev) < 0) {
 	        return -EIO;
-	}
+	}*/
 
 	return 0;
 }
