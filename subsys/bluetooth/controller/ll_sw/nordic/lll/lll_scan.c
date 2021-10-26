@@ -143,13 +143,13 @@ bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
 			   uint8_t devmatch_ok, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return (((lll->filter_policy & 0x01) == 0) &&
+	return (((lll->filter_policy & SCAN_FP_FILTER) == 0U) &&
 		(!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
 							       rl_idx))) ||
-	       (((lll->filter_policy & 0x01) != 0) &&
+	       (((lll->filter_policy & SCAN_FP_FILTER) != 0U) &&
 		(devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
 #else
-	return ((lll->filter_policy & 0x01) == 0U) ||
+	return ((lll->filter_policy & SCAN_FP_FILTER) == 0U) ||
 		devmatch_ok;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
@@ -215,7 +215,7 @@ bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
 	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
 	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
 	return ((!is_init ||
-		 (lll->filter_policy & 0x01) ||
+		 ((lll->filter_policy & SCAN_FP_FILTER) != 0U) ||
 		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
 		((!is_directed) ||
 		 (is_directed &&
@@ -410,7 +410,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ull_filter_lll_rl_enabled()) {
 		struct lll_filter *filter =
-			ull_filter_lll_get(!!(lll->filter_policy & 0x1));
+			ull_filter_lll_get((lll->filter_policy &
+					   SCAN_FP_FILTER) != 0U);
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(filter->enable_bitmask,
@@ -699,7 +700,8 @@ static void isr_rx(void *param)
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = devmatch_ok ?
-		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
+		 ull_filter_lll_rl_idx(((lll->filter_policy &
+					 SCAN_FP_FILTER) != 0U),
 				       devmatch_id) :
 		 irkmatch_ok ? ull_filter_lll_rl_irk_idx(irkmatch_id) :
 			       FILTER_IDX_NONE;
@@ -1392,7 +1394,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
-	return ((((lll->filter_policy & 0x01) != 0U) ||
+	return ((((lll->filter_policy & SCAN_FP_FILTER) != 0U) ||
 		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
 				    rl_idx)) &&
 		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
@@ -1433,7 +1435,7 @@ static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   uint8_t addr_type, uint8_t *addr,
 					   bool *dir_report)
 {
-	if (((lll->filter_policy & 0x02) != 0U) && (addr_type != 0) &&
+	if (((lll->filter_policy & SCAN_FP_EXT) != 0U) && (addr_type != 0U) &&
 	    ((addr[5] & 0xc0) == 0x40)) {
 
 		if (dir_report) {
