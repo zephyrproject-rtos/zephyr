@@ -28,10 +28,27 @@ LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE) (0)
 #endif
 
+#ifdef CONFIG_PWM_CAPTURE
+struct pwm_stm32_capture_data {
+	pwm_capture_callback_handler_t callback;
+	void *user_data;
+	uint32_t period;
+	uint32_t pulse;
+	uint32_t overflows;
+	uint8_t skip_irq;
+	bool capture_period;
+	bool capture_pulse;
+	bool continuous;
+};
+#endif /*CONFIG_PWM_CAPTURE*/
+
 /** PWM data. */
 struct pwm_stm32_data {
 	/** Timer clock (Hz). */
 	uint32_t tim_clk;
+#ifdef CONFIG_PWM_CAPTURE
+	struct pwm_stm32_capture_data capture;
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
 /** PWM configuration. */
@@ -46,6 +63,9 @@ struct pwm_stm32_config {
 	const struct soc_gpio_pinctrl *pinctrl;
 	/** Number of pinctrl configurations. */
 	size_t pinctrl_len;
+#ifdef CONFIG_PWM_CAPTURE
+	void (*irq_config_func)(const struct device *dev);
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
 /** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
@@ -70,6 +90,11 @@ struct pwm_stm32_config {
 #else
 #define TIMER_MAX_CH 4u
 #endif
+
+/* first capture is always nonsense, second is nonsense when polarity changed */
+#ifdef CONFIG_PWM_CAPTURE
+#define SKIPPED_PWM_CAPTURES 2u
+#endif /* CONFIG_PWM_CAPTURE */
 
 /** Channel to LL mapping. */
 static const uint32_t ch2ll[TIMER_MAX_CH] = {
@@ -224,6 +249,16 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_PWM_CAPTURE
+	if ((pwm == 1u) || (pwm == 2u)) {
+		if (LL_TIM_IsEnabledIT_CC1(cfg->timer) ||
+				LL_TIM_IsEnabledIT_CC2(cfg->timer)) {
+			LOG_ERR("Cannot set PWM output, capture in progress");
+			return -EBUSY;
+		}
+	}
+#endif /* CONFIG_PWM_CAPTURE */
+
 	channel = ch2ll[pwm - 1u];
 
 	if (period_cycles == 0u) {
@@ -240,6 +275,15 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
 		oc_init.CompareValue = pulse_cycles;
 		oc_init.OCPolarity = get_polarity(flags);
+
+#ifdef CONFIG_PWM_CAPTURE
+		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
+			LL_TIM_SetSlaveMode(cfg->timer,
+					LL_TIM_SLAVEMODE_DISABLED);
+			LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_ITR0);
+			LL_TIM_DisableMasterSlaveMode(cfg->timer);
+		}
+#endif /* CONFIG_PWM_CAPTURE */
 
 		if (LL_TIM_OC_Init(cfg->timer, channel, &oc_init) != SUCCESS) {
 			LOG_ERR("Could not initialize timer channel output");
@@ -259,6 +303,252 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
+#ifdef CONFIG_PWM_CAPTURE
+static int init_capture_channel(const struct device *dev, uint32_t pwm,
+		pwm_flags_t flags, uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	bool is_inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	LL_TIM_IC_InitTypeDef ic;
+
+	LL_TIM_IC_StructInit(&ic);
+	ic.ICPrescaler = TIM_ICPSC_DIV1;
+	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
+
+	if (channel == LL_TIM_CHANNEL_CH1) {
+		if (pwm == 1u) {
+			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
+			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_FALLING
+					: LL_TIM_IC_POLARITY_RISING;
+		} else {
+			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_INDIRECTTI;
+			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_RISING
+					: LL_TIM_IC_POLARITY_FALLING;
+		}
+	} else {
+		if (pwm == 1u) {
+			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_INDIRECTTI;
+			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_RISING
+					: LL_TIM_IC_POLARITY_FALLING;
+		} else {
+			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
+			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_FALLING
+					: LL_TIM_IC_POLARITY_RISING;
+		}
+	}
+
+	if (LL_TIM_IC_Init(cfg->timer, channel, &ic) != SUCCESS) {
+		LOG_ERR("Could not initialize channel for PWM capture");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int pwm_stm32_pin_configure_capture(const struct device *dev,
+		uint32_t pwm, pwm_flags_t flags,
+		pwm_capture_callback_handler_t cb, void *user_data)
+{
+
+	/*
+	 * Capture is implemented using the slave mode controller.
+	 * This allows for high accuracy, but only CH1 and CH2 are supported.
+	 * Alternatively all channels could be supported with ISR based resets.
+	 * This is currently not implemented!
+	 */
+
+	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+	int ret;
+
+	if ((pwm != 1u) && (pwm != 2u)) {
+		LOG_ERR("PWM capture only supported on first two channels");
+		return -ENOTSUP;
+	}
+
+	if (LL_TIM_IsEnabledIT_CC1(cfg->timer)
+			|| LL_TIM_IsEnabledIT_CC2(cfg->timer)) {
+		LOG_ERR("PWM Capture already in progress");
+		return -EBUSY;
+	}
+
+	if (cb == NULL) {
+		LOG_ERR("No PWM capture callback specified");
+		return -EINVAL;
+	}
+
+	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
+		LOG_ERR("No PWM capture type specified");
+		return -EINVAL;
+	}
+
+	if (!IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
+		LOG_ERR("Timer does not support slave mode for PWM capture");
+		return -ENOTSUP;
+	}
+
+	cpt->callback = cb;
+	cpt->user_data = user_data;
+	cpt->capture_period = (flags & PWM_CAPTURE_TYPE_PERIOD) ? true : false;
+	cpt->capture_pulse = (flags & PWM_CAPTURE_TYPE_PULSE) ? true : false;
+	cpt->continuous = (flags & PWM_CAPTURE_MODE_CONTINUOUS) ? true : false;
+
+	/* Prevents faulty behavior while making changes */
+	LL_TIM_SetSlaveMode(cfg->timer, LL_TIM_SLAVEMODE_DISABLED);
+
+	ret = init_capture_channel(dev, pwm, flags, LL_TIM_CHANNEL_CH1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = init_capture_channel(dev, pwm, flags, LL_TIM_CHANNEL_CH2);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (pwm == 1u) {
+		LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_TI1FP1);
+	} else {
+		LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_TI2FP2);
+	}
+	LL_TIM_SetSlaveMode(cfg->timer, LL_TIM_SLAVEMODE_RESET);
+
+	LL_TIM_EnableARRPreload(cfg->timer);
+	if (!IS_TIM_32B_COUNTER_INSTANCE(cfg->timer)) {
+		LL_TIM_SetAutoReload(cfg->timer, 0xffffu);
+	} else {
+		LL_TIM_SetAutoReload(cfg->timer, 0xffffffffu);
+	}
+	LL_TIM_EnableUpdateEvent(cfg->timer);
+
+	return 0;
+}
+
+static int pwm_stm32_pin_enable_capture(const struct device *dev, uint32_t pwm)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
+
+	if ((pwm != 1u) && (pwm != 2u)) {
+		LOG_ERR("PWM capture only supported on first two channels");
+		return -EINVAL;
+	}
+
+	if (LL_TIM_IsEnabledIT_CC1(cfg->timer)
+			|| LL_TIM_IsEnabledIT_CC2(cfg->timer)) {
+		LOG_ERR("PWM capture already active");
+		return -EBUSY;
+	}
+
+	data->capture.skip_irq = SKIPPED_PWM_CAPTURES;
+	data->capture.overflows = 0u;
+	LL_TIM_ClearFlag_CC1(cfg->timer);
+	LL_TIM_ClearFlag_CC2(cfg->timer);
+	LL_TIM_ClearFlag_UPDATE(cfg->timer);
+
+	LL_TIM_SetUpdateSource(cfg->timer, LL_TIM_UPDATESOURCE_COUNTER);
+	if (pwm == 1u) {
+		LL_TIM_EnableIT_CC1(cfg->timer);
+	} else {
+		LL_TIM_EnableIT_CC2(cfg->timer);
+	}
+	LL_TIM_EnableIT_UPDATE(cfg->timer);
+	LL_TIM_CC_EnableChannel(cfg->timer, LL_TIM_CHANNEL_CH1);
+	LL_TIM_CC_EnableChannel(cfg->timer, LL_TIM_CHANNEL_CH2);
+
+	return 0;
+}
+
+static int pwm_stm32_pin_disable_capture(const struct device *dev, uint32_t pwm)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+
+	if ((pwm != 1u) && (pwm != 2u)) {
+		LOG_ERR("PWM capture only supported on first two channels");
+		return -EINVAL;
+	}
+
+	LL_TIM_SetUpdateSource(cfg->timer, LL_TIM_UPDATESOURCE_REGULAR);
+	if (pwm == 1u) {
+		LL_TIM_DisableIT_CC1(cfg->timer);
+	} else {
+		LL_TIM_DisableIT_CC2(cfg->timer);
+	}
+	LL_TIM_DisableIT_UPDATE(cfg->timer);
+	LL_TIM_CC_DisableChannel(cfg->timer, LL_TIM_CHANNEL_CH1);
+	LL_TIM_CC_DisableChannel(cfg->timer, LL_TIM_CHANNEL_CH2);
+
+	return 0;
+}
+
+static void get_pwm_capture(const struct device *dev, uint32_t pwm)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+
+	if (pwm == 1u) {
+		cpt->period = LL_TIM_IC_GetCaptureCH1(cfg->timer);
+		cpt->pulse = LL_TIM_IC_GetCaptureCH2(cfg->timer);
+	} else {
+		cpt->period = LL_TIM_IC_GetCaptureCH2(cfg->timer);
+		cpt->pulse = LL_TIM_IC_GetCaptureCH1(cfg->timer);
+	}
+}
+
+static void pwm_stm32_isr(const struct device *dev)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+	int status = 0;
+	uint32_t in_ch = LL_TIM_IsEnabledIT_CC1(cfg->timer) ? 1u : 2u;
+
+	if (cpt->skip_irq == 0u) {
+		if (LL_TIM_IsActiveFlag_UPDATE(cfg->timer)) {
+			LL_TIM_ClearFlag_UPDATE(cfg->timer);
+			cpt->overflows++;
+		}
+
+		if (LL_TIM_IsActiveFlag_CC1(cfg->timer)
+				|| LL_TIM_IsActiveFlag_CC2(cfg->timer)) {
+			LL_TIM_ClearFlag_CC1(cfg->timer);
+			LL_TIM_ClearFlag_CC2(cfg->timer);
+
+			get_pwm_capture(dev, in_ch);
+
+			if (cpt->overflows) {
+				LOG_ERR("counter overflow during PWM capture");
+				status = -ERANGE;
+			}
+
+			if (!cpt->continuous) {
+				pwm_stm32_pin_disable_capture(dev, in_ch);
+			} else {
+				cpt->overflows = 0u;
+			}
+
+			cpt->callback(dev, in_ch,
+					cpt->capture_period ? cpt->period : 0u,
+					cpt->capture_pulse ? cpt->pulse : 0u,
+					status, cpt->user_data);
+		}
+	} else {
+		if (LL_TIM_IsActiveFlag_UPDATE(cfg->timer)) {
+			LL_TIM_ClearFlag_UPDATE(cfg->timer);
+		}
+
+		if (LL_TIM_IsActiveFlag_CC1(cfg->timer)
+				|| LL_TIM_IsActiveFlag_CC2(cfg->timer)) {
+			LL_TIM_ClearFlag_CC1(cfg->timer);
+			LL_TIM_ClearFlag_CC2(cfg->timer);
+			cpt->skip_irq--;
+		}
+	}
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t pwm,
 					uint64_t *cycles)
@@ -274,6 +564,11 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 static const struct pwm_driver_api pwm_stm32_driver_api = {
 	.pin_set = pwm_stm32_pin_set,
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
+#ifdef CONFIG_PWM_CAPTURE
+	.pin_configure_capture = pwm_stm32_pin_configure_capture,
+	.pin_enable_capture = pwm_stm32_pin_enable_capture,
+	.pin_disable_capture = pwm_stm32_pin_disable_capture,
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
 static int pwm_stm32_init(const struct device *dev)
@@ -331,8 +626,28 @@ static int pwm_stm32_init(const struct device *dev)
 
 	LL_TIM_EnableCounter(cfg->timer);
 
+#ifdef CONFIG_PWM_CAPTURE
+	cfg->irq_config_func(dev);
+#endif /* CONFIG_PWM_CAPTURE */
+
 	return 0;
 }
+
+#ifdef CONFIG_PWM_CAPTURE
+#define IRQ_CONFIG_FUNC(index)                                                 \
+static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
+{                                                                              \
+	IRQ_CONNECT(DT_IRQN(DT_PARENT(DT_DRV_INST(index))),                    \
+			DT_IRQ(DT_PARENT(DT_DRV_INST(index)), priority),       \
+			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);          \
+	irq_enable(DT_IRQN(DT_PARENT(DT_DRV_INST(index))));                    \
+}
+#define CAPTURE_INIT(index)                                                    \
+	.irq_config_func = pwm_stm32_irq_config_func_##index
+#else
+#define IRQ_CONFIG_FUNC(index)
+#define CAPTURE_INIT(index)
+#endif /* CONFIG_PWM_CAPTURE */
 
 #define DT_INST_CLK(index, inst)                                               \
 	{                                                                      \
@@ -349,6 +664,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
+	IRQ_CONFIG_FUNC(index)						       \
 									       \
 	static const struct soc_gpio_pinctrl pwm_pins_##index[] =	       \
 		ST_STM32_DT_INST_PINCTRL(index, 0);			       \
@@ -364,6 +680,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pinctrl = pwm_pins_##index,                                   \
 		.pinctrl_len = ARRAY_SIZE(pwm_pins_##index),                   \
+		CAPTURE_INIT(index)					       \
 	};                                                                     \
 									       \
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
