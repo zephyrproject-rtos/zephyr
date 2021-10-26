@@ -32,7 +32,7 @@ static struct k_fifo rndis_tx_queue;
 
 /* Serialize RNDIS command queue for later processing */
 #define CFG_RNDIS_CMD_BUF_COUNT	2
-#define CFG_RNDIS_CMD_BUF_SIZE	512
+#define CFG_RNDIS_CMD_BUF_SIZE	CONFIG_USB_REQUEST_BUFFER_SIZE
 NET_BUF_POOL_DEFINE(rndis_cmd_pool, CFG_RNDIS_CMD_BUF_COUNT,
 		    CFG_RNDIS_CMD_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_cmd_queue;

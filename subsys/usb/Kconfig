@@ -74,7 +74,7 @@ config USB_DEVICE_BLUETOOTH_BIG_BUF
 
 config USB_REQUEST_BUFFER_SIZE
 	int "Set buffer size for Standard, Class and Vendor request handlers"
-	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
+	range 64 512 if USB_DEVICE_NETWORK_RNDIS
 	range 8 65536
 	default 256 if USB_DEVICE_NETWORK_RNDIS
 	default 266 if (USB_DEVICE_BLUETOOTH && USB_DEVICE_BLUETOOTH_BIG_BUF)
