@@ -87,29 +87,29 @@ static uint8_t acc_odr_to_reg(const struct sensor_value *val)
 	double odr = sensor_value_to_double((struct sensor_value *) val);
 	uint8_t reg = 0;
 
-	if ((odr >= 0.78125f) && (odr < 1.5625f)) {
+	if ((odr >= 0.78125) && (odr < 1.5625)) {
 		reg = BMI270_ACC_ODR_25D32_HZ;
-	} else if ((odr >= 1.5625f) && (odr < 3.125f)) {
+	} else if ((odr >= 1.5625) && (odr < 3.125)) {
 		reg = BMI270_ACC_ODR_25D16_HZ;
-	} else if ((odr >= 3.125f) && (odr < 6.25f)) {
+	} else if ((odr >= 3.125) && (odr < 6.25)) {
 		reg = BMI270_ACC_ODR_25D8_HZ;
-	} else if ((odr >= 6.25f) && (odr < 12.5f)) {
+	} else if ((odr >= 6.25) && (odr < 12.5)) {
 		reg = BMI270_ACC_ODR_25D4_HZ;
-	} else if ((odr >= 12.5f) && (odr < 25.0f)) {
+	} else if ((odr >= 12.5) && (odr < 25.0)) {
 		reg = BMI270_ACC_ODR_25D2_HZ;
-	} else if ((odr >= 25.0f) && (odr < 50.0f)) {
+	} else if ((odr >= 25.0) && (odr < 50.0)) {
 		reg = BMI270_ACC_ODR_25_HZ;
-	} else if ((odr >= 50.0f) && (odr < 100.0f)) {
+	} else if ((odr >= 50.0) && (odr < 100.0)) {
 		reg = BMI270_ACC_ODR_50_HZ;
-	} else if ((odr >= 100.0f) && (odr < 200.0f)) {
+	} else if ((odr >= 100.0) && (odr < 200.0)) {
 		reg = BMI270_ACC_ODR_100_HZ;
-	} else if ((odr >= 200.0f) && (odr < 400.0f)) {
+	} else if ((odr >= 200.0) && (odr < 400.0)) {
 		reg = BMI270_ACC_ODR_200_HZ;
-	} else if ((odr >= 400.0f) && (odr < 800.0f)) {
+	} else if ((odr >= 400.0) && (odr < 800.0)) {
 		reg = BMI270_ACC_ODR_400_HZ;
-	} else if ((odr >= 800.0f) && (odr < 1600.0f)) {
+	} else if ((odr >= 800.0) && (odr < 1600.0)) {
 		reg = BMI270_ACC_ODR_800_HZ;
-	} else if (odr >= 1600.0f) {
+	} else if (odr >= 1600.0) {
 		reg = BMI270_ACC_ODR_1600_HZ;
 	}
 	return reg;
@@ -280,21 +280,21 @@ static uint8_t gyr_odr_to_reg(const struct sensor_value *val)
 	double odr = sensor_value_to_double((struct sensor_value *) val);
 	uint8_t reg = 0;
 
-	if ((odr >= 25.0f) && (odr < 50.0f)) {
+	if ((odr >= 25.0) && (odr < 50.0)) {
 		reg = BMI270_GYR_ODR_25_HZ;
-	} else if ((odr >= 50.0f) && (odr < 100.0f)) {
+	} else if ((odr >= 50.0) && (odr < 100.0)) {
 		reg = BMI270_GYR_ODR_50_HZ;
-	} else if ((odr >= 100.0f) && (odr < 200.0f)) {
+	} else if ((odr >= 100.0) && (odr < 200.0)) {
 		reg = BMI270_GYR_ODR_100_HZ;
-	} else if ((odr >= 200.0f) && (odr < 400.0f)) {
+	} else if ((odr >= 200.0) && (odr < 400.0)) {
 		reg = BMI270_GYR_ODR_200_HZ;
-	} else if ((odr >= 400.0f) && (odr < 800.0f)) {
+	} else if ((odr >= 400.0) && (odr < 800.0)) {
 		reg = BMI270_GYR_ODR_400_HZ;
-	} else if ((odr >= 800.0f) && (odr < 1600.0f)) {
+	} else if ((odr >= 800.0) && (odr < 1600.0)) {
 		reg = BMI270_GYR_ODR_800_HZ;
-	} else if ((odr >= 1600.0f) && (odr < 3200.0f)) {
+	} else if ((odr >= 1600.0) && (odr < 3200.0)) {
 		reg = BMI270_GYR_ODR_1600_HZ;
-	} else if (odr >= 3200.0f) {
+	} else if (odr >= 3200.0) {
 		reg = BMI270_GYR_ODR_3200_HZ;
 	}
 

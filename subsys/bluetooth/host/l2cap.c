@@ -59,7 +59,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 			  BT_L2CAP_BUF_SIZE(
 				sizeof(struct bt_l2cap_sig_hdr) +
 				sizeof(struct bt_l2cap_disconn_req)),
-			  NULL);
+			  8, NULL);
 
 #define L2CAP_ECRED_CHAN_MAX	5
 

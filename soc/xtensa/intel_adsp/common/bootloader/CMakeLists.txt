@@ -4,13 +4,21 @@
 #
 add_library(base_module OBJECT base_module.c)
 target_include_directories(base_module PUBLIC
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
+  ${PROJECT_BINARY_DIR}/include/generated
+  ${ZEPHYR_BASE}/include
   ../include
   )
 
 add_library(boot_module OBJECT boot_module.c)
 target_include_directories(boot_module PUBLIC
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
+  ${PROJECT_BINARY_DIR}/include/generated
+  ${ZEPHYR_BASE}/include
   ../include
   )
 
@@ -49,8 +57,11 @@ add_custom_command(TARGET bootloader
     -MD
     -D_LINKER
     -D_ASMLANGUAGE
+    -I ${SOC_DIR}/${ARCH}/${SOC_PATH}/
     -I ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
     -I ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
+    -I ${PROJECT_BINARY_DIR}/include/generated
+    -I ${ZEPHYR_BASE}/include
     ${current_defines}
     ${linker_pass_define}
     -E ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/bootloader/${bootloader_linker_script}.x
@@ -60,7 +71,7 @@ add_custom_command(TARGET bootloader
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
  )
 
-set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS -DASSEMBLY)
+set_source_files_properties(boot_entry.S PROPERTIES COMPILE_FLAGS "-DASSEMBLY -D_ASMLANGUAGE")
 if(CONFIG_RESET_VECTOR_IN_BOOTLOADER)
   set_source_files_properties(${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S PROPERTIES COMPILE_FLAGS -DBOOTLOADER)
 endif()

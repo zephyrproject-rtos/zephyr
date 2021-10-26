@@ -271,6 +271,10 @@ if (CONFIG_BUILD_WITH_TFM)
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
   )
 
+  # Set TFM binary directory as target property on 'tfm'
+  # This is the root of all TFM build artifacts.
+  set_target_properties(tfm PROPERTIES TFM_BINARY_DIR ${TFM_BINARY_DIR})
+
   # Set BL2 (MCUboot) executable file paths as target properties on 'tfm'
   # These files are produced by the TFM build system.
   if(CONFIG_TFM_BL2)
@@ -334,8 +338,8 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
 
   if (CONFIG_TFM_BL2)
-    set(PREPROCESSED_FILE_S "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
-    set(PREPROCESSED_FILE_NS "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
+    set(PREPROCESSED_FILE_S "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
+    set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
 
@@ -358,6 +362,10 @@ if (CONFIG_BUILD_WITH_TFM)
       set(pad_args --pad --pad-header)
     endif()
     set (${OUT_ARG}
+      # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
+      # it gets used over the system imgtool. Used so that imgtool from upstream
+      # mcuboot is preferred over system imgtool
+      ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
       ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
       --layout ${PREPROCESSED_FILE_${SUFFIX}}
       -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}

@@ -44,7 +44,7 @@ FILE(GLOB mock_sources
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/util.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ticker.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull.c
-	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_periph.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_peripheral.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_central.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_scan.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/lll_clock.c

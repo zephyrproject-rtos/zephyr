@@ -175,7 +175,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
-				(CONFIG_BT_BUF_ACL_TX_SIZE + \
+				(LL_LENGTH_OCTETS_TX_MAX + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
 /**
@@ -191,6 +191,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 /* Terminate procedure state values */
 #define TERM_REQ   1
 #define TERM_ACKED 3
+
+/* CIS Establishment procedure state values */
+#define CIS_REQUEST_AWAIT_HOST 2
 
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_BUF_ACL_TX_COUNT);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
@@ -647,13 +650,13 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 #if defined(CONFIG_BT_CTLR_PARAM_CHECK)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	uint16_t tx_time_max =
-			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_CODED);
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
 	uint16_t tx_time_max =
-			PDU_DC_MAX_US(CONFIG_BT_BUF_ACL_TX_SIZE, PHY_1M);
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
-	if ((tx_octets > CONFIG_BT_BUF_ACL_TX_SIZE) ||
+	if ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
 	    (tx_time > tx_time_max)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
@@ -3126,9 +3129,9 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				instant_latency;
 
 			lll->periph.window_widening_periodic_us =
-				(((lll_clock_ppm_local_get() +
-				   lll_clock_ppm_get(conn->periph.sca)) *
-				  conn_interval_us) + (1000000 - 1)) / 1000000U;
+				ceiling_fraction(((lll_clock_ppm_local_get() +
+					lll_clock_ppm_get(conn->periph.sca)) *
+					conn_interval_us), USEC_PER_SEC);
 			lll->periph.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->periph.window_size_prepare_us =
@@ -5954,6 +5957,11 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 void event_send_cis_rsp(struct ll_conn *conn)
 {
 	struct node_tx *tx;
+
+	/* If waiting for accept/reject from host, do nothing */
+	if (((conn->llcp_cis.req - conn->llcp_cis.ack) & 0xFF) == CIS_REQUEST_AWAIT_HOST) {
+		return;
+	}
 
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (tx) {

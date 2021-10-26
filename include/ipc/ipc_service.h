@@ -116,20 +116,38 @@ struct ipc_ept_cfg {
 	void *priv;
 };
 
+/** @brief Open an instance
+ *
+ *  Function to be used to open an instance before being able to register a new
+ *  endpoint on it.
+ *
+ *  @retval -EINVAL when instance configuration is invalid.
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EALREADY when the instance is already opened (or being opened).
+ *
+ *  @retval 0 on success or when not implemented on the backend (not needed).
+ *  @retval other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_open_instance(const struct device *instance);
+
+
 /** @brief Register IPC endpoint onto an instance.
  *
  *  Registers IPC endpoint onto an instance to enable communication with a
  *  remote device.
  *
- *  The same function registers endpoints for both master and slave devices.
+ *  The same function registers endpoints for both host and remote devices.
  *
  *  @param instance Instance to register the endpoint onto.
  *  @param ept Endpoint object.
  *  @param cfg Endpoint configuration.
  *
  *  @retval -EIO when no backend is registered.
- *  @retval -EINVAL when instance or endpoint configuration is invalid.
- *  @retval Other errno codes depending on the implementation of the backend.
+ *  @retval -EINVAL when instance, endpoint or configuration is invalid.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
  */
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
@@ -141,8 +159,14 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @param data Pointer to the buffer to send.
  *  @param len Number of bytes to send.
  *
- *  @retval -EIO when no backend is registered.
- *  @retval Other errno codes depending on the implementation of the backend.
+ *  @retval -EIO when no backend is registered or send hook is missing from
+ *	    backend.
+ *  @retval -EINVAL when instance or endpoint is invalid.
+ *  @retval -EBADMSG when the message is invalid.
+ *  @retval -EBUSY when the instance is busy.
+ *
+ *  @retval 0 on success.
+ *  @retval other errno codes depending on the implementation of the backend.
  */
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
 

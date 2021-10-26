@@ -36,7 +36,7 @@ static struct isotp_global_ctx global_ctx = {
 
 #ifdef CONFIG_ISOTP_USE_TX_BUF
 NET_BUF_POOL_VAR_DEFINE(isotp_tx_pool, CONFIG_ISOTP_TX_BUF_COUNT,
-			CONFIG_ISOTP_BUF_TX_DATA_POOL_SIZE, NULL);
+			CONFIG_ISOTP_BUF_TX_DATA_POOL_SIZE, 0, NULL);
 #endif
 
 static void receive_state_machine(struct isotp_recv_ctx *ctx);

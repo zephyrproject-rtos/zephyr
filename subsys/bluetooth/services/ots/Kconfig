@@ -46,6 +46,14 @@ config BT_OTS_MAX_OBJ_CNT
 config BT_OTS_SECONDARY_SVC
 	bool "Register OTS as Secondary Service"
 
+config BT_OTS_OACP_CREATE_SUPPORT
+	bool "Support OACP Create Operation"
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+	depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
+
+config BT_OTS_OACP_DELETE_SUPPORT
+	bool "Support OACP Delete Operation"
+
 config BT_OTS_OACP_READ_SUPPORT
 	bool "Support OACP Read Operation"
 	default y

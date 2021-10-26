@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 static struct spi_config iis2dh_spi_conf = {
 	.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-		      SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
+		      SPI_MODE_CPHA | SPI_WORD_SET(8)),
 	.slave     = DT_INST_REG_ADDR(0),
 	.cs        = NULL,
 };

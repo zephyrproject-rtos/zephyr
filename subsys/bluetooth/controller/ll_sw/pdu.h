@@ -110,6 +110,13 @@
 #define EVENT_INSTANT_MAX         0xffff
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
+/* Channel Map Unused channels count minimum */
+#define CHM_USED_COUNT_MIN     2U
+
+/* Channel Map hop count minimum and maximum */
+#define CHM_HOP_COUNT_MIN      5U
+#define CHM_HOP_COUNT_MAX      16U
+
 /* Offset Units field encoding */
 #define OFFS_UNIT_BITS         13
 #define OFFS_UNIT_30_US        30
@@ -136,6 +143,14 @@
 
 /* Channel Map Size */
 #define PDU_CHANNEL_MAP_SIZE 5
+
+/* Advertising Data */
+#define PDU_ADV_DATA_HEADER_SIZE        2U
+#define PDU_ADV_DATA_HEADER_LEN_SIZE    1U
+#define PDU_ADV_DATA_HEADER_TYPE_SIZE   1U
+#define PDU_ADV_DATA_HEADER_LEN_OFFSET  0U
+#define PDU_ADV_DATA_HEADER_TYPE_OFFSET 1U
+#define PDU_ADV_DATA_HEADER_DATA_OFFSET 2U
 
 /*
  * Macros to return correct Data Channel PDU time
@@ -212,7 +227,14 @@
 
 #define PDU_AC_US(octets, phy, cs)   PDU_US((octets), 0, (phy), (cs))
 
-#define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
+#define PDU_BIS_MAX_US(octets, enc, phy) PDU_MAX_US((octets), \
+						    ((enc) ? \
+						     (PDU_MIC_SIZE) : 0), \
+						    (phy))
+
+#define PDU_BIS_US(octets, enc, phy, s8) PDU_US((octets), \
+						((enc) ? (PDU_MIC_SIZE) : 0), \
+						(phy), (s8))
 
 /* TODO: verify if the following lines are correct */
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
@@ -980,6 +1002,10 @@ struct pdu_big_info {
 	uint8_t chm_phy[PDU_CHANNEL_MAP_SIZE]; /* 37 bit chm; 3 bit phy */
 	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
 
-	uint8_t giv; /* encryption required */
-	uint16_t gskd; /* encryption required */
+	uint8_t giv[8]; /* encryption required */
+	uint8_t gskd[16]; /* encryption required */
 } __packed;
+#define PDU_BIG_INFO_CLEARTEXT_SIZE offsetof(struct pdu_big_info, giv)
+#define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
+#define PDU_BIG_BN_MAX              0x07
+#define PDU_BIG_PAYLOAD_COUNT_MAX   28

@@ -12,11 +12,6 @@
 	model = "IT8XXX2 EV-Board";
 	compatible = "riscv,it8xxx2-evb";
 
-	aliases {
-		pwm-led0 = &led0;
-		pwm-led1 = &led1;
-	};
-
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
@@ -26,19 +21,6 @@
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,keyboard-scan = &kscan0;
-	};
-
-	pwmleds {
-		compatible = "pwm-leds";
-		/* NOTE: &pwm number needs same with channel number */
-		led0: led_0 {
-			pwms = <&pwm7 PWM_CHANNEL_7 PWM_POLARITY_INVERTED>;
-			label = "LED0_GREEN";
-		};
-		led1: led_1 {
-			pwms = <&pwm0 PWM_CHANNEL_0 PWM_POLARITY_NORMAL>;
-			label = "LED1_BLUE";
-		};
 	};
 };
 &adc0 {

@@ -32,6 +32,7 @@ config CDC_ACM_INTERRUPT_EP_MPS
 
 config CDC_ACM_BULK_EP_MPS
 	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
 	default 64
 	help
 	  CDC ACM class bulk endpoints size

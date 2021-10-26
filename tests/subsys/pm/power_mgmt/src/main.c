@@ -70,8 +70,10 @@ static int device_a_pm_action(const struct device *dev,
 	return 0;
 }
 
+PM_DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_a_pm_action);
+
 DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_init,
-		device_a_pm_action, NULL, NULL,
+		PM_DEVICE_DT_REF(DT_INST(0, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -113,8 +115,10 @@ static int device_b_pm_action(const struct device *dev,
 	return 0;
 }
 
+PM_DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_b_pm_action);
+
 DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_init,
-		device_b_pm_action, NULL, NULL,
+		PM_DEVICE_DT_REF(DT_INST(1, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -127,8 +131,10 @@ static int device_c_pm_action(const struct device *dev,
 	return 0;
 }
 
+PM_DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_c_pm_action);
+
 DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
-		device_c_pm_action, NULL, NULL,
+		PM_DEVICE_DT_REF(DT_INST(2, test_device_pm)), NULL, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -313,7 +319,7 @@ void test_power_state_trans(void)
  *    pm_action_cb
  *
  * @see pm_device_runtime_get(), pm_device_runtime_put_async(),
- *      pm_device_state_set(), pm_device_state_get()
+ *      pm_device_action_run(), pm_device_state_get()
  *
  * @ingroup power_tests
  */

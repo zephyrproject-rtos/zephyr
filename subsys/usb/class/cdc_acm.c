@@ -1104,7 +1104,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(idx, cdc_acm_init, NULL,			\
 		&cdc_acm_dev_data_##idx, &cdc_acm_config_##idx,		\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
 		&cdc_acm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CDC_ACM_DT_DEVICE_DEFINE);

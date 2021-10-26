@@ -58,18 +58,25 @@ static int pool_id(struct net_buf_pool *pool)
 int net_buf_id(struct net_buf *buf)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	size_t struct_size = ROUND_UP(sizeof(struct net_buf) + pool->user_data_size,
+				__alignof__(struct net_buf));
+	ptrdiff_t offset = (uint8_t *)buf - (uint8_t *)pool->__bufs;
 
-	return buf - pool->__bufs;
+	return offset / struct_size;
 }
 
 static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 					      uint16_t uninit_count)
 {
+	size_t struct_size = ROUND_UP(sizeof(struct net_buf) + pool->user_data_size,
+				__alignof__(struct net_buf));
+	size_t byte_offset = (pool->buf_count - uninit_count) * struct_size;
 	struct net_buf *buf;
 
-	buf = &pool->__bufs[pool->buf_count - uninit_count];
+	buf = (struct net_buf *)(((uint8_t *)pool->__bufs) + byte_offset);
 
 	buf->pool_id = pool_id(pool);
+	buf->user_data_size = pool->user_data_size;
 
 	return buf;
 }

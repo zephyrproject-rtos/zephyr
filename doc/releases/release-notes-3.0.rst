@@ -69,6 +69,12 @@ Removed APIs in this release:
   devicetree binding's ``fem`` property for information on what to do instead
   on the Nordic open source controller.
 
+* Removed Kconfig option ``CONFIG_USB_UART_CONSOLE``.
+  Option ``CONFIG_USB_UART_CONSOLE`` was only relevant for console driver
+  when CDC ACM UART is used as backend. Since the behavior of the CDC ACM UART
+  is changed so that it more closely mimics the real UART controller,
+  option is no longer necessary.
+
 Stable API changes in this release
 ==================================
 

@@ -7,7 +7,7 @@
 #define SHM_START_ADDR		CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_SHM_BASE_ADDRESS
 #define SHM_SIZE		CONFIG_IPC_SERVICE_BACKEND_RPMSG_MI_SHM_SIZE
 
-#define VRING_ALIGNMENT		(4)   /* Alignment of vring buffer */
+#define VRING_ALIGNMENT		CONFIG_IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
 #define VDEV_STATUS_SIZE	(0x4) /* Size of status region */
 
 #define VRING_COUNT		(2) /* Number of used vring buffers. */

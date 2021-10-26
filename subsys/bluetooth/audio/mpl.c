@@ -261,14 +261,24 @@ enum mpl_objects {
 /* And, except for the icon object, all objects can be created dynamically. */
 /* So a single buffer to hold object content is sufficient.  */
 struct obj_t {
-	uint64_t selected_id;  /* ID of the currently selected object*/
-	bool     busy;
-	uint8_t  add_type;     /* Type of object being added, e.g. MPL_OBJ_ICON */
+	/* ID of the currently selected object*/
+	uint64_t selected_id;
+
+	bool busy;
+
+	/* Type of object being added, e.g. MPL_OBJ_ICON */
+	uint8_t add_type;
+
+	/* Descriptor of object being added */
+	struct bt_ots_obj_created_desc *desc;
 	union {
-		struct mpl_track *add_track; /* Pointer to track being added */
-		struct mpl_group *add_group; /* Pointer to group being added */
+		/* Pointer to track being added */
+		struct mpl_track *add_track;
+
+		/* Pointer to group being added */
+		struct mpl_group *add_group;
 	};
-	struct   net_buf_simple *content;
+	struct net_buf_simple *content;
 };
 
 static struct obj_t obj = {
@@ -440,7 +450,8 @@ static uint32_t setup_group_object(struct mpl_group *group)
 static int add_icon_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_metadata icon = {0};
+	struct bt_ots_obj_add_param add_param = {};
+	struct bt_ots_obj_created_desc created_desc = {};
 	struct bt_uuid *icon_type = BT_UUID_OTS_TYPE_MPL_ICON;
 	static char *icon_name = "Icon";
 
@@ -452,14 +463,17 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 	}
 	obj.busy = true;
 	obj.add_type = MPL_OBJ_ICON;
+	obj.desc = &created_desc;
 
-	icon.size.alloc = icon.size.cur = setup_icon_object();
-	icon.name = icon_name;
-	icon.type.uuid.type = BT_UUID_TYPE_16;
-	icon.type.uuid_16.val = BT_UUID_16(icon_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(icon.props);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_icon_object();
+	obj.desc->name = icon_name;
+	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &icon);
+	add_param.size = obj.desc->size.alloc;
+	add_param.type.uuid.type = BT_UUID_TYPE_16;
+	add_param.type.uuid_16.val = BT_UUID_16(icon_type)->val;
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 
 	if (ret) {
 		BT_WARN("Unable to add icon object, error %d", ret);
@@ -472,7 +486,8 @@ static int add_icon_object(struct mpl_mediaplayer *pl)
 static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_metadata segs = {0};
+	struct bt_ots_obj_add_param add_param = {};
+	struct bt_ots_obj_created_desc created_desc = {};
 	struct bt_uuid *segs_type = BT_UUID_OTS_TYPE_TRACK_SEGMENT;
 
 	if (obj.busy) {
@@ -481,14 +496,17 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 	}
 	obj.busy = true;
 	obj.add_type = MPL_OBJ_TRACK_SEGMENTS;
+	obj.desc = &created_desc;
 
-	segs.size.alloc = segs.size.cur = setup_segments_object(pl->group->track);
-	segs.name = pl->group->track->title;
-	segs.type.uuid.type = BT_UUID_TYPE_16;
-	segs.type.uuid_16.val = BT_UUID_16(segs_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(segs.props);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_segments_object(pl->group->track);
+	obj.desc->name = pl->group->track->title;
+	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &segs);
+	add_param.size = obj.desc->size.alloc;
+	add_param.type.uuid.type = BT_UUID_TYPE_16;
+	add_param.type.uuid_16.val = BT_UUID_16(segs_type)->val;
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret) {
 		BT_WARN("Unable to add track segments object: %d", ret);
 		obj.busy = false;
@@ -499,7 +517,8 @@ static int add_current_track_segments_object(struct mpl_mediaplayer *pl)
 /* Add a single track to the OTS */
 static int add_track_object(struct mpl_track *track)
 {
-	struct bt_ots_obj_metadata track_meta = {0};
+	struct bt_ots_obj_add_param add_param = {};
+	struct bt_ots_obj_created_desc created_desc = {};
 	struct bt_uuid *track_type = BT_UUID_OTS_TYPE_TRACK;
 	int ret;
 
@@ -516,13 +535,17 @@ static int add_track_object(struct mpl_track *track)
 
 	obj.add_type = MPL_OBJ_TRACK;
 	obj.add_track = track;
+	obj.desc = &created_desc;
 
-	track_meta.size.alloc = track_meta.size.cur = setup_track_object(track);
-	track_meta.name = track->title;
-	track_meta.type.uuid.type = BT_UUID_TYPE_16;
-	track_meta.type.uuid_16.val = BT_UUID_16(track_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(track_meta.props);
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &track_meta);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_track_object(track);
+	obj.desc->name = track->title;
+	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
+
+	add_param.size = obj.desc->size.alloc;
+	add_param.type.uuid.type = BT_UUID_TYPE_16;
+	add_param.type.uuid_16.val = BT_UUID_16(track_type)->val;
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 
 	if (ret) {
 		BT_WARN("Unable to add track object: %d", ret);
@@ -536,7 +559,8 @@ static int add_track_object(struct mpl_track *track)
 static int add_parent_group_object(struct mpl_mediaplayer *pl)
 {
 	int ret;
-	struct bt_ots_obj_metadata group_meta = {0};
+	struct bt_ots_obj_add_param add_param = {};
+	struct bt_ots_obj_created_desc created_desc = {};
 	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 
 	if (obj.busy) {
@@ -545,14 +569,17 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 	}
 	obj.busy = true;
 	obj.add_type = MPL_OBJ_PARENT_GROUP;
+	obj.desc = &created_desc;
 
-	group_meta.size.alloc = group_meta.size.cur = setup_parent_group_object(pl->group);
-	group_meta.name = pl->group->parent->title;
-	group_meta.type.uuid.type = BT_UUID_TYPE_16;
-	group_meta.type.uuid_16.val = BT_UUID_16(group_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(group_meta.props);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_parent_group_object(pl->group);
+	obj.desc->name = pl->group->parent->title;
+	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &group_meta);
+	add_param.size = obj.desc->size.alloc;
+	add_param.type.uuid.type = BT_UUID_TYPE_16;
+	add_param.type.uuid_16.val = BT_UUID_16(group_type)->val;
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 	if (ret) {
 		BT_WARN("Unable to add parent group object");
 		obj.busy = false;
@@ -563,7 +590,8 @@ static int add_parent_group_object(struct mpl_mediaplayer *pl)
 /* Add a single group to the OTS */
 static int add_group_object(struct mpl_group *group)
 {
-	struct bt_ots_obj_metadata group_meta = {0};
+	struct bt_ots_obj_add_param add_param = {};
+	struct bt_ots_obj_created_desc created_desc = {};
 	struct bt_uuid *group_type = BT_UUID_OTS_TYPE_GROUP;
 	int ret;
 
@@ -581,14 +609,17 @@ static int add_group_object(struct mpl_group *group)
 
 	obj.add_type = MPL_OBJ_GROUP;
 	obj.add_group = group;
+	obj.desc = &created_desc;
 
-	group_meta.size.alloc = group_meta.size.cur = setup_group_object(group);
-	group_meta.name = group->title;
-	group_meta.type.uuid.type = BT_UUID_TYPE_16;
-	group_meta.type.uuid_16.val = BT_UUID_16(group_type)->val;
-	BT_OTS_OBJ_SET_PROP_READ(group_meta.props);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_group_object(group);
+	obj.desc->name = group->title;
+	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
-	ret = bt_ots_obj_add(bt_mcs_get_ots(), &group_meta);
+	add_param.size = obj.desc->size.alloc;
+	add_param.type.uuid.type = BT_UUID_TYPE_16;
+	add_param.type.uuid_16.val = BT_UUID_16(group_type)->val;
+
+	ret = bt_ots_obj_add(bt_mcs_get_ots(), &add_param);
 
 	if (ret) {
 		BT_WARN("Unable to add group object: %d", ret);
@@ -657,10 +688,12 @@ static int add_group_and_track_objects(struct mpl_mediaplayer *pl)
 
 /**** Callbacks from the object transfer service ******************************/
 
-static void on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
+static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
 	BT_DBG_OBJ_ID("Object Id deleted: ", id);
+
+	return 0;
 }
 
 static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
@@ -709,13 +742,15 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	obj.busy = false;
 }
 
-static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn,
-			  uint64_t id,
-			  const struct bt_ots_obj_metadata *metadata)
+static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			  const struct bt_ots_obj_add_param *add_param,
+			  struct bt_ots_obj_created_desc *created_desc)
 {
 	BT_DBG_OBJ_ID("Object Id created: ", id);
 
-	if (!bt_uuid_cmp(&metadata->type.uuid, BT_UUID_OTS_TYPE_MPL_ICON)) {
+	*created_desc = *obj.desc;
+
+	if (!bt_uuid_cmp(&add_param->type.uuid, BT_UUID_OTS_TYPE_MPL_ICON)) {
 		BT_DBG("Icon Obj Type");
 		if (obj.add_type == MPL_OBJ_ICON) {
 			obj.add_type = MPL_OBJ_NONE;
@@ -724,7 +759,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 			BT_DBG("Unexpected object creation");
 		}
 
-	} else if (!bt_uuid_cmp(&metadata->type.uuid,
+	} else if (!bt_uuid_cmp(&add_param->type.uuid,
 				BT_UUID_OTS_TYPE_TRACK_SEGMENT)) {
 		BT_DBG("Track Segments Obj Type");
 		if (obj.add_type == MPL_OBJ_TRACK_SEGMENTS) {
@@ -734,7 +769,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 			BT_DBG("Unexpected object creation");
 		}
 
-	} else if (!bt_uuid_cmp(&metadata->type.uuid,
+	} else if (!bt_uuid_cmp(&add_param->type.uuid,
 				 BT_UUID_OTS_TYPE_TRACK)) {
 		BT_DBG("Track Obj Type");
 		if (obj.add_type == MPL_OBJ_TRACK) {
@@ -745,7 +780,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 			BT_DBG("Unexpected object creation");
 		}
 
-	} else if (!bt_uuid_cmp(&metadata->type.uuid,
+	} else if (!bt_uuid_cmp(&add_param->type.uuid,
 				 BT_UUID_OTS_TYPE_GROUP)) {
 		BT_DBG("Group Obj Type");
 		if (obj.add_type == MPL_OBJ_PARENT_GROUP) {

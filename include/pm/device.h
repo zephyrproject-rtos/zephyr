@@ -144,7 +144,114 @@ struct pm_device {
 				(0)) << PM_DEVICE_FLAG_WS_CAPABLE),	\
 	}
 
+/**
+ * Get the name of device PM resources.
+ *
+ * @param dev_name Device name.
+ */
+#define Z_PM_DEVICE_NAME(dev_name) _CONCAT(__pm_device__, dev_name)
+
+#ifdef CONFIG_PM_DEVICE
+/**
+ * Define device PM resources for the given node identifier.
+ *
+ * @param node_id Node identifier (DT_NODE_INVALID if not a DT device).
+ * @param dev_name Device name.
+ * @param pm_action_cb PM control callback.
+ */
+#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)		\
+	static struct pm_device Z_PM_DEVICE_NAME(dev_name) =		\
+	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_name), node_id,		\
+			 pm_action_cb)
+
+/**
+ * Get a reference to the device PM resources.
+ *
+ * @param dev_name Device name.
+ */
+#define Z_PM_DEVICE_REF(dev_name) &Z_PM_DEVICE_NAME(dev_name)
+
+#else
+#define Z_PM_DEVICE_DEFINE(node_id, dev_name, pm_action_cb)
+#define Z_PM_DEVICE_REF(dev_name) NULL
+#endif /* CONFIG_PM_DEVICE */
+
 /** @endcond */
+
+/**
+ * Define device PM resources for the given device name.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param dev_name Device name.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
+ */
+#define PM_DEVICE_DEFINE(dev_name, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, pm_action_cb)
+
+/**
+ * Define device PM resources for the given node identifier.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param node_id Node identifier.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
+ */
+#define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb)			\
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
+			   pm_action_cb)
+
+/**
+ * Define device PM resources for the given instance.
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param idx Instance index.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DEFINE
+ */
+#define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb)			\
+	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),				\
+			   Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(idx)),	\
+			   pm_action_cb)
+
+/**
+ * @brief Obtain a reference to the device PM resources for the given device.
+ *
+ * @param dev_name Device name.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE} is disabled).
+ */
+#define PM_DEVICE_REF(dev_name) \
+	Z_PM_DEVICE_REF(dev_name)
+
+/**
+ * @brief Obtain a reference to the device PM resources for the given node.
+ *
+ * @param node_id Node identifier.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE} is disabled).
+ */
+#define PM_DEVICE_DT_REF(node_id) \
+	PM_DEVICE_REF(Z_DEVICE_DT_DEV_NAME(node_id))
+
+/**
+ * @brief Obtain a reference to the device PM resources for the given instance.
+ *
+ * @param idx Instance index.
+ *
+ * @return Reference to the device PM resources (NULL if device
+ * @kconfig{CONFIG_PM_DEVICE} is disabled).
+ */
+#define PM_DEVICE_DT_INST_REF(idx) \
+	PM_DEVICE_DT_REF(DT_DRV_INST(idx))
 
 /**
  * @brief Get name of device PM state
@@ -155,6 +262,8 @@ const char *pm_device_state_str(enum pm_device_state state);
 
 /**
  * @brief Set the power state of a device.
+ *
+ * @deprecated Use pm_device_action_run() instead.
  *
  * This function calls the device PM control callback so that the device does
  * the necessary operations to put the device into the given state.
@@ -171,7 +280,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -ENOSYS If device does not support PM.
  * @retval Errno Other negative errno on failure.
  */
-int pm_device_state_set(const struct device *dev,
+__deprecated int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state);
 
 /**
@@ -185,6 +294,25 @@ int pm_device_state_set(const struct device *dev,
  */
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);
+
+/**
+ * @brief Run a pm action on a device.
+ *
+ * This function calls the device PM control callback so that the device does
+ * the necessary operations to execute the given action.
+ *
+ * @param dev Device instance.
+ * @param action Device pm action.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If requested state is not supported.
+ * @retval -EALREADY If device is already at the requested state.
+ * @retval -EBUSY If device is changing its state.
+ * @retval -ENOSYS If device does not support PM.
+ * @retval Errno Other negative errno on failure.
+ */
+int pm_device_action_run(const struct device *dev,
+		enum pm_device_action action);
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**

@@ -23,6 +23,17 @@
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
 #endif
 
+/*
+ * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
+ * called while interacting with the flexspi MUST be relocated to SRAM or ITCM
+ * at runtime, so that the chip does not access the flexspi to read program
+ * instructions while it is being written to
+ */
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP) && (CONFIG_FLASH_LOG_LEVEL > 0)
+#warning "Enabling flash driver logging and XIP mode simultaneously can cause \
+	read-while-write hazards. This configuration is not recommended."
+#endif
+
 LOG_MODULE_REGISTER(flash_flexspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 enum {
@@ -241,7 +252,7 @@ static int flash_flexspi_nor_erase_sector(const struct device *dev,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08x", offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }
@@ -282,7 +293,7 @@ static int flash_flexspi_nor_page_program(const struct device *dev,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08x", len, offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
 
 	return memc_flexspi_transfer(data->controller, &transfer);
 }

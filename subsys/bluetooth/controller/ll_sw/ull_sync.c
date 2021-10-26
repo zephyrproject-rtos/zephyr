@@ -528,7 +528,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->chm[chm_last].data_chan_count =
 		util_ones_count_get(data_chan_map,
 				    sizeof(lll->chm[chm_last].data_chan_map));
-	if (lll->chm[chm_last].data_chan_count < 2) {
+	if (lll->chm[chm_last].data_chan_count < CHM_USED_COUNT_MIN) {
 		/* Ignore sync setup, invalid available channel count */
 		return;
 	}
@@ -555,9 +555,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	interval_us = interval * CONN_INT_UNIT_US;
 
 	/* Convert fromm 10ms units to interval units */
-	sync->timeout_reload =
-		RADIO_SYNC_EVENTS((sync->timeout * 10U * USEC_PER_MSEC),
-				  interval_us);
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U *
+						  USEC_PER_MSEC), interval_us);
 
 	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
 
@@ -568,9 +567,14 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
 	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	lll->sca = sca;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 	lll->window_widening_periodic_us =
-		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
-		  interval_us) + (1000000 - 1)) / 1000000U;
+		ceiling_fraction(((lll_clock_ppm_local_get() +
+				   lll_clock_ppm_get(sca)) *
+				  interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
 	if (si->offs_units) {
 		lll->window_size_event_us = OFFS_UNIT_300_US;
@@ -615,7 +619,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
 	sync_offset_us = ftr->radio_end_us;
-	sync_offset_us += (uint32_t)si->offs * lll->window_size_event_us;
+	sync_offset_us += (uint32_t)sys_le16_to_cpu(si->offs) *
+			  lll->window_size_event_us;
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (si->offs_adjust ? OFFS_ADJUST_US : 0U);
 	sync_offset_us -= PDU_AC_US(pdu->len, lll->phy, ftr->phy_flags);
@@ -907,8 +912,10 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 	/* Find the Channel Map Update Indication */
 	do {
 		/* Pick the length and find the Channel Map Update Indication */
-		ad_len = acad[0];
-		if (ad_len && (acad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		ad_len = acad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		if (ad_len &&
+		    (acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -935,13 +942,13 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 		chm_last = 0U;
 	}
 
-	chm_upd_ind = (void *)&acad[2];
+	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 	(void)memcpy(lll->chm[chm_last].data_chan_map, chm_upd_ind->chm,
 		     sizeof(lll->chm[chm_last].data_chan_map));
 	lll->chm[chm_last].data_chan_count =
 		util_ones_count_get(lll->chm[chm_last].data_chan_map,
 				    sizeof(lll->chm[chm_last].data_chan_map));
-	if (lll->chm[chm_last].data_chan_count < 2) {
+	if (lll->chm[chm_last].data_chan_count < CHM_USED_COUNT_MIN) {
 		/* Ignore channel map, invalid available channel count */
 		return;
 	}

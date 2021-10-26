@@ -681,7 +681,11 @@ static void drop_user(volatile bool *to_modify)
 static void test_init_and_access_other_memdomain(void)
 {
 	struct k_mem_partition *parts[] = { &ztest_mem_partition, &alt_part };
-	k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts);
+
+	zassert_equal(
+		k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts),
+		0, "failed to initialize memory domain");
+
 	/* Switch to alternate_domain which does not have default_part that
 	 * contains default_bool. This should fault when we try to write it.
 	 */
@@ -718,7 +722,11 @@ static void test_domain_add_thread_drop_to_user(void)
 static void test_domain_add_part_drop_to_user(void)
 {
 	clear_fault();
-	k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+
+	zassert_equal(
+		k_mem_domain_add_partition(&k_mem_domain_default, &alt_part),
+		0, "failed to add memory partition");
+
 	drop_user(&alt_bool);
 }
 
@@ -734,7 +742,11 @@ static void test_domain_remove_part_drop_to_user(void)
 	 * remove it, and then try to access again.
 	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
-	k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+
+	zassert_equal(
+		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
+		0, "failed to remove partition");
+
 	drop_user(&alt_bool);
 }
 
@@ -759,7 +771,11 @@ static void test_domain_add_thread_context_switch(void)
 static void test_domain_add_part_context_switch(void)
 {
 	clear_fault();
-	k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+
+	zassert_equal(
+		k_mem_domain_add_partition(&k_mem_domain_default, &alt_part),
+		0, "failed to add memory partition");
+
 	spawn_user(&alt_bool);
 }
 
@@ -776,7 +792,11 @@ static void test_domain_remove_part_context_switch(void)
 	 * remove it, and then try to access again.
 	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
-	k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+
+	zassert_equal(
+		k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part),
+		0, "failed to remove memory partition");
+
 	spawn_user(&alt_bool);
 }
 
@@ -963,8 +983,14 @@ void test_tls_pointer(void)
 
 void test_main(void)
 {
+	int ret;
+
 	/* Most of these scenarios use the default domain */
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	if (ret != 0) {
+		printk("Failed to add default memory partition (%d)\n", ret);
+		k_oops();
+	}
 
 #if defined(CONFIG_ARM64)
 	struct z_arm64_thread_stack_header *hdr;

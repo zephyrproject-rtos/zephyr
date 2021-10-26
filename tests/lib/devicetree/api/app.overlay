@@ -90,6 +90,15 @@
 			compatible = "vnd,enum-int-required-false-holder";
 		};
 
+		enum-6 {
+			compatible = "vnd,enum-holder-inst";
+			val = "zero";
+		};
+
+		enum-7 {
+			compatible = "vnd,enum-required-false-holder-inst";
+		};
+
 		/*
 		 * This should be the only node with this
 		 * compatible in the tree.

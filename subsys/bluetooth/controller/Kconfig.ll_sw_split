@@ -358,6 +358,26 @@ config BT_CTLR_SCHED_ADVANCED
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
 
+config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
+	int "Advanced scheduling central preferred connection spacing"
+	depends on BT_CTLR_SCHED_ADVANCED
+	default 0
+	help
+	  The central preferred connection spacing defines an additional spacing
+	  in microseconds, added to the fixed ~1250 us spacing obtained by enabling
+	  BT_CTLR_SCHED_ADVANCED. Specifying 0 (default) will obtain a spacing of
+	  ~1250 us, whereas specifying 1250 will yield a spacing of ~2500 us.
+	  The spacing is defined as the distance in time between the anchor points
+	  of the established central role connections.
+	  The precision is determined by the resolution of the platform dependent
+	  ticker clock.
+	  When spefifying values above 6.25 ms, the spacing may be unobtainable if
+	  the connection interval becomes smaller than the total spacing. In that
+	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
+	  interval yields 5 ms spacing.
+	  For multiple connections, it may become impossible to honor the preferred
+	  spacing, in which case overlapping will occur.
+
 config BT_CTLR_LLL_PRIO
 	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X

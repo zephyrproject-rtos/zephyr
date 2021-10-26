@@ -11,6 +11,7 @@
 #include <sys/libc-hooks.h>
 #endif
 #include <sys/reboot.h>
+#include <logging/log_ctrl.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -368,14 +369,21 @@ static int run_test(struct unit_test *test)
 		}
 		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
+
 	} else {
 		test_result = 1;
 		run_test_functions(test);
 	}
 
+
 	phase = TEST_PHASE_TEARDOWN;
 	test->teardown();
 	phase = TEST_PHASE_FRAMEWORK;
+
+	/* Flush all logs in case deferred mode is used. */
+	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) && log_data_pending()) {
+		k_msleep(100);
+	}
 
 	if (test_result == -1) {
 		ret = TC_FAIL;
@@ -501,17 +509,29 @@ int main(void)
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
+
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be
 	 * placed in this partition if no other memory domain configuration
 	 * is made.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &ztest_mem_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &ztest_mem_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add ztest_mem_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &z_malloc_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &z_malloc_partition);
+	if (ret != 0) {
+		PRINT("ERROR: failed to add z_malloc_partition to mem domain (%d)\n",
+		      ret);
+		k_oops();
+	}
 #endif
 #endif /* CONFIG_USERSPACE */
 

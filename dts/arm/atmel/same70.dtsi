@@ -341,7 +341,7 @@
 			reg = <0x40038000 0x4000>;
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
-			maximum-speed = "full-speed";
+			maximum-speed = "high-speed";
 			num-bidir-endpoints = <10>;
 			peripheral-id = <34>;
 			status = "disabled";

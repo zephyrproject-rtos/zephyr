@@ -882,8 +882,10 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 		     sizeof(acad));
 	ad = acad;
 	do {
-		ad_len = ad[0];
-		if (ad_len && (ad[1] == BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
+		ad_len = ad[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+		if (ad_len &&
+		    (ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+		     BT_DATA_CHANNEL_MAP_UPDATE_IND)) {
 			break;
 		}
 
@@ -1192,11 +1194,10 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Get Adv data from function parameters */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
-		ad_data = hdr_data;
-		ad_len = *ad_data;
-		++ad_data;
+		ad_len = *(uint8_t *)hdr_data;
+		hdr_data = (uint8_t *)hdr_data + sizeof(ad_len);
 
-		ad_data = (void *)sys_get_le32(ad_data);
+		(void)memcpy(&ad_data, hdr_data, sizeof(ad_data));
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		ad_len = ter_pdu_prev->len - ter_len_prev;
 		ad_data = ter_dptr_prev;
@@ -1485,11 +1486,11 @@ static uint8_t sync_chm_update(uint8_t handle)
 	(void)memcpy(&acad, &hdr_data[ULL_ADV_HDR_DATA_ACAD_PTR_OFFSET],
 		     sizeof(acad));
 	acad += acad_len_prev;
-	acad[0] = sizeof(*chm_upd_ind) + 1U;
-	acad[1] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
+	acad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*chm_upd_ind) + 1U;
+	acad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_CHANNEL_MAP_UPDATE_IND;
 
 	/* Populate the Channel Map Indication structure */
-	chm_upd_ind = (void *)&acad[2];
+	chm_upd_ind = (void *)&acad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
 	(void)ull_chan_map_get(chm_upd_ind->chm);
 	instant = lll_sync->event_counter + 6U;
 	chm_upd_ind->instant = sys_cpu_to_le16(instant);
@@ -1678,10 +1679,11 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		si->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
+						   OFFS_UNIT_30_US));
 		si->offs_units = OFFS_UNIT_VALUE_300_US;
 	} else {
-		si->offs = offs;
+		si->offs = sys_cpu_to_le16(offs);
 		si->offs_units = OFFS_UNIT_VALUE_30_US;
 	}
 }
@@ -1718,6 +1720,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (lll->iso) {
+		ull_adv_iso_offset_get(sync);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

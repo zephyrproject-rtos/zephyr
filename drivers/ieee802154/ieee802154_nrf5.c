@@ -150,8 +150,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
-		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
-		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
 			pkt_len = rx_frame->psdu[0];
 		} else {
 			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
@@ -374,7 +373,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	struct net_pkt *ack_pkt;
 	int err = 0;
 
-	if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) || IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+	if (IS_ENABLED(CONFIG_IEEE802154_NRF5_FCS_IN_LENGTH)) {
 		ack_len = nrf5_radio->ack_frame.psdu[0];
 	} else {
 		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
@@ -1081,9 +1080,13 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #define L2 OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
 #define MTU 1280
+#elif defined(CONFIG_NET_L2_CUSTOM_IEEE802154)
+#define L2 CUSTOM_IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(CUSTOM_IEEE802154_L2)
+#define MTU CONFIG_NET_L2_CUSTOM_IEEE802154_MTU
 #endif
 
-#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
+#if defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,

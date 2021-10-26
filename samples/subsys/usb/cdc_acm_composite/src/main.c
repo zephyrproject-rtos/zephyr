@@ -54,16 +54,20 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			struct ring_buf *rb = &peer->data->rb;
 
 			read = uart_fifo_read(dev, buf, sizeof(buf));
-			if (read) {
-				wrote = ring_buf_put(rb, buf, read);
-				if (wrote < read) {
-					LOG_ERR("Drop %zu bytes", read - wrote);
-				}
+			if (read < 0) {
+				LOG_ERR("Failed to read UART FIFO");
+				read = 0;
+			};
 
+			wrote = ring_buf_put(rb, buf, read);
+			if (wrote < read) {
+				LOG_ERR("Drop %zu bytes", read - wrote);
+			}
+
+			LOG_DBG("dev %p -> dev %p send %zu bytes",
+				dev, peer->dev, wrote);
+			if (wrote) {
 				uart_irq_tx_enable(peer->dev);
-
-				LOG_DBG("dev %p -> dev %p send %zu bytes",
-					dev, peer->dev, wrote);
 			}
 		}
 

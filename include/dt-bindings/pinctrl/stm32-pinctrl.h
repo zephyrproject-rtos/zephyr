@@ -35,11 +35,34 @@
 
 /**
  * @brief Macro to generate pinmux int using port, pin number and mode arguments
- * This is taken from Linux equivalent st,stm32f429-pinctrl binding
+ * This is inspired from Linux equivalent st,stm32f429-pinctrl binding
  */
 
-#define PIN_NO(port, line)	(((port) - 'A') * 0x10 + (line))
-#define STM32_PINMUX(port, line, mode) (((PIN_NO(port, line)) << 8) | (STM32_ ## mode))
+/**
+ * @brief Pin configuration configuration bit field.
+ *
+ * Fields:
+ *
+ * - mode [ 0 : 4 ]
+ * - line [ 5 : 8 ]
+ * - port [ 9 : 12 ]
+ *
+ * @param port Port ('A'..'K')
+ * @param line Pin (0..15)
+ * @param mode Mode (ANALOG, GPIO_IN, ALTERNATE).
+ */
+
+#define STM32_MODE_SHIFT 0U
+#define STM32_MODE_MASK  0x1FU
+#define STM32_LINE_SHIFT 5U
+#define STM32_LINE_MASK  0xFU
+#define STM32_PORT_SHIFT 9U
+#define STM32_PORT_MASK  0xFU
+
+#define STM32_PINMUX(port, line, mode)					       \
+		(((((port) - 'A') & STM32_PORT_MASK) << STM32_PORT_SHIFT) |    \
+		(((line) & STM32_LINE_MASK) << STM32_LINE_SHIFT) |	       \
+		(((STM32_ ## mode) & STM32_MODE_MASK) << STM32_MODE_SHIFT))
 
 /**
  * @brief PIN configuration bitfield

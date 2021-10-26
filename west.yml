@@ -67,13 +67,13 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: c8a4101133dd7a77e118a23b0c03c765c8a55ba7
+      revision: c4a591c35385be59a41cde7efc85fe7660172979
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_gigadevice
-      revision: ce323de9655972a545cbdddda813c1576d85d5d1
+      revision: 749fdd4b9dc9dfc57daac1229a5a669109e14624
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -124,7 +124,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 5c8275071ec1cf160bfe8c18bbd9330a7d714dc8
+      revision: 6fc9b5f7e0229ef64a882e37213266d346ebfadb
       path: modules/hal/stm32
       groups:
         - hal
@@ -144,7 +144,7 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: 39d049d4ae68e6f6d595fce7de1dcfc1024fb4eb
+      revision: f237c9d420a51cc43bc37d744e41191ad613f348
       path: modules/hal/libmetal
       groups:
         - hal
@@ -187,7 +187,7 @@ manifest:
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 6010f0523cbc75f551d9256cf782f173177acdef
+      revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
       revision: 69eb7030c5eb479e2d387408f7b3814c58963804
@@ -218,7 +218,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 400f58ff53eb1dea5234925e96c5279154515cc7
+      revision: 7c88781953ce7146878bd8bd724e175fdbc298c5
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

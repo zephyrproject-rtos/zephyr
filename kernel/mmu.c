@@ -181,8 +181,8 @@ void z_page_frames_dump(void)
  * Note that bit #0 is the highest address so that allocation is
  * done in reverse from highest address.
  */
-SYS_BITARRAY_DEFINE(virt_region_bitmap,
-		    CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE);
+SYS_BITARRAY_DEFINE_STATIC(virt_region_bitmap,
+			   CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE);
 
 static bool virt_region_inited;
 

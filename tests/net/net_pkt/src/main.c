@@ -791,7 +791,7 @@ void test_net_pkt_clone(void)
 	net_pkt_unref(cloned_pkt);
 }
 
-NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_pool, 4, 2, NULL);
+NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_pool, 4, 2, 4, NULL);
 void test_net_pkt_headroom(void)
 {
 	struct net_pkt *pkt;
@@ -867,7 +867,7 @@ void test_net_pkt_headroom(void)
 	net_pkt_unref(pkt);
 }
 
-NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_copy_pool, 2, 4, NULL);
+NET_BUF_POOL_FIXED_DEFINE(test_net_pkt_headroom_copy_pool, 2, 4, 4, NULL);
 void test_net_pkt_headroom_copy(void)
 {
 	struct net_pkt *pkt_src;

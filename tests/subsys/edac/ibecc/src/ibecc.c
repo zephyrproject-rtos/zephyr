@@ -58,13 +58,13 @@ static void test_ibecc_api(void)
 	/* Error log API */
 
 	ret = edac_ecc_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_ecc_error_log_get failed");
 
 	ret = edac_ecc_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
 	ret = edac_parity_error_log_get(dev, &value);
-	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
+	zassert_equal(ret, -ENODATA, "edac_parity_error_log_get failed");
 
 	ret = edac_parity_error_log_clear(dev);
 	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");
@@ -326,7 +326,12 @@ void test_edac_dummy_api(void);
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &default_part);
+	if (ret != 0) {
+		TC_PRINT("Failed to add to mem domain (%d)", ret);
+		k_oops();
+	}
 #endif
 
 	ztest_test_suite(ibecc,

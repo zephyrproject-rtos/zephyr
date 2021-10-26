@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2021, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gigadevice/gd32f4xx/gd32f450ik.dtsi>
+#include "gd32f450i_eval-pinctrl.dtsi"
+
+/ {
+	model = "GigaDevice GD32F450I-EVAL";
+	compatible = "gd,gd32f450i-eval";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};

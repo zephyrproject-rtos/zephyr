@@ -17,7 +17,7 @@
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
 
-# CMake version 3.13.1 is the real minimum supported version.
+# CMake version 3.20 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
 # define the required version, not even invoking it from an included

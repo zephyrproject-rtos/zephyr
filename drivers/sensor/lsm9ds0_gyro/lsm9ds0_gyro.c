@@ -161,7 +161,7 @@ static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
+	dval = (double)(raw_val) * (double)numerator / 1000.0 * DEG2RAD;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }

@@ -27,6 +27,24 @@
 	};
 };
 
+&lpi2c5 {
+	status = "okay";
+
+	fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		label = "FXOS8700";
+
+		/* Two zero ohm resistors (R256 and R270) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with camera and
+		 * ethernet PHY reset signals.
+		 */
+		int1-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpio11 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;

@@ -6,8 +6,14 @@
  * Author: Marcin Maka <marcin.maka@linux.intel.com>
  */
 
+/* Older (GCC 4.2-based) XCC variants need a fixup file. */
+#if defined(__XCC__) && (__GNUC__ == 4)
+#include <toolchain/xcc_missing_defs.h>
+#endif
+
+#include <autoconf.h> /* not built by zephyr */
 #include "manifest.h"
-#include <soc/memory.h>
+#include <cavs-mem.h>
 
 /*
  * Each module has an entry in the FW manifest header. This is NOT part of

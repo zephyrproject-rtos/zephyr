@@ -825,6 +825,11 @@ function(board_finalize_runner_args runner)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
 
+function(board_set_rimage_target target)
+  zephyr_check_cache(RIMAGE_TARGET)
+  set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
+endfunction()
+
 # Zephyr board revision:
 #
 # This section provides a function for revision checking.

@@ -4,6 +4,16 @@
 config ZEPHYR_HAL_GIGADEVICE_MODULE
 	bool
 
+config GD32_HAS_AF_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AF pinmux model.
+
+config GD32_HAS_AFIO_PINMUX
+	bool
+	help
+	  This option should be selected if the series use an AFIO pinmux model.
+
 config HAS_GD32_HAL
 	bool
 	select HAS_CMSIS_CORE if SOC_FAMILY_GD32_ARM
@@ -50,6 +60,11 @@ config USE_GD32_DBG
 	bool
 	help
 	  Enable GD32 Debug (DBG) HAL module driver
+
+config USE_GD32_DCI
+	bool
+	help
+		Enable GD32 Digital Camera Interface (DCI) HAL module driver
 
 config USE_GD32_DMA
 	bool
@@ -99,6 +114,16 @@ config USE_GD32_I2C
 	help
 	  Enable GD32 Inter-Integrated Circuit Interface (I2C) HAL module driver
 
+config USE_GD32_IPA
+	bool
+	help
+	  Enable GD32 Image Processing Accelerator (IPA) HAL module driver
+
+config USE_GD32_IREF
+	bool
+	help
+	  Enable GD32 Programmable Current Reference (IREF) HAL module driver
+
 config USE_GD32_MISC
 	bool
 	help
@@ -141,15 +166,30 @@ config USE_GD32_SHRTIMER
 	help
 	  Enable GD32 Super High-Resolution Timer (SHRTIMER) HAL module driver
 
+config USE_GD32_SYSCFG
+	bool
+	help
+	  Enable GD32 System Configuration (SYSCFG) HAL module driver
+
 config USE_GD32_TIMER
 	bool
 	help
 	  Enable GD32 Timer (TIMER) HAL module driver
 
+config USE_GD32_TLI
+	bool
+	help
+	  Enable GD32 TFT-LCD Interface (TLI) HAL module driver
+
 config USE_GD32_TMU
 	bool
 	help
 	  Enable GD32 Trigonometric Math Unit (TMU) HAL module driver
+
+config USE_GD32_TRNG
+	bool
+	help
+	  Enable GD32 True Random Number Generator (TRNG) HAL module driver
 
 config USE_GD32_USART
 	bool

@@ -100,6 +100,11 @@ static int configure(const struct device *dev,
 		return 0;
 	}
 
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
 		LOG_ERR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
@@ -110,7 +115,8 @@ static int configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only single line mode is supported");
 		return -EINVAL;
 	}
@@ -354,9 +360,10 @@ static int spi_nrfx_pm_action(const struct device *dev,
 			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
 		}							       \
 	};								       \
+	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_##idx##_init,					       \
-		      spi_nrfx_pm_action,				       \
+		      PM_DEVICE_DT_REF(SPI(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

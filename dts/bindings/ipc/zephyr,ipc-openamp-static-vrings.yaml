@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP (RPMsg with static VRINGs) backend
+
+compatible: "zephyr,ipc-openamp-static-vrings"
+
+include: base.yaml
+
+properties:
+  role:
+    description: OpenAMP roles
+    required: true
+    type: string
+    enum:
+      - host
+      - remote
+
+  memory-region:
+    description: phandle to the shared memory region
+    required: true
+    type: phandle
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true

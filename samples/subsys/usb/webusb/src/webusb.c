@@ -23,7 +23,12 @@ LOG_MODULE_REGISTER(webusb);
 #include "webusb.h"
 
 /* Max packet size for Bulk endpoints */
+#if IS_ENABLED(CONFIG_USB_DC_HAS_HS_SUPPORT)
+#define WEBUSB_BULK_EP_MPS		512
+#else
 #define WEBUSB_BULK_EP_MPS		64
+#endif
+
 /* Number of interfaces */
 #define WEBUSB_NUM_ITF			0x01
 /* Number of Endpoints in the custom interface */
@@ -34,7 +39,7 @@ LOG_MODULE_REGISTER(webusb);
 
 static struct webusb_req_handlers *req_handlers;
 
-uint8_t rx_buf[64];
+uint8_t rx_buf[WEBUSB_BULK_EP_MPS];
 
 #define INITIALIZER_IF(num_ep, iface_class)				\
 	{								\

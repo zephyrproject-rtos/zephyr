@@ -410,8 +410,7 @@ static int icm42605_init(const struct device *dev)
 	drv_data->spi_cfg.frequency = cfg->frequency;
 	drv_data->spi_cfg.slave = cfg->slave;
 	drv_data->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE |
-			SPI_TRANSFER_MSB);
+			SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
 	drv_data->spi_cfg.cs = &drv_data->spi_cs;
 
 	icm42605_spi_init(drv_data->spi, &drv_data->spi_cfg);
@@ -457,8 +456,8 @@ static const struct sensor_driver_api icm42605_driver_api = {
 		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(index),	\
 		.accel_hz = DT_INST_PROP(index, accel_hz),		\
 		.gyro_hz = DT_INST_PROP(index, gyro_hz),		\
-		.accel_fs = DT_ENUM_IDX(DT_DRV_INST(index), accel_fs),	\
-		.gyro_fs = DT_ENUM_IDX(DT_DRV_INST(index), gyro_fs),	\
+		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),		\
+		.gyro_fs = DT_INST_ENUM_IDX(index, gyro_fs),		\
 	}
 
 #define ICM42605_INIT(index)						\

@@ -856,6 +856,29 @@ static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_polltimeout_get(const struct shell *sh,
+			       size_t argc, char *argv[])
+{
+	uint16_t lpn_address;
+	int32_t poll_timeout;
+	int err;
+
+	lpn_address = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_cfg_lpn_timeout_get(net.net_idx,
+					  net.dst, lpn_address,
+					  &poll_timeout);
+	if (err) {
+		shell_error(sh, "Unable to send LPN PollTimeout Get"
+				   " (err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "PollTimeout value %d", poll_timeout);
+
+	return 0;
+}
+
 static int cmd_net_transmit(const struct shell *shell,
 		size_t argc, char *argv[])
 {
@@ -1011,6 +1034,45 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+
+static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
+{
+	bool has_key_val = (argc > 2);
+	uint8_t key_val[16];
+	uint16_t key_net_idx;
+	uint8_t status;
+	int err;
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+
+	if (has_key_val) {
+		size_t len;
+
+		len = hex2bin(argv[2], strlen(argv[2]),
+			      key_val, sizeof(key_val));
+		(void)memset(key_val, 0, sizeof(key_val) - len);
+	} else {
+		memcpy(key_val, default_key, sizeof(key_val));
+	}
+
+	err = bt_mesh_cfg_net_key_update(net.net_idx, net.dst, key_net_idx,
+					 key_val, &status);
+	if (err) {
+		shell_print(sh, "Unable to send NetKey Update (err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "NetKeyUpdate failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "NetKey updated with NetKey Index 0x%03x",
+			    key_net_idx);
+	}
+
+	return 0;
+}
+
 static int cmd_net_key_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t keys[16];
@@ -1129,6 +1191,49 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t key_val[16];
+	uint16_t key_net_idx, key_app_idx;
+	bool has_key_val = (argc > 3);
+	uint8_t status;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_app_idx = strtoul(argv[2], NULL, 0);
+
+	if (has_key_val) {
+		size_t len;
+
+		len = hex2bin(argv[3], strlen(argv[3]),
+			      key_val, sizeof(key_val));
+		(void)memset(key_val, 0, sizeof(key_val) - len);
+	} else {
+		memcpy(key_val, default_key, sizeof(key_val));
+	}
+
+	err = bt_mesh_cfg_app_key_update(net.net_idx, net.dst, key_net_idx,
+					 key_app_idx, key_val, &status);
+	if (err) {
+		shell_error(sh, "Unable to send App Key Update (err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "AppKey update failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "AppKey updated, NetKeyIndex 0x%04x "
+			    "AppKeyIndex 0x%04x", key_net_idx, key_app_idx);
+	}
+
+	return 0;
+}
+
 static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t net_idx;
@@ -1158,6 +1263,46 @@ static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 		    net.dst);
 	for (i = 0; i < cnt; i++) {
 		shell_print(shell, "\t0x%03x", keys[i]);
+	}
+
+	return 0;
+}
+
+static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t net_idx;
+	uint8_t status, identify;
+	int err;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_node_identity_get(net.net_idx, net.dst,
+						    net_idx, &status,
+						    &identify);
+		if (err) {
+			shell_print(sh, "Unable to send Node Identify Get (err %d)", err);
+			return 0;
+		}
+	} else {
+		uint8_t new_identify = strtoul(argv[1], NULL, 0);
+
+		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst,
+						    net_idx, new_identify,
+						    &status, &identify);
+		if (err) {
+			shell_print(sh, "Unable to send Node Identify Set (err %d)", err);
+			return 0;
+		}
+	}
+
+
+	if (status) {
+		shell_print(sh, "Node Identify Get/Set failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "Node Identify Get/Set successful with identify 0x%02x",
+			    identify);
 	}
 
 	return 0;
@@ -1503,6 +1648,133 @@ static int cmd_mod_sub_del_va(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static int cmd_mod_sub_ow(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t elem_addr, sub_addr, mod_id, cid;
+	uint8_t status;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+	sub_addr = strtoul(argv[2], NULL, 0);
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[4], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_overwrite_vnd(net.net_idx, net.dst,
+							elem_addr, sub_addr, mod_id,
+							cid, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_overwrite(net.net_idx, net.dst, elem_addr,
+						    sub_addr, mod_id, &status);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send Model Subscription Overwrite "
+			    "(err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "Model Subscription Overwrite failed with "
+			    "status 0x%02x", status);
+	} else {
+		shell_print(sh, "Model subscription overwrite was successful");
+	}
+
+	return 0;
+}
+
+static int cmd_mod_sub_ow_va(const struct shell *sh, size_t argc,
+			     char *argv[])
+{
+	uint16_t elem_addr, sub_addr, mod_id, cid;
+	uint8_t label[16];
+	uint8_t status;
+	size_t len;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+
+	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
+	(void)memset(label + len, 0, sizeof(label) - len);
+
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[4], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_va_overwrite_vnd(net.net_idx, net.dst,
+							   elem_addr, label, mod_id,
+							   cid, &sub_addr, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_va_overwrite(net.net_idx, net.dst,
+						       elem_addr, label, mod_id,
+						       &sub_addr, &status);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send Mod Sub VA Overwrite (err %d)",
+			    err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "Mod Sub VA Overwrite failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "0x%04x overwrite to Label UUID %s "
+			    "(va 0x%04x)", elem_addr, argv[2], sub_addr);
+	}
+
+	return 0;
+}
+
+static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t elem_addr, mod_id, cid;
+	uint8_t status;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+	mod_id = strtoul(argv[2], NULL, 0);
+
+	if (argc > 3) {
+		cid = strtoul(argv[3], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_del_all_vnd(net.net_idx, net.dst,
+						      elem_addr, mod_id,
+						      cid, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_del_all(net.net_idx, net.dst, elem_addr,
+						  mod_id, &status);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send Model Subscription Delete All"
+			    "(err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "Model Subscription Delete All failed with "
+			    "status 0x%02x", status);
+	} else {
+		shell_print(sh, "Model subscription deltion all was successful");
+	}
+
+	return 0;
+}
+
 static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 			      char *argv[])
 {
@@ -1554,6 +1826,36 @@ static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t status, phase;
+	uint16_t key_net_idx;
+	int err;
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+
+	if (argc < 3) {
+		err = bt_mesh_cfg_krp_get(net.net_idx, net.dst, key_net_idx,
+					  &status, &phase);
+	} else {
+		uint16_t trans = strtoul(argv[2], NULL, 0);
+
+		err = bt_mesh_cfg_krp_set(net.net_idx, net.dst, key_net_idx,
+					  trans, &status, &phase);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send krp Get/Set "
+			    "(err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "Krp Get/Set with status 0x%02x and phase 0x%02x",
+			    status, phase);
+
+	return 0;
+}
+
 static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id,
 		       uint16_t cid)
 {
@@ -1596,16 +1898,24 @@ static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id
 	return 0;
 }
 
-static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id,
-		       uint16_t cid, char *argv[])
+static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
+		       uint16_t mod_id, uint16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_mod_pub pub;
 	uint8_t status, count;
 	uint16_t interval;
+	uint8_t uuid[16];
+	uint8_t len;
 	int err;
 
-	pub.addr = strtoul(argv[0], NULL, 0);
-	pub.uuid = NULL;
+	if (!is_va) {
+		pub.addr = strtoul(argv[0], NULL, 0);
+	} else {
+		len = hex2bin(argv[0], strlen(argv[1]), uuid, sizeof(uuid));
+		memset(uuid + len, 0, sizeof(uuid) - len);
+		pub.uuid = (const uint8_t *)&uuid;
+	}
+
 	pub.app_idx = strtoul(argv[1], NULL, 0);
 	pub.cred_flag = str2bool(argv[2]);
 	pub.ttl = strtoul(argv[3], NULL, 0);
@@ -1613,13 +1923,13 @@ static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id
 
 	count = strtoul(argv[5], NULL, 0);
 	if (count > 7) {
-		shell_print(shell, "Invalid retransmit count");
+		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
 	interval = strtoul(argv[6], NULL, 0);
 	if (interval > (31 * 50) || (interval % 50)) {
-		shell_print(shell, "Invalid retransmit interval %u", interval);
+		shell_print(sh, "Invalid retransmit interval %u", interval);
 		return -EINVAL;
 	}
 
@@ -1634,16 +1944,16 @@ static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id
 	}
 
 	if (err) {
-		shell_error(shell, "Model Publication Set failed (err %d)",
+		shell_error(sh, "Model Publication Set failed (err %d)",
 			    err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(shell, "Model Publication Set failed "
+		shell_print(sh, "Model Publication Set failed "
 			    "(status 0x%02x)", status);
 	} else {
-		shell_print(shell, "Model Publication successfully set");
+		shell_print(sh, "Model Publication successfully set");
 	}
 
 	return 0;
@@ -1676,10 +1986,26 @@ static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 			return -EINVAL;
 		}
 
-		return mod_pub_set(shell, addr, mod_id, cid, argv);
+		return mod_pub_set(shell, addr, false, mod_id, cid, argv);
 	} else {
 		return mod_pub_get(shell, addr, mod_id, cid);
 	}
+}
+
+static int cmd_mod_pub_va(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t addr, mod_id, cid = CID_NVAL;
+
+	addr = strtoul(argv[1], NULL, 0);
+	mod_id = strtoul(argv[9], NULL, 0);
+
+	if (argc > 10) {
+		cid = strtoul(argv[10], NULL, 0);
+	}
+
+	argv += 2;
+
+	return mod_pub_set(sh, addr, true, mod_id, cid, argv);
 }
 
 static void hb_sub_print(const struct shell *shell,
@@ -2701,15 +3027,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      cmd_relay, 1, 3),
 	SHELL_CMD_ARG(net-key-add, NULL, "<NetKeyIndex> [val]", cmd_net_key_add,
 		      2, 1),
+	SHELL_CMD_ARG(net-key-upd, NULL, "<NetKeyIndex> [val]", cmd_net_key_update,
+		      2, 1),
 	SHELL_CMD_ARG(net-key-get, NULL, NULL, cmd_net_key_get, 1, 0),
 	SHELL_CMD_ARG(net-key-del, NULL, "<NetKeyIndex>", cmd_net_key_del, 2,
 		      0),
 	SHELL_CMD_ARG(app-key-add, NULL, "<NetKeyIndex> <AppKeyIndex> [val]",
 		      cmd_app_key_add, 3, 1),
+	SHELL_CMD_ARG(app-key-upd, NULL, "<NetKeyIndex> <AppKeyIndex> [val]",
+		      cmd_app_key_upd, 3, 1),
 	SHELL_CMD_ARG(app-key-del, NULL, "<NetKeyIndex> <AppKeyIndex>",
 		      cmd_app_key_del, 3, 0),
 	SHELL_CMD_ARG(app-key-get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2,
 		      0),
+	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIndex> [Identify]", cmd_node_id, 2, 1),
+	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPN Address>", cmd_polltimeout_get, 2, 0),
 	SHELL_CMD_ARG(net-transmit-param, NULL, "[<count: 0-7>"
 			" <interval: 10-320>]", cmd_net_transmit, 1, 2),
 	SHELL_CMD_ARG(mod-app-bind, NULL,
@@ -2724,6 +3056,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(mod-pub, NULL, "<addr> <mod id> [cid] [<PubAddr> "
 		      "<AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval>]",
 		      cmd_mod_pub, 3, 1 + 7),
+	SHELL_CMD_ARG(mod-pub-va, NULL, "<addr> <UUID: 16 hex values> "
+		      "<AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval> "
+		      "<mod id> [cid]",
+		      cmd_mod_pub_va, 10, 1),
 	SHELL_CMD_ARG(mod-sub-add, NULL,
 		      "<elem addr> <sub addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_add, 4, 1),
@@ -2736,9 +3072,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(mod-sub-del-va, NULL,
 		      "<elem addr> <Label UUID> <Model ID> [Company ID]",
 		      cmd_mod_sub_del_va, 4, 1),
+	SHELL_CMD_ARG(mod-sub-ow, NULL,
+		      "<elem addr> <sub addr> <Model ID> [Company ID]",
+		      cmd_mod_sub_ow, 4, 1),
+	SHELL_CMD_ARG(mod-sub-ow-va, NULL,
+		      "<elem addr> <Label UUID> <Model ID> [Company ID]",
+		      cmd_mod_sub_ow_va, 4, 1),
+	SHELL_CMD_ARG(mod-sub-del-all, NULL,
+		      "<elem addr> <Model ID> [Company ID]",
+		      cmd_mod_sub_del_all, 3, 1),
 	SHELL_CMD_ARG(mod-sub-get, NULL,
 		      "<elem addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_get, 3, 1),
+	SHELL_CMD_ARG(krp, NULL, "<NetKeyIndex> [Phase]",
+		      cmd_krp, 2, 1),
 	SHELL_CMD_ARG(hb-sub, NULL, "[<src> <dst> <period>]", cmd_hb_sub, 1, 3),
 	SHELL_CMD_ARG(hb-pub, NULL,
 		      "[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]",

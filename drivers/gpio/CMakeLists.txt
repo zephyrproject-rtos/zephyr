@@ -47,6 +47,10 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_PCA953X    gpio_pca953x.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_FXL6408    gpio_fxl6408.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ANDES_ATCGPIO100 gpio_andes_atcgpio100.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NEORV32    gpio_neorv32.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX    gpio_nct38xx.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX    gpio_nct38xx_port.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX_INTERRUPT gpio_nct38xx_alert.c)
+
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 

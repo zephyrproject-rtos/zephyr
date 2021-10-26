@@ -12,7 +12,7 @@
 
 #define BIS_ISO_CHAN_COUNT 1
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);

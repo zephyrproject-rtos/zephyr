@@ -459,7 +459,4 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  Different mcumgr transports impose different requirements for this
 	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
 	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
-
-	  Note that CONFIG_NET_BUF_USER_DATA_SIZE must be at least as big as
-	  MCUMGR_BUF_USER_DATA_SIZE.
 endif # MCUMGR

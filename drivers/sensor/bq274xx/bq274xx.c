@@ -168,8 +168,8 @@ static int bq274xx_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (bq274xx->internal_temperature * 0.1);
-		int_temp = int_temp - 273.15;
+		int_temp = (bq274xx->internal_temperature * 0.1f);
+		int_temp = int_temp - 273.15f;
 		val->val1 = (int32_t)int_temp;
 		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
 		break;
@@ -773,7 +773,10 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_action,   \
+	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action);		       \
+									       \
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init,		       \
+			    PM_DEVICE_DT_INST_REF(index),		       \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

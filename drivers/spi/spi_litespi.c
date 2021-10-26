@@ -25,6 +25,11 @@ static int spi_config(const struct spi_config *config, uint16_t *control)
 		cs = (uint8_t)(config->slave);
 	}
 
+	if (config->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
 		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
@@ -40,7 +45,8 @@ static int spi_config(const struct spi_config *config, uint16_t *control)
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_ERR("Only supports single mode");
 		return -ENOTSUP;
 	}
