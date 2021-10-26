@@ -465,6 +465,9 @@ void radio_status_reset(void)
 	NRF_RADIO->EVENTS_PHYEND = 0;
 #endif /* CONFIG_BT_CTLR_DF_SUPPORT */
 	NRF_RADIO->EVENTS_DISABLED = 0;
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+	NRF_RADIO->EVENTS_CTEPRESENT = 0;
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
@@ -561,12 +564,39 @@ void *radio_pkt_decrypt_get(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 
 static uint8_t sw_tifs_toggle;
-
+/**
+ * @brief Implementation of Radio operation software switch.
+ *
+ * In case the switch is from RX to TX or from RX to RX and CTEINLINE is enabled then PDU end event
+ * (EVENTS_PHYEND) may be delayed after actual PDU end. The delay occurs when received PDU does not
+ * include CTE. To maintain TIFS the delay must be compensated.
+ * To handle that, two timer EVENTS_COMPARE are prepared: without and without delay compensation.
+ * If EVENTS_CTEPRESENT is fired then EVENTS_COMPARE for delayed EVENTS_PHYEND event is cancelled.
+ * In other case EVENTS_COMPARE for delayed compensation will timeout first and disable group of
+ * PPIs related with the Radio operation switch.
+ * Enable of end event compensation is controller by @p end_evt_delay_en.
+ *
+ * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
+ * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
+ * @param phy_curr         PHY the Radio is working on.
+ * @param flags_curr       Flags related with current PHY, the Radio is workingo on.
+ * @param phy_next         Next PHY the Radio is preparing for.
+ * @param flags_next       Flags related with next PHY, the Radio is preparing for.
+ * @param end_evt_delay_en Enable end event delay compensation for TIFS after switch from current
+ *                         direction to next direction.
+ */
 void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t flags_curr,
-	       uint8_t phy_next, uint8_t flags_next)
+	       uint8_t phy_next, uint8_t flags_next,
+	       enum radio_end_evt_delay_state end_evt_delay_en)
 {
 	uint8_t ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(sw_tifs_toggle);
 	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+	uint8_t phyend_delay_cc =
+		SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_EVTS_COMP(sw_tifs_toggle);
+	uint8_t radio_enable_ppi =
+		HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(sw_tifs_toggle);
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	uint32_t delay;
 
 	hal_radio_sw_switch_setup(cc, ppi, sw_tifs_toggle);
@@ -575,12 +605,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 *       compiler should optimize out the redundant code path
 	 *       during the optimization.
 	 */
-	if (dir_next) {
+	if (dir_next == SW_SWITCH_TX) {
 		/* TX */
 
 		/* Calculate delay with respect to current and next PHY.
 		 */
-		if (dir_curr) {
+		if (dir_curr == SW_SWITCH_TX) {
 			delay = HAL_RADIO_NS2US_ROUND(
 			    hal_radio_tx_ready_delay_ns_get(phy_next,
 							    flags_next) +
@@ -600,6 +630,26 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_txen_on_sw_switch(ppi);
 		}
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
+		    !(phy_curr & PHY_CODED)) {
+			SW_SWITCH_TIMER->CC[phyend_delay_cc] =
+				SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US;
+			if (delay < SW_SWITCH_TIMER->CC[cc]) {
+				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
+						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] - delay));
+			} else {
+				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
+			}
+
+			hal_radio_sw_switch_phyend_delay_compensation_config_set(phyend_delay_cc,
+										 radio_enable_ppi);
+		} else {
+			hal_radio_sw_switch_phyend_delay_compensation_config_clear(
+				radio_enable_ppi);
+		}
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		uint8_t ppi_en =
@@ -607,7 +657,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		uint8_t ppi_dis =
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
 
-		if (!dir_curr && (phy_curr & PHY_CODED)) {
+		if (dir_curr == SW_SWITCH_RX && (phy_curr & PHY_CODED)) {
 			/* Switching to TX after RX on LE Coded PHY. */
 
 			uint8_t cc_s2 =
@@ -637,13 +687,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			hal_radio_sw_switch_coded_tx_config_set(ppi_en, ppi_dis,
 				cc_s2, sw_tifs_toggle);
 
-		} else {
-			/* Switching to TX after RX or from back-to-back TX on
-			 * LE 1M/2M PHY.
-			 */
-			/* Software switch group's disable PPI needs to be
-			 * configured at every sw_switch() as they depend on
-			 * the actual PHYs used in TX/RX mode.
+		} else if (dir_curr == SW_SWITCH_RX) {
+			/* Switching to TX after RX on LE 1M/2M PHY.
+			 * Software switch group's disable PPI needs to be
+			 * configured to defaults for non CODED PHY, hence
+			 * the call to clean up is executed every time for
+			 * RX direction.
 			 */
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
@@ -660,6 +709,10 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			(EVENT_CLOCK_JITTER_US << 1);
 
 		hal_radio_rxen_on_sw_switch(ppi);
+
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi);
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
@@ -681,6 +734,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 				 (SW_SWITCH_TIMER->CC[cc] - delay));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+		nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 	}
 
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
@@ -719,7 +775,7 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 	 *       calculations.
 	 */
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_RX, SW_SWITCH_PHY_1M, SW_SWITCH_FLAGS_DONTCARE, phy_rx,
-		  SW_SWITCH_FLAGS_DONTCARE);
+		  SW_SWITCH_FLAGS_DONTCARE, END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -733,7 +789,22 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
-	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx);
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
+		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_with_delay_compensation_and_tx(
+	uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx, uint8_t flags_tx,
+	enum radio_end_evt_delay_state end_delay_en)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_TXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -747,7 +818,8 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
-	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -869,6 +941,9 @@ void radio_tmr_status_reset(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+			BIT(HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI) |
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 			BIT(HAL_TRIGGER_CRYPT_PPI));
 }
 
