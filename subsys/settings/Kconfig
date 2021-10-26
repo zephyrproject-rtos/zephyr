@@ -33,7 +33,7 @@ config SETTINGS_ENCODE_LEN
 	depends on SETTINGS
 	bool
 
-choice
+choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
