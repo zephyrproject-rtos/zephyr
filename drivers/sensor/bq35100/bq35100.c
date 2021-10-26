@@ -193,25 +193,26 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 		return -EIO;
 	}
 
+	k_sleep(K_MSEC(1000));
+
 	if ((bq35100_control_reg_write(dev, address) < 0)) {
 		LOG_ERR("Unable to write to ManufacturerAccessControl in readExtended");
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(200));
-
+	k_sleep(K_MSEC(500));
 
 	if (i2c_burst_read(cfg->bus, cfg->i2c_addr, BQ35100_CMD_MAC_CONTROL,
 			   data, sizeof(data)) < 0) {
 		LOG_ERR("Unable to read from ManufacturerAccessControl");
 		return -EIO;
 	}
-	// k_sleep(K_MSEC(200)); Delay didn't work for address
+
 	// Address match check
-	/*if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
+	if (data[0] != (uint8_t)address || data[1] != (uint8_t)(address >> 8)) {
 		LOG_ERR("Address didn't match (expected 0x%04X, received 0x%02X%02X)", address, data[1], data[0]);
 		return -1;
-	}*/
+	}
 
 	if (data[34] != bq35100_compute_checksum(data, data[35] - 2)) {
 		LOG_ERR("Checksum didn't match (0x%02X expected)", data[34]);
@@ -349,7 +350,7 @@ static int bq35100_compute_checksum(const char *data, size_t length)
 		checksum = 0xFF - checksum;
 	}
 
-	//LOG_DBG("Checksum is 0x%02X", checksum);
+	// LOG_DBG("Checksum is 0x%02X", checksum);
 
 	return checksum;
 }
@@ -379,12 +380,11 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 		case BQ35100_SECURITY_UNKNOWN:
 			LOG_ERR("Unkown mode");
 			return 0;
-			break;
 		case  BQ35100_SECURITY_FULL_ACCESS:
 			LOG_DBG("inside full access");
 			if (data->security_mode == BQ35100_SECURITY_SEALED &&
 			    !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
-				LOG_ERR("Unseal first if in Sealed mode");
+				LOG_ERR("Unsealing failed");
 				return -EIO;
 			}
 
@@ -466,22 +466,24 @@ static int bq35100_wait_for_status(const struct device *dev, uint16_t expected,
 	uint16_t status;
 	uint8_t i;
 
-	// Works without for loop
-	//for (i = 0; i < 5; i++) {
+	// Works without for loop > probably just conicidence. Previously didnt work.
+	// The funcction call itself might have created a delay high enough. Keep the
+	// for loop just in case. It will quit the loop anyway if the first try succeeds.
+	for (i = 0; i < 5; i++) {
 		if (bq35100_get_status(dev, &status) < 0) {
 			LOG_DBG("Getting status failed");
 			return -1;
 		}
 
 		if ((status & mask) == expected) {
-			//LOG_DBG("Status match");
+			// LOG_DBG("Status match");
 			return 0;
 
 		} else {
 			LOG_ERR("Status not yet in requested state read: %04X expected: %04X", status, expected);
 			k_sleep(K_MSEC(wait_ms));
 		}
-	//}
+	}
 
 	return -1;
 }
@@ -584,13 +586,15 @@ static int bq35100_gauge_stop(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(50));	// Without delay it does not stop right after starting
+	// I dont understand this delay. Is it not stopping, because you removed the
+	// for loop in  wait_for_status?
+	k_sleep(K_MSEC(50));    // Without delay it does not stop right after starting
 
 	// Stopping takes a lot of time
 	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500) < 0) {
 		LOG_ERR("Gauge not stopped");
 		dev_data->gauge_enabled = true;
-		
+
 	} else {
 		LOG_DBG("Gauge stopped");
 		dev_data->gauge_enabled = false;
@@ -1016,31 +1020,32 @@ static int bq35100_init(const struct device *dev)
 	}
 
 	data->gauge_enabled = false;
-	//data->security_mode = BQ35100_SECURITY_UNSEALED;
+	// data->security_mode = BQ35100_SECURITY_UNSEALED;
+
+	// does this not work, or why you setting security mode manually above?
+	if (bq35100_get_security_mode(dev) < 0) {
+		return -EIO;
+	}
 
 	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 		return EIO;
 	}
 
-	if (bq35100_get_security_mode(dev) < 0) {
-		return -EIO;
-	}
-
 	/*if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
-		return EIO;
-	}
+	        return EIO;
+	   }
 
-	if (bq35100_get_gauge_mode(dev) < 0) {
-		return -EIO;
-	}
-
-	if (bq35100_gauge_start(dev) < 0) {
-		return -EIO;
-	}
-
-	if(bq35100_gauge_stop(dev) < 0) {
+	   if (bq35100_get_gauge_mode(dev) < 0) {
 	        return -EIO;
-	}*/
+	   }
+
+	   if (bq35100_gauge_start(dev) < 0) {
+	        return -EIO;
+	   }
+
+	   if(bq35100_gauge_stop(dev) < 0) {
+	        return -EIO;
+	   }*/
 
 	return 0;
 }
