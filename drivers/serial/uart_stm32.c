@@ -888,7 +888,7 @@ static void uart_stm32_isr(const struct device *dev)
 			uart_stm32_dma_rx_flush(dev);
 		}
 	} else if (LL_USART_IsEnabledIT_TC(UartInstance) &&
-			  LL_USART_IsActiveFlag_TC(UartInstance)) {
+			LL_USART_IsActiveFlag_TC(UartInstance)) {
 
 		LL_USART_DisableIT_TC(UartInstance);
 		LL_USART_ClearFlag_TC(UartInstance);
@@ -898,6 +898,10 @@ static void uart_stm32_isr(const struct device *dev)
 #ifdef CONFIG_PM
 		uart_stm32_pm_constraint_release(dev);
 #endif
+	} else if (LL_USART_IsEnabledIT_RXNE(UartInstance) &&
+			LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+		/* clear the RXNE by flushing the fifo, because Rx data was not read */
+		LL_USART_RequestRxDataFlush(UartInstance);
 	}
 
 	/* Clear errors */
@@ -979,7 +983,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
-	/*when async rx is disabled, enable interruptable instance of uart to function normally*/
+	/* When async rx is disabled, enable interruptable instance of uart to function normally*/
 	LL_USART_EnableIT_RXNE(UartInstance);
 
 	LOG_DBG("rx: disabled");
