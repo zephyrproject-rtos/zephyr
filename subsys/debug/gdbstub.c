@@ -834,4 +834,16 @@ int gdb_init(const struct device *arg)
 	return 0;
 }
 
+#ifdef CONFIG_XTENSA
+/*
+ * Interrupt stacks are being setup during init and are not
+ * available before POST_KERNEL. Xtensa needs to trigger
+ * interrupts to get into GDB stub. So this can only be
+ * initialized in POST_KERNEL, or else the interrupt would not be
+ * using the correct interrupt stack and will result in
+ * double exception.
+ */
+SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#else
 SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
