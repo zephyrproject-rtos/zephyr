@@ -27,6 +27,7 @@
 #include <arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
+#include <arch/xtensa/gdbstub.h>
 
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE

@@ -249,6 +249,17 @@ void *xtensa_excint1_c(int *interrupted_stack)
 	return z_get_next_switch_handle(interrupted_stack);
 }
 
+#if defined(CONFIG_GDBSTUB)
+void *xtensa_debugint_c(int *interrupted_stack)
+{
+	extern void z_gdb_isr(z_arch_esf_t *esf);
+
+	z_gdb_isr((void *)interrupted_stack);
+
+	return z_get_next_switch_handle(interrupted_stack);
+}
+#endif
+
 int z_xtensa_irq_is_enabled(unsigned int irq)
 {
 	uint32_t ie;
