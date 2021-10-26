@@ -1349,6 +1349,20 @@ SPARC arch:
     labels:
         - "area: SPARC"
 
+State machine framework:
+    status: maintained
+    maintainers:
+        - sambhurst
+    collaborators:
+        - keith-zephyr
+    files:
+        - doc/guides/smf/
+        - include/smf.h
+        - lib/smf/
+        - tests/lib/smf/
+    labels:
+        - "area: State Machine Framework"
+
 Synopsys Platforms:
     status: maintained
     maintainers:
