@@ -161,4 +161,26 @@
 
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/* Wire the SW SWITCH PHYEND delay compensation TIMER EVENTS_COMPARE[<cc_offset>] event to software
+ * switch TIMER0->CLEAR taks task.
+ *
+ * Note: Use the same nubmer of PPIs as for PHY CODED HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE.
+ *       The CTE is not allowe in PDUs sent over PHY CODED so this PPI may be re-used.
+ */
+#define HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI_BASE 17
+
+/* Cancel the SW switch timer running considering PHYEND delay compensation timing:
+ * wire the RADIO EVENTS_CTEPRESENT event to SW_SWITCH_TIMER TASKS_CAPTURE task.
+ *
+ * Note: Use the same nubmer of PPIs as for PHY CODED: HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI.
+ *       The CTE is not allowe in PDUs sent over PHY CODED so this PPI may be re-used.
+ */
+#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI 19
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
+/* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
+ * auto-switch for TIFS. 'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

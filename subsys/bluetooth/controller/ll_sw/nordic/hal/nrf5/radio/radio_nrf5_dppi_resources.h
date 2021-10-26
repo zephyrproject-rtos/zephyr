@@ -128,6 +128,10 @@
  */
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI HAL_TRIGGER_RATEOVERRIDE_PPI
 
+/* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
+ * auto-switch for TIFS. 'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 #endif /* CONFIG_SOC_NRF5340_CPUNET || DPPI_PRESENT */

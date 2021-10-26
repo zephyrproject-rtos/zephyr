@@ -24,9 +24,16 @@
  */
 #define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_END_DISABLE_Msk
 
+#if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
+/* Delay of EVENTS_PHYEND event on receive PDU without CTE inclded when CTEINLINE is enabled */
+#define RADIO_EVENTS_PHYEND_DELAY_US 16
+#endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+
 /* EVENTS_TIMER capture register used for sampling TIMER time-stamps. */
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
+
+#define NRF_PPI_NONE 0
 
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 #include "radio_sim_nrfxx.h"
