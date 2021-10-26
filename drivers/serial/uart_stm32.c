@@ -594,11 +594,13 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-	LL_USART_EnableIT_TC(UartInstance);
-
 #ifdef CONFIG_PM
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	data->tx_poll_stream_on = false;
 	uart_stm32_pm_constraint_set(dev);
 #endif
+	LL_USART_EnableIT_TC(UartInstance);
 }
 
 static void uart_stm32_irq_tx_disable(const struct device *dev)
