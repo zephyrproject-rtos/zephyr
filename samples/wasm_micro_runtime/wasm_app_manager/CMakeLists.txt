@@ -26,6 +26,10 @@ message("wasi-sdk was found at ${WASI_SDK_PATH}")
 
 set(WAMR_DIR ${ZEPHYR_WASM_MICRO_RUNTIME_MODULE_DIR})
 
+set(WAMR_LIBC_BUILTIN_DIR
+    ${CMAKE_CURRENT_BINARY_DIR}/wamr-sdk/app-sdk/libc-builtin-sysroot
+)
+
 set(WAMR_APP_FRAMEWORK_DIR
     ${CMAKE_CURRENT_BINARY_DIR}/wamr-sdk/app-sdk/wamr-app-framework
 )
@@ -70,6 +74,7 @@ foreach(WASM_APP ${WASM_APPS})
       ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/wasm-apps
     COMMAND
       ${WASI_SDK_PATH}/bin/clang -O3
+        -I${WAMR_LIBC_BUILTIN_DIR}/include
         -I${WAMR_APP_FRAMEWORK_DIR}/include
         -L${WAMR_APP_FRAMEWORK_DIR}/lib
         -lapp_framework
