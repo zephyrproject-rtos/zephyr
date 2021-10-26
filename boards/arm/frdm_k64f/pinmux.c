@@ -104,9 +104,11 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 
 	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
 
+#if DT_NODE_HAS_STATUS(DT_CHILD(DT_NODELABEL(enet),  ptp), okay)
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt4));
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
