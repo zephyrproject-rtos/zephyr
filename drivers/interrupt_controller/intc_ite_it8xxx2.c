@@ -136,8 +136,7 @@ void ite_intc_irq_disable(unsigned int irq)
 	irq_unlock(key);
 }
 
-void ite_intc_irq_priority_set(unsigned int irq,
-		unsigned int prio, unsigned int flags)
+void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 {
 	uint32_t g, i;
 	volatile uint8_t *tri;
