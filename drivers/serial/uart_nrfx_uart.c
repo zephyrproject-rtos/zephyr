@@ -79,7 +79,8 @@ static struct {
 
 	bool tx_abort;
 	const uint8_t *volatile tx_buffer;
-	size_t tx_buffer_length;
+	/* note: this is aliased with atomic_t in uart_nrfx_poll_out() */
+	unsigned long tx_buffer_length;
 	volatile size_t tx_counter;
 #if HW_FLOW_CONTROL_AVAILABLE
 	int32_t tx_timeout;
