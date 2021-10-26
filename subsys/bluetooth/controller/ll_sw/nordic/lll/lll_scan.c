@@ -47,6 +47,9 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+/* Maximum primary Advertising Radio Channels to scan */
+#define ADV_CHAN_MAX 3U
+
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static int resume_prepare_cb(struct lll_prepare_param *p);
@@ -866,7 +869,7 @@ static void isr_window(void *param)
 	lll = param;
 
 	/* Next radio channel to scan, round-robin 37, 38, and 39. */
-	if (++lll->chan == 3U) {
+	if (++lll->chan == ADV_CHAN_MAX) {
 		lll->chan = 0U;
 	}
 	lll_chan_set(37 + lll->chan);
@@ -978,7 +981,7 @@ static void isr_done_cleanup(void *param)
 
 	/* Next window to use next advertising radio channel */
 	lll = param;
-	if (++lll->chan == 3U) {
+	if (++lll->chan == ADV_CHAN_MAX) {
 		lll->chan = 0U;
 	}
 
