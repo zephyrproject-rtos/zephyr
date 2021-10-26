@@ -1855,7 +1855,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		return -EAGAIN;
 	}
 
-	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
+	BT_DBG("ch %p cid 0x%04x len %u credits %lu", ch, ch->tx.cid,
 	       seg->len, atomic_get(&ch->tx.credits));
 
 	len = seg->len - sdu_hdr_len;
@@ -1998,7 +1998,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	l2cap_chan_tx_give_credits(ch, credits);
 
-	BT_DBG("chan %p total credits %u", ch, atomic_get(&ch->tx.credits));
+	BT_DBG("chan %p total credits %lu", ch, atomic_get(&ch->tx.credits));
 
 	l2cap_chan_tx_resume(ch);
 }
@@ -2172,7 +2172,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 
 	l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	BT_DBG("chan %p credits %u", chan, atomic_get(&chan->rx.credits));
+	BT_DBG("chan %p credits %lu", chan, atomic_get(&chan->rx.credits));
 }
 
 static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
