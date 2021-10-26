@@ -691,9 +691,9 @@
 			label = "CSI";
 		};
 
-		flexcan1: can@40c40000 {
+		flexcan1: can@400c4000 {
 			compatible = "nxp,kinetis-flexcan";
-			reg = <0x40c40000 0x1000>;
+			reg = <0x400c4000 0x1000>;
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
@@ -736,20 +736,12 @@
 			#size-cells = <0>;
 		};
 
-		wdog1: wdog@40038000 {
+		wdog1: wdog@40030000 {
 			compatible = "nxp,imx-wdog";
-			reg = <0x40038000 0xA>;
+			reg = <0x40030000 0xA>;
 			status = "disabled";
 			interrupts = <112 0>;
 			label = "WDOG1";
-		};
-
-		wdog2: wdog@40034000 {
-			compatible = "nxp,imx-wdog";
-			reg = <0x40034000 0xA>;
-			status = "disabled";
-			interrupts = <65 0>;
-			label = "WDOG2";
 		};
 
 		ocram: ocram@20200000 {
