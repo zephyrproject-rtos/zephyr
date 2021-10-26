@@ -196,6 +196,7 @@ Bluetooth controller:
     collaborators:
         - carlescufi
         - thoh-ot
+        - kruithofa
     files:
         - subsys/bluetooth/controller/
     labels:
