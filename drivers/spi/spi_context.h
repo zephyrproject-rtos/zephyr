@@ -128,22 +128,34 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
-	uint32_t timeout_ms;
+	k_timeout_t timeout;
 
-	timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
-		     ctx->config->frequency;
-	timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
+	/* Do not use any timeout in the slave mode, as in this case it is not
+	 * known when the transfer will actually start and what the frequency
+	 * will be.
+	 */
+	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
+		timeout = K_FOREVER;
+	} else {
+		uint32_t timeout_ms;
+
+		timeout_ms = MAX(ctx->tx_len, ctx->rx_len) * 8 * 1000 /
+			     ctx->config->frequency;
+		timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
+
+		timeout = K_MSEC(timeout_ms);
+	}
 
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
-		if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+		if (k_sem_take(&ctx->sync, timeout)) {
 			LOG_ERR("Timeout waiting for transfer complete");
 			return -ETIMEDOUT;
 		}
 		status = ctx->sync_status;
 	}
 #else
-	if (k_sem_take(&ctx->sync, K_MSEC(timeout_ms))) {
+	if (k_sem_take(&ctx->sync, timeout)) {
 		LOG_ERR("Timeout waiting for transfer complete");
 		return -ETIMEDOUT;
 	}
