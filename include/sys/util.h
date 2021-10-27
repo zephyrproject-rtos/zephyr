@@ -124,7 +124,7 @@ extern "C" {
 	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
 
 /**
- * @brief Get a pointer to a container structure from an element
+ * @brief Get a pointer to a structure containing the element
  *
  * Example:
  *
