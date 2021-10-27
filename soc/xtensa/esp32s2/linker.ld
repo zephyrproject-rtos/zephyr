@@ -19,7 +19,8 @@
 #define RAM_IRAM_START    0x40020000
 #define RAM_DRAM_START    0x3ffb0000
 
-#define DATA_RAM_END      0x3ffe0000  /* 2nd stage bootloader iram_loader_seg starts at SRAM block 14 (reclaimed after app boots) */
+#define DATA_RAM_END      0x40010000  /* 2nd stage bootloader iram_loader_seg starts at SRAM block 14 (reclaimed after app boots) */
+/*#define DATA_RAM_END      0x3FFE0000  0x3FFEAB00 0x40000000*/
 
 #define IRAM_ORG    (RAM_IRAM_START + CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
                                     + CONFIG_ESP32S2_DATA_CACHE_SIZE)
