@@ -214,9 +214,7 @@ logger.setLevel(logging.DEBUG)
 def size_report(sc):
     logger.info(sc.filename)
     logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for i in enumerate(sc.sections):
-        v = sc.sections[i]
-
+    for v in sc.sections:
         logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
                     (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
                      v["type"]))
