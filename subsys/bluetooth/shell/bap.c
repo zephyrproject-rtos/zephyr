@@ -1245,7 +1245,9 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_audio_broadcast_sink_sync(default_sink, bis_bitfield,
-					   broadcast_sink_streams, NULL);
+					   broadcast_sink_streams,
+					   &default_preset->preset.codec,
+					   NULL);
 	if (err != 0) {
 		shell_error(sh, "Failed to sync to broadcast: %d", err);
 		return err;

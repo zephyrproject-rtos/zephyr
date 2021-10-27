@@ -715,6 +715,7 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
 				 struct bt_audio_stream *streams,
+				 struct bt_codec *codec,
 				 const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
@@ -770,13 +771,14 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 	sink->stream_count = stream_count;
 	sink->streams = streams;
+	sink->codec = codec;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
 
 		stream = &streams[i];
 
 		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
-							 sink->cap->codec);
+							   sink->codec);
 		if (err != 0) {
 			BT_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_sink_cleanup_streams(sink);
