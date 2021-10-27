@@ -10,7 +10,7 @@
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC INT_MAX
+#define MAX_CYC 0xffffffffu
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
@@ -21,10 +21,25 @@ static uint64_t last_count;
 
 static void set_mtimecmp(uint64_t time)
 {
+#if defined(CONFIG_SMP)
+    unsigned int hart_id;
+
+    __asm__ volatile("csrr %0, mhartid" : "=r" (hart_id));
+#endif
+
 #ifdef CONFIG_64BIT
+#if defined(CONFIG_SMP)
+//    *(volatile uint64_t *)RISCV_MTIMECMP_BY_HART(1) = time;
+    *(volatile uint64_t *)RISCV_MTIMECMP_BY_HART(hart_id) = time;
+#else
 	*(volatile uint64_t *)RISCV_MTIMECMP_BASE = time;
+#endif
+#else
+#if defined(CONFIG_SMP)
+    volatile uint32_t *r = (uint32_t *)RISCV_MTIMECMP_BY_HART(hart_id);
 #else
 	volatile uint32_t *r = (uint32_t *)RISCV_MTIMECMP_BASE;
+#endif
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
 	 * but are NOT internally latched for multiword transfers.  So
@@ -64,7 +79,7 @@ static void timer_isr(const void *arg)
 	uint64_t now = mtime();
 	uint32_t dticks = (uint32_t)((now - last_count) / CYC_PER_TICK);
 
-	last_count = now;
+	last_count += dticks * CYC_PER_TICK;
 
 	if (!TICKLESS) {
 		uint64_t next = last_count + CYC_PER_TICK;
@@ -146,4 +161,18 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return (uint32_t)mtime();
+}
+
+
+void smp_timer_init(void)
+{
+    /*
+     * Timer ISR is already registered for main hart so just need to configure
+     * and enable int on secondary harts.
+     *
+     * PMCS: Probably need guard on this but I'm not sure if we can do this at
+     * this stage of the start up?
+     */
+    set_mtimecmp(last_count + CYC_PER_TICK);
+    irq_enable(RISCV_MACHINE_TIMER_IRQ);
 }
