@@ -264,6 +264,12 @@ Artificially long but functional example:
                                  __/fifo_api/testcase.yaml
     """)
 
+    compare_group_option = parser.add_mutually_exclusive_group()
+
+    platform_group_option = parser.add_mutually_exclusive_group()
+
+    run_group_option = parser.add_mutually_exclusive_group()
+
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
@@ -362,7 +368,7 @@ Artificially long but functional example:
             coverage. If you are looking for accurate results, run this with
             --all, but this will take a while...""")
 
-    parser.add_argument("--compare-report",
+    compare_group_option.add_argument("--compare-report",
                         help="Use this report file for size comparison")
 
     parser.add_argument(
@@ -440,7 +446,7 @@ Artificially long but functional example:
              "instead of just a path to it")
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
                         help="log also to file")
-    parser.add_argument(
+    compare_group_option.add_argument(
         "-m", "--last-metrics", action="store_true",
         help="Instead of comparing metrics from the last --release, "
              "compare with the results of the previous twister "
@@ -451,7 +457,7 @@ Artificially long but functional example:
         action="store_true",
         help="do not update the results of the last run of the twister run")
 
-    parser.add_argument(
+    platform_group_option.add_argument(
         "-G",
         "--integration",
         action="store_true",
@@ -608,11 +614,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """
     )
 
-    parser.add_argument(
+    platform_group_option.add_argument(
         "--emulation-only", action="store_true",
         help="Only build and run emulation platforms")
 
-    parser.add_argument(
+    run_group_option.add_argument(
         "--device-testing", action="store_true",
         help="Test on device directly. Specify the serial device to "
              "use with the --device-serial option.")
@@ -625,7 +631,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "--device-serial-baud", action="store", default=None,
         help="Serial device baud rate (default 115200)")
 
-    serial = parser.add_mutually_exclusive_group()
+    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
     serial.add_argument("--device-serial",
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
@@ -641,7 +647,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         --device-serial-pty <script>
                         """)
 
-    parser.add_argument("--generate-hardware-map",
+    run_group_option.add_argument("--generate-hardware-map",
+                        required="--generate-hardware-map" in sys.argv,
                         help="""Probe serial devices connected to this platform
                         and create a hardware map file to be used with
                         --device-testing
@@ -653,7 +660,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         that support this feature (currently only Linux).
                         """)
 
-    parser.add_argument("--hardware-map",
+    serial.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
                         """)
