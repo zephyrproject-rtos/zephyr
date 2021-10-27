@@ -1,0 +1,52 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 OSPI device representation. A stm32 octospi node would typically
+    looks to this:
+
+        &octospi {
+            pinctrl-0 = <&octospi_clk_pe9 &octospi_ncs_pe10 &octospi_dqs_pe11
+                         &octospi_bk1_io0_pe12 &octospi_bk1_io1_pe13
+                         &octospi_bk1_io2_pe14 &octospi_bk1_io3_pe15
+                         &octospi_bk1_io4_pe16 &octospi_bk1_io5_pe17
+                         &octospi_bk1_io6_pe18 &octospi_bk1_io7_pe19>;
+
+            dmas = <&dma1 5 5 0x0000 0x03>;
+            dma-names = "tx_rx";
+
+            status = "okay";
+        };
+
+compatible: "st,stm32-ospi"
+
+include: base.yaml
+
+bus: ospi
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    dmas:
+      description: |
+        Optional DMA channel specifier. If DMA should be used, specifier should
+        hold a phandle reference to the dma controller, the channel number,
+        the slot number, channel configuration and finally features.
+
+        For example dmas for TX/RX on OSPI
+           dmas = <&dma1 5 5 0x0000 0x03>;
+
+    dma-names:
+      description: |
+        DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+        For example
+           dma-names = "tx_rx";
+
+    pinctrl-0:
+      type: phandles
+      required: true

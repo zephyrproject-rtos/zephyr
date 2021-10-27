@@ -1,0 +1,35 @@
+# Copyright (c) 2021, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 OSPI Flash controller supporting the JEDEC CFI interface
+
+    Representation of a serial flash on a octospi bus:
+
+        mx25lm51245: ospi-nor-flash@0 {
+                compatible = "st,stm32-ospi-nor";
+                label = "MX25LM512";
+                reg = <0>;
+                ospi-max-frequency = <80000000>;
+                size = <0x20000000>; /* 512 Mbits */
+                status = "okay";
+        };
+
+compatible: "st,stm32-ospi-nor"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: ospi
+
+properties:
+    reg:
+      required: true
+    ospi-max-frequency:
+      type: int
+      required: true
+      description: Maximum clock frequency of device's OSPI interface in Hz
+    label:
+      required: true
+    size:
+      required: true
+      description: Flash Memory size in bits
