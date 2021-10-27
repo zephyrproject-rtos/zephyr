@@ -92,6 +92,31 @@ typedef int16_t device_handle_t;
 	DEVICE_DEFINE(Z_SYS_NAME(init_fn), drv_name, init_fn, NULL,	\
 		      NULL, NULL, level, prio, NULL)
 
+/* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
+ * so synthesize a unique dev_name from the devicetree node.
+ *
+ * The ordinal used in this name can be mapped to the path by
+ * examining zephyr/include/generated/device_extern.h header. If the
+ * format of this conversion changes, gen_defines should be updated to
+ * match it.
+ */
+#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+
+/* Synthesize a unique name for the device state associated with
+ * dev_name.
+ */
+#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+
+/**
+ * @brief Utility macro to define and initialize the device state.
+ *
+ * @param node_id Devicetree node id of the device.
+ * @param dev_name Device name.
+ */
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
+	__attribute__((__section__(".z_devstate")));
+
 /**
  * @def DEVICE_DEFINE
  *
@@ -129,9 +154,11 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
+	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name) \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
 			pm_device,					\
-			data_ptr, cfg_ptr, level, prio, api_ptr)
+			data_ptr, cfg_ptr, level, prio, api_ptr,	\
+			&Z_DEVICE_STATE_NAME(dev_name))
 
 /**
  * @def DEVICE_DT_NAME
@@ -187,11 +214,14 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
 			 api_ptr, ...)					\
+	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id), init_fn,		\
 			pm_device,					\
 			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr, __VA_ARGS__)
+			api_ptr,					\
+			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),	\
+			__VA_ARGS__)
 
 /**
  * @def DEVICE_DT_INST_DEFINE
@@ -693,21 +723,6 @@ static inline bool device_is_ready(const struct device *dev)
  * @}
  */
 
-/* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
- * so synthesize a unique dev_name from the devicetree node.
- *
- * The ordinal used in this name can be mapped to the path by
- * examining zephyr/include/generated/device_extern.h header. If the
- * format of this conversion changes, gen_defines should be updated to
- * match it.
- */
-#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
-
-/* Synthesize a unique name for the device state associated with
- * dev_name.
- */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
-
 /** Synthesize the name of the object that holds device ordinal and
  * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
@@ -735,8 +750,7 @@ static inline bool device_is_ready(const struct device *dev)
  * include power management and dependency handles.
  */
 #define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)		\
-	Z_DEVICE_STATE_DEFINE(node_id, dev_name)
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
@@ -805,7 +819,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
-			data_ptr, cfg_ptr, level, prio, api_ptr, ...)	\
+			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
@@ -814,7 +828,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
-		.state = &Z_DEVICE_STATE_NAME(dev_name),		\
+		.state = (state_ptr),					\
 		.data = (data_ptr),					\
 		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\

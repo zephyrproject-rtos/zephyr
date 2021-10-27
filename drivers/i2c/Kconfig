@@ -22,6 +22,12 @@ config I2C_SHELL
 
 	  The I2C shell currently support scanning and bus recovery.
 
+config I2C_STATS
+	bool "Enable I2C device Stats"
+	depends on STATS
+	help
+	  Enable I2C Stats.
+
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b91"

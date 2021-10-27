@@ -1065,8 +1065,8 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \
 	\
-	DEVICE_DT_INST_DEFINE(idx,				               \
-			&i2c_it8xxx2_init, NULL,			       \
+	I2C_DEVICE_DT_INST_DEFINE(idx,				               \
+			i2c_it8xxx2_init, NULL,				       \
 			&i2c_it8xxx2_data_##idx,	                       \
 			&i2c_it8xxx2_cfg_##idx, POST_KERNEL,		       \
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \

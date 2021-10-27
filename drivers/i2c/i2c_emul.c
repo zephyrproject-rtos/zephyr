@@ -153,7 +153,7 @@ static struct i2c_driver_api i2c_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n), \
 	}; \
 	static struct i2c_emul_data i2c_emul_data_##n; \
-	DEVICE_DT_INST_DEFINE(n, \
+	I2C_DEVICE_DT_INST_DEFINE(n, \
 			    i2c_emul_init, \
 			    NULL, \
 			    &i2c_emul_data_##n, \

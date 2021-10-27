@@ -38,7 +38,7 @@ static int vnd_i2c_init(const struct device *dev)
 }
 
 #define VND_I2C_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, &vnd_i2c_init, NULL,			\
+	I2C_DEVICE_DT_INST_DEFINE(n, vnd_i2c_init, NULL,			\
 			      NULL, NULL, POST_KERNEL,			\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      &vnd_i2c_api);
