@@ -455,7 +455,7 @@ static const struct spi_driver_api spi_api = {
 	DEVICE_DT_DEFINE(DT_NODELABEL(spi##idx), &spi_esp32_init,	\
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_api);
+			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay)
 ESP32_SPI_INIT(2);

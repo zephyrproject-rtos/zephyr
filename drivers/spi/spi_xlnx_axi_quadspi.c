@@ -481,7 +481,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 			    NULL,					\
 			    &xlnx_quadspi_data_##n,			\
 			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &xlnx_quadspi_driver_api);			\
 									\
 	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\

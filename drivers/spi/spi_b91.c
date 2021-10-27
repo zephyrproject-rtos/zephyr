@@ -474,7 +474,7 @@ static struct spi_driver_api spi_b91_api = {
 			      &spi_b91_data_##inst,				\
 			      &spi_b91_cfg_##inst,				\
 			      POST_KERNEL,					\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      CONFIG_SPI_INIT_PRIORITY,				\
 			      &spi_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_B91_INIT)
