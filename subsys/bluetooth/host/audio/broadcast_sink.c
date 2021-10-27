@@ -34,6 +34,8 @@
 static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
 static struct bt_le_scan_cb broadcast_scan_cb;
 
+static sys_slist_t sink_cbs = SYS_SLIST_STATIC_INIT(&sink_cbs);
+
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
 
 static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
@@ -74,9 +76,8 @@ static struct bt_audio_broadcast_sink *broadcast_sink_get_by_pa(struct bt_le_per
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_audio_broadcast_sink *sink;
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
 
 	sink = broadcast_sink_syncing_get();
 	if (sink == NULL || sync != sink->pa_sync) {
@@ -90,21 +91,9 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	bt_audio_broadcast_sink_scan_stop();
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		/* Terminate early if we do not have any audio sink
-		 * capabilities
-		 */
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->pa_synced != NULL) {
-			ops->pa_synced(sink, sink->pa_sync, sink->broadcast_id);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->pa_synced != NULL) {
+			listener->pa_synced(sink, sink->pa_sync, sink->broadcast_id);
 		}
 	}
 
@@ -118,9 +107,8 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 static void pa_term(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_audio_broadcast_sink *sink;
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
 
 	sink = broadcast_sink_get_by_pa(sync);
 	if (sink == NULL) {
@@ -131,22 +119,9 @@ static void pa_term(struct bt_le_per_adv_sync *sync,
 	BT_DBG("PA sync with broadcast source with ID 0x%06X lost",
 	       sink->broadcast_id);
 	broadcast_sink_cleanup(sink);
-
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		/* Terminate early if we do not have any audio sink
-		 * capabilities
-		 */
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->pa_sync_lost != NULL) {
-			ops->pa_sync_lost(sink);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->pa_sync_lost != NULL) {
+			listener->pa_sync_lost(sink);
 		}
 	}
 }
@@ -346,19 +321,15 @@ static bool net_buf_decode_subgroup(struct net_buf_simple *buf,
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
 	struct bt_audio_broadcast_sink *sink = (struct bt_audio_broadcast_sink *)user_data;
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_codec_qos codec_qos = { 0 };
 	struct bt_audio_base base = { 0 };
 	struct bt_uuid_16 broadcast_uuid;
-	struct bt_audio_capability *cap;
 	struct net_buf_simple net_buf;
-	sys_slist_t *lst;
 	void *uuid;
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		/* Terminate early if we do not have any audio sink
-		 * capabilities
-		 */
+	if (sys_slist_is_empty(&sink_cbs)) {
+		/* Terminate early if we do not have any broadcast sink listeners */
 		return false;
 	}
 
@@ -415,13 +386,9 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 		}
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->base_recv != NULL) {
-			ops->base_recv(sink, &base);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->base_recv != NULL) {
+			listener->base_recv(sink, &base);
 		}
 	}
 
@@ -445,9 +412,8 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 			 const struct bt_iso_biginfo *biginfo)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_audio_broadcast_sink *sink;
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
 
 	sink = broadcast_sink_get_by_pa(sync);
 	if (sink == NULL) {
@@ -460,21 +426,9 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 	sink->biginfo_num_bis = biginfo->num_bis;
 	sink->big_encrypted = biginfo->encryption;
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		/* Terminate early if we do not have any audio sink
-		 * capabilities
-		 */
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->syncable != NULL) {
-			ops->syncable(sink, biginfo->encryption);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->syncable != NULL) {
+			listener->syncable(sink, biginfo->encryption);
 		}
 	}
 }
@@ -496,11 +450,10 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 	return timeout;
 }
 
-static void sync_broadcast_pa(sys_slist_t *lst,
-			      const struct bt_le_scan_recv_info *info,
-			      uint32_t broadcast_id,
-			      struct bt_audio_capability *cap)
+static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
+			      uint32_t broadcast_id)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_le_per_adv_sync_param param;
 	struct bt_audio_broadcast_sink *sink;
 	static bool pa_cb_registered;
@@ -536,36 +489,27 @@ static void sync_broadcast_pa(sys_slist_t *lst,
 			BT_ERR("Could not stop scan: %d", err);
 		}
 
-		SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-			struct bt_audio_capability_ops *ops;
-
-			ops = cap->ops;
-
-			if (ops != NULL && ops->scan_term != NULL) {
-				ops->scan_term(err);
+		SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+			if (listener->scan_term != NULL) {
+				listener->scan_term(err);
 			}
 		}
 	} else {
 		sink->syncing = true;
 		sink->pa_interval = info->interval;
 		sink->broadcast_id = broadcast_id;
-		sink->cap = cap;
 	}
 }
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
-	sys_slist_t *lst;
-	struct bt_audio_capability *cap;
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		/* Terminate early if we do not have any audio sink
-		 * capabilities
-		 */
+	if (sys_slist_is_empty(&sink_cbs)) {
+		/* Terminate early if we do not have any broadcast sink listeners */
 		return false;
 	}
 
@@ -595,16 +539,12 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	BT_DBG("Found broadcast source with address %s and id 0x%6X",
 	       bt_addr_le_str(info->addr), broadcast_id);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->scan_recv != NULL) {
-			bool sync_pa = ops->scan_recv(info, broadcast_id);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->scan_recv != NULL) {
+			bool sync_pa = listener->scan_recv(info, broadcast_id);
 
 			if (sync_pa) {
-				sync_broadcast_pa(lst, info, broadcast_id, cap);
+				sync_broadcast_pa(info, broadcast_id);
 				break;
 			}
 		}
@@ -628,31 +568,24 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 static void broadcast_scan_timeout(void)
 {
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
+	struct bt_audio_broadcast_sink_cb *listener;
 
 	bt_le_scan_cb_unregister(&broadcast_scan_cb);
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		BT_WARN("No BT_AUDIO_SINK capabilities");
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->scan_term != NULL) {
-			ops->scan_term(-ETIME);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->scan_term != NULL) {
+			listener->scan_term(-ETIME);
 		}
 	}
 }
 
+void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb)
+{
+	sys_slist_append(&sink_cbs, &cb->node);
+}
+
 int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 {
-	sys_slist_t *lst;
 	int err;
 
 	CHECKIF(param == NULL) {
@@ -668,9 +601,8 @@ int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		BT_WARN("No BT_AUDIO_SINK capabilities");
+	if (sys_slist_is_empty(&sink_cbs)) {
+		BT_WARN("No broadcast sink callbacks registered");
 		return -EINVAL;
 	}
 
@@ -692,9 +624,8 @@ int bt_audio_broadcast_sink_scan_start(const struct bt_le_scan_param *param)
 
 int bt_audio_broadcast_sink_scan_stop(void)
 {
+	struct bt_audio_broadcast_sink_cb *listener;
 	struct bt_audio_broadcast_sink *sink;
-	struct bt_audio_capability *cap;
-	sys_slist_t *lst;
 	int err;
 
 	sink = broadcast_sink_syncing_get();
@@ -713,19 +644,9 @@ int bt_audio_broadcast_sink_scan_stop(void)
 		bt_le_scan_cb_unregister(&broadcast_scan_cb);
 	}
 
-	lst = bt_audio_capability_get(BT_AUDIO_SINK);
-	if (lst == NULL) {
-		BT_WARN("No BT_AUDIO_SINK capabilities");
-		return 0;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_audio_capability_ops *ops;
-
-		ops = cap->ops;
-
-		if (ops != NULL && ops->scan_term != NULL) {
-			ops->scan_term(0);
+	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
+		if (listener->scan_term != NULL) {
+			listener->scan_term(0);
 		}
 	}
 

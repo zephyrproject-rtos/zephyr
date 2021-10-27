@@ -82,14 +82,7 @@ static void pa_sync_lost_cb(struct bt_audio_broadcast_sink *sink)
 	SET_FLAG(pa_sync_lost);
 }
 
-static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
-						BT_CODEC_LC3_DURATION_ANY,
-						0x03, 30, 240, 2,
-						(BT_CODEC_META_CONTEXT_VOICE |
-						BT_CODEC_META_CONTEXT_MEDIA),
-						BT_CODEC_META_CONTEXT_ANY);
-
-static struct bt_audio_capability_ops lc3_ops = {
+static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 	.scan_recv = scan_recv_cb,
 	.scan_term = scan_term_cb,
 	.base_recv = base_recv_cb,
@@ -100,15 +93,6 @@ static struct bt_audio_capability_ops lc3_ops = {
 static int init(void)
 {
 	int err;
-	static struct bt_audio_capability caps = {
-		.type = BT_AUDIO_SINK,
-		.pref = BT_AUDIO_CAPABILITY_PREF(
-				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
-				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u,
-				20000u, 40000u),
-		.codec = &lc3_codec,
-		.ops = &lc3_ops,
-	};
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -118,11 +102,7 @@ static int init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_audio_capability_register(&caps);
-	if (err != 0) {
-		FAIL("Failed to register capabilities: %d", err);
-		return err;
-	}
+	bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
 
 	UNSET_FLAG(broadcaster_found);
 	UNSET_FLAG(base_received);
@@ -156,6 +136,8 @@ static void test_main(void)
 
 	printk("Waiting for PA disconnected\n");
 	WAIT_FOR_FLAG(pa_sync_lost);
+
+	/* TODO: Handle Audio when ISO is supported in BSIM */
 
 	PASS("Broadcast sink passed\n");
 }

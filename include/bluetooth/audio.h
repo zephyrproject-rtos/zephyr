@@ -956,7 +956,10 @@ struct bt_audio_capability_ops {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*release)(struct bt_audio_stream *stream);
+};
 
+/** Broadcast Audio Sink callback structure */
+struct bt_audio_broadcast_sink_cb {
 	/** @brief Scan receive callback
 	 *
 	 *  Scan receive callback is called whenever a broadcast source has been
@@ -1036,6 +1039,9 @@ struct bt_audio_capability_ops {
 	 *  @param sink          Pointer to the sink structure.
 	 */
 	void (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
+
+	/* Internally used list node */
+	sys_snode_t node;
 };
 
 /** @brief Channel operation. */
@@ -1512,6 +1518,12 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source);
+
+/** @brief Register Broadcast sink callbacks
+ * *
+ *  @param cb  Broadcast sink callback structure.
+ */
+void bt_audio_broadcast_sink_register_cb(struct bt_audio_broadcast_sink_cb *cb);
 
 /** @brief Start scan for broadcast sources.
  *
