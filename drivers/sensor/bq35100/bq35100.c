@@ -407,6 +407,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				half_access_code |= full_access_codes & 0xFF;
 				bq35100_control_reg_write(dev, half_access_code);
 			}
+			data->security_mode = BQ35100_SECURITY_FULL_ACCESS;
 			break;
 		case BQ35100_SECURITY_UNSEALED:
 			LOG_DBG("inside unsealed");
@@ -425,10 +426,12 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				half_access_code |= BQ35100_DEFAULT_SEAL_CODES & 0xFF;
 				bq35100_control_reg_write(dev, half_access_code);
 			}
+			data->security_mode = BQ35100_SECURITY_UNSEALED;
 			break;
 		case BQ35100_SECURITY_SEALED:
 			LOG_DBG("inside sealed");
 			bq35100_control_reg_write(dev, BQ35100_CTRL_SEALED);
+			data->security_mode = BQ35100_SECURITY_SEALED;
 			break;
 		default:
 			LOG_ERR("Invalid mode");
@@ -437,11 +440,12 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 		}
 		k_sleep(K_MSEC(100));
 
-		data->security_mode = bq35100_get_security_mode(dev);
+		// Isn't get_security_mode() returing 0 in case of success? 
+		// data->security_mode = bq35100_get_security_mode(dev);
 
 		if (data->security_mode == security_mode) {
 			success = true;
-			LOG_DBG("Security mode set");
+			LOG_DBG("Security mode set as 0x%02X",data->security_mode);
 
 		} else {
 			LOG_ERR("Security mode set failed (wanted 0x%02X, got 0x%02X), will retry", security_mode, data->security_mode);
@@ -466,9 +470,6 @@ static int bq35100_wait_for_status(const struct device *dev, uint16_t expected,
 	uint16_t status;
 	uint8_t i;
 
-	// Works without for loop > probably just conicidence. Previously didnt work.
-	// The funcction call itself might have created a delay high enough. Keep the
-	// for loop just in case. It will quit the loop anyway if the first try succeeds.
 	for (i = 0; i < 5; i++) {
 		if (bq35100_get_status(dev, &status) < 0) {
 			LOG_DBG("Getting status failed");
@@ -585,10 +586,6 @@ static int bq35100_gauge_stop(const struct device *dev)
 		LOG_ERR("Unable to write control register");
 		return -EIO;
 	}
-
-	// I dont understand this delay. Is it not stopping, because you removed the
-	// for loop in  wait_for_status?
-	k_sleep(K_MSEC(50));    // Without delay it does not stop right after starting
 
 	// Stopping takes a lot of time
 	if (bq35100_wait_for_status(dev, 0, BQ35100_GA_BIT_MASK, 500) < 0) {
@@ -1020,11 +1017,13 @@ static int bq35100_init(const struct device *dev)
 	}
 
 	data->gauge_enabled = false;
-	// data->security_mode = BQ35100_SECURITY_UNSEALED;
 
-	// does this not work, or why you setting security mode manually above?
 	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
+	}
+
+	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+		return EIO;
 	}
 
 	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
