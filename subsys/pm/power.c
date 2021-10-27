@@ -17,9 +17,8 @@
 #include "pm_priv.h"
 
 #define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(power);
+LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
 static int post_ops_done = 1;
 static struct pm_state_info z_power_state;
