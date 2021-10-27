@@ -324,11 +324,6 @@ static int gpio_b91_pin_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Strengths not implemented */
-	if ((flags & GPIO_DS_ALT) != 0) {
-		return -ENOTSUP;
-	}
-
 	/* Set GPIO init state if defined to avoid glitches */
 	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 		gpio->output |= BIT(pin);

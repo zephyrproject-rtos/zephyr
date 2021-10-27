@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <dt-bindings/gpio/ite-it8xxx2-gpio.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
@@ -379,14 +380,14 @@ static int gpio_ite_configure(const struct device *dev,
 			gpio_1p8v[gpio_config->index][pin].offset);
 	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
 	if (reg_1p8v != &IT8XXX2_GPIO_GCRX(0)) {
-		gpio_flags_t volt = flags & GPIO_VOLTAGE_MASK;
+		gpio_flags_t volt = flags & IT8XXX2_GPIO_VOLTAGE_MASK;
 
-		if (volt == GPIO_VOLTAGE_1P8) {
+		if (volt == IT8XXX2_GPIO_VOLTAGE_1P8) {
 			__ASSERT(!(flags & GPIO_PULL_UP),
 			"Don't enable internal pullup if 1.8V voltage is used");
 			*reg_1p8v |= mask_1p8v;
-		} else if (volt == GPIO_VOLTAGE_3P3 ||
-			   volt == GPIO_VOLTAGE_DEFAULT) {
+		} else if (volt == IT8XXX2_GPIO_VOLTAGE_3P3 ||
+			   volt == IT8XXX2_GPIO_VOLTAGE_DEFAULT) {
 			*reg_1p8v &= ~mask_1p8v;
 		} else {
 			return -EINVAL;
