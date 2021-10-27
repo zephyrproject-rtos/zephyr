@@ -256,7 +256,7 @@ Artificially long but functional example:
       --testcase-root tests/ztest/base    \\
       --testcase-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
-      --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
+      --test      tests/kernel/fifo/fifo_api/kernel.fifo
 
    "kernel.fifo.poll" is one of the test section names in
                                  __/fifo_api/testcase.yaml
@@ -267,6 +267,148 @@ Artificially long but functional example:
     platform_group_option = parser.add_mutually_exclusive_group()
 
     run_group_option = parser.add_mutually_exclusive_group()
+
+    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
+
+    test_or_build = parser.add_mutually_exclusive_group()
+
+    test_xor_subtest = case_select.add_mutually_exclusive_group()
+
+    valgrind_asan_group = parser.add_mutually_exclusive_group()
+
+    case_select.add_argument(
+        "-E",
+        "--save-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Append list of tests and platforms to be run to file.")
+
+    case_select.add_argument(
+        "-F",
+        "--load-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Load list of tests and platforms to be run from file.")
+
+    case_select.add_argument(
+        "-T", "--testcase-root", action="append", default=[],
+        help="Base directory to recursively search for test cases. All "
+             "testcase.yaml files under here will be processed. May be "
+             "called multiple times. Defaults to the 'samples/' and "
+             "'tests/' directories at the base of the Zephyr tree.")
+
+    case_select.add_argument(
+        "-f",
+        "--only-failed",
+        action="store_true",
+        help="Run only those tests that failed the previous twister run "
+             "invocation.")
+
+    case_select.add_argument("--list-tests", action="store_true",
+                             help="""List of all sub-test functions recursively found in
+        all --testcase-root arguments. Note different sub-tests can share
+        the same section name and come from different directories.
+        The output is flattened and reports --sub-test names only,
+        not their directories. For instance net.socket.getaddrinfo_ok
+        and net.socket.fd_set belong to different directories.
+        """)
+
+    case_select.add_argument("--list-test-duplicates", action="store_true",
+                             help="""List tests with duplicate identifiers.
+        """)
+
+    case_select.add_argument("--test-tree", action="store_true",
+                             help="""Output the testsuite in a tree form""")
+
+    compare_group_option.add_argument("--compare-report",
+                        help="Use this report file for size comparison")
+
+    compare_group_option.add_argument(
+        "-m", "--last-metrics", action="store_true",
+        help="Instead of comparing metrics from the last --release, "
+             "compare with the results of the previous twister "
+             "invocation")
+
+    platform_group_option.add_argument(
+        "-G",
+        "--integration",
+        action="store_true",
+        help="Run integration tests")
+
+    platform_group_option.add_argument(
+        "--emulation-only", action="store_true",
+        help="Only build and run emulation platforms")
+
+    run_group_option.add_argument(
+        "--device-testing", action="store_true",
+        help="Test on device directly. Specify the serial device to "
+             "use with the --device-serial option.")
+
+    run_group_option.add_argument("--generate-hardware-map",
+                        required="--generate-hardware-map" in sys.argv,
+                        help="""Probe serial devices connected to this platform
+                        and create a hardware map file to be used with
+                        --device-testing
+                        """)
+
+    serial.add_argument("--device-serial",
+                        help="""Serial device for accessing the board
+                        (e.g., /dev/ttyACM0)
+                        """)
+
+    serial.add_argument("--device-serial-pty",
+                        help="""Script for controlling pseudoterminal.
+                        Twister believes that it interacts with a terminal
+                        when it actually interacts with the script.
+
+                        E.g "twister --device-testing
+                        --device-serial-pty <script>
+                        """)
+
+    serial.add_argument("--hardware-map",
+                        help="""Load hardware map from a file. This will be used
+                        for testing on hardware that is listed in the file.
+                        """)
+
+    test_or_build.add_argument(
+        "-b", "--build-only", action="store_true",
+        help="Only build the code, do not execute any of it in QEMU")
+
+    test_or_build.add_argument(
+        "--test-only", action="store_true",
+        help="""Only run device tests with current artifacts, do not build
+             the code""")
+
+    test_xor_subtest.add_argument(
+        "-s", "--test", action="append",
+        help="Run only the specified test cases. These are named by "
+             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+
+    test_xor_subtest.add_argument(
+        "--sub-test", action="append",
+        help="""Recursively find sub-test functions and run the entire
+        test section where they were found, including all sibling test
+        functions. Sub-tests are named by:
+        section.name.in.testcase.yaml.function_name_without_test_prefix
+        Example: In kernel.fifo.fifo_loop: 'kernel.fifo' is a section name
+        and 'fifo_loop' is a name of a function found in main.c without test prefix.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-valgrind", action="store_true",
+        help="""Run binary through valgrind and check for several memory access
+        errors. Valgrind needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-asan.
+        """)
+
+    valgrind_asan_group.add_argument(
+        "--enable-asan", action="store_true",
+        help="""Enable address sanitizer to check for several memory access
+        errors. Libasan needs to be installed on the host. This option only
+        works with host binaries such as those generated for the native_posix
+        configuration and is mutual exclusive with --enable-valgrind.
+        """)
 
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
@@ -298,12 +440,7 @@ Artificially long but functional example:
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
                              "Default is to run all tests with all tags.")
-    case_select.add_argument(
-        "-f",
-        "--only-failed",
-        action="store_true",
-        help="Run only those tests that failed the previous twister run "
-             "invocation.")
+
 
     parser.add_argument(
         "--retry-failed", type=int, default=0,
@@ -312,22 +449,6 @@ Artificially long but functional example:
     parser.add_argument(
         "--retry-interval", type=int, default=60,
         help="Retry failing tests after specified period of time.")
-
-    test_xor_subtest = case_select.add_mutually_exclusive_group()
-
-    test_xor_subtest.add_argument(
-        "-s", "--test", action="append",
-        help="Run only the specified test cases. These are named by "
-             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
-
-    test_xor_subtest.add_argument(
-        "--sub-test", action="append",
-        help="""Recursively find sub-test functions and run the entire
-        test section where they were found, including all sibling test
-        functions. Sub-tests are named by:
-        section.name.in.testcase.yaml.function_name_without_test_prefix
-        Example: kernel.fifo.poll.fifo_loop
-        """)
 
     parser.add_argument(
         "-l", "--all", action="store_true",
@@ -366,8 +487,7 @@ Artificially long but functional example:
             coverage. If you are looking for accurate results, run this with
             --all, but this will take a while...""")
 
-    compare_group_option.add_argument("--compare-report",
-                        help="Use this report file for size comparison")
+
 
     parser.add_argument(
         "-B", "--subset",
@@ -390,22 +510,6 @@ Artificially long but functional example:
 
     parser.add_argument("--list-tags", action="store_true",
                         help="list all tags in selected tests")
-
-    case_select.add_argument("--list-tests", action="store_true",
-                             help="""List of all sub-test functions recursively found in
-        all --testcase-root arguments. Note different sub-tests can share
-        the same section name and come from different directories.
-        The output is flattened and reports --sub-test names only,
-        not their directories. For instance net.socket.getaddrinfo_ok
-        and net.socket.fd_set belong to different directories.
-        """)
-
-    case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the testsuite in a tree form""")
-
-    case_select.add_argument("--list-test-duplicates", action="store_true",
-                             help="""List tests with duplicate identifiers.
-        """)
 
     parser.add_argument("--export-tests", action="store",
                         metavar="FILENAME",
@@ -444,29 +548,12 @@ Artificially long but functional example:
              "instead of just a path to it")
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
                         help="log also to file")
-    compare_group_option.add_argument(
-        "-m", "--last-metrics", action="store_true",
-        help="Instead of comparing metrics from the last --release, "
-             "compare with the results of the previous twister "
-             "invocation")
+
     parser.add_argument(
         "-u",
         "--no-update",
         action="store_true",
         help="do not update the results of the last run of the twister run")
-
-    platform_group_option.add_argument(
-        "-G",
-        "--integration",
-        action="store_true",
-        help="Run integration tests")
-
-    case_select.add_argument(
-        "-F",
-        "--load-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Load list of tests and platforms to be run from file.")
 
     parser.add_argument(
         "--quarantine-list",
@@ -481,23 +568,6 @@ Artificially long but functional example:
         action="store_true",
         help="Use the list of test scenarios under quarantine and run them"
              "to verify their current status")
-
-    case_select.add_argument(
-        "-E",
-        "--save-tests",
-        metavar="FILENAME",
-        action="store",
-        help="Append list of tests and platforms to be run to file.")
-
-    test_or_build = parser.add_mutually_exclusive_group()
-    test_or_build.add_argument(
-        "-b", "--build-only", action="store_true",
-        help="Only build the code, do not execute any of it in QEMU")
-
-    test_or_build.add_argument(
-        "--test-only", action="store_true",
-        help="""Only run device tests with current artifacts, do not build
-             the code""")
 
     parser.add_argument(
         "--cmake-only", action="store_true",
@@ -550,12 +620,7 @@ Artificially long but functional example:
         "-n", "--no-clean", action="store_true",
         help="Re-use the outdir before building. Will result in "
              "faster compilation since builds will be incremental.")
-    case_select.add_argument(
-        "-T", "--testcase-root", action="append", default=[],
-        help="Base directory to recursively search for test cases. All "
-             "testcase.yaml files under here will be processed. May be "
-             "called multiple times. Defaults to the 'samples/' and "
-             "'tests/' directories at the base of the Zephyr tree.")
+
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
@@ -612,15 +677,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         """
     )
 
-    platform_group_option.add_argument(
-        "--emulation-only", action="store_true",
-        help="Only build and run emulation platforms")
-
-    run_group_option.add_argument(
-        "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
-
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support")
@@ -629,38 +685,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "--device-serial-baud", action="store", default=None,
         help="Serial device baud rate (default 115200)")
 
-    serial = parser.add_mutually_exclusive_group(required="--device-testing" in sys.argv)
-    serial.add_argument("--device-serial",
-                        help="""Serial device for accessing the board
-                        (e.g., /dev/ttyACM0)
-                        """)
-
-    serial.add_argument("--device-serial-pty",
-                        help="""Script for controlling pseudoterminal.
-                        Twister believes that it interacts with a terminal
-                        when it actually interacts with the script.
-                        Not supported on Windows OS.
-
-                        E.g "twister --device-testing
-                        --device-serial-pty <script>
-                        """)
-
-    run_group_option.add_argument("--generate-hardware-map",
-                        required="--generate-hardware-map" in sys.argv,
-                        help="""Probe serial devices connected to this platform
-                        and create a hardware map file to be used with
-                        --device-testing
-                        """)
-
     parser.add_argument("--persistent-hardware-map", action='store_true',
                         help="""With --generate-hardware-map, tries to use
                         persistent names for serial devices on platforms
                         that support this feature (currently only Linux).
-                        """)
-
-    serial.add_argument("--hardware-map",
-                        help="""Load hardware map from a file. This will be used
-                        for testing on hardware that is listed in the file.
                         """)
 
     parser.add_argument("--pre-script",
@@ -692,24 +720,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         NOTE: west-flash must be enabled to use this option.
         """
     )
-
-    valgrind_asan_group = parser.add_mutually_exclusive_group()
-
-    valgrind_asan_group.add_argument(
-        "--enable-valgrind", action="store_true",
-        help="""Run binary through valgrind and check for several memory access
-        errors. Valgrind needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-asan.
-        """)
-
-    valgrind_asan_group.add_argument(
-        "--enable-asan", action="store_true",
-        help="""Enable address sanitizer to check for several memory access
-        errors. Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
-        configuration and is mutual exclusive with --enable-valgrind.
-        """)
 
     parser.add_argument(
         "--enable-lsan", action="store_true",
