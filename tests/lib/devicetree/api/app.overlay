@@ -58,6 +58,8 @@
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 			pwm-names = "red", "green";
+			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
+			baz-names = "john", "doe";
 		};
 
 		test_enum_0: enum-0 {
@@ -122,6 +124,7 @@
 			reg = < 0xdeadbeef 0x1000 >;
 			#gpio-cells = < 0x2 >;
 			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
 			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
@@ -134,6 +137,7 @@
 			reg-names = "one", "two";
 			#gpio-cells = < 0x2 >;
 			#foo-cells = < 0x1 >;
+			#baz-cells = < 0x1 >;
 			interrupts = <5 2>;
 			label = "TEST_GPIO_2";
 			status = "okay";

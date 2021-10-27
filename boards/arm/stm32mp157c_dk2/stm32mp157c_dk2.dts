@@ -49,6 +49,10 @@
 
 };
 
+&rcc {
+	clock-frequency = <DT_FREQ_M(209)>;
+};
+
 &spi4_miso_pe13{ slew-rate = "very-high-speed"; };
 
 &spi4{

@@ -705,6 +705,9 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_METHOD_POST:
 	case COAP_METHOD_PUT:
 	case COAP_METHOD_DELETE:
+	case COAP_METHOD_FETCH:
+	case COAP_METHOD_PATCH:
+	case COAP_METHOD_IPATCH:
 
 	/* All the defined response codes */
 	case COAP_RESPONSE_CODE_OK:
@@ -722,9 +725,11 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_RESPONSE_CODE_NOT_ALLOWED:
 	case COAP_RESPONSE_CODE_NOT_ACCEPTABLE:
 	case COAP_RESPONSE_CODE_INCOMPLETE:
+	case COAP_RESPONSE_CODE_CONFLICT:
 	case COAP_RESPONSE_CODE_PRECONDITION_FAILED:
 	case COAP_RESPONSE_CODE_REQUEST_TOO_LARGE:
 	case COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT:
+	case COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY:
 	case COAP_RESPONSE_CODE_INTERNAL_ERROR:
 	case COAP_RESPONSE_CODE_NOT_IMPLEMENTED:
 	case COAP_RESPONSE_CODE_BAD_GATEWAY:
@@ -826,6 +831,12 @@ static coap_method_t method_from_code(const struct coap_resource *resource,
 		return resource->put;
 	case COAP_METHOD_DELETE:
 		return resource->del;
+	case COAP_METHOD_FETCH:
+		return resource->fetch;
+	case COAP_METHOD_PATCH:
+		return resource->patch;
+	case COAP_METHOD_IPATCH:
+		return resource->ipatch;
 	default:
 		return NULL;
 	}

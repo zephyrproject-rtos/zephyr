@@ -5,9 +5,9 @@
 
 config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
-	depends on SOC_FAMILY_MEC
+	depends on SOC_SERIES_MEC1501X
 	help
-	  Enable the Microchip XEC ESPI driver.
+	  Enable the Microchip XEC ESPI driver for MEC15xx family.
 
 if ESPI_XEC
 

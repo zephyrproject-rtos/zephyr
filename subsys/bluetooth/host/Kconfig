@@ -551,6 +551,7 @@ config BT_ID_MAX
 
 config BT_DF
 	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
 	  It will allow to: get information about antennae, configure
@@ -752,6 +753,7 @@ config BT_BREDR
 	select BT_CENTRAL
 	select BT_SMP
 	select BT_L2CAP_DYNAMIC_CHANNEL
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth BR/EDR support
 
@@ -766,6 +768,7 @@ config BT_MAX_SCO_CONN
 
 config BT_RFCOMM
 	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth RFCOMM support
 
@@ -782,17 +785,20 @@ config BT_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
 	depends on PRINTK
 	select BT_RFCOMM
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth HF support
 
 config BT_AVDTP
 	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This option enables Bluetooth AVDTP support
 
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
+	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
 

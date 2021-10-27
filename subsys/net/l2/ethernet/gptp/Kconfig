@@ -4,6 +4,7 @@
 menuconfig NET_GPTP
 	bool "Enable IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"
 	select NET_L2_PTP
+	select EXPERIMENTAL
 	help
 	  Enable gPTP driver that send and receives gPTP packets
 	  and handles network packet timestamps.

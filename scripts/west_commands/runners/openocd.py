@@ -35,16 +35,22 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_init=None, no_load=False):
         super().__init__(cfg)
 
+        support = path.join(cfg.board_dir, 'support')
+
         if not config:
-            default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
+            default = path.join(support, 'openocd.cfg')
             if path.exists(default):
                 config = [default]
         self.openocd_config = config
 
         search_args = []
+        if path.exists(support):
+            search_args.append('-s')
+            search_args.append(support)
+
         if self.openocd_config is not None:
             for i in self.openocd_config:
-                if path.exists(i):
+                if path.exists(i) and not path.samefile(path.dirname(i), support):
                     search_args.append('-s')
                     search_args.append(path.dirname(i))
 
@@ -278,21 +284,21 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append("$_TARGETNAME configure -rtos Zephyr")
 
-        server_cmd = (self.openocd_cmd + self.serial +
+        server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
                        '-c', 'gdb_port {}'.format(self.gdb_port)] +
                       pre_init_cmd + self.init_arg + self.targets_arg +
-                      self.halt_arg + self.cfg_cmd)
+                      self.halt_arg)
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target remote :{}'.format(self.gdb_port),
+                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
-
-        for i in self.gdb_init:
-            gdb_cmd.append("-ex")
-            gdb_cmd.append(i)
+        if self.gdb_init is not None:
+            for i in self.gdb_init:
+                gdb_cmd.append("-ex")
+                gdb_cmd.append(i)
 
         self.require(gdb_cmd[0])
         self.print_gdbserver_message()

@@ -335,5 +335,5 @@ DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
 		      NULL,
 		      &adc_it8xxx2_data_0,
 		      &adc_it8xxx2_cfg_0, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      CONFIG_ADC_INIT_PRIORITY,
 		      &api_it8xxx2_driver_api);

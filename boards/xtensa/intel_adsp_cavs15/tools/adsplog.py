@@ -108,7 +108,7 @@ def read_hist(start_slot):
             sys.stdout.write("===\n=== [ADSP Device Reset?]\n===\n")
             sys.stdout.flush()
         reset_logged = True
-        time.sleep(0.1)
+        time.sleep(1)
         return (0, 0, "")
 
     reset_logged = False

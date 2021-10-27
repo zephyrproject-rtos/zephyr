@@ -153,14 +153,8 @@ __unused static bool smf_execute_ancestor_exit_actions(
 		struct smf_ctx *const ctx, const struct smf_state *target)
 {
 	struct internal_ctx * const internal = (void *) &ctx->internal;
-	const struct smf_state *tmp_state;
-	const struct smf_state *target_parent;
 
 	/* Execute all parent exit actions in reverse order */
-
-	/* Get target state's parent state */
-	target_parent = target->parent;
-	tmp_state = ctx->current;
 
 	for (const struct smf_state *tmp_state = ctx->current->parent;
 	     tmp_state != NULL;

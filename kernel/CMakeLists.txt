@@ -80,10 +80,12 @@ target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
+target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
 
 if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)
 endif()
+
 
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.

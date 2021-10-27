@@ -668,6 +668,14 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .start = __rodata_region_start,
 	  .end   = __rodata_region_end,
 	  .attrs = MT_NORMAL | MT_P_RO_U_RO | MT_DEFAULT_SECURE_STATE },
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	/* Mark nocache segment noncachable, read-write and execute-never */
+	{ .name  = "nocache_data",
+	  .start = _nocache_ram_start,
+	  .end   = _nocache_ram_end,
+	  .attrs = MT_NORMAL_NC | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
+#endif
 };
 
 static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
@@ -941,6 +949,29 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 		*phys = par & GENMASK(47, 12);
 	}
 	return 0;
+}
+
+size_t arch_virt_region_align(uintptr_t phys, size_t size)
+{
+	size_t alignment = CONFIG_MMU_PAGE_SIZE;
+	size_t level_size;
+	int level;
+
+	for (level = XLAT_LAST_LEVEL; level >= BASE_XLAT_LEVEL; level--) {
+		level_size = 1 << LEVEL_TO_VA_SIZE_SHIFT(level);
+
+		if (size < level_size) {
+			break;
+		}
+
+		if ((phys & (level_size - 1))) {
+			break;
+		}
+
+		alignment = level_size;
+	}
+
+	return alignment;
 }
 
 #ifdef CONFIG_USERSPACE

@@ -447,7 +447,7 @@ int lll_init(void);
 int lll_reset(void);
 void lll_resume(void *param);
 void lll_disable(void *param);
-void lll_done_sync(void);
+void lll_done_ull_inc(void);
 uint32_t lll_radio_is_idle(void);
 uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);

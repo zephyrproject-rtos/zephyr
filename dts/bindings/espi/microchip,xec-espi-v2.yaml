@@ -1,0 +1,44 @@
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip ESPI V2 controller
+
+compatible: "microchip,xec-espi-v2"
+
+include: espi-controller.yaml
+
+properties:
+    reg:
+      description: mmio register space
+      required: true
+
+    reg-names:
+      required: true
+      description: Name of each register space
+
+    girqs:
+      type: array
+      required: true
+      description: |
+        Array of encoded interrupt information
+
+    pcrs:
+      type: array
+      required: true
+      description: eSPI PCR register index and bit position
+
+    "#girq-cells":
+      type: int
+      const: 1
+
+    "#pcr-cells":
+      type: int
+      const: 2
+
+girq-cells:
+    - girqinfo
+
+pcr-cells:
+    - regidx
+    - bitpos

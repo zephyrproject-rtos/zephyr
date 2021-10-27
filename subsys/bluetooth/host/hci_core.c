@@ -2203,13 +2203,15 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_REQ, hci_le_cis_req,
 		      sizeof(struct bt_hci_evt_le_cis_req)),
 #endif /* (CONFIG_BT_ISO_UNICAST) */
-#if defined(CONFIG_BT_ISO_BROADCAST)
+#if defined(CONFIG_BT_ISO_BROADCASTER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_COMPLETE,
 		      hci_le_big_complete,
 		      sizeof(struct bt_hci_evt_le_big_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_TERMINATE,
 		      hci_le_big_terminate,
 		      sizeof(struct bt_hci_evt_le_big_terminate)),
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED,
 		      hci_le_big_sync_established,
 		      sizeof(struct bt_hci_evt_le_big_sync_established)),
@@ -2219,7 +2221,7 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIGINFO_ADV_REPORT,
 		      bt_hci_le_biginfo_adv_report,
 		      sizeof(struct bt_hci_evt_le_biginfo_adv_report)),
-#endif /* (CONFIG_BT_ISO_BROADCAST) */
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
 		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
@@ -2764,13 +2766,14 @@ static int le_set_event_mask(void)
 	}
 
 	/* Enable BIS events for broadcaster and/or receiver */
-	if (IS_ENABLED(CONFIG_BT_ISO_BROADCAST) &&
-	    BT_FEAT_LE_BIS(bt_dev.le.features)) {
-		if (BT_FEAT_LE_ISO_BROADCASTER(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_ISO) && BT_FEAT_LE_BIS(bt_dev.le.features)) {
+		if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
+		    BT_FEAT_LE_ISO_BROADCASTER(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_BIG_COMPLETE;
 			mask |= BT_EVT_MASK_LE_BIG_TERMINATED;
 		}
-		if (BT_FEAT_LE_SYNC_RECEIVER(bt_dev.le.features)) {
+		if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
+		    BT_FEAT_LE_SYNC_RECEIVER(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_BIG_SYNC_ESTABLISHED;
 			mask |= BT_EVT_MASK_LE_BIG_SYNC_LOST;
 			mask |= BT_EVT_MASK_LE_BIGINFO_ADV_REPORT;

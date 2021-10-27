@@ -925,7 +925,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 
 DEVICE_DT_INST_DEFINE(0, &mcp2515_init, NULL,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
-		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
+		    CONFIG_CAN_INIT_PRIORITY, &can_api_funcs);
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
 
@@ -956,7 +956,7 @@ static int socket_can_init(const struct device *dev)
 
 NET_DEVICE_INIT(socket_can_mcp2515_1, SOCKET_CAN_NAME_1, socket_can_init,
 		NULL, &socket_can_context_1, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		CONFIG_CAN_INIT_PRIORITY,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
 

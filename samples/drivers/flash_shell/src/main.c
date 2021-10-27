@@ -351,7 +351,7 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 	int err = check_flash_device(shell);
 
 	if (!err) {
-		PR_SHELL(shell, "%d\n",
+		PR_SHELL(shell, "%zu\n",
 			 flash_get_write_block_size(flash_device));
 	}
 
@@ -535,7 +535,7 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 	sz = info->size;
 	PR_SHELL(data->shell,
 		 "\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
-		 info->index, info->start_offset, sz, sz, sz / KB(1));
+		 info->index, (uint32_t)info->start_offset, sz, sz, sz / KB(1));
 	return true;
 }
 
@@ -653,8 +653,8 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 		}
 		PR_SHELL(shell, "Erasing page %u (start offset 0x%x,"
 				" size 0x%x)\n",
-		       info.index, info.start_offset, info.size);
-		ret = do_erase(shell, info.start_offset, info.size);
+		       info.index, (uint32_t)info.start_offset, (uint32_t)info.size);
+		ret = do_erase(shell, info.start_offset, (uint32_t)info.size);
 		if (ret) {
 			return ret;
 		}
@@ -690,7 +690,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
 			PR_ERROR(shell, "Argument %d (%s) is not a byte.\n",
-				 i + 2, argv[i]);
+				 (int)i + 2, argv[i]);
 			ret = -EINVAL;
 			goto bail;
 		}

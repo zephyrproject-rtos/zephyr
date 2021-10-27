@@ -14,6 +14,9 @@ config ADC_LMP90XXX
 config ADC_LMP90XXX_GPIO
 	default y
 
+config ADC_INIT_PRIORITY
+	default 80
+
 endif # ADC
 
 if EEPROM

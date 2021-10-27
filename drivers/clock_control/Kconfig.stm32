@@ -15,15 +15,6 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 
 if CLOCK_CONTROL_STM32_CUBE
 
-config CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY
-	int "Clock Control Device Priority"
-	default 1
-	help
-	  This option controls the priority of clock control
-	  device initialization. Higher priority ensures that the device
-	  is initialized earlier in the startup cycle. If unsure, leave
-	  at default value 1
-
 DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
 DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
 

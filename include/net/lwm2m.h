@@ -358,27 +358,6 @@ struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
 
 /**
- * @brief Data structure used to represent the LwM2M float type:
- * val1 is the whole number portion of the decimal
- * val2 is the decimal portion *1000000 for 32bit, *1000000000 for 64bit
- * Example: 123.456 == val1: 123, val2:456000
- * Example: 123.000456 = val1: 123, val2:456
- */
-
-/**
- * @brief Maximum precision value for 32-bit LwM2M float val2
- */
-#define LWM2M_FLOAT32_DEC_MAX 1000000
-
-/**
- * @brief 32-bit variant of the LwM2M float structure
- */
-typedef struct float32_value {
-	int32_t val1;
-	int32_t val2;
-} float32_value_t;
-
-/**
  * @brief Maximum value for ObjLnk resource fields
  */
 #define LWM2M_OBJLNK_MAX_ID USHRT_MAX
@@ -557,14 +536,14 @@ int lwm2m_engine_set_s64(char *pathstr, int64_t value);
 int lwm2m_engine_set_bool(char *pathstr, bool value);
 
 /**
- * @brief Set resource (instance) value (32-bit float structure)
+ * @brief Set resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[in] value 32-bit float value
+ * @param[in] value double value
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
+int lwm2m_engine_set_float(char *pathstr, double *value);
 
 /**
  * @brief Set resource (instance) value (ObjLnk)
@@ -689,14 +668,14 @@ int lwm2m_engine_get_s64(char *pathstr, int64_t *value);
 int lwm2m_engine_get_bool(char *pathstr, bool *value);
 
 /**
- * @brief Get resource (instance) value (32-bit float structure)
+ * @brief Get resource (instance) value (double)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
- * @param[out] buf 32-bit float buffer to copy data into
+ * @param[out] buf double buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
-int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
+int lwm2m_engine_get_float(char *pathstr, double *buf);
 
 /**
  * @brief Get resource (instance) value (ObjLnk)

@@ -18,6 +18,7 @@
 
 int lll_adv_data_init(struct lll_adv_pdu *pdu);
 int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_dequeue(struct lll_adv_pdu *pdu);
 int lll_adv_data_release(struct lll_adv_pdu *pdu);
 
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
@@ -188,8 +189,6 @@ static inline void *lll_adv_sync_extra_data_curr_get(struct lll_adv_sync *lll)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
-/* Release single PDU, shall only be called from ULL */
-void lll_adv_pdu_release(struct pdu_adv *pdu);
 /* Release PDU and all linked PDUs, shall only be called from ULL */
 void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first);
 

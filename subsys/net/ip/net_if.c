@@ -1248,7 +1248,9 @@ void net_if_start_dad(struct net_if *iface)
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (!ipv6->unicast[i].is_used ||
 		    ipv6->unicast[i].address.family != AF_INET6 ||
-		    &ipv6->unicast[i] == ifaddr) {
+		    &ipv6->unicast[i] == ifaddr ||
+		    net_ipv6_is_addr_loopback(
+			    &ipv6->unicast[i].address.in6_addr)) {
 			continue;
 		}
 
@@ -1683,7 +1685,8 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			iface, log_strdup(net_sprint_ipv6_addr(addr)),
 			net_addr_type2str(addr_type));
 
-		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
+		    !net_ipv6_is_addr_loopback(addr)) {
 			/* RFC 4862 5.4.2
 			 * Before sending a Neighbor Solicitation, an interface
 			 * MUST join the all-nodes multicast address and the
@@ -2154,7 +2157,7 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
-		if (!ipv6->unicast[i].is_used) {
+		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
 

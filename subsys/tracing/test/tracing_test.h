@@ -408,15 +408,24 @@
 	sys_trace_k_timer_status_sync_blocking(timer)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
+
+#define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
+#define sys_port_trace_k_event_post_enter(event, events, accumulate)   \
+	sys_trace_k_event_post_enter(event, events, accumulate)
+#define sys_port_trace_k_event_post_exit(event, events, accumulate)   \
+	sys_trace_k_event_post_exit(event, events, accumulate)
+#define sys_port_trace_k_event_wait_enter(event, events, options, timeout)   \
+	sys_trace_k_event_wait_enter(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_blocking(event, events, options, timeout) \
+	sys_trace_k_event_wait_blocking(event, events, options, timeout)
+#define sys_port_trace_k_event_wait_exit(event, events, ret)   \
+	sys_trace_k_event_wait_exit(event, events, ret)
+
 #define sys_port_trace_k_thread_abort_exit(thread) sys_trace_k_thread_abort_exit(thread)
 
 #define sys_port_trace_k_thread_abort_enter(thread) sys_trace_k_thread_abort_enter(thread)
 
 #define sys_port_trace_k_thread_resume_exit(thread) sys_trace_k_thread_resume_exit(thread)
-
-#define sys_port_trace_syscall_enter() sys_trace_syscall_enter()
-#define sys_port_trace_syscall_exit() sys_trace_syscall_exit()
-
 
 #define sys_port_trace_pm_system_suspend_enter(ticks)
 #define sys_port_trace_pm_system_suspend_exit(ticks, ret)
@@ -428,8 +437,6 @@
 #define sys_port_trace_pm_device_disable_enter(dev)
 #define sys_port_trace_pm_device_disable_exit(dev)
 
-void sys_trace_syscall_enter(void);
-void sys_trace_syscall_exit(void);
 void sys_trace_idle(void);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
@@ -659,5 +666,7 @@ void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration, k_time
 void sys_trace_k_timer_stop(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+
+void sys_trace_k_event_init(struct k_event *event);
 
 #endif /* ZEPHYR_TRACE_TEST_H */

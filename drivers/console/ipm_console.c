@@ -88,4 +88,4 @@ static int ipm_console_init(const struct device *dev)
 }
 
 /* Need to be initialized after IPM */
-SYS_INIT(ipm_console_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(ipm_console_init, POST_KERNEL, CONFIG_CONSOLE_INIT_PRIORITY);

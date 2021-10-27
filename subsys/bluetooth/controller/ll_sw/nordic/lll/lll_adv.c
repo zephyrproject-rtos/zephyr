@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -292,6 +292,29 @@ int lll_adv_data_reset(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
+int lll_adv_data_dequeue(struct lll_adv_pdu *pdu)
+{
+	uint8_t first;
+	void *p;
+
+	first = pdu->first;
+	if (first == pdu->last) {
+		return -ENOMEM;
+	}
+
+	p = pdu->pdu[first];
+	pdu->pdu[first] = NULL;
+	mem_release(p, &mem_pdu.free);
+
+	first++;
+	if (first == DOUBLE_BUFFER_SIZE) {
+		first = 0U;
+	}
+	pdu->first = first;
+
+	return 0;
+}
+
 int lll_adv_data_release(struct lll_adv_pdu *pdu)
 {
 	uint8_t last;
@@ -411,11 +434,6 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
-void lll_adv_pdu_release(struct pdu_adv *pdu)
-{
-	mem_release(pdu, &mem_pdu.free);
-}
-
 void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
 {
 	struct pdu_adv *pdu = pdu_first;
@@ -425,7 +443,7 @@ void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
 
 		pdu_next = PDU_ADV_NEXT_PTR(pdu);
 		PDU_ADV_NEXT_PTR(pdu) = NULL;
-		lll_adv_pdu_release(pdu);
+		mem_release(pdu, &mem_pdu.free);
 		pdu = pdu_next;
 	}
 }

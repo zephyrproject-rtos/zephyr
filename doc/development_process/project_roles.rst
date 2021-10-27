@@ -27,8 +27,7 @@ Contributor
 +++++++++++
 
 A *Contributor* is a developer who wishes to contribute to the project,
-at any level. Contributors who show dedication and skill are rewarded with
-additional rights and responsibilities.
+at any level.
 
 Contributors are granted the following rights and responsibilities:
 
@@ -48,6 +47,27 @@ Contributors are granted the following rights and responsibilities:
   discussions and in the review of contributions.
 * Responsibility to follow the project’s code of conduct
   (https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md)
+
+Contributors are initially only given `Read
+<https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization>`_
+access to the Zephyr GitHub repository. Specifically, at the Read access level,
+Contributors are not allowed to assign reviewers to their own pull requests. An
+automated process will assign reviewers. You may also share the pull request on
+the `Zephyr devel mailing list <https://lists.zephyrproject.org/g/devel>`_ or on
+the `Zephyr Discord Server <https://chat.zephyrproject.org>`_.
+
+Contributors who show dedication and skill are granted the Triage permission
+level to the Zephyr GitHub repository.
+
+You may nominate yourself, or another GitHub user, for promotion to the Triage
+permission level by creating a GitHub issue, using the `nomination template
+<https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=bug&template=nomination.md&title=>`_.
+
+Contributors granted the Triage permission level are permitted to add reviewers
+to a pull request and can be added as a reviewer by other GitHub users.
+Contributor votes on pull requests are not counted with respect to accepting and
+merging a pull request. However, Contributors comments and requested changes
+should still be considered by the pull request author.
 
 Collaborator
 ++++++++++++
@@ -69,6 +89,12 @@ in addition to those listed for Contributors:
 * Responsibility to participate in the quality verification and release
   process, when those happen.
 
+Contributors are promoted to the Collaborator role by adding the GitHub user
+name to one or more ``collaborators`` sections of the :ref:`maintainers_file` in
+the Zephyr repository.
+
+Collaborator votes on pull requests can block or approve the pull request.
+
 Maintainer
 ++++++++++
 
@@ -88,6 +114,11 @@ in addition to those listed for Contributors and Collaborators:
   within reasonable time.
 * Responsibility to enforce the code of conduct.
 
+Contributors or Collaborators are promoted to the Maintainer role by adding the
+GitHub user name to one or more ``maintainers`` sections of the
+:ref:`maintainers_file` in the Zephyr repository.
+
+Maintainer votes on pull requests can block or approve the pull request.
 
 Role Retirement
 ###############
@@ -190,7 +221,7 @@ the following:
 Roles / Permissions
 +++++++++++++++++++
 
-.. table:: Project Roles vs Github Permissions
+.. table:: Project Roles vs GitHub Permissions
     :widths: 20 20 10 10 10 10 10
     :align: center
 
@@ -210,27 +241,30 @@ Roles / Permissions
     ================ =================== =========== ================ =========== =========== ============
 
 
+.. _maintainers_file:
+
 MAINTAINERS File
 ################
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The MAINTAINERS file shall replace the CODEOWNERS file and will be used
-  for both setting assignees and reviewers.
+* The :zephyr_file:`MAINTAINERS.yaml` file shall replace the
+  :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
+  reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
 
   * Un-maintained areas should be indicated clearly in the MAINTAINERS file
 
-* All submitted pull-requests should have an assignee
+* All submitted pull requests should have an assignee
 * We Introduce an area/subsystem hierarchy to address the above point
 
   * Parent-area maintainer should be acting as default substitute/fallback
     assignee for un-maintained sub-areas
   * Area maintainer gets precedence over parent-area maintainer
 
-* Pull-requests may be re-assigned if this is needed or more appropriate
+* Pull requests may be re-assigned if this is needed or more appropriate
 
   * Re-assigned by original assignee (see “Assignee” slide)
 
@@ -238,7 +272,7 @@ Generic guidelines for deciding and filling in the Maintainers' list
   in a standalone commit alongside other changes introducing new files and
   directories to the tree.
 * Major changes to the file, including the addition of new areas with new maintainers
-  should come in as standalone pull-requests and require TSC review.
+  should come in as standalone pull requests and require TSC review.
 * If additional review by the TSC is required, the maintainers of the file
   should send the requested changes to the TSC and give members of the TSC two
   (2) days to object to any of the changes to maintainership of areas or the

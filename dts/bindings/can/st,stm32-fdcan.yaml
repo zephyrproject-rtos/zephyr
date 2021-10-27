@@ -2,7 +2,7 @@ description: Bosch m_can CAN-FD controller
 
 compatible: "st,stm32-fdcan"
 
-include: bosch-mcan.yaml
+include: bosch,m-can.yaml
 
 properties:
     pinctrl-0:

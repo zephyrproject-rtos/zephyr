@@ -106,11 +106,41 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval,
 		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
 }
 
+static void le_security_changed(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err err)
+{
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	struct gap_sec_level_changed_ev sec_ev;
+	struct gap_bond_lost_ev bond_ev;
+
+	switch (err) {
+	case BT_SECURITY_ERR_SUCCESS:
+		memcpy(sec_ev.address, addr->a.val, sizeof(sec_ev.address));
+		sec_ev.address_type = addr->type;
+		/* enum matches BTP values */
+		sec_ev.sec_level = level;
+
+		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_SEC_LEVEL_CHANGED,
+			    CONTROLLER_INDEX, (uint8_t *) &sec_ev, sizeof(sec_ev));
+		break;
+	case BT_SECURITY_ERR_PIN_OR_KEY_MISSING:
+		memcpy(bond_ev.address, addr->a.val, sizeof(bond_ev.address));
+		bond_ev.address_type = addr->type;
+
+		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_BOND_LOST,
+			    CONTROLLER_INDEX, (uint8_t *) &bond_ev, sizeof(bond_ev));
+		break;
+	default:
+		break;
+	}
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = le_connected,
 	.disconnected = le_disconnected,
 	.identity_resolved = le_identity_resolved,
 	.le_param_updated = le_param_updated,
+	.security_changed = le_security_changed,
 };
 
 static void supported_commands(uint8_t *data, uint16_t len)
@@ -127,6 +157,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GAP_SET_DISCOVERABLE);
 	tester_set_bit(cmds, GAP_SET_BONDABLE);
 	tester_set_bit(cmds, GAP_START_ADVERTISING);
+	tester_set_bit(cmds, GAP_START_DIRECTED_ADV);
 	tester_set_bit(cmds, GAP_STOP_ADVERTISING);
 	tester_set_bit(cmds, GAP_START_DISCOVERY);
 	tester_set_bit(cmds, GAP_STOP_DISCOVERY);
@@ -455,6 +486,36 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	return;
 fail:
 	tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
+static void start_directed_advertising(const uint8_t *data, uint16_t len)
+{
+	const struct gap_start_directed_adv_cmd *cmd = (void *)data;
+	struct gap_start_directed_adv_rp rp;
+	struct bt_le_adv_param adv_param;
+
+	adv_param = *BT_LE_ADV_CONN_DIR((bt_addr_le_t *)data);
+
+	if (cmd->high_duty == 0) {
+		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		adv_param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+		adv_param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+	}
+
+	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
+		LOG_ERR("Failed to start advertising");
+		goto fail;
+	}
+
+	atomic_set_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_START_DIRECTED_ADV,
+		    CONTROLLER_INDEX, (uint8_t *)&rp, sizeof(rp));
+	return;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_DIRECTED_ADV, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
 }
 
@@ -1038,6 +1099,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_START_ADVERTISING:
 		start_advertising(data, len);
+		return;
+	case GAP_START_DIRECTED_ADV:
+		start_directed_advertising(data, len);
 		return;
 	case GAP_STOP_ADVERTISING:
 		stop_advertising(data, len);

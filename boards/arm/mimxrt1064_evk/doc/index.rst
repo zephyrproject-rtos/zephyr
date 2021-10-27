@@ -120,6 +120,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
@@ -139,7 +141,13 @@ The MIMXRT1064 SoC has four pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | Name          | Function        | Usage                     |
 +===============+=================+===========================+
-| GPIO_AD_B0_02 | LCD_RST         | LCD Display               |
+| GPIO_AD_B0_00 | LPSPI1_SCK      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_01 | LPSPI1_SDO      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_02 | LPSPI3_SDI/LCD_RST| SPI/LCD Display         |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_03 | LPSPI3_PCS0     | SPI                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_05 | GPIO            | SD Card                   |
 +---------------+-----------------+---------------------------+
@@ -229,13 +237,13 @@ The MIMXRT1064 SoC has four pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_10 | ENET_INT        | Ethernet                  |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_00 | USDHC1_CMD      | SD Card                   |
+| GPIO_SD_B0_00 | USDHC1_CMD/LPSPI1_SCK | SD Card/SPI         |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_01 | USDHC1_CLK      | SD Card                   |
+| GPIO_SD_B0_01 | USDHC1_CLK/LPSPI1_PCS0 | SD Card/SPI        |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_02 | USDHC1_DATA0    | SD Card                   |
+| GPIO_SD_B0_02 | USDHC1_DATA0/LPSPI1_SDO | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
-| GPIO_SD_B0_03 | USDHC1_DATA1    | SD Card                   |
+| GPIO_SD_B0_03 | USDHC1_DATA1/LPSPI1_SDI | SD Card/SPI       |
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_04 | USDHC1_DATA2    | SD Card                   |
 +---------------+-----------------+---------------------------+
@@ -255,6 +263,10 @@ The MIMXRT1064 SoC has four pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B1_11 | FLEXSPIA_DATA03 | QSPI Flash                |
 +---------------+-----------------+---------------------------+
+
+.. note::
+        In order to use the SPI peripheral on this board, resistors R278, R279,
+        R280 and R281 must be populated with zero ohm resistors
 
 System Clock
 ============

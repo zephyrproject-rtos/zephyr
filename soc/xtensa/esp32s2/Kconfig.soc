@@ -60,14 +60,14 @@ endchoice
 
 config ESP32S2_INSTRUCTION_CACHE_SIZE
 	hex
-	default 0x2000
 	default 0x4000 if ESP32S2_INSTRUCTION_CACHE_16KB
+	default 0x2000
 
 config ESP32S2_DATA_CACHE_SIZE
 	hex
-	default 0x0000
 	default 0x2000 if ESP32S2_DATA_CACHE_8KB
 	default 0x4000 if ESP32S2_DATA_CACHE_16KB
+	default 0x0000
 
 choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
 	bool "Number of universally administered (by IEEE) MAC address"

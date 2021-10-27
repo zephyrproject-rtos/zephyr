@@ -10,6 +10,12 @@ menuconfig COUNTER
 
 if COUNTER
 
+config COUNTER_INIT_PRIORITY
+	int "Counter init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Counter driver device initialization priority.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
