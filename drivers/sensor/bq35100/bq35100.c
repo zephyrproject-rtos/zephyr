@@ -407,7 +407,6 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				half_access_code |= full_access_codes & 0xFF;
 				bq35100_control_reg_write(dev, half_access_code);
 			}
-			data->security_mode = BQ35100_SECURITY_FULL_ACCESS;
 			break;
 		case BQ35100_SECURITY_UNSEALED:
 			LOG_DBG("inside unsealed");
@@ -426,12 +425,10 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				half_access_code |= BQ35100_DEFAULT_SEAL_CODES & 0xFF;
 				bq35100_control_reg_write(dev, half_access_code);
 			}
-			data->security_mode = BQ35100_SECURITY_UNSEALED;
 			break;
 		case BQ35100_SECURITY_SEALED:
 			LOG_DBG("inside sealed");
 			bq35100_control_reg_write(dev, BQ35100_CTRL_SEALED);
-			data->security_mode = BQ35100_SECURITY_SEALED;
 			break;
 		default:
 			LOG_ERR("Invalid mode");
@@ -440,8 +437,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 		}
 		k_sleep(K_MSEC(100));
 
-		// Isn't get_security_mode() returing 0 in case of success? 
-		// data->security_mode = bq35100_get_security_mode(dev);
+		data->security_mode = bq35100_get_security_mode(dev);
 
 		if (data->security_mode == security_mode) {
 			success = true;
@@ -759,7 +755,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 
 	dev_data->security_mode = (data >> 13) & 0b011;
 
-	return 0;
+	return dev_data->security_mode;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -1022,23 +1018,23 @@ static int bq35100_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
-	}
+	}*/
 
-	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
+	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 		return EIO;
-	}
+	}*/
 
-	/*if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
+	/*if (bq35100_set_gauge_mode(dev, BQ35100_SOH_MODE)) {
 	        return EIO;
 	   }
 
 	   if (bq35100_get_gauge_mode(dev) < 0) {
 	        return -EIO;
-	   }
+	   }*/
 
-	   if (bq35100_gauge_start(dev) < 0) {
+	   /*if (bq35100_gauge_start(dev) < 0) {
 	        return -EIO;
 	   }
 
