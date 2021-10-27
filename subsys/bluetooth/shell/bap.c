@@ -1030,15 +1030,18 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.disable = lc3_disable,
 	.stop = lc3_stop,
 	.release = lc3_release,
+};
+
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
+static struct bt_audio_broadcast_sink_cb sink_cbs = {
 	.scan_recv = scan_recv,
 	.pa_synced = pa_synced,
 	.base_recv = base_recv,
 	.syncable = syncable,
 	.scan_term = scan_term,
 	.pa_sync_lost = pa_sync_lost,
-#endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 };
+#endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 
 static void audio_connected(struct bt_audio_stream *stream)
 {
@@ -1321,6 +1324,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
+	bt_audio_broadcast_sink_register_cb(&sink_cbs);
+
 	for (i = 0; i < ARRAY_SIZE(broadcast_sink_streams); i++) {
 		bt_audio_stream_cb_register(&broadcast_sink_streams[i],
 					    &stream_ops);
