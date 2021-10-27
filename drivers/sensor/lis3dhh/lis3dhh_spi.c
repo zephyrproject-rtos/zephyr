@@ -1,5 +1,7 @@
 /*
- * Copyright (c) Nexplore Technology GmbH
+ * Copyright (C) NEXPLORE
+ * https://www.nexplore.com
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,16 +17,8 @@ LOG_MODULE_DECLARE(lis3dhh, CONFIG_SENSOR_LOG_LEVEL);
 
 #define LIS3DHH_SPI_READ_BIT BIT(7)
 
-/**
- * @brief Read function to translate into actual SPI logic
- *
- * @param dev device to read from (ptr)
- * @param reg_addr specify register address to read from
- * @param value value to read into (ptr)
- * @param len length must be betwen 1 and 64
- * @return int
- */
-static int lis3dhh_raw_read(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len)
+static int lis3dhh_raw_read(const struct device *dev, uint8_t reg_addr,
+			    uint8_t *value, uint8_t len)
 {
 	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
 	const struct lis3dhh_config *cfg = dev->config;
@@ -68,17 +62,8 @@ static int lis3dhh_raw_read(const struct device *dev, uint8_t reg_addr, uint8_t 
 	return 0;
 }
 
-/**
- * @brief Write function to translate into actual SPI logic
- *
- * @param dev device to write to (ptr)
- * @param reg_addr specify register address to write to
- * @param value value to write (ptr)
- * @param len length must be between 1 and 64
- * @return int
- */
 static int lis3dhh_raw_write(const struct device *dev, uint8_t reg_addr,
-								uint8_t *value, uint8_t len)
+			     uint8_t *value, uint8_t len)
 {
 	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
 	const struct lis3dhh_config *cfg = dev->config;
@@ -113,25 +98,25 @@ static int lis3dhh_raw_write(const struct device *dev, uint8_t reg_addr,
 }
 
 static int lis3dhh_spi_read_data(const struct device *dev, uint8_t reg_addr,
-									uint8_t *value, uint8_t len)
+				 uint8_t *value, uint8_t len)
 {
 	return lis3dhh_raw_read(dev, reg_addr, value, len);
 }
 
 static int lis3dhh_spi_write_data(const struct device *dev, uint8_t reg_addr,
-									uint8_t *value, uint8_t len)
+				  uint8_t *value, uint8_t len)
 {
 	return lis3dhh_raw_write(dev, reg_addr, value, len);
 }
 
 static int lis3dhh_spi_read_reg(const struct device *dev, uint8_t reg_addr,
-									uint8_t *value)
+				uint8_t *value)
 {
 	return lis3dhh_raw_read(dev, reg_addr, value, 1);
 }
 
 static int lis3dhh_spi_write_reg(const struct device *dev, uint8_t reg_addr,
-									uint8_t value)
+				 uint8_t value)
 {
 	uint8_t tmp_val = value;
 
@@ -139,7 +124,7 @@ static int lis3dhh_spi_write_reg(const struct device *dev, uint8_t reg_addr,
 }
 
 static int lis3dhh_spi_update_reg(const struct device *dev, uint8_t reg_addr,
-									uint8_t mask, uint8_t value)
+				  uint8_t mask, uint8_t value)
 {
 	uint8_t tmp_val;
 
@@ -169,13 +154,14 @@ int lis3dhh_spi_init(const struct device *dev)
 	lis3dhh_drv_data->hw_tf = &lis3dhh_spi_transfter_fn;
 
 	if (spi_cfg->cs_gpios_label != NULL) {
-		lis3dhh_drv_data->cs_ctrl.gpio_dev = device_get_binding(spi_cfg->cs_gpios_label);
+		lis3dhh_drv_data->cs_ctrl.gpio_dev = device_get_binding(spi_cfg->
+									cs_gpios_label);
 		if (!lis3dhh_drv_data->cs_ctrl.gpio_dev) {
 			LOG_ERR("Unable to get chip-select GPIO.");
 			return -ENODEV;
 		}
-		LOG_DBG("SPI chip-select GPIO configured on %s: %u", spi_cfg->cs_gpios_label,
-				lis3dhh_drv_data->cs_ctrl.gpio_pin);
+		LOG_DBG("SPI chip-select GPIO configured on %s: %u", spi_cfg->
+			cs_gpios_label, lis3dhh_drv_data->cs_ctrl.gpio_pin);
 	} else {
 		LOG_ERR("Unable to find chip-select GPIO.");
 	}

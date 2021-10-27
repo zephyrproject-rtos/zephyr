@@ -1,5 +1,7 @@
 /*
- * Copyright (c) Nexplore Technology GmbH
+ * Copyright (C) NEXPLORE
+ * https://www.nexplore.com
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,6 +18,8 @@
 #include <drivers/spi.h>
 #include <zephyr/types.h>
 #include <devicetree.h>
+#include <pm/device.h>
+#include <pm/pm.h>
 
 #define LIS3DHH_REG_WHO_AM_I 0x0F
 #define LIS3DHH_CHIP_ID 0x11
@@ -118,6 +122,7 @@
 #define LIS3DHH_FIFO_SRC_FSS0 BIT(0)
 
 #define LIS3DHH_BUF_SZ 7
+#define LIS3DHH_FIFO_SIZE 32
 
 union lis3dhh_sample {
 	uint8_t raw[LIS3DHH_BUF_SZ];
@@ -157,10 +162,77 @@ struct lis3dhh_data {
 	const struct lis3dhh_transfer_function *hw_tf;
 	union lis3dhh_sample sample;
 	struct spi_cs_control cs_ctrl;
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state pm_state;
+#endif
 #if DT_INST_NODE_HAS_PROP(0, supply_gpios)
 	const struct device *supply_gpios;
 #endif
 };
+
+enum lis3dhh_filter {
+	filter_FIR,
+	filter_IIR
+};
+
+enum lis3dhh_bandwidth {
+	bandwidth_235,
+	bandwidth_440
+};
+
+enum lis3dhh_pp_od {
+	open_drain,
+	push_pull
+};
+
+enum lis3dhh_fifo_mode {
+	FIFO_BYPASS,
+	FIFO_NORMAL,
+	FIFO_CONTINUOUS_TO_FIFO,
+	FIFO_BYPASS_TO_CONTINUOUS,
+	FIFO_CONTINUOUS
+};
+
+#if DT_INST_NODE_HAS_PROP(0, supply_gpios)
+int lis3dhh_pwr_on(const struct device *dev);
+#endif
+
+int lis3dhh_configure_fifo_spi_high_speed(const struct device *dev,
+					  bool enable);
+
+int lis3dhh_configure_fifo_threshold(const struct device *dev,
+				     uint8_t threshold);
+
+int lis3dhh_configure_fifo_mode(const struct device *dev,
+				enum lis3dhh_fifo_mode fifo_mode);
+
+int lis3dhh_configure_fifo(const struct device *dev, bool enable);
+
+int lis3dhh_configure_pp_od_int2(const struct device *dev,
+				 enum lis3dhh_pp_od pp_od);
+
+int lis3dhh_configure_pp_od_int1(const struct device *dev,
+				 enum lis3dhh_pp_od pp_od);
+
+int lis3dhh_configure_bandwidth(const struct device *dev,
+				enum lis3dhh_bandwidth bandwidth);
+
+int lis3dhh_configure_filter(const struct device *dev,
+			     enum lis3dhh_filter filter);
+
+int lis3dhh_configure_int1_as_ext_async_input_trig(const struct device *dev,
+						   bool enable);
+
+int lis3dhh_configure_bdu(const struct device *dev,
+			  bool enable);
+
+int lis3dhh_configure_if_add_inc(const struct device *dev,
+				 bool enable);
+
+int lis3dhh_configure_normal_mode(const struct device *dev,
+				  bool enable);
+
+int lis3dhh_initial_configuration(const struct device *dev);
 
 int lis3dhh_spi_init(const struct device *dev);
 

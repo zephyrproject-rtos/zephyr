@@ -1,5 +1,7 @@
 /*
- * Copyright (c) Nexplore Technology GmbH
+ * Copyright (C) NEXPLORE
+ * https://www.nexplore.com
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +13,7 @@
 #include <sys/byteorder.h>
 #include <logging/log.h>
 #include <math.h>
+
 #include "lis3dhh.h"
 
 #if DT_INST_NODE_HAS_PROP(0, supply_gpios)
@@ -30,19 +33,19 @@ static inline bool no_device(const struct device *device)
 }
 
 /**
- * @brief converts the raw data from the sensor to engineering units (g)
+ * @brief Converts the raw data from the sensor to engineering units (g).
  *
- * @param raw_val the raw value from the sensor
+ * @param raw_val Raw value from the sensor
  * @param val sensor_value to which the converted value is written (ptr)
  */
 static void lis3dhh_convert(int16_t raw_val, struct sensor_value *val)
 {
 	float_t result;
 
-	result = (float_t)raw_val * 0.076f; /* typ. 0.076 mg/digit */
-	result = result / 1000.0f;          /* convert from mg to g */
-	val->val1 = (int32_t)result;        /* integer part of the value */
-    /* fractional part of the value (in one-millionth parts) */
+	result = (float_t)raw_val * 0.076f;     /* typ. 0.076 mg/digit */
+	result = result / 1000.0f;              /* convert from mg to g */
+	val->val1 = (int32_t)result;            /* integer part of the value */
+	/* fractional part of the value (in one-millionth parts) */
 	val->val2 = ((int32_t)(result * 1000000.0f) % 1000000);
 }
 
@@ -75,11 +78,22 @@ static int lis3dhh_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-int lis3dhh_sample_fetch(const struct device *dev, enum sensor_channel chan)
+int lis3dhh_sample_fetch(const struct device *dev,
+			 enum sensor_channel chan)
 {
 	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
 	size_t i;
 	int status;
+
+	#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		LOG_ERR("Sample fetch failed, device is not in active mode");
+		return -ENXIO;
+	}
+	#endif
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_ACCEL_XYZ);
@@ -114,8 +128,585 @@ int lis3dhh_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	return -ENODATA;
 }
 
-static const struct sensor_driver_api lis3dhh_driver_api = { .sample_fetch = lis3dhh_sample_fetch,
-							     .channel_get = lis3dhh_channel_get };
+static const struct sensor_driver_api lis3dhh_driver_api = { .sample_fetch =
+					lis3dhh_sample_fetch, .channel_get = lis3dhh_channel_get };
+
+#if DT_INST_NODE_HAS_PROP(0, supply_gpios)
+int lis3dhh_pwr_on(const struct device *dev)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	lis3dhh_drv_data->supply_gpios = device_get_binding(DT_INST_GPIO_LABEL(0,
+									       supply_gpios));
+	if (no_device(lis3dhh_drv_data->supply_gpios)) {
+		LOG_ERR("Failed to get pointer to power-supply \
+				gpio: %s", DT_INST_GPIO_LABEL(0, supply_gpios));
+		return -EINVAL;
+	}
+	status = gpio_pin_configure(lis3dhh_drv_data->supply_gpios, SUPPLY_PIN,
+				    GPIO_OUTPUT_ACTIVE | DT_INST_GPIO_FLAGS(0, supply_gpios));
+	if (is_error(status)) {
+		LOG_ERR("Failed to turn on power supply pin. \
+					Errorcode: %i", status);
+	}
+	k_sleep(K_MSEC(10)); /* wait 10ms for device to finish booting */
+	return 0;
+}
+#endif
+
+/**
+ * @brief Enables normal mode or puts sensor in Power-Down mode. In Power-Down
+ * 		  mode, SPI remains active to allow communication. Configuration registers
+ * 		  are preserved.
+ *
+ * @param dev Device to address.
+ * @param enable Enable normal mode. False for Power-Down mode.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_normal_mode(const struct device *dev,
+				  bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_NORM_MODE_EN, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable normal mode. \
+					Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_NORM_MODE_EN, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable normal mode. \
+					Errorcode: %i", status);
+		}
+	}
+	k_sleep(K_MSEC(10));/* wait 10ms for values to pan out */
+	return status;
+}
+
+/**
+ * @brief Configures auto-increment. Must be enabled for SPI multiple byte access.
+ *
+ * @param dev Device to address.
+ * @param enable True enables auto-increment. False disables it.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_if_add_inc(const struct device *dev,
+				 bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_IF_ADD_INC, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable automatic register increment. \
+						Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_IF_ADD_INC, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable automatic register increment. \
+						Errorcode: %i", status);
+		}
+	}
+	return status;
+}
+
+/**
+ * @brief Configures block data update (BDU) feature. If reading output data is slow,
+ * 		  this feature makes sure that all read values are from the same sample.
+ *
+ * @param dev Device to address.
+ * @param enable True enables BDU feature. False disables it.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_bdu(const struct device *dev,
+			  bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_BDU, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable block data update. \
+					Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_CTRL_REG1_BDU, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable block data update. \
+					Errorcode: %i", status);
+		}
+	}
+	return status;
+}
+
+/**
+ * @brief Enables or disables the INT1 pin on the sensor as an external
+ * 		  asynchronous input trigger for the FIFO.
+ *
+ * @param dev Device to address.
+ * @param enable True sets INT1 as external asynchronous input trigger,
+ * 			     false disables it.
+ * @return 0 for success, negative errorcode for failure
+ */
+int lis3dhh_configure_int1_as_ext_async_input_trig(const struct device *dev,
+						   bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_INT1_CTRL_EXT, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable INT1 as external asynchronous input \
+			trigger to FIFO. Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, \
+							     LIS3DHH_INT1_CTRL_EXT, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable INT1 as external asynchronous input \
+			trigger to FIFO. Errorcode: %i", status);
+		}
+	}
+	return status;
+}
+
+/**
+ * @brief Configures the filter that is used by the sensor. It can use
+ * 		  either a linear phase FIR or a nonlinear phase IIR.
+ *
+ * @param dev Device to address.
+ * @param filter Choose the filter the device uses.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_filter(const struct device *dev,
+			     enum lis3dhh_filter filter)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	switch (filter) {
+	case filter_FIR:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_DSP_LP_TYPE, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to configure FIR filter. \
+						Errorcode: %i", status);
+		}
+		break;
+	case filter_IIR:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_DSP_LP_TYPE, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to configure FIR filter. \
+						Errorcode: %i", status);
+		}
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief Choose the bandwidth the device's filter runs at.
+ *
+ * @param dev Device to address.
+ * @param bandwidth Can be either 440Hz or 235Hz.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_bandwidth(const struct device *dev,
+				enum lis3dhh_bandwidth bandwidth)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	switch (bandwidth) {
+	case bandwidth_440:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_DSP_BW_SEL, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set bandwidth to 440 Hz. \
+						Errorcode: %i", status);
+		}
+		break;
+	case bandwidth_235:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_DSP_BW_SEL, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set bandwidth to 235 Hz. \
+						Errorcode: %i", status);
+		}
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief Configure INT1 pin to run either in open-drain or
+ * 		  in push-pull mode.
+ *
+ * @param dev Device to address.
+ * @param pp_od Choose mode.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_pp_od_int1(const struct device *dev,
+				 enum lis3dhh_pp_od pp_od)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	switch (pp_od) {
+	case open_drain:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_PP_OD_INT1, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to select open drain on INT1. \
+						Errorcode: %i", status);
+		}
+		break;
+	case push_pull:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_PP_OD_INT1, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to select push/pull on INT1. \
+						Errorcode: %i", status);
+		}
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief Configure INT2 pin to run either in open-drain or
+ * 		  in push-pull mode.
+ *
+ * @param dev Device to address.
+ * @param pp_od Choose mode.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_pp_od_int2(const struct device *dev,
+				 enum lis3dhh_pp_od pp_od)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	switch (pp_od) {
+	case open_drain:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_PP_OD_INT2, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to select open drain on INT2. \
+						Errorcode: %i", status);
+		}
+		break;
+	case push_pull:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_PP_OD_INT2, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to select push/pull on INT2. \
+						Errorcode: %i", status);
+		}
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief Enable or disable FIFO functionality.
+ *
+ * @param dev Device to address.
+ * @param enable True enables the FIFO, false disables it.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_fifo(const struct device *dev, bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_FIFO_EN, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable FIFO. Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG4, \
+							     LIS3DHH_CTRL_REG4_FIFO_EN, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable FIFO. Errorcode: %i", status);
+		}
+	}
+	return status;
+}
+
+/**
+ * @brief Configures the FIFO mode. For a detailed explanation on how these
+ * 		  modes work exactly, refer to the manual.
+ *
+ * @param dev Device to address.
+ * @param fifo_mode Choose the FIFO mode.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_fifo_mode(const struct device *dev,
+				enum lis3dhh_fifo_mode fifo_mode)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+	uint8_t FIFO_CTRL_MASK = 0;
+
+	switch (fifo_mode) {
+	case FIFO_BYPASS:
+		FIFO_CTRL_MASK = LIS3DHH_FIFO_CTRL_FMODE0 |
+				 LIS3DHH_FIFO_CTRL_FMODE1 | LIS3DHH_FIFO_CTRL_FMODE2;
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+							     FIFO_CTRL_MASK, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set FIFO to bypass mode. \
+						Errorcode: %i", status);
+		}
+		break;
+	case FIFO_NORMAL:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+							     LIS3DHH_FIFO_CTRL_FMODE0, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set FIFO to normal mode. \
+						Errorcode: %i", status);
+		}
+		break;
+	case FIFO_CONTINUOUS_TO_FIFO:
+		FIFO_CTRL_MASK = LIS3DHH_FIFO_CTRL_FMODE0 | LIS3DHH_FIFO_CTRL_FMODE1;
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+							     FIFO_CTRL_MASK, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set continuous to normal FIFO mode. \
+							Errorcode: %i", status);
+		}
+		break;
+	case FIFO_BYPASS_TO_CONTINUOUS:
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+							     LIS3DHH_FIFO_CTRL_FMODE2, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set bypass to continuous mode on FIFO. \
+							Errorcode: %i", status);
+		}
+		break;
+	case FIFO_CONTINUOUS:
+		FIFO_CTRL_MASK = LIS3DHH_FIFO_CTRL_FMODE1 | LIS3DHH_FIFO_CTRL_FMODE2;
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+							     FIFO_CTRL_MASK, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to set FIFO to continuous mode. \
+						Errorcode: %i", status);
+		}
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+	return 0;
+}
+
+/**
+ * @brief Set the threshold at which the FIFO triggers its threshold flag. This
+ * 		  flag can be routed to INT1 and INT2 to provide an interrupt. For further
+ * 		  instructions on this, refer to the manual.
+ *
+ * @param dev Device to address.
+ * @param threshold Number must be between 1 and 32.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_fifo_threshold(const struct device *dev,
+				     uint8_t threshold)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+	uint8_t FIFO_CTRL_MASK = 0;
+	uint8_t initial_threshold = threshold;
+
+	if (threshold > 32 || !threshold) {
+		LOG_ERR("Invalid threshold. Max is 32. 0 is not allowed.");
+		return -EINVAL;
+	} else if (threshold >= 16) {
+		FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH4;
+		threshold -= 16;
+	}
+	if (threshold >= 8) {
+		FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH3;
+		threshold -= 8;
+	}
+	if (threshold >= 4) {
+		FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH2;
+		threshold -= 4;
+	}
+	if (threshold >= 2) {
+		FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH1;
+		threshold -= 2;
+	}
+	if (threshold >= 1) {
+		FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH0;
+	}
+
+	if (initial_threshold == 32) {
+		FIFO_CTRL_MASK = 0; /* equivalent to 32 */
+	}
+
+	status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_FIFO_CTRL, \
+						     FIFO_CTRL_MASK, 0);
+
+	if (is_error(status)) {
+		LOG_ERR("Failed to configure FIFO threshold. \
+					Errorcode: %i", status);
+	} else   {
+		LOG_INF("FIFO threshold has been set to %i", initial_threshold);
+	}
+
+	return status;
+}
+
+/**
+ * @brief Configures the SPI high speed mode for the FIFO block. This feature should
+ * 		  be enabled for SPI speeds of greater than 6 MHz.
+ *
+ * @param dev Device to address.
+ * @param enable True enables FISO SPI high speed mode, false disables it.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_configure_fifo_spi_high_speed(const struct device *dev,
+					  bool enable)
+{
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+	int status = 0;
+
+	if (enable) {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG5, \
+							     LIS3DHH_CTRL_REG5_FIFO_SPI_HS_ON, 0xFF);
+		if (is_error(status)) {
+			LOG_ERR("Failed to enable SPI high speed configuration. \
+					Errorcode: %i", status);
+		}
+	} else   {
+		status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG5, \
+							     LIS3DHH_CTRL_REG5_FIFO_SPI_HS_ON, 0);
+		if (is_error(status)) {
+			LOG_ERR("Failed to disable SPI high speed configuration. \
+					Errorcode: %i", status);
+		}
+	}
+	return status;
+}
+
+/**
+ * @brief Configures the device with the initial configuration as
+ * 		  defined by the Kconfig.
+ *
+ * @param dev Device to address.
+ * @return 0 for success, negative errorcode for failure.
+ */
+int lis3dhh_initial_configuration(const struct device *dev)
+{
+	int status = 0;
+
+	/* CTRL_REG1 configuration */
+#if defined(CONFIG_LIS3DHH_NORMAL_MODE)
+	lis3dhh_configure_normal_mode(dev, true);
+#else
+	lis3dhh_configure_normal_mode(dev, false);
+#endif
+#if defined(CONFIG_LIS3DHH_IF_ADD_INC)
+	lis3dhh_configure_if_add_inc(dev, true);
+#else
+	lis3dhh_configure_if_add_inc(dev, false);
+#endif
+#if defined(CONFIG_LIS3DHH_ENABLE_BDU)
+	lis3dhh_configure_bdu(dev, true);
+#else
+	lis3dhh_configure_bdu(dev, false);
+#endif
+
+	/* INT1_CTRL configuration */
+#if defined(CONFIG_LIS3DHH_INT1_AS_EXT_ASYNC_INPUT_TRIG)
+	lis3dhh_configure_int1_as_ext_async_input_trig(dev, true);
+#else
+	lis3dhh_configure_int1_as_ext_async_input_trig(dev, false);
+#endif
+
+	/* CTRL_REG4 configuration */
+#if defined(CONFIG_LIS3DHH_FILTER_FIR)
+	lis3dhh_configure_filter(dev, filter_FIR);
+#elif defined(CONFIG_LIS3DHH_FILTER_IIR)
+	lis3dhh_configure_filter(dev, filter_IIR);
+#endif
+#if defined(CONFIG_LIS3DHH_BANDWIDTH_440HZ)
+	lis3dhh_configure_bandwidth(dev, bandwidth_440);
+#elif defined(CONFIG_LIS3DHH_BANDWIDTH_235HZ)
+	lis3dhh_configure_bandwidth(dev, bandwidth_235);
+#endif
+#if defined(CONFIG_LIS3DHH_INT1_PUSH_PULL)
+	lis3dhh_configure_pp_od_int1(dev, push_pull);
+#elif defined(CONFIG_LIS3DHH_INT1_OPEN_DRAIN)
+	lis3dhh_configure_pp_od_int1(dev, open_drain);
+#endif
+#if defined(CONFIG_LIS3DHH_INT2_PUSH_PULL)
+	lis3dhh_configure_pp_od_int2(dev, push_pull);
+#elif defined(CONFIG_LIS3DHH_INT2_OPEN_DRAIN)
+	lis3dhh_configure_pp_od_int2(dev, open_drain);
+#endif
+#if defined(CONFIG_LIS3DHH_ENABLE_FIFO)
+	lis3dhh_configure_fifo(dev, true);
+#else
+	lis3dhh_configure_fifo(dev, false);
+#endif
+
+	/* CTRL_REG_5 configuration */
+#if defined(CONFIG_LIS3DHH_SPI_HS_CONFIG)
+	lis3dhh_configure_fifo_spi_high_speed(dev, true);
+#else
+	lis3dhh_configure_fifo_spi_high_speed(dev, false);
+#endif
+
+	/* FIFO configuration */
+#if defined(CONFIG_LIS3DHH_FIFO_BYPASS)
+	lis3dhh_configure_fifo_mode(dev, FIFO_BYPASS);
+#elif defined(CONFIG_LIS3DHH_FIFO_NORMAL)
+	lis3dhh_configure_fifo_mode(dev, FIFO_NORMAL);
+#elif defined(CONFIG_LIS3DHH_FIFO_CONTINUOUS_TO_FIFO)
+	lis3dhh_configure_fifo_mode(dev, FIFO_CONTINUOUS_TO_FIFO);
+#elif defined(CONFIG_LIS3DHH_FIFO_BYPASS_TO_CONTINUOUS)
+	lis3dhh_configure_fifo_mode(dev, FIFO_BYPASS_TO_CONTINUOUS);
+#elif defined(CONFIG_LIS3DHH_FIFO_CONTINUOUS)
+	lis3dhh_configure_fifo_mode(dev, FIFO_CONTINUOUS);
+#endif
+#if defined(LIS3DHH_FIFO_THRESHOLD)
+	status = lis3dhh_configure_fifo_threshold(dev, LIS3DHH_FIFO_THRESHOLD);
+#endif
+
+	return status;
+}
 
 int lis3dhh_init(const struct device *dev)
 {
@@ -123,21 +714,9 @@ int lis3dhh_init(const struct device *dev)
 	const struct lis3dhh_config *cfg = dev->config;
 	int status;
 	uint8_t id;
-	uint8_t CTRL_REG1_MASK = 0;
-	uint8_t CTRL_REG4_MASK = LIS3DHH_CTRL_REG4_ONE_1;
-	uint8_t FIFO_CTRL_MASK = 0;
 
 #if DT_INST_NODE_HAS_PROP(0, supply_gpios)
-	lis3dhh_drv_data->supply_gpios = device_get_binding(DT_INST_GPIO_LABEL(0,
-										supply_gpios));
-	if (no_device(lis3dhh_drv_data->supply_gpios)) {
-		LOG_ERR("Failed to get pointer to power-supply
-				gpio: %s", DT_INST_GPIO_LABEL(0, supply_gpios));
-		return -EINVAL;
-	}
-	gpio_pin_configure(lis3dhh_drv_data->supply_gpios, SUPPLY_PIN,
-				GPIO_OUTPUT_ACTIVE | DT_INST_GPIO_FLAGS(0, supply_gpios));
-	k_sleep(K_MSEC(10)); /* wait 10ms for device to finish booting */
+	lis3dhh_pwr_on(dev);
 #endif
 
 	lis3dhh_drv_data->bus = device_get_binding(
@@ -150,7 +729,8 @@ int lis3dhh_init(const struct device *dev)
 
 	status = cfg->bus_init(dev); /* spi bus initialization */
 	if (is_error(status)) {
-		LOG_ERR("SPI bus initialization failed. Errorcode: %i", status);
+		LOG_ERR("SPI bus initialization failed. \
+				Errorcode: %i", status);
 	}
 
 	status = lis3dhh_drv_data->hw_tf->read_reg(
@@ -167,171 +747,156 @@ int lis3dhh_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* CTRL_REG1 configuration */
-#if defined(CONFIG_LIS3DHH_NORMAL_MODE)
-	CTRL_REG1_MASK |= LIS3DHH_CTRL_REG1_NORM_MODE_EN;
-#else
-	CTRL_REG1_MASK &= ~LIS3DHH_CTRL_REG1_NORM_MODE_EN;
-#endif
-#if defined(CONFIG_LIS3DHH_IF_ADD_INC)
-	CTRL_REG1_MASK |= LIS3DHH_CTRL_REG1_IF_ADD_INC;
-#else
-	CTRL_REG1_MASK &= ~LIS3DHH_CTRL_REG1_IF_ADD_INC;
-#endif
-#if defined(CONFIG_LIS3DHH_ENABLE_BDU)
-	CTRL_REG1_MASK |= LIS3DHH_CTRL_REG1_BDU;
-#endif
-
-	status = lis3dhh_drv_data->hw_tf->write_reg(dev, LIS3DHH_CTRL_REG1, CTRL_REG1_MASK);
-	if (is_error(status)) {
-		LOG_ERR("Failed to configure CTRL_REG1. Errorcode: %i", status);
-		return status;
-	}
-
-	/* INT1_CTRL configuration */
-#if defined(CONFIG_LIS3DHH_INT1_AS_EXT_ASYNC_INPUT_TRIG)
-	status = lis3dhh_drv_data->hw_tf->update_reg(dev, LIS3DHH_CTRL_REG1, LIS3DHH_INT1_CTRL_EXT);
-	if (is_error(status)) {
-		LOG_ERR("Failed to update INT1_CTRL as external asynchronous input
-			trigger to FIFO. Errorcode: %i", status);
-		return status;
-	}
-#endif
-
-	/* CTRL_REG4 configuration */
-#if defined(CONFIG_LIS3DHH_FILTER_FIR)
-	CTRL_REG4_MASK &= ~LIS3DHH_CTRL_REG4_DSP_LP_TYPE;
-#elif defined(CONFIG_LIS3DHH_FILTER_IIR)
-	CTRL_REG4_MASK |= LIS3DHH_CTRL_REG4_DSP_LP_TYPE;
-#endif
-#if defined(CONFIG_LIS3DHH_BANDWIDTH_440HZ)
-	CTRL_REG4_MASK &= ~LIS3DHH_CTRL_REG4_DSP_LP_TYPE;
-#elif defined(CONFIG_LIS3DHH_BANDWIDTH_235HZ)
-	CTRL_REG4_MASK |= LIS3DHH_CTRL_REG4_DSP_LP_TYPE;
-#endif
-#if defined(CONFIG_LIS3DHH_INT1_PUSH_PULL)
-	CTRL_REG4_MASK &= ~LIS3DHH_CTRL_REG4_PP_OD_INT1;
-#elif defined(CONFIG_LIS3DHH_INT1_OPEN_DRAIN)
-	CTRL_REG4_MASK |= LIS3DHH_CTRL_REG4_PP_OD_INT1;
-#endif
-#if defined(CONFIG_LIS3DHH_INT2_PUSH_PULL)
-	CTRL_REG4_MASK &= ~LIS3DHH_CTRL_REG4_PP_OD_INT2;
-#elif defined(CONFIG_LIS3DHH_INT2_OPEN_DRAIN)
-	CTRL_REG4_MASK |= LIS3DHH_CTRL_REG4_PP_OD_INT2;
-#endif
-#if defined(CONFIG_LIS3DHH_ENABLE_FIFO)
-	CTRL_REG4_MASK |= LIS3DHH_CTRL_REG4_FIFO_EN;
-#endif
-
-	status = lis3dhh_drv_data->hw_tf->write_reg(dev, LIS3DHH_CTRL_REG4, CTRL_REG4_MASK);
-	if (is_error(status)) {
-		LOG_ERR("Failed to configure CTRL_REG4. Errorcode: %i", status);
-		return status;
-	}
-
-	/* CTRL_REG_5 configuration */
-#if defined(CONFIG_LIS3DHH_SPI_HS_CONFIG)
-	status = lis3dhh_drv_data->hw_tf->write_reg(dev, LIS3DHH_CTRL_REG5,
-				LIS3DHH_CTRL_REG5_FIFO_SPI_HS_ON);
-	if (is_error(status)) {
-		LOG_ERR("Failed to configure CTRL_REG5. Errorcode: %i", status);
-		return status;
-	}
-#endif
-
-	/* FIFO configuration */
-#if defined(CONFIG_LIS3DHH_FIFO_BYPASS)
-	FIFO_CTRL_MASK &= ~(LIS3DHH_FIFO_CTRL_FMODE0 |
-		LIS3DHH_FIFO_CTRL_FMODE1 | LIS3DHH_FIFO_CTRL_FMODE2)
-#elif defined(CONFIG_LIS3DHH_FIFO_NORMAL)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FMODE0;
-#elif defined(CONFIG_LIS3DHH_FIFO_CONTINUOUS_TO_FIFO)
-	FIFO_CTRL_MASK = FIFO_CTRL_MASK | LIS3DHH_FIFO_CTRL_FMODE0 | LIS3DHH_FIFO_CTRL_FMODE1;
-#elif defined(CONFIG_LIS3DHH_FIFO_BYPASS_TO_CONTINUOUS)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FMODE2;
-#elif defined(CONFIG_LIS3DHH_FIFO_CONTINUOUS)
-	FIFO_CTRL_MASK = FIFO_CTRL_MASK | LIS3DHH_FIFO_CTRL_FMODE1 | LIS3DHH_FIFO_CTRL_FMODE2;
-#endif
-#if defined(CONFIG_LIS3DHH_FIFO_THRESH_ADD_ONE)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH0;
-#endif
-#if defined(CONFIG_LIS3DHH_FIFO_THRESH_ADD_TWO)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH1;
-#endif
-#if defined(CONFIG_LIS3DHH_FIFO_THRESH_ADD_FOUR)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH2;
-#endif
-#if defined(CONFIG_LIS3DHH_FIFO_THRESH_ADD_EIGHT)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH3;
-#endif
-#if defined(CONFIG_LIS3DHH_FIFO_THRESH_ADD_SIXTEEN)
-	FIFO_CTRL_MASK |= LIS3DHH_FIFO_CTRL_FTH4;
-#endif
-
-	status = lis3dhh_drv_data->hw_tf->write_reg(dev, LIS3DHH_FIFO_CTRL, FIFO_CTRL_MASK);
-	if (is_error(status)) {
-		LOG_ERR("Failed to configure FIFO_CTRL. Errorcode: %i", status);
-		return status;
-	}
+	lis3dhh_initial_configuration(dev);
 
 	return status;
 }
 
-#define LIS3DHH_DEVICE_INIT(inst)                                                   \
-	DEVICE_DT_INST_DEFINE(inst, lis3dhh_init, NULL, &lis3dhh_data_##inst,           \
-			      &lis3dhh_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+#ifdef CONFIG_PM_DEVICE
+static int lis3dhh_pm_control(const struct device *dev,
+			      enum pm_device_action action)
+{
+#if DT_INST_NODE_HAS_PROP(0, supply_gpios)
+	struct lis3dhh_data *lis3dhh_drv_data = dev->data;
+#endif
+	int status = 0;
+	enum pm_device_state current_pm_state;
+	(void)pm_device_state_get(dev, &current_pm_state);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		LOG_INF("just entered resume case");
+		/* configure device to resume or start operations */
+		if (current_pm_state == PM_DEVICE_STATE_SUSPENDED) {
+			LOG_INF("currently in suspended state");
+			status = lis3dhh_configure_normal_mode(dev, true);
+			if (status) {
+				LOG_ERR("Resume failed. Errorcode: %i", status);
+				break;
+			}
+			LOG_DBG("LIS3DHH resumed operations. No config \
+						changes made.");
+			break;
+		}
+#if DT_INST_NODE_HAS_PROP(0, supply_gpios)
+		else if (current_pm_state == PM_DEVICE_STATE_OFF) {
+			LOG_INF("currently in off state");
+			lis3dhh_pwr_on(dev);
+			status = lis3dhh_initial_configuration(dev);
+			if (is_error(status)) {
+				LOG_ERR("Power up failed. Errorcode: %i", status);
+				break;
+			}
+			LOG_DBG("LIS3DHH state changed to active and initialized \
+					with startup config.");
+			break;
+		}
+#endif
+		else {
+			LOG_ERR("LIS3DHH not in a state where resume is \
+						supported.");
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		LOG_INF("just entered suspend case");
+		/* configure device to stop operations */
+		status = lis3dhh_configure_normal_mode(dev, false);
+		if (status) {
+			LOG_ERR("Suspend failed. Errorcode: %i", status);
+			break;
+		}
+		LOG_DBG("LIS3DHH has been to suspended state.");
+		break;
+
+#if DT_INST_NODE_HAS_PROP(0, supply_gpios)
+	case PM_DEVICE_ACTION_TURN_OFF:
+		LOG_INF("just entered turn off case");
+		lis3dhh_drv_data->supply_gpios = device_get_binding(
+			DT_INST_GPIO_LABEL(0, supply_gpios));
+		if (no_device(lis3dhh_drv_data->supply_gpios)) {
+			LOG_ERR("Failed to get pointer to power-supply \
+					gpio: %s", DT_INST_GPIO_LABEL(0, supply_gpios));
+			return -EINVAL;
+		}
+		status = gpio_pin_configure(lis3dhh_drv_data->supply_gpios,
+				 SUPPLY_PIN, GPIO_OUTPUT_INACTIVE | DT_INST_GPIO_FLAGS(0,
+										  supply_gpios));
+		if (status) {
+			LOG_ERR("Power down failed. Errorcode: %i", status);
+			break;
+		}
+		LOG_DBG("LIS3DHH is now turned off.");
+		break;
+#endif
+	default:
+		LOG_ERR("Action not supported on device.");
+		return -ENOTSUP;
+	}
+	return status;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+#define LIS3DHH_DEVICE_INIT(inst)			   \
+	DEVICE_DT_INST_DEFINE(inst,			   \
+			      lis3dhh_init,		   \
+			      lis3dhh_pm_control,	   \
+			      &lis3dhh_data_##inst,	   \
+			      &lis3dhh_config_##inst,	   \
+			      POST_KERNEL,		   \
+			      CONFIG_SENSOR_INIT_PRIORITY, \
 			      &lis3dhh_driver_api);
 
 #define LIS3DHH_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
 
-#define LIS3DHH_DATA_SPI_CS(inst)                     \
-	{                                                 \
-		.cs_ctrl = {                                  \
-			.gpio_pin =                               \
+#define LIS3DHH_DATA_SPI_CS(inst)				      \
+	{							      \
+		.cs_ctrl = {					      \
+			.gpio_pin =				      \
 				DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),   \
-			.gpio_dt_flags =                          \
+			.gpio_dt_flags =			      \
 				DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst), \
-		},                                            \
+		},						      \
 	}
 
 #define LIS3DHH_DATA_SPI(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
-			(LIS3DHH_DATA_SPI_CS(inst)), ({}))
+					   (LIS3DHH_DATA_SPI_CS(inst)), ({}))
 
 #define LIS3DHH_SPI_CS_PTR(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
-			(&(lis3dhh_data_##inst.cs_ctrl)), (NULL))
+					     (&(lis3dhh_data_##inst.cs_ctrl)), (NULL))
 
 #define LIS3DHH_SPI_CS_LABEL(inst) COND_CODE_1(LIS3DHH_HAS_CS(inst), \
-			(DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
+					       (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
 
-#define LIS3DHH_SPI_CFG(inst)                          \
-	(&(struct lis3dhh_spi_cfg){                        \
-		.spi_conf = {                                  \
-			.frequency =                               \
+#define LIS3DHH_SPI_CFG(inst)					       \
+	(&(struct lis3dhh_spi_cfg){				       \
+		.spi_conf = {					       \
+			.frequency =				       \
 				DT_INST_PROP(inst, spi_max_frequency), \
-			.operation = (SPI_WORD_SET(8) |            \
-				      SPI_OP_MODE_MASTER |             \
-				      SPI_TRANSFER_MSB),               \
-			.slave = DT_INST_REG_ADDR(inst),           \
-			.cs = LIS3DHH_SPI_CS_PTR(inst),            \
-		},                                             \
-		.cs_gpios_label = LIS3DHH_SPI_CS_LABEL(inst),  \
+			.operation = (SPI_WORD_SET(8) |		       \
+				      SPI_OP_MODE_MASTER |	       \
+				      SPI_TRANSFER_MSB),	       \
+			.slave = DT_INST_REG_ADDR(inst),	       \
+			.cs = LIS3DHH_SPI_CS_PTR(inst),		       \
+		},						       \
+		.cs_gpios_label = LIS3DHH_SPI_CS_LABEL(inst),	       \
 	})
 
 #define LIS3DHH_CFG_INT(inst)
 
-#define LIS3DHH_CONFIG_SPI(inst)                         \
-	{                                                    \
-		.bus_name = DT_INST_BUS_LABEL(inst),             \
-		.bus_init = lis3dhh_spi_init,                    \
+#define LIS3DHH_CONFIG_SPI(inst)				 \
+	{							 \
+		.bus_name = DT_INST_BUS_LABEL(inst),		 \
+		.bus_init = lis3dhh_spi_init,			 \
 		.bus_cfg = { .spi_cfg = LIS3DHH_SPI_CFG(inst) }, \
-		LIS3DHH_CFG_INT(inst)                            \
+		LIS3DHH_CFG_INT(inst)				 \
 	}
 
-#define LIS3DHH_DEFINE_SPI(inst)                               \
-	static struct lis3dhh_data lis3dhh_data_##inst =           \
-		LIS3DHH_DATA_SPI(inst);                                \
+#define LIS3DHH_DEFINE_SPI(inst)				   \
+	static struct lis3dhh_data lis3dhh_data_##inst =	   \
+		LIS3DHH_DATA_SPI(inst);				   \
 	static const struct lis3dhh_config lis3dhh_config_##inst = \
-		LIS3DHH_CONFIG_SPI(inst);                              \
+		LIS3DHH_CONFIG_SPI(inst);			   \
 	LIS3DHH_DEVICE_INIT(inst)
 
 #define LIS3DHH_DEFINE(inst) LIS3DHH_DEFINE_SPI(inst)
