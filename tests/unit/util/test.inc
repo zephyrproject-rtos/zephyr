@@ -354,6 +354,10 @@ static void test_IS_EMPTY(void)
 		     "Expected to be empty");
 	zassert_false(IS_EMPTY(test_IS_EMPTY_NOT_EMPTY),
 		      "Expected to be non-empty");
+	zassert_false(IS_EMPTY("string"),
+		      "Expected to be non-empty");
+	zassert_false(IS_EMPTY(&test_IS_EMPTY),
+		      "Expected to be non-empty");
 }
 
 static void test_LIST_DROP_EMPTY(void)

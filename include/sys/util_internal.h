@@ -67,9 +67,23 @@
 #define __DEBRACKET(...) __VA_ARGS__
 
 /* Used by IS_EMPTY() */
-#define Z_IS_EMPTY_(...) Z_IS_EMPTY__(__VA_ARGS__)
-#define Z_IS_EMPTY__(a, ...) Z_IS_EMPTY___(_ZZ##a##ZZ0, __VA_ARGS__)
-#define Z_IS_EMPTY___(...) GET_ARG_N(3, __VA_ARGS__)
+/* reference: https://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/ */
+#define Z_HAS_COMMA(...) \
+	NUM_VA_ARGS_LESS_1_IMPL(__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, \
+	 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
+	 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
+	 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+#define Z_TRIGGER_PARENTHESIS_(...) ,
+#define Z_IS_EMPTY_(...) \
+	Z_IS_EMPTY__( \
+		Z_HAS_COMMA(__VA_ARGS__), \
+		Z_HAS_COMMA(Z_TRIGGER_PARENTHESIS_ __VA_ARGS__), \
+		Z_HAS_COMMA(__VA_ARGS__ (/*empty*/)), \
+		Z_HAS_COMMA(Z_TRIGGER_PARENTHESIS_ __VA_ARGS__ (/*empty*/)))
+#define Z_CAT5(_0, _1, _2, _3, _4) _0 ## _1 ## _2 ## _3 ## _4
+#define Z_IS_EMPTY__(_0, _1, _2, _3) \
+	Z_HAS_COMMA(Z_CAT5(Z_IS_EMPTY_CASE_, _0, _1, _2, _3))
+#define Z_IS_EMPTY_CASE_0001 ,
 
 /* Used by LIST_DROP_EMPTY() */
 /* Adding ',' after each element would add empty element at the end of
