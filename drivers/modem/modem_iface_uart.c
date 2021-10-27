@@ -130,8 +130,8 @@ static bool mux_is_active(struct modem_iface *iface)
 	bool active = false;
 
 #if defined(CONFIG_UART_MUX_DEVICE_NAME)
-	const char *mux_name = CONFIG_UART_MUX_DEVICE_NAME;
-	active = (mux_name == iface->dev->name);
+	active = strncmp(CONFIG_UART_MUX_DEVICE_NAME, iface->dev->name,
+			 sizeof(CONFIG_UART_MUX_DEVICE_NAME) - 1) == 0;
 #endif /* CONFIG_UART_MUX_DEVICE_NAME */
 
 	return active;
