@@ -1,0 +1,66 @@
+# Copyright (c) 2021, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 OSPI Flash controller supporting the JEDEC CFI interface
+
+    Representation of a serial flash on a octospi bus:
+
+        mx25lm51245: ospi-nor-flash@0 {
+                compatible = "st,stm32-ospi-nor";
+                label = "MX25LM512";
+                reg = <0>;
+                data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
+                data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
+                ospi-max-frequency = <DT_FREQ_M(50)>;
+                size = <DT_SIZE_M(4)>;
+                status = "okay";
+        };
+
+compatible: "st,stm32-ospi-nor"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: ospi
+
+properties:
+    reg:
+      required: true
+    ospi-max-frequency:
+      type: int
+      required: true
+      description: Maximum clock frequency of device's OSPI interface in Hz
+    label:
+      required: true
+    size:
+      required: true
+      description: Flash Memory size in bits
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: RESETn pin
+    spi-bus-width:
+      type: int
+      required: true
+      description: |
+       The width of (Octo)SPI bus to which flash memory is connected.
+
+       Possible values are :
+        - OSPI_SPI_MODE <1> = SPI mode on 1 data line
+        - OSPI_OPI_MODE <8> = Octo SPI mode on 8 data lines
+      enum:
+        - 1
+        - 8
+
+    data-rate:
+      type: int
+      required: true
+      description: |
+       The SPI data Rate is STR or DTR
+
+       Possible values are :
+        - OSPI_STR_TRANSFER <1> = Single Rate Transfer
+        - OSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with OSPI_OPI_MODE)
+      enum:
+        - 1
+        - 2
