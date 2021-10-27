@@ -67,8 +67,7 @@ int sx126x_variant_init(const struct device *dev)
 
 	if (gpio_pin_configure_dt(&sx126x_gpio_reset, GPIO_OUTPUT_ACTIVE) ||
 	    gpio_pin_configure_dt(&sx126x_gpio_busy, GPIO_INPUT) ||
-	    gpio_pin_configure_dt(&sx126x_gpio_dio1,
-				  GPIO_INPUT | GPIO_INT_DEBOUNCE)) {
+	    gpio_pin_configure_dt(&sx126x_gpio_dio1, GPIO_INPUT)) {
 		LOG_ERR("GPIO configuration failed.");
 		return -EIO;
 	}

@@ -192,21 +192,6 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 		return -EWOULDBLOCK;
 	}
 
-	/* Zephyr currently defines drive strength support based on
-	 * the behavior and capabilities of the Nordic GPIO
-	 * peripheral: strength defaults to low but can be set high,
-	 * and is controlled independently for output levels.
-	 *
-	 * The PCA953X supports only high strength, and does not
-	 * support different strengths for different levels.
-	 *
-	 * Until something more general is available reject any
-	 * attempt to set a non-default drive strength.
-	 */
-	if ((flags & GPIO_DS_ALT) != 0) {
-		return -ENOTSUP;
-	}
-
 	/* Single Ended lines (Open drain and open source) not supported */
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		return -ENOTSUP;

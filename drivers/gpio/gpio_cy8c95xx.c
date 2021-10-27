@@ -105,11 +105,6 @@ static int cy8c95xx_config(const struct device *dev,
 		return -EWOULDBLOCK;
 	}
 
-	/* Strengths not implemented */
-	if ((flags & GPIO_DS_ALT) != 0) {
-		return -ENOTSUP;
-	}
-
 	/* Open-drain not implemented */
 	if ((flags & GPIO_SINGLE_ENDED) != 0U) {
 		return -ENOTSUP;

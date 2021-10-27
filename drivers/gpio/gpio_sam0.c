@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <dt-bindings/gpio/atmel-sam0-gpio.h>
 #include <soc.h>
 #include <drivers/interrupt_controller/sam0_eic.h>
 
@@ -94,7 +95,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 
 	/* Preserve debounce flag for interrupt configuration. */
 	WRITE_BIT(data->debounce, pin,
-		  ((flags & GPIO_INT_DEBOUNCE) != 0)
+		  ((flags & SAM0_GPIO_DEBOUNCE) != 0)
 		  && (pincfg.bit.INEN != 0));
 
 	/* Write the now-built pin configuration */
