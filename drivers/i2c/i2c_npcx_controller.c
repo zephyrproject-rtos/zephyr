@@ -962,7 +962,7 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	static struct i2c_ctrl_data i2c_ctrl_data_##inst;                      \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
+	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \

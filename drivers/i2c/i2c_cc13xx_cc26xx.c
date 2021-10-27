@@ -437,7 +437,7 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 
 PM_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_pm_action);
 
-DEVICE_DT_INST_DEFINE(0,
+I2C_DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
 		PM_DEVICE_DT_INST_REF(0),
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,

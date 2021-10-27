@@ -706,8 +706,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	.bitrate = I2C_FREQUENCY(idx),	\
 	.default_config = I2C_MODE_MASTER,				\
 	};								       \
-	DEVICE_DT_DEFINE(DT_NODELABEL(i2c##idx),					       \
-		      &i2c_esp32_init,					       \
+	I2C_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##idx),					       \
+		      i2c_esp32_init,					       \
 		      NULL,				       \
 		      &i2c_esp32_data_##idx,				       \
 		      &i2c_esp32_config_##idx,				       \

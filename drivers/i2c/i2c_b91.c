@@ -177,7 +177,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 		.pinctrl_list = i2c_pins_##inst			  \
 	};							  \
 								  \
-	DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		  \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		  \
 			      NULL,				  \
 			      &i2c_b91_data_##inst,		  \
 			      &i2c_b91_cfg_##inst,		  \
