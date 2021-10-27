@@ -1038,9 +1038,9 @@ struct bt_audio_capability_ops {
 	void (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
 };
 
-/** @brief Channel operation. */
+/** @brief Stream operation. */
 struct bt_audio_stream_ops {
-	/** @brief Channel connected callback
+	/** @brief Stream connected callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  connection completes.
@@ -1049,7 +1049,7 @@ struct bt_audio_stream_ops {
 	 */
 	void (*connected)(struct bt_audio_stream *stream);
 
-	/** @brief Channel disconnected callback
+	/** @brief Stream disconnected callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  stream is disconnected, including when a connection gets
@@ -1060,7 +1060,7 @@ struct bt_audio_stream_ops {
 	 */
 	void (*disconnected)(struct bt_audio_stream *stream, uint8_t reason);
 
-	/** @brief Channel audio HCI receive callback.
+	/** @brief Stream audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
 	 *
@@ -1200,7 +1200,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
  *  Register Audio callbacks for a stream.
  *
  *  @param stream Stream object.
- *  @param ops  Channel operations structure.
+ *  @param ops    Stream operations structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
@@ -1410,7 +1410,7 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf);
 /** @brief Create audio unicast group.
  *
  *  Create a new audio unicast group with one or more audio streams as a
- *  central. Channels in a unicast group shall share the same interval, framing
+ *  central. Streams in a unicast group shall share the same interval, framing
  *  and latency (see @ref bt_codec_qos).
  *
  *  @param[in]  streams        Array of stream objects being used for the
@@ -1543,7 +1543,7 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
  *                            e.g. BIS index 1 and 2, this should have the value
  *                            of BIT(1) | BIT(2).
- *  @param streams            Channel objects to be used for the receiver. If
+ *  @param streams            Stream objects to be used for the receiver. If
  *                            multiple BIS indexes shall be synchronized,
  *                            multiple streams shall be provided.
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
