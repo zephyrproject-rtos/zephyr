@@ -71,6 +71,12 @@ config QEMU_UEFI_BOOT
 	  This option indicates that QEMU will use UEFI bootable method
 	  to boot up.
 
+config BOARD_SUPPORT_REMOTE_ENDPOINT
+	bool "Board supports remote endpoint"
+	help
+	  When enabled the BOARD_REMOTE variable is expected to contain the
+	  remote endpoint as board name.
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu

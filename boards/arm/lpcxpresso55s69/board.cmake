@@ -17,5 +17,9 @@ endif()
 
 board_runner_args(pyocd "--target=lpc55s69")
 
+if(CONFIG_BOARD_SUPPORT_REMOTE_ENDPOINT AND CONFIG_BOARD_LPCXPRESSO55S69_CPU0)
+  set(BOARD_REMOTE "lpcxpresso55s69_cpu1")
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)

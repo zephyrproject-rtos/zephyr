@@ -5,13 +5,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpunet"
-       OR "${BOARD}" STREQUAL "bl5340_dvk_cpunet")
-	message(INFO " ${BOARD} compile as slave in this sample")
-else()
-	message(FATAL_ERROR "${BOARD} is not supported for this sample")
-endif()
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ipc_service_remote)
 

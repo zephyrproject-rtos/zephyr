@@ -23,3 +23,8 @@ elseif (CONFIG_SOC_MPS2_AN521_CPU1)
   set(QEMU_KERNEL_OPTION "-device;loader,file=${CPU0_BINARY_DIR}/zephyr.elf")
   set(QEMU_EXTRA_FLAGS "-device;loader,file=${CMAKE_CURRENT_BINARY_DIR}/zephyr/zephyr.elf")
 endif()
+
+if(CONFIG_BOARD_SUPPORT_REMOTE_ENDPOINT AND CONFIG_BOARD_MPS2_AN521_CPU0)
+  set(BOARD_REMOTE "mps2_an521_remote")
+  set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
+endif()

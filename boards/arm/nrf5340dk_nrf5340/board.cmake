@@ -16,5 +16,9 @@ if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUNET)
 board_runner_args(jlink "--device=nrf5340_xxaa_net" "--speed=4000")
 endif()
 
+if(CONFIG_BOARD_SUPPORT_REMOTE_ENDPOINT AND CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP)
+  set(BOARD_REMOTE "nrf5340dk_nrf5340_cpunet")
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
