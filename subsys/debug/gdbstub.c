@@ -17,8 +17,11 @@ LOG_MODULE_REGISTER(gdbstub);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <toolchain.h>
 #include <sys/types.h>
+#include <sys/util.h>
 
+#include <debug/gdbstub.h>
 #include "gdbstub_backend.h"
 
 /* +1 is for the NULL character added during receive */
@@ -34,6 +37,107 @@ LOG_MODULE_REGISTER(gdbstub);
 #define GDB_ERROR_OVERFLOW  "E22"
 
 static bool not_first_start;
+
+/* Empty memory region array */
+__weak const struct gdb_mem_region gdb_mem_region_array[0];
+
+/* Number of memory regions, default to 0 */
+__weak const size_t gdb_mem_num_regions;
+
+/**
+ * Given a starting address and length of a memory block, find a memory
+ * region descriptor from the memory region array where the memory block
+ * fits inside the memory region.
+ *
+ * @param addr Starting address of the memory block
+ * @param len  Length of the memory block
+ *
+ * @return Pointer to the memory region description if found.
+ *         NULL if not found.
+ */
+static inline const
+struct gdb_mem_region *find_memory_region(const uintptr_t addr, const size_t len)
+{
+	const struct gdb_mem_region *r, *ret = NULL;
+	unsigned int idx;
+
+	for (idx = 0; idx < gdb_mem_num_regions; idx++) {
+		r = &gdb_mem_region_array[idx];
+
+		if ((addr >= r->start) &&
+		    (addr < r->end) &&
+		    ((addr + len) >= r->start) &&
+		    ((addr + len) < r->end)) {
+			ret = r;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+bool gdb_mem_can_read(const uintptr_t addr, const size_t len, uint8_t *align)
+{
+	bool ret = false;
+	const struct gdb_mem_region *r;
+
+	if (gdb_mem_num_regions == 0) {
+		/*
+		 * No region is defined.
+		 * Assume memory access is not restricted, and there is
+		 * no alignment requirement.
+		 */
+		*align = 1;
+		ret = true;
+	} else {
+		r = find_memory_region(addr, len);
+		if (r != NULL) {
+			if ((r->attributes & GDB_MEM_REGION_READ) ==
+			    GDB_MEM_REGION_READ) {
+				if (r->alignment > 0) {
+					*align = r->alignment;
+				} else {
+					*align = 1;
+				}
+				ret = true;
+			}
+		}
+	}
+
+	return ret;
+}
+
+bool gdb_mem_can_write(const uintptr_t addr, const size_t len, uint8_t *align)
+{
+	bool ret = false;
+	const struct gdb_mem_region *r;
+
+	if (gdb_mem_num_regions == 0) {
+		/*
+		 * No region is defined.
+		 * Assume memory access is not restricted, and there is
+		 * no alignment requirement.
+		 */
+		*align = 1;
+		ret = true;
+	} else {
+		r = find_memory_region(addr, len);
+		if (r != NULL) {
+			if ((r->attributes & GDB_MEM_REGION_WRITE) ==
+			    GDB_MEM_REGION_WRITE) {
+				if (r->alignment > 0) {
+					*align = r->alignment;
+				} else {
+					*align = 1;
+				}
+
+				ret = true;
+			}
+		}
+	}
+
+	return ret;
+}
 
 size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
@@ -159,18 +263,24 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 }
 
 /**
- * Read data from a given memory.
+ * Read data from a given memory address and length.
  *
- * Return 0 in case of success, otherwise -1
+ * @return Number of bytes read from memory, otherwise -1
  */
 static int gdb_mem_read(uint8_t *buf, size_t buf_len,
 			uintptr_t addr, size_t len)
 {
-	uint8_t data;
+	uint8_t data, align;
 	size_t pos, count = 0;
 
 	if (len > buf_len) {
-		return -1;
+		count = -1;
+		goto out;
+	}
+
+	if (!gdb_mem_can_read(addr, len, &align)) {
+		count = -1;
+		goto out;
 	}
 
 	/* Read from system memory */
@@ -179,24 +289,32 @@ static int gdb_mem_read(uint8_t *buf, size_t buf_len,
 		count += gdb_bin2hex(&data, 1, buf + count, buf_len - count);
 	}
 
+out:
 	return count;
 }
 
 /**
- * Write data in a given memory.
+ * Write data to a given memory address and length.
  *
- * Return 0 in case of success, otherwise -1
+ * @return 0 if successful, otherwise -1
  */
 static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
 			 size_t len)
 {
-	uint8_t data;
+	uint8_t data, align;
+	int ret = 0;
+
+	if (!gdb_mem_can_write(addr, len, &align)) {
+		ret = -1;
+		goto out;
+	}
 
 	while (len > 0) {
 		size_t ret = hex2bin(buf, 2, &data, sizeof(data));
 
 		if (ret == 0) {
-			return -1;
+			ret = -1;
+			goto out;
 		}
 
 		*(uint8_t *)addr = data;
@@ -206,7 +324,10 @@ static int gdb_mem_write(const uint8_t *buf, uintptr_t addr,
 		len--;
 	}
 
-	return 0;
+	ret = 0;
+
+out:
+	return ret;
 }
 
 /**
