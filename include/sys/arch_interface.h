@@ -907,6 +907,36 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 			     uint32_t regno);
 
+/**
+ * @brief Add breakpoint or watchpoint.
+ *
+ * @param ctx GDB context
+ * @param type Breakpoint or watchpoint type
+ * @param addr Address of breakpoint or watchpoint
+ * @param kind Size of breakpoint/watchpoint in bytes
+ *
+ * @retval 0  Operation successful
+ * @retval -1 Error encountered
+ * @retval -2 Not supported
+ */
+int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			    uintptr_t addr, uint32_t kind);
+
+/**
+ * @brief Remove breakpoint or watchpoint.
+ *
+ * @param ctx GDB context
+ * @param type Breakpoint or watchpoint type
+ * @param addr Address of breakpoint or watchpoint
+ * @param kind Size of breakpoint/watchpoint in bytes
+ *
+ * @retval 0  Operation successful
+ * @retval -1 Error encountered
+ * @retval -2 Not supported
+ */
+int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			       uintptr_t addr, uint32_t kind);
+
 #endif
 /** @} */
 

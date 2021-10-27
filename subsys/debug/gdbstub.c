@@ -157,6 +157,21 @@ size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 	return 2 * buflen;
 }
 
+__weak
+int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			    uintptr_t addr, uint32_t kind)
+{
+	return -2;
+}
+
+__weak
+int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
+			       uintptr_t addr, uint32_t kind)
+{
+	return -2;
+}
+
+
 /**
  * Add preamble and termination to the given data.
  *
@@ -608,6 +623,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 		uint8_t *ptr;
 		size_t data_len, pkt_len;
 		uintptr_t addr;
+		uint32_t type;
 		int ret;
 
 		ret = gdb_get_packet(buf, sizeof(buf), &pkt_len);
@@ -740,6 +756,37 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 			pkt_len = arch_gdb_reg_writeone(ctx, ptr, strlen(ptr), addr);
 			CHECK_ERROR(pkt_len == 0);
 			gdb_send_packet("OK", 2);
+			break;
+
+		/*
+		 * Breakpoints and Watchpoints
+		 */
+		case 'z':
+			__fallthrough;
+		case 'Z':
+			CHECK_INT(type);
+			CHECK_SYMBOL(',');
+			CHECK_INT(addr);
+			CHECK_SYMBOL(',');
+			CHECK_INT(data_len);
+
+			if (buf[0] == 'Z') {
+				ret = arch_gdb_add_breakpoint(ctx, type,
+							      addr, data_len);
+			} else if (buf[0] == 'z') {
+				ret = arch_gdb_remove_breakpoint(ctx, type,
+								 addr, data_len);
+			}
+
+			if (ret == -2) {
+				/* breakpoint/watchpoint not supported */
+				gdb_send_packet(NULL, 0);
+			} else if (ret == -1) {
+				state = ERROR;
+			} else {
+				gdb_send_packet("OK", 2);
+			}
+
 			break;
 
 
