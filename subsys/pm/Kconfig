@@ -38,7 +38,7 @@ config HAS_NO_PM
 	  the responsibility of a different core.
 
 config PM_DEVICE
-	bool "Device power management"
+	bool "Device Power Management"
 	help
 	  This option enables the device power management interface.  The
 	  interface consists of hook functions implemented by device drivers
