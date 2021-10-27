@@ -168,7 +168,7 @@ html {
 @media (prefers-color-scheme: dark) {
     html:not(.light-mode) {
         color-scheme: dark;
-        
+
         --primary-color: #1982d2;
         --primary-dark-color: #5ca8e2;
         --primary-light-color: #4779ac;
@@ -581,6 +581,10 @@ iframe#MSearchResults {
     margin: 4px;
 }
 
+iframe {
+    color-scheme: normal;
+}
+
 @media (prefers-color-scheme: dark) {
     html:not(.light-mode) iframe#MSearchResults {
         filter: invert() hue-rotate(180deg);
@@ -645,6 +649,23 @@ html.dark-mode iframe#MSearchResults {
         overflow: auto;
         transform: translate(0, 20px);
         animation: ease-out 280ms slideInSearchResultsMobile;
+    }
+
+    /*
+     * Overwrites for fixing the searchbox on mobile in doxygen 1.9.2
+     */
+    label.main-menu-btn ~ #searchBoxPos1 {
+        top: 3px !important;
+        right: 6px !important;
+        left: 45px;
+        display: flex;
+    }
+
+    label.main-menu-btn ~ #searchBoxPos1 > #MSearchBox {
+        margin-top: 0;
+        margin-bottom: 0;
+        flex-grow: 2;
+        float: left;
     }
 }
 
@@ -1460,6 +1481,7 @@ li.navelem:first-child:before {
 */
 
 doxygen-awesome-dark-mode-toggle {
+    display: inline-block;
     margin: 0 0 0 var(--spacing-small);
     padding: 0;
     width: var(--searchbar-height);
