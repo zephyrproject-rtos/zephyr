@@ -140,7 +140,7 @@ static int led_pwm_pm_control(const struct device *dev,
 		}
 
 		err = pm_device_state_set(led_pwm->dev, state);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
 		}
 	}
