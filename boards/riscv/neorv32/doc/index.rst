@@ -140,6 +140,17 @@ implementation with the On-Chip Debugger (OCD) and bootloader enabled.
    :board: neorv32
    :goals: flash
 
+The default board configuration uses an :ref:`openocd-debug-host-tools`
+configuration similar to the example provided by the NEORV32 project. Other
+JTAGs can be used by providing further arguments when building. Here is an
+example for using the Flyswatter JTAG:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: neorv32
+   :goals: flash
+   :gen-args: -DBOARD_RUNNER_ARGS_openocd="--config;interface/ftdi/flyswatter.cfg;--config;neorv32.cfg;--cmd-pre-init;'adapter speed 2000'"
+
 After flashing, you should see message similar to the following in the terminal:
 
 .. code-block:: console
@@ -157,6 +168,16 @@ the NEORV32 user guide. If the :kconfig:`CONFIG_BUILD_OUTPUT_BIN` is enabled and
 the NEORV32 ``image_gen`` binary is available, the build system will
 automatically generate a :file:`zephyr.vhd` file suitable for initialising the
 internal instruction memory of the NEORV32.
+
+In order for the build system to automatically detect the ``image_gen`` binary
+it needs to be in the :envvar:`PATH` environment variable. If not, the path
+can be passed at build time:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: neorv32
+   :goals: build
+   :gen-args: -DCMAKE_PROGRAM_PATH=<path/to/neorv32/sw/image_gen/>
 
 Uploading via UART
 ==================
