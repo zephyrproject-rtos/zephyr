@@ -14,7 +14,7 @@
 static int lis3mdl_trig_cnt;
 
 static void lis3mdl_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, trig->chan);
 	lis3mdl_trig_cnt++;

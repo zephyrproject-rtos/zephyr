@@ -11,7 +11,7 @@
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }
