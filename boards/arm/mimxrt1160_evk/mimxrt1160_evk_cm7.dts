@@ -58,3 +58,7 @@
 &lpadc0 {
 	status = "okay";
 };
+
+&wdog1 {
+	status = "okay";
+};
