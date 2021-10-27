@@ -134,6 +134,17 @@ void lwm2m_firmware_set_update_result(uint8_t result);
 uint8_t lwm2m_firmware_get_update_result(void);
 #endif
 
+#if defined(CONFIG_LWM2M_SOFTWARE_MGMT_OBJ_SUPPORT)
+uint8_t lwm2m_software_mgmt_get_update_state(uint16_t obj_inst_id);
+void lwm2m_software_mgmt_set_update_state(uint16_t obj_inst_id, uint8_t state);
+void lwm2m_software_mgmt_set_update_result(uint16_t obj_inst_id, uint8_t result);
+uint8_t lwm2m_software_mgmt_get_update_result(uint16_t obj_inst_id);
+uint8_t lwm2m_software_mgmt_get_activation_state(uint16_t obj_inst_id);
+void lwm2m_software_mgmt_set_activation_state(uint16_t obj_inst_id, uint8_t state);
+void lwm2m_software_mgmt_set_package_name(uint16_t obj_inst_id, const char *name);
+void lwm2m_software_mgmt_set_package_version(uint16_t obj_inst_id, const char *name);
+#endif
+
 /* Attribute handling. */
 
 struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,

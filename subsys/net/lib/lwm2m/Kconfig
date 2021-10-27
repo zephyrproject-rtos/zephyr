@@ -326,6 +326,21 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Location Object (ID 6)
 
+config LWM2M_SOFTWARE_MGMT_OBJ_SUPPORT
+	bool "Software management object support"
+	help
+	  Include support for LWM2M Software Management Object (ID 9)
+
+if LWM2M_SOFTWARE_MGMT_OBJ_SUPPORT
+config LWM2M_SOFTWARE_MANAGEMENT_INSTANCE_COUNT
+	int "Maximum # of Software Management object instances"
+	default 1
+	range 1 10
+	help
+	  This setting establishes the total count of LWM2M Software Management
+	  object instances available to the client.
+endif
+
 menu "IPSO Alliance Smart Object Support"
 
 source "subsys/net/lib/lwm2m/Kconfig.ipso"

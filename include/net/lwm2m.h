@@ -43,6 +43,7 @@
 #define LWM2M_OBJECT_FIRMWARE_ID			5
 #define LWM2M_OBJECT_LOCATION_ID			6
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID		7
+#define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID		9
 
 /**
  * @brief LwM2M Objects produced by 3rd party Standards Development
@@ -363,6 +364,122 @@ lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void);
  */
 struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
+#endif
+
+/**
+ * @brief LWM2M Software Management object states
+ *
+ * An LwM2M client or the LwM2M Software Management object use the following codes
+ * to represent the LwM2M Software Management Update state (9/0/7).
+ */
+#define SW_MGMT_UPDATE_STATE_INITIAL		0
+#define SW_MGMT_UPDATE_STATE_DOWNLOAD_STARTED	1
+#define SW_MGMT_UPDATE_STATE_DOWNLOADED		2
+#define SW_MGMT_UPDATE_STATE_DELIVERED		3
+#define SW_MGMT_UPDATE_STATE_INSTALLED		4
+
+/**
+ * @brief LWM2M Software Management object activation states
+ *
+ * An LwM2M client or the LwM2M Software Management object use the following codes
+ * to represent the LwM2M Software Management Update state (9/0/12).
+ */
+#define SW_MGMT_ACTIVATION_STATE_DISABLED		0
+#define SW_MGMT_ACTIVATION_STATE_ENABLED		1
+
+/**
+ * @brief LWM2M Software Management object result codes
+ *
+ * After processing a software isntall, the client sets the result via one of
+ * the following codes via lwm2m_engine_set_u8("9/0/9", [result code])
+ */
+#define SW_MGMT_UPDATE_RESULT_DEFAULT			0
+#define SW_MGMT_UPDATE_RESULT_DOWNLOADING		1
+#define SW_MGMT_UPDATE_RESULT_INSTALLED			2
+#define SW_MGMT_UPDATE_RESULT_DOWNLOADED_VERIFIED	3
+#define SW_MGMT_UPDATE_RESULT_OUT_OF_STORAGE	50
+#define SW_MGMT_UPDATE_RESULT_OUT_OF_MEM		51
+#define SW_MGMT_UPDATE_RESULT_CONNECTION_LOST	52
+#define SW_MGMT_UPDATE_RESULT_INTEGRITY_CHECK_FAILED	53
+#define SW_MGMT_UPDATE_RESULT_UNSUP_PACKAGE_TYPE	54
+#define SW_MGMT_UPDATE_RESULT_INVALID_URI		56
+#define SW_MGMT_UPDATE_RESULT_UPDATE_ERROR		57
+#define SW_MGMT_UPDATE_RESULT_INSTALLATION_FAILURE	58
+#define SW_MGMT_UPDATE_RESULT_UNINSTALLATION_FAILURE_FOR_UPDATE	59
+
+#if defined(CONFIG_LWM2M_SOFTWARE_MGMT_OBJ_SUPPORT)
+/**
+ * @brief Set data callback for software block transfer.
+ *
+ * LwM2M clients use this function to register a callback for receiving the
+ * block transfer data when performing a software install.
+ *
+ * @param[in] cb A callback function to receive the block transfer data
+ */
+void lwm2m_software_mgmt_set_write_cb(lwm2m_engine_set_data_cb_t cb);
+
+/**
+ * @brief Get the data callback for software block transfer writes.
+ *
+ * @return A registered callback function to receive the block transfer data
+ */
+lwm2m_engine_set_data_cb_t lwm2m_software_mgmt_get_write_cb(void);
+
+/**
+ * @brief Set event callback to handle software install events.
+ *
+ * @param[in] cb A callback function to receive the software install event.
+ */
+void lwm2m_software_mgmt_set_install_cb(lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Get the event callback for software install events.
+ *
+ * @return A registered callback function to receive the software install event.
+ */
+lwm2m_engine_execute_cb_t lwm2m_software_mgmt_get_install_cb(void);
+
+/**
+ * @brief Set event callback to handle software uninstall events.
+ *
+ * @param[in] cb A callback function to receive the uninstall event.
+ */
+void lwm2m_software_mgmt_set_uninstall_cb(lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Get the event callback to handle software uninstall events.
+ *
+ * @return A registered callback function to receive the uninstall event.
+ */
+lwm2m_engine_execute_cb_t lwm2m_software_mgmt_get_uninstall_cb(void);
+
+/**
+ * @brief Set the event callback to handle software activation events.
+ *
+ * @param[in] cb A callback function to receive the activation event.
+ */
+void lwm2m_software_mgmt_set_activate_cb(lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Get the event callback to handle software activation events.
+ *
+ * @return A registered callback function to receive the software activation events.
+ */
+lwm2m_engine_execute_cb_t lwm2m_software_mgmt_get_activate_cb(void);
+
+/**
+ * @brief Set the event callback to handle software deactivation events.
+ *
+ * @param[in] cb A callback function to receive the deactivation event.
+ */
+void lwm2m_software_mgmt_set_deactivate_cb(lwm2m_engine_execute_cb_t cb);
+
+/**
+ * @brief Get the event callback to handle software deactivation events.
+ *
+ * @return A registered callback function to receive the software deactivation events.
+ */
+lwm2m_engine_execute_cb_t lwm2m_software_mgmt_get_deactivate_cb(void);
 #endif
 
 /**
