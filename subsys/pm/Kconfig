@@ -52,7 +52,6 @@ config PM_DEVICE
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
 	depends on PM_DEVICE
-	select POLL
 	help
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
