@@ -186,6 +186,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb_device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -211,6 +213,7 @@ Default Zephyr Peripheral Mapping:
 - I2C_1 SDA/SDL : PB9/PB8 (Arduino I2C)
 - I2C_2 SDA/SDL : PH5/PH4
 - DAC1 CH1 : PA4 (STMOD+1)
+- USB OTG : PA11/PA12
 
 System Clock
 ------------
