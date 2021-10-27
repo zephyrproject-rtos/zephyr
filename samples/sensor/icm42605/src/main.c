@@ -73,7 +73,7 @@ static struct sensor_trigger tap_trigger;
 static struct sensor_trigger double_tap_trigger;
 
 static void handle_icm42605_drdy(const struct device *dev,
-				 struct sensor_trigger *trig)
+				 const struct sensor_trigger *trig)
 {
 	int rc = process_icm42605(dev);
 
@@ -85,13 +85,13 @@ static void handle_icm42605_drdy(const struct device *dev,
 }
 
 static void handle_icm42605_tap(const struct device *dev,
-				 struct sensor_trigger *trig)
+				const struct sensor_trigger *trig)
 {
 	printf("Tap Detected!\n");
 }
 
 static void handle_icm42605_double_tap(const struct device *dev,
-				 struct sensor_trigger *trig)
+				       const struct sensor_trigger *trig)
 {
 	printf("Double Tap detected!\n");
 }
