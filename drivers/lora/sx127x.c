@@ -369,8 +369,7 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 
 		k_work_init(&dev_data.dio_work[i], sx127x_dio_work_handle);
 
-		gpio_pin_configure_dt(&sx127x_dios[i],
-				      GPIO_INPUT | GPIO_INT_DEBOUNCE);
+		gpio_pin_configure_dt(&sx127x_dios[i], GPIO_INPUT);
 
 		gpio_init_callback(&callbacks[i],
 				   sx127x_irq_callback,
