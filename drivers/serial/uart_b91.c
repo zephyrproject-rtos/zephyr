@@ -427,7 +427,8 @@ static int uart_b91_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 
-	return (uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) ? 1 : 0;
+	return ((uart_b91_get_tx_bufcnt(uart) < UART_TX_BUF_CNT) &&
+		((uart->ctrl0 & UART_TX_IRQ_MASK) != 0)) ? 1 : 0;
 }
 
 /* API implementation: irq_tx_complete */
@@ -558,7 +559,7 @@ static const struct uart_driver_api uart_b91_driver_api = {
 			      &uart_b91_data_##n,				    \
 			      &uart_b91_cfg_##n,				    \
 			      PRE_KERNEL_1,					    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		    \
+			      CONFIG_SERIAL_INIT_PRIORITY,			    \
 			      (void *)&uart_b91_driver_api);			    \
 										    \
 	static void uart_b91_irq_connect_##n(void)				    \

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Device.wrong_specifier_space_type test
+
+compatible: "wrong_specifier_space_type"
+
+properties:
+    wrong-type-for-specifier-space:
+        type: phandle
+        specifier-space: foobar

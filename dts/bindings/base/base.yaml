@@ -97,3 +97,14 @@ properties:
       required: false
       type: string-array
       description: Provided names of IO channel specifiers
+
+    mboxes:
+      required: false
+      type: phandle-array
+      description: mailbox / IPM channels specifiers
+      specifier-space: mbox
+
+    mbox-names:
+      required: false
+      type: string-array
+      description: Provided names of mailbox / IPM channel specifiers

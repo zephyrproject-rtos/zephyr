@@ -1078,6 +1078,18 @@ enum MCHP_GIRQ_INDEX {
 
 #define MCHP_GIRQ25_NVIC_AGGR		16u
 
+#define MCHP_MSVW00_GIRQ		24
+#define MCHP_MSVW01_GIRQ		24
+#define MCHP_MSVW02_GIRQ		24
+#define MCHP_MSVW03_GIRQ		24
+#define MCHP_MSVW04_GIRQ		24
+#define MCHP_MSVW05_GIRQ		24
+#define MCHP_MSVW06_GIRQ		24
+#define MCHP_MSVW07_GIRQ		25
+#define MCHP_MSVW08_GIRQ		25
+#define MCHP_MSVW09_GIRQ		25
+#define MCHP_MSVW10_GIRQ		25
+
 /* GIRQ26 Source, Enable_Set/Clr, Result registers bit positions */
 #define MCHP_GPIO_0240_GIRQ_POS		0
 #define MCHP_GPIO_0241_GIRQ_POS		1

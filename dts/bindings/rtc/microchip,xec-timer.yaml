@@ -37,7 +37,7 @@ properties:
       required: true
       description: PCR sleep enable register index and bit position.
 
-    "girq-cells":
+    "#girq-cells":
       type: int
       const: 2
 

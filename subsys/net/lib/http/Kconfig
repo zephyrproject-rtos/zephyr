@@ -26,6 +26,7 @@ config HTTP_CLIENT
 	bool "HTTP client API [EXPERIMENTAL]"
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
+	select EXPERIMENTAL
 	help
 	  HTTP client API
 

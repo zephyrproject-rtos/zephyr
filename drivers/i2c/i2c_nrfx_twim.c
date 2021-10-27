@@ -259,9 +259,18 @@ static int i2c_nrfx_twim_configure(const struct device *dev,
 	return 0;
 }
 
+static int i2c_nrfx_twim_recover_bus(const struct device *dev)
+{
+	nrfx_err_t err = nrfx_twim_bus_recover(get_dev_config(dev)->config.scl,
+					       get_dev_config(dev)->config.sda);
+
+	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
+}
+
 static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
-	.configure = i2c_nrfx_twim_configure,
-	.transfer  = i2c_nrfx_twim_transfer,
+	.configure   = i2c_nrfx_twim_configure,
+	.transfer    = i2c_nrfx_twim_transfer,
+	.recover_bus = i2c_nrfx_twim_recover_bus,
 };
 
 static int init_twim(const struct device *dev)

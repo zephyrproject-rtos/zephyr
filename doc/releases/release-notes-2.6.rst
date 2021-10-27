@@ -879,7 +879,8 @@ Libraries / Subsystems
   * MCUmgr
 
     * Fixed an issue with the file system management failing to
-      open files due to missing initializations of `fs_file_t` structures.
+      open files due to missing initializations of :c:type:`fs_file_t`
+      structures.
     * Fixed an issue where multiple SMP commands sent one after the other would
       corrupt CBOR payload.
     * Fixed problem where mcumgr over shell would stall and wait for

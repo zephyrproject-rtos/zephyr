@@ -127,5 +127,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &mcux_scg_init,
 		    NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &mcux_scg_driver_api);

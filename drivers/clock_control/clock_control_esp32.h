@@ -13,10 +13,10 @@
  * Convenience macros for the above functions.
  */
 #define I2C_WRITEREG_RTC(block, reg_add, indata) \
-	esp32_rom_i2c_writeReg(block, block##_HOSTID,  reg_add, indata)
+	esp_rom_i2c_writeReg(block, block##_HOSTID,  reg_add, indata)
 
 #define I2C_READREG_RTC(block, reg_add)	\
-	esp32_rom_i2c_readReg(block, block##_HOSTID,  reg_add)
+	esp_rom_i2c_readReg(block, block##_HOSTID,  reg_add)
 
 /*
  * Get voltage level for CPU to run at 240 MHz, or for flash/PSRAM to run at 80 MHz.

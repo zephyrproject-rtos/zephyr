@@ -34,11 +34,4 @@ config CAN_MAX_FILTER
 	  Defines the array size of the callback/msgq pointers.
 	  Must be at least the size of concurrent reads.
 
-
-config CAN_MCP2515_INIT_PRIORITY
-	int "Init priority"
-	default 80
-	help
-	  MCP2515 driver initialization priority, must be higher than SPI.
-
 endif # CAN_MCP2515

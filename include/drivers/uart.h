@@ -486,8 +486,8 @@ static inline int uart_callback_set(const struct device *dev,
  * @param dev     UART device structure.
  * @param buf     Pointer to transmit buffer.
  * @param len     Length of transmit buffer.
- * @param timeout Timeout in milliseconds. Valid only if flow control is
- *		  enabled. @ref SYS_FOREVER_MS disables timeout.
+ * @param timeout Timeout in microseconds. Valid only if flow control is
+ *		  enabled. @ref SYS_FOREVER_US disables timeout.
  *
  * @retval -ENOTSUP If not supported.
  * @retval -EBUSY   There is already an ongoing transfer.
@@ -550,7 +550,7 @@ static inline int z_impl_uart_tx_abort(const struct device *dev)
  * @param len     Buffer length.
  * @param timeout Inactivity period after receiving at least a byte which
  *		  triggers  @ref uart_event_type::UART_RX_RDY event. Given in
- *		  milliseconds. @ref SYS_FOREVER_MS disables timeout. See
+ *		  microseconds. @ref SYS_FOREVER_US disables timeout. See
  *		  @ref uart_event_type for details.
  *
  * @retval -ENOTSUP If not supported.
@@ -903,7 +903,8 @@ static inline void z_impl_uart_irq_tx_disable(const struct device *dev)
  *
  * @param dev UART device structure.
  *
- * @retval 1 If at least one char can be written to UART.
+ * @retval 1 If TX interrupt is enabled and at least one char can be
+ *           written to UART.
  * @retval 0 If device is not ready to write a new byte.
  * @retval -ENOSYS  if this function is not supported.
  * @retval -ENOTSUP if API is not enabled.

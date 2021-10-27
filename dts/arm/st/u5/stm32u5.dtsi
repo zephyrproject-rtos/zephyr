@@ -319,6 +319,15 @@
 			status = "disabled";
 			label = "LPTIM_1";
 		};
+
+		dac1: dac@46021800 {
+			compatible = "st,stm32-dac";
+			reg = <0x46021800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000040>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 

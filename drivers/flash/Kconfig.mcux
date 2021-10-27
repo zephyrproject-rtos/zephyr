@@ -27,6 +27,8 @@ endif # SOC_FLASH_MCUX
 
 if HAS_MCUX_FLEXSPI
 
+menu "Flexspi flash driver"
+
 config FLASH_MCUX_FLEXSPI_NOR
 	bool "MCUX FlexSPI NOR driver"
 	select FLASH_HAS_PAGE_LAYOUT
@@ -41,10 +43,28 @@ config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
 
+config FLASH_MCUX_FLEXSPI_HYPERFLASH
+	bool "MCUX FlexSPI HYPERFLASH driver"
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+
+endmenu
+
 config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 	bool "MCUX FlexSPI NOR write RAM buffer"
 	default y
 	depends on (FLASH_MCUX_FLEXSPI_NOR || FLASH_MCUX_FLEXSPI_MX25UM51345G)
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located on the
+	  flash itself.
+
+config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
+	bool "MCUX FlexSPI HYPERFLASH write RAM buffer"
+	default y
+	depends on FLASH_MCUX_FLEXSPI_HYPERFLASH
 	help
 	  Copy the data to a RAM buffer before writing it to the flash.
 	  This prevents faults when the data to write would be located on the

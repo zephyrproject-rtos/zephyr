@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+choice IPC_SERVICE_BACKEND
+	prompt "IPC service backend"
+
+config IPC_SERVICE_BACKEND_RPMSG_MI
+	bool "RPMSG backend - static VRINGs (multi-instance)"
+	select IPC_SERVICE_RPMSG
+	select IPC_SERVICE_STATIC_VRINGS
+	select OPENAMP
+	select IPM
+
+endchoice
+
+if IPC_SERVICE_BACKEND_RPMSG_MI
+
+rsource "Kconfig.rpmsg_mi"
+
+endif # IP_SERVICE_BACKEND_RPMSG_MI
+
+config IPC_SERVICE_RPMSG
+	bool "RPMsg support library"
+	help
+	  "RPMsg library"
+
+config IPC_SERVICE_STATIC_VRINGS
+	bool "Static VRINGs support library"
+	help
+	  "Static VRINGs library"

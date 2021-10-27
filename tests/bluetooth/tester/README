@@ -13,6 +13,9 @@ https://github.com/intel/auto-pts
 The auto-pts is an automation framework for PTS Bluetooth testing tool provided
 by Bluetooth SIG.
 
+See https://docs.zephyrproject.org/latest/guides/bluetooth/index.html for full
+documentation about how to use this test.
+
 --------------------------------------------------------------------------------
 
 Supported Profiles:

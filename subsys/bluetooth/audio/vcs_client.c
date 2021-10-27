@@ -772,8 +772,8 @@ int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs)
 	vcs_inst->cli.discover_params.func = primary_discover_func;
 	vcs_inst->cli.discover_params.uuid = &vcs_inst->cli.uuid.uuid;
 	vcs_inst->cli.discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	vcs_inst->cli.discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	vcs_inst->cli.discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	vcs_inst->cli.discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	vcs_inst->cli.discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	err = bt_gatt_discover(conn, &vcs_inst->cli.discover_params);
 	if (err == 0) {

@@ -221,8 +221,8 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	discover_params.func = discover_func;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	if (argc > 1) {
 		/* Only set the UUID if the value is valid (non zero) */
@@ -368,8 +368,8 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 
 	read_params.func = read_func;
 	read_params.handle_count = 0;
-	read_params.by_uuid.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	read_params.by_uuid.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	read_params.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	read_params.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	if (argc > 1) {
 		uuid.val = strtoul(argv[1], NULL, 16);
@@ -719,7 +719,7 @@ static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
 
 	shell_print(sh, "=================================================");
-	shell_print(sh, "Total: %u services %u attributes (%u bytes)",
+	shell_print(sh, "Total: %u services %u attributes (%zu bytes)",
 		    stats.svc_count, stats.attr_count, total_len);
 
 	return 0;
@@ -1046,7 +1046,7 @@ static uint8_t get_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	ret = attr->read(NULL, attr, (void *)buf, sizeof(buf), 0);
 	if (ret < 0) {
-		shell_print(sh, "Failed to read: %d", ret);
+		shell_print(sh, "Failed to read: %zd", ret);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1099,7 +1099,7 @@ static uint8_t set_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	ret = attr->write(NULL, attr, (void *)buf, i, 0, 0);
 	if (ret < 0) {
 		data->err = ret;
-		shell_error(data->sh, "Failed to write: %d", ret);
+		shell_error(data->sh, "Failed to write: %zd", ret);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1135,7 +1135,7 @@ int cmd_att_mtu(const struct shell *sh, size_t argc, char *argv[])
 
 	if (default_conn) {
 		mtu = bt_gatt_get_mtu(default_conn);
-		shell_print(sh, "MTU size: %d", mtu);
+		shell_print(sh, "MTU size: %u", mtu);
 	} else {
 		shell_print(sh, "No default connection");
 	}

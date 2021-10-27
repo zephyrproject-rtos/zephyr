@@ -196,6 +196,7 @@ Bluetooth controller:
     collaborators:
         - carlescufi
         - thoh-ot
+        - kruithofa
     files:
         - subsys/bluetooth/controller/
     labels:
@@ -381,6 +382,7 @@ Display drivers:
         - vanwinkeljan
     collaborators:
         - jfischer-no
+        - gmarull
     files:
         - drivers/display/
         - dts/bindings/display/
@@ -401,6 +403,7 @@ Documentation:
         - nashif
         - utzig
         - mbolivar-nordic
+        - gmarull
     files:
         - doc/
         - doc/_static/
@@ -678,6 +681,7 @@ Documentation:
       - albertofloyd
     collaborators:
       - VenkatKotakonda
+      - gmarull
     files:
         - drivers/kscan/
         - include/drivers/kscan.h
@@ -774,6 +778,8 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - gmarull
     files:
         - doc/reference/peripherals/pinmux.rst
         - drivers/pinmux/
@@ -809,6 +815,7 @@ Documentation:
         - anangl
     collaborators:
         - henrikbrixandersen
+        - gmarull
     files:
         - drivers/pwm/
         - dts/bindings/pwm/
@@ -836,6 +843,8 @@ Documentation:
         - MaureenHelm
     collaborators:
         - avisconti
+        - gmarull
+        - teburd
     files:
         - drivers/sensor/
         - include/drivers/sensor.h
@@ -1044,6 +1053,19 @@ MAINTAINERS file:
     description: >-
         Zephyr Maintainers File
 
+Mbed TLS:
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - ceolin
+    files:
+        - modules/mbedtls/
+        - tests/crypto/mbedtls/
+    labels:
+        - "area: Crypto / RNG"
+    description: >-
+        Mbed TLS module implementing the PSA Crypto API and TLS.
+
 MCU Manager:
     status: maintained
     maintainers:
@@ -1150,6 +1172,8 @@ Networking:
     status: maintained
     maintainers:
         - rlubos
+    collaborators:
+        - pdgendt
     files:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
@@ -1177,6 +1201,20 @@ Networking:
         - samples/net/mqtt_publisher/
     labels:
         - "area: Networking"
+
+"Networking: OpenThread":
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - pdgendt
+    files:
+        - subsys/net/l2/openthread/
+        - subsys/net/lib/openthread/
+        - samples/net/openthread/
+    labels:
+        - "area: Networking"
+        - "area: OpenThread"
 
 NIOS-2 arch:
     status: maintained
@@ -1217,6 +1255,8 @@ Power management:
     collaborators:
         - nashif
         - mengxianglinx
+        - gmarull
+        - teburd
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
@@ -1226,8 +1266,13 @@ Power management:
         - "area: Power Management"
 
 RISCV arch:
-    status: orphaned
+    status: maintained
+    maintainers:
+        - kgugala
+        - pgielda
+        - tgorochowik
     collaborators:
+        - fkokosinski
         - mgielda
         - katsuster
         - henrikbrixandersen
@@ -1305,6 +1350,20 @@ SPARC arch:
     labels:
         - "area: SPARC"
 
+State machine framework:
+    status: maintained
+    maintainers:
+        - sambhurst
+    collaborators:
+        - keith-zephyr
+    files:
+        - doc/guides/smf/
+        - include/smf.h
+        - lib/smf/
+        - tests/lib/smf/
+    labels:
+        - "area: State Machine Framework"
+
 Synopsys Platforms:
     status: maintained
     maintainers:
@@ -1376,6 +1435,7 @@ Intel Platforms (X86):
     collaborators:
         - jhedberg
         - aasthagr
+        - laurenmurphyx64
     files:
         - boards/x86/
         - soc/x86/
@@ -1451,6 +1511,7 @@ STM32 Platforms:
     collaborators:
         - ABOSTM
         - FRASTM
+        - gmarull
     files:
         - boards/arm/nucleo_*/
         - boards/arm/stm32*_disco/
@@ -1531,6 +1592,7 @@ TF-M Integration:
         - ioannisg
     files:
         - samples/tfm_integration/
+        - modules/trusted-firmware-m/
     labels:
         - "area: TF-M"
 
@@ -1538,6 +1600,8 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - teburd
     files:
         - subsys/tracing/
         - include/tracing/
@@ -1640,6 +1704,7 @@ x86 arch:
         - ceolin
         - enjiamai
         - aasthagr
+        - laurenmurphyx64
     files:
         - arch/x86/
         - include/arch/x86/

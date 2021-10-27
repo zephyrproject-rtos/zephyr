@@ -204,7 +204,7 @@ config TRACING_CMD_BUFFER_SIZE
 
 menu "Tracing Configuration"
 
-config SYSCALL_TRACING
+config TRACING_SYSCALL
 	bool "Enable tracing Syscalls"
 	default y
 	help
@@ -306,6 +306,12 @@ config TRACING_TIMER
 	default y
 	help
 	  Enable tracing Timers.
+
+config TRACING_EVENT
+	bool "Enable tracing Events"
+	default y
+	help
+	  Enable tracing Events.
 
 endmenu  # Tracing Configuration
 

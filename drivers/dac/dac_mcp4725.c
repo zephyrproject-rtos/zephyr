@@ -142,7 +142,7 @@ static const struct dac_driver_api mcp4725_driver_api = {
 			    NULL,					\
 			    NULL,					\
 			    &mcp4725_config_##index, POST_KERNEL,	\
-			    CONFIG_DAC_MCP4725_INIT_PRIORITY,		\
+			    CONFIG_DAC_INIT_PRIORITY,			\
 			    &mcp4725_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP4725);

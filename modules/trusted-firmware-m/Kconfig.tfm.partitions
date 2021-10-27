@@ -74,4 +74,17 @@ config TFM_PARTITION_AUDIT_LOG
 	  Note: the Audit Log service does not implement the IPC model
 	  interface so it may not be enabled together with IPC option.
 
+choice TFM_PARTITION_LOG_LEVEL
+	prompt "TF-M Partition Log Level"
+	default TFM_PARTITION_LOG_LEVEL_INFO
+config TFM_PARTITION_LOG_LEVEL_DEBUG
+	bool "Debug"
+config TFM_PARTITION_LOG_LEVEL_INFO
+	bool "Info"
+config TFM_PARTITION_LOG_LEVEL_ERROR
+	bool "Error"
+config TFM_PARTITION_LOG_LEVEL_SILENCE
+	bool "Off"
+endchoice
+
 endif # BUILD_WITH_TFM

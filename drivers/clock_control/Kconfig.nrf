@@ -65,6 +65,13 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
+config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
+	bool
+	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+	help
+	  Enabling indicates that calibration is perfomed by the clock control driver.
+
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"
 	default y if NRF_RTC_TIMER
@@ -101,6 +108,8 @@ config CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF
 	  Calibration is triggered if the temperature has changed by at least
 	  this amount since the last calibration.
 
+if CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
+
 config CLOCK_CONTROL_NRF_CALIBRATION_DEBUG
 	bool "Calibration instrumentation"
 	help
@@ -115,6 +124,7 @@ config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
 	select TEMP_NRF5
 	select SENSOR
 
+endif # CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 choice CLOCK_CONTROL_NRF_ACCURACY_PPM

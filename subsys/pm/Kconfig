@@ -21,10 +21,11 @@ menuconfig PM
 
 if PM
 
-config PM_DEBUG
-	bool "System Power Management debug hooks"
+config PM_STATS
+	bool "System Power Management Stats"
+	depends on STATS
 	help
-	  Enable System Power Management debugging hooks.
+	  Enable System Power Management Stats.
 
 source "subsys/pm/policy/Kconfig"
 

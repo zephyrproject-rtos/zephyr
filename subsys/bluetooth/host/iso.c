@@ -24,19 +24,25 @@
 #define LOG_MODULE_NAME bt_iso
 #include "common/log.h"
 
-NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
+#define iso_chan(_iso) ((_iso)->iso.chan);
+
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
 			  CONFIG_BT_ISO_RX_MTU, NULL);
 
 static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 #define iso_info(buf) (&iso_info_data[net_buf_id(buf)])
-#define iso_chan(_iso) ((_iso)->iso.chan);
+#endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_SYNC_RECEIVER */
+
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCAST)
+NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
 #endif /* CONFIG_BT_ISO_TX_FRAG_COUNT > 0 */
+#endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_BROADCAST */
 
 struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
@@ -49,33 +55,12 @@ static struct bt_iso_server *iso_server;
 struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
-#endif /* defined(CONFIG_BT_ISO_BROADCAST) */
+#endif /* CONFIG_BT_ISO_BROADCAST */
 
 /* Prototype */
 int hci_le_remove_cig(uint8_t cig_id);
 
-struct bt_iso_data_path {
-	/* Data Path direction */
-	uint8_t dir;
-	/* Data Path ID */
-	uint8_t pid;
-	/* Data Path param reference */
-	struct bt_iso_chan_path *path;
-};
-
-
-struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
-{
-	struct net_buf *buf = net_buf_alloc(&iso_rx_pool, timeout);
-
-	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_ISO_IN);
-	}
-
-	return buf;
-}
-
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
 static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
 {
 	struct bt_iso_chan *chan = iso->iso.chan;
@@ -89,6 +74,7 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
 		ops->sent(chan);
 	}
 }
+#endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_BROADCASTER */
 
 void hci_iso(struct net_buf *buf)
 {
@@ -190,8 +176,8 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 }
 
 
-static int hci_le_setup_iso_data_path(struct bt_conn *iso,
-				      struct bt_iso_data_path *path)
+static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
+				      const struct bt_iso_chan_path *path)
 {
 	struct bt_hci_cp_le_setup_iso_path *cp;
 	struct bt_hci_rp_le_setup_iso_path *rp;
@@ -206,15 +192,15 @@ static int hci_le_setup_iso_data_path(struct bt_conn *iso,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(iso->handle);
-	cp->path_dir = path->dir;
+	cp->path_dir = dir;
 	cp->path_id = path->pid;
-	cp->codec_id.coding_format = path->path->format;
-	cp->codec_id.company_id = sys_cpu_to_le16(path->path->cid);
-	cp->codec_id.vs_codec_id = sys_cpu_to_le16(path->path->vid);
-	sys_put_le24(path->path->delay, cp->controller_delay);
-	cp->codec_config_len = path->path->cc_len;
+	cp->codec_id.coding_format = path->format;
+	cp->codec_id.company_id = sys_cpu_to_le16(path->cid);
+	cp->codec_id.vs_codec_id = sys_cpu_to_le16(path->vid);
+	sys_put_le24(path->delay, cp->controller_delay);
+	cp->codec_config_len = path->cc_len;
 	cc = net_buf_add(buf, cp->codec_config_len);
-	memcpy(cc, path->path->cc, cp->codec_config_len);
+	memcpy(cc, path->cc, cp->codec_config_len);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SETUP_ISO_PATH, buf, &rsp);
 	if (err) {
@@ -275,13 +261,13 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 {
 	int err;
 	struct bt_iso_chan *chan;
-	struct bt_iso_chan_path default_path = { .pid = BT_ISO_DATA_PATH_HCI };
-	struct bt_iso_data_path out_path = {
-		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
-	struct bt_iso_data_path in_path = {
-		.dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR };
+	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
+	struct bt_iso_chan_path disabled_path = { .pid = BT_ISO_DATA_PATH_DISABLED };
+	struct bt_iso_chan_path *out_path;
+	struct bt_iso_chan_path *in_path;
 	struct bt_iso_chan_io_qos *tx_qos;
 	struct bt_iso_chan_io_qos *rx_qos;
+	uint8_t dir;
 
 	chan = iso_chan(iso);
 	if (chan == NULL) {
@@ -291,30 +277,58 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 	tx_qos = chan->qos->tx;
 	rx_qos = chan->qos->rx;
 
-	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &default_path;
-	in_path.pid  = tx_qos ? tx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
+	/* The following code sets the in and out paths for ISO data.
+	 * If the application provides a path for a direction (tx/rx) we use
+	 * that, otherwise we simply fall back to HCI.
+	 *
+	 * If the direction is not set (by whether tx_qos or rx_qos is NULL),
+	 * then we fallback to the HCI path object, but we disable the direction
+	 * in the controller.
+	 */
 
-	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &default_path;
-	out_path.pid  = rx_qos ? rx_qos->path->pid : BT_ISO_DATA_PATH_DISABLED;
+	if (tx_qos != NULL) {
+		if (tx_qos->path != NULL) { /* Use application path */
+			in_path = tx_qos->path;
+		} else { /* else fallback to HCI path */
+			in_path = &default_hci_path;
+		}
+	} else {
+		/* Disable TX */
+		in_path = &disabled_path;
+	}
+
+	if (rx_qos != NULL) {
+		if (rx_qos->path != NULL) { /* Use application path */
+			out_path = rx_qos->path;
+		} else { /* else fallback to HCI path */
+			out_path = &default_hci_path;
+		}
+	} else {
+		/* Disable RX */
+		out_path = &disabled_path;
+	}
 
 	if (iso->iso.is_bis) {
 		/* Only set one data path for BIS as per the spec */
 		if (tx_qos) {
-			return hci_le_setup_iso_data_path(iso, &in_path);
+			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+			return hci_le_setup_iso_data_path(iso, dir, in_path);
 
 		} else {
-			return hci_le_setup_iso_data_path(iso, &out_path);
+			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+			return hci_le_setup_iso_data_path(iso, dir, out_path);
 		}
 
 	} else {
 		/* Setup both directions for CIS*/
-		err = hci_le_setup_iso_data_path(iso, &in_path);
+		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		err = hci_le_setup_iso_data_path(iso, dir, in_path);
 		if (err) {
 			return err;
 		}
 
-		return hci_le_setup_iso_data_path(iso, &out_path);
-
+		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+		return hci_le_setup_iso_data_path(iso, dir, out_path);
 	}
 }
 
@@ -512,6 +526,19 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
 }
 #endif /* CONFIG_BT_DEBUG_ISO */
 
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
+{
+	struct net_buf *buf = net_buf_alloc(&iso_rx_pool, timeout);
+
+	if (buf) {
+		net_buf_reserve(buf, BT_BUF_RESERVE);
+		bt_buf_set_type(buf, BT_BUF_ISO_IN);
+	}
+
+	return buf;
+}
+
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_data_hdr *hdr;
@@ -653,7 +680,9 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 
 	bt_conn_reset_rx_state(iso);
 }
+#endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 {
 	struct bt_hci_iso_data_hdr *hdr;
@@ -679,6 +708,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 
 	return bt_conn_send_cb(chan->iso, buf, bt_iso_send_cb, NULL);
 }
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 			      bool is_tx)
@@ -1466,13 +1496,13 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 			return -EINVAL;
 		}
 
-		if (broadcaster) {
+		if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && broadcaster) {
 			CHECKIF(bis->qos->tx == NULL ||
 				!valid_chan_io_qos(bis->qos->tx, true)) {
 				BT_DBG("Invalid BIS QOS");
 				return -EINVAL;
 			}
-		} else {
+		} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
 			CHECKIF(bis->qos->rx == NULL) {
 				BT_DBG("Invalid BIS QOS");
 				return -EINVAL;
@@ -1496,6 +1526,7 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 	return 0;
 }
 
+#if defined(CONFIG_BT_ISO_BROADCASTER)
 static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 			     struct bt_iso_big_create_param *param)
 {
@@ -1632,6 +1663,65 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 	return err;
 }
 
+void hci_le_big_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_big_complete *evt = (void *)buf->data;
+	struct bt_iso_big *big;
+
+	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
+		BT_WARN("Invalid BIG handle");
+
+		big = big_lookup_flag(BT_BIG_PENDING);
+		if (big) {
+			big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
+			cleanup_big(big);
+		}
+
+		return;
+	}
+
+	big = lookup_big_by_handle(evt->big_handle);
+	atomic_clear_bit(big->flags, BT_BIG_PENDING);
+
+	BT_DBG("BIG[%u] %p completed, status %u", big->handle, big, evt->status);
+
+	if (evt->status || evt->num_bis != big->num_bis) {
+		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
+			BT_ERR("Invalid number of BIS created, was %u expected %u",
+			       evt->num_bis, big->num_bis);
+		}
+		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
+		cleanup_big(big);
+		return;
+	}
+
+	for (int i = 0; i < big->num_bis; i++) {
+		struct bt_iso_chan *bis = big->bis[i];
+
+		bis->iso->handle = sys_le16_to_cpu(evt->handle[i]);
+		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
+	}
+}
+
+void hci_le_big_terminate(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_big_terminate *evt = (void *)buf->data;
+	struct bt_iso_big *big;
+
+	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
+		BT_WARN("Invalid BIG handle");
+		return;
+	}
+
+	big = lookup_big_by_handle(evt->big_handle);
+
+	BT_DBG("BIG[%u] %p terminated", big->handle, big);
+
+	big_disconnect(big, evt->reason);
+	cleanup_big(big);
+}
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+
 static int hci_le_terminate_big(struct bt_iso_big *big)
 {
 	struct bt_hci_cp_le_terminate_big *req;
@@ -1699,7 +1789,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	/* They all have the same QOS dir so we can just check the first */
 	broadcaster = big->bis[0]->qos->tx ? true : false;
 
-	if (broadcaster) {
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && broadcaster) {
 		err = hci_le_terminate_big(big);
 
 		/* Wait for BT_HCI_EVT_LE_BIG_TERMINATE before cleaning up
@@ -1710,13 +1800,15 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 				bt_iso_chan_set_state(big->bis[i], BT_ISO_DISCONNECT);
 			}
 		}
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
 		err = hci_le_big_sync_term(big);
 
 		if (!err) {
 			big_disconnect(big, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 			cleanup_big(big);
 		}
+	} else {
+		err = -EINVAL;
 	}
 
 	if (err) {
@@ -1726,64 +1818,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	return err;
 }
 
-void hci_le_big_complete(struct net_buf *buf)
-{
-	struct bt_hci_evt_le_big_complete *evt = (void *)buf->data;
-	struct bt_iso_big *big;
-
-	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
-		BT_WARN("Invalid BIG handle");
-
-		big = big_lookup_flag(BT_BIG_PENDING);
-		if (big) {
-			big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-			cleanup_big(big);
-		}
-
-		return;
-	}
-
-	big = lookup_big_by_handle(evt->big_handle);
-	atomic_clear_bit(big->flags, BT_BIG_PENDING);
-
-	BT_DBG("BIG[%u] %p completed, status %u", big->handle, big, evt->status);
-
-	if (evt->status || evt->num_bis != big->num_bis) {
-		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
-			BT_ERR("Invalid number of BIS created, was %u expected %u",
-			       evt->num_bis, big->num_bis);
-		}
-		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-		cleanup_big(big);
-		return;
-	}
-
-	for (int i = 0; i < big->num_bis; i++) {
-		struct bt_iso_chan *bis = big->bis[i];
-
-		bis->iso->handle = sys_le16_to_cpu(evt->handle[i]);
-		bt_conn_set_state(bis->iso, BT_CONN_CONNECTED);
-	}
-}
-
-void hci_le_big_terminate(struct net_buf *buf)
-{
-	struct bt_hci_evt_le_big_terminate *evt = (void *)buf->data;
-	struct bt_iso_big *big;
-
-	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
-		BT_WARN("Invalid BIG handle");
-		return;
-	}
-
-	big = lookup_big_by_handle(evt->big_handle);
-
-	BT_DBG("BIG[%u] %p terminated", big->handle, big);
-
-	big_disconnect(big, evt->reason);
-	cleanup_big(big);
-}
-
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 void hci_le_big_sync_established(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_established *evt = (void *)buf->data;
@@ -1971,4 +2006,5 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 
 	return 0;
 }
-#endif /* defined(CONFIG_BT_ISO_BROADCAST) */
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
+#endif /* CONFIG_BT_ISO_BROADCAST */

@@ -22,13 +22,13 @@
 
 #define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\
-	k_mutex_lock(&conn->lock, K_FOREVER);				\
+	k_mutex_lock(&_conn->lock, K_FOREVER);				\
 									\
 	sys_snode_t *_node = sys_slist_##_op(_slist);			\
 									\
 	_type * _x = _node ? CONTAINER_OF(_node, _type, _link) : NULL;	\
 									\
-	k_mutex_unlock(&conn->lock);					\
+	k_mutex_unlock(&_conn->lock);					\
 									\
 	_x;								\
 })
@@ -127,7 +127,7 @@
 		NET_DBG("conn: %p total=%zd, unacked_len=%d, "                 \
 			"send_win=%hu, mss=%hu",                               \
 			(_conn), net_pkt_get_len((_conn)->send_data),          \
-			conn->unacked_len, conn->send_win,                     \
+			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
 		NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu", \
 			(_conn),                                               \
@@ -136,11 +136,6 @@
 					&(_conn)->send_data_timer)),           \
 			(_conn)->send_data_retries);                           \
 	})
-
-#define TCPOPT_END	0
-#define TCPOPT_NOP	1
-#define TCPOPT_MAXSEG	2
-#define TCPOPT_WINDOW	3
 
 enum pkt_addr {
 	TCP_EP_SRC = 1,
@@ -167,14 +162,14 @@ struct tcphdr {
 } __packed;
 
 enum th_flags {
-	FIN = 1,
-	SYN = 1 << 1,
-	RST = 1 << 2,
-	PSH = 1 << 3,
-	ACK = 1 << 4,
-	URG = 1 << 5,
-	ECN = 1 << 6,
-	CWR = 1 << 7,
+	FIN = BIT(0),
+	SYN = BIT(1),
+	RST = BIT(2),
+	PSH = BIT(3),
+	ACK = BIT(4),
+	URG = BIT(5),
+	ECN = BIT(6),
+	CWR = BIT(7),
 };
 
 enum tcp_state {
@@ -202,6 +197,18 @@ union tcp_endpoint {
 	struct sockaddr_in6 sin6;
 };
 
+/* TCP Option codes */
+#define NET_TCP_END_OPT          0
+#define NET_TCP_NOP_OPT          1
+#define NET_TCP_MSS_OPT          2
+#define NET_TCP_WINDOW_SCALE_OPT 3
+
+/* TCP Option sizes */
+#define NET_TCP_END_SIZE          1
+#define NET_TCP_NOP_SIZE          1
+#define NET_TCP_MSS_SIZE          4
+#define NET_TCP_WINDOW_SCALE_SIZE 3
+
 struct tcp_options {
 	uint16_t mss;
 	uint16_t window;
@@ -225,6 +232,7 @@ struct tcp { /* TCP connection */
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
+	struct tcp_options send_options;
 	struct k_work_delayable send_timer;
 	struct k_work_delayable recv_queue_timer;
 	struct k_work_delayable send_data_timer;

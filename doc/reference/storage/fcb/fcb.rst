@@ -40,28 +40,28 @@ Usage
 
 To add an entry to circular buffer:
 
-- Call `fcb_append` to get the location where data can be written. If
-  this fails due to lack of space, you can call `fcb_rotate` to erase
-  the oldest sector which will make the space. And then call `fcb_append`
-  again.
-- Use `flash_area_write` to write entry contents.
-- Call `fcb_append_finish` when done. This completes the writing of the
+- Call :c:func:`fcb_append` to get the location where data can be written. If
+  this fails due to lack of space, you can call :c:func:`fcb_rotate` to erase
+  the oldest sector which will make the space. And then call
+  :c:func:`fcb_append` again.
+- Use :c:func:`flash_area_write` to write entry contents.
+- Call :c:func:`fcb_append_finish` when done. This completes the writing of the
   entry by calculating the checksum.
 
 To read contents of the circular buffer:
 
-- Call `fcb_walk` with a pointer to your callback function.
+- Call :c:func:`fcb_walk` with a pointer to your callback function.
 - Within callback function copy in data from the entry using
-  `flash_area_read`. You can tell when all data from within a sector
+  :c:func:`flash_area_read`. You can tell when all data from within a sector
   has been read by monitoring the returned entry's area pointer. Then you
-  can call `fcb_rotate`, if you're done with that data.
+  can call :c:func:`fcb_rotate`, if you're done with that data.
 
 Alternatively:
 
-- Call `fcb_getnext` with 0 in entry offset to get the pointer to
+- Call :c:func:`fcb_getnext` with 0 in entry offset to get the pointer to
   the oldest entry.
-- Use `flash_area_read` to read entry contents.
-- Call `fcb_getnext` with pointer to current entry to get the next one.
+- Use :c:func:`flash_area_read` to read entry contents.
+- Call :c:func:`fcb_getnext` with pointer to current entry to get the next one.
   And so on.
 
 API Reference

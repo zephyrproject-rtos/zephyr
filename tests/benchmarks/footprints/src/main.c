@@ -30,6 +30,7 @@ struct k_thread my_thread_0;
 extern void run_heap_malloc_free(void);
 extern void run_libc(void);
 extern void run_mutex(void);
+extern void run_pm_device(void);
 extern void run_semaphore(void);
 extern void run_thread_system(void);
 extern void run_timer(void);
@@ -62,6 +63,10 @@ void main(void)
 	run_libc();
 
 	run_workq();
+
+#ifdef CONFIG_PM_DEVICE
+	run_pm_device();
+#endif
 
 #ifdef CONFIG_USERSPACE
 	run_userspace();

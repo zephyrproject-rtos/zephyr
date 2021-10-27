@@ -279,7 +279,7 @@ static struct can_stm32fd_data can_stm32fd_dev_data_##inst;
 #define CAN_STM32FD_DEVICE_INST(inst)                                          \
 DEVICE_DT_INST_DEFINE(inst, &can_stm32fd_init, NULL,                           \
 		      &can_stm32fd_dev_data_##inst, &can_stm32fd_cfg_##inst,   \
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,         \
+		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                   \
 		      &can_api_funcs);
 
 #define CAN_STM32FD_INST(inst)     \

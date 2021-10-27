@@ -9,7 +9,6 @@ CONFIG_RISCV_MACHINE_TIMER=y
 CONFIG_STACK_SENTINEL=y
 
 # Zephyr Kernel Configuration
-CONFIG_PRINTK=y
 CONFIG_XIP=n
 
 # Serial Drivers

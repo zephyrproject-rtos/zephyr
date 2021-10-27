@@ -235,13 +235,13 @@ static int data_out_overwrite_mode(uint8_t *data, size_t length, void *ctx)
 {
 	if (!is_sync_mode()) {
 		RTT_LOCK();
-	}
+		SEGGER_RTT_WriteWithOverwriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
+						    data, length);
 
-	SEGGER_RTT_WriteWithOverwriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
-					    data, length);
-
-	if (!is_sync_mode()) {
 		RTT_UNLOCK();
+	} else {
+		SEGGER_RTT_WriteWithOverwriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
+						    data, length);
 	}
 
 	return length;

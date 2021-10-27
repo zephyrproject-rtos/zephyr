@@ -321,7 +321,7 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 			    &mcux_lpsci_##n##_data,			\
 			    &mcux_lpsci_##n##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &mcux_lpsci_driver_api);			\
 									\
 	MCUX_LPSCI_CONFIG_FUNC(n)					\

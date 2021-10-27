@@ -78,7 +78,7 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 DEVICE_DT_INST_DEFINE(0,
 		    entropy_native_posix_init, NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_native_posix_api_funcs);
 
 static void add_fake_entropy_option(void)

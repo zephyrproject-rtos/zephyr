@@ -255,19 +255,17 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo L552ZE Q board includes an ST-LINK/V3E embedded debug tool
-interface. This interface is not yet supported by the openocd version.
-Instead, support can be enabled on pyocd by adding "pack" support with
-the following pyocd command:
+Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool
+interface. Support can be enabled on pyocd by adding "pack" support with the
+following pyocd command:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32l552ze
 
-Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.2.
+Alternatively, this interface is supported by the openocd version
+included in the Zephyr SDK since v0.13.1.
 
 Flashing an application to Nucleo L552ZE Q
 ------------------------------------------

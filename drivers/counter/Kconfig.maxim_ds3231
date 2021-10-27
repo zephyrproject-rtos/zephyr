@@ -9,10 +9,3 @@ config COUNTER_MAXIM_DS3231
 	select POLL
 	help
 	  Enable counter driver based on Maxim DS3231 I2C device.
-
-config COUNTER_MAXIM_DS3231_INIT_PRIORITY
-	int "Init priority"
-	depends on COUNTER_MAXIM_DS3231
-	default 65
-	help
-	  DS3231 device driver initialization priority.

@@ -155,5 +155,5 @@ DEVICE_DT_INST_DEFINE(0,
 		    &mcux_ccm_init,
 		    NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &mcux_ccm_driver_api);

@@ -7,6 +7,7 @@ menuconfig NET_CONNECTION_MANAGER
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
+	select EXPERIMENTAL
 	help
 	  When enabled, this will start the connection manager that will
 	  listen to network interface and IP events in order to verify

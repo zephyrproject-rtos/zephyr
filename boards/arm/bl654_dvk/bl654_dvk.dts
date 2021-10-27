@@ -106,6 +106,15 @@
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
+
+	dac0: mcp4725@60 {
+		/* MCP4725 not populated at factory */
+		compatible = "microchip,mcp4725";
+		reg = <0x60>;
+		label = "MCP4725";
+		#io-channel-cells = <1>;
+		status = "disabled";
+	};
 };
 
 &pwm0 {

@@ -252,7 +252,7 @@ static void counter_esp32_isr(void *arg)
 			      counter_esp32_init,				 \
 			      NULL, &counter_data_##n,				 \
 			      &counter_config_##n, PRE_KERNEL_1,		 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_api);
+			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 #ifdef CONFIG_COUNTER_ESP32_TG0_T0
 ESP32_COUNTER_INIT(0);
