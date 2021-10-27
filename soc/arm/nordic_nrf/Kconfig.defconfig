@@ -28,7 +28,7 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
 config PM
-	default y if SYS_CLOCK_EXISTS && !HAS_NO_SYS_PM && MULTITHREADING
+	default y if SYS_CLOCK_EXISTS && !HAS_NO_PM && MULTITHREADING
 
 config BUILD_OUTPUT_HEX
 	default y
