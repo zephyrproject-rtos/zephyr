@@ -1369,10 +1369,15 @@ int usb_ep_read_continue(uint8_t ep)
 	return usb_dc_ep_read_continue(ep);
 }
 
+bool usb_get_remote_wakeup_status(void)
+{
+	return usb_dev.remote_wakeup;
+}
+
 int usb_wakeup_request(void)
 {
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-		if (usb_dev.remote_wakeup) {
+		if (usb_get_remote_wakeup_status()) {
 			return usb_dc_wakeup_request();
 		}
 		return -EACCES;
