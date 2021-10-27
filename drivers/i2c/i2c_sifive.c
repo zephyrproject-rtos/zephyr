@@ -329,7 +329,7 @@ static struct i2c_driver_api i2c_sifive_api = {
 		.f_sys = DT_INST_PROP(n, input_frequency), \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	I2C_DEVICE_DT_INST_DEFINE(n, \
 			    i2c_sifive_init, \
 			    NULL, \
 			    NULL, \

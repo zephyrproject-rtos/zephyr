@@ -1163,7 +1163,7 @@ static int i2c_xec_init(const struct device *dev)
 		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &i2c_xec_init, NULL,			\
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,		\
 		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);					\
