@@ -36,6 +36,8 @@ Changes in this release
 
 * Replaced custom LwM2M :c:struct:`float32_value` type with a native double type.
 
+* Added function for getting status of USB device remote wakeup feature.
+
 ==========================
 
 Removed APIs in this release
