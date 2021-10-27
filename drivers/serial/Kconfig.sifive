@@ -52,7 +52,7 @@ config UART_SIFIVE_PORT_1_RXCNT_IRQ
 
 config UART_SIFIVE_PORT_1_TXCNT_IRQ
 	int "Port 1 TX Interrupt Threshold Count"
-	default 0
+	default 1
 	depends on UART_SIFIVE_PORT_1
 	help
 	  Port 1 TX Threshold at which the TX FIFO interrupt triggers.
