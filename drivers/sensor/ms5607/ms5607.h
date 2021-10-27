@@ -95,7 +95,7 @@ struct ms5607_config {
 		uint16_t i2c_addr;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		struct spi_config spi_cfg;
+		struct spi_dt_spec spi_bus;
 #endif
 	} bus_cfg;
 };

@@ -325,8 +325,8 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 	{								\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.tf = &ms5607_spi_transfer_function,			\
-		.bus_cfg.spi_cfg =					\
-			SPI_CONFIG_DT_INST(inst,			\
+		.bus_cfg.spi_bus =					\
+			SPI_DT_SPEC_INST_GET(inst,			\
 					   MS5607_SPI_OPERATION,	\
 					   0),				\
 	}
