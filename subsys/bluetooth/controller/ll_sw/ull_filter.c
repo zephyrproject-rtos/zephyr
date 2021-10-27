@@ -913,8 +913,9 @@ bool ull_filter_lll_rl_idx_allowed(uint8_t irkmatch_ok, uint8_t rl_idx)
 	return !rl[rl_idx].pirk || rl[rl_idx].dev;
 }
 
-bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
-				    uint8_t *rl_idx)
+bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type,
+				    const uint8_t *id_addr,
+				    uint8_t *const rl_idx)
 {
 	uint8_t i, j;
 
@@ -945,8 +946,8 @@ bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr,
 	return true;
 }
 
-bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type, uint8_t *id_addr,
-				    uint8_t rl_idx)
+bool ull_filter_lll_rl_addr_resolve(uint8_t id_addr_type,
+				    const uint8_t *id_addr, uint8_t rl_idx)
 {
 	/* Unable to resolve if AR is disabled, no RL entry or no local IRK */
 	if (!rl_enable || rl_idx >= ARRAY_SIZE(rl) || !rl[rl_idx].lirk) {

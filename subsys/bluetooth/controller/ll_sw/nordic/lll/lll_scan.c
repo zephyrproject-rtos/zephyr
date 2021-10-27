@@ -81,16 +81,18 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t phy_flags_rx);
 
 #if defined(CONFIG_BT_CENTRAL)
-static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, uint8_t rl_idx);
+static inline bool isr_scan_init_check(const struct lll_scan *lll,
+				       const struct pdu_adv *pdu,
+				       uint8_t rl_idx);
 #endif /* CONFIG_BT_CENTRAL */
 
-static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				uint8_t addr_type, uint8_t *addr,
-				uint8_t rl_idx, bool *dir_report);
-static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
-					   uint8_t addr_type, uint8_t *addr,
-					   bool *dir_report);
+static bool isr_scan_tgta_check(const struct lll_scan *lll, bool init,
+				uint8_t addr_type, const uint8_t *addr,
+				uint8_t rl_idx, bool *const dir_report);
+static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
+					   uint8_t addr_type,
+					   const uint8_t *addr,
+					   bool *const dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
@@ -158,8 +160,8 @@ bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
 }
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_ADV_EXT)
-bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
-			 uint8_t rl_idx)
+bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
+			 const uint8_t *addr, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Only applies to initiator with no filter accept list */
@@ -186,15 +188,15 @@ bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 #endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
-			     struct pdu_adv *pdu, uint8_t rl_idx,
-			     bool *dir_report)
+bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
+			     const struct pdu_adv *pdu, uint8_t rl_idx,
+			     bool *const dir_report)
 {
+	const uint8_t *adva;
+	const uint8_t *tgta;
 	uint8_t is_directed;
 	uint8_t tx_addr;
 	uint8_t rx_addr;
-	uint8_t *adva;
-	uint8_t *tgta;
 
 	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
 		return true;
@@ -1394,8 +1396,9 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, uint8_t rl_idx)
+static inline bool isr_scan_init_check(const struct lll_scan *lll,
+				       const struct pdu_adv *pdu,
+				       uint8_t rl_idx)
 {
 	return ((((lll->filter_policy & SCAN_FP_FILTER) != 0U) ||
 		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
@@ -1411,8 +1414,8 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				uint8_t addr_type, uint8_t *addr,
+static bool isr_scan_tgta_check(const struct lll_scan *lll, bool init,
+				uint8_t addr_type, const uint8_t *addr,
 				uint8_t rl_idx, bool *dir_report)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1434,9 +1437,10 @@ static bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 	       isr_scan_tgta_rpa_check(lll, addr_type, addr, dir_report);
 }
 
-static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
-					   uint8_t addr_type, uint8_t *addr,
-					   bool *dir_report)
+static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
+					   uint8_t addr_type,
+					   const uint8_t *addr,
+					   bool *const dir_report)
 {
 	if (((lll->filter_policy & SCAN_FP_EXT) != 0U) && (addr_type != 0U) &&
 	    ((addr[5] & 0xc0) == 0x40)) {
