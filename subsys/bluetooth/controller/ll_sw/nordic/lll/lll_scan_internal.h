@@ -7,11 +7,11 @@
 void lll_scan_isr_resume(void *param);
 bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
 			   uint8_t devmatch_ok, uint8_t rl_idx);
-bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
-			 uint8_t rl_idx);
-bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
-			     struct pdu_adv *pdu, uint8_t rl_idx,
-			     bool *dir_report);
+bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
+			 const uint8_t *addr, uint8_t rl_idx);
+bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
+			     const struct pdu_adv *pdu, uint8_t rl_idx,
+			     bool *const dir_report);
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 				  uint8_t phy, uint8_t adv_tx_addr,
 				  uint8_t *adv_addr, uint8_t init_tx_addr,

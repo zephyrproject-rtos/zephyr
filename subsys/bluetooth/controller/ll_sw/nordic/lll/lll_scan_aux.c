@@ -298,7 +298,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	} else if (ull_filter_lll_rl_enabled()) {
-		struct lll_filter *fal =
+		const struct lll_filter *fal =
 			ull_filter_lll_get((lll->filter_policy &
 					    SCAN_FP_FILTER) != 0U);
 		uint8_t count, *irks = ull_filter_lll_irks_get(&count);
@@ -311,7 +311,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) && lll->filter_policy) {
 		/* Setup Radio Filter */
-		struct lll_filter *fal = ull_filter_lll_get(true);
+		const struct lll_filter *fal = ull_filter_lll_get(true);
 
 		radio_filter_configure(fal->enable_bitmask,
 				       fal->addr_type_bitmask,
@@ -368,7 +368,7 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && ull_filter_lll_rl_enabled()) {
-		struct lll_filter *fal =
+		const struct lll_filter *fal =
 			ull_filter_lll_get((lll->filter_policy &
 					    SCAN_FP_FILTER) != 0);
 		const uint8_t *adva = &ext_hdr->data[ADVA_OFFSET];
@@ -387,7 +387,7 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 		}
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
 		   lll->filter_policy) {
-		struct lll_filter *fal = ull_filter_lll_get(true);
+		const struct lll_filter *fal = ull_filter_lll_get(true);
 		const uint8_t *adva = &ext_hdr->data[ADVA_OFFSET];
 
 		*devmatch_ok = ull_filter_lll_fal_match(fal, pdu->tx_addr, adva,
