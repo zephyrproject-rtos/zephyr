@@ -1008,7 +1008,7 @@ release:
 * :github:`31928` - usb loopback not work on nrf52840
 * :github:`31924` - IVSHMEM with ACRN not working
 * :github:`31921` - west flash not working with pyocd
-* :github:`31920` - BME280: Use of deprecated `CONFIG_DEVICE_POWER_MANAGEMENT`
+* :github:`31920` - BME280: Use of deprecated ``CONFIG_DEVICE_POWER_MANAGEMENT``
 * :github:`31911` - Bluetooth: Mesh: Network buffer overflow on too long proxy messages
 * :github:`31907` - settings: Unhandled error in NVS backend
 * :github:`31905` - Question : Friend & Low power node with nRF52840
