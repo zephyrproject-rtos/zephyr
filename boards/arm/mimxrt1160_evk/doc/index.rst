@@ -105,6 +105,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | flexcan                             |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1160_evk/mimxrt1160_evk_cm7_defconfig``
