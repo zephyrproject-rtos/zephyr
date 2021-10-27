@@ -7,9 +7,8 @@
 #include <device.h>
 #include <pm/device.h>
 
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power);
+LOG_MODULE_REGISTER(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
 #if defined(CONFIG_PM_DEVICE)
 extern const struct device *__pm_device_slots_start[];
