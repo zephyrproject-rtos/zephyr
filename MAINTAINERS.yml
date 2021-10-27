@@ -465,6 +465,8 @@ Documentation:
         - tests/drivers/can/
         - samples/subsys/canbus/
         - doc/reference/networking/can_api.rst
+        - modules/canopennode/
+        - samples/modules/canopennode/
     labels:
         - "area: CAN"
 
