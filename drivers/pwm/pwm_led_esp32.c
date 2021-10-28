@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp32_gpio
+#define DT_DRV_COMPAT espressif_esp32_ledc
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <esp_intr_alloc.h>
@@ -142,7 +142,6 @@ static void pwm_led_esp32_duty_config(int speed_mode,
 	volatile uint32_t hpoint_addr;
 	volatile uint32_t duty_addr;
 	volatile uint32_t conf1_addr;
-	volatile uint32_t conf1_val;
 
 	if (speed_mode == PWM_LED_ESP32_HIGH_SPEED) {
 		hpoint_addr = PWM_ESP32_HSCH_HPOINT(channel);
@@ -388,8 +387,6 @@ int pwm_led_esp32_init(const struct device *dev)
 #include <device.h>
 #include <init.h>
 
-DEVICE_DECLARE(pwm_led_esp32_0);
-
 #define CH_HS_TIMER(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _TIMER) & 0x2)
 #define CH_HS_GPIO(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _GPIO) & 0xfff)
 #define CH_LS_TIMER(i) ((CONFIG_PWM_LED_ESP32_LS_CH ## i ## _TIMER) & 0x2)
@@ -503,7 +500,13 @@ const static struct pwm_led_esp32_config pwm_led_esp32_config = {
 	},
 };
 
-DEVICE_DEFINE(pwm_led_esp32_0, CONFIG_PWM_LED_ESP32_DEV_NAME_0,
-		pwm_led_esp32_init, NULL, NULL,
-		&pwm_led_esp32_config, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_led_esp32_api);
+DEVICE_DT_DEFINE(
+	DT_NODELABEL(ledc0),
+	&pwm_led_esp32_init,
+	NULL,
+	NULL,
+	&pwm_led_esp32_config,
+	POST_KERNEL,
+	CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	&pwm_led_esp32_api
+);
