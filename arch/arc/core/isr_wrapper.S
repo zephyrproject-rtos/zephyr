@@ -277,6 +277,10 @@ SECTION_FUNC(TEXT, _isr_demux)
 	PUSHR r59
 #endif
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	bl z_sched_usage_stop
+#endif
+
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
