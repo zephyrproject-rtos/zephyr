@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2020 Bose Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +21,6 @@
  *
  * @return uint8_t A content control ID value.
  */
-uint8_t ccid_get_value(void);
+uint8_t bt_ccid_get_value(void);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_ */
