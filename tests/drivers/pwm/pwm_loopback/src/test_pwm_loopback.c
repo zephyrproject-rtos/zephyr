@@ -339,6 +339,9 @@ void test_capture_busy(void)
 					&data);
 	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
 
+	err = pwm_pin_enable_capture(in.dev, in.pwm);
+	zassert_equal(err, -EBUSY, "pwm capture not busy (err %d)", err);
+
 	err = pwm_pin_disable_capture(in.dev, in.pwm);
 	zassert_equal(err, 0, "failed to disable pwm capture (err %d)", err);
 }
