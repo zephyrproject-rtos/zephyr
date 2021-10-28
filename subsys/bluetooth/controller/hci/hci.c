@@ -84,7 +84,29 @@
 static uint16_t _opcode;
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+/* NOTE: Duplicate filter uses two LS bits value of standard advertising modes:
+ *       0 - Non-Connectable Non-Scannable advertising report
+ *       1 - Connectable Non-Scannable advertising report
+ *       2 - Non-Connectable Scannable advertisig report
+ *       3 - Connectable Scannable advertising report
+ *
+ *       FIXME: Duplicate filtering of Connectable Directed low and high duty
+ *              cycle. If advertiser changes between Connectable Non-Scannable,
+ *              Connectable Directed low, and high duty cycle without changing
+ *              SID and DID, then such reports will be filtered out by the
+ *              implementation. Needs enhancement to current implementation.
+ *
+ *       Define a custom duplicate filter mode for periodic advertising:
+ *       4 - Periodic Advertising report
+ */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+#define DUP_EXT_ADV_MODE_MAX      5
+#define DUP_EXT_ADV_MODE_PERIODIC BIT(2)
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 #define DUP_EXT_ADV_MODE_MAX      4
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
+
 #define DUP_EXT_ADV_MODE_COUNT    4
 
 /* Duplicate filter entries, one per Bluetooth address */
@@ -113,6 +135,18 @@ static struct dup_entry {
 static int32_t dup_count;
 /* Duplicate filtering current free entry, overwrites entries after rollover */
 static uint32_t dup_curr;
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+/* Helper function to reset non-periodic advertising entries in filter table */
+static void dup_ext_adv_reset(int count);
+/* Flag for advertising reports be filtered for duplicates. */
+static bool dup_scan;
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
+/* Set constant true so that (dup_count >= 0) decides if advertising duplicate
+ * filter is enabled when Periodic Advertising ADI support is disabled.
+ */
+static const bool dup_scan = true;
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -347,6 +381,9 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	dup_count = DUP_FILTER_DISABLED;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	dup_scan = false;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 	/* reset event masks */
@@ -1628,10 +1665,31 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	/* Initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
-		dup_count = 0;
-		dup_curr = 0U;
+		if (0) {
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+		} else if (dup_count <= DUP_FILTER_DISABLED) {
+			dup_scan = true;
+
+			/* All entries reset */
+			dup_count = 0;
+			dup_curr = 0U;
+		} else if (!dup_scan) {
+			dup_scan = true;
+			dup_ext_adv_reset(dup_count);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
+
+		} else {
+			/* All entries reset */
+			dup_count = 0;
+			dup_curr = 0U;
+		}
 	} else {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+		dup_scan = false;
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 		dup_count = DUP_FILTER_DISABLED;
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
@@ -3318,10 +3376,31 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	/* Initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
-		dup_count = 0;
-		dup_curr = 0U;
+		if (0) {
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+		} else if (dup_count < 0) {
+			dup_scan = true;
+
+			/* All entries reset */
+			dup_count = 0;
+			dup_curr = 0U;
+		} else if (!dup_scan) {
+			dup_scan = true;
+			dup_ext_adv_reset(dup_count);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
+
+		} else {
+			/* All entries reset */
+			dup_count = 0;
+			dup_curr = 0U;
+		}
 	} else {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+		dup_scan = false;
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 		dup_count = DUP_FILTER_DISABLED;
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
@@ -3358,6 +3437,35 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		return;
 	}
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT) &&
+	    (cmd->options &
+	     (BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED |
+	      BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE)) ==
+	    BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) {
+		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+		return;
+	}
+
+	/* FIXME: Check for HCI LE Set Periodic Advertising Receive Enable
+	 * command support and if reporting is initially disabled then
+	 * return error code Connection Failed to be Established /
+	 * Synchronization Timeout (0x3E).
+	 */
+
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+	/* Initialize duplicate filtering */
+	if (cmd->options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) {
+		if (!dup_scan || (dup_count < 0)) {
+			dup_count = 0;
+			dup_curr = 0U;
+		} else {
+			/* FIXME: Invalidate dup_ext_adv_mode array entries */
+		}
+	} else if (!dup_scan) {
+		dup_count = DUP_FILTER_DISABLED;
+	}
+#endif
 
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
@@ -4726,6 +4834,21 @@ static void dup_ext_adv_mode_reset(struct dup_ext_adv_mode *dup_adv_mode)
 		dup_mode->set_curr = 0U;
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+static void dup_ext_adv_reset(int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		struct dup_entry *dup;
+
+		dup = &dup_filter[i];
+		dup->mask = 0U;
+		dup_ext_adv_mode_reset(dup->adv_mode);
+	}
+}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
@@ -4862,7 +4985,8 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	LL_ASSERT(adv->type == PDU_ADV_TYPE_DIRECT_IND);
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	if (dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
+	if (dup_scan &&
+	    dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
@@ -5016,7 +5140,8 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	if (dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
+	if (dup_scan &&
+	    dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
@@ -5126,7 +5251,8 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	if (dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
+	if (dup_scan &&
+	    dup_found(adv->type, adv->tx_addr, adv->adv_ind.addr, 0, NULL, 0)) {
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
@@ -5749,8 +5875,9 @@ no_ext_hdr:
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (adv_addr) {
-		if (dup_found(PDU_ADV_TYPE_EXT_IND, adv_addr_type, adv_addr,
-			      evt_type, adi, data_status)) {
+		if (dup_scan &&
+		    dup_found(PDU_ADV_TYPE_EXT_IND, adv_addr_type, adv_addr,
+			      (evt_type & BIT_MASK(2)), adi, data_status)) {
 			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 			return;
 		}
@@ -5918,7 +6045,7 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	scan = node_rx->hdr.rx_ftr.param;
 
 	sep->sid = scan->per_scan.sid;
-	/* FIXME: fill based on filter_policy options */
+	/* Resolved address, if private, has been populated in ULL */
 	sep->adv_addr.type = scan->per_scan.adv_addr_type;
 	memcpy(&sep->adv_addr.a.val[0], scan->per_scan.adv_addr, BDADDR_SIZE);
 	sep->phy = find_lsb_set(se->phy);
@@ -5935,6 +6062,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
 	struct pdu_adv_aux_ptr *aux_ptr = NULL;
+	const struct pdu_adv_adi *adi = NULL;
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
 	struct pdu_adv_com_ext_adv *p;
 	struct pdu_adv_ext_hdr *h;
@@ -5944,6 +6072,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	uint8_t *data = NULL;
 	uint8_t data_len_max;
 	uint8_t hdr_buf_len;
+	bool dup = false;
 	uint8_t hdr_len;
 	uint8_t *ptr;
 	int8_t rssi;
@@ -6007,6 +6136,8 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	}
 
 	if (h->adi) {
+		adi = (void *)ptr;
+
 		ptr += sizeof(struct pdu_adv_adi);
 	}
 
@@ -6070,7 +6201,23 @@ no_ext_hdr:
 		BT_DBG("    AD Data (%u): <todo>", data_len);
 	}
 
-	adv = (void *)node_rx->pdu;
+#if (CONFIG_BT_CTLR_DUP_FILTER_LEN > 0) && \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT) && adi) {
+		const struct ll_sync_set *sync = HDR_LLL2ULL(ftr->param);
+
+		/* FIXME: Use correct data status else chain PDU report will
+		 *        be filtered out.
+		 */
+		dup = sync->nodups && dup_found(PDU_ADV_TYPE_EXT_IND,
+						sync->peer_id_addr_type,
+						sync->peer_id_addr,
+						DUP_EXT_ADV_MODE_PERIODIC,
+						adi, 0U);
+	}
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 &&
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
 
 	data_len_max = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
@@ -6078,55 +6225,61 @@ no_ext_hdr:
 
 	evt_buf = buf;
 
-	do {
-		uint8_t data_len_frag;
+	if (!dup && (le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
+		do {
+			uint8_t data_len_frag;
 
-		data_len_frag = MIN(data_len, data_len_max);
+			data_len_frag = MIN(data_len, data_len_max);
 
-		/* Start constructing periodic advertising report */
-		sep = meta_evt(evt_buf,
-			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
-			       sizeof(*sep) + data_len_frag);
+			/* Start constructing periodic advertising report */
+			sep = meta_evt(evt_buf,
+				       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
+				       sizeof(*sep) + data_len_frag);
 
-		memcpy(&sep->data[0], data, data_len_frag);
-		data += data_len_frag;
-		data_len -= data_len_frag;
+			memcpy(&sep->data[0], data, data_len_frag);
+			data += data_len_frag;
+			data_len -= data_len_frag;
 
-		if (data_len > 0) {
-			/* Some data left in PDU, mark as partial data. */
-			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		} else if (!aux_ptr) {
-			/* No data left, no AuxPtr, mark as complete data. */
-			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
-		} else if (ftr->aux_w4next) {
-			/* No data left, but have AuxPtr and scheduled aux scan,
-			 * mark as partial data.
+			if (data_len > 0) {
+				/* Some data left in PDU, mark as partial data. */
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+			} else if (!aux_ptr) {
+				/* No data left, no AuxPtr, mark as complete data. */
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+			} else if (ftr->aux_w4next) {
+				/* No data left, but have AuxPtr and scheduled aux scan,
+				 * mark as partial data.
+				 */
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+			} else {
+				/* No data left, have AuxPtr but not aux scan scheduled,
+				 * mark as incomplete data.
+				 */
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
+			}
+
+			sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+			/* TODO: use actual TX power only on 1st report, subsequent
+			 *       reports can use 0x7F
 			 */
-			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
-		} else {
-			/* No data left, have AuxPtr but not aux scan scheduled,
-			 * mark as incomplete data.
-			 */
-			data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
-		}
+			sep->tx_power = tx_pwr;
+			sep->rssi = rssi;
+			sep->cte_type = cte_type;
+			sep->data_status = data_status;
+			sep->length = data_len_frag;
 
-		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
-		/* TODO: use actual TX power only on 1st report, subsequent
-		 *       reports can use 0x7F
-		 */
-		sep->tx_power = tx_pwr;
-		sep->rssi = rssi;
-		sep->cte_type = cte_type;
-		sep->data_status = data_status;
-		sep->length = data_len_frag;
+			if (data_len > 0) {
+				evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+				net_buf_frag_add(buf, evt_buf);
 
-		if (data_len > 0) {
-			evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-			net_buf_frag_add(buf, evt_buf);
+				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
+			}
+		} while (data_len > 0);
 
-			tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
-		}
-	} while (data_len > 0);
+		evt_buf = NULL;
+	}
+
+	/* TODO: Generation of BIGInfo report */
 }
 
 static void le_per_adv_sync_lost(struct pdu_data *pdu_data,

@@ -532,6 +532,14 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 	  Set Periodic Advertiser List size, this will be return in the HCI LE
 	  Read Periodic Advertiser List Command.
 
+config BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	bool "Periodic Advertising Sync with ADI support (duplicate filtering)"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for duplicate filtering using AdvDataInfo present in
+	  Periodic Advertising PDUs.
+
 config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
 	bool "LE Periodic Advertiser filtering by CTE type"
 	depends on BT_CTLR_SYNC_PERIODIC
