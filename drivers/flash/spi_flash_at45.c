@@ -542,7 +542,6 @@ static int power_down_op(const struct device *dev, uint8_t opcode,
 
 static int spi_flash_at45_init(const struct device *dev)
 {
-	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 	int err;
 
