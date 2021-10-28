@@ -43,7 +43,7 @@ stats_get_name(const struct stats_hdr *hdr, int idx)
 static uint16_t
 stats_get_off(const struct stats_hdr *hdr, int idx)
 {
-	return sizeof(*hdr) + idx * hdr->s_size;
+	return (uint16_t) (sizeof(*hdr) + idx * (int) hdr->s_size);
 }
 
 /**
