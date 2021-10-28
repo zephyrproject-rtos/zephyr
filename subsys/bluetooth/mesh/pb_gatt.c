@@ -119,6 +119,14 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 
 static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 {
+	int err;
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		BT_ERR("Failed enabling advertiser");
+		return err;
+	}
+
 	(void)bt_mesh_proxy_prov_enable();
 	bt_mesh_adv_update();
 
