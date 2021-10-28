@@ -416,15 +416,36 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				return -EIO;
 			}
 
-			half_access_code = (BQ35100_DEFAULT_SEAL_CODES >> 24) & 0xFF;
-			half_access_code |= (BQ35100_DEFAULT_SEAL_CODES >> 16) & 0xFF;
-
+			status = bq35100_read_extended_data(dev,
+							    BQ35100_FLASH_UNSEAL_STEP1, buf, 4);
+			if (status < 0) {
+				LOG_ERR("Unable to read from DataFlash");
+				return -EIO;
+			}
+			uint32_t unseal_codes = (buf[0] << 24) + (buf[1] << 16) +
+						     (buf[2] << 8) + buf[3];
+			half_access_code = ((unseal_codes >> 8) & 0xFF00) |
+					((unseal_codes >> 24) & 0x00FF);
+			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
 			status = bq35100_control_reg_write(dev, half_access_code);
 			if (!(status < 0)) {
-				half_access_code = (BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF;
-				half_access_code |= BQ35100_DEFAULT_SEAL_CODES & 0xFF;
+				half_access_code = ((unseal_codes << 8) & 0xFF00) |
+					((unseal_codes >> 8) & 0x00FF);
+				LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
 				bq35100_control_reg_write(dev, half_access_code);
 			}
+			
+			/*
+			half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
+                     ((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
+			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
+			status = bq35100_control_reg_write(dev, half_access_code);
+			if (!(status < 0)) {
+				half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
+                     ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
+				LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
+				bq35100_control_reg_write(dev, half_access_code);
+			}*/
 			break;
 		case BQ35100_SECURITY_SEALED:
 			LOG_DBG("inside sealed");
@@ -730,7 +751,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 	if (bq35100_get_status(dev, &data) < 0) {
 		return -EIO;
 	}
-
+	//LOG_DBG("Data : %x", data);
 	switch ((data >> 13) & 0b011) {
 	case BQ35100_SECURITY_UNKNOWN:
 		LOG_DBG("Device is in UNKNOWN Security mode");
@@ -1018,9 +1039,9 @@ static int bq35100_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
-	}*/
+	}
 
 	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 		return EIO;
