@@ -127,10 +127,6 @@ source "drivers/serial/Kconfig.sifive"
 
 source "drivers/serial/Kconfig.esp32"
 
-source "drivers/serial/Kconfig.esp32c3_rom"
-
-source "drivers/serial/Kconfig.esp32s2_rom"
-
 source "drivers/serial/Kconfig.gecko"
 
 source "drivers/serial/Kconfig.leuart_gecko"
