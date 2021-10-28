@@ -382,20 +382,20 @@ static int tmp108_init(const struct device *dev)
 	return result;
 }
 
-#define TMP108_DEFINE(inst)						\
-	static struct tmp108_data tmp108_prv_data_##inst;		\
-	static const struct tmp108_config tmp108_config_##inst = {	\
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),			\
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst,		\
-						alert_gpios, { 0 })	\
-	};								\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			&tmp108_init,					\
-			      NULL,					\
-			      &tmp108_prv_data_##inst,			\
-			      &tmp108_config_##inst,			\
-			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
+#define TMP108_DEFINE(inst)						   \
+	static struct tmp108_data tmp108_prv_data_##inst;		   \
+	static const struct tmp108_config tmp108_config_##inst = {	   \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),			   \
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst,		   \
+						       alert_gpios, { 0 }) \
+	};								   \
+	DEVICE_DT_INST_DEFINE(inst,					   \
+			      &tmp108_init,				   \
+			      NULL,					   \
+			      &tmp108_prv_data_##inst,			   \
+			      &tmp108_config_##inst,			   \
+			      POST_KERNEL,				   \
+			      CONFIG_SENSOR_INIT_PRIORITY,		   \
 			      &tmp108_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP108_DEFINE)
