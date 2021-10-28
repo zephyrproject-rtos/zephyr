@@ -519,6 +519,7 @@ static uint32_t level_to_syst_severity(uint32_t level)
 	return ret;
 }
 
+#ifndef CONFIG_LOG2
 static void std_print(struct log_msg *msg,
 		const struct log_output *log_output)
 {
@@ -683,6 +684,142 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 
 	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, data, length);
 }
+
+#else
+static void hexdump2_print(struct log_msg2 *msg,
+			  const struct log_output *output)
+{
+	char *buf;
+	size_t length;
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+
+	buf = log_msg2_get_data(msg, &length);
+	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, buf, length);
+}
+
+void log_output_msg2_syst_process(const struct log_output *output,
+				struct log_msg2 *msg, uint32_t flag)
+{
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	size_t len, hexdump_len;
+
+	update_systh_platform_data(&log_syst_handle, output, flag);
+
+	uint8_t *data = log_msg2_get_package(msg, &len);
+
+	log_msg2_get_data(msg, &hexdump_len);
+
+	if (len && !hexdump_len) {
+
+		char *buf = data, *fmt;
+		unsigned int args_size;
+
+		fmt = ((char **)buf)[1];
+		args_size = ((((uint8_t *)buf)[0] * sizeof(int))/4)-2;
+		buf += sizeof(char *) * 2;
+
+		uint32_t *args = args_size ? alloca(sizeof(uint32_t)*args_size) : NULL;
+
+		union {
+			va_list ap;
+			void *ptr;
+		} u;
+
+		u.ptr = buf;
+
+		for (uint8_t i = 0; i < args_size; i++) {
+			args[i] = va_arg(u.ap, int);
+		}
+
+		switch (args_size) {
+		case 0:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt);
+			break;
+		case 1:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0]);
+			break;
+		case 2:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1]);
+			break;
+		case 3:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2]);
+			break;
+		case 4:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3]);
+			break;
+		case 5:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4]);
+			break;
+		case 6:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+				args[1], args[2], args[3], args[4], args[5]);
+			break;
+		case 7:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6]);
+			break;
+		case 8:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7]);
+			break;
+		case 9:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8]);
+			break;
+		case 10:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9]);
+			break;
+		case 11:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9], args[10]);
+			break;
+		case 12:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9], args[10],
+					args[11]);
+			break;
+		case 13:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9], args[10],
+					args[11], args[12]);
+			break;
+		case 14:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9], args[10],
+					args[11], args[12], args[13]);
+			break;
+		case 15:
+			MIPI_SYST_PRINTF(&log_syst_handle, severity, fmt, args[0],
+					args[1], args[2], args[3], args[4], args[5],
+					args[6], args[7], args[8], args[9], args[10],
+					args[11], args[12], args[13], args[14]);
+			break;
+		default:
+			/* Unsupported number of arguments. */
+			__ASSERT_NO_MSG(true);
+			break;
+		}
+
+	}
+
+	if (hexdump_len) {
+		hexdump2_print(msg, output);
+	}
+}
+#endif
 
 static int syst_init(const struct device *arg)
 {
