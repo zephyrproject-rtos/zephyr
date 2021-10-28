@@ -423,7 +423,11 @@ static inline void process_tx(void)
 	}
 
 	bytes = uart_fifo_fill(h4_dev, tx.buf->data, tx.buf->len);
-	net_buf_pull(tx.buf, bytes);
+	if (unlikely(bytes < 0)) {
+		BT_ERR("Unable to write to UART (err %d)", bytes);
+	} else {
+		net_buf_pull(tx.buf, bytes);
+	}
 
 	if (tx.buf->len) {
 		return;
