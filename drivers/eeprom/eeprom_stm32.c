@@ -124,4 +124,4 @@ static const struct eeprom_stm32_config eeprom_config = {
 
 DEVICE_DT_INST_DEFINE(0, &eeprom_stm32_init, NULL, NULL,
 		    &eeprom_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_stm32_api);
+		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);
