@@ -1186,6 +1186,20 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	}
 
+	if (param->options &
+	    BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) {
+		cp->options |=
+			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED;
+
+		atomic_set_bit(per_adv_sync->flags,
+			       BT_PER_ADV_SYNC_RECV_DISABLED);
+	}
+
+	if (param->options & BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE) {
+		cp->options |=
+			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE;
+	}
+
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_DONT_SYNC_AOA) {
 		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA;
 	}
@@ -1202,15 +1216,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT) {
 		cp->cte_type |= BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE;
-	}
-
-	if (param->options &
-	    BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) {
-		cp->options |=
-			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED;
-
-		atomic_set_bit(per_adv_sync->flags,
-			       BT_PER_ADV_SYNC_RECV_DISABLED);
 	}
 
 	cp->sid = param->sid;
