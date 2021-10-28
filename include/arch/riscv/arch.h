@@ -354,6 +354,12 @@ static inline uint32_t arch_k_cycle_get_32(void)
 	return sys_clock_cycle_get_32();
 }
 
+extern void arch_switch_riscv(void *switch_to, void **switched_from);
+static inline void arch_switch(void *switch_to, void **switched_from)
+{
+	arch_switch_riscv(switch_to, switched_from);
+}
+
 #ifdef CONFIG_USERSPACE
 #include <arch/riscv/error.h>
 #endif /* CONFIG_USERSPACE */

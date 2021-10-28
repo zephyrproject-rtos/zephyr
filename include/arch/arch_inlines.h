@@ -20,6 +20,8 @@
 #include <arch/arc/arch_inlines.h>
 #elif defined(CONFIG_XTENSA)
 #include <arch/xtensa/arch_inlines.h>
+#elif defined(CONFIG_RISCV)
+#include <arch/riscv/arch_inlines.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */
