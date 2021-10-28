@@ -13,16 +13,9 @@ GTEXT(__start)
 /* imports */
 GTEXT(__initialize)
 GTEXT(__irq_wrapper)
+GTEXT(__irq_wrapper_s)
 
 SECTION_FUNC(vectors, __start)
-#if defined(CONFIG_RISCV_GP)
-	/* Initialize global pointer */
-	.option push
-	.option norelax
-	la gp, __global_pointer$
-	.option pop
-#endif
-
 	.option norvc;
 
 	/*
@@ -31,6 +24,22 @@ SECTION_FUNC(vectors, __start)
 	 */
 	la t0, __irq_wrapper
 	csrw mtvec, t0
+#if defined(CONFIG_BOARD_HART_TO_USE) && (CONFIG_BOARD_HART_TO_USE != 0)
+    /* Set up dummy vector routine to catch supervisor traps in case of
+     * problems.
+     */
+#if defined(CONFIG_SOC_MPFS)
+    /*
+     * For MPFS and FU540 only allow setting STVEC on U54 as E51 does not have
+     * this register. On these SOCs, not setting STVEC can cause unexpected traps...
+     */
+    csrr t0, mhartid
+    beqz t0, skip_svect
+#endif
 
-	/* Jump to __reset */
-	tail __reset
+	//* Jump to __reset */
+	//tail __reset
+    skip_svect:
+#endif
+	/* Jump to __initialize */
+	tail __initialize
