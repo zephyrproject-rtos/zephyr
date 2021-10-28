@@ -526,6 +526,13 @@ test_i2c_tmp007: tmp007@44 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_tmp108: tmp108@48 {
+	compatible = "ti,tmp108";
+	label = "TMP108";
+	reg = <0x48>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_tmp112: tmp112@45 {
 	compatible = "ti,tmp112";
 	label = "TMP112";
