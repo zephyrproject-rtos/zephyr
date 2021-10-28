@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(gdbstub);
 #define GDB_ERROR_MEMORY    "E14"
 #define GDB_ERROR_OVERFLOW  "E22"
 
+static bool not_first_start;
+
 size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
 	if ((hexlen + 1) < buflen * 2) {
@@ -229,7 +231,7 @@ static int gdb_send_exception(uint8_t *buf, size_t len, uint8_t exception)
 /**
  * Synchronously communicate with gdb on the host
  */
-int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
+int z_gdb_main_loop(struct gdb_ctx *ctx)
 {
 	/* 'static' modifier is intentional so the buffer
 	 * is not declared inside running stack, which may
@@ -245,8 +247,13 @@ int z_gdb_main_loop(struct gdb_ctx *ctx, bool start)
 
 	state = RECEIVING;
 
-	if (start == false) {
+	/* Only send exception if this is not the first
+	 * GDB break.
+	 */
+	if (not_first_start) {
 		gdb_send_exception(buf, sizeof(buf), ctx->exception);
+	} else {
+		not_first_start = true;
 	}
 
 #define CHECK_ERROR(condition)			\
