@@ -320,6 +320,8 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags = log_backend_std_get_flags();
 
+	flags |= IS_ENABLED(CONFIG_LOG_BACKEND_RTT_SYST_ENABLE) ? LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
 	log_output_msg2_process(&log_output_rtt, &msg->log, flags);
 }
 
