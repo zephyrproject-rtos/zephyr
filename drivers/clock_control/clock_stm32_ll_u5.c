@@ -106,6 +106,9 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
+	case STM32_CLOCK_BUS_AHB2_2:
+		LL_AHB2_GRP2_EnableClock(pclken->enr);
+		break;
 	case STM32_CLOCK_BUS_AHB3:
 		LL_AHB3_GRP1_EnableClock(pclken->enr);
 		break;
@@ -141,6 +144,9 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		break;
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
+		break;
+	case STM32_CLOCK_BUS_AHB2_2:
+		LL_AHB2_GRP2_DisableClock(pclken->enr);
 		break;
 	case STM32_CLOCK_BUS_AHB3:
 		LL_AHB3_GRP1_DisableClock(pclken->enr);
@@ -185,6 +191,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
+	case STM32_CLOCK_BUS_AHB2_2:
 	case STM32_CLOCK_BUS_AHB3:
 		*rate = ahb_clock;
 		break;

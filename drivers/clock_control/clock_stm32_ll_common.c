@@ -118,6 +118,11 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	case STM32_CLOCK_BUS_AHB2_2:
+		LL_AHB2_GRP2_EnableClock(pclken->enr);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
@@ -190,6 +195,11 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	case STM32_CLOCK_BUS_AHB2_2:
+		LL_AHB2_GRP2_DisableClock(pclken->enr);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
@@ -266,6 +276,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	case STM32_CLOCK_BUS_AHB2_2:
+#endif
 #if !defined(CONFIG_SOC_SERIES_STM32WLX)
 	case STM32_CLOCK_BUS_AHB3:
 #endif
