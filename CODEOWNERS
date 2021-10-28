@@ -342,8 +342,6 @@
 /drivers/serial/*rcar*                    @aaillet
 /drivers/serial/Kconfig.test              @str4t0m
 /drivers/serial/serial_test.c             @str4t0m
-/drivers/serial/*esp32c3*                 @uLipe
-/drivers/serial/*esp32s2*                 @glaubermaroto
 /drivers/serial/Kconfig.xen               @lorc @firscity
 /drivers/serial/uart_hvc_xen.c            @lorc @firscity
 /drivers/disk/                            @jfischer-no
