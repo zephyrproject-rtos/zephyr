@@ -35,6 +35,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
 	inc_nest_counter x0, x1
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	bl	z_sched_usage_stop
+#endif
+
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_enter
 #endif
