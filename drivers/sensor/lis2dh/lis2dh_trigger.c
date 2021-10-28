@@ -25,7 +25,7 @@ static inline void setup_int1(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					enable
-					? GPIO_INT_EDGE_TO_ACTIVE
+					? GPIO_INT_LEVEL_ACTIVE
 					: GPIO_INT_DISABLE);
 }
 
@@ -121,7 +121,7 @@ static inline void setup_int2(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					enable
-					? GPIO_INT_EDGE_TO_ACTIVE
+					? GPIO_INT_LEVEL_ACTIVE
 					: GPIO_INT_DISABLE);
 }
 
@@ -254,6 +254,9 @@ static void lis2dh_gpio_int1_callback(const struct device *dev,
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT1);
 
+	/* int is level trigged so disable until we clear it */
+	setup_int1(lis2dh->dev, false);
+
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_give(&lis2dh->gpio_sem);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
@@ -270,6 +273,9 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 	ARG_UNUSED(pins);
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT2);
+
+	/* int is level trigged so disable until we clear it */
+	setup_int2(lis2dh->dev, false);
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_give(&lis2dh->gpio_sem);
@@ -316,6 +322,14 @@ static void lis2dh_thread_cb(const struct device *dev)
 
 		if (likely(lis2dh->handler_drdy != NULL)) {
 			lis2dh->handler_drdy(dev, &drdy_trigger);
+
+		}
+
+		/* Reactivate level triggered interrupt if handler did not
+		 * disable itself
+		 */
+		if (likely(lis2dh->handler_drdy != NULL)) {
+			setup_int1(dev, true);
 		}
 
 		return;
@@ -340,6 +354,13 @@ static void lis2dh_thread_cb(const struct device *dev)
 
 		if (likely(lis2dh->handler_anymotion != NULL)) {
 			lis2dh->handler_anymotion(dev, &anym_trigger);
+		}
+
+		/* Reactivate level triggered interrupt if handler did not
+		 * disable itself
+		 */
+		if (lis2dh->handler_anymotion != NULL) {
+			setup_int2(dev, true);
 		}
 
 		LOG_DBG("@tick=%u int2_src=0x%x", k_cycle_get_32(),
