@@ -503,6 +503,13 @@ config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
+config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
+	bool "Periodic Advertising ADI support"
+	depends on BT_CTLR_ADV_PERIODIC
+	default y
+	help
+	  Enable support for adding AdvDataInfo in Periodic Advertising PDUs.
+
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
 	depends on BT_OBSERVER && BT_CTLR_SYNC_PERIODIC_SUPPORT
