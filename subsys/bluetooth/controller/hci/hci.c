@@ -3353,6 +3353,11 @@ static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
+	    (cmd->options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST)) {
+		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+		return;
+	}
 
 	skip = sys_le16_to_cpu(cmd->skip);
 	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
