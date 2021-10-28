@@ -808,6 +808,16 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising data (duplicate filter)...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data3),
+				      (void *)per_adv_data3);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	k_sleep(K_MSEC(1000));
 
 	printk("Disabling periodic...");
@@ -1609,8 +1619,6 @@ static void test_scanx_main(void)
 	}
 	printk("done.\n");
 
-	printk("sync_report_len = %u\n", sync_report_len);
-
 	if (sync_report_len != 0) {
 		FAIL("Incorrect Periodic Advertising Report data.");
 	}
@@ -1658,7 +1666,7 @@ static void test_scanx_main(void)
 	}
 
 	printk("Waiting for Periodic Advertising Report of %u bytes...",
-	       sizeof(per_adv_data1));
+	       sizeof(per_adv_data2));
 	sync_report_len_prev = sync_report_len;
 	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
 		is_sync_report = false;
@@ -1709,8 +1717,10 @@ static void test_scanx_main(void)
 
 	printk("Creating Periodic Advertising Sync 4 after sync lost...");
 	is_sync = false;
+	is_sync_report = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
-	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST;
+	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST |
+				    BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
@@ -1739,6 +1749,30 @@ static void test_scanx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data3));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data3)) ||
+	    memcmp(sync_report_data, per_adv_data3, sizeof(per_adv_data3))) {
+		FAIL("Incorrect Periodic Advertising Report data (%u != %u).",
+		     sync_report_len, sizeof(per_adv_data3));
+	}
+
+	printk("Wait for no duplicate Periodic Advertising Report"
+	       " is generated...");
+	is_sync_report = false;
+	k_sleep(K_MSEC(400));
+	if (is_sync_report) {
+		goto exit;
+	}
+	printk("success\n");
 
 	printk("Deleting Periodic Advertising Sync 4...");
 	err = bt_le_per_adv_sync_delete(sync);
