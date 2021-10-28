@@ -1,5 +1,7 @@
-
-/**
+/*
+ * Copyright (C) NEXPLORE
+ * https://www.nexplore.com
+ *
  * @file
  * @brief Extended public API for LIS3DHH
  *
@@ -15,7 +17,6 @@ extern "C" {
 #endif
 
 #include <drivers/sensor.h>
-
 
 enum lis3dhh_filter {
 	filter_FIR,

@@ -30,6 +30,7 @@ endchoice # LIS3DHH_MODE_SELECTION
 
 config LIS3DHH_IF_ADD_INC
 	bool "Auto increment register address"
+	default y
 	depends on LIS3DHH_NORMAL_MODE
 	help
 	  Startup configuration. Register address automatically

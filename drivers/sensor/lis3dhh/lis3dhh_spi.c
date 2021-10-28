@@ -154,14 +154,13 @@ int lis3dhh_spi_init(const struct device *dev)
 	lis3dhh_drv_data->hw_tf = &lis3dhh_spi_transfter_fn;
 
 	if (spi_cfg->cs_gpios_label != NULL) {
-		lis3dhh_drv_data->cs_ctrl.gpio_dev = device_get_binding(spi_cfg->
-									cs_gpios_label);
+		lis3dhh_drv_data->cs_ctrl.gpio_dev = device_get_binding(spi_cfg->cs_gpios_label);
 		if (!lis3dhh_drv_data->cs_ctrl.gpio_dev) {
 			LOG_ERR("Unable to get chip-select GPIO.");
 			return -ENODEV;
 		}
-		LOG_DBG("SPI chip-select GPIO configured on %s: %u", spi_cfg->
-			cs_gpios_label, lis3dhh_drv_data->cs_ctrl.gpio_pin);
+		LOG_DBG("SPI chip-select GPIO configured on %s: %u", spi_cfg->cs_gpios_label,
+					lis3dhh_drv_data->cs_ctrl.gpio_pin);
 	} else {
 		LOG_ERR("Unable to find chip-select GPIO.");
 	}
