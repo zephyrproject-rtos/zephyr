@@ -1089,7 +1089,13 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	/* No ADI in AUX_SYNC_IND */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		if (ter_hdr_prev.adi) {
+			ter_dptr_prev += sizeof(struct pdu_adv_adi);
+		}
+		ter_hdr.adi = 1U;
+		ter_dptr += sizeof(struct pdu_adv_adi);
+	}
 
 	/* AuxPtr - will be added if AUX_CHAIN_IND is required */
 	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) ||
@@ -1233,7 +1239,27 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		}
 	}
 
-	/* No ADI in AUX_SYNC_IND*/
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		struct pdu_adv_adi *adi;
+		struct ll_adv_set *adv;
+		uint16_t did;
+
+		if (ter_hdr_prev.adi) {
+			ter_dptr_prev -= sizeof(struct pdu_adv_adi);
+		}
+
+		ter_dptr -= sizeof(struct pdu_adv_adi);
+		adi = (void *)ter_dptr;
+
+		adv = HDR_LLL2ULL(lll_sync->adv);
+
+		adi->sid = adv->sid;
+
+		/* The DID for a specific SID shall be unique.
+		 */
+		did = ull_adv_aux_did_next_unique_get(adv->sid);
+		adi->did = sys_cpu_to_le16(did);
+	}
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (ter_hdr.cte_info) {
