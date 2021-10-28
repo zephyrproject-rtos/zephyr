@@ -417,7 +417,7 @@ static const struct gpio_driver_api gpio_esp32_driver_api = {
 			NULL,							\
 			&gpio_data_##_id,					\
 			&gpio_config_##_id,					\
-			POST_KERNEL,						\
+			PRE_KERNEL_2,						\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 			&gpio_esp32_driver_api);
 
