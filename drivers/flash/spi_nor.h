@@ -31,11 +31,30 @@
 #define SPI_NOR_CMD_4BA         0xB7    /* Enter 4-Byte Address Mode */
 #define SPI_NOR_CMD_DPD         0xB9    /* Deep Power Down */
 #define SPI_NOR_CMD_RDPD        0xAB    /* Release from Deep Power Down */
+#define SPI_NOR_CMD_CFGREG2     0x72    /* Read config register 2 */
+#define SPI_NOR_OCMD_RDSR       0x05FA  /* Octal Read status register */
+#define SPI_NOR_OCMD_WREN       0x06F9  /* Octal Write enable */
 
 /* Page, sector, and block size are standard, not configurable. */
 #define SPI_NOR_PAGE_SIZE    0x0100U
 #define SPI_NOR_SECTOR_SIZE  0x1000U
 #define SPI_NOR_BLOCK_SIZE   0x10000U
+
+/* Auto-polling values */
+#define SPI_NOR_WREN_MATCH    0x02
+#define SPI_NOR_WREN_MASK     0x02
+
+#define SPI_NOR_MEM_RDY_MATCH 0x00
+#define SPI_NOR_MEM_RDY_MASK  0x01
+
+#define SPI_NOR_AUTO_POLLING_INTERVAL       0x10
+
+/* Memory registers address */
+#define SPI_NOR_REG2_ADDR1    0x0000000
+#define SPI_NOR_CR2_STR_OPI_EN          0x01
+
+#define SPI_NOR_REG2_ADDR3           0x00000300
+#define SPI_NOR_CR2_DUMMY_CYCLES_66MHZ      0x07
 
 /* Test whether offset is aligned to a given number of bits. */
 #define SPI_NOR_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)
