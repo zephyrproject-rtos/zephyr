@@ -519,6 +519,7 @@ static uint32_t level_to_syst_severity(uint32_t level)
 	return ret;
 }
 
+#ifndef CONFIG_LOG2
 static void std_print(struct log_msg *msg,
 		const struct log_output *log_output)
 {
@@ -683,6 +684,53 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 
 	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, data, length);
 }
+
+#else
+static void hexdump2_print(struct log_msg2 *msg,
+			  const struct log_output *output)
+{
+	char *buf;
+	size_t length;
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+
+	buf = log_msg2_get_data(msg, &length);
+	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, buf, length);
+}
+
+void log_output_msg2_syst_process(const struct log_output *output,
+				struct log_msg2 *msg, uint32_t flag)
+{
+	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	size_t len, hexdump_len;
+
+	update_systh_platform_data(&log_syst_handle, output, flag);
+
+	uint8_t *data = log_msg2_get_package(msg, &len);
+
+	log_msg2_get_data(msg, &hexdump_len);
+
+	if (len && !hexdump_len) {
+
+		char *buf = data, *fmt;
+
+		fmt = ((char **)buf)[1];
+		buf += sizeof(char *) * 2;
+
+		union {
+			va_list ap;
+			void *ptr;
+		} u;
+
+		u.ptr = buf;
+
+		MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, u.ap);
+	}
+
+	if (hexdump_len) {
+		hexdump2_print(msg, output);
+	}
+}
+#endif
 
 static int syst_init(const struct device *arg)
 {
