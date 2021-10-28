@@ -21,6 +21,16 @@ struct ll_sync_set {
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire;
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	/* TODO: Use for same peer check too */
+	uint8_t peer_id_addr[BDADDR_SIZE];
+	uint8_t peer_id_addr_type:1;
+#endif
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	uint8_t nodups:1;
+#endif
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	!defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	/* Member used to notify event done handler to terminate sync scanning.
