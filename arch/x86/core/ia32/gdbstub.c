@@ -12,7 +12,6 @@
 
 
 static struct gdb_ctx ctx;
-static bool start;
 
 /**
  * Currently we just handle vectors 1 and 3 but lets keep it generic
@@ -100,8 +99,7 @@ static void z_gdb_interrupt(unsigned int vector, z_arch_esf_t *esf)
 	ctx.registers[GDB_FS] = esf->fs;
 	ctx.registers[GDB_GS] = esf->gs;
 
-	z_gdb_main_loop(&ctx, start);
-	start = false;
+	z_gdb_main_loop(&ctx);
 
 	esf->eax = ctx.registers[GDB_EAX];
 	esf->ecx = ctx.registers[GDB_ECX];
@@ -230,7 +228,6 @@ static __used void z_gdb_break_isr(z_arch_esf_t *esf)
 
 void arch_gdb_init(void)
 {
-	start = true;
 	__asm__ volatile ("int3");
 }
 
