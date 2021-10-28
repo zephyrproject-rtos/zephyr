@@ -16,6 +16,12 @@ config DMA_64BIT
 	  When this option is true, 64 bit source and dest
 	  DMA addresses are supported.
 
+config DMA_INIT_PRIORITY
+	int "DMA init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  DMA driver device initialization priority.
+
 module = DMA
 module-str = dma
 source "subsys/logging/Kconfig.template.log_config"
