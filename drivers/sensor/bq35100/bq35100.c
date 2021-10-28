@@ -124,16 +124,22 @@ static int bq35100_reg_write(const struct device *dev,
 static int bq35100_control_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
-	// LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
+	LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
 
 	uint8_t buf[2];
+	uint8_t ret;
 
 	/* Little Endian */
 	buf[0] = (uint8_t)subcommand;
 	buf[1] = (uint8_t)(subcommand >> 8);
 
-	return bq35100_bus_access(dev, BQ35100_REG_WRITE(BQ35100_CMD_MAC_CONTROL),
-				  buf, 2);
+	ret = bq35100_bus_access(dev, BQ35100_REG_WRITE(BQ35100_CMD_MAC_CONTROL),
+				 buf, 2);
+
+	/* maybe increase it to test, if set_security still doesnt work */
+	k_sleep(K_MSEC(10));
+
+	return ret;
 }
 
 /**
@@ -423,29 +429,29 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				return -EIO;
 			}
 			uint32_t unseal_codes = (buf[0] << 24) + (buf[1] << 16) +
-						     (buf[2] << 8) + buf[3];
+						(buf[2] << 8) + buf[3];
 			half_access_code = ((unseal_codes >> 8) & 0xFF00) |
-					((unseal_codes >> 24) & 0x00FF);
+					   ((unseal_codes >> 24) & 0x00FF);
 			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
 			status = bq35100_control_reg_write(dev, half_access_code);
 			if (!(status < 0)) {
 				half_access_code = ((unseal_codes << 8) & 0xFF00) |
-					((unseal_codes >> 8) & 0x00FF);
+						   ((unseal_codes >> 8) & 0x00FF);
 				LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
 				bq35100_control_reg_write(dev, half_access_code);
 			}
-			
+
 			/*
-			half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
-                     ((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
-			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
-			status = bq35100_control_reg_write(dev, half_access_code);
-			if (!(status < 0)) {
-				half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
-                     ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
-				LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
-				bq35100_control_reg_write(dev, half_access_code);
-			}*/
+			   half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
+			   ((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
+			   LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
+			   status = bq35100_control_reg_write(dev, half_access_code);
+			   if (!(status < 0)) {
+			        half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
+			   ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
+			        LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
+			        bq35100_control_reg_write(dev, half_access_code);
+			   }*/
 			break;
 		case BQ35100_SECURITY_SEALED:
 			LOG_DBG("inside sealed");
@@ -462,7 +468,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 
 		if (data->security_mode == security_mode) {
 			success = true;
-			LOG_DBG("Security mode set as 0x%02X",data->security_mode);
+			LOG_DBG("Security mode set as 0x%02X", data->security_mode);
 
 		} else {
 			LOG_ERR("Security mode set failed (wanted 0x%02X, got 0x%02X), will retry", security_mode, data->security_mode);
@@ -751,7 +757,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 	if (bq35100_get_status(dev, &data) < 0) {
 		return -EIO;
 	}
-	//LOG_DBG("Data : %x", data);
+	// LOG_DBG("Data : %x", data);
 	switch ((data >> 13) & 0b011) {
 	case BQ35100_SECURITY_UNKNOWN:
 		LOG_DBG("Device is in UNKNOWN Security mode");
@@ -1044,8 +1050,8 @@ static int bq35100_init(const struct device *dev)
 	}
 
 	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
-		return EIO;
-	}*/
+	        return EIO;
+	   }*/
 
 	/*if (bq35100_set_gauge_mode(dev, BQ35100_SOH_MODE)) {
 	        return EIO;
@@ -1055,12 +1061,12 @@ static int bq35100_init(const struct device *dev)
 	        return -EIO;
 	   }*/
 
-	   /*if (bq35100_gauge_start(dev) < 0) {
-	        return -EIO;
+	/*if (bq35100_gauge_start(dev) < 0) {
+	     return -EIO;
 	   }
 
 	   if(bq35100_gauge_stop(dev) < 0) {
-	        return -EIO;
+	     return -EIO;
 	   }*/
 
 	return 0;
