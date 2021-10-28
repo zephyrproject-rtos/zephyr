@@ -456,7 +456,7 @@ struct dma_mcux_edma_data dma_data;
  */
 DEVICE_DT_INST_DEFINE(0, &dma_mcux_edma_init, NULL,
 		    &dma_data, &dma_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_mcux_edma_api);
+		    CONFIG_DMA_INIT_PRIORITY, &dma_mcux_edma_api);
 
 void dma_imx_config_func_0(const struct device *dev)
 {
