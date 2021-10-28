@@ -116,6 +116,15 @@
 			reg = <0x3ff49000 0x94>;
 		};
 
+		ledc0: ledc@3ff59000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x3ff59000 0x800>;
+			label = "LEDC_0";
+			status = "disabled";
+		};
+
 		gpio0: gpio@3ff44000 {
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;
