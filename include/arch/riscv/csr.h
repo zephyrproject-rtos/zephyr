@@ -159,6 +159,26 @@
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000
 #define CLINT_SIZE	0x000c0000
+
+#if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
+/*==============================================================================
+ * CLINT: Core Local Interrupter
+ *
+ * MPFS specific values for 5 harts... may want to make it more generic but 
+ * where do we pick up the number of harts from?
+ */
+typedef struct CLINT_Type_t
+{
+    volatile uint32_t MSIP[5];
+    volatile uint32_t reserved1[(0x4000U - 0x14U)/4U];
+    volatile uint64_t MTIMECMP[5];  /* mtime compare value for each hart. When mtime equals this value, interrupt is generated for particular hart */
+    volatile uint32_t reserved2[((0xbff8U - 0x4028U)/4U)];
+    volatile uint64_t MTIME;    /* contains the current mtime value */
+} CLINT_Type;
+
+#define RISCV_CLINT    ((CLINT_Type *)CLINT_BASE)
+#endif
+
 #define EXT_IO_BASE	0x40000000
 #define DRAM_BASE	0x80000000
 
