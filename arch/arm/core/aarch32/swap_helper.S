@@ -646,6 +646,7 @@ svc_system_thread:
     srsdb #MODE_SYS!
     cps #MODE_SYS
     push {r0-r3, r12, lr}
+    mov ip, sp
     cps #MODE_SVC
 
     /*
@@ -723,20 +724,14 @@ _oops:
 #if defined(CONFIG_USERSPACE)
     /*
      * System call will setup a jump to the _do_arm_syscall function
-     * when the SVC returns via the bx lr.
+     * running in system mode when returning from the exception.
      *
      * There is some trickery involved here because we have to preserve
      * the original PC value so that we can return back to the caller of
      * the SVC.
      *
      * On SVC exception, the USER/SYSTEM stack looks like the following:
-     *
-     * sp+0:   r0
-     * sp+4:   r1
-     * sp+8:   r2
-     * sp+12:  r3
-     * sp+16:  r12
-     * sp+20:  LR_svc (address of opcode just following SVC opcode )
+     * r0 - r1 - r2 - r3 - r12 - LR - { possible FPU space } - PC - SPSR
      *
      * Registers look like:
      * r0 - arg1
@@ -749,6 +744,26 @@ _oops:
      * r8 - saved link register
      */
 _do_syscall:
+    ldr r8, [ip, #24]   /* grab address of LR from stack frame */
+
+    /* Make the exception return to system state */
+    ldr r1, [ip, #28]
+
+    /* If leaving thumb mode, set the return address to thumb mode */
+    tst r1, #T_BIT
+    orrne r8, #1
+
+    bic r1, #(MODE_MASK | T_BIT)
+    orr r1, r1, #MODE_SYS
+    str r1, [ip, #28]
+
+    /*
+     * Store the address of z_arm_do_syscall for the exit so the exception
+     * return goes there in system state.
+     */
+    ldr r1, =z_arm_do_syscall
+    str r1, [ip, #24]   /* overwrite the LR to point to z_arm_do_syscall */
+
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
@@ -761,7 +776,6 @@ _do_syscall:
     ldr r6, =K_SYSCALL_BAD
 
 valid_syscall_id:
-    push {r0, r1}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r1, [r0, #_thread_offset_to_mode]
@@ -776,56 +790,8 @@ valid_syscall_id:
      */
     isb
 
-    /*
-     * restore r0-r3 from supervisor stack before changing to system mode.
-     * r0,r1 saved just after valid_syscall_id
-     * r2,r3 saved just after z_arm_svc
-     */
-    pop {r0-r3}
-
-    add sp,sp,r3 /* un-do stack pointer alignment to double-word boundary */
-
-    /* Switch to system mode */
-    cps #MODE_SYS
-
-    /*
-     * Restore the nested level.  The thread that is doing the system call may
-     * be put to sleep, as in the case of waiting in k_msgq_get() with
-     * K_FOREVER, so we don't want the nesting level to be elevated during
-     * that complete time.
-     */
-    ldr r2, =_kernel
-    ldr r1, [r2, #_kernel_offset_to_nested]
-    sub r1, r1, #1
-    str r1, [r2, #_kernel_offset_to_nested]
-
-    /*
-     * restore r0-r3 from stack since we've used them above during demux
-     */
-    ldr r0, [sp, #0]
-    ldr r1, [sp, #4]
-    ldr r2, [sp, #8]
-    ldr r3, [sp, #12]
-
-    /*
-     * grab return address from USER/SYSTEM stack frame
-     * (just past the SVC opcode)
-     */
-    ldr r8, [sp, #20]
-
-    /*
-     * User stack left with:
-     *
-     * sp:    r0
-     * sp+4:  r1
-     * sp+8:  r2
-     * sp+12: r3
-     * sp+16: r12
-     * sp+20: LR_svc (address of opcode just following SVC opcode )
-     */
-
-    /* branch to _arm_do_syscall.  We will not return here. */
-    b z_arm_do_syscall
+    /* Return to _arm_do_syscall in system state. */
+    b z_arm_int_exit
 #endif
 
 GTEXT(z_arm_cortex_r_svc)
