@@ -644,6 +644,11 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		pdu->rx_addr = 0;
 	}
 
+	/* Initialize LLL header with parent pointer so that ULL contexts
+	 * can be referenced in functions having the LLL context reference.
+	 */
+	lll_hdr_init(&adv->lll, adv);
+
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
@@ -1202,8 +1207,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	/* Initialize ULL context before radio event scheduling is started. */
 	ull_hdr_init(&adv->ull);
-	lll_hdr_init(lll, adv);
 
 	/* TODO: active_to_start feature port */
 	adv->ull.ticks_active_to_start = 0;
