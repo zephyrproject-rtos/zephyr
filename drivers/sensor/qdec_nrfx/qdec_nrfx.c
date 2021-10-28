@@ -88,7 +88,7 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	irq_unlock(key);
 
 	BUILD_ASSERT(steps > 0, "only positive number valid");
-	BUILD_ASSERT(steps <= 2148, "overflow possible");
+	BUILD_ASSERT(steps <= 2048, "overflow possible");
 
 	val->val1 = (acc * FULL_ANGLE) / steps;
 	val->val2 = (acc * FULL_ANGLE) - (val->val1 * steps);
