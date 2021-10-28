@@ -73,7 +73,7 @@ jobs:
           DOC_TAG="development"
         fi
 
-        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto" make -C doc html
+        DOC_TAG=${DOC_TAG} SPHINXOPTS="-q -W -j auto -t publish" make -C doc html
 
     - name: compress-docs
       run: |

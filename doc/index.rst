@@ -117,7 +117,6 @@ Sections
 Indices and Tables
 ******************
 
-* :ref:`configuration_options`
 * :ref:`glossary`
 * :ref:`genindex`
 
