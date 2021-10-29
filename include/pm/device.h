@@ -96,7 +96,6 @@ struct pm_device {
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_mutex lock;
-	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
 	bool enable : 1;
 	/** Device usage count */
