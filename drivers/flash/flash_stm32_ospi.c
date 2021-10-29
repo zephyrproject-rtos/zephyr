@@ -65,6 +65,7 @@ struct flash_stm32_ospi_config {
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
+	int data_mode;
 	const struct soc_gpio_pinctrl *pinctrl_list;
 	size_t pinctrl_list_size;
 };
@@ -112,7 +113,7 @@ static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 	struct flash_stm32_ospi_data *dev_data = DEV_DATA(dev);
 	HAL_StatusTypeDef hal_ret;
 
-	ARG_UNUSED(dev_cfg);
+	cmd->DataMode = dev_cfg->data_mode;
 
 	LOG_DBG("Instruction 0x%x", cmd->Instruction);
 
@@ -140,8 +141,7 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 	struct flash_stm32_ospi_data *dev_data = DEV_DATA(dev);
 	HAL_StatusTypeDef hal_ret;
 
-	ARG_UNUSED(dev_cfg);
-
+	cmd->DataMode = dev_cfg->data_mode;
 	cmd->NbData = size;
 
 	dev_data->cmd_status = 0;
@@ -177,7 +177,7 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 	struct flash_stm32_ospi_data *dev_data = DEV_DATA(dev);
 	HAL_StatusTypeDef hal_ret;
 
-	ARG_UNUSED(dev_cfg);
+	cmd->DataMode = dev_cfg->data_mode;
 
 	LOG_DBG("Instruction 0x%x", cmd->Instruction);
 
@@ -263,7 +263,6 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		.AddressSize = HAL_OSPI_ADDRESS_24_BITS,
 		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
 		.AddressMode = HAL_OSPI_ADDRESS_1_LINE,
-		.DataMode = HAL_OSPI_DATA_1_LINE,
 	};
 
 	ospi_lock_thread(dev);
@@ -277,13 +276,14 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 
 static int ospi_wait_until_ready(const struct device *dev)
 {
+	const struct flash_stm32_ospi_config *dev_cfg = DEV_CFG(dev);
 	uint8_t reg;
 	int ret;
 
 	OSPI_RegularCmdTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_RDSR,
 		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
-		.DataMode = HAL_OSPI_DATA_1_LINE,
+		.DataMode = dev_cfg->data_mode,
 	};
 
 	do {
@@ -314,7 +314,6 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		.AddressSize = HAL_OSPI_ADDRESS_24_BITS,
 		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
 		.AddressMode = HAL_OSPI_ADDRESS_1_LINE,
-		.DataMode = HAL_OSPI_DATA_1_LINE,
 	};
 
 	ospi_lock_thread(dev);
@@ -376,6 +375,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 	OSPI_RegularCmdTypeDef cmd_write_en = {
 		.Instruction = SPI_NOR_CMD_WREN,
 		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
+		.DataMode = dev_cfg->data_mode,
 	};
 
 	OSPI_RegularCmdTypeDef cmd_erase = {
@@ -383,6 +383,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		.AddressSize = HAL_OSPI_ADDRESS_24_BITS,
 		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
 		.AddressMode = HAL_OSPI_ADDRESS_1_LINE,
+		.DataMode = dev_cfg->data_mode,
 	};
 
 	ospi_lock_thread(dev);
@@ -395,7 +396,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			/* chip erase */
 			cmd_erase.Instruction = SPI_NOR_CMD_CE;
 			cmd_erase.AddressMode = HAL_OSPI_ADDRESS_NONE;
-			ospi_send_cmd(dev, &cmd_erase);
+			cmd_erase.DataMode = dev_cfg->data_mode;
 			size -= dev_cfg->flash_size;
 		} else {
 			const struct jesd216_erase_type *erase_types =
@@ -1027,6 +1028,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.irq_config = flash_stm32_ospi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
+	.data_mode = DT_INST_PROP(0, data_mode),
 	.pinctrl_list = ospi_pins,
 	.pinctrl_list_size = ARRAY_SIZE(ospi_pins),
 };
