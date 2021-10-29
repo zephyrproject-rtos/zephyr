@@ -19,6 +19,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <arch/xtensa/arch.h>
+#include <stdlib.h>
 
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
