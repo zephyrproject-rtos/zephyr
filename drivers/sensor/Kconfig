@@ -168,6 +168,8 @@ source "drivers/sensor/mchp_tach_xec/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
 
+source "drivers/sensor/mhz19b/Kconfig"
+
 source "drivers/sensor/mpr/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
