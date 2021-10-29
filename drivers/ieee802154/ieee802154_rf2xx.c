@@ -841,42 +841,12 @@ static inline int configure_gpios(const struct device *dev)
 
 static inline int configure_spi(const struct device *dev)
 {
-	struct rf2xx_context *ctx = dev->data;
 	const struct rf2xx_config *conf = dev->config;
 
-	/* Get SPI Driver Instance*/
-	ctx->spi = device_get_binding(conf->spi.devname);
-	if (!ctx->spi) {
-		LOG_ERR("Failed to get instance of %s device",
-			conf->spi.devname);
-
+	if (!spi_is_ready(&conf->spi)) {
+		LOG_ERR("SPI bus %s is not ready",
+			conf->spi.bus->name);
 		return -ENODEV;
-	}
-
-	/* Apply SPI Config: 8-bit, MSB First, MODE-0 */
-	ctx->spi_cfg.operation = SPI_WORD_SET(8) |
-				 SPI_TRANSFER_MSB;
-	ctx->spi_cfg.slave = conf->spi.addr;
-	ctx->spi_cfg.frequency = conf->spi.freq;
-	ctx->spi_cfg.cs = NULL;
-
-	/*
-	 * Get SPI Chip Select Instance
-	 *
-	 * This is an optinal feature configured on DTS. Some SPI controllers
-	 * automatically set CS line by device slave address. Check your SPI
-	 * device driver to understand if you need this option enabled.
-	 */
-	ctx->spi_cs.gpio_dev = device_get_binding(conf->spi.cs.devname);
-	if (ctx->spi_cs.gpio_dev) {
-		ctx->spi_cs.gpio_pin = conf->spi.cs.pin;
-		ctx->spi_cs.gpio_dt_flags = conf->spi.cs.flags;
-		ctx->spi_cs.delay = 0U;
-
-		ctx->spi_cfg.cs = &ctx->spi_cs;
-
-		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			conf->spi.cs.devname, conf->spi.cs.pin);
 	}
 
 	return 0;
@@ -981,18 +951,6 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha),			\
 		 DT_INST_GPIO_FLAGS(n, gpio_pha))
 
-#define DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n)				\
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
-		 DT_INST_SPI_DEV_CS_GPIOS_LABEL(n))
-
-#define DRV_INST_SPI_DEV_CS_GPIOS_PIN(n)				\
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
-		 DT_INST_SPI_DEV_CS_GPIOS_PIN(n))
-
-#define DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n)				\
-	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),			\
-		 DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n))
-
 #define DRV_INST_LOCAL_MAC_ADDRESS(n)					\
 	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),		\
 		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,	\
@@ -1023,12 +981,8 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		.clkm.pin = DRV_INST_GPIO_PIN(n, clkm_gpios),		\
 		.clkm.flags = DRV_INST_GPIO_FLAGS(n, clkm_gpios),	\
 									\
-		.spi.devname = DT_INST_BUS_LABEL(n),			\
-		.spi.addr = DT_INST_REG_ADDR(n),			\
-		.spi.freq = DT_INST_PROP(n, spi_max_frequency),		\
-		.spi.cs.devname = DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n),	\
-		.spi.cs.pin = DRV_INST_SPI_DEV_CS_GPIOS_PIN(n),		\
-		.spi.cs.flags = DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n),	\
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
+				 SPI_TRANSFER_MSB, 0),			\
 	}
 
 #define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
