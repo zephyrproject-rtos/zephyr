@@ -44,7 +44,7 @@ static uint8_t static_regions_num;
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_CPU_CORTEX_R)
+	defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #include "arm_mpu_v7_internal.h"
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
@@ -85,7 +85,7 @@ static int mpu_configure_region(const uint8_t index,
 
 	/* Populate internal ARM MPU region configuration structure. */
 	region_conf.base = new_region->start;
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	region_conf.size = size_to_mpu_rasr_size(new_region->size);
 #endif
 	get_region_attr_from_mpu_partition_info(&region_conf.attr,
@@ -138,7 +138,7 @@ static int mpu_configure_regions(const struct z_arm_mpu_partition
 /* ARM Core MPU Driver API Implementation for ARM MPU */
 
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 /**
  * @brief enable the MPU by setting bit in SCTRL register
  */
