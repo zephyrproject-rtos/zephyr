@@ -253,7 +253,7 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
 	size_t i;
 
 	for (i = 0; i < size; ++i) {
-		((uint8_t *)dst)[i] = ((uint8_t *)src)[i];
+		((uint8_t *)dst)[i] = ((const uint8_t *)src)[i];
 	}
 }
 
