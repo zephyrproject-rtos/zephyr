@@ -251,7 +251,7 @@ def string_create_helper(region, memory_type,
         else:
             if memory_type != 'SRAM' and region == 'rodata':
                 align_size = 0
-                if memory_type in mpu_align.keys():
+                if memory_type in mpu_align:
                     align_size = mpu_align[memory_type]
 
                 linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), region, memory_type.upper(),
