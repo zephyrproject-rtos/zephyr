@@ -16,9 +16,8 @@ extern "C" {
 
 /**
  * @brief Device Power Management API
- *
- * @defgroup device_power_management_api Device Power Management API
- * @ingroup power_management_api
+ * @defgroup subsys_pm_device Device
+ * @ingroup subsys_pm
  * @{
  */
 
@@ -90,7 +89,7 @@ typedef int (*pm_device_action_cb_t)(const struct device *dev,
  * @brief Device PM info
  */
 struct pm_device {
-#ifdef CONFIG_PM_DEVICE_RUNTIME
+#if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
@@ -183,7 +182,7 @@ int pm_device_state_set(const struct device *dev,
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
  * @brief Indicate that the device is in the middle of a transaction
  *
@@ -231,7 +230,7 @@ static inline void pm_device_busy_set(const struct device *dev) {}
 static inline void pm_device_busy_clear(const struct device *dev) {}
 static inline bool pm_device_is_any_busy(void) { return false; }
 static inline bool pm_device_is_busy(const struct device *dev) { return false; }
-#endif
+#endif /* CONFIG_PM_DEVICE */
 
 __deprecated static inline void device_busy_set(const struct device *dev)
 {

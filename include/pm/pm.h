@@ -18,16 +18,17 @@ extern "C" {
 #endif
 
 /**
- * @defgroup power_management_api Power Management
+ * @brief System and device power management
+ * @defgroup subsys_pm Power Management (PM)
+ * @ingroup subsys
  * @{
  * @}
  */
 
 /**
  * @brief System Power Management API
- *
- * @defgroup system_power_management_api System Power Management API
- * @ingroup power_management_api
+ * @defgroup subsys_pm_sys System
+ * @ingroup subsys_pm
  * @{
  */
 
@@ -63,7 +64,7 @@ struct pm_notifier {
 	void (*state_exit)(enum pm_state state);
 };
 
-#ifdef CONFIG_PM
+#if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
  * @brief Force usage of given power state.
  *
@@ -105,10 +106,9 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  */
 
 /**
- * @brief System Power Management Constraint API
- *
- * @defgroup system_power_management_constraint_api Constraint API
- * @ingroup power_management_api
+ * @brief System Power Management Constraints API
+ * @defgroup subsys_pm_sys_constraint Constraints
+ * @ingroup subsys_pm_sys
  * @{
  */
 
@@ -155,10 +155,9 @@ bool pm_constraint_get(enum pm_state state);
  */
 
 /**
- * @brief Power Management Hooks
- *
- * @defgroup power_management_hook_interface Power Management Hooks
- * @ingroup power_management_api
+ * @brief System Power Management Hooks
+ * @defgroup subsys_pm_sys_hooks Hooks
+ * @ingroup subsys_pm_sys
  * @{
  */
 

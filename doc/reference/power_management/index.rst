@@ -512,14 +512,16 @@ API Reference
 Power Management Hook Interface
 ===============================
 
-.. doxygengroup:: power_management_hook_interface
+.. doxygengroup:: subsys_pm_sys_hooks
 
 System Power Management APIs
 ============================
 
-.. doxygengroup:: system_power_management_api
+.. doxygengroup:: subsys_pm_sys
 
 Device Power Management APIs
 ============================
 
-.. doxygengroup:: device_power_management_api
+.. doxygengroup:: subsys_pm_device
+
+.. doxygengroup:: subsys_pm_device_runtime
