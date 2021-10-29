@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gigadevice/gd32f450ikh6.dtsi>
+
+/ {
+	model = "GigaDevice GD32F450I Evaluation Kit";
+	compatible = "gd,gd32f450i";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+};
+
+&usart0 {
+	status = "okay";
+
+	current-speed = <115200>;
+};
