@@ -236,6 +236,13 @@ int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int can_loopback_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_MAX_FILTER;
+}
+
 static const struct can_driver_api can_api_funcs = {
 	.set_mode = can_loopback_set_mode,
 	.set_timing = can_loopback_set_timing,
@@ -248,6 +255,7 @@ static const struct can_driver_api can_api_funcs = {
 #endif
 	.register_state_change_isr = can_loopback_register_state_change_isr,
 	.get_core_clock = can_loopback_get_core_clock,
+	.get_max_filters = can_loopback_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,

@@ -981,6 +981,13 @@ static int can_rcar_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int can_rcar_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_RCAR_MAX_FILTER;
+}
+
 static const struct can_driver_api can_rcar_driver_api = {
 	.set_mode = can_rcar_set_mode,
 	.set_timing = can_rcar_set_timing,
@@ -993,6 +1000,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 #endif
 	.register_state_change_isr = can_rcar_register_state_change_isr,
 	.get_core_clock = can_rcar_get_core_clock,
+	.get_max_filters = can_rcar_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,

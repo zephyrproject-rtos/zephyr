@@ -38,6 +38,15 @@ int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
+int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	if (id_type == CAN_STANDARD_IDENTIFIER) {
+		return NUM_STD_FILTER_DATA;
+	} else {
+		return NUM_EXT_FILTER_DATA;
+	}
+}
+
 void can_stm32fd_clock_enable(void)
 {
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
@@ -175,6 +184,7 @@ static const struct can_driver_api can_api_funcs = {
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
+	.get_max_filters = can_stm32fd_get_max_filters,
 	.register_state_change_isr = can_stm32fd_register_state_change_isr,
 	.timing_min = {
 		.sjw = 0x7f,

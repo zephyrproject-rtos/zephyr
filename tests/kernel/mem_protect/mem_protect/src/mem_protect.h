@@ -70,6 +70,7 @@ extern void test_kobj_create_out_of_memory(void);
 extern void test_thread_alloc_out_of_idx(void);
 extern void test_alloc_kobjects(void);
 extern void test_kobject_perm_error(void);
+extern void test_all_kobjects_str(void);
 
 
 /* Flag needed to figure out if the fault was expected or not. */

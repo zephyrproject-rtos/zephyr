@@ -370,6 +370,9 @@ typedef void(*can_register_state_change_isr_t)(const struct device *dev,
 
 typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
 
+typedef int (*can_get_max_filters_t)(const struct device *dev,
+				     enum can_ide id_type);
+
 #ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
 #define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
 #endif
@@ -404,6 +407,7 @@ __subsystem struct can_driver_api {
 	can_get_state_t get_state;
 	can_register_state_change_isr_t register_state_change_isr;
 	can_get_core_clock_t get_core_clock;
+	can_get_max_filters_t get_max_filters;
 	/* Min values for the timing registers */
 	struct can_timing timing_min;
 	/* Max values for the timing registers */
@@ -659,6 +663,31 @@ static inline int z_impl_can_get_core_clock(const struct device *dev,
 		(const struct can_driver_api *)dev->api;
 
 	return api->get_core_clock(dev, rate);
+}
+
+/**
+ * @brief Retrieve maximum number of filters
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param id_type CAN identifier type (standard or extended)
+ *
+ * @retval Number of maximum concurrent filters
+ * @retval -EIO General input / output error, failed to query device
+ * @retval -ENOSYS If this function is not implemented by the driver
+ */
+__syscall int can_get_max_filters(const struct device *dev, enum can_ide id_type);
+
+static inline int z_impl_can_get_max_filters(const struct device *dev,
+					     enum can_ide id_type)
+{
+	const struct can_driver_api *api =
+		(const struct can_driver_api *)dev->api;
+
+	if (api->get_max_filters == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_max_filters(dev, id_type);
 }
 
 /**
