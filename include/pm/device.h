@@ -117,7 +117,6 @@ struct pm_device {
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 #define INIT_PM_DEVICE_RUNTIME(obj)			\
-	.usage = 0U,					\
 	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
 	.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),
 #else
