@@ -84,21 +84,36 @@
 static uint16_t _opcode;
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-/* Scan duplicate filter */
-struct dup {
-	uint8_t      mask;
+#define DUP_EXT_ADV_MODE_MAX      4
+#define DUP_EXT_ADV_MODE_COUNT    4
+
+/* Duplicate filter entries, one per Bluetooth address */
+static struct dup_entry {
 	bt_addr_le_t addr;
 
+	/* Mask to accumulate advertising PDU type as bitmask */
+	uint8_t      mask;
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	uint8_t            adv_mode:2;
-	uint8_t            data_cmplt:1;
-	struct pdu_adv_adi adi;
+	struct dup_ext_adv_mode {
+		uint16_t set_count:5;
+		uint16_t set_curr:5;
+		struct dup_ext_adv_set {
+			uint8_t data_cmplt:1;
+			struct pdu_adv_adi adi;
+		} set[CONFIG_BT_CTLR_DUP_FILTER_ADV_SET_MAX];
+	} adv_mode[DUP_EXT_ADV_MODE_MAX];
 #endif
-};
-static struct dup dup_filter[CONFIG_BT_CTLR_DUP_FILTER_LEN];
+} dup_filter[CONFIG_BT_CTLR_DUP_FILTER_LEN];
+
+/* Duplicate filtering is disabled if count value is set to negative integer */
+#define DUP_FILTER_DISABLED (-1)
+
+/* Duplicate filtering array entry count, filtering disabled if negative */
 static int32_t dup_count;
+/* Duplicate filtering current free entry, overwrites entries after rollover */
 static uint32_t dup_curr;
-#endif
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 struct scan_filter {
@@ -331,8 +346,8 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 #endif
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	dup_count = -1;
-#endif
+	dup_count = DUP_FILTER_DISABLED;
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 	/* reset event masks */
 	event_mask = DEFAULT_EVENT_MASK;
@@ -1611,14 +1626,14 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	/* initialize duplicate filtering */
+	/* Initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
 		dup_count = 0;
 		dup_curr = 0U;
 	} else {
-		dup_count = -1;
+		dup_count = DUP_FILTER_DISABLED;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = ll_scan_enable(cmd->enable, 0, 0);
@@ -3301,14 +3316,14 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
-	/* initialize duplicate filtering */
+	/* Initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
 		dup_count = 0;
 		dup_curr = 0U;
 	} else {
-		dup_count = -1;
+		dup_count = DUP_FILTER_DISABLED;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
 
@@ -4663,49 +4678,102 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void store_adi(int i, const struct pdu_adv_adi *adi)
+static void dup_ext_adv_adi_store(struct dup_ext_adv_mode *dup_mode,
+				  const struct pdu_adv_adi *adi,
+				  uint8_t data_status)
 {
+	struct dup_ext_adv_set *adv_set;
+
+	adv_set = &dup_mode->set[dup_mode->set_curr];
+
+	adv_set->data_cmplt = !data_status;
+
 	if (adi) {
-		memcpy(&dup_filter[i].adi, adi, sizeof(*adi));
+		(void)memcpy(&adv_set->adi, adi, sizeof(*adi));
 	} else {
-		memset(&dup_filter[i].adi, 0, sizeof(*adi));
+		(void)memset(&adv_set->adi, 0U, sizeof(*adi));
+	}
+
+	if (dup_mode->set_count < CONFIG_BT_CTLR_DUP_FILTER_ADV_SET_MAX) {
+		dup_mode->set_count++;
+		dup_mode->set_curr = dup_mode->set_count;
+	} else {
+		dup_mode->set_curr++;
+	}
+
+	if (dup_mode->set_curr == CONFIG_BT_CTLR_DUP_FILTER_ADV_SET_MAX) {
+		dup_mode->set_curr = 0U;
+	}
+}
+
+static void dup_ext_adv_mode_reset(struct dup_ext_adv_mode *dup_adv_mode)
+{
+	uint8_t adv_mode;
+
+	for (adv_mode = 0U; adv_mode < DUP_EXT_ADV_MODE_COUNT;
+	     adv_mode++) {
+		struct dup_ext_adv_mode *dup_mode;
+
+		dup_mode = &dup_adv_mode[adv_mode];
+		dup_mode->set_count = 0U;
+		dup_mode->set_curr = 0U;
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-static inline bool is_dup_or_update(int i, uint8_t adv_type, uint8_t adv_mode,
+static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
+				    uint8_t adv_mode,
 				    const struct pdu_adv_adi *adi,
 				    uint8_t data_status)
 {
-	if (!(dup_filter[i].mask & BIT(adv_type))) {
+	if (!(dup->mask & BIT(adv_type))) {
 		/* report different adv types */
-		dup_filter[i].mask |= BIT(adv_type);
+		dup->mask |= BIT(adv_type);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		dup_filter[i].adv_mode = adv_mode;
-		dup_filter[i].data_cmplt = !data_status;
-		store_adi(i, adi);
+		dup_ext_adv_adi_store(&dup->adv_mode[adv_mode], adi,
+				      data_status);
 
 		return false;
-	} else if (dup_filter[i].adv_mode != adv_mode) {
-		/* report different adv mode */
-		dup_filter[i].adv_mode = adv_mode;
-
-		dup_filter[i].data_cmplt = !data_status;
-		store_adi(i, adi);
-
+	} else if (adv_type != PDU_ADV_TYPE_EXT_IND) {
+		/* drop duplicate legacy advertising */
+		return true;
+	} else if (dup->adv_mode[adv_mode].set_count == 0U) {
+		/* report different extended adv mode */
+		dup_ext_adv_adi_store(&dup->adv_mode[adv_mode], adi,
+				      data_status);
 		return false;
-	} else if (adi && ((dup_filter[i].adi.sid != adi->sid) ||
-			   (dup_filter[i].adi.did != adi->did))) {
-		/* report different adi */
-		store_adi(i, adi);
+	} else if (adi) {
+		struct dup_ext_adv_mode *dup_mode;
+		uint8_t j;
 
-		dup_filter[i].data_cmplt = !data_status;
+		dup_mode = &dup->adv_mode[adv_mode];
+		for (j = 0; j < dup_mode->set_count; j++) {
+			struct dup_ext_adv_set *adv_set;
 
-		return false;
-	} else if (!dup_filter[i].data_cmplt && !data_status) {
-		/* report data complete */
-		dup_filter[i].data_cmplt = !data_status;
+			adv_set = &dup_mode->set[j];
+			if (adv_set->adi.sid != adi->sid) {
+				continue;
+			}
+
+			if (adv_set->adi.did != adi->did) {
+				/* report different DID */
+				adv_set->adi.did = adi->did;
+				return false;
+			} else if (!adv_set->data_cmplt && !data_status) {
+				/* report data complete */
+				adv_set->data_cmplt = !data_status;
+				return false;
+			} else if (!adv_set->data_cmplt) {
+				/* report partial and incomplete data */
+				return false;
+			}
+
+			return true;
+		}
+
+		dup_ext_adv_adi_store(&dup->adv_mode[adv_mode], adi,
+				      data_status);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 		return false;
@@ -4720,31 +4788,38 @@ static bool dup_found(uint8_t adv_type, uint8_t addr_type, const uint8_t *addr,
 {
 	/* check for duplicate filtering */
 	if (dup_count >= 0) {
+		struct dup_entry *dup;
 		int i;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		__ASSERT((adv_mode < ARRAY_SIZE(dup_filter[0].adv_mode)),
+			 "adv_mode index out-of-bound");
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 		/* find for existing entry and update if changed */
 		for (i = 0; i < dup_count; i++) {
-			if (memcmp(addr, &dup_filter[i].addr.a.val[0],
+			dup = &dup_filter[i];
+			if (memcmp(addr, &dup->addr.a.val[0],
 				   sizeof(bt_addr_t)) ||
-			    (addr_type != dup_filter[i].addr.type)) {
+			    (addr_type != dup->addr.type)) {
 				continue;
 			}
 
 			/* still duplicate or update entry with change */
-			return is_dup_or_update(i, adv_type, adv_mode, adi,
+			return is_dup_or_update(dup, adv_type, adv_mode, adi,
 						data_status);
 		}
 
 		/* insert into the duplicate filter */
-		memcpy(&dup_filter[dup_curr].addr.a.val[0], addr,
-		       sizeof(bt_addr_t));
-		dup_filter[dup_curr].addr.type = addr_type;
-		dup_filter[dup_curr].mask = BIT(adv_type);
+		dup = &dup_filter[dup_curr];
+		(void)memcpy(&dup->addr.a.val[0], addr, sizeof(bt_addr_t));
+		dup->addr.type = addr_type;
+		dup->mask = BIT(adv_type);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		dup_filter[dup_curr].adv_mode = adv_mode;
-		dup_filter[i].data_cmplt = !data_status;
-		store_adi(dup_curr, adi);
+		dup_ext_adv_mode_reset(dup->adv_mode);
+		dup_ext_adv_adi_store(&dup->adv_mode[adv_mode], adi,
+				      data_status);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 		if (dup_count < CONFIG_BT_CTLR_DUP_FILTER_LEN) {
