@@ -1,4 +1,5 @@
 # Copyright (c) 2021, ATL Electronics
+# Copyright (c) 2021 BrainCo Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -13,5 +14,32 @@ choice
 
 	config SOC_GD32F403Z
 		bool "gd32f403z"
+
+	config SOC_GD32F405R
+		bool "gd32f405r"
+
+	config SOC_GD32F405V
+		bool "gd32f405v"
+
+	config SOC_GD32F405Z
+		bool "gd32f405z"
+
+	config SOC_GD32F407R
+		bool "gd32f407r"
+
+	config SOC_GD32F407V
+		bool "gd32f407v"
+
+	config SOC_GD32F407Z
+		bool "gd32f407z"
+
+	config SOC_GD32F450V
+		bool "gd32f450v"
+
+	config SOC_GD32F450Z
+		bool "gd32f450z"
+
+	config SOC_GD32F450I
+		bool "gd32f450i"
 
 endchoice

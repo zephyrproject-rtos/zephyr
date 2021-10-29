@@ -1,0 +1,21 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GD32F405R || SOC_GD32F405V || SOC_GD32F405Z
+
+config SOC
+	default	"gd32f405r" if SOC_GD32F405R
+	default	"gd32f405v" if SOC_GD32F405V
+	default	"gd32f405z" if SOC_GD32F405Z
+
+config SOC_SERIES_GD32F405
+	bool
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 168000000
+
+config NUM_IRQS
+	default 82
+
+endif

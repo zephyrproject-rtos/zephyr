@@ -1,0 +1,21 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GD32F450V || SOC_GD32F450Z || SOC_GD32F450I
+
+config SOC
+	default	"gd32f450v" if SOC_GD32F450V
+	default	"gd32f450z" if SOC_GD32F450Z
+	default	"gd32f450i" if SOC_GD32F450I
+
+config SOC_SERIES_GD32F450
+	bool
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 200000000
+
+config NUM_IRQS
+	default 91
+
+endif

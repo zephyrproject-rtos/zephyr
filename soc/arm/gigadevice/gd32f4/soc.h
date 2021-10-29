@@ -22,6 +22,10 @@
 
 #if defined(CONFIG_SOC_SERIES_GD32F403)
 #include <gd32f403.h>
+#elif defined(CONFIG_SOC_SERIES_GD32F405) || \
+	  defined(CONFIG_SOC_SERIES_GD32F407) || \
+	  defined(CONFIG_SOC_SERIES_GD32F450)
+#include <gd32f4xx.h>
 #else
 #error Library does not support the specified device.
 #endif
