@@ -22,7 +22,7 @@
 #include <arch/arm/aarch32/exc.h>
 #include <irq.h>
 
-#if defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <arch/arm/aarch32/cortex_a_r/cpu.h>
 #endif
 

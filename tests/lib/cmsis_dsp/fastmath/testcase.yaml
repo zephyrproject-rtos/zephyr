@@ -4,7 +4,7 @@ common:
 
 tests:
   libraries.cmsis_dsp.fastmath:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -14,7 +14,7 @@ tests:
     min_flash: 128
     min_ram: 64
   libraries.cmsis_dsp.fastmath.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
     tags: cmsis_dsp fpu
