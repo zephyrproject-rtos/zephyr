@@ -549,7 +549,7 @@ enum log_strdup_action {
 static inline uint32_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((uint8_t *)data - (uint8_t *)__log_const_start)/
+	return ((const uint8_t *)data - (uint8_t *)__log_const_start)/
 			sizeof(struct log_source_const_data);
 }
 
