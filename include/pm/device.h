@@ -225,25 +225,24 @@ bool pm_device_is_any_busy(void);
 bool pm_device_is_busy(const struct device *dev);
 
 /**
- * @brief Enable a power management wakeup source
+ * @brief Enable or disable a device as a wake up source.
  *
- * Enable a wakeup source. This will keep the current device active when the
- * system is suspended, allowing it to be used to wake up the system.
+ * A device marked as a wake up source will not be suspended when the system
+ * goes into low-power modes, thus allowing to use it as a wake up source for
+ * the system.
  *
- * @param dev device object to enable.
+ * @param dev Device instance.
  * @param enable @c true to enable or @c false to disable
  *
- * @retval true if the wakeup source was successfully enabled.
- * @retval false if the wakeup source was not successfully enabled.
+ * @retval true If the wakeup source was successfully enabled.
+ * @retval false If the wakeup source was not successfully enabled.
  */
 bool pm_device_wakeup_enable(struct device *dev, bool enable);
 
 /**
- * @brief Check if a power management wakeup source is enabled
+ * @brief Check if a device is enabled as a wake up source.
  *
- * Checks if a wake up source is enabled.
- *
- * @param dev device object to check.
+ * @param dev Device instance.
  *
  * @retval true if the wakeup source is enabled.
  * @retval false if the wakeup source is not enabled.
@@ -253,10 +252,10 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
 /**
  * @brief Check if a device is wake up capable
  *
- * @param dev device object to check.
+ * @param dev Device instance.
  *
- * @retval true if the device is wake up capable.
- * @retval false if the device is not wake up capable.
+ * @retval true If the device is wake up capable.
+ * @retval false If the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
 #else
