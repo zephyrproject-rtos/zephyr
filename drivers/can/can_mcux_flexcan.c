@@ -127,6 +127,13 @@ static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
+int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_MAX_FILTER;
+}
+
 static int mcux_flexcan_set_timing(const struct device *dev,
 				   const struct can_timing *timing,
 				   const struct can_timing *timing_data)
@@ -747,6 +754,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 #endif
 	.register_state_change_isr = mcux_flexcan_register_state_change_isr,
 	.get_core_clock = mcux_flexcan_get_core_clock,
+	.get_max_filters = mcux_flexcan_get_max_filters,
 	/*
 	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
 	 * descriptions" table in the SoC reference manual.
