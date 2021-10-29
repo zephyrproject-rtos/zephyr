@@ -161,6 +161,15 @@ config BT_CTLR_DUP_FILTER_LEN
 	  Set the number of unique BLE addresses that can be filtered as
 	  duplicates while scanning.
 
+config BT_CTLR_DUP_FILTER_ADV_SET_MAX
+	int "Number of Extended Advertising Sets in the scan duplicate filter"
+	depends on BT_OBSERVER && (BT_CTLR_DUP_FILTER_LEN > 0)
+	range 1 16
+	default 1
+	help
+	  Set the number of unique Advertising Set ID per Bluetooth Low Energy
+	  addresses that can be filtered as duplicates while Extended Scanning.
+
 config BT_CTLR_MESH_SCAN_FILTERS
 	int "Number of Mesh scan filters"
 	depends on BT_HCI_MESH_EXT
