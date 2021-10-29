@@ -289,13 +289,18 @@ enum sensor_attribute {
 	SENSOR_ATTR_UPPER_THRESH,
 	/** Threshold for any-motion (slope) trigger. */
 	SENSOR_ATTR_SLOPE_TH,
-	/** Threshold for freefall or wake-up trigger */
-	SENSOR_ATTR_WUFF_TH,
 	/**
 	* Duration for which the freefall value need to be
 	* outside the threshold for trigger to fire
 	*/
 	SENSOR_ATTR_WUFF_DUR,
+	/** Threshold for any-motion (slope) trigger. */
+	SENSOR_ATTR_SLOPE_TH,
+	/**
+	 * Duration for which the slope values needs to be
+	 * outside the threshold for the trigger to fire.
+	 */
+	SENSOR_ATTR_SLOPE_DUR,
 	/* Hysteresis for trigger thresholds. */
 	SENSOR_ATTR_HYSTERESIS,
 	/** Oversampling factor */
