@@ -386,3 +386,20 @@ void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)
 {
 	heap_print_info(heap->heap, dump_chunks);
 }
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+
+int sys_heap_runtime_stats_get(struct sys_heap *heap,
+		struct sys_heap_runtime_stats *stats)
+{
+	if ((heap == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+	stats->free_bytes = heap->heap->free_bytes;
+	stats->allocated_bytes = heap->heap->allocated_bytes;
+
+	return 0;
+}
+
+#endif
