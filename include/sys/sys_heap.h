@@ -61,6 +61,25 @@ struct z_heap_stress_result {
 	uint64_t accumulated_in_use_bytes;
 };
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+
+struct sys_heap_runtime_stats {
+	size_t free_bytes;
+	size_t allocated_bytes;
+};
+
+/**
+ * @brief Get the runtime statistics of a sys_heap
+ *
+ * @param heap Pointer to specified sys_heap
+ * @param stats_t Pointer to struct to copy statistics into
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int sys_heap_runtime_stats_get(struct sys_heap *heap,
+		struct sys_heap_runtime_stats *stats);
+
+#endif
+
 /** @brief Initialize sys_heap
  *
  * Initializes a sys_heap struct to manage the specified memory.
