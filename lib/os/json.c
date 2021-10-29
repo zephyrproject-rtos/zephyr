@@ -302,6 +302,23 @@ static int obj_init(struct json_obj *json, char *data, size_t len)
 	return 0;
 }
 
+static int arr_init(struct json_obj *json, char *data, size_t len)
+{
+	struct token token;
+
+	lexer_init(&json->lexer, data, len);
+
+	if (!lexer_next(&json->lexer, &token)) {
+		return -EINVAL;
+	}
+
+	if (token.type != JSON_TOK_ARRAY_START) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int element_token(enum json_tokens token)
 {
 	switch (token) {
@@ -605,6 +622,23 @@ int json_obj_parse(char *payload, size_t len,
 	}
 
 	return obj_parse(&obj, descr, descr_len, val);
+}
+
+int json_arr_parse(char *payload, size_t len,
+		   const struct json_obj_descr *descr, void *val)
+{
+	struct json_obj arr;
+	int ret;
+
+	ret = arr_init(&arr, payload, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	void *ptr = (char *)val + descr->offset;
+
+	return arr_parse(&arr, descr->array.element_descr,
+			 descr->array.n_elements, ptr, val);
 }
 
 static char escape_as(char chr)
