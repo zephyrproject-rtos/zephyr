@@ -1874,6 +1874,10 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 
 		if (bt_auth && bt_auth->pairing_complete) {
 			bt_auth->pairing_complete(conn, bond_flag);
+#if defined(CONFIG_BT_SETTINGS)
+            bt_gatt_update_ccc_cfg_addr(&(smp->chan.chan.conn->le.init_addr), &(smp->chan.chan.conn->le.dst));
+            bt_gatt_store_ccc_and_cf(smp->chan.chan.conn);
+#endif // #if defined(CONFIG_BT_SETTINGS)
 		}
 	} else {
 		enum bt_security_err security_err = security_err_get(status);

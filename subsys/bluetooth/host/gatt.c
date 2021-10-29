@@ -52,6 +52,16 @@
 
 static uint16_t last_static_handle;
 
+#if defined(CONFIG_BT_SETTINGS)
+/* Struct used to store both the public and the random address of a device when replacing
+   random adresses in the ccc attribute's with the device's public address after pairing complete.
+*/
+struct device_addresses {
+    const bt_addr_le_t *private_addr;
+    const bt_addr_le_t *public_addr;
+};
+#endif /* CONFIG_BT_SETTINGS */
+
 /* Persistent storage format for GATT CCC */
 struct ccc_store {
 	uint16_t handle;
@@ -1655,6 +1665,8 @@ static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 
 	return NULL;
 }
+
+
 
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
@@ -5138,6 +5150,53 @@ int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 	}
 
 	return 0;
+}
+
+u8_t convert_to_public_on_match(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct _bt_gatt_ccc     *ccc;
+	struct device_addresses *device_addresses   = user_data;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Copy the device's public address to the config's address if the config's address is the same as the device's private address */
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		if (bt_addr_le_cmp((const bt_addr_le_t*)&ccc->cfg[i].peer, device_addresses->private_addr) == 0) {
+			bt_addr_le_copy(&ccc->cfg[i].peer, device_addresses->public_addr);
+#ifndef CONFIG_BT_CTLR_ALLOW_SAME_PEER_CONN
+            break;
+#endif
+		}
+	}
+    return BT_GATT_ITER_STOP;
+}
+
+void bt_gatt_update_ccc_cfg_addr(const bt_addr_le_t *private_addr, const bt_addr_le_t *public_addr)
+{
+    struct device_addresses user_data = {.private_addr = private_addr, .public_addr = public_addr};
+
+    bt_gatt_foreach_attr(0x0001, 0xffff, convert_to_public_on_match, &user_data);
+}
+
+int bt_gatt_store_ccc_and_cf(struct bt_conn *conn)
+{
+    int return_code = 0;
+
+    return_code     = bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+
+    if(return_code != 0)
+    {
+        return return_code;
+    }
+
+    return_code = bt_gatt_store_cf(conn);
+
+    return return_code;
 }
 
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
