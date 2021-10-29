@@ -117,6 +117,7 @@ struct pm_state_info {
 	 * one Zephyr power state. This property allows the platform
 	 * distinguish them. e.g:
 	 *
+	 * @code{.dts}
 	 *	power-states {
 	 *		state0: state0 {
 	 *			compatible = "zephyr,power-state";
@@ -132,7 +133,8 @@ struct pm_state_info {
 	 *			min-residency-us = <20000>;
 	 *			exit-latency-us = <200>;
 	 *		};
-	 *	}
+	 *	};
+	 * @endcode
 	 */
 	uint8_t substate_id;
 
@@ -196,6 +198,8 @@ struct pm_state_info {
  * UTIL_LISTIFY func
  *
  * Example devicetree fragment:
+ *
+ * @code{.dts}
  *	cpus {
  *		...
  *		cpu0: cpu@0 {
@@ -221,10 +225,14 @@ struct pm_state_info {
  *		        exit-latency-us = <500>;
  *		};
  *	};
+ * @endcode
  *
- * Example usage: *
+ * Example usage:
+ *
+ * @code{.c}
  *    const struct pm_state_info states[] =
  *		PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+ * @endcode
  *
  * @param node_id A node identifier with compatible zephyr,power-state
  * @return an array of struct pm_state_info.
@@ -264,6 +272,8 @@ struct pm_state_info {
  * UTIL_LISTIFY func
  *
  * Example devicetree fragment:
+ *
+ * @code{.dts}
  *	cpus {
  *		...
  *		cpu0: cpu@0 {
@@ -287,9 +297,13 @@ struct pm_state_info {
  *		min-residency-us = <50000>;
  *		exit-latency-us = <500>;
  *	};
+ * @endcode
  *
- * Example usage: *
+ * Example usage:
+ *
+ * @code{.c}
  *    const enum pm_state states[] = PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+ * @endcode
  *
  * @param node_id A node identifier with compatible zephyr,power-state
  * @return an array of enum pm_state items.
