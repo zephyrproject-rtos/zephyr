@@ -1,0 +1,26 @@
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: KX022 16-Bit digital I2C Accelerometer sensor
+
+compatible: "kionix,kx022"
+
+include: i2c-device.yaml
+properties:
+    #  int1-gpios:
+    #    type: phandle-array
+    #    required: false
+    #    description: |
+    #      The INT1 signal.
+
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The INT2 signal.
+
+    # pwr-gpios:
+    #   type: phandle-array
+    #   required: false
+    #   description: |
+    #     The pin that powers the KX022

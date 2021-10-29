@@ -232,4 +232,6 @@ source "drivers/sensor/mcux_acmp/Kconfig"
 
 source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
 
+source "drivers/sensor/kx022/Kconfig"
+
 endif # SENSOR
