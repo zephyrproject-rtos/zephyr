@@ -2898,7 +2898,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         try:
             if result['returncode']:
-                raise TwisterRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+                raise TwisterRuntimeError("E: Unable to locate zephyr toolchain. Check the variable ZEPHYR_TOOLCHAIN_VARIANT.")
         except Exception as e:
             print(str(e))
             sys.exit(2)
