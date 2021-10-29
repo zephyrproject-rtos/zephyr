@@ -74,6 +74,8 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_FORCE_SUSPEND,
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Device PM action callback.
  *
@@ -125,7 +127,7 @@ struct pm_device {
 /**
  * @brief Utility macro to initialize #pm_device.
  *
- * @note DT_PROP_OR is used to retrieve the wakeup_source property because
+ * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
  * it may not be defined on all devices.
  *
  * @param obj Name of the #pm_device structure being initialized.
@@ -142,6 +144,8 @@ struct pm_device {
 				(DT_PROP_OR(node_id, wakeup_source, 0)),\
 				(0)) << PM_DEVICE_FLAG_WS_CAPABLE),	\
 	}
+
+/** @endcond */
 
 /**
  * @brief Get name of device PM state
