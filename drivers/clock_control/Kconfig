@@ -16,6 +16,12 @@ menuconfig CLOCK_CONTROL
 
 if CLOCK_CONTROL
 
+config CLOCK_CONTROL_INIT_PRIORITY
+	int "Clock control init priority"
+	default KERNEL_INIT_PRIORITY_OBJECTS
+	help
+	  Clock control driver device initialization priority.
+
 module = CLOCK_CONTROL
 module-str = clock control
 source "subsys/logging/Kconfig.template.log_config"
@@ -49,6 +55,8 @@ source "drivers/clock_control/Kconfig.rv32m1"
 source "drivers/clock_control/Kconfig.esp32"
 
 source "drivers/clock_control/Kconfig.esp32s2"
+
+source "drivers/clock_control/Kconfig.esp32c3"
 
 source "drivers/clock_control/Kconfig.litex"
 

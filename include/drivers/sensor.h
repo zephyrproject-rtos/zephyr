@@ -333,7 +333,7 @@ enum sensor_attribute {
  * @param trigger The trigger
  */
 typedef void (*sensor_trigger_handler_t)(const struct device *dev,
-					 struct sensor_trigger *trigger);
+					 const struct sensor_trigger *trigger);
 
 /**
  * @typedef sensor_attr_set_t
@@ -474,7 +474,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_trigger_set(const struct device *dev,
-				     struct sensor_trigger *trig,
+				     const struct sensor_trigger *trig,
 				     sensor_trigger_handler_t handler)
 {
 	const struct sensor_driver_api *api =

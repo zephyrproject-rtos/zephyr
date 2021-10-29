@@ -540,7 +540,7 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 			 &neorv32_uart_##n##_data,			\
 			 &neorv32_uart_##n##_config,			\
 			 PRE_KERNEL_1,					\
-			 CONFIG_UART_NEORV32_INIT_PRIORITY,		\
+			 CONFIG_SERIAL_INIT_PRIORITY,			\
 			 &neorv32_uart_driver_api)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(uart0), DT_DRV_COMPAT, okay)

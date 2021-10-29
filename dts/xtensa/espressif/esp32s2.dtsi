@@ -15,6 +15,7 @@
 
 	chosen {
 		zephyr,entropy = &trng0;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -62,6 +63,23 @@
 			xtal-div = <0>;
 			#clock-cells = <1>;
 			status = "ok";
+		};
+
+		flash: flash-controller@3f402000 {
+			compatible = "espressif,esp32-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x3f402000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_ESP32S2";
+				reg = <0 0x400000>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
 		};
 
 		uart0: uart@3f400000 {

@@ -159,33 +159,35 @@ static int ina23x_sample_fetch(const struct device *dev,
 	struct ina23x_data *ina23x = dev->data;
 	int ret;
 
-	switch (chan) {
-	case SENSOR_CHAN_VOLTAGE:
+	if (chan != SENSOR_CHAN_ALL &&
+	    chan != SENSOR_CHAN_VOLTAGE &&
+	    chan != SENSOR_CHAN_CURRENT &&
+	    chan != SENSOR_CHAN_POWER) {
+		return -ENOTSUP;
+	}
+
+	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VOLTAGE)) {
 		ret = ina23x_reg_read(dev, INA23X_REG_BUS_VOLT, &ina23x->bus_voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read bus voltage");
 			return ret;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_CURRENT:
+	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_CURRENT)) {
 		ret = ina23x_reg_read(dev, INA23X_REG_CURRENT, &ina23x->current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read current");
 			return ret;
 		}
-		break;
+	}
 
-	case SENSOR_CHAN_POWER:
+	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_POWER)) {
 		ret = ina23x_reg_read(dev, INA23X_REG_POWER, &ina23x->power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
 			return ret;
 		}
-		break;
-
-	default:
-		return -ENOTSUP;
 	}
 
 	return 0;

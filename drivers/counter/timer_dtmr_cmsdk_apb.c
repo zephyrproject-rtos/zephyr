@@ -196,7 +196,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 			    NULL,			\
 			    &dtmr_cmsdk_apb_dev_data_##inst,		\
 			    &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &dtmr_cmsdk_apb_api);			\
 									\
 	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev) \

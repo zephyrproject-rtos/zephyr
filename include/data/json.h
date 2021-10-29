@@ -179,6 +179,54 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 	}
 
 /**
+ * @internal @brief Helper macro to declare an element descriptor
+ *
+ * @param struct_ Struct packing the values
+ * @param len_field_ Field name in the struct for the number of elements
+ * in the array
+ * @param elem_type_ Element type, must be a primitive type
+ * @param union_ Optional macro argument containing array or object descriptor
+ */
+#define Z_JSON_ELEMENT_DESCR(struct_, len_field_, elem_type_, union_) \
+	(const struct json_obj_descr[]) \
+	{ \
+		{ \
+			.align_shift = Z_ALIGN_SHIFT(struct_), \
+			.type = elem_type_, \
+			.offset = offsetof(struct_, len_field_), \
+			union_ \
+		} \
+	}
+
+/**
+ * @internal @brief Helper macro to declare an array descriptor
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ */
+#define Z_JSON_DESCR_ARRAY(elem_descr_, elem_descr_len_) \
+	{ \
+		.array = { \
+			.element_descr = elem_descr_, \
+			.n_elements = elem_descr_len_, \
+		}, \
+	}
+
+/**
+ * @internal @brief Helper macro to declare an object descriptor
+ *
+ * @param elem_descr_ Element descriptor, pointer to a descriptor array
+ * @param elem_descr_len_ Number of elements in elem_descr_
+ */
+#define Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_) \
+	{ \
+		.object = { \
+			.sub_descr = elem_descr_, \
+			.sub_descr_len = elem_descr_len_, \
+		}, \
+	}
+
+/**
  * @brief Helper macro to declare a descriptor for an array of primitives
  *
  * @param struct_ Struct packing the values
@@ -210,14 +258,8 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = elem_type_, \
-					.offset = \
-						offsetof(struct_, \
-							 len_field_), \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					elem_type_,), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -267,21 +309,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_OBJECT_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.object = { \
-							.sub_descr = \
-								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					JSON_TOK_OBJECT_START, \
+					Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_)), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -340,24 +370,11 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.offset = offsetof(struct_, field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_ARRAY_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.array = { \
-							.element_descr = \
-								elem_descr_, \
-							.n_elements = \
-								1 + \
-								ZERO_OR_COMPILE_ERROR( \
-									elem_descr_len_ == 1 \
-								), \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR( \
+					struct_, len_field_, JSON_TOK_ARRAY_START, \
+					Z_JSON_DESCR_ARRAY( \
+						elem_descr_, \
+						1 + ZERO_OR_COMPILE_ERROR(elem_descr_len_ == 1))), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -443,13 +460,8 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.offset = offsetof(struct_, struct_field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = elem_type_, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-				} }, \
+				.element_descr = \
+					Z_JSON_ELEMENT_DESCR(struct_, len_field_, elem_type_,), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \
@@ -507,21 +519,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.offset = offsetof(struct_, struct_field_name_), \
 		{ \
 			.array = { \
-				.element_descr = (struct json_obj_descr[]) { { \
-					.align_shift = \
-						Z_ALIGN_SHIFT(struct_), \
-					.type = JSON_TOK_OBJECT_START, \
-					.offset = offsetof(struct_, \
-							   len_field_), \
-					{ \
-						.object = { \
-							.sub_descr = \
-								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
-						}, \
-					}, \
-				} }, \
+				.element_descr = Z_JSON_ELEMENT_DESCR(struct_, len_field_, \
+					JSON_TOK_OBJECT_START, \
+					Z_JSON_DESCR_OBJ(elem_descr_, elem_descr_len_)), \
 				.n_elements = (max_len_), \
 			}, \
 		}, \

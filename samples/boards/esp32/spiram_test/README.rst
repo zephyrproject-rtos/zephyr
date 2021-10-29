@@ -6,11 +6,13 @@ Espressif ESP32 SPIRAM test
 Overview
 ********
 
-This sample allocates memory from internal DRAM and SPIRAM by calling `k_malloc`, frees
-allocated memory by calling `k_free` and checks if memory can be allocated again.
-Capability of allocated memory is decided by ESP_HEAP_MIN_EXTRAM_THRESHOLD. If size is less than
-ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from internal DRAM. If size is greater than
-ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from SPIRAM.
+This sample allocates memory from internal DRAM and SPIRAM by calling
+:c:func:`k_malloc`, frees allocated memory by calling :c:func:`k_free` and
+checks if memory can be allocated again. Capability of allocated memory is
+decided by ESP_HEAP_MIN_EXTRAM_THRESHOLD. If size is less than
+ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from internal DRAM. If
+size is greater than ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from
+SPIRAM.
 
 Building and Running
 ********************

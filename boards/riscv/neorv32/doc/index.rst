@@ -45,6 +45,8 @@ Processor (SoC):
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
 
 The default board configuration for the NEORV32 Processor (SoC) can be found in
 the defconfig file: :file:`boards/riscv/neorv32/neorv32_defconfig`.
@@ -92,6 +94,14 @@ system console.
    The default configuration uses a baud rate of 19200 to match that of the
    standard NEORV32 bootloader. The baudrate can be changed by modifying the
    ``current-speed`` property of the ``uart0`` devicetree node.
+
+True Random-Number Generator
+============================
+
+The True Random-Number Generator (TRNG) of the NEORV32 is supported, but
+disabled by default. For NEORV32 SoC implementations supporting the TRNG,
+support can be enabled by setting the ``status`` property of the ``trng``
+devicetree node to ``okay``.
 
 Programming and Debugging
 *************************

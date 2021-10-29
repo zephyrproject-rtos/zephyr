@@ -2157,7 +2157,7 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
-		if (!ipv6->unicast[i].is_used) {
+		if (!ipv6->prefix[i].is_used) {
 			continue;
 		}
 

@@ -1953,6 +1953,14 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	uint16_t handle;
 	int err;
 
+	/* The Signed Write Without Response sub-procedure shall only be supported
+	 * on the LE Fixed Channel Unenhanced ATT bearer.
+	 */
+	if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
+		/* No response for this command */
+		return 0;
+	}
+
 	req = (void *)buf->data;
 
 	handle = sys_le16_to_cpu(req->handle);

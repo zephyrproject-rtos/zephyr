@@ -340,18 +340,12 @@ void test_benchmark_vec_dot_prod_q31(void)
 	TC_PRINT(BENCHMARK_TYPE " = %u\n", timespan);
 }
 
-void benchmark_basicmath_q31(void)
-{
-	ztest_test_suite(basicmath_q31_benchmark,
-		ztest_unit_test(test_benchmark_vec_add_q31),
-		ztest_unit_test(test_benchmark_vec_sub_q31),
-		ztest_unit_test(test_benchmark_vec_mult_q31),
-		ztest_unit_test(test_benchmark_vec_abs_q31),
-		ztest_unit_test(test_benchmark_vec_negate_q31),
-		ztest_unit_test(test_benchmark_vec_offset_q31),
-		ztest_unit_test(test_benchmark_vec_scale_q31),
-		ztest_unit_test(test_benchmark_vec_dot_prod_q31)
-		);
-
-	ztest_run_test_suite(basicmath_q31_benchmark);
-}
+ztest_register_test_suite(basicmath_q31_benchmark, NULL,
+			  ztest_unit_test(test_benchmark_vec_add_q31),
+			  ztest_unit_test(test_benchmark_vec_sub_q31),
+			  ztest_unit_test(test_benchmark_vec_mult_q31),
+			  ztest_unit_test(test_benchmark_vec_abs_q31),
+			  ztest_unit_test(test_benchmark_vec_negate_q31),
+			  ztest_unit_test(test_benchmark_vec_offset_q31),
+			  ztest_unit_test(test_benchmark_vec_scale_q31),
+			  ztest_unit_test(test_benchmark_vec_dot_prod_q31));

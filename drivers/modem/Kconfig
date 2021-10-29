@@ -38,6 +38,7 @@ config MODEM_RECEIVER_MAX_CONTEXTS
 
 config MODEM_CONTEXT
 	bool "Modem context helper driver [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  This driver allows modem drivers to communicate with an interface
 	  using custom defined protocols. Driver doesn't inspect received data

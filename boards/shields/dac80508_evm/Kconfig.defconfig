@@ -11,6 +11,9 @@ config SPI
 config DAC_DACX0508
 	default y
 
+config DAC_INIT_PRIORITY
+	default 80
+
 endif # DAC
 
 endif # SHIELD_DAC80508_EVM

@@ -209,4 +209,4 @@ static const struct counter_driver_api api = {
 };
 
 DEVICE_DEFINE(counter_cmos, "CMOS", init, NULL, NULL, &info,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
+		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &api);

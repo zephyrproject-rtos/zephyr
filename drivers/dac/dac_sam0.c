@@ -108,7 +108,7 @@ static const struct dac_driver_api api_sam0_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,		       \
 			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    CONFIG_DAC_INIT_PRIORITY,			       \
 			    &api_sam0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SAM0_DAC_INIT);

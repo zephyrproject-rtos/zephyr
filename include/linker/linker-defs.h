@@ -306,6 +306,12 @@ extern char __dtcm_start[];
 extern char __dtcm_end[];
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+extern char __ocm_start[];
+extern char __ocm_end[];
+extern char __ocm_size[];
+#endif
+
 /* Used by the Security Attribution Unit to configure the
  * Non-Secure Callable region.
  */

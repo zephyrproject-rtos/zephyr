@@ -11,6 +11,11 @@ properties:
     interrupts:
       required: true
 
+    ldn:
+      type: int
+      required: true
+      description: logical device number
+
     girqs:
       type: array
       required: true

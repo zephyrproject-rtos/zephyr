@@ -12,7 +12,7 @@ config IRQ_OFFLOAD_INTNUM
 	default 7
 
 config MP_NUM_CPUS
-	default 2
+	default 1
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n

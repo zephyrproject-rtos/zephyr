@@ -75,6 +75,7 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 config NET_IPV4_AUTO
 	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_ARP
+	select EXPERIMENTAL
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 

@@ -196,6 +196,7 @@ Bluetooth controller:
     collaborators:
         - carlescufi
         - thoh-ot
+        - kruithofa
     files:
         - subsys/bluetooth/controller/
     labels:
@@ -464,6 +465,8 @@ Documentation:
         - tests/drivers/can/
         - samples/subsys/canbus/
         - doc/reference/networking/can_api.rst
+        - modules/canopennode/
+        - samples/modules/canopennode/
     labels:
         - "area: CAN"
 
@@ -843,6 +846,7 @@ Documentation:
     collaborators:
         - avisconti
         - gmarull
+        - teburd
     files:
         - drivers/sensor/
         - include/drivers/sensor.h
@@ -1051,6 +1055,19 @@ MAINTAINERS file:
     description: >-
         Zephyr Maintainers File
 
+Mbed TLS:
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - ceolin
+    files:
+        - modules/mbedtls/
+        - tests/crypto/mbedtls/
+    labels:
+        - "area: Crypto / RNG"
+    description: >-
+        Mbed TLS module implementing the PSA Crypto API and TLS.
+
 MCU Manager:
     status: maintained
     maintainers:
@@ -1241,6 +1258,7 @@ Power management:
         - nashif
         - mengxianglinx
         - gmarull
+        - teburd
     files:
         - include/pm/pm.h
         - samples/subsys/pm/
@@ -1334,6 +1352,20 @@ SPARC arch:
     labels:
         - "area: SPARC"
 
+State machine framework:
+    status: maintained
+    maintainers:
+        - sambhurst
+    collaborators:
+        - keith-zephyr
+    files:
+        - doc/guides/smf/
+        - include/smf.h
+        - lib/smf/
+        - tests/lib/smf/
+    labels:
+        - "area: State Machine Framework"
+
 Synopsys Platforms:
     status: maintained
     maintainers:
@@ -1405,6 +1437,7 @@ Intel Platforms (X86):
     collaborators:
         - jhedberg
         - aasthagr
+        - laurenmurphyx64
     files:
         - boards/x86/
         - soc/x86/
@@ -1569,6 +1602,8 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - teburd
     files:
         - subsys/tracing/
         - include/tracing/
@@ -1671,6 +1706,7 @@ x86 arch:
         - ceolin
         - enjiamai
         - aasthagr
+        - laurenmurphyx64
     files:
         - arch/x86/
         - include/arch/x86/

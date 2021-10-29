@@ -11,11 +11,3 @@ config UART_NEORV32
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the UART driver for the NEORV32.
-
-config UART_NEORV32_INIT_PRIORITY
-	int "Driver inititalization priority"
-	default 55
-	depends on UART_NEORV32
-	help
-	  Device driver initialization priority. This driver must be
-	  initialized after the syscon driver.

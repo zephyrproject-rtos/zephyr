@@ -119,7 +119,7 @@ They operate at a frequency of up to 160 MHz.
 
   - 14-bit ADC 2.5-Msps, resolution up to 16 bits with hardware oversampling
   - 12-bit ADC 2.5-Msps, with hardware oversampling, autonomous in Stop 2 mode
-  - 2 12-bit DAC, low-power sample and hold
+  - 12-bit DAC, low-power sample and hold
   - 2 operational amplifiers with built-in PGA
   - 2 ultra-low-power comparators
 
@@ -179,6 +179,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -203,6 +205,7 @@ Default Zephyr Peripheral Mapping:
 - SPI1 NSS/SCK/MISO/MOSI : PE12/P13/P14/P15 (Arduino SPI)
 - I2C_1 SDA/SDL : PB9/PB8 (Arduino I2C)
 - I2C_2 SDA/SDL : PH5/PH4
+- DAC1 CH1 : PA4 (STMOD+1)
 
 System Clock
 ------------

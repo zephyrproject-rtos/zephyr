@@ -88,7 +88,7 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	irq_unlock(key);
 
 	BUILD_ASSERT(steps > 0, "only positive number valid");
-	BUILD_ASSERT(steps <= 2148, "overflow possible");
+	BUILD_ASSERT(steps <= 2048, "overflow possible");
 
 	val->val1 = (acc * FULL_ANGLE) / steps;
 	val->val2 = (acc * FULL_ANGLE) - (val->val1 * steps);
@@ -207,9 +207,11 @@ static int qdec_nrfx_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int qdec_nrfx_pm_control(struct qdec_nrfx_data *data,
+static int qdec_nrfx_pm_control(const struct device *dev,
 				enum pm_device_action action)
 {
+	ARG_UNUSED(dev);
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		qdec_nrfx_gpio_ctrl(true);

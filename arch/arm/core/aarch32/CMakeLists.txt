@@ -27,7 +27,9 @@ add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)
 add_subdirectory_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE cortex_m/tz)
 
 add_subdirectory_ifdef(CONFIG_ARM_MPU mpu)
+add_subdirectory_ifdef(CONFIG_ARM_AARCH32_MMU mmu)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_R cortex_a_r)
+add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)

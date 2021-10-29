@@ -24,8 +24,16 @@ extern "C" {
 #define __CR_REV                0U
 #endif
 
+#ifndef __CA_REV
+#define __CA_REV                0U
+#endif
+
 #ifndef __FPU_PRESENT
 #define __FPU_PRESENT           CONFIG_CPU_HAS_FPU
+#endif
+
+#ifndef __MMU_PRESENT
+#define __MMU_PRESENT           CONFIG_CPU_HAS_MMU
 #endif
 
 #ifdef __cplusplus
@@ -38,6 +46,15 @@ extern "C" {
 #include <core_cr5.h>
 #elif defined(CONFIG_CPU_CORTEX_R7)
 #include <core_cr7.h>
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A)
+/*
+ * Any defines relevant for the proper inclusion of CMSIS' Cortex-A
+ * Common Peripheral Access Layer (such as __CORTEX_A) which are not
+ * covered by the Kconfig-based default assignments above must be
+ * provided by each aarch32 Cortex-A SoC's header file (already in-
+ * cluded above).
+ */
+#include <core_ca.h>
 #else
 #error "Unknown device"
 #endif

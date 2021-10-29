@@ -89,6 +89,16 @@ static int stm32h7_init(const struct device *arg)
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 	}
 
+	/* Errata ES0392 Rev 8:
+	 * 2.2.9: Reading from AXI SRAM may lead to data read corruption
+	 * Workaround: Set the READ_ISS_OVERRIDE bit in the AXI_TARG7_FN_MOD
+	 * register.
+	 * Applicable only to RevY (REV_ID 0x1003)
+	 */
+	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
+		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
+	}
+
 	return 0;
 }
 

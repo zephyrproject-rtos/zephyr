@@ -1403,18 +1403,20 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_TERMINATE:
 		{
-			struct ll_conn *conn;
-			memq_link_t *link;
+			if (IS_ACL_HANDLE(rx_free->handle)) {
+				struct ll_conn *conn;
+				memq_link_t *link;
 
-			conn = ll_conn_get(rx_free->handle);
+				conn = ll_conn_get(rx_free->handle);
 
-			LL_ASSERT(!conn->lll.link_tx_free);
-			link = memq_deinit(&conn->lll.memq_tx.head,
-					   &conn->lll.memq_tx.tail);
-			LL_ASSERT(link);
-			conn->lll.link_tx_free = link;
+				LL_ASSERT(!conn->lll.link_tx_free);
+				link = memq_deinit(&conn->lll.memq_tx.head,
+						&conn->lll.memq_tx.tail);
+				LL_ASSERT(link);
+				conn->lll.link_tx_free = link;
 
-			ll_conn_release(conn);
+				ll_conn_release(conn);
+			}
 		}
 		break;
 #endif /* CONFIG_BT_CONN */
@@ -2620,8 +2622,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* dequeue prepare pipeline */
 	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-	/* LLL done synchronized */
-	lll_done_sync();
+	/* LLL done synchronize count */
+	lll_done_ull_inc();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* If disable initiated, signal the semaphore */

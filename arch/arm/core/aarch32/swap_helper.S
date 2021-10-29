@@ -11,7 +11,7 @@
  * @brief Thread context switching for ARM Cortex-M and Cortex-R
  *
  * This module implements the routines necessary for thread context switching
- * on ARM Cortex-M and Cortex-R CPUs.
+ * on ARM Cortex-A, Cortex-M and Cortex-R CPUs.
  */
 
 #include <toolchain.h>
@@ -120,7 +120,7 @@ out_fp_endif:
      * regardless of whether the thread has an active FP context.
      */
 #endif /* CONFIG_FPU_SHARING */
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
     /* Store rest of process context */
     cps #MODE_SYS
     stm r0, {r4-r11, sp}
@@ -136,7 +136,7 @@ out_fp_endif:
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI_MAX, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
     /*
      * Interrupts are still disabled from arch_swap so empty clause
      * here to avoid the preprocessor error below
@@ -344,7 +344,7 @@ in_fp_endif:
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 _thread_irq_disabled:
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
@@ -603,7 +603,7 @@ valid_syscall_id:
     bx lr
 #endif /* CONFIG_USERSPACE */
 
-#elif defined(CONFIG_ARMV7_R)
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 
 /**
  *

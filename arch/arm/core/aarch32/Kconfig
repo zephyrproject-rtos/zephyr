@@ -36,6 +36,17 @@ config CPU_CORTEX_R
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
+config CPU_AARCH32_CORTEX_A
+	bool
+	select CPU_CORTEX
+	select CPU_HAS_MMU
+	select HAS_CMSIS_CORE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
+
 config ISA_THUMB2
 	bool
 	help
@@ -295,3 +306,4 @@ rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
 rsource "mpu/Kconfig"
+rsource "mmu/Kconfig"

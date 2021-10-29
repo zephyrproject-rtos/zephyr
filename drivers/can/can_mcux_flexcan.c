@@ -127,6 +127,13 @@ static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
+int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(id_type);
+
+	return CONFIG_CAN_MAX_FILTER;
+}
+
 static int mcux_flexcan_set_timing(const struct device *dev,
 				   const struct can_timing *timing,
 				   const struct can_timing *timing_data)
@@ -747,19 +754,29 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 #endif
 	.register_state_change_isr = mcux_flexcan_register_state_change_isr,
 	.get_core_clock = mcux_flexcan_get_core_clock,
+	.get_max_filters = mcux_flexcan_get_max_filters,
+	/*
+	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
+	 * descriptions" table in the SoC reference manual.
+	 *
+	 * Note that the values here are the "physical" timing limits, whereas
+	 * the register field limits are physical values minus 1 (which is
+	 * handled by the flexcan_config_t field assignments elsewhere in this
+	 * driver).
+	 */
 	.timing_min = {
-		.sjw = 0x1,
+		.sjw = 0x01,
 		.prop_seg = 0x01,
 		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
+		.phase_seg2 = 0x02,
 		.prescaler = 0x01
 	},
 	.timing_max = {
-		.sjw = 0x03,
-		.prop_seg = 0x07,
-		.phase_seg1 = 0x07,
-		.phase_seg2 = 0x07,
-		.prescaler = 0xFF
+		.sjw = 0x04,
+		.prop_seg = 0x08,
+		.phase_seg1 = 0x08,
+		.phase_seg2 = 0x08,
+		.prescaler = 0x100
 	}
 };
 
@@ -799,7 +816,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	DEVICE_DT_INST_DEFINE(id, &mcux_flexcan_init,			\
 			NULL, &mcux_flexcan_data_##id,	\
 			&mcux_flexcan_config_##id, POST_KERNEL,		\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			CONFIG_CAN_INIT_PRIORITY,			\
 			&mcux_flexcan_driver_api);			\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev) \
@@ -840,7 +857,7 @@ DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
 	NET_DEVICE_INIT(socket_can_flexcan_##id, SOCKET_CAN_NAME_##id,	\
 		socket_can_init_##id, NULL,				\
 		&socket_can_context_##id, NULL,				\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &socket_can_api,	\
+		CONFIG_CAN_INIT_PRIORITY, &socket_can_api,		\
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2),	\
 		CAN_MTU);						\
 

@@ -110,6 +110,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		/* Remove ADC2, it doesn't exist on RT1010 */
+		/delete-node/ adc@400C8000;
 	};
 };
 

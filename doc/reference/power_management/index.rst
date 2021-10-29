@@ -230,20 +230,18 @@ in those states, kind of operations done to save power, and the impact on the
 device behavior due to the state transition. Device context includes device
 registers, clocks, memory etc.
 
-The four device power states:
+The three device power states:
 
 :code:`PM_DEVICE_STATE_ACTIVE`
 
    Normal operation of the device. All device context is retained.
 
-:code:`PM_DEVICE_STATE_LOW_POWER`
-
-   Device context is preserved by the HW and need not be restored by the driver.
-
 :code:`PM_DEVICE_STATE_SUSPENDED`
 
-   Most device context is lost by the hardware. Device drivers must save and
-   restore or reinitialize any context lost by the hardware.
+   The system is idle and entering a low power state. Most device context is
+   lost by the hardware. Device drivers must save and restore or reinitialize
+   any context lost by the hardware. Devices can check which state the system
+   is entering calling :c:func:`pm_power_state_next_get()` .
 
 :code:`PM_DEVICE_STATE_OFF`
 

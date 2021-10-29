@@ -104,8 +104,8 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		 * targets.
 		 */
 #ifdef CONFIG_64BIT
-		shell_print(shell, "\tTotal execution cycles: %llu (%u %%)",
-			    rt_stats_thread.execution_cycles,
+		shell_print(shell, "\tTotal execution cycles: %" PRIu64 " (%u %%)",
+			    (uint64_t)rt_stats_thread.execution_cycles,
 			    pcnt);
 #else
 		shell_print(shell, "\tTotal execution cycles: %u (%u %%)",

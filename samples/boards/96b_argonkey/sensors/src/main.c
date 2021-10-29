@@ -28,7 +28,7 @@ static inline float out_ev(struct sensor_value *val)
 static int lsm6dsl_trig_cnt;
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static void lsm6dsl_trigger_handler(const struct device *dev,
-				    struct sensor_trigger *trig)
+				    const struct sensor_trigger *trig)
 {
 #ifdef ARGONKEY_TEST_LOG
 	char out_str[64];

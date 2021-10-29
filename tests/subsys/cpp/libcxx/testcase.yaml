@@ -16,7 +16,7 @@ tests:
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
-    timeout: 30
+    timeout: 60
     extra_configs:
         - CONFIG_NEWLIB_LIBC=y
         - CONFIG_NEWLIB_LIBC_NANO=y

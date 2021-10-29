@@ -1,0 +1,12 @@
+tests:
+  testing.ztest.mock_fff:
+    filter: CONFIG_ZEPHYR_FFF_MODULE
+    tags: test_framework
+    integration_platforms:
+      - native_posix
+  testing.ztest.mock_fff_global:
+    filter: CONFIG_ZEPHYR_FFF_MODULE
+    tags: test_framework
+    extra_args: CONF_FILE=prj_global.conf
+    integration_platforms:
+      - native_posix

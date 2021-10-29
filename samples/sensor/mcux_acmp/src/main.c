@@ -64,7 +64,7 @@ static void acmp_input_handler(bool above_threshold)
 }
 
 static void acmp_trigger_handler(const struct device *dev,
-				 struct sensor_trigger *trigger)
+				 const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 

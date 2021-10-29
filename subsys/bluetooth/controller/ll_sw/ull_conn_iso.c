@@ -274,9 +274,11 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
  * @param cis		 Pointer to connected ISO stream to stop
  * @param cis_relased_cb Callback to invoke when the CIS has been released.
  *                       NULL to ignore.
+ * @param reason         Termination reason
  */
 void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
-			   ll_iso_stream_released_cb_t cis_released_cb)
+			   ll_iso_stream_released_cb_t cis_released_cb,
+			   uint8_t reason)
 {
 	struct ll_conn_iso_group *cig;
 	struct ull_hdr *hdr;
@@ -287,6 +289,7 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 	}
 	cis->teardown = 1;
 	cis->released_cb = cis_released_cb;
+	cis->terminate_reason = reason;
 
 	/* Check ref count to determine if any pending LLL events in pipeline */
 	cig = cis->group;
@@ -486,11 +489,22 @@ static void cis_disabled_cb(void *param)
 		LL_ASSERT(cis);
 
 		if (cis->teardown) {
-			struct ll_conn *conn;
 			ll_iso_stream_released_cb_t cis_released_cb;
+			struct node_rx_pdu *node_terminate;
+			struct ll_conn *conn;
 
 			conn = ll_conn_get(cis->lll.acl_handle);
 			cis_released_cb = cis->released_cb;
+
+			/* Create and enqueue termination node */
+			node_terminate = ull_pdu_rx_alloc();
+			LL_ASSERT(node_terminate);
+			node_terminate->hdr.handle = cis->lll.handle;
+			node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
+			*((uint8_t *)node_terminate->pdu) = cis->terminate_reason;
+
+			ll_rx_put(node_terminate->hdr.link, node_terminate);
+			ll_rx_sched();
 
 			ll_conn_iso_stream_release(cis);
 			cig->lll.num_cis--;

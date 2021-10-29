@@ -29,10 +29,10 @@ struct lis2mdl_config {
 	stmdev_ctx_t ctx;
 	union {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-		const struct stmemsc_cfg_i2c i2c;
+		const struct i2c_dt_spec i2c;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-		const struct stmemsc_cfg_spi spi;
+		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;
 	bool cancel_offset;

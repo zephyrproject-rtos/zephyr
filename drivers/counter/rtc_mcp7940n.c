@@ -765,7 +765,7 @@ static const struct counter_driver_api mcp7940n_api = {
 		    &mcp7940n_data_##index,						\
 		    &mcp7940n_config_##index,						\
 		    POST_KERNEL,							\
-		    CONFIG_COUNTER_MICROCHIP_MCP7940N_INIT_PRIORITY,			\
+		    CONFIG_COUNTER_INIT_PRIORITY,					\
 		    &mcp7940n_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP7904N);
