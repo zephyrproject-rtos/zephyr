@@ -185,45 +185,42 @@ int pm_device_state_get(const struct device *dev,
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
- * @brief Indicate that the device is in the middle of a transaction
+ * @brief Mark a device as busy.
  *
- * Called by a device driver to indicate that it is in the middle of a
- * transaction.
+ * Devices marked as busy will not be suspended when the system goes into
+ * low-power states. This can be useful if, for example, the device is in the
+ * middle of a transaction.
  *
- * @param dev Pointer to device structure of the driver instance.
+ * @param dev Device instance.
+ *
+ * @see pm_device_busy_clear()
  */
 void pm_device_busy_set(const struct device *dev);
 
 /**
- * @brief Indicate that the device has completed its transaction
+ * @brief Clear a device busy status.
  *
- * Called by a device driver to indicate the end of a transaction.
+ * @param dev Device instance.
  *
- * @param dev Pointer to device structure of the driver instance.
+ * @see pm_device_busy_set()
  */
 void pm_device_busy_clear(const struct device *dev);
 
 /**
- * @brief Check if any device is in the middle of a transaction
+ * @brief Check if any device is busy.
  *
- * Called by an application to see if any device is in the middle
- * of a critical transaction that cannot be interrupted.
- *
- * @retval false if no device is busy
- * @retval true if any device is busy
+ * @retval false If no device is busy
+ * @retval true If one or more devices are busy
  */
 bool pm_device_is_any_busy(void);
 
 /**
- * @brief Check if a specific device is in the middle of a transaction
+ * @brief Check if a device is busy.
  *
- * Called by an application to see if a particular device is in the
- * middle of a critical transaction that cannot be interrupted.
+ * @param dev Device instance.
  *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval false if the device is not busy
- * @retval true if the device is busy
+ * @retval false If the device is not busy
+ * @retval true If the device is busy
  */
 bool pm_device_is_busy(const struct device *dev);
 #else
