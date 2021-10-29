@@ -10,7 +10,7 @@
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_CPU_CORTEX_R)
+	defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #include <arch/arm/aarch32/mpu/arm_mpu_v7m.h>
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
@@ -28,7 +28,7 @@ struct arm_mpu_region {
 	uint32_t base;
 	/* Region Name */
 	const char *name;
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	/* Region Size */
 	uint32_t size;
 #endif
@@ -44,7 +44,7 @@ struct arm_mpu_config {
 	const struct arm_mpu_region *mpu_regions;
 };
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #define MPU_REGION_ENTRY(_name, _base, _size, _attr) \
 	{\
 		.name = _name, \
