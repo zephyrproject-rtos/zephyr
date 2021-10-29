@@ -14,6 +14,11 @@
 #endif
 
 
+int as5x47_init(const struct device *dev) {
+    // TODO
+    return 0;
+}
+
 int as5x47_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     // TODO: Read data from sensor
     // spi_transceive_dt(...);
@@ -40,14 +45,13 @@ int as5x47_trigger_set(const struct device *dev, const struct sensor_trigger *tr
     return -ENOTSUP;
 }
 
-
 const struct sensor_driver_api as5x47_sensor_api = {
         .sample_fetch = as5x47_sample_fetch,
         .channel_get = as5x47_channel_get,
         .attr_set = as5x47_attr_set,
         .attr_get = as5x47_attr_get,
         .trigger_set = as5x47_trigger_set,
-}
+};
 
 #define AS5x47_DEVICE_INIT(inst) \
     static as5x47_data as5x47_data_##inst; \
