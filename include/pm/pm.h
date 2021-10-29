@@ -178,9 +178,10 @@ void pm_power_state_set(struct pm_state_info info);
  * This function returns the next power state that will be used by the
  * SoC.
  *
+ * @param cpu CPU index.
  * @return next pm_state_info that will be used
  */
-const struct pm_state_info pm_power_state_next_get(void);
+const struct pm_state_info pm_power_state_next_get(uint8_t cpu);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
@@ -209,7 +210,7 @@ void pm_power_state_exit_post_ops(struct pm_state_info info);
 
 #define pm_power_state_set(info)
 #define pm_power_state_exit_post_ops(info)
-#define pm_power_state_next_get() \
+#define pm_power_state_next_get(cpu) \
 	((struct pm_state_info){PM_STATE_ACTIVE, 0, 0})
 
 #endif /* CONFIG_PM */
