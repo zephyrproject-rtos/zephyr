@@ -14,7 +14,7 @@
 
 #include <arch/arm/aarch32/exc.h>
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
 #include <arch/cpu.h>
 #endif
 
@@ -63,7 +63,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_ARMV7_R)
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
@@ -79,7 +79,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      */
     mov ip, sp
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
     mov sp, r0
 #else
     /* set stack to privileged stack
@@ -113,7 +113,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov r1, ip
     push {r0,r1}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     push {r0,ip}
 #endif
 
@@ -145,7 +145,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
     push {r0,r3}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     pop {r0,ip}
 
     /* load up stack info from user stack */
@@ -169,7 +169,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     pop {r0, r1}
     mov ip, r1
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     pop {r0,ip}
 #endif
 
@@ -184,11 +184,11 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov lr, r4
     mov r4, ip
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     pop {r1,r2,r3,lr}
 #endif
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
     /*
      * set stack to user stack.  We are in SYSTEM state, so r13 and r14 are
      * shared with USER state
@@ -244,7 +244,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* restore r0 */
     mov r0, lr
 
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
     /* change processor mode to unprivileged, with all interrrupts enabled. */
     msr CPSR_c, #MODE_USR
 #else
@@ -296,7 +296,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov ip, r0
     pop {r0, r1}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     ldr ip, =z_thread_entry
 #endif
     bx ip
@@ -554,7 +554,7 @@ dispatch_syscall:
     msr CONTROL, r2
     pop {r2, r3}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+    || defined(CONFIG_ARMV7_R)
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r1, [r0, #_thread_offset_to_mode]
@@ -665,7 +665,7 @@ z_arm_user_string_nlen_fault_start:
     ldrb r5, [r0, r3]
 
 z_arm_user_string_nlen_fault_end:
-#if defined(CONFIG_CPU_CORTEX_R)
+#if defined(CONFIG_ARMV7_R)
     cmp r5, #0
     beq strlen_done
 
