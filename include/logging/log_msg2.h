@@ -496,7 +496,7 @@ static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 	va_end(ap);
 }
 
-static inline bool z_log_item_is_msg(union log_msg2_generic *msg)
+static inline bool z_log_item_is_msg(const union log_msg2_generic *msg)
 {
 	return msg->generic.type == Z_LOG_MSG2_LOG;
 }
@@ -520,10 +520,10 @@ static inline uint32_t log_msg2_get_total_wlen(const struct log_msg2_desc desc)
  */
 static inline uint32_t log_msg2_generic_get_wlen(const union mpsc_pbuf_generic *item)
 {
-	union log_msg2_generic *generic_msg = (union log_msg2_generic *)item;
+	const union log_msg2_generic *generic_msg = (const union log_msg2_generic *)item;
 
 	if (z_log_item_is_msg(generic_msg)) {
-		struct log_msg2 *msg = (struct log_msg2 *)generic_msg;
+		const struct log_msg2 *msg = (const struct log_msg2 *)generic_msg;
 
 		return log_msg2_get_total_wlen(msg->hdr.desc);
 	}
