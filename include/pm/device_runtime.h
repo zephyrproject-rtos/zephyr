@@ -15,8 +15,9 @@ extern "C" {
 #endif
 
 /**
- * @defgroup runtime_power_management_api Device Runtime Power Management API
- * @ingroup power_management_api
+ * @brief Device Runtime Power Management API
+ * @defgroup subsys_pm_device_runtime Device Runtime
+ * @ingroup subsys_pm
  * @{
  */
 

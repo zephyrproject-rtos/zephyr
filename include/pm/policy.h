@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Function to get the next PM state
  *
@@ -26,6 +28,7 @@ extern "C" {
  */
 struct pm_state_info pm_policy_next_state(int32_t ticks);
 
+/** @endcond */
 
 #ifdef __cplusplus
 }
