@@ -876,6 +876,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
+                         @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
