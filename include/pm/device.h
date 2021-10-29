@@ -232,26 +232,6 @@ static inline bool pm_device_is_any_busy(void) { return false; }
 static inline bool pm_device_is_busy(const struct device *dev) { return false; }
 #endif /* CONFIG_PM_DEVICE */
 
-__deprecated static inline void device_busy_set(const struct device *dev)
-{
-	pm_device_busy_set(dev);
-}
-
-__deprecated static inline void device_busy_clear(const struct device *dev)
-{
-	pm_device_busy_clear(dev);
-}
-
-__deprecated static inline int device_any_busy_check(void)
-{
-	return pm_device_is_any_busy() ? -EBUSY : 0;
-}
-
-__deprecated static inline int device_busy_check(const struct device *dev)
-{
-	return pm_device_is_busy(dev) ? -EBUSY : 0;
-}
-
 /**
  * @brief Enable a power management wakeup source
  *
@@ -287,6 +267,58 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false if the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+
+/**
+ * Mark a device as busy.
+ *
+ * @deprecated Use pm_device_busy_set() instead
+ *
+ * @param dev Device instance.
+ */
+__deprecated static inline void device_busy_set(const struct device *dev)
+{
+	pm_device_busy_set(dev);
+}
+
+/**
+ * @brief Clear busy status of a device.
+ *
+ * @deprecated Use pm_device_busy_clear() instead
+ *
+ * @param dev Device instance.
+ */
+__deprecated static inline void device_busy_clear(const struct device *dev)
+{
+	pm_device_busy_clear(dev);
+}
+
+/**
+ * @brief Check if any device is busy.
+ *
+ * @deprecated Use pm_device_is_any_busy() instead
+ *
+ * @retval 0 No devices are busy.
+ * @retval -EBUSY One or more devices are busy.
+ */
+__deprecated static inline int device_any_busy_check(void)
+{
+	return pm_device_is_any_busy() ? -EBUSY : 0;
+}
+
+/**
+ * @brief Check if a device is busy.
+ *
+ * @deprecated Use pm_device_is_busy() instead
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 Device is not busy.
+ * @retval -EBUSY Device is busy.
+ */
+__deprecated static inline int device_busy_check(const struct device *dev)
+{
+	return pm_device_is_busy(dev) ? -EBUSY : 0;
+}
 
 /** @} */
 
