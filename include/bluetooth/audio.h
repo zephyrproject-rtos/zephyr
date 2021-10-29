@@ -836,6 +836,132 @@ struct bt_audio_stream {
 	};
 };
 
+/** Unicast Server callback structure */
+struct bt_audio_unicast_server_cb {
+	/** @brief Endpoint config request callback
+	 *
+	 *  Config callback is called whenever an endpoint is requested to be
+	 *  configured
+	 *
+	 *  @param[in]  conn    Connection object.
+	 *  @param[in]  ep      Local Audio Endpoint being configured.
+	 *  @param[in]  cap     Local Audio Capability being configured.
+	 *  @param[in]  codec   Codec configuration.
+	 *  @param[out] stream  Pointer to stream that will be configured for
+	 *                      the endpoint.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*config)(struct bt_conn *conn,
+		      const struct bt_audio_ep *ep,
+		      const struct bt_audio_capability *cap,
+		      const struct bt_codec *codec,
+		      struct bt_audio_stream **stream);
+
+	/** @brief Stream reconfig request callback
+	 *
+	 *  Reconfig callback is called whenever an Audio Stream needs to be
+	 *  reconfigured with different codec configuration.
+	 *
+	 *  @param stream  Stream object being reconfigured.
+	 *  @param cap     Local Audio Capability being reconfigured.
+	 *  @param codec   Codec configuration.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*reconfig)(struct bt_audio_stream *stream,
+			const struct bt_audio_capability *cap,
+			const struct bt_codec *codec);
+
+	/** @brief Stream QoS request callback
+	 *
+	 *  QoS callback is called whenever an Audio Stream Quality of
+	 *  Service needs to be configured.
+	 *
+	 *  @param stream  Stream object being reconfigured.
+	 *  @param qos     Quality of Service configuration.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*qos)(struct bt_audio_stream *stream,
+		   const struct bt_codec_qos *qos);
+
+	/** @brief Stream Enable request callback
+	 *
+	 *  Enable callback is called whenever an Audio Stream is requested to
+	 *  be enabled to stream.
+	 *
+	 *  @param stream      Stream object being enabled.
+	 *  @param meta_count  Number of metadata entries
+	 *  @param meta        Metadata entries
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*enable)(struct bt_audio_stream *stream, uint8_t meta_count,
+		      const struct bt_codec_data *meta);
+
+	/** @brief Stream Start request callback
+	 *
+	 *  Start callback is called whenever an Audio Stream is requested to
+	 *  start streaming.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*start)(struct bt_audio_stream *stream);
+
+	/** @brief Stream Metadata update request callback
+	 *
+	 *  Metadata callback is called whenever an Audio Stream is requested to
+	 *  update its metadata.
+	 *
+	 *  @param stream       Stream object.
+	 *  @param meta_count   Number of metadata entries
+	 *  @param meta         Metadata entries
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*metadata)(struct bt_audio_stream *stream, uint8_t meta_count,
+			const struct bt_codec_data *meta);
+
+	/** @brief Stream Disable request callback
+	 *
+	 *  Disable callback is called whenever an Audio Stream is requested to
+	 *  disable the stream.
+	 *
+	 *  @param stream Stream object being disabled.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*disable)(struct bt_audio_stream *stream);
+
+	/** @brief Stream Stop callback
+	 *
+	 *  Stop callback is called whenever an Audio Stream is requested to
+	 *  stop streaming.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*stop)(struct bt_audio_stream *stream);
+
+	/** @brief Stream release callback
+	 *
+	 *  Release callback is called whenever a new Audio Stream needs to be
+	 *  released and thus deallocated.
+	 *
+	 *  @param stream Stream object.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*release)(struct bt_audio_stream *stream);
+
+	/* Internally used list node */
+	sys_snode_t node;
+};
+
 /** @brief Capability operations structure.
  *
  *  These are only used for unicast streams and broadcast sink streams.
@@ -1212,6 +1338,28 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
  */
 void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
 				 struct bt_audio_stream_ops *ops);
+
+/** @brief Register unicast server callbacks.
+ *
+ *  Only one callback structure can be registered, and attempting to
+ *  registering more than one will result in an error.
+ *
+ *  @param cb  Unicast server callback structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb);
+
+/** @brief Unregister unicast server callbacks.
+ *
+ *  May only unregister a callback structure that has previously been
+ *  registered by bt_audio_unicast_server_register_cb().
+ *
+ *  @param cb  Unicast server callback structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
