@@ -1,0 +1,6 @@
+description: |
+  AMS AS5x47 rotary position sensor, compatible with AS5047P, AS5047D, AS5147, AS5147P, AS5247
+
+compatible: "ams,as5x47"
+
+include: spi-device.yaml
