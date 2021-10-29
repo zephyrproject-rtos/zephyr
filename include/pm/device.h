@@ -21,7 +21,24 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 struct device;
+
+/** @brief Device PM flags. */
+enum pm_device_flag {
+	/** Indicate if the device is busy or not. */
+	PM_DEVICE_FLAG_BUSY,
+	/**
+	 * Indicates whether or not the device is capable of waking the system
+	 * up.
+	 */
+	PM_DEVICE_FLAG_WS_CAPABLE,
+	/** Indicates if the device is being used as wakeup source. */
+	PM_DEVICE_FLAG_WS_ENABLED,
+};
+
+/** @endcond */
 
 /** @brief Device power states. */
 enum pm_device_state {
@@ -43,19 +60,6 @@ enum pm_device_state {
 	 *     Device context is lost.
 	 */
 	PM_DEVICE_STATE_OFF
-};
-
-/** @brief Device PM flags. */
-enum pm_device_flag {
-	/** Indicate if the device is busy or not. */
-	PM_DEVICE_FLAG_BUSY,
-	/**
-	 * Indicates whether or not the device is capable of waking the system
-	 * up.
-	 */
-	PM_DEVICE_FLAG_WS_CAPABLE,
-	/** Indicates if the device is being used as wakeup source. */
-	PM_DEVICE_FLAG_WS_ENABLED,
 };
 
 /** @brief Device PM actions. */
