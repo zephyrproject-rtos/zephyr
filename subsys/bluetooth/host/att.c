@@ -2526,7 +2526,6 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static void att_reset(struct bt_att *att)
 {
-	struct bt_att_req *req, *tmp;
 	struct net_buf *buf;
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
@@ -2543,7 +2542,12 @@ static void att_reset(struct bt_att *att)
 	att->conn = NULL;
 
 	/* Notify pending requests */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
+	while (!sys_slist_is_empty(&att->reqs)) {
+		struct bt_att_req *req;
+		sys_snode_t *node;
+
+		node = sys_slist_get_not_empty(&att->reqs);
+		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
 			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
 				  req->user_data);
