@@ -223,12 +223,6 @@ bool pm_device_is_any_busy(void);
  * @retval true If the device is busy
  */
 bool pm_device_is_busy(const struct device *dev);
-#else
-static inline void pm_device_busy_set(const struct device *dev) {}
-static inline void pm_device_busy_clear(const struct device *dev) {}
-static inline bool pm_device_is_any_busy(void) { return false; }
-static inline bool pm_device_is_busy(const struct device *dev) { return false; }
-#endif /* CONFIG_PM_DEVICE */
 
 /**
  * @brief Enable a power management wakeup source
@@ -265,6 +259,24 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false if the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+#else
+static inline void pm_device_busy_set(const struct device *dev) {}
+static inline void pm_device_busy_clear(const struct device *dev) {}
+static inline bool pm_device_is_any_busy(void) { return false; }
+static inline bool pm_device_is_busy(const struct device *dev) { return false; }
+static inline bool pm_device_wakeup_enable(struct device *dev, bool enable)
+{
+	return false;
+}
+static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
+{
+	return false;
+}
+static inline bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	return false;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 /**
  * Mark a device as busy.
