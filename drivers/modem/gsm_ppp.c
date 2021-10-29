@@ -183,7 +183,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 {
 	if (argc >= 1) {
 #if defined(CONFIG_MODEM_CELL_INFO)
-		if (argc >= 3){
+		if (argc >= 3) {
 			gsm.context.data_operator = unquoted_atoi(argv[2], 10);
 			LOG_INF("operator: %u",
 				gsm.context.data_operator);
