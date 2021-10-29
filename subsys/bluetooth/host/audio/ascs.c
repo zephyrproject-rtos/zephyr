@@ -9,6 +9,7 @@
 
 #include <zephyr.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #include <device.h>
 #include <init.h>
@@ -54,6 +55,42 @@ struct bt_ascs {
 };
 
 static struct bt_ascs sessions[CONFIG_BT_MAX_CONN];
+
+static const struct bt_audio_unicast_server_cb *server_cb;
+
+int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		BT_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	if (server_cb != NULL) {
+		BT_DBG("callback structure already registered");
+		return -EALREADY;
+	}
+
+	server_cb = cb;
+
+	return 0;
+}
+
+int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		BT_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	if (server_cb != cb) {
+		BT_DBG("callback structure not registered");
+		return -EINVAL;
+	}
+
+	server_cb = NULL;
+
+	return 0;
+}
 
 static void ascs_ase_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
