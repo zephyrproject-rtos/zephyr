@@ -287,8 +287,6 @@ enum sensor_attribute {
 	SENSOR_ATTR_LOWER_THRESH,
 	/** Upper threshold for trigger. */
 	SENSOR_ATTR_UPPER_THRESH,
-	/** Threshold for any-motion (slope) trigger. */
-	SENSOR_ATTR_SLOPE_TH,
 	/**
 	* Duration for which the freefall value need to be
 	* outside the threshold for trigger to fire
