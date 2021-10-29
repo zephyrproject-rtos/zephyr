@@ -23,11 +23,17 @@
 #include "esp_spi_flash.h"
 #include "hal/cpu_ll.h"
 #include "esp_err.h"
+#include "esp32s2/spiram.h"
 #include "sys/printk.h"
 
 extern void z_cstart(void);
 extern void z_bss_zero(void);
 extern void rtc_clk_cpu_freq_set_xtal(void);
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -158,7 +164,32 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = 0;
 #endif
 
-#if CONFIG_SOC_FLASH_ESP32
+#if CONFIG_ESP_SPIRAM
+	esp_err_t err = esp_spiram_init();
+
+	if (err != ESP_OK) {
+		printk("Failed to Initialize SPIRAM, aborting.\n");
+		abort();
+	}
+	esp_spiram_init_cache();
+	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+		printk("SPIRAM size is less than configured size, aborting.\n");
+		abort();
+	}
+#endif
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+	memset(&_ext_ram_bss_start,
+		0,
+		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+#endif
+
+/* Scheduler is not started at this point. Hence, guard functions
+ * must be initialized after esp_spiram_init_cache which internally
+ * uses guard functions. Setting guard functions before SPIRAM
+ * cache initialization will result in a crash.
+ */
+#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
 	esp_intr_initialize();
