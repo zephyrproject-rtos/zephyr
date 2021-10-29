@@ -272,6 +272,25 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 	}
 }
 
+static inline void *spi_context_get_next_buf(const struct spi_buf **current,
+					     size_t *count,
+					     size_t *buf_len,
+					     uint8_t dfs)
+{
+	/* This loop skips zero-length buffers in the set, if any. */
+	while (*count) {
+		if (((*current)->len / dfs) != 0) {
+			*buf_len = (*current)->len / dfs;
+			return (*current)->buf;
+		}
+		++(*current);
+		--(*count);
+	}
+
+	*buf_len = 0;
+	return NULL;
+}
+
 static inline
 void spi_context_buffers_setup(struct spi_context *ctx,
 			       const struct spi_buf_set *tx_bufs,
@@ -280,29 +299,17 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 {
 	LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
-	if (tx_bufs) {
-		ctx->current_tx = tx_bufs->buffers;
-		ctx->tx_count = tx_bufs->count;
-		ctx->tx_buf = (const uint8_t *)ctx->current_tx->buf;
-		ctx->tx_len = ctx->current_tx->len / dfs;
-	} else {
-		ctx->current_tx = NULL;
-		ctx->tx_count = 0;
-		ctx->tx_buf = NULL;
-		ctx->tx_len = 0;
-	}
+	ctx->current_tx = tx_bufs ? tx_bufs->buffers : NULL;
+	ctx->tx_count = ctx->current_tx ? tx_bufs->count : 0;
+	ctx->tx_buf = (const uint8_t *)
+		spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count,
+					 &ctx->tx_len, dfs);
 
-	if (rx_bufs) {
-		ctx->current_rx = rx_bufs->buffers;
-		ctx->rx_count = rx_bufs->count;
-		ctx->rx_buf = (uint8_t *)ctx->current_rx->buf;
-		ctx->rx_len = ctx->current_rx->len / dfs;
-	} else {
-		ctx->current_rx = NULL;
-		ctx->rx_count = 0;
-		ctx->rx_buf = NULL;
-		ctx->rx_len = 0;
-	}
+	ctx->current_rx = rx_bufs ? rx_bufs->buffers : NULL;
+	ctx->rx_count = ctx->current_rx ? rx_bufs->count : 0;
+	ctx->rx_buf = (uint8_t *)
+		spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count,
+					 &ctx->rx_len, dfs);
 
 	ctx->sync_status = 0;
 
@@ -331,14 +338,13 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 
 	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
-		ctx->tx_count--;
-		if (ctx->tx_count) {
-			ctx->current_tx++;
-			ctx->tx_buf = (const uint8_t *)ctx->current_tx->buf;
-			ctx->tx_len = ctx->current_tx->len / dfs;
-		} else {
-			ctx->tx_buf = NULL;
-		}
+		/* Current buffer is done. Get the next one to be processed. */
+		++ctx->current_tx;
+		--ctx->tx_count;
+		ctx->tx_buf = (const uint8_t *)
+			spi_context_get_next_buf(&ctx->current_tx,
+						 &ctx->tx_count,
+						 &ctx->tx_len, dfs);
 	} else if (ctx->tx_buf) {
 		ctx->tx_buf += dfs * len;
 	}
@@ -379,14 +385,13 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 
 	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
-		ctx->rx_count--;
-		if (ctx->rx_count) {
-			ctx->current_rx++;
-			ctx->rx_buf = (uint8_t *)ctx->current_rx->buf;
-			ctx->rx_len = ctx->current_rx->len / dfs;
-		} else {
-			ctx->rx_buf = NULL;
-		}
+		/* Current buffer is done. Get the next one to be processed. */
+		++ctx->current_rx;
+		--ctx->rx_count;
+		ctx->rx_buf = (uint8_t *)
+			spi_context_get_next_buf(&ctx->current_rx,
+						 &ctx->rx_count,
+						 &ctx->rx_len, dfs);
 	} else if (ctx->rx_buf) {
 		ctx->rx_buf += dfs * len;
 	}
