@@ -13,6 +13,7 @@
 #include "util/memq.h"
 #include "util/mem.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

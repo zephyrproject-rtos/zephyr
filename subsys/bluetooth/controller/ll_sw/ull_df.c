@@ -17,6 +17,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
+#include "util/dbuff.h"
 
 #include "pdu.h"
 
