@@ -1,0 +1,9 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+tokio = { version = "1.0", features = [ "full" ] }
+tokio-rustls = "0.23.0"
+rustls-pemfile = "0.2.1"
