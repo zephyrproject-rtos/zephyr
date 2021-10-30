@@ -61,3 +61,6 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uin
 
 /* Enable CTE transmission according to provided configuration */
 void lll_df_conn_cte_tx_enable(const struct lll_df_conn_tx_cfg *df_cfg);
+
+/* Enabled parsing of a PDU for CTEInfo */
+void lll_df_conf_cte_info_parsing_enable(void);

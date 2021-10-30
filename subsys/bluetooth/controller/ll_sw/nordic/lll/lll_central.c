@@ -88,6 +88,10 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_params *df_rx_params;
+	struct lll_df_conn_rx_cfg *df_rx_cfg;
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 	struct pdu_data *pdu_data_tx;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -178,22 +182,29 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
-	/* TODO: Remove TIFS extension from IFS when EVETNS_END is switched to EVENTS_PHYEND */
-	radio_tmr_tifs_set(EVENT_IFS_US + cte_len);
+	radio_tmr_tifs_set(EVENT_IFS_US);
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
-#if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_phyend_and_rx(lll->phy_rx);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_phyend_and_rx(0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-#else
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	/* If CTE RX is enabled and the PHY is not CODED, store channel used for
+	 * the connection event to report it with collected IQ samples.
+	 * The configuration of the CTE receive may not change during the event,
+	 * so config buffer is swapped in prepare and used in IRS handers.
+	 */
+	if (lll->phy_rx != PHY_CODED) {
+		df_rx_cfg = &lll->df_rx_cfg;
+		df_rx_params = dbuf_latest_get(&df_rx_cfg->hdr, NULL);
+
+		if (df_rx_params->is_enabled == true) {
+			lll->df_rx_cfg.chan = data_chan_use;
+		}
+	}
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(lll->phy_rx);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
