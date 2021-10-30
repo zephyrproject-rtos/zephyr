@@ -949,7 +949,7 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 				ant = radio_df_pdu_antenna_switch_pattern_get();
 				iq_report = ull_df_iq_report_alloc();
 
-				iq_report->hdr.type = NODE_RX_TYPE_IQ_SAMPLE_REPORT;
+				iq_report->hdr.type = NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT;
 				iq_report->sample_count = sample_cnt;
 				iq_report->packet_status = packet_status;
 				iq_report->rssi_ant_id = ant;

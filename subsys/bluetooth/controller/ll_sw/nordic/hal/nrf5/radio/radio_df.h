@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* PDU_ANTENNA is defined outside of the #if block below because
+ * radio_df_pdu_antenna_switch_pattern_get() can get called even when
+ * the preprocessor condition being tested is 0. In this case, we use
+ * the default value of 0.
+ */
+#define PDU_ANTENNA DT_PROP_OR(RADIO_NODE, dfe_pdu_antenna, 0)
+
 /* Function configures Radio with information about GPIO pins that may be
  * used to drive antenna switching during CTE Tx/RX.
  */
@@ -53,8 +60,6 @@ void radio_switch_complete_and_phy_end_disable(void);
 /* Completes switching and enables shortcut between PHYEND and TXEN events */
 void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 					      uint8_t phy_next, uint8_t flags_next);
-/* Completes switching and enables shortcut between PHYEND and RXEN events */
-void radio_switch_complete_phyend_and_rx(uint8_t phy_rx);
 
 /* Set buffer to store IQ samples collected during CTE sampling */
 void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len);
@@ -62,3 +67,5 @@ void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len);
 uint32_t radio_df_iq_samples_amount_get(void);
 /* Get CTE status (CTEInfo) parsed by Radio from received PDU */
 uint8_t radio_df_cte_status_get(void);
+/* Get information if CTE was present in a received packet */
+bool radio_df_cte_ready(void);
