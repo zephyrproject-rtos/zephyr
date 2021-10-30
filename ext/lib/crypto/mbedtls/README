@@ -1,19 +1,10 @@
 The mbed TLS library in Zephyr is a downstream of an externally maintained
 open source project.  The original upstream code can be found at:
 
-https://tls.mbed.org/download/start/mbedtls-2.16.0-apache.tgz
+https://github.com/ARMmbed/mbedtls/archive/refs/tags/v2.16.11.tar.gz
+SHA256 - c18e7e9abf95e69e425260493720470021384a1728417042060a35d0b7b18b41
 
-One change was applied in the original code. In mbedTLS the file
-net_sockets.c was defining _POSIX_C_SOURCE and as Zephyr build all files
-together this was raising and warning. In order to fix this problem one
-define guard was added, as showed bellow:
-
-#if defined(_POSIX_C_SOURCE)
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#endif
-
-At version 2.16.0
+At version 2.16.11
 
 The following is the license information for this code:
 

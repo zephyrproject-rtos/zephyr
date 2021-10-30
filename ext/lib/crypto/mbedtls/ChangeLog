@@ -1,5 +1,580 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS 2.16.11 branch released 2021-07-07
+
+Security
+   * Fix a bias in the generation of finite-field Diffie-Hellman-Merkle (DHM)
+     private keys and of blinding values for DHM and elliptic curves (ECP)
+     computations. Reported by FlorianF89 in #4245.
+   * Fix a potential side channel vulnerability in ECDSA ephemeral key generation.
+     An adversary who is capable of very precise timing measurements could
+     learn partial information about the leading bits of the nonce used for the
+     signature, allowing the recovery of the private key after observing a
+     large number of signature operations. This completes a partial fix in
+     Mbed TLS 2.16.4.
+   * It was possible to configure MBEDTLS_ECP_MAX_BITS to a value that is
+     too small, leading to buffer overflows in ECC operations. Fail the build
+     in such a case.
+   * An adversary with access to precise enough information about memory
+     accesses (typically, an untrusted operating system attacking a secure
+     enclave) could recover an RSA private key after observing the victim
+     performing a single private-key operation. Found and reported by
+     Zili KOU, Wenjian HE, Sharad Sinha, and Wei ZHANG.
+   * An adversary with access to precise enough timing information (typically, a
+     co-located process) could recover a Curve25519 or Curve448 static ECDH key
+     after inputting a chosen public key and observing the victim performing the
+     corresponding private-key operation. Found and reported by Leila Batina,
+     Lukas Chmielewski, Björn Haase, Niels Samwel and Peter Schwabe.
+
+Bugfix
+   * Fix premature fopen() call in mbedtls_entropy_write_seed_file which may
+     lead to the seed file corruption in case if the path to the seed file is
+     equal to MBEDTLS_PLATFORM_STD_NV_SEED_FILE. Contributed by Victor
+     Krasnoshchok in #3616.
+   * Fix some cases in the bignum module where the library constructed an
+     unintended representation of the value 0 which was not processed
+     correctly by some bignum operations. This could happen when
+     mbedtls_mpi_read_string() was called on "-0", or when
+     mbedtls_mpi_mul_mpi() and mbedtls_mpi_mul_int() was called with one of
+     the arguments being negative and the other being 0. Fixes #4643.
+   * Fix a compilation error when MBEDTLS_ECP_RANDOMIZE_MXZ_ALT is
+     defined. Fixes #4217.
+   * Fix an incorrect error code when parsing a PKCS#8 private key.
+   * In a TLS client, enforce the Diffie-Hellman minimum parameter size
+     set with mbedtls_ssl_conf_dhm_min_bitlen() precisely. Before, the
+     minimum size was rounded down to the nearest multiple of 8.
+   * In library/net_sockets.c, _POSIX_C_SOURCE and _XOPEN_SOURCE are
+     defined to specific values.  If the code is used in a context
+     where these are already defined, this can result in a compilation
+     error.  Instead, assume that if they are defined, the values will
+     be adequate to build Mbed TLS.
+   * The cipher suite TLS-RSA-WITH-CAMELLIA-256-GCM-SHA384 was not available
+     when SHA-1 was disabled and was offered when SHA-1 was enabled but SHA-384
+     was disabled. Fix the dependency. Fixes #4472.
+   * Fix test suite code on platforms where int32_t is not int, such as
+     Arm Cortex-M. Fixes #4530.
+   * Fix some issues affecting MBEDTLS_ARIA_ALT implementations: a misplaced
+     directive in a header and a missing initialization in the self-test.
+   * Fix a missing initialization in the Camellia self-test, affecting
+     MBEDTLS_CAMELLIA_ALT implementations.
+   * Fix a regression introduced in 2.16.8 which broke (D)TLS CBC ciphersuites
+     (when the encrypt-then-MAC extension is not in use) with some ALT
+     implementations of the underlying hash (SHA-1, SHA-256, SHA-384), causing
+     the affected side to wrongly reject valid messages. Fixes #4118.
+   * Fix mbedtls_net_poll() and mbedtls_net_recv_timeout() often failing with
+     MBEDTLS_ERR_NET_POLL_FAILED on Windows. Fixes #4465.
+   * Fix a resource leak in a test suite with an alternative AES
+     implementation. Fixes #4176.
+   * Fix a crash in mbedtls_mpi_debug_mpi on a bignum having 0 limbs.
+     Reported by lhuang04 in #4578. Fixes #4608.
+   * Fix a null pointer dereference when mbedtls_mpi_exp_mod() was called with
+     A=0 represented with 0 limbs. This bug could not be triggered by code
+     that constructed A with one of the mbedtls_mpi_read_xxx functions
+     (including in particular TLS code) since those always built an mpi object
+     with at least one limb. Credit to OSS-Fuzz. Fixes #4641.
+   * Fix mbedtls_mpi_gcd(G,A,B) when the value of B is zero. This had no
+     effect on Mbed TLS's internal use of mbedtls_mpi_gcd(), but may affect
+     applications that call mbedtls_mpi_gcd() directly. Fixes #4642.
+   * mbedtls_pk_sign() and mbedtls_pk_verify() and their extended and
+     restartable variants now require at least the specified hash length if
+     nonzero. Before, for RSA, hash_len was ignored in favor of the length of
+     the specified hash algorithm.
+   * Fix which alert is sent in some cases to conform to the
+     applicable RFC: on an invalid Finished message value, an
+     invalid max_fragment_length extension, or an
+     unsupported extension used by the server.
+
+Changes
+   * Fix the setting of the read timeout in the DTLS sample programs.
+   * Remove the AES sample application programs/aes/aescrypt2 which shows
+     bad cryptographic practice. Fix #1906.
+   * When building the test suites with GNU make, invoke python3 or python, not
+     python2. The build still works with either Python 2.7 or 3.5+, but we
+     recommend using a version of Python that is supported upstream.
+
+= mbed TLS 2.16.10 branch released 2021-03-12
+
+Default behavior changes
+   * In mbedtls_rsa_context objects, the ver field was formerly documented
+     as always 0. It is now reserved for internal purposes and may take
+     different values.
+
+Security
+   * Fix a buffer overflow in mbedtls_mpi_sub_abs() when calculating
+     |A| - |B| where |B| is larger than |A| and has more limbs (so the
+     function should return MBEDTLS_ERR_MPI_NEGATIVE_VALUE). Only
+     applications calling mbedtls_mpi_sub_abs() directly are affected:
+     all calls inside the library were safe since this function is
+     only called with |A| >= |B|. Reported by Guido Vranken in #4042.
+   * Fix an errorneous estimation for an internal buffer in
+     mbedtls_pk_write_key_pem(). If MBEDTLS_MPI_MAX_SIZE is set to an odd
+     value the function might fail to write a private RSA keys of the largest
+     supported size.
+     Found by Daniel Otte, reported in #4093 and fixed in #4094,
+     backported in #4100.
+   * Fix a stack buffer overflow with mbedtls_net_poll() and
+     mbedtls_net_recv_timeout() when given a file descriptor that is
+     beyond FD_SETSIZE. Reported by FigBug in #4169.
+   * Guard against strong local side channel attack against base64 tables by
+     making access aceess to them use constant flow code.
+
+Bugfix
+   * Fix an incorrect error code if an RSA private operation glitched.
+   * Fix a resource leak in CTR_DRBG and HMAC_DRBG when MBEDTLS_THREADING_C
+     is enabled, on platforms where initializing a mutex allocates resources.
+     This was a regression introduced in the previous release. Reported in
+     #4017, #4045 and #4071.
+   * Ensure that calling mbedtls_rsa_free() or mbedtls_entropy_free()
+     twice is safe. This happens for RSA when some Mbed TLS library functions
+     fail. Such a double-free was not safe when MBEDTLS_THREADING_C was
+     enabled on platforms where freeing a mutex twice is not safe.
+   * Fix a resource leak in a bad-arguments case of mbedtls_rsa_gen_key()
+     when MBEDTLS_THREADING_C is enabled on platforms where initializing
+     a mutex allocates resources.
+   * This change makes 'mbedtls_x509write_crt_set_basic_constraints'
+     consistent with RFC 5280 4.2.1.9 which says: "Conforming CAs MUST
+     include this extension in all CA certificates that contain public keys
+     used to validate digital signatures on certificates and MUST mark the
+     extension as critical in such certificates." Previous to this change,
+     the extension was always marked as non-critical. This was fixed by
+     #4044.
+
+= mbed TLS 2.16.9 branch released 2020-12-11
+
+Security
+   * Limit the size of calculations performed by mbedtls_mpi_exp_mod to
+     MBEDTLS_MPI_MAX_SIZE to prevent a potential denial of service when
+     generating Diffie-Hellman key pairs. Credit to OSS-Fuzz.
+   * A failure of the random generator was ignored in mbedtls_mpi_fill_random(),
+     which is how most uses of randomization in asymmetric cryptography
+     (including key generation, intermediate value randomization and blinding)
+     are implemented. This could cause failures or the silent use of non-random
+     values. A random generator can fail if it needs reseeding and cannot not
+     obtain entropy, or due to an internal failure (which, for Mbed TLS's own
+     CTR_DRBG or HMAC_DRBG, can only happen due to a misconfiguration).
+   * Fix a compliance issue whereby we were not checking the tag on the
+     algorithm parameters (only the size) when comparing the signature in the
+     description part of the cert to the real signature. This meant that a
+     NULL algorithm parameters entry would look identical to an array of REAL
+     (size zero) to the library and thus the certificate would be considered
+     valid. However, if the parameters do not match in *any* way then the
+     certificate should be considered invalid, and indeed OpenSSL marks these
+     certs as invalid when mbedtls did not.
+     Many thanks to guidovranken who found this issue via differential fuzzing
+     and reported it in #3629.
+   * Zeroising of local buffers and variables which are used for calculations
+     in mbedtls_pkcs5_pbkdf2_hmac(), mbedtls_internal_sha*_process(),
+     mbedtls_internal_md*_process() and mbedtls_internal_ripemd160_process()
+     functions to erase sensitive data from memory. Reported by
+     Johan Malmgren and Johan Uppman Bruce from Sectra.
+
+Bugfix
+   * Fix an invalid (but nonzero) return code from mbedtls_pk_parse_subpubkey()
+     when the input has trailing garbage. Fixes #2512.
+   * Fix rsa_prepare_blinding() to retry when the blinding value is not
+     invertible (mod N), instead of returning MBEDTLS_ERR_RSA_RNG_FAILED. This
+     addresses a regression but is rare in practice (approx. 1 in 2/sqrt(N)).
+     Found by Synopsys Coverity, fix contributed by Peter Kolbus (Garmin).
+     Fixes #3647.
+   * Fix the build when the macro _GNU_SOURCE is defined to a non-empty value.
+     Fix #3432.
+   * Correct the default IV size for mbedtls_cipher_info_t structures using
+     MBEDTLS_MODE_ECB to 0, since ECB mode ciphers don't use IVs.
+   * Make arc4random_buf available on NetBSD and OpenBSD when _POSIX_C_SOURCE is
+     defined. Fix contributed in #3571. Adopted for LTS branch 2.16 in #3602.
+   * Fix build failures on GCC 11. Fixes #3782.
+   * Fix a memory leak in mbedtls_mpi_sub_abs() when the result was negative
+     (an error condition) and the second operand was aliased to the result.
+   * Fix a case in elliptic curve arithmetic where an out-of-memory condition
+     could go undetected, resulting in an incorrect result.
+   * In CTR_DRBG and HMAC_DRBG, don't reset the reseed interval in seed().
+     Fixes #2927.
+   * In PEM writing functions, fill the trailing part of the buffer with null
+     bytes. This guarantees that the corresponding parsing function can read
+     the buffer back, which was the case for mbedtls_x509write_{crt,csr}_pem
+     until this property was inadvertently broken in Mbed TLS 2.19.0.
+     Fixes #3682.
+   * Fix a build failure that occurred with the MBEDTLS_AES_SETKEY_DEC_ALT
+     option on. In this configuration key management methods that are required
+     for MBEDTLS_CIPHER_MODE_XTS were excluded from the build and made it fail.
+     Fixes #3818. Reported by John Stroebel.
+
+Changes
+   * Reduce stack usage significantly during sliding window exponentiation.
+     Reported in #3591 and fix contributed in #3592 by Daniel Otte.
+   * Remove the zeroization of a pointer variable in AES rounds. It was valid
+     but spurious and misleading since it looked like a mistaken attempt to
+     zeroize the pointed-to buffer. Reported by Antonio de la Piedra, CEA
+     Leti, France.
+
+= mbed TLS 2.16.8 branch released 2020-09-01
+
+Features
+   * Support building on e2k (Elbrus) architecture: correctly enable
+     -Wformat-signedness, and fix the code that causes signed-one-bit-field
+     and sign-compare warnings. Contributed by makise-homura (Igor Molchanov)
+     <akemi_homura@kurisa.ch>.
+
+Security
+   * When checking X.509 CRLs, a certificate was only considered as revoked if
+     its revocationDate was in the past according to the local clock if
+     available. In particular, on builds without MBEDTLS_HAVE_TIME_DATE,
+     certificates were never considered as revoked. On builds with
+     MBEDTLS_HAVE_TIME_DATE, an attacker able to control the local clock (for
+     example, an untrusted OS attacking a secure enclave) could prevent
+     revocation of certificates via CRLs. Fixed by no longer checking the
+     revocationDate field, in accordance with RFC 5280. Reported by
+     yuemonangong in #3340. Reported independently and fixed by
+     Raoul Strackx and Jethro Beekman in #3433.
+   * In (D)TLS record decryption, when using a CBC ciphersuites without the
+     Encrypt-then-Mac extension, use constant code flow memory access patterns
+     to extract and check the MAC. This is an improvement to the existing
+     countermeasure against Lucky 13 attacks. The previous countermeasure was
+     effective against network-based attackers, but less so against local
+     attackers. The new countermeasure defends against local attackers, even
+     if they have access to fine-grained measurements. In particular, this
+     fixes a local Lucky 13 cache attack found and reported by Tuba Yavuz,
+     Farhaan Fowze, Ken (Yihan) Bai, Grant Hernandez, and Kevin Butler
+     (University of Florida) and Dave Tian (Purdue University).
+   * Fix side channel in RSA private key operations and static (finite-field)
+     Diffie-Hellman. An adversary with precise enough timing and memory access
+     information (typically an untrusted operating system attacking a secure
+     enclave) could bypass an existing counter-measure (base blinding) and
+     potentially fully recover the private key.
+   * Fix a 1-byte buffer overread in mbedtls_x509_crl_parse_der().
+     Credit to OSS-Fuzz for detecting the problem and to Philippe Antoine
+     for pinpointing the problematic code.
+   * Zeroising of plaintext buffers in mbedtls_ssl_read() to erase unused
+     application data from memory. Reported in #689 by
+     Johan Uppman Bruce of Sectra.
+
+Bugfix
+   * Avoid use of statically sized stack buffers for certificate writing.
+     This previously limited the maximum size of DER encoded certificates
+     in mbedtls_x509write_crt_der() to 2Kb. Reported by soccerGB in #2631.
+   * Reduce the stack consumption of mbedtls_x509write_csr_der() which
+     previously could lead to stack overflow on constrained devices.
+     Contributed by Doru Gucea and Simon Leet in #3464.
+   * Use arc4random_buf on NetBSD instead of rand implementation with cyclical
+     lower bits. Fix contributed in #3540.
+   * Fix building library/net_sockets.c and the ssl_mail_client program on
+     NetBSD. NetBSD conditionals were added for the backport to avoid the risk
+     of breaking a platform. Original fix contributed by Nia Alarie in #3422.
+     Adapted for long-term support branch 2.16 in #3558.
+   * Fix bug in redirection of unit test outputs on platforms where stdout is
+     defined as a macro. First reported in #2311 and fix contributed in #3528.
+     Adopted for LTS branch 2.16 in #3601.
+
+Changes
+   * Update copyright notices to use Linux Foundation guidance. As a result,
+     the copyright of contributors other than Arm is now acknowledged, and the
+     years of publishing are no longer tracked in the source files. This also
+     eliminates the need for the lines declaring the files to be part of
+     MbedTLS. Fixes #3457.
+
+= mbed TLS 2.16.7 branch released 2020-07-01
+
+Security
+   * Fix a side channel vulnerability in modular exponentiation that could
+     reveal an RSA private key used in a secure enclave. Noticed by Sangho Lee,
+     Ming-Wei Shih, Prasun Gera, Taesoo Kim and Hyesoon Kim (Georgia Institute
+     of Technology); and Marcus Peinado (Microsoft Research). Reported by Raoul
+     Strackx (Fortanix) in #3394.
+   * Fix side channel in mbedtls_ecp_check_pub_priv() and
+     mbedtls_pk_parse_key() / mbedtls_pk_parse_keyfile() (when loading a
+     private key that didn't include the uncompressed public key), as well as
+     mbedtls_ecp_mul() / mbedtls_ecp_mul_restartable() when called with a NULL
+     f_rng argument. An attacker with access to precise enough timing and
+     memory access information (typically an untrusted operating system
+     attacking a secure enclave) could fully recover the ECC private key.
+     Found and reported by Alejandro Cabrera Aldaya and Billy Brumley.
+   * Fix issue in Lucky 13 counter-measure that could make it ineffective when
+     hardware accelerators were used (using one of the MBEDTLS_SHAxxx_ALT
+     macros). This would cause the original Lucky 13 attack to be possible in
+     those configurations, allowing an active network attacker to recover
+     plaintext after repeated timing measurements under some conditions.
+     Reported and fix suggested by Luc Perneel in #3246.
+
+Bugfix
+   * Fix the Visual Studio Release x64 build configuration for mbedtls itself.
+     Completes a previous fix in Mbed TLS 2.16.3 that only fixed the build for
+     the example programs. Reported in #1430 and fix contributed by irwir.
+   * Fix undefined behavior in X.509 certificate parsing if the
+     pathLenConstraint basic constraint value is equal to INT_MAX.
+     The actual effect with almost every compiler is the intended
+     behavior, so this is unlikely to be exploitable anywhere. #3197
+   * Include asn1.h in error.c. Fixes #3328 reported by David Hu.
+   * Fix potential memory leaks in ecp_randomize_jac() and ecp_randomize_mxz()
+     when PRNG function fails. Contributed by Jonas Lejeune in #3318.
+   * Add additional bounds checks in ssl_write_client_hello() preventing
+     output buffer overflow if the configuration declared a buffer that was
+     too small.
+
+Changes
+   * Unify the example programs termination to call mbedtls_exit() instead of
+     using a return command. This has been done to enable customization of the
+     behavior in bare metal environments.
+   * Abort the ClientHello writing function as soon as some extension doesn't
+     fit into the record buffer. Previously, such extensions were silently
+     dropped. As a consequence, the TLS handshake now fails when the output
+     buffer is not large enough to hold the ClientHello.
+   * The ECP module, enabled by `MBEDTLS_ECP_C`, now depends on
+     `MBEDTLS_CTR_DRBG_C`, `MBEDTLS_HMAC_DRBG_C`, `MBEDTLS_SHA512_C` or
+     `MBEDTLS_SHA256_C` for some side-channel coutermeasures. If side channels
+     are not a concern, this dependency can be avoided by enabling the new
+     option `MBEDTLS_ECP_NO_INTERNAL_RNG`.
+
+= mbed TLS 2.16.6 branch released 2020-04-14
+
+Security
+   * Fix side channel in ECC code that allowed an adversary with access to
+     precise enough timing and memory access information (typically an
+     untrusted operating system attacking a secure enclave) to fully recover
+     an ECDSA private key. Found and reported by Alejandro Cabrera Aldaya,
+     Billy Brumley and Cesar Pereida Garcia. CVE-2020-10932
+   * Fix a potentially remotely exploitable buffer overread in a
+     DTLS client when parsing the Hello Verify Request message.
+
+Bugfix
+   * Fix compilation failure when both MBEDTLS_SSL_PROTO_DTLS and
+     MBEDTLS_SSL_HW_RECORD_ACCEL are enabled.
+   * Fix a function name in a debug message. Contributed by Ercan Ozturk in
+     #3013.
+
+= mbed TLS 2.16.5 branch released 2020-02-20
+
+Security
+   * Fix potential memory overread when performing an ECDSA signature
+     operation. The overread only happens with cryptographically low
+     probability (of the order of 2^-n where n is the bitsize of the curve)
+     unless the RNG is broken, and could result in information disclosure or
+     denial of service (application crash or extra resource consumption).
+     Found by Auke Zeilstra and Peter Schwabe, using static analysis.
+   * To avoid a side channel vulnerability when parsing an RSA private key,
+     read all the CRT parameters from the DER structure rather than
+     reconstructing them. Found by Alejandro Cabrera Aldaya and Billy Bob
+     Brumley. Reported and fix contributed by Jack Lloyd.
+     ARMmbed/mbed-crypto#352
+
+Bugfix
+   * Fix an unchecked call to mbedtls_md() in the x509write module.
+   * Fix a bug in mbedtls_pk_parse_key() that would cause it to accept some
+     RSA keys that would later be rejected by functions expecting private
+     keys. Found by Catena cyber using oss-fuzz (issue 20467).
+   * Fix a bug in mbedtls_pk_parse_key() that would cause it to accept some
+     RSA keys with invalid values by silently fixing those values.
+
+= mbed TLS 2.16.4 branch released 2020-01-15
+
+Security
+   * Fix side channel vulnerability in ECDSA. Our bignum implementation is not
+     constant time/constant trace, so side channel attacks can retrieve the
+     blinded value, factor it (as it is smaller than RSA keys and not guaranteed
+     to have only large prime factors), and then, by brute force, recover the
+     key. Reported by Alejandro Cabrera Aldaya and Billy Brumley.
+   * Zeroize local variables in mbedtls_internal_aes_encrypt() and
+     mbedtls_internal_aes_decrypt() before exiting the function. The value of
+     these variables can be used to recover the last round key. To follow best
+     practice and to limit the impact of buffer overread vulnerabilities (like
+     Heartbleed) we need to zeroize them before exiting the function.
+     Issue reported by Tuba Yavuz, Farhaan Fowze, Ken (Yihang) Bai,
+     Grant Hernandez, and Kevin Butler (University of Florida) and
+     Dave Tian (Purdue University).
+   * Fix side channel vulnerability in ECDSA key generation. Obtaining precise
+     timings on the comparison in the key generation enabled the attacker to
+     learn leading bits of the ephemeral key used during ECDSA signatures and to
+     recover the private key. Reported by Jeremy Dubeuf.
+   * Catch failure of AES functions in mbedtls_ctr_drbg_random(). Uncaught
+     failures could happen with alternative implementations of AES. Bug
+     reported and fix proposed by Johan Uppman Bruce and Christoffer Lauri,
+     Sectra.
+
+Bugfix
+   * Remove redundant line for getting the bitlen of a bignum, since the variable
+     holding the returned value is overwritten a line after.
+     Found by irwir in #2377.
+   * Support mbedtls_hmac_drbg_set_entropy_len() and
+     mbedtls_ctr_drbg_set_entropy_len() before the DRBG is seeded. Before,
+     the initial seeding always reset the entropy length to the compile-time
+     default.
+
+Changes
+   * Add unit tests for AES-GCM when called through mbedtls_cipher_auth_xxx()
+     from the cipher abstraction layer. Fixes #2198.
+   * Clarify how the interface of the CTR_DRBG and HMAC modules relates to
+     NIST SP 800-90A. In particular CTR_DRBG requires an explicit nonce
+     to achieve a 256-bit strength if MBEDTLS_ENTROPY_FORCE_SHA256 is set.
+
+= mbed TLS 2.16.3 branch released 2019-09-06
+
+Security
+   * Fix a missing error detection in ECJPAKE. This could have caused a
+     predictable shared secret if a hardware accelerator failed and the other
+     side of the key exchange had a similar bug.
+   * The deterministic ECDSA calculation reused the scheme's HMAC-DRBG to
+     implement blinding. Because of this for the same key and message the same
+     blinding value was generated. This reduced the effectiveness of the
+     countermeasure and leaked information about the private key through side
+     channels. Reported by Jack Lloyd.
+   * When writing a private EC key, use a constant size for the private
+     value, as specified in RFC 5915. Previously, the value was written
+     as an ASN.1 INTEGER, which caused the size of the key to leak
+     about 1 bit of information on average and could cause the value to be
+     1 byte too large for the output buffer.
+
+API Changes
+   * The new function mbedtls_ecdsa_sign_det_ext() is similar to
+     mbedtls_ecdsa_sign_det() but allows passing an external RNG for the
+     purpose of blinding.
+
+Bugfix
+   * Fix to allow building test suites with any warning that detects unused
+     functions. Fixes #1628.
+   * Fix typo in net_would_block(). Fixes #528 reported by github-monoculture.
+   * Remove redundant include file in timing.c. Fixes #2640 reported by irwir.
+   * Fix Visual Studio Release x64 build configuration by inheriting
+     PlatformToolset from the project configuration. Fixes #1430 reported by
+     irwir.
+   * Enable Suite B with subset of ECP curves. Make sure the code compiles even
+     if some curves are not defined. Fixes #1591 reported by dbedev.
+   * Fix misuse of signed arithmetic in the HAVEGE module. #2598
+   * Update test certificates that were about to expire. Reported by
+     Bernhard M. Wiedemann in #2357.
+   * Fix the build on ARMv5TE in ARM mode to not use assembly instructions
+     that are only available in Thumb mode. Fix contributed by Aurelien Jarno
+     in #2169.
+   * Fix undefined memset(NULL) call in test_suite_nist_kw.
+   * Make NV seed test support MBEDTLS_ENTROPY_FORCE_SHA256.
+   * Fix propagation of restart contexts in restartable EC operations.
+     This could previously lead to segmentation faults in builds using an
+     address-sanitizer and enabling but not using MBEDTLS_ECP_RESTARTABLE.
+   * Fix memory leak in in mpi_miller_rabin(). Contributed by
+     Jens Wiklander <jens.wiklander@linaro.org> in #2363
+   * Improve code clarity in x509_crt module, removing false-positive
+     uninitialized variable warnings on some recent toolchains (GCC8, etc).
+     Discovered and fixed by Andy Gross (Linaro), #2392.
+   * Zero length buffer check for undefined behavior in
+     mbedtls_platform_zeroize(). Fixes ARMmbed/mbed-crypto#49.
+   * Fix bug in endianness conversion in bignum module. This lead to
+     functionally incorrect code on bigendian systems which don't have
+     __BYTE_ORDER__ defined. Reported by Brendan Shanks. Fixes #2622.
+
+Changes
+   * Make it easier to define MBEDTLS_PARAM_FAILED as assert (which config.h
+     suggests). #2671
+   * Make `make clean` clean all programs always. Fixes #1862.
+
+= mbed TLS 2.16.2 branch released 2019-06-11
+
+Security
+   * Make mbedtls_ecdh_get_params return an error if the second key
+     belongs to a different group from the first. Before, if an application
+     passed keys that belonged to different group, the first key's data was
+     interpreted according to the second group, which could lead to either
+     an error or a meaningless output from mbedtls_ecdh_get_params. In the
+     latter case, this could expose at most 5 bits of the private key.
+
+Bugfix
+   * Server's RSA certificate in certs.c was SHA-1 signed. In the default
+     mbedTLS configuration only SHA-2 signed certificates are accepted.
+     This certificate is used in the demo server programs, which lead the
+     client programs to fail at the peer's certificate verification
+     due to an unacceptable hash signature. The certificate has been
+     updated to one that is SHA-256 signed. Fix contributed by
+     Illya Gerasymchuk.
+   * Fix private key DER output in the key_app_writer example. File contents
+     were shifted by one byte, creating an invalid ASN.1 tag. Fixed by
+     Christian Walther in #2239.
+   * Fix potential memory leak in X.509 self test. Found and fixed by
+     Junhwan Park, #2106.
+   * Reduce stack usage of hkdf tests. Fixes #2195.
+   * Fix 1-byte buffer overflow in mbedtls_mpi_write_string() when
+     used with negative inputs. Found by Guido Vranken in #2404. Credit to
+     OSS-Fuzz.
+   * Fix bugs in the AEAD test suite which would be exposed by ciphers which
+     either used both encrypt and decrypt key schedules, or which perform padding.
+     GCM and CCM were not affected. Fixed by Jack Lloyd.
+   * Fix incorrect default port number in ssl_mail_client example's usage.
+     Found and fixed by irwir. #2337
+   * Add missing parentheses around parameters in the definition of the
+     public macro MBEDTLS_X509_ID_FLAG. This could lead to invalid evaluation
+     in case operators binding less strongly than subtraction were used
+     for the parameter.
+   * Add a check for MBEDTLS_X509_CRL_PARSE_C in ssl_server2, guarding the crl
+     sni entry parameter. Reported by inestlerode in #560.
+   * Add DER-encoded test CRTs to library/certs.c, allowing
+     the example programs ssl_server2 and ssl_client2 to be run
+     if MBEDTLS_FS_IO and MBEDTLS_PEM_PARSE_C are unset. Fixes #2254.
+   * Fix missing bounds checks in X.509 parsing functions that could
+     lead to successful parsing of ill-formed X.509 CRTs. Fixes #2437.
+   * Fix multiple X.509 functions previously returning ASN.1 low-level error
+     codes to always wrap these codes into X.509 high level error codes before
+     returning. Fixes #2431.
+
+Changes
+   * Return from various debugging routines immediately if the
+     provided SSL context is unset.
+   * Remove dead code from bignum.c in the default configuration.
+     Found by Coverity, reported and fixed by Peter Kolbus (Garmin). Fixes #2309.
+   * Add test for minimal value of MBEDTLS_MPI_WINDOW_SIZE to all.sh.
+     Contributed by Peter Kolbus (Garmin).
+   * Change wording in the `mbedtls_ssl_conf_max_frag_len()`'s documentation to
+     improve clarity. Fixes #2258.
+   * Replace multiple uses of MD2 by SHA-256 in X.509 test suite. Fixes #821.
+
+= mbed TLS 2.16.1 branch released 2019-03-19
+
+Features
+   * Add MBEDTLS_REMOVE_3DES_CIPHERSUITES to allow removing 3DES ciphersuites
+     from the default list (enabled by default). See
+     https://sweet32.info/SWEET32_CCS16.pdf.
+
+Bugfix
+   * Fix a compilation issue with mbedtls_ecp_restart_ctx not being defined
+     when MBEDTLS_ECP_ALT is defined. Reported by jwhui. Fixes #2242.
+   * Run the AD too long test only if MBEDTLS_CCM_ALT is not defined.
+     Raised as a comment in #1996.
+   * Reduce the stack consumption of mbedtls_mpi_fill_random() which could
+     previously lead to a stack overflow on constrained targets.
+   * Add `MBEDTLS_SELF_TEST` for the mbedtls_self_test functions
+     in the header files, which missed the precompilation check. #971
+   * Fix clobber list in MIPS assembly for large integer multiplication.
+     Previously, this could lead to functionally incorrect assembly being
+     produced by some optimizing compilers, showing up as failures in
+     e.g. RSA or ECC signature operations. Reported in #1722, fix suggested
+     by Aurelien Jarno and submitted by Jeffrey Martin.
+   * Fix signed-to-unsigned integer conversion warning
+     in X.509 module. Fixes #2212.
+   * Reduce stack usage of `mpi_write_hlp()` by eliminating recursion.
+     Fixes #2190.
+   * Remove a duplicate #include in a sample program. Fixed by Masashi Honma #2326.
+   * Remove the mbedtls namespacing from the header file, to fix a "file not found"
+     build error. Fixed by Haijun Gu #2319.
+   * Fix returning the value 1 when mbedtls_ecdsa_genkey failed.
+   * Fix false failure in all.sh when backup files exist in include/mbedtls
+     (e.g. config.h.bak). Fixed by Peter Kolbus (Garmin) #2407.
+   * Ensure that unused bits are zero when writing ASN.1 bitstrings when using
+     mbedtls_asn1_write_bitstring().
+   * Fix issue when writing the named bitstrings in KeyUsage and NsCertType
+     extensions in CSRs and CRTs that caused these bitstrings to not be encoded
+     correctly as trailing zeroes were not accounted for as unused bits in the
+     leading content octet. Fixes #1610.
+
+Changes
+   * Include configuration file in all header files that use configuration,
+     instead of relying on other header files that they include.
+     Inserted as an enhancement for #1371
+   * Add support for alternative CSR headers, as used by Microsoft and defined
+     in RFC 7468. Found by Michael Ernst. Fixes #767.
+   * Fix configuration queries in ssl-opt.h. #2030
+   * Ensure that ssl-opt.h can be run in OS X. #2029
+   * Reduce the complexity of the timing tests. They were assuming more than the
+     underlying OS actually guarantees.
+   * Re-enable certain interoperability tests in ssl-opt.sh which had previously
+     been disabled for lack of a sufficiently recent version of GnuTLS on the CI.
+   * Ciphersuites based on 3DES now have the lowest priority by default when
+     they are enabled.
+
 = mbed TLS 2.16.0 branch released 2018-12-21
 
 Features
@@ -309,7 +884,7 @@ Security
      1.2, that allowed a local attacker, able to execute code on the local
      machine as well as manipulate network packets, to partially recover the
      plaintext of messages under some conditions by using a cache attack
-     targetting an internal MD/SHA buffer. With TLS or if
+     targeting an internal MD/SHA buffer. With TLS or if
      mbedtls_ssl_conf_dtls_badmac_limit() was used, the attack only worked if
      the same secret (for example a HTTP Cookie) has been repeatedly sent over
      connections manipulated by the attacker. Connections using GCM or CCM
@@ -1195,7 +1770,7 @@ Bugfix
    * Fix potential build failures related to the 'apidoc' target, introduced
      in the previous patch release. Found by Robert Scheck. #390 #391
    * Fix issue in Makefile that prevented building using armar. #386
-   * Fix memory leak that occured only when ECJPAKE was enabled and ECDHE and
+   * Fix memory leak that occurred only when ECJPAKE was enabled and ECDHE and
      ECDSA was disabled in config.h . The leak didn't occur by default.
    * Fix an issue that caused valid certificates to be rejected whenever an
      expired or not yet valid certificate was parsed before a valid certificate
@@ -1437,7 +2012,7 @@ API Changes
      You now need to link to all of them if you use TLS for example.
    * All public identifiers moved to the mbedtls_* or MBEDTLS_* namespace.
      Some names have been further changed to make them more consistent.
-     Migration helpers scripts/rename.pl and include/mbedlts/compat-1.3.h are
+     Migration helpers scripts/rename.pl and include/mbedtls/compat-1.3.h are
      provided. Full list of renamings in scripts/data_files/rename-1.3-2.0.txt
    * Renamings of fields inside structures, not covered by the previous list:
      mbedtls_cipher_info_t.key_length -> key_bitlen
@@ -1492,7 +2067,7 @@ API Changes
    * net_accept() gained new arguments for the size of the client_ip buffer.
    * In the threading layer, mbedtls_mutex_init() and mbedtls_mutex_free() now
      return void.
-   * ecdsa_write_signature() gained an addtional md_alg argument and
+   * ecdsa_write_signature() gained an additional md_alg argument and
      ecdsa_write_signature_det() was deprecated.
    * pk_sign() no longer accepts md_alg == POLARSSL_MD_NONE with ECDSA.
    * Last argument of x509_crt_check_key_usage() and
@@ -3027,7 +3602,7 @@ XySSL ChangeLog
       not swapped on PadLock; also fixed compilation on older versions
       of gcc (bug reported by David Barrett)
     * Correctly handle the case in padlock_xcryptcbc() when input or
-      ouput data is non-aligned by falling back to the software
+      output data is non-aligned by falling back to the software
       implementation, as VIA Nehemiah cannot handle non-aligned buffers
     * Fixed a memory leak in x509parse_crt() which was reported by Greg
       Robson-Garth; some x509write.c fixes by Pascal Vizeli, thanks to
