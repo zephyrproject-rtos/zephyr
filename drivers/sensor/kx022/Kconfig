@@ -1,0 +1,200 @@
+# Kionix KX022 3-axis accelerometer driver
+
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig KX022
+	bool "KX022 I2C accelerometer sensor driver"
+	depends on I2C
+	help
+	  Enable driver for KX022 accelerometer sensor driver
+
+if KX022
+
+choice KX022_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config KX022_TRIGGER_NONE
+	bool "No trigger"
+
+config KX022_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select KX022_TRIGGER
+
+config KX022_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select KX022_TRIGGER
+
+endchoice
+
+choice KX022_INT_PIN
+	prompt "KX022 physical interrupt output pin"
+	default KX022_INT2_PIN
+
+config KX022_INT1_PIN
+	bool "Use interrupt 1"
+	help
+	  Use interrupt 1.
+
+config KX022_INT2_PIN
+	bool "Use interrupt 2"
+	help
+	  Use interrupt 2.
+
+	endchoice
+
+config KX022_TRIGGER
+	bool
+
+config KX022_MOTION_INT
+	bool "Use motion interrupt"
+	help
+	  Enable Motion detection
+config KX022_DRDY_INT
+	bool "Use data ready interrupt"
+	help
+	  Enable data ready  detection
+config KX022_TILT_INT
+	bool "Use tilt position interrupt"
+	help
+	  Enable tilt position detection
+
+config KX022_THREAD_PRIORITY
+	int "Thread priority"
+	depends on KX022_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config KX022_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on KX022_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+menu "Attributes"
+config KX022_TILT_ODR
+	int "Accelerometer Tilt Position Output data rate"
+	range 1 4
+	default 2
+	help
+	  Specify the default accelerometer tilt position output data rate
+	  are:
+	  1: 1.56Hz
+	  2: 12.5Hz
+	  3: 6.25Hz
+	  4: 50Hz
+config KX022_MOTION_THS
+	int "Wake up Motion threshold"
+	range  1 16
+	default 3
+	help
+		The motion threshold is calculated using Formula :
+		Value /16 =ths in unit g
+		1: 0.0625g
+		2: 0.1250g
+		3: 0.1875g
+		++
+config KX022_MOTION_DURATION
+	int "Wake Up Motion duration"
+	range 1 16
+	default 5
+	help
+	  The duration in second for motion,calculated by using this function
+	  Value/ Motion Wake-up Output data rate(default:50hz).
+	  ie:
+	  1: 0.02s
+	  2: 0.04s
+	  3: 0.06s
+	  ++
+config KX022_TILT_ANGLE_LL_SET
+	int "The Tilt Angle lower value default 22 degree"
+	range 0 50
+	default 12
+	help
+	  The Tilt Angle High Limit valueis calculated by using the formula below
+	  Angle(count) = sin θ*32.
+config KX022_TILT_ANGLE_HL_SET
+	int "The Tilt Angle High Limit value"
+	range 0 50
+	default 42
+	help
+	  The Tilt Angle High Limit valueis calculated by using the formula below
+	  Angle(count) = sin θ*32.
+
+# config IGN_MODE
+#     int "type of  ign "
+#     range 0 2
+#     default 0
+#     help
+#       0: Ignition Mode Using Ignition Button
+#       1: Ignition Mode Using Voltage Threashold
+#       2: Ignition Mode Using Motion
+
+
+
+
+config KX022_FS
+	int "Accelerometer full-scale range"
+	default 2
+	help
+	  Specify the default accelerometer full-scale range.
+	  An X value for the config represents a range of +/- X G. Valid values
+	  are:
+	  0:  Full Scale selected at runtime
+	  2:  +/- 2g
+	  4:  +/- 4g
+	  8:  +/- 8g
+
+config KX022_ODR
+	int "Accelerometer Output data rate frequency"
+	range 0 8
+	default 3
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 12.5Hz
+	  2: 25Hz
+	  3: 50Hz
+	  4: 100Hz
+	  5: 200Hz
+	  6: 400Hz
+	  7: 800Hz
+	  8: 1600Hz
+
+config KX022_AVC
+	int "Number of samples to be averaged"
+	range 0 7
+	default 4
+	help
+	  Averaging Filter Control, the default setting is 16 samples averaged.
+	  0: No averaging
+	  1: 2 samples averaged
+	  2: 4 samples averaged
+	  3: 8 samples averaged
+	  4: 16 samples averaged
+	  5: 32 samples averaged
+	  6: 64 samples averaged
+	  7: 128 samples averaged
+
+
+
+config KX022_RES
+	int "Resolution of the KX022"
+	range 0 2
+	default 2
+	help
+	  AKA Sensitivity in the datasheet, related to the power of the
+	  KX022, the default setting is 16-bit resolution.
+	  0: RES selected at runtime
+	  1: 8-bit
+	  2: 16-bit
+endmenu
+
+endif # KX022

@@ -176,7 +176,10 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
-
+	/** Accelerometer Free Fall Motion Detection. */
+	SENSOR_CHAN_FREE_FALL,
+	/*Accelerometer Slope/ Tilt Position Detection */
+	SENSOR_CHAN_NEAR_FAR,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -233,9 +236,17 @@ enum sensor_trigger_type {
 	/** Trigger fires when a double tap is detected. */
 	SENSOR_TRIG_DOUBLE_TAP,
 
-	/** Trigger fires when a free fall is detected. */
+	/**
+	 * Trigger fires when a free fall is detected.
+	 * The freefall treshlod is configured
+	 * via the @ref SENSOR_ATTR_WUFF_TH and @ref SENSOR_ATTR_WUFF_DUR
+	 * attribute
+	 */
 	SENSOR_TRIG_FREEFALL,
-
+	/**
+	 * Trigger fire all sensor trigger
+	 */
+	SENSOR_TRIG_ALL,
 	/**
 	 * Number of all common sensor triggers.
 	 */
@@ -276,6 +287,11 @@ enum sensor_attribute {
 	SENSOR_ATTR_LOWER_THRESH,
 	/** Upper threshold for trigger. */
 	SENSOR_ATTR_UPPER_THRESH,
+	/**
+	 * Duration for which the freefall value need to be
+	 * outside the threshold for trigger to fire
+	 */
+	SENSOR_ATTR_WUFF_DUR,
 	/** Threshold for any-motion (slope) trigger. */
 	SENSOR_ATTR_SLOPE_TH,
 	/**
