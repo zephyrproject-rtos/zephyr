@@ -229,7 +229,7 @@
 #endif
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
-#endif
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
 #define TICKER_USER_LLL_VENDOR_OPS 0
@@ -1203,8 +1203,12 @@ void ll_rx_dequeue(void)
 #endif
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1276,8 +1280,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		{
 			mem_release(rx_free, &mem_pdu_rx.free);
-			break;
+		}
+		break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1452,16 +1458,6 @@ void ll_rx_mem_release(void **node_rx)
 		}
 		break;
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-		case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-		{
-			ull_iq_report_link_inc_quota(1);
-			ull_df_iq_report_mem_release(rx_free);
-			ull_df_rx_iq_report_alloc(1);
-		}
-		break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 		case NODE_RX_TYPE_SYNC_ISO:
 		{
@@ -1486,6 +1482,19 @@ void ll_rx_mem_release(void **node_rx)
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+		case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
+		case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+		{
+			const uint8_t report_cnt = 1U;
+
+			ull_iq_report_link_inc_quota(report_cnt);
+			ull_df_iq_report_mem_release(rx_free);
+			ull_df_rx_iq_report_alloc(report_cnt);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_TERMINATE:
@@ -2432,17 +2441,20 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_established_report(link, rx);
 	}
 	break;
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT: {
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);
 		ll_rx_sched();
 	}
 	break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:

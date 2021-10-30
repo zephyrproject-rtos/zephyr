@@ -148,9 +148,9 @@ struct lll_conn {
 	int8_t tx_pwr_lvl;
 #endif
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	struct lll_df_conn_rx_params df_rx_params;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+	struct lll_df_conn_rx_cfg df_rx_cfg;
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	struct lll_df_conn_tx_cfg df_tx_cfg;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */

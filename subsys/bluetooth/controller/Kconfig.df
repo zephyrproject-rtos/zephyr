@@ -90,6 +90,7 @@ config BT_CTLR_DF_ANT_SWITCH_RX
 config BT_CTLR_DF_CTE_RX
 	bool "Enable reception of Constant Tone Extension feature"
 	depends on BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_CONN_RSSI if BT_CONN
 	default y
 	help
 	  Enable support for reception of Constant Tone Extension in controller.
@@ -131,6 +132,14 @@ config BT_CTLR_DF_CONN_CTE_TX
 	default y
 	help
 	  Enable transmission of Constant Tone Extension in
+	  direction finding connected mode.
+
+config BT_CTRL_DF_CONN_CTE_RX
+	bool "Enable Connection based CTE Receiver"
+	depends on BT_CTLR_DF_CTE_RX && BT_CONN
+	default y
+	help
+	  Enable reception and sampling of Constant Tone Extension in
 	  direction finding connected mode.
 
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC

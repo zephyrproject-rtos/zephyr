@@ -32,6 +32,16 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+/* Minimum number of antenna switch patterns required by Direction Finding Extension to be
+ * configured in SWTICHPATTER register. The value is set to 2, even though the radio peripheral
+ * specification requires 3.
+ * Radio always configures three antenna patterns. First pattern is set implicitly in
+ * radio_df_ant_switch_pattern_set. It is provided by DTS radio.dfe_pdu_antenna property.
+ * There is a need for two more patterns to be provided by an application.
+ * They are aimed for: reference period and switch-sample period.
+ */
+#define DF_MIN_ANT_NUM_REQUIRED 2
+
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 static void df_cte_tx_configure(uint8_t cte_type, uint8_t cte_length, uint8_t ant_ids_len,
@@ -213,7 +223,9 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
 
 	return &df_cfg->cfg[first];
 }
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
 /* @brief Function initializes reception of Constant Tone Extension.
  *
  * @param slot_duration     Switching and sampling slots duration (1us or 2us).
@@ -252,7 +264,36 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uin
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
 	node_rx->chan_idx = chan_idx;
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+/**
+ * @brief Function initializes parsing of received PDU for CTEInfo.
+ *
+ * Parsing a PDU for CTEInfo is required to successfully receive a PDU that may include CTE.
+ * It makes possible to correctly interpret PDU content by Radio peripheral.
+ */
+void lll_df_conf_cte_info_parsing_enable(void)
+{
+	/* Use of mandatory 2 us switching and sampling slots for CTEInfo parsing.
+	 * The configuration here does not matter for actual IQ sampling.
+	 * The collected data will not be reported to host.
+	 */
+	radio_df_cte_rx_4us_switching(true);
+
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+	/* Use PDU_ANTENNA so no actual antenna change will be done. */
+	static uint8_t ant_ids[DF_MIN_ANT_NUM_REQUIRED] = { PDU_ANTENNA, PDU_ANTENNA };
+
+	radio_df_ant_switching_pin_sel_cfg();
+	radio_df_ant_switch_pattern_clear();
+	radio_df_ant_switch_pattern_set(ant_ids, DF_MIN_ANT_NUM_REQUIRED);
+#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+
+	/* Do not set storage for IQ samples, it is irrelevant for parsing of a PDU for CTEInfo. */
+	radio_df_iq_data_packet_set(NULL, 0);
+}
+#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
 
 /* @brief Function performs common steps for initialization and reset
  * of Direction Finding LLL module.
