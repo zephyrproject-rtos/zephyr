@@ -19,8 +19,8 @@ the advantages of being universally portable and pervasively
 understood, though they may not match the precision of the underlying
 hardware perfectly.
 
-The kernel presents a "cycle" count via the
-:c:func:`k_cycle_get_32` API.  The intent is that this counter
+The kernel presents a "cycle" count via the :c:func:`k_cycle_get_32`
+and :c:func:`k_cycle_get_64` APIs.  The intent is that this counter
 represents the fastest cycle counter that the operating system is able
 to present to the user (for example, a CPU cycle counter) and that the
 read operation is very fast.  The expectation is that very sensitive

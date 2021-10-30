@@ -134,3 +134,15 @@ uint32_t sys_clock_cycle_get_32(void)
 {
 	return systimer_ll_get_counter_value_low(SYSTIMER_COUNTER_1);
 }
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t ret = systimer_ll_get_counter_value_low(SYSTIMER_COUNTER_1);
+
+	ret |= (uint64_t)systimer_ll_get_counter_value_high(SYSTIMER_COUNTER_1) << 32;
+
+	k_spin_unlock(&lock, key);
+
+	return ret;
+}
