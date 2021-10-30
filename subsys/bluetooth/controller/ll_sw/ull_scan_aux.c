@@ -11,6 +11,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 #include "util/util.h"
+#include "util/dbuf.h"
 
 #include "hal/ticker.h"
 #include "hal/ccm.h"
