@@ -127,18 +127,6 @@ config KX022_TILT_ANGLE_HL_SET
 	  The Tilt Angle High Limit valueis calculated by using the formula below
 	  Angle(count) = sin θ*32.
 
-# config IGN_MODE
-#     int "type of  ign "
-#     range 0 2
-#     default 0
-#     help
-#       0: Ignition Mode Using Ignition Button
-#       1: Ignition Mode Using Voltage Threashold
-#       2: Ignition Mode Using Motion
-
-
-
-
 config KX022_FS
 	int "Accelerometer full-scale range"
 	default 2
