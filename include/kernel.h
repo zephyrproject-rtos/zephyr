@@ -1640,6 +1640,27 @@ static inline uint32_t k_cycle_get_32(void)
 }
 
 /**
+ * @brief Read the 64-bit hardware clock.
+ *
+ * This routine returns the current time in 64-bits, as measured by the
+ * system's hardware clock, if available.
+ *
+ * @see CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+ *
+ * @return Current hardware clock up-counter (in cycles).
+ */
+static inline uint64_t k_cycle_get_64(void)
+{
+	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		__ASSERT(0, "64-bit cycle counter not enabled on this platform. "
+			    "See CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER");
+		return 0;
+	}
+
+	return arch_k_cycle_get_64();
+}
+
+/**
  * @}
  */
 

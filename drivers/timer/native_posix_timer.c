@@ -32,6 +32,11 @@ uint32_t sys_clock_cycle_get_32(void)
 	return hwm_get_time();
 }
 
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return hwm_get_time();
+}
+
 /**
  * Interrupt handler for the timer interrupt
  * Announce to the kernel that a number of ticks have passed
