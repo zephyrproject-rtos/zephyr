@@ -58,6 +58,13 @@ typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
  */
 static inline uint32_t arch_k_cycle_get_32(void);
 
+/**
+ * Obtain the current cycle count, in units that are hardware-specific
+ *
+ * @see k_cycle_get_64()
+ */
+static inline uint64_t arch_k_cycle_get_64(void);
+
 /** @} */
 
 

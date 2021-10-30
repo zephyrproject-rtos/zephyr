@@ -127,3 +127,8 @@ uint32_t sys_clock_cycle_get_32(void)
 {
 	return (uint32_t)OSTIMER_GetCurrentTimerValue(base);
 }
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return OSTIMER_GetCurrentTimerValue(base);
+}
