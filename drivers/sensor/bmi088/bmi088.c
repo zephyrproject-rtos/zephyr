@@ -1,4 +1,5 @@
 /* Bosch BMI088 inertial measurement unit driver
+ * Note: This is for the Gyro part only
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -13,13 +14,16 @@
 #include <sys/byteorder.h>
 #include <kernel.h>
 #include <sys/__assert.h>
-#include <logging/log.h>
+
 #include <devicetree.h>
+#include "../lib/libc/minimal/include/math.h"
 
 #include "bmi088.h"
-#define M_PI   3.14159265358979323846264338327950288
 
-LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
+#define LOG_LEVEL CONFIG_BMI088_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(BMI088);
+//LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #error "BMI088 driver enabled without any devices"
@@ -85,17 +89,6 @@ int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte) 
     return bmi088_read(dev, reg_addr, byte, 1);
 }
 
-int bmi088_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word) {
-    int rc = bmi088_read(dev, reg_addr, word, 2);
-    if (rc != 0) {
-        return rc;
-    }
-
-    *word = sys_le16_to_cpu(*word);
-
-    return 0;
-}
-
 int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len) {
 
     return bmi088_transceive(dev, reg_addr & BMI088_REG_MASK, true, buf, len);
@@ -104,15 +97,6 @@ int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t 
 int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
                       uint8_t byte) {
     return bmi088_write(dev, reg_addr & BMI088_REG_MASK, &byte, 1);
-}
-
-int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word) {
-    uint8_t tx_word[2] = {
-            (uint8_t) (word & 0xff),
-            (uint8_t) (word >> 8)
-    };
-
-    return bmi088_write(dev, reg_addr & BMI088_REG_MASK, tx_word, 2);
 }
 
 int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val) {
@@ -134,8 +118,7 @@ static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor
     val->val2 = converted_val % 1000000;
 }
 
-static void
-bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_xyz, struct sensor_value *val) {
+static void bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
             bmi088_to_fixed_point(raw_xyz[0], scale, val);
@@ -147,6 +130,7 @@ bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, uint16_t *raw_x
             bmi088_to_fixed_point(raw_xyz[2], scale, val);
             break;
         default:
+            LOG_ERR("Channels not supported !");
             break;
     }
 
@@ -169,7 +153,6 @@ static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, e
 
 static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     struct bmi088_data *data = to_data(dev);
-    uint8_t status;
     size_t i;
 
     __ASSERT(chan == SENSOR_CHAN_ALL, "channel is not valid");
@@ -200,7 +183,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-    const uint16_t scale = (61 * 1000 * 2 * M_PI / 360);
+    const uint16_t scale = (61 * 1000 * 2 * M_PI / 360);    // scale for converting sensor output to m°/s/lsb
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
         case SENSOR_CHAN_GYRO_Y:
@@ -254,28 +237,21 @@ static int bmi088_init(const struct device *dev) {
     }
     LOG_DBG("Chip successfully detected");
 
-    // Set default gyro range, For now: always use largest range
+    // Set default gyro range, For now: always use the largest range
     if (bmi088_byte_write(dev, GYRO_RANGE, BMI088_DEFAULT_RANGE) < 0) {
         LOG_DBG("Cannot set default range for gyroscope.");
         return -EIO;
     }
 
 
-    // Set Bandwidth to 0x04: ODR 200Hz, Filter bandwidth 23Hz
-    if (bmi088_reg_field_update(dev, GYRO_BANDWIDTH,
-                                0,
-                                FULL_MASK,
-                                BMI088_DEFAULT_BW) < 0) {
-        LOG_DBG("Failed to set gyro's default ODR.");
+    // Set Bandwidth to 0x04 (ODR 200Hz, Filter bandwidth 23Hz)
+    if(bmi088_byte_write(dev, GYRO_BANDWIDTH, BMI088_DEFAULT_BW) < 0){
+        LOG_DBG("Failed to set gyro's default ODR");
         return -EIO;
     }
 
 
     return 0;
-}
-
-uint16_t bmi088_gyr_scale(int32_t range_dps) {
-    return (2 * range_dps * SENSOR_PI) / 180LL / 65536LL;
 }
 
 static const struct sensor_driver_api bmi088_api = {

@@ -1,4 +1,6 @@
 /* Bosch BMI088 inertial measurement unit header
+ * Note: This is for the Gyro part only
+ *
  */
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_
@@ -63,8 +65,6 @@
 #define BMI088_DEFAULT_RANGE    0x00    // Largest possible range for gyro (2000dps)
 #define BMI088_DEFAULT_BW       0x04    // ODR: 200Hz, Filter bw: 23Hz
 
-#define FULL_MASK   0xFF    // Mask with only Ones
-
 #define BMI088_AXES 3   // Number of Axes
 
 #define BMI088_SAMPLE_SIZE  (BMI088_AXES * sizeof(uint16_t))    // Size of Samples with 2 bytes per axis = 6 bytes
@@ -107,8 +107,6 @@ int bmi088_read(const struct device *dev, uint8_t reg_addr, void *data, uint8_t 
 
 int bmi088_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte);
 
-int bmi088_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word);
-
 /**
  * Write multiple bytes to the BMI088
  *
@@ -121,8 +119,6 @@ int bmi088_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word)
 int bmi088_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len);
 
 int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
-
-int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word);
 
 /**
  * Update some bits in a BMI088 register without changing the other bits.
@@ -138,6 +134,13 @@ int bmi088_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word)
  */
 int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
 
-uint16_t bmi088_gyr_scale(int32_t range_dps);
+/**
+ * Convert the raw value with a factor 'scale' and save the new values integer and fractional part in 'sensor_value'
+ *
+ * @param raw_val Raw sensor value
+ * @param scale Value to scale the raw_val
+ * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
+ */
+static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */
