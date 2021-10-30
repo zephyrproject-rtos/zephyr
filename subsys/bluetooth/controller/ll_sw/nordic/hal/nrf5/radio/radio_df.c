@@ -307,7 +307,7 @@ void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
 }
 
-void radio_df_cte_rx_2us_switching(void)
+void radio_df_cte_rx_2us_switching(bool cte_info_in_s1)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
@@ -315,10 +315,10 @@ void radio_df_cte_rx_2us_switching(void)
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_2us);
-	radio_df_cte_inline_set_enabled(false);
+	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 
-void radio_df_cte_rx_4us_switching(void)
+void radio_df_cte_rx_4us_switching(bool cte_info_in_s1)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
@@ -326,7 +326,7 @@ void radio_df_cte_rx_4us_switching(void)
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_4us);
-	radio_df_cte_inline_set_enabled(false);
+	radio_df_cte_inline_set_enabled(cte_info_in_s1);
 }
 
 void radio_df_ant_switch_pattern_clear(void)

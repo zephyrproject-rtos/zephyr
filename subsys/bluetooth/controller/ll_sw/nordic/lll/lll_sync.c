@@ -176,8 +176,8 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
 
 	if (cfg->is_enabled) {
-		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len,
-					  cfg->ant_ids, lll_aux->chan);
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
+					  lll_aux->chan, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
 
 		radio_switch_complete_and_phy_end_disable();
@@ -285,7 +285,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 
 	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  chan_idx);
+					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
 
 		radio_switch_complete_and_phy_end_disable();
@@ -346,7 +346,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	if (cfg->is_enabled) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  chan_idx);
+					  chan_idx, CTE_INFO_IN_PAYLOAD);
 		cfg->cte_count = 0;
 
 		radio_switch_complete_and_phy_end_disable();
@@ -560,7 +560,7 @@ static void isr_aux_setup(void *param)
 
 	if (cfg->is_enabled && is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
-					  aux_ptr->chan_idx);
+					  aux_ptr->chan_idx, CTE_INFO_IN_PAYLOAD);
 
 		radio_switch_complete_and_phy_end_disable();
 	} else

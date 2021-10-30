@@ -220,22 +220,24 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
  * @param ant_num           Number of antennas in switch pattern.
  * @param ant_ids           Antenna identifiers that create switch pattern.
  * @param chan_idx          Channel used to receive PDU with CTE
+ * @param cte_info_in_s1    Inform if CTEInfo is in S1 byte for conn. PDU or in extended advertising
+ *                          header of per. adv. PDU.
  *
  * In case of AoA mode ant_num and ant_ids parameters are not used.
  */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *ant_ids,
-			       uint8_t chan_idx)
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, const uint8_t *ant_ids,
+			       uint8_t chan_idx, bool cte_info_in_s1)
 {
 	struct node_rx_iq_report *node_rx;
 
 	/* ToDo change to appropriate HCI constant */
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)
 	if (slot_duration == 0x1) {
-		radio_df_cte_rx_2us_switching();
+		radio_df_cte_rx_2us_switching(cte_info_in_s1);
 	} else
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_1US */
 	{
-		radio_df_cte_rx_4us_switching();
+		radio_df_cte_rx_4us_switching(cte_info_in_s1);
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
