@@ -12,6 +12,12 @@
 /* @brief Min supported length of antenna switching pattern */
 #define LLL_DF_MIN_ANT_PATTERN_LEN 3
 
+/* @brief Mactros to name constants informing where CTEInfo may be found within a PDU depending on
+ * a PDU type.
+ */
+#define CTE_INFO_IN_S1_BYTE true
+#define CTE_INFO_IN_PAYLOAD false
+
 /* @brief Macro to convert length of CTE to [us] */
 #define CTE_LEN_US(n) ((n) * 8U)
 

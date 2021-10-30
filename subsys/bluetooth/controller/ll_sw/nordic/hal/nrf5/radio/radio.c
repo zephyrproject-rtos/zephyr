@@ -122,6 +122,15 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(NRF_GPIO_CSN_CTLR, nordic_nrf_gpio),
 
 #endif	/* HAL_RADIO_FEM_IS_NRF21540 */
 
+/* CTEINLINE S0_MASK for periodic advertising PUDs. It allows to accept all types of extended
+ * advertising PDUs to have CTE included.
+ */
+#define DF_S0_ALLOW_ALL_PER_ADV_PDU 0x0
+/* CTEINLINE S0_MASK for data channel PDUs. It points to CP bit in S0 byte to check if is it set
+ * to 0x1. In that is true then S1 byte (CTEInfo) is considered as present in a PDU.
+ */
+#define DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU 0x20
+
 static radio_isr_cb_t isr_cb;
 static void           *isr_cb_param;
 
@@ -1627,12 +1636,11 @@ void radio_ar_resolve(const uint8_t *addr)
  */
 void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 {
-#if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	const nrf_radio_cteinline_conf_t inline_conf = {
 		.enable = true,
 		/* Indicates whether CTEInfo is in S1 byte or not. */
 		.info_in_s1 = cte_info_in_s1,
-	/* Enable or disable switching and sampling when CRC is not OK. */
+		/* Enable or disable switching and sampling when CRC is not OK. */
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
 		.err_handling = true,
 #else
@@ -1644,12 +1652,13 @@ void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 		.rx1us = NRF_RADIO_CTEINLINE_RX_MODE_2US,
 		/* Spacing between samples for 2us AoD or AoA is set to 4us. */
 		.rx2us = NRF_RADIO_CTEINLINE_RX_MODE_4US,
-		/**< S0 bit pattern to match all types of adv. PDUs */
-		.s0_pattern = 0x0,
-		/**< S0 bit mask set to don't match any bit in SO octet */
-		.s0_mask = 0x0
+		/* S0 bit pattern to match all types of adv. PDUs or CP bit in conn PDU*/
+		.s0_pattern = (cte_info_in_s1 ? DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU :
+							DF_S0_ALLOW_ALL_PER_ADV_PDU),
+		/* S0 bit mask set to don't match any bit in SO octet or match CP bit in conn PDU */
+		.s0_mask = (cte_info_in_s1 ? DF_S0_MASK_CP_BIT_IN_DATA_CHANNEL_PDU :
+							DF_S0_ALLOW_ALL_PER_ADV_PDU)
 	};
 
 	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
-#endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 }
