@@ -161,8 +161,10 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
 /**
  * @brief Register a callback to be called when the datarate changes
  *
- * The callback is called once upon successfully joining a network and again
- * each time the datarate changes due to ADR.
+ * The callback is called in the following situations:
+ *     * Upon successfully joining a network.
+ *     * Each time the datarate changes due to ADR.
+ *     * When the datarate is changed by a call to @ref lorawan_set_datarate.
  *
  * The callback function takes one parameter:
  *	- dr - updated datarate

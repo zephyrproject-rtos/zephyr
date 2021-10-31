@@ -394,6 +394,11 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 		return -EINVAL;
 	}
 
+	/* Run DR callback if datarate was changed */
+	if (dr_change_cb && (current_datarate != dr)) {
+		dr_change_cb(dr);
+	}
+
 	default_datarate = dr;
 	current_datarate = dr;
 
