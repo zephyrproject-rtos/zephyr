@@ -23,7 +23,6 @@
 #define LOG_LEVEL CONFIG_BMI088_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(BMI088);
-//LOG_MODULE_REGISTER(BMI088, LOG_LEVEL_DBG);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #error "BMI088 driver enabled without any devices"
@@ -99,26 +98,34 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
     return bmi088_write(dev, reg_addr & BMI088_REG_MASK, &byte, 1);
 }
 
-int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val) {
-    uint8_t old_val;
-
-    if (bmi088_byte_read(dev, reg_addr, &old_val) < 0) {
-        return -EIO;
-    }
-
-    return bmi088_byte_write(dev, reg_addr, (old_val & ~mask) | ((val << pos) & mask));
-}
-
-static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
+/**
+ * Convert the raw value with a factor 'scale' and save the new values integer and fractional part in 'sensor_value'
+ *
+ * @param raw_val Raw sensor value
+ * @param scale Value to scale the raw_val
+ * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
+ */
+static struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
     int32_t converted_val = raw_val * scale;
 
     LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
 
     val->val1 = converted_val / 1000000;
     val->val2 = converted_val % 1000000;
+
+    return *val;
 }
 
-static void bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
+/**
+ * Convert the corresponding value of the channel (X, Y or Z)
+ *
+ * @param chan Channel to read. Implemented: Gyro X, Y, Z
+ * @param scale Value to scale the raw_val
+ * @param raw_xyz array for storing X, Y, Z channel raw value of the sensor
+ * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
+ * @return
+ */
+static struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
             bmi088_to_fixed_point(raw_xyz[0], scale, val);
@@ -133,12 +140,12 @@ static void bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int
             LOG_ERR("Channels not supported !");
             break;
     }
+    return *val;
 
 
 }
 
-static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
-                           const struct sensor_value *val) {
+static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr, const struct sensor_value *val) {
     return -ENOTSUP;
 }
 
@@ -150,20 +157,17 @@ static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, e
  * @param chan Channel to fetch. Only SENSOR_CHAN_ALL is supported.
  * @return 0 on success
  */
-
 static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     struct bmi088_data *data = to_data(dev);
-    size_t i;
 
     __ASSERT(chan == SENSOR_CHAN_ALL, "channel is not valid");
 
-    if (bmi088_read(dev, RATE_X_LSB, data->sample.gyr,
-                    BMI088_SAMPLE_SIZE) < 0) {
+    if (bmi088_read(dev, RATE_X_LSB, data->sample.gyr, BMI088_SAMPLE_SIZE) < 0) {
         return -EIO;
     }
 
     // convert samples to cpu endianness
-    for (i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
+    for (size_t i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
         uint16_t *sample = (uint16_t *) &data->sample.gyr[i];
 
         *sample = sys_le16_to_cpu(*sample);
@@ -183,7 +187,7 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-    const uint16_t scale = (61 * 1000 * 2 * M_PI / 360);    // scale for converting sensor output to m°/s/lsb
+    const uint16_t scale = (uint16_t)(61 * 1000 * 2 * M_PI / 360);    // scale for converting sensor output to m°/s/lsb
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
         case SENSOR_CHAN_GYRO_Y:

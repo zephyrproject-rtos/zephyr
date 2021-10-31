@@ -15,14 +15,6 @@
 // read-only
 #define BMI088_REG_CHIPID    0x00
 #define RATE_X_LSB      0x02
-#define RATE_X_MSB      0x03
-#define RATE_Y_LSB      0x04
-#define RATE_Y_MSB      0x05
-#define RATE_Z_LSB      0x06
-#define RATE_Z_MSB      0x07
-#define INT_STAT_1      0x0A
-#define FIFO_STATUS     0x0E
-#define FIFO_DATA       0x3F
 
 // write-only
 #define BMI088_SOFTRESET  0x14
@@ -30,27 +22,6 @@
 // read/write
 #define GYRO_RANGE      0x0F
 #define GYRO_BANDWIDTH  0x10
-#define GYRO_LPM1       0x11
-#define GYRO_INT_CTRL   0x15
-#define IO_CONF         0x16
-#define IO_MAP          0x18
-#define FIFO_WM_EN      0x1E
-#define FIFO_EXT_INT_S  0x34
-#define G_FIFO_CONF_0   0x3D
-#define G_FIFO_CONF_1   0x3E
-#define GYRO_SELFTEST   0x3C
-
-// bit-fields
-
-// GYRO_INT_STAT_1
-#define GYRO_FIFO_INT   BIT(4)
-#define GYRO_DRDY       BIT(7)
-// FIFO_STATUS
-#define FIFO_FRAMECOUNT
-#define FIFO_OVERRUN    BIT(7)
-// GYRO_INT_CTRL
-#define GYRO_FIFO_EN    BIT(6)
-#define GYRO_DATA_EN    BIT(7)
 
 //other defines
 
@@ -76,9 +47,9 @@ struct bmi088_cfg {
 };
 
 
-// Each sample has X, Y and Z
+// Each sample has X, Y and Z, each with lsb and msb Bytes
 struct bmi088_gyro_sample {
-    int16_t gyr[BMI088_AXES];
+    int8_t gyr[BMI088_SAMPLE_SIZE];
 };
 
 struct bmi088_data {
@@ -132,15 +103,11 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
  * @param val Value to set the bits to
  * @return
  */
-int bmi088_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask, uint8_t val);
 
-/**
- * Convert the raw value with a factor 'scale' and save the new values integer and fractional part in 'sensor_value'
- *
- * @param raw_val Raw sensor value
- * @param scale Value to scale the raw_val
- * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
- */
-static void bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
+
+static struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
+
+
+static struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val)
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */
