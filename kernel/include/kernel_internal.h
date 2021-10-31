@@ -240,8 +240,10 @@ void z_mem_manage_boot_finish(void);
  *
  * This function is entered with interrupts disabled. It should re-enable
  * interrupts if it had entered a power state.
+ *
+ * @return True if the system suspended, otherwise return false
  */
-enum pm_state pm_system_suspend(int32_t ticks);
+bool pm_system_suspend(int32_t ticks);
 
 /**
  * Notify exit from kernel idling after PM operations
