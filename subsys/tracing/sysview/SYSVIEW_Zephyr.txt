@@ -162,7 +162,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 154 k_lifo_alloc_put             lifo=%I, data=%I
 
 
-155 pm_system_suspend            ticks=%u | Returns %PowerState
+155 pm_system_suspend            ticks=%u | Returns %Bool
 156 pm_device_runtime_get        dev=%I | Returns %u
 157 pm_device_runtime_put        dev=%I | Returns %u
 158 pm_device_runtime_put_async  dev=%I | Returns %u

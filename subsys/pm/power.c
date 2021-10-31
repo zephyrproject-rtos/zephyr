@@ -267,7 +267,7 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 }
 #endif
 
-enum pm_state pm_system_suspend(int32_t ticks)
+bool pm_system_suspend(int32_t ticks)
 {
 	uint8_t id = _current_cpu->id;
 
@@ -340,7 +340,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_power_states[id].state);
-	return z_power_states[id].state;
+	return true;
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)
