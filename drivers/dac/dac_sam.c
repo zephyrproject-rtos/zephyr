@@ -173,5 +173,5 @@ static const struct dac_sam_dev_cfg dacc_sam_config = {
 static struct dac_sam_dev_data dacc_sam_data;
 
 DEVICE_DT_INST_DEFINE(0, dac_sam_init, NULL, &dacc_sam_data, &dacc_sam_config,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,
 		      &dac_sam_driver_api);

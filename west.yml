@@ -67,9 +67,14 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a360365cb7858826809c82e375524ee5faf497ac
+      revision: 7c46a3fc5b336199392cba0f66c3c27d5fe9025c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
+      groups:
+        - hal
+    - name: hal_gigadevice
+      revision: ce323de9655972a545cbdddda813c1576d85d5d1
+      path: modules/hal/gigadevice
       groups:
         - hal
     - name: hal_infineon

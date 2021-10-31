@@ -7,9 +7,8 @@
 #include <sys/__assert.h>
 #include <pm/device_runtime.h>
 
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power);
+LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 
 /* Device PM request type */
 #define PM_DEVICE_SYNC          BIT(0)

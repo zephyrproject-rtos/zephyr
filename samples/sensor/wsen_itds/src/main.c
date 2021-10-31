@@ -67,7 +67,7 @@ static void test_polling_mode(const struct device *itds)
 
 #if defined(CONFIG_ITDS_TRIGGER)
 static void trigger_handler(const struct device *itds,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	switch (trigger->type) {
 	case SENSOR_TRIG_DATA_READY:

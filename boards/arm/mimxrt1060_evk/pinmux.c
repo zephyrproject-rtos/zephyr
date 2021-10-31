@@ -280,6 +280,7 @@ static int mimxrt1060_evk_init(const struct device *dev)
 	GPIO_PinInit(GPIO2, 31, &config);
 #endif
 
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay) && CONFIG_CAN
 	/* FLEXCAN1 TX, RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_08_FLEXCAN1_TX, 1);
@@ -296,6 +297,19 @@ static int mimxrt1060_evk_init(const struct device *dev)
 
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_14_FLEXCAN2_TX, 0x10B0u);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_15_FLEXCAN2_RX, 0x10B0u);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
+	/* ADC1 Input 0 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_11_GPIO1_IO27,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+	/* ADC1 Input 15 */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_10_GPIO1_IO26,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay) && CONFIG_CAN

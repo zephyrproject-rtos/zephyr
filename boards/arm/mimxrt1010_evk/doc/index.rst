@@ -76,6 +76,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1010_evk/mimxrt1010_evk_defconfig``
@@ -109,6 +111,10 @@ The MIMXRT1010 SoC has five pairs of pinmux/gpio controllers.
 | GPIO_AD_05    | LPSPI1_PCS0     | SPI                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_06    | LPSPI1_SCK      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_01    | ADC             | ADC1 Channel 1            |
++---------------+-----------------+---------------------------+
+| GPIO_AD_02    | ADC             | ADC1 Channel 2            |
 +---------------+-----------------+---------------------------+
 
 System Clock

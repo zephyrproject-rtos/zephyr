@@ -6,7 +6,7 @@ config SOC_FLASH_ESP32
 	default y
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_ESP32S2 || SOC_ESP32C3
 	help
 	  Enable ESP32 internal flash driver.
 

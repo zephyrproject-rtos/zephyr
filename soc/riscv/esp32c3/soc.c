@@ -97,6 +97,10 @@ void __attribute__((section(".iram1"))) __start(void)
 	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
 
+#if CONFIG_SOC_FLASH_ESP32
+	spi_flash_guard_set(&g_flash_guard_default_ops);
+#endif
+
 	/*Initialize the esp32c3 interrupt controller */
 	esp_intr_initialize();
 

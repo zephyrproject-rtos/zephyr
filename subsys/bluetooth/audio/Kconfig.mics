@@ -11,8 +11,9 @@ if BT_AUDIO
 ##################### Microphone Input Control Service #####################
 
 config BT_MICS
-	bool "Microphone Input Control Service Support"
+	bool "Microphone Input Control Service Support [EXPERIMENTAL]"
 	default n
+	select EXPERIMENTAL
 	help
 	  This option enables support for Microphone Input Control Service.
 
@@ -47,9 +48,10 @@ endif # BT_MICS
 ##################### Microphone Control Profile Client #####################
 
 config BT_MICS_CLIENT
-	bool "Microphone Control Profile Support"
+	bool "Microphone Control Profile Support [EXPERIMENTAL]"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
+	select EXPERIMENTAL
 	help
 	  This option enables support for Microphone Control Profile.
 

@@ -647,6 +647,22 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 			   struct coap_block_context *ctx);
 
 /**
+ * @brief Updates @a ctx according to @a option set in @a cpkt
+ * so after this is called the current entry indicates the correct
+ * offset in the body of data being transferred.
+ *
+ * @param cpkt Packet in which to look for block-wise transfers options
+ * @param ctx Block context to be updated
+ * @param option Either COAP_OPTION_BLOCK1 or COAP_OPTION_BLOCK2
+ *
+ * @return The offset in the block-wise transfer, 0 if the transfer
+ * has finished or a negative value in case of an error.
+ */
+int coap_next_block_for_option(const struct coap_packet *cpkt,
+			       struct coap_block_context *ctx,
+			       enum coap_option_num option);
+
+/**
  * @brief Updates @a ctx so after this is called the current entry
  * indicates the correct offset in the body of data being
  * transferred.

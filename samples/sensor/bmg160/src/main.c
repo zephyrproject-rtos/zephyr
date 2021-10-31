@@ -70,7 +70,7 @@ static void test_polling_mode(const struct device *bmg160)
 }
 
 static void trigger_handler(const struct device *bmg160,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	if (trigger->type != SENSOR_TRIG_DATA_READY &&
 	    trigger->type != SENSOR_TRIG_DELTA) {
