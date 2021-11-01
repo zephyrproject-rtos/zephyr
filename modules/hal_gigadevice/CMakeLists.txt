@@ -13,7 +13,7 @@ set(gd32_std_src_dir ${gd32_std_dir}/Source)
 
 zephyr_library_named(hal_gigadevice)
 
-zephyr_library_compile_definitions(${gd32_soc_uc})
+zephyr_compile_definitions(${gd32_soc_uc})
 
 # Global includes to be used outside hal_gigadevice
 zephyr_include_directories(${gd32_cmsis_dir}/Include)
