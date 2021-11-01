@@ -448,7 +448,8 @@ static int init_acpi_ec0(const struct device *dev)
 
 #endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO */
 
-#ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT
+#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
+	defined(CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT)
 
 static const struct xec_acpi_ec_config xec_acpi_ec1_cfg = {
 	.regbase = DT_REG_ADDR(DT_NODELABEL(acpi_ec1)),
@@ -462,7 +463,11 @@ static void acpi_ec1_ibf_isr(const struct device *dev)
 		(struct espi_xec_data *const)dev->data;
 	struct espi_event evt = {
 		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+		.evt_details = ESPI_PERIPHERAL_EC_HOST_CMD,
+#else
 		.evt_details = ESPI_PERIPHERAL_HOST_IO_PVT,
+#endif
 		.evt_data = ESPI_PERIPHERAL_NODATA
 	};
 
@@ -509,11 +514,17 @@ static int init_acpi_ec1(const struct device *dev)
 	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
 	struct espi_iom_regs *regs = (struct espi_iom_regs *)cfg->base_addr;
 
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+	regs->IOHBAR[IOB_ACPI_EC1] =
+				(CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM << 16) |
+				MCHP_ESPI_IO_BAR_HOST_VALID;
+#else
 	regs->IOHBAR[IOB_ACPI_EC1] =
 		CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT_PORT_NUM |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
 	regs->IOHBAR[IOB_MBOX] = ESPI_XEC_MBOX_BAR_ADDRESS |
 				 MCHP_ESPI_IO_BAR_HOST_VALID;
+#endif
 
 	return 0;
 }
@@ -523,7 +534,123 @@ static int init_acpi_ec1(const struct device *dev)
 #undef	INIT_ACPI_EC1
 #define	INIT_ACPI_EC1		init_acpi_ec1
 
-#endif /* CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT */
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD || CONFIG_ESPI_PERIPHERAL_HOST_IO_PVT */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(emi0), okay),
+	     "XEC EMI0 DT node is disabled!");
+
+struct xec_emi_config {
+	uintptr_t regbase;
+};
+
+static const struct xec_emi_config xec_emi0_cfg = {
+	.regbase = DT_REG_ADDR(DT_NODELABEL(emi0)),
+};
+
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
+						CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE];
+#else
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE];
+#endif
+
+static int init_emi0(const struct device *dev)
+{
+	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
+	struct espi_iom_regs *regs = (struct espi_iom_regs *)cfg->base_addr;
+	struct emi_regs *emi_hw =
+		(struct emi_regs *)xec_emi0_cfg.regbase;
+
+	regs->IOHBAR[IOB_EMI0] =
+				(CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM << 16) |
+				MCHP_ESPI_IO_BAR_HOST_VALID;
+
+	emi_hw->MEM_BA_0 = (uint32_t)ec_host_cmd_sram;
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	emi_hw->MEM_RL_0 = CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
+						CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE;
+#else
+	emi_hw->MEM_RL_0 = CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+#endif
+	emi_hw->MEM_WL_0 = CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+
+	return 0;
+}
+
+#undef	INIT_EMI0
+#define	INIT_EMI0		init_emi0
+
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
+
+#ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
+
+static int ecust_rd_req(const struct device *dev,
+			enum lpc_peripheral_opcode op,
+			uint32_t *data)
+{
+	ARG_UNUSED(dev);
+
+	switch (op) {
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+	case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY:
+		*data = (uint32_t)ec_host_cmd_sram;
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int ecust_wr_req(const struct device *dev,
+			enum lpc_peripheral_opcode op,
+			uint32_t *data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(op);
+	ARG_UNUSED(data);
+
+	return -EINVAL;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
+
+#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) && \
+	defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
+
+static int eacpi_shm_rd_req(const struct device *dev,
+			enum lpc_peripheral_opcode op,
+			uint32_t *data)
+{
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case EACPI_GET_SHARED_MEMORY:
+		*data = (uint32_t)&ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE];
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int eacpi_shm_wr_req(const struct device *dev,
+			enum lpc_peripheral_opcode op,
+			uint32_t *data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(op);
+	ARG_UNUSED(data);
+
+	return -EINVAL;
+}
+
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
+
 
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 
@@ -753,6 +880,10 @@ static const struct espi_lpc_req espi_lpc_req_tbl[] = {
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_HOST_IO
 	{ EACPI_START_OPCODE, EACPI_MAX_OPCODE, eacpi_rd_req, eacpi_wr_req },
+#endif
+#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) && \
+	defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
+	{ EACPI_GET_SHARED_MEMORY, EACPI_GET_SHARED_MEMORY, eacpi_shm_rd_req, eacpi_shm_wr_req},
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
 	{ ECUSTOM_START_OPCODE, ECUSTOM_MAX_OPCODE, ecust_rd_req, ecust_wr_req},
