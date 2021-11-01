@@ -137,7 +137,7 @@ static int bq35100_control_reg_write(const struct device *dev,
 				 buf, 2);
 
 	/* maybe increase it to test, if set_security still doesnt work */
-	k_sleep(K_MSEC(10));
+	k_sleep(K_MSEC(100));
 
 	return ret;
 }
@@ -374,7 +374,9 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 	uint8_t buf[4];
 	uint8_t i;
 	bool success = false;
-	uint16_t half_access_code;
+	uint32_t half_access_code; 
+	// have a warning in line 432, it requires 36 bits for shifting
+	// I tried uint64_t but still same error for setting security mode
 
 	if (data->security_mode == security_mode) {
 		LOG_DBG("Already inside desired mode");
@@ -422,36 +424,16 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 				return -EIO;
 			}
 
-			status = bq35100_read_extended_data(dev,
-							    BQ35100_FLASH_UNSEAL_STEP1, buf, 4);
-			if (status < 0) {
-				LOG_ERR("Unable to read from DataFlash");
-				return -EIO;
-			}
-			uint32_t unseal_codes = (buf[0] << 24) + (buf[1] << 16) +
-						(buf[2] << 8) + buf[3];
-			half_access_code = ((unseal_codes >> 8) & 0xFF00) |
-					   ((unseal_codes >> 24) & 0x00FF);
+			half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
+			((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
 			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
 			status = bq35100_control_reg_write(dev, half_access_code);
 			if (!(status < 0)) {
-				half_access_code = ((unseal_codes << 8) & 0xFF00) |
-						   ((unseal_codes >> 8) & 0x00FF);
-				LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
-				bq35100_control_reg_write(dev, half_access_code);
+			     half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
+			((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
+			     LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
+			    bq35100_control_reg_write(dev, half_access_code);
 			}
-
-			/*
-			   half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
-			   ((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
-			   LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
-			   status = bq35100_control_reg_write(dev, half_access_code);
-			   if (!(status < 0)) {
-			        half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
-			   ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
-			        LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
-			        bq35100_control_reg_write(dev, half_access_code);
-			   }*/
 			break;
 		case BQ35100_SECURITY_SEALED:
 			LOG_DBG("inside sealed");
@@ -636,6 +618,19 @@ static int bq35100_get_temp(const struct device *dev)
 }
 
 /**
+ * Get the internal temperature register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise. 
+ */
+static int bq35100_get_internal_temp(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+
+	return bq35100_reg_read(dev, BQ35100_CMD_INTERNAL_TEMP,
+				&data->internal_temperature, 2);
+}
+
+/**
  * Get the voltage register data
  * @param dev - The device structure.
  * @return 0 in case of success, negative error code otherwise.
@@ -693,8 +688,8 @@ static int bq35100_get_acc_capacity(const struct device *dev)
 		return -EIO;
 	}
 
-	return bq35100_reg_read(dev, BQ35100_CMD_ACCUMULATED_CAPACITY,
-				(uint32_t *)&data->acc_capacity, 4);
+	return bq35100_reg_read(dev, BQ35100_CMD_ACCUMULATED_CAPACITY, 
+				&data->acc_capacity, 4);
 }
 
 
@@ -783,6 +778,35 @@ static int bq35100_get_security_mode(const struct device *dev)
 	dev_data->security_mode = (data >> 13) & 0b011;
 
 	return dev_data->security_mode;
+}
+
+/**
+ * Get Battery Status.
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_battery_status(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	int status;
+
+	status = bq35100_reg_read(dev, BQ35100_CMD_BATTERY_STATUS,
+				&data->battery_status, 1);
+	if (status < 0) {
+		LOG_ERR("Unable to read Battery Status");
+	}
+
+	LOG_DBG("Battery status: %02X", data->battery_status);
+
+	if (((data->battery_status >> 2) & 0b01) == 1) {
+		LOG_DBG("ALERT is active");
+	}
+
+	if ((data->battery_status & 0b01) == 1) {
+		LOG_DBG("Discharge current is detected");
+	}
+
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -880,6 +904,7 @@ static int bq35100_attr_set(const struct device *dev,
 static int bq35100_get_sensor_data(const struct device *dev)
 {
 	bq35100_get_temp(dev);
+	bq35100_get_internal_temp(dev);
 	bq35100_get_voltage(dev);
 	bq35100_get_avg_current(dev);
 	bq35100_get_state_of_health(dev);
@@ -930,6 +955,11 @@ static int bq35100_channel_get(const struct device *dev,
 		val->val1 = ((uint16_t)(data->temperature) - 2731) / 10;
 		val->val2 = ((uint16_t)((data->temperature) - 2731) % 10 * 100000);
 		break;
+	// gives undecleared error?
+	/*case SENSOR_CHAN_GAUGE_INT_TEMP:
+		val->val1 = ((uint16_t)(data->internal_temperature) - 2731) / 10;
+		val->val2 = ((uint16_t)((data->internal_temperature) - 2731) % 10 * 100000);
+		break;*/
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = (uint16_t)data->voltage / 1000;
 		val->val2 = ((uint16_t)data->voltage % 1000 * 1000);
@@ -1039,15 +1069,19 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (bq35100_get_battery_status(dev) < 0) {
+		return -EIO;
+	}
+
 	data->gauge_enabled = false;
 
 	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
 	}
 
-	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
-	}
+	}*/
 
 	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 	        return EIO;
