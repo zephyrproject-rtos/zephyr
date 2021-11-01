@@ -1061,7 +1061,7 @@ if(CONFIG_USERSPACE)
 
   configure_linker_script(
     linker_app_smem_unaligned.cmd
-    "-DLINKER_APP_SMEM_UNALIGNED"
+    "LINKER_APP_SMEM_UNALIGNED"
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
@@ -1246,7 +1246,7 @@ endif()
 
 configure_linker_script(
   linker_zephyr_prebuilt.cmd
-  "-DLINKER_ZEPHYR_PREBUILT"
+  "LINKER_ZEPHYR_PREBUILT"
   ${APP_SMEM_ALIGNED_DEP}
   ${KOBJECT_LINKER_DEP}
   ${CODE_RELOCATION_DEP}
@@ -1298,7 +1298,7 @@ else()
   # file and preprocessed with the define LINKER_ZEPHYR_FINAL.
   configure_linker_script(
     linker.cmd
-    "-DLINKER_ZEPHYR_FINAL"
+    "LINKER_ZEPHYR_FINAL"
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     zephyr_generated_headers
