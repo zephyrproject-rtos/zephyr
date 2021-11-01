@@ -5,13 +5,7 @@ choice
 	prompt "GigaDevice GD32F403 MCU Selection"
 	depends on SOC_SERIES_GD32F403
 
-	config SOC_GD32F403R
-		bool "gd32f403r"
-
-	config SOC_GD32F403V
-		bool "gd32f403v"
-
-	config SOC_GD32F403Z
-		bool "gd32f403z"
+	config SOC_GD32F403
+		bool "gd32f403"
 
 endchoice

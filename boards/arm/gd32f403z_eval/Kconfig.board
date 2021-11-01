@@ -3,4 +3,4 @@
 
 config BOARD_GD32F403Z_EVAL
 	bool "GigaDevice GD32F403Z Evaluation Kit"
-	depends on SOC_GD32F403Z
+	depends on SOC_GD32F403
