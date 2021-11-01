@@ -450,4 +450,4 @@ static int mb_display_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(mb_display_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(mb_display_init, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY);

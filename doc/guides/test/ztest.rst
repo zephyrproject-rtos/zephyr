@@ -113,7 +113,7 @@ report them as being skipped.  Because the test inventory and
 the list of tests is extracted from the code, adding
 conditionals inside the test suite is sub-optimal.  Tests that need
 to be skipped for a certain platform or feature need to explicitly
-report a skip using :c:func:`ztest_test_skip()`. If the test runs,
+report a skip using :c:func:`ztest_test_skip`. If the test runs,
 it needs to report either a pass or fail.  For example::
 
 	#ifdef CONFIG_TEST1
@@ -179,7 +179,7 @@ subcases that a Zephyr *ztest* test image will expose.
 There exist two alternatives to writing tests. The first, and more verbose,
 approach is to directly declare and run the test suites.
 Here is a generic template for a test showing the expected use of
-:func:`ztest_test_suite`:
+:c:func:`ztest_test_suite`:
 
 .. code-block:: C
 
@@ -210,7 +210,7 @@ Here is a generic template for a test showing the expected use of
    }
 
 Alternatively, it is possible to split tests across multiple files using
-:func:`ztest_register_test_suite` which bypasses the need for `extern`:
+:c:func:`ztest_register_test_suite` which bypasses the need for ``extern``:
 
 .. code-block:: C
 
@@ -224,16 +224,16 @@ Alternatively, it is possible to split tests across multiple files using
   			    ztest_unit_test(test_sometest1)
   			    );
 
-The above sample simple registers the test suite and uses a `NULL` pragma
+The above sample simple registers the test suite and uses a ``NULL`` pragma
 function (more on that later). It is important to note that the test suite isn't
 directly run in this file. Instead two alternatives exist for running the suite.
-First, if to do nothing. A default :func:`test_main` function is provided by
+First, if to do nothing. A default ``test_main`` function is provided by
 ztest. This is the preferred approach if the test doesn't involve a state and
 doesn't require use of the pragma.
 
 In cases of an integration test it is possible that some general state needs to
 be set between test suites. This can be thought of as a state diagram in which
-:func:`test_main` simply goes through various actions that modify the board's
+``test_main`` simply goes through various actions that modify the board's
 state and different test suites need to run. This is achieved in the following:
 
 .. code-block:: C
@@ -292,12 +292,12 @@ state and different test suites need to run. This is achieved in the following:
   }
 
 For *twister* to parse source files and create a list of subcases,
-the declarations of :func:`ztest_test_suite` and
-:func:`ztest_register_test_suite` must follow a few rules:
+the declarations of :c:func:`ztest_test_suite` and
+:c:func:`ztest_register_test_suite` must follow a few rules:
 
 - one declaration per line
 
-- conditional execution by using :func:`ztest_test_skip`
+- conditional execution by using :c:func:`ztest_test_skip`
 
 What to avoid:
 
@@ -339,7 +339,7 @@ What to avoid:
                               ztest_unit_test(test_sometest4),
              ...
 
-- Do not add comments on lines with a call to :func:`ztest_unit_test`:
+- Do not add comments on lines with a call to :c:func:`ztest_unit_test`:
 
   .. code-block:: C
 
