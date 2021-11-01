@@ -144,6 +144,7 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
 int  lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
-int  lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool is_firmware_uri);
+int  lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, 
+							char *desthostname, bool is_firmware_uri);
 
 #endif /* LWM2M_ENGINE_H */
