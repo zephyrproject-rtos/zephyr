@@ -97,6 +97,10 @@
 	status = "okay";
 };
 
+&emi0 {
+	status = "okay";
+};
+
 &p80bd0 {
 	status = "okay";
 };
