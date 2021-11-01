@@ -4,10 +4,7 @@
  */
 
 /**
- * @file
- * @brief Board configuration macros
- *
- * This header file is used to specify and describe board-level aspects
+ * @file SoC configuration header for the GD32F403 SoC series.
  */
 
 #ifndef _SOC__H_
@@ -16,16 +13,8 @@
 #include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
-
-/* Add include for DTS generated information */
 #include <devicetree.h>
-
-#if defined(CONFIG_SOC_SERIES_GD32F403)
 #include <gd32f403.h>
-#else
-#error Library does not support the specified device.
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */
