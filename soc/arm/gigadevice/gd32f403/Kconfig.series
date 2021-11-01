@@ -1,8 +1,8 @@
 # Copyright (c) 2021, ATL Electronics
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_GD32F4
-	bool "GigaDevice GD32F4xxx series Cortex-M4F MCU"
+config SOC_SERIES_GD32F403
+	bool "GigaDevice GD32F403 series Cortex-M4F MCU"
 	select ARM
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
@@ -11,4 +11,4 @@ config SOC_SERIES_GD32F4
 	select CPU_CORTEX_M_HAS_VTOR
 	select SOC_FAMILY_GD32_ARM
 	help
-	  Enable support for GigaDevice GD32F4xxx MCU series
+	  Enable support for GigaDevice GD32F403 MCU series
