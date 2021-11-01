@@ -1512,7 +1512,7 @@ void media_proxy_pl_seeking_speed_cb(int8_t speed);
  * To be called when the ID of the current track is changed (e.g. due
  * to a track change).
  *
- * @param speed	The ID of the current track object in the OTS
+ * @param id The ID of the current track object in the OTS
  */
 void media_proxy_pl_current_track_id_cb(uint64_t id);
 
@@ -1521,7 +1521,7 @@ void media_proxy_pl_current_track_id_cb(uint64_t id);
  *
  * To be called when the ID of the current track is changes
  *
- * @param speed	The ID of the next track object in the OTS
+ * @param id The ID of the next track object in the OTS
  */
 void media_proxy_pl_next_track_id_cb(uint64_t id);
 
@@ -1530,7 +1530,7 @@ void media_proxy_pl_next_track_id_cb(uint64_t id);
  *
  * To be called when the ID of the parent group is changed
  *
- * @param speed	The ID of the parent group object in the OTS
+ * @param id The ID of the parent group object in the OTS
  */
 void media_proxy_pl_parent_group_id_cb(uint64_t id);
 
@@ -1539,7 +1539,7 @@ void media_proxy_pl_parent_group_id_cb(uint64_t id);
  *
  * To be called when the ID of the current group is changed
  *
- * @param speed	The ID of the current group object in the OTS
+ * @param id The ID of the current group object in the OTS
  */
 void media_proxy_pl_current_group_id_cb(uint64_t id);
 
