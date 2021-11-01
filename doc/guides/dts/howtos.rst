@@ -353,17 +353,6 @@ Write device drivers using devicetree APIs
 particular :ref:`compatible <dt-important-props>` (or related set of
 compatibles) supported by the driver.
 
-.. note::
-
-  Historically, Zephyr has used Kconfig options like :kconfig:`CONFIG_I2C_0` and
-  :kconfig:`CONFIG_I2C_1` to enable driver support for individual devices of
-  some type. For example, if ``CONFIG_I2C_1=y``, the SoC's I2C peripheral
-  driver would create a ``struct device`` for "I2C bus controller number 1".
-
-  This style predates support for devicetree in Zephyr and its use is now
-  discouraged. Existing device drivers may be made "devicetree-aware"
-  in future releases.
-
 Writing a devicetree-aware driver begins by defining a :ref:`devicetree binding
 <dt-bindings>` for the devices supported by the driver. Use existing bindings
 from similar drivers as a starting point. A skeletal binding to get started
