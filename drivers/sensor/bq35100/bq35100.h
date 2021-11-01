@@ -250,7 +250,6 @@
 #define BQ35100_DEVICE_TYPE_ID                         0x100
 
 #define BQ35100_DEFAULT_SEAL_CODES                     0x04143672
-#define BQ35100_FLASHF_BIT_MASK                        0b1000000000000000
 
 #define BQ35100_GA_BIT_MASK                            0b0000000000000001
 #define BQ35100_G_DONE_BIT_MASK                        0b0000000001000000
@@ -276,7 +275,7 @@ typedef enum {
 } bq35100_gauge_mode_t;
 
 typedef enum {
-	BQ35100_SECURITY_UNKNOWN,
+	BQ35100_SECURITY_UNKNOWN,		// invalid
 	BQ35100_SECURITY_FULL_ACCESS,   // Allows writes to all of memory
 	BQ35100_SECURITY_UNSEALED,      // Allows writes to all of memory apart from the security codes area
 	BQ35100_SECURITY_SEALED         // Normal operating mode, prevents accidental writes
@@ -284,10 +283,12 @@ typedef enum {
 
 struct bq35100_data {
 	uint16_t temperature;
+	uint16_t internal_temperature;
 	uint16_t voltage;
 	uint16_t avg_current;
 	uint8_t state_of_health;
 	uint32_t acc_capacity;
+	uint8_t battery_status;
 
 	bool gauge_enabled;
 
