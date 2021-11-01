@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 choice
-	prompt "GigaDevice GD32F4xx MCU Selection"
-	depends on SOC_SERIES_GD32F4
+	prompt "GigaDevice GD32F403 MCU Selection"
+	depends on SOC_SERIES_GD32F403
 
 	config SOC_GD32F403R
 		bool "gd32f403r"
