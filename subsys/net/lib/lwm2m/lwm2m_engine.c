@@ -4701,7 +4701,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 #if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION)
 		ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
 				client_ctx->desthostname, strlen(client_ctx->desthostname));
-		if (ret < 0){
+		if (ret < 0) {
 			LOG_ERR("Failed to set TLS_HOSTNAME option: %d",
 							errno);
 			return -errno;
