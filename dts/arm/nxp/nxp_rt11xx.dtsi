@@ -76,9 +76,9 @@
 		};
 
 		/* GPT1 is used for the hardware timer, not as a standard counter */
-		gpt_hw_timer: gpt@401ec000 {
+		gpt_hw_timer: gpt@400ec000 {
 			compatible = "nxp,gpt-hw-timer";
-			reg = <0x401ec000 0x4000>;
+			reg = <0x400ec000 0x4000>;
 			interrupts = <119 0>;
 			label = "GPT_HW_TIMER";
 			status = "disabled";
