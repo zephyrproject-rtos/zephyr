@@ -75,6 +75,11 @@ struct lwm2m_ctx {
 	/** Destination address storage */
 	struct sockaddr remote_addr;
 
+	/** When MBEDTLS SNI is enabled socket must be set with destination
+	 *  hostname server.
+	 */
+	char *desthostname;
+
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
@@ -98,6 +103,7 @@ struct lwm2m_ctx {
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
 	 */
 	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
+
 #endif
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection

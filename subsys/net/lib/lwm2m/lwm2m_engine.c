@@ -4697,6 +4697,16 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			lwm2m_engine_context_close(client_ctx);
 			return -errno;
 		}
+
+#if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION)
+		ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
+				client_ctx->desthostname, strlen(client_ctx->desthostname));
+		if (ret < 0) {
+			LOG_ERR("Failed to set TLS_HOSTNAME option: %d",
+							errno);
+			return -errno;
+		}
+#endif
 	}
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
@@ -4716,7 +4726,8 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	return lwm2m_socket_add(client_ctx);
 }
 
-int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool is_firmware_uri)
+int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls,
+		char *desthostname,	bool is_firmware_uri)
 {
 	struct http_parser_url parser;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
@@ -4772,6 +4783,8 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool 
 	/* truncate host portion */
 	tmp = url[off + len];
 	url[off + len] = '\0';
+
+	memcpy(desthostname, url + off, len);
 
 	/* initialize addr */
 	(void)memset(addr, 0, sizeof(*addr));
@@ -4848,7 +4861,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 	url[url_len] = '\0';
 	ret = lwm2m_parse_peerinfo(url, &client_ctx->remote_addr,
-				   &client_ctx->use_dtls, false);
+				   &client_ctx->use_dtls, client_ctx->desthostname, false);
 	if (ret < 0) {
 		return ret;
 	}
