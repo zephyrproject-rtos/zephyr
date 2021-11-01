@@ -661,8 +661,13 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		}
 
 		if (ase->ep.stream != NULL) {
-			err = bt_audio_stream_reconfig(ase->ep.stream, cap,
-						       &ase->ep.codec);
+			if (server_cb != NULL && server_cb->config != NULL) {
+				err = server_cb->reconfig(ase->ep.stream, cap,
+							  &ase->ep.codec);
+			} else {
+				err = -EACCES;
+			}
+
 			if (err) {
 				uint8_t reason = BT_ASCS_REASON_CODEC_DATA;
 
