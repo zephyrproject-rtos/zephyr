@@ -387,7 +387,7 @@ static void firmware_transfer(void)
 #endif
 
 	ret = lwm2m_parse_peerinfo(server_addr, &firmware_ctx.remote_addr,
-				   &firmware_ctx.use_dtls, true);
+				   &firmware_ctx.use_dtls, firmware_ctx.desthostname, true);
 	if (ret < 0) {
 		LOG_ERR("Failed to parse server URI.");
 		goto error;
