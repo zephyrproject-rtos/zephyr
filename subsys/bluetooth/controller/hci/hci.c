@@ -4686,7 +4686,9 @@ static void dup_ext_adv_adi_store(struct dup_ext_adv_mode *dup_mode,
 
 	adv_set = &dup_mode->set[dup_mode->set_curr];
 
-	adv_set->data_cmplt = !data_status;
+	adv_set->data_cmplt = (data_status ==
+			       BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) ?
+			      1U : 0U;
 
 	if (adi) {
 		(void)memcpy(&adv_set->adi, adi, sizeof(*adi));
@@ -4760,9 +4762,11 @@ static inline bool is_dup_or_update(struct dup_entry *dup, uint8_t adv_type,
 				/* report different DID */
 				adv_set->adi.did = adi->did;
 				return false;
-			} else if (!adv_set->data_cmplt && !data_status) {
+			} else if (!adv_set->data_cmplt &&
+				   (data_status ==
+				    BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE)) {
 				/* report data complete */
-				adv_set->data_cmplt = !data_status;
+				adv_set->data_cmplt = 1U;
 				return false;
 			} else if (!adv_set->data_cmplt) {
 				/* report partial and incomplete data */
