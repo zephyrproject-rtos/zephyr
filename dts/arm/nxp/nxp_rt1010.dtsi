@@ -68,6 +68,10 @@
 	interrupts = <38 0>;
 };
 
+&edma0 {
+	dma-channels = <16>;
+};
+
 / {
 	soc {
 		/* Fixup GPIO2 its a different location on RT1010 */
