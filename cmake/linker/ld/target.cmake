@@ -32,9 +32,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
 
   if(CONFIG_CMAKE_LINKER_GENERATOR)
-    if("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_PREBUILT")
+    if("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_PREBUILT")
       set(PASS 1)
-    elseif("${linker_pass_define}" STREQUAL "-DLINKER_ZEPHYR_FINAL")
+    elseif("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_FINAL")
       set(PASS 2)
     endif()
 
@@ -53,6 +53,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
         -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
       )
   else()
+    set(template_script_defines ${linker_pass_define})
+    list(TRANSFORM template_script_defines PREPEND "-D")
+
     # Different generators deal with depfiles differently.
     if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
       # Note that the IMPLICIT_DEPENDS option is currently supported only
@@ -90,7 +93,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -imacros ${AUTOCONF_H}
       ${current_includes}
       ${current_defines}
-      ${linker_pass_define}
+      ${template_script_defines}
       -E ${LINKER_SCRIPT}
       -P # Prevent generation of debug `#line' directives.
       -o ${linker_script_gen}
