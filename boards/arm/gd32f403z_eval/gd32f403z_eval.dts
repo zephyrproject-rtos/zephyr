@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32f403zet6.dtsi>
+#include <gigadevice/gd32f403/gd32f403zet6.dtsi>
 
 / {
 	model = "GigaDevice GD32F403Z Evaluation Kit";
