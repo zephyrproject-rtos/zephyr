@@ -194,10 +194,16 @@ arduino_serial: &lpuart3 {};
 
 &lpspi1 {
 	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
 };
 
 &lpspi3 {
 	status = "okay";
+	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
+	dmas = <&edma0 2 15>, <&edma0 3 16>;
+	dma-names = "rx", "tx";
 };
 
 &enet {
