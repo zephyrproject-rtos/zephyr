@@ -373,6 +373,8 @@ static void ase_stream_add(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	BT_DBG("ase %p stream %p", ase, stream);
 	ase->ep.stream = stream;
 	stream->conn = ascs->conn;
+	stream->ep = &ase->ep;
+	stream->iso = &ase->ep.iso;
 }
 
 static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
@@ -674,21 +676,39 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			}
 			stream = ase->ep.stream;
 		} else {
-			stream = bt_audio_stream_config(ascs->conn, &ase->ep,
-							cap, &ase->ep.codec);
-			if (stream == NULL) {
-				BT_ERR("Config failed");
+			stream = NULL;
+			if (server_cb != NULL && server_cb->config != NULL) {
+				err = server_cb->config(ascs->conn, &ase->ep,
+							cap, &ase->ep.codec,
+							&stream);
+			} else {
+				err = -EACCES;
+			}
+
+			if (err || stream == NULL) {
+				BT_ERR("Config failed, err: %d, stream %p",
+				       err, stream);
 
 				memcpy(&ase->ep.codec, &codec, sizeof(codec));
 				ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
 						BT_ASCS_RSP_CONF_REJECTED,
 						BT_ASCS_REASON_CODEC_DATA);
-				return 0;
+
+				return err;
 			}
 			ase_stream_add(ascs, ase, stream);
 		}
 
 		ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
+
+		/* TODO: bt_audio_stream_attach duplicates some of the
+		 * ase_stream_add. Should be cleaned up.
+		 */
+		bt_audio_stream_attach(ascs->conn, stream, &ase->ep, cap,
+				       &ase->ep.codec);
+
+		bt_audio_ep_set_state(&ase->ep,
+				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 
 		return 0;
 	}
@@ -723,6 +743,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
+		int err;
 
 		if (buf->len < sizeof(*cfg)) {
 			BT_ERR("Malformed ASE Config: len %u < %zu", buf->len,
@@ -753,7 +774,8 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 			continue;
 		}
 
-		if (ase_config(ascs, ase, cfg, buf) < 0) {
+		err = ase_config(ascs, ase, cfg, buf);
+		if (err != 0) {
 			BT_ERR("Malformed ASE Config");
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
