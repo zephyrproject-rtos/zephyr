@@ -5,11 +5,13 @@
 
 #define DT_DRV_COMPAT gd_gd32_usart
 
+#include <drivers/pinctrl.h>
 #include <drivers/uart.h>
 
 struct gd32_usart_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct gd32_usart_data {
@@ -20,8 +22,12 @@ static int usart_gd32_init(const struct device *dev)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
 	struct gd32_usart_data *const data = dev->data;
+	int ret;
 
-	/* NOTE: pins are configured at board_init till pinctrl be available */
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 	usart_deinit(cfg->reg);
@@ -100,12 +106,14 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 };
 
 #define GD32_USART_INIT(n)							\
+	PINCTRL_DT_INST_DEFINE(n)						\
 	static struct gd32_usart_data usart##n##_gd32_data = {			\
 		.baud_rate = DT_INST_PROP(n, current_speed),			\
 	};									\
 	static const struct gd32_usart_config usart##n##_gd32_config = {	\
 		.reg = DT_INST_REG_ADDR(n),					\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
 			      NULL,						\
