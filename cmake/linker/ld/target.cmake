@@ -32,16 +32,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
 
   if(CONFIG_CMAKE_LINKER_GENERATOR)
-    if("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_PREBUILT")
-      set(PASS 1)
-    elseif("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_FINAL")
-      set(PASS 2)
-    endif()
-
     add_custom_command(
       OUTPUT ${linker_script_gen}
       COMMAND ${CMAKE_COMMAND}
-        -DPASS=${PASS}
+        -DPASS="${linker_pass_define}"
         -DFORMAT="$<TARGET_PROPERTY:linker,FORMAT>"
         -DENTRY="$<TARGET_PROPERTY:linker,ENTRY>"
         -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
