@@ -20,10 +20,19 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite";
 			device_type = "cpu";
 			reg = <0>;
+			cpu-power-states = <&standby>;
+		};
+	};
+
+	power-states {
+		standby: standby {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <240000>;
 		};
 	};
 

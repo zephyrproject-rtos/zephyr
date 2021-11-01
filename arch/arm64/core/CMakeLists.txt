@@ -30,3 +30,5 @@ if ((CONFIG_MP_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
 endif ()
 
 zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
+
+add_subdirectory_ifdef(CONFIG_SOC_XENVM xen)

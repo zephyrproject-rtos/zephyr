@@ -14,24 +14,38 @@
 #elif defined(CONFIG_SOC_ESP32S2)
 #include <esp32s2/rom/ets_sys.h>
 #include <esp32s2/rom/gpio.h>
+#elif defined(CONFIG_SOC_ESP32C3)
+#include <esp32c3/rom/ets_sys.h>
+#include <esp32c3/rom/gpio.h>
 #endif
 #include <soc/uart_struct.h>
-#include <soc/dport_reg.h>
+#include <soc/dport_access.h>
 #include "stubs.h"
 #include <hal/uart_ll.h>
 
 
 #include <soc/gpio_sig_map.h>
 #include <soc/uart_reg.h>
-
 #include <device.h>
 #include <soc.h>
 #include <drivers/uart.h>
+
+#ifndef CONFIG_SOC_ESP32C3
 #include <drivers/interrupt_controller/intc_esp32.h>
+#else
+#include <drivers/interrupt_controller/intc_esp32c3.h>
+#endif
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <sys/util.h>
 #include <esp_attr.h>
+
+#ifdef CONFIG_SOC_ESP32C3
+#define ISR_HANDLER isr_handler_t
+#else
+#define ISR_HANDLER intr_handler_t
+#endif
+
 
 struct uart_esp32_config {
 
@@ -179,7 +193,12 @@ static int uart_esp32_configure_pins(const struct device *dev)
 static int uart_esp32_configure(const struct device *dev,
 				const struct uart_config *cfg)
 {
+
+#ifndef CONFIG_SOC_ESP32C3
+	/* this register does not exist for esp32c3 uart controller */
 	DEV_BASE(dev)->conf0.tick_ref_always_on = 1;
+#endif
+
 	DEV_BASE(dev)->conf1.rxfifo_full_thrhd = UART_RX_FIFO_THRESH;
 	DEV_BASE(dev)->conf1.txfifo_empty_thrhd = UART_TX_FIFO_THRESH;
 
@@ -258,7 +277,11 @@ static int uart_esp32_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_DATA(dev)->irq_line =
-		esp_intr_alloc(DEV_CFG(dev)->irq_source, 0, uart_esp32_isr, (void *)dev, NULL);
+		esp_intr_alloc(DEV_CFG(dev)->irq_source,
+			0,
+			(ISR_HANDLER)uart_esp32_isr,
+			(void *)dev,
+			NULL);
 #endif
 	return 0;
 }

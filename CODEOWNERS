@@ -24,6 +24,7 @@
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/arm64/                              @carlocaione
 /arch/arm64/core/cortex_r/                @povergoing
+/arch/arm64/core/xen/                     @lorc @firscity
 /arch/common/                             @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
@@ -60,7 +61,7 @@
 /soc/arm64/qemu_cortex_a53/               @carlocaione
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
-/soc/arm64/xenvm/                         @lorc
+/soc/arm64/xenvm/                         @lorc @firscity
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /submanifests/*                           @mbolivar-nordic
@@ -166,7 +167,7 @@
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
-/boards/arm64/xenvm/                      @lorc
+/boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
@@ -343,6 +344,8 @@
 /drivers/serial/serial_test.c             @str4t0m
 /drivers/serial/*esp32c3*                 @uLipe
 /drivers/serial/*esp32s2*                 @glaubermaroto
+/drivers/serial/Kconfig.xen               @lorc @firscity
+/drivers/serial/uart_hvc_xen.c            @lorc @firscity
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
@@ -389,6 +392,7 @@
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
+/drivers/xen/                             @lorc @firscity
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/atmel/sam4e*                     @nandojve

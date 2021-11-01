@@ -41,10 +41,13 @@ static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
  * the filecache heap.  This relates to the CHUNK_UNIT parameter in
  * the heap implementation, but that value is not visible outside the
  * kernel.
+ * FIXME: value for this macro should be rather taken from the Kernel
+ * internals than set by user, but we do not have a way to do so now.
  */
-#define FC_HEAP_PER_ALLOC_OVERHEAD 24U
+#define FC_HEAP_PER_ALLOC_OVERHEAD CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
 
 #if (CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) <= 0
+BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
 /* Auto-generate heap size from cache size and number of files */
 #undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
 #define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE						\
