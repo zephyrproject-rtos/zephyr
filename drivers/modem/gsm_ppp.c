@@ -181,11 +181,13 @@ static int unquoted_atoi(const char *s, int base)
  */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
 {
-	if (argc >= 3) {
+	if (argc >= 1) {
 #if defined(CONFIG_MODEM_CELL_INFO)
-		gsm.context.data_operator = unquoted_atoi(argv[2], 10);
-		LOG_INF("operator: %u",
-			gsm.context.data_operator);
+		if (argc >= 3) {
+			gsm.context.data_operator = unquoted_atoi(argv[2], 10);
+			LOG_INF("operator: %u",
+				gsm.context.data_operator);
+		}
 #endif
 		if (unquoted_atoi(argv[0], 10) == 0) {
 			gsm.context.is_automatic_oper = true;
@@ -445,7 +447,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 
 
 static const struct modem_cmd read_cops_cmd =
-	MODEM_CMD("+COPS", on_cmd_atcmdinfo_cops, 3U, ",");
+	MODEM_CMD_ARGS_MAX("+COPS:", on_cmd_atcmdinfo_cops, 1U, 4U, ",");
 
 static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
