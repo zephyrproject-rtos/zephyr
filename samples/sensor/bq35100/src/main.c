@@ -64,9 +64,9 @@ void main(void)
 	If you need to pass parameters use val1 and val2.
 	SENSOR_ATTR_BQ35100_EXAMPLE1 is just as an example. You could create
 	e.g. SENSOR_ATTR_BQ35100_GAUGE_START to start the gauge and so on. */
-	val.val1 = 1;
+	/*val.val1 = 1;
 	val.val2 = 2;
-	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_BQ35100_EXAMPLE1, &val);
+	sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_BQ35100_EXAMPLE1, &val);*/
 
 
 	while (1) {
@@ -77,6 +77,9 @@ void main(void)
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_TEMP, &val);
 		printf("Temperature:   %2.1f  C\n", sensor_value_to_double(&val));
+
+		/*sensor_channel_get(dev, SENSOR_CHAN_GAUGE_INT_TEMP, &val);
+		printf("Internal Temp: %2.1f  C\n", sensor_value_to_double(&val));*/
 		
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_VOLTAGE, &val);
 		printf("Voltage:       %1.3f V\n", sensor_value_to_double(&val));
@@ -86,6 +89,9 @@ void main(void)
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_HEALTH, &val);
 		printf("StateOfHealth: %i   %%\n\n", val.val1);
+
+		/*sensor_channel_get(dev, SENSON_CHAN_GAUGE_DES_CAP, &val);
+		printf("StateOfHealth: %i   %%\n\n", val.val1);*/
 
 		/*sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
 		printk("Acc Capacity : %i     uAh\n\n", val.val1);*/
