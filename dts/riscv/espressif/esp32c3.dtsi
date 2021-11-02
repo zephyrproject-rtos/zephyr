@@ -136,6 +136,24 @@
 			current-speed = <115200>;
 		};
 
+		timer0: counter@6001F000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x6001F000 DT_SIZE_K(4)>;
+			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG0_T0";
+			status = "disabled";
+		};
+
+		timer1: counter@60020000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x60020000 DT_SIZE_K(4)>;
+			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "TIMG1_T0";
+			status = "disabled";
+		};
+
 		trng0: trng@3ff700b0 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF700B0 0x4>;
