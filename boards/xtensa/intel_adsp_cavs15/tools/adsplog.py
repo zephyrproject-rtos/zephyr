@@ -61,8 +61,14 @@ for dev_addr in os.listdir(sys_devices):
         barfile = sys_devices + "/" + dev_addr + "/resource4"
 
         fd = open(barfile)
-        mem = mmap.mmap(fd.fileno(), MAP_SIZE, offset=LOG_OFFSET,
-                    prot=mmap.PROT_READ)
+        try:
+            mem = mmap.mmap(fd.fileno(), MAP_SIZE, offset=LOG_OFFSET,
+                            prot=mmap.PROT_READ)
+        except OSError as ose:
+            sys.stderr.write("""\
+mmap failed! If CONFIG IO_STRICT_DEVMEM is set then you must unload the kernel driver.
+""")
+            raise ose
         break
 
 if mem is None:
