@@ -14,8 +14,8 @@ struct test_driver_data {
 	struct k_sem sync;
 };
 
-static int test_driver_action_cb(const struct device *dev,
-				 enum pm_device_action action)
+static int test_driver_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	struct test_driver_data *data = dev->data;
 
@@ -64,5 +64,5 @@ int test_driver_init(const struct device *dev)
 static struct test_driver_data data;
 
 DEVICE_DEFINE(test_driver, "test_driver", &test_driver_init,
-	      test_driver_action_cb, &data, NULL, POST_KERNEL,
+	      test_driver_action, &data, NULL, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);

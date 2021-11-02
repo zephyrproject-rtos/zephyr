@@ -32,7 +32,7 @@ int dummy_init(const struct device *dev)
 	return 0;
 }
 
-int dummy_pm_control(const struct device *dev, enum pm_device_action action)
+int dummy_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	return 0;
 }
@@ -41,7 +41,7 @@ int dummy_pm_control(const struct device *dev, enum pm_device_action action)
  * @cond INTERNAL_HIDDEN
  */
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, dummy_init,
-		dummy_pm_control, NULL, NULL, POST_KERNEL,
+		dummy_pm_action, NULL, NULL, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
 
 /**
