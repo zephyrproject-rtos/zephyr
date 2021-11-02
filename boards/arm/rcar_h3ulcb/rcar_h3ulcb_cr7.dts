@@ -16,7 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &scif1;
 		zephyr,shell-uart = &scif1;
-		zephyr,can-primary = &can0;
+		zephyr,canbus = &can0;
 	};
 
 	leds {

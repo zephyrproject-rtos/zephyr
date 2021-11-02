@@ -341,8 +341,8 @@ device.
      - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-uart
      - Sets UART device used by Bluetooth
-   * - zephyr,can-primary
-     - Sets the primary CAN controller
+   * - zephyr,canbus
+     - Sets the default CAN controller
    * - zephyr,ccm
      - Core-Coupled Memory node on some STM32 SoCs
    * - zephyr,code-partition
