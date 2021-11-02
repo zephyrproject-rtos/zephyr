@@ -1987,18 +1987,78 @@
 
 #define sys_port_trace_pm_system_suspend_exit(ticks, ret)
 
-#define sys_port_trace_pm_device_request_enter(dev, target_state)
+/**
+ * @brief PM Device Runtime Tracing APIs
+ * @defgroup pm_device_runtime_tracing_apis PM Device Runtime Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
 
-#define sys_port_trace_pm_device_request_exit(dev, ret)
+/**
+ * @brief Trace getting a device call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_get_enter(dev)
 
-#define sys_port_trace_pm_device_enable_enter(dev)
+/**
+ * @brief Trace getting a device call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
 
-#define sys_port_trace_pm_device_enable_exit(dev)
+/**
+ * @brief Trace putting a device call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_put_enter(dev)
 
-#define sys_port_trace_pm_device_disable_enter(dev)
+/**
+ * @brief Trace putting a device call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
 
-#define sys_port_trace_pm_device_disable_exit(dev)
+/**
+ * @brief Trace putting a device (asynchronously) call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
 
+/**
+ * @brief Trace putting a device (asynchronously) call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+
+/**
+ * @brief Trace enabling device runtime PM call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)
+
+/**
+ * @brief Trace enabling device runtime PM call exit.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_enable_exit(dev)
+
+/**
+ * @brief Trace disabling device runtime PM call entry.
+ * @param dev Device instance.
+ */
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)
+
+/**
+ * @brief Trace disabling device runtime PM call exit.
+ * @param dev Device instance.
+ * @param ret Return value.
+ */
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
+
+/** @} */ /* end of pm_device_runtime_tracing_apis */
 
 #if defined CONFIG_PERCEPIO_TRACERECORDER
 #include "tracing_tracerecorder.h"
