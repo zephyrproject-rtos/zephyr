@@ -116,11 +116,11 @@ struct pm_device {
 };
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-#define INIT_PM_DEVICE_RUNTIME(obj)			\
+#define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
 	.lock = Z_MUTEX_INITIALIZER(obj.lock),		\
 	.condvar = Z_CONDVAR_INITIALIZER(obj.condvar),
 #else
-#define INIT_PM_DEVICE_RUNTIME(obj)
+#define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 /**
@@ -135,7 +135,7 @@ struct pm_device {
  */
 #define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)			\
 	{								\
-		INIT_PM_DEVICE_RUNTIME(obj)				\
+		Z_PM_DEVICE_RUNTIME_INIT(obj)				\
 		.action_cb = pm_action_cb,				\
 		.state = PM_DEVICE_STATE_ACTIVE,			\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
