@@ -17,7 +17,7 @@
 		zephyr,sram = &sram1;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,can-primary = &flexcan2;
+		zephyr,canbus = &flexcan2;
 	};
 
 	sdram0: memory@80000000 {

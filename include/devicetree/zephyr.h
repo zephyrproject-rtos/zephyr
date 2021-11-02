@@ -46,12 +46,12 @@
 #define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
 
 /**
- * @def DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
+ * @def DT_CHOSEN_ZEPHYR_CANBUS_LABEL
  *
- * @brief If there is a chosen node zephyr,can-primary property which has
+ * @brief If there is a chosen node zephyr,canbus property which has
  *        a label property, that property's value. Undefined otherwise.
  */
-#define DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL ""
+#define DT_CHOSEN_ZEPHYR_CANBUS_LABEL ""
 
 #endif /* DT_DOXYGEN */
 
@@ -64,9 +64,9 @@
 	DT_LABEL(DT_CHOSEN(zephyr_flash_controller))
 #endif
 
-#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_can_primary), label)
-#define DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL \
-	DT_LABEL(DT_CHOSEN(zephyr_can_primary))
+#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_canbus), label)
+#define DT_CHOSEN_ZEPHYR_CANBUS_LABEL \
+	DT_LABEL(DT_CHOSEN(zephyr_canbus))
 #endif
 /**
  * @}

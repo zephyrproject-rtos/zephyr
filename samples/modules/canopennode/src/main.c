@@ -15,9 +15,9 @@
 LOG_MODULE_REGISTER(app);
 
 
-#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
-#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_can_primary), bus_speed) / 1000)
-#if !defined(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL)
+#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CANBUS_LABEL
+#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
+#if !defined(DT_CHOSEN_ZEPHYR_CANBUS_LABEL)
 #error CANopen CAN interface not set
 #endif
 

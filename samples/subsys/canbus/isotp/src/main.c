@@ -148,7 +148,7 @@ void main(void)
 	static struct isotp_send_ctx send_ctx_0_5;
 	int ret = 0;
 
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
+	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CANBUS_LABEL);
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");
 		return;
