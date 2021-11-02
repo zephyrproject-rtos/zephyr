@@ -425,7 +425,7 @@ static const struct sensor_driver_api si7210_api_funcs = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-int si7210_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int si7210_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
 	int rc;
 
