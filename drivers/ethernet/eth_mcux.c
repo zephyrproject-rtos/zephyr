@@ -183,8 +183,8 @@ static int ts_tx_rd, ts_tx_wr;
 static void eth_mcux_phy_enter_reset(struct eth_context *context);
 void eth_mcux_phy_stop(struct eth_context *context);
 
-static int eth_mcux_device_pm_control(const struct device *dev,
-				      enum pm_device_action action)
+static int eth_mcux_device_pm_action(const struct device *dev,
+				     enum pm_device_action action)
 {
 	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
 	int ret = 0;
@@ -231,10 +231,10 @@ out:
 	return ret;
 }
 
-#define ETH_MCUX_PM_FUNC eth_mcux_device_pm_control
+#define ETH_MCUX_PM_ACTION_CB eth_mcux_device_pm_action
 
 #else
-#define ETH_MCUX_PM_FUNC NULL
+#define ETH_MCUX_PM_ACTION_CB NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if ETH_MCUX_FIXED_LINK
@@ -1395,7 +1395,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
 			    eth_init,					\
-			    ETH_MCUX_PM_FUNC,				\
+			    ETH_MCUX_PM_ACTION_CB,			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
 			    CONFIG_ETH_INIT_PRIORITY,			\

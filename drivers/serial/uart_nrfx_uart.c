@@ -1142,8 +1142,8 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 	}
 }
 
-static int uart_nrfx_pm_control(const struct device *dev,
-				enum pm_device_action action)
+static int uart_nrfx_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -1183,7 +1183,7 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 
 DEVICE_DT_INST_DEFINE(0,
 	      uart_nrfx_init,
-	      uart_nrfx_pm_control,
+	      uart_nrfx_pm_action,
 	      &uart_nrfx_uart0_data,
 	      NULL,
 	      /* Initialize UART device before UART console. */
