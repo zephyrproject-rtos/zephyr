@@ -635,6 +635,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="""Script for controlling pseudoterminal.
                         Twister believes that it interacts with a terminal
                         when it actually interacts with the script.
+                        Not supported on Windows OS.
 
                         E.g "twister --device-testing
                         --device-serial-pty <script>
@@ -838,6 +839,10 @@ def main():
 
     if not options.coverage_platform:
         options.coverage_platform = options.platform
+
+    if options.device_serial_pty and os.name == "nt":  # OS is Windows
+        logger.error("--device-serial-pty is not supported on Windows OS")
+        sys.exit(1)
 
     if options.size:
         for fn in options.size:
@@ -1322,5 +1327,6 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        if os.isatty(1): # stdout is interactive
+        if (os.name != "nt") and os.isatty(1):
+            # (OS is not Windows) and (stdout is interactive)
             os.system("stty sane")
