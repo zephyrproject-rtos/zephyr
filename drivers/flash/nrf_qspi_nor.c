@@ -650,10 +650,6 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 /* Configures QSPI memory for the transfer */
 static int qspi_nrfx_configure(const struct device *dev)
 {
-	if (!dev) {
-		return -ENXIO;
-	}
-
 	struct qspi_nor_data *dev_data = dev->data;
 
 	qspi_fill_init_struct(&QSPIconfig);
