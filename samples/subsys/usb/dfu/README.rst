@@ -107,4 +107,4 @@ USB DFU sample, showing this output to the console:
   ***** Booting Zephyr OS v1.11.0-830-g9df01813c4 *****
 
 .. _MCUboot GitHub repo: https://github.com/runtimeco/mcuboot
-.. _Using MCUboot with Zephyr: https://mcuboot.com/mcuboot/readme-zephyr.html
+.. _Using MCUboot with Zephyr: https://mcuboot.com/documentation/readme-zephyr/
