@@ -38,6 +38,10 @@
 	bus-speed = <125000>;
 };
 
+&lpi2c1 {
+	status = "okay";
+};
+
 &lpspi1 {
 	status = "okay";
 };
