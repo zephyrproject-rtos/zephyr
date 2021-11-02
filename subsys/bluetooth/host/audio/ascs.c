@@ -793,8 +793,7 @@ static int ase_stream_qos(struct bt_audio_stream *stream, struct bt_codec_qos *q
 {
 	BT_DBG("stream %p qos %p", stream, qos);
 
-	if (stream == NULL || stream->ep == NULL || stream->cap == NULL ||
-	    stream->cap->ops == NULL || qos == NULL) {
+	if (stream == NULL || stream->ep == NULL || qos == NULL) {
 		return -EINVAL;
 	}
 
@@ -818,10 +817,10 @@ static int ase_stream_qos(struct bt_audio_stream *stream, struct bt_codec_qos *q
 		return -EINVAL;
 	}
 
-	if (stream->cap->ops->qos != NULL) {
+	if (server_cb != NULL && server_cb->config != NULL) {
 		int err;
 
-		err = stream->cap->ops->qos(stream, qos);
+		err = server_cb->qos(stream, qos);
 		if (err != 0) {
 			return err;
 		}
