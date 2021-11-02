@@ -227,11 +227,23 @@ static void ase_release(struct bt_ascs_ase *ase, bool cache)
 
 	BT_DBG("ase %p", ase);
 
-	err = bt_audio_stream_release(ase->ep.stream, cache);
+	if (server_cb != NULL && server_cb->release != NULL) {
+		err = server_cb->release(ase->ep.stream);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_RELEASE_OP, err,
 				      BT_ASCS_REASON_NONE);
 		return;
+	}
+
+	if (cache) {
+		bt_audio_ep_set_state(&ase->ep,
+				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	} else {
+		bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_RELEASING);
 	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_RELEASE_OP);
