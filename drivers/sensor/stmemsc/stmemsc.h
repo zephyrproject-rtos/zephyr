@@ -14,26 +14,16 @@
 #include <drivers/spi.h>
 
 #ifdef CONFIG_I2C
-struct stmemsc_cfg_i2c {
-	const struct device *bus;
-	uint16_t i2c_slv_addr;
-};
-
-int stmemsc_i2c_read(const struct stmemsc_cfg_i2c *stmemsc,
+int stmemsc_i2c_read(const struct i2c_dt_spec *stmemsc,
 		     uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_i2c_write(const struct stmemsc_cfg_i2c *stmemsc,
+int stmemsc_i2c_write(const struct i2c_dt_spec *stmemsc,
 		      uint8_t reg_addr, uint8_t *value, uint8_t len);
 #endif
 
 #ifdef CONFIG_SPI
-struct stmemsc_cfg_spi {
-	const struct device *bus;
-	struct spi_config spi_cfg;
-};
-
-int stmemsc_spi_read(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 		     uint8_t reg_addr, uint8_t *value, uint8_t len);
-int stmemsc_spi_write(const struct stmemsc_cfg_spi *stmemsc,
+int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 		      uint8_t reg_addr, uint8_t *value, uint8_t len);
 #endif
 #endif /* ZEPHYR_DRIVERS_SENSOR_STMEMSC_STMEMSC_H_ */

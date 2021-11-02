@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2021 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define MSVW 0
+#define SMVW 1
+
+/ {
+	mchp-xec-espi-vw-routing {
+		compatible = "microchip,xec-espi-vw-routing";
+
+		/* eSPI Virtual Vire (VW) routing */
+		vw-slp-s3-n {
+			/* Host-index MSVW/SMVW MSVW/SMVW-index source */
+			vw-reg = <0x02 MSVW 0 0>;
+			vw-girq = <24 0>;
+		};
+		vw-slp-s4-n {
+			vw-reg = <0x02 MSVW 0 1>;
+			vw-girq = <24 1>;
+		};
+		vw-slp-s5-n {
+			vw-reg = <0x02 MSVW 0 2>;
+			vw-girq = <24 2>;
+		};
+		vw-sus-stat-n {
+			vw-reg = <0x03 MSVW 1 0>;
+			vw-girq = <24 4>;
+		};
+		vw-pltrst-n {
+			vw-reg = <0x03 MSVW 1 1>;
+			vw-girq = <24 5>;
+		};
+		vw-oob-rst-warn {
+			vw-reg = <0x03 MSVW 1 2>;
+			vw-girq = <24 6>;
+		};
+		vw-host-rst-warn {
+			vw-reg = <0x07 MSVW 2 0>;
+			vw-girq = <24 8>;
+		};
+		vw-sus-warn-n {
+			vw-reg = <0x41 MSVW 3 0>;
+			vw-girq = <24 12>;
+		};
+		vw-sus-pwrdn-ack {
+			vw-reg = <0x41 MSVW 3 1>;
+			vw-girq = <24 13>;
+		};
+		vw-slp-a-n {
+			vw-reg = <0x41 MSVW 3 3>;
+			vw-girq = <24 15>;
+		};
+		vw-slp-lan-n {
+			vw-reg = <0x42 MSVW 4 0>;
+			vw-girq = <24 16>;
+		};
+		vw-slp-wlen-n {
+			vw-reg = <0x42 MSVW 4 1>;
+			vw-girq = <24 17>;
+		};
+		vw-host-c10 {
+			vw-reg = <0x47 MSVW 7 0>;
+			vw-girq = <25 0>;
+		};
+		vw-dnx-warn {
+			vw-reg = <0x4a MSVW 8 1>;
+			vw-girq = <25 5>;
+		};
+
+		/* Device to Host (SMVW) do not have SoC interrupts */
+		vw-oob-rst-ack {
+			vw-reg = <0x04 SMVW 0 0>;
+		};
+		vw-wake-n {
+			vw-reg = <0x04 SMVW 0 2>;
+		};
+		vw-pme-n {
+			vw-reg = <0x04 SMVW 0 3>;
+		};
+		vw-slave-boot-load-done {
+			vw-reg = <0x05 SMVW 1 0>;
+		};
+		vw-error-fatal {
+			vw-reg = <0x05 SMVW 1 1>;
+		};
+		vw-error-non-fatal {
+			vw-reg = <0x05 SMVW 1 2>;
+		};
+		vw-slave-boot-load-status {
+			vw-reg = <0x05 SMVW 1 3>;
+		};
+		vw-sci-n {
+			vw-reg = <0x06 SMVW 2 0>;
+		};
+		vw-smi-n {
+			vw-reg = <0x06 SMVW 2 1>;
+		};
+		vw-rcin-n {
+			vw-reg = <0x06 SMVW 2 2>;
+		};
+		vw-host-rst-ack {
+			vw-reg = <0x06 SMVW 2 3>;
+		};
+		vw-sus-ack-n {
+			vw-reg = <0x40 SMVW 3 0>;
+		};
+		vw-dnx-ack {
+			vw-reg = <0x40 SMVW 3 1>;
+		};
+	};
+};

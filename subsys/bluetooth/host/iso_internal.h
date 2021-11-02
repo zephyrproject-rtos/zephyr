@@ -73,11 +73,8 @@ void hci_iso(struct net_buf *buf);
 /* Allocates RX buffer */
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout);
 
-/* Create new ISO connecting */
-struct bt_conn *iso_new(void);
-
-/* Process CIS Estabilished event */
-void hci_le_cis_estabilished(struct net_buf *buf);
+/* Process CIS Established event */
+void hci_le_cis_established(struct net_buf *buf);
 
 /* Process CIS Request event */
 void hci_le_cis_req(struct net_buf *buf);
@@ -152,5 +149,3 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state);
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);
-
-void bt_iso_remove_data_path(struct bt_conn *iso);

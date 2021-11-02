@@ -648,10 +648,6 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	bq274xx->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	return 0;
 }
 

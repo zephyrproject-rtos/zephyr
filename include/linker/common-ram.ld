@@ -140,3 +140,7 @@
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
+
+#if defined(CONFIG_ZTEST)
+	ITERABLE_SECTION_RAM(ztest_suite_node, 4)
+#endif /* CONFIG_ZTEST */

@@ -1484,6 +1484,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS_DESCRIPTION \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_DESCRIPTION_VAL)
+/** @def BT_UUID_CCID_VAL
+ *  @brief Content Control ID value
+ */
+#define BT_UUID_CCID_VAL 0x2BBA
+/** @def BT_UUID_CCID
+ *  @brief Content Control ID
+ */
+#define BT_UUID_CCID \
+	BT_UUID_DECLARE_16(BT_UUID_CCID_VAL)
 /** @def BT_UUID_MICS_MUTE_VAL
  *  @brief Microphone Input Control Service Mute value
  */

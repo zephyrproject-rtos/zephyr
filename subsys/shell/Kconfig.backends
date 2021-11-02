@@ -230,7 +230,8 @@ config SHELL_TELNET_SEND_TIMEOUT
 	  in when a line buffer is not empty but did not yet meet the line feed.
 
 config SHELL_TELNET_SUPPORT_COMMAND
-	bool "Add support for telnet commands (IAC) [Experimental]"
+	bool "Add support for telnet commands (IAC) [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Current support is so limited it's not interesting to enable it.
 	  However, if proven to be needed at some point, it will be possible

@@ -1403,18 +1403,20 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_TERMINATE:
 		{
-			struct ll_conn *conn;
-			memq_link_t *link;
+			if (IS_ACL_HANDLE(rx_free->handle)) {
+				struct ll_conn *conn;
+				memq_link_t *link;
 
-			conn = ll_conn_get(rx_free->handle);
+				conn = ll_conn_get(rx_free->handle);
 
-			LL_ASSERT(!conn->lll.link_tx_free);
-			link = memq_deinit(&conn->lll.memq_tx.head,
-					   &conn->lll.memq_tx.tail);
-			LL_ASSERT(link);
-			conn->lll.link_tx_free = link;
+				LL_ASSERT(!conn->lll.link_tx_free);
+				link = memq_deinit(&conn->lll.memq_tx.head,
+						&conn->lll.memq_tx.tail);
+				LL_ASSERT(link);
+				conn->lll.link_tx_free = link;
 
-			ll_conn_release(conn);
+				ll_conn_release(conn);
+			}
 		}
 		break;
 #endif /* CONFIG_BT_CONN */
@@ -2366,9 +2368,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC_REPORT:
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
@@ -2399,6 +2398,14 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_established_report(link, rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT: {
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -2620,8 +2627,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	/* dequeue prepare pipeline */
 	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-	/* LLL done synchronized */
-	lll_done_sync();
+	/* LLL done synchronize count */
+	lll_done_ull_inc();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* If disable initiated, signal the semaphore */

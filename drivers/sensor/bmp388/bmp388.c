@@ -52,7 +52,7 @@ static int bmp388_transceive(const struct device *dev,
 	const struct spi_buf buf = { .buf = data, .len = length };
 	const struct spi_buf_set s = { .buffers = &buf, .count = 1 };
 
-	return spi_transceive(cfg->bus, &cfg->spi_cfg, &s, &s);
+	return spi_transceive_dt(&cfg->spi_bus, &s, &s);
 }
 
 static int bmp388_read_spi(const struct device *dev,
@@ -71,7 +71,7 @@ static int bmp388_read_spi(const struct device *dev,
 	const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
 	const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
 
-	return spi_transceive(cfg->bus, &cfg->spi_cfg, &tx, &rx);
+	return spi_transceive_dt(&cfg->spi_bus, &tx, &rx);
 }
 
 static int bmp388_byte_read_spi(const struct device *dev,
@@ -602,10 +602,10 @@ static int bmp388_init(const struct device *dev)
 	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	/* Verify that the CS device is ready if it is set in the DT. */
-	if (is_spi && (cfg->spi_cfg.cs != NULL)) {
-		if (!device_is_ready(cfg->spi_cfg.cs->gpio_dev)) {
-			LOG_ERR("SPI CS device is not ready");
+	/* Verify the SPI bus */
+	if (is_spi) {
+		if (!spi_is_ready(&cfg->spi_bus)) {
+			LOG_ERR("SPI bus is not ready");
 			return -ENODEV;
 		}
 	}
@@ -694,7 +694,7 @@ static int bmp388_init(const struct device *dev)
 
 #define BMP388_BUS_CFG_SPI(inst) \
 	.ops = &bmp388_spi_ops,	 \
-	.spi_cfg = SPI_CONFIG_DT_INST(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
+	.spi_bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
 
 #define BMP388_BUS_CFG(inst)			\
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\

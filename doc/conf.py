@@ -80,6 +80,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "zephyr.vcs_link",
     "notfound.extension",
     "zephyr.external_content",
 ]
@@ -108,6 +109,8 @@ pygments_style = "sphinx"
 
 todo_include_todos = False
 
+numfig = True
+
 rst_epilog = """
 .. include:: /substitutions.txt
 """
@@ -132,6 +135,9 @@ html_show_sphinx = False
 html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
+reference_prefix = ""
+if tags.has("publish"):  # pylint: disable=undefined-variable
+    reference_prefix = f"/{version}" if is_release else "/latest"
 docs_title = "Docs / {}".format(version if is_release else "Latest")
 html_context = {
     "show_license": True,
@@ -147,6 +153,12 @@ html_context = {
         ("2.3.0", "/2.3.0/"),
         ("1.14.1", "/1.14.1/"),
     ),
+    "display_vcs_link": True,
+    "reference_links": {
+        "API": f"{reference_prefix}/doxygen/html/index.html",
+        "Kconfig Options": f"{reference_prefix}/reference/kconfig/index.html",
+        "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
+    }
 }
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -218,6 +230,21 @@ warnings_filter_silent = False
 # -- Options for notfound.extension ---------------------------------------
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
+
+# -- Options for zephyr.vcs_link ------------------------------------------
+
+vcs_link_version = f"v{version}" if is_release else "main"
+vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_link_version}"
+vcs_link_prefixes = {
+    "samples/.*": "",
+    "boards/.*": "",
+    ".*": "doc",
+}
+vcs_link_exclude = [
+    "reference/kconfig.*",
+    "reference/devicetree/bindings.*",
+    "reference/devicetree/compatibles.*",
+]
 
 # -- Options for zephyr.external_content ----------------------------------
 

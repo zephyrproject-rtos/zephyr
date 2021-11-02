@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief ARM Cortex-M and Cortex-R power management
+ * @brief ARM Cortex-A, Cortex-M and Cortex-R power management
  *
  */
 
@@ -135,7 +135,8 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	/* r0: interrupt mask from caller */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
+	|| defined(CONFIG_ARMV7_R) \
+	|| defined(CONFIG_ARMV7_A)
 	/* No BASEPRI, call wfe directly
 	 * (SEVONPEND is set in z_arm_cpu_idle_init())
 	 */

@@ -1961,8 +1961,15 @@ static void conn_cleanup_iso_cis_released_cb(struct ll_conn *conn)
 
 	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
 	if (cis) {
+		struct node_rx_pdu *rx;
+		uint8_t reason;
+
 		/* More associated CISes - stop next */
-		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb);
+		rx = (void *)&conn->llcp_terminate.node_rx;
+		reason = *(uint8_t *)rx->pdu;
+
+		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb,
+				      reason);
 	} else {
 		/* No more CISes associated with conn - finalize */
 		conn_cleanup_finalize(conn);
@@ -2038,7 +2045,8 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
 	if (cis) {
 		/* Stop CIS and defer cleanup to after teardown. */
-		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb);
+		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb,
+				      reason);
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */

@@ -218,6 +218,7 @@ gaisler	Gaisler
 gardena	GARDENA GmbH
 gateworks	Gateworks Corporation
 gcw	Game Consoles Worldwide
+gd	GigaDevice Semiconductor
 ge	General Electric Company
 geekbuying	GeekBuying
 gef	GE Fanuc Intelligent Platforms Embedded Systems, Inc.

@@ -525,9 +525,8 @@ static int lis2mdl_pm_control(const struct device *dev,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.spi = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LIS2MDL_SPI_OPERATION,	\
 					   0),				\
 		},							\
@@ -552,9 +551,8 @@ static int lis2mdl_pm_control(const struct device *dev,
 			.handle =					\
 			   (void *)&lis2mdl_config_##inst.stmemsc_cfg,	\
 		},							\
-		.stmemsc_cfg.i2c = {					\
-			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
-			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.cancel_offset = DT_INST_PROP(inst, cancel_offset),	\
 		.single_mode = DT_INST_PROP(inst, single_mode),		\

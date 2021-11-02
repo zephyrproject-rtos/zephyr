@@ -56,10 +56,10 @@ void smp_log(const char *msg)
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
-		esp32_rom_uart_tx_one_char(*msg++);
+		esp_rom_uart_tx_one_char(*msg++);
 	}
-	esp32_rom_uart_tx_one_char('\r');
-	esp32_rom_uart_tx_one_char('\n');
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
 }
@@ -170,8 +170,8 @@ static void appcpu_start(void)
 	 * definition, so we can skip that complexity and just call
 	 * the ROM directly.
 	 */
-	esp32_rom_Cache_Flush(1);
-	esp32_rom_Cache_Read_Enable(1);
+	esp_rom_Cache_Flush(1);
+	esp_rom_Cache_Read_Enable(1);
 
 	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
 	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
@@ -185,7 +185,7 @@ static void appcpu_start(void)
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
-	esp32_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
+	esp_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
 
 	smp_log("ESP32: APPCPU start sequence complete");
 }

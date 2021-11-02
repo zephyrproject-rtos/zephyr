@@ -40,7 +40,7 @@ static const char *now_str(void)
 	return buf;
 }
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }

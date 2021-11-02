@@ -391,6 +391,17 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 		ull_adv_aux_release(aux);
 	}
 
+	/* Dequeue and release, advertising and scan response data, to keep
+	 * one initial primary channel PDU each for the advertising set.
+	 * This is done to prevent common extended payload format contents from
+	 * being overwritten and corrupted due to same primary PDU buffer being
+	 * used to remove AdvA and other fields are moved over in its place when
+	 * auxiliary PDU is allocated to new advertising set.
+	 */
+	(void)lll_adv_data_dequeue(&adv->lll.adv_data);
+	(void)lll_adv_data_dequeue(&adv->lll.scan_rsp);
+
+	/* Make the advertising set available for new advertisements */
 	adv->is_created = 0;
 
 	return BT_HCI_ERR_SUCCESS;

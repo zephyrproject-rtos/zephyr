@@ -38,6 +38,7 @@ extern void test_queue_multithread_competition(void);
 extern void test_access_kernel_obj_with_priv_data(void);
 extern void test_queue_append_list_error(void);
 extern void test_queue_merge_list_error(void);
+extern void test_queue_unique_append(void);
 
 extern struct k_heap test_pool;
 

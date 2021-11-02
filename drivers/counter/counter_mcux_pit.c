@@ -234,7 +234,7 @@ static const struct mcux_pit_config mcux_pit_config_0 = {
 
 DEVICE_DT_INST_DEFINE(0, &mcux_pit_init, NULL,
 		    &mcux_pit_data_0, &mcux_pit_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_pit_driver_api);
+		    CONFIG_COUNTER_INIT_PRIORITY, &mcux_pit_driver_api);
 
 static void mcux_pit_irq_config_0(const struct device *dev)
 {

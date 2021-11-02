@@ -30,7 +30,9 @@ struct sx12xx_rx_params {
 };
 
 static struct sx12xx_data {
+	const struct device *dev;
 	struct k_poll_signal *operation_done;
+	lora_recv_cb async_rx_cb;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
@@ -100,6 +102,16 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 			      int8_t snr)
 {
 	struct k_poll_signal *sig = dev_data.operation_done;
+
+	/* Receiving in asynchronous mode */
+	if (dev_data.async_rx_cb) {
+		/* Start receiving again */
+		Radio.Rx(0);
+		/* Run the callback */
+		dev_data.async_rx_cb(dev_data.dev, payload, size, rssi, snr);
+		/* Don't run the synchronous code */
+		return;
+	}
 
 	/* Manually release the modem instead of just calling modem_release
 	 * as we need to perform cleanup operations while still ensuring
@@ -232,6 +244,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		return -EBUSY;
 	}
 
+	dev_data.async_rx_cb = NULL;
 	/* Store operation signal */
 	dev_data.operation_done = &done;
 	/* Set data output location */
@@ -260,6 +273,32 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	}
 
 	return size;
+}
+
+int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
+{
+	/* Cancel ongoing reception */
+	if (cb == NULL) {
+		if (!modem_release(&dev_data)) {
+			/* Not receiving or already being stopped */
+			return -EINVAL;
+		}
+		return 0;
+	}
+
+	/* Ensure available */
+	if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+
+	/* Store parameters */
+	dev_data.async_rx_cb = cb;
+
+	/* Start reception */
+	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.Rx(0);
+
+	return 0;
 }
 
 int sx12xx_lora_config(const struct device *dev,
@@ -309,6 +348,7 @@ int sx12xx_init(const struct device *dev)
 {
 	atomic_set(&dev_data.modem_usage, 0);
 
+	dev_data.dev = dev;
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
 	Radio.Init(&dev_data.events);

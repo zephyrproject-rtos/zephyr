@@ -24,6 +24,7 @@
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/arm64/                              @carlocaione
 /arch/arm64/core/cortex_r/                @povergoing
+/arch/arm64/core/xen/                     @lorc @firscity
 /arch/common/                             @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
@@ -38,6 +39,7 @@
 /soc/arm/atmel_sam/samv71/                @nandojve
 /soc/arm/cypress/                         @nandojve
 /soc/arm/bcm*/                            @sbranden
+/soc/arm/gigadevice/                      @nandojve
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @mmahadevan108 @dleach02
 /soc/arm/nordic_nrf/                      @ioannisg
@@ -59,7 +61,7 @@
 /soc/arm64/qemu_cortex_a53/               @carlocaione
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
-/soc/arm64/xenvm/                         @lorc
+/soc/arm64/xenvm/                         @lorc @firscity
 /soc/arm64/arm/                           @povergoing
 /soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /submanifests/*                           @mbolivar-nordic
@@ -99,6 +101,7 @@
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @mmahadevan108 @dleach02
 /boards/arm/frdm*/doc/                    @dleach02 @MeganHansen
+/boards/arm/gd32*/                        @nandojve
 /boards/arm/google_*/                     @jackrosenthal
 /boards/arm/hexiwear*/                    @mmahadevan108 @dleach02
 /boards/arm/hexiwear*/doc/                @dleach02 @MeganHansen
@@ -164,7 +167,7 @@
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
-/boards/arm64/xenvm/                      @lorc
+/boards/arm64/xenvm/                      @lorc @firscity
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
@@ -185,6 +188,7 @@
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
+/drivers/*/*gd32*                         @nandojve
 /drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
 /drivers/*/*mcux*                         @mmahadevan108 @dleach02
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
@@ -230,6 +234,7 @@
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @tbursztyka @pfalcon
+/drivers/ethernet/*dwmac*                 @npitre
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
@@ -238,6 +243,7 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
+/drivers/flash/*esp32*                    @glaubermaroto
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn
@@ -283,6 +289,7 @@
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
+/drivers/mbox/                            @carlocaione
 /drivers/memc/                            @gmarull
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
@@ -290,6 +297,7 @@
 /drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/pinctrl/                         @gmarull
 /drivers/pinmux/*b91*                     @yurvyn
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
@@ -336,6 +344,8 @@
 /drivers/serial/serial_test.c             @str4t0m
 /drivers/serial/*esp32c3*                 @uLipe
 /drivers/serial/*esp32s2*                 @glaubermaroto
+/drivers/serial/Kconfig.xen               @lorc @firscity
+/drivers/serial/uart_hvc_xen.c            @lorc @firscity
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
@@ -377,11 +387,13 @@
 /drivers/watchdog/*cc32xx*                @pavlohamov
 /drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
 /drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
+/drivers/watchdog/wdt_counter.c           @nordic-krch
 /drivers/wifi/                            @rlubos @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
+/drivers/xen/                             @lorc @firscity
 /dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/atmel/sam4e*                     @nandojve
@@ -393,6 +405,7 @@
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @nandojve
+/dts/arm/gigadevice/                      @nandojve
 /dts/arm/infineon/                        @parthitce
 /dts/arm64/                               @carlocaione
 /dts/arm64/armv8-r.dtsi                   @povergoing
@@ -425,6 +438,7 @@
 /dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
+/dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
 /dts/arm/renesas/                         @julien-massot
@@ -441,6 +455,7 @@
 /dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
+/dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl
@@ -562,7 +577,9 @@
 /lib/libc/                                @nashif
 /lib/libc/arcmwdt/                        @abrodkin @ruuddw @evgeniy-paltsev
 /modules/                                 @nashif
+/modules/canopennode/                     @henrikbrixandersen
 /modules/mbedtls/                         @ceolin @d3zd3z
+/modules/hal_gigadevice/                  @nandojve
 /modules/trusted-firmware-m/              @ioannisg @microbuilder
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
@@ -580,6 +597,7 @@
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
+/samples/modules/canopennode/             @henrikbrixandersen
 /samples/net/                             @rlubos @tbursztyka @pfalcon
 /samples/net/cloud/tagoio_http_post/      @nandojve
 /samples/net/dns_resolve/                 @rlubos @tbursztyka @pfalcon

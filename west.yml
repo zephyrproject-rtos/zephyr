@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: canopennode
-      revision: f167efe85c8c7de886f1bc47f9173cfb8a346bb5
+      revision: 1052dae561497bef901f931ef75e117c9224aecd
       path: modules/lib/canopennode
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
@@ -46,6 +46,11 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
+    - name: fff
+      revision: 6ce5ba26486e93d5b7696a3e23f0585932c14b16
+      path: modules/lib/fff
+      groups:
+        - ci
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
       path: modules/hal/altera
@@ -62,9 +67,14 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2308568ea25817f1fa61cc218b3693cc87949c57
+      revision: 8284e0c251a6450f9cdeff299988a647648296e3
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
+      groups:
+        - hal
+    - name: hal_gigadevice
+      revision: ce323de9655972a545cbdddda813c1576d85d5d1
+      path: modules/hal/gigadevice
       groups:
         - hal
     - name: hal_infineon
@@ -183,7 +193,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: openthread
-      revision: fd1ab161f7d5cfd5d0120cd5d1797811e78ff918
+      revision: 15d9f0401eb458b35c82e327299969b8b745231f
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -211,10 +221,23 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      path: modules/tee/tfm
-      revision: 00d0e38cf89656b0f3ef8d1757109c0ea021a780
+      revision: 400f58ff53eb1dea5234925e96c5279154515cc7
+      path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
+    - name: tf-m-tests
+      revision: 93dad5cb3cfc2e2d82de61d1b2781f84881ce839
+      path: modules/tee/tf-m/tf-m-tests
+      groups:
+        - tee
+    - name: psa-arch-tests
+      revision: 077b8e5cd5fe9e27718a499b004e79bfca2d2e89
+      path: modules/tee/tf-m/psa-arch-tests
+      groups:
+        - tee
+
+  group-filter:
+    - -ci
 
   self:
     path: zephyr

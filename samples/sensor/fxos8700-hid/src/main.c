@@ -160,7 +160,7 @@ static bool read_accel(const struct device *dev)
 }
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *tr)
+			    const struct sensor_trigger *tr)
 {
 	ARG_UNUSED(tr);
 

@@ -17,7 +17,7 @@ K_SEM_DEFINE(sem, 0, 1);
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trigger)
+			    const struct sensor_trigger *trigger)
 {
 	switch (trigger->type) {
 	case SENSOR_TRIG_DATA_READY:

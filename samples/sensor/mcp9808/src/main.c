@@ -80,7 +80,7 @@ static inline int set_window_ucel(const struct device *dev,
 }
 
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	struct sensor_value temp;
 	static size_t cnt;

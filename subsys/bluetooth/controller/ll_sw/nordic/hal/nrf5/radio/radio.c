@@ -541,10 +541,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		uint8_t ppi_en =
-		    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
+			HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
 		uint8_t ppi_dis =
-			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
-			    sw_tifs_toggle);
+			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(sw_tifs_toggle);
 
 		if (!dir_curr && (phy_curr & PHY_CODED)) {
 			/* Switching to TX after RX on LE Coded PHY. */
@@ -568,12 +567,22 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 				SW_SWITCH_TIMER->CC[cc_s2] = 1;
 			}
 
+			/* Setup the Tx start for S2 using a dedicated compare,
+			 * setup a PPI to disable PPI group on that compare
+			 * event, and then importantly setup a capture PPI to
+			 * disable the Tx start for S8 on RATEBOOST event.
+			 */
 			hal_radio_sw_switch_coded_tx_config_set(ppi_en, ppi_dis,
 				cc_s2, sw_tifs_toggle);
 
-		} else if (!dir_curr) {
-			/* Switching to TX after RX on LE 1M/2M PHY */
-
+		} else {
+			/* Switching to TX after RX or from back-to-back TX on
+			 * LE 1M/2M PHY.
+			 */
+			/* Software switch group's disable PPI needs to be
+			 * configured at every sw_switch() as they depend on
+			 * the actual PHYs used in TX/RX mode.
+			 */
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
 		}
@@ -854,12 +863,14 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 #if !defined(CONFIG_BT_CTLR_PHY_CODED) || \
 	!defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-
+	/* Software switch group's disable PPI can be configured one time here
+	 * at timer setup when only 1M and/or 2M is supported.
+	 */
 	hal_radio_group_task_disable_ppi_setup();
 
 #else /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
-	/* PPI setup needs to be configured at every sw_switch()
-	 * as they depend on the actual PHYs used in TX/RX mode.
+	/* Software switch group's disable PPI needs to be configured at every
+	 * sw_switch() as they depend on the actual PHYs used in TX/RX mode.
 	 */
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

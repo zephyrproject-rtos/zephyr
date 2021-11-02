@@ -1,15 +1,67 @@
-# ARM Cortex-R platform configuration options
+# ARM Cortex-A and Cortex-R platform configuration options
 
 # Copyright (c) 2018 Marvell
 # Copyright (c) 2018 Lexmark International, Inc.
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+#
 # SPDX-License-Identifier: Apache-2.0
 
 # NOTE: We have the specific core implementations first and outside of the
-# if CPU_CORTEX_R block so that SoCs can select which core they are using
-# without having to select all the options related to that core.  Everything
-# else is captured inside the if CPU_CORTEX_R block so they are not exposed
-# if one selects a different ARM Cortex Family (Cortex-A or Cortex-M)
+# if CPU_AARCH32_CORTEX_A / if CPU_CORTEX_R block so that SoCs can select
+# which core they are using without having to select all the options related
+# to that core. Everything else is captured inside the if CPU_CORTEX_A / if
+# CPU_CORTEX_R blocks so they are not exposed if one selects a different ARM
+# Cortex Family (Cortex-M).
 
+config CPU_CORTEX_A9
+	bool
+	select CPU_AARCH32_CORTEX_A
+	select ARMV7_A
+	help
+	  This option signifies the use of a Cortex-A9 CPU.
+
+if CPU_AARCH32_CORTEX_A
+
+config ARMV7_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+
+config ARMV7_EXCEPTION_STACK_SIZE
+	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the undefined
+	  instruction and data abort exception handlers.
+
+config ARMV7_FIQ_STACK_SIZE
+	int "FIQ stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the FIQ handler.
+
+config ARMV7_SVC_STACK_SIZE
+	int "SVC stack size (in bytes)"
+	default 512
+	help
+	  This option specifies the size of the stack used by the SVC handler.
+
+config ARMV7_SYS_STACK_SIZE
+	int "SYS stack size (in bytes)"
+	default 1024
+	help
+	  This option specifies the size of the stack used by the system mode.
+
+config RUNTIME_NMI
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+endif # CPU_AARCH32_CORTEX_A
 
 config CPU_CORTEX_R4
 	bool

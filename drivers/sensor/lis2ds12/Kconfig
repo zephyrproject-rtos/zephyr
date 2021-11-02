@@ -6,6 +6,8 @@
 menuconfig LIS2DS12
 	bool "LIS2DS12 I2C/SPI accelerometer sensor driver"
 	depends on I2C || SPI
+	select HAS_STMEMSC
+	select USE_STDC_LIS2DS12
 	help
 	  Enable driver for LIS2DS12 accelerometer sensor driver
 
@@ -52,37 +54,5 @@ config LIS2DS12_ENABLE_TEMP
 	bool "Enable temperature"
 	help
 	  Enable/disable temperature
-
-menu "Attributes"
-
-config LIS2DS12_FS
-	int "Accelerometer full-scale range"
-	default 0
-	help
-	  Specify the default accelerometer full-scale range.
-	  An X value for the config represents a range of +/- X G. Valid values
-	  are:
-	  0:  Full Scale selected at runtime
-	  2:  +/- 2g
-	  4:  +/- 4g
-	  8:  +/- 8g
-	  16: +/- 16g
-
-config LIS2DS12_ODR
-	int "Accelerometer Output data rate frequency"
-	range 0 10
-	default 0
-	help
-	  Specify the default accelerometer output data rate expressed in
-	  samples per second (Hz).
-	  0: ODR selected at runtime
-	  1: 12.5Hz
-	  2: 25Hz
-	  3: 50Hz
-	  4: 100Hz
-	  5: 200Hz
-	  6: 400Hz
-	  7: 800Hz
-endmenu
 
 endif # LIS2DS12

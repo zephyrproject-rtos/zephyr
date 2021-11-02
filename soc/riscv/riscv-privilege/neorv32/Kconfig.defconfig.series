@@ -25,4 +25,8 @@ config SERIAL_INIT_PRIORITY
 	default 55
 	depends on SERIAL
 
+config ENTROPY_INIT_PRIORITY
+	default 55
+	depends on ENTROPY_GENERATOR
+
 endif # SOC_SERIES_NEORV32

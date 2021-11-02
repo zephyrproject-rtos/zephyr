@@ -1845,10 +1845,10 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		nrf_uarte_enable(uarte);
 
 #ifdef CONFIG_UART_ASYNC_API
-		if (hw_rx_counting_enabled(get_dev_data(dev))) {
+		if (hw_rx_counting_enabled(data)) {
 			nrfx_timer_enable(&get_dev_config(dev)->timer);
 		}
-		if (get_dev_data(dev)->async) {
+		if (data->async) {
 			return 0;
 		}
 #endif
@@ -1870,7 +1870,7 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		 * only sent after each RX if async UART API is used.
 		 */
 #ifdef CONFIG_UART_ASYNC_API
-		if (get_dev_data(dev)->async) {
+		if (data->async) {
 			/* Entering inactive state requires device to be no
 			 * active asynchronous calls.
 			 */

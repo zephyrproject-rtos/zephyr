@@ -64,7 +64,7 @@ static void test_polling_mode(const struct device *dev)
 
 #if defined(CONFIG_VCNL4040_TRIGGER)
 static void trigger_handler(const struct device *dev,
-			    struct sensor_trigger *trig)
+			    const struct sensor_trigger *trig)
 {
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:

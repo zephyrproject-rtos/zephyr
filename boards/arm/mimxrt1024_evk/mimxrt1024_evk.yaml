@@ -21,3 +21,4 @@ supported:
   - netif:eth
   - watchdog
   - spi
+  - adc

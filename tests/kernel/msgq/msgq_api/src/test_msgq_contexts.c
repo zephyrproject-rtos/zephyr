@@ -272,12 +272,19 @@ void test_msgq_thread_overflow(void)
 	int ret;
 
 	/**TESTPOINT: init via k_msgq_init*/
-	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 2);
 	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
+
+	ret = k_msgq_put(&msgq, (void *)&data[0], K_FOREVER);
 	zassert_equal(ret, 0, NULL);
 
 	msgq_thread_overflow(&msgq);
 	msgq_thread_overflow(&kmsgq);
+
+	/*verify the write pointer not reset to the buffer start*/
+	zassert_false(msgq.write_ptr == msgq.buffer_start,
+		"Invalid add operation of message queue");
 }
 
 #ifdef CONFIG_USERSPACE

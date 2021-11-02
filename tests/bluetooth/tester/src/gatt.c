@@ -994,8 +994,8 @@ static void disc_all_prim(uint8_t *data, uint16_t len)
 	}
 
 	discover_params.uuid = NULL;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
 
@@ -1037,8 +1037,8 @@ static void disc_prim_uuid(uint8_t *data, uint16_t len)
 	}
 
 	discover_params.uuid = &uuid.uuid;
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	discover_params.func = disc_prim_cb;
 
@@ -1742,7 +1742,7 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	}
 
 	/* Discover Characteristic Value this CCC Descriptor refers to */
-	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = ccc_handle;
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = discover_func;

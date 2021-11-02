@@ -32,7 +32,7 @@ static struct k_fifo rndis_tx_queue;
 
 /* Serialize RNDIS command queue for later processing */
 #define CFG_RNDIS_CMD_BUF_COUNT	2
-#define CFG_RNDIS_CMD_BUF_SIZE	512
+#define CFG_RNDIS_CMD_BUF_SIZE	CONFIG_USB_REQUEST_BUFFER_SIZE
 NET_BUF_POOL_DEFINE(rndis_cmd_pool, CFG_RNDIS_CMD_BUF_COUNT,
 		    CFG_RNDIS_CMD_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_cmd_queue;
@@ -44,9 +44,7 @@ static K_KERNEL_STACK_DEFINE(cmd_stack, 2048);
 static struct k_thread cmd_thread_data;
 
 struct usb_rndis_config {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor iad;
-#endif
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_cm_descriptor if0_cm;
@@ -60,7 +58,6 @@ struct usb_rndis_config {
 } __packed;
 
 USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	.iad = {
 		.bLength = sizeof(struct usb_association_descriptor),
 		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,
@@ -71,7 +68,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bFunctionProtocol = 0,
 		.iFunction = 0,
 	},
-#endif
 	/* Interface descriptor 0 */
 	/* CDC Communication interface */
 	.if0 = {
@@ -1159,9 +1155,7 @@ static void netusb_interface_config(struct usb_desc_header *head,
 	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
 	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
 	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
-#endif
 }
 
 USBD_CFG_DATA_DEFINE(primary, netusb) struct usb_cfg_data netusb_config = {

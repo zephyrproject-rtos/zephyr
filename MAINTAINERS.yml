@@ -196,6 +196,7 @@ Bluetooth controller:
     collaborators:
         - carlescufi
         - thoh-ot
+        - kruithofa
     files:
         - subsys/bluetooth/controller/
     labels:
@@ -435,6 +436,7 @@ Documentation:
         - lyakh
         - lgirdwood
         - mengxianglinx
+        - marc-hb
     files:
         - drivers/audio/
         - include/audio/
@@ -464,6 +466,8 @@ Documentation:
         - tests/drivers/can/
         - samples/subsys/canbus/
         - doc/reference/networking/can_api.rst
+        - modules/canopennode/
+        - samples/modules/canopennode/
     labels:
         - "area: CAN"
 
@@ -1069,6 +1073,8 @@ MCU Manager:
     status: maintained
     maintainers:
         - de-nordic
+    collaborators:
+        - lairdjm
     files:
         - subsys/mgmt/mcumgr/
         - include/mgmt/mcumgr/
@@ -1349,6 +1355,20 @@ SPARC arch:
     labels:
         - "area: SPARC"
 
+State machine framework:
+    status: maintained
+    maintainers:
+        - sambhurst
+    collaborators:
+        - keith-zephyr
+    files:
+        - doc/guides/smf/
+        - include/smf.h
+        - lib/smf/
+        - tests/lib/smf/
+    labels:
+        - "area: State Machine Framework"
+
 Synopsys Platforms:
     status: maintained
     maintainers:
@@ -1420,6 +1440,7 @@ Intel Platforms (X86):
     collaborators:
         - jhedberg
         - aasthagr
+        - laurenmurphyx64
     files:
         - boards/x86/
         - soc/x86/
@@ -1688,6 +1709,7 @@ x86 arch:
         - ceolin
         - enjiamai
         - aasthagr
+        - laurenmurphyx64
     files:
         - arch/x86/
         - include/arch/x86/

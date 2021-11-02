@@ -28,6 +28,8 @@
 #define __dtcm_data_section Z_GENERIC_SECTION(_DTCM_DATA_SECTION_NAME)
 #define __dtcm_bss_section Z_GENERIC_SECTION(_DTCM_BSS_SECTION_NAME)
 #define __dtcm_noinit_section Z_GENERIC_SECTION(_DTCM_NOINIT_SECTION_NAME)
+#define __ocm_data_section Z_GENERIC_SECTION(_OCM_DATA_SECTION_NAME)
+#define __ocm_bss_section Z_GENERIC_SECTION(_OCM_BSS_SECTION_NAME)
 #define __imx_boot_conf_section Z_GENERIC_SECTION(_IMX_BOOT_CONF_SECTION_NAME)
 #define __imx_boot_data_section Z_GENERIC_SECTION(_IMX_BOOT_DATA_SECTION_NAME)
 #define __imx_boot_ivt_section Z_GENERIC_SECTION(_IMX_BOOT_IVT_SECTION_NAME)

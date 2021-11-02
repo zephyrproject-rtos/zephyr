@@ -101,6 +101,19 @@ static int mimxrt1010_evk_init(const struct device *dev)
 			IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
+	/* ADC Channels 1 and 2, exposed as pins 10 and 12 on J26 of EVK */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_01_GPIOMUX_IO15, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_02_GPIOMUX_IO16, 0U);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_01_GPIOMUX_IO15,
+				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_02_GPIOMUX_IO16,
+				IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
+#endif
+
 	return 0;
 }
 

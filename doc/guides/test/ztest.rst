@@ -113,7 +113,7 @@ report them as being skipped.  Because the test inventory and
 the list of tests is extracted from the code, adding
 conditionals inside the test suite is sub-optimal.  Tests that need
 to be skipped for a certain platform or feature need to explicitly
-report a skip using :c:func:`ztest_test_skip()`. If the test runs,
+report a skip using :c:func:`ztest_test_skip`. If the test runs,
 it needs to report either a pass or fail.  For example::
 
 	#ifdef CONFIG_TEST1
@@ -176,8 +176,10 @@ subcases that a Zephyr *ztest* test image will expose.
    high-level test project level, particularly when tests do too
    many things, is too vague.
 
+There exist two alternatives to writing tests. The first, and more verbose,
+approach is to directly declare and run the test suites.
 Here is a generic template for a test showing the expected use of
-:func:`ztest_test_suite`:
+:c:func:`ztest_test_suite`:
 
 .. code-block:: C
 
@@ -207,12 +209,95 @@ Here is a generic template for a test showing the expected use of
    	ztest_run_test_suite(common);
    }
 
+Alternatively, it is possible to split tests across multiple files using
+:c:func:`ztest_register_test_suite` which bypasses the need for ``extern``:
+
+.. code-block:: C
+
+  #include <ztest.h>
+
+  void test_sometest1(void) {
+  	zassert_true(1, "true");
+  }
+
+  ztest_register_test_suite(common, NULL,
+  			    ztest_unit_test(test_sometest1)
+  			    );
+
+The above sample simple registers the test suite and uses a ``NULL`` pragma
+function (more on that later). It is important to note that the test suite isn't
+directly run in this file. Instead two alternatives exist for running the suite.
+First, if to do nothing. A default ``test_main`` function is provided by
+ztest. This is the preferred approach if the test doesn't involve a state and
+doesn't require use of the pragma.
+
+In cases of an integration test it is possible that some general state needs to
+be set between test suites. This can be thought of as a state diagram in which
+``test_main`` simply goes through various actions that modify the board's
+state and different test suites need to run. This is achieved in the following:
+
+.. code-block:: C
+
+  #include <ztest.h>
+
+  struct state {
+  	bool is_hibernating;
+  	bool is_usb_connected;
+  }
+
+  static bool pragma_always(const void *state)
+  {
+  	return true;
+  }
+
+  static bool pragma_not_hibernating_not_connected(const void *s)
+  {
+  	struct state *state = s;
+  	return !state->is_hibernating && !state->is_usb_connected;
+  }
+
+  static bool pragma_usb_connected(const void *s)
+  {
+  	return ((struct state *)s)->is_usb_connected;
+  }
+
+  ztest_register_test_suite(baseline, pragma_always,
+  			    ztest_unit_test(test_case0));
+  ztest_register_test_suite(before_usb, pragma_not_hibernating_not_connected,
+  			    ztest_unit_test(test_case1),
+  			    ztest_unit_test(test_case2));
+  ztest_register_test_suite(with_usb, pragma_usb_connected,,
+  			    ztest_unit_test(test_case3),
+  			    ztest_unit_test(test_case4));
+
+  void test_main(void)
+  {
+  	struct state state;
+
+	/* Should run `baseline` test suite only. */
+	ztest_run_registered_test_suites(&state);
+
+  	/* Simulate power on and update state. */
+  	emulate_power_on();
+  	/* Should run `baseline` and `before_usb` test suites. */
+  	ztest_run_registered_test_suites(&state);
+
+  	/* Simulate plugging in a USB device. */
+  	emulate_plugging_in_usb();
+  	/* Should run `baseline` and `with_usb` test suites. */
+  	ztest_run_registered_test_suites(&state);
+
+  	/* Verify that all the registered test suites actually ran. */
+  	ztest_verify_all_registered_test_suites_ran();
+  }
+
 For *twister* to parse source files and create a list of subcases,
-the declarations of :func:`ztest_test_suite` must follow a few rules:
+the declarations of :c:func:`ztest_test_suite` and
+:c:func:`ztest_register_test_suite` must follow a few rules:
 
 - one declaration per line
 
-- conditional execution by using :func:`ztest_test_skip`
+- conditional execution by using :c:func:`ztest_test_skip`
 
 What to avoid:
 
@@ -254,7 +339,7 @@ What to avoid:
                               ztest_unit_test(test_sometest4),
              ...
 
-- Do not add comments on lines with a call to :func:`ztest_unit_test`:
+- Do not add comments on lines with a call to :c:func:`ztest_unit_test`:
 
   .. code-block:: C
 

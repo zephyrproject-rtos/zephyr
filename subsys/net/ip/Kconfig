@@ -38,7 +38,7 @@ config NET_NATIVE_UDP
 	default y if NET_UDP
 
 config NET_OFFLOAD
-	bool "Offload IP stack [EXPERIMENTAL]"
+	bool "Offload IP stack"
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
@@ -211,6 +211,7 @@ config NET_TC_THREAD_COOPERATIVE
 config NET_TC_THREAD_PREEMPTIVE
 	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
 	depends on PREEMPT_ENABLED
+	select EXPERIMENTAL
 	help
 	  With pre-emptive threads, the thread can be pre-empted.
 
@@ -664,6 +665,7 @@ config NET_BUF_FIXED_DATA_SIZE
 
 config NET_BUF_VARIABLE_DATA_SIZE
 	bool "Variable data size buffer [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  The buffer is dynamically allocated from runtime requested size.
 
@@ -825,7 +827,7 @@ config NET_PKT_TXTIME_STATS_DETAIL
 	  command.
 
 config NET_PROMISCUOUS_MODE
-	bool "Enable promiscuous mode support [EXPERIMENTAL]"
+	bool "Enable promiscuous mode support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_L2_ETHERNET_MGMT if NET_L2_ETHERNET

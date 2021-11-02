@@ -20,7 +20,7 @@
 #include <kernel_internal.h>
 #include <linker/linker-defs.h>
 
-#if defined(CONFIG_ARMV7_R)
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <aarch32/cortex_a_r/stack.h>
 #endif
 
@@ -166,6 +166,7 @@ static inline void z_arm_floating_point_init(void)
 #endif /* CONFIG_CPU_HAS_FPU */
 
 extern FUNC_NORETURN void z_cstart(void);
+
 /**
  *
  * @brief Prepare to and run C code
@@ -182,7 +183,7 @@ void z_arm_prep_c(void)
 #endif
 	z_bss_zero();
 	z_data_copy();
-#if defined(CONFIG_ARMV7_R) && defined(CONFIG_INIT_STACKS)
+#if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)) && defined(CONFIG_INIT_STACKS))
 	z_arm_init_stacks();
 #endif
 	z_arm_interrupt_init();
