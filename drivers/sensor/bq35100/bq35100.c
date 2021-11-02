@@ -674,24 +674,50 @@ static int bq35100_get_state_of_health(const struct device *dev)
 static int bq35100_get_acc_capacity(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
-	int status;
-
-	status = bq35100_control_reg_write(dev, BQ35100_CTRL_CONTROL_STATUS);
-	if (status < 0) {
-		LOG_ERR("Unable to set [GA] pin");
-		return -EIO;
-	}
-
-	// status = bq35100_gauge_stop(dev);
-	if (status < 0) {
-		LOG_ERR("Unable to write Accumulated Capacity");
-		return -EIO;
-	}
 
 	return bq35100_reg_read(dev, BQ35100_CMD_ACCUMULATED_CAPACITY, 
 				&data->acc_capacity, 4);
 }
 
+/**
+ * Set the design capacity register data
+ * @param dev - The device structure.
+ * @param capacity - the capacity is going to be set.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_set_design_capacity(const struct device *dev, uint16_t capacity)
+{
+	uint8_t buf[2];
+	int status;
+
+	buf[0] = capacity >> 8;
+	buf[1] = capacity;
+
+	LOG_DBG("Setting designed cell capacity to %i mAh", capacity);
+
+	status = bq35100_write_extended_data(dev, BQ35100_FLASH_CELL_DESIGN_CAPACITY_MAH,
+				buf, 2);
+
+	if (status < 0) {
+		LOG_ERR("Unable to set the design capacity");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * Get the design capacity register data
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_design_capacity(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+
+	return bq35100_reg_read(dev, BQ35100_CMD_DESIGN_CAPACITY,
+				&data->design_capacity, 2);
+}
 
 /**
  * Read CONTROL register from the device to get CONTROL_STATUS.
@@ -739,6 +765,7 @@ static int bq35100_get_gauge_mode(const struct device *dev)
 
 	return 0;
 }
+
 /**
  * Get the security status from the device.
  * @param dev - The device structure.
@@ -909,6 +936,7 @@ static int bq35100_get_sensor_data(const struct device *dev)
 	bq35100_get_avg_current(dev);
 	bq35100_get_state_of_health(dev);
 	bq35100_get_acc_capacity(dev);
+	bq35100_get_design_capacity(dev);
 
 	return 0;
 }
@@ -959,6 +987,10 @@ static int bq35100_channel_get(const struct device *dev,
 	/*case SENSOR_CHAN_GAUGE_INT_TEMP:
 		val->val1 = ((uint16_t)(data->internal_temperature) - 2731) / 10;
 		val->val2 = ((uint16_t)((data->internal_temperature) - 2731) % 10 * 100000);
+		break;
+	case SENSON_CHAN_GAUGE_DES_CAP:
+		val->val1 = (int16_t)data->design_capacity;
+		val->val2 = 0;
 		break;*/
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = (uint16_t)data->voltage / 1000;
@@ -1069,15 +1101,20 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (bq35100_get_battery_status(dev) < 0) {
+	/*if (bq35100_get_battery_status(dev) < 0) {
 		return -EIO;
-	}
+	}*/
 
 	data->gauge_enabled = false;
 
 	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
 	}
+
+	// does not work because of unsealing problem
+	/*if (bq35100_set_design_capacity(dev, 1000) < 0) {
+		return -EIO;
+	}*/
 
 	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
