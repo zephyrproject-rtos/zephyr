@@ -162,13 +162,13 @@ void test_power_state_trans(void)
  * @brief notification between system and device
  *
  * @details
- *  - device driver notify its power state change by pm_device_get and
- *    pm_device_put_async
+ *  - device driver notify its power state change by pm_device_runtime_get and
+ *    pm_device_runtime_put_async
  *  - system inform device system power state change through device interface
  *    pm_control
  *
- * @see pm_device_get(), pm_device_put_async(), pm_device_state_set(),
- *      pm_device_state_get()
+ * @see pm_device_runtime_get(), pm_device_runtime_put_async(),
+ *      pm_device_state_set(), pm_device_state_get()
  *
  * @ingroup power_tests
  */
