@@ -61,19 +61,6 @@ static void ascs_ase_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static void ase_stream_del(struct bt_ascs_ase *ase)
-{
-	struct bt_audio_stream *stream = ase->ep.stream;
-
-	if (stream == NULL) {
-		return;
-	}
-
-	BT_DBG("ase %p stream %p", ase, stream);
-
-	bt_audio_stream_reset(stream);
-}
-
 NET_BUF_SIMPLE_DEFINE_STATIC(rsp_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static void ascs_cp_rsp_alloc(uint8_t op)
@@ -452,11 +439,6 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 
 	BT_DBG("ase %p conn %p", ase, ase->ascs->conn);
-
-	if (state == BT_AUDIO_EP_STATE_RELEASING ||
-	    state == BT_AUDIO_EP_STATE_IDLE) {
-		ase_stream_del(ase);
-	}
 
 	if (!ase->ascs->conn || ase->ascs->conn->state != BT_CONN_CONNECTED) {
 		return;
