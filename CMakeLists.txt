@@ -819,22 +819,12 @@ if(CONFIG_USERSPACE)
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
 
-  get_property(include_dir_in_interface TARGET zephyr_interface
-    PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-
-  get_property(sys_include_dir_in_interface TARGET zephyr_interface
-    PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-
-  get_property(compile_definitions_interface TARGET zephyr_interface
-    PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
 
   set(KOBJECT_HASH_LIST               kobject_hash.gperf)
   set(KOBJECT_HASH_OUTPUT_SRC_PRE     kobject_hash_preprocessed.c)
   set(KOBJECT_HASH_OUTPUT_SRC         kobject_hash.c)
-  set(KOBJECT_HASH_OUTPUT_OBJ         kobject_hash.c.obj)
   set(KOBJECT_HASH_OUTPUT_OBJ_RENAMED kobject_hash_renamed.o)
 
   # Essentially what we are doing here is extracting some information
@@ -908,34 +898,23 @@ if(CONFIG_USERSPACE)
   # generated data into special section names
   add_library(
     kobj_hash_output_lib
-    STATIC ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC}
+    OBJECT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC}
     )
 
   set_source_files_properties(${KOBJECT_HASH_OUTPUT_SRC}
     PROPERTIES COMPILE_FLAGS
     "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")
 
-  set_source_files_properties(${KOBJECT_HASH_OUTPUT_SRC}
-    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
+  target_compile_definitions(kobj_hash_output_lib
+    PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+  )
 
-  # Turn off -ffunction-sections, etc.
-  # NB: Using a library instead of target_compile_options(kobj_hash_output_lib
-  # [...]) because a library's options have precedence
-  add_library(kobj_hash_output_lib_interface INTERFACE)
+  target_include_directories(kobj_hash_output_lib
+    PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
+  )
 
-  target_link_libraries(kobj_hash_output_lib kobj_hash_output_lib_interface)
-
-  foreach(incl ${include_dir_in_interface})
-    target_include_directories(kobj_hash_output_lib_interface INTERFACE ${incl})
-  endforeach()
-
-  foreach(incl ${sys_include_dir_in_interface})
-    target_include_directories(kobj_hash_output_lib_interface SYSTEM INTERFACE ${incl})
-  endforeach()
-
-  set(
-    KOBJECT_HASH_OUTPUT_OBJ_PATH
-    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/kobj_hash_output_lib.dir/${KOBJECT_HASH_OUTPUT_OBJ}
+  target_include_directories(kobj_hash_output_lib SYSTEM
+    PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
   )
 
   add_custom_command(
@@ -946,7 +925,7 @@ if(CONFIG_USERSPACE)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.sdata=.kobject_data.sdata
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.text=.kobject_data.text
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.rodata=.kobject_data.rodata
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KOBJECT_HASH_OUTPUT_OBJ_PATH}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_OBJECTS:kobj_hash_output_lib>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KOBJECT_HASH_OUTPUT_OBJ_RENAMED}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     DEPENDS kobj_hash_output_lib
@@ -1129,7 +1108,6 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_PREBUILT_HASH_LIST           kobject_prebuilt_hash.gperf)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE kobject_prebuilt_hash_preprocessed.c)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC     kobject_prebuilt_hash.c)
-  set(KOBJECT_PREBUILT_HASH_OUTPUT_OBJ     kobject_prebuilt_hash.c.obj)
 
   add_custom_command(
     OUTPUT ${KOBJECT_PREBUILT_HASH_LIST}
@@ -1183,40 +1161,23 @@ if(CONFIG_USERSPACE)
 
   add_library(
     kobj_prebuilt_hash_output_lib
-    STATIC ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    OBJECT ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
     )
 
   set_source_files_properties(${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
     PROPERTIES COMPILE_FLAGS
     "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")
 
-  set_source_files_properties(${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
-    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
-
-  add_library(kobj_prebuilt_hash_output_lib_interface INTERFACE)
-
-  target_link_libraries(
-    kobj_prebuilt_hash_output_lib
-    kobj_prebuilt_hash_output_lib_interface
+  target_compile_definitions(kobj_prebuilt_hash_output_lib
+    PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
   )
 
-  foreach(incl ${include_dir_in_interface})
-    target_include_directories(
-      kobj_prebuilt_hash_output_lib_interface
-      INTERFACE ${incl}
-    )
-  endforeach()
+  target_include_directories(kobj_prebuilt_hash_output_lib
+    PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
+  )
 
-  foreach(incl ${sys_include_dir_in_interface})
-    target_include_directories(
-      kobj_prebuilt_hash_output_lib_interface
-      SYSTEM INTERFACE ${incl}
-    )
-  endforeach()
-
-  set(
-    KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH
-    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/kobj_prebuilt_hash_output_lib.dir/${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ}
+  target_include_directories(kobj_prebuilt_hash_output_lib SYSTEM
+    PUBLIC $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
   )
 
   set(KOBJECT_LINKER_HEADER_DATA "${PROJECT_BINARY_DIR}/include/generated/linker-kobject-prebuilt-data.h")
@@ -1226,14 +1187,13 @@ if(CONFIG_USERSPACE)
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_kobject_placeholders.py
-    --object ${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH}
+    --object $<TARGET_OBJECTS:kobj_prebuilt_hash_output_lib>
     --outdir ${PROJECT_BINARY_DIR}/include/generated
     --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}
     --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
     kobj_prebuilt_hash_output_lib
-    ${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
