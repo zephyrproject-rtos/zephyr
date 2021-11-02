@@ -48,6 +48,16 @@ static int mimxrt1160_evk_init(const struct device *dev)
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_30_LPSPI1_SOUT, 0x02U);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_31_LPSPI1_SIN, 0x02U);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
+	/* LPI2C1 SDA, SCL */
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_08_LPI2C1_SCL, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_09_LPI2C1_SDA, 1U);
+	/* Open drain, with software input on */
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_08_LPI2C1_SCL, 0x10U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_09_LPI2C1_SDA, 0x10U);
+#endif
+
 	return 0;
 }
 
