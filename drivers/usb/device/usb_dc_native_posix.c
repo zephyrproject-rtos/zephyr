@@ -560,7 +560,7 @@ int handle_usb_data(struct usbip_header *hdr)
 		ep_ctrl->cb(ep, USB_DC_EP_DATA_OUT);
 
 		/* Send ACK reply */
-		if (!usbip_send_common(ep, 0)) {
+		if (!usbip_send_common(ep, ep_ctrl->data_len)) {
 			return -EIO;
 		}
 	} else {
