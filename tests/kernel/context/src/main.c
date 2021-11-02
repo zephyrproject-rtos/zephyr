@@ -1161,6 +1161,56 @@ void test_kernel_thread(void)
 
 }
 
+#if defined(CONFIG_X86) && !defined(CONFIG_X86_64)
+/**
+ * @brief verify the bit value of IF in EFLAGS register is not changed
+ * before and after call CPU idle function.
+ *
+ * @details Get the value of EFLAGES, and then call k_cpu_atomic_idle
+ * to make CPU idle, compare the value of IF before and after call CPU
+ * idle function. Locked the IRQ and repeat that.
+ *
+ * @see k_cpu_atomic_idle()
+ *
+ * @ingroup kernel_context_tests
+ */
+void test_kernel_cpu_idle_no_impact_if(void)
+{
+	unsigned int eflags = 0;
+	/* the bit value of IF in EFLAGS register */
+	unsigned int if_value = 0;
+	const unsigned int eflags_if_mask = 0x200;
+
+	/* Get the valud of EFLAGS register */
+	__asm__ volatile ("pushfl; popl %%eax; movl %%eax, %0;" : "=r" (eflags));
+	if_value = (eflags & eflags_if_mask);
+	/* The interrupt is enabled by default */
+	zassert_true(if_value, "The IF is not high");
+	k_cpu_atomic_idle(eflags);
+	__asm__ volatile ("pushfl; popl %%eax; movl %%eax, %0;" : "=r" (eflags));
+	zassert_true((eflags & eflags_if_mask) == if_value, "The IF changed");
+
+	/* locked irq first */
+	unsigned int key = irq_lock();
+
+	__asm__ volatile ("pushfl; popl %%eax; movl %%eax, %0;" : "=r" (eflags));
+	if_value = (eflags & eflags_if_mask);
+	/* The interrupt is enabled by default */
+	zassert_false(if_value, "The IF is not low");
+	k_cpu_atomic_idle(eflags);
+	__asm__ volatile ("pushfl; popl %%eax; movl %%eax, %0;" : "=r" (eflags));
+	zassert_true((eflags & eflags_if_mask) == if_value, "The IF changed");
+
+	/* unlock IRQ */
+	irq_unlock(key);
+}
+#else
+void test_kernel_cpu_idle_no_impact_if(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -1175,6 +1225,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_busy_wait),
 			 ztest_1cpu_unit_test(test_k_sleep),
 			 ztest_unit_test(test_kernel_cpu_idle_atomic),
+			 ztest_unit_test(test_kernel_cpu_idle_no_impact_if),
 			 ztest_unit_test(test_kernel_cpu_idle),
 			 ztest_1cpu_unit_test(test_k_yield),
 			 ztest_1cpu_unit_test(test_kernel_thread),
