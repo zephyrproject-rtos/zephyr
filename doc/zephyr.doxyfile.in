@@ -2268,6 +2268,7 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_FLASH_PAGE_LAYOUT \
                          CONFIG_FPU \
                          CONFIG_FPU_SHARING \
+                         CONFIG_GDBSTUB \
                          CONFIG_HEAP_MEM_POOL_SIZE \
                          CONFIG_MMU \
                          CONFIG_NET_L2_ETHERNET_MGMT \
