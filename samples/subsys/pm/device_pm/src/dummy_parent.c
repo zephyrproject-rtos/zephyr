@@ -24,8 +24,8 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 	return 0;
 }
 
-static int dummy_parent_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_parent_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -52,5 +52,5 @@ int dummy_parent_init(const struct device *dev)
 }
 
 DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init,
-		    dummy_parent_pm_ctrl, NULL, NULL, POST_KERNEL,
+		    dummy_parent_pm_action, NULL, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
