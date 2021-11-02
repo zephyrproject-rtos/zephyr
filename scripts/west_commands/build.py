@@ -368,7 +368,7 @@ class Build(Forceable):
         # If the build directory specifies a source app, make sure it's
         # consistent with --source-dir.
         apps_mismatched = (source_abs and cached_abs and
-            pathlib.PurePath(source_abs) != pathlib.PurePath(cached_abs))
+            pathlib.Path(source_abs).resolve() != pathlib.Path(cached_abs).resolve())
 
         self.check_force(
             not apps_mismatched or self.auto_pristine,
