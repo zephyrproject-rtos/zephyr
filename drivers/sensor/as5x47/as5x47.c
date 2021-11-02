@@ -10,8 +10,12 @@
 #include <drivers/sensor.h>
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "AS5x47 driver enabled without any devices"
+#error "AS5x47 driver enabled without any devices"
 #endif
+
+const as5x47_config *get_config(const struct device *dev) {
+    return dev->config;
+}
 
 
 int as5x47_init(const struct device *dev) {
@@ -22,6 +26,8 @@ int as5x47_init(const struct device *dev) {
 int as5x47_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     // TODO: Read data from sensor
     // spi_transceive_dt(...);
+
+    getSensorValue(&get_config(dev)->sensor);
     return -ENOTSUP;
 }
 
@@ -46,11 +52,11 @@ int as5x47_trigger_set(const struct device *dev, const struct sensor_trigger *tr
 }
 
 const struct sensor_driver_api as5x47_sensor_api = {
-        .sample_fetch = as5x47_sample_fetch,
-        .channel_get = as5x47_channel_get,
         .attr_set = as5x47_attr_set,
         .attr_get = as5x47_attr_get,
         .trigger_set = as5x47_trigger_set,
+        .sample_fetch = as5x47_sample_fetch,
+        .channel_get = as5x47_channel_get,
 };
 
 #define AS5x47_DEVICE_INIT(inst) \
