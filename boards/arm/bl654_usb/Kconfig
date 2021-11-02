@@ -8,3 +8,19 @@ config BOARD_ENABLE_DCDC
 	select SOC_DCDC_NRF52X
 	default y
 	depends on BOARD_BL654_USB
+
+config BOARD_ENABLE_USB_AUTOMATICALLY
+	bool "Enable USB automatically"
+	default y if USB_UART_CONSOLE
+	depends on BOARD_BL654_USB
+	help
+	  Will automatically enable the USB peripheral upon boot if USB console
+	  mode is selected, which means manually enabling USB from user-code is
+	  not required
+
+config BOARD_ENABLE_USB_AUTOMATICALLY_INIT_PRIORITY
+	int "USB automatic init priority"
+	default 96
+	depends on BOARD_ENABLE_USB_AUTOMATICALLY
+	help
+	  Automatic USB peripheral enablement initialisation priority

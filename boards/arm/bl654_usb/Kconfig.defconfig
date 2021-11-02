@@ -26,7 +26,10 @@ config FLASH_LOAD_OFFSET
 if USB_DEVICE_STACK
 
 config USB_UART_CONSOLE
-	default y
+	default y if !USB_DEVICE_BLUETOOTH
+
+config USB_CDC_ACM
+	default n if USB_DEVICE_BLUETOOTH
 
 config UART_LINE_CTRL
 	default y
