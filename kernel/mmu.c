@@ -72,6 +72,7 @@ static bool page_frames_initialized;
 #define COLOR(x)	do { } while (0)
 #endif
 
+/* LCOV_EXCL_START */
 static void page_frame_dump(struct z_page_frame *pf)
 {
 	if (z_page_frame_is_reserved(pf)) {
@@ -120,6 +121,7 @@ void z_page_frames_dump(void)
 		printk("\n");
 	}
 }
+/* LCOV_EXCL_STOP */
 
 #define VIRT_FOREACH(_base, _size, _pos) \
 	for (_pos = _base; \
@@ -417,6 +419,7 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 	pf->addr = addr;
 }
 
+/* LCOV_EXCL_START */
 /* Go through page frames to find the physical address mapped
  * by a virtual address.
  *
@@ -445,6 +448,8 @@ static int virt_to_page_frame(void *virt, uintptr_t *phys)
 
 	return ret;
 }
+/* LCOV_EXCL_STOP */
+
 __weak FUNC_ALIAS(virt_to_page_frame, arch_page_phys_get, int);
 
 #ifdef CONFIG_DEMAND_PAGING
