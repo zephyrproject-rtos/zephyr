@@ -664,8 +664,8 @@ static int gpio_emul_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int gpio_emul_pm_device_ctrl(const struct device *dev,
-		enum pm_device_action action)
+static int gpio_emul_pm_device_pm_action(const struct device *dev,
+					 enum pm_device_action action)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(action);
@@ -673,7 +673,7 @@ static int gpio_emul_pm_device_ctrl(const struct device *dev,
 	return 0;
 }
 #else
-#define gpio_emul_pm_device_ctrl NULL
+#define gpio_emul_pm_device_pm_action NULL
 #endif
 
 /*
@@ -710,7 +710,7 @@ static int gpio_emul_pm_device_ctrl(const struct device *dev,
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
-			    gpio_emul_pm_device_ctrl,			\
+			    gpio_emul_pm_device_pm_action,		\
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
