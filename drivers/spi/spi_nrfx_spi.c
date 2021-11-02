@@ -273,8 +273,8 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 
 
 #ifdef CONFIG_PM_DEVICE
-static int spi_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_action action)
+static int spi_nrfx_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
@@ -351,7 +351,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 	};								       \
 	DEVICE_DT_DEFINE(SPI(idx),					       \
 		      spi_##idx##_init,					       \
-		      spi_nrfx_pm_control,				       \
+		      spi_nrfx_pm_action,				       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

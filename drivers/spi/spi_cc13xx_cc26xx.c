@@ -208,8 +208,8 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_action action)
+static int spi_cc13xx_cc26xx_pm_action(const struct device *dev,
+				       enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -292,7 +292,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
 	DEVICE_DT_INST_DEFINE(n,						    \
 		spi_cc13xx_cc26xx_init_##n,				    \
-		spi_cc13xx_cc26xx_pm_control,				    \
+		spi_cc13xx_cc26xx_pm_action,				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			    \
 		&spi_cc13xx_cc26xx_driver_api)
