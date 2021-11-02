@@ -868,6 +868,103 @@ static ssize_t sf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #endif /* CONFIG_BT_EATT */
 #endif /* CONFIG_BT_GATT_CACHING */
 
+static int bt_gatt_store_cf(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_GATT_CACHING)
+	struct gatt_cf_cfg *cfg;
+	char key[BT_SETTINGS_KEY_MAX];
+	char *str;
+	size_t len;
+	int err;
+
+	cfg = find_cf_cfg(conn);
+	if (!cfg) {
+		/* No cfg found, just clear it */
+		BT_DBG("No config for CF");
+		str = NULL;
+		len = 0;
+	} else {
+		str = (char *)cfg->data;
+		len = sizeof(cfg->data);
+
+		if (conn->id) {
+			char id_str[4];
+
+			u8_to_dec(id_str, sizeof(id_str), conn->id);
+			bt_settings_encode_key(key, sizeof(key), "cf",
+					       &conn->le.dst, id_str);
+		}
+	}
+
+	if (!cfg || !conn->id) {
+		bt_settings_encode_key(key, sizeof(key), "cf",
+				       &conn->le.dst, NULL);
+	}
+
+	err = settings_save_one(key, str, len);
+	if (err) {
+		BT_ERR("Failed to store Client Features (err %d)", err);
+		return err;
+	}
+
+	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), log_strdup(key));
+#endif /* CONFIG_BT_GATT_CACHING */
+	return 0;
+
+}
+
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP) && defined(CONFIG_BT_GATT_CLIENT)
+/** Struct used to store both the id and the random address of a device when replacing
+ * random addresses in the ccc attribute's cfg array with the device's id address after
+ * pairing complete.
+ */
+struct addr_match {
+	const bt_addr_le_t *private_addr;
+	const bt_addr_le_t *id_addr;
+};
+
+static uint8_t convert_to_id_on_match(const struct bt_gatt_attr *attr,
+				      uint16_t handle, void *user_data)
+{
+	struct _bt_gatt_ccc *ccc;
+	struct addr_match *match = user_data;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Copy the device's id address to the config's address if the config's address is the
+	 * same as the device's private address
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		if (bt_addr_le_cmp(&ccc->cfg[i].peer, match->private_addr) == 0) {
+			bt_addr_le_copy(&ccc->cfg[i].peer, match->id_addr);
+		}
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *private_addr,
+				      const bt_addr_le_t *id_addr)
+{
+	/* Update the ccc cfg addresses */
+	struct addr_match user_data = {
+		.private_addr = private_addr,
+		.id_addr      = id_addr
+	};
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, convert_to_id_on_match, &user_data);
+
+	/* Store the ccc and cf data */
+	bt_gatt_store_ccc(conn->id, &(conn->le.dst));
+	bt_gatt_store_cf(conn);
+}
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP && CONFIG_BT_GATT_CLIENT */
+
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
@@ -4991,6 +5088,18 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
+
+#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_SMP)
+	static struct bt_conn_cb gatt_conn_cb = {
+		.identity_resolved = bt_gatt_identity_resolved,
+	};
+
+	/* Register the gatt module for connection callbacks so it can be
+	 * notified when pairing has completed. This is used to enable CCC and
+	 * CF storage on pairing complete.
+	 */
+	bt_conn_cb_register(&gatt_conn_cb);
+#endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 #endif /* CONFIG_BT_GATT_CLIENT */
 }
 
@@ -5059,51 +5168,6 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 #else
 	return true;
 #endif
-}
-
-static int bt_gatt_store_cf(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_GATT_CACHING)
-	struct gatt_cf_cfg *cfg;
-	char key[BT_SETTINGS_KEY_MAX];
-	char *str;
-	size_t len;
-	int err;
-
-	cfg = find_cf_cfg(conn);
-	if (!cfg) {
-		/* No cfg found, just clear it */
-		BT_DBG("No config for CF");
-		str = NULL;
-		len = 0;
-	} else {
-		str = (char *)cfg->data;
-		len = sizeof(cfg->data);
-
-		if (conn->id) {
-			char id_str[4];
-
-			u8_to_dec(id_str, sizeof(id_str), conn->id);
-			bt_settings_encode_key(key, sizeof(key), "cf",
-					       &conn->le.dst, id_str);
-		}
-	}
-
-	if (!cfg || !conn->id) {
-		bt_settings_encode_key(key, sizeof(key), "cf",
-				       &conn->le.dst, NULL);
-	}
-
-	err = settings_save_one(key, str, len);
-	if (err) {
-		BT_ERR("Failed to store Client Features (err %d)", err);
-		return err;
-	}
-
-	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), log_strdup(key));
-#endif /* CONFIG_BT_GATT_CACHING */
-	return 0;
-
 }
 
 static struct gatt_cf_cfg *find_cf_cfg_by_addr(uint8_t id,
