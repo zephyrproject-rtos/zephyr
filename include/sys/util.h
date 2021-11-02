@@ -258,6 +258,29 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
 }
 
 /**
+ * @brief byte by byte swap.
+ *
+ * Swap @a size bytes between memory regions @a a and @a b. This is
+ * guaranteed to be done byte by byte.
+ *
+ * @param a Pointer to the the first memory region.
+ * @param b Pointer to the the second memory region.
+ * @param size The number of bytes to swap.
+ */
+static inline void byteswp(void *a, void *b, size_t size)
+{
+	uint8_t t;
+	uint8_t *aa = (uint8_t *)a;
+	uint8_t *bb = (uint8_t *)b;
+
+	for (; size > 0; --size) {
+		t = *aa;
+		*aa++ = *bb;
+		*bb++ = t;
+	}
+}
+
+/**
  * @brief      Convert a single character into a hexadecimal nibble.
  *
  * @param c     The character to convert
