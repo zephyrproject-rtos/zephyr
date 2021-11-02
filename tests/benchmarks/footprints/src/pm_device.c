@@ -21,15 +21,15 @@ static int dummy_init(const struct device *dev)
 	return 0;
 }
 
-static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	return 0;
 }
 
 /* Define a driver with and without power management enabled */
 DEVICE_DEFINE(dummy_pm_driver, DUMMY_PM_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_ctrl, NULL, NULL, APPLICATION,
+		    dummy_device_pm_action, NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
