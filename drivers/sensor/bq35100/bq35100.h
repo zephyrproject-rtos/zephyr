@@ -289,7 +289,8 @@ struct bq35100_data {
 	uint8_t state_of_health;
 	uint32_t acc_capacity;
 	uint8_t battery_status;
-
+	uint16_t design_capacity;
+	
 	bool gauge_enabled;
 
 	bq35100_security_mode_t security_mode;
