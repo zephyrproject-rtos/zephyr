@@ -97,7 +97,7 @@ static void runtime_suspend_work(struct k_work *work)
 	__ASSERT(ret == 0, "Could not suspend device (%d)", ret);
 }
 
-int pm_device_get(const struct device *dev)
+int pm_device_runtime_get(const struct device *dev)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
@@ -144,33 +144,33 @@ unlock:
 	return ret;
 }
 
-int pm_device_put(const struct device *dev)
+int pm_device_runtime_put(const struct device *dev)
 {
 	int ret;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_put, dev);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
 	ret = runtime_suspend(dev, false);
-	SYS_PORT_TRACING_FUNC_EXIT(pm, device_put, dev, ret);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put, dev, ret);
 
 	return ret;
 }
 
-int pm_device_put_async(const struct device *dev)
+int pm_device_runtime_put_async(const struct device *dev)
 {
 	int ret;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_put_async, dev);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev);
 	ret = runtime_suspend(dev, true);
-	SYS_PORT_TRACING_FUNC_EXIT(pm, device_put_async, dev, ret);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, ret);
 
 	return ret;
 }
 
-void pm_device_enable(const struct device *dev)
+void pm_device_runtime_enable(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_enable, dev);
 
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
@@ -194,15 +194,15 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
-	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_enable, dev);
 }
 
-int pm_device_disable(const struct device *dev)
+int pm_device_runtime_disable(const struct device *dev)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_disable, dev);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_disable, dev);
 
 	if (!k_is_pre_kernel()) {
 		(void)k_mutex_lock(&pm->lock, K_FOREVER);
@@ -237,7 +237,7 @@ unlock:
 		k_mutex_unlock(&pm->lock);
 	}
 
-	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev, ret);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_disable, dev, ret);
 
 	return ret;
 }

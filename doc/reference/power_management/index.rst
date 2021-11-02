@@ -438,7 +438,7 @@ Enable Device Runtime Power Management of a Device API
 
 .. code-block:: c
 
-   void pm_device_enable(const struct device *dev);
+   void pm_device_runtime_enable(const struct device *dev);
 
 Enables Runtime Power Management of the device.
 
@@ -447,7 +447,7 @@ Disable Device Runtime Power Management of a Device API
 
 .. code-block:: c
 
-   void pm_device_disable(const struct device *dev);
+   void pm_device_runtime_disable(const struct device *dev);
 
 Disables Runtime Power Management of the device.
 
@@ -456,7 +456,7 @@ Resume Device synchronously API
 
 .. code-block:: c
 
-   int pm_device_get(const struct device *dev);
+   int pm_device_runtime_get(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -468,7 +468,7 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int pm_device_put_async(const struct device *dev);
+   int pm_device_runtime_put_async(const struct device *dev);
 
 Releases a device. This API asynchronously puts the device to suspend
 state if not already in suspend state if the usage count of this device
@@ -479,7 +479,7 @@ Suspend Device synchronously API
 
 .. code-block:: c
 
-   int pm_device_put(const struct device *dev);
+   int pm_device_runtime_put(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device
