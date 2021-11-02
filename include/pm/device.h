@@ -253,9 +253,6 @@ __deprecated static inline int device_busy_check(const struct device *dev)
 	return pm_device_is_busy(dev) ? -EBUSY : 0;
 }
 
-/** Alias for legacy use of device_pm_control_nop */
-#define device_pm_control_nop __DEPRECATED_MACRO NULL
-
 /**
  * @brief Enable a power management wakeup source
  *
