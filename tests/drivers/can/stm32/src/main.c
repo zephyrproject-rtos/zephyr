@@ -125,7 +125,7 @@ static void test_filter_handling(void)
 	int ret, filter_id_1, filter_id_2;
 	struct zcan_frame msg_buffer;
 
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
+	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CANBUS_LABEL);
 
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 

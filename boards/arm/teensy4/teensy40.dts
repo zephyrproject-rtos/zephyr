@@ -21,7 +21,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart6; /* Teensy Pins 0(RX1) 1(TX1) */
-		zephyr,can-primary = &flexcan1; /* Teensy Pins 23(CRX1) 22(CTX1) */
+		zephyr,canbus = &flexcan1; /* Teensy Pins 23(CRX1) 22(CTX1) */
 	};
 
 	leds {
