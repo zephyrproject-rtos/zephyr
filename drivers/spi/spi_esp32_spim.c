@@ -453,7 +453,7 @@ static const struct spi_driver_api spi_api = {
 	};	\
 		\
 	DEVICE_DT_DEFINE(DT_NODELABEL(spi##idx), &spi_esp32_init,	\
-			      device_pm_control_no, &spi_data_##idx,	\
+			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_api);
 
