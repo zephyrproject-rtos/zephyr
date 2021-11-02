@@ -118,6 +118,22 @@ extern "C" {
 /** @} */
 
 /**
+ * @name SPI Frame Format
+ * @{
+ *
+ * 2 frame formats are exposed: Motorola and TI.
+ * The main difference is the behavior of the CS line. In Motorala it stays
+ * active the whole transfer. In TI, it's active only one serial clock period
+ * prior to actually make the transfer, it is thus inactive during the transfer,
+ * which ends when the clocks ends as well.
+ * By default, as it is the most commonly used, the Motorola frame format
+ * will prevail.
+ */
+#define SPI_FRAME_FORMAT_MOTOROLA	(0U << 15)
+#define SPI_FRAME_FORMAT_TI		(1U << 15)
+/** @} */
+
+/**
  * @name SPI MISO lines (if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled)
  * @{
  *
@@ -248,7 +264,7 @@ struct spi_cs_control {
  *     cs_hold             [ 12 ]      - Hold on the CS line if possible.
  *     lock_on             [ 13 ]      - Keep resource locked for the caller.
  *     cs_active_high      [ 14 ]      - Active high CS logic.
- *     reserved            [ 15 ]      - reserved for future use.
+ *     format              [ 15 ]      - Motorola or TI frame format (optional).
  * if @kconfig{CONFIG_SPI_EXTENDED_MODES} is defined:
  *     lines               [ 16 : 17 ] - MISO lines: Single/Dual/Quad/Octal.
  *     reserved            [ 18 : 31 ] - reserved for future use.
