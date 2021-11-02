@@ -436,6 +436,7 @@ Documentation:
         - lyakh
         - lgirdwood
         - mengxianglinx
+        - marc-hb
     files:
         - drivers/audio/
         - include/audio/
