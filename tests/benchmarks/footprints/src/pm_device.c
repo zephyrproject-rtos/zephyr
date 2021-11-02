@@ -48,12 +48,12 @@ void run_pm_device(void)
 		return;
 	}
 
-	if (pm_device_get(dev)) {
+	if (pm_device_runtime_get(dev)) {
 		printk("\n PM device runtime get failed\n");
 		return;
 	}
 
-	if (pm_device_put(dev)) {
+	if (pm_device_runtime_put(dev)) {
 		printk("\n PM device runtime put failed\n");
 		return;
 	}

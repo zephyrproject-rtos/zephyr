@@ -28,7 +28,7 @@ extern "C" {
  *
  * @param dev Device instance.
  */
-void pm_device_enable(const struct device *dev);
+void pm_device_runtime_enable(const struct device *dev);
 
 /**
  * @brief Disable device runtime PM
@@ -43,7 +43,7 @@ void pm_device_enable(const struct device *dev);
  * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of resuming the device.
  */
-int pm_device_disable(const struct device *dev);
+int pm_device_runtime_disable(const struct device *dev);
 
 /**
  * @brief Resume a device based on usage count.
@@ -53,8 +53,8 @@ int pm_device_disable(const struct device *dev);
  * be left unchanged. In all other cases, usage count will be incremented.
  *
  * If the device is still being suspended as a result of calling
- * pm_device_put_async(), this function will wait for the operation to finish to
- * then resume the device.
+ * pm_device_runtime_put_async(), this function will wait for the operation to
+ * finish to then resume the device.
  *
  * @funcprops \pre_kernel_ok
  *
@@ -65,7 +65,7 @@ int pm_device_disable(const struct device *dev);
  * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of the PM action callback.
  */
-int pm_device_get(const struct device *dev);
+int pm_device_runtime_get(const struct device *dev);
 
 /**
  * @brief Suspend a device based on usage count.
@@ -86,9 +86,9 @@ int pm_device_get(const struct device *dev);
  * calls are unbalanced).
  * @retval -errno Other negative errno, result of the action callback.
  *
- * @see pm_device_put_async()
+ * @see pm_device_runtime_put_async()
  */
-int pm_device_put(const struct device *dev);
+int pm_device_runtime_put(const struct device *dev);
 
 /**
  * @brief Suspend a device based on usage count (asynchronously).
@@ -98,7 +98,8 @@ int pm_device_put(const struct device *dev);
  * decremented (down to 0).
  *
  * @note Asynchronous operations are not supported when in pre-kernel mode. In
- * this case, the function will be blocking (equivalent to pm_device_put()).
+ * this case, the function will be blocking (equivalent to
+ * pm_device_runtime_put()).
  *
  * @funcprops \pre_kernel_ok, \async
  *
@@ -110,16 +111,16 @@ int pm_device_put(const struct device *dev);
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
- * @see pm_device_put()
+ * @see pm_device_runtime_put()
  */
-int pm_device_put_async(const struct device *dev);
+int pm_device_runtime_put_async(const struct device *dev);
 
 #else
-static inline void pm_device_enable(const struct device *dev) { }
-static inline int pm_device_disable(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_get(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_put(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_put_async(const struct device *dev) { return -ENOSYS; }
+static inline void pm_device_runtime_enable(const struct device *dev) { }
+static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_runtime_get(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_runtime_put(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_runtime_put_async(const struct device *dev) { return -ENOSYS; }
 #endif
 
 /** @} */

@@ -47,7 +47,7 @@ static const struct dummy_parent_api funcs = {
 
 int dummy_parent_init(const struct device *dev)
 {
-	pm_device_enable(dev);
+	pm_device_runtime_enable(dev);
 	return 0;
 }
 
