@@ -77,8 +77,8 @@ static int dummy_close(const struct device *dev)
 	return ret;
 }
 
-static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -114,5 +114,5 @@ int dummy_init(const struct device *dev)
 }
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_ctrl, NULL, NULL, APPLICATION,
+		    dummy_device_pm_action, NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
