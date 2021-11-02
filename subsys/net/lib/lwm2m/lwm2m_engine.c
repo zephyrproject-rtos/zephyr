@@ -577,14 +577,15 @@ char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 #endif /* CONFIG_LOG */
 
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
-static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
+static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx,
+					  struct lwm2m_obj_path *path)
 {
 	char buf[LWM2M_MAX_PATH_STR_LEN];
 	struct observe_node *obs, *found_obj = NULL;
 	sys_snode_t *prev_node = NULL;
 
 	/* find the node index */
-	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
 		if (memcmp(path, &obs->path, sizeof(*path)) == 0) {
 			found_obj = obs;
 			break;
@@ -599,7 +600,7 @@ static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
 
 	LOG_INF("Removing observer for path %s",
 		lwm2m_path_log_strdup(buf, path));
-	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
+	sys_slist_remove(&ctx->observer, prev_node, &found_obj->node);
 	(void)memset(found_obj, 0, sizeof(*found_obj));
 
 	return 0;
@@ -3840,7 +3841,8 @@ static int handle_request(struct coap_packet *request,
 				r = engine_remove_observer(msg->ctx, token, tkl);
 				if (r < 0) {
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
-					r = engine_remove_observer_by_path(&msg->path);
+					r = engine_remove_observer_by_path(msg->ctx,
+									   &msg->path);
 					if (r < 0)
 #endif /* CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH */
 					{
