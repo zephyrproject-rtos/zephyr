@@ -76,8 +76,8 @@ static int led_pwm_set_brightness(const struct device *dev,
 
 	pulse = led_pwm->period * value / 100;
 
-	return pwm_pin_set_cycles(led_pwm->dev, led_pwm->channel,
-				  led_pwm->period, pulse, led_pwm->flags);
+	return pwm_pin_set_nsec(led_pwm->dev, led_pwm->channel,
+				led_pwm->period, pulse, led_pwm->flags);
 }
 
 static int led_pwm_on(const struct device *dev, uint32_t led)
@@ -160,7 +160,7 @@ static const struct led_driver_api led_pwm_api = {
 {									\
 	.dev		= DEVICE_DT_GET(DT_PWMS_CTLR(led_node_id)),	\
 	.channel	= DT_PWMS_CHANNEL(led_node_id),			\
-	.period		= DT_PHA_OR(led_node_id, pwms, period, 100),	\
+	.period		= DT_PHA_OR(led_node_id, pwms, period, 100000),	\
 	.flags		= DT_PHA_OR(led_node_id, pwms, flags,		\
 				    PWM_POLARITY_NORMAL),		\
 },
