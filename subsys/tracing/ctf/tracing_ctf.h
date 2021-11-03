@@ -322,7 +322,7 @@ extern "C" {
 
 
 #define sys_port_trace_pm_system_suspend_enter(ticks)
-#define sys_port_trace_pm_system_suspend_exit(ticks, ret)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
 
 #define sys_port_trace_pm_device_runtime_get_enter(dev)
 #define sys_port_trace_pm_device_runtime_get_exit(dev, ret)

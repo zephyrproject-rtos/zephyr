@@ -613,6 +613,10 @@ void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
 
+#define sys_port_trace_pm_system_suspend_enter(ticks)			       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)		       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)state)
 
 #define sys_port_trace_pm_device_runtime_get_enter(dev)			       \
 	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_GET,		       \
