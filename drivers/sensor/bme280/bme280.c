@@ -394,7 +394,8 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_action(const struct device *dev, enum pm_device_action action)
+static int bme280_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	int ret = 0;
 
