@@ -670,6 +670,13 @@ config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 	help
 	  Maximum supported CISes per CIG.
 
+config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
+	bool "Do not pass invalid SDUs on HCI datapath"
+	depends on BT_CTLR_CONN_ISO
+	help
+	  This allows for applications to decide whether to
+	  forward invalid SDUs through HCI upwards.
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
