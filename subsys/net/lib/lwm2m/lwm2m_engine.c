@@ -68,6 +68,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #define MAX_TOKEN_LEN		8
+#define URI_MAX_LEN			255
 
 #define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
 
@@ -4699,6 +4700,17 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			lwm2m_engine_context_close(client_ctx);
 			return -errno;
 		}
+
+		if (client_ctx->desthostname != NULL &&
+				client_ctx->desthostnamelen <= URI_MAX_LEN) {
+			ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
+					client_ctx->desthostname, client_ctx->desthostnamelen);
+			if (ret < 0) {
+				LOG_ERR("Failed to set TLS_HOSTNAME option: %d",
+								errno);
+				return -errno;
+			}
+		}
 	}
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
@@ -4718,7 +4730,8 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	return lwm2m_socket_add(client_ctx);
 }
 
-int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool is_firmware_uri)
+int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx,
+		 	 	 	 	 	 bool is_firmware_uri)
 {
 	struct http_parser_url parser;
 #if defined(CONFIG_LWM2M_DNS_SUPPORT)
@@ -4746,17 +4759,17 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool 
 	}
 
 	/* check for DTLS requirement */
-	*use_dtls = false;
+	client_ctx->use_dtls = false;
 	if (len == 5U && strncmp(url + off, "coaps", len) == 0) {
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-		*use_dtls = true;
+		client_ctx->use_dtls = true;
 #else
 		return -EPROTONOSUPPORT;
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 	}
 
 	if (!(parser.field_set & (1 << UF_PORT))) {
-		if (is_firmware_uri && *use_dtls) {
+		if (is_firmware_uri && client_ctx->use_dtls) {
 			/* Set to default coaps firmware update port */
 			parser.port = CONFIG_LWM2M_FIRMWARE_PORT_SECURE;
 		} else if (is_firmware_uri) {
@@ -4775,18 +4788,18 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool 
 	tmp = url[off + len];
 	url[off + len] = '\0';
 
-	/* initialize addr */
-	(void)memset(addr, 0, sizeof(*addr));
+	/* initialize remote_addr */
+	(void)memset(&client_ctx->remote_addr, 0, sizeof(client_ctx->remote_addr));
 
 	/* try and set IP address directly */
-	addr->sa_family = AF_INET6;
+	client_ctx->remote_addr.sa_family = AF_INET6;
 	ret = net_addr_pton(AF_INET6, url + off,
-			    &((struct sockaddr_in6 *)addr)->sin6_addr);
+			    &((struct sockaddr_in6 *)&client_ctx->remote_addr)->sin6_addr);
 	/* Try to parse again using AF_INET */
 	if (ret < 0) {
-		addr->sa_family = AF_INET;
+		client_ctx->remote_addr.sa_family = AF_INET;
 		ret = net_addr_pton(AF_INET, url + off,
-				    &((struct sockaddr_in *)addr)->sin_addr);
+				    &((struct sockaddr_in *)&client_ctx->remote_addr)->sin_addr);
 	}
 
 	if (ret < 0) {
@@ -4809,8 +4822,8 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool 
 			goto cleanup;
 		}
 
-		memcpy(addr, res->ai_addr, sizeof(*addr));
-		addr->sa_family = res->ai_family;
+		memcpy(&client_ctx->remote_addr, res->ai_addr, sizeof(client_ctx->remote_addr));
+		client_ctx->remote_addr.sa_family = res->ai_family;
 		freeaddrinfo(res);
 #else
 		goto cleanup;
@@ -4818,10 +4831,10 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls, bool 
 	}
 
 	/* set port */
-	if (addr->sa_family == AF_INET6) {
-		net_sin6(addr)->sin6_port = htons(parser.port);
-	} else if (addr->sa_family == AF_INET) {
-		net_sin(addr)->sin_port = htons(parser.port);
+	if (client_ctx->remote_addr.sa_family == AF_INET6) {
+		net_sin6(&client_ctx->remote_addr)->sin6_port = htons(parser.port);
+	} else if (client_ctx->remote_addr.sa_family == AF_INET) {
+		net_sin(&client_ctx->remote_addr)->sin_port = htons(parser.port);
 	} else {
 		ret = -EPROTONOSUPPORT;
 	}
@@ -4849,8 +4862,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 	}
 
 	url[url_len] = '\0';
-	ret = lwm2m_parse_peerinfo(url, &client_ctx->remote_addr,
-				   &client_ctx->use_dtls, false);
+	ret = lwm2m_parse_peerinfo(url, client_ctx, false);
 	if (ret < 0) {
 		return ret;
 	}
