@@ -9,6 +9,9 @@ config ESPI_IT8XXX2
 
 if ESPI_IT8XXX2
 
+config ESPI_OOB_CHANNEL
+	default y
+
 config ESPI_PERIPHERAL_8042_KBC
 	default y
 
