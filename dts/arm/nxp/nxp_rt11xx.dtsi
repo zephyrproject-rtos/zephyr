@@ -46,13 +46,14 @@
 	};
 
 	soc {
-		flexspi1: spi@400cc000 {
+		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400cc000 0x4000>;
 			interrupts = <130 0>;
-			label = "FLEXSPI1";
+			label = "FLEXSPI";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		flexspi2: spi@400d0000 {
@@ -62,6 +63,7 @@
 			label = "FLEXSPI2";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		semc: semc0@400d4000 {
