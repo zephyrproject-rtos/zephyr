@@ -387,6 +387,15 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 
+#if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
+	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
+	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->GPR_PRIVATE1_SET = 0x1;
 	/* Keep the system clock running so SYSTICK can wake up the system from
