@@ -982,16 +982,36 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 			struct bt_ascs_metadata *meta,
 			struct net_buf_simple *buf)
 {
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep;
+	uint8_t state;
 	int err;
 
 	BT_DBG("ase %p meta->len %u", ase, meta->len);
+
+	ep = &ase->ep;
+	state = ep->status.state;
+
+	switch (state) {
+	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
+	case BT_AUDIO_EP_STATE_ENABLING:
+	/* or 0x04 (Streaming) */
+	case BT_AUDIO_EP_STATE_STREAMING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		err = -EBADMSG;
+		ascs_cp_rsp_add_errno(ASE_ID(ase), op, EBADMSG,
+				      buf->len ? *buf->data : 0x00);
+		return err;
+	}
 
 	if (!meta->len) {
 		goto done;
 	}
 
-	err = bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
-				       &ase->ep.codec);
+	/* TODO: We should ask the upper layer for accept before we store it */
+	err = bt_audio_ep_set_metadata(ep, buf, meta->len, &ep->codec);
 	if (err) {
 		if (err < 0) {
 			ascs_cp_rsp_add_errno(ASE_ID(ase), op, err, 0x00);
@@ -1002,8 +1022,14 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		return 0;
 	}
 
-	err = bt_audio_stream_metadata(ase->ep.stream, ase->ep.codec.meta_count,
-				       ase->ep.codec.meta);
+	stream = ep->stream;
+	if (server_cb != NULL && server_cb->metadata != NULL) {
+		err = server_cb->metadata(stream, ep->codec.meta_count,
+					  ep->codec.meta);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		BT_ERR("Metadata failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), op, err,
@@ -1011,6 +1037,8 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		return -EFAULT;
 	}
 
+	/* Set the state to the same state to trigger the notifications */
+	bt_audio_ep_set_state(ep, ep->status.state);
 done:
 	ascs_cp_rsp_success(ASE_ID(ase), op);
 
