@@ -1048,12 +1048,25 @@ done:
 static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		      struct net_buf_simple *buf)
 {
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep;
 	int err;
 
 	BT_DBG("ase %p buf->len %u", ase, buf->len);
 
-	err = bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
-				       &ase->ep.codec);
+	ep = &ase->ep;
+
+	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
+	if (ep->status.state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
+		err = -EBADMSG;
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_ENABLE_OP, err,
+				      BT_ASCS_REASON_NONE);
+		return err;
+	}
+
+	err = bt_audio_ep_set_metadata(ep, buf, meta->len, &ep->codec);
 	if (err) {
 		if (err < 0) {
 			ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_ENABLE_OP,
@@ -1065,13 +1078,31 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		return 0;
 	}
 
-	err = bt_audio_stream_enable(ase->ep.stream, ase->ep.codec.meta_count,
-				     ase->ep.codec.meta);
+	stream = ep->stream;
+	if (server_cb != NULL && server_cb->enable != NULL) {
+		err = server_cb->enable(stream, ep->codec.meta_count,
+					ep->codec.meta);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		BT_ERR("Enable rejected: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_ENABLE_OP, err,
 				      BT_ASCS_REASON_NONE);
 		return -EFAULT;
+	}
+
+	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_ENABLING);
+
+
+	if (ASE_DIR(ep->status.id) == BT_AUDIO_SINK) {
+		/* SINK ASEs can autonomously go into the streaming state if
+		 * the CIS is connected
+		 */
+		/* TODO: Verify that CIS is connected and set ep state to
+		 * BT_AUDIO_EP_STATE_STREAMING
+		 */
 	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_ENABLE_OP);
