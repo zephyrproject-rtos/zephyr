@@ -1983,9 +1983,28 @@
  * @}
  */ /* end of event_tracing_apis */
 
+
+/**
+ * @brief System PM Tracing APIs
+ * @defgroup pm_system_tracing_apis System PM Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace system suspend call entry.
+ * @param ticks Ticks.
+ */
 #define sys_port_trace_pm_system_suspend_enter(ticks)
 
-#define sys_port_trace_pm_system_suspend_exit(ticks, ret)
+/**
+ * @brief Trace system suspend call exit.
+ * @param ticks Ticks.
+ * @param state PM state.
+ */
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
+
+/** @} */ /* end of pm_system_tracing_apis */
 
 /**
  * @brief PM Device Runtime Tracing APIs
