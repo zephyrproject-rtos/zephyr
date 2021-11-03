@@ -105,9 +105,9 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
  */
 
 
-static struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
+struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
 
 
-static struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val)
+struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */

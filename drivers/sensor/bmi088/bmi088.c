@@ -105,7 +105,7 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
  * @param scale Value to scale the raw_val
  * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
  */
-static struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
+struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
     int32_t converted_val = raw_val * scale;
 
     LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
@@ -125,7 +125,7 @@ static struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale
  * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
  * @return
  */
-static struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
+struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
             bmi088_to_fixed_point(raw_xyz[0], scale, val);
