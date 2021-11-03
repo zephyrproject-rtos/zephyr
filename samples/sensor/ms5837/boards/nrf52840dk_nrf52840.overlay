@@ -11,5 +11,6 @@
         compatible = "meas,ms5837";
         reg = <0x76>;
         label = "MS5837";
+        hardware-type = "30BA";
     };
 };

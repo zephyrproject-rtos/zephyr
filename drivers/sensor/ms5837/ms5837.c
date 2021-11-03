@@ -45,7 +45,7 @@ static int ms5837_get_measurement(const struct device *i2c_master,
 	return 0;
 }
 
-static void ms5837_compensate(struct ms5837_data *data,
+static void ms5837_compensate_30(struct ms5837_data *data,
 			      const int32_t adc_temperature,
 			      const int32_t adc_pressure)
 {
@@ -97,6 +97,48 @@ static void ms5837_compensate(struct ms5837_data *data,
 	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
 }
 
+static void ms5837_compensate_02(struct ms5837_data *data,
+			      const int32_t adc_temperature,
+			      const int32_t adc_pressure)
+{
+	int64_t dT;
+	int64_t OFF;
+	int64_t SENS;
+	int64_t temp_sq;
+	int32_t Ti = 0;
+	int32_t OFFi = 0;
+	int32_t SENSi = 0;
+
+	/* first order compensation as per datasheet
+	 * (https://www.te.com/usa-en/product-CAT-BLPS0059.html) section
+	 * PRESSURE AND TEMPERATURE CALCULATION
+	 */
+
+	dT = adc_temperature - ((uint32_t)(data->t_ref) << 8);
+	data->temperature = 2000 + (dT * data->tempsens) / (1ll << 23);
+	OFF = ((int64_t)(data->off_t1) << 17) + (dT * data->tco) / (1ll << 6);
+	SENS = ((int64_t)(data->sens_t1) << 16) + (dT * data->tcs) / (1ll << 7);
+
+	/* Second order compensation as per datasheet
+	 * (https://www.te.com/usa-en/product-CAT-BLPS0059.html) section
+	 * SECOND ORDER TEMPERATURE COMPENSATION
+	 */
+
+	temp_sq = (data->temperature - 2000) * (data->temperature - 2000);
+	if (data->temperature < 2000) {
+		Ti = (11ll * dT * dT) / (1ll << 35);
+		OFFi = (31ll * temp_sq) / (1ll << 3);
+		SENSi = (63ll * temp_sq) / (1ll << 5);
+	}
+
+	OFF -= OFFi;
+	SENS -= SENSi;
+
+	data->temperature -= Ti;
+	data->pressure =
+	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 15);
+}
+
 static int ms5837_sample_fetch(const struct device *dev,
 			       enum sensor_channel channel)
 {
@@ -124,7 +166,14 @@ static int ms5837_sample_fetch(const struct device *dev,
 		return err;
 	}
 
-	ms5837_compensate(data, adc_temperature, adc_pressure);
+	if (cfg->hw_type == MS5837_30BA) {
+		ms5837_compensate_30(data, adc_temperature, adc_pressure);
+	} else if (cfg->hw_type == MS5837_02BA) {
+		ms5837_compensate_02(data, adc_temperature, adc_pressure);
+	} else {
+		LOG_ERR("invalid hardware type %d", cfg->hw_type);
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -323,7 +372,8 @@ static struct ms5837_data ms5837_data;
 
 static const struct ms5837_config ms5837_config = {
 	.i2c_name = DT_INST_BUS_LABEL(0),
-	.i2c_address = DT_INST_REG_ADDR(0)
+	.i2c_address = DT_INST_REG_ADDR(0),
+	.hw_type = DT_ENUM_IDX(DT_DRV_INST(0), hardware_type)
 };
 
 DEVICE_DT_INST_DEFINE(0, ms5837_init, NULL, &ms5837_data,
