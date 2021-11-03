@@ -55,6 +55,15 @@ IT8XXX2_REG_OFFSET_CHECK(espi_vw_regs, VW_INDEX, 0x00);
 IT8XXX2_REG_OFFSET_CHECK(espi_vw_regs, VWCTRL0, 0x90);
 IT8XXX2_REG_OFFSET_CHECK(espi_vw_regs, VWCTRL1, 0x91);
 
+/* eSPI Queue 0 registers structure check */
+IT8XXX2_REG_SIZE_CHECK(espi_queue0_regs, 0xd0);
+IT8XXX2_REG_OFFSET_CHECK(espi_queue0_regs, PUT_OOB_DATA, 0x80);
+
+/* eSPI Queue 1 registers structure check */
+IT8XXX2_REG_SIZE_CHECK(espi_queue1_regs, 0xc0);
+IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, UPSTREAM_DATA, 0x00);
+IT8XXX2_REG_OFFSET_CHECK(espi_queue1_regs, PUT_FLASH_NP_DATA, 0x80);
+
 /* GCTRL register structure check */
 IT8XXX2_REG_SIZE_CHECK(gctrl_it8xxx2_regs, 0x88);
 IT8XXX2_REG_OFFSET_CHECK(gctrl_it8xxx2_regs, GCTRL_RSTS, 0x06);

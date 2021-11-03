@@ -45,12 +45,18 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 #define IT8XXX2_ESPI_VW_INTERRUPT_ENABLE       BIT(7)
 #define IT8XXX2_ESPI_INTERRUPT_PUT_PC          BIT(7)
 
+#define IT8XXX2_ESPI_UPSTREAM_ENABLE           BIT(7)
+#define IT8XXX2_ESPI_UPSTREAM_GO               BIT(6)
 #define IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE BIT(5)
 #define IT8XXX2_ESPI_UPSTREAM_CHANNEL_DISABLE  BIT(2)
 #define IT8XXX2_ESPI_UPSTREAM_DONE             BIT(1)
+#define IT8XXX2_ESPI_UPSTREAM_BUSY             BIT(0)
+
+#define IT8XXX2_ESPI_CYCLE_TYPE_OOB            0x07
 
 #define IT8XXX2_ESPI_PUT_OOB_STATUS            BIT(7)
 #define IT8XXX2_ESPI_PUT_OOB_INTERRUPT_ENABLE  BIT(7)
+#define IT8XXX2_ESPI_PUT_OOB_LEN_MASK          GENMASK(6, 0)
 
 #define IT8XXX2_ESPI_INPUT_PAD_GATING          BIT(6)
 
@@ -66,6 +72,9 @@ struct espi_it8xxx2_config {
 
 struct espi_it8xxx2_data {
 	sys_slist_t callbacks;
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	struct k_sem oob_upstream_go;
+#endif
 };
 
 /* Driver convenience defines */
@@ -687,22 +696,145 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 }
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL
+/* eSPI cycle type field */
+#define ESPI_OOB_CYCLE_TYPE          0x21
+#define ESPI_OOB_TAG                 0x00
+#define ESPI_OOB_TIMEOUT_MS          200
+
+/* eSPI oob cycle type, tag, and length fields. */
+#define ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE  3
+
+struct espi_oob_msg_packet {
+	uint8_t cycle_type;
+	uint8_t tag_len_bit_11_8;
+	uint8_t len_bit_7_0;
+	uint8_t data_byte[0];
+};
+
 static int espi_it8xxx2_send_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	/* TODO: implement me... */
-	ARG_UNUSED(dev);
+	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	struct espi_queue1_regs *const queue1_reg =
+		(struct espi_queue1_regs *)config->base_espi_queue1;
+	struct espi_oob_msg_packet *oob_pckt =
+		(struct espi_oob_msg_packet *)pckt->buf;
+	uint16_t oob_msg_len;
 
-	return -EIO;
+	__ASSERT(pckt->len >= ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE,
+		"Invalid OOB packet length");
+
+	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
+		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		return -EIO;
+	}
+
+	if (slave_reg->ESUCTRL0 & IT8XXX2_ESPI_UPSTREAM_BUSY) {
+		LOG_ERR("%s: OOB upstream busy", __func__);
+		return -EIO;
+	}
+
+	oob_msg_len = oob_pckt->len_bit_7_0 |
+				((oob_pckt->tag_len_bit_11_8 & 0xf) << 8);
+
+	if (pckt->len < (oob_msg_len +
+				ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE)) {
+		LOG_ERR("%s: Out of tx buf %d vs %d", __func__, pckt->len,
+			(oob_msg_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE));
+		return -EINVAL;
+	}
+
+	if (oob_msg_len > ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE) {
+		LOG_ERR("%s: Out of OOB queue space", __func__);
+		return -EINVAL;
+	}
+
+	/* Set cycle type */
+	slave_reg->ESUCTRL1 = IT8XXX2_ESPI_CYCLE_TYPE_OOB;
+	/* Set tag and length[11:8] */
+	slave_reg->ESUCTRL2 = oob_pckt->tag_len_bit_11_8;
+	/* Set length [7:0] */
+	slave_reg->ESUCTRL3 = oob_pckt->len_bit_7_0;
+
+	/* Set data byte */
+	for (int i = 0; i < oob_msg_len; i++) {
+		queue1_reg->UPSTREAM_DATA[i] = oob_pckt->data_byte[i];
+	}
+
+	/* Set upstream enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_ENABLE;
+	/* Set upstream go */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_GO;
+
+	return 0;
 }
 
 static int espi_it8xxx2_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	/* TODO: implement me... */
-	ARG_UNUSED(dev);
+	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+	struct espi_queue0_regs *const queue0_reg =
+		(struct espi_queue0_regs *)config->base_espi_queue0;
+	struct espi_oob_msg_packet *oob_pckt =
+		(struct espi_oob_msg_packet *)pckt->buf;
+	int ret;
+	uint8_t oob_len;
 
-	return -EIO;
+	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
+		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		return -EIO;
+	}
+
+	/* Wait until receive OOB message or timeout */
+	ret = k_sem_take(&data->oob_upstream_go, K_MSEC(ESPI_OOB_TIMEOUT_MS));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s: Timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	/* Get length */
+	oob_len = (slave_reg->ESOCTRL4 & IT8XXX2_ESPI_PUT_OOB_LEN_MASK);
+	/*
+	 * Buffer passed to driver isn't enough.
+	 * The first three bytes of buffer are cycle type, tag, and length.
+	 */
+	if ((oob_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE) > pckt->len) {
+		LOG_ERR("%s: Out of rx buf %d vs %d", __func__,
+		(oob_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE), pckt->len);
+		return -EINVAL;
+	}
+
+	oob_pckt->cycle_type = ESPI_OOB_CYCLE_TYPE;
+	oob_pckt->tag_len_bit_11_8 = ESPI_OOB_TAG;
+	oob_pckt->len_bit_7_0 = oob_len;
+
+	/* Get data byte */
+	for (int i = 0; i < oob_pckt->len_bit_7_0; i++) {
+		oob_pckt->data_byte[i] = queue0_reg->PUT_OOB_DATA[i];
+	}
+
+	return 0;
+}
+
+static void espi_it8xxx2_oob_init(const struct device *dev)
+{
+	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
+	struct espi_slave_regs *const slave_reg =
+		(struct espi_slave_regs *)config->base_espi_slave;
+
+	k_sem_init(&data->oob_upstream_go, 0, 1);
+
+	/* Upstream interrupt enable */
+	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE;
+
+	/* PUT_OOB interrupt enable */
+	slave_reg->ESOCTRL1 |= IT8XXX2_ESPI_PUT_OOB_INTERRUPT_ENABLE;
 }
 #endif
 
@@ -1052,6 +1184,7 @@ static void espi_it8xxx2_put_pc_status_isr(const struct device *dev)
 	slave_reg->ESPCTRL0 = IT8XXX2_ESPI_INTERRUPT_PUT_PC;
 }
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_it8xxx2_upstream_channel_disable_isr(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
@@ -1070,23 +1203,25 @@ static void espi_it8xxx2_upstream_done_isr(const struct device *dev)
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
-	LOG_INF("isr %s is ignored!", __func__);
-
 	/* write-1 to clear this bit */
 	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_DONE;
+	/* upstream disable */
+	slave_reg->ESUCTRL0 &= ~IT8XXX2_ESPI_UPSTREAM_ENABLE;
 }
 
 static void espi_it8xxx2_put_oob_status_isr(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = DRV_CONFIG(dev);
+	struct espi_it8xxx2_data *const data = DRV_DATA(dev);
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
 
-	LOG_INF("isr %s is ignored!", __func__);
-
 	/* Write-1 to clear this bit for the next coming posted transaction. */
 	slave_reg->ESOCTRL0 |= IT8XXX2_ESPI_PUT_OOB_STATUS;
+
+	k_sem_give(&data->oob_upstream_go);
 }
+#endif
 
 /*
  * The ISR of espi interrupt event in array need to be matched bit order in
@@ -1110,7 +1245,9 @@ static void espi_it8xxx2_isr(const struct device *dev)
 		(struct espi_slave_regs *)config->base_espi_slave;
 	/* get espi interrupt events */
 	uint8_t espi_event = slave_reg->ESGCTRL0;
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 	uint8_t espi_upstream = slave_reg->ESUCTRL0;
+#endif
 
 	/* write-1 to clear */
 	slave_reg->ESGCTRL0 = espi_event;
@@ -1132,6 +1269,7 @@ static void espi_it8xxx2_isr(const struct device *dev)
 		espi_it8xxx2_put_pc_status_isr(dev);
 	}
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 	/*
 	 * The corresponding channel of the eSPI upstream transaction is
 	 * disabled.
@@ -1149,6 +1287,7 @@ static void espi_it8xxx2_isr(const struct device *dev)
 	if (slave_reg->ESOCTRL0 & IT8XXX2_ESPI_PUT_OOB_STATUS) {
 		espi_it8xxx2_put_oob_status_isr(dev);
 	}
+#endif
 }
 
 void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable)
@@ -1208,8 +1347,8 @@ static struct espi_it8xxx2_data espi_it8xxx2_data_0;
 static const struct espi_it8xxx2_config espi_it8xxx2_config_0 = {
 	.base_espi_slave = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.base_espi_vw = DT_INST_REG_ADDR_BY_IDX(0, 1),
-	.base_espi_queue1 = DT_INST_REG_ADDR_BY_IDX(0, 2),
-	.base_espi_queue0 = DT_INST_REG_ADDR_BY_IDX(0, 3),
+	.base_espi_queue0 = DT_INST_REG_ADDR_BY_IDX(0, 2),
+	.base_espi_queue1 = DT_INST_REG_ADDR_BY_IDX(0, 3),
 	.base_ec2i = DT_INST_REG_ADDR_BY_IDX(0, 4),
 	.base_kbc = DT_INST_REG_ADDR_BY_IDX(0, 5),
 	.base_pmc = DT_INST_REG_ADDR_BY_IDX(0, 6),
@@ -1259,11 +1398,9 @@ static int espi_it8xxx2_init(const struct device *dev)
 			DEVICE_DT_INST_GET(0), 0);
 	irq_enable(IT8XXX2_ESPI_VW_IRQ);
 
-	/* Upstream interrupt enable */
-	slave_reg->ESUCTRL0 |= IT8XXX2_ESPI_UPSTREAM_INTERRUPT_ENABLE;
-
-	/* PUT_OOB interrupt enable */
-	slave_reg->ESOCTRL1 |= IT8XXX2_ESPI_PUT_OOB_INTERRUPT_ENABLE;
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+	espi_it8xxx2_oob_init(dev);
+#endif
 
 	/* Enable espi interrupt */
 	slave_reg->ESGCTRL1 |= IT8XXX2_ESPI_INTERRUPT_ENABLE;
