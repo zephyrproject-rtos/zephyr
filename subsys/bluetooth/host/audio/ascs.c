@@ -1293,9 +1293,13 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 static void ase_stop(struct bt_ascs_ase *ase)
 {
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep;
 	int err;
 
 	BT_DBG("ase %p", ase);
+
+	ep = &ase->ep;
 
 	/* If the ASE_ID  written by the client represents a Sink ASE, the
 	 * server shall not accept the Receiver Start Ready operation for that
@@ -1310,11 +1314,43 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	err = bt_audio_stream_stop(ase->ep.stream);
+	if (ep->status.state != BT_AUDIO_EP_STATE_DISABLING) {
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_STOP_OP, EBADMSG,
+				      BT_ASCS_REASON_NONE);
+		return;
+	}
+
+	stream = ep->stream;
+	if (server_cb != NULL && server_cb->stop != NULL) {
+		err = server_cb->stop(stream);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		BT_ERR("Stop failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_STOP_OP, err,
 				      BT_ASCS_REASON_NONE);
+		return;
+	}
+
+	/* If the Receiver Stop Ready operation has completed successfully the
+	 * Unicast Client or the Unicast Server may terminate a CIS established
+	 * for that ASE by following the Connected Isochronous Stream Terminate
+	 * procedure defined in Volume 3, Part C, Section 9.3.15.
+	 */
+	err = bt_audio_stream_disconnect(stream);
+	if (err != 0) {
+		BT_ERR("Could not disconnect the CIS: %d", err);
+		return;
+	}
+
+	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+	err = bt_audio_stream_iso_listen(stream);
+	if (err != 0) {
+		BT_ERR("Could not make stream listen: %d", err);
 		return;
 	}
 
