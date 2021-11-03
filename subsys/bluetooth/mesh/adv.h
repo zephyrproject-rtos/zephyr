@@ -42,8 +42,6 @@ struct bt_mesh_adv {
 	uint8_t      xmit;
 };
 
-extern struct k_fifo bt_mesh_adv_queue;
-
 /* Lookup table for Advertising data types for bt_mesh_adv_type: */
 extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 
@@ -55,7 +53,13 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
 
+struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
+
+struct net_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout);
+
 void bt_mesh_adv_update(void);
+
+void bt_mesh_adv_buf_get_cancel(void);
 
 void bt_mesh_adv_init(void);
 
@@ -65,7 +69,9 @@ int bt_mesh_scan_disable(void);
 
 int bt_mesh_adv_enable(void);
 
-void bt_mesh_adv_buf_ready(void);
+void bt_mesh_adv_buf_local_ready(void);
+
+void bt_mesh_adv_buf_relay_ready(void);
 
 int bt_mesh_adv_start(const struct bt_le_adv_param *param, int32_t duration,
 		      const struct bt_data *ad, size_t ad_len,
