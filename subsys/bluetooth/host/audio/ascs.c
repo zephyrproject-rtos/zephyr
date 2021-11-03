@@ -1159,9 +1159,23 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 static void ase_start(struct bt_ascs_ase *ase)
 {
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep;
 	int err;
 
 	BT_DBG("ase %p", ase);
+
+	ep = &ase->ep;
+
+	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
+	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
+		err = -EBADMSG;
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_START_OP, err,
+				      BT_ASCS_REASON_NONE);
+		return;
+	}
 
 	/* If the ASE_ID  written by the client represents a Sink ASE, the
 	 * server shall not accept the Receiver Start Ready operation for that
@@ -1169,20 +1183,28 @@ static void ase_start(struct bt_ascs_ase *ase)
 	 * characteristic to the client, and the server shall set the
 	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
 	 */
-	if (ASE_DIR(ase->ep.status.id) == BT_AUDIO_SINK) {
+	if (ASE_DIR(ep->status.id) == BT_AUDIO_SINK) {
 		BT_ERR("Start failed: invalid operation for Sink");
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
 				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
 		return;
 	}
 
-	err = bt_audio_stream_start(ase->ep.stream);
+	stream = ep->stream;
+	if (server_cb != NULL && server_cb->start != NULL) {
+		err = server_cb->start(stream);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		BT_ERR("Start failed: %d", err);
 		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP, err,
 				BT_ASCS_REASON_NONE);
 		return;
 	}
+
+	bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_STREAMING);
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_START_OP);
 }
