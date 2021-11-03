@@ -133,10 +133,16 @@ static void tmslab_used_get(void *data)
 
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
+static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
+static struct k_thread HELPER;
 
-static void helper_thread(void)
+static void helper_thread(void *p0, void *p1, void *p2)
 {
 	void *ptr[BLK_NUM];           /* Pointer to memory block */
+
+	ARG_UNUSED(p0);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
 
 	(void)memset(ptr, 0, sizeof(ptr));
 
@@ -169,9 +175,6 @@ static void helper_thread(void)
 	k_sem_give(&SEM_HELPERDONE);
 
 }  /* helper thread */
-
-K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
-		7, 0, 0);
 
 /*test cases*/
 /**
@@ -289,8 +292,17 @@ void test_mslab_used_get(void)
  */
 void test_mslab_pending(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		ztest_test_skip();
+		return;
+	}
+
 	int ret_value;
 	void *b;                        /* Pointer to memory block */
+
+	(void)k_thread_create(&HELPER, stack, STACKSIZE,
+			helper_thread, NULL, NULL, NULL,
+			7, 0, K_NO_WAIT);
 
 	k_sem_give(&SEM_REGRESSDONE);   /* Allow helper thread to run */
 
