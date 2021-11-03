@@ -405,70 +405,6 @@
 
 /**
  *
- * (12xxh) EC Access to ost Controlled Modules (EC2I Bridge)
- *
- */
-#define IHIOA			ECREG(EC_REG_BASE_ADDR + 0x1200)
-#define IHD			ECREG(EC_REG_BASE_ADDR + 0x1201)
-#define LSIOHA			ECREG(EC_REG_BASE_ADDR + 0x1202)
-#define SIOLV			ECREG(EC_REG_BASE_ADDR + 0x1203)
-#define IBMAE			ECREG(EC_REG_BASE_ADDR + 0x1204)
-#define IBCTL			ECREG(EC_REG_BASE_ADDR + 0x1205)
-
-/* Lock Super I/O Host Access Register */
-#define LKCFG			BIT(0)
-
-/* Super I/O Access Lock Violation Register */
-#define CFGLV			BIT(0)
-
-/* EC to I-Bus Modules Access Enable Register */
-#define SWUCAE			BIT(2)
-#define CFGAE			BIT(0)
-
-/* I-Bus Control Register */
-#define CWIB			BIT(2)
-#define CRIB			BIT(1)
-#define CSAE			BIT(0)
-
-/**
- *
- * (13xxh) Keyboard Controller (KBC)
- *
- */
-#define KBHICR			ECREG(EC_REG_BASE_ADDR + 0x1300)
-#define KBIRQR			ECREG(EC_REG_BASE_ADDR + 0x1302)
-#define KBHISR			ECREG(EC_REG_BASE_ADDR + 0x1304)
-#define KBHIKDOR		ECREG(EC_REG_BASE_ADDR + 0x1306)
-#define KBHIMDOR		ECREG(EC_REG_BASE_ADDR + 0x1308)
-#define KBHIDIR			ECREG(EC_REG_BASE_ADDR + 0x130A)
-
-/* KBC Host Interface Control Register*/
-#define PM1ICIE			BIT(6)
-#define PM1OCIE			BIT(5)
-#define PM1HIE			BIT(4)
-#define IBFCIE			BIT(3)
-#define OBECIE			BIT(2)
-#define OBFMIE			BIT(1)
-#define OBFKIE			BIT(0)
-
-/* KBC Interrupt Control Register */
-#define IRQNP			BIT(6)
-#define IRQ11B			BIT(2)
-#define IRQ12B			BIT(1)
-#define IRQ1B			BIT(0)
-
-/* KBC Host Interface Keyboard/Mouse Status Register */
-#define PARE			BIT(7)
-#define GTIM			BIT(6)
-#define AOBF			BIT(5)
-#define KEYL			BIT(4)
-#define C_D			BIT(3)
-#define SYSF			BIT(2)
-#define IBF			BIT(1)
-#define OBF			BIT(0)
-
-/**
- *
  * (14xxh) System Wake-Up Control (SWUC)
  *
  */
@@ -523,100 +459,6 @@
 #define PDER			ECREG(EC_REG_BASE_ADDR + 0x141A)
 #define PRC0R			ECREG(EC_REG_BASE_ADDR + 0x141C)
 #define PRC1R			ECREG(EC_REG_BASE_ADDR + 0x141D)
-
-/**
- *
- * (15xxh) Power Management Channel (PMC)
- *
- */
-/* PM1 */
-#define PM1STS			ECREG(EC_REG_BASE_ADDR + 0x1500)
-#define PM1DO			ECREG(EC_REG_BASE_ADDR + 0x1501)
-#define PM1DOSCI		ECREG(EC_REG_BASE_ADDR + 0x1502)
-#define PM1DOSMI		ECREG(EC_REG_BASE_ADDR + 0x1503)
-#define PM1DI			ECREG(EC_REG_BASE_ADDR + 0x1504)
-#define PM1DISCI		ECREG(EC_REG_BASE_ADDR + 0x1505)
-#define PM1CTL			ECREG(EC_REG_BASE_ADDR + 0x1506)
-#define PM1IC			ECREG(EC_REG_BASE_ADDR + 0x1507)
-#define PM1IE			ECREG(EC_REG_BASE_ADDR + 0x1508)
-/* PM2 */
-#define PM2STS			ECREG(EC_REG_BASE_ADDR + 0x1510)
-#define PM2DO			ECREG(EC_REG_BASE_ADDR + 0x1511)
-#define PM2DOSCI		ECREG(EC_REG_BASE_ADDR + 0x1512)
-#define PM2DOSMI		ECREG(EC_REG_BASE_ADDR + 0x1513)
-#define PM2DI			ECREG(EC_REG_BASE_ADDR + 0x1514)
-#define PM2DISCI		ECREG(EC_REG_BASE_ADDR + 0x1515)
-#define PM2CTL			ECREG(EC_REG_BASE_ADDR + 0x1516)
-#define PM2IC			ECREG(EC_REG_BASE_ADDR + 0x1517)
-#define PM2IE			ECREG(EC_REG_BASE_ADDR + 0x1518)
-/* Mailbox */
-#define MBXCTRL			ECREG(EC_REG_BASE_ADDR + 0x1519)
-/* 16-byte PMC2EX Mailbox 0 ~ Mailbox 15 */
-#define MBXEC_00		ECREG(EC_REG_BASE_ADDR + 0x15F0)
-#define MBXEC_01		ECREG(EC_REG_BASE_ADDR + 0x15F1)
-#define MBXEC_02		ECREG(EC_REG_BASE_ADDR + 0x15F2)
-#define MBXEC_03		ECREG(EC_REG_BASE_ADDR + 0x15F3)
-#define MBXEC_04		ECREG(EC_REG_BASE_ADDR + 0x15F4)
-#define MBXEC_05		ECREG(EC_REG_BASE_ADDR + 0x15F5)
-#define MBXEC_06		ECREG(EC_REG_BASE_ADDR + 0x15F6)
-#define MBXEC_07		ECREG(EC_REG_BASE_ADDR + 0x15F7)
-#define MBXEC_08		ECREG(EC_REG_BASE_ADDR + 0x15F8)
-#define MBXEC_09		ECREG(EC_REG_BASE_ADDR + 0x15F9)
-#define MBXEC_10		ECREG(EC_REG_BASE_ADDR + 0x15FA)
-#define MBXEC_11		ECREG(EC_REG_BASE_ADDR + 0x15FB)
-#define MBXEC_12		ECREG(EC_REG_BASE_ADDR + 0x15FC)
-#define MBXEC_13		ECREG(EC_REG_BASE_ADDR + 0x15FD)
-#define MBXEC_14		ECREG(EC_REG_BASE_ADDR + 0x15FE)
-#define MBXEC_15		ECREG(EC_REG_BASE_ADDR + 0x15FF)
-#define PM3STS			ECREG(EC_REG_BASE_ADDR + 0x1520)
-#define PM3DO			ECREG(EC_REG_BASE_ADDR + 0x1521)
-#define PM3DI			ECREG(EC_REG_BASE_ADDR + 0x1522)
-#define PM3CTL			ECREG(EC_REG_BASE_ADDR + 0x1523)
-#define PM3IC			ECREG(EC_REG_BASE_ADDR + 0x1524)
-#define PM3IE			ECREG(EC_REG_BASE_ADDR + 0x1525)
-#define PM4STS			ECREG(EC_REG_BASE_ADDR + 0x1530)
-#define PM4DO			ECREG(EC_REG_BASE_ADDR + 0x1531)
-#define PM4DI			ECREG(EC_REG_BASE_ADDR + 0x1532)
-#define PM4CTL			ECREG(EC_REG_BASE_ADDR + 0x1533)
-#define PM4IC			ECREG(EC_REG_BASE_ADDR + 0x1534)
-#define PM4IE			ECREG(EC_REG_BASE_ADDR + 0x1535)
-#define PM5STS			ECREG(EC_REG_BASE_ADDR + 0x1540)
-#define PM5DO			ECREG(EC_REG_BASE_ADDR + 0x1541)
-#define PM5DI			ECREG(EC_REG_BASE_ADDR + 0x1542)
-#define PM5CTL			ECREG(EC_REG_BASE_ADDR + 0x1543)
-#define PM5IC			ECREG(EC_REG_BASE_ADDR + 0x1544)
-#define PM5IE			ECREG(EC_REG_BASE_ADDR + 0x1545)
-
-/* PM Status Register */
-#define SMIEVT			BIT(6)
-#define SCIEVT			BIT(5)
-#define BURST			BIT(4)
-#define P_C_D			BIT(3)
-#define P_IBF			BIT(1)
-#define P_OBF			BIT(0)
-
-/* PM Control */
-#define APM			BIT(7)
-#define SCINP			BIT(6)
-#define OBEIE			BIT(1)
-#define IBFIE			BIT(0)
-
-/* PM Interrupt Control */
-#define SMINP			BIT(6)
-#define SCIB			BIT(2)
-#define SMIB			BIT(1)
-#define IRQB			BIT(0)
-
-/* PM Interrupt Enable */
-#define HWSMIEN			BIT(5)
-#define HWSCIEN			BIT(4)
-#define HWIRQEN			BIT(3)
-#define SMIEN			BIT(2)
-#define SCIEN			BIT(1)
-#define IRQEN			BIT(0)
-
-/* PM Interrupt Enable */
-#define MBXEN			BIT(7)
 
 /**
  *
@@ -1677,7 +1519,11 @@ struct flash_it8xxx2_regs {
 #define IT8XXX2_GPIO_BASE  0x00F01600
 #define IT8XXX2_GPIO2_BASE 0x00F03E00
 
+/* TODO: create interface for accessing GPIO general control registers. */
 #define IT8XXX2_GPIO_GCR        ECREG(IT8XXX2_GPIO_BASE + 0x00)
+#define IT8XXX2_GPIO_GCR_ESPI_RST_D2      0x2
+#define IT8XXX2_GPIO_GCR_ESPI_RST_POS     1
+#define IT8XXX2_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT8XXX2_GPIO_GCR_ESPI_RST_POS)
 
 #define IT8XXX2_GPIO_GCRX(offset) ECREG(IT8XXX2_GPIO_BASE + (offset))
 #define IT8XXX2_GPIO_GCR25_OFFSET 0xd1
@@ -1949,8 +1795,18 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t reserved2[3];
 	/* 0x06: Reset Status */
 	volatile uint8_t GCTRL_RSTS;
-	/* 0x07-0x1B: Reserved3 */
-	volatile uint8_t reserved3[21];
+	/* 0x07-0x09: Reserved3 */
+	volatile uint8_t reserved3[3];
+	/* 0x0a: Base Address Select */
+	volatile uint8_t GCTRL_BADRSEL;
+	/* 0x0b: Wait Next Clock Rising */
+	volatile uint8_t GCTRL_WNCKR;
+	/* 0x0c: Reserved3-1 */
+	volatile uint8_t reserved3_1;
+	/* 0x0d: Special Control 1 */
+	volatile uint8_t GCTRL_SPCTRL1;
+	/* 0x0E-0x1B: Reserved3-2 */
+	volatile uint8_t reserved3_2[14];
 	/* 0x1C: Special Control 4 */
 	volatile uint8_t GCTRL_SPCTRL4;
 	/* 0x1D-0x1F: Reserved4 */
@@ -1987,8 +1843,18 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t GCTRL_ETWDUARTCR;
 	/* 0x4C: Wakeup MCU Control */
 	volatile uint8_t GCTRL_WMCR;
-	/* 0x4D-0x84: Reserved11 */
-	volatile uint8_t reserved11[56];
+	/* 0x4D-0x4F: Reserved11 */
+	volatile uint8_t reserved11[3];
+	/* 0x50: Port 80h/81h Status Register */
+	volatile uint8_t GCTRL_P80H81HSR;
+	/* 0x51: Port 80h Data Register */
+	volatile uint8_t GCTRL_P80HDR;
+	/* 0x52: Port 81h Data Register */
+	volatile uint8_t GCTRL_P81HDR;
+	/* 0x53: H2RAM Offset Register */
+	volatile uint8_t GCTRL_H2ROFSR;
+	/* 0x54-0x84: Reserved11-1 */
+	volatile uint8_t reserved11_1[49];
 	/* 0x85: Chip ID Byte 1 */
 	volatile uint8_t GCTRL_ECHIPID1;
 	/* 0x86: Chip ID Byte 2 */
@@ -2008,5 +1874,423 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_LRSIPGWR		BIT(0)
 /* 0x4B: ETWD and UART Control */
 #define IT8XXX2_GCTRL_ETWD_HW_RST_EN	BIT(0)
+/* Accept Port 80h Cycle */
+#define IT8XXX2_GCTRL_ACP80		BIT(6)
+
+/*
+ * VCC Detector Option.
+ * bit[7-6] = 1: The VCC power status is treated as power-on.
+ * The VCC supply of eSPI and related functions (EC2I, KBC, PMC and
+ * PECI). It means VCC should be logic high before using these
+ * functions, or firmware treats VCC logic high.
+ */
+#define IT8XXX2_GCTRL_VCCDO_MASK	(BIT(6) | BIT(7))
+#define IT8XXX2_GCTRL_VCCDO_VCC_ON	BIT(6)
+/*
+ * bit[3] = 0: The reset source of PNPCFG is RSTPNP bit in RSTCH
+ * register and WRST#.
+ */
+#define IT8XXX2_GCTRL_HGRST		BIT(3)
+/* bit[2] = 1: Enable global reset. */
+#define IT8XXX2_GCTRL_GRST		BIT(2)
+
+#ifndef __ASSEMBLER__
+/*
+ * EC2I bridge registers
+ */
+struct ec2i_regs {
+	/* 0x00: Indirect Host I/O Address Register */
+	volatile uint8_t IHIOA;
+	/* 0x01: Indirect Host Data Register */
+	volatile uint8_t IHD;
+	/* 0x02: Lock Super I/O Host Access Register */
+	volatile uint8_t LSIOHA;
+	/* 0x03: Super I/O Access Lock Violation Register */
+	volatile uint8_t SIOLV;
+	/* 0x04: EC to I-Bus Modules Access Enable Register */
+	volatile uint8_t IBMAE;
+	/* 0x05: I-Bus Control Register */
+	volatile uint8_t IBCTL;
+};
+
+/* Index list of the host interface registers of PNPCFG */
+enum host_pnpcfg_index {
+	/* Logical Device Number */
+	HOST_INDEX_LDN = 0x07,
+	/* Chip ID Byte 1 */
+	HOST_INDEX_CHIPID1 = 0x20,
+	/* Chip ID Byte 2 */
+	HOST_INDEX_CHIPID2 = 0x21,
+	/* Chip Version */
+	HOST_INDEX_CHIPVER = 0x22,
+	/* Super I/O Control */
+	HOST_INDEX_SIOCTRL = 0x23,
+	/* Super I/O IRQ Configuration */
+	HOST_INDEX_SIOIRQ = 0x25,
+	/* Super I/O General Purpose */
+	HOST_INDEX_SIOGP = 0x26,
+	/* Super I/O Power Mode */
+	HOST_INDEX_SIOPWR = 0x2D,
+	/* Depth 2 I/O Address */
+	HOST_INDEX_D2ADR = 0x2E,
+	/* Depth 2 I/O Data */
+	HOST_INDEX_D2DAT = 0x2F,
+	/* Logical Device Activate Register */
+	HOST_INDEX_LDA = 0x30,
+	/* I/O Port Base Address Bits [15:8] for Descriptor 0 */
+	HOST_INDEX_IOBAD0_MSB = 0x60,
+	/* I/O Port Base Address Bits [7:0] for Descriptor 0 */
+	HOST_INDEX_IOBAD0_LSB = 0x61,
+	/* I/O Port Base Address Bits [15:8] for Descriptor 1 */
+	HOST_INDEX_IOBAD1_MSB = 0x62,
+	/* I/O Port Base Address Bits [7:0] for Descriptor 1 */
+	HOST_INDEX_IOBAD1_LSB = 0x63,
+	/* Interrupt Request Number and Wake-Up on IRQ Enabled */
+	HOST_INDEX_IRQNUMX = 0x70,
+	/* Interrupt Request Type Select */
+	HOST_INDEX_IRQTP = 0x71,
+	/* DMA Channel Select 0 */
+	HOST_INDEX_DMAS0 = 0x74,
+	/* DMA Channel Select 1 */
+	HOST_INDEX_DMAS1 = 0x75,
+	/* Device Specific Logical Device Configuration 1 to 10 */
+	HOST_INDEX_DSLDC1 = 0xF0,
+	HOST_INDEX_DSLDC2 = 0xF1,
+	HOST_INDEX_DSLDC3 = 0xF2,
+	HOST_INDEX_DSLDC4 = 0xF3,
+	HOST_INDEX_DSLDC5 = 0xF4,
+	HOST_INDEX_DSLDC6 = 0xF5,
+	HOST_INDEX_DSLDC7 = 0xF6,
+	HOST_INDEX_DSLDC8 = 0xF7,
+	HOST_INDEX_DSLDC9 = 0xF8,
+	HOST_INDEX_DSLDC10 = 0xF9,
+};
+
+/* List of logical device number (LDN) assignments */
+enum logical_device_number {
+	/* Serial Port 1 */
+	LDN_UART1 = 0x01,
+	/* Serial Port 2 */
+	LDN_UART2 = 0x02,
+	/* System Wake-Up Control */
+	LDN_SWUC = 0x04,
+	/* KBC/Mouse Interface */
+	LDN_KBC_MOUSE = 0x05,
+	/* KBC/Keyboard Interface */
+	LDN_KBC_KEYBOARD = 0x06,
+	/* Consumer IR */
+	LDN_CIR = 0x0A,
+	/* Shared Memory/Flash Interface */
+	LDN_SMFI = 0x0F,
+	/* RTC-like Timer */
+	LDN_RTCT = 0x10,
+	/* Power Management I/F Channel 1 */
+	LDN_PMC1 = 0x11,
+	/* Power Management I/F Channel 2 */
+	LDN_PMC2 = 0x12,
+	/* Serial Peripheral Interface */
+	LDN_SSPI = 0x13,
+	/* Platform Environment Control Interface */
+	LDN_PECI = 0x14,
+	/* Power Management I/F Channel 3 */
+	LDN_PMC3 = 0x17,
+	/* Power Management I/F Channel 4 */
+	LDN_PMC4 = 0x18,
+	/* Power Management I/F Channel 5 */
+	LDN_PMC5 = 0x19,
+};
+
+/* Structure for initializing PNPCFG via ec2i. */
+struct ec2i_t {
+	/* index port */
+	enum host_pnpcfg_index index_port;
+	/* data port */
+	uint8_t data_port;
+};
+
+/* EC2I access index/data port */
+enum ec2i_access {
+	/* index port */
+	EC2I_ACCESS_INDEX = 0,
+	/* data port */
+	EC2I_ACCESS_DATA = 1,
+};
+
+/* EC to I-Bus Access Enabled */
+#define EC2I_IBCTL_CSAE  BIT(0)
+/* EC Read from I-Bus */
+#define EC2I_IBCTL_CRIB  BIT(1)
+/* EC Write to I-Bus */
+#define EC2I_IBCTL_CWIB  BIT(2)
+#define EC2I_IBCTL_CRWIB (EC2I_IBCTL_CRIB | EC2I_IBCTL_CWIB)
+
+/* PNPCFG Register EC Access Enable */
+#define EC2I_IBMAE_CFGAE BIT(0)
+
+/*
+ * KBC registers
+ */
+struct kbc_regs {
+	/* 0x00: KBC Host Interface Control Register */
+	volatile uint8_t KBHICR;
+	/* 0x01: Reserved1 */
+	volatile uint8_t reserved1;
+	/* 0x02: KBC Interrupt Control Register */
+	volatile uint8_t KBIRQR;
+	/* 0x03: Reserved2 */
+	volatile uint8_t reserved2;
+	/* 0x04: KBC Host Interface Keyboard/Mouse Status Register */
+	volatile uint8_t KBHISR;
+	/* 0x05: Reserved3 */
+	volatile uint8_t reserved3;
+	/* 0x06: KBC Host Interface Keyboard Data Output Register */
+	volatile uint8_t KBHIKDOR;
+	/* 0x07: Reserved4 */
+	volatile uint8_t reserved4;
+	/* 0x08: KBC Host Interface Mouse Data Output Register */
+	volatile uint8_t KBHIMDOR;
+	/* 0x09: Reserved5 */
+	volatile uint8_t reserved5;
+	/* 0x0a: KBC Host Interface Keyboard/Mouse Data Input Register */
+	volatile uint8_t KBHIDIR;
+};
+
+/* Output Buffer Full */
+#define KBC_KBHISR_OBF      BIT(0)
+/* Input Buffer Full */
+#define KBC_KBHISR_IBF      BIT(1)
+/* A2 Address (A2) */
+#define KBC_KBHISR_A2_ADDR  BIT(3)
+#define KBC_KBHISR_STS_MASK (KBC_KBHISR_OBF | KBC_KBHISR_IBF \
+						| KBC_KBHISR_A2_ADDR)
+
+/* Clear Output Buffer Full */
+#define KBC_KBHICR_COBF      BIT(6)
+/* IBF/OBF Clear Mode Enable */
+#define KBC_KBHICR_IBFOBFCME BIT(5)
+/* Input Buffer Full CPU Interrupt Enable */
+#define KBC_KBHICR_IBFCIE    BIT(3)
+/* Output Buffer Empty CPU Interrupt Enable */
+#define KBC_KBHICR_OBECIE    BIT(2)
+/* Output Buffer Full Mouse Interrupt Enable */
+#define KBC_KBHICR_OBFMIE    BIT(1)
+/* Output Buffer Full Keyboard Interrupt Enable */
+#define KBC_KBHICR_OBFKIE    BIT(0)
+
+/*
+ * PMC registers
+ */
+struct pmc_regs {
+	/* 0x00: Host Interface PM Channel 1 Status */
+	volatile uint8_t PM1STS;
+	/* 0x01: Host Interface PM Channel 1 Data Out Port */
+	volatile uint8_t PM1DO;
+	/* 0x02: Host Interface PM Channel 1 Data Out Port with SCI# */
+	volatile uint8_t PM1DOSCI;
+	/* 0x03: Host Interface PM Channel 1 Data Out Port with SMI# */
+	volatile uint8_t PM1DOSMI;
+	/* 0x04: Host Interface PM Channel 1 Data In Port */
+	volatile uint8_t PM1DI;
+	/* 0x05: Host Interface PM Channel 1 Data In Port with SCI# */
+	volatile uint8_t PM1DISCI;
+	/* 0x06: Host Interface PM Channel 1 Control */
+	volatile uint8_t PM1CTL;
+	/* 0x07: Host Interface PM Channel 1 Interrupt Control */
+	volatile uint8_t PM1IC;
+	/* 0x08: Host Interface PM Channel 1 Interrupt Enable */
+	volatile uint8_t PM1IE;
+	/* 0x09-0x0f: Reserved1 */
+	volatile uint8_t reserved1[7];
+	/* 0x10-0xff: Reserved2 */
+	volatile uint8_t reserved2[0xf0];
+};
+
+/* Input Buffer Full Interrupt Enable */
+#define PMC_PM1CTL_IBFIE    BIT(0)
+/* Output Buffer Full */
+#define PMC_PM1STS_OBF      BIT(0)
+/* Input Buffer Full */
+#define PMC_PM1STS_IBF      BIT(1)
+/* General Purpose Flag */
+#define PMC_PM1STS_GPF      BIT(2)
+/* A2 Address (A2) */
+#define PMC_PM1STS_A2_ADDR  BIT(3)
+
+/*
+ * eSPI slave registers
+ */
+struct espi_slave_regs {
+	/* 0x00-0x03: Reserved1 */
+	volatile uint8_t reserved1[4];
+
+	/* 0x04: General Capabilities and Configuration 0 */
+	volatile uint8_t GCAPCFG0;
+	/* 0x05: General Capabilities and Configuration 1 */
+	volatile uint8_t GCAPCFG1;
+	/* 0x06: General Capabilities and Configuration 2 */
+	volatile uint8_t GCAPCFG2;
+	/* 0x07: General Capabilities and Configuration 3 */
+	volatile uint8_t GCAPCFG3;
+
+	/* Channel 0 (Peripheral Channel) Capabilities and Configurations */
+	/* 0x08: Channel 0 Capabilities and Configuration 0 */
+	volatile uint8_t CH_PC_CAPCFG0;
+	/* 0x09: Channel 0 Capabilities and Configuration 1 */
+	volatile uint8_t CH_PC_CAPCFG1;
+	/* 0x0A: Channel 0 Capabilities and Configuration 2 */
+	volatile uint8_t CH_PC_CAPCFG2;
+	/* 0x0B: Channel 0 Capabilities and Configuration 3 */
+	volatile uint8_t CH_PC_CAPCFG3;
+
+	/* Channel 1 (Virtual Wire Channel) Capabilities and Configurations */
+	/* 0x0C: Channel 1 Capabilities and Configuration 0 */
+	volatile uint8_t CH_VW_CAPCFG0;
+	/* 0x0D: Channel 1 Capabilities and Configuration 1 */
+	volatile uint8_t CH_VW_CAPCFG1;
+	/* 0x0E: Channel 1 Capabilities and Configuration 2 */
+	volatile uint8_t CH_VW_CAPCFG2;
+	/* 0x0F: Channel 1 Capabilities and Configuration 3 */
+	volatile uint8_t CH_VW_CAPCFG3;
+
+	/* Channel 2 (OOB Message Channel) Capabilities and Configurations */
+	/* 0x10: Channel 2 Capabilities and Configuration 0 */
+	volatile uint8_t CH_OOB_CAPCFG0;
+	/* 0x11: Channel 2 Capabilities and Configuration 1 */
+	volatile uint8_t CH_OOB_CAPCFG1;
+	/* 0x12: Channel 2 Capabilities and Configuration 2 */
+	volatile uint8_t CH_OOB_CAPCFG2;
+	/* 0x13: Channel 2 Capabilities and Configuration 3 */
+	volatile uint8_t CH_OOB_CAPCFG3;
+
+	/* Channel 3 (Flash Access Channel) Capabilities and Configurations */
+	/* 0x14: Channel 3 Capabilities and Configuration 0 */
+	volatile uint8_t CH_FLASH_CAPCFG0;
+	/* 0x15: Channel 3 Capabilities and Configuration 1 */
+	volatile uint8_t CH_FLASH_CAPCFG1;
+	/* 0x16: Channel 3 Capabilities and Configuration 2 */
+	volatile uint8_t CH_FLASH_CAPCFG2;
+	/* 0x17: Channel 3 Capabilities and Configuration 3 */
+	volatile uint8_t CH_FLASH_CAPCFG3;
+	/* Channel 3 Capabilities and Configurations 2 */
+	/* 0x18: Channel 3 Capabilities and Configuration 2-0 */
+	volatile uint8_t CH_FLASH_CAPCFG2_0;
+	/* 0x19: Channel 3 Capabilities and Configuration 2-1 */
+	volatile uint8_t CH_FLASH_CAPCFG2_1;
+	/* 0x1A: Channel 3 Capabilities and Configuration 2-2 */
+	volatile uint8_t CH_FLASH_CAPCFG2_2;
+	/* 0x1B: Channel 3 Capabilities and Configuration 2-3 */
+	volatile uint8_t CH_FLASH_CAPCFG2_3;
+
+	/* 0x1c-0x1f: Reserved2 */
+	volatile uint8_t reserved2[4];
+	/* 0x20-0x8f: Reserved3 */
+	volatile uint8_t reserved3[0x70];
+
+	/* 0x90: eSPI PC Control 0 */
+	volatile uint8_t ESPCTRL0;
+	/* 0x91: eSPI PC Control 1 */
+	volatile uint8_t ESPCTRL1;
+	/* 0x92: eSPI PC Control 2 */
+	volatile uint8_t ESPCTRL2;
+	/* 0x93: eSPI PC Control 3 */
+	volatile uint8_t ESPCTRL3;
+	/* 0x94: eSPI PC Control 4 */
+	volatile uint8_t ESPCTRL4;
+	/* 0x95: eSPI PC Control 5 */
+	volatile uint8_t ESPCTRL5;
+	/* 0x96: eSPI PC Control 6 */
+	volatile uint8_t ESPCTRL6;
+	/* 0x97: eSPI PC Control 7 */
+	volatile uint8_t ESPCTRL7;
+	/* 0x98-0x9f: Reserved4 */
+	volatile uint8_t reserved4[8];
+
+	/* 0xa0: eSPI General Control 0 */
+	volatile uint8_t ESGCTRL0;
+	/* 0xa1: eSPI General Control 1 */
+	volatile uint8_t ESGCTRL1;
+	/* 0xa2: eSPI General Control 2 */
+	volatile uint8_t ESGCTRL2;
+	/* 0xa3: eSPI General Control 3 */
+	volatile uint8_t ESGCTRL3;
+	/* 0xa4-0xaf: Reserved5 */
+	volatile uint8_t reserved5[12];
+
+	/* 0xb0: eSPI Upstream Control 0 */
+	volatile uint8_t ESUCTRL0;
+	/* 0xb1: eSPI Upstream Control 1 */
+	volatile uint8_t ESUCTRL1;
+	/* 0xb2: eSPI Upstream Control 2 */
+	volatile uint8_t ESUCTRL2;
+	/* 0xb3: eSPI Upstream Control 3 */
+	volatile uint8_t ESUCTRL3;
+	/* 0xb4-0xb5: Reserved6 */
+	volatile uint8_t reserved6[2];
+	/* 0xb6: eSPI Upstream Control 6 */
+	volatile uint8_t ESUCTRL6;
+	/* 0xb7: eSPI Upstream Control 7 */
+	volatile uint8_t ESUCTRL7;
+	/* 0xb8: eSPI Upstream Control 8 */
+	volatile uint8_t ESUCTRL8;
+	/* 0xb9-0xbf: Reserved7 */
+	volatile uint8_t reserved7[7];
+
+	/* 0xc0: eSPI OOB Control 0 */
+	volatile uint8_t ESOCTRL0;
+	/* 0xc1: eSPI OOB Control 1 */
+	volatile uint8_t ESOCTRL1;
+	/* 0xc2-0xc3: Reserved8 */
+	volatile uint8_t reserved8[2];
+	/* 0xc4: eSPI OOB Control 4 */
+	volatile uint8_t ESOCTRL4;
+	/* 0xc5-0xcf: Reserved9 */
+	volatile uint8_t reserved9[11];
+
+	/* 0xd0: eSPI SAFS Control 0 */
+	volatile uint8_t ESPISAFSC0;
+	/* 0xd1: eSPI SAFS Control 1 */
+	volatile uint8_t ESPISAFSC1;
+	/* 0xd2: eSPI SAFS Control 2 */
+	volatile uint8_t ESPISAFSC2;
+	/* 0xd3: eSPI SAFS Control 3 */
+	volatile uint8_t ESPISAFSC3;
+	/* 0xd4: eSPI SAFS Control 4 */
+	volatile uint8_t ESPISAFSC4;
+	/* 0xd5: eSPI SAFS Control 5 */
+	volatile uint8_t ESPISAFSC5;
+	/* 0xd6: eSPI SAFS Control 6 */
+	volatile uint8_t ESPISAFSC6;
+	/* 0xd7: eSPI SAFS Control 7 */
+	volatile uint8_t ESPISAFSC7;
+};
+
+/*
+ * eSPI VW registers
+ */
+struct espi_vw_regs {
+	/* 0x00-0x7f: VW index */
+	volatile uint8_t VW_INDEX[0x80];
+	/* 0x80-0x8f: Reserved1 */
+	volatile uint8_t reserved1[0x10];
+	/* 0x90: VW Contrl 0 */
+	volatile uint8_t VWCTRL0;
+	/* 0x91: VW Contrl 1 */
+	volatile uint8_t VWCTRL1;
+	/* 0x92: VW Contrl 2 */
+	volatile uint8_t VWCTRL2;
+	/* 0x93: VW Contrl 3 */
+	volatile uint8_t VWCTRL3;
+	/* 0x94: Reserved2 */
+	volatile uint8_t reserved2;
+	/* 0x95: VW Contrl 5 */
+	volatile uint8_t VWCTRL5;
+	/* 0x96: VW Contrl 6 */
+	volatile uint8_t VWCTRL6;
+	/* 0x97: VW Contrl 7 */
+	volatile uint8_t VWCTRL7;
+	/* 0x98-0x99: Reserved3 */
+	volatile uint8_t reserved3[2];
+};
+#endif /* !__ASSEMBLER__ */
 
 #endif /* CHIP_CHIPREGS_H */
