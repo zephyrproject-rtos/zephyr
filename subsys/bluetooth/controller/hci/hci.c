@@ -206,6 +206,34 @@ static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 static struct net_buf *cmd_complete_status(uint8_t status);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_HCI_RAW)
+static uint8_t ll_adv_cmds;
+
+__weak int ll_adv_cmds_set(uint8_t adv_cmds)
+{
+	if (!ll_adv_cmds) {
+		ll_adv_cmds = adv_cmds;
+	}
+
+	if (ll_adv_cmds != adv_cmds) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+__weak int ll_adv_cmds_is_ext(void)
+{
+	return ll_adv_cmds == LL_ADV_CMDS_EXT;
+}
+
+#else /* !CONFIG_BT_HCI_RAW */
+__weak int ll_adv_cmds_is_ext(void)
+{
+	return 1;
+}
+#endif /* !CONFIG_BT_HCI_RAW */
+
 static int adv_cmds_legacy_check(struct net_buf **cc_evt)
 {
 	int err;
