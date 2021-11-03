@@ -8,32 +8,46 @@
 
 #include <devicetree.h>
 #include <drivers/sensor.h>
+#include <logging/log.h>
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #error "AS5x47 driver enabled without any devices"
 #endif
 
+LOG_MODULE_REGISTER(as5x47_driver, LOG_LEVEL_INF);
+
 const as5x47_config *get_config(const struct device *dev) {
     return dev->config;
 }
 
+as5x47_data *get_data(const struct device *dev) {
+    return dev->data;
+}
+
 
 int as5x47_init(const struct device *dev) {
-    // TODO
+    bool initSuccessful = initSPI(get_config(dev)->sensor);
+    if (!initSuccessful) {
+        LOG_ERR("AS5x47 initialization of device \"%s\" unsuccessful", dev->name);
+        return -EIO;
+    }
     return 0;
 }
 
 int as5x47_sample_fetch(const struct device *dev, enum sensor_channel chan) {
-    // TODO: Read data from sensor
-    // spi_transceive_dt(...);
-
-    getSensorValue(&get_config(dev)->sensor);
+    if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ROTATION) {
+        get_data(dev)->angle_deg = readAngleDegree(get_config(dev)->sensor, true, NULL, false, false, false);
+        return 0;
+    }
     return -ENOTSUP;
 }
 
 int as5x47_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-    // TODO: Return data
-    // val = dev->data...
+    if (chan == SENSOR_CHAN_ROTATION) {
+        sensor_value_from_double(val, get_data(dev)->angle_deg);
+        return 0;
+    }
+
     return -ENOTSUP;
 }
 
@@ -63,6 +77,7 @@ const struct sensor_driver_api as5x47_sensor_api = {
     static as5x47_data as5x47_data_##inst; \
     static as5x47_config as5x47_cfg_##inst = { \
         .spi_spec = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(16), 0), \
+        .sensor = &as5x47_cfg_##inst.spi_spec \
     }; \
     DEVICE_DT_INST_DEFINE(inst, as5x47_init, NULL, &as5x47_data_##inst, &as5x47_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &as5x47_sensor_api);
 

@@ -10,7 +10,7 @@
 #include "as5047p_c_interface.h"
 
 typedef struct as5x47_data {
-
+    float angle_deg;
 } as5x47_data;
 
 typedef struct as5x47_config {
