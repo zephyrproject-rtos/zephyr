@@ -271,6 +271,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FLASH_AREA_SIZE(label) \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
+/**
+ * Get device pointer for device the area/partition resides on
+ *
+ * @param label partition label
+ *
+ * @return const struct device type pointer
+ */
+#define FLASH_AREA_DEVICE(label) \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODE_BY_FIXED_PARTITION_LABEL(label)))
+
 #ifdef __cplusplus
 }
 #endif
