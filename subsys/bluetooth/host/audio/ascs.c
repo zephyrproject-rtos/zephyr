@@ -272,16 +272,50 @@ static void ascs_clear(struct bt_ascs *ascs)
 
 static void ase_disable(struct bt_ascs_ase *ase)
 {
+	struct bt_audio_stream *stream;
+	struct bt_audio_ep *ep;
 	int err;
 
 	BT_DBG("ase %p", ase);
 
-	err = bt_audio_stream_disable(ase->ep.stream);
+	ep = &ase->ep;
+
+	switch (ep->status.state) {
+	/* Valid only if ASE_State field = 0x03 (Enabling) */
+	case BT_AUDIO_EP_STATE_ENABLING:
+	 /* or 0x04 (Streaming) */
+	case BT_AUDIO_EP_STATE_STREAMING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
+		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_DISABLE_OP,
+				      -EBADMSG, BT_ASCS_REASON_NONE);
+		return;
+	}
+
+	stream = ep->stream;
+
+	if (server_cb != NULL && server_cb->release != NULL) {
+		err = server_cb->disable(stream);
+	} else {
+		err = -EACCES;
+	}
+
 	if (err) {
 		BT_ERR("Disable failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_DISABLE_OP,
 				      err, BT_ASCS_REASON_NONE);
 		return;
+	}
+
+	/* The ASE state machine goes into different states from this operation
+	 * based on whether it is a source or a sink ASE.
+	 */
+	if (stream->cap->type == BT_AUDIO_SOURCE) {
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+	} else {
+		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 	}
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_DISABLE_OP);
