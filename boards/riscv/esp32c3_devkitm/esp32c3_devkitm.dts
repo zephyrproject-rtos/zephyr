@@ -69,6 +69,10 @@
 	status = "okay";
 };
 
+&wdt0 {
+	status = "okay";
+};
+
 &flash0 {
 	status = "okay";
 	partitions {
