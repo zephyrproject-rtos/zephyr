@@ -190,7 +190,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
-	int err = 0;
+	int err;
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
@@ -224,7 +224,7 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
-	int err = 0;
+	int err;
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
