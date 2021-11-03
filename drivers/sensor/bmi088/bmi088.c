@@ -21,7 +21,9 @@
 #include "bmi088.h"
 
 #define LOG_LEVEL CONFIG_BMI088_LOG_LEVEL
+
 #include <logging/log.h>
+
 LOG_MODULE_REGISTER(BMI088);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
@@ -103,17 +105,15 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr,
  *
  * @param raw_val Raw sensor value
  * @param scale Value to scale the raw_val
- * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
  */
-struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val) {
+struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale) {
     int32_t converted_val = raw_val * scale;
 
     LOG_INF("Conversion: input %d scale %d converted %ld", raw_val, scale, converted_val);
-
-    val->val1 = converted_val / 1000000;
-    val->val2 = converted_val % 1000000;
-
-    return *val;
+    struct sensor_value val = {
+            .val1=converted_val / 1000000,
+            .val2=converted_val % 1000000};
+    return val;
 }
 
 /**
@@ -122,30 +122,25 @@ struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struc
  * @param chan Channel to read. Implemented: Gyro X, Y, Z
  * @param scale Value to scale the raw_val
  * @param raw_xyz array for storing X, Y, Z channel raw value of the sensor
- * @param val sensor value struct(val1, val2) where val1 is the integer part and val2 is the fractional part
  * @return
  */
-struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val) {
+struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]) {
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
-            bmi088_to_fixed_point(raw_xyz[0], scale, val);
-            break;
+            return bmi088_to_fixed_point(raw_xyz[0], scale);
         case SENSOR_CHAN_GYRO_Y:
-            bmi088_to_fixed_point(raw_xyz[1], scale, val);
-            break;
+            return bmi088_to_fixed_point(raw_xyz[1], scale);
         case SENSOR_CHAN_GYRO_Z:
-            bmi088_to_fixed_point(raw_xyz[2], scale, val);
-            break;
+            return bmi088_to_fixed_point(raw_xyz[2], scale);
         default:
             LOG_ERR("Channels not supported !");
-            break;
+            struct sensor_value empty = {0};
+            return empty;
     }
-    return *val;
-
-
 }
 
-static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr, const struct sensor_value *val) {
+static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
+                           const struct sensor_value *val) {
     return -ENOTSUP;
 }
 
@@ -167,8 +162,8 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
     }
 
     // convert samples to cpu endianness
-    for (size_t i = 0; i < BMI088_SAMPLE_SIZE; i += 2) {
-        uint16_t *sample = (uint16_t *) &data->sample.gyr[i];
+    for (size_t i = 0; i < BMI088_AXES; i++) {
+        uint16_t *sample = &data->sample.gyr[i];
 
         *sample = sys_le16_to_cpu(*sample);
     }
@@ -187,13 +182,13 @@ static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel cha
  * @return 0 on success, -ENOTSUP on unsupported channel
  */
 static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
-    const uint16_t scale = (uint16_t)(61 * 1000 * 2 * M_PI / 360);    // scale for converting sensor output to m°/s/lsb
+    const uint16_t scale = (uint16_t) (61 * 1000 * 2 * M_PI / 360);    // scale for converting sensor output to m°/s/lsb
     switch (chan) {
         case SENSOR_CHAN_GYRO_X:
         case SENSOR_CHAN_GYRO_Y:
         case SENSOR_CHAN_GYRO_Z: {
             struct bmi088_data *data = to_data(dev);
-            bmi088_channel_convert(chan, scale, data->sample.gyr, val);
+            *val = bmi088_channel_convert(chan, scale, data->sample.gyr);
             return 0;
         }
 
@@ -210,10 +205,6 @@ static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan
  * @return 0 on success
  */
 static int bmi088_init(const struct device *dev) {
-
-    const struct bmi088_cfg *cfg = to_config(dev);
-    struct bmi088_data *data = to_data(dev);
-
     LOG_DBG("Initializing BMI088 device at %p", dev);
 
     if (!bmi088_bus_ready_spi(dev)) {
@@ -249,11 +240,10 @@ static int bmi088_init(const struct device *dev) {
 
 
     // Set Bandwidth to 0x04 (ODR 200Hz, Filter bandwidth 23Hz)
-    if(bmi088_byte_write(dev, GYRO_BANDWIDTH, BMI088_DEFAULT_BW) < 0){
+    if (bmi088_byte_write(dev, GYRO_BANDWIDTH, BMI088_DEFAULT_BW) < 0) {
         LOG_DBG("Failed to set gyro's default ODR");
         return -EIO;
     }
-
 
     return 0;
 }

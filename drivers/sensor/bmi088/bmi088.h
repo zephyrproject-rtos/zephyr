@@ -49,7 +49,7 @@ struct bmi088_cfg {
 
 // Each sample has X, Y and Z, each with lsb and msb Bytes
 struct bmi088_gyro_sample {
-    int8_t gyr[BMI088_SAMPLE_SIZE];
+    uint16_t gyr[BMI088_AXES];
 };
 
 struct bmi088_data {
@@ -105,9 +105,9 @@ int bmi088_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte);
  */
 
 
-struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale, struct sensor_value *val);
+struct sensor_value bmi088_to_fixed_point(int16_t raw_val, uint16_t scale);
 
 
-struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3], struct sensor_value *val);
+struct sensor_value bmi088_channel_convert(enum sensor_channel chan, uint16_t scale, int16_t raw_xyz[3]);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI088_BMI088_H_ */
