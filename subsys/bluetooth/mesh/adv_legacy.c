@@ -131,7 +131,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
-			buf = net_buf_get(&bt_mesh_adv_queue, K_NO_WAIT);
+			buf = bt_mesh_adv_buf_get(K_NO_WAIT);
 			while (!buf) {
 
 				/* Adv timeout may be set by a call from proxy
@@ -148,12 +148,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 					BT_DBG("PB-GATT Advertising");
 				}
 
-				buf = net_buf_get(&bt_mesh_adv_queue,
-						  SYS_TIMEOUT_MS(adv_timeout));
+				buf = bt_mesh_adv_buf_get(SYS_TIMEOUT_MS(adv_timeout));
 				bt_le_adv_stop();
 			}
 		} else {
-			buf = net_buf_get(&bt_mesh_adv_queue, K_FOREVER);
+			buf = bt_mesh_adv_buf_get(K_FOREVER);
 		}
 
 		if (!buf) {
@@ -173,16 +172,19 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-void bt_mesh_adv_update(void)
-{
-	BT_DBG("");
-
-	k_fifo_cancel_wait(&bt_mesh_adv_queue);
-}
-
-void bt_mesh_adv_buf_ready(void)
+void bt_mesh_adv_buf_local_ready(void)
 {
 	/* Will be handled automatically */
+}
+
+void bt_mesh_adv_buf_relay_ready(void)
+{
+	/* Will be handled automatically */
+}
+
+void bt_mesh_adv_update(void)
+{
+	bt_mesh_adv_buf_get_cancel();
 }
 
 void bt_mesh_adv_init(void)
