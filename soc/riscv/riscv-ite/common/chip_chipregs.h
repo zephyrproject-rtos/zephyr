@@ -2291,6 +2291,32 @@ struct espi_vw_regs {
 	/* 0x98-0x99: Reserved3 */
 	volatile uint8_t reserved3[2];
 };
+
+#define ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE 80
+/*
+ * eSPI Queue 0 registers
+ */
+struct espi_queue0_regs {
+	/* 0x00-0x3f: PUT_PC Data Byte 0-63 */
+	volatile uint8_t PUT_PC_DATA[0x40];
+	/* 0x40-0x7f: Reserved1 */
+	volatile uint8_t reserved1[0x40];
+	/* 0x80-0xcf: PUT_OOB Data Byte 0-79 */
+	volatile uint8_t PUT_OOB_DATA[ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE];
+};
+
+/*
+ * eSPI Queue 1 registers
+ */
+struct espi_queue1_regs {
+	/* 0x00-0x4f: Upstream Data Byte 0-79 */
+	volatile uint8_t UPSTREAM_DATA[ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE];
+	/* 0x50-0x7f: Reserved1 */
+	volatile uint8_t reserved1[0x30];
+	/* 0x80-0xbf: PUT_FLASH_NP Data Byte 0-63 */
+	volatile uint8_t PUT_FLASH_NP_DATA[0x40];
+};
+
 #endif /* !__ASSEMBLER__ */
 
 #endif /* CHIP_CHIPREGS_H */
