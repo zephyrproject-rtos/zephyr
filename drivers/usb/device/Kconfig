@@ -28,7 +28,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	help
-	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4 and G4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0, L4, G4, U5 family of
 	  processors.
 
 config USB_DC_STM32_DISCONN_ENABLE
