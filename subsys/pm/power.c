@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 static bool post_ops_done = true;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 static struct pm_state_info z_power_states[CONFIG_MP_NUM_CPUS];
+#ifdef CONFIG_PM_DEVICE
+static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
+#endif
 static struct k_spinlock pm_notifier_lock;
 
 #ifdef CONFIG_PM_STATS
@@ -260,9 +263,10 @@ void pm_power_state_force(struct pm_state_info info)
 static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
-	pm_resume_devices();
 
+	pm_resume_devices();
 	z_power_states[_current_cpu->id].state = PM_STATE_ACTIVE;
+
 	return PM_STATE_ACTIVE;
 }
 #endif
@@ -301,15 +305,15 @@ bool pm_system_suspend(int32_t ticks)
 	}
 
 #if CONFIG_PM_DEVICE
-	bool should_resume_devices = false;
-
-	if (z_power_states[id].state != PM_STATE_RUNTIME_IDLE) {
+	if ((z_power_states[id].state != PM_STATE_RUNTIME_IDLE) &&
+			(atomic_sub(&z_cpus_active, 1) == 1)) {
 		if (pm_suspend_devices()) {
-			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
-				ticks, _handle_device_abort(z_power_states[id]));
-			return _handle_device_abort(z_power_states[id]);
+			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
+				_handle_device_abort(z_power_states[id]));
+			(void)_handle_device_abort(z_power_states[id]);
+			(void)atomic_add(&z_cpus_active, 1);
+			return false;
 		}
-		should_resume_devices = true;
 	}
 #endif
 	/*
@@ -330,8 +334,7 @@ bool pm_system_suspend(int32_t ticks)
 
 	/* Wake up sequence starts here */
 #if CONFIG_PM_DEVICE
-	if (should_resume_devices) {
-		/* Turn on peripherals and restore device states as necessary */
+	if (atomic_add(&z_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}
 #endif
