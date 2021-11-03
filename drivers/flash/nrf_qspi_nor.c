@@ -801,12 +801,9 @@ out:
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
  *
  * @param dev The device structure
- * @param flash_id The flash info structure which contains the
- *		  expected JEDEC ID
  * @return 0 on success, negative errno code otherwise
  */
-static inline int qspi_nor_read_id(const struct device *dev,
-				   const struct qspi_nor_config *const flash_id)
+static inline int qspi_nor_read_id(const struct device *dev)
 {
 	uint8_t id[SPI_NOR_MAX_ID_LEN];
 	int ret = qspi_read_jedec_id(dev, id);
@@ -815,10 +812,12 @@ static inline int qspi_nor_read_id(const struct device *dev,
 		return -EIO;
 	}
 
-	if (memcmp(flash_id->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
+	const struct qspi_nor_config *qnc = dev->config;
+
+	if (memcmp(qnc->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
 		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
 			id[0], id[1], id[2],
-			flash_id->id[0], flash_id->id[1], flash_id->id[2]);
+			qnc->id[0], qnc->id[1], qnc->id[2]);
 		return -ENODEV;
 	}
 
@@ -1105,8 +1104,6 @@ static int qspi_nor_write_protection_set(const struct device *dev,
  */
 static int qspi_nor_configure(const struct device *dev)
 {
-	const struct qspi_nor_config *params = dev->config;
-
 	int ret = qspi_nrfx_configure(dev);
 
 	if (ret != 0) {
@@ -1116,7 +1113,7 @@ static int qspi_nor_configure(const struct device *dev)
 	ANOMALY_122_UNINIT(dev);
 
 	/* now the spi bus is configured, we can verify the flash id */
-	if (qspi_nor_read_id(dev, params) != 0) {
+	if (qspi_nor_read_id(dev) != 0) {
 		return -ENODEV;
 	}
 
