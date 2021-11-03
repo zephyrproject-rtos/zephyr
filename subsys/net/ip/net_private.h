@@ -29,6 +29,11 @@
 #include <net/wifi_mgmt.h>
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct wifi_scan_result)
 
+#elif defined(CONFIG_NET_L2_IEEE802154)
+
+#include <net/ieee802154_mgmt.h>
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct ieee802154_frame_raw)
+
 #else
 
 #if defined(CONFIG_NET_DHCPV4)

@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <random/rand32.h>
 
 #include <net/ieee802154_radio.h>
+#include <net/ieee802154_mgmt.h>
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
@@ -189,6 +190,20 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			 pkt_len, rx_frame->lqi);
+
+#ifdef CONFIG_NET_MGMT_EVENT
+		struct ieee802154_frame_raw raw = {
+			.psdu = &rx_frame->psdu[1],
+			.pkt_len = pkt_len - 1,
+			.time = rx_frame->time,
+			.lqi = rx_frame->lqi,
+			.rssi = rx_frame->rssi,
+			.ack_fpb = rx_frame->ack_fpb,
+		};
+		net_mgmt_event_notify_with_info(NET_EVENT_IEEE802154_FRAME_RECEIVED,
+						nrf5_radio->iface, &raw,
+						sizeof(struct ieee802154_frame_raw));
+#endif
 
 		if (net_recv_data(nrf5_radio->iface, pkt) < 0) {
 			LOG_ERR("Packet dropped by NET stack");

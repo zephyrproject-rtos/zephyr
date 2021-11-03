@@ -162,11 +162,14 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_IEEE802154_GET_SECURITY_SETTINGS);
 
 enum net_event_ieee802154_cmd {
 	NET_EVENT_IEEE802154_CMD_SCAN_RESULT = 1,
+	NET_EVENT_IEEE802154_CMD_FRAME_RECEIVED,
 };
 
 #define NET_EVENT_IEEE802154_SCAN_RESULT				\
 	(_NET_IEEE802154_EVENT | NET_EVENT_IEEE802154_CMD_SCAN_RESULT)
 
+#define NET_EVENT_IEEE802154_FRAME_RECEIVED                                                        \
+	(_NET_IEEE802154_EVENT | NET_EVENT_IEEE802154_CMD_FRAME_RECEIVED)
 
 #define IEEE802154_IS_CHAN_SCANNED(_channel_set, _chan)	\
 	(_channel_set & BIT(_chan - 1))
@@ -218,6 +221,20 @@ struct ieee802154_security_params {
 	uint8_t key_mode	: 2;
 	uint8_t level	: 3;
 	uint8_t _unused	: 3;
+};
+
+/**
+ * @brief raw IEEE 802.15.4 frame
+ *
+ * Used in nt_mgmt NET_EVENT_IEEE802154_FRAME_RECEIVED event
+ */
+struct ieee802154_frame_raw {
+	uint8_t *psdu; /* Pointer to the received frame. */
+	size_t pkt_len; /* length of psdu */
+	uint32_t time; /* RX timestamp. */
+	uint8_t lqi; /* LQI value. */
+	int8_t rssi; /* RSSI value. */
+	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
 };
 
 #ifdef __cplusplus
