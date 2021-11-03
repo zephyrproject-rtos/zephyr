@@ -153,6 +153,25 @@
 			status = "disabled";
 			use-iomux;
 		};
+
+		wdt0: watchdog@6001f048  {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x6001f048 0x20>;
+			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_0";
+			status = "disabled";
+		};
+
+		wdt1: watchdog@60020048 {
+			compatible = "espressif,esp32-watchdog";
+			reg = <0x60020048 0x20>;
+			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "WDT_1";
+			status = "disabled";
+		};
+
 	};
 
 };
