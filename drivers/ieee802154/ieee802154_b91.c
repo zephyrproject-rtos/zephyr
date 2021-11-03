@@ -244,7 +244,7 @@ static void b91_send_ack(uint8_t seq_num)
 
 	b91_set_tx_payload(ack_buf, sizeof(ack_buf));
 	rf_set_txmode();
-	delay_us(B91_SET_TRX_MODE_DELAY_US);
+	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 	rf_tx_pkt(data.tx_buffer);
 }
 
@@ -410,7 +410,7 @@ static int b91_cca(const struct device *dev)
 	unsigned int t1 = stimer_get_tick();
 
 	while (!clock_time_exceed(t1, B91_CCA_TIME_MAX_US)) {
-		if (rf_get_rssi() < B91_CCA_RSSI_MIN) {
+		if (rf_get_rssi() < CONFIG_IEEE802154_B91_CCA_RSSI_THRESHOLD) {
 			return 0;
 		}
 	}
@@ -479,7 +479,7 @@ static int b91_start(const struct device *dev)
 	/* check if RF is already started */
 	if (!data.is_started) {
 		rf_set_rxmode();
-		delay_us(B91_SET_TRX_MODE_DELAY_US);
+		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 		riscv_plic_irq_enable(DT_INST_IRQN(0));
 		data.is_started = true;
 	}
@@ -496,7 +496,7 @@ static int b91_stop(const struct device *dev)
 	if (data.is_started) {
 		riscv_plic_irq_disable(DT_INST_IRQN(0));
 		rf_set_tx_rx_off();
-		delay_us(B91_SET_TRX_MODE_DELAY_US);
+		delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 		data.is_started = false;
 	}
 
@@ -529,7 +529,7 @@ static int b91_tx(const struct device *dev,
 
 	/* start transmission */
 	rf_set_txmode();
-	delay_us(B91_SET_TRX_MODE_DELAY_US);
+	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 	rf_tx_pkt(data.tx_buffer);
 
 	/* wait for tx done */
