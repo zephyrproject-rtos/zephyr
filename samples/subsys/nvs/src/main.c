@@ -48,8 +48,7 @@
 
 static struct nvs_fs fs;
 
-#define STORAGE_NODE DT_NODE_BY_FIXED_PARTITION_LABEL(storage)
-#define FLASH_NODE DT_MTD_FROM_FIXED_PARTITION(STORAGE_NODE)
+#define STORAGE_NODE_LABEL storage
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      100
@@ -78,7 +77,7 @@ void main(void)
 	 *	3 sectors
 	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
-	flash_dev = DEVICE_DT_GET(FLASH_NODE);
+	flash_dev = FLASH_AREA_DEVICE(STORAGE_NODE_LABEL);
 	if (!device_is_ready(flash_dev)) {
 		printk("Flash device %s is not ready\n", flash_dev->name);
 		return;
