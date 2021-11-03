@@ -40,7 +40,8 @@ const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES] = {
 	[BT_MESH_ADV_URI]    = BT_DATA_URI,
 };
 
-K_FIFO_DEFINE(bt_mesh_adv_queue);
+static K_FIFO_DEFINE(bt_mesh_adv_queue);
+static K_FIFO_DEFINE(bt_mesh_relay_queue);
 
 static void adv_buf_destroy(struct net_buf *buf)
 {
@@ -101,6 +102,67 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 					    tag, xmit, timeout);
 }
 
+static struct net_buf *process_events(struct k_poll_event *ev, int count)
+{
+	for (; count; ev++, count--) {
+		BT_DBG("ev->state %u", ev->state);
+
+		switch (ev->state) {
+		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
+			return net_buf_get(ev->fifo, K_NO_WAIT);
+		case K_POLL_STATE_NOT_READY:
+		case K_POLL_STATE_CANCELLED:
+			break;
+		default:
+			BT_WARN("Unexpected k_poll event state %u", ev->state);
+			break;
+		}
+	}
+
+	return NULL;
+}
+
+struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
+{
+	int err;
+	struct k_poll_event events[] = {
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&bt_mesh_adv_queue,
+						0),
+#if defined(CONFIG_BT_MESH_RELAY)
+		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+						K_POLL_MODE_NOTIFY_ONLY,
+						&bt_mesh_relay_queue,
+						0),
+#endif /* CONFIG_BT_MESH_RELAY */
+	};
+
+	err = k_poll(events, ARRAY_SIZE(events), timeout);
+	if (err) {
+		return NULL;
+	}
+
+	return process_events(events, ARRAY_SIZE(events));
+}
+
+struct net_buf *bt_mesh_adv_buf_relay_get(k_timeout_t timeout)
+{
+	return net_buf_get(&bt_mesh_relay_queue, timeout);
+}
+
+void bt_mesh_adv_buf_get_cancel(void)
+{
+	BT_DBG("");
+
+	k_fifo_cancel_wait(&bt_mesh_adv_queue);
+
+#if defined(CONFIG_BT_MESH_RELAY)
+	k_fifo_cancel_wait(&bt_mesh_relay_queue);
+#endif /* CONFIG_BT_MESH_RELAY */
+
+}
+
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data)
 {
@@ -111,8 +173,13 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 	BT_MESH_ADV(buf)->cb_data = cb_data;
 	BT_MESH_ADV(buf)->busy = 1U;
 
-	net_buf_put(&bt_mesh_adv_queue, net_buf_ref(buf));
-	bt_mesh_adv_buf_ready();
+	if (BT_MESH_ADV(buf)->tag == BT_MESH_LOCAL_ADV) {
+		net_buf_put(&bt_mesh_adv_queue, net_buf_ref(buf));
+		bt_mesh_adv_buf_local_ready();
+	} else {
+		net_buf_put(&bt_mesh_relay_queue, net_buf_ref(buf));
+		bt_mesh_adv_buf_relay_ready();
+	}
 }
 
 static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
