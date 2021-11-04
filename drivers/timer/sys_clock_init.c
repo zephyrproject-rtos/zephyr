@@ -18,11 +18,6 @@
 
 /* Weak-linked noop defaults for optional driver interfaces*/
 
-void __weak sys_clock_isr(void *arg)
-{
-	__ASSERT_NO_MSG(false);
-}
-
 void __weak sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 }
