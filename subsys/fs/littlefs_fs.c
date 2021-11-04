@@ -37,12 +37,11 @@ static K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
 static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
 			 CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
 
-/* Inferred overhead, in bytes, for each k_heap_aligned allocation for
- * the filecache heap.  This relates to the CHUNK_UNIT parameter in
- * the heap implementation, but that value is not visible outside the
- * kernel.
- * FIXME: value for this macro should be rather taken from the Kernel
- * internals than set by user, but we do not have a way to do so now.
+/* Inferred overhead, in bytes, for each k_heap_aligned allocation for the filecache heap.
+ * This relates to the CHUNK_UNIT parameter in the heap implementation, but that value is not
+ * visible outside the kernel.
+ * FIXME: value for this macro should be rather taken from the Kernel internals than set by user,
+ * but we do not have a way to do so now.
  */
 #define FC_HEAP_PER_ALLOC_OVERHEAD CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
 
@@ -52,7 +51,7 @@ BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
 #undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
 #define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE						\
 	((CONFIG_FS_LITTLEFS_CACHE_SIZE + FC_HEAP_PER_ALLOC_OVERHEAD) *		\
-	CONFIG_FS_LITTLEFS_NUM_FILES)
+	 CONFIG_FS_LITTLEFS_NUM_FILES)
 #endif /* CONFIG_FS_LITTLEFS_FC_HEAP_SIZE */
 
 static K_HEAP_DEFINE(file_cache_heap, CONFIG_FS_LITTLEFS_FC_HEAP_SIZE);
@@ -152,8 +151,8 @@ static int errno_to_lfs(int error)
 }
 
 
-static int lfs_api_read(const struct lfs_config *c, lfs_block_t block,
-			lfs_off_t off, void *buffer, lfs_size_t size)
+static int lfs_api_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer,
+			lfs_size_t size)
 {
 	const struct flash_area *fa = c->context;
 	size_t offset = block * c->block_size + off;
@@ -163,8 +162,8 @@ static int lfs_api_read(const struct lfs_config *c, lfs_block_t block,
 	return errno_to_lfs(rc);
 }
 
-static int lfs_api_prog(const struct lfs_config *c, lfs_block_t block,
-			lfs_off_t off, const void *buffer, lfs_size_t size)
+static int lfs_api_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off,
+			const void *buffer, lfs_size_t size)
 {
 	const struct flash_area *fa = c->context;
 	size_t offset = block * c->block_size + off;
@@ -205,8 +204,8 @@ static int lfs_flags_from_zephyr(unsigned int zflags)
 {
 	int flags = (zflags & FS_O_CREATE) ? LFS_O_CREAT : 0;
 
-	/* LFS_O_READONLY and LFS_O_WRONLY can be selected at the same time,
-	 * this is not a mistake, together they create RDWR access.
+	/* LFS_O_READONLY and LFS_O_WRONLY can be selected at the same time, this is not a mistake,
+	 * together they create RDWR access.
 	 */
 	flags |= (zflags & FS_O_READ) ? LFS_O_RDONLY : 0;
 	flags |= (zflags & FS_O_WRITE) ? LFS_O_WRONLY : 0;
@@ -216,8 +215,7 @@ static int lfs_flags_from_zephyr(unsigned int zflags)
 	return flags;
 }
 
-static int littlefs_open(struct fs_file_t *fp, const char *path,
-			 fs_mode_t zflags)
+static int littlefs_open(struct fs_file_t *fp, const char *path, fs_mode_t zflags)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 	struct lfs *lfs = &fs->lfs;
@@ -243,8 +241,7 @@ static int littlefs_open(struct fs_file_t *fp, const char *path,
 
 	fs_lock(fs);
 
-	ret = lfs_file_opencfg(&fs->lfs, &fdp->file,
-			       path, flags, &fdp->config);
+	ret = lfs_file_opencfg(&fs->lfs, &fdp->file, path, flags, &fdp->config);
 
 	fs_unlock(fs);
 out:
@@ -284,8 +281,7 @@ static int littlefs_unlink(struct fs_mount_t *mountp, const char *path)
 	return lfs_to_errno(ret);
 }
 
-static int littlefs_rename(struct fs_mount_t *mountp, const char *from,
-			   const char *to)
+static int littlefs_rename(struct fs_mount_t *mountp, const char *from, const char *to)
 {
 	struct fs_littlefs *fs = mountp->fs_data;
 
@@ -324,9 +320,8 @@ static ssize_t littlefs_write(struct fs_file_t *fp, const void *ptr, size_t len)
 	return lfs_to_errno(ret);
 }
 
-BUILD_ASSERT((FS_SEEK_SET == LFS_SEEK_SET)
-	     && (FS_SEEK_CUR == LFS_SEEK_CUR)
-	     && (FS_SEEK_END == LFS_SEEK_END));
+BUILD_ASSERT((FS_SEEK_SET == LFS_SEEK_SET) && (FS_SEEK_CUR == LFS_SEEK_CUR) &&
+	     (FS_SEEK_END == LFS_SEEK_END));
 
 static int littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
 {
@@ -421,8 +416,7 @@ static int littlefs_opendir(struct fs_dir_t *dp, const char *path)
 
 static void info_to_dirent(const struct lfs_info *info, struct fs_dirent *entry)
 {
-	entry->type = ((info->type == LFS_TYPE_DIR) ?
-		       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
+	entry->type = ((info->type == LFS_TYPE_DIR) ?  FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 	entry->size = info->size;
 	strncpy(entry->name, info->name, sizeof(entry->name));
 	entry->name[sizeof(entry->name) - 1] = '\0';
@@ -464,8 +458,7 @@ static int littlefs_closedir(struct fs_dir_t *dp)
 	return lfs_to_errno(ret);
 }
 
-static int littlefs_stat(struct fs_mount_t *mountp,
-			 const char *path, struct fs_dirent *entry)
+static int littlefs_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
 {
 	struct fs_littlefs *fs = mountp->fs_data;
 
@@ -486,8 +479,7 @@ static int littlefs_stat(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
-static int littlefs_statvfs(struct fs_mount_t *mountp,
-			    const char *path, struct fs_statvfs *stat)
+static int littlefs_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_statvfs *stat)
 {
 	struct fs_littlefs *fs = mountp->fs_data;
 	struct lfs *lfs = &fs->lfs;
@@ -512,8 +504,8 @@ static int littlefs_statvfs(struct fs_mount_t *mountp,
 	return lfs_to_errno(ret);
 }
 
-/* Return maximum page size in a flash area.  There's no flash_area
- * API to implement this, so we have to make one here.
+/* Return maximum page size in a flash area.  There's no flash_area API to implement this, so we
+ * have to make one here.
  */
 struct get_page_ctx {
 	const struct flash_area *area;
@@ -544,10 +536,9 @@ static bool get_page_cb(const struct flash_pages_info *info, void *ctxp)
 	return true;
 }
 
-/* Iterate over all page groups in the flash area and return the
- * largest page size we see.  This works as long as the partition is
- * aligned so that erasing with this size is supported throughout the
- * partition.
+/* Iterate over all page groups in the flash area and return the largest page size we see.
+ * This works as long as the partition is aligned so that erasing with this size is supported
+ * throughout the partition.
  */
 static lfs_size_t get_block_size(const struct flash_area *fa)
 {
@@ -569,8 +560,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	unsigned int area_id = (uintptr_t)mountp->storage_dev;
 	const struct device *dev;
 
-	LOG_INF("LittleFS version %u.%u, disk version %u.%u",
-		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
+	LOG_INF("LittleFS version %u.%u, disk version %u.%u", LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
 		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
 
 	if (fs->area) {
@@ -588,8 +578,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		ret = -ENODEV;
 		goto out;
 	}
-	LOG_DBG("FS area %u at 0x%x for %u bytes",
-		area_id, (uint32_t)fs->area->fa_off,
+	LOG_DBG("FS area %u at 0x%x for %u bytes", area_id, (uint32_t)fs->area->fa_off,
 		(uint32_t)fs->area->fa_size);
 
 	dev = flash_area_get_device(fs->area);
@@ -661,11 +650,11 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	/* No, you don't get to override this. */
 	lfs_size_t block_count = fs->area->fa_size / block_size;
 
-	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
-		log_strdup(dev->name), (uint32_t)fs->area->fa_off,
-		block_count, block_size, block_cycles);
-	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
-		read_size, prog_size, cache_size, lookahead_size);
+	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle", log_strdup(dev->name),
+		(uint32_t)fs->area->fa_off, block_count, block_size, block_cycles);
+
+	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u", read_size, prog_size, cache_size,
+		lookahead_size);
 
 	__ASSERT_NO_MSG(prog_size != 0);
 	__ASSERT_NO_MSG(read_size != 0);
@@ -674,10 +663,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	__ASSERT((fs->area->fa_size % block_size) == 0,
 		 "partition size must be multiple of block size");
-	__ASSERT((block_size % prog_size) == 0,
-		 "erase size must be multiple of write size");
-	__ASSERT((block_size % cache_size) == 0,
-		 "cache size incompatible with block size");
+	__ASSERT((block_size % prog_size) == 0, "erase size must be multiple of write size");
+	__ASSERT((block_size % cache_size) == 0, "cache size incompatible with block size");
 
 	/* Set the validated/defaulted values. */
 	lcp->context = (void *)fs->area;
@@ -695,8 +682,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	/* Mount it, formatting if needed. */
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
-	if (ret < 0 &&
-	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
+	if (ret < 0 && (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
 		LOG_WRN("can't mount (LFS %d); formatting", ret);
 		if ((mountp->flags & FS_MOUNT_FLAG_READ_ONLY) == 0) {
 			ret = lfs_format(&fs->lfs, &fs->cfg);
@@ -814,17 +800,14 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS)
 
 static void mount_init(struct fs_mount_t *mp)
 {
-
 	LOG_INF("littlefs partition at %s", mp->mnt_point);
 	if ((mp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
 		int rc = fs_mount(mp);
 
 		if (rc < 0) {
-			LOG_ERR("Automount %s failed: %d",
-				mp->mnt_point, rc);
+			LOG_ERR("Automount %s failed: %d", mp->mnt_point, rc);
 		} else {
-			LOG_INF("Automount %s succeeded",
-				mp->mnt_point);
+			LOG_INF("Automount %s succeeded", mp->mnt_point);
 		}
 	}
 }
