@@ -519,6 +519,7 @@ struct hl7800_iface_ctx {
 	char mdm_active_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
 	char mdm_bands_string[MDM_HL7800_LTE_BAND_STR_SIZE];
 	char mdm_imsi[MDM_HL7800_IMSI_MAX_STR_SIZE];
+	int mdm_rssi;
 	uint16_t mdm_bands_top;
 	uint32_t mdm_bands_middle;
 	uint32_t mdm_bands_bottom;
@@ -860,7 +861,7 @@ static void event_handler(enum mdm_hl7800_event event, void *event_data)
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
 {
-	*rsrp = ictx.mdm_ctx.data_rssi;
+	*rsrp = ictx.mdm_rssi;
 	*sinr = ictx.mdm_sinr;
 }
 
@@ -1243,7 +1244,7 @@ void mdm_hl7800_generate_status_events(void)
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	generate_fota_state_event();
 #endif
-	event_handler(HL7800_EVENT_RSSI, &ictx.mdm_ctx.data_rssi);
+	event_handler(HL7800_EVENT_RSSI, &ictx.mdm_rssi);
 	event_handler(HL7800_EVENT_SINR, &ictx.mdm_sinr);
 	event_handler(HL7800_EVENT_APN_UPDATE, &ictx.mdm_apn);
 	event_handler(HL7800_EVENT_RAT, &ictx.mdm_rat);
@@ -3385,7 +3386,7 @@ static bool on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 		search_start = delims[i] + 1;
 	}
 	/* the first value in the message is the RSRP */
-	ictx.mdm_ctx.data_rssi = strtol(value, NULL, 10);
+	ictx.mdm_rssi = strtol(value, NULL, 10);
 	/* the 4th ',' (last in the msg) is the start of the SINR */
 	ictx.mdm_sinr = strtol(delims[3] + 1, NULL, 10);
 	if ((delims[1] - delims[0]) == 1) {
@@ -3394,9 +3395,9 @@ static bool on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 		 */
 		LOG_INF("RSSI (RSRP): UNKNOWN");
 	} else {
-		LOG_INF("RSSI (RSRP): %d SINR: %d", ictx.mdm_ctx.data_rssi,
+		LOG_INF("RSSI (RSRP): %d SINR: %d", ictx.mdm_rssi,
 			ictx.mdm_sinr);
-		event_handler(HL7800_EVENT_RSSI, &ictx.mdm_ctx.data_rssi);
+		event_handler(HL7800_EVENT_RSSI, &ictx.mdm_rssi);
 		event_handler(HL7800_EVENT_SINR, &ictx.mdm_sinr);
 	}
 done:
@@ -5854,6 +5855,7 @@ static int hl7800_init(const struct device *dev)
 #ifdef CONFIG_MODEM_SIM_NUMBERS
 	ictx.mdm_ctx.data_imei = ictx.mdm_imei;
 #endif
+	ictx.mdm_ctx.data_rssi = &ictx.mdm_rssi;
 
 	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV,
 				    mdm_recv_buf, sizeof(mdm_recv_buf));
