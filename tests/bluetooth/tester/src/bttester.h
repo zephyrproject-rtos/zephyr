@@ -707,6 +707,8 @@ struct gatt_change_db_cmd {
 	uint8_t visibility;
 } __packed;
 
+#define GATT_READ_MULTIPLE_VAR		0x20
+
 /* GATT events */
 #define GATT_EV_NOTIFICATION		0x80
 struct gatt_notification_ev {
