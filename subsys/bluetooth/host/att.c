@@ -110,7 +110,6 @@ K_MEM_SLAB_DEFINE(att_slab, sizeof(struct bt_att),
 K_MEM_SLAB_DEFINE(chan_slab, sizeof(struct bt_att_chan),
 		  CONFIG_BT_MAX_CONN * ATT_CHAN_MAX,
 		  __alignof__(struct bt_att_chan));
-static struct bt_att_req cancel;
 
 typedef void (*bt_att_chan_sent_t)(struct bt_att_chan *chan);
 
@@ -610,12 +609,6 @@ static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
 
 	if (!chan->req) {
 		BT_WARN("No pending ATT request");
-		goto process;
-	}
-
-	/* Check if request has been cancelled */
-	if (chan->req == &cancel) {
-		chan->req = NULL;
 		goto process;
 	}
 
@@ -2058,8 +2051,8 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	/* Don't retry if there is no req pending or it has been cancelled */
-	if (!chan->req || chan->req == &cancel) {
+	/* Don't retry if there is no req pending */
+	if (!chan->req) {
 		err = BT_ATT_ERR_UNLIKELY;
 		goto done;
 	}
@@ -3101,47 +3094,4 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 	att_req_send_process(att);
 
 	return 0;
-}
-
-static bool bt_att_chan_req_cancel(struct bt_att_chan *chan,
-				   struct bt_att_req *req)
-{
-	if (chan->req != req) {
-		return false;
-	}
-
-	chan->req = &cancel;
-
-	bt_att_req_free(req);
-
-	return true;
-}
-
-void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
-{
-	struct bt_att *att;
-	struct bt_att_chan *chan, *tmp;
-
-	BT_DBG("req %p", req);
-
-	if (!conn || !req) {
-		return;
-	}
-
-	att = att_get(conn);
-	if (!att) {
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		/* Check if request is outstanding */
-		if (bt_att_chan_req_cancel(chan, req)) {
-			return;
-		}
-	}
-
-	/* Remove request from the list */
-	sys_slist_find_and_remove(&att->reqs, &req->node);
-
-	bt_att_req_free(req);
 }

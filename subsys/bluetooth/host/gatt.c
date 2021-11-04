@@ -4382,8 +4382,6 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 
 	BT_DBG("err 0x%02x", err);
 
-	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
-
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
 		struct gatt_sub *sub;
@@ -4419,8 +4417,6 @@ static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
 	write_req = net_buf_add(buf, sizeof(*write_req));
 	write_req->handle = sys_cpu_to_le16(params->ccc_handle);
 	net_buf_add_le16(buf, params->value);
-
-	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
 	return 0;
 }
@@ -4613,11 +4609,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		if (params == tmp) {
 			found = true;
 			sys_slist_remove(&sub->list, prev, &tmp->node);
-			/* Attempt to cancel if write is pending */
-			if (atomic_test_bit(params->flags,
-			    BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-				bt_gatt_cancel(conn, params);
-			}
 			continue;
 		} else {
 			prev = &tmp->node;
@@ -4646,11 +4637,6 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	params->value = 0x0000;
 
 	return gatt_write_ccc(conn, params);
-}
-
-void bt_gatt_cancel(struct bt_conn *conn, void *params)
-{
-	bt_att_req_cancel(conn, params);
 }
 
 static void add_subscriptions(struct bt_conn *conn)

@@ -1579,13 +1579,6 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_NO_RESUB,
 
-	/** @brief Write pending flag
-	 *
-	 *  If set, indicates write operation is pending waiting remote end to
-	 *  respond.
-	 */
-	BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING,
-
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
 
@@ -1671,8 +1664,15 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *
  *  @param conn Connection object.
  *  @param params Requested params address.
+ *
+ *  \deprecated
+ *  This function was incorrectly implemented and never did anything useful.
+ *  It now a no-op, and may be removed in the future. There is no replacement.
  */
-void bt_gatt_cancel(struct bt_conn *conn, void *params);
+__deprecated
+inline void bt_gatt_cancel(struct bt_conn *conn, void *params)
+{
+}
 
 /** @} */
 
