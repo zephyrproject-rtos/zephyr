@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <device.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -311,46 +312,6 @@ void z_nrf_rtc_timer_chan_free(int32_t chan)
 	atomic_or(&alloc_mask, BIT(chan));
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	static const enum nrf_lfclk_start_mode mode =
-		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
-			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
-			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
-			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
-			CLOCK_CONTROL_NRF_LF_START_STABLE);
-
-	/* TODO: replace with counter driver to access RTC */
-	nrf_rtc_prescaler_set(RTC, 0);
-	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
-		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
-	}
-
-	NVIC_ClearPendingIRQ(RTC_IRQn);
-
-	IRQ_CONNECT(RTC_IRQn, DT_IRQ(DT_NODELABEL(RTC_LABEL), priority),
-		    rtc_nrf_isr, 0, 0);
-	irq_enable(RTC_IRQn);
-
-	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
-	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
-
-	int_mask = BIT_MASK(CHAN_COUNT);
-	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
-		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
-	}
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		compare_set(0, counter() + CYC_PER_TICK,
-			    sys_clock_timeout_handler, NULL);
-	}
-
-	z_nrf_clock_control_lf_on(mode);
-
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -409,3 +370,46 @@ uint32_t sys_clock_cycle_get_32(void)
 	k_spin_unlock(&lock, key);
 	return ret;
 }
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
+
+	/* TODO: replace with counter driver to access RTC */
+	nrf_rtc_prescaler_set(RTC, 0);
+	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
+		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
+	}
+
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+
+	IRQ_CONNECT(RTC_IRQn, DT_IRQ(DT_NODELABEL(RTC_LABEL), priority),
+		    rtc_nrf_isr, 0, 0);
+	irq_enable(RTC_IRQn);
+
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
+	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
+
+	int_mask = BIT_MASK(CHAN_COUNT);
+	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
+		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
+	}
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		compare_set(0, counter() + CYC_PER_TICK,
+			    sys_clock_timeout_handler, NULL);
+	}
+
+	z_nrf_clock_control_lf_on(mode);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

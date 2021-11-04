@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include <device.h>
 #include <drivers/timer/arm_arch_timer.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
@@ -83,21 +83,6 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	k_spin_unlock(&lock, key);
 
 	sys_clock_announce(delta_ticks);
-}
-
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
-		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
-	arm_arch_timer_init();
-	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
-	arm_arch_timer_enable(true);
-	irq_enable(ARM_ARCH_TIMER_IRQ);
-	arm_arch_timer_set_irq_mask(false);
-
-	return 0;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -192,3 +177,21 @@ void smp_timer_init(void)
 	arm_arch_timer_set_irq_mask(false);
 }
 #endif
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
+		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
+	arm_arch_timer_init();
+	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
+	arm_arch_timer_enable(true);
+	irq_enable(ARM_ARCH_TIMER_IRQ);
+	arm_arch_timer_set_irq_mask(false);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
