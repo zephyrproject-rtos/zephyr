@@ -105,7 +105,8 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 	z_arm_debug_monitor,	/* 0x30 */
 	(void (*)())image_vector_table,		/* 0x34, imageLoadAddress. */
 	z_arm_pendsv,						/* 0x38 */
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr,						/* 0x3C */
 #else
 	z_arm_exc_spurious,
