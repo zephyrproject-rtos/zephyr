@@ -65,6 +65,7 @@ void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
+
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -79,6 +80,7 @@ void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param)
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
+
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -93,6 +95,7 @@ void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_rsp->features[counter];
+
 		pdu->llctrl.feature_req.features[counter] = expected_value;
 	}
 }
@@ -206,6 +209,7 @@ void helper_pdu_encode_reject_ind(struct pdu_data *pdu, void *param)
 void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_phy_req *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len =
 		offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
@@ -217,6 +221,7 @@ void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param)
 void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_phy_rsp *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len =
 		offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
@@ -435,6 +440,7 @@ void helper_pdu_verify_feature_req(const char *file, uint32_t line, struct pdu_d
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
+
 		zassert_equal(pdu->llctrl.feature_req.features[counter], expected_value,
 			      "Wrong feature exchange data.\nAt %s:%d\n", file, line);
 	}
@@ -450,6 +456,7 @@ void helper_pdu_verify_slave_feature_req(const char *file, uint32_t line, struct
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_req->features[counter];
+
 		zassert_equal(pdu->llctrl.feature_req.features[counter], expected_value,
 			      "Wrong feature data\nCalled at %s:%d\n", file, line);
 	}
@@ -467,6 +474,7 @@ void helper_pdu_verify_feature_rsp(const char *file, uint32_t line, struct pdu_d
 
 	for (int counter = 0; counter < 8; counter++) {
 		uint8_t expected_value = feature_rsp->features[counter];
+
 		zassert_equal(pdu->llctrl.feature_rsp.features[counter], expected_value,
 			      "Wrong feature data\nCalled at %s:%d\n", file, line);
 	}
@@ -606,6 +614,7 @@ void helper_pdu_verify_reject_ext_ind(const char *file, uint32_t line, struct pd
 void helper_pdu_verify_phy_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_phy_req *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
 		      line);
 	zassert_equal(pdu->len,
@@ -623,6 +632,7 @@ void helper_pdu_verify_phy_req(const char *file, uint32_t line, struct pdu_data 
 void helper_pdu_verify_phy_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_phy_rsp *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
 		      line);
 	zassert_equal(pdu->len,
@@ -641,6 +651,7 @@ void helper_pdu_verify_phy_update_ind(const char *file, uint32_t line, struct pd
 				      void *param)
 {
 	struct pdu_data_llctrl_phy_upd_ind *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
 		      line);
 	zassert_equal(pdu->len,
@@ -846,6 +857,7 @@ void helper_pdu_verify_length_req(const char *file, uint32_t line, struct pdu_da
 				  void *param)
 {
 	struct pdu_data_llctrl_length_req *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
 		      line);
 	zassert_equal(pdu->len,
@@ -868,6 +880,7 @@ void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_da
 				  void *param)
 {
 	struct pdu_data_llctrl_length_rsp *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
 		      line);
 	zassert_equal(pdu->len,

@@ -261,7 +261,8 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 				  conn.lll.event_counter);
 
 	/* Now lets generate another DLU, but one that should not result in
-	   change to effective numbers, thus not generate NTF */
+	 * change to effective numbers, thus not generate NTF
+	 */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -547,10 +548,11 @@ void test_data_length_update_sla_rem_and_loc(void)
 void test_data_length_update_dle_max_time_get(void)
 {
 	uint16_t max_time = 0xffff;
+	uint16_t max_octets = 211;
+
 #ifdef CONFIG_BT_CTLR_PHY
 	max_time = 2120;
 #endif
-	uint16_t max_octets = 211;
 	conn.llcp.fex.valid = 0;
 
 	ull_dle_local_tx_update(&conn, max_octets, max_time);

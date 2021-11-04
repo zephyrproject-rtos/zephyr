@@ -59,19 +59,19 @@ enum {
 	/* Procedure run */
 	LP_PU_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_PU_EVT_PHY_RSP,
 
-	/* Indication recieved */
+	/* Indication received */
 	LP_PU_EVT_PHY_UPDATE_IND,
 
 	/* Ack received */
 	LP_PU_EVT_ACK,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_PU_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_PU_EVT_UNKNOWN,
 };
 
@@ -93,13 +93,13 @@ enum {
 	/* Procedure run */
 	RP_PU_EVT_RUN,
 
-	/* Request recieved */
+	/* Request received */
 	RP_PU_EVT_PHY_REQ,
 
 	/* Ack received */
 	RP_PU_EVT_ACK,
 
-	/* Indication recieved */
+	/* Indication received */
 	RP_PU_EVT_PHY_UPDATE_IND,
 };
 
@@ -114,7 +114,7 @@ enum {
 
 static inline uint8_t pu_select_phy(uint8_t phys)
 {
-	/* select only one phy, select prefered */
+	/* select only one phy, select preferred */
 	if (phys & PHY_PREF_1) {
 		return PHY_PREF_1;
 	} else if (phys & PHY_PREF_2) {
@@ -193,19 +193,21 @@ static uint16_t pu_event_counter(struct ll_conn *conn)
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+	uint8_t ret = 0;
+
 	/* Both tx and rx PHY unchanged */
 	if (!((ctx->data.pu.c_to_p_phy | ctx->data.pu.p_to_c_phy) & 0x07)) {
 		/* if no phy changes, quit procedure, and possibly signal host */
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
-		return 1;
+		ret = 1;
 	} else {
 		/* if instant already passed, quit procedure with error */
 		if (is_instant_reached_or_passed(ctx->data.pu.instant, pu_event_counter(conn))) {
 			ctx->data.pu.error = BT_HCI_ERR_INSTANT_PASSED;
-			return 1;
+			ret = 1;
 		}
 	}
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -232,8 +234,6 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 			lll->phy_tx = ctx->data.pu.c_to_p_phy;
 		}
 #endif /* CONFIG_BT_CENTRAL */
-	} else {
-		/* empty clause */
 	}
 
 	return (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy);
@@ -360,7 +360,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
 
-	/* Update procedure timout */
+	/* Update procedure timeout */
 	ull_conn_prt_reload(conn, conn->procedure_reload);
 }
 
@@ -416,7 +416,9 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #define NTF_DLE 0
 #endif
 	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
-	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer) */
+	/* when complete reset timing restrictions - idempotent
+	 * (so no problem if we need to wait for NTF buffer)
+	 */
 	pu_reset_timing_restrict(conn);
 
 	if (ntf_count && !llcp_ntf_alloc_num_available(ntf_count)) {
@@ -503,7 +505,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		llcp_pdu_decode_phy_rsp(ctx, (struct pdu_data *)param);
 		/* Pause data tx */
 		llcp_tx_pause_data(conn);
-		/* Combine with the 'Prefered' phys */
+		/* Combine with the 'Preferred' phys */
 		pu_combine_phys(conn, ctx, tx_pref, rx_pref);
 		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
 		break;
@@ -584,7 +586,7 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 				pu_set_timing_restrict(conn, ctx->data.pu.c_to_p_phy);
 			}
 
-			/* Since at least one phy will change, we clear procedure response timeout */
+			/* Since at least one phy will change we clear procedure response timeout */
 			ull_conn_prt_clear(conn);
 
 			/* Now we should wait for instant */
@@ -613,13 +615,14 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
+
 		if (!end_procedure) {
 			if (ctx->data.pu.p_to_c_phy) {
 				/* If periph to central phy changes apply tx timing restriction */
 				pu_set_timing_restrict(conn, ctx->data.pu.p_to_c_phy);
 			}
 
-			/* Since at least one phy will change, we clear procedure response timeout */
+			/* Since at least one phy will change we clear procedure response timeout */
 			ull_conn_prt_clear(conn);
 
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
@@ -812,7 +815,9 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #define NTF_DLE 0
 #endif
 	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
-	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF) */
+	/* when complete reset timing restrictions - idempotent
+	 * (so no problem if we need to wait for NTF buffer)
+	 */
 	pu_reset_timing_restrict(conn);
 
 	if ((ntf_count > 0) && !llcp_ntf_alloc_num_available(ntf_count)) {
@@ -876,7 +881,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 				     void *param)
 {
 	llcp_pdu_decode_phy_req(ctx, (struct pdu_data *)param);
-	/* Combine with the 'Prefered' the phys in conn->phy_pref_?x */
+	/* Combine with the 'Preferred' the phys in conn->phy_pref_?x */
 	pu_combine_phys(conn, ctx, conn->phy_pref_tx, conn->phy_pref_rx);
 	llcp_tx_pause_data(conn);
 	switch (evt) {
@@ -984,8 +989,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	case RP_PU_EVT_PHY_UPDATE_IND:
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
+
 		if (!end_procedure) {
-			/* Since at least one phy will change, we clear procedure response timeout */
+			/* Since at least one phy will change we clear procedure response timeout */
 			ull_conn_prt_clear(conn);
 
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;

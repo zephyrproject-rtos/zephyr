@@ -1,8 +1,8 @@
 /*
-* Copyright (c) 2020 Demant
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright (c) 2020 Demant
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <zephyr/types.h>
 #include <ztest.h>
@@ -45,24 +45,24 @@ static void setup(void)
 }
 
 /* +-----+                     +-------+            +-----+
-* | UT  |                     | LL_A  |            | LT  |
-* +-----+                     +-------+            +-----+
-*    |                            |                   |
-*    | Start                      |                   |
-*    | Version Exchange Proc.     |                   |
-*    |--------------------------->|                   |
-*    |                            |                   |
-*    |                            | LL_VERSION_IND    |
-*    |                            |------------------>|
-*    |                            |                   |
-*    |                            |    LL_VERSION_IND |
-*    |                            |<------------------|
-*    |                            |                   |
-*    |     Version Exchange Proc. |                   |
-*    |                   Complete |                   |
-*    |<---------------------------|                   |
-*    |                            |                   |
-*/
+ * | UT  |                     | LL_A  |            | LT  |
+ * +-----+                     +-------+            +-----+
+ *    |                            |                   |
+ *    | Start                      |                   |
+ *    | Version Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |                            | LL_VERSION_IND    |
+ *    |                            |------------------>|
+ *    |                            |                   |
+ *    |                            |    LL_VERSION_IND |
+ *    |                            |<------------------|
+ *    |                            |                   |
+ *    |     Version Exchange Proc. |                   |
+ *    |                   Complete |                   |
+ *    |<---------------------------|                   |
+ *    |                            |                   |
+ */
 void test_version_exchange_mas_loc(void)
 {
 	uint8_t err;
@@ -133,16 +133,16 @@ void test_version_exchange_mas_loc_2(void)
 }
 
 /* +-----+ +-------+            +-----+
-* | UT  | | LL_A  |            | LT  |
-* +-----+ +-------+            +-----+
-*    |        |                   |
-*    |        |    LL_VERSION_IND |
-*    |        |<------------------|
-*    |        |                   |
-*    |        | LL_VERSION_IND    |
-*    |        |------------------>|
-*    |        |                   |
-*/
+ * | UT  | | LL_A  |            | LT  |
+ * +-----+ +-------+            +-----+
+ *    |        |                   |
+ *    |        |    LL_VERSION_IND |
+ *    |        |<------------------|
+ *    |        |                   |
+ *    |        | LL_VERSION_IND    |
+ *    |        |------------------>|
+ *    |        |                   |
+ */
 void test_version_exchange_mas_rem(void)
 {
 	struct node_tx *tx;
@@ -192,24 +192,24 @@ void test_version_exchange_mas_rem(void)
 }
 
 /* +-----+                     +-------+            +-----+
-* | UT  |                     | LL_A  |            | LT  |
-* +-----+                     +-------+            +-----+
-*    |                            |                   |
-*    |                            |    LL_VERSION_IND |
-*    |                            |<------------------|
-*    |                            |                   |
-*    |                            | LL_VERSION_IND    |
-*    |                            |------------------>|
-*    |                            |                   |
-*    | Start                      |                   |
-*    | Version Exchange Proc.     |                   |
-*    |--------------------------->|                   |
-*    |                            |                   |
-*    |     Version Exchange Proc. |                   |
-*    |                   Complete |                   |
-*    |<---------------------------|                   |
-*    |                            |                   |
-*/
+ * | UT  |                     | LL_A  |            | LT  |
+ * +-----+                     +-------+            +-----+
+ *    |                            |                   |
+ *    |                            |    LL_VERSION_IND |
+ *    |                            |<------------------|
+ *    |                            |                   |
+ *    |                            | LL_VERSION_IND    |
+ *    |                            |------------------>|
+ *    |                            |                   |
+ *    | Start                      |                   |
+ *    | Version Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |     Version Exchange Proc. |                   |
+ *    |                   Complete |                   |
+ *    |<---------------------------|                   |
+ *    |                            |                   |
+ */
 void test_version_exchange_mas_rem_2(void)
 {
 	uint8_t err;
@@ -260,31 +260,31 @@ void test_version_exchange_mas_rem_2(void)
 }
 
 /* +-----+                     +-------+            +-----+
-* | UT  |                     | LL_A  |            | LT  |
-* +-----+                     +-------+            +-----+
-*    |                            |                   |
-*    | Start                      |                   |
-*    | Version Exchange Proc.     |                   |
-*    |--------------------------->|                   |
-*    |                            |                   |
-*    |                            | LL_VERSION_IND    |
-*    |                            |------------------>|
-*    |                            |                   |
-*    |                            |    LL_VERSION_IND |
-*    |                            |<------------------|
-*    |                            |                   |
-*    |     Version Exchange Proc. |                   |
-*    |                   Complete |                   |
-*    |<---------------------------|                   |
-*    | Start                      |                   |
-*    | Version Exchange Proc.     |                   |
-*    |--------------------------->|                   |
-*    |                            |                   |
-*    |     Version Exchange Proc. |                   |
-*    |                   Complete |                   |
-*    |<---------------------------|                   |
-*    |                            |                   |
-*/
+ * | UT  |                     | LL_A  |            | LT  |
+ * +-----+                     +-------+            +-----+
+ *    |                            |                   |
+ *    | Start                      |                   |
+ *    | Version Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |                            | LL_VERSION_IND    |
+ *    |                            |------------------>|
+ *    |                            |                   |
+ *    |                            |    LL_VERSION_IND |
+ *    |                            |<------------------|
+ *    |                            |                   |
+ *    |     Version Exchange Proc. |                   |
+ *    |                   Complete |                   |
+ *    |<---------------------------|                   |
+ *    | Start                      |                   |
+ *    | Version Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |     Version Exchange Proc. |                   |
+ *    |                   Complete |                   |
+ *    |<---------------------------|                   |
+ *    |                            |                   |
+ */
 void test_version_exchange_mas_loc_twice(void)
 {
 	uint8_t err;

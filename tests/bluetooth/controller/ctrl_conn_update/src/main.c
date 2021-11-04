@@ -1072,7 +1072,8 @@ void test_conn_update_mas_rem_reject(void)
 void test_conn_update_mas_rem_unsupp_feat(void)
 {
 	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking */
+	 * checking
+	 */
 }
 
 /*
@@ -2031,7 +2032,8 @@ void test_conn_update_sla_rem_reject(void)
 void test_conn_update_sla_rem_unsupp_feat(void)
 {
 	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking */
+	 * checking
+	 */
 }
 
 /*
