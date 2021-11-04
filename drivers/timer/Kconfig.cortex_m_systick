@@ -16,6 +16,7 @@ config CORTEX_M_SYSTICK
 		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK)) || \
 		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
 	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
 	  SYSTICK timer and provides the standard "system clock driver" interfaces.
