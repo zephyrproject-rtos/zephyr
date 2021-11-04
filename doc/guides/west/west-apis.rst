@@ -304,6 +304,9 @@ Manifest and sub-objects
    .. versionadded:: 0.9.0
       The *group_filter* and *submodules* attributes.
 
+   .. versionadded:: 0.12.0
+      The *userdata* attribute.
+
    Constructor:
 
    .. automethod:: __init__
