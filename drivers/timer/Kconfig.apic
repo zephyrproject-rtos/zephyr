@@ -1,0 +1,76 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig APIC_TIMER
+	bool "New local APIC timer"
+	depends on X86
+	depends on LOAPIC
+	select TICKLESS_CAPABLE
+	help
+	  Use the x86 local APIC in one-shot mode as the system time
+	  source.  NOTE: this probably isn't what you want except on
+	  older or idiosyncratic hardware (or environments like qemu
+	  without complete APIC emulation).  Modern hardware will work
+	  better with CONFIG_APIC_TSC_DEADLINE_TIMER.
+
+if APIC_TIMER
+
+config APIC_TIMER_IRQ
+	int "Local APIC timer IRQ"
+	default 24
+	help
+	  This option specifies the IRQ used by the local APIC timer.
+	  Note: this MUST be set to the index immediately after the
+	  last IO-APIC IRQ (the timer is the first entry in the APIC
+	  local vector table).  This footgun is not intended to be
+	  user-configurable and almost certainly should be managed via
+	  a different mechanism.
+
+config APIC_TIMER_TSC
+	bool "Use invariant TSC for sys_clock_cycle_get_32()"
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  If your CPU supports invariant TSC, and you know the ratio of the
+	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
+	  timer frequency), then enable this for a much faster and more
+	  accurate sys_clock_cycle_get_32().
+
+if APIC_TIMER_TSC
+
+config APIC_TIMER_TSC_N
+	int "TSC to local APIC timer frequency multiplier (N)"
+	default 1
+
+config APIC_TIMER_TSC_M
+	int "TSC to local APIC timer frequency divisor (M)"
+	default 1
+
+endif # APIC_TIMER_TSC
+
+endif # APIC_TIMER
+
+config APIC_TSC_DEADLINE_TIMER
+	bool "Even newer APIC timer using TSC deadline mode"
+	depends on X86
+	select LOAPIC
+	select TICKLESS_CAPABLE
+	help
+	  Extremely simple timer driver based the local APIC TSC
+	  deadline capability.  The use of a free-running 64 bit
+	  counter with comparator eliminates almost all edge cases
+	  from the handling, and the near-instruction-cycle resolution
+	  permits effectively unlimited precision where needed (the
+	  limit becomes the CPU time taken to execute the timing
+	  logic). SMP-safe and very fast, this should be the obvious
+	  choice for any x86 device with invariant TSC and TSC
+	  deadline capability.
+
+config APIC_TIMER_IRQ_PRIORITY
+	int "Local APIC timer interrupt priority"
+	depends on APIC_TIMER || APIC_TSC_DEADLINE_TIMER
+	default 4
+	help
+	  This option specifies the interrupt priority used by the
+	  local APIC timer.
