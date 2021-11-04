@@ -431,8 +431,11 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 	}
 	qspi_trans_lock(dev);
 	rv = qspi_nor_write_protection_set(dev, false);
+	if (rv != 0) {
+		goto out_trans_unlock;
+	}
 	qspi_lock(dev);
-	while ((rv == 0) && (size > 0)) {
+	while (size > 0) {
 		nrfx_err_t res = !NRFX_SUCCESS;
 		uint32_t adj = 0;
 
@@ -453,7 +456,7 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 		} else {
 			/* minimal erase size is at least a sector size */
 			LOG_ERR("unsupported at 0x%lx size %zu", (long)addr, size);
-			rv = -EINVAL;
+			res = NRFX_ERROR_INVALID_PARAM;
 		}
 
 		qspi_wait_for_completion(dev, res);
@@ -463,17 +466,19 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 		} else {
 			LOG_ERR("erase error at 0x%lx size %zu", (long)addr, size);
 			rv = qspi_get_zephyr_ret_code(res);
+			break;
 		}
 	}
 	qspi_unlock(dev);
 
 	int rv2 = qspi_nor_write_protection_set(dev, true);
 
-	qspi_trans_unlock(dev);
-
 	if (!rv) {
 		rv = rv2;
 	}
+
+out_trans_unlock:
+	qspi_trans_unlock(dev);
 
 out:
 	ANOMALY_122_UNINIT(dev);
