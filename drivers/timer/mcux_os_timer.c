@@ -110,9 +110,9 @@ uint64_t sys_clock_cycle_get_64(void)
 	return OSTIMER_GetCurrentTimerValue(base);
 }
 
-static int sys_clock_driver_init(const struct device *device)
+static int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	/* Configure event timer's ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
