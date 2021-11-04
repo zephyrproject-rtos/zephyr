@@ -1596,16 +1596,24 @@ static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id
 	return 0;
 }
 
-static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id,
-		       uint16_t cid, char *argv[])
+static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
+		       uint16_t mod_id, uint16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_mod_pub pub;
 	uint8_t status, count;
 	uint16_t interval;
+	uint8_t uuid[16];
+	uint8_t len;
 	int err;
 
-	pub.addr = strtoul(argv[0], NULL, 0);
-	pub.uuid = NULL;
+	if (!is_va) {
+		pub.addr = strtoul(argv[0], NULL, 0);
+	} else {
+		len = hex2bin(argv[0], strlen(argv[1]), uuid, sizeof(uuid));
+		memset(uuid + len, 0, sizeof(uuid) - len);
+		pub.uuid = (const uint8_t *)&uuid;
+	}
+
 	pub.app_idx = strtoul(argv[1], NULL, 0);
 	pub.cred_flag = str2bool(argv[2]);
 	pub.ttl = strtoul(argv[3], NULL, 0);
@@ -1613,13 +1621,13 @@ static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id
 
 	count = strtoul(argv[5], NULL, 0);
 	if (count > 7) {
-		shell_print(shell, "Invalid retransmit count");
+		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
 	interval = strtoul(argv[6], NULL, 0);
 	if (interval > (31 * 50) || (interval % 50)) {
-		shell_print(shell, "Invalid retransmit interval %u", interval);
+		shell_print(sh, "Invalid retransmit interval %u", interval);
 		return -EINVAL;
 	}
 
@@ -1634,16 +1642,16 @@ static int mod_pub_set(const struct shell *shell, uint16_t addr, uint16_t mod_id
 	}
 
 	if (err) {
-		shell_error(shell, "Model Publication Set failed (err %d)",
+		shell_error(sh, "Model Publication Set failed (err %d)",
 			    err);
 		return 0;
 	}
 
 	if (status) {
-		shell_print(shell, "Model Publication Set failed "
+		shell_print(sh, "Model Publication Set failed "
 			    "(status 0x%02x)", status);
 	} else {
-		shell_print(shell, "Model Publication successfully set");
+		shell_print(sh, "Model Publication successfully set");
 	}
 
 	return 0;
@@ -1676,10 +1684,26 @@ static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 			return -EINVAL;
 		}
 
-		return mod_pub_set(shell, addr, mod_id, cid, argv);
+		return mod_pub_set(shell, addr, false, mod_id, cid, argv);
 	} else {
 		return mod_pub_get(shell, addr, mod_id, cid);
 	}
+}
+
+static int cmd_mod_pub_va(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t addr, mod_id, cid = CID_NVAL;
+
+	addr = strtoul(argv[1], NULL, 0);
+	mod_id = strtoul(argv[9], NULL, 0);
+
+	if (argc > 10) {
+		cid = strtoul(argv[10], NULL, 0);
+	}
+
+	argv += 2;
+
+	return mod_pub_set(sh, addr, true, mod_id, cid, argv);
 }
 
 static void hb_sub_print(const struct shell *shell,
@@ -2724,6 +2748,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(mod-pub, NULL, "<addr> <mod id> [cid] [<PubAddr> "
 		      "<AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval>]",
 		      cmd_mod_pub, 3, 1 + 7),
+	SHELL_CMD_ARG(mod-pub-va, NULL, "<addr> <UUID: 16 hex values> "
+		      "<AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval> "
+		      "<mod id> [cid]",
+		      cmd_mod_pub_va, 10, 1),
 	SHELL_CMD_ARG(mod-sub-add, NULL,
 		      "<elem addr> <sub addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_add, 4, 1),
