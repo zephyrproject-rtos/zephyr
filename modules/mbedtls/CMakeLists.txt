@@ -8,6 +8,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
 
   target_include_directories(mbedTLS INTERFACE
     ${ZEPHYR_CURRENT_MODULE_DIR}/include
+    ${ZEPHYR_CURRENT_MODULE_DIR}/library
     configs
 	)
 
