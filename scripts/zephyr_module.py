@@ -246,7 +246,8 @@ def process_twister(module, meta):
     return out
 
 
-def process_meta(zephyr_base, west_projects, modules, extra_modules=None):
+def process_meta(zephyr_base, west_projects, modules, extra_modules=None,
+                 propagate_state=False):
     # Process zephyr_base, projects, and modules and create a dictionary
     # with meta information for each input.
     #
@@ -338,6 +339,24 @@ def process_meta(zephyr_base, west_projects, modules, extra_modules=None):
 
     meta['workspace'].update({'dirty': workspace_dirty,
                               'extra': workspace_extra})
+
+    if propagate_state:
+        if workspace_dirty and not zephyr_dirty:
+            zephyr_revision += '-dirty'
+        if workspace_extra:
+            zephyr_revision += '-extra'
+        if workspace_off:
+            zephyr_revision += '-off'
+        zephyr_project.update({'revision': zephyr_revision})
+
+        if west_projects is not None:
+            if workspace_dirty and not manifest_dirty:
+                manifest_revision += '-dirty'
+            if workspace_extra:
+                manifest_revision += '-extra'
+            if workspace_off:
+                manifest_revision += '-off'
+            manifest_project.update({'revision': manifest_revision})
 
     return meta
 
@@ -447,6 +466,10 @@ def main():
                              of Zephyr modules and west projects.
                              If a module or project is also a git repository
                              the current SHA revision will also be written.""")
+    parser.add_argument('--meta-state-propagate', action='store_true',
+                        help="""Propagate state of modules and west projects
+                             to the suffix of the Zephyr SHA and if west is
+                             used, to the suffix of the manifest SHA""")
     parser.add_argument('--settings-out',
                         help="""File to write with resulting <name>:<value>
                              values to use for including in CMake""")
@@ -509,7 +532,7 @@ def main():
 
     if args.meta_out:
         meta = process_meta(args.zephyr_base, west_proj, modules,
-                            args.extra_modules)
+                            args.extra_modules, args.meta_state_propagate)
 
         with open(args.meta_out, 'w', encoding="utf-8") as fp:
             fp.write(yaml.dump(meta))
