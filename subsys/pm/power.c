@@ -229,9 +229,13 @@ void pm_system_resume(void)
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
+		uint8_t id = _current_cpu->id;
+
 		post_ops_done = true;
-		exit_pos_ops(z_power_states[_current_cpu->id]);
+		exit_pos_ops(z_power_states[id]);
 		pm_state_notify(false);
+		z_power_states[id] = (struct pm_state_info){PM_STATE_ACTIVE,
+			0, 0};
 	}
 }
 
