@@ -24,8 +24,11 @@ extern "C" {
 enum sensor_channel_bq35100 {
 	/** Example channel 1 **/
 	SENSOR_CHAN_BQ35100_EXAMPLE1 = SENSOR_CHAN_PRIV_START,
-	/** Example channel 2 **/
-	SENSOR_CHAN_BQ35100_EXAMPLE2,
+	/** Internal Temperature **/
+	SENSOR_CHAN_BQ35100_GAUGE_INT_TEMP,
+	/** Designed Capacity **/
+	SENSON_CHAN_BQ35100_GAUGE_DES_CAP
+
 };
 
 /**
