@@ -8,15 +8,12 @@
 extern "C" {
 float readAngleDegree(AS5047P_handle h, bool withDAEC, AS5047P_ERROR *errorOut, bool verifyParity,
                       bool checkForComError, bool checkForSensorError) {
-    /*
     AS5047P dev(h);
     AS5047P_Types::ERROR_t error;
     auto angle = dev.readAngleDegree(withDAEC, &error, verifyParity, checkForComError, checkForSensorError);
     errorOut->controllerSideErrors.raw = error.controllerSideErrors.raw;
     errorOut->sensorSideErrors.raw = errorOut->sensorSideErrors.raw;
     return angle;
-     */
-    return 0;
 }
 
 
@@ -25,10 +22,7 @@ bool noError(const AS5047P_ERROR *error) {
 }
 
 bool initSPI(AS5047P_handle h) {
-    /*
     AS5047P dev(h);
     return dev.initSPI();
-     */
-    return false;
 }
 }
