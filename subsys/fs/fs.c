@@ -133,9 +133,6 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	/* COpy flags to zfp for use with other fs_ API calls */
-	zfp->flags = flags;
-
 	if ((file_name == NULL) ||
 			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
 		LOG_ERR("invalid file name!!");
@@ -168,6 +165,9 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		zfp->mp = NULL;
 		return rc;
 	}
+
+	/* Copy flags to zfp for use with other fs_ API calls */
+	zfp->flags = flags;
 
 	return rc;
 }
