@@ -76,22 +76,22 @@ void main(void)
 		}
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_TEMP, &val);
-		printf("Temperature:   %2.1f  C\n", sensor_value_to_double(&val));
+		printf("Temperature:    %2.1f  C\n", sensor_value_to_double(&val));
 
-		/*sensor_channel_get(dev, SENSOR_CHAN_GAUGE_INT_TEMP, &val);
-		printf("Internal Temp: %2.1f  C\n", sensor_value_to_double(&val));*/
+		sensor_channel_get(dev, SENSOR_CHAN_BQ35100_GAUGE_INT_TEMP, &val);
+		printf("Internal Temp:  %2.1f  C\n", sensor_value_to_double(&val));
 		
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_VOLTAGE, &val);
-		printf("Voltage:       %1.3f V\n", sensor_value_to_double(&val));
+		printf("Voltage:        %1.3f V\n", sensor_value_to_double(&val));
 	
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_AVG_CURRENT, &val);
-		printf("Current:       %i   mA\n", val.val1);
+		printf("Current:        %i   mA\n", val.val1);
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_HEALTH, &val);
-		printf("StateOfHealth: %i   %%\n\n", val.val1);
+		printf("State of Health:%i   %%\n", val.val1);
 
-		/*sensor_channel_get(dev, SENSON_CHAN_GAUGE_DES_CAP, &val);
-		printf("StateOfHealth: %i   %%\n\n", val.val1);*/
+		sensor_channel_get(dev, SENSON_CHAN_BQ35100_GAUGE_DES_CAP, &val);
+		printf("Design Capacity:%i  mAh\n\n", val.val1);
 
 		/*sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
 		printk("Acc Capacity : %i     uAh\n\n", val.val1);*/
