@@ -149,13 +149,13 @@ static int bmi088_attr_set(const struct device *dev, enum sensor_channel chan, e
  * It is assumed that the data is ready
  *
  * @param dev Sensor device pointer
- * @param chan Channel to fetch. Only SENSOR_CHAN_ALL is supported.
+ * @param chan Channel to fetch. Only SENSOR_CHAN_ALL and GYRO_XYZ is supported.
  * @return 0 on success
  */
 static int bmi088_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     struct bmi088_data *data = to_data(dev);
 
-    __ASSERT(chan == SENSOR_CHAN_ALL, "channel is not valid");
+    __ASSERT(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_GYRO_XYZ, "channel is not valid");
 
     if (bmi088_read(dev, RATE_X_LSB, data->sample.gyr, BMI088_SAMPLE_SIZE) < 0) {
         return -EIO;
@@ -191,9 +191,15 @@ static int bmi088_channel_get(const struct device *dev, enum sensor_channel chan
             *val = bmi088_channel_convert(chan, scale, data->sample.gyr);
             return 0;
         }
-
+        case SENSOR_CHAN_GYRO_XYZ: {
+            struct bmi088_data *data = to_data(dev);
+            val[0] = bmi088_channel_convert(SENSOR_CHAN_GYRO_X, scale, data->sample.gyr);
+            val[1] = bmi088_channel_convert(SENSOR_CHAN_GYRO_Y, scale, data->sample.gyr);
+            val[2] = bmi088_channel_convert(SENSOR_CHAN_GYRO_Z, scale, data->sample.gyr);
+            return 0;
+        }
         default:
-            LOG_DBG("Channel not supported.");
+            LOG_ERR("Channel not supported.");
             return -ENOTSUP;
     }
 }
