@@ -484,6 +484,25 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
 		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
 
+``mesh mod-pub-va <addr> <UUID> <AppKeyIndex> <cred: off, on> <ttl> <period> <count> <interval> <mod id> [cid]``
+------------------------------------------------------------------------------------------------------------------
+
+	Set the publication parameters of a model.
+
+	* ``addr``: Address of the element the model is on.
+	* ``Model ID``: The model ID of the model to get the bound keys of.
+	* ``cid``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+	Publication parameters:
+
+		* ``UUID``: The destination virtual address to publish to.
+		* ``AppKeyIndex``: The application key index to publish with.
+		* ``cred``: Whether to publish with Friendship credentials when acting as a Low Power Node.
+		* ``ttl``: TTL value to publish with (``0x00`` to ``0x07f``).
+		* ``period``: Encoded publication period, or 0 to disable periodic publication.
+		* ``count``: Number of retransmission for each published message (``0`` to ``7``).
+		* ``interval`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+
 
 ``mesh mod-sub-add <elem addr> <sub addr> <Model ID> [Company ID]``
 -------------------------------------------------------------------
