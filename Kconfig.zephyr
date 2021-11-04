@@ -523,6 +523,24 @@ config BUILD_OUTPUT_META
 	             The off state is only present if a west workspace is found.
 	  File extension is .meta
 
+config BUILD_OUTPUT_META_STATE_PROPAGATE
+	bool "Propagate module and project state"
+	depends on BUILD_OUTPUT_META
+	help
+	  Propagate to state of each module to the Zephyr revision field.
+	  If west is used the state of each west project is also propagated to
+	  the Zephyr revision field.
+	  West manifest repo revision field will also
+	  be marked with the same state as the Zephyr revision.
+	  The final revision will become: <SHA>-<state1>-<state2>-<state3>...
+	  If no states are appended to the SHA it means the build is of a clean
+	  tree.
+	  - dirty: one or more repositories are marked dirty
+	  - extra: extra Zephyr modules are manually included in the build
+	  - off:   the SHA of one or more west projects are not what the manifest
+	           defined when `west update` was run the last time (`manifest-rev`).
+	           The off state is only present if a west workspace is found.
+
 endmenu
 
 config EXPERIMENTAL

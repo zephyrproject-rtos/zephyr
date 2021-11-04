@@ -1470,6 +1470,7 @@ if(CONFIG_BUILD_OUTPUT_META)
             ${ZEPHYR_MODULES_ARG}
             ${ZEPHYR_EXTRA_MODULES_ARG}
             --meta-out ${KERNEL_META_NAME}
+            $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
   list(APPEND
     post_build_byproducts
