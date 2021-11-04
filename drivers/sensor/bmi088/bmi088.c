@@ -9,22 +9,19 @@
 
 #define DT_DRV_COMPAT bosch_bmi088
 
+#include "bmi088.h"
+
 #include <init.h>
 #include <drivers/sensor.h>
 #include <sys/byteorder.h>
 #include <kernel.h>
 #include <sys/__assert.h>
-
 #include <devicetree.h>
-#include "../lib/libc/minimal/include/math.h"
-
-#include "bmi088.h"
-
-#define LOG_LEVEL CONFIG_BMI088_LOG_LEVEL
-
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(BMI088);
+#include "../lib/libc/minimal/include/math.h"
+
+LOG_MODULE_REGISTER(BMI088, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #error "BMI088 driver enabled without any devices"
