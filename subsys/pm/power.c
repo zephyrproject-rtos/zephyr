@@ -241,6 +241,8 @@ void pm_system_resume(void)
 
 void pm_power_state_force(struct pm_state_info info)
 {
+	uint8_t id = _current_cpu->id;
+
 	__ASSERT(info.state < PM_STATES_LEN,
 		 "Invalid power state %d!", info.state);
 
@@ -249,7 +251,14 @@ void pm_power_state_force(struct pm_state_info info)
 	}
 
 	(void)arch_irq_lock();
-	z_power_states[_current_cpu->id] = info;
+	z_power_states[id] = info;
+
+#ifdef CONFIG_PM_DEVICE
+	if (z_power_states[id].state != PM_STATE_RUNTIME_IDLE) {
+		(void)atomic_sub(&z_cpus_active, 1);
+	}
+#endif
+
 	post_ops_done = false;
 	pm_state_notify(true);
 
@@ -260,6 +269,9 @@ void pm_power_state_force(struct pm_state_info info)
 	pm_stop_timer();
 
 	pm_system_resume();
+#ifdef CONFIG_PM_DEVICE
+	(void)atomic_add(&z_cpus_active, 1);
+#endif
 	k_sched_unlock();
 }
 
