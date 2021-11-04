@@ -512,7 +512,15 @@ config BUILD_OUTPUT_META
 	  Create a build meta file in the build directory containing lists of:
 	  - Zephyr: path and revision (if git repo)
 	  - Zephyr modules: name, path, and revision (if git repo)
-	  - West projects: path and revision
+	  - West:
+	    - manifest: path and revision
+	    - projects: path and revision
+	  - Workspace:
+	    - dirty: one or more repositories are marked dirty
+	    - extra: extra Zephyr modules are manually included in the build
+	    - off:   the SHA of one or more west projects are not what the manifest
+	             defined when `west update` was run the last time (`manifest-rev`).
+	             The off state is only present if a west workspace is found.
 	  File extension is .meta
 
 endmenu
