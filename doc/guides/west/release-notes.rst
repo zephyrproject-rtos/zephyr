@@ -3,6 +3,27 @@
 West Release Notes
 ##################
 
+v0.12.0
+*******
+
+New features:
+
+- West now works on the `MSYS2 <https://www.msys2.org/>`_ platform.
+
+- West manifest files can now contain arbitrary user data associated with each
+  project. See :ref:`west-project-userdata` for details.
+
+Bug fixes:
+
+- The ``west list`` command's ``{sha}`` format key has been fixed for
+  the manifest repository; it now prints ``N/A`` ("not applicable")
+  as expected.
+
+:ref:`API <west-apis>` changes:
+
+- The ``west.manifest.Project.userdata`` attribute was added to support
+  project user data.
+
 v0.11.1
 *******
 

@@ -26,7 +26,7 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 0.11.1
+  WEST_VERSION: 0.12.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
