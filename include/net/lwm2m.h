@@ -94,10 +94,17 @@ struct lwm2m_ctx {
 	 */
 	int tls_tag;
 
+	/** When MBEDTLS SNI is enabled socket must be set with destination
+	 *  hostname server.
+	 */
+	char *desthostname;
+	uint16_t desthostnamelen;
+
 	/** Client can set load_credentials function as a way of overriding
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
 	 */
 	int (*load_credentials)(struct lwm2m_ctx *client_ctx);
+
 #endif
 	/** Flag to indicate if context should use DTLS.
 	 *  Enabled via the use of coaps:// protocol prefix in connection
