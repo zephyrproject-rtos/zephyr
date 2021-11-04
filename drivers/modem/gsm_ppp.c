@@ -446,8 +446,6 @@ static const struct setup_cmd setup_cmds[] = {
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
 
-	/* create PDP context */
-	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
@@ -584,6 +582,17 @@ static void rssi_handler(struct k_work *work)
 
 }
 
+int __weak gsm_ppp_setup_hook(struct modem_context *ctx, struct k_sem *sem)
+{
+	return 0;
+}
+
+int __weak gsm_ppp_pre_connect_hook(struct modem_context *ctx,
+				    struct k_sem *sem)
+{
+	return 0;
+}
+
 static void gsm_finalize_connection(struct k_work *work)
 {
 	int ret = 0;
@@ -631,7 +640,7 @@ static void gsm_finalize_connection(struct k_work *work)
 		LOG_ERR("%s returned %d, %s", "gsm_setup_mccmno", ret, "retrying...");
 
 		(void)k_work_reschedule(&gsm->gsm_configure_work,
-							K_SECONDS(1));
+					K_SECONDS(1));
 		return;
 	}
 
@@ -643,6 +652,27 @@ static void gsm_finalize_connection(struct k_work *work)
 						  GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("%s returned %d, %s", "setup_cmds", ret, "retrying...");
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		return;
+	}
+
+	ret = gsm_ppp_setup_hook(&gsm->context, &gsm->sem_response);
+	if (ret < 0) {
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		return;
+	}
+
+	/* create PDP context */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &response_cmds[0],
+				    ARRAY_SIZE(response_cmds),
+				    "AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\"",
+				    &gsm->sem_response,
+				    GSM_CMD_AT_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Couldn't create PDP context (error %d), %s", ret,
+			"retrying...");
 		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
@@ -705,6 +735,12 @@ attaching:
 
 	LOG_DBG("modem RSSI: %d, %s", gsm->context.data_rssi, "enable PPP");
 
+	ret = gsm_ppp_pre_connect_hook(&gsm->context, &gsm->sem_response);
+	if (ret < 0) {
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
+		return;
+	}
+
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
 						  connect_cmds,
@@ -718,6 +754,7 @@ attaching:
 	}
 
 	gsm->gsm_state = GSM_PPP_STATE_SETUP_DONE;
+
 	set_ppp_carrier_on(gsm);
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
