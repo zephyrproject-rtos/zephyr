@@ -142,8 +142,9 @@ static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 	res = f_stat(&to[1], &fno);
 	if (FR_OK == res) {
 		res = f_unlink(&to[1]);
-		if (FR_OK != res)
+		if (res != FR_OK) {
 			return translate_error(res);
+		}
 	}
 
 	res = f_rename(&from[1], &to[1]);
