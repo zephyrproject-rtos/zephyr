@@ -124,7 +124,7 @@ static int bq35100_reg_write(const struct device *dev,
 static int bq35100_control_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
-	LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
+	//LOG_DBG("[0x%x] = 0x%x", BQ35100_CMD_MAC_CONTROL, subcommand);
 
 	uint8_t buf[2];
 	uint8_t ret;
@@ -137,7 +137,7 @@ static int bq35100_control_reg_write(const struct device *dev,
 				 buf, 2);
 
 	/* maybe increase it to test, if set_security still doesnt work */
-	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(10));
 
 	return ret;
 }
@@ -233,7 +233,6 @@ static int bq35100_read_extended_data(const struct device *dev, uint16_t address
 
 	memcpy(buf, data + 2, length_read);
 	success = true;
-	// LOG_DBG("Success data read(%u): %.*s", length_read, (char*)*buf);
 
 	// Change back the security mode if it was changed
 	if (previous_security_mode != dev_data->security_mode) {
@@ -281,9 +280,6 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 		return -EIO;
 	}
 
-	// LOG_DBG("Preparing to write %u byte(s) to address 0x%04X %.*s", length,
-	//	address, data, length));
-
 	d[0] = BQ35100_CMD_MAC_CONTROL;
 	d[1] = address & UCHAR_MAX;
 	d[2] = address >> 8;
@@ -320,8 +316,8 @@ static int bq35100_write_extended_data(const struct device *dev, uint16_t addres
 		return -EIO;
 	}
 
-	if (status & BQ35100_FLASHF_BIT_MASK) { // Flash bit mask
-		LOG_ERR("Writing failed");      // fail detected
+	if (status & BQ35100_FLASHF_BIT_MASK) {
+		LOG_ERR("Writing failed");
 		return -EIO;
 	}
 
@@ -356,8 +352,6 @@ static int bq35100_compute_checksum(const char *data, size_t length)
 		checksum = 0xFF - checksum;
 	}
 
-	// LOG_DBG("Checksum is 0x%02X", checksum);
-
 	return checksum;
 }
 
@@ -374,9 +368,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 	uint8_t buf[4];
 	uint8_t i;
 	bool success = false;
-	uint32_t half_access_code; 
-	// have a warning in line 432, it requires 36 bits for shifting
-	// I tried uint64_t but still same error for setting security mode
+	uint32_t half_access_code;
 
 	if (data->security_mode == security_mode) {
 		LOG_DBG("Already inside desired mode");
@@ -389,7 +381,6 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 			LOG_ERR("Unkown mode");
 			return 0;
 		case  BQ35100_SECURITY_FULL_ACCESS:
-			LOG_DBG("inside full access");
 			if (data->security_mode == BQ35100_SECURITY_SEALED &&
 			    !bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 				LOG_ERR("Unsealing failed");
@@ -405,38 +396,29 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 
 			uint32_t full_access_codes = (buf[0] << 24) + (buf[1] << 16) +
 						     (buf[2] << 8) + buf[3];
-
-			half_access_code = (full_access_codes >> 24) & 0xFF;
-			half_access_code |= (full_access_codes >> 16) & 0xFF;
-
+							 
+			half_access_code = (uint16_t)(full_access_codes >> 16);
 			status = bq35100_control_reg_write(dev, half_access_code);
+
 			if (!(status < 0)) {
-				half_access_code = (full_access_codes >> 8) & 0xFF;
-				half_access_code |= full_access_codes & 0xFF;
+				half_access_code = (uint16_t)(full_access_codes);
 				bq35100_control_reg_write(dev, half_access_code);
 			}
 			break;
 		case BQ35100_SECURITY_UNSEALED:
-			LOG_DBG("inside unsealed");
 			if (data->security_mode == BQ35100_SECURITY_FULL_ACCESS &&
 			    !bq35100_set_security_mode(dev, BQ35100_SECURITY_SEALED)) {
 				LOG_ERR("Seal first if in Full Access mode");
 				return -EIO;
 			}
-
-			half_access_code = ((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0xFF00) |
-			((BQ35100_DEFAULT_SEAL_CODES >> 24) & 0x00FF);
-			LOG_DBG("First part of half access codes : 0x%04X", half_access_code);
+			half_access_code = (uint16_t)(BQ35100_DEFAULT_SEAL_CODES >> 16);
 			status = bq35100_control_reg_write(dev, half_access_code);
 			if (!(status < 0)) {
-			     half_access_code = ((BQ35100_DEFAULT_SEAL_CODES << 8) & 0xFF00) |
-			((BQ35100_DEFAULT_SEAL_CODES >> 8) & 0x00FF);
-			     LOG_DBG("Second part of half access codes : 0x%04X", half_access_code);
+				half_access_code = (uint16_t)(BQ35100_DEFAULT_SEAL_CODES);
 			    bq35100_control_reg_write(dev, half_access_code);
 			}
 			break;
 		case BQ35100_SECURITY_SEALED:
-			LOG_DBG("inside sealed");
 			bq35100_control_reg_write(dev, BQ35100_CTRL_SEALED);
 			break;
 		default:
@@ -510,6 +492,7 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 		LOG_ERR("Unkown mode");
 		return -1;
 	}
+
 	// Operation Config A
 	if ((bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A,
 					&buf, 1)) < 0) {
@@ -517,7 +500,7 @@ static int bq35100_set_gauge_mode(const struct device *dev, bq35100_gauge_mode_t
 		return -EIO;
 	}
 
-	if ((buf & 0b11) != gauge_mode) { // GMSEL 1:0
+	if ((buf & 0b11) != gauge_mode) {
 		buf = buf & ~0b11;
 		buf |= (uint8_t)gauge_mode;
 
@@ -779,7 +762,7 @@ static int bq35100_get_security_mode(const struct device *dev)
 	if (bq35100_get_status(dev, &data) < 0) {
 		return -EIO;
 	}
-	// LOG_DBG("Data : %x", data);
+
 	switch ((data >> 13) & 0b011) {
 	case BQ35100_SECURITY_UNKNOWN:
 		LOG_DBG("Device is in UNKNOWN Security mode");
@@ -823,7 +806,7 @@ static int bq35100_get_battery_status(const struct device *dev)
 		LOG_ERR("Unable to read Battery Status");
 	}
 
-	LOG_DBG("Battery status: %02X", data->battery_status);
+	LOG_DBG("Battery status: 0x%02X", data->battery_status);
 
 	if (((data->battery_status >> 2) & 0b01) == 1) {
 		LOG_DBG("ALERT is active");
@@ -831,6 +814,50 @@ static int bq35100_get_battery_status(const struct device *dev)
 
 	if ((data->battery_status & 0b01) == 1) {
 		LOG_DBG("Discharge current is detected");
+	}
+
+	return 0;
+}
+
+/**
+ * Get the battery alert
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_battery_alert(const struct device *dev)
+{
+	struct bq35100_data *data = dev->data;
+	int status;
+
+	status = bq35100_reg_read(dev, BQ35100_CMD_BATTERY_ALERT,
+				&data->battery_alert, 1);
+	if (status < 0) {
+		LOG_ERR("Unable to read battery alert");
+		return -EIO;
+	}
+
+	LOG_DBG("Battery Alert: 0x%02X",data->battery_alert);
+
+	if (data->battery_alert & 0b00000001) {
+		LOG_DBG("ALERT is triggered because of INITCOMP");
+	}
+	if (data->battery_alert & 0b00000010) {
+		LOG_DBG("ALERT is triggered because of GDONE");
+	}
+	if (data->battery_alert & 0b00001000) {
+		LOG_DBG("ALERT is triggered because of EOS");
+	}
+	if (data->battery_alert & 0b00010000) {
+		LOG_DBG("ALERT is triggered because of SOHLOW");
+	}
+	if (data->battery_alert & 0b00100000) {
+		LOG_DBG("ALERT is triggered because of TEMPHIGH");
+	}
+	if (data->battery_alert & 0b01000000) {
+		LOG_DBG("ALERT is triggered because of TEMPLOW");
+	}
+	if (data->battery_alert & 0b10000000) {
+		LOG_DBG("ALERT is triggered because of BATLOW");
 	}
 
 	return 0;
@@ -983,15 +1010,14 @@ static int bq35100_channel_get(const struct device *dev,
 		val->val1 = ((uint16_t)(data->temperature) - 2731) / 10;
 		val->val2 = ((uint16_t)((data->temperature) - 2731) % 10 * 100000);
 		break;
-	// gives undecleared error?
-	/*case SENSOR_CHAN_GAUGE_INT_TEMP:
+	case SENSOR_CHAN_BQ35100_GAUGE_INT_TEMP:
 		val->val1 = ((uint16_t)(data->internal_temperature) - 2731) / 10;
 		val->val2 = ((uint16_t)((data->internal_temperature) - 2731) % 10 * 100000);
 		break;
-	case SENSON_CHAN_GAUGE_DES_CAP:
+	case SENSON_CHAN_BQ35100_GAUGE_DES_CAP:
 		val->val1 = (int16_t)data->design_capacity;
 		val->val2 = 0;
-		break;*/
+		break;
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = (uint16_t)data->voltage / 1000;
 		val->val2 = ((uint16_t)data->voltage % 1000 * 1000);
@@ -1084,6 +1110,7 @@ static int bq35100_init(const struct device *dev)
 {
 	const struct bq35100_config *cfg = dev->config;
 	struct bq35100_data *data = dev->data;
+	data->gauge_enabled = false;
 
 	if (cfg->ge_gpio->name) {
 		if (bq35100_init_ge_pin(dev) < 0) {
@@ -1101,44 +1128,45 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*if (bq35100_get_battery_status(dev) < 0) {
+	/*if (bq35100_get_battery_alert(dev) < 0) {
 		return -EIO;
 	}*/
 
-	data->gauge_enabled = false;
-
-	if (bq35100_get_security_mode(dev) < 0) {
+	if (bq35100_get_battery_status(dev) < 0) {
 		return -EIO;
 	}
 
-	// does not work because of unsealing problem
-	/*if (bq35100_set_design_capacity(dev, 1000) < 0) {
+	/*if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
-	}*/
+	}
 
-	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
+	if (bq35100_set_design_capacity(dev, 2000) < 0) {
+		return -EIO;
+	}
+
+	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
+	}
+
+	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
+	    return EIO;
+	}
+
+	if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
+	    return EIO;
+	}
+
+	if (bq35100_get_gauge_mode(dev) < 0) {
+	    return -EIO;
+	}
+
+	if (bq35100_gauge_start(dev) < 0) {
+	    return -EIO;
+	}
+
+	if(bq35100_gauge_stop(dev) < 0) {
+	     return -EIO;
 	}*/
-
-	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
-	        return EIO;
-	   }*/
-
-	/*if (bq35100_set_gauge_mode(dev, BQ35100_SOH_MODE)) {
-	        return EIO;
-	   }
-
-	   if (bq35100_get_gauge_mode(dev) < 0) {
-	        return -EIO;
-	   }*/
-
-	/*if (bq35100_gauge_start(dev) < 0) {
-	     return -EIO;
-	   }
-
-	   if(bq35100_gauge_stop(dev) < 0) {
-	     return -EIO;
-	   }*/
 
 	return 0;
 }
