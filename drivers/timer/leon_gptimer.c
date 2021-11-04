@@ -12,6 +12,7 @@
 
 #define DT_DRV_COMPAT gaisler_gptimer
 
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 
@@ -101,7 +102,7 @@ static void init_downcounter(volatile struct gptimer_timer_regs *tmr)
 	tmr->ctrl = GPTIMER_CTRL_LD | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN;
 }
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	const int timer_interrupt = get_timer_irq();
@@ -127,3 +128,6 @@ int sys_clock_driver_init(const struct device *dev)
 	irq_enable(timer_interrupt);
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include <device.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
@@ -118,18 +118,6 @@ static void compare_isr(const void *arg)
 	sys_clock_announce(dticks);
 }
 
-/* Runs on core 0 only */
-int sys_clock_driver_init(const struct device *dev)
-{
-	uint64_t curr = count();
-
-	IRQ_CONNECT(TIMER_IRQ, 0, compare_isr, 0, 0);
-	set_compare(curr + CYC_PER_TICK);
-	last_count = curr;
-	irq_enable(TIMER_IRQ);
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -195,3 +183,18 @@ void smp_timer_init(void)
 	CAVS_INTCTRL[arch_curr_cpu()->id].l2.clear = CAVS_L2_DWCT0;
 	irq_enable(TIMER_IRQ);
 }
+
+/* Runs on core 0 only */
+static int sys_clock_driver_init(const struct device *dev)
+{
+	uint64_t curr = count();
+
+	IRQ_CONNECT(TIMER_IRQ, 0, compare_isr, 0, 0);
+	set_compare(curr + CYC_PER_TICK);
+	last_count = curr;
+	irq_enable(TIMER_IRQ);
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -16,6 +16,7 @@
  * generate an interrupt every tick.
  */
 
+#include <device.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
@@ -175,7 +176,71 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-int sys_clock_driver_init(const struct device *dev)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
+	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
+
+	/* Compute number of RTC cycles until the next timeout. */
+	uint32_t count = rtc_count();
+	uint32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
+
+	/* Round to the nearest tick boundary. */
+	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
+		  * CYCLES_PER_TICK;
+
+	if (timeout < TICK_THRESHOLD) {
+		timeout += CYCLES_PER_TICK;
+	}
+
+	rtc_sync();
+	RTC0->COMP[0].reg = count + timeout;
+
+#else /* !CONFIG_TICKLESS_KERNEL */
+
+	if (ticks == K_TICKS_FOREVER) {
+		/* Disable comparator for K_TICKS_FOREVER and other negative
+		 * values.
+		 */
+		rtc_timeout = rtc_counter;
+		return;
+	}
+
+	if (ticks < 1) {
+		ticks = 1;
+	}
+
+	/* Avoid race condition between reading counter and ISR incrementing
+	 * it.
+	 */
+	int key = irq_lock();
+
+	rtc_timeout = rtc_counter + ticks;
+	irq_unlock(key);
+
+#endif /* CONFIG_TICKLESS_KERNEL */
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;
+#else
+	return rtc_counter - rtc_last;
+#endif
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	/* Just return the absolute value of RTC cycle counter. */
+	return rtc_count();
+}
+
+static int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -252,66 +317,5 @@ int sys_clock_driver_init(const struct device *dev)
 	return 0;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
-
-	/* Compute number of RTC cycles until the next timeout. */
-	uint32_t count = rtc_count();
-	uint32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
-
-	/* Round to the nearest tick boundary. */
-	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
-		  * CYCLES_PER_TICK;
-
-	if (timeout < TICK_THRESHOLD) {
-		timeout += CYCLES_PER_TICK;
-	}
-
-	rtc_sync();
-	RTC0->COMP[0].reg = count + timeout;
-
-#else /* !CONFIG_TICKLESS_KERNEL */
-
-	if (ticks == K_TICKS_FOREVER) {
-		/* Disable comparator for K_TICKS_FOREVER and other negative
-		 * values.
-		 */
-		rtc_timeout = rtc_counter;
-		return;
-	}
-
-	if (ticks < 1) {
-		ticks = 1;
-	}
-
-	/* Avoid race condition between reading counter and ISR incrementing
-	 * it.
-	 */
-	int key = irq_lock();
-
-	rtc_timeout = rtc_counter + ticks;
-	irq_unlock(key);
-
-#endif /* CONFIG_TICKLESS_KERNEL */
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;
-#else
-	return rtc_counter - rtc_last;
-#endif
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	/* Just return the absolute value of RTC cycle counter. */
-	return rtc_count();
-}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

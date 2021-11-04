@@ -34,6 +34,7 @@
  *   "sleep/deep sleep" power state if CONFIG_PM is enabled.
  */
 
+#include <device.h>
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
