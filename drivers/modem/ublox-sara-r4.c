@@ -161,6 +161,7 @@ struct modem_data {
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_imsi[MDM_IMSI_LENGTH];
+	int mdm_rssi;
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
@@ -658,13 +659,13 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 	rsrp = ATOI(argv[5], 0, "rsrp");
 	rxlev = ATOI(argv[0], 0, "rxlev");
 	if (rsrp >= 0 && rsrp <= 97) {
-		mctx.data_rssi = -140 + (rsrp - 1);
-		LOG_INF("RSRP: %d", mctx.data_rssi);
+		mdata.mdm_rssi = -140 + (rsrp - 1);
+		LOG_INF("RSRP: %d", mdata.mdm_rssi);
 	} else if (rxlev >= 0 && rxlev <= 63) {
-		mctx.data_rssi = -110 + (rxlev - 1);
-		LOG_INF("RSSI: %d", mctx.data_rssi);
+		mdata.mdm_rssi = -110 + (rxlev - 1);
+		LOG_INF("RSSI: %d", mdata.mdm_rssi);
 	} else {
-		mctx.data_rssi = -1000;
+		mdata.mdm_rssi = -1000;
 		LOG_INF("RSRP/RSSI not known");
 	}
 
@@ -681,15 +682,15 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 
 	rssi = ATOI(argv[0], 0, "signal_power");
 	if (rssi == 31) {
-		mctx.data_rssi = -46;
+		mdata.mdm_rssi = -46;
 	} else if (rssi >= 0 && rssi <= 31) {
 		/* FIXME: This value depends on the RAT */
-		mctx.data_rssi = -110 + ((rssi * 2) + 1);
+		mdata.mdm_rssi = -110 + ((rssi * 2) + 1);
 	} else {
-		mctx.data_rssi = -1000;
+		mdata.mdm_rssi = -1000;
 	}
 
-	LOG_INF("RSSI: %d", mctx.data_rssi);
+	LOG_INF("RSSI: %d", mdata.mdm_rssi);
 	return 0;
 }
 #endif
@@ -1320,13 +1321,13 @@ restart:
 	counter = 0;
 	/* wait for RSSI < 0 and > -1000 */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	       (mctx.data_rssi >= 0 ||
-		mctx.data_rssi <= -1000)) {
+	       (mdata.mdm_rssi >= 0 ||
+		mdata.mdm_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
-	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {
+	if (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000) {
 		retry_count++;
 		if (retry_count >= MDM_NETWORK_RETRY_COUNT) {
 			LOG_ERR("Failed network init.  Too many attempts!");
@@ -2195,6 +2196,7 @@ static int modem_init(const struct device *dev)
 	mctx.data_model = mdata.mdm_model;
 	mctx.data_revision = mdata.mdm_revision;
 	mctx.data_imei = mdata.mdm_imei;
+	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
 	mctx.pins = modem_pins;

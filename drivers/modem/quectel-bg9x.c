@@ -231,14 +231,14 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 
 	/* Check the RSSI value. */
 	if (rssi == 31) {
-		mctx.data_rssi = -51;
+		mdata.mdm_rssi = -51;
 	} else if (rssi >= 0 && rssi <= 31) {
-		mctx.data_rssi = -114 + ((rssi * 2) + 1);
+		mdata.mdm_rssi = -114 + ((rssi * 2) + 1);
 	} else {
-		mctx.data_rssi = -1000;
+		mdata.mdm_rssi = -1000;
 	}
 
-	LOG_INF("RSSI: %d", mctx.data_rssi);
+	LOG_INF("RSSI: %d", mdata.mdm_rssi);
 	return 0;
 }
 
@@ -1035,13 +1035,13 @@ restart_rssi:
 
 	/* Keep trying to read RSSI until we get a valid value - Eventually, exit. */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	      (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000)) {
+	      (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
 
 	/* Is the RSSI invalid ? */
-	if (mctx.data_rssi >= 0 || mctx.data_rssi <= -1000) {
+	if (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000) {
 		rssi_retry_count++;
 
 		if (rssi_retry_count >= MDM_NETWORK_RETRY_COUNT) {
@@ -1180,6 +1180,7 @@ static int modem_init(const struct device *dev)
 	mctx.data_imsi	       = mdata.mdm_imsi;
 	mctx.data_iccid	       = mdata.mdm_iccid;
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
+	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
 	mctx.pins	       = modem_pins;
