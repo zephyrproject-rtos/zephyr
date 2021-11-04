@@ -246,7 +246,7 @@ def process_twister(module, meta):
     return out
 
 
-def process_meta(zephyr_base, west_projects, modules):
+def process_meta(zephyr_base, west_projects, modules, extra_modules=None):
     # Process zephyr_base, projects, and modules and create a dictionary
     # with meta information for each input.
     #
@@ -257,7 +257,11 @@ def process_meta(zephyr_base, west_projects, modules):
     #
     # returns the dictionary with said lists
 
-    meta = {'zephyr': None, 'modules': None, 'west': None}
+    meta = {'zephyr': None, 'modules': None, 'workspace': None}
+
+    workspace_dirty = False
+    workspace_extra = extra_modules is not None
+    workspace_off = False
 
     def git_revision(path):
         rc = subprocess.Popen(['git', 'rev-parse', '--is-inside-work-tree'],
@@ -282,32 +286,58 @@ def process_meta(zephyr_base, west_projects, modules):
                                       stderr=None,
                                       cwd=path).wait()
                 if rc:
-                    return revision + '-dirty'
-                return revision
-        return None
+                    return revision + '-dirty', True
+                return revision, False
+        return None, False
 
-    meta_project = {'path': zephyr_base,
-                    'revision': git_revision(zephyr_base)}
-    meta['zephyr'] = meta_project
+    zephyr_revision, zephyr_dirty = git_revision(zephyr_base)
+    zephyr_project = {'path': zephyr_base,
+                      'revision': zephyr_revision}
+    meta['zephyr'] = zephyr_project
+    meta['workspace'] = {}
+    workspace_dirty |= zephyr_dirty
 
     if west_projects is not None:
+        from west.manifest import MANIFEST_REV_BRANCH
+        projects = west_projects['projects']
         meta_projects = []
-        for project in west_projects['projects']:
-            project_path = PurePath(project).as_posix()
+
+        # Special treatment of manifest project.
+        manifest_path = PurePath(projects[0].posixpath).as_posix()
+        manifest_revision, manifest_dirty = git_revision(manifest_path)
+        workspace_dirty |= manifest_dirty
+        manifest_project = {'path': manifest_path,
+                            'revision': manifest_revision}
+        meta_projects.append(manifest_project)
+
+        for project in projects[1:]:
+            project_path = PurePath(project.posixpath).as_posix()
+            revision, dirty = git_revision(project_path)
+            workspace_dirty |= dirty
+            if project.sha(MANIFEST_REV_BRANCH) != revision:
+                revision += '-off'
+                workspace_off = True
             meta_project = {'path': project_path,
-                            'revision': git_revision(project_path)}
+                            'revision': revision}
             meta_projects.append(meta_project)
-        meta['west'] = {'manifest': west_projects['manifest'],
-                        'projects': meta_projects}
+
+        meta.update({'west': {'manifest': west_projects['manifest'],
+                              'projects': meta_projects}})
+        meta['workspace'].update({'off': workspace_off})
 
     meta_projects = []
     for module in modules:
         module_path = PurePath(module.project).as_posix()
+        revision, dirty = git_revision(module_path)
+        workspace_dirty |= dirty
         meta_project = {'name': module.meta['name'],
                         'path': module_path,
-                        'revision': git_revision(module_path)}
+                        'revision': revision}
         meta_projects.append(meta_project)
     meta['modules'] = meta_projects
+
+    meta['workspace'].update({'dirty': workspace_dirty,
+                              'extra': workspace_extra})
 
     return meta
 
@@ -325,10 +355,10 @@ def west_projects():
     try:
         manifest = Manifest.from_file()
         if version.parse(WestVersion) >= version.parse('0.9.0'):
-            projects = [p.posixpath for p in manifest.get_projects([])
+            projects = [p for p in manifest.get_projects([])
                         if manifest.is_active(p)]
         else:
-            projects = [p.posixpath for p in manifest.get_projects([])]
+            projects = manifest.get_projects([])
         manifest_file = manifest.path
         return {'manifest': manifest_file, 'projects': projects}
     except WestNotFound:
@@ -438,7 +468,8 @@ def main():
     if args.modules is None:
         west_proj = west_projects()
         modules = parse_modules(args.zephyr_base,
-                                west_proj['projects'] if west_proj else None,
+                                [p.posixpath for p in west_proj['projects']]
+                                if west_proj else None,
                                 args.extra_modules)
     else:
         modules = parse_modules(args.zephyr_base, args.modules,
@@ -477,7 +508,9 @@ def main():
             fp.write(twister)
 
     if args.meta_out:
-        meta = process_meta(args.zephyr_base, west_proj, modules)
+        meta = process_meta(args.zephyr_base, west_proj, modules,
+                            args.extra_modules)
+
         with open(args.meta_out, 'w', encoding="utf-8") as fp:
             fp.write(yaml.dump(meta))
 
