@@ -107,8 +107,6 @@ uint32_t sys_clock_elapsed(void)
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
-
-#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *
  * @brief Stop announcing sys ticks into the kernel
@@ -122,7 +120,6 @@ void sys_clock_disable(void)
 	irq_disable(TIMER_TICK_IRQ);
 	hwtimer_set_silent_ticks(INT64_MAX);
 }
-#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
 
 /*
  * @brief Initialize system timer driver

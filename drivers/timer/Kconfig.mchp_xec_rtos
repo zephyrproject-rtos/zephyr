@@ -7,6 +7,7 @@ config MCHP_XEC_RTOS_TIMER
 	bool "Microchip XEC series RTOS timer"
 	depends on SOC_FAMILY_MEC
 	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the Microchip
 	  XEC series RTOS timer and provides the standard "system clock

@@ -30,7 +30,3 @@ void __weak sys_clock_set_timeout(int32_t ticks, bool idle)
 void __weak sys_clock_idle_exit(void)
 {
 }
-
-void __weak sys_clock_disable(void)
-{
-}

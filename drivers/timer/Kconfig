@@ -7,13 +7,6 @@
 
 menu "Timer Drivers"
 
-config SYSTEM_CLOCK_DISABLE
-	bool "API to disable system clock"
-	help
-	  This option enables the sys_clock_disable() API in the kernel. It is
-	  needed by some subsystems (which will automatically select it), but is
-	  rarely needed by applications.
-
 config TIMER_HAS_64BIT_CYCLE_COUNTER
 	bool
 	help
@@ -54,6 +47,12 @@ config TICKLESS_CAPABLE
 	  one should be expected not to produce a call to
 	  sys_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
+
+config SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	bool
+	help
+	  This option should be selected by drivers implementing support for
+	  sys_clock_disable() API.
 
 source "drivers/timer/Kconfig.altera_avalon"
 source "drivers/timer/Kconfig.apic"

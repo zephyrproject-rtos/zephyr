@@ -108,6 +108,21 @@ extern void sys_clock_announce(int32_t ticks);
  * instantaneous answer.
  */
 extern uint32_t sys_clock_elapsed(void);
+
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	defined(CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT) || \
+	defined(__DOXYGEN__)
+/**
+ * @brief Disable system timer.
+ *
+ * This function is a no-op if the system timer does not have the capability
+ * of being disabled.
+ */
+extern void sys_clock_disable(void);
+#else
+static inline void sys_clock_disable(void) {}
+#endif /* CONFIG_SYSTEM_TIMER_HAS_DISABLE_SUPPORT */
+
 /**
  * @}
  */

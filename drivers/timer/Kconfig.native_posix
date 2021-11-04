@@ -9,6 +9,7 @@ config NATIVE_POSIX_TIMER
 	depends on BOARD_NATIVE_POSIX
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the native_posix HW timer
 	  model
