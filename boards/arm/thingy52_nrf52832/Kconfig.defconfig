@@ -11,6 +11,9 @@ config BOARD
 config I2C
 	default y
 
+config GPIO
+	default y
+
 config BT_CTLR
 	default BT
 
