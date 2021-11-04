@@ -17,31 +17,26 @@ menu "ELM FAT file system settings"
 config FS_FATFS_READ_ONLY
 	bool "Read-only support for all volumes"
 	help
-	  The option excludes write code from ELM FAT file system driver;
-	  when selected, it no longer will be possible to write data on
-	  the FAT FS.
-	  If write support is not needed, enabling this flag will slightly
-	  reduce application size.
-	  This option translates to _FS_READONLY within ELM FAT file system
-	  driver; it enables exclusion, from compilation, of write supporting
-	  code.
+	  The option excludes write code from ELM FAT file system driver; when selected, it no
+	  longer will be possible to write data on the FAT FS.  If write support is not needed,
+	  enabling this flag will slightly reduce application size.
+	  This option translates to _FS_READONLY within ELM FAT file system driver; it enables
+	  exclusion, from compilation, of write supporting code.
 
 config FS_FATFS_MKFS
 	bool
 	help
-	  This option translates to _USE_MKFS within ELM FAT file system
-	  driver; it enables additional code that is required for formatting
-	  volumes to ELM FAT.
+	  This option translates to _USE_MKFS within ELM FAT file system driver; it enables
+	  additional code that is required for formatting volumes to ELM FAT.
 
 config FS_FATFS_MOUNT_MKFS
 	bool "Allow formatting volume when mounting fails"
 	default y
 	select FS_FATFS_MKFS
 	help
-	  This option adds code that allows fs_mount to attempt to format
-	  a volume if no file system is found.
-	  If formatting is not needed, disabling this flag will slightly
-	  reduce application size.
+	  This option adds code that allows fs_mount to attempt to format a volume if no file system
+	  is found.  If formatting is not needed, disabling this flag will slightly reduce
+	  application size.
 
 config FS_FATFS_EXFAT
 	bool "Enable exFAT support"
@@ -60,8 +55,8 @@ config FS_FATFS_NUM_DIRS
 config FS_FATFS_LFN
 	bool "Enable long filenames (LFN)"
 	help
-	  Without long filenames enabled, file names are limited to 8.3 format.
-	  This option increases working buffer size.
+	  Without long filenames enabled, file names are limited to 8.3 format.  This option
+	  increases working buffer size.
 
 if FS_FATFS_LFN
 
@@ -91,9 +86,8 @@ config FS_FATFS_MAX_LFN
 	range 12 255
 	default 255
 	help
-	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
-	  additional 608 bytes at exFAT enabled.
-	  It should be set 255 to support full featured LFN operations.
+	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and additional 608 bytes at
+	  exFAT enabled.  It should be set 255 to support full featured LFN operations.
 
 endif # FS_FATFS_LFN
 

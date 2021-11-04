@@ -18,12 +18,10 @@
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
 /* Memory pool for FatFs directory objects */
-K_MEM_SLAB_DEFINE(fatfs_dirp_pool, sizeof(DIR),
-			CONFIG_FS_FATFS_NUM_DIRS, 4);
+K_MEM_SLAB_DEFINE(fatfs_dirp_pool, sizeof(DIR), CONFIG_FS_FATFS_NUM_DIRS, 4);
 
 /* Memory pool for FatFs file objects */
-K_MEM_SLAB_DEFINE(fatfs_filep_pool, sizeof(FIL),
-			CONFIG_FS_FATFS_NUM_FILES, 4);
+K_MEM_SLAB_DEFINE(fatfs_filep_pool, sizeof(FIL), CONFIG_FS_FATFS_NUM_FILES, 4);
 
 static int translate_error(int error)
 {
@@ -71,11 +69,10 @@ static uint8_t translate_flags(fs_mode_t flags)
 	fat_mode |= (flags & FS_O_READ) ? FA_READ : 0;
 	fat_mode |= (flags & FS_O_WRITE) ? FA_WRITE : 0;
 	fat_mode |= (flags & FS_O_CREATE) ? FA_OPEN_ALWAYS : 0;
-	/* NOTE: FA_APPEND is not translated because FAT FS does not
-	 * support append semantics of the Zephyr, where file position
-	 * is forwarded to the end before each write, the fatfs_write
-	 * will be tasked with setting a file position to the end,
-	 * if FA_APPEND flag is present.
+	/* NOTE: FA_APPEND is not translated because FAT FS does not support append semantics of
+	 * the Zephyr, where file position is forwarded to the end before each write, the
+	 * fatfs_write will be tasked with setting a file position to the end, if FA_APPEND flag is
+	 * present.
 	 */
 
 	return fat_mode;
@@ -251,9 +248,8 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		res = f_truncate(zfp->filep);
 	} else {
 		/*
-		 * Get actual length after expansion. This could be
-		 * less if there was not enough space in the volume
-		 * to expand to the requested length
+		 * Get actual length after expansion. This could be less if there was not enough
+		 * space in the volume to expand to the requested length
 		 */
 		length = f_tell((FIL *)zfp->filep);
 
@@ -263,10 +259,8 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		}
 
 		/*
-		 * The FS module does caching and optimization of
-		 * writes. Here we write 1 byte at a time to avoid
-		 * using additional code and memory for doing any
-		 * optimization.
+		 * The FS module does caching and optimization of writes. Here we write 1 byte at
+		 * a time to avoid using additional code and memory for doing any optimization.
 		 */
 		unsigned int bw;
 		uint8_t c = 0U;
@@ -393,9 +387,9 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	stat->f_bfree = f_bfree;
 
 	/*
-	 * If FF_MIN_SS and FF_MAX_SS differ, variable sector size support is
-	 * enabled and the file system object structure contains the actual sector
-	 * size, otherwise it is configured to a fixed value give by FF_MIN_SS.
+	 * If FF_MIN_SS and FF_MAX_SS differ, variable sector size support is enabled and the file
+	 * system object structure contains the actual sector size, otherwise it is configured to
+	 * a fixed value give by FF_MIN_SS.
 	 */
 #if FF_MAX_SS != FF_MIN_SS
 	stat->f_bsize = fs->ssize;
@@ -422,8 +416,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 		return -EROFS;
 	}
 	/* If no file system found then create one */
-	if (res == FR_NO_FILESYSTEM &&
-	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
+	if (res == FR_NO_FILESYSTEM && (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
 		uint8_t work[FF_MAX_SS];
 		MKFS_PARM mkfs_opt = {
 			.fmt = FM_FAT | FM_SFD,	/* Any suitable FAT */

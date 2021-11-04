@@ -159,8 +159,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(shell, "%s%s", entry.name,
-			      (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
+		shell_print(shell, "%s%s", entry.name, (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
 	}
 
 	fs_closedir(&dir);
@@ -268,8 +267,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_stat(path, &dirent);
 	if (err) {
-		shell_error(shell, "Failed to obtain file %s (err: %d)",
-			    path, err);
+		shell_error(shell, "Failed to obtain file %s (err: %d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -290,8 +288,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	if (offset > 0) {
 		err = fs_seek(&file, offset, FS_SEEK_SET);
 		if (err) {
-			shell_error(shell, "Failed to seek %s (%d)",
-				    path, err);
+			shell_error(shell, "Failed to seek %s (%d)", path, err);
 			fs_close(&file);
 			return -ENOEXEC;
 		}
@@ -350,8 +347,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 
 		err = fs_stat(path, &dirent);
 		if (err < 0) {
-			shell_error(shell, "Failed to obtain file %s (err: %d)",
-					path, err);
+			shell_error(shell, "Failed to obtain file %s (err: %d)", path, err);
 			continue;
 		}
 
@@ -378,8 +374,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (read < 0) {
-			shell_error(shell, "Failed to read from file %s (err: %zd)",
-				path, read);
+			shell_error(shell, "Failed to read from file %s (err: %zd)", path, read);
 		}
 
 		fs_close(&file);
@@ -459,8 +454,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		if ((buf_len == BUF_CNT) || (arg_offset == argc)) {
 			err = fs_write(&file, buf, buf_len);
 			if (err < 0) {
-				shell_error(shell, "Failed to write %s (%d)",
-					      path, err);
+				shell_error(shell, "Failed to write %s (%d)", path, err);
 				fs_close(&file);
 				return -ENOEXEC;
 			}
@@ -496,21 +490,18 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
-		shell_error(shell,
-			    "Failed to allocate  buffer for mount point");
+		shell_error(shell, "Failed to allocate  buffer for mount point");
 		return -ENOEXEC;
 	}
 
 	fatfs_mnt.mnt_point = (const char *)mntpt;
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
-		shell_error(shell,
-			"Error mounting fat fs.Error Code [%d]", res);
+		shell_error(shell, "Error mounting fat fs.Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "Successfully mounted fat fs:%s",
-			fatfs_mnt.mnt_point);
+	shell_print(shell, "Successfully mounted fat fs:%s", fatfs_mnt.mnt_point);
 
 	return 0;
 }
@@ -544,18 +535,14 @@ static int cmd_mount_littlefs(const struct shell *shell, size_t argc, char **arg
 }
 #endif
 
-#if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
-	|| defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#if defined(CONFIG_FAT_FILESYSTEM_ELM) || defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
-	SHELL_CMD_ARG(fat, NULL,
-		      "Mount fatfs. fs mount fat <mount-point>",
-		      cmd_mount_fat, 2, 0),
+	SHELL_CMD_ARG(fat, NULL, "Mount fatfs. fs mount fat <mount-point>", cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-	SHELL_CMD_ARG(littlefs, NULL,
-		      "Mount littlefs. fs mount littlefs <mount-point>",
+	SHELL_CMD_ARG(littlefs, NULL, "Mount littlefs. fs mount littlefs <mount-point>",
 		      cmd_mount_littlefs, 2, 0),
 #endif
 
@@ -563,8 +550,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 );
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
-	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs, SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)		\
@@ -574,9 +560,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 #endif
 	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
 	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
-	SHELL_CMD_ARG(cat, NULL,
-		"Concatenate files and print on the standard output",
-		cmd_cat, 2, 255),
+	SHELL_CMD_ARG(cat, NULL, "Concatenate files and print on the standard output",
+		      cmd_cat, 2, 255),
 	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
 	SHELL_CMD_ARG(statvfs, NULL, "Show file system state", cmd_statvfs, 2, 0),
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
