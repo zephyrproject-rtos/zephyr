@@ -1,0 +1,11 @@
+# Bosch BMI088 inertial measurement configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI088
+	bool "Bosch BMI088 inertial measurement unit"
+	depends on SPI
+	help
+	  Enable Bosch BMI088 inertial measurement unit that provides acceleration
+	  and angular rate measurements.
+
