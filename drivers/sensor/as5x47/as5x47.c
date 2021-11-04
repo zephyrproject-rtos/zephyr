@@ -36,7 +36,13 @@ int as5x47_init(const struct device *dev) {
 
 int as5x47_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ROTATION) {
-        get_data(dev)->angle_deg = readAngleDegree(get_config(dev)->sensor, true, NULL, false, false, false);
+        bool error;
+        get_data(dev)->angle_deg = readAngleDegree(get_config(dev)->sensor, true, &error, true, true, true);
+        if (error) {
+            LOG_ERR("Error reading from sensor");
+            get_data(dev)->angle_deg = 0;
+            return -EIO;
+        }
         return 0;
     }
     return -ENOTSUP;
