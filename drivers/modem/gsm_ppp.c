@@ -1115,7 +1115,7 @@ static int gsm_init(const struct device *dev)
 	gsm->context.data_imsi = minfo.mdm_imsi;
 	gsm->context.data_iccid = minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
-	gsm->context.data_rssi = minfo.mdm_rssi;
+	gsm->context.data_rssi = &minfo.mdm_rssi;
 #endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->context.is_automatic_oper = false;
