@@ -17,6 +17,14 @@ config CORTEX_M_SYSTICK
 		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select CORTEX_M_SYSTICK_INSTALL_ISR
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
 	  SYSTICK timer and provides the standard "system clock driver" interfaces.
+
+config CORTEX_M_SYSTICK_INSTALL_ISR
+	bool
+	depends on CPU_CORTEX_M_HAS_SYSTICK
+	help
+	  This option should be selected by SysTick-based drivers so that the
+	  sys_clock_isr() function is installed.
