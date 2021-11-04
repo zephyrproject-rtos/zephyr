@@ -78,36 +78,26 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
 		return 0U;
-		break;
 	case PROC_MIN_USED_CHANS:
 		return 0U;
-		break;
 	case PROC_LE_PING:
 		return 0U;
-		break;
 	case PROC_VERSION_EXCHANGE:
 		return 0U;
-		break;
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		return 0U;
-		break;
 	case PROC_PHY_UPDATE:
 		return 1U;
-		break;
 	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		return 1U;
-		break;
 	case PROC_TERMINATE:
 		return 0U;
-		break;
 	case PROC_CHAN_MAP_UPDATE:
 		return 1U;
-		break;
 	case PROC_DATA_LENGTH_UPDATE:
 		return 0U;
-		break;
 	case PROC_CTE_REQ:
 		return 0U;
 	default:

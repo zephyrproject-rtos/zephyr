@@ -1913,9 +1913,8 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		} else if (!tx) {
 			/* Tx Node re-used to enqueue new ctrl PDU */
 			return;
-		} else {
-			LL_ASSERT(!link->next);
 		}
+		LL_ASSERT(!link->next);
 	} else if (handle == LLL_HANDLE_INVALID) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
@@ -1923,8 +1922,6 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 	}
 
 	ll_tx_ack_put(handle, tx);
-
-	return;
 }
 
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)

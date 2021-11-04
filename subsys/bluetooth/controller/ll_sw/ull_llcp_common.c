@@ -56,13 +56,13 @@ enum {
 	/* Procedure run */
 	LP_COMMON_EVT_RUN,
 
-	/* Response recieved */
+	/* Response received */
 	LP_COMMON_EVT_RESPONSE,
 
-	/* Reject response recieved */
+	/* Reject response received */
 	LP_COMMON_EVT_REJECT,
 
-	/* Unknown response recieved */
+	/* Unknown response received */
 	LP_COMMON_EVT_UNKNOWN,
 
 	/* Instant collision detected */
@@ -88,7 +88,7 @@ enum {
 	/* Ack received */
 	RP_COMMON_EVT_ACK,
 
-	/* Request recieved */
+	/* Request received */
 	RP_COMMON_EVT_REQUEST,
 };
 
@@ -157,7 +157,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
 
-	/* Update procedure timout. For TERMINATE supervision_timeout is used */
+	/* Update procedure timeout. For TERMINATE supervision_timeout is used */
 	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE) ? conn->procedure_reload :
 									conn->supervision_reload);
 }
@@ -323,7 +323,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			uint8_t dle_changed = ull_dle_update_eff(conn);
 
 			if (dle_changed && !llcp_ntf_alloc_is_available()) {
-				/* We need to generate NTF but no buffers avail, so go wait for one */
+				/* We need to generate NTF but no buffers avail so wait for one */
 				ctx->state = LP_COMMON_STATE_WAIT_NTF;
 			} else {
 				if (dle_changed) {
@@ -398,7 +398,9 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
+		/* The Link Layer shall only queue for transmission a maximum of
+		 * one LL_VERSION_IND PDU during a connection.
+		 */
 		if (!conn->llcp.vex.sent) {
 			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
@@ -426,8 +428,8 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
-				/* Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
-				 * conflicting with out-going LL Data PDUs
+				/* Pause data tx, to ensure we can later (on RSP rx-ack)
+				 * update DLE without conflicting with out-going LL Data PDUs
 				 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
 				 */
 				llcp_tx_pause_data(conn);
@@ -807,7 +809,9 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *)ntf->pdu;
 	switch (ctx->proc) {
-/* Note: the 'double' ifdef in case this switch case expands in the future and the function is re-instated */
+/* Note: the 'double' ifdef in case this switch case expands
+ * in the future and the function is re-instated
+ */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_ntf_length_change(conn, ctx, pdu);
@@ -851,7 +855,9 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_VERSION_EXCHANGE:
-		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
+		/* The Link Layer shall only queue for transmission a maximum of one
+		 * LL_VERSION_IND PDU during a connection.
+		 */
 		if (!conn->llcp.vex.sent) {
 			if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = RP_COMMON_STATE_WAIT_TX;
@@ -864,7 +870,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		} else {
 			/* Protocol Error.
 			 *
-			 * A procedure already sent a LL_VERSION_IND and recieved a LL_VERSION_IND.
+			 * A procedure already sent a LL_VERSION_IND and received a LL_VERSION_IND.
 			 */
 			/* TODO */
 			LL_ASSERT(0);
@@ -876,9 +882,9 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		 * Spec says (5.2, Vol.6, Part B, Section 5.1.11):
 		 *     The procedure has completed when the Link Layer acknowledgment of the
 		 *     LL_MIN_USED_CHANNELS_IND PDU is sent or received.
-		 *  In effect, for this procedure, this is equivalent to RX of PDU
+		 * In effect, for this procedure, this is equivalent to RX of PDU
 		 */
-		/* So we inititate a chmap update procedure, but only if acting as central, just in case ... */
+		/* Inititate a chmap update, but only if acting as central, just in case ... */
 		if (conn->lll.role == BT_HCI_ROLE_CENTRAL &&
 		    ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
 			uint8_t chmap[5];

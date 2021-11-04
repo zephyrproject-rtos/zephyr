@@ -120,7 +120,7 @@ struct proc_ctx {
 	/* Procedure FSM */
 	uint8_t state;
 
-	/* Expected opcode to be recieved next */
+	/* Expected opcode to be received next */
 	enum pdu_data_llctrl_type rx_opcode;
 
 	/* Last transmitted opcode used for unknown/reject */
@@ -519,7 +519,8 @@ void llcp_pdu_encode_pause_enc_rsp(struct pdu_data *pdu);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 void llcp_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
-void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
+void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode,
+				    uint8_t error_code);
 void llcp_pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 

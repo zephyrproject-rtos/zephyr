@@ -130,7 +130,7 @@ void helper_pdu_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data 
 void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_pdu *rx,
 				void *param);
 
-typedef enum {
+enum helper_pdu_opcode {
 	LL_VERSION_IND,
 	LL_LE_PING_REQ,
 	LL_LE_PING_RSP,
@@ -159,14 +159,14 @@ typedef enum {
 	LL_LENGTH_RSP,
 	LL_CTE_REQ,
 	LL_CTE_RSP,
-} helper_pdu_opcode_t;
+};
 
-typedef enum {
+enum helper_node_opcode {
 	NODE_PHY_UPDATE,
 	NODE_CONN_UPDATE,
 	NODE_ENC_REFRESH,
 	NODE_CTE_RSP,
-} helper_node_opcode_t;
+};
 
 typedef void(helper_pdu_encode_func_t)(struct pdu_data *data, void *param);
 typedef void(helper_pdu_verify_func_t)(const char *file, uint32_t line, struct pdu_data *data,

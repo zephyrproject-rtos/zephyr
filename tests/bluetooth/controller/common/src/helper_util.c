@@ -293,15 +293,16 @@ uint16_t event_counter(struct ll_conn *conn)
 
 	/* If event_counter is called inside an event_prepare()/event_done() pair
 	 * return the current event counter value (i.e. -1);
-	 * otherwise return the next event counter value */
+	 * otherwise return the next event counter value
+	 */
 	if (event_active)
 		event_counter--;
 
 	return event_counter;
 }
 
-void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ll_conn *conn,
-		void *param)
+void lt_tx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
+		struct ll_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *rx;
@@ -321,8 +322,8 @@ void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, str
 	sys_slist_append(&lt_tx_q, (sys_snode_t *)rx);
 }
 
-void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ll_conn *conn,
-		struct node_tx **tx_ref, void *param)
+void lt_rx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
+		struct ll_conn *conn, struct node_tx **tx_ref, void *param)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -347,7 +348,7 @@ void lt_rx_q_is_empty_real(const char *file, uint32_t line, struct ll_conn *conn
 	zassert_is_null(tx, "Tx Q not empty.\nCalled at %s:%d\n", file, line);
 }
 
-void ut_rx_pdu_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode,
+void ut_rx_pdu_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
 		    struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct pdu_data *pdu;
@@ -369,7 +370,7 @@ void ut_rx_pdu_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode,
 	*ntf_ref = ntf;
 }
 
-void ut_rx_node_real(const char *file, uint32_t line, helper_node_opcode_t opcode,
+void ut_rx_node_real(const char *file, uint32_t line, enum helper_node_opcode opcode,
 		     struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct node_rx_pdu *ntf;

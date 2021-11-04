@@ -26,8 +26,8 @@ void ull_llcp_init(struct ll_conn *conn);
 void ull_cp_state_set(struct ll_conn *conn, uint8_t state);
 
 /**
-*
-*/
+ *
+ */
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx);
 
 /**

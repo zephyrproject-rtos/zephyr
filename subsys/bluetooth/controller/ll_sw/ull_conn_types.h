@@ -401,7 +401,9 @@ struct llcp_struct {
 		uint8_t min_used_chans;
 	} muc;
 
-	/* EGON TODO: we'll need the next few structs eventually, Thomas and Szymon please comment on names etc. */
+	/* EGON TODO: we'll need the next few structs eventually,
+	 * Thomas and Szymon please comment on names etc.
+	 */
 	struct {
 		uint16_t *pdu_win_offset;
 		uint32_t ticks_anchor;
@@ -436,13 +438,14 @@ struct llcp_struct {
 #if (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) &&\
 	(CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM <\
 	CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX)
+
 	uint8_t tx_buffer_alloc;
 #endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
 
 }; /* struct llcp_struct */
 
 struct ll_conn {
- 	struct ull_hdr  ull;
+	struct ull_hdr  ull;
 	struct lll_conn lll;
 
 	struct ull_tx_q tx_q;
@@ -457,6 +460,7 @@ struct ll_conn {
 		 */
 		struct {
 			struct node_rx_hdr hdr;
+
 			uint8_t reason __aligned(4);
 		} node_rx;
 	} llcp_terminate;

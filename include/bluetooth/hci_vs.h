@@ -209,7 +209,6 @@ struct bt_hci_cp_vs_set_min_num_used_chans {
 	uint8_t  min_used_chans;
 } __packed;
 
-
 /* Events */
 
 struct bt_hci_evt_vs {
