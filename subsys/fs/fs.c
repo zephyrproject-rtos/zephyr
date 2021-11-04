@@ -40,8 +40,7 @@ static inline void registry_clear_entry(struct registry_entry *ep)
 	ep->fstp = NULL;
 }
 
-static int registry_add(int type,
-			const struct fs_file_system_t *fstp)
+static int registry_add(int type, const struct fs_file_system_t *fstp)
 {
 	int rv = -ENOSPC;
 
@@ -121,8 +120,9 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
-	if (match_len)
+	if (match_len) {
 		*match_len = mnt_p->mountp_len;
+	}
 
 	return 0;
 }
@@ -136,8 +136,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	/* COpy flags to zfp for use with other fs_ API calls */
 	zfp->flags = flags;
 
-	if ((file_name == NULL) ||
-			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
+	if ((file_name == NULL) || (strlen(file_name) <= 1) || (file_name[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -152,8 +151,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		return rc;
 	}
 
-	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
-	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
+	if ((mp->flags & FS_MOUNT_FLAG_READ_ONLY) && (flags & (FS_O_CREATE | FS_O_WRITE))) {
 		return -EROFS;
 	}
 
@@ -321,8 +319,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) < 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (strlen(abs_path) < 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -392,6 +389,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 				break;
 			}
 		}
+
 		if (rc < 0) {
 			LOG_ERR("directory read error (%d)", rc);
 		}
@@ -422,8 +420,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 			mnt = CONTAINER_OF(node, struct fs_mount_t, node);
 
 			entry->type = FS_DIR_ENTRY_DIR;
-			strncpy(entry->name, mnt->mnt_point + 1,
-				sizeof(entry->name) - 1);
+			strncpy(entry->name, mnt->mnt_point + 1, sizeof(entry->name) - 1);
 			entry->name[sizeof(entry->name) - 1] = 0;
 			entry->size = 0;
 
@@ -477,8 +474,7 @@ int fs_mkdir(const char *abs_path)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -510,8 +506,7 @@ int fs_unlink(const char *abs_path)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -545,7 +540,7 @@ int fs_rename(const char *from, const char *to)
 	int rc = -EINVAL;
 
 	if ((from == NULL) || (strlen(from) <= 1) || (from[0] != '/') ||
-			(to == NULL) || (strlen(to) <= 1) || (to[0] != '/')) {
+	    (to == NULL) || (strlen(to) <= 1) || (to[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -583,8 +578,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -613,8 +607,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	struct fs_mount_t *mp;
 	int rc;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}

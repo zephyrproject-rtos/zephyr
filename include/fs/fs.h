@@ -33,16 +33,13 @@ enum fs_dir_entry_type {
 
 /** @brief Enumeration to uniquely identify file system types.
  *
- * Zephyr supports in-tree file systems and external ones.  Each
- * requires a unique identifier used to register the file system
- * implementation and to associate a mount point with the file system
- * type.  This anonymous enum defines global identifiers for the
- * in-tree file systems.
+ * Zephyr supports in-tree file systems and external ones.  Each requires a unique identifier used
+ * to register the file system implementation and to associate a mount point with the file system
+ * type.  This anonymous enum defines global identifiers for the in-tree file systems.
  *
- * External file systems should be registered using unique identifiers
- * starting at @c FS_TYPE_EXTERNAL_BASE.  It is the responsibility of
- * applications that use external file systems to ensure that these
- * identifiers are unique if multiple file system implementations are
+ * External file systems should be registered using unique identifiers starting at
+ * @c FS_TYPE_EXTERNAL_BASE.  It is the responsibility of applications that use external file
+ * systems to ensure that these identifiers are unique if multiple file system implementations are
  * used by the application.
  */
 enum {
@@ -60,8 +57,7 @@ enum {
 #define FS_MOUNT_FLAG_NO_FORMAT BIT(0)
 /** Flag makes mounted file system read-only */
 #define FS_MOUNT_FLAG_READ_ONLY BIT(1)
-/** Flag used in pre-defined mount structures that are to be mounted
- * on startup.
+/** Flag used in pre-defined mount structures that are to be mounted on startup.
  *
  * This flag has no impact in user-defined mount structures.
  */
@@ -95,8 +91,7 @@ struct fs_mount_t {
 /**
  * @brief Structure to receive file or directory information
  *
- * Used in functions that reads the directory entries to get
- * file or directory information.
+ * Used in functions that reads the directory entries to get file or directory information.
  *
  * @param dir_entry_type Whether file or directory
  * - FS_DIR_ENTRY_FILE
@@ -113,8 +108,7 @@ struct fs_dirent {
 /**
  * @brief Structure to receive volume statistics
  *
- * Used to retrieve information about total and available space
- * in the volume.
+ * Used to retrieve information about total and available space in the volume.
  *
  * @param f_bsize Optimal transfer block size
  * @param f_frsize Allocation unit size
@@ -178,10 +172,8 @@ struct fs_statvfs {
 /*
  * @brief Get the common mount flags for an fstab entry.
 
- * @param node_id the node identifier for a child entry in a
- * zephyr,fstab node.
- * @return a value suitable for initializing an fs_mount_t flags
- * member.
+ * @param node_id the node identifier for a child entry in a zephyr,fstab node.
+ * @return a value suitable for initializing an fs_mount_t flags member.
  */
 #define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
 	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
@@ -189,25 +181,22 @@ struct fs_statvfs {
 	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0))
 
 /**
- * @brief The name under which a zephyr,fstab entry mount structure is
- * defined.
+ * @brief The name under which a zephyr,fstab entry mount structure is defined.
  */
 #define FS_FSTAB_ENTRY(node_id) _CONCAT(z_fsmp_, node_id)
 
 /**
- * @brief Generate a declaration for the externally defined fstab
- * entry.
+ * @brief Generate a declaration for the externally defined fstab entry.
  *
  * This will evaluate to the name of a struct fs_mount_t object.
  */
-#define FS_FSTAB_DECLARE_ENTRY(node_id)		\
-	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
+#define FS_FSTAB_DECLARE_ENTRY(node_id)	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
 
 /**
  * @brief Initialize fs_file_t object
  *
- * Initializes the fs_file_t object; the function needs to be invoked
- * on object before first use with fs_open.
+ * Initializes the fs_file_t object; the function needs to be invoked on object before first use
+ * with fs_open.
  *
  * @param zfp Pointer to file object
  *
@@ -220,8 +209,8 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
 /**
  * @brief Initialize fs_dir_t object
  *
- * Initializes the fs_dir_t object; the function needs to be invoked
- * on object before first use with fs_opendir.
+ * Initializes the fs_dir_t object; the function needs to be invoked on object before first use
+ * with fs_opendir.
  *
  * @param zdp Pointer to file object
  *
@@ -237,16 +226,15 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * Opens or possibly creates a file and associates a stream with it.
  *
  * @details
- * @p flags can be 0 or a binary combination of one or more of the following
- * identifiers:
+ * @p flags can be 0 or a binary combination of one or more of the following identifiers:
  *   - @c FS_O_READ open for read
  *   - @c FS_O_WRITE open for write
  *   - @c FS_O_RDWR open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
  *   - @c FS_O_CREATE create file if it does not exist
  *   - @c FS_O_APPEND move to end of file before each write
  *
- * If @p flags are set to 0 the function will attempt to open an existing file
- * with no read/write access; this may be used to e.g. check if the file exists.
+ * If @p flags are set to 0 the function will attempt to open an existing file with no read/write
+ * access; this may be used to e.g. check if the file exists.
  *
  * @param zfp Pointer to a file object
  * @param file_name The name of a file to open
@@ -254,9 +242,8 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  *
  * @retval 0 on success;
  * @retval -EINVAL when a bad file name is given;
- * @retval -EROFS when opening read-only file for write, or attempting to
- *	   create a file on a system that has been mounted with the
- *	   FS_MOUNT_FLAG_READ_ONLY flag;
+ * @retval -EROFS when opening read-only file for write, or attempting to create a file on a system
+ *	   that has been mounted with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOENT when the file path is not possible (bad mount point);
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
@@ -282,8 +269,8 @@ int fs_close(struct fs_file_t *zfp);
  * @param path Path to the file or directory to delete
  *
  * @retval 0 on success;
- * @retval -EROFS if file is read-only, or when file system has been mounted
- *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
+ * @retval -EROFS if file is read-only, or when file system has been mounted with
+ *	   the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
@@ -292,16 +279,13 @@ int fs_unlink(const char *path);
 /**
  * @brief Rename file or directory
  *
- * Performs a rename and / or move of the specified source path to the
- * specified destination.  The source path can refer to either a file or a
- * directory.  All intermediate directories in the destination path must
- * already exist.  If the source path refers to a file, the destination path
- * must contain a full filename path, rather than just the new parent
- * directory.  If an object already exists at the specified destination path,
- * this function causes it to be unlinked prior to the rename (i.e., the
- * destination gets clobbered).
- * @note Current implementation does not allow moving files between mount
- * points.
+ * Performs a rename and / or move of the specified source path to the specified destination.
+ * The source path can refer to either a file or a directory.  All intermediate directories in
+ * the destination path must already exist.  If the source path refers to a file, the destination
+ * path must contain a full filename path, rather than just the new parent directory.
+ * If an object already exists at the specified destination path, this function causes it to be
+ * unlinked prior to the rename (i.e., the destination gets clobbered).
+ * @note Current implementation does not allow moving files between mount points.
  *
  * @param from The source path
  * @param to The destination path
@@ -315,9 +299,8 @@ int fs_rename(const char *from, const char *to);
 /**
  * @brief Read file
  *
- * Reads up to @p size bytes of data to @p ptr pointed buffer, returns number
- * of bytes read.  A returned value may be lower than @p size if there were
- * fewer bytes available than requested.
+ * Reads up to @p size bytes of data to @p ptr pointed buffer, returns number of bytes read.
+ * A returned value may be lower than @p size if there were fewer bytes available than requested.
  *
  * @param zfp Pointer to the file object
  * @param ptr Pointer to the data buffer
@@ -331,12 +314,10 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 /**
  * @brief Write file
  *
- * Attempts to write @p size number of bytes to the specified file.
- * If a negative value is returned from the function, the file pointer has not
- * been advanced.
- * If the function returns a non-negative number that is lower than @p size,
- * the global @c errno variable should be checked for an error code,
- * as the device may have no free space for data.
+ * Attempts to write @p size number of bytes to the specified file.  If a negative value is returned
+ * from the function, the file pointer has not been advanced.
+ * If the function returns a non-negative number that is lower than @p size, the global @c errno
+ * variable should be checked for an error code, as the device may have no free space for data.
  *
  * @param zfp Pointer to the file object
  * @param ptr Pointer to the data buffer
@@ -351,8 +332,8 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 /**
  * @brief Seek file
  *
- * Moves the file position to a new location in the file. The @p offset is added
- * to file position based on the @p whence parameter.
+ * Moves the file position to a new location in the file. The @p offset is added to file position
+ * based on the @p whence parameter.
  *
  * @param zfp Pointer to the file object
  * @param offset Relative location to move the file pointer to
@@ -385,14 +366,13 @@ off_t fs_tell(struct fs_file_t *zfp);
 /**
  * @brief Truncate or extend an open file to a given size
  *
- * Truncates the file to the new length if it is shorter than the current
- * size of the file. Expands the file if the new length is greater than the
- * current size of the file. The expanded region would be filled with zeroes.
+ * Truncates the file to the new length if it is shorter than the current size of the file. Expands
+ * the file if the new length is greater than the current size of the file.  The expanded region
+ * would be filled with zeroes.
  *
- * @note In the case of expansion, if the volume got full during the
- * expansion process, the function will expand to the maximum possible length
- * and return success.  Caller should check if the expanded size matches the
- * requested length.
+ * @note In the case of expansion, if the volume got full during the expansion process, the function
+ * will expand to the maximum possible length and return success.
+ * Caller should check if the expanded size matches the requested length.
  *
  * @param zfp Pointer to the file object
  * @param length New size of the file in bytes
@@ -406,11 +386,10 @@ int fs_truncate(struct fs_file_t *zfp, off_t length);
 /**
  * @brief Flush cached write data buffers of an open file
  *
- * The function flushes the cache of an open file; it can be invoked to ensure
- * data gets written to the storage media immediately, e.g. to avoid data loss
- * in case if power is removed unexpectedly.
- * @note Closing a file will cause caches to be flushed correctly so the
- * function need not be called when the file is being closed.
+ * The function flushes the cache of an open file; it can be invoked to ensure data gets written to
+ * the storage media immediately, e.g. to avoid data loss in case if power is removed unexpectedly.
+ * @note Closing a file will cause caches to be flushed correctly so the function need not be called
+ * when the file is being closed.
  *
  * @param zfp Pointer to the file object
  *
@@ -448,12 +427,11 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
 /**
  * @brief Directory read entry
  *
- * Reads directory entries of an open directory. In end-of-dir condition,
- * the function will return 0 and set the <tt>entry->name[0]</tt> to 0.
+ * Reads directory entries of an open directory. In end-of-dir condition, the function will return 0
+ * and set the <tt>entry->name[0]</tt> to 0.
  *
- * @note: Most existing underlying file systems do not generate POSIX
- * special directory entries "." or "..".  For consistency the
- * abstraction layer will remove these from lower layer results so
+ * @note: Most existing underlying file systems do not generate POSIX special directory entries "."
+ * or "..".  For consistency the abstraction layer will remove these from lower layer results so
  * higher layers see consistent results.
  *
  * @param zdp Pointer to the directory object
@@ -479,26 +457,22 @@ int fs_closedir(struct fs_dir_t *zdp);
 /**
  * @brief Mount filesystem
  *
- * Perform steps needed for mounting a file system like
- * calling the file system specific mount function and adding
- * the mount point to mounted file system list.
+ * Perform steps needed for mounting a file system like calling the file system specific mount
+ * function and adding the mount point to mounted file system list.
  *
- * @note Current implementation of ELM FAT driver allows only following mount
- * points: "/RAM:","/NAND:","/CF:","/SD:","/SD2:","/USB:","/USB2:","/USB3:"
+ * @note Current implementation of ELM FAT driver allows only following mount points:
+ * "/RAM:", "/NAND:", "/CF:", "/SD:", "/SD2:", "/USB:", "/USB2:", "/USB3:"
  * or mount points that consist of single digit, e.g: "/0:", "/1:" and so forth.
  *
- * @param mp Pointer to the fs_mount_t structure.  Referenced object
- *	     is not changed if the mount operation failed.
- *	     A reference is captured in the fs infrastructure if the
- *	     mount operation succeeds, and the application must not
- *	     mutate the structure contents until fs_unmount is
- *	     successfully invoked on the same pointer.
+ * @param mp Pointer to the fs_mount_t structure.  Referenced object is not changed if the mount
+ *	     operation failed.  A reference is captured in the fs infrastructure if the mount
+ *	     operation succeeds, and the application must not mutate the structure contents until
+ *	     fs_unmount is successfully invoked on the same pointer.
  *
  * @retval 0 on success;
  * @retval -ENOENT when file system type has not been registered;
  * @retval -ENOTSUP when not supported by underlying file system driver;
- * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
- *	   has been set;
+ * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY has been set;
  * @retval <0 an other negative errno code on error.
  */
 int fs_mount(struct fs_mount_t *mp);
@@ -506,9 +480,8 @@ int fs_mount(struct fs_mount_t *mp);
 /**
  * @brief Unmount filesystem
  *
- * Perform steps needed to unmount a file system like
- * calling the file system specific unmount function and removing
- * the mount point from mounted file system list.
+ * Perform steps needed to unmount a file system like calling the file system specific unmount
+ * function and removing the mount point from mounted file system list.
  *
  * @param mp Pointer to the fs_mount_t structure
  *
@@ -522,10 +495,9 @@ int fs_unmount(struct fs_mount_t *mp);
 /**
  * @brief Get path of mount point at index
  *
- * This function iterates through the list of mount points and returns
- * the directory name of the mount point at the given @p index.
- * On success @p index is incremented and @p name is set to the mount directory
- * name.  If a mount point with the given @p index does not exist, @p name will
+ * This function iterates through the list of mount points and returns the directory name of
+ * the mount point at the given @p index.  On success @p index is incremented and @p name is set to
+ * the mount directory name.  If a mount point with the given @p index does not exist, @p name will
  * be set to @c NULL.
  *
  * @param index Pointer to mount point index
@@ -543,8 +515,7 @@ int fs_readmount(int *index, const char **name);
  * @note The file on a storage device may not be updated until it is closed.
  *
  * @param path Path to the file or directory
- * @param entry Pointer to the zfs_dirent structure to fill if the file or
- * directory exists.
+ * @param entry Pointer to the zfs_dirent structure to fill if the file or directory exists.
  *
  * @retval 0 on success;
  * @retval <0 negative errno code on error.

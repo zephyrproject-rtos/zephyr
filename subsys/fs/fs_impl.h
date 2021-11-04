@@ -22,12 +22,10 @@ extern "C" {
  *
  * @param mp a pointer to the mount point within which @p path is found
  *
- * @return the absolute path within the mount point.  Behavior is
- * undefined if @p path does not start with the mount point prefix.
+ * @return the absolute path within the mount point.  Behavior is undefined if @p path does not
+ * start with the mount point prefix.
  */
-const char *fs_impl_strip_prefix(const char *path,
-				 const struct fs_mount_t *mp);
-
+const char *fs_impl_strip_prefix(const char *path, const struct fs_mount_t *mp);
 
 #ifdef __cplusplus
 }

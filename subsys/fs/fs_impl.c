@@ -8,8 +8,7 @@
 #include <fs/fs.h>
 #include "fs_impl.h"
 
-const char *fs_impl_strip_prefix(const char *path,
-				 const struct fs_mount_t *mp)
+const char *fs_impl_strip_prefix(const char *path, const struct fs_mount_t *mp)
 {
 	static const char *const root = "/";
 
