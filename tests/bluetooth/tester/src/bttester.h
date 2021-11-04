@@ -228,9 +228,9 @@ struct gap_passkey_confirm_cmd {
 	uint8_t match;
 } __packed;
 
-#define GAP_START_DIRECTED_ADV_HD	0x0001
-#define GAP_START_DIRECTED_ADV_OWN_ID	0x0002
-#define GAP_START_DIRECTED_ADV_PEER_RPA	0x0004
+#define GAP_START_DIRECTED_ADV_HD	BIT(0)
+#define GAP_START_DIRECTED_ADV_OWN_ID	BIT(1)
+#define GAP_START_DIRECTED_ADV_PEER_RPA	BIT(2)
 
 #define GAP_START_DIRECTED_ADV		0x15
 struct gap_start_directed_adv_cmd {
