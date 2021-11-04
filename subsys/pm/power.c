@@ -259,18 +259,6 @@ void pm_power_state_force(struct pm_state_info info)
 	k_sched_unlock();
 }
 
-#if CONFIG_PM_DEVICE
-static enum pm_state _handle_device_abort(struct pm_state_info info)
-{
-	LOG_DBG("Some devices didn't enter suspend state!");
-
-	pm_resume_devices();
-	z_power_states[_current_cpu->id].state = PM_STATE_ACTIVE;
-
-	return PM_STATE_ACTIVE;
-}
-#endif
-
 bool pm_system_suspend(int32_t ticks)
 {
 	uint8_t id = _current_cpu->id;
@@ -308,10 +296,11 @@ bool pm_system_suspend(int32_t ticks)
 	if ((z_power_states[id].state != PM_STATE_RUNTIME_IDLE) &&
 			(atomic_sub(&z_cpus_active, 1) == 1)) {
 		if (pm_suspend_devices()) {
+			pm_resume_devices();
+			z_power_states[id].state = PM_STATE_ACTIVE;
+			(void)atomic_add(&z_cpus_active, 1);
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				_handle_device_abort(z_power_states[id]));
-			(void)_handle_device_abort(z_power_states[id]);
-			(void)atomic_add(&z_cpus_active, 1);
 			return false;
 		}
 	}
