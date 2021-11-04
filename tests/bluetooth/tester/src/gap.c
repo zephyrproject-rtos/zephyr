@@ -494,10 +494,12 @@ static void start_directed_advertising(const uint8_t *data, uint16_t len)
 	const struct gap_start_directed_adv_cmd *cmd = (void *)data;
 	struct gap_start_directed_adv_rp rp;
 	struct bt_le_adv_param adv_param;
+	uint16_t options = sys_le16_to_cpu(cmd->options);
+	const bt_addr_le_t *peer = (bt_addr_le_t *)data;
 
-	adv_param = *BT_LE_ADV_CONN_DIR((bt_addr_le_t *)data);
+	adv_param = *BT_LE_ADV_CONN_DIR(peer);
 
-	if (cmd->high_duty == 0) {
+	if (!(options & GAP_START_DIRECTED_ADV_HD)) {
 		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		adv_param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 		adv_param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
