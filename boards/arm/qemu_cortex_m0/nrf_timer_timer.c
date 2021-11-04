@@ -160,31 +160,6 @@ void timer0_nrf_isr(void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* FIXME switch to 1 MHz once this is fixed in QEMU */
-	nrf_timer_frequency_set(TIMER, NRF_TIMER_FREQ_2MHz);
-	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
-
-	IRQ_CONNECT(TIMER0_IRQn, 1, timer0_nrf_isr, 0, 0);
-	irq_enable(TIMER0_IRQn);
-
-	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_CLEAR);
-	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_START);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		set_comparator(counter() + CYC_PER_TICK);
-	}
-
-	event_clear();
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	int_enable();
-
-	return 0;
-}
-
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -255,3 +230,31 @@ uint32_t sys_clock_cycle_get_32(void)
 	k_spin_unlock(&lock, key);
 	return ret;
 }
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* FIXME switch to 1 MHz once this is fixed in QEMU */
+	nrf_timer_frequency_set(TIMER, NRF_TIMER_FREQ_2MHz);
+	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
+
+	IRQ_CONNECT(TIMER0_IRQn, 1, timer0_nrf_isr, 0, 0);
+	irq_enable(TIMER0_IRQn);
+
+	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_CLEAR);
+	nrf_timer_task_trigger(TIMER, NRF_TIMER_TASK_START);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		set_comparator(counter() + CYC_PER_TICK);
+	}
+
+	event_clear();
+	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	int_enable();
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
