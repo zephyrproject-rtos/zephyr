@@ -13,8 +13,13 @@
 #define ZEPHYR_SOC_ARM_GIGADEVICE_COMMON_PINCTRL_SOC_H_
 
 #include <devicetree.h>
-#include <dt-bindings/pinctrl/gd32-af.h>
 #include <zephyr/types.h>
+
+#ifdef CONFIG_PINCTRL_GD32_AF
+#include <dt-bindings/pinctrl/gd32-af.h>
+#else
+#include <dt-bindings/pinctrl/gd32-afio.h>
+#endif /* CONFIG_PINCTRL_GD32_AF */
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,9 +29,14 @@ extern "C" {
 
 /** @brief Type for GD32 pin.
  *
- * Bits:
+ * Bits (AF model):
  * - 0-12: GD32_PINMUX_AF bit field.
  * - 13-25: Reserved.
+ * - 26-31: Pin configuration bit field (@ref GD32_PINCFG).
+ *
+ * Bits (AFIO model):
+ * - 0-19: GD32_PINMUX_AFIO bit field.
+ * - 20-25: Reserved.
  * - 26-31: Pin configuration bit field (@ref GD32_PINCFG).
  */
 typedef uint32_t pinctrl_soc_pin_t;
@@ -62,7 +72,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 /** @endcond */
 
 /**
- * @name GD32 PUPD (values match the ones in the HAL).
+ * @name GD32 PUPD (values match the ones in the HAL for AF model).
  * @{
  */
 
@@ -76,7 +86,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 /** @} */
 
 /**
- * @name GD32 OTYPE (values match the ones in the HAL).
+ * @name GD32 OTYPE (values match the ones in the HAL for AF model).
  * @{
  */
 
@@ -88,10 +98,12 @@ typedef uint32_t pinctrl_soc_pin_t;
 /** @} */
 
 /**
- * @name GD32 OSPEED (values match the ones in the HAL).
+ * @name GD32 OSPEED (values match the ones in the HAL for AF model, mode minus
+ * one for AFIO model).
  * @{
  */
 
+#ifdef CONFIG_PINCTRL_GD32_AF
 /** Maximum 2MHz */
 #define GD32_OSPEED_2MHZ 0U
 /** Maximum 25MHz */
@@ -100,6 +112,16 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define GD32_OSPEED_50MHZ 2U
 /** Maximum 200MHz */
 #define GD32_OSPEED_200MHZ 3U
+#else
+/** Maximum 10MHz */
+#define GD32_OSPEED_10MHZ 0U
+/** Maximum 2MHz */
+#define GD32_OSPEED_2MHZ 1U
+/** Maximum 50MHz */
+#define GD32_OSPEED_50MHZ 2U
+/** Maximum speed */
+#define GD32_OSPEED_MAX 3U
+#endif /* CONFIG_PINCTRL_GD32_AF */
 
 /** @} */
 
