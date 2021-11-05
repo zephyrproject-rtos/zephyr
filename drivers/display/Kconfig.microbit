@@ -5,7 +5,7 @@
 
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"
-	depends on BOARD_BBC_MICROBIT
+	depends on (BOARD_BBC_MICROBIT || BOARD_BBC_MICROBIT_V2)
 	depends on PRINTK
 	depends on GPIO
 	help
@@ -21,3 +21,8 @@ config MICROBIT_DISPLAY_STR_MAX
 	  This value specifies the maximum length of strings that can
 	  be displayed using the mb_display_string() and mb_display_print()
 	  APIs.
+
+config MICROBIT_SCROLL_DEFAULT_DURATION_MS
+	int "Scroll default duration in ms"
+	default 80
+	depends on MICROBIT_DISPLAY

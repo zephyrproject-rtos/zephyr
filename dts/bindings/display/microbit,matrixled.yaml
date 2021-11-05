@@ -1,0 +1,25 @@
+# Copyright (c) 2021 Alexander Chudov <chudov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    BBC Micro:Bit 5x5 LED display.
+
+
+compatible: "microbit,matrixled"
+
+properties:
+    col-gpios-used:
+        type: phandles
+        required: true
+        description:
+            So far there is no better way found to specify how many different ports are used by LED columns.
+            For the moment V1 uses gpio0, V2 uses gpio0 and gpio1
+    row-gpios:
+        type: phandle-array
+        required: true
+    col-gpios:
+        type: phandle-array
+        required: true
+    led-mapping:
+        type: array
+        required: true

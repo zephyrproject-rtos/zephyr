@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2021 Alexader Chudov <chudov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,9 @@
 extern "C" {
 #endif
 
+#define MB_DISPLAY_HEIGHT	(5)
+#define MB_DISPLAY_WIDTH	(5)
+
 /**
  * @brief Representation of a BBC micro:bit display image.
  *
@@ -42,8 +46,8 @@ struct mb_image {
 				c3:1,
 				c4:1,
 				c5:1;
-		} r[5];
-		uint8_t row[5];
+		} r[MB_DISPLAY_HEIGHT];
+		uint8_t row[MB_DISPLAY_HEIGHT];
 	};
 };
 

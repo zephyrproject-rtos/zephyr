@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2021 Alexander Chudov <chudov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,8 @@
  * https://www.microbit.co.uk/device/screen
  * https://lancaster-university.github.io/microbit-docs/ubit/display/
  */
+
+#define DT_DRV_COMPAT microbit_matrixled
 
 #include <zephyr.h>
 #include <init.h>
@@ -24,110 +27,103 @@
 
 #define MODE_MASK    BIT_MASK(16)
 
-/* Onboard LED Row 1 */
-#define LED_ROW1_GPIO_PIN   13
-#define LED_ROW1_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Row 2 */
-#define LED_ROW2_GPIO_PIN   14
-#define LED_ROW2_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Row 3 */
-#define LED_ROW3_GPIO_PIN   15
-#define LED_ROW3_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 1 */
-#define LED_COL1_GPIO_PIN   4
-#define LED_COL1_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 2 */
-#define LED_COL2_GPIO_PIN   5
-#define LED_COL2_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 3 */
-#define LED_COL3_GPIO_PIN   6
-#define LED_COL3_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 4 */
-#define LED_COL4_GPIO_PIN   7
-#define LED_COL4_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 5 */
-#define LED_COL5_GPIO_PIN   8
-#define LED_COL5_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 6 */
-#define LED_COL6_GPIO_PIN   9
-#define LED_COL6_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 7 */
-#define LED_COL7_GPIO_PIN   10
-#define LED_COL7_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 8 */
-#define LED_COL8_GPIO_PIN   11
-#define LED_COL8_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-/* Onboard LED Column 9 */
-#define LED_COL9_GPIO_PIN   12
-#define LED_COL9_GPIO_PORT  DT_LABEL(DT_NODELABEL(gpio0))
-
-
-#define DISPLAY_ROWS 3
-#define DISPLAY_COLS 9
+#define DISPLAY_USES_COL_PORTS DT_INST_PROP_LEN(0, col_gpios_used)
+#define DISPLAY_ROWS (DT_INST_PROP_LEN(0, row_gpios))
+#define DISPLAY_COLS (DT_INST_PROP_LEN(0, col_gpios))
 
 #define SCROLL_OFF   0
 #define SCROLL_START 1
 
-#define SCROLL_DEFAULT_DURATION_MS 80
-
 struct mb_display {
-	const struct device *dev;         /* GPIO device */
-
 	struct k_timer  timer;       /* Rendering timer */
 
-	uint8_t            img_count;   /* Image count */
+	uint8_t	img_count;   /* Image count */
 
-	uint8_t            cur_img;     /* Current image or character to show */
+	uint8_t	cur_img;     /* Current image or character to show */
 
-	uint8_t            scroll:3,    /* Scroll shift */
+	uint8_t	scroll:3,    /* Scroll shift */
 			first:1,     /* First frame of a scroll sequence */
 			loop:1,      /* Loop to beginning */
 			text:1,      /* We're showing a string (not image) */
 			img_sep:1;   /* One column image separation */
 
 	/* The following variables track the currently shown image */
-	uint8_t            cur;         /* Currently rendered row */
-	uint32_t           row[3];      /* Content (columns) for each row */
-	int64_t           expiry;      /* When to stop showing current image */
-	int32_t           duration;    /* Duration for each shown image */
+	uint8_t	cur;         /* Currently rendered row */
+	uint32_t	row[DISPLAY_ROWS][DISPLAY_USES_COL_PORTS]; /* Content for each row */
+	int64_t	expiry;      /* When to stop showing current image */
+	int32_t	duration;    /* Duration for each shown image */
 
 	union {
 		const struct mb_image *img; /* Array of images to show */
-		const char            *str; /* String to be shown */
+		const char		 *str; /* String to be shown */
 	};
 
 	/* Buffer for printed strings */
-	char            str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
+	char		str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
 };
 
 struct x_y {
 	uint8_t x:4,
-	     y:4;
+		y:4;
 };
 
-/* Where the X,Y coordinates of each row/col are found.
- * The top left corner has the coordinates 0,0.
- */
-static const struct x_y map[DISPLAY_ROWS][DISPLAY_COLS] = {
-	{{0, 0}, {2, 0}, {4, 0}, {4, 3}, {3, 3}, {2, 3}, {1, 3}, {0, 3}, {1, 2} },
-	{{4, 2}, {0, 2}, {2, 2}, {1, 0}, {3, 0}, {3, 4}, {1, 4}, {0, 0}, {0, 0} },
-	{{2, 4}, {4, 4}, {0, 4}, {0, 1}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {3, 2} },
+struct gpio_dt_spec_port_num {
+	const struct gpio_dt_spec dt_spec;
+	const uint8_t port_num;
 };
 
-/* Mask of all the column bits */
-static const uint32_t col_mask = (((~0UL) << LED_COL1_GPIO_PIN) &
-			       ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
+struct mb_display_cfg {
+	const struct device *dev[DT_INST_PROP_LEN(0, col_gpios_used)]; /* GPIO devices */
+	/* Mapping of the display logical pixels to physical LED, connected at one side to a specific
+ 	 * row and on another side to a specific pin of a specific GPIO port.
+ 	 * The top left corner has the coordinates 0,0.
+ 	 */
+	const struct x_y pixels_map[MB_DISPLAY_HEIGHT][MB_DISPLAY_WIDTH];
+	/* Map of rows GPIO pins*/	
+	const struct gpio_dt_spec_port_num row_pins[DT_INST_PROP_LEN(0, row_gpios)];
+	/* Map of columns GPIO pins */
+	const struct gpio_dt_spec_port_num col_pins[DT_INST_PROP_LEN(0, col_gpios)];
+	/* Masks for columns ports */
+	const uint32_t col_mask[DT_INST_PROP_LEN(0, col_gpios_used)];
+};
+
+/* mapping rows or columns to actual pins */
+#define GPIO_MAPPING(node_id, prop, idx) \
+	{GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx),\
+	 DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, port)},
+
+#define GET_PORT(node_id, prop, idx) \
+	DEVICE_DT_GET(DT_PROP_BY_IDX(node_id, prop, idx)),
+
+/* builds a mask for columns update at compile time */
+#define BUILD_A_COLMASK(node_id, prop, idx, port_name) \
+	((port_name == DT_REG_ADDR_BY_IDX(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx), 0)) \
+	              	<< (DT_GPIO_PIN_BY_IDX(node_id, prop, idx)))|
+
+#define BUILD_A_COLMASK_ARRAY(node_id, prop, idx) \
+	DT_INST_FOREACH_PROP_ELEM_VARGS(0, col_gpios, BUILD_A_COLMASK,\
+		 DT_REG_ADDR_BY_IDX(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx), 0)) \
+	0, /* this null is important - it finalizes the | operators */
+
+static const struct mb_display_cfg display_cfg = {
+	.col_mask = { 
+		DT_INST_FOREACH_PROP_ELEM(0, col_gpios_used, BUILD_A_COLMASK_ARRAY)
+	},
+
+	.dev = {
+		DT_INST_FOREACH_PROP_ELEM(0, col_gpios_used, GET_PORT)
+	},
+
+	.row_pins = { 
+		DT_INST_FOREACH_PROP_ELEM(0, row_gpios,GPIO_MAPPING)
+	},
+
+	.col_pins = {
+		DT_INST_FOREACH_PROP_ELEM(0, col_gpios,GPIO_MAPPING)
+	},
+
+	.pixels_map = DT_INST_PROP(0, led_mapping),
+};
 
 static inline const struct mb_image *get_font(char ch)
 {
@@ -140,24 +136,27 @@ static inline const struct mb_image *get_font(char ch)
 
 #define GET_PIXEL(img, x, y) ((img)->row[y] & BIT(x))
 
-/* Precalculate all three rows of an image and start the rendering. */
+/* Precalculate all rows of an image and start the rendering. */
 static void start_image(struct mb_display *disp, const struct mb_image *img)
 {
-	int row, col;
+	uint8_t row, col, port;
+	const struct mb_display_cfg * cfg = &display_cfg;
 
-	for (row = 0; row < DISPLAY_ROWS; row++) {
-		disp->row[row] = 0U;
-
-		for (col = 0; col < DISPLAY_COLS; col++) {
-			if (GET_PIXEL(img, map[row][col].x, map[row][col].y)) {
-				disp->row[row] |= BIT(LED_COL1_GPIO_PIN + col);
-			}
+	for (port = 0; port < DISPLAY_USES_COL_PORTS; port++) {
+		for (row = 0; row < DISPLAY_ROWS; row++) {
+			disp->row[row][port] = 0;
 		}
-
-		disp->row[row] = ~disp->row[row] & col_mask;
-		disp->row[row] |= BIT(LED_ROW1_GPIO_PIN + row);
 	}
 
+	for (row = 0; row < MB_DISPLAY_HEIGHT; row++) {
+		for (col = 0; col < MB_DISPLAY_WIDTH; col++) {
+			if (GET_PIXEL(img, col, row)) {
+				disp->row[cfg->pixels_map[row][col].x]
+					[cfg->col_pins[cfg->pixels_map[row][col].y].port_num] |=
+					BIT(cfg->col_pins[cfg->pixels_map[row][col].y].dt_spec.pin);
+			}
+		}
+	}
 	disp->cur = 0U;
 
 	if (disp->duration == SYS_FOREVER_MS) {
@@ -169,22 +168,20 @@ static void start_image(struct mb_display *disp, const struct mb_image *img)
 	k_timer_start(&disp->timer, K_NO_WAIT, K_MSEC(4));
 }
 
-#define ROW_PIN(n) (LED_ROW1_GPIO_PIN + (n))
-
-static inline void update_pins(struct mb_display *disp, uint32_t val)
+static inline void update_pins(struct mb_display *disp, uint32_t val[])
 {
-	uint32_t pin, prev = (disp->cur + 2) % 3;
+	uint32_t prev = (disp->cur + (DISPLAY_ROWS-1)) % DISPLAY_ROWS;
 
 	/* Disable the previous row */
-	gpio_pin_set_raw(disp->dev, ROW_PIN(prev), 0);
+	gpio_pin_set_dt(&display_cfg.row_pins[prev].dt_spec, 0);
 
 	/* Set the column pins to their correct values */
-	for (pin = LED_COL1_GPIO_PIN; pin <= LED_COL9_GPIO_PIN; pin++) {
-		gpio_pin_set_raw(disp->dev, pin, !!(val & BIT(pin)));
+	for (uint8_t port = 0; port < DISPLAY_USES_COL_PORTS; port++) {
+		gpio_port_set_masked(display_cfg.dev[port], display_cfg.col_mask[port], val[port]);
 	}
 
 	/* Enable the new row */
-	gpio_pin_set_raw(disp->dev, ROW_PIN(disp->cur), 1);
+	gpio_pin_set_dt(&display_cfg.row_pins[disp->cur].dt_spec, 1);
 }
 
 static void reset_display(struct mb_display *disp)
@@ -243,16 +240,15 @@ static inline bool last_frame(struct mb_display *disp)
 
 static inline uint8_t scroll_steps(struct mb_display *disp)
 {
-	return 5 + disp->img_sep;
+	return MB_DISPLAY_WIDTH + disp->img_sep;
 }
 
 static void update_scroll(struct mb_display *disp)
 {
 	if (disp->scroll < scroll_steps(disp)) {
 		struct mb_image img;
-		int i;
 
-		for (i = 0; i < 5; i++) {
+		for (uint8_t i = 0; i < MB_DISPLAY_HEIGHT; i++) {
 			const struct mb_image *i1 = current_img(disp);
 			const struct mb_image *i2 = next_img(disp);
 
@@ -304,7 +300,6 @@ static void update_image(struct mb_display *disp)
 static void show_row(struct k_timer *timer)
 {
 	struct mb_display *disp = CONTAINER_OF(timer, struct mb_display, timer);
-
 	update_pins(disp, disp->row[disp->cur]);
 	disp->cur = (disp->cur + 1) % DISPLAY_ROWS;
 
@@ -321,8 +316,10 @@ static void show_row(struct k_timer *timer)
 static void clear_display(struct k_timer *timer)
 {
 	struct mb_display *disp = CONTAINER_OF(timer, struct mb_display, timer);
+	uint32_t clean_disp[DISPLAY_USES_COL_PORTS];
 
-	update_pins(disp, col_mask);
+	memset(clean_disp, 0, sizeof(clean_disp));
+	update_pins(disp, clean_disp);
 }
 
 static struct mb_display display = {
@@ -335,7 +332,7 @@ static void start_scroll(struct mb_display *disp, int32_t duration)
 	if (duration) {
 		disp->duration = duration / scroll_steps(disp);
 	} else {
-		disp->duration = SCROLL_DEFAULT_DURATION_MS;
+		disp->duration = CONFIG_MICROBIT_SCROLL_DEFAULT_DURATION_MS;
 	}
 
 	disp->scroll = SCROLL_START;
@@ -428,26 +425,20 @@ struct mb_display *mb_display_get(void)
 
 static int mb_display_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	for(uint8_t i = 0; i< DISPLAY_ROWS; i++) {
+		gpio_pin_configure_dt(&display_cfg.row_pins[i].dt_spec, GPIO_OUTPUT_INACTIVE | GPIO_DS_ALT_HIGH);
+	}
 
-	display.dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
-
-	__ASSERT(dev, "No GPIO device found");
-
-	gpio_pin_configure(display.dev, LED_ROW1_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_ROW2_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_ROW3_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL1_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL2_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL3_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL4_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL5_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL6_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL7_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL8_GPIO_PIN, GPIO_OUTPUT);
-	gpio_pin_configure(display.dev, LED_COL9_GPIO_PIN, GPIO_OUTPUT);
-
+	for(uint8_t i = 0; i< DISPLAY_COLS; i++) {
+		gpio_pin_configure_dt(&display_cfg.col_pins[i].dt_spec, GPIO_OUTPUT_INACTIVE | GPIO_DS_ALT_LOW);
+	}
+ 
 	return 0;
 }
-
-SYS_INIT(mb_display_init, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY);
+/*
+DEVICE_DT_INST_DEFINE(0, mb_display_init, NULL,
+		      &display, &display_cfg,
+		      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,
+		      NULL);
+*/
+ SYS_INIT(mb_display_init, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY);
