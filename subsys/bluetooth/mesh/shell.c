@@ -1034,6 +1034,45 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+
+static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
+{
+	bool has_key_val = (argc > 2);
+	uint8_t key_val[16];
+	uint16_t key_net_idx;
+	uint8_t status;
+	int err;
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+
+	if (has_key_val) {
+		size_t len;
+
+		len = hex2bin(argv[2], strlen(argv[2]),
+			      key_val, sizeof(key_val));
+		(void)memset(key_val, 0, sizeof(key_val) - len);
+	} else {
+		memcpy(key_val, default_key, sizeof(key_val));
+	}
+
+	err = bt_mesh_cfg_net_key_update(net.net_idx, net.dst, key_net_idx,
+					 key_val, &status);
+	if (err) {
+		shell_print(sh, "Unable to send NetKey Update (err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "NetKeyUpdate failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "NetKey updated with NetKey Index 0x%03x",
+			    key_net_idx);
+	}
+
+	return 0;
+}
+
 static int cmd_net_key_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t keys[16];
@@ -2944,6 +2983,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      "[<val: off, on> [<count: 0-7> [interval: 10-320]]]",
 		      cmd_relay, 1, 3),
 	SHELL_CMD_ARG(net-key-add, NULL, "<NetKeyIndex> [val]", cmd_net_key_add,
+		      2, 1),
+	SHELL_CMD_ARG(net-key-upd, NULL, "<NetKeyIndex> [val]", cmd_net_key_update,
 		      2, 1),
 	SHELL_CMD_ARG(net-key-get, NULL, NULL, cmd_net_key_get, 1, 0),
 	SHELL_CMD_ARG(net-key-del, NULL, "<NetKeyIndex>", cmd_net_key_del, 2,
