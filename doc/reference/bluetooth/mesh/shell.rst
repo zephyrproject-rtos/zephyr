@@ -372,6 +372,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``count``: Sets the new relay retransmit count if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``2`` if omitted.
 	* ``interval``: Sets the new relay retransmit interval in milliseconds if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``20`` if omitted.
 
+``mesh node-id <NetKeyIndex> [Identity]``
+-----------------------------------------
+
+	Get or Set of current Node Identity state of a subnet.
+
+	* ``NetKeyIndex``: The network key index to Get/Set.
+	* ``Identity``: If present, sets the identity of Node Identity state.
+
 ``mesh polltimeout-get <LPN Address>``
 --------------------------------------
 
