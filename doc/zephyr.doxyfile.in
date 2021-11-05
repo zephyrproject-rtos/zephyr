@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "A Scalable Open Source RTOS"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = @ZEPHYR_BASE@/doc/_doxygen/logo.png
+PROJECT_LOGO           = @ZEPHYR_BASE@/doc/_doxygen/logo.svg
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -1278,7 +1278,8 @@ HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome.css \
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-darkmode-toggle.js
+HTML_EXTRA_FILES       = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-darkmode-toggle.js \
+                         @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-zephyr.js
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -1600,7 +1601,7 @@ ENUM_VALUES_PER_LINE   = 4
 # Minimum value: 0, maximum value: 1500, default value: 250.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-TREEVIEW_WIDTH         = 250
+TREEVIEW_WIDTH         = 300
 
 # If the EXT_LINKS_IN_WINDOW option is set to YES, doxygen will open links to
 # external symbols imported via tag files in a separate window.
