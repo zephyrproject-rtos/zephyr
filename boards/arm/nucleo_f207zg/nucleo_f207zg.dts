@@ -160,6 +160,7 @@ zephyr_udc0: &usbotg_fs {
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &backup_sram {

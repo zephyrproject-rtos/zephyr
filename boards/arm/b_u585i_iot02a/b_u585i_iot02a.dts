@@ -81,6 +81,7 @@ zephyr_udc0: &usbotg_fs {
 
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
