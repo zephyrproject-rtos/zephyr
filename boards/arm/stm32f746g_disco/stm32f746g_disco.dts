@@ -145,6 +145,7 @@ zephyr_udc0: &usbotg_fs {
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
+	pinctrl-names = "default";
 };
 
 &quadspi {
