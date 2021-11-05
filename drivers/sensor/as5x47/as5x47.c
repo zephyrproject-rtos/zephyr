@@ -82,7 +82,7 @@ const struct sensor_driver_api as5x47_sensor_api = {
 #define AS5x47_DEVICE_INIT(inst) \
     static as5x47_data as5x47_data_##inst; \
     static as5x47_config as5x47_cfg_##inst = { \
-        .spi_spec = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(16) | SPI_MODE_CPHA, 0), \
+        .spi_spec = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(16) | SPI_TRANSFER_MSB | SPI_MODE_CPHA, 0), \
         .sensor = &as5x47_cfg_##inst.spi_spec \
     }; \
     DEVICE_DT_INST_DEFINE(inst, as5x47_init, NULL, &as5x47_data_##inst, &as5x47_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &as5x47_sensor_api);
