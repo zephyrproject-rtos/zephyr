@@ -218,7 +218,8 @@ int mcumgr_serial_tx_frame(const uint8_t *data, bool first, int len,
 
 	/* Only the first fragment contains the packet length. */
 	if (first) {
-		u16 = sys_cpu_to_be16(len);
+		/* The size of the CRC16 should be added to packet length */
+		u16 = sys_cpu_to_be16(len + 2);
 		memcpy(raw, &u16, sizeof(u16));
 		raw[2] = data[0];
 
