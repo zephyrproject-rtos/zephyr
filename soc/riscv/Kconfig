@@ -1,0 +1,14 @@
+# General options of RISC-V SoCs
+
+# Copyright (c) 2021 Jim Shu
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_HAS_CUSTOM_FIXED_SOC_PMP_REGIONS
+	bool "Custom fixed SoC PMP region definition"
+	depends on RISCV_PMP
+	help
+	  If enabled, this option signifies that the SoC will
+	  define and configure its own fixed PMP regions in the
+	  SoC definition. These fixed PMP regions are currently
+	  used to set ROM and RAM default access policies and
+	  they are programmed at boot time.

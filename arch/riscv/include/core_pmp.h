@@ -36,6 +36,63 @@
 
 #endif /* CONFIG_PMP_STACK_GUARD */
 
+#define REGION_ROM_ATTR			(PMP_R | PMP_X | PMP_L)
+#define REGION_RAM_ATTR			(PMP_R | PMP_W | PMP_L)
+
+#if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
+# define PMP_MODE_DEFAULT		PMP_MODE_NAPOT
+# define PMP_USED_ENTRY_DEFAULT		1 /* NAPOT region use 1 PMP entry */
+#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+# define PMP_MODE_DEFAULT		PMP_MODE_TOR
+# define PMP_USED_ENTRY_DEFAULT		2 /* TOR region use 2 PMP entry */
+#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+
+enum pmp_region_mode {
+	PMP_MODE_NA4,
+	/* If NAPOT mode region size is 4, apply NA4 region to PMP CSR. */
+	PMP_MODE_NAPOT,
+	PMP_MODE_TOR,
+};
+
+/* Region definition data structure */
+struct riscv_pmp_region {
+	ulong_t start;
+	ulong_t size;
+	const char *name;
+	uint8_t perm;
+	enum pmp_region_mode mode;
+};
+
+/* PMP configuration data structure */
+struct riscv_pmp_config {
+	/* Number of regions */
+	uint32_t num_regions;
+	/* Regions */
+	const struct riscv_pmp_region *pmp_regions;
+};
+
+#define PMP_REGION_ENTRY(_name, _start, _size, _perm) \
+	PMP_REGION_ENTRY_FULL(_name, _start, _size, _perm, PMP_MODE_DEFAULT)
+
+#define PMP_REGION_ENTRY_FULL(_name, _start, _size, _perm, _mode) \
+	{ \
+		.name = _name, \
+		.start = _start, \
+		.size  = _size, \
+		.perm  = _perm, \
+		.mode  = _mode, \
+	}
+
+/* Reference to the PMP configuration.
+ *
+ * This struct is defined and populated for each SoC (in the SoC definition),
+ * and holds the build-time configuration information for the fixed PMP
+ * regions enabled during kernel initialization. Dynamic PMP regions (e.g.
+ * for Thread Stack, Stack Guards, etc.) are programmed during runtime, thus,
+ * not kept here.
+ */
+extern const struct riscv_pmp_config pmp_config;
+
 #ifdef CONFIG_RISCV_PMP
 
 /*

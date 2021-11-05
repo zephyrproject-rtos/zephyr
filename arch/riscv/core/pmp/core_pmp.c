@@ -28,18 +28,10 @@ LOG_MODULE_REGISTER(mpu);
 #ifdef CONFIG_64BIT
 # define PMPCFG_NUM(index)	(((index) / 8) * 2)
 # define PMPCFG_SHIFT(index)	(((index) % 8) * 8)
-#else
+#else  /* CONFIG_64BIT */
 # define PMPCFG_NUM(index)	((index) / 4)
 # define PMPCFG_SHIFT(index)	(((index) % 4) * 8)
-#endif
-
-#if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-# define PMP_MODE_DEFAULT		PMP_MODE_NAPOT
-# define PMP_USED_ENTRY_DEFAULT		1 /* NAPOT region use 1 PMP entry */
-#else
-# define PMP_MODE_DEFAULT		PMP_MODE_TOR
-# define PMP_USED_ENTRY_DEFAULT		2 /* TOR region use 2 PMP entry */
-#endif
+#endif /* CONFIG_64BIT */
 
 #ifdef CONFIG_USERSPACE
 /*
@@ -51,21 +43,6 @@ LOG_MODULE_REGISTER(mpu);
  */
 #define PMP_REGION_NUM_FOR_U_THREAD	(1 + (1 * PMP_USED_ENTRY_DEFAULT))
 #endif /* CONFIG_USERSPACE */
-
-enum pmp_region_mode {
-	PMP_MODE_NA4,
-	/* If NAPOT mode region size is 4, apply NA4 region to PMP CSR. */
-	PMP_MODE_NAPOT,
-	PMP_MODE_TOR,
-};
-
-/* Region definition data structure */
-struct riscv_pmp_region {
-	ulong_t start;
-	ulong_t size;
-	uint8_t perm;
-	enum pmp_region_mode mode;
-};
 
 #ifdef CONFIG_USERSPACE
 extern uint32_t is_user_mode;
@@ -96,16 +73,6 @@ static inline uint8_t max_dynamic_region(void)
 }
 
 static const struct riscv_pmp_region static_regions[] = {
-	{
-		/*
-		 * Program and RO data: RX permission for both
-		 * user/supervisor mode.
-		 */
-		.start = (ulong_t) __rom_region_start,
-		.size = (ulong_t) __rom_region_size,
-		.perm = PMP_R | PMP_X | PMP_L,
-		.mode = PMP_MODE_DEFAULT,
-	},
 #ifdef CONFIG_PMP_STACK_GUARD
 	{
 		/* IRQ stack guard */
@@ -1122,14 +1089,24 @@ void z_riscv_pmp_init_thread(struct k_thread *thread)
 
 void z_riscv_configure_static_pmp_regions(void)
 {
+	int index, next;
+
 #ifdef CONFIG_PMP_STACK_GUARD
 	mprv_regions_num = 1;
 #endif
 
 	/* Max dynamic PMP entry is also next free static PMP entry (from last). */
-	int index = max_dynamic_region();
-	int new_index = riscv_pmp_regions_set_from_last(index,
-		static_regions, ARRAY_SIZE(static_regions));
+	index = max_dynamic_region();
 
-	static_regions_num += index - new_index;
+	/* Program fixed regions configured at SoC definition. */
+	next = riscv_pmp_regions_set_from_last(index,
+		pmp_config.pmp_regions, pmp_config.num_regions);
+	static_regions_num += index - next;
+	index = next;
+
+	/* Configure static_regions. */
+	next = riscv_pmp_regions_set_from_last(index,
+		static_regions, ARRAY_SIZE(static_regions));
+	static_regions_num += index - next;
+	index = next;
 }
