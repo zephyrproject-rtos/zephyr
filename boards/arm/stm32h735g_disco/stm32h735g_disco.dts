@@ -108,5 +108,6 @@
 		     &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12
 		     &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 };

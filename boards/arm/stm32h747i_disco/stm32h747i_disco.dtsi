@@ -77,11 +77,13 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
 &uart8 {
 	pinctrl-0 = <&uart8_tx_pj8 &uart8_rx_pj9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
