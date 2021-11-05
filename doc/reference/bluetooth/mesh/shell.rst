@@ -405,6 +405,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. Only valid if the key does not already exist in the Configuration Database. If omitted, the default key value is used.
 
 
+``mesh net-key-upd <NetKeyIndex> [val]``
+----------------------------------------
+
+	Update a network key to the target node.
+
+	* ``NetKeyIndex``: The network key index to updated.
+	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. If omitted, the default key value is used.
+
 ``mesh net-key-get``
 --------------------
 
