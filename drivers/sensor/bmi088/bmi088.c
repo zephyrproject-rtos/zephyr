@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(BMI088, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#error "BMI088 driver enabled without any devices"
+#warning "BMI088 driver enabled without any devices"
 #endif
 
 /**

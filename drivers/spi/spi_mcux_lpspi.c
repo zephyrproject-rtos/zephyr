@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi);
 
 #include "spi_context.h"
 
-#define CHIP_SELECT_COUNT	4
 #define MAX_DATA_WIDTH		4096
 
 struct spi_mcux_config {
@@ -140,13 +139,6 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	LPSPI_MasterGetDefaultConfig(&master_config);
-
-	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave,
-			    CHIP_SELECT_COUNT);
-		return -EINVAL;
-	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > MAX_DATA_WIDTH) {
