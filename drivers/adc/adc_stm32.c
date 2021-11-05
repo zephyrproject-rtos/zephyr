@@ -12,6 +12,7 @@
 #include <errno.h>
 
 #include <drivers/adc.h>
+#include <drivers/pinctrl.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
@@ -29,7 +30,6 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -259,8 +259,7 @@ struct adc_stm32_cfg {
 	ADC_TypeDef *base;
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
-	const struct soc_gpio_pinctrl *pinctrl;
-	size_t pinctrl_len;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -838,9 +837,7 @@ static int adc_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	err = stm32_dt_pinctrl_configure(config->pinctrl,
-					 config->pinctrl_len,
-					 (uint32_t)config->base);
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		LOG_ERR("ADC pinctrl setup failed (%d)", err);
 		return err;
@@ -1046,8 +1043,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 									\
 static void adc_stm32_cfg_func_##index(void);				\
 									\
-static const struct soc_gpio_pinctrl adc_pins_##index[] =		\
-	ST_STM32_DT_INST_PINCTRL(index, 0);				\
+PINCTRL_DT_INST_DEFINE(index)						\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
@@ -1056,8 +1052,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
-	.pinctrl = adc_pins_##index,					\
-	.pinctrl_len = ARRAY_SIZE(adc_pins_##index),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 };									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
