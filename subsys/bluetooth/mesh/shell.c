@@ -1543,6 +1543,54 @@ static int cmd_mod_sub_ow(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_mod_sub_ow_va(const struct shell *sh, size_t argc,
+			     char *argv[])
+{
+	uint16_t elem_addr, sub_addr, mod_id, cid;
+	uint8_t label[16];
+	uint8_t status;
+	size_t len;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+
+	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
+	(void)memset(label + len, 0, sizeof(label) - len);
+
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[4], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_va_overwrite_vnd(net.net_idx, net.dst,
+							   elem_addr, label, mod_id,
+							   cid, &sub_addr, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_va_overwrite(net.net_idx, net.dst,
+						       elem_addr, label, mod_id,
+						       &sub_addr, &status);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send Mod Sub VA Overwrite (err %d)",
+			    err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "Mod Sub VA Overwrite failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "0x%04x overwrite to Label UUID %s "
+			    "(va 0x%04x)", elem_addr, argv[2], sub_addr);
+	}
+
+	return 0;
+}
+
 static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 			      char *argv[])
 {
@@ -2807,6 +2855,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(mod-sub-ow, NULL,
 		      "<elem addr> <sub addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_ow, 4, 1),
+	SHELL_CMD_ARG(mod-sub-ow-va, NULL,
+		      "<elem addr> <Label UUID> <Model ID> [Company ID]",
+		      cmd_mod_sub_ow_va, 4, 1),
 	SHELL_CMD_ARG(mod-sub-get, NULL,
 		      "<elem addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_get, 3, 1),
