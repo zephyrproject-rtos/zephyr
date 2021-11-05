@@ -139,6 +139,7 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in13_pc4>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

@@ -103,6 +103,7 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in5_pa0>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
