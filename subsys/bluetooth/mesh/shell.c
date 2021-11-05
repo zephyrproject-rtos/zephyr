@@ -1186,6 +1186,46 @@ static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t net_idx;
+	uint8_t status, identify;
+	int err;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_node_identity_get(net.net_idx, net.dst,
+						    net_idx, &status,
+						    &identify);
+		if (err) {
+			shell_print(sh, "Unable to send Node Identify Get (err %d)", err);
+			return 0;
+		}
+	} else {
+		uint8_t new_identify = strtoul(argv[1], NULL, 0);
+
+		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst,
+						    net_idx, new_identify,
+						    &status, &identify);
+		if (err) {
+			shell_print(sh, "Unable to send Node Identify Set (err %d)", err);
+			return 0;
+		}
+	}
+
+
+	if (status) {
+		shell_print(sh, "Node Identify Get/Set failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "Node Identify Get/Set successful with identify 0x%02x",
+			    identify);
+	}
+
+	return 0;
+}
+
 static int cmd_app_key_del(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t key_net_idx, key_app_idx;
@@ -2914,6 +2954,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      cmd_app_key_del, 3, 0),
 	SHELL_CMD_ARG(app-key-get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2,
 		      0),
+	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIndex> [Identify]", cmd_node_id, 2, 1),
 	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPN Address>", cmd_polltimeout_get, 2, 0),
 	SHELL_CMD_ARG(net-transmit-param, NULL, "[<count: 0-7>"
 			" <interval: 10-320>]", cmd_net_transmit, 1, 2),
