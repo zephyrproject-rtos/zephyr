@@ -136,6 +136,7 @@
 
 &can1 {
 	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-names = "default";
 	/*
 	 * make sure CAN and USB are not enabled at the same time
 	 * because they share interrupts 19, 20 (stm32f103Xb.dtsi)
