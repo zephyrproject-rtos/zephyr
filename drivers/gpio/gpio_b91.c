@@ -562,7 +562,7 @@ static void gpio_b91_irq_connect_4(void)
 			      &gpio_b91_data_##n,			    \
 			      &gpio_b91_config_##n,			    \
 			      POST_KERNEL,				    \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	    \
+			      CONFIG_GPIO_INIT_PRIORITY,		    \
 			      &gpio_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_B91_INIT)
