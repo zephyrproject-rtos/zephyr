@@ -6,7 +6,7 @@
 
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 #include <sys/util.h>
 #include <string.h>
 #include <kernel.h>
@@ -454,9 +454,7 @@ static int can_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	ret = stm32_dt_pinctrl_configure(cfg->pinctrl,
-					 cfg->pinctrl_len,
-					 (uint32_t)cfg->can);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
@@ -1133,8 +1131,7 @@ static const struct can_driver_api can_api_funcs = {
 
 static void config_can_1_irq(CAN_TypeDef *can);
 
-static const struct soc_gpio_pinctrl pins_can_1[] =
-	ST_STM32_DT_PINCTRL(can1, 0);
+PINCTRL_DT_DEFINE(DT_NODELABEL(can1))
 
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
@@ -1150,8 +1147,7 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
 	},
 	.config_irq = config_can_1_irq,
-	.pinctrl = pins_can_1,
-	.pinctrl_len = ARRAY_SIZE(pins_can_1)
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1))
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
@@ -1231,8 +1227,7 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 static void config_can_2_irq(CAN_TypeDef *can);
 
-static const struct soc_gpio_pinctrl pins_can_2[] =
-	ST_STM32_DT_PINCTRL(can2, 0);
+PINCTRL_DT_DEFINE(DT_NODELABEL(can2))
 
 static const struct can_stm32_config can_stm32_cfg_2 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can2)),
@@ -1249,8 +1244,7 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
 	.config_irq = config_can_2_irq,
-	.pinctrl = pins_can_2,
-	.pinctrl_len = ARRAY_SIZE(pins_can_2)
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2))
 };
 
 static struct can_stm32_data can_stm32_dev_data_2;

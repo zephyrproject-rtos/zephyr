@@ -2,7 +2,7 @@ description: STM32 CAN controller
 
 compatible: "st,stm32-can"
 
-include: can-controller.yaml
+include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -13,15 +13,6 @@ properties:
 
     clocks:
       required: true
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for CAN RX and TX. The phandles are
-        expected to reference pinctrl nodes, e.g.
-
-          pinctrl-0 = <&can1_rx_pa11 &can1_tx_pa12>;
 
     master-can-reg:
       type: int
