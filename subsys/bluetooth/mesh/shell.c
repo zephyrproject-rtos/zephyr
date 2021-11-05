@@ -1704,6 +1704,36 @@ static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t status, phase;
+	uint16_t key_net_idx;
+	int err;
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+
+	if (argc < 3) {
+		err = bt_mesh_cfg_krp_get(net.net_idx, net.dst, key_net_idx,
+					  &status, &phase);
+	} else {
+		uint16_t trans = strtoul(argv[2], NULL, 0);
+
+		err = bt_mesh_cfg_krp_set(net.net_idx, net.dst, key_net_idx,
+					  trans, &status, &phase);
+	}
+
+	if (err) {
+		shell_error(sh, "Unable to send krp Get/Set "
+			    "(err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "Krp Get/Set with status 0x%02x and phase 0x%02x",
+			    status, phase);
+
+	return 0;
+}
+
 static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id,
 		       uint16_t cid)
 {
@@ -2927,6 +2957,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(mod-sub-get, NULL,
 		      "<elem addr> <Model ID> [Company ID]",
 		      cmd_mod_sub_get, 3, 1),
+	SHELL_CMD_ARG(krp, NULL, "<NetKeyIndex> [Phase]",
+		      cmd_krp, 2, 1),
 	SHELL_CMD_ARG(hb-sub, NULL, "[<src> <dst> <period>]", cmd_hb_sub, 1, 3),
 	SHELL_CMD_ARG(hb-pub, NULL,
 		      "[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]",
