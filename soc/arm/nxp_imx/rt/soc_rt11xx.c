@@ -134,7 +134,7 @@ static ALWAYS_INLINE void clock_init(void)
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
 #endif
 
-/* RT1160 does not have Foward Body Biasing on the CM7 core */
+/* RT1160 does not have Forward Body Biasing on the CM7 core */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
 	/* Check if FBB need to be enabled in OverDrive(OD) mode */
 	if (((OCOTP->FUSEN[7].FUSE & 0x10U) >> 4U) != 1) {
@@ -301,9 +301,13 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS_LPSR using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
+#if defined(CONFIG_SOC_MIMXRT1176_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1166_CM4)
+	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 4;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #endif
 
