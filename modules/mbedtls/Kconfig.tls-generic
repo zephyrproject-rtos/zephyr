@@ -375,4 +375,10 @@ config MBEDTLS_HAVE_TIME_DATE
 	  There also need to be a valid time source in the system, as mbedTLS
 	  expects a valid date/time for certificate validation."
 
+config MBEDTLS_PKCS5_C
+	bool "Enable password-based encryption functions"
+	select MBEDTLS_MD
+	help
+	  Enable PKCS5 functions
+
 endmenu
