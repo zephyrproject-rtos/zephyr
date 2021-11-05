@@ -31,6 +31,7 @@ struct shell_telnet *sh_telnet;
 #define TELNET_TIMEOUT   CONFIG_SHELL_TELNET_SEND_TIMEOUT
 
 #define TELNET_MIN_COMMAND_LEN 2
+#define TELNET_WILL_DO_COMMAND_LEN 3
 
 /* Basic TELNET implmentation. */
 
@@ -157,7 +158,7 @@ static void telnet_send_prematurely(struct k_work *work)
 	(void)telnet_send();
 }
 
-static inline bool telnet_handle_command(struct net_pkt *pkt)
+static inline int telnet_handle_command(struct net_pkt *pkt)
 {
 	/* Commands are two or three bytes. */
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(cmd_access, uint16_t);
@@ -166,7 +167,7 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 	cmd = (struct telnet_simple_command *)net_pkt_get_data(pkt,
 							       &cmd_access);
 	if (!cmd || cmd->iac != NVT_CMD_IAC) {
-		return false;
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_TELNET_SUPPORT_COMMAND)) {
@@ -174,7 +175,17 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 		telnet_reply_command(cmd);
 	}
 
-	return true;
+	if (cmd->op == NVT_CMD_SB) {
+		/* TODO Add subnegotiation support. */
+		return -EOPNOTSUPP;
+	}
+
+	if (cmd->op == NVT_CMD_WILL || cmd->op == NVT_CMD_WONT ||
+	    cmd->op == NVT_CMD_DO || cmd->op == NVT_CMD_DONT) {
+		return TELNET_WILL_DO_COMMAND_LEN;
+	}
+
+	return TELNET_MIN_COMMAND_LEN;
 }
 
 static void telnet_recv(struct net_context *client,
@@ -185,6 +196,7 @@ static void telnet_recv(struct net_context *client,
 			void *user_data)
 {
 	size_t len;
+	int ret;
 
 	if (!pkt || status) {
 		telnet_end_client_connection();
@@ -197,11 +209,25 @@ static void telnet_recv(struct net_context *client,
 
 	len = net_pkt_remaining_data(pkt);
 
-	if (len >= TELNET_MIN_COMMAND_LEN) {
-		if (telnet_handle_command(pkt)) {
+	while (len >= TELNET_MIN_COMMAND_LEN) {
+		ret = telnet_handle_command(pkt);
+		if (ret > 0) {
 			LOG_DBG("Handled command");
+			ret = net_pkt_skip(pkt, ret);
+			if (ret < 0) {
+				goto unref;
+			}
+		} else if (ret < 0) {
 			goto unref;
+		} else {
+			break;
 		}
+
+		len = net_pkt_remaining_data(pkt);
+	}
+
+	if (len == 0) {
+		goto unref;
 	}
 
 	/* Fifo add */
