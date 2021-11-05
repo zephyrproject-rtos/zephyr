@@ -722,6 +722,40 @@ void test_delayed_work_define(void)
 			  sizeof(struct k_delayed_work), NULL);
 }
 
+/**
+ * @brief Verify k_work_poll_cancel()
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @details Cancel a triggered work item repeatedly,
+ * see if it returns expected value.
+ *
+ * @see k_work_poll_cancel()
+ */
+static void test_triggered_cancel(void)
+{
+	int ret;
+
+	TC_PRINT("Starting triggered test\n");
+
+	/* As work items are triggered, they should indicate an event. */
+	expected_poll_result = 0;
+
+	TC_PRINT(" - Initializing triggered test items\n");
+	test_triggered_init();
+
+	test_triggered_submit(K_FOREVER);
+
+	ret = k_work_poll_cancel(&triggered_tests[0].work);
+	zassert_true(ret == 0, "triggered cancel failed");
+
+	ret = k_work_poll_cancel(&triggered_tests[0].work);
+	zassert_true(ret == -EINVAL, "triggered cancel failed");
+
+	ret = k_work_poll_cancel(NULL);
+	zassert_true(ret == -EINVAL, "triggered cancel failed");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -739,7 +773,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
 			 ztest_1cpu_unit_test(test_triggered_wait),
 			 ztest_1cpu_unit_test(test_triggered_wait_expired),
-			 ztest_1cpu_unit_test(test_delayed_work_define)
+			 ztest_1cpu_unit_test(test_delayed_work_define),
+			 ztest_1cpu_unit_test(test_triggered_cancel)
 			 );
 	ztest_run_test_suite(workqueue);
 }
