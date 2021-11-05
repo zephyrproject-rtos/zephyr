@@ -120,6 +120,7 @@
 &adc1 {
 	/* adc1_in14_pc4 is used to sense the USB voltage */
 	pinctrl-0 = <&adc1_in1_pa1 &adc1_in14_pc4>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
