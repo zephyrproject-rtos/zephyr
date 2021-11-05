@@ -8,19 +8,15 @@
 #define ZEPHYR_INCLUDE_TRACING_SYSCALL_H_
 
 #if defined CONFIG_SEGGER_SYSTEMVIEW
-
 #include "tracing_sysview_syscall.h"
-
 #elif defined CONFIG_TRACING_TEST
-
 #include "tracing_test_syscall.h"
-
 #else
 
 /**
  * @brief Syscall Tracing APIs
- * @defgroup syscall_tracing_apis Syscall Tracing APIs
- * @ingroup tracing_apis
+ * @defgroup subsys_tracing_apis_syscall Syscall Tracing APIs
+ * @ingroup subsys_tracing_apis
  * @{
  */
 
@@ -41,9 +37,7 @@
  */
 #define sys_port_trace_syscall_exit(id, name, ...)
 
-/**
- * @}
- */ /* end of syscall_tracing_apis */
+/** @} */ /* end of subsys_tracing_syscall_apis */
 
 #endif
 
