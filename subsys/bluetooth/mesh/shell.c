@@ -1191,6 +1191,49 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t key_val[16];
+	uint16_t key_net_idx, key_app_idx;
+	bool has_key_val = (argc > 3);
+	uint8_t status;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_app_idx = strtoul(argv[2], NULL, 0);
+
+	if (has_key_val) {
+		size_t len;
+
+		len = hex2bin(argv[3], strlen(argv[3]),
+			      key_val, sizeof(key_val));
+		(void)memset(key_val, 0, sizeof(key_val) - len);
+	} else {
+		memcpy(key_val, default_key, sizeof(key_val));
+	}
+
+	err = bt_mesh_cfg_app_key_update(net.net_idx, net.dst, key_net_idx,
+					 key_app_idx, key_val, &status);
+	if (err) {
+		shell_error(sh, "Unable to send App Key Update (err %d)", err);
+		return 0;
+	}
+
+	if (status) {
+		shell_print(sh, "AppKey update failed with status 0x%02x",
+			    status);
+	} else {
+		shell_print(sh, "AppKey updated, NetKeyIndex 0x%04x "
+			    "AppKeyIndex 0x%04x", key_net_idx, key_app_idx);
+	}
+
+	return 0;
+}
+
 static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t net_idx;
@@ -2991,6 +3034,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      0),
 	SHELL_CMD_ARG(app-key-add, NULL, "<NetKeyIndex> <AppKeyIndex> [val]",
 		      cmd_app_key_add, 3, 1),
+	SHELL_CMD_ARG(app-key-upd, NULL, "<NetKeyIndex> <AppKeyIndex> [val]",
+		      cmd_app_key_upd, 3, 1),
 	SHELL_CMD_ARG(app-key-del, NULL, "<NetKeyIndex> <AppKeyIndex>",
 		      cmd_app_key_del, 3, 0),
 	SHELL_CMD_ARG(app-key-get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2,
