@@ -351,85 +351,83 @@ API
 Common
 ======
 
-.. doxygengroup:: tracing_apis
+.. doxygengroup:: subsys_tracing_apis
 
 Threads
 =======
 
-.. doxygengroup:: thread_tracing_apis
-
+.. doxygengroup:: subsys_tracing_apis_thread
 
 Work Queues
 ===========
 
-.. doxygengroup:: work_tracing_apis
-
+.. doxygengroup:: subsys_tracing_apis_work
 
 Poll
 ====
 
-.. doxygengroup:: poll_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_poll
 
 Semaphore
 =========
 
-.. doxygengroup:: sem_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_sem
 
 Mutex
 =====
 
-.. doxygengroup:: mutex_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mutex
 
 Condition Variables
 ===================
 
-.. doxygengroup:: condvar_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_condvar
 
 Queues
 ======
 
-.. doxygengroup:: queue_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_queue
 
 FIFO
 ====
 
-.. doxygengroup:: fifo_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_fifo
 
 LIFO
 ====
-.. doxygengroup:: lifo_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_lifo
 
 Stacks
 ======
 
-.. doxygengroup:: stack_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_stack
 
 Message Queues
 ==============
 
-.. doxygengroup:: msgq_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_msgq
 
 Mailbox
 =======
 
-.. doxygengroup:: mbox_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mbox
 
 Pipes
 ======
 
-.. doxygengroup:: pipe_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_pipe
 
 Heaps
 =====
 
-.. doxygengroup:: heap_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_heap
 
 Memory Slabs
 ============
 
-.. doxygengroup:: mslab_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_mslab
 
 Timers
 ======
 
-.. doxygengroup:: timer_tracing_apis
+.. doxygengroup:: subsys_tracing_apis_timer
