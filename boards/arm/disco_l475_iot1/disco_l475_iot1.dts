@@ -237,6 +237,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in3_pc2
 		     &adc1_in4_pc3 &adc1_in13_pc4
 		     &adc1_in14_pc5>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
