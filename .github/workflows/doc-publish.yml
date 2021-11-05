@@ -19,8 +19,9 @@ jobs:
   doc-publish:
     name: Publish Documentation
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
     - name: Download artifacts
