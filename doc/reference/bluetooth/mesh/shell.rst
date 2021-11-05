@@ -557,6 +557,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Model ID``: The model ID of the model to add the subscription to.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
+``mesh mod-sub-ow-va <elem addr> <Label UUID> <Model ID> [Company ID]``
+------------------------------------------------------------------------
+
+	Overwrite all model subscriptions with a single new virtual address. Models only receive messages sent to their unicast address or a group or virtual address they subscribe to. Models may subscribe to multiple group and virtual addresses.
+
+	* ``elem addr``: Address of the element the model is on.
+	* ``Label UUID``: 128-bit label UUID of the virtual address as the new Address to be added to the subscription list. Any omitted bytes will be zero.
+	* ``Model ID``: The model ID of the model to add the subscription to.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 ``mesh mod-sub-get <elem addr> <Model ID> [Company ID]``
 --------------------------------------------------------
