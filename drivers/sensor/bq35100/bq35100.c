@@ -634,6 +634,11 @@ static int bq35100_get_avg_current(const struct device *dev)
 {
 	struct bq35100_data *data = dev->data;
 
+	if (data->gauge_enabled != true) {
+		LOG_ERR("Gauge not enabled");
+		return -EIO;
+	}
+
 	return bq35100_reg_read(dev, BQ35100_CMD_CURRENT, &data->avg_current, 2);
 }
 
@@ -1128,15 +1133,15 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*if (bq35100_get_battery_alert(dev) < 0) {
+	if (bq35100_get_battery_alert(dev) < 0) {
 		return -EIO;
-	}*/
+	}
 
 	if (bq35100_get_battery_status(dev) < 0) {
 		return -EIO;
 	}
 
-	/*if (bq35100_get_security_mode(dev) < 0) {
+	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
 	}
 
@@ -1152,7 +1157,7 @@ static int bq35100_init(const struct device *dev)
 	    return EIO;
 	}
 
-	if (bq35100_set_gauge_mode(dev, BQ35100_EOS_MODE)) {
+	if (bq35100_set_gauge_mode(dev, BQ35100_ACCUMULATOR_MODE)) {
 	    return EIO;
 	}
 
@@ -1164,7 +1169,7 @@ static int bq35100_init(const struct device *dev)
 	    return -EIO;
 	}
 
-	if(bq35100_gauge_stop(dev) < 0) {
+	/*if(bq35100_gauge_stop(dev) < 0) {
 	     return -EIO;
 	}*/
 

@@ -91,10 +91,10 @@ void main(void)
 		printf("State of Health:%i   %%\n", val.val1);
 
 		sensor_channel_get(dev, SENSON_CHAN_BQ35100_GAUGE_DES_CAP, &val);
-		printf("Design Capacity:%i  mAh\n\n", val.val1);
+		printf("Design Capacity:%i  mAh\n", val.val1);
 
-		/*sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
-		printk("Acc Capacity : %i     uAh\n\n", val.val1);*/
+		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
+		printk("Acc Capacity :  %i  uAh\n\n", val.val1);
 
 		k_sleep(K_MSEC(3000));
 	}
