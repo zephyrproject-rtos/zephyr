@@ -592,6 +592,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
+``mesh krp <NetKeyIdx> [Phase]``
+-------------------------------------
+
+	Get or set the key refresh phase of a subnet.
+
+	* ``NetKeyIdx``: The identified network key used to Get/Set the current Key Refresh Phase state.
+	* ``Phase``: New Key Refresh Phase. Valid phases are 0, 1 or 2.
+
 ``mesh hb-sub [<src> <dst> <period>]``
 --------------------------------------
 
