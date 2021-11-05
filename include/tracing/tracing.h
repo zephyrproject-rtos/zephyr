@@ -326,6 +326,13 @@ void sys_trace_idle(void);
  */
 #define sys_port_trace_k_thread_sched_suspend(thread)
 
+/**
+ * @brief Trace thread heap assignment
+ * @param thread Thread object
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_thread_heap_assign(thread, heap)
+
 /** @}c*/ /* end of subsys_tracing_apis_thread */
 
 /**
