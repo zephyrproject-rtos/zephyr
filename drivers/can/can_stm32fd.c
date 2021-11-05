@@ -5,11 +5,11 @@
  */
 
 #include <drivers/can.h>
+#include <drivers/pinctrl.h>
 #include <kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include "can_stm32fd.h"
-#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
@@ -72,9 +72,7 @@ static int can_stm32fd_init(const struct device *dev)
 	int ret;
 
 	/* Configure dt provided device signals when available */
-	ret = stm32_dt_pinctrl_configure(cfg->pinctrl,
-					 ARRAY_SIZE(cfg->pinctrl),
-					 (uint32_t)mcan_cfg->can);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
@@ -235,6 +233,9 @@ static void config_can_##inst##_irq(void)                                      \
 #ifdef CONFIG_CAN_FD_MODE
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
+									       \
+PINCTRL_DT_INST_DEFINE(inst)						       \
+									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \
 			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),           \
@@ -258,12 +259,15 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 		.tx_delay_comp_offset =                                        \
 			DT_INST_PROP(inst, tx_delay_comp_offset)               \
 	},                                                                     \
-	.pinctrl = ST_STM32_DT_INST_PINCTRL(inst, 0),                          \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
 
 #else /* CONFIG_CAN_FD_MODE */
 
 #define CAN_STM32FD_CFG_INST(inst)                                             \
+									       \
+PINCTRL_DT_INST_DEFINE(inst)						       \
+									       \
 static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 	.msg_sram = (struct can_mcan_msg_sram *)                               \
 			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),           \
@@ -278,7 +282,7 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 			    DT_INST_PROP_OR(inst, phase_seg1, 0),              \
 		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                   \
 	},                                                                     \
-	.pinctrl = ST_STM32_DT_INST_PINCTRL(inst, 0),                          \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
 
 #endif /* CONFIG_CAN_FD_MODE */
