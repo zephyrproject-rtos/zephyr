@@ -597,7 +597,7 @@ static int gpio_nrfx_init(const struct device *port)
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\
 			 POST_KERNEL,					\
-			 CONFIG_GPIO_NRF_INIT_PRIORITY,			\
+			 CONFIG_GPIO_INIT_PRIORITY,			\
 			 &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)

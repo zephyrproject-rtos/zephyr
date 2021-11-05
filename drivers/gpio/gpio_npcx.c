@@ -336,7 +336,7 @@ int gpio_npcx_init(const struct device *dev)
 			    &gpio_npcx_data_##inst,                            \
 			    &gpio_npcx_cfg_##inst,                             \
 			    POST_KERNEL,                                       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			    CONFIG_GPIO_INIT_PRIORITY,                         \
 			    &gpio_npcx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)

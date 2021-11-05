@@ -418,7 +418,7 @@ static const struct gpio_driver_api gpio_esp32_driver_api = {
 			&gpio_data_##_id,					\
 			&gpio_config_##_id,					\
 			PRE_KERNEL_2,						\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			CONFIG_GPIO_INIT_PRIORITY,				\
 			&gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);
