@@ -8,6 +8,9 @@ config BOARD
 
 if GPIO
 
+config GPIO_INIT_PRIORITY
+	default 60
+
 config GPIO_DW
 	default y
 

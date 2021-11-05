@@ -11,7 +11,7 @@ config BOARD_VDD_PWR_CTRL_INIT_PRIORITY
 	depends on GPIO
 	help
 	  Initialization priority for the VDD power rail. Has to be greater
-	  than GPIO_NRF_INIT_PRIORITY.
+	  than GPIO_INIT_PRIORITY.
 
 config BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY
 	int "CCS_VDD power rail init priority"
