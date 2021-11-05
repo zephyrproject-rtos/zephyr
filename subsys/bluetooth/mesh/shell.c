@@ -856,6 +856,29 @@ static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_polltimeout_get(const struct shell *sh,
+			       size_t argc, char *argv[])
+{
+	uint16_t lpn_address;
+	int32_t poll_timeout;
+	int err;
+
+	lpn_address = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_cfg_lpn_timeout_get(net.net_idx,
+					  net.dst, lpn_address,
+					  &poll_timeout);
+	if (err) {
+		shell_error(sh, "Unable to send LPN PollTimeout Get"
+				   " (err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "PollTimeout value %d", poll_timeout);
+
+	return 0;
+}
+
 static int cmd_net_transmit(const struct shell *shell,
 		size_t argc, char *argv[])
 {
@@ -2861,6 +2884,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      cmd_app_key_del, 3, 0),
 	SHELL_CMD_ARG(app-key-get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2,
 		      0),
+	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPN Address>", cmd_polltimeout_get, 2, 0),
 	SHELL_CMD_ARG(net-transmit-param, NULL, "[<count: 0-7>"
 			" <interval: 10-320>]", cmd_net_transmit, 1, 2),
 	SHELL_CMD_ARG(mod-app-bind, NULL,
