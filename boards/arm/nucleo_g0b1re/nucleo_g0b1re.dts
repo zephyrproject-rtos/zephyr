@@ -158,6 +158,7 @@ zephyr_udc0: &usb {
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
