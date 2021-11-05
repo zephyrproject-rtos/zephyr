@@ -567,6 +567,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Model ID``: The model ID of the model to add the subscription to.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
+``mesh mod-sub-del-all <elem addr> <Model ID> [Company ID]``
+-------------------------------------------------------------------
+
+	Remove all group and virtual address subscriptions from of a model.
+
+	* ``elem addr``: Address of the element the model is on.
+	* ``Model ID``: The model ID of the model to Unsubscribe all.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
 ``mesh mod-sub-get <elem addr> <Model ID> [Company ID]``
 --------------------------------------------------------
 
