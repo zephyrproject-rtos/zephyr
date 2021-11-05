@@ -372,6 +372,12 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``count``: Sets the new relay retransmit count if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``2`` if omitted.
 	* ``interval``: Sets the new relay retransmit interval in milliseconds if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``20`` if omitted.
 
+``mesh polltimeout-get <LPN Address>``
+--------------------------------------
+
+	Get current value of the PollTimeout timer of the LPN within a Friend node.
+
+	* ``addr`` Address of Low Power node.
 
 ``mesh net-transmit-param [<count: 0-7> <interval: 10-320>]``
 -------------------------------------------------------------
