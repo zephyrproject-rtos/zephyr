@@ -436,6 +436,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``AppKeyIndex``: The application key index to add.
 	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. Only valid if the key does not already exist in the Configuration Database. If omitted, the default key value is used.
 
+``mesh app-key-upd <NetKeyIndex> <AppKeyIndex> [val]``
+------------------------------------------------------
+
+	Update an application key to the target node.
+
+	* ``NetKeyIndex``: The network key index the application key is bound to.
+	* ``AppKeyIndex``: The application key index to update.
+	* ``val``: If present, sets the key value as a 128-bit hexadecimal value. Any missing bytes will be zero. If omitted, the default key value is used.
 
 ``mesh app-key-get <NetKeyIndex>``
 ----------------------------------
