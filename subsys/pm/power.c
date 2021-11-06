@@ -11,6 +11,7 @@
 #include <init.h>
 #include <string.h>
 #include <pm/device.h>
+#include <pm/device_runtime.h>
 #include <pm/pm.h>
 #include <pm/state.h>
 #include <pm/policy.h>
@@ -120,8 +121,12 @@ static int pm_suspend_devices(void)
 	for (const struct device *dev = devs + devc - 1; dev >= devs; dev--) {
 		int ret;
 
-		/* ignore busy devices */
-		if (pm_device_is_busy(dev) || pm_device_wakeup_is_enabled(dev)) {
+		/*
+		 * ignore busy devices, wake up source and devices with
+		 * runtime PM enabled.
+		 */
+		if (pm_device_is_busy(dev) || pm_device_wakeup_is_enabled(dev)
+				|| pm_device_runtime_is_enabled(dev)) {
 			continue;
 		}
 
