@@ -31,6 +31,7 @@ int as5x47_init(const struct device *dev) {
         LOG_ERR("AS5x47 initialization of device \"%s\" unsuccessful", dev->name);
         return -EIO;
     }
+    LOG_INF("AS5x47 initialization of device \"%s\" successful", dev->name);
     return 0;
 }
 
