@@ -1,0 +1,17 @@
+sample:
+  description: k_cycle_get_64() example
+  name: cycle64
+common:
+  integration_platforms:
+    - native_posix_64
+    - qemu_riscv
+    - qemu_riscv64
+  tags: kernel
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "SUCCESS"
+tests:
+    sample.kernel.cycle64:
+        filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
