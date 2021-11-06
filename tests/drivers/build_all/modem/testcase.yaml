@@ -11,3 +11,16 @@ tests:
   drivers.modem.quectel_bg9x.build:
     extra_args: CONF_FILE=modem_quectel_bg9x.conf
     platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+  drivers.modem.gsm.build:
+    extra_args: CONF_FILE=modem_gsm.conf
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+  drivers.modem.gsm.simcom.build:
+    extra_args: CONF_FILE=modem_gsm.conf
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+    extra_configs:
+      - CONFIG_MODEM_GSM_SIMCOM=y
+  drivers.modem.gsm.quectel.build:
+    extra_args: CONF_FILE=modem_gsm.conf
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv
+    extra_configs:
+      - CONFIG_MODEM_GSM_QUECTEL=y
