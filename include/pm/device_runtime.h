@@ -116,12 +116,27 @@ int pm_device_runtime_put(const struct device *dev);
  */
 int pm_device_runtime_put_async(const struct device *dev);
 
+/**
+ * @brief Check if device runtime is enabled for a given device.
+ *
+ * @funcprops \pre_kernel_ok
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device has device runtime PM enabled.
+ * @retval false If the device has device runtime PM disabled.
+ *
+ * @see pm_device_runtime_enable()
+ */
+bool pm_device_runtime_is_enabled(const struct device *dev);
+
 #else
 static inline void pm_device_runtime_enable(const struct device *dev) { }
 static inline int pm_device_runtime_disable(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_get(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_put(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_runtime_put_async(const struct device *dev) { return -ENOSYS; }
+static inline bool pm_device_runtime_is_enabled(const struct device *dev) { return false; }
 #endif
 
 /** @} */
