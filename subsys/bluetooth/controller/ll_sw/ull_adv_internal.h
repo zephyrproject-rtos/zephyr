@@ -158,8 +158,12 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 
 }
 
+/* helper function to get next unique DID value */
+uint16_t ull_adv_aux_did_next_unique_get(uint8_t sid);
+
 /* helper function to fill the aux ptr structure in common ext adv payload */
-void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
+void ull_adv_aux_ptr_fill(struct pdu_adv_aux_ptr *aux_ptr, uint32_t offs_us,
+			  uint8_t phy_s);
 
 /* helper function to handle adv aux done events */
 void ull_adv_aux_done(struct node_rx_event_done *done);

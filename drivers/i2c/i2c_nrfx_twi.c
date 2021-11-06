@@ -225,8 +225,8 @@ static int init_twi(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int twi_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_action action)
+static int twi_nrfx_pm_action(const struct device *dev,
+			      enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -287,7 +287,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	};								       \
 	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twi_##idx##_init,					       \
-		      twi_nrfx_pm_control,				       \
+		      twi_nrfx_pm_action,				       \
 		      &twi_##idx##_data,				       \
 		      &twi_##idx##z_config,				       \
 		      POST_KERNEL,					       \

@@ -465,7 +465,7 @@ static int gpio_stm32_config(const struct device *dev,
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Enable device clock before configuration (requires bank writes) */
-	err = pm_device_get(dev);
+	err = pm_device_runtime_get(dev);
 	if (err < 0) {
 		return err;
 	}
@@ -485,7 +485,7 @@ static int gpio_stm32_config(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Release clock only if configuration doesn't require bank writes */
 	if ((flags & GPIO_OUTPUT) == 0) {
-		err = pm_device_put_async(dev);
+		err = pm_device_runtime_put_async(dev);
 		if (err < 0) {
 			return err;
 		}
@@ -570,8 +570,8 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int gpio_stm32_pm_device_ctrl(const struct device *dev,
-				     enum pm_device_action action)
+static int gpio_stm32_pm_action(const struct device *dev,
+				enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -612,7 +612,7 @@ static int gpio_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	pm_device_enable(dev);
+	pm_device_runtime_enable(dev);
 
 	return 0;
 #else
@@ -632,7 +632,7 @@ static int gpio_stm32_init(const struct device *dev)
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
-			    gpio_stm32_pm_device_ctrl,			       \
+			    gpio_stm32_pm_action,			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    PRE_KERNEL_1,				       \

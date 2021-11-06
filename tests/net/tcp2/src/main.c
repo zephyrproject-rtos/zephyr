@@ -559,7 +559,7 @@ static void test_client_ipv4(void)
 	/* Peer will release the semaphone after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
-	net_tcp_put(ctx);
+	net_context_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
@@ -621,7 +621,7 @@ static void test_client_ipv6(void)
 	/* Peer will release the semaphone after it sends ACK for data */
 	test_sem_take(K_MSEC(100), __LINE__);
 
-	net_tcp_put(ctx);
+	net_context_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
@@ -1394,7 +1394,7 @@ static void test_server_recv_out_of_order_data(void)
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
 	/* Let the IP stack to process the packet properly */
-	k_msleep(1);
+	k_yield();
 
 	/* Then we send a packet that is after the previous packet */
 	seq += 10;
@@ -1406,7 +1406,7 @@ static void test_server_recv_out_of_order_data(void)
 	ret = net_recv_data(iface, pkt);
 	zassert_true(ret == 0, "recv data failed (%d)", ret);
 
-	k_msleep(1);
+	k_yield();
 
 	/* Then send packets that are before the first packet. The final packet
 	 * will flush the receive queue as the seq will be 1
@@ -1422,7 +1422,7 @@ static void test_server_recv_out_of_order_data(void)
 		ret = net_recv_data(iface, pkt);
 		zassert_true(ret == 0, "recv data failed (%d)", ret);
 
-		k_msleep(1);
+		k_yield();
 	}
 
 	/* Then the final packet that will flush the receive queue */

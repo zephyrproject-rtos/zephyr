@@ -114,8 +114,8 @@ static int led_pwm_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int led_pwm_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int led_pwm_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	const struct led_pwm_config *config = DEV_CFG(dev);
 
@@ -176,7 +176,7 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 	.led		= led_pwm_##id,				\
 };								\
 								\
-DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
+DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_action,	\
 		      NULL, &led_pwm_config_##id, POST_KERNEL,	\
 		      CONFIG_LED_INIT_PRIORITY, &led_pwm_api);
 

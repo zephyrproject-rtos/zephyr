@@ -199,13 +199,18 @@ static void enable_gpio0_interrupt(const struct device *dev, bool enable)
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, mode);
 }
 
-static void setup_gpio_callback(const struct device *dev)
+static int setup_gpio_callback(const struct device *dev)
 {
 	const struct cc1200_config *cfg = dev->config;
 	struct cc1200_context *cc1200 = dev->data;
 
 	gpio_init_callback(&cc1200->rx_tx_cb, gpio0_int_handler, BIT(cfg->interrupt.pin));
-	gpio_add_callback(cfg->interrupt.port, &cc1200->rx_tx_cb);
+
+	if (gpio_add_callback(cfg->interrupt.port, &cc1200->rx_tx_cb) != 0) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /****************
@@ -713,7 +718,9 @@ static int power_on_and_setup(const struct device *dev)
 		return -EIO;
 	}
 
-	setup_gpio_callback(dev);
+	if (setup_gpio_callback(dev) != 0) {
+		return -EIO;
+	}
 
 	return rf_calibrate(dev);
 }

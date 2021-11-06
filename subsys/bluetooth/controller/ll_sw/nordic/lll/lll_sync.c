@@ -823,6 +823,8 @@ static void isr_rx_aux_chain(void *param)
 		 */
 		lll_isr_status_reset();
 
+		crc_ok =  0U;
+
 		goto isr_rx_aux_chain_done;
 	}
 

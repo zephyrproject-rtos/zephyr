@@ -429,16 +429,23 @@ static void enable_sfd_interrupt(const struct device *dev,
 	gpio_pin_interrupt_configure_dt(&cfg->sfd, mode);
 }
 
-static inline void setup_gpio_callbacks(const struct device *dev)
+static inline int setup_gpio_callbacks(const struct device *dev)
 {
 	const struct cc2520_config *cfg = dev->config;
 	struct cc2520_context *cc2520 = dev->data;
 
 	gpio_init_callback(&cc2520->sfd_cb, sfd_int_handler, BIT(cfg->sfd.pin));
-	gpio_add_callback(cfg->sfd.port, &cc2520->sfd_cb);
+	if (gpio_add_callback(cfg->sfd.port, &cc2520->sfd_cb) != 0) {
+		return -EIO;
+	}
+
 
 	gpio_init_callback(&cc2520->fifop_cb, fifop_int_handler, BIT(cfg->fifop.pin));
-	gpio_add_callback(cfg->fifop.port, &cc2520->fifop_cb);
+	if (gpio_add_callback(cfg->fifop.port, &cc2520->fifop_cb) != 0) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 
@@ -931,7 +938,9 @@ static int power_on_and_setup(const struct device *dev)
 	/* Cleaning up TX fifo */
 	instruct_sflushtx(dev);
 
-	setup_gpio_callbacks(dev);
+	if (setup_gpio_callbacks(dev) != 0) {
+		return -EIO;
+	}
 
 	cc2520_print_gpio_config(dev);
 

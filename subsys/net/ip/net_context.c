@@ -411,11 +411,11 @@ int net_context_put(struct net_context *context)
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
 
-	/* Decrement refcount on user app's behalf */
-	net_context_unref(context);
-
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
 	net_tcp_put(context);
+
+	/* Decrement refcount on user app's behalf */
+	net_context_unref(context);
 
 unlock:
 	k_mutex_unlock(&context->lock);

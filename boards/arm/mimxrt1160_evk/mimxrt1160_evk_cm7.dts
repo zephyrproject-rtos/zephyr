@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2021, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1160_cm7.dtsi>
+#include "mimxrt1160_evk.dtsi"
+
+/ {
+	model = "NXP MIMXRT1160-EVK board";
+	compatible = "nxp,mimxrt1166";
+
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,can-primary = &flexcan3;
+	};
+
+	sdram0: memory@80000000 {
+		/* Winbond W9825G6KH-5I */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&flexcan3 {
+	status = "okay";
+	bus-speed = <125000>;
+};
+
+&lpspi1 {
+	status = "okay";
+};
+
+&flexspi1 {
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	is25wp128: is25wp128@0 {
+		compatible = "issi,is25wp128";
+		size = <134217728>;
+		label = "IS25WP128";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+	};
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};

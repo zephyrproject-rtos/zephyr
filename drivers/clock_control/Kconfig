@@ -54,10 +54,6 @@ source "drivers/clock_control/Kconfig.rv32m1"
 
 source "drivers/clock_control/Kconfig.esp32"
 
-source "drivers/clock_control/Kconfig.esp32s2"
-
-source "drivers/clock_control/Kconfig.esp32c3"
-
 source "drivers/clock_control/Kconfig.litex"
 
 source "drivers/clock_control/Kconfig.rcar"

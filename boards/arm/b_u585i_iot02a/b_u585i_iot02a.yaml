@@ -12,5 +12,7 @@ supported:
   - arduino_i2c
   - arduino_spi
   - hts221
+  - usb_device
   - spi
   - dac
+  - watchdog

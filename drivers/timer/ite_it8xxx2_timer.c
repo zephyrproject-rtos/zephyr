@@ -130,6 +130,19 @@ static void evt_timer_isr(const void *unused)
 	}
 }
 
+static void free_run_timer_overflow_isr(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/* Read to clear terminal count flag */
+	__unused uint8_t rc_tc = IT8XXX2_EXT_CTRLX(FREE_RUN_TIMER);
+
+	/*
+	 * TODO: to increment 32-bit "top half" here for software 64-bit
+	 * timer emulation.
+	 */
+}
+
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	uint32_t hw_cnt;
@@ -304,10 +317,13 @@ int sys_clock_driver_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+	/* Enable 32-bit free run timer overflow interrupt */
+	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL,
+			FREE_RUN_TIMER_FLAG);
 	/* Set 32-bit timer4 for free run*/
 	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, TRUE,
 			 FREE_RUN_TIMER_MAX_CNT, TRUE, FREE_RUN_TIMER_IRQ,
-			 FREE_RUN_TIMER_FLAG, FALSE, TRUE);
+			 FREE_RUN_TIMER_FLAG, TRUE, TRUE);
 	if (ret < 0) {
 		LOG_ERR("Init free run timer failed");
 		return ret;

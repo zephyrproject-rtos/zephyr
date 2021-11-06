@@ -1488,7 +1488,7 @@ uint32_t radio_ar_has_match(void)
 		!NRF_AAR->EVENTS_NOTRESOLVED);
 }
 
-void radio_ar_resolve(uint8_t *addr)
+void radio_ar_resolve(const uint8_t *addr)
 {
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;

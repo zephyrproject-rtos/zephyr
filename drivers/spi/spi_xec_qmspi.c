@@ -221,9 +221,6 @@ static int qmspi_configure(const struct device *dev,
 
 	data->ctx.config = config;
 
-	/* Add driver specific data to SPI context structure */
-	spi_context_cs_configure(&data->ctx);
-
 	regs->MODE |= MCHP_QMSPI_M_ACTIVATE;
 
 	return 0;
@@ -616,6 +613,7 @@ static int qmspi_release(const struct device *dev,
  */
 static int qmspi_init(const struct device *dev)
 {
+	int err;
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
 	QMSPI_Type *regs = cfg->regs;
@@ -629,6 +627,11 @@ static int qmspi_init(const struct device *dev)
 
 	MCHP_GIRQ_BLK_CLREN(cfg->girq);
 	NVIC_ClearPendingIRQ(cfg->girq_nvic_direct);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -671,7 +674,8 @@ static const struct spi_qmspi_config spi_qmspi_0_config = {
 
 static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 	SPI_CONTEXT_INIT_LOCK(spi_qmspi_0_dev_data, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx)
+	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx),
+	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(0), ctx)
 };
 
 DEVICE_DT_INST_DEFINE(0,

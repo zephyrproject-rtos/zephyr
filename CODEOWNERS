@@ -342,8 +342,6 @@
 /drivers/serial/*rcar*                    @aaillet
 /drivers/serial/Kconfig.test              @str4t0m
 /drivers/serial/serial_test.c             @str4t0m
-/drivers/serial/*esp32c3*                 @uLipe
-/drivers/serial/*esp32s2*                 @glaubermaroto
 /drivers/serial/Kconfig.xen               @lorc @firscity
 /drivers/serial/uart_hvc_xen.c            @lorc @firscity
 /drivers/disk/                            @jfischer-no
@@ -387,6 +385,7 @@
 /drivers/watchdog/*cc32xx*                @pavlohamov
 /drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
 /drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
+/drivers/watchdog/wdt_counter.c           @nordic-krch
 /drivers/wifi/                            @rlubos @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve

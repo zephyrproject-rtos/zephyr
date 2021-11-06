@@ -394,7 +394,8 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int bme280_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -448,7 +449,7 @@ int bme280_pm_ctrl(const struct device *dev, enum pm_device_action action)
 			    (BME280_CONFIG_I2C(inst)));			\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			 bme280_chip_init,				\
-			 bme280_pm_ctrl,				\
+			 bme280_pm_action,				\
 			 &bme280_data_##inst,				\
 			 &bme280_config_##inst,				\
 			 POST_KERNEL,					\

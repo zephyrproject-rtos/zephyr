@@ -96,6 +96,22 @@ static int gpio_mcux_configure(const struct device *dev,
 		pcr |= PORT_PCR_PE_MASK;
 	}
 
+#if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
+	/* Determine the drive strength */
+	switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)) {
+	case GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH:
+		/* Default is low drive strength */
+		mask |= PORT_PCR_DSE_MASK;
+		break;
+	case GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH:
+		/* Alternate is high drive strength */
+		pcr |= PORT_PCR_DSE_MASK;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif /* defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH */
+
 	/* Accessing by pin, we only need to write one PCR register. */
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
 

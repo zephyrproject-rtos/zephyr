@@ -27,6 +27,8 @@ enum spi_ctx_runtime_op_mode {
 struct spi_context {
 	const struct spi_config *config;
 	const struct spi_config *owner;
+	const struct gpio_dt_spec *cs_gpios;
+	size_t num_cs_gpios;
 
 	struct k_sem lock;
 	struct k_sem sync;
@@ -56,6 +58,20 @@ struct spi_context {
 
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+
+#define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)		\
+	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
+
+#define SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)				\
+	DT_FOREACH_PROP_ELEM(_node_id, cs_gpios,				\
+				SPI_CONTEXT_CS_GPIO_SPEC_ELEM)
+
+#define SPI_CONTEXT_CS_GPIOS_INITIALIZE(_node_id, _ctx_name)				\
+	._ctx_name.cs_gpios = (const struct gpio_dt_spec []) {				\
+		COND_CODE_1(DT_SPI_HAS_CS_GPIOS(_node_id),				\
+			    (SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)), ({0}))	\
+	},										\
+	._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
 
 static inline bool spi_context_configured(struct spi_context *ctx,
 					  const struct spi_config *config)
@@ -183,23 +199,27 @@ gpio_dt_flags_t spi_context_cs_active_level(struct spi_context *ctx)
 	return GPIO_ACTIVE_LOW;
 }
 
-static inline int spi_context_cs_configure(struct spi_context *ctx)
+static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
 	int ret;
+	const struct gpio_dt_spec *cs_gpio;
 
-	if (ctx->config->cs && ctx->config->cs->gpio.port) {
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (!device_is_ready(cs_gpio->port)) {
+			LOG_ERR("CS GPIO port %s pin %d is not ready",
+				cs_gpio->port->name, cs_gpio->pin);
+			return -ENODEV;
+		}
+
 		/* Validate CS active levels are equivalent */
 		__ASSERT(spi_context_cs_active_level(ctx) ==
-			 (ctx->config->cs->gpio.dt_flags & GPIO_ACTIVE_LOW),
+			 (cs_gpio->dt_flags & GPIO_ACTIVE_LOW),
 			 "Devicetree and spi_context CS levels are not equal");
-		ret = gpio_pin_configure_dt(&ctx->config->cs->gpio,
-				      GPIO_OUTPUT_INACTIVE);
+
+		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure 'cs' gpio: %d", ret);
 			return ret;
 		}
-	} else {
-		LOG_INF("CS control inhibited (no GPIO device)");
 	}
 
 	return 0;

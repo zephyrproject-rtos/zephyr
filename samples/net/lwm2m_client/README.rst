@@ -214,7 +214,7 @@ networking do the following:
    :compact:
 
 Note: If not provisioned (fully erased before flash), device will form
-new OpenThread network and promote himself as leader (Current role: 4).
+new OpenThread network and promote itself to leader (Current role: leader).
 To join into already existing OT network, either enable CONFIG_OPENTHREAD_JOINER=y
 and CONFIG_OPENTHREAD_JOINER_AUTOSTART=y and send join request from other
 already joined device with joiner capabilities, or provision it manually

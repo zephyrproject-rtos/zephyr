@@ -44,6 +44,11 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+.DS_Store
+
+# CI output
+compliance.xml
+_error.types
 
 # Tag files
 GPATH

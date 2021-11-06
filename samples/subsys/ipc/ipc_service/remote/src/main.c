@@ -14,6 +14,8 @@
 
 #include <ipc/ipc_service.h>
 
+#define MI_BACKEND_DRIVER_NAME "MI_BACKEND"
+
 #define APP_TASK_STACK_SIZE  1024
 
 K_THREAD_STACK_DEFINE(thread_stack_1, APP_TASK_STACK_SIZE);
@@ -31,8 +33,8 @@ static K_SEM_DEFINE(bound_ept2_sem, 0, 1);
 static K_SEM_DEFINE(data_rx1_sem, 0, 1);
 static K_SEM_DEFINE(data_rx2_sem, 0, 1);
 
-static struct ipc_ept *ept_1;
-static struct ipc_ept *ept_2;
+static struct ipc_ept ept_1;
+static struct ipc_ept ept_2;
 
 static void ept_bound_1(void *priv)
 {
@@ -71,10 +73,14 @@ void app_task_1(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
+	const struct device *ipc_instance;
 	int status = 0;
 	uint8_t message = 0U;
 
 	printk("\r\nIPC Service [remote 1] demo started\r\n");
+
+	ipc_instance = device_get_binding(MI_BACKEND_DRIVER_NAME);
 
 	static struct ipc_ept_cfg ept_cfg = {
 		.name = "ep_1",
@@ -87,7 +93,7 @@ void app_task_1(void *arg1, void *arg2, void *arg3)
 		},
 	};
 
-	status = ipc_service_register_endpoint(&ept_1, &ept_cfg);
+	status = ipc_service_register_endpoint(ipc_instance, &ept_1, &ept_cfg);
 	if (status < 0) {
 		printk("ipc_service_register_endpoint failed %d\n", status);
 		return;
@@ -101,7 +107,7 @@ void app_task_1(void *arg1, void *arg2, void *arg3)
 		printk("Remote [1] received a message: %d\n", message);
 
 		message++;
-		status = ipc_service_send(ept_1, &message, sizeof(message));
+		status = ipc_service_send(&ept_1, &message, sizeof(message));
 		if (status < 0) {
 			printk("send_message(%d) failed with status %d\n",
 			       message, status);
@@ -117,10 +123,14 @@ void app_task_2(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
+	const struct device *ipc_instance;
 	int status = 0;
 	uint8_t message = 0U;
 
 	printk("\r\nIPC Service [remote 2] demo started\r\n");
+
+	ipc_instance = device_get_binding(MI_BACKEND_DRIVER_NAME);
 
 	static struct ipc_ept_cfg ept_cfg = {
 		.name = "ep_2",
@@ -133,7 +143,7 @@ void app_task_2(void *arg1, void *arg2, void *arg3)
 		},
 	};
 
-	status = ipc_service_register_endpoint(&ept_2, &ept_cfg);
+	status = ipc_service_register_endpoint(ipc_instance, &ept_2, &ept_cfg);
 
 	if (status < 0) {
 		printk("ipc_service_register_endpoint failed %d\n", status);
@@ -148,7 +158,7 @@ void app_task_2(void *arg1, void *arg2, void *arg3)
 		printk("Remote [2] received a message: %d\n", message);
 
 		message++;
-		status = ipc_service_send(ept_2, &message, sizeof(message));
+		status = ipc_service_send(&ept_2, &message, sizeof(message));
 		if (status < 0) {
 			printk("send_message(%d) failed with status %d\n",
 			       message, status);

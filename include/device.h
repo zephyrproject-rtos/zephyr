@@ -98,10 +98,7 @@ typedef int16_t device_handle_t;
 /**
  * @def DEVICE_DEFINE
  *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to pm_control. In case of Device Idle Power
- * Management is enabled, make sure the device is in suspended state after
- * initialization.
+ * @brief Create device object and set it up for boot time initialization.
  *
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization. Note that

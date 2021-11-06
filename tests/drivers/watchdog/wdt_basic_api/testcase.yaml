@@ -13,3 +13,9 @@ tests:
     tags: drivers watchdog
     build_only: true
     platform_allow: mec15xxevb_assy6853
+  drivers.watchdog.counter_watchdog:
+    depends_on: watchdog
+    tags: drivers watchdog
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_counter.conf"
+      DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_counter.overlay"

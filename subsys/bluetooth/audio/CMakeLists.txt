@@ -22,4 +22,6 @@ if (CONFIG_BT_MICS OR CONFIG_BT_MICS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
+
 zephyr_library_link_libraries(subsys__bluetooth)

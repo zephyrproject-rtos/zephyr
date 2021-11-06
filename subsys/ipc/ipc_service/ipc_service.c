@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,46 +14,41 @@
 
 LOG_MODULE_REGISTER(ipc_service, CONFIG_IPC_SERVICE_LOG_LEVEL);
 
-const static struct ipc_service_backend *backend;
-
-int ipc_service_register_backend(const struct ipc_service_backend *bkd)
+int ipc_service_register_endpoint(const struct device *instance,
+				  struct ipc_ept *ept,
+				  const struct ipc_ept_cfg *cfg)
 {
-	if (backend) {
-		return -EALREADY;
-	}
+	const struct ipc_service_backend *backend;
 
-	if (!bkd || !bkd->register_endpoint || !bkd->send) {
+	if (!instance || !ept || !cfg) {
+		LOG_ERR("Invalid instance, endpoint or configuration");
 		return -EINVAL;
 	}
 
-	backend = bkd;
-	LOG_DBG("Registered: %s", backend->name ? backend->name : "");
+	backend = (const struct ipc_service_backend *) instance->api;
 
-	return 0;
-}
-
-int ipc_service_register_endpoint(struct ipc_ept **ept, const struct ipc_ept_cfg *cfg)
-{
-	LOG_DBG("Register endpoint %s", cfg->name ? cfg->name : "");
 	if (!backend || !backend->register_endpoint) {
-		LOG_ERR("Backend not registered");
+		LOG_ERR("Invalid backend configuration");
 		return -EIO;
 	}
 
-	if (!ept || !cfg) {
-		LOG_ERR("Invalid endpoint or configuration");
-		return -EINVAL;
-	}
+	LOG_DBG("Register endpoint %s", cfg->name ? cfg->name : "");
 
-	return backend->register_endpoint(ept, cfg);
+	ept->instance = instance;
+
+	return backend->register_endpoint(instance, &ept->token, cfg);
 }
 
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 {
+	const struct ipc_service_backend *backend;
+
+	backend = ept->instance->api;
+
 	if (!backend || !backend->send) {
-		LOG_ERR("Backend not registered");
+		LOG_ERR("Invalid backend configuration");
 		return -EIO;
 	}
 
-	return backend->send(ept, data, len);
+	return backend->send(ept->instance, ept->token, data, len);
 }
