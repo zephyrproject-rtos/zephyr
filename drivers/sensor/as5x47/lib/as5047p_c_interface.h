@@ -94,8 +94,8 @@ bool write_ZPOSM(AS5047P_handle h, const as5047p_ZPOSM_data_t *regData, bool che
 
 bool write_ZPOSL(AS5047P_handle h, const as5047p_ZPOSL_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
-bool
-write_SETTINGS1(AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData, bool checkForComError, bool verifyWittenReg);
+bool write_SETTINGS1(AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData,
+                     bool checkForComError, bool verifyWittenReg);
 
 bool write_SETTINGS2(AS5047P_handle h, const as5047p_SETTINGS2_data_t *regData,
                      bool checkForComError, bool verifyWrittenReg);
