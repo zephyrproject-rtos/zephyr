@@ -4,3 +4,18 @@ description: |
 compatible: "ams,as5x47"
 
 include: spi-device.yaml
+
+properties:
+
+  output-interface:
+    type: string
+    required: true
+    description: Enables ABI or UVW output (UVW_ABI field).
+    enum:
+      - "abi"
+      - "uvw"
+
+  uvw-polepairs:
+    type: int
+    required: true
+    description: Sets pole pairs for UVW output (1 to 7)
