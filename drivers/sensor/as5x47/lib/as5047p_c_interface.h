@@ -6,6 +6,7 @@
 #define CAROLO_APP_AS5047P_C_INTERFACE_H
 
 #include "as5047p_c_types.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +52,7 @@ bool read_ANGLECOM(const AS5047P_handle h, as5047p_ANGLECOM_data_t *regData, boo
 
 // Write Volatile Registers ------------------------------------
 
-bool write_PROG(const AS5047P_handle h, const as5047p_PROG_data_t *regData, bool checkForComError, bool verifyWittenReg);
+bool write_PROG(const AS5047P_handle h, const as5047p_PROG_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
 // -------------------------------------------------------------
 
@@ -69,13 +70,13 @@ bool read_SETTINGS2(const AS5047P_handle h, as5047p_SETTINGS2_data_t *regData, b
 
 // Write Non-Volatile Registers --------------------------------
 
-bool write_ZPOSM(const AS5047P_handle h, const as5047p_ZPOSM_data_t *regData, bool checkForComError, bool verifyWittenReg);
+bool write_ZPOSM(const AS5047P_handle h, const as5047p_ZPOSM_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
-bool write_ZPOSL(const AS5047P_handle h, const as5047p_ZPOSL_data_t *regData, bool checkForComError, bool verifyWittenReg);
+bool write_ZPOSL(const AS5047P_handle h, const as5047p_ZPOSL_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
 bool write_SETTINGS1(const AS5047P_handle h, const as5047p_SETTINGS1_data_t *regData, bool checkForComError, bool verifyWittenReg);
 
-bool write_SETTINGS2(const AS5047P_handle h, const as5047p_SETTINGS2_data_t *regData, bool checkForComError, bool verifyWittenReg);
+bool write_SETTINGS2(const AS5047P_handle h, const as5047p_SETTINGS2_data_t *regData, bool checkForComError, bool verifyWrittenReg);
 
 // -------------------------------------------------------------
 

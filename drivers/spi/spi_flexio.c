@@ -237,7 +237,6 @@ static int spi_flexio_configure(const struct device *dev,
 
 
     data->ctx.config = spi_cfg;
-    spi_context_cs_configure(&data->ctx);
 
     return 0;
 }
@@ -312,7 +311,10 @@ static int spi_flexio_init(const struct device *dev) {
     struct spi_flexio_data *data = dev->data;
 
     config->irq_config_func(dev);
-
+    int err = spi_context_cs_configure_all(&data->ctx);
+    if (err < 0) {
+        return err;
+    }
     spi_context_unlock_unconditionally(&data->ctx);
 
     data->dev = dev;
@@ -342,6 +344,7 @@ static const struct spi_driver_api spi_flexio_driver_api = {
     static struct spi_flexio_data spi_flexio_dev_data_##n = { \
         SPI_CONTEXT_INIT_LOCK(spi_flexio_dev_data_##n, ctx), \
         SPI_CONTEXT_INIT_SYNC(spi_flexio_dev_data_##n, ctx), \
+        SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
     }; \
     DEVICE_DT_INST_DEFINE(n, &spi_flexio_init, NULL, \
                 &spi_flexio_dev_data_##n, \
