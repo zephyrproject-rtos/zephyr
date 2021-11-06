@@ -826,6 +826,25 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 	return net_pkt_set_data(pkt, &mss_option);
 }
 
+static bool is_destination_local(struct net_pkt *pkt)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
+		    net_ipv4_is_my_addr(&NET_IPV4_HDR(pkt)->dst)) {
+			return true;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->dst)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
@@ -884,7 +903,14 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
-	if (tcp_send_process_no_lock(conn)) {
+	if (is_destination_local(pkt)) {
+		/* If the destination is local, we have to let the current
+		 * thread to finish with any state-machine changes before
+		 * sending the packet, or it might lead to state unconsistencies
+		 */
+		k_work_schedule_for_queue(&tcp_work_q,
+					  &conn->send_timer, K_NO_WAIT);
+	} else if (tcp_send_process_no_lock(conn)) {
 		tcp_conn_unref(conn);
 	}
 out:
@@ -2797,10 +2823,9 @@ void net_tcp_init(void)
 #endif
 
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
-/* Lowest priority cooperative thread */
-#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#define THREAD_PRIORITY K_PRIO_COOP(0)
 #else
-#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#define THREAD_PRIORITY K_PRIO_PREEMPT(0)
 #endif
 
 	/* Use private workqueue in order not to block the system work queue.

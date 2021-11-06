@@ -274,7 +274,7 @@ Device Model with Power Management Support
 Drivers initialize the devices using macros. See :ref:`device_model_api` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
 drivers providing power management support via the PM control function.
-One of the macro parameters is the pointer to the pm_control handler function.
+One of the macro parameters is the pointer to the PM action callback.
 If the driver doesn't implement any power control operations, it can initialize
 the corresponding pointer with ``NULL``.
 
@@ -307,8 +307,7 @@ Device Set Power State
 
    int pm_device_state_set(const struct device *dev, enum pm_device_state state);
 
-Calls the :c:func:`pm_control()` handler function implemented by the
-device driver with the provided state.
+Calls the device PM action callback with the provided state.
 
 Device Get Power State
 ----------------------
@@ -438,7 +437,7 @@ Enable Device Runtime Power Management of a Device API
 
 .. code-block:: c
 
-   void pm_device_enable(const struct device *dev);
+   void pm_device_runtime_enable(const struct device *dev);
 
 Enables Runtime Power Management of the device.
 
@@ -447,31 +446,16 @@ Disable Device Runtime Power Management of a Device API
 
 .. code-block:: c
 
-   void pm_device_disable(const struct device *dev);
+   void pm_device_runtime_disable(const struct device *dev);
 
 Disables Runtime Power Management of the device.
-
-Resume Device asynchronously API
---------------------------------
-
-.. code-block:: c
-
-   int pm_device_get_async(const struct device *dev);
-
-Marks the device as being used. This API will asynchronously
-bring the device to resume state if it was suspended. If the device
-was already active, it just increments the device usage count.
-The API returns 0 on success.
-
-Device drivers can monitor this operation to finish calling
-:c:func:`pm_device_wait`.
 
 Resume Device synchronously API
 -------------------------------
 
 .. code-block:: c
 
-   int pm_device_get(const struct device *dev);
+   int pm_device_runtime_get(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -483,21 +467,18 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int pm_device_put_async(const struct device *dev);
+   int pm_device_runtime_put_async(const struct device *dev);
 
 Releases a device. This API asynchronously puts the device to suspend
 state if not already in suspend state if the usage count of this device
 reaches 0.
-
-Device drivers can monitor this operation to finish calling
-:c:func:`pm_device_wait`.
 
 Suspend Device synchronously API
 --------------------------------
 
 .. code-block:: c
 
-   int pm_device_put(const struct device *dev);
+   int pm_device_runtime_put(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device
@@ -531,14 +512,16 @@ API Reference
 Power Management Hook Interface
 ===============================
 
-.. doxygengroup:: power_management_hook_interface
+.. doxygengroup:: subsys_pm_sys_hooks
 
 System Power Management APIs
 ============================
 
-.. doxygengroup:: system_power_management_api
+.. doxygengroup:: subsys_pm_sys
 
 Device Power Management APIs
 ============================
 
-.. doxygengroup:: device_power_management_api
+.. doxygengroup:: subsys_pm_device
+
+.. doxygengroup:: subsys_pm_device_runtime

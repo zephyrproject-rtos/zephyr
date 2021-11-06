@@ -48,6 +48,15 @@
 		compatible = "intel,pcie";
 		ranges;
 
+		ptm_root0: ptm_root@e000 {
+			compatible = "ptm-root";
+
+			reg = <PCIE_BDF(0,0x1c,0) PCIE_ID(0x8086,0x4b38)>;
+			label = "PTM_ROOT_0";
+
+			status = "okay";
+		};
+
 		uart0: uart@f000 {
 			compatible = "ns16550";
 

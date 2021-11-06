@@ -19,19 +19,10 @@ static int dummy_open(const struct device *dev)
 	printk("open()\n");
 
 	/* Make sure parent is resumed */
-	ret = pm_device_get(parent);
+	ret = pm_device_runtime_get(parent);
 	if (ret < 0) {
 		return ret;
 	}
-
-	ret = pm_device_get_async(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	printk("Async wakeup request queued\n");
-
-	(void) pm_device_wait(dev, K_FOREVER);
 
 	(void)pm_device_state_get(dev, &state);
 	if (state == PM_DEVICE_STATE_ACTIVE) {
@@ -73,21 +64,21 @@ static int dummy_close(const struct device *dev)
 	int ret;
 
 	printk("close()\n");
-	ret = pm_device_put(dev);
+	ret = pm_device_runtime_put(dev);
 	if (ret == 1) {
 		printk("Async suspend request ququed\n");
 	}
 
 	/* Parent can be suspended */
 	if (parent) {
-		pm_device_put(parent);
+		pm_device_runtime_put(parent);
 	}
 
 	return ret;
 }
 
-static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int dummy_device_pm_action(const struct device *dev,
+				  enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -117,11 +108,11 @@ int dummy_init(const struct device *dev)
 		printk("parent not found\n");
 	}
 
-	pm_device_enable(dev);
+	pm_device_runtime_enable(dev);
 
 	return 0;
 }
 
 DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, &dummy_init,
-		    dummy_device_pm_ctrl, NULL, NULL, APPLICATION,
+		    dummy_device_pm_action, NULL, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);

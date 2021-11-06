@@ -542,7 +542,6 @@ static int power_down_op(const struct device *dev, uint8_t opcode,
 
 static int spi_flash_at45_init(const struct device *dev)
 {
-	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 	int err;
 
@@ -594,8 +593,8 @@ static int spi_flash_at45_init(const struct device *dev)
 }
 
 #if IS_ENABLED(CONFIG_PM_DEVICE)
-static int spi_flash_at45_pm_control(const struct device *dev,
-				     enum pm_device_action action)
+static int spi_flash_at45_pm_action(const struct device *dev,
+				    enum pm_device_action action)
 {
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 
@@ -701,7 +700,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 			"atmel,at45 is not compatible with its "	     \
 			"total size");))				     \
 	DEVICE_DT_INST_DEFINE(idx,					     \
-		      spi_flash_at45_init, spi_flash_at45_pm_control,	     \
+		      spi_flash_at45_init, spi_flash_at45_pm_action,	     \
 		      &inst_##idx##_data, &inst_##idx##_config,		     \
 		      POST_KERNEL, CONFIG_SPI_FLASH_AT45_INIT_PRIORITY,      \
 		      &spi_flash_at45_api);

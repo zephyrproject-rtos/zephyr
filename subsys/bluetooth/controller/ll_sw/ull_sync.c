@@ -106,11 +106,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* FIXME: Check for already synchronized to same peer */
 
-	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST) &&
-	    (options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST)) {
-		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-	}
-
 	link_sync_estab = ll_rx_link_alloc();
 	if (!link_sync_estab) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -163,6 +158,11 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		}
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	sync->nodups = (options &
+			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) ?
+		       1U : 0U;
+#endif
 	sync->skip = skip;
 	sync->timeout = sync_timeout;
 
@@ -486,6 +486,13 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	/* Remember the peer address */
+	sync->peer_id_addr_type = scan->per_scan.adv_addr_type;
+	(void)memcpy(sync->peer_id_addr, scan->per_scan.adv_addr,
+		     sizeof(sync->peer_id_addr));
+#endif
+
 	memcpy(lll->access_addr, &si->aa, sizeof(lll->access_addr));
 	lll->data_chan_id = lll_chan_id(lll->access_addr);
 	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
@@ -533,7 +540,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 	sync_handle = ull_sync_handle_get(sync);
 
-	/* Prepare and dispatch sync notification */
+	/* Prepare sync notification, dispatch only on successful AUX_SYNC_IND
+	 * reception.
+	 */
 	rx = (void *)sync->node_rx_sync_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC;
 	rx->hdr.handle = sync_handle;

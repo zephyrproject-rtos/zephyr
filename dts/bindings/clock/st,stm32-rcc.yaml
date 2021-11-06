@@ -48,14 +48,14 @@ properties:
       const: 2
 
     clock-frequency:
-      required: false
+      required: true
       type: int
       description: |
         default frequency in Hz for clock output
 
     ahb-prescaler:
       type: int
-      required: false
+      required: true
       enum:
         - 1
         - 2
@@ -73,7 +73,7 @@ properties:
 
     apb1-prescaler:
       type: int
-      required: false
+      required: true
       enum:
         - 1
         - 2
@@ -83,7 +83,7 @@ properties:
 
     apb2-prescaler:
       type: int
-      required: false
+      required: true
       enum:
         - 1
         - 2

@@ -11,6 +11,10 @@ config IPC_SERVICE_BACKEND_RPMSG_MI
 	select OPENAMP
 	select IPM
 
+config IPC_SERVICE_BACKEND_ZTEST
+	depends on ZTEST
+	bool "IPC service backend test"
+
 endchoice
 
 if IPC_SERVICE_BACKEND_RPMSG_MI

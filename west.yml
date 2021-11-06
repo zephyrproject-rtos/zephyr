@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: canopennode
-      revision: f167efe85c8c7de886f1bc47f9173cfb8a346bb5
+      revision: 1052dae561497bef901f931ef75e117c9224aecd
       path: modules/lib/canopennode
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
@@ -67,7 +67,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 7c46a3fc5b336199392cba0f66c3c27d5fe9025c
+      revision: 5c2062876f86fbf3aa30f3e2539a88b56b8fd461
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -88,7 +88,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: a6e5299041f152da5ae0ab17b2e44e088bb96d6d
+      revision: cad21db72a61b8dde0aabf95301dfd9dee119018
       path: modules/hal/nordic
       groups:
         - hal
@@ -98,7 +98,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2b3396864d2c60512038446f487c6dade6da6e04
+      revision: fd8b79c40172e8aab808a3957978d49f46b01d87
       path: modules/hal/nxp
       groups:
         - hal
@@ -221,8 +221,18 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      path: modules/tee/tfm
-      revision: 00d0e38cf89656b0f3ef8d1757109c0ea021a780
+      revision: 400f58ff53eb1dea5234925e96c5279154515cc7
+      path: modules/tee/tf-m/trusted-firmware-m
+      groups:
+        - tee
+    - name: tf-m-tests
+      revision: 93dad5cb3cfc2e2d82de61d1b2781f84881ce839
+      path: modules/tee/tf-m/tf-m-tests
+      groups:
+        - tee
+    - name: psa-arch-tests
+      revision: 077b8e5cd5fe9e27718a499b004e79bfca2d2e89
+      path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
 

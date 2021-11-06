@@ -26,8 +26,7 @@ LOG_MODULE_REGISTER(adc_mcp320x, CONFIG_ADC_LOG_LEVEL);
 #define MCP320X_RESOLUTION 12U
 
 struct mcp320x_config {
-	const struct device *spi_dev;
-	struct spi_config spi_cfg;
+	struct spi_dt_spec bus;
 	uint8_t channels;
 };
 
@@ -223,7 +222,7 @@ static int mcp320x_read_channel(const struct device *dev, uint8_t channel,
 		tx_bytes[0] |= BIT(1);
 	}
 
-	err = spi_transceive(config->spi_dev, &config->spi_cfg, &tx, &rx);
+	err = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (err) {
 		return err;
 	}
@@ -276,18 +275,9 @@ static int mcp320x_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 0, 1);
 
-	if (!device_is_ready(config->spi_dev)) {
-		LOG_ERR("SPI master device '%s' not ready",
-			config->spi_dev->name);
-		return -EINVAL;
-	}
-
-	if (config->spi_cfg.cs) {
-		if (!device_is_ready(config->spi_cfg.cs->gpio_dev)) {
-			LOG_ERR("SPI CS GPIO device '%s' not ready",
-				config->spi_cfg.cs->gpio_dev->name);
-			return -EINVAL;
-		}
+	if (!spi_is_ready(&config->bus)) {
+		LOG_ERR("SPI bus is not ready");
+		return -ENODEV;
 	}
 
 	k_thread_create(&data->thread, data->stack,
@@ -319,8 +309,7 @@ static const struct adc_driver_api mcp320x_adc_api = {
 		ADC_CONTEXT_INIT_SYNC(mcp##t##_data_##n, ctx), \
 	}; \
 	static const struct mcp320x_config mcp##t##_config_##n = { \
-		.spi_dev = DEVICE_DT_GET(DT_BUS(INST_DT_MCP320X(n, t))), \
-		.spi_cfg = SPI_CONFIG_DT(INST_DT_MCP320X(n, t), \
+		.bus = SPI_DT_SPEC_GET(INST_DT_MCP320X(n, t), \
 					 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
 					 SPI_WORD_SET(8), 0), \
 		.channels = ch, \

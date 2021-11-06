@@ -214,10 +214,6 @@ static int xlnx_quadspi_configure(const struct device *dev,
 
 	ctx->config = spi_cfg;
 
-	if (!IS_ENABLED(CONFIG_SPI_SLAVE) || !spi_context_is_slave(ctx)) {
-		spi_context_cs_configure(ctx);
-	}
-
 	return 0;
 }
 
@@ -436,6 +432,7 @@ static void xlnx_quadspi_isr(const struct device *dev)
 
 static int xlnx_quadspi_init(const struct device *dev)
 {
+	int err;
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 
@@ -447,6 +444,11 @@ static int xlnx_quadspi_init(const struct device *dev)
 	/* Enable DTR Empty interrupt */
 	xlnx_quadspi_write32(dev, IPIXR_DTR_EMPTY, IPIER_OFFSET);
 	xlnx_quadspi_write32(dev, DGIER_GIE, DGIER_OFFSET);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -475,13 +477,14 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
 		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
 			    NULL,					\
 			    &xlnx_quadspi_data_##n,			\
 			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &xlnx_quadspi_driver_api);			\
 									\
 	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\

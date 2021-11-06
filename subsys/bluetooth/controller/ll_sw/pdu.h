@@ -93,6 +93,8 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
+/* Controller defined back to back transmit MAFS */
+#define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_PDU_BACK2BACK_AFS)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
@@ -103,6 +105,7 @@
 #define EVENT_INSTANT_LATENCY_MAX 0x7fff
 
 /* Offset Units field encoding */
+#define OFFS_UNIT_BITS         13
 #define OFFS_UNIT_30_US        30
 #define OFFS_UNIT_300_US       300
 #define OFFS_UNIT_VALUE_30_US  0

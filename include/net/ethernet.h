@@ -827,9 +827,9 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 
 #if defined(CONFIG_NET_VLAN)
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_cb, data, cfg, prio, api, mtu)	\
+			      pm_action_cb, data, cfg, prio, api, mtu)	\
 	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
-			pm_control_cb, data, cfg, POST_KERNEL,		\
+			pm_action_cb, data, cfg, POST_KERNEL,		\
 			prio, api);					\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
@@ -837,9 +837,9 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #else /* CONFIG_NET_VLAN */
 
 #define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
-			      pm_control_cb, data, cfg, prio, api, mtu)	\
+			      pm_action_cb, data, cfg, prio, api, mtu)	\
 	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			  pm_control_cb, data, cfg, prio, api,		\
+			  pm_action_cb, data, cfg, prio, api,		\
 			  ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),\
 			  mtu)
 #endif /* CONFIG_NET_VLAN */
@@ -853,7 +853,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_cb Pointer to pm_control function.
+ * @param pm_action_cb Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -863,10 +863,10 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_cb,	\
+#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_action_cb,	\
 			    data, cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
-			      init_fn, pm_control_cb, data, cfg, prio,	\
+			      init_fn, pm_action_cb, data, cfg, prio,	\
 			      api, mtu)
 
 /**
@@ -877,7 +877,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_cb Pointer to pm_control function.
+ * @param pm_action_cb Pointer to PM action callback.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -887,11 +887,11 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_control_cb, data,	\
+#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_action_cb, data,	\
 			       cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
 			      DT_PROP_OR(node_id, label, ""),		\
-			      init_fn, pm_control_cb, data, cfg, prio,	\
+			      init_fn, pm_action_cb, data, cfg, prio,	\
 			      api, mtu)
 
 /**

@@ -179,7 +179,6 @@ static int configure(const struct device *dev,
 	dev_data->initialized = true;
 
 	ctx->config = spi_cfg;
-	spi_context_cs_configure(ctx);
 
 	return 0;
 }
@@ -330,8 +329,8 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int spim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_action action)
+static int spim_nrfx_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
@@ -392,15 +391,21 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
+		int err;                                                       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
 			    DT_IRQ(SPIM(idx), priority),		       \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+		err = spi_context_cs_configure_all(&get_dev_data(dev)->ctx);   \
+		if (err < 0) {                                                 \
+			return err;                                            \
+		}                                                              \
 		spi_context_unlock_unconditionally(&get_dev_data(dev)->ctx);   \
 		return 0;						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)         \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
@@ -420,7 +425,7 @@ static int spim_nrfx_pm_control(const struct device *dev,
 	};								       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_##idx##_init,					       \
-		      spim_nrfx_pm_control,				       \
+		      spim_nrfx_pm_action,				       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
 		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \

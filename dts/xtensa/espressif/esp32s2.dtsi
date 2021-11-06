@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <xtensa/xtensa.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/esp32s2_clock.h>
 #include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
 
@@ -26,7 +27,6 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <0>;
-			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 	};
 
@@ -60,7 +60,6 @@
 			reg = <0x3f408000 0x0D8>;
 			label = "RTC";
 			xtal-freq = <ESP32_CLK_XTAL_40M>;
-			xtal-div = <0>;
 			#clock-cells = <1>;
 			status = "ok";
 		};
@@ -131,6 +130,30 @@
 			interrupt-parent = <&intc>;
 			label = "GPIO_1";
 			ngpios = <22>;   /* 32..53 */
+		};
+
+		i2c0: i2c@3f413000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x3f413000 0x1000>;
+			interrupts = <I2C_EXT0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "I2C_0";
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@3f427000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x3f427000 0x1000>;
+			interrupts = <I2C_EXT1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			label = "I2C_1";
+			clocks = <&rtc ESP32_I2C1_MODULE>;
+			status = "disabled";
 		};
 
 		timer0: counter@3f41f000 {

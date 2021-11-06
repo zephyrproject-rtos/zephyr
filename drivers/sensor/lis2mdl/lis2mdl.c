@@ -442,8 +442,8 @@ static int lis2mdl_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lis2mdl_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int lis2mdl_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
@@ -490,7 +490,7 @@ static int lis2mdl_pm_control(const struct device *dev,
 #define LIS2MDL_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2mdl_init,				\
-			    lis2mdl_pm_control,				\
+			    lis2mdl_pm_action,				\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\

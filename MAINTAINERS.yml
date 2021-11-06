@@ -436,6 +436,7 @@ Documentation:
         - lyakh
         - lgirdwood
         - mengxianglinx
+        - marc-hb
     files:
         - drivers/audio/
         - include/audio/
@@ -1072,6 +1073,8 @@ MCU Manager:
     status: maintained
     maintainers:
         - de-nordic
+    collaborators:
+        - lairdjm
     files:
         - subsys/mgmt/mcumgr/
         - include/mgmt/mcumgr/

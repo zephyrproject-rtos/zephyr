@@ -613,28 +613,40 @@ void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
 
+#define sys_port_trace_pm_system_suspend_enter(ticks)			       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)		       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_SYSTEM_SUSPEND, (uint32_t)state)
 
-
-#define sys_port_trace_pm_system_suspend_enter(ticks) \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_SUSPEND, (uint32_t)ticks)
-#define sys_port_trace_pm_system_suspend_exit(ticks, ret) \
-	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_SUSPEND, (uint32_t)ret)
-
-#define sys_port_trace_pm_device_request_enter(dev, target_state) \
-	SEGGER_SYSVIEW_RecordU32x2(TID_PM_DEVICE_REQUEST, (uint32_t)(uintptr_t)dev, target_state)
-#define sys_port_trace_pm_device_request_exit(dev, ret) \
-	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_REQUEST, (uint32_t)ret)
-
-#define sys_port_trace_pm_device_enable_enter(dev) \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_ENABLE, (uint32_t)(uintptr_t)dev)
-#define sys_port_trace_pm_device_enable_exit(dev) \
-	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_ENABLE)
-
-#define sys_port_trace_pm_device_disable_enter(dev) \
-	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_DISABLE, (uint32_t)(uintptr_t)dev)
-#define sys_port_trace_pm_device_disable_exit(dev) \
-	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_DISABLE)
-
+#define sys_port_trace_pm_device_runtime_get_enter(dev)			       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_GET,		       \
+				 (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)		       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_GET,	       \
+					(uint32_t)ret)
+#define sys_port_trace_pm_device_runtime_put_enter(dev)			       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_PUT,		       \
+				 (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)		       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT,	       \
+					(uint32_t)ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)		       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,	       \
+				 (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)	       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_PUT_ASYNC,       \
+					(uint32_t)ret)
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)		       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_ENABLE,		       \
+				 (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_RUNTIME_ENABLE)
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)		       \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_RUNTIME_DISABLE,		       \
+				 (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)		       \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_RUNTIME_DISABLE,	       \
+					(uint32_t)ret)
 
 #ifdef __cplusplus
 }

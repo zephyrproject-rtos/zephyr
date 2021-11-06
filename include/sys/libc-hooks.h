@@ -21,8 +21,6 @@
 /* syscall generation ignores preprocessor, ensure this is defined to ensure
  * we don't have compile errors
  */
-#define _MLIBC_RESTRICT
-
 __syscall int zephyr_read_stdin(char *buf, int nbytes);
 
 __syscall int zephyr_write_stdout(const void *buf, int nbytes);
@@ -32,8 +30,8 @@ __syscall int zephyr_write_stdout(const void *buf, int nbytes);
 
 __syscall int zephyr_fputc(int c, FILE * stream);
 
-__syscall size_t zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
-				size_t nitems, FILE *_MLIBC_RESTRICT stream);
+__syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
+				size_t nitems, FILE *ZRESTRICT stream);
 #endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef CONFIG_USERSPACE

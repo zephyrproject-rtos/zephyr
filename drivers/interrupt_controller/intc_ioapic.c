@@ -309,8 +309,8 @@ int ioapic_resume_from_suspend(const struct device *port)
 * the *context may include IN data or/and OUT data
 */
 __pinned_func
-static int ioapic_device_ctrl(const struct device *dev,
-			      enum pm_device_action action)
+static int ioapic_pm_action(const struct device *dev,
+			    enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -497,7 +497,7 @@ static void IoApicRedUpdateLo(unsigned int irq,
 
 
 #ifdef CONFIG_PM_DEVICE
-SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
+SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_pm_action, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(ioapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

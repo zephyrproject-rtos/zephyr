@@ -438,8 +438,8 @@ static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
 	return 0;
 }
 
-static inline int uart_npcx_pm_control(const struct device *dev,
-				       enum pm_device_action action)
+static int uart_npcx_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	/* If next device power state is SUSPEND power state */
 	switch (action) {
@@ -504,7 +504,7 @@ static inline int uart_npcx_pm_control(const struct device *dev,
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
-			uart_npcx_pm_control,				       \
+			uart_npcx_pm_action,				       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	       \
 			&uart_npcx_driver_api);                                \

@@ -396,8 +396,8 @@ static int st7789v_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7789v_pm_control(const struct device *dev,
-			      enum pm_device_action action)
+static int st7789v_pm_action(const struct device *dev,
+			     enum pm_device_action action)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 	int ret = 0;
@@ -439,5 +439,5 @@ static struct st7789v_data st7789v_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &st7789v_init,
-	      st7789v_pm_control, &st7789v_data, NULL, POST_KERNEL,
+	      st7789v_pm_action, &st7789v_data, NULL, POST_KERNEL,
 	      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);

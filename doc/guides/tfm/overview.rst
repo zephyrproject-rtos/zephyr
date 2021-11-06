@@ -190,7 +190,7 @@ Note that the starting state of our device is controlled by the secure firmware,
 meaning that when the non-secure Zephyr application starts, peripherals may
 not be in the HW-default reset state. In case of doubts, be sure to consult
 the board support packages in TF-M, available in the ``platform/ext/target/``
-folder of the TF-M module (which is in ``modules/tee/tfm/trusted-firmware-m/``
+folder of the TF-M module (which is in ``modules/tee/tf-m/trusted-firmware-m/``
 within a default Zephyr west workspace.)
 
 Secure Services

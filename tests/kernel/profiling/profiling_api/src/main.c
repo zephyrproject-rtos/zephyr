@@ -23,9 +23,11 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
 	static bool test_flag;
+
+	ARG_UNUSED(cpu);
 
 	/* Call k_thread_foreach only once otherwise it will
 	 * flood the console with stack dumps.

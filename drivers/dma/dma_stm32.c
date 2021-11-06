@@ -682,7 +682,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 		    &dma_stm32_init,					\
 		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
 		    &dma_funcs)
 
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS

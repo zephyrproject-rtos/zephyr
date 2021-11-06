@@ -57,9 +57,11 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(int ticks)
+struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 {
 	struct pm_state_info info = {};
+
+	ARG_UNUSED(cpu);
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
@@ -162,13 +164,13 @@ void test_power_state_trans(void)
  * @brief notification between system and device
  *
  * @details
- *  - device driver notify its power state change by pm_device_get_async and
- *    pm_device_put_async
+ *  - device driver notify its power state change by pm_device_runtime_get and
+ *    pm_device_runtime_put_async
  *  - system inform device system power state change through device interface
- *    pm_control
+ *    pm_action_cb
  *
- * @see pm_device_get_async(), pm_device_put_async(), pm_device_state_set(),
- *      pm_device_state_get()
+ * @see pm_device_runtime_get(), pm_device_runtime_put_async(),
+ *      pm_device_state_set(), pm_device_state_get()
  *
  * @ingroup power_tests
  */

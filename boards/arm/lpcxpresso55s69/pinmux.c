@@ -247,6 +247,28 @@ static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
 
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sc_timer), nxp_sctimer_pwm, okay) && CONFIG_PWM
+	/* Pin is configured as SCT0_OUT2 */
+	pinmux_pin_set(port0, 15, IOCON_PIO_FUNC4 |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI |
+				  IOCON_PIO_ASW_EN);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(red_pwm_led), okay)
+	/* Pin is configured as SCT0_OUT0 */
+	pinmux_pin_set(port1, 4, IOCON_PIO_FUNC4 |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif
+
+#endif
+
 	return 0;
 }
 

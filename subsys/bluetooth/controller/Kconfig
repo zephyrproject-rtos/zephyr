@@ -161,6 +161,15 @@ config BT_CTLR_DUP_FILTER_LEN
 	  Set the number of unique BLE addresses that can be filtered as
 	  duplicates while scanning.
 
+config BT_CTLR_DUP_FILTER_ADV_SET_MAX
+	int "Number of Extended Advertising Sets in the scan duplicate filter"
+	depends on BT_OBSERVER && (BT_CTLR_DUP_FILTER_LEN > 0)
+	range 1 16
+	default 1
+	help
+	  Set the number of unique Advertising Set ID per Bluetooth Low Energy
+	  addresses that can be filtered as duplicates while Extended Scanning.
+
 config BT_CTLR_MESH_SCAN_FILTERS
 	int "Number of Mesh scan filters"
 	depends on BT_HCI_MESH_EXT
@@ -494,6 +503,13 @@ config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select EXPERIMENTAL if BT_LL_SW_SPLIT
 
+config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
+	bool "Periodic Advertising ADI support"
+	depends on BT_CTLR_ADV_PERIODIC
+	default y
+	help
+	  Enable support for adding AdvDataInfo in Periodic Advertising PDUs.
+
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
 	depends on BT_OBSERVER && BT_CTLR_SYNC_PERIODIC_SUPPORT
@@ -522,6 +538,14 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 	help
 	  Set Periodic Advertiser List size, this will be return in the HCI LE
 	  Read Periodic Advertiser List Command.
+
+config BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	bool "Periodic Advertising Sync with ADI support (duplicate filtering)"
+	depends on BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Enable support for duplicate filtering using AdvDataInfo present in
+	  Periodic Advertising PDUs.
 
 config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
 	bool "LE Periodic Advertiser filtering by CTE type"

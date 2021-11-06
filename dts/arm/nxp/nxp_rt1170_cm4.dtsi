@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_rt117x.dtsi>
+#include <nxp/nxp_rt11xx.dtsi>
 
 / {
 	cpus {
@@ -28,6 +28,28 @@
 		sram1: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(128)>;
+		};
+
+		/*
+		 * M4 uses different addresses from the M7 core for GPIO2 and
+		 * GPIO3, see pg. 1410 of RT1170 ref manual for example
+		 */
+		gpio2: gpio@40130000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40130000 0x4000>;
+			interrupts = <102 0>, <103 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@40134000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x40134000 0x4000>;
+			interrupts = <104 0>, <105 0>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		edma1: dma-controller@40c14000 {
