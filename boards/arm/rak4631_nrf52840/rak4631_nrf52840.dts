@@ -102,7 +102,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
-	lora: sx1262@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;
 		label = "sx1262";
