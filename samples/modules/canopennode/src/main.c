@@ -14,12 +14,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-
-#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CANBUS_LABEL
+#define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
 #define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_canbus), bus_speed) / 1000)
-#if !defined(DT_CHOSEN_ZEPHYR_CANBUS_LABEL)
-#error CANopen CAN interface not set
-#endif
 
 #if DT_NODE_HAS_PROP(DT_ALIAS(green_led), gpios)
 #define LED_GREEN_PORT  DT_GPIO_LABEL(DT_ALIAS(green_led), gpios)
@@ -210,9 +206,9 @@ void main(void)
 	int ret;
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
-	can.dev = device_get_binding(CAN_INTERFACE);
-	if (!can.dev) {
-		LOG_ERR("CAN interface not found");
+	can.dev = CAN_INTERFACE;
+	if (!device_is_ready(can.dev)) {
+		LOG_ERR("CAN interface not ready");
 		return;
 	}
 
