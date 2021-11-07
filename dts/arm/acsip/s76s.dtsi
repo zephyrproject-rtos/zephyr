@@ -15,7 +15,7 @@
 	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	lora: sx1276@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		label = "sx1276";
