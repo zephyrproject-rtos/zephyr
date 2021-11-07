@@ -16,4 +16,3 @@ supported:
   - watchdog
   - adc
   - usb_device
-  - can
