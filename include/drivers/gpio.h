@@ -259,6 +259,19 @@ extern "C" {
  * use the default drive strength.
  */
 #define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
+
+/** Combined default drive strength.
+ */
+#define GPIO_DS_DFLT (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH)
+
+/** Combined alternative drive strength.
+ */
+#define GPIO_DS_ALT (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)
+
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_DS_MASK (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)
+/** @endcond */
+
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */

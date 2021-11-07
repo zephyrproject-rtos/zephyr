@@ -106,7 +106,7 @@ static int cy8c95xx_config(const struct device *dev,
 	}
 
 	/* Strengths not implemented */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 

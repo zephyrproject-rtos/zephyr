@@ -203,7 +203,7 @@ static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
 	 * Until something more general is available reject any
 	 * attempt to set a non-default drive strength.
 	 */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 

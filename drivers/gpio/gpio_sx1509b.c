@@ -313,7 +313,7 @@ static int sx1509b_config(const struct device *dev,
 	 * Until something more general is available reject any
 	 * attempt to set a non-default drive strength.
 	 */
-	if ((flags & (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)) != 0) {
+	if ((flags & GPIO_DS_ALT) != 0) {
 		return -ENOTSUP;
 	}
 
