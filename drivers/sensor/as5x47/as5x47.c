@@ -27,6 +27,7 @@ as5x47_data *get_data(const struct device *dev) {
 
 int as5x47_init(const struct device *dev) {
     const as5x47_config *cfg = dev->config;
+    LOG_INF("Initializing sensor, uvw=%d, polepairs=%d", cfg->useUVW, cfg->uvwPolePairs);
     bool initSuccessful = initializeSensor(cfg->sensor, cfg->useUVW, cfg->uvwPolePairs);
     if (!initSuccessful) {
         LOG_ERR("AS5x47 initialization of device \"%s\" unsuccessful", dev->name);
@@ -41,7 +42,7 @@ int as5x47_sample_fetch(const struct device *dev, enum sensor_channel chan) {
         if (!readAngleDegree(get_config(dev)->sensor,
                              &get_data(dev)->angle_deg,
                              true,
-                             true, false, false)) {
+                             true, true, true)) {
             LOG_ERR("Error reading from sensor");
             get_data(dev)->angle_deg = 0;
             return -EIO;
@@ -87,7 +88,7 @@ const struct sensor_driver_api as5x47_sensor_api = {
     static as5x47_config as5x47_cfg_##inst = { \
         .spi_spec = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(16) | SPI_TRANSFER_MSB | SPI_MODE_CPHA, 0), \
         .sensor = &as5x47_cfg_##inst.spi_spec, \
-        .useUVW = __builtin_strcmp(DT_INST_PROP(inst, output_interface), "uvw"), \
+        .useUVW = __builtin_strcmp(DT_INST_PROP(inst, output_interface), "uvw") == 0, \
         .uvwPolePairs = DT_INST_PROP(inst, uvw_polepairs) \
     }; \
     DEVICE_DT_INST_DEFINE(inst, as5x47_init, NULL, &as5x47_data_##inst, &as5x47_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &as5x47_sensor_api);
