@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <gigadevice/gd32f403/gd32f403zet6.dtsi>
+#include "gd32f403z_eval-pinctrl.dtsi"
 
 / {
 	model = "GigaDevice GD32F403Z Evaluation Kit";
@@ -21,6 +22,7 @@
 
 &usart0 {
 	status = "okay";
-
 	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 };
