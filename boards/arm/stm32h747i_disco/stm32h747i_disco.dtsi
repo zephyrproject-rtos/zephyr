@@ -90,4 +90,5 @@
 &spi5 {
 	pinctrl-0 = <&spi5_nss_pk1 &spi5_sck_pk0
 		     &spi5_miso_pj11 &spi5_mosi_pj10>;
+	pinctrl-names = "default";
 };

@@ -80,12 +80,14 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
 		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
 		     &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
