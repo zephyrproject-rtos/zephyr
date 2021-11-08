@@ -15,7 +15,7 @@
 #include <stm32_ll_spi.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 
 #include "i2s_ll_stm32.h"
 #include <logging/log.h>
@@ -669,9 +669,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	ret = stm32_dt_pinctrl_configure(cfg->pinctrl_list,
-					 cfg->pinctrl_list_size,
-					 (uint32_t)cfg->i2s);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("I2S pinctrl setup failed (%d)", ret);
 		return ret;
@@ -893,10 +891,10 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 }
 
 #define I2S_INIT(index, clk_sel)					\
-static const struct soc_gpio_pinctrl i2s_pins_##index[] =		\
-				     ST_STM32_DT_PINCTRL(i2s##index, 0);\
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
+									\
+PINCTRL_DT_DEFINE(DT_NODELABEL(i2s##index))				\
 									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\
@@ -905,8 +903,7 @@ static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(i2s##index), bus),	\
 	},								\
 	.i2s_clk_sel = CLK_SEL_##clk_sel,				\
-	.pinctrl_list = i2s_pins_##index,				\
-	.pinctrl_list_size = ARRAY_SIZE(i2s_pins_##index),		\
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(i2s##index)),	\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
 };									\
 									\
