@@ -263,7 +263,13 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 
 		if (buf->len > net_buf_tailroom(conn->rx)) {
 			BT_ERR("Not enough buffer space for L2CAP data");
-			bt_conn_reset_rx_state(conn);
+
+			/* Frame is not complete but we still pass it to L2CAP
+			 * so that it may handle error on protocol level
+			 * eg disconnect channel.
+			 */
+			bt_l2cap_recv(conn, conn->rx, false);
+			conn->rx = NULL;
 			net_buf_unref(buf);
 			return;
 		}
@@ -308,7 +314,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	conn->rx = NULL;
 
 	BT_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf);
+	bt_l2cap_recv(conn, buf, true);
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
