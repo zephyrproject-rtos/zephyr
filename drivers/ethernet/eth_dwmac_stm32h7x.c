@@ -23,12 +23,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 
 #include "eth_dwmac_priv.h"
 
-static const struct soc_gpio_pinctrl eth0_pins[] =
-	ST_STM32_DT_INST_PINCTRL(0, 0);
+PINCTRL_DT_INST_DEFINE(0)
+static const struct pinctrl_dev_config *eth0_pcfg =
+	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 static const struct stm32_pclken pclken = {
 	.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bus),
@@ -57,8 +58,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 		return -EIO;
 	}
 
-	ret = stm32_dt_pinctrl_configure(eth0_pins, ARRAY_SIZE(eth0_pins),
-					 (uint32_t)p->base_addr);
+	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("Could not configure ethernet pins");
 		return ret;
