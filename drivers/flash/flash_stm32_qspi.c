@@ -13,7 +13,7 @@
 #include <arch/common/ffs.h>
 #include <sys/util.h>
 #include <soc.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <drivers/flash.h>
@@ -63,8 +63,7 @@ struct flash_stm32_qspi_config {
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct flash_stm32_qspi_data {
@@ -652,9 +651,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	int ret;
 
 	/* Signals configuration */
-	ret = stm32_dt_pinctrl_configure(dev_cfg->pinctrl_list,
-					 dev_cfg->pinctrl_list_size,
-					 (uint32_t)dev_cfg->regs);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
 		return ret;
@@ -860,10 +857,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 static void flash_stm32_qspi_irq_config_func(const struct device *dev);
 
-static const struct soc_gpio_pinctrl qspi_pins[] =
-					ST_STM32_DT_PINCTRL(quadspi, 0);
-
 #define STM32_QSPI_NODE DT_PARENT(DT_DRV_INST(0))
+
+PINCTRL_DT_DEFINE(STM32_QSPI_NODE)
 
 static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.regs = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
@@ -874,8 +870,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.irq_config = flash_stm32_qspi_irq_config_func,
 	.flash_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
-	.pinctrl_list = qspi_pins,
-	.pinctrl_list_size = ARRAY_SIZE(qspi_pins),
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 };
 
 static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
