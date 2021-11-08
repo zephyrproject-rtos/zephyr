@@ -1,0 +1,4 @@
+tests:
+  arch.interface:
+    arch_allow: x86
+    tags: arch_interface
