@@ -113,4 +113,6 @@ source "drivers/gpio/Kconfig.andes_atcgpio100"
 
 source "drivers/gpio/Kconfig.neorv32"
 
+source "drivers/gpio/Kconfig.nct38xx"
+
 endif # GPIO
