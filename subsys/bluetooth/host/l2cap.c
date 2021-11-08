@@ -2364,13 +2364,23 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
-static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf,
+			    bool complete)
 {
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	if (L2CAP_LE_CID_IS_DYN(ch->rx.cid)) {
-		l2cap_chan_recv_queue(ch, buf);
+		if (complete) {
+			l2cap_chan_recv_queue(ch, buf);
+		} else {
+			/* if packet was not complete this means peer device
+			 * overflowed our RX and channel shall be disconnected
+			 */
+			bt_l2cap_chan_disconnect(chan);
+			net_buf_unref(buf);
+		}
+
 		return;
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -2381,7 +2391,7 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	net_buf_unref(buf);
 }
 
-void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
+void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 {
 	struct bt_l2cap_hdr *hdr;
 	struct bt_l2cap_chan *chan;
@@ -2411,7 +2421,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 		return;
 	}
 
-	l2cap_chan_recv(chan, buf);
+	l2cap_chan_recv(chan, buf, complete);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn,
