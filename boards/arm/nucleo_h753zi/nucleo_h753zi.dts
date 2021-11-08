@@ -116,6 +116,7 @@ zephyr_udc0: &usbotg_fs {
 	pwm12: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim12_ch1_pb14>;
+		pinctrl-names = "default";
 	};
 };
 
