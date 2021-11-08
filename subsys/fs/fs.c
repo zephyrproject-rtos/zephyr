@@ -625,11 +625,13 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 		return rc;
 	}
 
-	if (mp->fs->statvfs != NULL) {
-		rc = mp->fs->statvfs(mp, abs_path, stat);
-		if (rc < 0) {
-			LOG_ERR("failed get file or dir stat (%d)", rc);
-		}
+	CHECKIF(mp->fs->statvfs == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->statvfs(mp, abs_path, stat);
+	if (rc < 0) {
+		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
 
 	return rc;
