@@ -33,7 +33,7 @@ This project outputs data to the console.
 It can be built as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipm_imx
+   :zephyr-app: samples/drivers/ipm/ipm_imx
    :board: udoo_neo_full_m4
    :goals: build flash
    :compact:
