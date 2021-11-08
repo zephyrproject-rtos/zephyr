@@ -73,6 +73,20 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "Enable the RSA-PSK based ciphersuite modes"
 
+config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	bool
+	default y if MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+
+config MBEDTLS_PSK_MAX_LEN
+	int "Max size of TLS pre-shared keys"
+	default 32
+	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	help
+	  Max size of TLS pre-shared keys, in bytes.
+
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "Enable the RSA-only based ciphersuite modes"
 	default y if !NET_L2_OPENTHREAD
