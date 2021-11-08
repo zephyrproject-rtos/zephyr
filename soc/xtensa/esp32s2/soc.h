@@ -45,6 +45,16 @@ extern void esp_rom_Cache_Invalidate_ICache_All(void);
 extern void esp_rom_Cache_Resume_ICache(uint32_t autoload);
 extern int esp_rom_Cache_Invalidate_Addr(uint32_t addr, uint32_t size);
 
+/* data-cache related rom functions */
+extern void esp_rom_Cache_Set_DCache_Mode(cache_size_t cache_size, cache_ways_t ways,
+					cache_line_size_t cache_line_size);
+
+extern void esp_rom_Cache_Invalidate_DCache_All(void);
+extern void esp_rom_Cache_Enable_DCache(uint32_t autoload);
+
+extern void esp_rom_Cache_Set_DCache_Mode(cache_size_t cache_size, cache_ways_t ways,
+					cache_line_size_t cache_line_size);
+
 /* ROM information related to SPI Flash chip timing and device */
 extern esp_rom_spiflash_chip_t g_rom_flashchip;
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
