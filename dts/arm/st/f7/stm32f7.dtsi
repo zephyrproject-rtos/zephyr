@@ -486,13 +486,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				label = "PWM_6";
-				#pwm-cells = <3>;
-			};
 		};
 
 		timers7: timers@40001400 {
@@ -504,13 +497,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_7";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				label = "PWM_7";
-				#pwm-cells = <3>;
-			};
 		};
 
 		timers8: timers@40010400 {
