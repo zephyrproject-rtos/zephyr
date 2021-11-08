@@ -152,6 +152,7 @@ zephyr_udc0: &usbotg_fs {
 			     &tim4_ch2_pd13
 			     &tim4_ch3_pd14
 			     &tim4_ch4_pd15>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -164,6 +165,7 @@ zephyr_udc0: &usbotg_fs {
 			     &tim5_ch2_pa1
 			     &tim5_ch3_pa2
 			     &tim5_ch4_pa3>;
+		pinctrl-names = "default";
 	};
 };
 
