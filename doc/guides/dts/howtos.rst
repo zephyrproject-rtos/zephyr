@@ -205,8 +205,8 @@ list of overlay files to use. If :makevar:`DTC_OVERLAY_FILE` specifies multiple
 files, they are included in that order by the C preprocessor.
 
 You can set :makevar:`DTC_OVERLAY_FILE` to contain exactly the files you want
-to use. Here is an example :ref:`using west build
-<west-building-dtc-overlay-file>`.
+to use. Here is an :ref:`example <west-building-dtc-overlay-file>` using
+``using west build``.
 
 If you don't set :makevar:`DTC_OVERLAY_FILE`, the build system will follow
 these steps, looking for files in your application source directory to use
@@ -225,7 +225,8 @@ as devicetree overlays:
 
 Using :ref:`shields` will also add devicetree overlay files.
 
-However you set the value, it is saved in the CMake cache between builds.
+The :makevar:`DTC_OVERLAY_FILE` value is stored in the CMake cache and used
+in successive builds.
 
 The :ref:`build system <build_overview>` prints all the devicetree overlays it
 finds in the configuration phase, like this:
