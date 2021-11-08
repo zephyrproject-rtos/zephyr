@@ -6,9 +6,6 @@ CONFIG_SOC_STM32L4S5XX=y
 # enable uart driver
 CONFIG_SERIAL=y
 
-# enable pinmux
-CONFIG_PINMUX=y
-
 # enable GPIO
 CONFIG_GPIO=y
 
