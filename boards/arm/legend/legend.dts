@@ -179,6 +179,7 @@
 
 	pwm3: pwm {
 		pinctrl-0 = <&tim3_ch3_pb0>;
+		pinctrl-names = "default";
 		status = "disabled";
 	};
 };

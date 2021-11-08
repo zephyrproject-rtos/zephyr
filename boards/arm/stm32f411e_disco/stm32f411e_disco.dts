@@ -108,6 +108,7 @@
 			     &tim4_ch2_pd13
 			     &tim4_ch3_pd14
 			     &tim4_ch4_pd15>;
+		pinctrl-names = "default";
 	};
 };
 

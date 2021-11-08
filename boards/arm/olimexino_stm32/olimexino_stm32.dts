@@ -140,6 +140,7 @@ zephyr_udc0: &usb {
 	pwm1: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
+		pinctrl-names = "default";
 	};
 };
 
