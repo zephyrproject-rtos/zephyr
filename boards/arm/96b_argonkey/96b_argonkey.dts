@@ -108,6 +108,7 @@
 &i2s5 {
 	status = "okay";
 	pinctrl-0 = <&i2s5_ck_pb0 &i2s5_sd_pb8>;
+	pinctrl-names = "default";
 
 	mp34dt05@0 {
 		compatible = "st,mpxxdtyy";

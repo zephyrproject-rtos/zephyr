@@ -117,6 +117,7 @@
 
 &i2s2 {
 	pinctrl-0 = <&i2s2_ck_pc7 &i2s2_sd_pc1>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
