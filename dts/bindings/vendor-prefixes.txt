@@ -412,6 +412,7 @@ nokia	Nokia
 nordic	Nordic Semiconductor
 novtech	NovTech, Inc.
 nutsboard	NutsBoard
+nuclei	Nuclei System Technology
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
 nvidia	NVIDIA
