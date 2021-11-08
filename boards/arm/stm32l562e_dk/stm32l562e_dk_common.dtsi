@@ -155,5 +155,6 @@
 
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
+	pinctrl-names = "default";
 	status = "okay";
 };
