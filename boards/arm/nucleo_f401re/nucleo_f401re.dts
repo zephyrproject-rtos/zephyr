@@ -149,6 +149,7 @@
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
 	};
 };
 

@@ -155,6 +155,7 @@
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch3_pc8>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -164,6 +165,7 @@
 	pwm4: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim4_ch3_pd14 &tim4_ch4_pd15>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -173,6 +175,7 @@
 	pwm9: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim9_ch1_pe5 &tim9_ch2_pe6>;
+		pinctrl-names = "default";
 	};
 };
 
