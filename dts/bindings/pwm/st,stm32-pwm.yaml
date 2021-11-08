@@ -2,7 +2,7 @@ description: STM32 PWM
 
 compatible: "st,stm32-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
     label:
@@ -17,15 +17,6 @@ properties:
         Note: This property is obsolete and was replaced by "st,prescaler"
         binding of parent timer node. It is kept temporarily for compatibility
         reasons.
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for PWM signal/s. We expect that the phandles
-        will reference pinctrl nodes, e.g.
-
-           pinctrl-0 = <&tim1_ch1_pwm_pa8 &tim1_ch2_pwm_pa9>;
 
     "#pwm-cells":
       const: 3
