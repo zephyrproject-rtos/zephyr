@@ -318,10 +318,10 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 #endif /* CONFIG_SPI_SLAVE */
 
 	LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
-		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
-		    ctx->current_tx, ctx->tx_count,
-		    ctx->current_rx, ctx->rx_count,
-		    ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
+		" tx buf/len %p/%zu, rx buf/len %p/%zu",
+		ctx->current_tx, ctx->tx_count,
+		ctx->current_rx, ctx->rx_count,
+		ctx->tx_buf, ctx->tx_len, ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE
