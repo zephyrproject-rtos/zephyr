@@ -310,19 +310,21 @@ autogeneration is not an option.
      * This file is optional, but recommended.
      */
 
-    /* Mapping for PERIPH0_SIGA -> PX0, to be used for default state */
-    periph0_siga_px0_default: periph0_siga_px0_default {
-        pinmux = <VNDSOC_PIN(X, 0, MUX0)>;
-    };
+    &pinctrl {
+        /* Mapping for PERIPH0_SIGA -> PX0, to be used for default state */
+        periph0_siga_px0_default: periph0_siga_px0_default {
+            pinmux = <VNDSOC_PIN(X, 0, MUX0)>;
+        };
 
-    /* Mapping for PERIPH0_SIGB -> PY7, to be used for default state */
-    periph0_sigb_py7_default: periph0_sigb_py7_default {
-        pinmux = <VNDSOC_PIN(Y, 7, MUX4)>;
-    };
+        /* Mapping for PERIPH0_SIGB -> PY7, to be used for default state */
+        periph0_sigb_py7_default: periph0_sigb_py7_default {
+            pinmux = <VNDSOC_PIN(Y, 7, MUX4)>;
+        };
 
-    /* Mapping for PERIPH0_SIGC -> PZ1, to be used for default state */
-    periph0_sigc_pz1_default: periph0_sigc_pz1_default {
-        pinmux = <VNDSOC_PIN(Z, 1, MUX2)>;
+        /* Mapping for PERIPH0_SIGC -> PZ1, to be used for default state */
+        periph0_sigc_pz1_default: periph0_sigc_pz1_default {
+            pinmux = <VNDSOC_PIN(Z, 1, MUX2)>;
+        };
     };
 
 .. code-block:: devicetree
