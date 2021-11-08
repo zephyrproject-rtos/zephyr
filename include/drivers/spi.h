@@ -235,10 +235,6 @@ struct spi_cs_control {
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
- *
- * @note Only cs_hold and lock_on can be changed between consecutive
- * transceive call. Rest of the attributes are not meant to be tweaked.
- *
  * @warning Most drivers use pointer comparison to determine whether a
  * passed configuration is different from one used in a previous
  * transaction.  Changes to fields in the structure may not be
@@ -684,19 +680,21 @@ static inline int spi_write_async(const struct device *dev,
 #endif /* CONFIG_SPI_ASYNC */
 
 /**
- * @brief Release the SPI device locked on by the current config
+ * @brief Release the SPI device locked on and/or the CS by the current config
  *
- * Note: This synchronous function is used to release the lock on the SPI
- *       device that was kept if, and if only, given config parameter was
- *       the last one to be used (in any of the above functions) and if
- *       it has the SPI_LOCK_ON bit set into its operation bits field.
+ * Note: This synchronous function is used to release either the lock on the
+ *       SPI device and/or the CS line that was kept if, and if only,
+ *       given config parameter was the last one to be used (in any of the
+ *       above functions) and if it has the SPI_LOCK_ON bit set and/or the
+ *       SPI_HOLD_ON_CS bit set into its operation bits field.
  *       This can be used if the caller needs to keep its hand on the SPI
- *       device for consecutive transactions.
+ *       device for consecutive transactions and/or if it needs the device to
+ *       stay selected. Usually both bits will be used along each other, so the
+ *       the device is locked and stays on until another operation is necessary
+ *       or until it gets released with the present function.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
- *        Pointer-comparison may be used to detect changes from
- *        previous operations.
  *
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
