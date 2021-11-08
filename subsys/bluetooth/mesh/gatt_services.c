@@ -833,8 +833,8 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 		}
 
 		if (client->filter_type == PROV) {
-			BT_ERR("Invalid PDU type for Proxy Client");
-			return -EINVAL;
+			BT_WARN("Invalid PDU type for Proxy Client");
+			continue;
 		}
 
 		/* Proxy PDU sending modifies the original buffer,
