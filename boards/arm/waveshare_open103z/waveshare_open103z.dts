@@ -161,6 +161,7 @@ zephyr_udc0: &usb {
 	 * reference: RM0008 rev20 page 205
 	 */
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 	disconnect-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
 };

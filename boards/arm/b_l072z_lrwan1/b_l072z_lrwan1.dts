@@ -167,6 +167,7 @@ arduino_i2c: &i2c1 {};
 
 &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
