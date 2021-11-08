@@ -16,12 +16,12 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <stm32_ll_spi.h>
 #include <errno.h>
 #include <drivers/spi.h>
+#include <drivers/pinctrl.h>
 #include <toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
 #include <drivers/dma/dma_stm32.h>
 #include <drivers/dma.h>
 #endif
-#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
@@ -836,9 +836,7 @@ static int spi_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	err = stm32_dt_pinctrl_configure(cfg->pinctrl_list,
-					 cfg->pinctrl_list_size,
-					 (uint32_t)cfg->spi);
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		LOG_ERR("SPI pinctrl setup failed (%d)", err);
 		return err;
@@ -943,8 +941,7 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
-static const struct soc_gpio_pinctrl spi_pins_##id[] =			\
-				ST_STM32_DT_INST_PINCTRL(id, 0);	\
+PINCTRL_DT_INST_DEFINE(id)						\
 									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),			\
@@ -952,8 +949,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 		.enr = DT_INST_CLOCKS_CELL(id, bits),			\
 		.bus = DT_INST_CLOCKS_CELL(id, bus)			\
 	},								\
-	.pinctrl_list = spi_pins_##id,					\
-	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
 };									\
