@@ -96,11 +96,13 @@
 /* Only one interface should be enabled at a time: usbotg_fs or usbotg_hs */
 usb_otg1: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
 	status = "disabled";
 };
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
