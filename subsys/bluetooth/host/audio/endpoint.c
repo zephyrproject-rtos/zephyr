@@ -302,12 +302,14 @@ struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 
 static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
+	struct bt_audio_stream *stream = ep->stream;
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->release) {
-		ep->cap->ops->release(ep->stream);
+	if (stream != NULL && stream->ops != NULL &&
+	    stream->ops->released != NULL) {
+		stream->ops->released(stream);
 	}
 
-	bt_audio_stream_reset(ep->stream);
+	bt_audio_stream_reset(stream);
 }
 
 static void ep_qos_reset(struct bt_audio_ep *ep)
@@ -321,20 +323,22 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
 	struct bt_audio_capability_pref *pref;
+	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*cfg)) {
 		BT_ERR("Config status too short");
 		return;
 	}
 
-	if (ep->stream == NULL) {
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
 
 	cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
-	if (ep->stream->codec == NULL || ep->stream->codec->id != cfg->codec.id) {
+	if (stream->codec == NULL || stream->codec->id != cfg->codec.id) {
 		BT_ERR("Codec configuration mismatched");
 		/* TODO: Release the stream? */
 		return;
@@ -349,7 +353,7 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	/* Reset any exiting QoS configuration */
 	ep_qos_reset(ep);
 
-	pref = &ep->stream->cap->pref;
+	pref = &stream->cap->pref;
 
 	/* Convert to interval representation so they can be matched by QoS */
 	pref->framing = cfg->framing;
@@ -362,9 +366,9 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	pref->pref_pd_max = sys_get_le24(cfg->prefer_pd_max);
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
-	       "pd_min %u pd_max %u codec 0x%02x ", ep->stream->cap->type,
+	       "pd_min %u pd_max %u codec 0x%02x ", stream->cap->type,
 	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
-	       pref->pd_max, ep->stream->codec->id);
+	       pref->pd_max, stream->codec->id);
 
 	bt_audio_ep_set_codec(ep, cfg->codec.id,
 			      sys_le16_to_cpu(cfg->codec.cid),
@@ -372,21 +376,23 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 			      buf, cfg->cc_len, NULL);
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->reconfig) {
-		ep->cap->ops->reconfig(ep->stream, ep->cap, ep->stream->codec);
+	if (stream->ops != NULL && stream->ops->configured != NULL) {
+		stream->ops->configured(stream);
 	}
 }
 
 static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_qos *qos;
+	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*qos)) {
 		BT_ERR("QoS status too short");
 		return;
 	}
 
-	if (ep->stream == NULL) {
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
@@ -395,127 +401,135 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	ep->cig_id = qos->cig_id;
 	ep->cis_id = qos->cis_id;
-	memcpy(&ep->stream->qos->interval, sys_le24_to_cpu(qos->interval),
-	       sizeof(qos->interval));
-	ep->stream->qos->framing = qos->framing;
-	ep->stream->qos->phy = qos->phy;
-	ep->stream->qos->sdu = sys_le16_to_cpu(qos->sdu);
-	ep->stream->qos->rtn = qos->rtn;
-	ep->stream->qos->latency = sys_le16_to_cpu(qos->latency);
-	memcpy(&ep->stream->qos->pd, sys_le24_to_cpu(qos->pd), sizeof(qos->pd));
+	(void)memcpy(&stream->qos->interval, sys_le24_to_cpu(qos->interval),
+		     sizeof(qos->interval));
+	stream->qos->framing = qos->framing;
+	stream->qos->phy = qos->phy;
+	stream->qos->sdu = sys_le16_to_cpu(qos->sdu);
+	stream->qos->rtn = qos->rtn;
+	stream->qos->latency = sys_le16_to_cpu(qos->latency);
+	(void)memcpy(&stream->qos->pd, sys_le24_to_cpu(qos->pd),
+		     sizeof(qos->pd));
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-	       ep->stream->cap->type, ep->cig_id, ep->cis_id, ep->stream->codec->id,
-	       ep->stream->qos->interval, ep->stream->qos->framing,
-	       ep->stream->qos->phy, ep->stream->qos->rtn, ep->stream->qos->latency,
-	       ep->stream->qos->pd);
+	       stream->cap->type, ep->cig_id, ep->cis_id, stream->codec->id,
+	       stream->qos->interval, stream->qos->framing,
+	       stream->qos->phy, stream->qos->rtn, stream->qos->latency,
+	       stream->qos->pd);
 
 	/* Disconnect ISO if connected */
-	if (ep->stream->iso->state == BT_ISO_CONNECTED) {
-		bt_audio_stream_disconnect(ep->stream);
+	if (stream->iso->state == BT_ISO_CONNECTED) {
+		bt_audio_stream_disconnect(stream);
 	}
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->qos) {
-		ep->cap->ops->qos(ep->stream, ep->stream->qos);
+	if (stream->ops != NULL && stream->ops->qos_set != NULL) {
+		stream->ops->qos_set(stream);
 	}
 }
 
 static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
+	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*enable)) {
 		BT_ERR("Enabling status too short");
 		return;
 	}
 
-	if (ep->stream == NULL) {
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
 	       ep->cig_id, ep->cis_id);
 
 	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->enable) {
-		ep->cap->ops->enable(ep->stream, ep->codec.meta_count,
-				     ep->codec.meta);
+	if (stream->ops != NULL && stream->ops->enabled != NULL) {
+		stream->ops->enabled(stream);
 	}
 
-	bt_audio_stream_start(ep->stream);
+	(void)bt_audio_stream_start(stream);
 }
 
 static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
+	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*enable)) {
 		BT_ERR("Streaming status too short");
 		return;
 	}
 
-	if (ep->stream == NULL) {
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->start) {
-		ep->cap->ops->start(ep->stream);
+	if (stream->ops != NULL && stream->ops->started != NULL) {
+		stream->ops->started(stream);
 	}
 }
 
 static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_enable *enable;
+	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*enable)) {
 		BT_ERR("Disabling status too short");
 		return;
 	}
 
-	if (ep->stream == NULL) {
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->disable) {
-		ep->cap->ops->disable(ep->stream);
+	if (stream->ops != NULL && stream->ops->disabled != NULL) {
+		stream->ops->disabled(stream);
 	}
-
-	bt_audio_stream_stop(ep->stream);
+	bt_audio_stream_stop(stream);
 }
 
 static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
-	if (ep->stream == NULL) {
+	struct bt_audio_stream *stream;
+
+	stream = ep->stream;
+	if (stream == NULL) {
 		BT_ERR("No stream active for endpoint");
 		return;
 	}
 
-	BT_DBG("dir 0x%02x", ep->stream->cap->type);
+	BT_DBG("dir 0x%02x", stream->cap->type);
 
 	/* Notify local capability */
-	if (ep->cap && ep->cap->ops && ep->cap->ops->stop) {
-		ep->cap->ops->stop(ep->stream);
+	if (stream->ops != NULL && stream->ops->stopped != NULL) {
+		stream->ops->stopped(stream);
 	}
 
 	/* The Unicast Client shall terminate any CIS established for that ASE
@@ -523,7 +537,7 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	 * defined in Volume 3, Part C, Section 9.3.15 in when the Unicast
 	 * Client has determined that the ASE is in the Releasing state.
 	 */
-	bt_audio_stream_disconnect(ep->stream);
+	bt_audio_stream_disconnect(stream);
 }
 
 void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -1373,12 +1387,6 @@ int bt_audio_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	case BT_AUDIO_EP_STATE_DISABLING:
 		break;
 	default:
-		if (ep->cap) {
-			if (!ep->cap->ops->release(ep->stream)) {
-				return 0;
-			}
-		}
-
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(ep->status.state));
 		return -EINVAL;
