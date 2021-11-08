@@ -447,13 +447,22 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 	} else {
 		struct bt_audio_stream *stream;
+		int err;
 
-		stream = bt_audio_stream_config(default_conn, ep, cap,
-						&named_preset->preset.codec);
-		if (stream == NULL) {
-			shell_error(sh, "Unable to config stream");
-			return -ENOEXEC;
+		if (default_stream == NULL) {
+			stream = &streams[0];
+		} else {
+			stream = default_stream;
 		}
+
+		err = bt_audio_stream_config(default_conn, stream, ep, cap,
+					     &named_preset->preset.codec);
+		if (err != 0) {
+			shell_error(sh, "Unable to config stream: %d");
+			return err;
+		}
+
+		default_stream = stream;
 	}
 
 	shell_print(sh, "ASE config: preset %s", named_preset->name);

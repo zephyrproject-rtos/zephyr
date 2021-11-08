@@ -1487,16 +1487,18 @@ int bt_audio_discover(struct bt_conn *conn,
  *  remote endpoint, local capability and codec configuration.
  *
  *  @param conn Connection object
+ *  @param stream Stream object being configured
  *  @param ep Remote Audio Endpoint being configured
  *  @param cap Local Audio Capability being configured
  *  @param codec Codec configuration
  *
  *  @return Allocated Audio Stream object or NULL in case of error.
  */
-struct bt_audio_stream *bt_audio_stream_config(struct bt_conn *conn,
-					       struct bt_audio_ep *ep,
-					       struct bt_audio_capability *cap,
-					       struct bt_codec *codec);
+int bt_audio_stream_config(struct bt_conn *conn,
+			   struct bt_audio_stream *stream,
+			   struct bt_audio_ep *ep,
+			   struct bt_audio_capability *cap,
+			   struct bt_codec *codec);
 
 /** @brief Reconfigure Audio Stream
  *

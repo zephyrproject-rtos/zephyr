@@ -550,12 +550,12 @@ static int configure_stream(struct bt_audio_stream **stream)
 {
 	int err;
 
-	*stream = bt_audio_stream_config(default_conn, sinks[0],
-					 remote_capabilities[0],
-					 &preset_16_2_1.codec);
-	if (*stream == NULL) {
+	err = bt_audio_stream_config(default_conn, &audio_stream, sinks[0],
+				     remote_capabilities[0],
+				     &preset_16_2_1.codec);
+	if (err != 0) {
 		printk("Could not configure stream\n");
-		return -ENOENT;
+		return err;
 	}
 
 	err = k_sem_take(&sem_stream_configured, K_FOREVER);
