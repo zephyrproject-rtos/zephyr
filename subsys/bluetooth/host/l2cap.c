@@ -25,6 +25,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "keys.h"
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
 #define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rx_work)
@@ -1032,14 +1033,44 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	return BT_L2CAP_LE_SUCCESS;
 }
 
-static bool l2cap_check_security(struct bt_conn *conn,
+static uint16_t l2cap_check_security(struct bt_conn *conn,
 				 struct bt_l2cap_server *server)
 {
+	const struct bt_keys *keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	bool ltk_present;
+
 	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
-		return true;
+		return BT_L2CAP_LE_SUCCESS;
 	}
 
-	return conn->sec_level >= server->sec_level;
+	if (conn->sec_level >= server->sec_level) {
+		return BT_L2CAP_LE_SUCCESS;
+	}
+
+	if (conn->sec_level > BT_SECURITY_L1) {
+		return BT_L2CAP_LE_ERR_AUTHENTICATION;
+	}
+
+	if (keys) {
+		if (conn->role == BT_HCI_ROLE_CENTRAL) {
+			ltk_present = keys->id & (BT_KEYS_LTK_P256 | BT_KEYS_PERIPH_LTK);
+		} else {
+			ltk_present = keys->id & (BT_KEYS_LTK_P256 | BT_KEYS_LTK);
+		}
+	} else {
+		ltk_present = false;
+	}
+
+	/* If an LTK or an STK is available and encryption is required
+	 * (LE security mode 1) but encryption is not enabled, the
+	 * service request shall be rejected with the error code
+	 * "Insufficient Encryption".
+	 */
+	if (ltk_present) {
+		return BT_L2CAP_LE_ERR_ENCRYPTION;
+	}
+
+	return BT_L2CAP_LE_ERR_AUTHENTICATION;
 }
 
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1090,8 +1121,9 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (!l2cap_check_security(conn, server)) {
-		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_AUTHENTICATION);
+	result = l2cap_check_security(conn, server);
+	if (result != BT_L2CAP_LE_SUCCESS) {
+		rsp->result = sys_cpu_to_le16(result);
 		goto rsp;
 	}
 
@@ -1170,8 +1202,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (!l2cap_check_security(conn, server)) {
-		result = BT_L2CAP_LE_ERR_AUTHENTICATION;
+	result = l2cap_check_security(conn, server);
+	if (result != BT_L2CAP_LE_SUCCESS) {
 		goto response;
 	}
 
