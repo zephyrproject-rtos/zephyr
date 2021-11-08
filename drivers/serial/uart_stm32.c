@@ -900,8 +900,13 @@ static void uart_stm32_isr(const struct device *dev)
 #endif
 	} else if (LL_USART_IsEnabledIT_RXNE(UartInstance) &&
 			LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+#ifdef USART_SR_RXNE
+		/* clear the RXNE flag, because Rx data was not read */
+		LL_USART_ClearFlag_RXNE(UartInstance);
+#else
 		/* clear the RXNE by flushing the fifo, because Rx data was not read */
 		LL_USART_RequestRxDataFlush(UartInstance);
+#endif /* USART_SR_RXNE */
 	}
 
 	/* Clear errors */
