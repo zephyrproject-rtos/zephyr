@@ -232,7 +232,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 2.6
 
-   * - :ref: `pinctrl_api`
+   * - :ref:`pinctrl_api`
      - Experimental
      - 3.0
      - 3.0
