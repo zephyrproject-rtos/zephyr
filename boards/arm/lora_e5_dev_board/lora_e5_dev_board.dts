@@ -165,6 +165,7 @@
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pa10>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	/* unpopulated footprint for spi flash */

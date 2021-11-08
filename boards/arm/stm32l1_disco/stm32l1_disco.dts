@@ -104,11 +104,13 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };

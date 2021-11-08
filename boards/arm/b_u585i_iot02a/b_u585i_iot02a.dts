@@ -43,6 +43,7 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
 		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
