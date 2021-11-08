@@ -12,26 +12,30 @@ description: |
 
     This binding is not relevant to the nRF91x baseband radio.
 
-    External Coexistence Support
-    ----------------------------
+    Front-End Module (FEM) support
+    ------------------------------
 
-    External radio coexistence is a system designed to allow cooperative sharing
-    of the radio spectrum by separate transceivers or SoCs co-located on the
-    same board. There has to be an arbitrator that grants or denies on-air access
-    to the different transceivers, using one or more GPIOs connected to each
-    transceiver.
+    External front-end modules are range extenders used for boosting
+    the link robustness and link budget of wireless SoCs. If your
+    system includes an external FEM, set it up in the devicetree using
+    this binding's 'fem' property, like this example:
 
-    If your system includes a radio arbitrator, set up the link to it in the
-    devicetree using this binding's 'coex' property, like this example:
+      &radio {
+              fem = <&nrf_radio_fem>;
+      };
 
-    &radio {
-            coex = <&nrf_radio_coex>;
-    };
+      nrf_radio_fem: my-fem {
+              compatible = "...";
+              ....
+      };
 
-    nrf_radio_coex: my-coex {
-            compatible = "...";
-            ...
-    };
+    Currently supported "compatible" properties for the FEM node are:
+
+      - generic-fem-two-ctrl-pins
+      - nordic,nrf21540-fem
+
+    Refer to the bindings for these compatibles for more information
+    about how to configure the FEM.
 
     Direction Finding Extension
     ---------------------------
@@ -112,6 +116,11 @@ properties:
 
     interrupts:
       required: true
+
+    fem:
+      type: phandle
+      description: |
+        Phandle linking the RADIO node to its external front-end module.
 
     coex:
       type: phandle
