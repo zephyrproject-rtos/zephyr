@@ -1172,10 +1172,82 @@ struct bt_audio_broadcast_sink_cb {
 
 /** @brief Stream operation. */
 struct bt_audio_stream_ops {
+	/** @brief Stream configured callback
+	 *
+	 *  Configured callback is called whenever an Audio Stream has been
+	 *  configured.
+	 *
+	 *  @param stream Stream object that has been configured.
+	 */
+	void (*configured)(struct bt_audio_stream *stream);
+
+	/** @brief Stream QoS set callback
+	 *
+	 *  QoS set callback is called whenever an Audio Stream Quality of
+	 *  Service has been set or updated.
+	 *
+	 *  @param stream Stream object that had its QoS updated.
+	 */
+	void (*qos_set)(struct bt_audio_stream *stream);
+
+	/** @brief Stream enabled callback
+	 *
+	 *  Enabled callback is called whenever an Audio Stream has been
+	 *  enabled.
+	 *
+	 *  @param stream Stream object that has been enabled.
+	 */
+	void (*enabled)(struct bt_audio_stream *stream);
+
+	/** @brief Stream started callback
+	 *
+	 *  Started callback is called whenever an Audio Stream has been started
+	 *  and will be usable for streaming.
+	 *
+	 *  @param stream Stream object that has been started.
+	 */
+	void (*started)(struct bt_audio_stream *stream);
+
+	/** @brief Stream metadata updated callback
+	 *
+	 *  Metadata Updated callback is called whenever an Audio Stream's
+	 *  metadata has been updated.
+	 *
+	 *  @param stream Stream object that had its metadata updated.
+	 */
+	void (*metadata_updated)(struct bt_audio_stream *stream);
+
+	/** @brief Stream disabled callback
+	 *
+	 *  Disabled callback is called whenever an Audio Stream has been
+	 *  disabled.
+	 *
+	 *  @param stream Stream object that has been disabled.
+	 */
+	void (*disabled)(struct bt_audio_stream *stream);
+
+	/** @brief Stream stopped callback
+	 *
+	 *  Stopped callback is called whenever an Audio Stream has been
+	 *  stopped.
+	 *
+	 *  @param stream Stream object that has been stopped.
+	 */
+	void (*stopped)(struct bt_audio_stream *stream);
+
+	/** @brief Stream released callback
+	 *
+	 *  Released callback is called whenever a Audio Stream has been
+	 *  released and can be deallocated.
+	 *
+	 *  @param stream Stream object that has been released.
+	 */
+	void (*released)(struct bt_audio_stream *stream);
+
 	/** @brief Stream connected callback
 	 *
-	 *  If this callback is provided it will be called whenever the
-	 *  connection completes.
+	 *  If this callback is provided it will be called when the
+	 *  isochronous stream is connected.
 	 *
 	 *  @param stream The stream that has been connected
 	 */
@@ -1183,8 +1255,8 @@ struct bt_audio_stream_ops {
 
 	/** @brief Stream disconnected callback
 	 *
-	 *  If this callback is provided it will be called whenever the
-	 *  stream is disconnected, including when a connection gets
+	 *  If this callback is provided it will be called when the
+	 *  isochronous stream is disconnected, including when a connection gets
 	 *  rejected.
 	 *
 	 *  @param stream The stream that has been Disconnected
