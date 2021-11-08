@@ -69,3 +69,7 @@
 	detect-dat3;
 	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
 };
+
+&edma0 {
+	status = "okay";
+};
