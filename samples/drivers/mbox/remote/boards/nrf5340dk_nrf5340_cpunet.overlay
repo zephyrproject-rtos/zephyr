@@ -6,6 +6,8 @@
 
 / {
 	soc {
+		/delete-node/ ipc@41012000;
+
 		mbox: mbox@41012000 {
 			compatible = "nordic,mbox-nrf-ipc";
 			reg = <0x41012000 0x1000>;
