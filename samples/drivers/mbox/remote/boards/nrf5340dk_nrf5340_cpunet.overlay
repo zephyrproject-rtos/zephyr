@@ -12,6 +12,7 @@
 			tx-mask = <0x0000ffff>;
 			rx-mask = <0x0000ffff>;
 			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
+			#mbox-cells = <1>;
 			status = "okay";
 		};
 	};
