@@ -527,13 +527,19 @@ static void uart_stm32_poll_out(const struct device *dev,
 					unsigned char c)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	/* Wait for TXE flag to be raised */
-	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
+	while (1) {
+		if (atomic_cas(&data->tx_lock, 0, 1)) {
+			if (LL_USART_IsActiveFlag_TXE(UartInstance)) {
+				break;
+			}
+			atomic_set(&data->tx_lock, 0);
+		}
 	}
 
 #ifdef CONFIG_PM
-	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (!data->tx_poll_stream_on) {
 		data->tx_poll_stream_on = true;
@@ -551,6 +557,7 @@ static void uart_stm32_poll_out(const struct device *dev,
 #endif /* CONFIG_PM */
 
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
+	atomic_set(&data->tx_lock, 0);
 }
 
 static int uart_stm32_err_check(const struct device *dev)
@@ -647,10 +654,12 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-#ifdef CONFIG_PM
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
+	while (atomic_cas(&data->tx_lock, 0, 1) == false) {
+	}
+
+#ifdef CONFIG_PM
 	data->tx_poll_stream_on = false;
 	uart_stm32_pm_constraint_set(dev);
 #endif
@@ -660,8 +669,11 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	LL_USART_DisableIT_TC(UartInstance);
+
+	atomic_set(&data->tx_lock, 0);
 
 #ifdef CONFIG_PM
 	uart_stm32_pm_constraint_release(dev);
