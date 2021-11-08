@@ -5,6 +5,7 @@
 
 #define DT_DRV_COMPAT gd_gd32_usart
 
+#include <errno.h>
 #include <drivers/pinctrl.h>
 #include <drivers/uart.h>
 
@@ -12,6 +13,7 @@ struct gd32_usart_config {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
 	const struct pinctrl_dev_config *pcfg;
+	uint32_t parity;
 };
 
 struct gd32_usart_data {
@@ -22,6 +24,8 @@ static int usart_gd32_init(const struct device *dev)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
 	struct gd32_usart_data *const data = dev->data;
+	uint32_t word_length;
+	uint32_t parity;
 	int ret;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -29,13 +33,34 @@ static int usart_gd32_init(const struct device *dev)
 		return ret;
 	}
 
+	/**
+	 * In order to keep the transfer data size to 8 bits(1 byte),
+	 * append word length to 9BIT if parity bit enabled.
+	 */
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		parity = USART_PM_NONE;
+		word_length = USART_WL_8BIT;
+		break;
+	case UART_CFG_PARITY_ODD:
+		parity = USART_PM_ODD;
+		word_length = USART_WL_9BIT;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		parity = USART_PM_EVEN;
+		word_length = USART_WL_9BIT;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	rcu_periph_clock_enable(cfg->rcu_periph_clock);
 	usart_deinit(cfg->reg);
 	usart_baudrate_set(cfg->reg, data->baud_rate);
-	usart_word_length_set(cfg->reg, USART_WL_8BIT);
-	usart_parity_config(cfg->reg, USART_PM_NONE);
+	usart_parity_config(cfg->reg, parity);
+	usart_word_length_set(cfg->reg, word_length);
+	/* Default to 1 stop bit */
 	usart_stop_bit_set(cfg->reg, USART_STB_1BIT);
-	usart_parity_config(cfg->reg, USART_PM_NONE);
 	usart_receive_config(cfg->reg, USART_RECEIVE_ENABLE);
 	usart_transmit_config(cfg->reg, USART_TRANSMIT_ENABLE);
 	usart_enable(cfg->reg);
@@ -114,6 +139,8 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 		.reg = DT_INST_REG_ADDR(n),					\
 		.rcu_periph_clock = DT_INST_PROP(n, rcu_periph_clock),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.parity = DT_ENUM_IDX_OR(DT_DRV_INST(n), parity,		\
+					 UART_CFG_PARITY_NONE),			\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
 			      NULL,						\
