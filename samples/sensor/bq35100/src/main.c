@@ -94,7 +94,7 @@ void main(void)
 		printf("Design Capacity:%i  mAh\n", val.val1);
 
 		sensor_channel_get(dev, SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY, &val);
-		printk("Acc Capacity :  %i  uAh\n\n", val.val1);
+		printf("Acc Capacity :  %.3f mAh\n\n", sensor_value_to_double(&val));
 
 		k_sleep(K_MSEC(3000));
 	}
