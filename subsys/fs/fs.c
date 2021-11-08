@@ -323,7 +323,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) < 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid directory name!!");
 		return -EINVAL;
 	}
 
@@ -479,7 +479,7 @@ int fs_mkdir(const char *abs_path)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid directory name!!");
 		return -EINVAL;
 	}
 
@@ -585,7 +585,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
 	}
 
@@ -615,7 +615,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
-		LOG_ERR("invalid file name!!");
+		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
 	}
 
