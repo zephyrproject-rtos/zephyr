@@ -14,8 +14,7 @@ typedef void (*irq_config_func_t)(const struct device *port);
 struct spi_stm32_config {
 	struct stm32_pclken pclken;
 	SPI_TypeDef *spi;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #endif
