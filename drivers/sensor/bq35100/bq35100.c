@@ -598,7 +598,7 @@ static int bq35100_new_battery(const struct device *dev, uint16_t capacity)
 {
 	int status;
 
-	if (capacity != 0 && !bq35100_set_design_capacity(dev,capacity)) {
+	if (capacity != 0 && bq35100_set_design_capacity(dev,capacity)) {
 		return -EIO;
 	}
 
@@ -1176,29 +1176,33 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*if (bq35100_get_battery_alert(dev) < 0) {
-		return -EIO;
-	}
-
-	if (bq35100_get_battery_status(dev) < 0) {
+	/*if (bq35100_get_battery_status(dev) < 0) {
 		return -EIO;
 	}*/
 
 	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
 	}
-
-	// does not work
-	/*if (bq35100_set_design_capacity(dev, 2000) < 0) {
-		return -EIO;
-	}*/
-
+	
 	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
 	}
+	
+	if (bq35100_get_battery_alert(dev) < 0) {
+		return -EIO;
+	}
+	
+	// doest not work
+	/*if (bq35100_set_battery_alert(dev, 2) < 0) {
+		return -EIO;
+	}*/
 
 	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 	    return EIO;
+	}*/
+
+	/*if (bq35100_new_battery(dev, 2200) < 0) {
+		return -EIO;
 	}*/
 
 	if (bq35100_set_gauge_mode(dev, BQ35100_ACCUMULATOR_MODE)) {
