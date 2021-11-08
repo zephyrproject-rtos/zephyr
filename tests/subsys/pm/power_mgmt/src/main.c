@@ -27,7 +27,7 @@ static bool leave_idle;
 static bool idle_entered;
 static bool testing_device_runtime;
 
-static const struct device *dev;
+static const struct device *device_dummy;
 static struct dummy_driver_api *api;
 
 void pm_power_state_set(struct pm_state_info info)
@@ -40,7 +40,7 @@ void pm_power_state_set(struct pm_state_info info)
 
 	/* this function is called after devices enter low power state */
 	enum pm_device_state device_power_state;
-	pm_device_state_get(dev, &device_power_state);
+	pm_device_state_get(device_dummy, &device_power_state);
 
 	if (testing_device_runtime) {
 		/* If device runtime is enable, the device should still be
@@ -103,7 +103,7 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
 
-	pm_device_state_get(dev, &device_power_state);
+	pm_device_state_get(device_dummy, &device_power_state);
 	if (testing_device_runtime) {
 		/* If device runtime is enable, the device should still be
 		 * active
@@ -129,7 +129,7 @@ static void notify_pm_state_exit(enum pm_state state)
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
 
 	/* at this point, devices are active again*/
-	pm_device_state_get(dev, &device_power_state);
+	pm_device_state_get(device_dummy, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 	leave_idle = true;
 
@@ -207,10 +207,10 @@ void test_power_state_notification(void)
 
 	enter_low_power = true;
 
-	ret = api->open(dev);
+	ret = api->open(device_dummy);
 	zassert_true(ret == 0, "Fail to open device");
 
-	pm_device_state_get(dev, &device_power_state);
+	pm_device_state_get(device_dummy, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 
 
@@ -220,8 +220,8 @@ void test_power_state_notification(void)
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle, NULL);
 
-	api->close(dev);
-	pm_device_state_get(dev, &device_power_state);
+	api->close(device_dummy);
+	pm_device_state_get(device_dummy, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
 }
 
@@ -233,8 +233,8 @@ void test_main(void)
 	};
 
 	pm_notifier_register(&notifier);
-	dev = device_get_binding(DUMMY_DRIVER_NAME);
-	api = (struct dummy_driver_api *)dev->api;
+	device_dummy = device_get_binding(DUMMY_DRIVER_NAME);
+	api = (struct dummy_driver_api *)device_dummy->api;
 
 	ztest_test_suite(power_management_test,
 			 ztest_1cpu_unit_test(test_power_idle),
