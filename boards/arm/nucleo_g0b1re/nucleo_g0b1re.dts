@@ -142,12 +142,14 @@ zephyr_udc0: &usb {
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pd0 &spi2_sck_pd1
 		     &spi2_miso_pd3 &spi2_mosi_pd4>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
