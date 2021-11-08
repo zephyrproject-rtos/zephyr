@@ -7,6 +7,8 @@
 #include <sys/printk.h>
 #include <zephyr.h>
 #include <zephyr/types.h>
+#include <pm/device.h>
+#include <pm/device_runtime.h>
 #include <ztest.h>
 #include <ksched.h>
 #include <kernel.h>
@@ -23,6 +25,7 @@ static bool notify_app_exit;
 static bool set_pm;
 static bool leave_idle;
 static bool idle_entered;
+static bool testing_device_runtime;
 
 static const struct device *dev;
 static struct dummy_driver_api *api;
@@ -37,9 +40,17 @@ void pm_power_state_set(struct pm_state_info info)
 
 	/* this function is called after devices enter low power state */
 	enum pm_device_state device_power_state;
-	/* at this point, devices have been deactivated */
 	pm_device_state_get(dev, &device_power_state);
-	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+
+	if (testing_device_runtime) {
+		/* If device runtime is enable, the device should still be
+		 * active
+		 */
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+	} else {
+		/* at this point, devices have been deactivated */
+		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+	}
 
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be PM_STATE_ACTIVE
@@ -92,9 +103,16 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_equal(state, PM_STATE_SUSPEND_TO_IDLE, NULL);
 
-	/* at this point, devices should not be active */
 	pm_device_state_get(dev, &device_power_state);
-	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+	if (testing_device_runtime) {
+		/* If device runtime is enable, the device should still be
+		 * active
+		 */
+		zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+	} else {
+		/* at this point, devices should not be active */
+		zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
+	}
 	set_pm = true;
 	notify_app_exit = true;
 }
@@ -154,10 +172,18 @@ void test_power_idle(void)
  */
 void test_power_state_trans(void)
 {
+	int ret;
+
 	enter_low_power = true;
+
+	ret = pm_device_runtime_disable(dev);
+	zassert_true(ret == 0, "Failed to disable device runtime PM");
+
 	/* give way to idle thread */
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle, NULL);
+
+	pm_device_runtime_enable(dev);
 }
 
 /*
@@ -176,31 +202,27 @@ void test_power_state_trans(void)
  */
 void test_power_state_notification(void)
 {
+	int ret;
 	enum pm_device_state device_power_state;
+
+	enter_low_power = true;
+
+	ret = api->open(dev);
+	zassert_true(ret == 0, "Fail to open device");
 
 	pm_device_state_get(dev, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 
+
+	/* The device should be kept active even when the system goes idle */
+	testing_device_runtime = true;
+
+	k_sleep(SLEEP_TIMEOUT);
+	zassert_true(leave_idle, NULL);
+
 	api->close(dev);
 	pm_device_state_get(dev, &device_power_state);
 	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
-	/* reopen device as it will be closed in teardown */
-	api->open(dev);
-}
-
-void test_setup(void)
-{
-	int ret;
-
-	dev = device_get_binding(DUMMY_DRIVER_NAME);
-	api = (struct dummy_driver_api *)dev->api;
-	ret = api->open(dev);
-	zassert_true(ret == 0, "Fail to open device");
-}
-
-void test_teardown(void)
-{
-	api->close(dev);
 }
 
 void test_main(void)
@@ -211,16 +233,13 @@ void test_main(void)
 	};
 
 	pm_notifier_register(&notifier);
+	dev = device_get_binding(DUMMY_DRIVER_NAME);
+	api = (struct dummy_driver_api *)dev->api;
 
 	ztest_test_suite(power_management_test,
 			 ztest_1cpu_unit_test(test_power_idle),
-			 ztest_unit_test_setup_teardown(test_power_state_trans,
-							test_setup,
-							test_teardown),
-			 ztest_unit_test_setup_teardown(
-						test_power_state_notification,
-						test_setup,
-						test_teardown));
+			 ztest_1cpu_unit_test(test_power_state_trans),
+			 ztest_1cpu_unit_test(test_power_state_notification));
 	ztest_run_test_suite(power_management_test);
 	pm_notifier_unregister(&notifier);
 }
