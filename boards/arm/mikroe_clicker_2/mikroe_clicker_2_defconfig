@@ -10,9 +10,6 @@ CONFIG_SERIAL=y
 # console
 CONFIG_CONSOLE=y
 
-# enable pinmux
-CONFIG_PINMUX=y
-
 # enable GPIO
 CONFIG_GPIO=y
 
