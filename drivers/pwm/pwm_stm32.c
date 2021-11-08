@@ -13,12 +13,12 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_tim.h>
 #include <drivers/pwm.h>
+#include <drivers/pinctrl.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
@@ -43,9 +43,7 @@ struct pwm_stm32_config {
 	/** Clock configuration. */
 	struct stm32_pclken pclken;
 	/** pinctrl configurations. */
-	const struct soc_gpio_pinctrl *pinctrl;
-	/** Number of pinctrl configurations. */
-	size_t pinctrl_len;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
@@ -301,9 +299,7 @@ static int pwm_stm32_init(const struct device *dev)
 	}
 
 	/* configure pinmux */
-	r = stm32_dt_pinctrl_configure(cfg->pinctrl,
-				       cfg->pinctrl_len,
-				       (uint32_t)cfg->timer);
+	r = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (r < 0) {
 		LOG_ERR("PWM pinctrl setup failed (%d)", r);
 		return r;
@@ -347,11 +343,18 @@ static int pwm_stm32_init(const struct device *dev)
 replaced by 'st,prescaler' property in parent node, aka timers"
 #endif
 
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#define STM32_PWM_PINCTRL_DEFINE(index)	PINCTRL_DT_INST_DEFINE(index)
+#else
+#define STM32_PWM_PINCTRL_DEFINE(index)					       \
+			PINCTRL_DT_INST_CUSTOM_REG_DEFINE(index,	       \
+				DT_REG_ADDR(DT_PARENT(DT_DRV_INST(index))))
+#endif
+
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 									       \
-	static const struct soc_gpio_pinctrl pwm_pins_##index[] =	       \
-		ST_STM32_DT_INST_PINCTRL(index, 0);			       \
+	STM32_PWM_PINCTRL_DEFINE(index)					       \
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \
@@ -362,8 +365,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 			(DT_PROP(DT_PARENT(DT_DRV_INST(index)),                \
 				 st_prescaler))),                              \
 		.pclken = DT_INST_CLK(index, timer),                           \
-		.pinctrl = pwm_pins_##index,                                   \
-		.pinctrl_len = ARRAY_SIZE(pwm_pins_##index),                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
 	};                                                                     \
 									       \
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
