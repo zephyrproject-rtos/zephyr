@@ -249,6 +249,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
 		     &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
 		     &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+	pinctrl-names = "default";
 	dmas = <&dma1 5 5 0x0000>;
 	dma-names = "tx_rx";
 
