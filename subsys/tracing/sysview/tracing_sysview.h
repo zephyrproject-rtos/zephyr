@@ -555,8 +555,8 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
 #define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_malloc_exit(heap, ret)
-#define sys_port_trace_k_heap_sys_k_free_enter(heap)
-#define sys_port_trace_k_heap_sys_k_free_exit(heap)
+#define sys_port_trace_k_heap_sys_k_free_enter(heap, heap_ref)
+#define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 #define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
 #define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
 

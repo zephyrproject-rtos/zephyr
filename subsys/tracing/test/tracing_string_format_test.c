@@ -376,12 +376,12 @@ void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, size_t bytes,
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
 
-void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h)
+void sys_trace_k_heap_sys_k_free_enter(struct k_heap *h, struct k_heap **hr)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
 
-void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h)
+void sys_trace_k_heap_sys_k_free_exit(struct k_heap *h, struct k_heap **hr)
 {
 	TRACING_STRING("%s: %p\n", __func__, h);
 }
