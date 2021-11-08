@@ -28,13 +28,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_7";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				label = "PWM_7";
-				#pwm-cells = <3>;
-			};
 		};
 
 		can1: can@40006400 {

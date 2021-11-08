@@ -81,13 +81,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				label = "PWM_6";
-				#pwm-cells = <3>;
-			};
 		};
 
 		dac1: dac@40007400 {
