@@ -895,6 +895,7 @@ Documentation:
     status: orphaned
     collaborators:
         - katsuster
+        - martinjaeger
     files:
         - doc/reference/peripherals/watchdog.rst
         - drivers/watchdog/
@@ -1588,6 +1589,17 @@ Storage:
         - tests/subsys/storage/
     labels:
         - "area: Storage"
+
+Task Watchdog:
+    status: maintained
+    maintainers:
+        - martinjaeger
+    files:
+        - include/task_wdt/
+        - samples/subsys/task_wdt/
+        - subsys/task_wdt/
+    labels:
+        - "area: Task Watchdog"
 
 TF-M Integration:
     status: maintained
