@@ -219,9 +219,9 @@ void test_file_statvfs(void)
 	ret = fs_statvfs("/SDCARD:", &stat);
 	zassert_not_equal(ret, 0, "Get volume info by no-exist path");
 
-	/* It's ok if there is no stat interface */
+	/* System with no statvfs interface */
 	ret = fs_statvfs(NOOP_MNTP, &stat);
-	zassert_equal(ret, 0, "fs has no statvfs functionality");
+	zassert_equal(ret, -ENOTSUP, "fs has no statvfs functionality");
 
 	ret = fs_statvfs(TEST_FS_MNTP, &stat);
 	zassert_equal(ret, 0, "Error getting voluem stats");
