@@ -21,6 +21,11 @@ __weak void acpi(void)
 	printk("ACPI: Not supported in this build.\n\n");
 }
 
+__weak void early_serial(void)
+{
+	printk("EARLY SERIAL: Not supported in this build.\n\n");
+}
+
 void main(void)
 {
 	printk("\n\ninfo: the Zephyr x86 platform information tool\n\n");
@@ -31,4 +36,8 @@ void main(void)
 	timer();
 
 	printk("info: complete\n");
+
+	/* test early serial */
+	early_serial();
+	printk("Successful!\n");
 }

@@ -17,3 +17,10 @@ tests:
         type: one_line
         regex:
           - "info: complete"
+  arch.x86.early_serial:
+    arch_allow: x86
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+         - "Successful!"
