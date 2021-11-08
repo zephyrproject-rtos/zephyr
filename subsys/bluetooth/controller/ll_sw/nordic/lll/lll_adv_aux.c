@@ -196,7 +196,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
-                PDU_AC_CRC_IV);
+					PDU_AC_CRC_IV);
 
 	/* Use channel idx in aux_ptr */
 	lll_chan_set(aux_ptr->chan_idx);

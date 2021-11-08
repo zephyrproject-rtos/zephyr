@@ -162,7 +162,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 	/* Set access address for sync */
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
-                sys_get_le24(lll->crc_init));
+				sys_get_le24(lll->crc_init));
 
 	lll_chan_set(lll_aux->chan);
 
@@ -405,7 +405,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	radio_pkt_configure(8, LL_EXT_OCTETS_RX_MAX, (lll->phy << 1));
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(PDU_CRC_POLYNOMIAL,
-                sys_get_le24(lll->crc_init));
+					sys_get_le24(lll->crc_init));
 
 	lll_chan_set(chan_idx);
 
