@@ -24,7 +24,7 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
-#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 #include "stm32_hsem.h"
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
@@ -60,9 +60,10 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
 #define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
 #endif
-static const struct soc_gpio_pinctrl usb_pinctrl[] =
-						ST_STM32_DT_INST_PINCTRL(0, 0);
 
+PINCTRL_DT_INST_DEFINE(0)
+static const struct pinctrl_dev_config *usb_pcfg =
+					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 #define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
@@ -412,9 +413,7 @@ static int usb_dc_stm32_init(void)
 #endif
 
 	LOG_DBG("Pinctrl signals configuration");
-	status = stm32_dt_pinctrl_configure(usb_pinctrl,
-				     ARRAY_SIZE(usb_pinctrl),
-				     (uint32_t)usb_dc_stm32_state.pcd.Instance);
+	status = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", status);
 		return status;
