@@ -327,27 +327,28 @@ static void discover_sink(void)
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
-static struct bt_audio_stream *configure_stream(struct bt_audio_ep *ep)
+static int configure_stream(struct bt_audio_stream *stream,
+			    struct bt_audio_ep *ep)
 {
-	struct bt_audio_stream *stream;
+	int err;
 
 	UNSET_FLAG(flag_stream_configured);
 
-	stream = bt_audio_stream_config(g_conn, ep, g_remote_capabilities[0],
-					&preset_16_2_1.codec);
-	if (stream == NULL) {
-		FAIL("Could not configure stream\n");
-		return NULL;
+	err = bt_audio_stream_config(g_conn, stream, ep,
+				     g_remote_capabilities[0],
+				     &preset_16_2_1.codec);
+	if (err != 0) {
+		FAIL("Could not configure stream: %d\n", err);
+		return err;
 	}
 
 	WAIT_FOR_FLAG(flag_stream_configured);
 
-	return stream;
+	return 0;
 }
 
 static void test_main(void)
 {
-	struct bt_audio_stream *configured_streams[CONFIG_BT_BAP_ASE_SNK_COUNT];
 	struct bt_audio_unicast_group *unicast_group;
 	uint8_t stream_cnt;
 	int err;
@@ -361,18 +362,18 @@ static void test_main(void)
 	discover_sink();
 
 	printk("Configuring streams\n");
-	memset(configured_streams, 0, sizeof(configured_streams));
 	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
 		if (g_sinks[stream_cnt] == NULL) {
 			break;
 		}
 
-		configured_streams[stream_cnt] = configure_stream(g_sinks[stream_cnt]);
-	}
-
-	if (configured_streams[0] == NULL) {
-		FAIL("No streams configured");
-		return;
+		err = configure_stream(&g_streams[stream_cnt],
+				       g_sinks[stream_cnt]);
+		if (err != 0) {
+			FAIL("Unable to configure stream[%u]: %d",
+			     stream_cnt, err);
+			return;
+		}
 	}
 
 	printk("Creating unicast group\n");

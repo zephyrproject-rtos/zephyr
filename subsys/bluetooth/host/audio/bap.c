@@ -41,62 +41,14 @@ static const struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
 static const struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
-static struct bt_audio_stream *bap_config(struct bt_conn *conn,
-					struct bt_audio_ep *ep,
-					struct bt_audio_capability *cap,
-					struct bt_codec *codec)
-{
-	sys_slist_t *lst;
-	struct bt_audio_capability *lcap;
-	struct bt_audio_stream *stream;
-	uint8_t type = 0x00;
-
-	BT_DBG("conn %p cap %p codec %p", conn, cap, codec);
-
-	if (cap->type == BT_AUDIO_SINK) {
-		type = BT_AUDIO_SOURCE;
-	} else if (cap->type == BT_AUDIO_SOURCE) {
-		type = BT_AUDIO_SINK;
-	} else {
-		BT_ERR("Invalid capability type: 0x%02x", type);
-		return NULL;
-	}
-
-	/* Check if there are capabilities for the given direction */
-	lst = bt_audio_capability_get(type);
-	if (!lst) {
-		BT_ERR("Unable to find matching capability type: 0x%02x", type);
-		return NULL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, lcap, node) {
-		if (lcap->codec->id != cap->codec->id) {
-			continue;
-		}
-
-		/* Configure stream using local capabilities */
-		stream = bt_audio_stream_config(conn, ep, lcap, codec);
-		if (stream != NULL) {
-			if (!bt_audio_stream_reconfig(stream, cap, codec)) {
-				ep->cap = lcap;
-				return stream;
-			}
-			bt_audio_stream_release(stream, false);
-		}
-	}
-
-	return NULL;
-}
-
-static int bap_reconfig(struct bt_audio_stream *stream,
-			struct bt_audio_capability *cap, struct bt_codec *codec)
+int bap_config(struct bt_audio_stream *stream,
+	       struct bt_audio_capability *cap,
+	       struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = stream->ep;
-	struct net_buf_simple *buf;
 	struct bt_ascs_config_op *op;
+	struct net_buf_simple *buf;
 	int err;
-
-	BT_DBG("stream %p cap %p codec %p", stream, cap, codec);
 
 	buf = bt_audio_ep_create_pdu(BT_ASCS_CONFIG_OP);
 
@@ -109,6 +61,21 @@ static int bap_reconfig(struct bt_audio_stream *stream,
 	}
 
 	err = bt_audio_ep_send(stream->conn, ep, buf);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int bap_reconfig(struct bt_audio_stream *stream,
+			struct bt_audio_capability *cap, struct bt_codec *codec)
+{
+	int err;
+
+	BT_DBG("stream %p cap %p codec %p", stream, cap, codec);
+
+	err = bap_config(stream, cap, codec);
 	if (err) {
 		return err;
 	}
@@ -310,7 +277,7 @@ static int bap_release(struct bt_audio_stream *stream)
 }
 
 static struct bt_audio_capability_ops cap_ops = {
-	.config		= bap_config,
+	.config		= NULL,
 	.reconfig	= bap_reconfig,
 	.qos		= NULL,
 	.enable		= bap_enable,

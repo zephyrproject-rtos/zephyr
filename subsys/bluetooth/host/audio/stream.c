@@ -21,6 +21,7 @@
 
 #include "endpoint.h"
 #include "capabilities.h"
+#include "bap_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM)
 #define LOG_MODULE_NAME bt_audio_stream
@@ -47,19 +48,21 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	bt_audio_ep_attach(ep, stream);
 }
 
-struct bt_audio_stream *bt_audio_stream_config(struct bt_conn *conn,
-					       struct bt_audio_ep *ep,
-					       struct bt_audio_capability *cap,
-					       struct bt_codec *codec)
+int bt_audio_stream_config(struct bt_conn *conn,
+			   struct bt_audio_stream *stream,
+			   struct bt_audio_ep *ep,
+			   struct bt_audio_capability *cap,
+			   struct bt_codec *codec)
 {
-	struct bt_audio_stream *stream;
+	BT_DBG("conn %p stream %p, ep %p cap %p codec %p codec id 0x%02x "
+	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep, cap,
+	       codec, codec ? codec->id : 0, codec ? codec->cid : 0,
+	       codec ? codec->vid : 0);
 
-	BT_DBG("conn %p ep %p cap %p codec %p codec id 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", conn, ep, cap, codec, codec ? codec->id : 0,
-	       codec ? codec->cid : 0, codec ? codec->vid : 0);
-
-	if (!conn || !cap || !cap->ops || !codec) {
-		return NULL;
+	CHECKIF(conn == NULL || stream == NULL || cap == NULL ||
+		cap->ops == NULL || codec == NULL) {
+		BT_DBG("NULL value(s) supplied)");
+		return -EINVAL;
 	}
 
 	switch (ep->status.state) {
@@ -73,31 +76,30 @@ struct bt_audio_stream *bt_audio_stream_config(struct bt_conn *conn,
 	default:
 		BT_ERR("Invalid state: %s",
 		       bt_audio_ep_state_str(ep->status.state));
-		return NULL;
+		return -EBADMSG;
 	}
 
 	/* Check that codec and frequency are supported */
 	if (cap->codec->id != codec->id) {
 		BT_ERR("Invalid codec id");
-		return NULL;
-	}
-
-	if (!cap->ops->config) {
-		return NULL;
-	}
-
-	stream = cap->ops->config(conn, ep, cap, codec);
-	if (stream == NULL) {
-		return stream;
+		return -EINVAL;
 	}
 
 	bt_audio_stream_attach(conn, stream, ep, cap, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	} else {
+		int err;
+
+		err = bap_config(stream, cap, codec);
+		if (err != 0) {
+			BT_DBG("Failed to configure stream: %d", err);
+			return err;
+		}
 	}
 
-	return stream;
+	return 0;
 }
 
 int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
