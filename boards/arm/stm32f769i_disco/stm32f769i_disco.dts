@@ -108,6 +108,7 @@ arduino_serial: &usart6 {};
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pa11 &spi2_sck_pa12 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

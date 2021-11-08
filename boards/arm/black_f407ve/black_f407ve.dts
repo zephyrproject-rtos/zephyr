@@ -126,6 +126,7 @@ zephyr_udc0: &usbotg_fs {
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 	w25q16cv: w25q16cv@0 {
@@ -143,5 +144,6 @@ zephyr_udc0: &usbotg_fs {
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
 	status = "okay";
 };
