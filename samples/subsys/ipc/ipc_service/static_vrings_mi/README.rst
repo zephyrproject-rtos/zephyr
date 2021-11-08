@@ -16,7 +16,7 @@ Building the application for nrf5340dk_nrf5340_cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipc_service
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings_mi
    :board: nrf5340dk_nrf5340_cpuapp
    :goals: debug
 
@@ -72,12 +72,12 @@ Building the application for bl5340_dvk_cpuapp
 **********************************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipc_service
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings_mi
    :board: bl5340_dvk_cpuapp
    :goals: debug
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipc_service/remote
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings_mi/remote
    :board: bl5340_dvk_cpunet
    :goals: debug
 
