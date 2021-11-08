@@ -37,6 +37,10 @@ description: |
               /* ... other nRF21540 properties go here ... */
       };
 
+      &radio {
+              fem = <&nrf_radio_fem>;
+      };
+
     In the above example, the nRF21540 is configured for use with:
 
       - TX_EN on P0.2 (from 'tx-en-gpios')
@@ -54,6 +58,9 @@ description: |
     Configure any other nRF21540 pins as needed using 'pdn-gpios',
     'ant-sel-gpios', and 'mode-gpios' properties. If unsure about the
     format, use 'tx-en-gpios' as an example.
+
+    Finally, the nRF5 SoC's radio peripheral is set up for use with
+    the nRF21540 via the 'fem' property in the 'radio' node.
 
 compatible: "nordic,nrf21540-fem"
 
