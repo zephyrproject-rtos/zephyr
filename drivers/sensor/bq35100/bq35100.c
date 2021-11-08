@@ -21,6 +21,7 @@ static int bq35100_set_security_mode(const struct device *dev, bq35100_security_
 static int bq35100_compute_checksum(const char *data, size_t length);
 static int bq35100_get_security_mode(const struct device *dev);
 static int bq35100_get_status(const struct device *dev, uint16_t *status);
+static int bq35100_set_design_capacity(const struct device *dev, uint16_t capacity);
 
 /**
  * Read/Write from device.
@@ -589,6 +590,28 @@ static int bq35100_gauge_stop(const struct device *dev)
 }
 
 /**
+ * Indicates a new battery has been insterted.
+ * @param dev - The device structure.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_new_battery(const struct device *dev, uint16_t capacity)
+{
+	int status;
+
+	if (capacity != 0 && !bq35100_set_design_capacity(dev,capacity)) {
+		return -EIO;
+	}
+
+	status = bq35100_control_reg_write(dev, BQ35100_CTRL_NEW_BATTERY);
+	if (status < 0) {
+		LOG_ERR("Unable to set new battery");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
  * Get the temperature register data
  * @param dev - The device structure.
  * @return 0 in case of success, negative error code otherwise.
@@ -635,7 +658,7 @@ static int bq35100_get_avg_current(const struct device *dev)
 	struct bq35100_data *data = dev->data;
 
 	if (data->gauge_enabled != true) {
-		LOG_ERR("Gauge not enabled");
+		LOG_ERR("To measure current first enable gauge");
 		return -EIO;
 	}
 
@@ -819,6 +842,26 @@ static int bq35100_get_battery_status(const struct device *dev)
 
 	if ((data->battery_status & 0b01) == 1) {
 		LOG_DBG("Discharge current is detected");
+	}
+
+	return 0;
+}
+
+/**
+ * Set battery alert
+ * @param dev - The device structure.
+ * @param alert - Battery alert register
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_set_battery_alert(const struct device *dev, uint8_t alert)
+{
+	uint8_t buf[1];
+	int status;
+
+	status = bq35100_write_extended_data(dev, BQ35100_FLASH_ALERT_CFG, buf, 1);
+	if (status < 0) {
+		LOG_ERR("Unable to set battery alert");
+		return -EIO;
 	}
 
 	return 0;
@@ -1036,8 +1079,8 @@ static int bq35100_channel_get(const struct device *dev,
 		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_GAUGE_ACCUMULATED_CAPACITY:
-		val->val1 = (uint32_t)data->acc_capacity;
-		val->val2 = 0;
+		val->val1 = (uint32_t)(ULONG_MAX - data->acc_capacity + 1) / 1000;
+		val->val2 = ((uint32_t)(ULONG_MAX - data->acc_capacity + 1) % 1000) * 1000;
 		break;
 	default:
 		LOG_ERR("Channel type not supported.");
@@ -1133,29 +1176,30 @@ static int bq35100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (bq35100_get_battery_alert(dev) < 0) {
+	/*if (bq35100_get_battery_alert(dev) < 0) {
 		return -EIO;
 	}
 
 	if (bq35100_get_battery_status(dev) < 0) {
 		return -EIO;
-	}
+	}*/
 
 	if (bq35100_get_security_mode(dev) < 0) {
 		return -EIO;
 	}
 
-	if (bq35100_set_design_capacity(dev, 2000) < 0) {
+	// does not work
+	/*if (bq35100_set_design_capacity(dev, 2000) < 0) {
 		return -EIO;
-	}
+	}*/
 
 	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_UNSEALED)) {
 		return EIO;
 	}
 
-	if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
+	/*if (bq35100_set_security_mode(dev, BQ35100_SECURITY_FULL_ACCESS)) {
 	    return EIO;
-	}
+	}*/
 
 	if (bq35100_set_gauge_mode(dev, BQ35100_ACCUMULATOR_MODE)) {
 	    return EIO;
