@@ -1731,14 +1731,16 @@ void sys_trace_idle(void);
 /**
  * @brief Trace System Heap free entry
  * @param heap Heap object
+ * @param heap_ref Heap reference
  */
-#define sys_port_trace_k_heap_sys_k_free_enter(heap)
+#define sys_port_trace_k_heap_sys_k_free_enter(heap, heap_ref)
 
 /**
  * @brief Trace System Heap free exit
  * @param heap Heap object
+ * @param heap_ref Heap reference
  */
-#define sys_port_trace_k_heap_sys_k_free_exit(heap)
+#define sys_port_trace_k_heap_sys_k_free_exit(heap, heap_ref)
 
 /**
  * @brief Trace System heap calloc enter
