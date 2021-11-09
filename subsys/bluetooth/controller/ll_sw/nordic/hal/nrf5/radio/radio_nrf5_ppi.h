@@ -280,7 +280,7 @@ static inline void hal_palna_ppi_setup(void)
 }
 
 /******************************************************************************/
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 static inline void hal_pa_ppi_setup(void)
 {
 	/* Nothing specific to PA with FEM to handle inside TRX chains */
@@ -310,7 +310,7 @@ static inline void hal_fem_ppi_setup(void)
 		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[HAL_CSN_GPIOTE_CHAN]));
 }
 
-#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+#endif /* HAL_RADIO_FEM_IS_NRF21540 */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
