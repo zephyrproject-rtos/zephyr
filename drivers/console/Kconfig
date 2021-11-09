@@ -87,15 +87,6 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
 
-config USB_UART_CONSOLE
-	bool "Use USB port for console outputs"
-	select UART_CONSOLE
-	select USB_CDC_ACM
-	help
-	  Enable this option to use the USB CDC ACM class for console.
-	  As for the console driver, this option only changes the initialization
-	  level.
-
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER

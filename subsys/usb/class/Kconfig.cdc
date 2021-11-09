@@ -53,6 +53,13 @@ config CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
 	  by Arduino style programmers to reset the device into the
 	  bootloader.
 
+config USB_UART_CONSOLE
+	bool "Use CDC ACM UART as backend for console (DEPRECATED)"
+	help
+	  This option is deprecated.
+	  This option is only used to enable relevant options in backend
+	  configuration (if any), and for backward compatibility.
+
 module = USB_CDC_ACM
 module-str = usb cdc acm
 source "subsys/logging/Kconfig.template.log_config"
