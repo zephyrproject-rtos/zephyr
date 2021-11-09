@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF53X=y
+CONFIG_SOC_NRF5340_CPUNET_QKAA=y
+CONFIG_BOARD_BL5340PA_DVK_CPUNET=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Disable logging as the serial instance is used by SPI for the FEM
+CONFIG_LOG=n

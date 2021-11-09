@@ -9,12 +9,13 @@ toolchain:
 ram: 448
 flash: 1024
 supported:
+  - counter
   - gpio
   - i2c
   - pwm
   - qspi
   - spi
-  - watchdog
   - uart
   - usb_cdc
   - usb_device
+  - watchdog

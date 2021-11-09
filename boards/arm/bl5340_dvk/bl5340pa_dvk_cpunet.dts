@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/* Include common board configuration */
+#include "bl5340_dvk_cpunet_common.dts"
+
+/ {
+	model = "Laird Connectivity BL5340PA (nRF5340 with nRF21540) Network";
+	compatible = "lairdconnectivity,bl5340pa-dvk-cpunet";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	nrf_radio_fem: nrf21540_fem {
+		compatible = "nordic,nrf21540-fem";
+		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		rx-en-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		pdn-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		ant-sel-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		spi-if = <&nrf_radio_fem_spi>;
+	};
+};
+
+fem_spi: &spi0 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <32>;
+	miso-pin = <36>;
+	mosi-pin = <33>;
+	cs-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+
+	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "okay";
+		reg = <0>;
+		label = "FEM_SPI_IF";
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&uart0 {
+	/* UART is disabled by default so that the FEM SPI can be used */
+	status = "disabled";
+	current-speed = <115200>;
+	tx-pin = <40>;
+	rx-pin = <42>;
+	rts-pin = <39>;
+	cts-pin = <41>;
+};
+
+/* Include shared RAM configuration file */
+#include "bl5340_dvk_shared_sram_planning_conf.dts"

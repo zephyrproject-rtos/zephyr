@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
  * Copyright (c) 2021 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -10,8 +9,8 @@
 #include "bl5340_dvk_cpuapp_common.dts"
 
 / {
-	model = "Laird Connectivity BL5340 (nRF5340) Application";
-	compatible = "lairdconnectivity,bl5340-dvk-cpuapp";
+	model = "Laird Connectivity BL5340PA (nRF5340 with nRF21540) Application";
+	compatible = "lairdconnectivity,bl5340pa-dvk-cpuapp";
 
 	chosen {
 		zephyr,sram = &sram0_image;

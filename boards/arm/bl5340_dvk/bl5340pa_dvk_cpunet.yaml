@@ -1,5 +1,5 @@
-identifier: bl5340_dvk_cpunet
-name: BL5340-DVK-network-MCU
+identifier: bl5340pa_dvk_cpunet
+name: BL5340PA-DVK-network-MCU
 type: mcu
 arch: arm
 toolchain:
@@ -9,10 +9,9 @@ toolchain:
 ram: 64
 flash: 256
 supported:
-  - ble
   - counter
+  - ble
   - gpio
   - i2c
   - spi
-  - uart
   - watchdog

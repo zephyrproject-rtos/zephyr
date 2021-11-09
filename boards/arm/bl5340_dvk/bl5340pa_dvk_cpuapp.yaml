@@ -1,18 +1,21 @@
-identifier: bl5340_dvk_cpunet
-name: BL5340-DVK-network-MCU
+identifier: bl5340pa_dvk_cpuapp
+name: BL5340PA-DVK-application-MCU
 type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 64
-flash: 256
+ram: 448
+flash: 1024
 supported:
-  - ble
   - counter
   - gpio
   - i2c
+  - pwm
+  - qspi
   - spi
   - uart
+  - usb_cdc
+  - usb_device
   - watchdog
