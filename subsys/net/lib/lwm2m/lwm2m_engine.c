@@ -67,6 +67,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define	COAP_OPTION_BUF_LEN	13
 #endif
 
+#define BINDING_OPT_MAX_LEN	3 /* "UQ" */
+#define QUEUE_OPT_MAX_LEN	2 /* "Q" */
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
@@ -2012,11 +2014,23 @@ int lwm2m_engine_update_observer_max_period(const char *pathstr, uint32_t period
 
 void lwm2m_engine_get_binding(char *binding)
 {
+	/* Defaults to UDP. */
+	strncpy(binding, "U", BINDING_OPT_MAX_LEN);
+#if CONFIG_LWM2M_VERSION_1_0
+	/* In LwM2M 1.0 binding and queue mode are in same parameter */
+	char queue[QUEUE_OPT_MAX_LEN];
+
+	lwm2m_engine_get_queue_mode(queue);
+	strncat(binding, queue, QUEUE_OPT_MAX_LEN);
+#endif
+}
+
+void lwm2m_engine_get_queue_mode(char *queue)
+{
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		strcpy(binding, "UQ");
+		strncpy(queue, "Q", QUEUE_OPT_MAX_LEN);
 	} else {
-		/* Defaults to UDP. */
-		strcpy(binding, "U");
+		strncpy(queue, "", QUEUE_OPT_MAX_LEN);
 	}
 }
 
