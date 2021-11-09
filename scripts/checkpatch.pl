@@ -5261,7 +5261,7 @@ sub process {
 			#print "LINE<$lines[$ln-1]> len<" . length($lines[$ln-1]) . "\n";
 
 			$has_flow_statement = 1 if ($ctx =~ /\b(goto|return)\b/);
-			$has_arg_concat = 1 if ($ctx =~ /\#\#/ && $ctx !~ /\#\#\s*(?:__VA_ARGS__|args)\b/);
+			$has_arg_concat = 1 if (($ctx =~ /\#\#/ || $ctx =~ /UTIL_CAT/) && $ctx !~ /\#\#\s*(?:__VA_ARGS__|args)\b/);
 
 			$dstat =~ s/^.\s*\#\s*define\s+$Ident(\([^\)]*\))?\s*//;
 			my $define_args = $1;
