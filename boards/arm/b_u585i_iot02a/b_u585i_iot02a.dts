@@ -72,6 +72,11 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in15_pb0>;
+	status = "okay";
+};
+
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	status = "okay";
