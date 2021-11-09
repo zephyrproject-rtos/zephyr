@@ -116,14 +116,6 @@
 		port = <2>;
 	};
 
-	flexspi: spi@134000 {
-		compatible = "nxp,imx-flexspi";
-		reg = <0x134000 0x1000>;
-		interrupts = <42 0>;
-		label = "FLEXSPI";
-		#address-cells = <1>;
-		#size-cells = <0>;
-	};
 
 	flexcomm0: flexcomm@106000 {
 		compatible = "nxp,lpc-flexcomm";
@@ -391,6 +383,14 @@
 		prescale = <0>;
 		label = "CTIMER_4";
 	};
+};
+
+&flexspi {
+	compatible = "nxp,imx-flexspi";
+	interrupts = <42 0>;
+	label = "FLEXSPI";
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &nvic {

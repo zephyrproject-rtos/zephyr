@@ -17,11 +17,13 @@ config NUM_IRQS
 config PM
 	select CODE_DATA_RELOCATION_SRAM
 
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/peripheral@50000000/spi@134000,1,K)
-
+#
+# The base address of the external flash comes from the FLEXSPI base
+# address. The size of the flash is defined by what is populated and
+# described in the board devicetree file.
+#
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/peripheral@50000000/spi@134000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@134000,1)
 
 config ENTROPY_MCUX_TRNG
 	default y if HAS_MCUX_TRNG
