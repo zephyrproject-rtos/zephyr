@@ -104,9 +104,21 @@ Flat State Machine Example
 This example turns the following state diagram into code using the SMF, where
 the initial state is S0.
 
-.. figure:: img/flat.svg
-    :align: center
-    :alt: Flat state machine diagram
+.. graphviz::
+   :caption: Flat state machine diagram
+
+   digraph smf_flat {
+      node [style=rounded];
+      init [shape = point];
+      STATE_S0 [shape = box];
+      STATE_S1 [shape = box];
+      STATE_S2 [shape = box];
+
+      init -> STATE_S0;
+      STATE_S0 -> STATE_S1;
+      STATE_S1 -> STATE_S2;
+      STATE_S2 -> STATE_S0;
+   }
 
 Code::
 
@@ -194,9 +206,27 @@ Hierarchical State Machine Example
 This example turns the following state diagram into code using the SMF, where
 S0 and S1 share a parent state and S0 is the initial state.
 
-.. figure:: img/hierarchical.svg
-    :align: center
-    :alt: Hierarchial state machine diagram
+
+.. graphviz::
+   :caption: Hierarchial state machine diagram
+
+   digraph smf_hierarchical {
+      node [style = rounded];
+      init [shape = point];
+      STATE_S0 [shape = box];
+      STATE_S1 [shape = box];
+      STATE_S2 [shape = box];
+
+      subgraph cluster_0 {
+         label = "PARENT";
+         style = rounded;
+         STATE_S0 -> STATE_S1;
+      }
+
+      init -> STATE_S0;
+      STATE_S1 -> STATE_S2;
+      STATE_S2 -> STATE_S0;
+   }
 
 Code::
 
@@ -286,48 +316,3 @@ When designing hierarchical state machines, the following should be considered:
    is called.
  - The parent_run function only executes if the child_run function returns
    whithout transitioning to another state, ie. calling smf_set_state.
-
-State Machine diagrams in this guide
-====================================
-
-The State Machine diagrams in this guide were generated using the graphviz dot
-tool.
-
-The following code generated flat.svg
-
-.. code-block:: none
-
-   digraph smf_flat {
-      node [style=rounded];
-      init [shape = point];
-      STATE_S0 [shape = box];
-      STATE_S1 [shape = box];
-      STATE_S2 [shape = box];
-
-      init -> STATE_S0;
-      STATE_S0 -> STATE_S1;
-      STATE_S1 -> STATE_S2;
-      STATE_S2 -> STATE_S0;
-   }
-
-The following code generated hierarchical.svg
-
-.. code-block:: none
-
-   digraph smf_hierarchical {
-      node [style = rounded];
-      init [shape = point];
-      STATE_S0 [shape = box];
-      STATE_S1 [shape = box];
-      STATE_S2 [shape = box];
-
-      subgraph cluster_0 {
-         label = "PARENT";
-         style = rounded;
-         STATE_S0 -> STATE_S1;
-      }
-
-      init -> STATE_S0;
-      STATE_S1 -> STATE_S2;
-      STATE_S2 -> STATE_S0;
-   }
