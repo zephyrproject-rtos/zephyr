@@ -20,6 +20,7 @@ config SHELL_BACKEND_SERIAL
 	default y if !HAS_DTS
 	select SERIAL
 	select RING_BUFFER
+	select CONSOLE
 	help
 	  Enable serial backend.
 
