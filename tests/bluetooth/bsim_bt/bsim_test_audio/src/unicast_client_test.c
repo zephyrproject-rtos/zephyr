@@ -57,8 +57,6 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 
 	print_codec(codec);
 
-	SET_FLAG(flag_stream_configured);
-
 	return 0;
 }
 
@@ -68,8 +66,6 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 
 	print_qos(qos);
 
-	SET_FLAG(flag_stream_qos);
-
 	return 0;
 }
 
@@ -77,8 +73,6 @@ static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta)
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
-
-	SET_FLAG(flag_stream_enabled);
 
 	return 0;
 }
@@ -142,6 +136,52 @@ static struct bt_audio_capability caps[] = {
 	}
 };
 
+static void stream_configured(struct bt_audio_stream *stream)
+{
+	printk("Configured stream %p\n", stream);
+
+	SET_FLAG(flag_stream_configured);
+}
+
+static void stream_qos_set(struct bt_audio_stream *stream)
+{
+	printk("QoS set stream %p\n", stream);
+
+	SET_FLAG(flag_stream_qos);
+}
+
+static void stream_enabled(struct bt_audio_stream *stream)
+{
+	printk("Enabled stream %p\n", stream);
+
+	SET_FLAG(flag_stream_enabled);
+}
+
+static void stream_started(struct bt_audio_stream *stream)
+{
+	printk("Started stream %p\n", stream);
+}
+
+static void stream_metadata_updated(struct bt_audio_stream *stream)
+{
+	printk("Metadata updated stream %p\n", stream);
+}
+
+static void stream_disabled(struct bt_audio_stream *stream)
+{
+	printk("Disabled stream %p\n", stream);
+}
+
+static void stream_stopped(struct bt_audio_stream *stream)
+{
+	printk("Stopped stream %p\n", stream);
+}
+
+static void stream_released(struct bt_audio_stream *stream)
+{
+	printk("Released stream %p\n", stream);
+}
+
 static void stream_connected(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p connected\n", stream);
@@ -154,8 +194,16 @@ static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 }
 
 static struct bt_audio_stream_ops stream_ops = {
-	.connected	= stream_connected,
-	.disconnected	= stream_disconnected,
+	.configured = stream_configured,
+	.qos_set = stream_qos_set,
+	.enabled = stream_enabled,
+	.started = stream_started,
+	.metadata_updated = stream_metadata_updated,
+	.disabled = stream_disabled,
+	.stopped = stream_stopped,
+	.released = stream_released,
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)

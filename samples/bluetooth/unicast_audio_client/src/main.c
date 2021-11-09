@@ -34,6 +34,7 @@ static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
+static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -154,8 +155,6 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 
 	print_codec(codec);
 
-	k_sem_give(&sem_stream_configured);
-
 	return 0;
 }
 
@@ -165,8 +164,6 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 
 	print_qos(qos);
 
-	k_sem_give(&sem_stream_qos);
-
 	return 0;
 }
 
@@ -174,8 +171,6 @@ static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
 		      struct bt_codec_data *meta)
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
-
-	k_sem_give(&sem_stream_enabled);
 
 	return 0;
 }
@@ -329,6 +324,52 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
+static void stream_configured(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p configured\n", stream);
+
+	k_sem_give(&sem_stream_configured);
+}
+
+static void stream_qos_set(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p QoS set\n", stream);
+
+	k_sem_give(&sem_stream_qos);
+}
+
+static void stream_enabled(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p enabled\n", stream);
+
+	k_sem_give(&sem_stream_enabled);
+}
+
+static void stream_started(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p started\n", stream);
+}
+
+static void stream_metadata_updated(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p metadata updated\n", stream);
+}
+
+static void stream_disabled(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p disabled\n", stream);
+}
+
+static void stream_stopped(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p stopped\n", stream);
+}
+
+static void stream_released(struct bt_audio_stream *stream)
+{
+	printk("Audio Stream %p released\n", stream);
+}
+
 static void stream_connected(struct bt_audio_stream *stream)
 {
 	printk("Audio Stream %p connected, start sending\n", stream);
@@ -345,8 +386,16 @@ static void stream_disconnected(struct bt_audio_stream *stream, uint8_t reason)
 }
 
 static struct bt_audio_stream_ops stream_ops = {
-	.connected	= stream_connected,
-	.disconnected	= stream_disconnected,
+	.configured = stream_configured,
+	.qos_set = stream_qos_set,
+	.enabled = stream_enabled,
+	.started = stream_started,
+	.metadata_updated = stream_metadata_updated,
+	.disabled = stream_disabled,
+	.stopped = stream_stopped,
+	.released = stream_released,
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
 };
 
 static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
@@ -546,11 +595,11 @@ static int discover_sink(void)
 	return 0;
 }
 
-static int configure_stream(struct bt_audio_stream **stream)
+static int configure_stream(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_stream_config(default_conn, &audio_stream, sinks[0],
+	err = bt_audio_stream_config(default_conn, stream, sinks[0],
 				     remote_capabilities[0],
 				     &preset_16_2_1.codec);
 	if (err != 0) {
@@ -620,9 +669,27 @@ static int enable_stream(struct bt_audio_stream *stream)
 	return 0;
 }
 
+static int start_stream(struct bt_audio_stream *stream)
+{
+	int err;
+
+	err = bt_audio_stream_start(stream);
+	if (err != 0) {
+		printk("Unable to start stream: %d\n", err);
+		return err;
+	}
+
+	err = k_sem_take(&sem_stream_started, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_stream_started (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
-	struct bt_audio_stream *stream;
 	int err;
 
 	printk("Initializing\n");
@@ -654,14 +721,14 @@ void main(void)
 	printk("Sink discovered\n");
 
 	printk("Configuring stream\n");
-	err = configure_stream(&stream);
+	err = configure_stream(&audio_stream);
 	if (err != 0) {
 		return;
 	}
 	printk("Channel configured\n");
 
 	printk("Creating unicast group\n");
-	err = create_group(stream);
+	err = create_group(&audio_stream);
 	if (err != 0) {
 		return;
 	}
@@ -675,9 +742,16 @@ void main(void)
 	printk("Channel QoS Set\n");
 
 	printk("Enabling stream\n");
-	err = enable_stream(stream);
+	err = enable_stream(&audio_stream);
 	if (err != 0) {
 		return;
 	}
 	printk("Channel enabled\n");
+
+	printk("Starting stream\n");
+	err = start_stream(&audio_stream);
+	if (err != 0) {
+		return;
+	}
+	printk("Channel started\n");
 }
