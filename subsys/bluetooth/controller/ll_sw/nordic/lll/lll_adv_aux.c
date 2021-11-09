@@ -263,7 +263,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	radio_gpio_pa_setup();
 	radio_gpio_pa_lna_enable(start_us + radio_tx_ready_delay_get(phy_s, 1) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -366,7 +366,7 @@ static void isr_tx_chain(void *param)
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_B2B_MAFS_US -
 				 4 - radio_tx_chain_delay_get(lll->phy_s,
 							      lll->phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -448,7 +448,7 @@ static void isr_tx_rx(void *param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
 				 radio_tx_chain_delay_get(lll->phy_s, 1) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -622,7 +622,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(lll->phy_s,
 								  1) -
-					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 		return 0;
 
@@ -674,7 +674,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(lll->phy_s,
 								  1) -
-					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 		/* Note: this is the same as previous result from alloc_peek */
