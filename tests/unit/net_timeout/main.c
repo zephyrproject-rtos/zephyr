@@ -360,7 +360,7 @@ static void test_nop(void)
 void test_main(void)
 {
 
-	ztest_test_suite(test_prf,
+	ztest_test_suite(test_net_timeout,
 			 ztest_unit_test(test_basics),
 			 ztest_unit_test(test_set),
 			 ztest_unit_test(test_deadline),
@@ -369,5 +369,5 @@ void test_main(void)
 			 ztest_unit_test(test_evaluate_whitebox),
 			 ztest_unit_test(test_nop)
 			 );
-	ztest_run_test_suite(test_prf);
+	ztest_run_test_suite(test_net_timeout);
 }
