@@ -36,21 +36,7 @@ power consumption and context retention.
 
 The list of available power states is defined by :c:enum:`pm_state`. In
 general power states with higher indexes will offer greater power savings and
-have higher wake latencies. Following is a thorough list of available states:
-
-.. doxygenenumvalue:: PM_STATE_ACTIVE
-
-.. doxygenenumvalue:: PM_STATE_RUNTIME_IDLE
-
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_IDLE
-
-.. doxygenenumvalue:: PM_STATE_STANDBY
-
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_RAM
-
-.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_DISK
-
-.. doxygenenumvalue:: PM_STATE_SOFT_OFF
+have higher wake latencies.
 
 .. _pm_constraints:
 
@@ -61,14 +47,9 @@ The power management subsystem allows different Zephyr components and
 applications to set constraints on various power states preventing the
 system from transitiioning into these states. This can be used by devices when executing
 tasks in background to avoid the system to go to a specific state where it would
-lose context. Constraints can be set, released and checked using the
-follow APIs:
-
-.. doxygenfunction:: pm_constraint_set
-
-.. doxygenfunction:: pm_constraint_release
-
-.. doxygenfunction:: pm_constraint_get
+lose context. Constraints can be set using the :c:func:`pm_constraint_set`,
+released using :c:func:`pm_constraint_release` and checked using the
+:c:func:`pm_constraint_get`.
 
 Power Management Policies
 =========================
@@ -106,16 +87,10 @@ state is:
 Application
 -----------
 
-The power management policy is defined by the application which has to implement
-the following function.
-
-.. code-block:: c
-
-   struct pm_state_info pm_policy_next_state(int32_t ticks);
-
-In this policy the application is free to decide which power state the
-system should transition to based on the remaining time for the next scheduled
-timeout.
+The power management policy is defined by the application by implementing the
+:c:func:`pm_policy_next_state` function. In this policy the application is free
+to decide which power state the system should transition to based on the
+remaining time for the next scheduled timeout.
 
 An example of an application that defines its own policy can be found in
 :zephyr_file:`tests/subsys/pm/power_mgmt/`.
