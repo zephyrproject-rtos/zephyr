@@ -40,7 +40,7 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 	/* SysTick and DWT both run at CPU frequency,
 	 * reflected in the system timer HW cycles/sec.
 	 */
-	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	return sys_clock_hw_cycles_per_sec();
 #else
 	static uint64_t dwt_frequency;
 	uint32_t cyc_start, cyc_end;
