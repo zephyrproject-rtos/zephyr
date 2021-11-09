@@ -582,7 +582,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 };
 
 #define ASSERT_AT24_ADDR_W_VALID(w) \
-	BUILD_ASSERT(w == 8U || w == 16U,		\
+	BUILD_ASSERT(w == 8U || w == 16U || w == 11U,		\
 		     "Unsupported address width")
 
 #define ASSERT_AT25_ADDR_W_VALID(w)			\
