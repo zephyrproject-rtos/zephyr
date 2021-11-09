@@ -65,6 +65,18 @@ uint64_t z_nrf_rtc_timer_read(void);
  */
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan);
 
+/** @brief Get CAPTURE task register address.
+ *
+ * Address can be used for (D)PPI.
+ *
+ * @note Not all platforms have CAPTURE task.
+ *
+ * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ *
+ * @return Register address.
+ */
+uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan);
+
 /** @brief Safely disable compare event interrupt.
  *
  * Function returns key indicating whether interrupt was already disabled.
