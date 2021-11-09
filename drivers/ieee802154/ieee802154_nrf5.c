@@ -973,14 +973,17 @@ void nrf_802154_transmitted_raw(uint8_t *frame,
 	nrf5_data.tx_frame_is_secured = metadata->frame_props.is_secured;
 	nrf5_data.tx_frame_mac_hdr_rdy = metadata->frame_props.dynamic_data_is_set;
 	nrf5_data.ack_frame.psdu = metadata->data.transmitted.p_ack;
-	nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
-	nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
 
-#if !defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_NET_PKT_TIMESTAMP)
-	nrf5_data.ack_frame.time =
-		nrf_802154_first_symbol_timestamp_get(
-			metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
+	if (nrf5_data.ack_frame.psdu) {
+		nrf5_data.ack_frame.rssi = metadata->data.transmitted.power;
+		nrf5_data.ack_frame.lqi = metadata->data.transmitted.lqi;
+
+#if !IS_ENABLED(CONFIG_NRF_802154_SER_HOST) && IS_ENABLED(CONFIG_NET_PKT_TIMESTAMP)
+		nrf5_data.ack_frame.time =
+			nrf_802154_first_symbol_timestamp_get(
+				metadata->data.transmitted.time, nrf5_data.ack_frame.psdu[0]);
 #endif
+	}
 
 	k_sem_give(&nrf5_data.tx_wait);
 }
