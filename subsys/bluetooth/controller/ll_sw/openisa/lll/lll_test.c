@@ -126,7 +126,7 @@ static void isr_tx(void *param)
 	radio_gpio_pa_setup();
 	radio_gpio_pa_lna_enable(t + radio_tx_ready_delay_get(test_phy,
 							      test_phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 }
 
@@ -268,7 +268,7 @@ uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
 	radio_gpio_pa_lna_enable(start_us +
 				 radio_tx_ready_delay_get(test_phy,
 							  test_phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */

@@ -192,11 +192,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_tx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 	ARG_UNUSED(remainder_us);

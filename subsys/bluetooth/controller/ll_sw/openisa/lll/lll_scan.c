@@ -222,7 +222,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	ARG_UNUSED(remainder_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -470,7 +470,7 @@ static void isr_tx(void *param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
 				 radio_tx_chain_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	radio_isr_set(isr_rx, param);
@@ -527,7 +527,7 @@ static void isr_done(void *param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(start_us +
 				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	ARG_UNUSED(start_us);
 
@@ -559,7 +559,7 @@ static void isr_window(void *param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	ARG_UNUSED(remainder_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -812,7 +812,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(0, 0) -
-					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
@@ -945,7 +945,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(0, 0) -
-					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 		/* switch scanner state to active */
