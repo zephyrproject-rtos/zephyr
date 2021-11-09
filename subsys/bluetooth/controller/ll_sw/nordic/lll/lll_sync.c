@@ -445,7 +445,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(lll->phy, 1) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
@@ -599,7 +599,7 @@ static void isr_aux_setup(void *param)
 
 	radio_gpio_pa_lna_enable(aux_start_us +
 				 radio_rx_ready_delay_get(phy_aux, 1) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 }
 

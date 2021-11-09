@@ -226,7 +226,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_gpio_pa_setup();
 
 	radio_gpio_pa_lna_enable(start_us + radio_tx_ready_delay_get(phy_s, 1) -
-				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -382,7 +382,7 @@ static void isr_tx(void *param)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + ADV_SYNC_PDU_B2B_AFS - 4 + cte_len_us -
 				 radio_tx_chain_delay_get(lll->phy_s, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {

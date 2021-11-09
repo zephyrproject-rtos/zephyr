@@ -1253,7 +1253,7 @@ void radio_gpio_pa_lna_enable(uint32_t trx_us)
 	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
 #if defined(CONFIG_BT_CTLR_FEM_NRF21540)
 	nrf_timer_cc_set(EVENT_TIMER, 3, (trx_us -
-					  CONFIG_BT_CTLR_GPIO_PDN_CSN_OFFSET));
+					  HAL_RADIO_GPIO_NRF21540_PDN_OFFSET));
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 					  BIT(HAL_DISABLE_PALNA_PPI) |
 					  BIT(HAL_ENABLE_FEM_PPI) |
