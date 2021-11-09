@@ -388,6 +388,8 @@ device.
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,ot-uart
      - Used by the OpenThread to specify UART device for Spinel protocol
+   * - zephyr,pcie-controller
+     - The node corresponding to the PCIe Controller
    * - zephyr,shell-uart
      - Sets UART device used by serial shell backend
    * - zephyr,sram
