@@ -241,7 +241,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	 *
 	 * Setting `scan->per_scan.sync` to NULL represents cancellation
 	 * requested in the thread context. Checking `sync->timeout_reload`
-	 * confirms if synchronization was established before
+	 * confirms if synchronization is pending or was established before
 	 * `scan->per_scan.sync` was set to NULL.
 	 */
 	sync = scan->per_scan.sync;
@@ -522,22 +522,6 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		lll->window_size_event_us = OFFS_UNIT_30_US;
 	}
 
-	/* Reset the sync context allocated to scan contexts */
-	scan->per_scan.sync = NULL;
-	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		struct ll_scan_set *scan_1m;
-
-		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
-		if (scan == scan_1m) {
-			struct ll_scan_set *scan_coded;
-
-			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->per_scan.sync = NULL;
-		} else {
-			scan_1m->per_scan.sync = NULL;
-		}
-	}
-
 	sync_handle = ull_sync_handle_get(sync);
 
 	/* Prepare sync notification, dispatch only on successful AUX_SYNC_IND
@@ -608,6 +592,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct node_rx_pdu *rx_establ;
 	struct ll_sync_set *ull_sync;
+	struct ll_scan_set *scan;
 	struct node_rx_ftr *ftr;
 	struct node_rx_sync *se;
 	struct lll_sync *lll;
@@ -650,6 +635,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 
 		/* Prepare and dispatch sync notification */
 		rx_establ = (void *)ull_sync->node_rx_sync_estab;
+		/* Check whether periodic sync. was cancelled by host. */
+		if (!rx_establ) {
+			return;
+		}
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
 		se = (void *)rx_establ->pdu;
 
@@ -667,6 +656,25 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 		ll_rx_put(rx_establ->hdr.link, rx_establ);
 		ll_rx_sched();
+
+		/* Reset the sync context allocated to scan contexts.* Sync is now established.
+		 * Controller may start to create new sync.
+		 */
+		scan = rx_establ->hdr.rx_ftr.param;
+		scan->per_scan.sync = NULL;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+			struct ll_scan_set *scan_1m;
+
+			scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+			if (scan == scan_1m) {
+				struct ll_scan_set *scan_coded;
+
+				scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+				scan_coded->per_scan.sync = NULL;
+			} else {
+				scan_1m->per_scan.sync = NULL;
+			}
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
@@ -702,6 +710,10 @@ void ull_sync_done(struct node_rx_event_done *done)
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 	lll = &sync->lll;
 
+	/* Check whether periodic sync. was cancelled by host. */
+	if (!sync->node_rx_sync_estab) {
+		return;
+	}
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 #if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 	if (done->extra.sync_term) {

@@ -321,7 +321,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		 * Setup synchronization if address and SID match in the
 		 * Periodic Advertiser List or with the explicitly supplied.
 		 */
-		if (sync && adi && ull_sync_setup_sid_match(scan, adi->sid)) {
+		if ((sync && sync->timeout_reload == 0) && adi &&
+		    ull_sync_setup_sid_match(scan, adi->sid)) {
 			ull_sync_setup(scan, aux, rx, si);
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
