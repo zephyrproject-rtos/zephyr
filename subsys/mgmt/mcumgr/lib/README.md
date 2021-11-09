@@ -8,22 +8,28 @@ components.  In addition, mcumgr provides definitions and handlers for some
 core commands: image management, file system management, and OS management.
 
 mcumgr is operating system and hardware independent.  It relies on hardware
-porting layers from the operating system it runs on.  Currently, mcumgr runs on
-both the Apache Mynewt and Zephyr operating systems.
+porting layers from the operating system it runs on.
 
-## Getting started
+## Configuration
 
-For tips on using mcumgr with your particular OS, see the appropriate file from
-the list below:
+The `samples/smp_svr/zephyr/prj.conf` file provides a good starting point for
+configuring an application to use *mcumgr*.  The major configuration settings
+are described below:
 
-* [Mynewt](README-mynewt.md)
-* [Zephyr](README-zephyr.md)
+| Setting       | Description   | Default |
+| ------------- | ------------- | ------- |
+| `CONFIG_MCUMGR` | Enable the mcumgr management library. | n |
+| `CONFIG_MCUMGR_CMD_FS_MGMT` | Enable mcumgr handlers for file management | n |
+| `CONFIG_MCUMGR_CMD_IMG_MGMT` | Enable mcumgr handlers for image management | n |
+| `CONFIG_MCUMGR_CMD_OS_MGMT` | Enable mcumgr handlers for OS management | n |
+| `CONFIG_MCUMGR_CMD_STAT_MGMT` | Enable mcumgr handlers for statistics | n |
+| `CONFIG_MCUMGR_GRP_ZEPHYR_BASIC` | Enable mcumgr basic commands group | n |
 
 ## Dependencies
 
 To use mcumgr's image management support, your device must be running version
 1.1.0 or later of the [MCUboot boot
-loader](https://github.com/runtimeco/mcuboot).  The other mcumgr features do
+loader](https://github.com/mcu-tools/mcuboot).  The other mcumgr features do
 not require MCUboot.
 
 ## Command line tool
@@ -126,11 +132,10 @@ For more information in the source, here are some pointers:
 - [cmd](cmd): Built-in command handlers for the core mcumgr commands.
 - [ext](ext): Third-party libraries that mcumgr depends on.
 - [mgmt](mgmt): Code implementing the `mgmt` layer of mcumgr.
-- [samples](samples): Sample applications utilizing mcumgr.
 - [smp](smp): The built-in transfer encoding: Simple management protocol.
 
 ## Joining
 
 Developers welcome!
 
-* Our Slack channel: https://mynewt.slack.com/messages/C7Y3K0C2J
+* Discord mcumgr channel: https://discord.com/invite/Ck7jw53nU2
