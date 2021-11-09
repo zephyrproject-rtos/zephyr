@@ -412,7 +412,7 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_NODELABEL(spi##n), ctx)\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, &spi_psoc6_init, NULL,			\
 			      &spi_psoc6_dev_data_##n,			\
