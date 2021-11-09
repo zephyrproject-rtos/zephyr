@@ -12,6 +12,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_CC312
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_DCNF
 	select HAS_HW_NRF_DPPIC
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_EGU1
@@ -26,8 +27,10 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_IPC
 	select HAS_HW_NRF_KMU
 	select HAS_HW_NRF_LPCOMP
+	select HAS_HW_NRF_MUTEX
 	select HAS_HW_NRF_NFCT
 	select HAS_HW_NRF_NVMC_PE
+	select HAS_HW_NRF_OSCILLATORS
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PWM0
@@ -37,6 +40,8 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_QDEC0
 	select HAS_HW_NRF_QDEC1
 	select HAS_HW_NRF_QSPI
+	select HAS_HW_NRF_REGULATORS
+	select HAS_HW_NRF_RESET
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SAADC
@@ -67,6 +72,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_UARTE3
 	select HAS_HW_NRF_USBD
 	select HAS_HW_NRF_USBREG
+	select HAS_HW_NRF_VMC
 	select HAS_HW_NRF_WDT0
 	select HAS_HW_NRF_WDT1
 
