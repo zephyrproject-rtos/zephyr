@@ -302,6 +302,7 @@ Libraries / Subsystems
 
 * Management
 
+  * Fixed the mcumgr SMP protocol over serial not adding the length of the CRC16 to packet length.
 
 * CMSIS subsystem
 
