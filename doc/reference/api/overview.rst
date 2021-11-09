@@ -242,7 +242,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 1.11
 
-   * - :ref:`power_management_api`
+   * - :ref:`pm_api`
      - Experimental
      - 1.2
      - 2.2
