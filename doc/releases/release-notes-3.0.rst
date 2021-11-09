@@ -46,6 +46,29 @@ Changes in this release
 
 Removed APIs in this release:
 
+* The following Kconfig options related to radio front-end modules (FEMs) were
+  removed:
+
+  * ``CONFIG_BT_CTLR_GPIO_PA``
+  * ``CONFIG_BT_CTLR_GPIO_PA_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_PA_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_PA_OFFSET``
+  * ``CONFIG_BT_CTLR_GPIO_LNA``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_LNA_OFFSET``
+  * ``CONFIG_BT_CTLR_FEM_NRF21540``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_CSN_PIN``
+  * ``CONFIG_BT_CTLR_GPIO_CSN_POL_INV``
+  * ``CONFIG_BT_CTLR_GPIO_PDN_CSN_OFFSET``
+
+  This FEM configuration is hardware description, and was therefore moved to
+  :ref:`devicetree <dt-guide>`. See the :dtcompatible:`nordic,nrf-radio`
+  devicetree binding's ``fem`` property for information on what to do instead
+  on the Nordic open source controller.
+
 Stable API changes in this release
 ==================================
 
