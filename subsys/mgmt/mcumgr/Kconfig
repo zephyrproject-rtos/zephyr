@@ -30,6 +30,14 @@ config MGMT_CBORATTR_MAX_SIZE
         help
           The maximum size of a CBOR attribute during decoding
 
+config MGMT_CBORATTR_FLOAT_SUPPORT
+	bool "Enable support for float"
+	help
+	  The option enables float processing within CBOR attributes.
+	  If your code requires processing of float numbers by CBOR,
+	  the option needs to be enabled.
+	  Disabling the option slightly reduces code footprint.
+
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Enable mcumgr handlers for file management (insecure)"

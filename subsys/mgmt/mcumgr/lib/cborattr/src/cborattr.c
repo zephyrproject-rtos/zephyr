@@ -15,6 +15,12 @@
 #define CBORATTR_MAX_SIZE 512
 #endif
 
+#ifdef CONFIG_MGMT_CBORATTR_FLOAT_SUPPORT
+#define CBORATTR_FLOAT_SUPPORT	0
+#else
+#define CBORATTR_FLOAT_SUPPORT	1
+#endif
+
 /* this maps a CborType to a matching CborAtter Type. The mapping is not
  * one-to-one because of signedness of integers
  * and therefore we need a function to do this trickery
@@ -44,7 +50,7 @@ valid_attr_type(CborType ct, enum CborAttrType at)
 			return 1;
 		}
 	break;
-#if FLOAT_SUPPORT
+#if CBORATTR_FLOAT_SUPPORT != 0
 	case CborAttrHalfFloatType:
 		if (ct == CborHalfFloatType) {
 			return 1;
@@ -103,7 +109,7 @@ cbor_target_address(const struct cbor_attr_t *cursor,
 		case CborAttrUnsignedIntegerType:
 			targetaddr = (char *)&cursor->addr.uinteger[offset];
 			break;
-#if FLOAT_SUPPORT
+#if CBORATTR_FLOAT_SUPPORT != 0
 		case CborAttrHalfFloatType:
 			targetaddr = (char *)&cursor->addr.halffloat[offset];
 			break;
@@ -166,7 +172,7 @@ cbor_internal_read_object(CborValue *root_value,
 				case CborAttrBooleanType:
 					memcpy(lptr, &cursor->dflt.boolean, sizeof(bool));
 					break;
-#if FLOAT_SUPPORT
+#if CBORATTR_FLOAT_SUPPORT != 0
 				case CborAttrHalfFloatType:
 					memcpy(lptr, &cursor->dflt.halffloat, sizeof(uint16_t));
 					break;
@@ -250,7 +256,7 @@ cbor_internal_read_object(CborValue *root_value,
 			case CborAttrUnsignedIntegerType:
 				err |= cbor_value_get_uint64(&cur_value, lptr);
 				break;
-#if FLOAT_SUPPORT
+#if CBORATTR_FLOAT_SUPPORT != 0
 			case CborAttrHalfFloatType:
 				err |= cbor_value_get_half_float(&cur_value, lptr);
 				break;
@@ -324,7 +330,7 @@ cbor_read_array(struct CborValue *value, const struct cbor_array_t *arr)
 			lptr = &arr->arr.uintegers.store[off];
 			err |= cbor_value_get_uint64(&elem, lptr);
 			break;
-#if FLOAT_SUPPORT
+#if CBORATTR_FLOAT_SUPPORT != 0
 		case CborAttrHalfFloatType:
 			lptr = &arr->arr.halffloats.store[off];
 			err |= cbor_value_get_half_float(&elem, lptr);
