@@ -1153,6 +1153,9 @@ struct bt_le_per_adv_sync_term_info {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/** Cause of periodic advertising termination */
+	uint8_t reason;
 };
 
 struct bt_le_per_adv_sync_recv_info {
