@@ -23,7 +23,7 @@
 
 #include "radio_internal.h"
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
 #define NRF_GPIO_PA     NRF_P1
 #define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
@@ -31,9 +31,9 @@
 #define NRF_GPIO_PA     NRF_P0
 #define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
 #endif
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_LNA_PIN) > 31)
 #define NRF_GPIO_LNA     NRF_P1
 #define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
@@ -41,7 +41,7 @@
 #define NRF_GPIO_LNA     NRF_P0
 #define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
 #endif
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PDN_PIN) > 31)
@@ -105,20 +105,20 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 
 void radio_setup(void)
 {
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	NRF_GPIO_PA->DIRSET = BIT(NRF_GPIO_PA_PIN);
 #if defined(HAL_RADIO_GPIO_PA_POL_INV)
 	NRF_GPIO_PA->OUTSET = BIT(NRF_GPIO_PA_PIN);
 #else
 	NRF_GPIO_PA->OUTCLR = BIT(NRF_GPIO_PA_PIN);
 #endif
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	NRF_GPIO_LNA->DIRSET = BIT(NRF_GPIO_LNA_PIN);
 
 	radio_gpio_lna_off();
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_GPIO_PDN_PIN)
 	NRF_GPIO_PDN->DIRSET = BIT(NRF_GPIO_PDN_PIN);
@@ -160,7 +160,7 @@ void radio_reset(void)
 	hal_radio_sw_switch_ppi_group_setup();
 #endif
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	hal_palna_ppi_setup();
 #endif
 #if defined(CONFIG_BT_CTLR_FEM_NRF21540)
@@ -1120,9 +1120,9 @@ uint32_t radio_tmr_sample_get(void)
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-    defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
+	defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 void radio_gpio_pa_setup(void)
 {
 	/* NOTE: With GPIO Pins above 31, left shift of
@@ -1150,9 +1150,9 @@ void radio_gpio_pa_setup(void)
 	radio_gpio_csn_setup();
 #endif
 }
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 void radio_gpio_lna_setup(void)
 {
 	/* NOTE: With GPIO Pins above 31, left shift of
@@ -1246,7 +1246,7 @@ void radio_gpio_lna_off(void)
 	NRF_GPIO_LNA->OUTCLR = BIT(NRF_GPIO_LNA_PIN);
 #endif
 }
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
@@ -1280,7 +1280,7 @@ void radio_gpio_pa_lna_disable(void)
 	NRF_GPIOTE->CONFIG[HAL_PALNA_GPIOTE_CHAN] = 0;
 #endif
 }
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
 
