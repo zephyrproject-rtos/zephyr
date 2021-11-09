@@ -51,6 +51,17 @@ release:
 * :github:`29858` - Bluetooth: Mesh: RPL cleared on LPN disconnect
 * :github:`32430` - Bluetooth: thread crashes when configuring a non 0 Slave Latency
 * :github:`32898` - Bluetooth: controller: Control PDU buffer leak into Data PDU buffer pool
+* :github:`18598` - tests/net/trickle failed on multiple platforms
+* :github:`22751` - STM32F407 I2C driver hangs
+* :github:`24300` - tests/net/trickle failed on frdm_k64f and sam_e70_xplained with v1.14 branch.
+* :github:`24750` - need API to get list of succeed initialization device or add initialization status flag in struct device
+* :github:`24970` - ieee802154 l2: no length check in frame validation
+* :github:`25314` - Bluetooth: controller: legacy: Backport conformance test related changes
+* :github:`25350` - Bluetooth: controller: Data transmission delayed by slave latency
+* :github:`26499` - usermode: random: backport random syscall
+* :github:`26595` - tests/kernel/obj_tracing thread counting issue with 1.14 branch.
+* :github:`27771` - iotdk: cpu_stats function doesn't work as expected
+* :github:`35983` - Bluetooth: controller: Check length field of scan response data
 
 Zephyr 1.14.2
 ####################
