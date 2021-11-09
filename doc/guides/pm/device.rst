@@ -47,30 +47,12 @@ or idle.
 
 Device Power Management States
 ******************************
-The power management subsystem defines four device states.
-These states are classified based on the degree of device context that gets lost
-in those states, kind of operations done to save power, and the impact on the
-device behavior due to the state transition. Device context includes device
-registers, clocks, memory etc.
 
-The three device power states:
-
-:code:`PM_DEVICE_STATE_ACTIVE`
-
-   Normal operation of the device. All device context is retained.
-
-:code:`PM_DEVICE_STATE_SUSPENDED`
-
-   The system is idle and entering a low power state. Most device context is
-   lost by the hardware. Device drivers must save and restore or reinitialize
-   any context lost by the hardware. Devices can check which state the system
-   is entering calling :c:func:`pm_power_state_next_get()` .
-
-:code:`PM_DEVICE_STATE_OFF`
-
-   Power has been fully removed from the device. The device context is lost
-   when this state is entered. Need to reinitialize the device when powering
-   it back on.
+The power management subsystem defines device states in
+:c:enum:`pm_device_state`. These states are classified based on the degree of
+device context that gets lost in those states, kind of operations done to save
+power, and the impact on the device behavior due to the state transition. Device
+context includes device registers, clocks, memory etc.
 
 Device Power Management Operations
 **********************************
@@ -101,44 +83,6 @@ One of the macro parameters is the pointer to the PM action callback.
 If the driver doesn't implement any power control operations, it can initialize
 the corresponding pointer with ``NULL``.
 
-Device Power Management API
-***************************
-
-The SOC interface and application use these APIs to perform power management
-operations on the devices.
-
-Get Device List
-===============
-
-.. code-block:: c
-
-   size_t z_device_get_all_static(struct device const **device_list);
-
-The Zephyr RTOS kernel internally maintains a list of all devices in the system.
-The SOC interface uses this API to get the device list. The SOC interface can use the list to
-identify the devices on which to execute power management operations.
-
-.. note::
-
-   Ensure that the SOC interface does not alter the original list. Since the kernel
-   uses the original list, it must remain unchanged.
-
-Device Set Power State
-======================
-
-.. code-block:: c
-
-   int pm_device_state_set(const struct device *dev, enum pm_device_state state);
-
-Calls the device PM action callback with the provided state.
-
-Device Get Power State
-======================
-
-.. code-block:: c
-
-   int pm_device_state_get(const struct device *dev, enum pm_device_state *state);
-
 .. _pm-device-busy:
 
 Busy Status Indication
@@ -154,50 +98,6 @@ the device is in the middle of a hardware transaction.
 When the :c:func:`pm_system_suspend()` is called, depending on the power state
 returned by the policy manager, the system may suspend or put devices in low
 power if they are not marked as busy.
-
-Here are the APIs used to set, clear, and check the busy status of devices.
-
-Indicate Busy Status API
-========================
-
-.. code-block:: c
-
-   void device_busy_set(const struct device *busy_dev);
-
-Sets a bit corresponding to the device, in a data structure maintained by the
-kernel, to indicate whether or not it is in the middle of a transaction.
-
-Clear Busy Status API
-=====================
-
-.. code-block:: c
-
-   void device_busy_clear(const struct device *busy_dev);
-
-Clears the bit corresponding to the device in a data structure
-maintained by the kernel to indicate that the device is not in the middle of
-a transaction.
-
-Check Busy Status of Single Device API
-======================================
-
-.. code-block:: c
-
-   int device_busy_check(const struct device *chk_dev);
-
-Checks whether a device is busy. The API returns 0 if the device
-is not busy.
-
-This API is used by the system power management.
-
-Check Busy Status of All Devices API
-====================================
-
-.. code-block:: c
-
-   int device_any_busy_check(void);
-
-Checks if any device is busy. The API returns 0 if no device in the system is busy.
 
 Wakeup capability
 *****************
