@@ -60,6 +60,13 @@
 #define HAL_CSN_GPIOTE_CHAN 2
 #endif
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA)
+#define HAL_RADIO_GPIO_HAVE_PA_PIN 1
+#endif
+#if defined(CONFIG_BT_CTLR_GPIO_LNA)
+#define HAL_RADIO_GPIO_HAVE_LNA_PIN 1
+#endif
+
 #if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
 #define HAL_RADIO_GPIO_PA_POL_INV CONFIG_BT_CTLR_GPIO_PA_POL_INV
 #endif

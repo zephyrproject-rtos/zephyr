@@ -185,7 +185,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -198,9 +198,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 radio_tx_ready_delay_get(0, 0) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(remainder_us);
-#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+#endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)

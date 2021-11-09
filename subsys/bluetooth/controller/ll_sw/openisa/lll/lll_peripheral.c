@@ -209,7 +209,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_hcto_configure(hcto);
 
-#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -221,10 +221,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 radio_rx_ready_delay_get(0, 0) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
-#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
-	defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 

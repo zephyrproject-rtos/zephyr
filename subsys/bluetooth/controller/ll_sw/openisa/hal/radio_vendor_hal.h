@@ -6,6 +6,13 @@
 
 #include "hal/RV32M1/radio/radio.h"
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA)
+#define HAL_RADIO_GPIO_HAVE_PA_PIN
+#endif
+#if defined(CONFIG_BT_CTLR_GPIO_LNA)
+#define HAL_RADIO_GPIO_HAVE_LNA_PIN
+#endif
+
 #if defined(CONFIG_BT_CTLR_GPIO_PA_OFFSET)
 #define HAL_RADIO_GPIO_PA_OFFSET CONFIG_BT_CTLR_GPIO_PA_OFFSET
 #endif
