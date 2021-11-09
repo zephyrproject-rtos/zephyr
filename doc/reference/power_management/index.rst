@@ -7,34 +7,6 @@ Zephyr RTOS power management subsystem provides several means for a system
 integrator to implement power management support that can take full
 advantage of the power saving features of SOCs.
 
-
-Terminology
-***********
-
-:dfn:`SOC interface`
-   This is a general term for the components that have knowledge of the
-   SOC and provide interfaces to the hardware features. It will abstract
-   the SOC specific implementations to the applications and the OS.
-
-:dfn:`Idle Thread`
-   A system thread that runs when there are no other threads ready to run.
-
-:dfn:`Power gating`
-   Power gating reduces power consumption by shutting off current to blocks of
-   the integrated circuit that are not in use.
-
-:dfn:`Power State`
-   SOC Power State describes processor and device power states implemented at
-   the SOC level. Power states are represented by :c:enum:`pm_state` and each
-   one has a different meaning.
-
-:dfn:`Device Runtime Power Management`
-   Device Runtime Power Management (PM) refers the capability of
-   devices be able of saving energy independently of the the
-   system. Devices will keep reference of their usage and will
-   automatically be suspended or resumed. This feature is enabled via
-   the ::kconfig:`CONFIG_PM_DEVICE_RUNTIME` Kconfig option.
-
 Overview
 ********
 
