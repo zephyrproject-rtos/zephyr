@@ -10,10 +10,13 @@
 LOG_MODULE_REGISTER(as5047p_c_interface, LOG_LEVEL_INF);
 
 /**
- * Log error and set out-parameter
- * @param errorOut[out] Will be set to true if an error has occured. Can be nullptr.
+ * Log error.
+ * @param error
+ * @param functionName
+ * @param description
+ * @return
  */
-bool handleError(const AS5047P_Types::ERROR_t &error,                 const char *functionName, const char *description) {
+bool handleError(const AS5047P_Types::ERROR_t &error, const char *functionName, const char *description) {
     if (!error.noError()) {
         LOG_ERR("%s, %s: C_GENERAL_COM_ERR: %d, C_SPI_PARITY_ERR: %d, C_WRITE_VERIFY_FAILED: %d, S_CORDIC_OVERFLOW_ERR: %d, "
                 "S_OFFSET_COMP_ERR: %d, S_MAG_TOO_HIGH: %d, S_MAG_TOO_LOW: %d, S_SPI_FRAMING_ERR: %d, "
@@ -71,12 +74,6 @@ bool initializeSensor(const AS5047P_handle h, bool useUVW, int polePairs) {
     }
     return true;
 }
-
-// Util --------------------------------------------------------
-
-//std::string readStatusAsStdString(const AS5047P_handle h) {
-
-//}
 
 // -------------------------------------------------------------
 
