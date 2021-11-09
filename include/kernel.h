@@ -76,6 +76,22 @@ struct k_mem_domain;
 struct k_mem_partition;
 struct k_futex;
 struct k_event;
+struct k_condvar;
+struct k_mbox_msg;
+struct k_work;
+struct k_work_q;
+struct k_work_user;
+struct k_work_sync;
+struct k_work_delayable;
+struct k_work_queue_config;
+
+typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
+				   void *user_data);
+typedef void (*k_timer_expiry_t)(struct k_timer *timer);
+typedef void (*k_timer_stop_t)(struct k_timer *timer);
+typedef uintptr_t stack_data_t;
+typedef void (*k_work_handler_t)(struct k_work *work);
+typedef void (*k_work_user_handler_t)(struct k_work_user *work);
 
 enum execution_context_types {
 	K_ISR = 0,
@@ -86,6 +102,8 @@ enum execution_context_types {
 /* private, used by k_poll and k_work_poll */
 struct k_work_poll;
 typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
+
+#include <tracing/tracing.h>
 
 /**
  * @addtogroup thread_apis
@@ -5892,7 +5910,6 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
 }
 #endif
 
-#include <tracing/tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
