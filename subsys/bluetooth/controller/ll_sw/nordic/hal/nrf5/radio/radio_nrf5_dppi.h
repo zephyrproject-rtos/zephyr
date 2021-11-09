@@ -171,7 +171,7 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 /******************************************************************************/
 #define HAL_ENABLE_PALNA_PPI 5
 
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 #define HAL_DISABLE_PALNA_PPI 4
 #else
 #define HAL_DISABLE_PALNA_PPI HAL_ENABLE_PALNA_PPI
@@ -184,7 +184,7 @@ static inline void hal_palna_ppi_setup(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
 			      HAL_DISABLE_PALNA_PPI);
 
-#if !defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if !defined(HAL_RADIO_FEM_IS_NRF21540)
 	nrf_gpiote_task_t task;
 
 	task = nrf_gpiote_out_task_get(HAL_PALNA_GPIOTE_CHAN);
@@ -193,7 +193,7 @@ static inline void hal_palna_ppi_setup(void)
 }
 
 /******************************************************************************/
-#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#if defined(HAL_RADIO_FEM_IS_NRF21540)
 
 static inline void hal_pa_ppi_setup(void)
 {
@@ -266,7 +266,7 @@ static inline void hal_fem_ppi_setup(void)
 #endif /* !HAL_RADIO_GPIO_NRF21540_CSN_POL_INV */
 }
 
-#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+#endif /* HAL_RADIO_FEM_IS_NRF21540 */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)

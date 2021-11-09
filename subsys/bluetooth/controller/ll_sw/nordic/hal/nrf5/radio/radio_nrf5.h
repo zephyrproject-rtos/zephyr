@@ -90,6 +90,10 @@
 #define HAL_RADIO_GPIO_NRF21540_PDN_OFFSET CONFIG_BT_CTLR_GPIO_PDN_CSN_OFFSET
 #endif
 
+#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#define HAL_RADIO_FEM_IS_NRF21540 1
+#endif
+
 #if defined(PPI_PRESENT)
 #include "radio_nrf5_ppi.h"
 #elif defined(DPPI_PRESENT)
