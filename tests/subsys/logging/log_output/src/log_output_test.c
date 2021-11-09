@@ -149,11 +149,11 @@ void test_log_output_string(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_log_message,
+	ztest_test_suite(test_log_output,
 		ztest_unit_test_setup_teardown(test_log_output_raw_string,
 					       setup, teardown),
 		ztest_unit_test_setup_teardown(test_log_output_string,
 					       setup, teardown)
 		);
-	ztest_run_test_suite(test_log_message);
+	ztest_run_test_suite(test_log_output);
 }

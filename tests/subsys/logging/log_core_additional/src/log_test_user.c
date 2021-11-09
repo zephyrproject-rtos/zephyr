@@ -70,7 +70,7 @@ static void call_log_generic(uint32_t source_id, const char *fmt, ...)
 }
 
 /* test log_generic() from user space */
-void test_log_generic(void)
+void test_log_generic_user(void)
 {
 	uint32_t source_id = 0;
 
@@ -98,15 +98,4 @@ void test_log_panic(void)
 	log_from_user(src_level, "log from user, level %d\n", src_level.level);
 
 	log_panic();
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_log_list,
-			 ztest_user_unit_test(test_log_from_user),
-			 ztest_user_unit_test(test_log_hexdump_from_user),
-			 ztest_user_unit_test(test_log_generic),
-			 ztest_user_unit_test(test_log_filter_set),
-			 ztest_user_unit_test(test_log_panic));
-	ztest_run_test_suite(test_log_list);
 }
