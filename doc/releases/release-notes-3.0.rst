@@ -41,12 +41,10 @@ Changes in this release
 * Added ``ranges`` and ``dma-ranges`` as invalid property to be used with DT_PROP_LEN()
   along ``reg`` and ``interrupts``.
 
-==========================
+Changes in this release
+=======================
 
-Removed APIs in this release
-
-
-============================
+Removed APIs in this release:
 
 Stable API changes in this release
 ==================================
