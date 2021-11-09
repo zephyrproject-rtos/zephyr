@@ -1,6 +1,8 @@
 # Copyright (c) 2020-2021 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
+if IPC_SERVICE_BACKEND_RPMSG_MI
+
 choice IPC_SERVICE_BACKEND_RPMSG_MI_ROLE
 	prompt "IPC service device role"
 
@@ -58,3 +60,5 @@ ipm_name_instance_num = 6
 rsource "Kconfig.ipm_name_instance"
 ipm_name_instance_num = 7
 rsource "Kconfig.ipm_name_instance"
+
+endif # IP_SERVICE_BACKEND_RPMSG_MI
