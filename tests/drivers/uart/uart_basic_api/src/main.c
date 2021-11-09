@@ -58,7 +58,7 @@ void test_uart_pending(void)
 
 void test_main(void)
 {
-#if defined(CONFIG_USB_UART_CONSOLE)
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
 	const struct device *dev;
 	uint32_t dtr = 0;
 
