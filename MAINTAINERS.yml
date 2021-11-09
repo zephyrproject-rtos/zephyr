@@ -221,6 +221,7 @@ Build system:
         - tejlmand
     collaborators:
         - nashif
+        - SebastianBoe
     files:
         - cmake/
         - CMakeLists.txt
