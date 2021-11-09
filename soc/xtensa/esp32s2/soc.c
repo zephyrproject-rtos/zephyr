@@ -30,7 +30,7 @@ extern void z_cstart(void);
 extern void z_bss_zero(void);
 extern void rtc_clk_cpu_freq_set_xtal(void);
 
-#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+#if CONFIG_ESP_SPIRAM
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
@@ -176,9 +176,7 @@ void __attribute__((section(".iram1"))) __start(void)
 		printk("SPIRAM size is less than configured size, aborting.\n");
 		abort();
 	}
-#endif
 
-#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 	memset(&_ext_ram_bss_start,
 		0,
 		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
