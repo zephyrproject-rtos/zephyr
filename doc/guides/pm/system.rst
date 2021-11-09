@@ -63,16 +63,16 @@ The policy manager is responsible for informing the power subsystem which
 power state the system should transition to based on states defined by the
 platform and possible runtime :ref:`constraints<pm_constraints>`
 
-Information about states can be found in the device tree, see
-:zephyr_file:`dts/bindings/power/state.yaml`.
+More details on the states definition can be found in the
+:dtcompatible:`zephyr,power-state` binding documentation.
 
 Residency
 ---------
 
 The power management system enters the power state which offers the highest
-power savings, and with a minimum residency value (in device tree, see
-:zephyr_file:`dts/bindings/power/state.yaml`) less than or equal to
-the scheduled system idle time duration.
+power savings, and with a minimum residency value (see
+:dtcompatible:`zephyr,power-state`) less than or equal to the scheduled system
+idle time duration.
 
 This policy also accounts for the time necessary to become active
 again. The core logic used by this policy to select the best power
