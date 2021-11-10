@@ -250,7 +250,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
+/* TODO Remove this workaround macro once Scancode has been updated to
+ * not report this as a false positive MPL license
+ *
+ * See https://github.com/nexB/scancode-toolkit/issues/2304
+ * and https://github.com/nexB/scancode-toolkit/commit/6abbc4a22973f40ab74f6f8d948dd06416c97bd4
+ */
+#define CMD_NQM cmd_mpl
 SHELL_CMD_ARG_REGISTER(mpl, &mpl_cmds, "Media player (MCS) related commands",
-		       cmd_mpl, 1, 1);
+		       CMD_NQM, 1, 1);
 
 #endif /* CONFIG_BT_MCS */
