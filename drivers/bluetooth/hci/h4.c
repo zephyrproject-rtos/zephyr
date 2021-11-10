@@ -135,7 +135,7 @@ static inline void get_iso_hdr(void)
 	if (!rx.remaining) {
 		struct bt_hci_iso_hdr *hdr = &rx.iso;
 
-		rx.remaining = sys_le16_to_cpu(hdr->len);
+		rx.remaining = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
 		BT_DBG("Got ISO header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
 	}
