@@ -89,9 +89,10 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 	*(uint8_t *)ext_hdr = ext_hdr_flags;
 	dptr = ext_hdr->data;
 
-	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA |
-				     ULL_ADV_PDU_HDR_FIELD_TARGETA |
+	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA | ULL_ADV_PDU_HDR_FIELD_TARGETA |
+#if !defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)
 				     ULL_ADV_PDU_HDR_FIELD_ADI |
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
 				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
 
 	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
@@ -102,6 +103,10 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 	}
 	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
 		dptr += sizeof(uint8_t);
+	}
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
+	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_ADI)) {
+		dptr += sizeof(struct pdu_adv_adi);
 	}
 
 	/* Calc tertiary PDU len */
@@ -151,7 +156,8 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 
 	LL_ASSERT(!ext_hdr->adv_addr);
 	LL_ASSERT(!ext_hdr->tgt_addr);
-	LL_ASSERT(!ext_hdr->adi);
+	LL_ASSERT(IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) ||
+		  !ext_hdr->adi);
 	LL_ASSERT(!ext_hdr->sync_info);
 
 	dptr = ext_hdr->data;
@@ -164,12 +170,22 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 	/* Copy CTEInfo, if applicable */
 	if (ext_hdr->cte_info) {
 		if (ext_hdr_prev->cte_info) {
-			memcpy(dptr, dptr_prev, sizeof(struct pdu_cte_info));
+			(void)memcpy(dptr, dptr_prev, sizeof(struct pdu_cte_info));
 		}
 		dptr += sizeof(struct pdu_cte_info);
 	}
 	if (ext_hdr_prev->cte_info) {
 		dptr_prev += sizeof(struct pdu_cte_info);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi != 0) {
+		if (ext_hdr_prev->adi) {
+			memcpy(dptr, dptr_prev, sizeof(struct pdu_adv_adi));
+		}
+		dptr += sizeof(struct pdu_adv_adi);
+	}
+	if (ext_hdr_prev->adi) {
+		dptr_prev += sizeof(struct pdu_adv_adi);
 	}
 
 	/* Add AuxPtr, if applicable. Do not copy since it will be updated later

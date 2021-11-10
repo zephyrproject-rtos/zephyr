@@ -424,7 +424,11 @@ static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy, uint8_t fla
 		dptr++;
 	}
 
-	LL_ASSERT(!hdr->adi);
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && hdr->adi != 0) {
+		dptr += sizeof(struct pdu_adv_adi);
+	} else {
+		LL_ASSERT(!hdr->adi);
+	}
 
 	/* Update AuxPtr */
 	aux_ptr = (void *)dptr;

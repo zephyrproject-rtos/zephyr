@@ -613,12 +613,17 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 	uint8_t pdu_add_field_flags;
 	struct pdu_adv *pdu_next;
 	uint8_t cte_index = 1;
+	bool adi_in_sync_ind;
 	bool new_chain;
 	uint8_t err;
 
 	new_chain = (pdu_prev == pdu ? false : true);
 
 	pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)) {
+		adi_in_sync_ind = ull_adv_sync_pdu_had_adi(pdu_prev);
+	}
 
 	pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
 
@@ -646,6 +651,10 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 			}
 		}
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
+			pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
+		}
+
 		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
 						 cte_info);
 		if (err != BT_HCI_ERR_SUCCESS) {
@@ -663,6 +672,10 @@ static uint8_t per_adv_chain_cte_info_set(struct lll_adv_sync *lll_sync, struct 
 		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
 	} else {
 		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && adi_in_sync_ind) {
+		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_ADI;
 	}
 
 	/* Add new PDUs if the number of PDUs in existing chain is lower than requested number
@@ -783,6 +796,9 @@ static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
 		}
 		if (ext_hdr->aux_ptr) {
 			size_rem += sizeof(struct pdu_adv_aux_ptr);
+		}
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi) {
+			size_rem += sizeof(struct pdu_adv_adi);
 		}
 
 		if ((pdu->adv_ext_ind.ext_hdr_len - size_rem) != PDU_AC_EXT_HEADER_SIZE_MIN) {
