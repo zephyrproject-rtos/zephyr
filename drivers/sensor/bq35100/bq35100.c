@@ -857,12 +857,15 @@ static int bq35100_set_battery_alert(const struct device *dev, uint8_t alert)
 {
 	uint8_t buf[1];
 	int status;
+	buf[0] = alert;
 
 	status = bq35100_write_extended_data(dev, BQ35100_FLASH_ALERT_CFG, buf, 1);
 	if (status < 0) {
 		LOG_ERR("Unable to set battery alert");
 		return -EIO;
 	}
+
+	LOG_DBG("Battery alert set to: %02X", alert);
 
 	return 0;
 }
@@ -909,6 +912,302 @@ static int bq35100_get_battery_alert(const struct device *dev)
 	}
 
 	return 0;
+}
+
+/**
+ * Enter/exit calibration mode
+ * @param dev - The device structure.
+ * @param enable - determines enter(1) or exit (0)
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_enter_cal_mode(const struct device *dev, bool enable)
+{
+	k_sleep(K_MSEC(1000));
+
+	if ( bq35100_control_reg_write(dev, enable ?
+			BQ35100_CTRL_ENTER_CAL : BQ35100_CTRL_EXIT_CAL) < 0) {
+		LOG_ERR("Unable to change calibration mode");
+		return -EIO;
+	}
+
+	if ( bq35100_wait_for_status(dev, enable ? BQ35100_CAL_MODE_BIT_MASK : 0,
+			BQ35100_CAL_MODE_BIT_MASK, 1000) < 0) {
+		LOG_ERR("Calibration error/timeout");
+	}
+
+	LOG_DBG("Calibration mode %s", enable ? "enabled" : "disabled");
+
+	return 0;
+}
+
+/**
+ * 
+ * @param dev - The device structure.
+ * @param command - command of the register to read
+ * @param result - a place to put the read data
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_get_raw_cal_data(const struct device *dev, uint16_t command, int16_t *result)
+{
+	uint16_t buf[2];
+	uint8_t adc_counter_prev = 0;
+	uint8_t counter = 0;
+    int32_t avg = 0;
+
+	if (bq35100_enter_cal_mode(dev, true) < 0) {
+		LOG_ERR("Unable to enter calibration mode");
+		return -EIO;
+	}
+
+	while (true) {
+		k_sleep(K_MSEC(200));
+
+		if (bq35100_reg_read(dev, BQ35100_CMD_CAL_COUNT, buf, 2) < 0) {
+			LOG_ERR("Unable to get cal count");
+			return -EIO;
+		}
+
+		if (adc_counter_prev == buf[0]) {
+            continue;
+        }
+
+		adc_counter_prev = buf[0];
+		if (bq35100_reg_read(dev, command, buf, 2) < 0) {
+			LOG_ERR("Unable to get data");
+			return -EIO;
+		}
+
+		avg += (buf[1] << 8) + buf[0];
+		LOG_DBG("Cal avg: %i", (buf[1] << 8) + buf[0]);
+
+		counter++;
+		if (counter == 4) {
+			break;
+		}
+	}
+
+	avg /= 4;
+	LOG_DBG("Final cal avg: %li", avg);
+
+	if (result) {
+		*result = (int16_t)avg;
+	}
+
+	if(bq35100_enter_cal_mode(dev, false) < 0) {
+		LOG_ERR("Unable to exit cal mode");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * Calibrate with known current
+ * @param dev - The device structure.
+ * @param voltage - known voltage in [mV].
+ * @return 0 in case of success, negative error code otherwise. 
+ */
+static int bq35100_cal_voltage(const struct device *dev, uint16_t voltage)
+{
+	uint8_t buf[1];
+	int16_t avg_voltage;
+    int32_t offset;
+
+	if (bq35100_get_raw_cal_data(dev, BQ35100_CMD_CAL_VOLTAGE, &avg_voltage) < 0) {
+		LOG_ERR("Unable to get raw cal data for voltage calibration");
+	}
+
+	offset = voltage - avg_voltage;
+	LOG_DBG("Voltage calibration difference: %li", offset);
+
+	if (offset < -128 || offset > 127) {
+        LOG_ERR("Invalid voltage offset");
+        return -EIO;
+    }
+
+	buf[0] = (int8_t)offset;
+	k_sleep(K_MSEC(1000));
+
+	if (bq35100_write_extended_data(dev, BQ35100_FLASH_PACK_V_OFFSET, buf, 1) < 0) {
+		LOG_ERR("Unable to write extenden in cal_voltage()");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * Calibrate with known current flowing
+ * @param dev - The device structure.
+ * @param current - known constant current in [mA].
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_cal_current(const struct device *dev, uint16_t current)
+{
+	uint16_t buf[4];
+    int16_t avg_current;
+    int16_t cc_offset;
+    int8_t board_offset;
+
+	if (bq35100_read_extended_data(dev, BQ35100_FLASH_CC_OFFSET, buf, 2) < 0) {
+		return -EIO;
+	}
+
+	cc_offset = (buf[0] << 0) | buf[1];
+
+	if (bq35100_read_extended_data(dev, BQ35100_FLASH_BOARD_OFFSET, buf, 1) < 0) {
+		return -EIO;
+	}
+
+	board_offset = buf[0];
+
+	k_sleep(K_MSEC(1000));
+
+	if (bq35100_get_raw_cal_data(dev, BQ35100_CMD_CAL_CURRENT, &avg_current) < 0) {
+		LOG_ERR("Unable to get raw cal data for current calibration");
+		return -EIO;
+	}
+
+	float cc_gain = (float)current / (avg_current - (cc_offset + board_offset) / 16);
+
+	/*if (cc_gain < 2.00E-02 || cc_gain > 10.00E+00) {
+        LOG_ERR("Invalid CC gain result");
+        return -EIO;
+    }*/
+
+	float cc_delta = cc_gain * 1193046;
+
+	/*if (cc_delta < 2.98262E+04 || cc_delta > 5.677445E+06) {
+        LOG_ERR("Invalid CC delta result");
+        return -EIO;
+    }*/
+
+	// from now something is really wrong
+	bq35100_float_to_DF(cc_gain, buf);
+	k_sleep(K_MSEC(1000));
+
+	if (bq35100_write_extended_data(dev, BQ35100_FLASH_CC_GAIN, buf, 2) < 0) {
+		return -EIO;
+	}
+
+	bq35100_float_to_DF(cc_delta, buf);
+	k_sleep(K_MSEC(50));
+
+	if (bq35100_write_extended_data(dev, BQ35100_FLASH_CC_DELTA, buf, 2) < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+ /**
+ * Calibrate internal/external temperature.
+ * To determine which tempearture source is selected calling
+ * useInternalTemp(true/false) is recommended prior to this.
+ * 
+ * @param dev - The device structure.
+ * @param temp - Temperature in 0.1 Kelvin.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int bq35100_cal_temp(const struct device *dev, uint16_t temp)
+{
+	uint8_t buf[1];
+    int16_t avg_temp;
+    bool external;
+    int32_t offset;
+
+	if (bq35100_read_extended_data(dev, BQ35100_FLASH_OPERATION_CFG_A, buf, 1) < 0) {
+		return -EIO;
+	}
+
+	// Determine which temperature source is selected
+    external = (buf[0] & 0b10000000);
+
+	LOG_DBG("Calibrating %s temperature", external ? "external" : "internal");
+	k_sleep(K_MSEC(1000));
+
+	if (bq35100_get_raw_cal_data(dev, BQ35100_CMD_CAL_TEMPERATURE, &avg_temp) < 0) {
+		LOG_ERR("Unable to get raw cal data for temperature calibration");
+		return -EIO;
+	}
+
+	offset = (int32_t)temp - avg_temp;
+
+    LOG_DBG("Temperature calibration difference: %li", offset);
+
+    if (offset < -128 || offset > 127) {
+        LOG_ERR("Invalid temperature offset");
+        return -EIO;
+    }
+
+	buf[0] = (int8_t)offset;
+	k_sleep(K_MSEC(1000));
+
+	if (bq35100_write_extended_data(dev, external ?
+		BQ35100_FLASH_EXT_TEMP_OFFSET : BQ35100_FLASH_INT_TEMP_OFFSET, buf, 1) < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * Floating pointconversion
+ * @param val - value to be converted
+ * @param result - a place to put the read data (4 bytes long)
+ */
+void bq35100_float_to_DF(float val, char *result)
+{
+	int32_t exp = 0;
+    float mod_val = val;
+    float tmp_val = 0;
+    uint16_t data[4];
+
+    if (val < 0.0) {
+        mod_val *= -1;
+    }
+
+    tmp_val = mod_val;
+
+    tmp_val *= (1 + pow(2, -25));
+
+    if (tmp_val < 0.5) {
+        while (tmp_val < 0.5) {
+            tmp_val *= 2;
+            exp--;
+        }
+
+    } else if (tmp_val >= 1.0) {
+        while (tmp_val >= 1.0) {
+            tmp_val /= 2;
+            exp--;
+        }
+    }
+
+    if (exp > 127) {
+        exp = 127;
+
+    } else if (exp < -128) {
+        exp = -128;
+    }
+
+    tmp_val = pow(2, 8 - exp) * val - 128;
+
+    data[2] = (uint8_t)tmp_val;
+    tmp_val = pow(2, 8) * (tmp_val - data[2]);
+    data[1] = (uint8_t)tmp_val;
+    tmp_val = pow(2, 8) * (tmp_val - data[1]);
+    data[0] = (uint8_t)tmp_val;
+
+    if (val < 0.0) {
+        data[2] |= 0x80;
+    }
+
+    data[3] = exp + 128;
+
+    if (result) {
+        memcpy(result, data, 4);
+    }
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -1188,12 +1487,12 @@ static int bq35100_init(const struct device *dev)
 		return EIO;
 	}
 	
-	if (bq35100_get_battery_alert(dev) < 0) {
+	/*if (bq35100_get_battery_alert(dev) < 0) {
 		return -EIO;
-	}
-	
-	// doest not work
-	/*if (bq35100_set_battery_alert(dev, 2) < 0) {
+	}*/
+
+	// not sure if this works
+	/*if (bq35100_set_battery_alert(dev, 0b0010) < 0) {
 		return -EIO;
 	}*/
 
@@ -1216,6 +1515,23 @@ static int bq35100_init(const struct device *dev)
 	if (bq35100_gauge_start(dev) < 0) {
 	    return -EIO;
 	}
+
+	/*if (bq35100_enter_cal_mode(dev, true) < 0) {
+		return -EIO;
+	}*/
+
+	/*if (bq35100_cal_voltage(dev, 3615) < 0) {
+		return -EIO;
+	}*/
+
+	// does not work
+	if (bq35100_cal_current(dev, 13) < 0) {
+		return -EIO;
+	}
+
+	/*if (bq35100_cal_temp(dev, 2950) < 0) {
+		return -EIO;
+	}*/
 
 	/*if(bq35100_gauge_stop(dev) < 0) {
 	     return -EIO;
