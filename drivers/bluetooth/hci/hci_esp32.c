@@ -147,7 +147,7 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	if (remaining != sys_le16_to_cpu(hdr.len)) {
+	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
 		BT_ERR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;

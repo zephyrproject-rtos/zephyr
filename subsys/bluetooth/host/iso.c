@@ -85,7 +85,7 @@ void hci_iso(struct net_buf *buf)
 	BT_ASSERT(buf->len >= sizeof(*hdr));
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	len = sys_le16_to_cpu(hdr->len);
+	len = bt_iso_hdr_len(sys_le16_to_cpu(hdr->len));
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = bt_iso_flags(handle);
 

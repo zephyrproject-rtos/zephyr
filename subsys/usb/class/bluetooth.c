@@ -199,7 +199,7 @@ static uint16_t hci_pkt_get_len(struct net_buf *buf,
 
 		hdr_len = sizeof(*iso_hdr);
 		iso_hdr = (struct bt_hci_iso_hdr *)data;
-		len = sys_le16_to_cpu(iso_hdr->len) + hdr_len;
+		len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
 		break;
 	}
 	default:
