@@ -312,7 +312,7 @@ static void ase_disable(struct bt_ascs_ase *ase)
 	/* The ASE state machine goes into different states from this operation
 	 * based on whether it is a source or a sink ASE.
 	 */
-	if (stream->cap->type == BT_AUDIO_SOURCE) {
+	if (bt_audio_ep_is_src(ep)) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
 	} else {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);

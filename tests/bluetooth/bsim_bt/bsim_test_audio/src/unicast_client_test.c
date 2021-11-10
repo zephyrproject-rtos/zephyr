@@ -213,13 +213,14 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	g_sinks[index] = ep;
 }
 
-static void add_remote_capability(struct bt_audio_capability *cap, int index)
+static void add_remote_capability(struct bt_audio_capability *cap, int index,
+				  uint8_t type)
 {
-	printk("#%u: cap %p type 0x%02x\n", index, cap, cap->type);
+	printk("#%u: cap %p type 0x%02x\n", index, cap, type);
 
 	print_codec(cap->codec);
 
-	if (cap->type != BT_AUDIO_SINK && cap->type != BT_AUDIO_SOURCE) {
+	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
@@ -242,7 +243,7 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (cap != NULL) {
-		add_remote_capability(cap, params->num_caps);
+		add_remote_capability(cap, params->num_caps, params->type);
 		capability_found = true;
 		return;
 	}

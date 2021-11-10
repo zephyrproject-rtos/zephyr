@@ -144,6 +144,10 @@ struct bt_audio_ep *bt_audio_ep_find_by_stream(struct bt_audio_stream *stream);
 
 struct bt_audio_ep *bt_audio_ep_alloc(struct bt_conn *conn, uint16_t handle);
 
+bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep);
+
+bool bt_audio_ep_is_src(const struct bt_audio_ep *ep);
+
 struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 				    uint16_t handle);
 

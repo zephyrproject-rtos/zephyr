@@ -122,6 +122,24 @@ static struct named_lc3_preset lc3_broadcast_presets[] = {
 /* Default to 16_2_1 */
 static struct named_lc3_preset *default_preset = &lc3_unicast_presets[3];
 
+static uint8_t stream_dir(const struct bt_audio_stream *stream)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
+		if (snks[i] != NULL && stream->ep == snks[i]) {
+			return BT_AUDIO_SINK;
+		}
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
+		if (srcs[i] != NULL && stream->ep == srcs[i]) {
+			return BT_AUDIO_SOURCE;
+		}
+	}
+
+	__ASSERT(false, "Invalid stream");
+	return 0;
+}
+
 static void print_codec(const struct bt_codec *codec)
 {
 	int i;
@@ -148,19 +166,20 @@ static void print_codec(const struct bt_codec *codec)
 	}
 }
 
-static void add_capability(struct bt_audio_capability *cap, int index)
+static void add_capability(struct bt_audio_capability *cap, int index,
+			   uint8_t type)
 {
 	shell_print(ctx_shell, "#%u: cap %p type 0x%02x", index, cap,
-		    cap->type);
+		    type);
 
 	print_codec(cap->codec);
 
-	if (cap->type != BT_AUDIO_SINK && cap->type != BT_AUDIO_SOURCE) {
+	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
 	if (index < CONFIG_BT_BAP_PAC_COUNT) {
-		rcaps[cap->type - 1][index] = cap;
+		rcaps[type - 1][index] = cap;
 	}
 }
 
@@ -183,7 +202,7 @@ static void discover_cb(struct bt_conn *conn, struct bt_audio_capability *cap,
 			struct bt_audio_discover_params *params)
 {
 	if (cap) {
-		add_capability(cap, params->num_caps);
+		add_capability(cap, params->num_caps, params->type);
 		return;
 	}
 
@@ -207,7 +226,7 @@ static void discover_all(struct bt_conn *conn, struct bt_audio_capability *cap,
 			struct bt_audio_discover_params *params)
 {
 	if (cap) {
-		add_capability(cap, params->num_caps);
+		add_capability(cap, params->num_caps, params->type);
 		return;
 	}
 
@@ -678,7 +697,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		if (stream->conn) {
 			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
 				    stream == default_stream ? "*" : " ", i, stream,
-				    stream->cap->type, stream->group);
+				    stream_dir(stream), stream->group);
 		}
 	}
 

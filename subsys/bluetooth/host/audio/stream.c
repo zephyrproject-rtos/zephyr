@@ -566,7 +566,7 @@ done:
 		return 0;
 	}
 
-	if (stream->cap->type == BT_AUDIO_SOURCE) {
+	if (bt_audio_ep_is_src(stream->ep)) {
 		return 0;
 	}
 
@@ -663,7 +663,7 @@ done:
 
 	bt_audio_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
 
-	if (stream->cap->type == BT_AUDIO_SOURCE) {
+	if (bt_audio_ep_is_src(stream->ep)) {
 		return 0;
 	}
 

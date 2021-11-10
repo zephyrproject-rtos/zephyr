@@ -79,13 +79,13 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	switch (ep->type) {
 	case BT_AUDIO_EP_LOCAL:
 		/* Server */
-		if (ep->stream->cap->type == BT_AUDIO_SINK) {
+		if (bt_audio_ep_is_snk(ep)) {
 			bt_audio_stream_start(ep->stream);
 		}
 		return;
 	case BT_AUDIO_EP_REMOTE:
 		/* Client */
-		if (ep->stream->cap->type == BT_AUDIO_SOURCE) {
+		if (bt_audio_ep_is_src(ep)) {
 			bt_audio_stream_start(ep->stream);
 		}
 		return;
@@ -287,6 +287,30 @@ struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
 }
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK || CONFIG_BT_AUDIO_BROADCAST_SOURCE*/
 
+bool bt_audio_ep_is_snk(const struct bt_audio_ep *ep)
+{
+#if SNK_SIZE > 0
+	for (int i = 0; i < ARRAY_SIZE(snks); i++) {
+		if (PART_OF_ARRAY(snks[i], ep)) {
+			return true;
+		}
+	}
+#endif /* SNK_SIZE > 0 */
+	return false;
+}
+
+bool bt_audio_ep_is_src(const struct bt_audio_ep *ep)
+{
+#if SRC_SIZE > 0
+	for (int i = 0; i < ARRAY_SIZE(srcs); i++) {
+		if (PART_OF_ARRAY(srcs[i], ep)) {
+			return true;
+		}
+	}
+#endif /* SRC_SIZE > 0 */
+	return false;
+}
+
 struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 				    uint16_t handle)
 {
@@ -367,7 +391,8 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	pref->pref_pd_max = sys_get_le24(cfg->prefer_pd_max);
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
-	       "pd_min %u pd_max %u codec 0x%02x ", stream->cap->type,
+	       "pd_min %u pd_max %u codec 0x%02x ",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
 	       pref->pd_max, stream->codec->id);
 
@@ -414,7 +439,8 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-	       stream->cap->type, ep->cig_id, ep->cis_id, stream->codec->id,
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
+	       ep->cig_id, ep->cis_id, stream->codec->id,
 	       stream->qos->interval, stream->qos->framing,
 	       stream->qos->phy, stream->qos->rtn, stream->qos->latency,
 	       stream->qos->pd);
@@ -448,7 +474,8 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
 	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
@@ -479,7 +506,8 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
@@ -506,7 +534,8 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 
 	/* Notify upper layer */
@@ -526,7 +555,8 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		return;
 	}
 
-	BT_DBG("dir 0x%02x", stream->cap->type);
+	BT_DBG("dir 0x%02x",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE);
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->stopped != NULL) {
@@ -694,7 +724,8 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 	cfg->codec.vid = sys_cpu_to_le16(ep->codec.vid);
 
 	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
-	       "pd_min %u pd_max %u codec 0x%02x ", ep->stream->cap->type,
+	       "pd_min %u pd_max %u codec 0x%02x ",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
 	       pref->pd_max, ep->stream->codec->id);
 
@@ -720,7 +751,8 @@ static void ep_get_status_qos(struct bt_audio_ep *ep,
 	sys_put_le24(ep->stream->qos->pd, qos->pd);
 
 	BT_DBG("dir 0x%02x codec 0x%02x interval %u framing 0x%02x phy 0x%02x "
-	       "rtn %u latency %u pd %u", ep->stream->cap->type,
+	       "rtn %u latency %u pd %u",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->stream->codec->id, ep->stream->qos->interval,
 	       ep->stream->qos->framing, ep->stream->qos->phy, ep->stream->qos->rtn,
 	       ep->stream->qos->latency, ep->stream->qos->pd);
@@ -739,7 +771,8 @@ static void ep_get_status_enable(struct bt_audio_ep *ep,
 	codec_data_add(buf, "meta", ep->codec.meta_count, ep->codec.meta);
 	enable->metadata_len = buf->len - enable->metadata_len;
 
-	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->stream->cap->type,
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x",
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       ep->cig_id, ep->cis_id);
 }
 
@@ -1169,7 +1202,8 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		return -EINVAL;
 	}
 
-	BT_DBG("id 0x%02x dir 0x%02x codec 0x%02x", ep->status.id, cap->type,
+	BT_DBG("id 0x%02x dir 0x%02x codec 0x%02x", ep->status.id,
+	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
 	       codec->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
