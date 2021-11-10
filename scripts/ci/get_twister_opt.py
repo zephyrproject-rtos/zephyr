@@ -200,4 +200,5 @@ if __name__ == "__main__":
     find_boards(files)
     find_archs(files)
     find_tests(files)
-    find_tags(files)
+    # disabling for now due to #40235
+    #find_tags(files)
