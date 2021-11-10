@@ -19,24 +19,27 @@ set -e
 # The remote host must be accessible via non-interactive ssh access
 # and the remote account must have password-free sudo ability.  (The
 # intent is that isolating the host like this to be a CAVS test unit
-# means that simple device access at root is acceptable.)  There must
-# be a current Zephyr tree on the host, and a working loadable
-# "diag_driver" kernel module.
+# means that simple device access at root is acceptable.)  The
+# firmware load and logging scripts must be present on the device and
+# match the paths below.
 
 # Remote host on which to test
-HOST=up2
+HOST=tgl2
+#HOST=up2
+
+# rimage key to use for signing binaries
+KEY=$HOME/otc_private_key_3k.pem
+#KEY=$HOME/otc_private_key.pem
+
+# Firmware load script on the host (different for APL and TGL)
+FWLOAD=./cavs-fw-v25.py
+#FWLOAD=./cavs-fw-v15.py
+
+# Local path to a built rimage directory (https://github.com/thesofproject/rimage)
+RIMAGE=$HOME/rimage
 
 # Zephyr tree on the host
 HOST_ZEPHYR_BASE=z/zephyr
-
-# rimage key to use for signing binaries
-KEY=$HOME/otc_private_key.pem
-
-# Local path to a built rimage (https://github.com/thesofproject/rimage)
-RIMAGE=$ZEPHYR_BASE/../modules/audio/sof/zephyr/ext/rimage
-
-# Kernel module on host (https://github.com/thesofproject/sof-diagnostic-driver)
-HOST_DRIVER=sof-diagnostic-driver/diag_driver.ko
 
 ########################################################################
 #
@@ -62,14 +65,14 @@ HOST_DRIVER=sof-diagnostic-driver/diag_driver.ko
 # separate file ("cavslog_load.log" in $ZEPHYR_BASE) and not the
 # device.log file that twister expects.
 
-if [ "$(basename $1)" = "zephyr.elf" ]; then
+if [ "$1" = "" ]; then
+    # Twister --device-serial-pty mode
+    DO_LOAD=1
+    DO_LOG=1
+elif [ "$(basename $1)" = "zephyr.elf" ]; then
     # Standalone mode (argument is a path to zephyr.elf)
     BLDDIR=$(dirname $(dirname $1))
     DO_SIGN=1
-    DO_LOAD=1
-    DO_LOG=1
-elif [ "$1" = "" ]; then
-    # Twister --device-serial-pty mode
     DO_LOAD=1
     DO_LOG=1
 else
@@ -80,15 +83,13 @@ fi
 
 IMAGE=$ZEPHYR_BASE/_cavstmp.ri
 LOADLOG=$ZEPHYR_BASE/_cavsload_load.log
-HOST_TOOLS=$HOST_ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools
-FWLOAD=$HOST_TOOLS/fw_loader.py
-ADSPLOG=$HOST_TOOLS/adsplog.py
+ADSPLOG=./adsplog.py
 
 if [ "$DO_SIGN" = "1" ]; then
     ELF=$BLDDIR/zephyr/zephyr.elf.mod
     BOOT=$BLDDIR/zephyr/bootloader.elf.mod
-    $RIMAGE/rimage -v -k $KEY -o $IMAGE -c $RIMAGE/config/apl.toml \
-		   -i 3 -e $BOOT $ELF > $BLDDIR/rimage.log
+    (cd $BLDDIR; west sign --tool-data=$RIMAGE/config -t rimage -- -k $KEY)
+    cp $BLDDIR/zephyr/zephyr.ri $IMAGE
 fi
 
 if [ "$DO_LOAD" = "1" ]; then
@@ -97,11 +98,10 @@ if [ "$DO_LOAD" = "1" ]; then
     done
 
     scp $IMAGE $HOST:_cavstmp.ri
-    ssh $HOST "(lsmod | grep -q diag_driver) || sudo insmod $HOST_DRIVER"
 
     # The script sometimes gets stuck
-    ssh $HOST "sudo pkill -f -9 fw_loader.py" || true
-    ssh $HOST "sudo $FWLOAD -f _cavstmp.ri || true" > $LOADLOG 2>&1
+    ssh $HOST "sudo pkill -f -9 cavs-fw-" || true
+    ssh $HOST "sudo $FWLOAD _cavstmp.ri" > $LOADLOG 2>&1
 
     if [ "$DO_SIGN" = "1" ]; then
 	cat $LOADLOG
