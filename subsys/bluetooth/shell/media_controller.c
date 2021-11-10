@@ -214,7 +214,7 @@ static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 	}
 
 	if (id == MPL_NO_TRACK_ID) {
-		shell_print(ctx_shell, "Player: %p, Next Track Object ID is empty");
+		shell_print(ctx_shell, "Player: %p, Next Track Object ID is empty", plr);
 	} else {
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 		shell_print(ctx_shell, "Player: %p, Next Track Object ID: %s", plr, str);
@@ -354,7 +354,7 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 	}
 
 	if (id == 0) {
-		shell_print(ctx_shell, "Player: %p, Search result not avilable");
+		shell_print(ctx_shell, "Player: %p, Search result not avilable", plr);
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
