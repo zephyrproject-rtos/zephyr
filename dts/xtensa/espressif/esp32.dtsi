@@ -81,6 +81,22 @@
 			};
 		};
 
+		ipi0: ipi@3f4c0058 {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI0";
+			reg = <0x3f4c0058 0x4>;
+			interrupts = <FROM_CPU_INTR0_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi1: ipi@3f4c005c {
+			compatible = "espressif,crosscore-interrupt";
+			label = "IPI1";
+			reg = <0x3f4c005c 0x4>;
+			interrupts = <FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
+		};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;

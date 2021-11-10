@@ -41,7 +41,7 @@ MEMORY
    *  - Utilize available memory regions to full capacity
    */
   dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
-  dram0_1_seg(RW): org = 0x3FFE4350, len = 0x1BCB0
+  dram0_1_seg(RW): org = 0x3FFE5230, len = 0x1BCB0 - 0xEE0 /* skip data for APP CPU initialization usage */
   drom0_0_seg(R): org = 0x3F400020, len = 0x400000-0x20
   rtc_iram_seg(RWX): org = 0x400C0000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x1000
@@ -488,7 +488,7 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     . = ALIGN (8);
     *(.noinit)
-    *(".noinit.*")
+    *(.noinit.*)
     . = ALIGN (8);
   } GROUP_LINK_IN(RAMABLE_REGION_1)
 
