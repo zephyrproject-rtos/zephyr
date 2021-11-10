@@ -774,6 +774,12 @@ void gsm_ppp_start(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
 
+	if (k_delayed_work_pending(&gsm->gsm_configure_work) == true) {
+	        if (k_delayed_work_cancel(&gsm->gsm_configure_work) != 0) {
+			LOG_WRN("Failed to cancel scheduled gsm_configure_work");
+		}
+	}
+
 	/* Re-init underlying UART comms */
 	int r = modem_iface_uart_init_dev(&gsm->context.iface,
 					  CONFIG_MODEM_GSM_UART_NAME);
@@ -782,13 +788,19 @@ void gsm_ppp_start(const struct device *device)
 		return;
 	}
 
-	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
 void gsm_ppp_stop(const struct device *device)
 {
 	struct gsm_modem *gsm = device->data;
+
+	if (k_delayed_work_pending(&gsm->gsm_configure_work) == true) {
+	        if (k_delayed_work_cancel(&gsm->gsm_configure_work) != 0) {
+			LOG_WRN("Failed to cancel scheduled gsm_configure_work");
+		}
+	}
+
 	struct net_if *iface = gsm->iface;
 
 	net_if_l2(iface)->enable(iface, false);
@@ -843,6 +855,8 @@ static int gsm_init(const struct device *device)
 	gsm->context.data_iccid = minfo.mdm_iccid;
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
 #endif	/* CONFIG_MODEM_SHELL */
+
+	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 
 	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
 	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
