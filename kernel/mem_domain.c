@@ -151,15 +151,23 @@ out:
 	return ret;
 }
 
-void k_mem_domain_add_partition(struct k_mem_domain *domain,
-				struct k_mem_partition *part)
+int k_mem_domain_add_partition(struct k_mem_domain *domain,
+			       struct k_mem_partition *part)
 {
 	int p_idx;
 	k_spinlock_key_t key;
+	int ret = 0;
 
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT(check_add_partition(domain, part),
-		 "invalid partition %p", part);
+	CHECKIF(domain == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(!check_add_partition(domain, part)) {
+		LOG_ERR("invalid partition %p", part);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	key = k_spin_lock(&z_mem_domain_lock);
 
@@ -170,8 +178,11 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 		}
 	}
 
-	__ASSERT(p_idx < max_partitions,
-		 "no free partition slots available");
+	CHECKIF(!(p_idx < max_partitions)) {
+		LOG_ERR("no free partition slots available");
+		ret = -ENOSPC;
+		goto unlock_out;
+	}
 
 	LOG_DBG("add partition base %lx size %zu to domain %p\n",
 		part->start, part->size, domain);
@@ -185,17 +196,25 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_partition_add(domain, p_idx);
 #endif
+
+unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
+
+out:
+	return ret;
 }
 
-void k_mem_domain_remove_partition(struct k_mem_domain *domain,
+int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 				  struct k_mem_partition *part)
 {
 	int p_idx;
 	k_spinlock_key_t key;
+	int ret = 0;
 
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT_NO_MSG(part != NULL);
+	CHECKIF((domain == NULL) || (part == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
 
 	key = k_spin_lock(&z_mem_domain_lock);
 
@@ -207,7 +226,11 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		}
 	}
 
-	__ASSERT(p_idx < max_partitions, "no matching partition found");
+	CHECKIF(!(p_idx < max_partitions)) {
+		LOG_ERR("no matching partition found");
+		ret = -ENOENT;
+		goto unlock_out;
+	}
 
 	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
 		part->start, part->size, domain);
@@ -221,7 +244,11 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 	domain->num_partitions--;
 
+unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
+
+out:
+	return ret;
 }
 
 static void add_thread_locked(struct k_mem_domain *domain,
@@ -301,7 +328,9 @@ static int init_mem_domain_module(const struct device *arg)
 	__ASSERT(ret == 0, "failed to init default mem domain");
 
 #ifdef Z_LIBC_PARTITION_EXISTS
-	k_mem_domain_add_partition(&k_mem_domain_default, &z_libc_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &z_libc_partition);
+	__ASSERT(ret == 0, "failed to add default libc mem partition");
 #endif /* Z_LIBC_PARTITION_EXISTS */
 
 	return 0;
