@@ -7,10 +7,10 @@ Overview
 ********
 
 This application is used together with the TTCN-3 based sanity check
-to validate the functionality of the experimental TCP (TCP2).
+to validate the functionality of the TCP.
 
-Building, Running and executing TTCN-3 based Sanity Check for TCP2
-******************************************************************
+Building, Running and executing TTCN-3 based Sanity Check for TCP
+*****************************************************************
 
 Compile and start the `net-test-tools`_:
 
@@ -29,7 +29,7 @@ Build the TCP sample app:
    cmake -DBOARD=qemu_x86 -DOVERLAY_CONFIG="overlay-slip.conf" ..
    make run
 
-Compile and run the TCP2 sanity check `net-test-suites`_:
+Compile and run the TCP sanity check `net-test-suites`_:
 
 .. code-block:: console
 

@@ -1,6 +1,6 @@
 /* main.c - Application main entry point
  *
- * This is a self-contained test for exercising the TCP2 protocol stack. Both
+ * This is a self-contained test for exercising the TCP protocol stack. Both
  * the server and client side run on ths same device using a DUMMY interface
  * as a loopback of the IP packets.
  *
@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include "ipv4.h"
 #include "ipv6.h"
-#include "tcp2.h"
-#include "tcp2_priv.h"
+#include "tcp.h"
+#include "tcp_private.h"
 #include "net_stats.h"
 
 #include <ztest.h>
@@ -1475,7 +1475,7 @@ static void test_server_timeout_out_of_order_data(void)
 	}
 
 	/* Because the pending seq values are not sequential,
-	 * the recv queue in tcp2 should timeout.
+	 * the recv queue in tcp should timeout.
 	 */
 	ret = k_sem_take(&test_sem,
 			 K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT + 10));
