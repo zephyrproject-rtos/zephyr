@@ -3,23 +3,22 @@
 
 if(CONFIG_HAS_GD32_HAL)
 
-string(TOUPPER ${CONFIG_SOC_SERIES} gd32_soc_series_uc)
 string(TOUPPER ${CONFIG_SOC} gd32_soc_uc)
 
-set(gd32_soc_dir     ${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/${gd32_soc_series_uc})
-set(gd32_cmsis_dir   ${gd32_soc_dir}/CMSIS/GD/${gd32_soc_series_uc})
+set(gd32_soc_dir     ${ZEPHYR_HAL_GIGADEVICE_MODULE_DIR}/${CONFIG_SOC_SERIES})
+set(gd32_cmsis_dir   ${gd32_soc_dir}/cmsis/gd/${CONFIG_SOC_SERIES})
 set(gd32_std_dir     ${gd32_soc_dir}/standard_peripheral)
-set(gd32_std_src_dir ${gd32_std_dir}/Source)
+set(gd32_std_src_dir ${gd32_std_dir}/source)
 
 zephyr_library_named(hal_gigadevice)
 
 zephyr_compile_definitions(${gd32_soc_uc})
 
 # Global includes to be used outside hal_gigadevice
-zephyr_include_directories(${gd32_cmsis_dir}/Include)
-zephyr_include_directories(${gd32_std_dir}/Include)
+zephyr_include_directories(${gd32_cmsis_dir}/include)
+zephyr_include_directories(${gd32_std_dir}/include)
 
-zephyr_library_sources(${gd32_cmsis_dir}/Source/system_${CONFIG_SOC_SERIES}.c)
+zephyr_library_sources(${gd32_cmsis_dir}/source/system_${CONFIG_SOC_SERIES}.c)
 
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_ADC    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_adc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_BKP    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_bkp.c)
