@@ -54,12 +54,20 @@ config TFM_CRYPTO_CIPHER_MODULE_ENABLED
 	  Unset this option if the functionality provided by 'crypto_cipher.c'
 	  is not used.
 
-config TFM_CRYPTO_ASYMMETRIC_MODULE_ENABLED
-	bool "Enable ASYMMETRIC crypto module"
+config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
+	bool "Enable ASYM ENCRYPT crypto module"
 	default y
 	help
-	  Enables the ASYMMETRIC crypto module within the crypto partition.
-	  Unset this option if the functionality provided by 'crypto_asymmetric.c'
+	  Enables the ASYM ENCRYPT crypto module within the crypto partition.
+	  Unset this option if the encrypt functionality provided by 'crypto_asymmetric.c'
+	  is not used.
+
+config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
+	bool "Enable ASYM SIGN crypto module"
+	default y
+	help
+	  Enables the ASYM SIGN crypto module within the crypto partition.
+	  Unset this option if the sign functionality provided by 'crypto_asymmetric.c'
 	  is not used.
 
 config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
