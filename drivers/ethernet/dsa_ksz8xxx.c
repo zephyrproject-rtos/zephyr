@@ -312,11 +312,6 @@ static int dsa_ksz8xxx_switch_setup(struct ksz8xxx_data *pdev)
 	 * disabled.
 	 */
 	for (i = KSZ8XXX_FIRST_PORT; i <= KSZ8XXX_LAST_PORT; i++) {
-		/* Skip Switch <-> CPU Port */
-		if (i == KSZ8XXX_CPU_PORT) {
-			continue;
-		}
-
 		/* Enable transmission, reception and switch address learning */
 		dsa_ksz8xxx_read_reg(pdev, KSZ8794_CTRL2_PORTn(i), &tmp);
 		tmp |= KSZ8794_CTRL2_TRANSMIT_EN;
