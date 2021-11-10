@@ -326,7 +326,12 @@ void test_edac_dummy_api(void);
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
-	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					     &default_part);
+	if (ret != 0) {
+		TC_PRINT("Failed to add to mem domain (%d)", ret);
+		k_oops();
+	}
 #endif
 
 	ztest_test_suite(ibecc,
