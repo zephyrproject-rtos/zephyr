@@ -11,6 +11,7 @@
 #include <device.h>
 #include <sys/util.h>
 #include <logging/log.h>
+#include <math.h>
 
 #include "bq35100.h"
 #include "drivers/sensor/bq35100.h"
@@ -22,6 +23,7 @@ static int bq35100_compute_checksum(const char *data, size_t length);
 static int bq35100_get_security_mode(const struct device *dev);
 static int bq35100_get_status(const struct device *dev, uint16_t *status);
 static int bq35100_set_design_capacity(const struct device *dev, uint16_t capacity);
+void bq35100_float_to_DF(float val, char *result);
 
 /**
  * Read/Write from device.
@@ -987,7 +989,7 @@ static int bq35100_get_raw_cal_data(const struct device *dev, uint16_t command, 
 	}
 
 	avg /= 4;
-	LOG_DBG("Final cal avg: %li", avg);
+	LOG_DBG("Final cal avg: %i", avg);
 
 	if (result) {
 		*result = (int16_t)avg;
@@ -1018,7 +1020,7 @@ static int bq35100_cal_voltage(const struct device *dev, uint16_t voltage)
 	}
 
 	offset = voltage - avg_voltage;
-	LOG_DBG("Voltage calibration difference: %li", offset);
+	LOG_DBG("Voltage calibration difference: %i", offset);
 
 	if (offset < -128 || offset > 127) {
         LOG_ERR("Invalid voltage offset");
@@ -1044,7 +1046,7 @@ static int bq35100_cal_voltage(const struct device *dev, uint16_t voltage)
  */
 static int bq35100_cal_current(const struct device *dev, uint16_t current)
 {
-	uint16_t buf[4];
+	uint8_t buf[4];
     int16_t avg_current;
     int16_t cc_offset;
     int8_t board_offset;
@@ -1133,7 +1135,7 @@ static int bq35100_cal_temp(const struct device *dev, uint16_t temp)
 
 	offset = (int32_t)temp - avg_temp;
 
-    LOG_DBG("Temperature calibration difference: %li", offset);
+    LOG_DBG("Temperature calibration difference: %i", offset);
 
     if (offset < -128 || offset > 127) {
         LOG_ERR("Invalid temperature offset");
@@ -1156,12 +1158,12 @@ static int bq35100_cal_temp(const struct device *dev, uint16_t temp)
  * @param val - value to be converted
  * @param result - a place to put the read data (4 bytes long)
  */
-void bq35100_float_to_DF(float val, char *result)
+void bq35100_float_to_DF(float val, uint8_t *result)
 {
 	int32_t exp = 0;
     float mod_val = val;
     float tmp_val = 0;
-    uint16_t data[4];
+    uint8_t data[4];
 
     if (val < 0.0) {
         mod_val *= -1;
