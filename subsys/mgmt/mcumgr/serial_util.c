@@ -29,24 +29,6 @@ static uint16_t mcumgr_serial_calc_crc(const uint8_t *data, int len)
 	return crc16(data, len, 0x1021, 0, true);
 }
 
-static int mcumgr_serial_parse_op(const uint8_t *buf, int len)
-{
-	uint16_t op;
-
-	if (len < sizeof(op)) {
-		return -EINVAL;
-	}
-
-	memcpy(&op, buf, sizeof(op));
-	op = sys_be16_to_cpu(op);
-
-	if (op != MCUMGR_SERIAL_HDR_PKT && op != MCUMGR_SERIAL_HDR_FRAG) {
-		return -EINVAL;
-	}
-
-	return op;
-}
-
 static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
 	if (rx_ctxt->nb->len < 2) {
@@ -98,7 +80,11 @@ struct net_buf *mcumgr_serial_process_frag(
 		}
 	}
 
-	op = mcumgr_serial_parse_op(frag, frag_len);
+	if (frag_len < sizeof(op)) {
+		return NULL;
+	}
+
+	op = sys_be16_to_cpu(*(uint16_t *)frag);
 	switch (op) {
 	case MCUMGR_SERIAL_HDR_PKT:
 		net_buf_reset(rx_ctxt->nb);
