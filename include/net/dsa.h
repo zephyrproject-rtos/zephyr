@@ -28,7 +28,7 @@
  * Size of the DSA TAG:
  * - KSZ8794 - 1 byte
  */
-#if defined(CONFIG_DSA_KSZ8794) && defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ8794) && defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 #define DSA_TAG_SIZE 1
 #else
 #define DSA_TAG_SIZE 0

@@ -320,7 +320,7 @@ static int dsa_ksz8xxx_switch_setup(struct ksz8xxx_data *pdev)
 		dsa_ksz8xxx_write_reg(pdev, KSZ8794_CTRL2_PORTn(i), tmp);
 	}
 
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 	/* Enable tail tag feature */
 	dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL10, &tmp);
 	tmp |= KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN;
@@ -854,7 +854,7 @@ static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
 	return 0;
 }
 
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 #define DSA_KSZ8795_TAIL_TAG_OVRD	BIT(6)
 #define DSA_KSZ8795_TAIL_TAG_LOOKUP	BIT(7)
 
@@ -1066,7 +1066,7 @@ static struct dsa_api dsa_api_f = {
 	.switch_write = dsa_ksz8xxx_sw_write_reg,
 	.switch_set_mac_table_entry = dsa_ksz8xxx_set_mac_table_entry,
 	.switch_get_mac_table_entry = dsa_ksz8xxx_get_mac_table_entry,
-#if defined(DSA_KSZ_TAIL_TAGGING)
+#if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
 	.dsa_xmit_pkt = dsa_ksz8xxx_xmit_pkt,
 	.dsa_get_iface = dsa_ksz8xxx_get_iface,
 #endif
