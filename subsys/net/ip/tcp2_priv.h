@@ -172,6 +172,10 @@ enum th_flags {
 	CWR = BIT(7),
 };
 
+struct tcp_mss_option {
+	uint32_t option;
+};
+
 enum tcp_state {
 	TCP_LISTEN = 1,
 	TCP_SYN_SENT,
