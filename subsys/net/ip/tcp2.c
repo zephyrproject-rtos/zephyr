@@ -808,14 +808,11 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 
 static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct mss_option {
-		uint32_t option;
-	};
-	NET_PKT_DATA_ACCESS_DEFINE(mss_option, struct mss_option);
-	struct mss_option *mss;
+	NET_PKT_DATA_ACCESS_DEFINE(mss_opt_access, struct tcp_mss_option);
+	struct tcp_mss_option *mss;
 	uint32_t recv_mss;
 
-	mss = net_pkt_get_data(pkt, &mss_option);
+	mss = net_pkt_get_data(pkt, &mss_opt_access);
 	if (!mss) {
 		return -ENOBUFS;
 	}
@@ -825,7 +822,7 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 
 	UNALIGNED_PUT(htonl(recv_mss), (uint32_t *)mss);
 
-	return net_pkt_set_data(pkt, &mss_option);
+	return net_pkt_set_data(pkt, &mss_opt_access);
 }
 
 static bool is_destination_local(struct net_pkt *pkt)
