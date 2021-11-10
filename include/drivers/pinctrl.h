@@ -183,6 +183,13 @@ struct pinctrl_dev_config {
 		.states = Z_PINCTRL_STATES_NAME(node_id),		       \
 		.state_cnt = ARRAY_SIZE(Z_PINCTRL_STATES_NAME(node_id)),       \
 	}
+
+#define Z_PINCTRL_DEV_CUSTOM_REG_CONFIG_INIT(node_id, custom_reg)	       \
+	{								       \
+		.reg = custom_reg,					       \
+		.states = Z_PINCTRL_STATES_NAME(node_id),		       \
+		.state_cnt = ARRAY_SIZE(Z_PINCTRL_STATES_NAME(node_id)),       \
+	}
 #else
 #define Z_PINCTRL_DEV_CONFIG_INIT(node_id)				       \
 	{								       \
@@ -243,6 +250,26 @@ struct pinctrl_dev_config {
 	Z_PINCTRL_DEV_CONFIG_INIT(node_id);
 
 /**
+ * @brief Variant of PINCTRL_DT_DEFINE, with custom reg provided
+ *
+ * Same as PINCTRL_DT_DEFINE, but associated with
+ * Z_PINCTRL_DEV_CUSTOM_REG_CONFIG_INIT. Only useful for a subset of devices
+ * defining CONFIG_PINCTRL_STORE_REG nad for which reg address can't be directly
+ * infered from node reference.
+ *
+ * @param node_id Node identifier.
+ * @param reg  Custom reg address
+ */
+
+#define PINCTRL_DT_CUSTOM_REG_DEFINE(node_id, reg)			       \
+	UTIL_LISTIFY(DT_NUM_PINCTRL_STATES(node_id),			       \
+		     Z_PINCTRL_STATE_PINS_DEFINE, node_id)		       \
+	Z_PINCTRL_STATES_DEFINE(node_id)				       \
+	Z_PINCTRL_DEV_CONFIG_CONST Z_PINCTRL_DEV_CONFIG_STATIC		       \
+	struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =	       \
+	Z_PINCTRL_DEV_CUSTOM_REG_CONFIG_INIT(node_id, reg);
+
+/**
  * @brief Define all pin control information for the given compatible index.
  *
  * @param inst Instance number.
@@ -250,6 +277,17 @@ struct pinctrl_dev_config {
  * @see #PINCTRL_DT_DEFINE
  */
 #define PINCTRL_DT_INST_DEFINE(inst) PINCTRL_DT_DEFINE(DT_DRV_INST(inst))
+
+/**
+ * @brief Variant of PINCTRL_DT_INST_DEFINE, when with a custom reg
+ *
+ * @param inst Instance number.
+ * @param reg  Custom reg address
+ *
+ * @see #PINCTRL_DT_CUSTOM_REG_DEFINE
+ */
+#define PINCTRL_DT_INST_CUSTOM_REG_DEFINE(inst, reg) \
+				PINCTRL_DT_CUSTOM_REG_DEFINE(DT_DRV_INST(inst), reg)
 
 /**
  * @brief Obtain a reference to the pin control configuration given a node
