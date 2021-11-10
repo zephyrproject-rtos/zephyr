@@ -432,18 +432,19 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 }
 
 void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
-		     union mpsc_pbuf_generic *item)
+		     const union mpsc_pbuf_generic *item)
 {
 	uint32_t wlen = buffer->get_wlen(item);
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
+	union mpsc_pbuf_generic *witem = (union mpsc_pbuf_generic *)item;
 
-	item->hdr.valid = 0;
+	witem->hdr.valid = 0;
 	if (!(buffer->flags & MPSC_PBUF_MODE_OVERWRITE) ||
 		 ((uint32_t *)item == &buffer->buf[buffer->rd_idx])) {
-		item->hdr.busy = 0;
+		witem->hdr.busy = 0;
 		buffer->rd_idx = idx_inc(buffer, buffer->rd_idx, wlen);
 	} else {
-		item->skip.len = wlen;
+		witem->skip.len = wlen;
 	}
 	MPSC_PBUF_DBG(buffer, "freed: %p ", item);
 
