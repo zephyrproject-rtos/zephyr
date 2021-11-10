@@ -709,7 +709,7 @@ config BT_CTLR_GPIO_PA_POL_INV
 config BT_CTLR_GPIO_PA_OFFSET
 	int "Time from PA ON to Tx ready"
 	default 5
-	range 0 15
+	range 0 23
 	help
 	  Time before Tx ready to turn on PA in micro seconds.
 
