@@ -128,7 +128,7 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_TCP2)
+#if defined(CONFIG_NET_TCP)
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif

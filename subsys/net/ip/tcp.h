@@ -21,11 +21,11 @@
  *       into the ip stack and the socket layer less intrusive.
  *
  *       Semantically cleaner use is possible (and might be exposed),
- *       look into the unit test tests/net/tcp2 for insights.
+ *       look into the unit test tests/net/tcp for insights.
  */
 
-#ifndef TCP2_H
-#define TCP2_H
+#ifndef TCP_H
+#define TCP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,4 +142,4 @@ void tcp_input(struct net_pkt *pkt);
 }
 #endif
 
-#endif /* TCP2_H */
+#endif /* TCP_H */

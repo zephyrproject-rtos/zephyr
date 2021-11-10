@@ -2813,7 +2813,7 @@ const char *net_tcp_state_str(enum tcp_state state)
 void net_tcp_init(void)
 {
 #if defined(CONFIG_NET_TEST_PROTOCOL)
-	/* Register inputs for TTCN-3 based TCP2 sanity check */
+	/* Register inputs for TTCN-3 based TCP sanity check */
 	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
 	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
 	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
