@@ -11,8 +11,21 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 7
 
+config SMP
+	default n
+
+if SMP
+
+config SCHED_IPI_SUPPORTED
+	default y
+
+config SCHED_CPU_MASK
+	default y
+
 config MP_NUM_CPUS
-	default 1
+	default 2
+
+endif
 
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n

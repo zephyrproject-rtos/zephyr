@@ -81,9 +81,6 @@ void __attribute__((section(".iram1"))) __start(void)
 		:
 		: "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
-	/* Disable CPU1 while we figure out how to have SMP in Zephyr. */
-	*app_cpu_config_reg &= ~DPORT_APPCPU_CLKGATE_EN;
-
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
 	 * arch_kernel_init() is invoked.
