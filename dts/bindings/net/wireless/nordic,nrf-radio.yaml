@@ -12,6 +12,27 @@ description: |
 
     This binding is not relevant to the nRF91x baseband radio.
 
+    External Coexistence Support
+    ----------------------------
+
+    External radio coexistence is a system designed to allow cooperative sharing
+    of the radio spectrum by separate transceivers or SoCs co-located on the
+    same board. There has to be an arbitrator that grants or denies on-air access
+    to the different transceivers, using one or more GPIOs connected to each
+    transceiver.
+
+    If your system includes a radio arbitrator, set up the link to it in the
+    devicetree using this binding's 'coex' property, like this example:
+
+    &radio {
+            coex = <&nrf_radio_coex>;
+    };
+
+    nrf_radio_coex: my-coex {
+            compatible = "...";
+            ...
+    };
+
     Direction Finding Extension
     ---------------------------
 
@@ -91,6 +112,11 @@ properties:
 
     interrupts:
       required: true
+
+    coex:
+      type: phandle
+      description: |
+        Phandle linking the RADIO node to the external radio coexistence arbitrator.
 
     dfe-supported:
       type: boolean
