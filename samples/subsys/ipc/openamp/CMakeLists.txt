@@ -41,5 +41,6 @@ ExternalProject_Add(
   # NB: Do we need to pass on more CMake variables?
   BUILD_ALWAYS True
 )
+add_dependencies(app openamp_remote)
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
