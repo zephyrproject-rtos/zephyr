@@ -1542,7 +1542,7 @@ Espressif Platforms:
     maintainers:
         - sylvioalves
         - glaubermaroto
-        - ulipe
+        - uLipe
     files:
         - drivers/*/*esp32*.c
         - boards/xtensa/esp32*/
