@@ -248,6 +248,8 @@ static void telnet_accept(struct net_context *client,
 			  int error,
 			  void *user_data)
 {
+	int ret;
+
 	if (error) {
 		LOG_ERR("Error %d", error);
 		goto error;
@@ -270,6 +272,14 @@ static void telnet_accept(struct net_context *client,
 		net_context_get_family(client) == AF_INET ? "" : "6");
 
 	sh_telnet->client_ctx = client;
+
+	/* Disable echo - if command handling is enabled we reply that we don't
+	 * support echo.
+	 */
+	ret = shell_echo_set(sh_telnet->shell_context, false);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable echo, err: %d", ret);
+	}
 
 	return;
 error:
