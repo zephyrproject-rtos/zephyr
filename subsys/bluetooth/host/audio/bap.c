@@ -174,7 +174,7 @@ static int bap_start(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (stream->cap->type == BT_AUDIO_SOURCE) {
+	if (bt_audio_ep_is_src(ep)) {
 		err = bt_audio_ep_start(ep, buf);
 		if (err) {
 			return err;
@@ -226,7 +226,7 @@ static int bap_stop(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (stream->cap->type == BT_AUDIO_SOURCE) {
+	if (bt_audio_ep_is_src(ep)) {
 		err = bt_audio_ep_stop(ep, buf);
 		if (err) {
 			return err;
