@@ -54,14 +54,6 @@ config TFM_CRYPTO_CIPHER_MODULE_ENABLED
 	  Unset this option if the functionality provided by 'crypto_cipher.c'
 	  is not used.
 
-config TFM_CRYPTO_GENERATOR_MODULE_ENABLED
-	bool "Enable GENERATOR crypto module"
-	default y
-	help
-	  Enables the GENERATOR crypto module within the crypto partition.
-	  Unset this option if the key generation, generate, raw key and
-	  key derivation features from 'tfm_crypto_secure_api.c' is not used.
-
 config TFM_CRYPTO_ASYMMETRIC_MODULE_ENABLED
 	bool "Enable ASYMMETRIC crypto module"
 	default y
