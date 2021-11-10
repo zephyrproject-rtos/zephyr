@@ -15,10 +15,10 @@ config BOARD
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 100000000
+	default 111111111
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default 100
+	default 1000
 
 if CONSOLE
 
@@ -71,7 +71,7 @@ endif # NETWORKING
 if QEMU_ICOUNT
 
 	config QEMU_ICOUNT_SHIFT
-	default 8
+	default 3
 	config QEMU_ICOUNT_SLEEP
 	default y
 
