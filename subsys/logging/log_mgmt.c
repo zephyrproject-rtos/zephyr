@@ -84,7 +84,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			       uint32_t domain_id, int16_t source_id,
 			       uint32_t level)
 {
-	__ASSERT_NO_MSG(source_id < z_log_sources_count());
+	__ASSERT_NO_MSG(source_id < (int16_t)z_log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		uint32_t new_aggr_filter;
@@ -139,7 +139,7 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 		"Setting per-backend filters from user mode is not supported"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < z_log_sources_count(),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < (int16_t)z_log_sources_count(),
 		"Invalid log source id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
 		(level <= LOG_LEVEL_DBG),
@@ -185,7 +185,7 @@ void log_backend_disable(struct log_backend const *const backend)
 uint32_t log_filter_get(struct log_backend const *const backend,
 			uint32_t domain_id, int16_t source_id, bool runtime)
 {
-	__ASSERT_NO_MSG(source_id < z_log_sources_count());
+	__ASSERT_NO_MSG(source_id < (int16_t)z_log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
 		if (source_id < 0) {
