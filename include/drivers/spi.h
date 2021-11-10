@@ -22,6 +22,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
+#include <dt-bindings/spi/spi.h>
 #include <drivers/gpio.h>
 
 #ifdef __cplusplus
@@ -83,15 +84,6 @@ extern "C" {
 
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
-
-/**
- * @brief SPI duplex modes
- *
- * Some controllers support half duplex transfer, which results in 3-wire usage.
- * By default, full duplex will prevail.
- */
-#define SPI_FULL_DUPLEX		(0U << 11)
-#define SPI_HALF_DUPLEX		(1U << 11)
 
 /**
  * @brief Specific SPI devices control bits
