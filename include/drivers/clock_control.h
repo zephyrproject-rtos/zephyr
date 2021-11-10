@@ -80,12 +80,17 @@ typedef enum clock_control_status (*clock_control_get_status_fn)(
 						    const struct device *dev,
 						    clock_control_subsys_t sys);
 
+typedef int (*clock_control_set)(const struct device *dev,
+				 clock_control_subsys_t sys,
+				 uint32_t rate);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
 	clock_control_async_on_fn	async_on;
 	clock_control_get		get_rate;
 	clock_control_get_status_fn	get_status;
+	clock_control_set		set_rate;
 };
 
 /**
@@ -230,6 +235,43 @@ static inline int clock_control_get_rate(const struct device *dev,
 
 	return api->get_rate(dev, sys, rate);
 }
+
+/**
+ * @brief Set the rate of the clock controlled by the device.
+ *
+ * On success, the new clock rate is set and ready when this function
+ * returns. This function may sleep, and thus can only be called from
+ * thread context.
+ *
+ * @param dev Device structure whose driver controls the clock.
+ * @param sys Opaque data representing the clock.
+ * @param rate Subsystem clock rate.
+ *
+ * @retval -EALREADY if clock was already in the given rate.
+ * @retval -ENOTSUP If the requested mode of operation is not supported.
+ * @retval -ENOSYS if the interface is not implemented.
+ * @retval other negative errno on vendor specific error.
+ */
+static inline int clock_control_set_rate(const struct device *dev,
+		clock_control_subsys_t sys,
+		uint32_t rate)
+{
+	int ret = device_usable_check(dev);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->set_rate == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_rate(dev, sys, rate);
+}
+
 
 #ifdef __cplusplus
 }
