@@ -226,7 +226,7 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer);
  * @param packet Packet.
  */
 void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
-		    union mpsc_pbuf_generic *packet);
+		    const union mpsc_pbuf_generic *packet);
 
 /** @brief Check if there are any message pending.
  *
