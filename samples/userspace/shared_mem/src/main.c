@@ -158,9 +158,19 @@ void main(void)
 	k_thread_access_grant(tCT, &allforone);
 	printk("CT Thread Created %p\n", tCT);
 	/* Re-using the default memory domain for CT */
-	k_mem_domain_add_partition(&k_mem_domain_default, &ct_part);
-	k_mem_domain_add_partition(&k_mem_domain_default, &blk_part);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default, &ct_part);
+	if (ret != 0) {
+		printk("Failed to add ct_part to mem domain (%d)\n", ret);
+		k_oops();
+	}
 	printk("ct partitions installed\n");
+
+	ret = k_mem_domain_add_partition(&k_mem_domain_default, &blk_part);
+	if (ret != 0) {
+		printk("Failed to add blk_part to mem domain (%d)\n", ret);
+		k_oops();
+	}
+	printk("blk partitions installed\n");
 
 	k_thread_start(&enc_thread);
 	/* need to start all three threads.  let enc go first to perform init step */

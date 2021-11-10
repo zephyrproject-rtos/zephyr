@@ -151,8 +151,12 @@ extern int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
  *
  * @param domain The memory domain to be added a memory partition.
  * @param part The memory partition to be added
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOSPC if no free partition slots available
  */
-extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
+extern int k_mem_domain_add_partition(struct k_mem_domain *domain,
 				      struct k_mem_partition *part);
 
 /**
@@ -162,8 +166,12 @@ extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
  *
  * @param domain The memory domain to be removed a memory partition.
  * @param part The memory partition to be removed
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOENT if no matching partition found
  */
-extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
+extern int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 					 struct k_mem_partition *part);
 
 /**
