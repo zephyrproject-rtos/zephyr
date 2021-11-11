@@ -230,7 +230,7 @@ static void ase_release(struct bt_ascs_ase *ase, bool cache)
 	if (server_cb != NULL && server_cb->release != NULL) {
 		err = server_cb->release(ase->ep.stream);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
@@ -299,7 +299,7 @@ static void ase_disable(struct bt_ascs_ase *ase)
 	if (server_cb != NULL && server_cb->release != NULL) {
 		err = server_cb->disable(stream);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
@@ -711,7 +711,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 				err = server_cb->reconfig(ase->ep.stream, cap,
 							  &ase->ep.codec);
 			} else {
-				err = -EACCES;
+				err = -EOPNOTSUPP;
 			}
 
 			if (err) {
@@ -733,7 +733,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 							cap, &ase->ep.codec,
 							&stream);
 			} else {
-				err = -EACCES;
+				err = -EOPNOTSUPP;
 			}
 
 			if (err || stream == NULL) {
@@ -1027,7 +1027,7 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		err = server_cb->metadata(stream, ep->codec.meta_count,
 					  ep->codec.meta);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
@@ -1083,7 +1083,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 		err = server_cb->enable(stream, ep->codec.meta_count,
 					ep->codec.meta);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
@@ -1194,7 +1194,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 	if (server_cb != NULL && server_cb->start != NULL) {
 		err = server_cb->start(stream);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
@@ -1326,7 +1326,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	if (server_cb != NULL && server_cb->stop != NULL) {
 		err = server_cb->stop(stream);
 	} else {
-		err = -EACCES;
+		err = -EOPNOTSUPP;
 	}
 
 	if (err) {
