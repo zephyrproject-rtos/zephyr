@@ -1006,8 +1006,8 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
-static void private_map(struct arm_mmu_ptables *ptables, const char *name,
-			uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+static int private_map(struct arm_mmu_ptables *ptables, const char *name,
+		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
 	int ret;
 
@@ -1018,10 +1018,12 @@ static void private_map(struct arm_mmu_ptables *ptables, const char *name,
 	if (is_ptable_active(ptables)) {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
-static void reset_map(struct arm_mmu_ptables *ptables, const char *name,
-		      uintptr_t addr, size_t size)
+static int reset_map(struct arm_mmu_ptables *ptables, const char *name,
+		     uintptr_t addr, size_t size)
 {
 	int ret;
 
@@ -1030,40 +1032,44 @@ static void reset_map(struct arm_mmu_ptables *ptables, const char *name,
 	if (is_ptable_active(ptables)) {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id)
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id)
 {
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	private_map(domain_ptables, "partition", ptn->start, ptn->start,
-		    ptn->size, ptn->attr.attrs | MT_NORMAL);
+	return private_map(domain_ptables, "partition", ptn->start, ptn->start,
+			   ptn->size, ptn->attr.attrs | MT_NORMAL);
 }
 
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id)
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id)
 {
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	reset_map(domain_ptables, "partition removal", ptn->start, ptn->size);
+	return reset_map(domain_ptables, "partition removal",
+			 ptn->start, ptn->size);
 }
 
-static void map_thread_stack(struct k_thread *thread,
-			     struct arm_mmu_ptables *ptables)
+static int map_thread_stack(struct k_thread *thread,
+			    struct arm_mmu_ptables *ptables)
 {
-	private_map(ptables, "thread_stack", thread->stack_info.start,
-		    thread->stack_info.start, thread->stack_info.size,
-		    MT_P_RW_U_RW | MT_NORMAL);
+	return private_map(ptables, "thread_stack", thread->stack_info.start,
+			    thread->stack_info.start, thread->stack_info.size,
+			    MT_P_RW_U_RW | MT_NORMAL);
 }
 
-void arch_mem_domain_thread_add(struct k_thread *thread)
+int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	struct arm_mmu_ptables *old_ptables, *domain_ptables;
 	struct k_mem_domain *domain;
 	bool is_user, is_migration;
+	int ret = 0;
 
 	domain = thread->mem_domain_info.mem_domain;
 	domain_ptables = &domain->arch.ptables;
@@ -1073,7 +1079,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	is_migration = (old_ptables != NULL) && is_user;
 
 	if (is_migration) {
-		map_thread_stack(thread, domain_ptables);
+		ret = map_thread_stack(thread, domain_ptables);
 	}
 
 	thread->arch.ptables = domain_ptables;
@@ -1089,12 +1095,14 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	if (is_migration) {
-		reset_map(old_ptables, __func__, thread->stack_info.start,
+		ret = reset_map(old_ptables, __func__, thread->stack_info.start,
 				thread->stack_info.size);
 	}
+
+	return ret;
 }
 
-void arch_mem_domain_thread_remove(struct k_thread *thread)
+int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct arm_mmu_ptables *domain_ptables;
 	struct k_mem_domain *domain;
@@ -1103,15 +1111,15 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 	domain_ptables = &domain->arch.ptables;
 
 	if ((thread->base.user_options & K_USER) == 0) {
-		return;
+		return 0;
 	}
 
 	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
-		return;
+		return 0;
 	}
 
-	reset_map(domain_ptables, __func__, thread->stack_info.start,
-		  thread->stack_info.size);
+	return reset_map(domain_ptables, __func__, thread->stack_info.start,
+			 thread->stack_info.size);
 }
 
 static void z_arm64_swap_ptables(struct k_thread *incoming)
