@@ -31,13 +31,13 @@ app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_dut_llcp.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_tst_llcp.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_dut.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_tst.conf compile
-app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
-  conf_file=prj_dut_legacy.conf compile
-app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
-  conf_file=prj_tst_legacy.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_low_lat.conf compile

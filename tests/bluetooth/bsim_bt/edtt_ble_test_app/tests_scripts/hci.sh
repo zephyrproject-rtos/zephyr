@@ -5,7 +5,7 @@
 # HCI regression tests based on the EDTTool
 CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 
-export SIMULATION_ID="edtt_hci_llcp"
+export SIMULATION_ID="edtt_hci"
 export TEST_FILE=${CWD}"/hci.test_list"
 export TEST_MODULE="hci_verification"
 export PRJ_CONF_1="prj_dut_conf"
