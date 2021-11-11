@@ -10,7 +10,7 @@
 
 / {
 	model = "QEMU Cortex-A9";
-	compatible = "xlnx,zynq7000";
+	compatible = "xlnx,zynq7000s";
 	interrupt-parent = <&gic>;
 
 	sram0: memory@100000 {
