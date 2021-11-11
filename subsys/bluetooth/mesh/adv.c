@@ -65,6 +65,7 @@ static struct bt_mesh_adv *adv_alloc(int id)
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
+					     enum bt_mesh_adv_tag tag,
 					     uint8_t xmit, k_timeout_t timeout)
 {
 	struct bt_mesh_adv *adv;
@@ -86,16 +87,18 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 	(void)memset(adv, 0, sizeof(*adv));
 
 	adv->type         = type;
+	adv->tag          = tag;
 	adv->xmit         = xmit;
 
 	return buf;
 }
 
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-				   k_timeout_t timeout)
+struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
+				   enum bt_mesh_adv_tag tag,
+				   uint8_t xmit, k_timeout_t timeout)
 {
 	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
-					    xmit, timeout);
+					    tag, xmit, timeout);
 }
 
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
