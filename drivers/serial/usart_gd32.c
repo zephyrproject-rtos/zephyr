@@ -8,6 +8,12 @@
 #include <errno.h>
 #include <drivers/pinctrl.h>
 #include <drivers/uart.h>
+#include <soc.h>
+
+/* Unify GD32 HAL USART status register name to USART_STAT */
+#ifndef USART_STAT
+#define USART_STAT USART_STAT0
+#endif
 
 struct gd32_usart_config {
 	uint32_t reg;
@@ -120,7 +126,7 @@ static void usart_gd32_poll_out(const struct device *dev, unsigned char c)
 static int usart_gd32_err_check(const struct device *dev)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
-	uint32_t status = USART_STAT0(cfg->reg);
+	uint32_t status = USART_STAT(cfg->reg);
 	int errors = 0;
 
 	if (status & USART_FLAG_ORERR) {
