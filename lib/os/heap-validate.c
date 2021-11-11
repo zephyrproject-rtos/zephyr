@@ -67,10 +67,42 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 	}
 }
 
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+
+static inline void sys_heap_get_info(struct sys_heap *heap,
+		struct sys_heap_runtime_stats *stats)
+{
+	chunkid_t c = 0;
+	struct z_heap *h = heap->heap;
+
+	stats->allocated_bytes = 0;
+	stats->free_bytes = 0;
+
+	do {
+		if (chunk_used(h, c)) {
+			if ((c != 0) && (c != h->end_chunk)) {
+				stats->allocated_bytes +=
+					chunksz_to_bytes(h, chunk_size(h, c));
+			}
+		} else {
+			if (!solo_free_header(h, c)) {
+				stats->free_bytes +=
+					chunksz_to_bytes(h, chunk_size(h, c));
+			}
+		}
+		c = right_chunk(h, c);
+	} while (c != h->end_chunk);
+}
+
+#endif
+
 bool sys_heap_validate(struct sys_heap *heap)
 {
 	struct z_heap *h = heap->heap;
 	chunkid_t c;
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	struct sys_heap_runtime_stats stat1, stat2;
+#endif
 
 	/*
 	 * Walk through the chunks linearly, verifying sizes and end pointer.
@@ -83,6 +115,22 @@ bool sys_heap_validate(struct sys_heap *heap)
 	if (c != h->end_chunk) {
 		return false;  /* Should have exactly consumed the buffer */
 	}
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	/*
+	 * Validate sys_heap_runtime_stats_get API.
+	 * Iterate all chunks in sys_heap to get total allocated bytes and
+	 * free bytes, then compare with the results of
+	 * sys_heap_runtime_stats_get function.
+	 */
+	sys_heap_runtime_stats_get(heap, &stat1);
+	sys_heap_get_info(heap, &stat2);
+
+	if ((stat1.allocated_bytes != stat2.allocated_bytes) ||
+			(stat1.free_bytes != stat2.free_bytes)) {
+		return false;
+	}
+#endif
 
 	/* Check the free lists: entry count should match, empty bit
 	 * should be correct, and all chunk entries should point into
