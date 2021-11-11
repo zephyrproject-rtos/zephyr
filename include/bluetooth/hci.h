@@ -1372,7 +1372,7 @@ struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  handle;
 	uint8_t  op;
 	uint8_t  len;
-	uint8_t  data[251];
+	uint8_t  data[BT_HCI_LE_PER_ADV_FRAG_MAX_LEN];
 } __packed;
 
 #define BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE     BIT(0)
