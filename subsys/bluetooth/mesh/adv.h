@@ -25,9 +25,6 @@ enum bt_mesh_adv_type {
 	BT_MESH_ADV_TYPES,
 };
 
-typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, uint16_t duration,
-				   int err, void *user_data);
-
 struct bt_mesh_adv {
 	const struct bt_mesh_send_cb *cb;
 	void *cb_data;
@@ -39,8 +36,6 @@ struct bt_mesh_adv {
 	uint8_t      xmit;
 };
 
-typedef struct bt_mesh_adv *(*bt_mesh_adv_alloc_t)(int id);
-
 extern struct k_fifo bt_mesh_adv_queue;
 
 /* Lookup table for Advertising data types for bt_mesh_adv_type: */
@@ -49,11 +44,6 @@ extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
 				   k_timeout_t timeout);
-
-struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
-					     bt_mesh_adv_alloc_t get_id,
-					     enum bt_mesh_adv_type type,
-					     uint8_t xmit, k_timeout_t timeout);
 
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
