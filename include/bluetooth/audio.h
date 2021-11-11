@@ -18,6 +18,8 @@
 #include <bluetooth/lc3.h>
 #include <bluetooth/gatt.h>
 
+#include <bluetooth/audio/capabilities.h> /* TODO: Temp include, remove */
+
 /**
  * @brief Bluetooth Audio
  * @defgroup bt_audio Bluetooth Audio
@@ -383,6 +385,70 @@ struct bt_codec_qos {
 	uint16_t latency;
 	/** QoS Presentation Delay */
 	uint32_t pd;
+};
+
+/** @def BT_CODEC_QOS_PREF
+ *  @brief Helper to declare elements of @ref bt_codec_qos_pref
+ *
+ *  @param _unframed_supported Unframed PDUs supported
+ *  @param _phy Preferred Target PHY
+ *  @param _rtn Preferred Retransmission number
+ *  @param _latency Preferred Maximum Transport Latency (msec)
+ *  @param _pd_min Minimum Presentation Delay (usec)
+ *  @param _pd_max Maximum Presentation Delay (usec)
+ *  @param _pref_pd_min Preferred Minimum Presentation Delay (usec)
+ *  @param _pref_pd_max Preferred Maximum Presentation Delay (usec)
+ */
+#define BT_CODEC_QOS_PREF(_unframed_supported, _phy, _rtn, _latency, _pd_min, \
+			  _pd_max, _pref_pd_min, _pref_pd_max) \
+	{ \
+		.unframed_supported = _unframed_supported, \
+		.phy = _phy, \
+		.rtn = _rtn, \
+		.latency = _latency, \
+		.pd_min = _pd_min, \
+		.pd_max = _pd_max, \
+		.pref_pd_min = _pref_pd_min, \
+		.pref_pd_max = _pref_pd_max, \
+	}
+
+/** @brief Audio Stream Quality of Service Preference structure. */
+struct bt_codec_qos_pref {
+	/** @brief Unframed PDUs supported
+	 *
+	 *  Unlike the other fields, this is not a preference but whether
+	 *  the codec supports unframed ISOAL PDUs.
+	 */
+	bool unframed_supported;
+
+	/** Preferred PHY */
+	uint8_t phy;
+
+	/** Preferred Retransmission Number */
+	uint8_t rtn;
+
+	/** Preferred Transport Latency */
+	uint16_t latency;
+
+	/** @brief Minimun Presentation Delay
+	 *
+	 *  Unlike the other fields, this is not a preference but a minimum
+	 *  requirement.
+	 */
+	uint32_t pd_min;
+
+	/** @brief Maximum Presentation Delay
+	 *
+	 *  Unlike the other fields, this is not a preference but a maximum
+	 *  requirement.
+	 */
+	uint32_t pd_max;
+
+	/** @brief Preferred minimun Presentation Delay */
+	uint32_t pref_pd_min;
+
+	/** @brief Preferred maximum Presentation Delay	*/
+	uint32_t pref_pd_max;
 };
 
 /** Struct to hold a BAP defined LC3 preset */
@@ -849,6 +915,9 @@ struct bt_audio_unicast_server_cb {
 	 *  @param[in]  codec   Codec configuration.
 	 *  @param[out] stream  Pointer to stream that will be configured for
 	 *                      the endpoint.
+	 *  @param[out] pref    Pointer to a QoS preference object that shall
+	 *                      be populated with values. Invalid values will
+	 *                      reject the codec configuration request.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
@@ -856,22 +925,27 @@ struct bt_audio_unicast_server_cb {
 		      const struct bt_audio_ep *ep,
 		      uint8_t type,
 		      const struct bt_codec *codec,
-		      struct bt_audio_stream **stream);
+		      struct bt_audio_stream **stream,
+		      struct bt_codec_qos_pref *const pref);
 
 	/** @brief Stream reconfig request callback
 	 *
 	 *  Reconfig callback is called whenever an Audio Stream needs to be
 	 *  reconfigured with different codec configuration.
 	 *
-	 *  @param stream  Stream object being reconfigured.
-	 *  @param type    Type of the endpoint.
-	 *  @param codec   Codec configuration.
+	 *  @param[in]  stream  Stream object being reconfigured.
+	 *  @param[in]  type    Type of the endpoint.
+	 *  @param[in]  codec   Codec configuration.
+	 *  @param[out] pref    Pointer to a QoS preference object that shall
+	 *                      be populated with values. Invalid values will
+	 *                      reject the codec configuration request.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*reconfig)(struct bt_audio_stream *stream,
 			uint8_t type,
-			const struct bt_codec *codec);
+			const struct bt_codec *codec,
+			struct bt_codec_qos_pref *const pref);
 
 	/** @brief Stream QoS request callback
 	 *
@@ -1288,76 +1362,6 @@ enum bt_audio_pac_type {
 #define BT_AUDIO_CONTENT_ALERT           BIT(5)
 #define BT_AUDIO_CONTENT_MAN_MACHINE     BIT(6)
 #define BT_AUDIO_CONTENT_EMERGENCY       BIT(7)
-
-#define BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED     0x00
-#define BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED 0x01
-
-/** @def BT_AUDIO_CAPABILITY_PREF
- *  @brief Helper to declare elements of @ref bt_audio_capability_pref
- *
- *  @param _framing Framing Support
- *  @param _phy Preferred Target PHY
- *  @param _rtn Preferred Retransmission number
- *  @param _latency Preferred Maximum Transport Latency (msec)
- *  @param _pd_min Minimum Presentation Delay (usec)
- *  @param _pd_max Maximum Presentation Delay (usec)
- *  @param _pref_pd_min Preferred Minimum Presentation Delay (usec)
- *  @param _pref_pd_max Preferred Maximum Presentation Delay (usec)
- */
-#define BT_AUDIO_CAPABILITY_PREF(_framing, _phy, _rtn, _latency, _pd_min, \
-				 _pd_max, _pref_pd_min, _pref_pd_max) \
-	{ \
-		.framing = _framing, \
-		.phy = _phy, \
-		.rtn = _rtn, \
-		.latency = _latency, \
-		.pd_min = _pd_min, \
-		.pd_max = _pd_max, \
-		.pref_pd_min = _pref_pd_min, \
-		.pref_pd_max = _pref_pd_max, \
-	}
-
-/** @brief Audio Capability Preference structure. */
-struct bt_audio_capability_pref {
-	/** @brief Supported framing
-	 *
-	 *  Unlike the other fields, this is not a preference but whether
-	 *  the capability supports framed ISOAL PDUs.
-	 *
-	 *  Possible values: BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED and
-	 *  BT_AUDIO_CAPABILITY_UNFRAMED_NOT_SUPPORTED.
-	 */
-	uint8_t  framing;
-
-	/** Preferred PHY */
-	uint8_t  phy;
-
-	/** Preferred Retransmission Number */
-	uint8_t  rtn;
-
-	/** Preferred Transport Latency */
-	uint16_t latency;
-
-	/** @brief Minimun Presentation Delay
-	 *
-	 *  Unlike the other fields, this is not a preference but a minimum
-	 *  requirement.
-	 */
-	uint32_t pd_min;
-
-	/** @brief Maximum Presentation Delay
-	 *
-	 *  Unlike the other fields, this is not a preference but a maximum
-	 *  requirement.
-	 */
-	uint32_t pd_max;
-
-	/** @brief Preferred minimun Presentation Delay */
-	uint32_t pref_pd_min;
-
-	/** @brief Preferred maximum Presentation Delay	*/
-	uint32_t pref_pd_max;
-};
 
 /** @brief Audio Capability structure.
  *

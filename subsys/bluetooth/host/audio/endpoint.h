@@ -8,6 +8,7 @@
 
 #include "ascs_internal.h"
 #include "stream.h"
+#include <bluetooth/audio/capabilities.h> /* TODO: Temp include, remove */
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST)
 #define UNICAST_GROUP_CNT CONFIG_BT_BAP_UNICAST_GROUP_COUNT
@@ -52,6 +53,7 @@ struct bt_audio_ep {
 	struct bt_audio_stream *stream;
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
+	struct bt_codec_qos_pref qos_pref;
 	/* TODO: Remove iso from this struct. The reason is that a ASE
 	 * (endpoint) may only be unidirectional, but a single bidirectional CIS
 	 * may used for a sink ASE and a source ASE, so there is not a 1:1
