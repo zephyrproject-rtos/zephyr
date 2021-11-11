@@ -202,7 +202,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 	uint32_t ticks_slot_overhead;
 
 	/*
-	 * EGON TODO: update when updating the connection update procedure
+	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	uint16_t win_offset;
@@ -216,7 +216,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 	}
 
 	/*
-	 * EGON TODO: update when updating the connection update procedure
+	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	after_mstr_offset_get(conn->lll.interval,
@@ -240,7 +240,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 	uint32_t *ticks_to_offset_next;
 
 	/*
-	 * EGON TODO: update when updating the connection update procedure
+	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	uint8_t offset_max = 6U;
@@ -250,7 +250,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 	ticks_to_offset_next = &ticks_to_offset_default;
 
 	/*
-	 * EGON TODO: update when updating the connection update procedure
+	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 
@@ -289,7 +289,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 #endif
 
 	/*
-	 * EGON TODO: update when updating the connection update procedure
+	 * TODO: update when updating the connection update procedure
 	 */
 #if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 

@@ -467,7 +467,7 @@ void test_hci_rssi(void)
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
 	/*
-	 * EGON: add ll_chm_update
+	 * TODO: add ll_chm_update
 	 */
 
 	err = ll_rssi_get(conn_handle + 1, &rssi);

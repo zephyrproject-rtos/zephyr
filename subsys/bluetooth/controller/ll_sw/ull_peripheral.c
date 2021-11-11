@@ -596,7 +596,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	}
 #else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 	/*
-	 * EGON TODO: add info to the conn-structure
+	 * TODO: add info to the conn-structure
 	 * - refresh
 	 * - no procedure in progress
 	 * - procedure type
@@ -605,7 +605,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	 * see BT 5.2 Vol. 6 part B chapter 5.1.3
 	 * see also ull_periph.c line 395-439
 	 *
-	 * EGON TODO: the ull_cp_ltx_req* functions should return success/fail status
+	 * TODO: the ull_cp_ltx_req* functions should return success/fail status
 	 */
 	if (error_code) {
 		ull_cp_ltk_req_neq_reply(conn);

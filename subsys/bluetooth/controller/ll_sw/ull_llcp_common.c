@@ -180,7 +180,7 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 		llcp_ntf_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
-		/* EGON: TODO: define behaviour for unexpected PDU */
+		/* TODO: define behaviour for unexpected PDU */
 		LL_ASSERT(0);
 	}
 }
@@ -193,7 +193,7 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 		llcp_ntf_encode_version_ind(conn, pdu);
 		break;
 	default:
-		/* EGON: TODO: define behaviour for unexpected PDU */
+		/* TODO: define behaviour for unexpected PDU */
 		LL_ASSERT(0);
 	}
 }

@@ -240,7 +240,7 @@ static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 
 /*
- * EGON TODO: this is the same as calc_eff_time in ull_connections.c
+ * TODO: this is the same as calc_eff_time in ull_connections.c
  */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t pu_calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
@@ -496,7 +496,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_RSP:
-		/* EGON TODO: should we swap the function call with variable declaration? */
+		/* TODO: should we swap the function call with variable declaration? */
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* 'Prefer' the phys from the REQ */
 		uint8_t tx_pref = ctx->data.pu.tx;

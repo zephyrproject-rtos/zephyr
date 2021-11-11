@@ -208,7 +208,7 @@
 
 #define PKT_BIS_US(octets, mic, phy) PDU_MAX_US((octets), (mic), (phy))
 
-/* EGON TODO: verify if the following lines are correct */
+/* TODO: verify if the following lines are correct */
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
  */

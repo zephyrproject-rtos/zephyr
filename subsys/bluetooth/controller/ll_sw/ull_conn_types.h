@@ -403,7 +403,7 @@ struct llcp_struct {
 		uint8_t min_used_chans;
 	} muc;
 
-	/* EGON TODO: we'll need the next few structs eventually,
+	/* TODO: we'll need the next few structs eventually,
 	 * Thomas and Szymon please comment on names etc.
 	 */
 	struct {
@@ -468,7 +468,7 @@ struct ll_conn {
 	} llcp_terminate;
 
 /*
- * EGON TODO: all the following comes from the legacy LL llcp structure
+ * TODO: all the following comes from the legacy LL llcp structure
  * and/or needs to be properly integrated in the control procedures
  */
 	union {
