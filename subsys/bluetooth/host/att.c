@@ -3228,3 +3228,29 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 
 	bt_att_req_free(req);
 }
+
+struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data)
+{
+	struct bt_att *att;
+	struct bt_att_chan *chan;
+	struct bt_att_req *req;
+
+	att = att_get(conn);
+	if (!att) {
+		return NULL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		if (chan->req->user_data == user_data) {
+			return chan->req;
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->reqs, req, node) {
+		if (req->user_data == user_data) {
+			return req;
+		}
+	}
+
+	return NULL;
+}

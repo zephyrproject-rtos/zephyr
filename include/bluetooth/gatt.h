@@ -1675,10 +1675,22 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
 
-/** @brief Cancel GATT pending request
+/** @brief Try to cancel the first pending request identified by @p params.
  *
- *  @param conn Connection object.
- *  @param params Requested params address.
+ *  This function does not release @p params for reuse. The usual callbacks
+ *  for the request still apply. A successful cancel simulates a
+ *  #BT_ATT_ERR_UNLIKELY response from the server.
+ *
+ *  This function can cancel the following request functions:
+ *   - #bt_gatt_exchange_mtu
+ *   - #bt_gatt_discover
+ *   - #bt_gatt_read
+ *   - #bt_gatt_write
+ *   - #bt_gatt_subscribe
+ *   - #bt_gatt_unsubscribe
+ *
+ *  @param conn The connection the request was issued on.
+ *  @param params The address `params` used in the request function call.
  */
 void bt_gatt_cancel(struct bt_conn *conn, void *params);
 
