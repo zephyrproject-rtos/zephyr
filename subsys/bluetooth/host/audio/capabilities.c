@@ -34,37 +34,82 @@ static sys_slist_t srcs;
  */
 static int unicast_server_config_cb(struct bt_conn *conn,
 				    const struct bt_audio_ep *ep,
-				    const struct bt_audio_capability *cap,
+				    uint8_t type,
 				    const struct bt_codec *codec,
 				    struct bt_audio_stream **stream)
 {
-	if (cap->ops == NULL || cap->ops->config == NULL) {
-		return -EACCES;
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	if (type == BT_AUDIO_SINK) {
+		lst = &snks;
+	} else if (type == BT_AUDIO_SOURCE) {
+		lst = &srcs;
+	} else {
+		BT_ERR("Invalid endpoint type: %u", type);
+		return -EINVAL;
 	}
 
-	*stream = cap->ops->config(conn,
-				   (struct bt_audio_ep *)ep,
-				   (struct bt_audio_capability *)cap,
-				   (struct bt_codec *)codec);
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		/* Skip if capabilities don't match */
+		if (codec->id != cap->codec->id) {
+			continue;
+		}
 
-	if (*stream == NULL) {
-		return -ENOMEM;
+		if (cap->ops == NULL || cap->ops->config == NULL) {
+			return -EACCES;
+		}
+
+		*stream = cap->ops->config(conn, (struct bt_audio_ep *)ep,
+					   cap, (struct bt_codec *)codec);
+
+		if (*stream == NULL) {
+			return -ENOMEM;
+		}
+
+		/* TODO: A stream should not have a reference to a cap */
+		(*stream)->cap = cap;
+
+		return 0;
 	}
 
-	return 0;
+	BT_ERR("No capability for type %u and codec ID %u", type, codec->id);
+
+	return -EOPNOTSUPP;
 }
 
 static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
-				      const struct bt_audio_capability *cap,
+				      uint8_t type,
 				      const struct bt_codec *codec)
 {
-	if (cap->ops == NULL || cap->ops->reconfig == NULL) {
-		return -EACCES;
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	if (type == BT_AUDIO_SINK) {
+		lst = &snks;
+	} else if (type == BT_AUDIO_SOURCE) {
+		lst = &srcs;
+	} else {
+		BT_ERR("Invalid endpoint type: %u", type);
+		return -EINVAL;
 	}
 
-	return cap->ops->reconfig(stream,
-				  (struct bt_audio_capability *)cap,
-				  (struct bt_codec *)codec);
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		if (codec->id != cap->codec->id) {
+			continue;
+		}
+
+		if (cap->ops == NULL || cap->ops->reconfig == NULL) {
+			return -EACCES;
+		}
+
+		return cap->ops->reconfig(stream, cap,
+					  (struct bt_codec *)codec);
+	}
+
+	BT_ERR("No capability for type %u and codec ID %u", type, codec->id);
+
+	return -EOPNOTSUPP;
 }
 
 static int unicast_server_qos_cb(struct bt_audio_stream *stream,
