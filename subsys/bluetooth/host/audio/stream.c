@@ -42,7 +42,10 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	       codec);
 
 	stream->conn = conn;
-	stream->cap = cap;
+	if (cap != NULL) {
+		/* TODO: Temporary fix to avoid setting stream->cap = NULL */
+		stream->cap = cap;
+	}
 	stream->codec = codec;
 
 	bt_audio_ep_attach(ep, stream);

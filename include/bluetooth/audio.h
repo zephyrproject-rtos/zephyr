@@ -845,7 +845,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @param[in]  conn    Connection object.
 	 *  @param[in]  ep      Local Audio Endpoint being configured.
-	 *  @param[in]  cap     Local Audio Capability being configured.
+	 *  @param[in]  type    Type of the endpoint.
 	 *  @param[in]  codec   Codec configuration.
 	 *  @param[out] stream  Pointer to stream that will be configured for
 	 *                      the endpoint.
@@ -854,7 +854,7 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*config)(struct bt_conn *conn,
 		      const struct bt_audio_ep *ep,
-		      const struct bt_audio_capability *cap,
+		      uint8_t type,
 		      const struct bt_codec *codec,
 		      struct bt_audio_stream **stream);
 
@@ -864,13 +864,13 @@ struct bt_audio_unicast_server_cb {
 	 *  reconfigured with different codec configuration.
 	 *
 	 *  @param stream  Stream object being reconfigured.
-	 *  @param cap     Local Audio Capability being reconfigured.
+	 *  @param type    Type of the endpoint.
 	 *  @param codec   Codec configuration.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*reconfig)(struct bt_audio_stream *stream,
-			const struct bt_audio_capability *cap,
+			uint8_t type,
 			const struct bt_codec *codec);
 
 	/** @brief Stream QoS request callback
