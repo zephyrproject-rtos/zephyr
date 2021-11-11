@@ -11,6 +11,7 @@
 #include <sys/__assert.h>
 #include <stdbool.h>
 #include <spinlock.h>
+#include <sys/check.h>
 #include <sys/libc-hooks.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -20,7 +21,6 @@ static uint8_t max_partitions;
 
 struct k_mem_domain k_mem_domain_default;
 
-#if __ASSERT_ON
 static bool check_add_partition(struct k_mem_domain *domain,
 				struct k_mem_partition *part)
 {
@@ -84,19 +84,30 @@ static bool check_add_partition(struct k_mem_domain *domain,
 
 	return true;
 }
-#endif
 
-void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
-		       struct k_mem_partition *parts[])
+int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
+		      struct k_mem_partition *parts[])
 {
 	k_spinlock_key_t key;
+	int ret = 0;
 
-	__ASSERT_NO_MSG(domain != NULL);
-	__ASSERT(num_parts == 0U || parts != NULL,
-		 "parts array is NULL and num_parts is nonzero");
-	__ASSERT(num_parts <= max_partitions,
-		 "num_parts of %d exceeds maximum allowable partitions (%d)",
-		 num_parts, max_partitions);
+	CHECKIF(domain == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(!(num_parts == 0U || parts != NULL)) {
+		LOG_ERR("parts array is NULL and num_parts is nonzero");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF(!(num_parts <= max_partitions)) {
+		LOG_ERR("num_parts of %d exceeds maximum allowable partitions (%d)",
+			num_parts, max_partitions);
+		ret = -EINVAL;
+		goto out;
+	}
 
 	key = k_spin_lock(&z_mem_domain_lock);
 
@@ -105,25 +116,25 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	sys_dlist_init(&domain->mem_domain_q);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
-	int ret = arch_mem_domain_init(domain);
+	ret = arch_mem_domain_init(domain);
 
-	/* TODO propagate return values, see #24609.
-	 *
-	 * Not using an assertion here as this is a memory allocation error
-	 */
 	if (ret != 0) {
 		LOG_ERR("architecture-specific initialization failed for domain %p with %d",
 			domain, ret);
-		k_panic();
+		ret = -ENOMEM;
+		goto unlock_out;
 	}
 #endif
 	if (num_parts != 0U) {
 		uint32_t i;
 
 		for (i = 0U; i < num_parts; i++) {
-			__ASSERT(check_add_partition(domain, parts[i]),
-				 "invalid partition index %d (%p)",
-				 i, parts[i]);
+			CHECKIF(!check_add_partition(domain, parts[i])) {
+				LOG_ERR("invalid partition index %d (%p)",
+					i, parts[i]);
+				ret = -EINVAL;
+				goto unlock_out;
+			}
 
 			domain->partitions[i] = *parts[i];
 			domain->num_partitions++;
@@ -133,7 +144,11 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		}
 	}
 
+unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);
+
+out:
+	return ret;
 }
 
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
@@ -269,7 +284,10 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 
 static int init_mem_domain_module(const struct device *arg)
 {
+	int ret;
+
 	ARG_UNUSED(arg);
+	ARG_UNUSED(ret);
 
 	max_partitions = arch_mem_domain_max_partitions_get();
 	/*
@@ -279,7 +297,9 @@ static int init_mem_domain_module(const struct device *arg)
 	 */
 	__ASSERT(max_partitions <= CONFIG_MAX_DOMAIN_PARTITIONS, "");
 
-	k_mem_domain_init(&k_mem_domain_default, 0, NULL);
+	ret = k_mem_domain_init(&k_mem_domain_default, 0, NULL);
+	__ASSERT(ret == 0, "failed to init default mem domain");
+
 #ifdef Z_LIBC_PARTITION_EXISTS
 	k_mem_domain_add_partition(&k_mem_domain_default, &z_libc_partition);
 #endif /* Z_LIBC_PARTITION_EXISTS */

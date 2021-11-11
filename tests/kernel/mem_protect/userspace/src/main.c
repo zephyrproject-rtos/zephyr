@@ -681,7 +681,11 @@ static void drop_user(volatile bool *to_modify)
 static void test_init_and_access_other_memdomain(void)
 {
 	struct k_mem_partition *parts[] = { &ztest_mem_partition, &alt_part };
-	k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts);
+
+	zassert_equal(
+		k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts),
+		0, "failed to initialize memory domain");
+
 	/* Switch to alternate_domain which does not have default_part that
 	 * contains default_bool. This should fault when we try to write it.
 	 */

@@ -53,7 +53,9 @@ void test_mem_domain_setup(void)
 			CONFIG_MAX_DOMAIN_PARTITIONS, max_parts);
 	zassert_true(num_rw_parts > 0, "no free memory partitions");
 
-	k_mem_domain_init(&test_domain, ARRAY_SIZE(parts), parts);
+	zassert_equal(
+		k_mem_domain_init(&test_domain, ARRAY_SIZE(parts), parts),
+		0, "failed to initialize memory domain");
 
 	for (unsigned int i = 0; i < num_rw_parts; i++) {
 		rw_parts[i].start = (uintptr_t)&rw_bufs[i];
@@ -207,7 +209,9 @@ K_MEM_PARTITION_DEFINE(no_access_part, no_access_buf, sizeof(no_access_buf),
 
 static void mem_domain_init_entry(void *p1, void *p2, void *p3)
 {
-	k_mem_domain_init(&no_access_domain, 0, NULL);
+	zassert_equal(
+		k_mem_domain_init(&no_access_domain, 0, NULL),
+		0, "failed to initialize memory domain");
 }
 
 static void mem_domain_add_partition_entry(void *p1, void *p2, void *p3)
@@ -469,10 +473,8 @@ void test_mem_domain_remove_part_fail(void)
 /**
  * @brief Test error case of initializing memory domain fail
  *
- * @details Try to initialize a domain with invalid partition, then see
- * if an expected fatal error happens.
- * And while the fatal error happened, the memory domain spinlock
- * is held, we need to release them to make other follow test case.
+ * @details Try to initialize a domain with invalid partition.
+ * k_mem_domain_init() should return non-zero.
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -480,18 +482,14 @@ void test_mem_domain_init_fail(void)
 {
 	struct k_mem_partition *no_parts[] = {&ro_part, 0};
 
-	/* init another domain fail, expected fault happened */
-	need_recover_spinlock = true;
-	set_fault_valid(true);
-	k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
-			no_parts);
+	/* init another domain fail */
+	need_recover_spinlock = false;
+	set_fault_valid(false);
 
-	/* For acrh which not CONFIG_ARCH_MEM_DOMAIN_DATA, if assert is off,
-	 * it will reach here.
-	 */
-#if !defined(CONFIG_ASSERT) && defined(CONFIG_ARCH_MEM_DOMAIN_DATA)
-	zassert_unreachable("should not be here");
-#endif
+	zassert_not_equal(
+		k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
+				  no_parts),
+		0, "should fail to initialize memory domain");
 }
 
 /**

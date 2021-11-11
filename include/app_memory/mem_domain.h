@@ -121,9 +121,13 @@ struct k_mem_partition;
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
  *              if num_parts is zero.
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid parameters supplied
+ * @retval -ENOMEM if insufficient memory
  */
-extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
-			      struct k_mem_partition *parts[]);
+extern int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
+			     struct k_mem_partition *parts[]);
 
 /**
  * @brief Add a memory partition into a memory domain.
