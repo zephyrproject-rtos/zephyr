@@ -18,6 +18,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ASCS)
 #define LOG_MODULE_NAME bt_ascs
@@ -27,7 +28,6 @@
 #include "../conn_internal.h"
 
 #include "endpoint.h"
-#include "capabilities.h"
 #include "pacs_internal.h"
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
@@ -695,7 +695,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		if (server_cb != NULL && server_cb->reconfig != NULL) {
 			err = server_cb->reconfig(ase->ep.stream,
 						  ASE_DIR(ase->ep.status.id),
-						  &ase->ep.codec);
+						  &ase->ep.codec,
+						  &ase->ep.qos_pref);
 		} else {
 			err = -EOPNOTSUPP;
 		}
@@ -718,7 +719,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		if (server_cb != NULL && server_cb->config != NULL) {
 			err = server_cb->config(ascs->conn, &ase->ep,
 						ASE_DIR(ase->ep.status.id),
-						&ase->ep.codec, &stream);
+						&ase->ep.codec, &stream,
+						&ase->ep.qos_pref);
 		} else {
 			err = -EOPNOTSUPP;
 		}
