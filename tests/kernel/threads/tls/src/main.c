@@ -209,6 +209,7 @@ void test_tls_userspace(void)
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
 	unsigned int i;
 
 	struct k_mem_partition *parts[] = {
@@ -220,7 +221,11 @@ void test_main(void)
 	};
 
 	parts[0] = &part_common;
-	k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+
+	ret = k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&dom_common, k_current_get());
 
 	for (i = 0; i < NUM_THREADS; i++) {
