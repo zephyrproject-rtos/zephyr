@@ -635,9 +635,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		      const struct bt_ascs_config *cfg,
 		      struct net_buf_simple *buf)
 {
-	sys_slist_t *lst;
-	struct bt_audio_capability *cap;
 	struct bt_audio_stream *stream;
+	struct bt_codec codec;
 	int err;
 
 	BT_DBG("ase %p latency 0x%02x phy 0x%02x codec 0x%02x "
@@ -676,98 +675,79 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		return 0;
 	}
 
-	/* Check if there are capabilities for the given direction */
-	lst = bt_audio_capability_get(ASE_DIR(ase->ep.status.id));
-	if (!lst) {
-		goto not_found;
-	}
+	/* Store current codec configuration to be able to restore it
+	 * in case of error.
+	 */
+	(void)memcpy(&codec, &ase->ep.codec, sizeof(codec));
 
-	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
-		struct bt_codec codec;
-
-		/* Skip if capabilities don't match */
-		if (cfg->codec.id != cap->codec->id) {
-			continue;
-		}
-
-		/* Store current codec configuration to be able to restore it
-		 * in case of error.
-		 */
-		memcpy(&codec, &ase->ep.codec, sizeof(codec));
-
-		if (bt_audio_ep_set_codec(&ase->ep, cfg->codec.id,
-					  sys_le16_to_cpu(cfg->codec.cid),
-					  sys_le16_to_cpu(cfg->codec.vid),
-					  buf, cfg->cc_len, &ase->ep.codec)) {
-			memcpy(&ase->ep.codec, &codec, sizeof(codec));
-			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
-					BT_ASCS_RSP_CONF_INVALID,
-					BT_ASCS_REASON_CODEC_DATA);
-			return 0;
-		}
-
-		if (ase->ep.stream != NULL) {
-			if (server_cb != NULL && server_cb->config != NULL) {
-				err = server_cb->reconfig(ase->ep.stream, cap,
-							  &ase->ep.codec);
-			} else {
-				err = -EOPNOTSUPP;
-			}
-
-			if (err) {
-				uint8_t reason = BT_ASCS_REASON_CODEC_DATA;
-
-				BT_ERR("Reconfig failed: %d", err);
-
-				memcpy(&ase->ep.codec, &codec, sizeof(codec));
-				ascs_cp_rsp_add_errno(ASE_ID(ase),
-						      BT_ASCS_CONFIG_OP,
-						      err, reason);
-				return 0;
-			}
-			stream = ase->ep.stream;
-		} else {
-			stream = NULL;
-			if (server_cb != NULL && server_cb->config != NULL) {
-				err = server_cb->config(ascs->conn, &ase->ep,
-							cap, &ase->ep.codec,
-							&stream);
-			} else {
-				err = -EOPNOTSUPP;
-			}
-
-			if (err || stream == NULL) {
-				BT_ERR("Config failed, err: %d, stream %p",
-				       err, stream);
-
-				memcpy(&ase->ep.codec, &codec, sizeof(codec));
-				ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
-						BT_ASCS_RSP_CONF_REJECTED,
-						BT_ASCS_REASON_CODEC_DATA);
-
-				return err;
-			}
-			ase_stream_add(ascs, ase, stream);
-		}
-
-		ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
-
-		/* TODO: bt_audio_stream_attach duplicates some of the
-		 * ase_stream_add. Should be cleaned up.
-		 */
-		bt_audio_stream_attach(ascs->conn, stream, &ase->ep, cap,
-				       &ase->ep.codec);
-
-		bt_audio_ep_set_state(&ase->ep,
-				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-
+	if (bt_audio_ep_set_codec(&ase->ep, cfg->codec.id,
+				  sys_le16_to_cpu(cfg->codec.cid),
+				  sys_le16_to_cpu(cfg->codec.vid),
+				  buf, cfg->cc_len, &ase->ep.codec)) {
+		(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
+		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
+				BT_ASCS_RSP_CONF_INVALID,
+				BT_ASCS_REASON_CODEC_DATA);
 		return 0;
 	}
 
-not_found:
-	BT_ERR("Unable to find matching Capability");
-	ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
-			BT_ASCS_RSP_CAP_UNSUPPORTED, 0x00);
+	if (ase->ep.stream != NULL) {
+		if (server_cb != NULL && server_cb->config != NULL) {
+			err = server_cb->reconfig(ase->ep.stream,
+						  ASE_DIR(ase->ep.status.id),
+						  &ase->ep.codec);
+		} else {
+			err = -EOPNOTSUPP;
+		}
+
+		if (err != 0) {
+			uint8_t reason = BT_ASCS_REASON_CODEC_DATA;
+
+			BT_ERR("Reconfig failed: %d", err);
+
+			(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
+			ascs_cp_rsp_add_errno(ASE_ID(ase),
+					      BT_ASCS_CONFIG_OP,
+					      err, reason);
+			return 0;
+		}
+
+		stream = ase->ep.stream;
+	} else {
+		stream = NULL;
+		if (server_cb != NULL && server_cb->config != NULL) {
+			err = server_cb->config(ascs->conn, &ase->ep,
+						ASE_DIR(ase->ep.status.id),
+						&ase->ep.codec, &stream);
+		} else {
+			err = -EOPNOTSUPP;
+		}
+
+		if (err != 0 || stream == NULL) {
+			BT_ERR("Config failed, err: %d, stream %p",
+			       err, stream);
+
+			(void)memcpy(&ase->ep.codec, &codec, sizeof(codec));
+			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
+					BT_ASCS_RSP_CONF_REJECTED,
+					BT_ASCS_REASON_CODEC_DATA);
+
+			return err;
+		}
+
+		ase_stream_add(ascs, ase, stream);
+	}
+
+	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_CONFIG_OP);
+
+	/* TODO: bt_audio_stream_attach duplicates some of the
+	 * ase_stream_add. Should be cleaned up.
+	 */
+	bt_audio_stream_attach(ascs->conn, stream, &ase->ep, NULL,
+			       &ase->ep.codec);
+
+	bt_audio_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+
 	return 0;
 }
 
