@@ -30,7 +30,7 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #include "ll_sw/ull_tx_queue.h"
 #endif
 

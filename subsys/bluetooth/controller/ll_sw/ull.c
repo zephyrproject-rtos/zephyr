@@ -45,7 +45,7 @@
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
-#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
 #endif
 #include "ull_conn_types.h"

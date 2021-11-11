@@ -35,7 +35,7 @@
 #include "lll_peripheral.h"
 #include "lll_filter.h"
 
-#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ull_tx_queue.h"
 #endif
 
@@ -50,7 +50,7 @@
 
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 #include "ll_sw/ull_llcp.h"
 #endif
 
@@ -180,10 +180,10 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		win_delay_us = WIN_DELAY_LEGACY;
 	}
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#if (!defined(CONFIG_BT_LL_SW_LLCP_LEGACY))
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* calculate the window widening */
 	conn->periph.sca = pdu_adv->connect_ind.sca;
@@ -326,7 +326,7 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	max_tx_time = lll->max_tx_time;
 	max_rx_time = lll->max_rx_time;
 #else
@@ -562,7 +562,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	if (error_code) {
 		if (conn->llcp_enc.refresh == 0U) {
 			if ((conn->llcp_req == conn->llcp_ack) ||
@@ -594,7 +594,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 	}
-#else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	/*
 	 * TODO: add info to the conn-structure
 	 * - refresh
@@ -612,7 +612,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	} else {
 		ull_cp_ltk_req_reply(conn, ltk);
 	}
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	return 0;
 }
@@ -678,7 +678,7 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 	conn->periph.latency_cancel = 0U;
 }
 
-#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 			      uint8_t const min_used_chans)
@@ -697,4 +697,4 @@ uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 	return ull_cp_min_used_chans(conn, phys, min_used_chans);
 }
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
-#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */

@@ -74,6 +74,27 @@ config BT_CTLR_TIFS_HW_SUPPORT
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
+choice BT_LL_SW_LLCP_IMPL
+	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP_LEGACY
+	help
+	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+
+config BT_LL_SW_LLCP_LEGACY
+	bool "Legacy implementation"
+	help
+	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
+
+config BT_LL_SW_LLCP
+	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
+	  It is considered experimental because it is still under development and is not qualifiable yet.
+
+endchoice
+
+
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
 	int "High priority Rx thread stack size"
@@ -116,34 +137,8 @@ config BT_CTLR_ADVANCED_FEATURES
 	help
 	  Makes advanced features visible to controller developers.
 
-# default is applied only to visible choice option so we need hidden helper
-# config to fallback to legacy implementation regardless if "Advanced features"
-# menu is visible or nor
-config BT_LL_SW_SPLIT_LLCP_LEGACY
-	bool
-	default !BT_LL_SW_SPLIT_LLCP_CHOICE_REFACTORED
-
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
-
-choice BT_LL_SW_SPLIT_LLCP_CHOICE
-	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
-	default BT_LL_SW_SPLIT_LLCP_CHOICE_LEGACY
-	help
-	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
-
-config BT_LL_SW_SPLIT_LLCP_CHOICE_LEGACY
-	bool "Legacy"
-	help
-	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
-
-config BT_LL_SW_SPLIT_LLCP_CHOICE_REFACTORED
-	bool "Refactored [EXPERIMENTAL]"
-	help
-	  Use the Bluetooth Low Energy Software Link Layer Refactored Control Procedure implementation.
-	  It is considered experimental because it is still under development and is not qualifiable yet.
-
-endchoice
 
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
@@ -487,7 +482,7 @@ config BT_CTLR_LLCP_CONN
 	  more than this number of connections simultaneously may cause
 	  instabilities.
 
-if !BT_LL_SW_SPLIT_LLCP_LEGACY
+if !BT_LL_SW_LLCP_LEGACY
 config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
 	int
 	default 4
@@ -527,7 +522,7 @@ config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
 	  for handlign control procedures. This pool is shared across all
 	  connections (local vs remote initiate), with allocation through a queue
 
-endif #!BT_LL_SW_SPLIT_LLCP_LEGACY
+endif #!BT_LL_SW_LLCP_LEGACY
 
 
 config BT_CTLR_LLID_DATA_START_EMPTY

@@ -71,7 +71,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
     zephyr_library_sources(
       ll_sw/ull_conn.c
       )
-    if(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+    if(CONFIG_BT_LL_SW_LLCP_LEGACY)
     else()
       zephyr_library_sources_ifdef(
         CONFIG_BT_PHY_UPDATE

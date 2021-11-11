@@ -32,7 +32,7 @@ enum llcp {
 #endif /* CONFIG_BT_CTLR_PHY */
 };
 
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 struct ll_conn {
 	struct ull_hdr  ull;
 	struct lll_conn lll;
