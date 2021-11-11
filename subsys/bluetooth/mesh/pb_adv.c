@@ -237,7 +237,7 @@ static struct net_buf *adv_buf_create(uint8_t retransmits)
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV, BT_MESH_LOCAL_ADV,
 				 BT_MESH_TRANSMIT(retransmits, 20),
 				 BUF_TIMEOUT);
 	if (!buf) {

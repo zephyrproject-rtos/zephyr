@@ -25,13 +25,19 @@ enum bt_mesh_adv_type {
 	BT_MESH_ADV_TYPES,
 };
 
+enum bt_mesh_adv_tag {
+	BT_MESH_LOCAL_ADV,
+	BT_MESH_RELAY_ADV,
+};
+
 struct bt_mesh_adv {
 	const struct bt_mesh_send_cb *cb;
 	void *cb_data;
 
 	uint8_t      type:2,
 		  started:1,
-		  busy:1;
+		  busy:1,
+		  tag:1;
 
 	uint8_t      xmit;
 };
@@ -42,8 +48,9 @@ extern struct k_fifo bt_mesh_adv_queue;
 extern const uint8_t bt_mesh_adv_type[BT_MESH_ADV_TYPES];
 
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-				   k_timeout_t timeout);
+struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
+				   enum bt_mesh_adv_tag tag,
+				   uint8_t xmit, k_timeout_t timeout);
 
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		      void *cb_data);
