@@ -4650,7 +4650,22 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
 {
-	bt_att_req_cancel(conn, params);
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	k_sched_unlock();
+
+	if (func) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
 }
 
 static void add_subscriptions(struct bt_conn *conn)
