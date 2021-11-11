@@ -10,5 +10,3 @@ tests:
   bluetooth.controller.ctrl_data_length_update.test_nophy:
      type: unit
      extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"
-
-

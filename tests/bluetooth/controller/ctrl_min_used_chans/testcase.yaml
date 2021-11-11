@@ -3,4 +3,3 @@ common:
 tests:
   bluetooth.controller.ctrl_min_used_chans.test:
      type: unit
-

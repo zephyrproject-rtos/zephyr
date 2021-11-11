@@ -187,8 +187,6 @@ void *ll_pdu_rx_alloc(void)
 	return MFIFO_DEQUEUE(ll_pdu_rx_free);
 }
 
-/* Forward declaration */
-struct node_tx;
 void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx)
 {
 }

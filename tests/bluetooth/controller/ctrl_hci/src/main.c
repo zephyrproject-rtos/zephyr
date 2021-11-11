@@ -482,7 +482,7 @@ void test_hci_enc(void)
 	uint16_t conn_handle;
 	uint64_t err;
 
-	uint8_t rand;
+	uint8_t rand_nr;
 	uint8_t ediv;
 	uint8_t error_code;
 	uint8_t ltk[5];
@@ -495,9 +495,9 @@ void test_hci_enc(void)
 
 	error_code = 0;
 
-	err = ll_enc_req_send(conn_handle + 1, &rand, &ediv, &ltk[0]);
+	err = ll_enc_req_send(conn_handle + 1, &rand_nr, &ediv, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
-	err = ll_enc_req_send(conn_handle, &rand, &ediv, &ltk[0]);
+	err = ll_enc_req_send(conn_handle, &rand_nr, &ediv, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	test_set_role(conn_from_pool, BT_HCI_ROLE_PERIPHERAL);
