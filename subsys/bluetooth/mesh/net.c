@@ -676,7 +676,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		transmit = bt_mesh_net_transmit_get();
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, transmit, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
+				 transmit, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Out of relay buffers");
 		return;

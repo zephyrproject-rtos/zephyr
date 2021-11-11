@@ -1261,7 +1261,8 @@ static void friend_timeout(struct k_work *work)
 	frnd->queue_size--;
 
 send_last:
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, FRIEND_XMIT, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 FRIEND_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate friend adv buffer");
 		return;
