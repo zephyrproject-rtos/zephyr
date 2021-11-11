@@ -38,9 +38,9 @@
 #include "lll_filter.h"
 #include "lll/lll_df_types.h"
 
-#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ll_sw/ull_tx_queue.h"
-#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -56,9 +56,9 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
-#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #include "ll_sw/ull_llcp.h"
-#endif /* !CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv
@@ -946,7 +946,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->nesn = 0;
 		conn_lll->empty = 0;
 
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
@@ -967,7 +967,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif
-#else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_ADV_EXT)
 		const uint8_t phy = lll->phy_s;
@@ -976,7 +976,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif
 		ull_dle_init(conn, phy);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_flags = 0;
@@ -1043,7 +1043,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			     sizeof(conn->peer_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
-#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		conn->common.fex_valid = 0;
 		conn->common.txn_lock = 0;
 		conn->periph.latency_cancel = 0;
@@ -1098,7 +1098,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
-#else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 		/* Re-initialize the control procedure data structures */
 		ull_llcp_init(conn);
 
@@ -1115,7 +1115,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;
