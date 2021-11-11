@@ -708,10 +708,11 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 				 struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_capability_pref *pref = &ep->stream->cap->pref;
+	struct bt_codec_qos_pref *pref = &ep->qos_pref;
 
 	cfg = net_buf_simple_add(buf, sizeof(*cfg));
-	cfg->framing = pref->framing;
+	cfg->framing = pref->unframed_supported ? BT_ASCS_QOS_FRAMING_UNFRAMED
+						: BT_ASCS_QOS_FRAMING_FRAMED;
 	cfg->phy = pref->phy;
 	cfg->rtn = pref->rtn;
 	cfg->latency = sys_cpu_to_le16(pref->latency);
@@ -723,11 +724,11 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 	cfg->codec.cid = sys_cpu_to_le16(ep->codec.cid);
 	cfg->codec.vid = sys_cpu_to_le16(ep->codec.vid);
 
-	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
-	       "pd_min %u pd_max %u codec 0x%02x ",
+	BT_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
+	       "latency %u pd_min %u pd_max %u codec 0x%02x",
 	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
-	       pref->pd_max, ep->stream->codec->id);
+	       pref->unframed_supported, pref->phy, pref->rtn, pref->latency,
+	       pref->pd_min, pref->pd_max, ep->stream->codec->id);
 
 	cfg->cc_len = buf->len;
 	codec_data_add(buf, "data", ep->codec.data_count, ep->codec.data);

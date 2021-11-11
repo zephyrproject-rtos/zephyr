@@ -15,12 +15,12 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 
 #include "../conn_internal.h"
 #include "../iso_internal.h"
 
 #include "endpoint.h"
-#include "capabilities.h"
 #include "bap_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM)

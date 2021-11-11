@@ -16,8 +16,8 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 
-#include "capabilities.h"
 #include "pacs_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CAPABILITIES)
@@ -36,7 +36,8 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 				    const struct bt_audio_ep *ep,
 				    uint8_t type,
 				    const struct bt_codec *codec,
-				    struct bt_audio_stream **stream)
+				    struct bt_audio_stream **stream,
+				    struct bt_codec_qos_pref *const pref)
 {
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
@@ -67,6 +68,16 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 			return -ENOMEM;
 		}
 
+		pref->unframed_supported =
+			cap->pref.framing == BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED;
+		pref->phy = cap->pref.phy;
+		pref->rtn = cap->pref.rtn;
+		pref->latency = cap->pref.latency;
+		pref->pd_min = cap->pref.pd_min;
+		pref->pd_max = cap->pref.pd_max;
+		pref->pref_pd_min = cap->pref.pref_pd_min;
+		pref->pref_pd_max = cap->pref.pref_pd_max;
+
 		/* TODO: A stream should not have a reference to a cap */
 		(*stream)->cap = cap;
 
@@ -80,7 +91,8 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 
 static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 				      uint8_t type,
-				      const struct bt_codec *codec)
+				      const struct bt_codec *codec,
+				      struct bt_codec_qos_pref *const pref)
 {
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
@@ -102,6 +114,16 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 		if (cap->ops == NULL || cap->ops->reconfig == NULL) {
 			return -EACCES;
 		}
+
+		pref->unframed_supported =
+			cap->pref.framing == BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED;
+		pref->phy = cap->pref.phy;
+		pref->rtn = cap->pref.rtn;
+		pref->latency = cap->pref.latency;
+		pref->pd_min = cap->pref.pd_min;
+		pref->pd_max = cap->pref.pd_max;
+		pref->pref_pd_min = cap->pref.pref_pd_min;
+		pref->pref_pd_max = cap->pref.pref_pd_max;
 
 		return cap->ops->reconfig(stream, cap,
 					  (struct bt_codec *)codec);

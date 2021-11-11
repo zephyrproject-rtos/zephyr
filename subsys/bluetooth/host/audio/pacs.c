@@ -18,13 +18,13 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include <bluetooth/audio/capabilities.h>
 #include "../conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_PACS)
 #define LOG_MODULE_NAME bt_pacs
 #include "common/log.h"
 
-#include "capabilities.h"
 #include "pacs_internal.h"
 
 #if defined(CONFIG_BT_BAP)
