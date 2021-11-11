@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Golioth, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_QCBOR_MODULE
+	bool
+
+config QCBOR
+	bool "QCBOR library"
+	help
+	  Enable QCBOR library, which is a powerful, commercial-quality CBOR
+	  encoder/decoder.
