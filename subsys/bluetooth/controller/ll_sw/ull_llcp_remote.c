@@ -72,7 +72,7 @@ enum {
 static bool proc_with_instant(struct proc_ctx *ctx)
 {
 	/*
-	 * EGON TODO: should we combine all the cases that return 0
+	 * TODO: should we combine all the cases that return 0
 	 * and all the cases that return 1?
 	 */
 	switch (ctx->proc) {
