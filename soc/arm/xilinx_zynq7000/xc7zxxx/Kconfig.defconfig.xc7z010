@@ -3,4 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "soc/arm/xilinx_zynq7000/*/Kconfig.series"
+config SOC
+	default "XC7Z010"
+	depends on SOC_XILINX_XC7Z010
