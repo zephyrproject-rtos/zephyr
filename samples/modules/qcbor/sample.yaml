@@ -1,0 +1,12 @@
+sample:
+  description: QCBOR sample, with simple encoding and decoding
+  name: Simple QCBOR sample
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Decoded message is equal to encoded message"
+tests:
+  sample.modules.qcbor:
+    tags: samples qcbor
