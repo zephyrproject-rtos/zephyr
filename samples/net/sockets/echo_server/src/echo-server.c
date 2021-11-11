@@ -131,7 +131,10 @@ static void init_app(void)
 		&app_partition
 	};
 
-	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	int ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) || \
