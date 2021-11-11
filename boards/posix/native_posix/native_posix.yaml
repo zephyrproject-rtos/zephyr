@@ -14,5 +14,6 @@ supported:
   - adc
   - i2c
   - spi
+  - gpio
 testing:
   default: true
