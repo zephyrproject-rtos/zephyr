@@ -51,7 +51,7 @@ void helper_privacy_add(int skew)
 	prpa_cache_add(&a1);
 	pos = prpa_cache_find(&a1);
 	ex_pos = (1 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	zassert_equal(pos, ex_pos, "%d == %d", pos, ex_pos);
 
 	prpa_cache_add(&a2);
 	pos = prpa_cache_find(&a2);
@@ -80,19 +80,27 @@ void helper_privacy_add(int skew)
 	zassert_equal(pos, FILTER_IDX_NONE, "");
 }
 
-void test_privacy_clear(void)
+static void before(void *data)
 {
-	prpa_cache_clear();
+	ARG_UNUSED(data);
 
+	/* Run before each test - clear the cache so we start fresh each time. */
+	prpa_cache_clear();
+}
+
+ZTEST_SUITE(test_ctrl_sw_privacy_unit, NULL, NULL, before, NULL, NULL);
+
+ZTEST(test_ctrl_sw_privacy_unit, test_privacy_clear)
+{
 	helper_privacy_clear();
 }
 
-void test_privacy_add(void)
+ZTEST(test_ctrl_sw_privacy_unit, test_privacy_add)
 {
 	helper_privacy_add(0);
 }
 
-void test_privacy_add_stress(void)
+ZTEST(test_ctrl_sw_privacy_unit, test_privacy_add_stress)
 {
 	bt_addr_t ar;
 
@@ -106,13 +114,4 @@ void test_privacy_add_stress(void)
 		helper_privacy_add(skew);
 		prpa_cache_clear();
 	}
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test, ztest_unit_test(test_privacy_clear),
-			 ztest_unit_test(test_privacy_add),
-			 ztest_unit_test(test_privacy_clear),
-			 ztest_unit_test(test_privacy_add_stress));
-	ztest_run_test_suite(test);
 }
