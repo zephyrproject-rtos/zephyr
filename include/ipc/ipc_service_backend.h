@@ -25,6 +25,14 @@ extern "C" {
  *  This structure is used for configuration backend during registration.
  */
 struct ipc_service_backend {
+	/** @brief Pointer to the function that will be used to open an instance
+	 *
+	 *  @param instance Instance pointer.
+	 *
+	 *  @retval Status code.
+	 */
+	int (*open_instance)(const struct device *instance);
+
 	/** @brief Pointer to the function that will be used to send data to the endpoint.
 	 *
 	 *  @param instance Instance pointer.

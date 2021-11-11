@@ -116,6 +116,19 @@ struct ipc_ept_cfg {
 	void *priv;
 };
 
+/** @brief Open an instance
+ *
+ *  Optional function to be used to open an instance before being able to
+ *  register a new endpoint on it.
+ *
+ *  @retval -EIO when no backend is registered.
+ *  @retval -EINVAL when instance or endpoint configuration is invalid.
+ *  @retval -EALREADY when the instance is already opened.
+ *  @retval Other errno codes depending on the implementation of the backend.
+ */
+int ipc_service_open_instance(const struct device *instance);
+
+
 /** @brief Register IPC endpoint onto an instance.
  *
  *  Registers IPC endpoint onto an instance to enable communication with a
