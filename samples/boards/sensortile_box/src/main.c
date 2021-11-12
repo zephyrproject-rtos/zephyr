@@ -12,7 +12,6 @@
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <drivers/sensor.h>
-#include <usb/usb_device.h>
 #include <drivers/uart.h>
 
 #include <stdio.h>
@@ -255,8 +254,7 @@ void main(void)
 	int cnt = 1;
 	uint32_t dtr = 0;
 
-	/* Application must enable USB by itself */
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
+	if (!device_is_ready(dev)) {
 		return;
 	}
 
