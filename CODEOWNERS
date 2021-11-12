@@ -72,7 +72,7 @@
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @dleach02
-/soc/riscv/riscv-privilege/andes_v5/      @cwshu @Teng-Shih-Wei
+/soc/riscv/riscv-privilege/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privilege/neorv32/       @henrikbrixandersen
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
@@ -151,7 +151,7 @@
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @dleach02
 /boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
-/boards/riscv/adp_xc7k_ae350/             @cwshu @Teng-Shih-Wei
+/boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/neorv32/                    @henrikbrixandersen
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
@@ -195,7 +195,7 @@
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
-/drivers/*/*andes*                        @cwshu @Teng-Shih-Wei
+/drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
@@ -437,7 +437,7 @@
 /dts/riscv/rv32m1*                        @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
-/dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
+/dts/riscv/andes_v5*                      @cwshu @kevinwang821020 @jimmyzhe
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -467,7 +467,7 @@
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
-/dts/bindings/*/andes*                    @cwshu @Teng-Shih-Wei
+/dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
