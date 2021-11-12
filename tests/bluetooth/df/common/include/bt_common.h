@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 /**
  * @brief Structure to store CTE receive parameters for unit tests setup.
  */

@@ -7,15 +7,16 @@
 #include <stdint.h>
 
 #include <bt_common.h>
+#include <ztest.h>
 
 #include "common.h"
-#include "test_set_iq_sampling_enable.h"
 
 /*test case main entry*/
 void test_main(void)
 {
 	ut_bt_setup();
-
 	common_create_per_sync_set();
-	run_set_scan_cte_rx_enable_tests();
+
+	ztest_run_test_suites(NULL);
+	ztest_verify_all_test_suites_ran();
 }

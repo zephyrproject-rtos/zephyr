@@ -14,7 +14,6 @@
 #include <host/hci_core.h>
 
 #include "common.h"
-#include "test_set_iq_sampling_enable.h"
 
 struct ut_bt_df_scan_cte_rx_params {
 	uint8_t slot_durations;
@@ -39,6 +38,7 @@ static struct ut_bt_df_scan_cte_rx_params g_params = {
 #define CTE_COUNT_INVALID (BT_HCI_LE_SAMPLE_CTE_COUNT_MAX + 1)
 #define SWITCH_PATTERN_LEN_INVALID                                             \
 	(CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN + 1)
+
 /* @brief Function sends HCI_LE_Set_Connectionless_CTE_Sampling_Enable
  *        to controller.
  *
@@ -87,7 +87,19 @@ int send_set_scan_cte_rx_enable(uint16_t sync_handle,
 				    buf, NULL);
 }
 
-void test_set_scan_cte_rx_enable_invalid_scan_set_handle(void)
+void set_scan_cte_rx_enable_teardown(void *data)
+{
+	int err;
+
+	err = send_set_scan_cte_rx_enable(g_per_sync->handle, &g_params, false);
+	zassert_equal(err, 0, "Unexpected error value for disable IQ sampling.");
+}
+
+ZTEST_SUITE(test_set_iq_sampling_enable__rx_enable, NULL, NULL, NULL,
+	    set_scan_cte_rx_enable_teardown, NULL);
+
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_invalid_scan_set_handle)
 {
 	int err;
 
@@ -96,7 +108,8 @@ void test_set_scan_cte_rx_enable_invalid_scan_set_handle(void)
 		      "Unexpected error value for enable IQ sampling with wrong sync handle");
 }
 
-void test_set_scan_cte_rx_enable_invalid_antenna_slots_value(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_invalid_antenna_slots_value)
 {
 	int err;
 
@@ -112,7 +125,8 @@ void test_set_scan_cte_rx_enable_invalid_antenna_slots_value(void)
 	g_params.slot_durations = slot_durations_prev;
 }
 
-void test_set_scan_cte_rx_enable_invalid_antenna_pattern_num(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_invalid_antenna_pattern_num)
 {
 	int err;
 
@@ -132,7 +146,8 @@ void test_set_scan_cte_rx_enable_invalid_antenna_pattern_num(void)
 	g_params.ant_ids = ant_ids_prev;
 }
 
-void test_set_scan_cte_rx_enable_invalid_cte_count_value(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_invalid_cte_count_value)
 {
 	int err;
 
@@ -148,7 +163,8 @@ void test_set_scan_cte_rx_enable_invalid_cte_count_value(void)
 	g_params.cte_count = cte_count_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_slot_duration_2us(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_slot_duration_2us)
 {
 	int err;
 
@@ -162,7 +178,8 @@ void test_set_scan_cte_rx_enable_with_slot_duration_2us(void)
 	g_params.slot_durations = slot_durations_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_slot_duration_1us(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_slot_duration_1us)
 {
 	int err;
 
@@ -177,7 +194,8 @@ void test_set_scan_cte_rx_enable_with_slot_duration_1us(void)
 	g_params.slot_durations = slot_durations_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_sample_cte_count_min(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_sample_cte_count_min)
 {
 	int err;
 
@@ -193,7 +211,8 @@ void test_set_scan_cte_rx_enable_with_sample_cte_count_min(void)
 	g_params.cte_count = cte_count_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_sample_cte_count_max(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_sample_cte_count_max)
 {
 	int err;
 
@@ -209,7 +228,8 @@ void test_set_scan_cte_rx_enable_with_sample_cte_count_max(void)
 	g_params.cte_count = cte_count_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_antenna_switch_patterns_min(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_antenna_switch_patterns_min)
 {
 	int err;
 
@@ -228,7 +248,8 @@ void test_set_scan_cte_rx_enable_with_antenna_switch_patterns_min(void)
 	g_params.ant_ids = ant_ids_prev;
 }
 
-void test_set_scan_cte_rx_enable_with_antenna_switch_patterns_max(void)
+ZTEST(test_set_iq_sampling_enable__rx_enable,
+	test_set_scan_cte_rx_enable_with_antenna_switch_patterns_max)
 {
 	int err;
 
@@ -247,7 +268,19 @@ void test_set_scan_cte_rx_enable_with_antenna_switch_patterns_max(void)
 	g_params.ant_ids = ant_ids_prev;
 }
 
-void test_set_scan_cte_rx_disable_with_correct_sampling_parameters(void)
+void set_scan_cte_rx_disable_setup(void *data)
+{
+	int err;
+
+	err = send_set_scan_cte_rx_enable(g_per_sync->handle, &g_params, true);
+	zassert_equal(err, 0, "Unexpected error value for enable IQ sampling.");
+}
+
+ZTEST_SUITE(test_set_iq_sampling_enable__sampling_params, NULL, NULL,
+	    set_scan_cte_rx_disable_setup, NULL, NULL);
+
+ZTEST(test_set_iq_sampling_enable__sampling_params,
+	test_set_scan_cte_rx_disable_with_correct_sampling_parameters)
 {
 	int err;
 
@@ -255,7 +288,8 @@ void test_set_scan_cte_rx_disable_with_correct_sampling_parameters(void)
 	zassert_equal(err, 0, "Unexpected error value for disable IQ sampling.");
 }
 
-void test_set_scan_cte_rx_disable_with_invalid_sampling_parameters(void)
+ZTEST(test_set_iq_sampling_enable__sampling_params,
+	test_set_scan_cte_rx_disable_with_invalid_sampling_parameters)
 {
 	int err;
 
@@ -271,71 +305,14 @@ void test_set_scan_cte_rx_disable_with_invalid_sampling_parameters(void)
 	zassert_equal(err, 0, "Unexpected error value for disable IQ sampling.");
 }
 
-void test_set_scan_cte_rx_disable_when_disabled(void)
+ZTEST_SUITE(test_set_iq_sampling_enable__disable, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(test_set_iq_sampling_enable__disable,
+	test_set_scan_cte_rx_disable_when_disabled)
 {
 	int err;
 
 	err = send_set_scan_cte_rx_enable(g_per_sync->handle, &g_params, false);
 	zassert_equal(err, 0,
 		      "Unexpected error value for disable IQ sampling when it is disabled.");
-}
-
-void set_scan_cte_rx_enable_teardown(void)
-{
-	int err;
-
-	err = send_set_scan_cte_rx_enable(g_per_sync->handle, &g_params, false);
-	zassert_equal(err, 0, "Unexpected error value for disable IQ sampling.");
-}
-
-void set_scan_cte_rx_disable_setup(void)
-{
-	int err;
-
-	err = send_set_scan_cte_rx_enable(g_per_sync->handle, &g_params, true);
-	zassert_equal(err, 0, "Unexpected error value for enable IQ sampling.");
-}
-
-void run_set_scan_cte_rx_enable_tests(void)
-{
-	ztest_test_suite(
-		test_hci_set_scan_cte_rx_enable,
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_invalid_scan_set_handle,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_invalid_antenna_slots_value,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_invalid_antenna_pattern_num,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_invalid_cte_count_value,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_slot_duration_2us,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_slot_duration_1us,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_sample_cte_count_min,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_sample_cte_count_max,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_antenna_switch_patterns_min,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_enable_with_antenna_switch_patterns_max,
-			unit_test_noop, set_scan_cte_rx_enable_teardown),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_disable_with_correct_sampling_parameters,
-			set_scan_cte_rx_disable_setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_set_scan_cte_rx_disable_with_invalid_sampling_parameters,
-			set_scan_cte_rx_disable_setup, unit_test_noop),
-		ztest_unit_test(test_set_scan_cte_rx_disable_when_disabled));
-	ztest_run_test_suite(test_hci_set_scan_cte_rx_enable);
 }
