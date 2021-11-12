@@ -103,3 +103,7 @@ CDC ACM UART as backend for a subsystem or application:
 * ``zephyr,shell-uart`` used by shell for serial backend,
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
 * ``zephyr,uart-mcumgr`` used by :ref:`smp_svr_sample`
+
+In-tree samples that do not require any USB device classes other than
+CDC ACM UART for console, logging, or shell should be built with
+:ref:`cdc_acm_shield`.

@@ -1,0 +1,43 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_CDC_ACM_CONSOLE || SHIELD_CDC_ACM_SHELL || SHIELD_CDC_ACM_BT_C2H
+
+# TEST_LOGGING_DEFAULTS option sets all log levels to INF,
+# including the USB_CDC_ACM_LOG_LEVEL and that can not work.
+config TEST_LOGGING_DEFAULTS
+	default n
+
+config SERIAL
+	default y
+
+config UART_LINE_CTRL
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y
+
+endif #if SHIELD_CDC_ACM_CONSOLE || SHIELD_CDC_ACM_SHELL || ...
+
+if SHIELD_CDC_ACM_CONSOLE
+
+config CONSOLE
+	default y
+
+config UART_CONSOLE
+	default y
+
+endif #if SHIELD_CDC_ACM_CONSOLE
+
+if SHIELD_CDC_ACM_SHELL
+
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default y
+
+config LOG_PRINTK
+	default y
+
+endif #if SHIELD_CDC_ACM_SHELL
