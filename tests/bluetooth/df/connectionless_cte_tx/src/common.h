@@ -20,7 +20,6 @@ struct bt_test_state {
 	/** Whether or not bt_le_ext_adv_create() was called (not deleted) */
 	bool is_adv_set_created;
 };
-extern struct bt_test_state test_state;
 
 void common_create_adv_set(void);
 void common_delete_adv_set(void);

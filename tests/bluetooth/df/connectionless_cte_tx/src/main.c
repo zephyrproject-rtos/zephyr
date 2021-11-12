@@ -19,8 +19,10 @@ void test_main(void)
 	test_state.is_setup = true;
 
 	common_create_adv_set();
-	ztest_run_registered_test_suites(&test_state);
+	test_state.is_adv_set_created = true;
+	ztest_run_test_suites(&test_state);
 
 	common_delete_adv_set();
-	ztest_run_registered_test_suites(&test_state);
+	test_state.is_adv_set_created = false;
+	ztest_run_test_suites(&test_state);
 }
