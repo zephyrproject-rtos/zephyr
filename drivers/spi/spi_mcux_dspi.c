@@ -582,7 +582,7 @@ static int spi_mcux_configure(const struct device *dev,
 
 	DSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.whichPcs = spi_cfg->slave;
+	master_config.whichPcs = 1U << spi_cfg->slave;
 	master_config.whichCtar = config->which_ctar;
 	master_config.pcsActiveHighOrLow =
 		(spi_cfg->operation & SPI_CS_ACTIVE_HIGH) ?
@@ -646,7 +646,7 @@ static int spi_mcux_configure(const struct device *dev,
 	/* record frame_size setting for DMA */
 	data->frame_size = word_size;
 	/* keep the pcs settings */
-	data->which_pcs = spi_cfg->slave;
+	data->which_pcs = 1U << spi_cfg->slave;
 #ifdef CONFIG_MCUX_DSPI_EDMA_SHUFFLE_DATA
 	mcux_init_inner_buffer_with_cmd(dev, 0);
 #endif
