@@ -152,6 +152,12 @@ config USB_WORKQUEUE_PRIORITY
 	  priority. This means that any work handler, once started, won't
 	  be preempted by any other thread until finished.
 
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	bool "Initialize USB device support at boot"
+	depends on USB_CDC_ACM
+	help
+	  Use CDC ACM UART as backend for console, shell, or logging.
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK
