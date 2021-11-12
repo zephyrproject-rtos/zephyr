@@ -11,7 +11,6 @@
  * @}
  */
 
-#include <usb/usb_device.h>
 #include "test_uart.h"
 
 #ifdef CONFIG_SHELL
@@ -63,7 +62,7 @@ void test_main(void)
 	uint32_t dtr = 0;
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
+	if (!device_is_ready(dev)) {
 		return;
 	}
 
