@@ -1252,8 +1252,10 @@ struct bt_audio_stream_ops {
 	 *  configured.
 	 *
 	 *  @param stream Stream object that has been configured.
+	 *  @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_audio_stream *stream);
+	void (*configured)(struct bt_audio_stream *stream,
+			   const struct bt_codec_qos_pref *pref);
 
 	/** @brief Stream QoS set callback
 	 *

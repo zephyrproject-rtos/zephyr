@@ -324,7 +324,8 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
-static void stream_configured(struct bt_audio_stream *stream)
+static void stream_configured(struct bt_audio_stream *stream,
+			      const struct bt_codec_qos_pref *pref)
 {
 	printk("Audio Stream %p configured\n", stream);
 
