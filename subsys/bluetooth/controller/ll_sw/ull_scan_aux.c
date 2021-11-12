@@ -275,7 +275,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* Check if Periodic Advertising Synchronization to be created
 		 */
-		if (sync) {
+		if (sync && (scan->per_scan.state != LL_SYNC_STATE_CREATED)) {
 			/* Check address and update internal state */
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			ull_sync_setup_addr_check(scan, pdu->tx_addr, ptr,
@@ -536,7 +536,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 ull_scan_aux_rx_flush:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (sync) {
+	if (sync && (scan->per_scan.state != LL_SYNC_STATE_CREATED)) {
 		scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */

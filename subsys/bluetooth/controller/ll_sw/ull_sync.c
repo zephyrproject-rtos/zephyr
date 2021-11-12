@@ -52,13 +52,15 @@
 
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
-static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_of_cb);
+static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op_cb);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_op_cb(uint32_t status, void *param);
-static void ticker_stop_op_cb(uint32_t status, void *param);
+static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param);
+static void sync_expire(void *param);
+static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
 static bool peer_sid_sync_exists(uint8_t const peer_id_addr_type,
@@ -300,7 +302,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
-	node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.handle = LLL_HANDLE_INVALID;
 
 	/* NOTE: struct node_rx_lost has uint8_t member following the
 	 *       struct node_rx_hdr to store the reason.
@@ -309,7 +311,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
 
 	/* NOTE: Since NODE_RX_TYPE_SYNC is only generated from ULL context,
-	 *       pass ULL context as parameter.
+	 *       pass ULL sync context as parameter.
 	 */
 	node_rx->hdr.rx_ftr.param = sync;
 
@@ -548,18 +550,22 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->event_counter = si->evt_cntr;
 	lll->phy = aux->lll.phy;
 
+	interval = sys_le16_to_cpu(si->interval);
+	interval_us = interval * CONN_INT_UNIT_US;
+
+	/* Convert fromm 10ms units to interval units */
+	sync->timeout_reload =
+		RADIO_SYNC_EVENTS((sync->timeout * 10U * USEC_PER_MSEC),
+				  interval_us);
+
+	sync->sync_expire = CONN_ESTAB_COUNTDOWN;
+
 	/* Extract the SCA value from the sca_chm field of the sync_info
 	 * structure.
 	 */
 	sca = (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
 	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
-
-	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * CONN_INT_UNIT_US;
-
-	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
-						 interval_us);
 
 	lll->window_widening_periodic_us =
 		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
@@ -571,8 +577,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		lll->window_size_event_us = OFFS_UNIT_30_US;
 	}
 
-	/* Reset the sync context allocated to scan contexts */
-	scan->per_scan.sync = NULL;
+	/* Set the state to sync create */
+	scan->per_scan.state = LL_SYNC_STATE_CREATED;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
@@ -581,9 +587,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			struct ll_scan_set *scan_coded;
 
 			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->per_scan.sync = NULL;
+			scan_coded->per_scan.state = LL_SYNC_STATE_CREATED;
 		} else {
-			scan_1m->per_scan.sync = NULL;
+			scan_1m->per_scan.state = LL_SYNC_STATE_CREATED;
 		}
 	}
 
@@ -654,6 +660,25 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		  (ret == TICKER_STATUS_BUSY));
 }
 
+void ull_sync_setup_complete(struct ll_scan_set *scan)
+{
+	/* Remove the sync context from being associated with scan contexts */
+	scan->per_scan.sync = NULL;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		struct ll_scan_set *scan_1m;
+
+		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+		if (scan == scan_1m) {
+			struct ll_scan_set *scan_coded;
+
+			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+			scan_coded->per_scan.sync = NULL;
+		} else {
+			scan_1m->per_scan.sync = NULL;
+		}
+	}
+}
+
 void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct node_rx_pdu *rx_establ;
@@ -715,6 +740,11 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 #else
 		se->status = BT_HCI_ERR_SUCCESS;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
+
+		/* NOTE: footer param has already been populated during sync
+		 * setup.
+		 */
+
 		ll_rx_put(rx_establ->hdr.link, rx_establ);
 		ll_rx_sched();
 	}
@@ -776,12 +806,27 @@ void ull_sync_done(struct node_rx_event_done *done)
 
 			/* Enforce skip */
 			lll->skip_event = sync->skip;
+
+			/* Reset failed to establish sync countdown */
+			sync->sync_expire = 0U;
 		}
 
 		/* Reset supervision countdown */
 		if (done->extra.crc_valid) {
 			sync->timeout_expire = 0U;
 		}
+
+		/* check sync failed to establish */
+		else if (sync->sync_expire) {
+			if (sync->sync_expire > elapsed_event) {
+				sync->sync_expire -= elapsed_event;
+			} else {
+				sync_ticker_cleanup(sync, ticker_stop_sync_expire_op_cb);
+
+				return;
+			}
+		}
+
 		/* If anchor point not sync-ed, start timeout countdown, and break skip if any */
 		else if (!sync->timeout_expire) {
 			sync->timeout_expire = sync->timeout_reload;
@@ -800,7 +845,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 					force = 1U;
 				}
 			} else {
-				sync_ticker_cleanup(sync, ticker_stop_op_cb);
+				sync_ticker_cleanup(sync, ticker_stop_sync_lost_op_cb);
 
 				return;
 			}
@@ -978,14 +1023,14 @@ static inline struct ll_sync_set *sync_acquire(void)
 	return mem_acquire(&sync_free);
 }
 
-static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_of_cb)
+static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op_cb)
 {
 	uint16_t sync_handle = ull_sync_handle_get(sync);
 	uint32_t ret;
 
 	/* Stop Periodic Sync Ticker */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_of_cb, (void *)sync);
+			  TICKER_ID_SCAN_SYNC_BASE + sync_handle, stop_op_cb, (void *)sync);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -1035,7 +1080,46 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 		  param == ull_disable_mark_get());
 }
 
-static void ticker_stop_op_cb(uint32_t status, void *param)
+static void ticker_stop_sync_expire_op_cb(uint32_t status, void *param)
+{
+	uint32_t retval;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, sync_expire};
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	mfy.param = param;
+
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
+				0, &mfy);
+	LL_ASSERT(!retval);
+}
+
+static void sync_expire(void *param)
+{
+	struct ll_sync_set *sync = param;
+	struct node_rx_sync *se;
+	struct node_rx_pdu *rx;
+
+	/* Generate Periodic advertising sync failed to establish */
+	rx = (void *)sync->node_rx_sync_estab;
+	rx->hdr.type = NODE_RX_TYPE_SYNC;
+	rx->hdr.handle = LLL_HANDLE_INVALID;
+
+	/* NOTE: struct node_rx_sync_estab has uint8_t member following the
+	 *       struct node_rx_hdr to store the reason.
+	 */
+	se = (void *)rx->pdu;
+	se->status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+
+	/* NOTE: footer param has already been populated during sync setup */
+
+	/* Enqueue the sync failed to established towards ULL context */
+	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_sched();
+}
+
+static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 {
 	uint32_t retval;
 	static memq_link_t link;
