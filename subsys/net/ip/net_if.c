@@ -44,6 +44,8 @@ static K_MUTEX_DEFINE(lock);
 extern struct net_if _net_if_list_start[];
 extern struct net_if _net_if_list_end[];
 
+static struct net_if *default_iface;
+
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 static struct k_work_delayable router_timer;
@@ -552,12 +554,21 @@ struct net_if *net_if_lookup_by_dev(const struct device *dev)
 	return NULL;
 }
 
+void net_if_set_default(struct net_if *iface)
+{
+	default_iface = iface;
+}
+
 struct net_if *net_if_get_default(void)
 {
 	struct net_if *iface = NULL;
 
 	if (_net_if_list_start == _net_if_list_end) {
 		return NULL;
+	}
+
+	if (default_iface != NULL) {
+		return default_iface;
 	}
 
 #if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)

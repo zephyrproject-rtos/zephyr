@@ -903,6 +903,13 @@ static inline struct net_if_config *net_if_config_get(struct net_if *iface)
 void net_if_router_rm(struct net_if_router *router);
 
 /**
+ * @brief Set the default network interface.
+ *
+ * @param iface New default interface, or NULL to revert to the one set by Kconfig.
+ */
+void net_if_set_default(struct net_if *iface);
+
+/**
  * @brief Get the default network interface.
  *
  * @return Default interface or NULL if no interfaces are configured.
