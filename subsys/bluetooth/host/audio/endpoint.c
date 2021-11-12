@@ -303,7 +303,8 @@ struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
 static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_audio_stream *stream = ep->stream;
-	/* Notify local capability */
+
+	/* Notify upper layer */
 	if (stream != NULL && stream->ops != NULL &&
 	    stream->ops->released != NULL) {
 		stream->ops->released(stream);
@@ -375,7 +376,7 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 			      sys_le16_to_cpu(cfg->codec.vid),
 			      buf, cfg->cc_len, NULL);
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
 		stream->ops->configured(stream);
 	}
@@ -423,7 +424,7 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		bt_audio_stream_disconnect(stream);
 	}
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->qos_set != NULL) {
 		stream->ops->qos_set(stream);
 	}
@@ -452,7 +453,7 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->enabled != NULL) {
 		stream->ops->enabled(stream);
 	}
@@ -481,7 +482,7 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
 	       ep->cig_id, ep->cis_id);
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->started != NULL) {
 		stream->ops->started(stream);
 	}
@@ -508,7 +509,7 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", stream->cap->type,
 	       ep->cig_id, ep->cis_id);
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->disabled != NULL) {
 		stream->ops->disabled(stream);
 	}
@@ -527,7 +528,7 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	BT_DBG("dir 0x%02x", stream->cap->type);
 
-	/* Notify local capability */
+	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->stopped != NULL) {
 		stream->ops->stopped(stream);
 	}
