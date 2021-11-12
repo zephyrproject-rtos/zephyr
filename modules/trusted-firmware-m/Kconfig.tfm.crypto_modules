@@ -8,14 +8,14 @@ if BUILD_WITH_TFM
 if TFM_PARTITION_CRYPTO
 
 config TFM_CRYPTO_RNG_MODULE_ENABLED
-	bool "Enable random number generator crypto module"
+	bool "Random number generator crypto module"
 	default y
 	help
 	  Enables the random number generator  module within the crypto partition.
 	  Unset this option if 'psa_generate_random' is not used.
 
 config TFM_CRYPTO_KEY_MODULE_ENABLED
-	bool "Enable KEY crypto module"
+	bool "KEY crypto module"
 	default y
 	help
 	  Enables the KEY crypto module within the crypto partition.
@@ -23,7 +23,7 @@ config TFM_CRYPTO_KEY_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_AEAD_MODULE_ENABLED
-	bool "Enable AEAD crypto module"
+	bool "AEAD crypto module"
 	default y
 	help
 	  Enables the AEAD crypto module within the crypto partition.
@@ -31,7 +31,7 @@ config TFM_CRYPTO_AEAD_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_MAC_MODULE_ENABLED
-	bool "Enable MAC crypto module"
+	bool "MAC crypto module"
 	default y
 	help
 	  Enables the MAC crypto module within the crypto partition.
@@ -39,7 +39,7 @@ config TFM_CRYPTO_MAC_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_HASH_MODULE_ENABLED
-	bool "Enable HASH crypto module"
+	bool "HASH crypto module"
 	default y
 	help
 	  Enables the HASH crypto module within the crypto partition.
@@ -47,7 +47,7 @@ config TFM_CRYPTO_HASH_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_CIPHER_MODULE_ENABLED
-	bool "Enable CIPHER crypto module"
+	bool "CIPHER crypto module"
 	default y
 	help
 	  Enables the CIPHER crypto module within the crypto partition.
@@ -55,7 +55,7 @@ config TFM_CRYPTO_CIPHER_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
-	bool "Enable ASYM ENCRYPT crypto module"
+	bool "ASYM ENCRYPT crypto module"
 	default y
 	help
 	  Enables the ASYM ENCRYPT crypto module within the crypto partition.
@@ -63,7 +63,7 @@ config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
-	bool "Enable ASYM SIGN crypto module"
+	bool "ASYM SIGN crypto module"
 	default y
 	help
 	  Enables the ASYM SIGN crypto module within the crypto partition.
@@ -71,7 +71,7 @@ config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
 	  is not used.
 
 config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
-	bool "Enable KEY DERIVATION crypto module"
+	bool "KEY DERIVATION crypto module"
 	default y
 	help
 	  Enables the KEY_DERIVATION crypto module within the crypto partition.
