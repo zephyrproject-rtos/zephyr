@@ -29,14 +29,16 @@ these specific USB dongles.
 Current supported chosen properties
 ===================================
 
-+-----------------------+---------------------+
-| Chosen property       | Shield Designation  |
-|                       |                     |
-+=======================+=====================+
-| ``zephyr,console``    | ``cdc_acm_console`` |
-+-----------------------+---------------------+
-| ``zephyr,shell-uart`` | ``cdc_acm_shell``   |
-+-----------------------+---------------------+
++------------------------+---------------------+
+| Chosen property        | Shield Designation  |
+|                        |                     |
++========================+=====================+
+| ``zephyr,console``     | ``cdc_acm_console`` |
++------------------------+---------------------+
+| ``zephyr,shell-uart``  | ``cdc_acm_shell``   |
++------------------------+---------------------+
+| ``zephyr,bt-c2h-uart`` | ``cdc_acm_bt_c2h``  |
++------------------------+---------------------+
 
 Requirements
 ************
@@ -61,4 +63,13 @@ Or ``-DSHIELD=cdc_acm_console``, for example:
    :zephyr-app: samples/basic/threads
    :board: nrf52840dongle_nrf52840
    :shield: cdc_acm_console
+   :goals: build
+
+With ``-DSHIELD=cdc_acm_bt_c2h``, :ref:`bluetooth-hci-uart-sample` can use
+CDC ACM UART as interface to the host:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_uart
+   :board: nrf52840dongle_nrf52840
+   :shield: cdc_acm_bt_c2h
    :goals: build
