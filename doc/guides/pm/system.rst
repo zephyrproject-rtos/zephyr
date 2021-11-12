@@ -45,11 +45,11 @@ Power States Constraint
 
 The power management subsystem allows different Zephyr components and
 applications to set constraints on various power states preventing the
-system from transitiioning into these states. This can be used by devices when executing
-tasks in background to avoid the system to go to a specific state where it would
-lose context. Constraints can be set using the :c:func:`pm_constraint_set`,
-released using :c:func:`pm_constraint_release` and checked using the
-:c:func:`pm_constraint_get`.
+system from transitioning into these states. This can be used by devices when
+executing tasks in background to prevent the system from going to a specific
+state where it would lose context. Constraints can be set using the
+:c:func:`pm_constraint_set`, released using :c:func:`pm_constraint_release` and
+checked using the :c:func:`pm_constraint_get`.
 
 Power Management Policies
 =========================
@@ -87,7 +87,7 @@ state is:
 Application
 -----------
 
-The power management policy is defined by the application by implementing the
+The application defines the power management policy by implementing the
 :c:func:`pm_policy_next_state` function. In this policy the application is free
 to decide which power state the system should transition to based on the
 remaining time for the next scheduled timeout.
