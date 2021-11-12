@@ -382,7 +382,8 @@ qspi: qspi@2b000 {
 	compatible = "nordic,nrf-qspi";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x2b000 0x1000>;
+	reg = <0x2b000 0x1000>, <0x10000000 0x10000000>;
+	reg-names = "qspi", "qspi_mm";
 	interrupts = <43 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "QSPI";
