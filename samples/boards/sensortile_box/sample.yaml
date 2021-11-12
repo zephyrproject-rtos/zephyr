@@ -7,3 +7,4 @@ tests:
     platform_allow: sensortile_box
     tags: sensors
     depends_on: i2c spi gpio
+    extra_args: SHIELD="cdc_acm_console"
