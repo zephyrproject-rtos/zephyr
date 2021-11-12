@@ -60,6 +60,11 @@ static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
+static bool peer_sid_sync_exists(uint8_t const peer_id_addr_type,
+				 uint8_t const *const peer_id_addr,
+				 uint8_t sid);
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	!defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
 static struct pdu_cte_info *pdu_cte_info_get(struct pdu_adv *pdu);
@@ -96,6 +101,14 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	if (!scan || scan->per_scan.sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
+	/* Do not sync twice to the same peer and same SID */
+	if (((options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST) == 0U) &&
+	    peer_sid_sync_exists(adv_addr_type, adv_addr, sid)) {
+		return BT_HCI_ERR_CONN_ALREADY_EXISTS;
+	}
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
@@ -158,19 +171,42 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		}
 	}
 
+	/* Initialize sync context */
+	node_rx->link = link_sync_estab;
+	sync->node_rx_sync_estab = node_rx;
+	sync->node_rx_lost.hdr.link = link_sync_lost;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	sync->nodups = (options &
 			BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_FILTER_DUPLICATE) ?
 		       1U : 0U;
 #endif
 	sync->skip = skip;
+
+	/* NOTE: Use timeout not zero to represent sync context used for sync
+	 * create.
+	 */
 	sync->timeout = sync_timeout;
 
-	/* Initialize sync context */
-	node_rx->link = link_sync_estab;
-	sync->node_rx_sync_estab = node_rx;
+	/* NOTE: Use timeout_reload not zero to represent sync established. */
 	sync->timeout_reload = 0U;
 	sync->timeout_expire = 0U;
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
+	/* Remember the peer address when periodic advertiser list is not
+	 * used.
+	 * NOTE: Peer address will be filled/overwritten with correct identity
+	 * address on sync setup when privacy is enabled.
+	 */
+	if ((options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST) == 0U) {
+		sync->peer_id_addr_type = adv_addr_type;
+		(void)memcpy(sync->peer_id_addr, adv_addr,
+			     sizeof(sync->peer_id_addr));
+	}
+
+	/* Remember the SID */
+	sync->sid = sid;
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* Reset Broadcast Isochronous Group Sync Establishment */
@@ -192,14 +228,9 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->is_rx_enabled =
 		!(options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED);
 
-	/* TODO: Add support for duplicate filtering */
-
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	ull_df_sync_cfg_init(&lll_sync->df_cfg);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-
-	/* sync_lost node_rx */
-	sync->node_rx_lost.hdr.link = link_sync_lost;
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
@@ -252,6 +283,11 @@ uint8_t ll_sync_create_cancel(void **rx)
 	cpu_dmb();
 	if (!sync || sync->timeout_reload) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Mark the sync context as sync create cancelled */
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
+		sync->timeout = 0U;
 	}
 
 	node_rx = (void *)sync->node_rx_sync_estab;
@@ -390,6 +426,14 @@ uint16_t ull_sync_lll_handle_get(struct lll_sync *lll)
 
 void ull_sync_release(struct ll_sync_set *sync)
 {
+	/* Mark the sync context as sync create cancelled */
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)) {
+		sync->timeout = 0U;
+	}
+
+	/* Mark sync context not sync established */
+	sync->timeout_reload = 0U;
+
 	mem_release(sync, &sync_free);
 }
 
@@ -486,12 +530,17 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		return;
 	}
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-	/* Remember the peer address */
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC) || \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
+	/* Remember the peer address.
+	 * NOTE: Peer identity address is copied here when privacy is enable.
+	 */
 	sync->peer_id_addr_type = scan->per_scan.adv_addr_type;
 	(void)memcpy(sync->peer_id_addr, scan->per_scan.adv_addr,
 		     sizeof(sync->peer_id_addr));
-#endif
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
 
 	memcpy(lll->access_addr, &si->aa, sizeof(lll->access_addr));
 	lll->data_chan_id = lll_chan_id(lll->access_addr);
@@ -1010,6 +1059,40 @@ static void sync_lost(void *param)
 	ll_rx_put(rx->hdr.link, rx);
 	ll_rx_sched();
 }
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
+static struct ll_sync_set *sync_is_create_get(uint16_t handle)
+{
+	struct ll_sync_set *sync;
+
+	sync = ull_sync_set_get(handle);
+	if (!sync || !sync->timeout) {
+		return NULL;
+	}
+
+	return sync;
+}
+
+static bool peer_sid_sync_exists(uint8_t const peer_id_addr_type,
+				 uint8_t const *const peer_id_addr,
+				 uint8_t sid)
+{
+	uint16_t handle;
+
+	for (handle = 0U; handle < CONFIG_BT_PER_ADV_SYNC_MAX; handle++) {
+		struct ll_sync_set *sync = sync_is_create_get(handle);
+
+		if (sync &&
+		    (sync->peer_id_addr_type == peer_id_addr_type) &&
+		    !memcmp(sync->peer_id_addr, peer_id_addr, BDADDR_SIZE) &&
+		    (sync->sid == sid)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static void ticker_update_op_status_give(uint32_t status, void *param)
