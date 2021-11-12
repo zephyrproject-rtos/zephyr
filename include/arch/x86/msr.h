@@ -24,7 +24,7 @@
 
 #define X86_X2APIC_BASE_MSR		0x00000800 /* .. thru 0x00000BFF */
 
-#define X86_EFER_MSR			0xC0000080
+#define X86_EFER_MSR			0xC0000080U
 #define X86_EFER_MSR_SCE		BIT(0)
 #define X86_EFER_MSR_LME		BIT(8)
 #define X86_EFER_MSR_NXE		BIT(11)
@@ -33,17 +33,17 @@
  *      47:32  Kernel CS (SS = CS+8)
  *      63:48  User CS (SS = CS+8)
  */
-#define X86_STAR_MSR			0xC0000081
+#define X86_STAR_MSR			0xC0000081U
 
 /* Location for system call entry point */
-#define X86_LSTAR_MSR			0xC0000082
+#define X86_LSTAR_MSR			0xC0000082U
 
 /* Low 32 bits in this MSR are the SYSCALL mask applied to EFLAGS */
-#define X86_FMASK_MSR			0xC0000084
+#define X86_FMASK_MSR			0xC0000084U
 
-#define X86_FS_BASE			0xC0000100
-#define X86_GS_BASE			0xC0000101
-#define X86_KERNEL_GS_BASE		0xC0000102
+#define X86_FS_BASE			0xC0000100U
+#define X86_GS_BASE			0xC0000101U
+#define X86_KERNEL_GS_BASE		0xC0000102U
 
 #ifndef _ASMLANGUAGE
 #ifdef __cplusplus
@@ -58,7 +58,7 @@ extern "C" {
 static inline void z_x86_msr_write(unsigned int msr, uint64_t data)
 {
 	uint32_t high = data >> 32;
-	uint32_t low = data & 0xFFFFFFFF;
+	uint32_t low = data & 0xFFFFFFFFU;
 
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
