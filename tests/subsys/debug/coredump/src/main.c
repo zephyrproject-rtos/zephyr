@@ -6,10 +6,18 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <debug/coredump.h>
 
 void func_3(uint32_t *addr)
 {
-#if !defined(CONFIG_CPU_CORTEX_M)
+#if defined(CONFIG_BOARD_M2GL025_MIV) || defined(CONFIG_BOARD_HIFIVE1)
+	ARG_UNUSED(addr);
+	/* Call coredump() directly so Renode doesn't pause execution */
+	z_arch_esf_t esf;
+	struct k_thread kthread;
+
+	coredump(1, &esf, &kthread);
+#elif !defined(CONFIG_CPU_CORTEX_M)
 	/* For null pointer reference */
 	*addr = 0;
 #else
