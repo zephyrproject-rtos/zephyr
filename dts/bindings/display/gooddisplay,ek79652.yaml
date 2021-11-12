@@ -1,0 +1,69 @@
+# Copyright (c) 2021, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: EK79652 EPD display controller
+
+compatible: "gooddisplay,ek79652"
+
+include: spi-device.yaml
+
+properties:
+    height:
+      type: int
+      required: true
+      description: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixel of the panel driven by the controller
+
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        RESET pin.
+
+        The RESET pin of EK79652 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    dc-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        DC pin.
+
+        The DC pin of EK79652 is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    busy-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        BUSY pin.
+
+        The BUSY pin of EK79652 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    pwr:
+      type: uint8-array
+      required: true
+      description: Power Setting (PWR) values
+
+    softstart:
+      type: uint8-array
+      required: true
+      description: Booster Soft Start (BTST) values
+
+    cdi:
+      type: int
+      required: true
+      description: VCOM and data interval value
+
+    pwropt:
+      type: uint8-array
+      required: false
+      description: Power optimization value

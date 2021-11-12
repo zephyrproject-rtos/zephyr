@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2021 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "waveshare_epaper_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &ek79652;
+	};
+};
+
+&arduino_spi {
+	ek79652: ek79652@0 {
+		compatible = "gooddisplay,ek79652";
+		label = "EK79652";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <176>;
+		height = <264>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
+		pwr = [03 00 2b 2b];
+		softstart = [07 07 17];
+		cdi = <0x97>;
+		pwropt = [60 A5 89 A5 90 00 93 2A A0 A5 A1 00];
+	};
+};

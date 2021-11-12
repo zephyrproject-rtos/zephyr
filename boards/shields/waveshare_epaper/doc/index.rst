@@ -65,6 +65,10 @@ Current supported displays
 | Good Display | WFT0420CZ15     | UC8176 /     | waveshare_epaper_gdew042t2   |
 | GDEW042T2    |                 | gd7965       | waveshare_epaper_gdew042t2-p |
 +--------------+-----------------+--------------+------------------------------+
+| Good Display | WFI0190CZ22     | EK79652      | waveshare_epaper_gdew027w3   |
+| GDEW027W3    |                 |              |                              |
++--------------+-----------------+--------------+------------------------------+
+
 
 
 Requirements
