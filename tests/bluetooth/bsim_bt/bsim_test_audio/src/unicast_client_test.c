@@ -136,9 +136,14 @@ static struct bt_audio_capability caps[] = {
 	}
 };
 
-static void stream_configured(struct bt_audio_stream *stream)
+static void stream_configured(struct bt_audio_stream *stream,
+			      const struct bt_codec_qos_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
+
+	/* TODO: The preference should be used/taken into account when
+	 * setting the QoS
+	 */
 
 	SET_FLAG(flag_stream_configured);
 }

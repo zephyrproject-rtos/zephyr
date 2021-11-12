@@ -347,7 +347,7 @@ static void ep_qos_reset(struct bt_audio_ep *ep)
 static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_capability_pref *pref;
+	struct bt_codec_qos_pref *pref;
 	struct bt_audio_stream *stream;
 
 	if (buf->len < sizeof(*cfg)) {
@@ -378,10 +378,10 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	/* Reset any exiting QoS configuration */
 	ep_qos_reset(ep);
 
-	pref = &stream->cap->pref;
+	pref = &stream->ep->qos_pref;
 
 	/* Convert to interval representation so they can be matched by QoS */
-	pref->framing = cfg->framing;
+	pref->unframed_supported = cfg->framing == BT_ASCS_QOS_FRAMING_UNFRAMED;
 	pref->phy = cfg->phy;
 	pref->rtn = cfg->rtn;
 	pref->latency = sys_le16_to_cpu(cfg->latency);
@@ -390,11 +390,11 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	pref->pref_pd_min = sys_get_le24(cfg->prefer_pd_min);
 	pref->pref_pd_max = sys_get_le24(cfg->prefer_pd_max);
 
-	BT_DBG("dir 0x%02x framing 0x%02x phy 0x%02x rtn %u latency %u "
-	       "pd_min %u pd_max %u codec 0x%02x ",
+	BT_DBG("dir 0x%02x unframed_supported 0x%02x phy 0x%02x rtn %u "
+	       "latency %u pd_min %u pd_max %u codec 0x%02x ",
 	       bt_audio_ep_is_snk(ep) ? BT_AUDIO_SINK : BT_AUDIO_SOURCE,
-	       pref->framing, pref->phy, pref->rtn, pref->latency, pref->pd_min,
-	       pref->pd_max, stream->codec->id);
+	       pref->unframed_supported, pref->phy, pref->rtn, pref->latency,
+	       pref->pd_min, pref->pd_max, stream->codec->id);
 
 	bt_audio_ep_set_codec(ep, cfg->codec.id,
 			      sys_le16_to_cpu(cfg->codec.cid),
@@ -403,7 +403,7 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
-		stream->ops->configured(stream);
+		stream->ops->configured(stream, pref);
 	}
 }
 
