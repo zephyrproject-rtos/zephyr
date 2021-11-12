@@ -23,16 +23,6 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on !USE_DT_CODE_PARTITION
 
-if USB_DEVICE_STACK
-
-config USB_UART_CONSOLE
-	default y
-
-config UART_LINE_CTRL
-	default y
-
-endif # USB_DEVICE_STACK
-
 if IEEE802154
 
 config IEEE802154_NRF5
