@@ -12,11 +12,14 @@
 
 #include "bt_common.h"
 
-void ut_bt_setup(void)
+void *ut_bt_setup(void)
 {
 	int err;
 
-	/* Initialize bluetooth subsystem */
+	/* Initialize bluetooth subsystem. It's okay if it's already on. */
 	err = bt_enable(NULL);
-	zassert_equal(err, 0, "Bluetooth subsystem initialization failed");
+	zassert_true((err == 0 || err == -EALREADY),
+		"Bluetooth subsystem initialization failed (%d)", err);
+
+	return NULL;
 }
