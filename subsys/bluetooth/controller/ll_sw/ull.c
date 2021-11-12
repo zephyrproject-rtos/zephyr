@@ -1384,8 +1384,6 @@ void ll_rx_mem_release(void **node_rx)
 			struct ll_sync_set *sync =
 				(void *)rx_free->rx_ftr.param;
 
-			sync->timeout_reload = 0U;
-
 			ull_sync_release(sync);
 		}
 		break;

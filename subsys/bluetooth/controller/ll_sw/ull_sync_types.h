@@ -21,11 +21,13 @@ struct ll_sync_set {
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire;
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-	/* TODO: Use for same peer check too */
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC) || \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	uint8_t peer_id_addr[BDADDR_SIZE];
 	uint8_t peer_id_addr_type:1;
-#endif
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	uint8_t nodups:1;
@@ -38,6 +40,10 @@ struct ll_sync_set {
 	 */
 	uint8_t sync_term:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
+	uint8_t sid;
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 
 	/* node rx type with memory aligned storage for sync lost reason.
 	 * HCI will reference the value using the pdu member of
