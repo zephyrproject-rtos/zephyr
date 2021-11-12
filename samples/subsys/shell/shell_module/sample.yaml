@@ -13,8 +13,7 @@ tests:
     tags: shell usb
     harness: keyboard
     min_ram: 40
-    extra_args: OVERLAY_CONFIG="overlay-usb.conf"
-                DTC_OVERLAY_FILE="usb.overlay"
+    extra_args: SHIELD="cdc_acm_shell"
     integration_platforms:
       - native_posix
   sample.shell.shell_module.minimal:
