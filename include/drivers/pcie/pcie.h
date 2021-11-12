@@ -284,9 +284,9 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 #define PCIE_CONF_INTR_IRQ(w)	((w) & 0xFFU)
 #define PCIE_CONF_INTR_IRQ_NONE	0xFFU  /* no interrupt routed */
 
-#define PCIE_MAX_BUS  (0xFFFFFFFF & PCIE_BDF_BUS_MASK)
-#define PCIE_MAX_DEV  (0xFFFFFFFF & PCIE_BDF_DEV_MASK)
-#define PCIE_MAX_FUNC (0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
+#define PCIE_MAX_BUS  (0xFFFFFFFFU & PCIE_BDF_BUS_MASK)
+#define PCIE_MAX_DEV  (0xFFFFFFFFU & PCIE_BDF_DEV_MASK)
+#define PCIE_MAX_FUNC (0xFFFFFFFFU & PCIE_BDF_FUNC_MASK)
 
 #ifdef __cplusplus
 }
