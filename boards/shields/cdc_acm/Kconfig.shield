@@ -1,0 +1,8 @@
+# Copyright (c) 2021
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_CDC_ACM_CONSOLE
+	def_bool $(shields_list_contains,cdc_acm_console)
+
+config SHIELD_CDC_ACM_SHELL
+	def_bool $(shields_list_contains,cdc_acm_shell)
