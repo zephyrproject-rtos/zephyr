@@ -54,7 +54,7 @@ NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
 NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
 		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
-NMI_API sint8 close(SOCKET sock);
+NMI_API sint8 winc1500_close(SOCKET sock);
 
 enum socket_errors {
 	SOCK_ERR_NO_ERROR = 0,
@@ -596,7 +596,7 @@ static int winc1500_put(struct net_context *context)
 
 	memset(&(context->remote), 0, sizeof(struct sockaddr_in));
 	context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
-	ret = close(sock);
+	ret = winc1500_close(sock);
 
 	net_pkt_unref(sd->rx_pkt);
 
@@ -899,7 +899,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		 * context as well. The new context gives us another socket
 		 * so we have to close that one first.
 		 */
-		close((int)a_sd->context->offload_context);
+		winc1500_close((int)a_sd->context->offload_context);
 
 		a_sd->context->offload_context =
 				(void *)((int)accept_msg->sock);
