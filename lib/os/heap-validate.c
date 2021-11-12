@@ -67,42 +67,27 @@ static inline void check_nexts(struct z_heap *h, int bidx)
 	}
 }
 
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-
-static inline void sys_heap_get_info(struct sys_heap *heap,
-		struct sys_heap_runtime_stats *stats)
+static void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
+			   size_t *free_bytes)
 {
-	chunkid_t c = 0;
-	struct z_heap *h = heap->heap;
+	chunkid_t c;
 
-	stats->allocated_bytes = 0;
-	stats->free_bytes = 0;
+	*alloc_bytes = 0;
+	*free_bytes = 0;
 
-	do {
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		if (chunk_used(h, c)) {
-			if ((c != 0) && (c != h->end_chunk)) {
-				stats->allocated_bytes +=
-					chunksz_to_bytes(h, chunk_size(h, c));
-			}
-		} else {
-			if (!solo_free_header(h, c)) {
-				stats->free_bytes +=
-					chunksz_to_bytes(h, chunk_size(h, c));
-			}
+			*alloc_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		} else if (!solo_free_header(h, c)) {
+			*free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		}
-		c = right_chunk(h, c);
-	} while (c != h->end_chunk);
+	}
 }
-
-#endif
 
 bool sys_heap_validate(struct sys_heap *heap)
 {
 	struct z_heap *h = heap->heap;
 	chunkid_t c;
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-	struct sys_heap_runtime_stats stat1, stat2;
-#endif
 
 	/*
 	 * Walk through the chunks linearly, verifying sizes and end pointer.
@@ -123,11 +108,13 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * free bytes, then compare with the results of
 	 * sys_heap_runtime_stats_get function.
 	 */
-	sys_heap_runtime_stats_get(heap, &stat1);
-	sys_heap_get_info(heap, &stat2);
+	size_t allocated_bytes, free_bytes;
+	struct sys_heap_runtime_stats stat;
 
-	if ((stat1.allocated_bytes != stat2.allocated_bytes) ||
-			(stat1.free_bytes != stat2.free_bytes)) {
+	get_alloc_info(h, &allocated_bytes, &free_bytes);
+	sys_heap_runtime_stats_get(heap, &stat);
+	if ((stat.allocated_bytes != allocated_bytes) ||
+	    (stat.free_bytes != free_bytes)) {
 		return false;
 	}
 #endif
@@ -393,20 +380,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 
 	if (dump_chunks) {
 		printk("\nChunk dump:\n");
-	}
-	free_bytes = allocated_bytes = 0;
-	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
-		if (chunk_used(h, c)) {
-			if ((c != 0) && (c != h->end_chunk)) {
-				/* 1st and last are always allocated for internal purposes */
-				allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
-			}
-		} else {
-			if (!solo_free_header(h, c)) {
-				free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
-			}
-		}
-		if (dump_chunks) {
+		for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
 			printk("chunk %4d: [%c] size=%-4d left=%-4d right=%d\n",
 			       c,
 			       chunk_used(h, c) ? '*'
@@ -415,12 +389,13 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 			       chunk_size(h, c),
 			       left_chunk(h, c),
 			       right_chunk(h, c));
-		}
-		if (c == h->end_chunk) {
-			break;
+			if (c == h->end_chunk) {
+				break;
+			}
 		}
 	}
 
+	get_alloc_info(h, &allocated_bytes, &free_bytes);
 	/* The end marker chunk has a header. It is part of the overhead. */
 	total = h->end_chunk * CHUNK_UNIT + chunk_header_bytes(h);
 	overhead = total - free_bytes - allocated_bytes;
