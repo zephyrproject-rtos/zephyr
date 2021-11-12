@@ -226,7 +226,7 @@ int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value)
 /**
  * @brief      Write static MAC table entry
  *
- * @param      iface          Master DSA interface
+ * @param      iface          DSA interface
  * @param[in]  mac            MAC address
  * @param[in]  fw_port        The firmware port
  * @param[in]  tbl_entry_idx  Table entry index
@@ -252,7 +252,7 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface,
 /**
  * @brief      Read static MAC table entry
  *
- * @param      iface          Master DSA interface
+ * @param      iface          DSA interface
  * @param      buf            Buffer to receive MAC address
  * @param[in]  tbl_entry_idx  Table entry index
  *
