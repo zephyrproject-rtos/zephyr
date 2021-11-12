@@ -564,7 +564,7 @@ static char get_entry_code(pentry_t value)
 
 		if ((value & MMU_US) != 0U) {
 			/* Uppercase indicates user mode access */
-			ret = toupper(ret);
+			ret = toupper((unsigned char)ret);
 		}
 	}
 
