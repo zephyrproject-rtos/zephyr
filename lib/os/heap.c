@@ -381,7 +381,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	} else if (!chunk_used(h, rc) &&
 		   (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
-		chunkid_t split_size = chunks_need - chunk_size(h, c);
+		chunksz_t split_size = chunks_need - chunk_size(h, c);
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 		h->allocated_bytes += split_size * CHUNK_UNIT;
