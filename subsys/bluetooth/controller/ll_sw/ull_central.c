@@ -255,7 +255,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
 #endif /* CONFIG_BT_CTLR_CONN_META */
 
-	conn->connect_expire = 6U;
+	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
 	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
