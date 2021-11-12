@@ -14,8 +14,7 @@ tests:
     tags: shell usb
     harness: keyboard
     min_ram: 40
-    extra_args: OVERLAY_CONFIG="overlay-usb.conf"
-                DTC_OVERLAY_FILE="usb.overlay"
+    extra_args: SHIELD="cdc_acm_shell"
   sample.shell.shell_module.minimal:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
