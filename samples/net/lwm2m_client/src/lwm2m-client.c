@@ -78,6 +78,11 @@ static uint32_t led_state;
 
 static struct lwm2m_ctx client;
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+/* Array with supported PULL firmware update protocols */
+static uint8_t supported_protocol[1];
+#endif
+
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #define TLS_TAG			1
 
@@ -369,6 +374,10 @@ static int lwm2m_setup(void)
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 #endif
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	lwm2m_engine_create_res_inst("5/0/8/0");
+	lwm2m_engine_set_res_data("5/0/8/0", &supported_protocol[0],
+				  sizeof(supported_protocol[0]), 0);
+
 	lwm2m_firmware_set_update_cb(firmware_update_cb);
 #endif
 
