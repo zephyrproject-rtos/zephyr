@@ -179,9 +179,9 @@
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
-/doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
+/doc/guides/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
 /doc/guides/dts/                          @galak @mbolivar-nordic
-/doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
+/doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
 /doc/reference/devicetree/                @galak @mbolivar-nordic
 /doc/reference/networking/can*            @alexanderwachter
 /doc/security/                            @ceolin @d3zd3z
@@ -201,7 +201,7 @@
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/audio/*nrfx*                     @anangl
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
-/drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
+/drivers/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
 /drivers/cache/                           @carlocaione
 /drivers/syscon/                          @carlocaione @yperess
 /drivers/can/                             @alexanderwachter
@@ -480,7 +480,7 @@
 /include/drivers/dac.h                    @martinjaeger
 /include/drivers/display.h                @vanwinkeljan
 /include/drivers/espi.h                   @albertofloyd @franciscomunoz @scottwcpg
-/include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
 /include/drivers/i2c_emul.h               @sjg20
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
@@ -515,8 +515,8 @@
 /include/arch/xtensa/                     @andyross @dcpleung
 /include/arch/sparc/                      @martin-aberg
 /include/sys/atomic.h                     @andyross
-/include/bluetooth/                       @joerchan @jhedberg @Vudentz
-/include/bluetooth/audio/                 @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
+/include/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
+/include/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/cache.h                          @carlocaione @andyross
 /include/canbus/                          @alexanderwachter
 /include/tracing/                         @nashif
@@ -584,7 +584,7 @@
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
-/samples/bluetooth/                       @jhedberg @Vudentz @joerchan
+/samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/subsys/display/                  @vanwinkeljan
 /samples/compression/                     @Navin-Sankar
@@ -654,10 +654,10 @@
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
-/subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
-/subsys/bluetooth/audio/                  @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
+/subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
+/subsys/bluetooth/audio/                  @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
-/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
+/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @alwa-nordic @Vudentz
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @vanwinkeljan
 /subsys/debug/                            @nashif
@@ -716,10 +716,10 @@
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @joerchan @jhedberg @Vudentz
-/tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
-/tests/bluetooth/bsim_bt/bsim_test_audio/ @joerchan @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
-/tests/bluetooth/tester/                  @joerchan @jhedberg @Vudentz @sjanc
+/tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz
+/tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot
+/tests/bluetooth/bsim_bt/bsim_test_audio/ @alwa-nordic @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
+/tests/bluetooth/tester/                  @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin @d3zd3z
