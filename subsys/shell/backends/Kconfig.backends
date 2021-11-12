@@ -73,7 +73,6 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	bool "Check DTR signal before TX"
-	default y if USB_UART_CONSOLE
 	depends on UART_LINE_CTRL
 	help
 	  Check DTR signal before TX.
