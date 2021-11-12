@@ -59,32 +59,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	 * Configure the mode of instruction cache :
 	 * cache size, cache associated ways, cache line size.
 	 */
-	cache_size_t cache_size;
-	cache_ways_t cache_ways;
-	cache_line_size_t cache_line_size;
-
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_8KB;
-#else
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_16KB;
-#endif
-
-	cache_ways = CACHE_4WAYS_ASSOC;
-
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#endif
-
-	esp_rom_Cache_Suspend_ICache();
-	esp_rom_Cache_Set_ICache_Mode(cache_size, cache_ways, cache_line_size);
-	esp_rom_Cache_Invalidate_ICache_All();
-	esp_rom_Cache_Resume_ICache(0);
+	esp_config_instruction_cache_mode();
 
 	/*
 	 * If we need use SPIRAM, we should use data cache, or if we want to
@@ -93,36 +68,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	 * line size.
 	 * Enable data cache, so if we don't use SPIRAM, it just works.
 	 */
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_DCACHE_LOW,
-			CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_8KB;
-#else
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_DCACHE_LOW,
-			CACHE_MEMORY_DCACHE_HIGH, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_16KB;
-#endif
-#else
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
-			CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID);
-	cache_size = CACHE_SIZE_8KB;
-#else
-	esp_rom_Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH,
-			CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_DCACHE_HIGH);
-	cache_size = CACHE_SIZE_16KB;
-#endif
-#endif
-
-	cache_ways = CACHE_4WAYS_ASSOC;
-#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B
-	cache_line_size = CACHE_LINE_SIZE_16B;
-#else
-	cache_line_size = CACHE_LINE_SIZE_32B;
-#endif
-	esp_rom_Cache_Set_DCache_Mode(cache_size, cache_ways, cache_line_size);
-	esp_rom_Cache_Invalidate_DCache_All();
+	esp_config_data_cache_mode();
 	esp_rom_Cache_Enable_DCache(0);
 
 #if !CONFIG_BOOTLOADER_ESP_IDF
@@ -165,6 +111,11 @@ void __attribute__((section(".iram1"))) __start(void)
 #endif
 
 #if CONFIG_ESP_SPIRAM
+
+	memset(&_ext_ram_bss_start,
+		0,
+		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+
 	esp_err_t err = esp_spiram_init();
 
 	if (err != ESP_OK) {
@@ -177,10 +128,7 @@ void __attribute__((section(".iram1"))) __start(void)
 		abort();
 	}
 
-	memset(&_ext_ram_bss_start,
-		0,
-		(&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
-#endif
+#endif /* CONFIG_ESP_SPIRAM */
 
 /* Scheduler is not started at this point. Hence, guard functions
  * must be initialized after esp_spiram_init_cache which internally
