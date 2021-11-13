@@ -3,7 +3,7 @@ name: Build with Clang/LLVM
 on: pull_request_target
 
 jobs:
-  clang-build-cancel:
+  clang-build-prep:
     runs-on: ubuntu-latest
     steps:
       - name: Cancel Previous Runs
@@ -11,19 +11,20 @@ jobs:
         with:
           access_token: ${{ github.token }}
   clang-build:
-    runs-on: ubuntu-latest
-    needs: clang-build-cancel
+    runs-on: zephyr_runner
+    needs: clang-build-prep
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
       matrix:
-        subset: [1, 2, 3, 4, 5]
+        platform: ["native_posix"]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
-      MATRIX_SIZE: 5
+    outputs:
+      report_needed: ${{ steps.twsiter.outputs.report_needed }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -42,7 +43,12 @@ jobs:
       - name: west setup
         run: |
           west init -l . || true
-          west update
+          # In some cases modules are left in a state where they can't be
+          # updated (i.e. when we cancel a job and the builder is killed),
+          # So first retry to update, if that does not work, remove all modules
+          # and start over. (Workaround until we implement more robust module
+          # west caching).
+          west update 1> west.update.log || west update 1> west.update-2.log || ( rm -rf ../modules && west update)
 
       - name: Check Environment
         run: |
@@ -52,39 +58,56 @@ jobs:
           ls -la
 
       - name: Run Tests with Twister
+        id: twister
         run: |
-          #source zephyr-env.sh
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          ./scripts/twister --inline-logs -M -N -v -p native_posix --subset ${{matrix.subset}}/${MATRIX_SIZE} --retry-failed 3
+          #
+          git rebase origin/main
+          commit_range="origin/${{github.base_ref}}..HEAD"
+          # check if we need to run a full twister or not based on files changed
+          SC=$(./scripts/ci/what_changed.py --commits ${commit_range})
+          # Get twister arguments based on the files changed
+          ./scripts/ci/get_twister_opt.py --commits ${commit_range}
+          if [ "$SC" = "full" ]; then
+            # Full twister
+            ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
+          else
+            # We can limit scope to just what has changed
+            if [ -s modified_tests.args ]; then
+              # we are working with one platform at a time
+              sed -i '/--all/d' modified_tests.args
+              # Full twister but with options based on changes
+              ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} +modified_tests.args --retry-failed 2
+            else
+              # if nothing is run, skip reporting step
+              echo "::set-output name=report_needed::0";
+            fi
+          fi
 
       - name: Upload Unit Test Results
-        if: always()
+        if: always() && steps.twister.outputs.report_needed != 0
         uses: actions/upload-artifact@v2
         with:
-          name: Unit Test Results (Subset ${{ matrix.subset }})
+          name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
 
   publish-test-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
     runs-on: ubuntu-20.04
-      # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
-
+    if: (success() || failure() ) && needs.clang-build.outputs.report_needed != 0
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
           path: artifacts
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.12
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
         with:
           check_name: Unit Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/twister.xml"
-          comment_on_pr: false
+          comment_mode: off
