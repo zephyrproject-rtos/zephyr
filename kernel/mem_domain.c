@@ -139,7 +139,12 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			domain->partitions[i] = *parts[i];
 			domain->num_partitions++;
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-			arch_mem_domain_partition_add(domain, i);
+			int ret2 = arch_mem_domain_partition_add(domain, i);
+
+			ARG_UNUSED(ret2);
+			CHECKIF(ret2 != 0) {
+				ret = ret2;
+			}
 #endif
 		}
 	}
@@ -194,7 +199,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 	domain->num_partitions++;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	arch_mem_domain_partition_add(domain, p_idx);
+	ret = arch_mem_domain_partition_add(domain, p_idx);
 #endif
 
 unlock_out:
@@ -236,7 +241,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		part->start, part->size, domain);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	arch_mem_domain_partition_remove(domain, p_idx);
+	ret = arch_mem_domain_partition_remove(domain, p_idx);
 #endif
 
 	/* A zero-sized partition denotes it's a free partition */
@@ -251,9 +256,11 @@ out:
 	return ret;
 }
 
-static void add_thread_locked(struct k_mem_domain *domain,
-			      k_tid_t thread)
+static int add_thread_locked(struct k_mem_domain *domain,
+			     k_tid_t thread)
 {
+	int ret = 0;
+
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(thread != NULL);
 
@@ -263,50 +270,72 @@ static void add_thread_locked(struct k_mem_domain *domain,
 	thread->mem_domain_info.mem_domain = domain;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	arch_mem_domain_thread_add(thread);
+	ret = arch_mem_domain_thread_add(thread);
 #endif
+
+	return ret;
 }
 
-static void remove_thread_locked(struct k_thread *thread)
+static int remove_thread_locked(struct k_thread *thread)
 {
+	int ret = 0;
+
 	__ASSERT_NO_MSG(thread != NULL);
 	LOG_DBG("remove thread %p from memory domain %p\n",
 		thread, thread->mem_domain_info.mem_domain);
 	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	arch_mem_domain_thread_remove(thread);
+	ret = arch_mem_domain_thread_remove(thread);
 #endif
+
+	return ret;
 }
 
 /* Called from thread object initialization */
 void z_mem_domain_init_thread(struct k_thread *thread)
 {
+	int ret;
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 
 	/* New threads inherit memory domain configuration from parent */
-	add_thread_locked(_current->mem_domain_info.mem_domain, thread);
+	ret = add_thread_locked(_current->mem_domain_info.mem_domain, thread);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 /* Called when thread aborts during teardown tasks. sched_spinlock is held */
 void z_mem_domain_exit_thread(struct k_thread *thread)
 {
+	int ret;
+
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
-	remove_thread_locked(thread);
+
+	ret = remove_thread_locked(thread);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
-void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
+int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 {
+	int ret = 0;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&z_mem_domain_lock);
 	if (thread->mem_domain_info.mem_domain != domain) {
-		remove_thread_locked(thread);
-		add_thread_locked(domain, thread);
+		ret = remove_thread_locked(thread);
+
+		if (ret == 0) {
+			ret = add_thread_locked(domain, thread);
+		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
+
+	return ret;
 }
 
 static int init_mem_domain_module(const struct device *arg)

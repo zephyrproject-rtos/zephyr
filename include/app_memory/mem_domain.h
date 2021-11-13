@@ -183,9 +183,10 @@ extern int k_mem_domain_remove_partition(struct k_mem_domain *domain,
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
  *
+ * @return 0 if successful, fails otherwise.
  */
-extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
-				    k_tid_t thread);
+extern int k_mem_domain_add_thread(struct k_mem_domain *domain,
+				   k_tid_t thread);
 
 #ifdef __cplusplus
 }
