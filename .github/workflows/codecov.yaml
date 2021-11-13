@@ -98,7 +98,7 @@ jobs:
           name: Coverage Data (Subset ${{ matrix.platform }})
           path: coverage/reports/${{ matrix.platform }}.info
 
-  publish-coverage-results:
+  codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
     runs-on: ubuntu-latest
