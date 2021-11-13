@@ -24,7 +24,7 @@ jobs:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
     outputs:
-      report_needed: ${{ steps.twsiter.outputs.report_needed }}
+      report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -74,6 +74,7 @@ jobs:
           if [ "$SC" = "full" ]; then
             # Full twister
             ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} --retry-failed 2
+            echo "::set-output name=report_needed::1";
           else
             # We can limit scope to just what has changed
             if [ -s modified_tests.args ]; then
@@ -81,6 +82,7 @@ jobs:
               sed -i '/--all/d' modified_tests.args
               # Full twister but with options based on changes
               ./scripts/twister --inline-logs -M -N -v -p ${{ matrix.platform }} +modified_tests.args --retry-failed 2
+              echo "::set-output name=report_needed::1";
             else
               # if nothing is run, skip reporting step
               echo "::set-output name=report_needed::0";
