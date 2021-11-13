@@ -96,7 +96,7 @@ jobs:
           name: Unit Test Results (Subset ${{ matrix.platform }})
           path: twister-out/twister.xml
 
-  publish-test-results:
+  clang-build-results:
     name: "Publish Unit Tests Results"
     needs: clang-build
     runs-on: ubuntu-20.04
