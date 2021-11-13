@@ -2,7 +2,7 @@ name: Code Coverage with codecov
 
 on:
   schedule:
-    - cron: '25 */3 * * *'
+    - cron: '25 */3 * * 1-5'
 
 jobs:
   codecov-prep:
