@@ -69,14 +69,15 @@ struct pm_notifier {
  * @brief Force usage of given power state.
  *
  * This function overrides decision made by PM policy forcing
- * usage of given power state immediately.
+ * usage of given power state upon next entry of the idle thread.
  *
  * @note This function can only run in thread context
  *
+ * @param cpu CPU index.
  * @param info Power state which should be used in the ongoing
  *	suspend operation.
  */
-void pm_power_state_force(struct pm_state_info info);
+bool pm_power_state_force(uint8_t cpu, struct pm_state_info info);
 
 /**
  * @brief Register a power management notifier
