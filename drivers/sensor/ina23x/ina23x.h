@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_INA23X_H_
 
 #include <drivers/gpio.h>
+#include <drivers/i2c.h>
 
 #ifdef CONFIG_INA23X_VARIANT_230
 #define INA23X_REG_CONFIG     0x00
@@ -54,8 +55,7 @@ struct ina23x_data {
 };
 
 struct ina23x_config {
-	const struct device *bus;
-	const uint16_t i2c_slv_addr;
+	struct i2c_dt_spec i2c;
 	uint16_t config;
 	uint16_t adc_config;
 	uint16_t current_lsb;

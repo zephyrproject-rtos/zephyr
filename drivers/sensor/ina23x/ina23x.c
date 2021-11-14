@@ -9,7 +9,6 @@
 #include <sys/byteorder.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
@@ -77,7 +76,7 @@ static int ina23x_reg_read_24(const struct device *dev, uint8_t reg, uint32_t *v
 	uint8_t data[3];
 	int ret;
 
-	ret = i2c_burst_read(config->bus, config->i2c_slv_addr, reg, data, 3);
+	ret = i2c_burst_read_dt(&config->i2c, reg, data, 3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -94,7 +93,7 @@ static int ina23x_reg_read(const struct device *dev, uint8_t reg, int16_t *val)
 	uint8_t data[2];
 	int ret;
 
-	ret = i2c_burst_read(config->bus, config->i2c_slv_addr, reg, data, 2);
+	ret = i2c_burst_read_dt(&config->i2c, reg, data, 2);
 	if (ret < 0) {
 		return ret;
 	}
@@ -112,7 +111,7 @@ static int ina23x_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 	tx_buf[0] = reg;
 	sys_put_be16(val, &tx_buf[1]);
 
-	return i2c_write(config->bus, tx_buf, sizeof(tx_buf), config->i2c_slv_addr);
+	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
 /**
@@ -334,8 +333,8 @@ static int ina23x_init(const struct device *dev)
 	uint16_t cal;
 	int ret;
 
-	if (!device_is_ready(config->bus)) {
-		LOG_ERR("Device %s is not ready", config->bus->name);
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Device %s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -412,8 +411,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 #define INA23X_DRIVER_INIT(inst)				    \
 	static struct ina23x_data drv_data_##inst;		    \
 	static const struct ina23x_config drv_config_##inst = {	    \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	    \
-		.i2c_slv_addr = DT_INST_REG_ADDR(inst),		    \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),		    \
 		.config = DT_INST_PROP(inst, config),		    \
 		.adc_config = DT_INST_PROP_OR(inst, adc_config, 0), \
 		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
