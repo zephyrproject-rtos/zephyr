@@ -90,7 +90,7 @@ void main(void)
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_power_state_force((struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 
 	printk("ERROR: System off failed\n");
 	while (true) {
