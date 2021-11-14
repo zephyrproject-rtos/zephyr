@@ -46,6 +46,51 @@
 			};
 		};
 
+		usart0: usart@40013800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40013800 0x400>;
+			interrupts = <37 0>;
+			rcu-periph-clock = <0x60e>;
+			status = "disabled";
+			label = "USART_0";
+		};
+
+		usart1: usart@40004400 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <38 0>;
+			rcu-periph-clock = <0x712>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		usart2: usart@40004800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004800 0x400>;
+			interrupts = <39 0>;
+			rcu-periph-clock = <0x713>;
+			status = "disabled";
+			label = "USART_2";
+		};
+
+		uart3: usart@40004C00 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004C00 0x400>;
+			interrupts = <52 0>;
+			rcu-periph-clock = <0x714>;
+			status = "disabled";
+			label = "USART_3";
+		};
+
+		uart4: usart@40005000 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40005000 0x400>;
+			interrupts = <53 0>;
+			rcu-periph-clock = <0x715>;
+			status = "disabled";
+			label = "USART_4";
+		};
+
 		afio: afio@40010000 {
 			compatible = "gd,gd32-afio";
 			reg = <0x40010000 0x400>;
@@ -119,13 +164,6 @@
 			};
 		};
 
-		usart0: usart@40013800 {
-			compatible = "gd,gd32-usart";
-			reg = <0x40013800 0x400>;
-			rcu-periph-clock = <0x60e>;
-			status = "disabled";
-			label = "usart_0";
-		};
 	};
 };
 
