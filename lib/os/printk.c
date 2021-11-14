@@ -51,7 +51,7 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 }
 /* LCOV_EXCL_STOP */
 
-int (*_char_out)(int) = arch_printk_char_out;
+int (*_char_out)(int c) = arch_printk_char_out;
 
 /**
  * @brief Install the character output routine for printk
@@ -60,7 +60,7 @@ int (*_char_out)(int) = arch_printk_char_out;
  * routine that outputs one ASCII character at a time.
  * @param fn putc routine to install
  */
-void __printk_hook_install(int (*fn)(int))
+void __printk_hook_install(int (*fn)(int c))
 {
 	_char_out = fn;
 }
