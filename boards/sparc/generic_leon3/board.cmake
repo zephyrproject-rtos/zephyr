@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(SUPPORTED_EMU_PLATFORMS tsim)
+set(EMU_PLATFORM tsim)
 
 find_program(TSIM tsim-leon3)
 

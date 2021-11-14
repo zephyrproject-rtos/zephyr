@@ -11,7 +11,7 @@ set(RENODE_FLAGS
   --pid-file renode.pid
   )
 
-add_custom_target(run_renode
+add_custom_target(run
   COMMAND
   ${RENODE}
   ${RENODE_FLAGS}

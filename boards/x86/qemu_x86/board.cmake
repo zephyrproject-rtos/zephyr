@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(SUPPORTED_EMU_PLATFORMS qemu)
+set(EMU_PLATFORM qemu)
 
 if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)

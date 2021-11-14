@@ -34,7 +34,7 @@ else()
 endif()
 
 string(REPLACE ";" " " MDB_COMMAND "${MDB_OPTIONS}")
-add_custom_target(run_nsim
+add_custom_target(run
   COMMAND
   ${MDB_OPTIONS}
   ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
@@ -49,7 +49,7 @@ find_program(
   nsimdrv
   )
 
-add_custom_target(run_nsim
+add_custom_target(run
   COMMAND
   ${NSIM}
   -propsfile
@@ -61,7 +61,7 @@ add_custom_target(run_nsim
   USES_TERMINAL
   )
 
-add_custom_target(debugserver_nsim
+add_custom_target(debugserver
   COMMAND
   ${NSIM}
   -propsfile

@@ -36,7 +36,7 @@ else()
     )
 endif()
 
-add_custom_target(run_armfvp
+add_custom_target(run
   COMMAND
   ${ARMFVP}
   ${ARMFVP_FLAGS}
