@@ -77,17 +77,6 @@ static uint32_t count32(void)
 	return shim_regs->walclk32_lo;
 }
 
-static uint64_t count64(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t ret = shim_regs->walclk32_lo;
-
-	ret |= (uint64_t)shim_regs->walclk32_hi << 32;
-
-	k_spin_unlock(&lock, key);
-	return ret;
-}
-
 static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
@@ -195,7 +184,7 @@ uint32_t sys_clock_cycle_get_32(void)
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return count64();
+	return count();
 }
 
 /* Runs on secondary cores */
