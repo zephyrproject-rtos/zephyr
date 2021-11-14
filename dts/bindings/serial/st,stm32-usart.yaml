@@ -20,3 +20,13 @@ properties:
 
         For example the USART1 would be
            pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+
+    stop-bits:
+      required: false
+      type: string
+      description: Inital stop-bits setting for UART
+      enum:
+        - "1"
+        - "0.5"
+        - "1.5"
+        - "2"
