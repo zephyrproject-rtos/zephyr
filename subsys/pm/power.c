@@ -241,7 +241,6 @@ void pm_system_resume(void)
 		pm_state_notify(false);
 		z_power_states[id] = (struct pm_state_info){PM_STATE_ACTIVE,
 			0, 0};
-		atomic_clear_bit(z_power_states_forced, id);
 	}
 }
 
@@ -263,6 +262,7 @@ bool pm_power_state_force(uint8_t cpu, struct pm_state_info info)
 
 bool pm_system_suspend(int32_t ticks)
 {
+	bool ret = true;
 	uint8_t id = _current_cpu->id;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
@@ -275,8 +275,8 @@ bool pm_system_suspend(int32_t ticks)
 		LOG_DBG("No PM operations done.");
 		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_power_states[id].state);
-		atomic_clear_bit(z_power_states_forced, id);
-		return false;
+		ret = false;
+		goto end;
 	}
 	post_ops_done = false;
 
@@ -308,8 +308,8 @@ bool pm_system_suspend(int32_t ticks)
 			(void)atomic_add(&z_cpus_active, 1);
 			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				_handle_device_abort(z_power_states[id]));
-			atomic_clear_bit(z_power_states_forced, id);
-			return false;
+			ret = false;
+			goto end;
 		}
 	}
 #endif
@@ -340,7 +340,10 @@ bool pm_system_suspend(int32_t ticks)
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
 				   z_power_states[id].state);
-	return true;
+
+end:
+	atomic_clear_bit(z_power_states_forced, id);
+	return ret;
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)
