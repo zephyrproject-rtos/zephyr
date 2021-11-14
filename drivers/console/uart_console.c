@@ -96,7 +96,7 @@ static int console_out(int c)
 #endif
 
 #if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
+extern void __stdout_hook_install(int (*hook)(int c));
 #else
 #define __stdout_hook_install(x) \
 	do {    /* nothing */	 \
@@ -104,7 +104,7 @@ extern void __stdout_hook_install(int (*hook)(int));
 #endif
 
 #if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
+extern void __printk_hook_install(int (*fn)(int c));
 #else
 #define __printk_hook_install(x) \
 	do {    /* nothing */	 \

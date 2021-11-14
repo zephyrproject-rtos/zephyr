@@ -10,10 +10,10 @@
 
 #define __abi __attribute__((ms_abi))
 
-typedef uintptr_t __abi (*efi_fn1_t)(void *);
-typedef uintptr_t __abi (*efi_fn2_t)(void *, void *);
-typedef uintptr_t __abi (*efi_fn3_t)(void *, void *, void *);
-typedef uintptr_t __abi (*efi_fn4_t)(void *, void *, void *, void *);
+typedef uintptr_t __abi (*efi_fn1_t)(void *arg1);
+typedef uintptr_t __abi (*efi_fn2_t)(void *arg1, void *arg2);
+typedef uintptr_t __abi (*efi_fn3_t)(void *arg1, void *arg2, void *arg3);
+typedef uintptr_t __abi (*efi_fn4_t)(void *arg1, void *arg2, void *arg3, void *arg4);
 
 struct efi_simple_text_output {
 	efi_fn2_t Reset;
