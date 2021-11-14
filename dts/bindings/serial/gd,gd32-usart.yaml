@@ -11,6 +11,9 @@ properties:
     reg:
       required: true
 
+    interrupts:
+      required: true
+
     rcu-periph-clock:
       type: int
       description: Reset Control Unit Peripheral Clock ID
