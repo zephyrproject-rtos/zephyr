@@ -58,14 +58,14 @@ static bool page_frames_initialized;
 #define COLOR_PAGE_FRAMES	1
 
 #if COLOR_PAGE_FRAMES
-#define ANSI_DEFAULT "\x1B[0m"
-#define ANSI_RED     "\x1B[1;31m"
-#define ANSI_GREEN   "\x1B[1;32m"
-#define ANSI_YELLOW  "\x1B[1;33m"
-#define ANSI_BLUE    "\x1B[1;34m"
-#define ANSI_MAGENTA "\x1B[1;35m"
-#define ANSI_CYAN    "\x1B[1;36m"
-#define ANSI_GREY    "\x1B[1;90m"
+#define ANSI_DEFAULT "\x1B" "[0m"
+#define ANSI_RED     "\x1B" "[1;31m"
+#define ANSI_GREEN   "\x1B" "[1;32m"
+#define ANSI_YELLOW  "\x1B" "[1;33m"
+#define ANSI_BLUE    "\x1B" "[1;34m"
+#define ANSI_MAGENTA "\x1B" "[1;35m"
+#define ANSI_CYAN    "\x1B" "[1;36m"
+#define ANSI_GREY    "\x1B" "[1;90m"
 
 #define COLOR(x)	printk(_CONCAT(ANSI_, x))
 #else
