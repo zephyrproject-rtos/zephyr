@@ -291,6 +291,13 @@ void z_irq_spurious(const void *unused);
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	arch_irq_priority_set(irq_p, priority_p); \
 }
+#elif defined(CONFIG_NUCLEI_ECLIC)
+void nuclei_eclic_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags);
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+{ \
+	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
+	nuclei_eclic_irq_priority_set(irq_p, priority_p, flags_p); \
+}
 #else
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
