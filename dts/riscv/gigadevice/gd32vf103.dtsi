@@ -40,6 +40,17 @@
 			clk-divider = <RISCV_MACHINE_TIMER_DIVIDER_4>;
 		};
 
+		eclic: interrupt-controller@d2000000 {
+			#interrupt-cells = <2>;
+			compatible = "nuclei,eclic";
+			interrupt-controller;
+			reg =  <0xd2000000 0x0001
+				0xd2000004 0x0004
+				0xd200000b 0x0001
+				0xd2001000 0x1000>;
+			label = "NUCLEI_ECLIC";
+		};
+
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			label = "FMC";
