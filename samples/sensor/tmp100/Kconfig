@@ -1,0 +1,11 @@
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+module = TMP100
+module-str = TMP100
+source "subsys/logging/Kconfig.template.log_config"
+############################################
+# The below line is the important addition #
+############################################
+rsource "../../../drivers/sensor/tmp100/Kconfig"

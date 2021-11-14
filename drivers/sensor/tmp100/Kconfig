@@ -1,0 +1,5 @@
+menuconfig TMP100
+        bool "TMP100 Temperature Sensor"
+        depends on I2C
+        help
+                Enable tmp100 sensor

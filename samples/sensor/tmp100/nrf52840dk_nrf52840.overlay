@@ -1,0 +1,12 @@
+&i2c0 {
+    compatible = "nordic,nrf-twi";
+    status = "okay";
+    sda-pin = <26>;
+    scl-pin = <27>;
+	tmp100@48 {
+		compatible = "ti,tmp100";
+		reg = <0x48>;
+        status = "okay";
+		label = "TMP100";
+	};
+};
