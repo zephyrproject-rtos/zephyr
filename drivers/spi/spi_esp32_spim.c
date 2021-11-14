@@ -280,7 +280,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	spi_hal_timing_param_t timing_param = {
 		.half_duplex = hal_dev->half_duplex,
 		.no_compensate = hal_dev->no_compensate,
-		.clock_speed_hz = cfg->frequency,
+		.clock_speed_hz = spi_cfg->frequency,
 		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
 		.input_delay_ns = cfg->input_delay_ns,
 		.use_gpio = true
@@ -441,7 +441,6 @@ static const struct spi_driver_api spi_api = {
 		.spi = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 			\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(spi##idx))),	\
-		.frequency = SPI_MASTER_FREQ_8M,\
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
 		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \
