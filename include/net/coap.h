@@ -144,6 +144,7 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
 						coap_make_response_code(4, 15),
 	COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY = coap_make_response_code(4, 22),
+	COAP_RESPONSE_CODE_TOO_MANY_REQUESTS = coap_make_response_code(4, 29),
 	COAP_RESPONSE_CODE_INTERNAL_ERROR = coap_make_response_code(5, 0),
 	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = coap_make_response_code(5, 1),
 	COAP_RESPONSE_CODE_BAD_GATEWAY = coap_make_response_code(5, 2),
