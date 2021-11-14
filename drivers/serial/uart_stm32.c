@@ -1420,6 +1420,7 @@ static int uart_stm32_init(const struct device *dev)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint32_t ll_parity;
 	uint32_t ll_datawidth;
+	uint32_t ll_stopbits;
 	int err;
 
 	__uart_stm32_get_clock(dev);
@@ -1463,12 +1464,12 @@ static int uart_stm32_init(const struct device *dev)
 		ll_parity = LL_USART_PARITY_NONE;
 		ll_datawidth = LL_USART_DATAWIDTH_8B;
 	}
-
+	ll_stopbits = uart_stm32_cfg2ll_stopbits(config->stop_bits);
 	/* Set datawidth and parity, 1 start bit, 1 stop bit  */
 	LL_USART_ConfigCharacter(UartInstance,
 				 ll_datawidth,
 				 ll_parity,
-				 LL_USART_STOPBITS_1);
+				 ll_stopbits);
 
 	if (config->hw_flow_control) {
 		uart_stm32_set_hwctrl(dev, LL_USART_HWCONTROL_RTS_CTS);
@@ -1593,6 +1594,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	},								\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
 	.parity = DT_ENUM_IDX_OR(DT_DRV_INST(index), parity, UART_CFG_PARITY_NONE),	\
+	.stop_bits = DT_ENUM_IDX_OR(DT_DRV_INST(index), stop_bits, UART_CFG_STOP_BITS_1), \
 	STM32_UART_POLL_IRQ_HANDLER_FUNC(index)				\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\

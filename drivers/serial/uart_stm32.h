@@ -23,6 +23,9 @@ struct uart_stm32_config {
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
 	int  parity;
+	/* initial stop-bits, 
+	*  0 for 1, 1 for 0.5, 2 for 1.5, 3 for 2 */
+	int stop_bits;
 	const struct soc_gpio_pinctrl *pinctrl_list;
 	size_t pinctrl_list_size;
 #if defined(CONFIG_PM) \
