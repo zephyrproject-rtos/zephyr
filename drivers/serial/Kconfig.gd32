@@ -9,6 +9,7 @@ config USART_GD32
 	default $(dt_compat_enabled,$(DT_COMPAT_GIGADEVICE_GD32_USART))
 	depends on SOC_FAMILY_GD32
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select USE_GD32_USART
 	help
 	  This option enables the USART driver for GD32 SoC family.
