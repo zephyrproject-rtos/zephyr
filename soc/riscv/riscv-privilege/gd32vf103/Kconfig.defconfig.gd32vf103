@@ -31,10 +31,14 @@ config RISCV_HAS_PLIC
 	default n
 
 config NUM_IRQS
-	default 64
+	default 87 if  NUCLEI_ECLIC
+	default 16 if !NUCLEI_ECLIC
 
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,flash0@8000000)
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
 
 config PINCTRL
 	default y

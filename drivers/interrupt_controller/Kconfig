@@ -73,4 +73,6 @@ source "drivers/interrupt_controller/Kconfig.esp32c3"
 
 source "drivers/interrupt_controller/Kconfig.xec"
 
+source "drivers/interrupt_controller/Kconfig.eclic"
+
 endmenu

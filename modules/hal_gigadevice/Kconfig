@@ -106,12 +106,6 @@ config USE_GD32_DMA
 	help
 	  Enable GD32 Direct Memory Access controller (DMA) HAL module driver
 
-config USE_GD32_ECLIC
-	bool
-	help
-	  Enable GD32 Enhancement Core-Local Interrupt Controller (ECLIC) HAL
-	  module driver
-
 config USE_GD32_ENET
 	bool
 	help
