@@ -1645,5 +1645,5 @@ static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
 	int credits = atomic_get(&l2ch_chan.ch.tx.credits);
 
-	BT_DBG("Channel %p status %u, credits %d", chan, *status, credits);
+	BT_DBG("Channel %p status %lu, credits %d", chan, *status, credits);
 }
