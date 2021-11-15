@@ -136,6 +136,11 @@ config HAS_MCUX_GPT
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
 
+config HAS_MCUX_SNVS
+	bool
+	help
+	  Set if the SNVS module is present on the SoC.
+
 config HAS_MCUX_RNG
 	bool
 	help
