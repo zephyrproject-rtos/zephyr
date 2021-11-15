@@ -66,8 +66,8 @@ int bap_config(struct bt_audio_stream *stream, struct bt_codec *codec)
 	return 0;
 }
 
-static int bap_enable(struct bt_audio_stream *stream,
-		      uint8_t meta_count, struct bt_codec_data *meta)
+int bap_enable(struct bt_audio_stream *stream, uint8_t meta_count,
+	       struct bt_codec_data *meta)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct net_buf_simple *buf;
