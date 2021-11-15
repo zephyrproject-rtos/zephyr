@@ -78,9 +78,6 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		pref->pref_pd_min = cap->pref.pref_pd_min;
 		pref->pref_pd_max = cap->pref.pref_pd_max;
 
-		/* TODO: A stream should not have a reference to a cap */
-		(*stream)->cap = cap;
-
 		return 0;
 	}
 

@@ -8,7 +8,6 @@
 
 #include "ascs_internal.h"
 #include "stream.h"
-#include <bluetooth/audio/capabilities.h> /* TODO: Temp include, remove */
 
 #if defined(CONFIG_BT_BAP) && defined(CONFIG_BT_AUDIO_UNICAST)
 #define UNICAST_GROUP_CNT CONFIG_BT_BAP_UNICAST_GROUP_COUNT
@@ -49,7 +48,6 @@ struct bt_audio_ep {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	struct bt_ascs_ase_status status;
-	struct bt_audio_capability *cap;
 	struct bt_audio_stream *stream;
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
