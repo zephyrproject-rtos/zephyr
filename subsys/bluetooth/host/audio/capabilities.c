@@ -204,6 +204,37 @@ static int unicast_server_release_cb(struct bt_audio_stream *stream)
 	return stream->cap->ops->release(stream);
 }
 
+static int publish_capability_cb(struct bt_conn *conn, uint8_t type,
+				 uint8_t index, struct bt_codec *codec)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+	uint8_t i;
+
+	if (type == BT_AUDIO_SINK) {
+		lst = &snks;
+	} else if (type == BT_AUDIO_SOURCE) {
+		lst = &srcs;
+	} else {
+		BT_ERR("Invalid endpoint type: %u", type);
+		return -EINVAL;
+	}
+
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		if (i != index) {
+			i++;
+			continue;
+		}
+
+		(void)memcpy(codec, cap->codec, sizeof(*codec));
+
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
 static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.config = unicast_server_config_cb,
 	.reconfig = unicast_server_reconfig_cb,
@@ -214,6 +245,7 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.disable = unicast_server_disable_cb,
 	.stop = unicast_server_stop_cb,
 	.release = unicast_server_release_cb,
+	.publish_capability = publish_capability_cb,
 };
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 

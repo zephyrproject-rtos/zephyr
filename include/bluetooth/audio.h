@@ -1032,6 +1032,27 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*release)(struct bt_audio_stream *stream);
 
+	/** @brief Publish Capability callback
+	 *
+	 *  Publish Capability callback is called whenever a remote client
+	 *  requests to read the Published Audio Capabilities (PAC) records.
+	 *  The callback will be called iteratively until it returns an error,
+	 *  increasing the @p index each time. Once an error value (non-zero)
+	 *  is returned, the previously returned @p codec values (if any) will
+	 *  be sent to the client that requested the value.
+	 *
+	 *  @param type   Type of the endpoint.
+	 *  @param index  Index of the codec object requested. Multiple objects
+	 *                may be returned, and this value keep tracks of how
+	 *                many have previously been returned.
+	 *  @param codec  Codec object that shall be populated if returning
+	 *                success (0). Ignored if returning non-zero.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*publish_capability)(struct bt_conn *conn, uint8_t type,
+				  uint8_t index, struct bt_codec *const codec);
+
 	/* Internally used list node */
 	sys_snode_t node;
 };
