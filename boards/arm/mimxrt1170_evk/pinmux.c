@@ -34,59 +34,19 @@ static gpio_pin_config_t cam_pwdn_config = {
 };
 #endif
 
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
-
-/*Drive Strength Field: R0(260 Ohm @ 3.3V, 150 Ohm@1.8V, 240 Ohm for DDR)
- *Speed Field: medium(100MHz)
- *Open Drain Enable Field: Open Drain Disabled
- *Pull / Keep Enable Field: Pull/Keeper Enabled
- *Pull / Keep Select Field: Pull
- *Pull Up / Down Config. Field: 47K Ohm Pull Up
- *Hyst. Enable Field: Hysteresis Enabled.
- */
-
-static void mimxrt1170_evk_usdhc_pinmux(uint16_t nusdhc, bool init,
-		uint32_t speed, uint32_t strength)
+void imxrt1170_evk_dat3_pull(bool pullup)
 {
-	uint32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
-			 IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
-			 IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
-			 IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
-			 IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
-			 IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
-			 IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
-
-	uint32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
-			IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
-			IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
-			IOMUXC_SW_PAD_CTL_PAD_PUS(0) |
-			IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
-
-	if (nusdhc != 0) {
-		LOG_ERR("Invalid USDHC index");
-		return;
+	if (pullup) {
+		/* Set pin config to pull up */
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3,
+				IOMUXC_SW_PAD_CTL_PAD_PULL(1));
+	} else {
+		/* no pull */
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3,
+				IOMUXC_SW_PAD_CTL_PAD_PULL(3));
 	}
-
-	if (init) {
-		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_32_GPIO_MUX3_IO31, 0U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_34_USDHC1_VSELECT, 0U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_35_GPIO10_IO02, 0U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_00_USDHC1_CMD, 1U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_01_USDHC1_CLK, 1U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_02_USDHC1_DATA0, 1U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_03_USDHC1_DATA1, 1U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_04_USDHC1_DATA2, 1U);
-		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3, 1U);
-		IOMUXC_GPR->GPR43 = ((IOMUXC_GPR->GPR43
-			& (~(IOMUXC_GPR_GPR43_GPIO_MUX3_GPIO_SEL_HIGH_MASK)))
-			| IOMUXC_GPR_GPR43_GPIO_MUX3_GPIO_SEL_HIGH(0x8000U));
-	}
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_00_USDHC1_CMD, cmd_data);
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_01_USDHC1_CLK, clk);
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_02_USDHC1_DATA0, cmd_data);
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_03_USDHC1_DATA1, cmd_data);
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_04_USDHC1_DATA2, cmd_data);
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3, cmd_data);
 }
 #endif
 
@@ -208,8 +168,32 @@ static int mimxrt1170_evk_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
-	mimxrt1170_evk_usdhc_pinmux(0, true, 2, 1);
-	imxrt_usdhc_pinmux_cb_register(mimxrt1170_evk_usdhc_pinmux);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_32_GPIO_MUX3_IO31, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_34_USDHC1_VSELECT, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_35_GPIO10_IO02, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_00_USDHC1_CMD, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_01_USDHC1_CLK, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_02_USDHC1_DATA0, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_03_USDHC1_DATA1, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_04_USDHC1_DATA2, 1U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3, 1U);
+	IOMUXC_GPR->GPR43 = ((IOMUXC_GPR->GPR43
+		& (~(IOMUXC_GPR_GPR43_GPIO_MUX3_GPIO_SEL_HIGH_MASK)))
+		| IOMUXC_GPR_GPR43_GPIO_MUX3_GPIO_SEL_HIGH(0x8000U));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_00_USDHC1_CMD,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(1));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_01_USDHC1_CLK,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(3));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_02_USDHC1_DATA0,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(1));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_03_USDHC1_DATA1,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(1));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_04_USDHC1_DATA2,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(1));
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B1_05_USDHC1_DATA3,
+		IOMUXC_SW_PAD_CTL_PAD_PUE(1));
+
+	imxrt_usdhc_dat3_cb_register(imxrt1170_evk_dat3_pull);
 #endif
 
 	return 0;
