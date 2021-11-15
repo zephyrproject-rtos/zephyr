@@ -35,17 +35,11 @@ static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
 void bt_audio_stream_attach(struct bt_conn *conn,
 			    struct bt_audio_stream *stream,
 			    struct bt_audio_ep *ep,
-			    struct bt_audio_capability *cap,
 			    struct bt_codec *codec)
 {
-	BT_DBG("conn %p stream %p ep %p cap %p codec %p", conn, stream, ep, cap,
-	       codec);
+	BT_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
 
 	stream->conn = conn;
-	if (cap != NULL) {
-		/* TODO: Temporary fix to avoid setting stream->cap = NULL */
-		stream->cap = cap;
-	}
 	stream->codec = codec;
 
 	bt_audio_ep_attach(ep, stream);
@@ -80,7 +74,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 		return -EBADMSG;
 	}
 
-	bt_audio_stream_attach(conn, stream, ep, NULL, codec);
+	bt_audio_stream_attach(conn, stream, ep, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
@@ -139,7 +133,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	bt_audio_stream_attach(stream->conn, stream, ep, NULL, codec);
+	bt_audio_stream_attach(stream->conn, stream, ep, codec);
 
 	if (ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);

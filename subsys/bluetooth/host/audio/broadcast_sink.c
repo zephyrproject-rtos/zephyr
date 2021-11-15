@@ -673,7 +673,7 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 		return -ENOMEM;
 	}
 
-	bt_audio_stream_attach(NULL, stream, ep, NULL, codec);
+	bt_audio_stream_attach(NULL, stream, ep, codec);
 	/* TODO: The values of sink_chan_io_qos and codec_qos are not used,
 	 * but the `rx` and `qos` pointers need to be set. This should be fixed.
 	 */
